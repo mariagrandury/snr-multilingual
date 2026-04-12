@@ -22,6 +22,7 @@ def parse_args():
     ckpt_group.add_argument("--total", type=int, help="T evenly spaced checkpoints")
     ckpt_group.add_argument("--names", action="store_true", help="Use checkpoint names from models.json")
 
+    parser.add_argument("--checkpoint-index", type=int, default=None, help="Run only the i-th checkpoint (for parallel jobs)")
     parser.add_argument("--limit", type=int, default=None, help="Limit examples per task (for testing)")
     parser.add_argument("--device", default="cpu", help="Device (default: cpu)")
     parser.add_argument("--batch-size", default="auto", help="Batch size (default: auto)")
@@ -46,6 +47,14 @@ def main():
             checkpoints_per_model[model_id] = resolve_checkpoints(model_id, last=args.last)
         else:
             checkpoints_per_model[model_id] = resolve_checkpoints(model_id, total=args.total)
+
+    # If --checkpoint-index is set, pick only that one checkpoint per model
+    if args.checkpoint_index is not None:
+        for model_id in checkpoints_per_model:
+            ckpts = checkpoints_per_model[model_id]
+            if args.checkpoint_index >= len(ckpts):
+                raise ValueError(f"--checkpoint-index {args.checkpoint_index} out of range (model {model_id} has {len(ckpts)} checkpoints)")
+            checkpoints_per_model[model_id] = [ckpts[args.checkpoint_index]]
 
     print(f"Tasks: {tasks}")
     for model_id, ckpts in checkpoints_per_model.items():
