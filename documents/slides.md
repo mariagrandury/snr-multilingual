@@ -522,19 +522,18 @@ The most significant limitation is the English-centric nature of the training da
 
 ## layout: section
 
-# Current & Next Steps
-
-The Full Research Plan
+# Current Progress & Next Steps
 
 ---
 
 layout: agenda
-title: Next Steps
+title: Current Progress
 items:
 
-- "Train custom multilingual models"
-- "Comprehensive evaluation"
-- "INCLUDE Benchmark Analysis"
+- "Phase 1: Model training (in progress)"
+- "Phase 2: Evaluation pipeline (operational)"
+- "Phase 3: SNR analysis toolkit (implemented)"
+- "Phases 4–5: INCLUDE analysis & dissemination (upcoming)"
 
 ---
 
@@ -545,14 +544,14 @@ title: Research Timeline
 items:
 
 - year: "Phase 1"
-  title: "Model Training"
-  description: "36 small models (100M–1B), 3 data mixtures, 3 seeds"
+  title: "Model Training ⏳"
+  description: "36 small models (100M–1B), 3 data mixtures, 3 seeds — training on cluster"
 - year: "Phase 2"
-  title: "Evaluation"
-  description: "40 multilingual benchmarks on custom + open-source models"
+  title: "Evaluation ⏳"
+  description: "40 multilingual benchmarks via lm-eval-harness, results in W&B"
 - year: "Phase 3"
-  title: "SNR Analysis"
-  description: "Compute signal, noise, SNR, decision accuracy per stage"
+  title: "SNR Analysis ✅"
+  description: "Toolkit built: signal, noise, SNR, decision accuracy computation + visualization"
 - year: "Phase 4"
   title: "INCLUDE Analysis"
   description: "Optimal subsets for 100+ countries across training stages"
@@ -710,6 +709,41 @@ In Phase 3, we compute our five metrics for every benchmark at every training st
 
 ---
 
+title: "SNR Toolkit"
+subtitle: "Open-source implementation"
+
+---
+
+## SNR Analysis Toolkit (Implemented)
+
+<br/>
+
+### Modular Python package: `src/snr` + `src/analysis`
+
+<br/>
+
+| Module             | Functionality                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `snr.metrics`      | Signal (relative dispersion), noise (checkpoint + k-fold benchmark), SNR, decision accuracy |
+| `snr.data`         | Load results from W&B or local JSON, parse model metadata                                   |
+| `snr.compute`      | Orchestrate metrics across all benchmarks and training stages                               |
+| `analysis.plots`   | SNR vs DA scatter, signal-noise maps, benchmark rankings, stage comparisons                 |
+| `analysis.summary` | Results tables, benchmark recommendations per stage                                         |
+
+<br/>
+
+### Pipeline: `compute_snr.py` &rarr; `run_analysis.py`
+
+- Compute SNR from W&B or local results &rarr; CSV per stage
+- Generate plots, correlation matrices, and stage-specific recommendations
+- Supports both checkpoint noise and benchmark noise (k-fold)
+
+<!--
+We've built a complete analysis toolkit that extends the original signal-and-noise codebase. The key improvement is modularity: clean separation between metric computation, data loading, and visualization. The toolkit supports two noise computation methods — checkpoint noise for models with many intermediate checkpoints, and our proposed benchmark noise via k-fold splits for single-run analysis. Everything integrates with W&B for experiment tracking.
+-->
+
+---
+
 title: "Phase 4: INCLUDE Analysis"
 subtitle: "Regional knowledge across 100+ countries"
 
@@ -772,10 +806,11 @@ subtitle: "Open science deliverables"
 
 <br/>
 
-**Open-Source Toolkit**
+**Open-Source Toolkit** (in progress)
 
-- Compute SNR on your own benchmarks and models
-- Fork and extension of the original SNR codebase
+- Modular Python package: metrics, data loading, visualization
+- Compute SNR on your own benchmarks and models via `compute_snr.py`
+- Stage-specific analysis and recommendations via `run_analysis.py`
 
 <br/>
 
@@ -797,6 +832,19 @@ Three concrete deliverables. The NeurIPS paper with comprehensive SNR analysis. 
 
 ---
 
-# Open Questions
+layout: bullets
+title: Open Questions
+icon: "?"
 
-1. How to select optimal sub-benchmarks?
+---
+
+## Open Questions
+
+- **Benchmark noise calibration**: How many folds (k) are needed for stable noise estimates on small benchmarks?
+- **Sub-benchmark selection**
+- **Language coverage**
+- **Stage transitions**: Are there benchmarks that are reliably informative across all stages, or is stage-specificity the norm?
+
+<!--
+These are the key open questions driving the next phase of the research. The benchmark noise calibration question is practical — we want to know the minimum fold count for reliable noise estimates. The sub-benchmark selection question is the core optimization problem. Language coverage is critical for the multilingual setting — we need to ensure our recommendations don't systematically exclude underrepresented languages. The inverse scaling question affects how we define "decision accuracy" for tasks where model quality doesn't monotonically improve with scale.
+-->
