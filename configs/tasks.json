@@ -1,6 +1,5 @@
 {
     "pretraining": [
-        "global_mmlu",
         "hellaswag",
         "piqa",
         "openbookqa",

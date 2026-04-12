@@ -52,7 +52,7 @@ Evaluate multiple checkpoints in parallel:
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && git pull && \
 for i in $(seq 0 9); do
-    sbatch --time=04:00:00 --job-name="eval_SmolLM3_${i}" \
+    sbatch --time=02:00:00 --job-name="eval_SmolLM3_${i}" \
         scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10 --checkpoint-index "$i"
 done
 ```

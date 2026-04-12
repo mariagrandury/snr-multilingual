@@ -133,13 +133,17 @@ def run_all(
         model_id = model_entry["id"]
         revisions = checkpoints_per_model[model_id]
         for idx, revision in enumerate(revisions):
-            run_evaluation(
-                model_id,
-                revision,
-                tasks,
-                checkpoint_index=idx,
-                device=device,
-                batch_size=batch_size,
-                limit=limit,
-                log_wandb=log_wandb,
-            )
+            try:
+                run_evaluation(
+                    model_id,
+                    revision,
+                    tasks,
+                    checkpoint_index=idx,
+                    device=device,
+                    batch_size=batch_size,
+                    limit=limit,
+                    log_wandb=log_wandb,
+                )
+            except Exception as e:
+                print(f"\nERROR: {model_id} @ {revision} failed: {e}\n")
+                continue
