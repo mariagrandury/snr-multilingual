@@ -35,14 +35,15 @@ cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 Review the logs:
 
 ```bash
-cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
+cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs && ls
 ```
 
 Evaluate multiple checkpoints:
 
 ```bash
-sbatch --time=08:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks posttraining --models posttraining --last 10
-sbatch --time=04:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks pretraining --models pretraining --total 13
+cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
+&& git pull \
+&& sbatch --time=02:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10
 ```
 
 ### Import from another WandB project

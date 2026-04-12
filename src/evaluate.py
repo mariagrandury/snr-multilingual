@@ -35,7 +35,7 @@ def run_evaluation(
     print(f"Device: {device}, Limit: {limit}")
     print(f"{'='*60}\n")
 
-    model_args = f"pretrained={model_id},revision={revision},trust_remote_code=True"
+    model_args = f"pretrained={model_id},revision={revision},trust_remote_code=True,parallelize=True"
 
     start_time = time.time()
     results = lm_eval.simple_evaluate(
