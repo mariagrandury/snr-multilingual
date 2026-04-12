@@ -37,6 +37,12 @@ sbatch scripts/run_slurm.sh --tasks pretraining --models pretraining --total 5
 sbatch --time=08:00:00 scripts/run_slurm.sh --tasks posttraining --models posttraining --last 10
 ```
 
+### Import from another WandB project
+
+```bash
+python scripts/import_wandb.py --source ist/SwissAI-QAT-evals --tag QAT 2>&1
+```
+
 ## Checkpoint strategies
 
 - `--last N`: last N branches (alphabetically sorted, excludes 'main')

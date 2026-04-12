@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Import evaluation results from an existing W&B project into our project.
 
-Reads runs from a source project, saves results locally in our format,
-and re-logs them to our W&B project with configurable tags.
+Reads runs from a source project (including full history for multi-checkpoint runs),
+saves results locally in our format, and re-logs them to our W&B project.
 
 Usage:
     python scripts/import_wandb.py --source ist/SwissAI-QAT-evals --tag QAT
@@ -11,6 +11,7 @@ Usage:
 
 import argparse
 import json
+import math
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,20 @@ def parse_args():
     return parser.parse_args()
 
 
+def _split_metrics(row: dict) -> tuple[dict, dict]:
+    """Split a row into task metrics (keys with /) and metadata (rest)."""
+    task_metrics = {}
+    metadata = {}
+    for k, v in row.items():
+        if k.startswith("_") or (isinstance(v, float) and math.isnan(v)):
+            continue
+        if "/" in k:
+            task_metrics[k] = v
+        else:
+            metadata[k] = v
+    return task_metrics, metadata
+
+
 def import_runs(source_project: str, tag: str, dry_run: bool = False, log_wandb: bool = True):
     import wandb
 
@@ -37,53 +52,62 @@ def import_runs(source_project: str, tag: str, dry_run: bool = False, log_wandb:
     print(f"Found {len(runs)} runs in {source_project}\n")
 
     for run in runs:
-        summary = run.summary._json_dict
         model_name = run.name
 
-        # Separate task metrics from metadata
-        task_metrics = {}
-        metadata = {}
-        for k, v in summary.items():
-            if k.startswith("_"):
-                continue
-            if "/" in k:
-                task_metrics[k] = v
-            else:
-                metadata[k] = v
+        # Get full history (each row = one checkpoint evaluation)
+        history = run.history(samples=10000, pandas=True)
+        n_rows = len(history)
 
-        tasks = sorted(set(k.split("/")[0] for k in task_metrics))
-        print(f"{'[DRY RUN] ' if dry_run else ''}Importing: {model_name} ({len(tasks)} tasks)")
+        tasks_sample = run.summary._json_dict
+        n_tasks = len(set(k.split("/")[0] for k in tasks_sample if "/" in k and not k.startswith("_")))
+
+        print(f"{'[DRY RUN] ' if dry_run else ''}Importing: {model_name} ({n_tasks} tasks, {n_rows} checkpoints)")
 
         if dry_run:
             continue
 
-        # Build results dict in our format
-        results_by_task = {}
-        for key, value in task_metrics.items():
-            task, metric = key.split("/", 1)
-            if task not in results_by_task:
-                results_by_task[task] = {"alias": task}
-            results_by_task[task][metric] = value
+        # Save each checkpoint row locally
+        output_dir = RESULTS_DIR / model_name / "imported"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
 
+        all_rows = []
+        for _, row in history.iterrows():
+            row_dict = row.to_dict()
+            task_metrics, metadata = _split_metrics(row_dict)
+            if not task_metrics:
+                continue
+
+            results_by_task = {}
+            for key, value in task_metrics.items():
+                task, metric = key.split("/", 1)
+                if task not in results_by_task:
+                    results_by_task[task] = {"alias": task}
+                results_by_task[task][metric] = value
+
+            all_rows.append({
+                "results": results_by_task,
+                "metadata": metadata,
+                "task_metrics": task_metrics,
+            })
+
+        # Save all checkpoints in one file
         results_to_save = {
-            "results": results_by_task,
             "source_project": source_project,
             "source_run_name": model_name,
             "imported_at": datetime.now().isoformat(),
             "import_tag": tag,
-            **metadata,
+            "checkpoints": [
+                {"results": r["results"], **r["metadata"]}
+                for r in all_rows
+            ],
         }
-
-        # Save locally
-        output_dir = RESULTS_DIR / model_name / "imported"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
         results_file = output_dir / f"results_{timestamp}.json"
         with open(results_file, "w") as f:
             json.dump(results_to_save, f, indent=2, default=str)
-        print(f"  Saved to {results_file}")
+        print(f"  Saved {len(all_rows)} checkpoints to {results_file}")
 
-        # Push to our W&B
+        # Push to our W&B: one run per source run, log each checkpoint as a step
         if log_wandb:
             wandb.init(
                 entity=WANDB_ENTITY,
@@ -95,14 +119,16 @@ def import_runs(source_project: str, tag: str, dry_run: bool = False, log_wandb:
                 config={
                     "model_name": model_name,
                     "source_project": source_project,
-                    "checkpoint_index": 0,
-                    **metadata,
                 },
             )
-            # Include metadata (ConsumedTokens, OptStep) so they can be used as x-axis
-            wandb.log({**task_metrics, **metadata})
+
+            for idx, row_data in enumerate(all_rows):
+                log_dict = {**row_data["task_metrics"], **row_data["metadata"]}
+                log_dict["checkpoint_index"] = idx
+                wandb.log(log_dict)
+
             wandb.finish()
-            print(f"  Logged to W&B: {WANDB_ENTITY}/{WANDB_PROJECT}/{model_name}")
+            print(f"  Logged {len(all_rows)} steps to W&B: {WANDB_ENTITY}/{WANDB_PROJECT}/{model_name}")
 
 
 def main():
