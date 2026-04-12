@@ -16,16 +16,21 @@ def run_evaluation(
     revision: str,
     tasks: list[str],
     *,
+    checkpoint_index: int = 0,
     device: str = "cpu",
     batch_size: str | int = "auto",
     limit: int | None = None,
     log_wandb: bool = True,
 ) -> dict:
-    """Run lm_eval on a single model checkpoint and save results."""
+    """Run lm_eval on a single model checkpoint and save results.
+
+    checkpoint_index: Position in the sorted checkpoint list, used as the x-axis in W&B charts.
+    """
     model_short = model_id.split("/")[-1]
     run_name = f"{model_short}_{revision}"
+
     print(f"\n{'='*60}")
-    print(f"Evaluating: {model_id} @ {revision}")
+    print(f"Evaluating: {model_id} @ {revision} (index {checkpoint_index})")
     print(f"Tasks: {tasks}")
     print(f"Device: {device}, Limit: {limit}")
     print(f"{'='*60}\n")
@@ -43,6 +48,10 @@ def run_evaluation(
         log_samples=True,
     )
 
+    elapsed = time.time() - start_time
+    results["total_evaluation_time_seconds"] = round(elapsed, 2)
+    print(f"Evaluation completed in {elapsed:.1f}s")
+
     # Save results locally
     output_dir = RESULTS_DIR / model_short / revision
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -50,17 +59,13 @@ def run_evaluation(
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     results_file = output_dir / f"results_{timestamp}.json"
 
-    elapsed = time.time() - start_time
-    results["total_evaluation_time_seconds"] = round(elapsed, 2)
-    print(f"Evaluation completed in {elapsed:.1f}s")
-
-    # Save full results (everything except per-sample data, which goes in JSONL)
+    # Save full results (except per-sample data)
     results_to_save = {k: v for k, v in results.items() if k != "samples"}
     with open(results_file, "w") as f:
         json.dump(results_to_save, f, indent=2, default=str)
     print(f"Results saved to {results_file}")
 
-    # Save samples
+    # Save samples as JSONL (one file per task)
     if "samples" in results:
         for task_name, samples in results["samples"].items():
             samples_file = output_dir / f"samples_{task_name}_{timestamp}.jsonl"
@@ -83,7 +88,18 @@ def run_evaluation(
         wandb_logger.log_eval_result()
         if "samples" in results:
             wandb_logger.log_eval_samples(results["samples"])
-        import wandb
+
+        # Log per-task metrics with checkpoint_index for charting:
+        #   x-axis = checkpoint_index, y-axis = score, grouped by model
+        metrics = {"checkpoint_index": checkpoint_index}
+        for task_name, task_results in results["results"].items():
+            for metric_key, value in task_results.items():
+                if metric_key == "alias" or "stderr" in metric_key:
+                    continue
+                metrics[f"{task_name}/{metric_key}"] = value
+        metrics["total_evaluation_time_seconds"] = elapsed
+        wandb.log(metrics)
+
         wandb.finish()
         print(f"Results logged to W&B: {WANDB_ENTITY}/{WANDB_PROJECT}/{run_name}")
 
@@ -104,11 +120,12 @@ def run_all(
     for model_entry in models:
         model_id = model_entry["id"]
         revisions = checkpoints_per_model[model_id]
-        for revision in revisions:
+        for idx, revision in enumerate(revisions):
             run_evaluation(
                 model_id,
                 revision,
                 tasks,
+                checkpoint_index=idx,
                 device=device,
                 batch_size=batch_size,
                 limit=limit,

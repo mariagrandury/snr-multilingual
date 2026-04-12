@@ -1,4 +1,19 @@
+import re
+
 from huggingface_hub import HfApi
+
+
+def _natural_sort_key(name: str) -> tuple:
+    """Sort key that handles branch names like 'stage2-step-3480000' correctly.
+
+    Splits the name into (prefix, number) pairs so that:
+    - 'stage1-step-3440000' < 'stage2-step-3480000' (prefix order)
+    - 'stage1-step-80000' < 'stage1-step-120000'   (numeric order within prefix)
+    - 'longctx-step125' < 'longctx-step1000'        (numeric order)
+    - 'step100000-tokens420B' < 'step950000-tokens3990B'
+    """
+    parts = re.split(r"(\d+)", name)
+    return tuple(int(p) if p.isdigit() else p.lower() for p in parts)
 
 
 def list_branches(model_id: str) -> list[str]:
@@ -7,6 +22,11 @@ def list_branches(model_id: str) -> list[str]:
     refs = api.list_repo_refs(model_id)
     branches = sorted(b.name for b in refs.branches)
     return branches
+
+
+def sort_checkpoints(names: list[str]) -> list[str]:
+    """Sort checkpoint branch names in natural training order."""
+    return sorted(names, key=_natural_sort_key)
 
 
 def resolve_checkpoints(
@@ -19,9 +39,9 @@ def resolve_checkpoints(
     """Resolve which checkpoints (branches) to evaluate.
 
     Exactly one of last, total, or names must be provided.
-    - last N: take the last N branches (alphabetically sorted)
-    - total T: take T evenly spaced branches from the sorted list
-    - names: use these exact branch names
+    - last N: take the last N branches (naturally sorted by training order)
+    - total T: take T evenly spaced branches from the naturally sorted list
+    - names: use these exact branch names (in the given order)
     """
     if sum(x is not None for x in (last, total, names)) != 1:
         raise ValueError("Exactly one of --last, --total, or --names must be specified")
@@ -36,6 +56,8 @@ def resolve_checkpoints(
     if not checkpoint_branches:
         print(f"No checkpoint branches found for {model_id}, falling back to 'main'")
         return ["main"]
+
+    checkpoint_branches = sort_checkpoints(checkpoint_branches)
 
     if last is not None:
         return checkpoint_branches[-last:]
