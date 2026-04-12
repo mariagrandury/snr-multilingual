@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -31,6 +32,7 @@ def run_evaluation(
 
     model_args = f"pretrained={model_id},revision={revision},trust_remote_code=True"
 
+    start_time = time.time()
     results = lm_eval.simple_evaluate(
         model="hf",
         model_args=model_args,
@@ -48,10 +50,14 @@ def run_evaluation(
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     results_file = output_dir / f"results_{timestamp}.json"
 
-    # Serialize results (exclude samples for the summary file)
-    summary = {k: v for k, v in results.items() if k != "samples"}
+    elapsed = time.time() - start_time
+    results["total_evaluation_time_seconds"] = round(elapsed, 2)
+    print(f"Evaluation completed in {elapsed:.1f}s")
+
+    # Save full results (everything except per-sample data, which goes in JSONL)
+    results_to_save = {k: v for k, v in results.items() if k != "samples"}
     with open(results_file, "w") as f:
-        json.dump(summary, f, indent=2, default=str)
+        json.dump(results_to_save, f, indent=2, default=str)
     print(f"Results saved to {results_file}")
 
     # Save samples
@@ -66,10 +72,12 @@ def run_evaluation(
     # Log to W&B
     if log_wandb:
         wandb_logger = WandbLogger(
-            entity=WANDB_ENTITY,
-            project=WANDB_PROJECT,
-            name=run_name,
-            job_type="eval",
+            init_args={
+                "entity": WANDB_ENTITY,
+                "project": WANDB_PROJECT,
+                "name": run_name,
+                "job_type": "eval",
+            },
         )
         wandb_logger.post_init(results)
         wandb_logger.log_eval_result()

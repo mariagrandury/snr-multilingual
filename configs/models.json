@@ -7,16 +7,46 @@
     "midtraining": [
         {
             "id": "HuggingFaceTB/SmolLM3-3B-checkpoints"
+        },
+        {
+            "id": "swiss-ai/Apertus-8B-2509"
+        },
+        {
+            "id": "allenai/Olmo-3-1025-7B"
         }
     ],
     "posttraining": [
         {
-            "id": "HuggingFaceTB/SmolLM3-3B-checkpoints"
+            "id": "daslab-testing/Apertus-1.7B-it800000-SFT"
+        },
+        {
+            "id": "swiss-ai/Apertus-8B-Instruct-2509"
+        },
+        {
+            "id": "HuggingFaceTB/SmolLM3-3B"
+        },
+        {
+            "id": "allenai/Olmo-3-7B-Instruct-SFT"
+        },
+        {
+            "id": "allenai/Olmo-3-7B-Instruct-DPO"
+        },
+        {
+            "id": "allenai/Olmo-3-7B-Instruct"
+        },
+        {
+            "id": "swiss-ai/Apertus-70B-Instruct-2509"
         }
     ],
     "test": [
         {
             "id": "HuggingFaceTB/SmolLM3-3B-checkpoints",
+            "checkpoints": ["main"]
+        }
+    ],
+    "test_small": [
+        {
+            "id": "HuggingFaceTB/SmolLM2-135M",
             "checkpoints": ["main"]
         }
     ]

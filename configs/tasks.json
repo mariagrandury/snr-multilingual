@@ -1,12 +1,25 @@
 {
     "pretraining": [
+        "global_mmlu",
         "hellaswag",
-        "arc_easy",
-        "arc_challenge",
         "piqa",
-        "winogrande",
         "openbookqa",
-        "boolq"
+        "wikitext",
+        "include_base_44",
+        "m_hellaswag",
+        "xwinograd",
+        "commonsense_qa",
+        "squadv2",
+        "mmlu",
+        "m_arc",
+        "lambada",
+        "lambada_openai",
+        "gsm8k",
+        "xnli",
+        "xcopa",
+        "pawsx",
+        "ai2_arc",
+        "winogrande"
     ],
     "midtraining": [
         "hellaswag",
@@ -16,14 +29,32 @@
         "truthfulqa_mc2"
     ],
     "posttraining": [
-        "mmlu",
-        "truthfulqa_mc2",
-        "gsm8k",
-        "arc_challenge",
+        "mmlu_flan_cot_zeroshot",
+        "truthfulqa",
+        "bbh",
+        "drop",
+        "acp_bench",
+        "gsm8k_cot",
+        "hendrycks_math",
+        "mathqa",
+        "humaneval_instruct",
+        "mbpp_instruct",
+        "ifeval",
         "hellaswag",
-        "winogrande"
+        "harmbench",
+        "toxigen",
+        "bbq",
+        "global_mmlu",
+        "truthfulqa_multilingual",
+        "mgsm_cot_native",
+        "hellaswag_multilingual",
+        "blend",
+        "cultural_bench"
     ],
     "test": [
         "hellaswag"
+    ],
+    "test_small": [
+        "piqa"
     ]
 }
