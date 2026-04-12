@@ -16,11 +16,15 @@ python scripts/run_local.py --tasks test --models test --names --no-wandb
 
 ### SLURM
 
+Set up the environment:
+
 ```bash
 conda create -n snr python=3.11 -y
 conda activate snr
 pip install -r requirements.txt
 ```
+
+Launch a quick test (<10s):
 
 ```bash
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
@@ -28,13 +32,17 @@ cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && sbatch --time=00:30:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks test --models test --last 2 --limit 2
 ```
 
+Review the logs:
+
 ```bash
 cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
 ```
 
+Evaluate multiple checkpoints:
+
 ```bash
-sbatch scripts/run_slurm.sh --tasks pretraining --models pretraining --total 5
-sbatch --time=08:00:00 scripts/run_slurm.sh --tasks posttraining --models posttraining --last 10
+sbatch --time=08:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks posttraining --models posttraining --last 10
+sbatch --time=04:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks pretraining --models pretraining --total 13
 ```
 
 ### Import from another WandB project
