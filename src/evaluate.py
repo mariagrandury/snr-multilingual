@@ -76,12 +76,24 @@ def run_evaluation(
 
     # Log to W&B
     if log_wandb:
+        import wandb
+
         wandb_logger = WandbLogger(
             init_args={
                 "entity": WANDB_ENTITY,
                 "project": WANDB_PROJECT,
                 "name": run_name,
+                "group": model_id,
                 "job_type": "eval",
+                "tags": [model_short, revision],
+                "config": {
+                    "model_id": model_id,
+                    "revision": revision,
+                    "checkpoint_index": checkpoint_index,
+                    "tasks": tasks,
+                    "limit": limit,
+                    "device": device,
+                },
             },
         )
         wandb_logger.post_init(results)
