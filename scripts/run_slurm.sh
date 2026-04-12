@@ -44,7 +44,8 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate snr
 
 # ── Run evaluation ──
-cd "$(dirname "$0")/.."
+REPO_DIR=/iopsstor/scratch/cscs/mariagrandury/snr-multilingual
+cd "$REPO_DIR"
 
 python scripts/run_local.py \
     --device cuda \
