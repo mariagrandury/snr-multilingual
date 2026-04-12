@@ -101,16 +101,16 @@ def run_evaluation(
         if "samples" in results:
             wandb_logger.log_eval_samples(results["samples"])
 
-        # Log per-task metrics with checkpoint_index for charting:
+        # Set summary metrics for charting (avoids W&B auto-incrementing _step)
         #   x-axis = checkpoint_index, y-axis = score, grouped by model
-        metrics = {"checkpoint_index": checkpoint_index}
+        wandb.summary["checkpoint_index"] = checkpoint_index
+        wandb.summary["revision"] = revision
+        wandb.summary["total_evaluation_time_seconds"] = elapsed
         for task_name, task_results in results["results"].items():
             for metric_key, value in task_results.items():
                 if metric_key == "alias" or "stderr" in metric_key:
                     continue
-                metrics[f"{task_name}/{metric_key}"] = value
-        metrics["total_evaluation_time_seconds"] = elapsed
-        wandb.log(metrics)
+                wandb.summary[f"{task_name}/{metric_key}"] = value
 
         wandb.finish()
         print(f"Results logged to W&B: {WANDB_ENTITY}/{WANDB_PROJECT}/{run_name}")

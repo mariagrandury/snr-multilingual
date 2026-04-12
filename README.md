@@ -29,6 +29,10 @@ cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 ```
 
 ```bash
+cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
+```
+
+```bash
 sbatch scripts/run_slurm.sh --tasks pretraining --models pretraining --total 5
 sbatch --time=08:00:00 scripts/run_slurm.sh --tasks posttraining --models posttraining --last 10
 ```
