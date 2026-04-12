@@ -1,0 +1,4 @@
+{
+    "entity": "mariagrandury-epflnlp",
+    "project": {"pretrain": "data-mix-small", "evals": "snr-experiments"}
+}

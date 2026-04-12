@@ -27,54 +27,6 @@ Pretraining of small-scale multilingual Apertus models. Initial set:
 
 ## Launching jobs
 
-1. cd into the folder and switch to the branch
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/pretrain/
-git switch data-mix-small
-```
-
-2. Review the `--time` and `--nodes`
-
-3. Launch the job with sbatch:
-
-````bash
-sbatch pretrain/megatron/data-mix-small/submit-apertus-data-mix.sh
-```
-
-or in an interactive node:
-
-```bash
-srun \
- --account=infra01 \
- --time=0:09:59 \
- --job-name=apertus-100m-test \
- --nodes=1 \
- --ntasks-per-node=4 \
- --gpus-per-node=4 \
- --cpus-per-task=72 \
- --mem=460000 \
- --mpi=pmix \
- --network=disable_rdzv_get \
- --environment=/capstor/store/cscs/swissai/a139/containers/ngc_25-11-nemo-alps3.toml \
- --output=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.out \
- --error=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.err \
- --signal=SIGUSR2@600 \
- --kill-on-bad-exit=1 \
- /iopsstor/scratch/cscs/mariagrandury/pretrain/megatron/data-mix-small/submit-apertus-data-mix.sh
-````
-
-The command includes all `sbatch` directives except `--no-requeue` because
-`srun: unrecognized option '--no-requeue'`.
-
-4. The output and error will be saved under:
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training
-```
-
-## Launching job
-
 ```bash
 # One command
 cd /iopsstor/scratch/cscs/mariagrandury/pretrain/megatron/data-mix-small/ && git pull && conda activate && python launch_trainings.py --mix_en 60 --seed 1904

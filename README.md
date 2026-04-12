@@ -1,77 +1,22 @@
-# SNR Multilingual - LM Evaluation Harness Runner
+# Signal-Aware Framework for Multilingual LM Evaluation
+
+The objective of this project is to answer this research question:
+
+> Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
 
 ## Overview
 
-Evaluates HuggingFace model checkpoints on lm-evaluation-harness tasks. Results saved locally and pushed to W&B (entity: mariagrandury-epflnlp, project: snr-experiments).
-
-## Usage
-
-### Local (CPU/testing)
-
-```bash
-python scripts/run_local.py --tasks test --models test --last 2 --limit 2
-python scripts/run_local.py --tasks pretraining --models pretraining --total 5
-python scripts/run_local.py --tasks test --models test --names --no-wandb
-```
-
-### SLURM
-
-Set up the environment:
-
-```bash
-conda create -n snr python=3.11 -y
-conda activate snr
-pip install -r requirements.txt
-```
-
-Launch a quick test (<10s):
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
-&& git pull \
-&& sbatch --time=00:30:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks test --models test --last 2 --limit 2
-```
-
-Review the logs:
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs && ls
-```
-
-Evaluate multiple checkpoints:
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
-&& git pull \
-&& sbatch --time=02:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10
-```
-
-Evaluate multiple checkpoints in parallel:
-
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
-&& git pull && \
-for i in $(seq 0 9); do
-    sbatch --time=02:00:00 --job-name="eval_SmolLM3_${i}" \
-        scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10 --checkpoint-index "$i"
-done
-```
-
-### Import from another WandB project
-
-```bash
-python scripts/import_wandb.py --source ist/SwissAI-QAT-evals --tag QAT 2>&1
-```
-
-## Checkpoint strategies
-
-- `--last N`: last N branches (alphabetically sorted, excludes 'main')
-- `--total T`: T evenly spaced from all branches
-- `--names`: use exact names from `"checkpoints"` key in models.json
+- Pretraining: Pretrain custom small multilingual models. Run only on the cluster.
+- Evaluation: Evaluate HuggingFace model checkpoints on lm-evaluation-harness tasks. Results saved locally and pushed to W&B.
+- SNR: Calculate signal, noise, SNR, decision accuracy, and scaling-law error for all the benchmarks. Results saved locally and pushed to W&B.
+- Analysis: Perform statistical analyses and generate visuals to understand the results and be able to make recommendations on which benchmarks (or subsets of benchmarks) to evaluate at each training stage.
+- Slides: Document the methodology and results in clear slides to present our work to the research community.
 
 ## Project structure
 
-- `configs/` - tasks.json and models.json define what to evaluate
-- `src/` - core logic (config loading, checkpoint resolution, evaluation)
-- `scripts/` - thin runner wrappers (local + SLURM)
-- `results/` - local output (gitignored)
+- `configs/`: tasks.json and models.json define what to evaluate
+- `documents/`: reports and slides presenting the motivation and progress of the project
+- `src/`: core logic (config loading, model pretraining, evaluation, analysis)
+- `scripts/`: thin runner wrappers (local + SLURM)
+- `results/`: local output (gitignored)
+- `preliminary-analysis/`: code and report from a preliminary analysis of the framework

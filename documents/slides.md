@@ -16,23 +16,58 @@ authors:
     institution: "EPFL NLP"
 ---
 
-# Signal-Aware Benchmark Evaluation for Multilingual LLMs
+# Signal-Aware Framework for Multilingual LM Evaluation
 
 ---
-layout: agenda
+
+## layout: agenda
+
+- Motivation
+- Previous work
+- Key concepts: SNR
+- Preliminary results
+- Current experiments
+- Open questions
+
 ---
 
+## layout: section
+
+# The Problem
+
+## Evaluation is expensive and often uninformative
 
 ---
-layout: section
+
+title: The Evaluation Dilemma
+subtitle: Coverage vs. Efficiency
+
 ---
 
-# Motivation
+## The Evaluation Dilemma
 
-Why do we need signal-aware evaluation?
+<br/>
+
+### Training multilingual LMs requires constant evaluation decisions
+
+<br/>
+
+**But benchmarks vary wildly in diagnostic value:**
+
+- Some tasks are **sensitive** to meaningful changes in training
+- Others show **high variance**, **redundancy**, or **weak correlation** with downstream goals
+- Improvements on certain benchmarks **may not reflect real progress**
+
+<br/>
+
+<Block type="warning" title="The status quo">
+
+Practitioners evaluate on large benchmark suites with diminishing returns — or use small subsets with noisy, misaligned signals.
+
+</Block>
 
 <!--
-Training multilingual LLMs is extremely expensive. Practitioners need to make decisions about data mixtures and hyperparameters early on, using small proxy models. But not all benchmarks are equally useful for guiding those decisions. We need to understand which benchmarks provide reliable signals.
+When you're training a multilingual model, you evaluate constantly — after every data mixture change, every hyperparameter tweak. But running 40 benchmarks is expensive, and many of those benchmarks are telling you the same thing, or worse, telling you nothing useful at all. You end up spending compute on evaluations that don't help your decisions.
 -->
 
 ---
@@ -54,9 +89,11 @@ At every stage of training — pre-training, mid-training, and post-training —
 -->
 
 ---
+
 layout: bullets
 title: The Benchmark Problem
 icon: "⚠️"
+
 ---
 
 ## Not all benchmarks provide equally informative signals
@@ -71,23 +108,21 @@ Benchmarks vary widely in their diagnostic value. Some are sensitive to meaningf
 -->
 
 ---
+
 layout: focus
 color: green
-icon: 🔬
----
-
-# Can we predict, from small proxy models, which data mixture will produce the best large model?
-
-This relies on rankings being **preserved across scales**. If not → wrong decisions → wasted compute.
-
-<!--
-The whole idea behind using proxy models is that if mixture A beats mixture B at small scale, it should also win at large scale. This is what Heineman et al. call "decision accuracy". If a benchmark doesn't preserve rankings across scales, then evaluating on it is worse than useless — it's misleading.
--->
+icon: 🎯
 
 ---
+
+## Which benchmarks provide reliable signal at each stage of multilingual model training?
+
+---
+
 layout: bullets
 title: Why Multilingual?
 icon: "🌍"
+
 ---
 
 ## This assumption is **especially fragile** in multilingual settings
@@ -122,16 +157,88 @@ Heineman et al. introduced the SNR framework showing that benchmarks with higher
 -->
 
 ---
-layout: section
+
+title: Signal-to-Noise Ratio
+subtitle: Quantifying benchmark reliability
+
 ---
+
+## Signal-to-Noise Ratio (SNR)
+
+<br/>
+
+**Signal**: How well a benchmark separates models of similar scale:
+
+$$\text{Signal}(b) = \text{Var}_{\text{models}}\big[\bar{s}_b(m)\big]$$
+
+<br/>
+
+**Noise**: Variability across checkpoints or stochastic runs:
+
+$$\text{Noise}(b) = \mathbb{E}_m\big[\text{Var}_{\text{runs}}[s_b(m)]\big]$$
+
+<br/>
+
+**SNR**: The ratio that tells us if a benchmark is worth running:
+
+$$\text{SNR}(b) = \frac{\text{Signal}(b)}{\text{Noise}(b)}$$
+
+<br/>
+
+<Block type="success" title="Takeaway">
+
+High SNR → benchmark reliably distinguishes models → better training decisions
+
+</Block>
+
+<!--
+The key insight from Heineman et al. is simple but powerful. Signal measures how much benchmark scores vary across different models — you want benchmarks that can tell models apart. Noise measures how much scores fluctuate due to randomness — training seeds, checkpoint selection. The ratio gives you a single number: is this benchmark telling you something real, or just showing you noise? We're extending this framework from English-only to multilingual settings.
+-->
+
+---
+
+title: Beyond SNR
+subtitle: Decision-theoretic metrics
+
+---
+
+## Decision Accuracy and Scaling-Law Error
+
+<br/>
+
+### Decision Accuracy
+
+Does the benchmark correctly identify which model is better?
+
+$$\text{DA}(b) = P\big(\text{rank}_b(m_1, m_2) = \text{rank}_{\text{true}}(m_1, m_2)\big)$$
+
+<br/>
+
+### Scaling-Law Error
+
+Can we extrapolate performance from small to large models?
+
+$$\text{SLE}(b) = \left| \hat{s}_b^{\text{large}} - s_b^{\text{large}} \right|$$
+
+<br/>
+
+<Block type="success" title="The trifecta">
+
+High SNR + high decision accuracy + low scaling-law error = a benchmark you can trust to guide training.
+
+</Block>
+
+<!--
+SNR alone isn't enough. We also measure decision accuracy — does the benchmark actually get the ranking right when comparing two models? And scaling-law error — can you use small model evaluations to predict how a large model will perform? Together, these three metrics tell you if a benchmark is reliable, accurate, and predictive. That's the trifecta for practical evaluation during training.
+-->
+
+---
+
+## layout: section
 
 # Methodology
 
 The Signal-and-Noise Framework
-
-<!--
-We now explain the core metrics of the framework: signal, noise, SNR, and decision accuracy. Understanding these is essential to interpret the results.
--->
 
 ---
 
@@ -150,12 +257,14 @@ Signal captures how much a benchmark's scores vary when you change the training 
 -->
 
 ---
+
 layout: compare
 title: "Noise: Two Approaches"
 leftLabel: Original
 rightLabel: Ours
 leftColor: amber
 rightColor: green
+
 ---
 
 ### Checkpoint noise
@@ -201,34 +310,37 @@ The SNR combines both metrics into a single score. A benchmark with high signal 
 -->
 
 ---
-layout: section
----
+
+## layout: section
 
 # Preliminary Results
 
 by Élenorore, Clara, Antoine
 
 ---
+
 layout: agenda
 title: Preliminary Results
 items:
-  - "Reproduction of the English SNR Framework"
-  - "Benchmark Noise, A More Practical Noise Metric"
-  - "Extension to Multilingual Downstream Tasks"
-  - "BPB on Raw Text Corpora"
+
+- "Reproduction of the English SNR Framework"
+- "Benchmark Noise, A More Practical Noise Metric"
+- "Extension to Multilingual Downstream Tasks"
+- "BPB on Raw Text Corpora"
+
 ---
 
 ---
 
 # Models: DataDecide Suite
 
-| Parameter | Detail |
-|---|---|
-| **Source** | Allen AI DataDecide models |
-| **Sizes** | 4M to 1B parameters |
-| **Training mixtures** | 10–25 English-centric web corpora |
-| **Seeds** | Up to 3 per configuration |
-| **Mixtures include** | DCLM, Dolma, Falcon, FineWeb variants |
+| Parameter             | Detail                                |
+| --------------------- | ------------------------------------- |
+| **Source**            | Allen AI DataDecide models            |
+| **Sizes**             | 4M to 1B parameters                   |
+| **Training mixtures** | 10–25 English-centric web corpora     |
+| **Seeds**             | Up to 3 per configuration             |
+| **Mixtures include**  | DCLM, Dolma, Falcon, FineWeb variants |
 
 All mixtures are **English-centric** (Common Crawl derivatives)
 
@@ -240,30 +352,32 @@ The DataDecide suite provides the model diversity needed for this analysis. The 
 
 # Benchmarks
 
-| Experiment | Benchmarks |
-|---|---|
-| **Reproduction experiment** (English) | ARC, HellaSwag, MMLU, WinoGrande, PIQA, OpenBookQA, BoolQ, SocialIQA, CSQA |
-| **Multilingual downstream tasks** | Belebele, XStoryCloze, XNLI, XWinograd, XCOPA, BanglaMMlu, Click, TruthfulQA-multi, and more |
-| **BPB evaluation sets** (raw text corpora) | Flores+ (10 subsets, ~220 languages) and Wiki40B (5 subsets, ~40 languages) |
+| Experiment                                 | Benchmarks                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **Reproduction experiment** (English)      | ARC, HellaSwag, MMLU, WinoGrande, PIQA, OpenBookQA, BoolQ, SocialIQA, CSQA                   |
+| **Multilingual downstream tasks**          | Belebele, XStoryCloze, XNLI, XWinograd, XCOPA, BanglaMMlu, Click, TruthfulQA-multi, and more |
+| **BPB evaluation sets** (raw text corpora) | Flores+ (10 subsets, ~220 languages) and Wiki40B (5 subsets, ~40 languages)                  |
 
 <!--
 We use three sets of benchmarks across our experiments. The reproduction experiment uses the same English benchmarks as Heineman et al. The multilingual experiment adds a broad set of multilingual downstream tasks. Finally, we evaluate on raw text corpora using bits-per-byte (BPB), which bypasses the instruction-following bottleneck that makes accuracy unreliable for non-English tasks.
 -->
 
 ---
+
 layout: results
 title: "Experiment 1: Reproduction"
 subtitle: "Validating the English SNR Framework"
+
 ---
 
 ## Reproduction of the English SNR Framework
 
 We compared two signal metrics: **relative dispersion** vs. **relative spread**
 
-| Metric | R | R² |
-|---|---|---|
+| Metric              | R         | R²        |
+| ------------------- | --------- | --------- |
 | Relative dispersion | **0.811** | **0.658** |
-| Relative spread | 0.791 | 0.626 |
+| Relative spread     | 0.791     | 0.626     |
 
 **Relative dispersion** gives a stronger SNR–decision accuracy correlation
 
@@ -273,20 +387,21 @@ We compared two signal metrics: **relative dispersion** vs. **relative spread**
 Heineman et al. claimed that relative dispersion is a better signal metric than relative spread, but their published plots actually used relative spread. Our re-analysis confirms their claim: relative dispersion yields a stronger correlation between SNR and decision accuracy. This is an important validation step — it shows the framework produces consistent results and gives us confidence to build on it.
 -->
 
-
 ---
+
 layout: results
 title: "Experiment 2: Benchmark Noise"
 subtitle: "A more practical noise metric"
+
 ---
 
 ## Benchmark Noise: More Practical AND More Predictive
 
 Checkpoint noise requires intermediate checkpoints (rarely available). We propose **benchmark noise**: computable from a **single evaluation run** via k-fold splits.
 
-| Noise metric | R | R² |
-|---|---|---|
-| Checkpoint noise | 0.811 | 0.658 |
+| Noise metric        | R         | R²        |
+| ------------------- | --------- | --------- |
+| Checkpoint noise    | 0.811     | 0.658     |
 | **Benchmark noise** | **0.854** | **0.730** |
 
 - Benchmark noise (150M models) correlates strongly with checkpoint noise: **R = 0.854**
@@ -303,19 +418,20 @@ The benchmark noise computed from just the 150M models correlates at R = 0.854 w
 Not only is benchmark noise easier to compute, it actually produces a stronger SNR-decision accuracy correlation than the original checkpoint noise. This is likely because benchmark noise captures a complementary source of instability — the finite sample nature of the evaluation set — that checkpoint noise misses.
 -->
 
-
 ---
+
 layout: results
 title: "Experiment 3: Multilingual Downstream Tasks"
 subtitle: "Framework reliability depends on model competence"
+
 ---
 
 ## Multilingual Extension: Framework Weakens
 
-| Task subset | R | R² |
-|---|---|---|
-| English-only tasks | 0.594 | 0.353 |
-| All non-English tasks | 0.045 | 0.002 |
+| Task subset                 | R     | R²    |
+| --------------------------- | ----- | ----- |
+| English-only tasks          | 0.594 | 0.353 |
+| All non-English tasks       | 0.045 | 0.002 |
 | Non-English (excl. 3 worst) | 0.293 | 0.086 |
 
 **Why?** Small English-first models perform **near-randomly** on underrepresented languages → uninformative rankings. No framework can recover signal from random scores.
@@ -335,19 +451,21 @@ This is perhaps the most important finding: the framework is sound, but its appl
 -->
 
 ---
+
 layout: results
 title: "Experiment 4: BPB on Raw Text Corpora"
 subtitle: "Bypassing the instruction-following bottleneck"
+
 ---
 
 ## BPB: A Better Multilingual Evaluation Signal
 
 **Accuracy** is discrete and unreliable when models don't understand English-centric prompts. **Bits-per-byte (BPB)** is continuous, requires no instruction-following, and is more stable.
 
-| Metric | R | R² | Decision Accuracy |
-|---|---|---|---|
-| Non-English tasks (accuracy) | 0.045 | 0.002 | Near-random |
-| **BPB on raw corpora** | **0.307** | **0.094** | **0.77 – 0.96** |
+| Metric                       | R         | R²        | Decision Accuracy |
+| ---------------------------- | --------- | --------- | ----------------- |
+| Non-English tasks (accuracy) | 0.045     | 0.002     | Near-random       |
+| **BPB on raw corpora**       | **0.307** | **0.094** | **0.77 – 0.96**   |
 
 - Wiki40B reaches decision accuracy of **0.96**
 - Low signal (0.05–0.16) expected: all DataDecide mixtures are English web variants
@@ -362,9 +480,11 @@ The results are striking. While multilingual downstream tasks showed near-random
 -->
 
 ---
+
 layout: bullets
 title: Key Takeaways
 icon: "→"
+
 ---
 
 ## Key Takeaways
@@ -379,9 +499,11 @@ These four results paint a coherent picture. The framework is sound and reproduc
 -->
 
 ---
+
 layout: bullets
 title: Limitations
 icon: "⚠️"
+
 ---
 
 ## Limitations
@@ -397,86 +519,279 @@ The most significant limitation is the English-centric nature of the training da
 -->
 
 ---
-layout: section
----
+
+## layout: section
 
 # Current & Next Steps
 
 The Full Research Plan
 
 ---
+
 layout: agenda
 title: Next Steps
 items:
-  - "Train custom multilingual models"
-  - "Comprehensive evaluation"
-  - "INCLUDE Benchmark Analysis"
+
+- "Train custom multilingual models"
+- "Comprehensive evaluation"
+- "INCLUDE Benchmark Analysis"
+
+---
+
+---
+
+layout: timeline
+title: Research Timeline
+items:
+
+- year: "Phase 1"
+  title: "Model Training"
+  description: "36 small models (100M–1B), 3 data mixtures, 3 seeds"
+- year: "Phase 2"
+  title: "Evaluation"
+  description: "40 multilingual benchmarks on custom + open-source models"
+- year: "Phase 3"
+  title: "SNR Analysis"
+  description: "Compute signal, noise, SNR, decision accuracy per stage"
+- year: "Phase 4"
+  title: "INCLUDE Analysis"
+  description: "Optimal subsets for 100+ countries across training stages"
+- year: "Phase 5"
+  title: "Dissemination"
+  description: "NeurIPS paper, HF benchmark subsets, open-source toolkit"
+
 ---
 
 ---
-layout: methodology
-title: "1. Custom Multilingual Models"
-subtitle: "Addressing the core limitation"
+
+title: Model and Benchmark Suites
+subtitle: Scale and coverage
+
 ---
 
-## Pretrain 36 Small Models
+## Experimental Setup
 
-- **4 sizes:** 175M, 350M, 600M, 1B params
-- **3 multilingual data mixtures** (FineWeb + FineWeb2, 200+ languages)
-- **3 seeds** per configuration
+<br/>
 
-<Block type="info" title="Key difference from preliminary work">
+### Model Suite
 
-Genuinely multilingual training data, not English-only. Addresses the core limitation that caused weak multilingual results.
+| Component         | Details                                                  |
+| ----------------- | -------------------------------------------------------- |
+| **Custom models** | 4 sizes (100M–1B) x 3 mixtures x 3 seeds = **36 models** |
+| **Data sources**  | FineWeb (EN) + FineWeb2 (200+ languages)                 |
+| **Open-source**   | Apertus, OLMo, SmolLM (1B–70B, intermediate checkpoints) |
+
+<br/>
+
+### Benchmark Suite — 40 multilingual benchmarks
+
+| Category                  | Benchmarks                            |
+| ------------------------- | ------------------------------------- |
+| **Cross-lingual**         | XNLI, XCOPA, XStoryCloze, Belebele    |
+| **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
+| **Regional knowledge**    | INCLUDE (100+ countries), Global MMLU |
+| **Instruction-following** | IFEval                                |
+
+<!--
+The experimental design is comprehensive. On the model side, 36 custom-trained models give us controlled comparisons — same architecture, different data and seeds — plus open-source families that give us scale diversity up to 70B parameters with intermediate checkpoints. On the benchmark side, 40 tasks spanning cross-lingual understanding, QA, reasoning, regional knowledge, and instruction following. We evaluate with logprobs in both 0-shot and 5-shot setups to maximize comparability.
+-->
+
+---
+
+title: "Phase 1: Model Training"
+subtitle: "36 models across 4 scales"
+
+---
+
+## Phase 1: Model Training
+
+<br/>
+
+### Architecture — 4 scales, LLaMA-style
+
+| Label    | Layers | d_model | Heads | KV Heads | Non-emb params |
+| -------- | ------ | ------- | ----- | -------- | -------------- |
+| **175M** | 16     | 1024    | 16    | 4        | 0.176B         |
+| **350M** | 20     | 1280    | 20    | 5        | 0.344B         |
+| **600M** | 24     | 1536    | 24    | 6        | 0.595B         |
+| **1B**   | 28     | 1792    | 28    | 7        | 0.944B         |
+
+<br/>
+
+### Data Mixtures — FineEdu2-DCLM + FineWeb2
+
+| Mixture   | FineEdu2-DCLM (EN) | FineWeb2 (multilingual) |
+| --------- | ------------------ | ----------------------- |
+| **Mix A** | 30%                | 70%                     |
+| **Mix B** | 60%                | 40%                     |
+| **Mix C** | 90%                | 10%                     |
+
+<br/>
+
+<Block type="info" title="Total">
+
+4 sizes x 3 mixtures x 3 seeds = **36 models** with full checkpoint history
 
 </Block>
 
 <!--
-Unlike the DataDecide models which are all English-centric, these custom models will be trained on genuinely multilingual data from FineWeb and FineWeb2. This addresses the core limitation of the preliminary experiments. With 3 meaningfully different multilingual mixtures, we expect much higher signal on multilingual benchmarks, and can properly test whether the framework extends to this setting.
+In Phase 1, we pretrain 36 small models. Four sizes from 175M to 1B parameters, all using grouped query attention with a GQA ratio of 4. Each size is trained on three data mixtures that vary the ratio of English data from FineEdu2-DCLM to multilingual data from FineWeb2 — from mostly multilingual at 30-70, to balanced at 60-40, to mostly English at 90-10. Each configuration runs with three seeds, giving us 36 models total with full checkpoint histories for our SNR analysis.
 -->
 
 ---
-layout: methodology
-title: "2. Comprehensive Evaluation"
-subtitle: "40 benchmarks across training stages"
+
+title: "Phase 2: Model Evaluation"
+subtitle: "Model evaluation"
+
 ---
 
-## Comprehensive Evaluation
+## Phase 2: Model Evaluation
 
-**Models:** custom models + 3 open-source families (Apertus, OLMo, SmolLM), 1B–70B
+<br/>
 
-**40 multilingual benchmarks:**
-- Cross-lingual understanding: XNLI, XCOPA, XStoryCloze, Belebele
-- QA & Reasoning: XQuAD, MGSM, XLSum
-- Regional knowledge: INCLUDE, Global MMLU
-- Instruction-following: IFEval
+| Stage             | Models                                                |
+| ----------------- | ----------------------------------------------------- |
+| **Pretraining**   | Custom 100M, 300M, 500M, 1B (3 mixtures each)         |
+|                   | Apertus 1B, Apertus 3B                                |
+| **Midtraining**   | SmolLM3 3B Base                                       |
+|                   | Apertus 8B Base, Apertus 70B Base                     |
+|                   | OLMo3 7B Base                                         |
+| **Post-training** | Apertus 0.6B / 1.7B Distilled                         |
+|                   | Apertus 1.7B Distilled SFT, 8B Instruct, 70B Instruct |
+|                   | SmolLM3 3B                                            |
+|                   | OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR)              |
 
-Compute SNR, decision accuracy, and scaling-law error for **each benchmark at each training stage**
+<br/>
+
+<Block type="info" title="Coverage">
+
+Custom models for controlled pretraining analysis + open-source families for mid/post-training coverage up to **70B**
+
+</Block>
 
 <!--
-The evaluation will be much more comprehensive than the preliminary work. We add significantly more benchmarks and more model families. Critically, we will evaluate at different training stages to understand which benchmarks are most informative at each point during training. This enables stage-specific evaluation strategies.
+In Phase 2, we evaluate across all three training stages. For pretraining, our 36 custom models give us controlled comparisons — same architecture, different data and seeds — plus Apertus 1B and 3B. For midtraining, we use base checkpoints from SmolLM3, Apertus, and OLMo3, ranging from 3B to 70B. For post-training, we compare distilled, SFT, DPO, and RLVR variants across the same families. This lets us analyze which benchmarks are informative at each specific stage.
 -->
 
 ---
-layout: methodology
-title: "3. INCLUDE Benchmark Analysis"
+
+title: "Phase 3: SNR Analysis"
+subtitle: "Signal, noise, and decision metrics"
+
+---
+
+## Phase 3: SNR Computation and Analysis
+
+<br/>
+
+For each of the **40 benchmarks**, compute:
+
+<br/>
+
+| Metric                | Question it answers                                      |
+| --------------------- | -------------------------------------------------------- |
+| **Signal**            | Does this benchmark separate models meaningfully?        |
+| **Noise**             | How much do scores fluctuate due to randomness?          |
+| **SNR**               | Is the signal worth the evaluation cost?                 |
+| **Decision Accuracy** | Does it correctly rank model pairs?                      |
+| **Scaling-Law Error** | Can small model results predict large model performance? |
+
+<br/>
+
+### Key analysis dimensions
+
+- **Stage-specific:** Which benchmarks have high SNR at pre/mid/post-training?
+- **Subtask-level:** Which subtasks within a benchmark carry the signal?
+- **Efficiency frontier:** Minimum benchmark subset for reliable decisions
+
+<!--
+In Phase 3, we compute our five metrics for every benchmark at every training stage. The goal is to identify stage-specific evaluation strategies. A benchmark that's highly informative during pretraining may be useless at post-training, and vice versa. We also go beyond benchmark-level analysis to examine individual subtasks — because within a benchmark like XNLI, some language pairs may be far more informative than others.
+-->
+
+---
+
+title: "Phase 4: INCLUDE Analysis"
 subtitle: "Regional knowledge across 100+ countries"
+
 ---
 
-## INCLUDE Benchmark Analysis
+## Phase 4: Multilingual Benchmark Analysis on INCLUDE
 
-Deep analysis of **INCLUDE**: a multicultural regional knowledge benchmark covering **100+ countries**
+<br/>
 
-- Identify optimal **country subsets** for evaluation at each training stage
-- Provide subset recommendations on Hugging Face
+<Block type="info" title="INCLUDE Benchmark">
+
+Internally developed benchmark evaluating **regional knowledge** across **100+ countries** in local languages and scripts.
+
+</Block>
+
+<br/>
+
+### Analysis goals
+
+- Apply SNR framework to **country-level subtasks**
+- Identify which country subsets are most diagnostic at each training stage
+- Produce **optimal evaluation subsets** that maximize signal while minimizing cost
+
+<br/>
+
+### Deliverable
+
+Publish recommended INCLUDE subsets on Hugging Face:
+
+- **Pretraining subset**: countries that track early capability development
+- **Midtraining subset**: countries sensitive to data mixture changes
+- **Post-training subset**: countries that reflect instruction-following quality
 
 <!--
-INCLUDE is an internally developed benchmark designed to evaluate regional knowledge across diverse countries. By applying the SNR framework to INCLUDE, we can identify which country subsets provide the most reliable evaluation signal at different training stages. This will be published as concrete, actionable recommendations for practitioners.
+Phase 4 focuses on INCLUDE, our benchmark for regional knowledge. With over 100 countries, running the full benchmark is expensive. By applying SNR analysis at the country level, we can identify which country subsets are most informative at each training stage. The practical output: published subsets on Hugging Face so practitioners can evaluate efficiently without sacrificing diagnostic quality.
 -->
 
 ---
-layout: section
+
+title: "Phase 5: Dissemination"
+subtitle: "Open science deliverables"
+
 ---
+
+## Phase 5: Dissemination
+
+<br/>
+
+**Paper**
+
+- SNR scores and stage-specific recommendations for 40 multilingual benchmarks
+- Analysis of benchmark reliability across pre/mid/post-training
+
+<br/>
+
+**INCLUDE Subset Recommendations** on Hugging Face
+
+- Optimal country subsets for each training stage
+- Coverage of 100+ countries
+
+<br/>
+
+**Open-Source Toolkit**
+
+- Compute SNR on your own benchmarks and models
+- Fork and extension of the original SNR codebase
+
+<br/>
+
+<Block type="success" title="Open science">
+
+Everything open-source — enabling the community to make better evaluation decisions for multilingual models.
+
+</Block>
+
+<!--
+Three concrete deliverables. The NeurIPS paper with comprehensive SNR analysis. On Hugging Face, recommended INCLUDE subsets per training stage. And an open-source Python toolkit so anyone can compute SNR for their own benchmarks and models.
+-->
+
+---
+
+## layout: section
 
 # Open Questions
 
@@ -484,4 +799,4 @@ layout: section
 
 # Open Questions
 
-1. 
+1. How to select optimal sub-benchmarks?
