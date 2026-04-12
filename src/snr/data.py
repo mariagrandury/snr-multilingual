@@ -306,6 +306,84 @@ def _parse_model_metadata(
     return model_size, data_mix, seed
 
 
+def load_hf_dataset(
+    repo_id: str = "allenai/signal-and-noise",
+    split: str = "core",
+    *,
+    cache_dir: str | None = None,
+) -> pd.DataFrame:
+    """Load evaluation results from a HuggingFace dataset (parquet format).
+
+    This loads the Allen AI signal-and-noise dataset used in the preliminary
+    analysis, or any similarly structured HF dataset.
+
+    Args:
+        repo_id: HuggingFace dataset repository ID.
+        split: Dataset split name (e.g., "core", "datadecide_intermediate").
+        cache_dir: Optional local cache directory.
+
+    Returns:
+        DataFrame with columns aligned to our canonical format:
+            model_id, revision, checkpoint_index, task, metric, score,
+            model_size, data_mix, seed
+    """
+    from huggingface_hub import snapshot_download
+
+    local_path = snapshot_download(
+        repo_id=repo_id,
+        repo_type="dataset",
+        local_dir=cache_dir,
+    )
+
+    # Find parquet files for the requested split
+    data_dir = Path(local_path) / "data"
+    parquet_files = sorted(data_dir.glob(f"{split}*.parquet"))
+    if not parquet_files:
+        # Try flat structure
+        parquet_files = sorted(Path(local_path).glob(f"*{split}*.parquet"))
+    if not parquet_files:
+        raise FileNotFoundError(
+            f"No parquet files found for split '{split}' in {local_path}"
+        )
+
+    # Use fastparquet engine to avoid pyarrow version incompatibilities
+    # with nested column schemas
+    dfs = [pd.read_parquet(f, engine="fastparquet") for f in parquet_files]
+    raw_df = pd.concat(dfs, ignore_index=True)
+    print(f"Loaded {len(raw_df)} rows from {repo_id} (split={split})")
+
+    # Map to canonical format
+    rows = []
+    for _, row in raw_df.iterrows():
+        step = row.get("step", 0)
+        step = 0 if pd.isna(step) else int(step)
+        size = row.get("size", None)
+        size = None if pd.isna(size) or size == "" else str(size)
+        mix = row.get("mix", None)
+        mix = None if pd.isna(mix) else str(mix)
+        score = row.get("primary_score", 0)
+        if pd.isna(score):
+            continue
+
+        rows.append({
+            "model_id": str(row.get("model_path", row.get("model", ""))),
+            "revision": str(step),
+            "checkpoint_index": step,
+            "task": str(row.get("task", "")),
+            "metric": "primary_score",
+            "score": float(score),
+            "model_size": size,
+            "data_mix": mix,
+            "seed": str(row.get("seed", "")) if "seed" in row and pd.notna(row.get("seed")) else None,
+            "run_id": None,
+            "run_name": str(row.get("model", "")),
+        })
+
+    df = pd.DataFrame(rows)
+    print(f"Mapped to {len(df)} rows, {df['task'].nunique()} tasks, {df['model_size'].nunique()} sizes")
+    return df
+
+
 def get_primary_metric(df: pd.DataFrame, task: str) -> pd.DataFrame:
     """Filter DataFrame to the primary metric for a given task.
 

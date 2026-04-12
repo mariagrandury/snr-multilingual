@@ -5,11 +5,17 @@ organized by training stage. Results are returned as a DataFrame and optionally
 logged to W&B.
 """
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 from . import metrics
 from .data import get_primary_metric
+
+# Metrics where lower is better (loss, perplexity, BPB)
+LOWER_IS_BETTER_METRICS = {"byte_perplexity", "word_perplexity", "bits_per_byte", "loss"}
 
 
 def compute_all_metrics(
@@ -21,6 +27,8 @@ def compute_all_metrics(
     noise_type: str = "benchmark",
     fold_scores: dict[str, dict[str, np.ndarray]] | None = None,
     n_last_checkpoints: int = 5,
+    higher_is_better: dict[str, bool] | None = None,
+    group_weights: dict[str, dict[str, int]] | None = None,
 ) -> pd.DataFrame:
     """Compute signal, noise, SNR, and decision accuracy for each task.
 
@@ -33,21 +41,33 @@ def compute_all_metrics(
         fold_scores: Pre-computed fold scores dict: {task: {model_key: ndarray(k,)}}.
             Required when noise_type="benchmark".
         n_last_checkpoints: Number of late checkpoints to use for checkpoint noise.
+        higher_is_better: Override per-task metric directionality. If None,
+            auto-detected from the metric name (e.g., byte_perplexity → lower is better).
+        group_weights: Optional weighted subtask aggregation. Dict mapping
+            task_group → {subtask: n_samples}. When provided, subtasks are
+            aggregated into task_group scores weighted by sample count.
 
     Returns:
-        DataFrame with one row per (task, small_size) combination, columns:
-            task, small_size, large_size, signal, noise, snr,
-            decision_accuracy, n_models, n_mixes
+        DataFrame with one row per (task, small_size, large_size) combination.
     """
     results = []
     small_sizes = small_sizes or _infer_sizes(df, role="small")
     large_sizes = large_sizes or _infer_sizes(df, role="large")
+    higher_is_better = higher_is_better or {}
+
+    # Optionally aggregate subtasks into weighted group scores
+    if group_weights:
+        df = _apply_group_weights(df, group_weights)
 
     for task in tasks:
         task_df = get_primary_metric(df, task)
         if task_df.empty:
             print(f"  Skipping {task}: no data")
             continue
+
+        # Determine metric direction
+        metric_name = task_df["metric"].iloc[0] if not task_df.empty else ""
+        hib = higher_is_better.get(task, metric_name not in LOWER_IS_BETTER_METRICS)
 
         for small_size in small_sizes:
             small_df = task_df[task_df["model_size"] == small_size]
@@ -72,7 +92,7 @@ def compute_all_metrics(
                 if large_df.empty:
                     da = float("nan")
                 else:
-                    da = _compute_decision_accuracy(small_df, large_df)
+                    da = _compute_decision_accuracy(small_df, large_df, higher_is_better=hib)
 
                 results.append(
                     {
@@ -84,6 +104,7 @@ def compute_all_metrics(
                         "noise_type": noise_type,
                         "snr": snr_val,
                         "decision_accuracy": da,
+                        "higher_is_better": hib,
                         "n_models_small": small_df["model_id"].nunique(),
                         "n_models_large": (
                             large_df["model_id"].nunique() if not large_df.empty else 0
@@ -213,36 +234,86 @@ def _compute_benchmark_noise(model_folds: dict[str, np.ndarray]) -> float:
 def _compute_decision_accuracy(
     small_df: pd.DataFrame,
     large_df: pd.DataFrame,
+    *,
+    higher_is_better: bool = True,
 ) -> float:
     """Compute decision accuracy between small and large model rankings.
 
     Aligns models by data_mix (or model_id if no mix info).
+    For lower-is-better metrics (BPB, loss), flips scores before comparison.
     """
+    group_col = "data_mix" if small_df["data_mix"].notna().any() else "model_id"
+
     # Get one score per model: mean across checkpoints
-    small_scores = (
-        small_df.groupby(
-            "data_mix" if small_df["data_mix"].notna().any() else "model_id"
-        )["score"]
-        .mean()
-        .sort_index()
-    )
-    large_scores = (
-        large_df.groupby(
-            "data_mix" if large_df["data_mix"].notna().any() else "model_id"
-        )["score"]
-        .mean()
-        .sort_index()
-    )
+    small_scores = small_df.groupby(group_col)["score"].mean().sort_index()
+    large_scores = large_df.groupby(group_col)["score"].mean().sort_index()
 
     # Align on common models/mixes
     common = small_scores.index.intersection(large_scores.index)
     if len(common) < 2:
         return float("nan")
 
-    return metrics.decision_accuracy(
-        small_scores.loc[common].values,
-        large_scores.loc[common].values,
-    )
+    small_vals = small_scores.loc[common].values
+    large_vals = large_scores.loc[common].values
+
+    # Flip for lower-is-better metrics so "better" always means higher
+    if not higher_is_better:
+        small_vals = -small_vals
+        large_vals = -large_vals
+
+    return metrics.decision_accuracy(small_vals, large_vals)
+
+
+def _apply_group_weights(
+    df: pd.DataFrame,
+    group_weights: dict[str, dict[str, int]],
+) -> pd.DataFrame:
+    """Aggregate subtasks into weighted group scores.
+
+    For multilingual benchmarks with many subtasks (e.g., XNLI per language),
+    this computes weighted means using sample counts.
+
+    Args:
+        df: DataFrame with individual subtask rows.
+        group_weights: {group_name: {subtask_name: n_samples}}.
+
+    Returns:
+        DataFrame with subtask rows replaced by aggregated group rows.
+    """
+    aggregated_rows = []
+    remaining = df.copy()
+
+    for group_name, subtask_weights in group_weights.items():
+        subtask_names = list(subtask_weights.keys())
+        subtask_df = df[df["task"].isin(subtask_names)]
+        remaining = remaining[~remaining["task"].isin(subtask_names)]
+
+        if subtask_df.empty:
+            continue
+
+        # Group by model and compute weighted score
+        for (model_id, rev, metric), group in subtask_df.groupby(
+            ["model_id", "revision", "metric"]
+        ):
+            total_weight = 0
+            weighted_score = 0
+            for _, row in group.iterrows():
+                w = subtask_weights.get(row["task"], 1)
+                weighted_score += row["score"] * w
+                total_weight += w
+            if total_weight > 0:
+                aggregated_rows.append(
+                    {
+                        **group.iloc[0].to_dict(),
+                        "task": group_name,
+                        "score": weighted_score / total_weight,
+                    }
+                )
+
+    if aggregated_rows:
+        agg_df = pd.DataFrame(aggregated_rows)
+        return pd.concat([remaining, agg_df], ignore_index=True)
+    return df
 
 
 def _infer_sizes(df: pd.DataFrame, role: str) -> list[str]:
@@ -268,3 +339,52 @@ def _infer_sizes(df: pd.DataFrame, role: str) -> list[str]:
     else:
         # Use largest as target
         return sorted_sizes[-1:]
+
+
+# --- Noise caching ---
+
+
+def save_noise_results(
+    fold_scores: dict[str, dict[str, np.ndarray]],
+    filepath: str | Path,
+) -> None:
+    """Cache fold scores to JSON for reuse across runs.
+
+    Args:
+        fold_scores: {task: {model_key: ndarray(k,)}} fold scores.
+        filepath: Path to save JSON file.
+    """
+    filepath = Path(filepath)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    serializable = {}
+    for task, models in fold_scores.items():
+        serializable[task] = {
+            model: scores.tolist() for model, scores in models.items()
+        }
+
+    with open(filepath, "w") as f:
+        json.dump(serializable, f, indent=2)
+    print(f"Noise results saved to {filepath}")
+
+
+def load_noise_results(filepath: str | Path) -> dict[str, dict[str, np.ndarray]]:
+    """Load cached fold scores from JSON.
+
+    Args:
+        filepath: Path to saved JSON file.
+
+    Returns:
+        {task: {model_key: ndarray(k,)}} fold scores.
+    """
+    filepath = Path(filepath)
+    with open(filepath) as f:
+        data = json.load(f)
+
+    fold_scores = {}
+    for task, models in data.items():
+        fold_scores[task] = {
+            model: np.array(scores) for model, scores in models.items()
+        }
+    print(f"Loaded noise results for {len(fold_scores)} tasks from {filepath}")
+    return fold_scores

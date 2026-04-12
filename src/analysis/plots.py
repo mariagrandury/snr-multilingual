@@ -210,7 +210,7 @@ def correlation_matrix(
 
 
 def _add_log_fit(ax: plt.Axes, x: np.ndarray, y: np.ndarray) -> None:
-    """Add log-linear regression fit line with R/R² annotation."""
+    """Add log-linear regression fit line with R/R² annotation and 95% CI band."""
     # Filter to positive x values for log
     mask = x > 0
     x_pos, y_pos = x[mask], y[mask]
@@ -221,8 +221,21 @@ def _add_log_fit(ax: plt.Axes, x: np.ndarray, y: np.ndarray) -> None:
     slope, intercept, r_value, p_value, std_err = stats.linregress(log_x, y_pos)
 
     x_fit = np.linspace(x_pos.min(), x_pos.max(), 100)
-    y_fit = slope * np.log(x_fit) + intercept
+    log_x_fit = np.log(x_fit)
+    y_fit = slope * log_x_fit + intercept
 
+    # 95% confidence interval band
+    n = len(x_pos)
+    residuals = y_pos - (slope * log_x + intercept)
+    se_residuals = np.sqrt(np.sum(residuals**2) / (n - 2))
+    log_x_mean = np.mean(log_x)
+    ss_x = np.sum((log_x - log_x_mean) ** 2)
+    se_fit = se_residuals * np.sqrt(1 / n + (log_x_fit - log_x_mean) ** 2 / ss_x)
+    t_crit = stats.t.ppf(0.975, n - 2)
+    ci_upper = y_fit + t_crit * se_fit
+    ci_lower = y_fit - t_crit * se_fit
+
+    ax.fill_between(x_fit, ci_lower, ci_upper, alpha=0.15, color="red", label="95% CI")
     ax.plot(x_fit, y_fit, "r--", alpha=0.7, linewidth=1.5)
     ax.text(
         0.05,
