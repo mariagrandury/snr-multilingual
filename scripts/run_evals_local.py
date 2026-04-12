@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.checkpoints import resolve_checkpoints
-from src.config import load_models, load_tasks
-from src.evaluate import run_all
+from src.evals.checkpoints import resolve_checkpoints
+from src.evals.config import load_models, load_tasks
+from src.evals.evaluate import run_all
 
 
 def parse_args():
@@ -18,14 +18,27 @@ def parse_args():
     parser.add_argument("--models", required=True, help="Key from configs/models.json")
 
     ckpt_group = parser.add_mutually_exclusive_group(required=True)
-    ckpt_group.add_argument("--last", type=int, help="Last N checkpoints (alphabetical)")
+    ckpt_group.add_argument(
+        "--last", type=int, help="Last N checkpoints (alphabetical)"
+    )
     ckpt_group.add_argument("--total", type=int, help="T evenly spaced checkpoints")
-    ckpt_group.add_argument("--names", action="store_true", help="Use checkpoint names from models.json")
+    ckpt_group.add_argument(
+        "--names", action="store_true", help="Use checkpoint names from models.json"
+    )
 
-    parser.add_argument("--checkpoint-index", type=int, default=None, help="Run only the i-th checkpoint (for parallel jobs)")
-    parser.add_argument("--limit", type=int, default=None, help="Limit examples per task (for testing)")
+    parser.add_argument(
+        "--checkpoint-index",
+        type=int,
+        default=None,
+        help="Run only the i-th checkpoint (for parallel jobs)",
+    )
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Limit examples per task (for testing)"
+    )
     parser.add_argument("--device", default="cpu", help="Device (default: cpu)")
-    parser.add_argument("--batch-size", default="auto", help="Batch size (default: auto)")
+    parser.add_argument(
+        "--batch-size", default="auto", help="Batch size (default: auto)"
+    )
     parser.add_argument("--no-wandb", action="store_true", help="Disable W&B logging")
 
     return parser.parse_args()
@@ -41,19 +54,29 @@ def main():
         model_id = model_entry["id"]
         if args.names:
             if "checkpoints" not in model_entry:
-                raise ValueError(f"--names requires 'checkpoints' in models.json for {model_id}")
-            checkpoints_per_model[model_id] = resolve_checkpoints(model_id, names=model_entry["checkpoints"])
+                raise ValueError(
+                    f"--names requires 'checkpoints' in models.json for {model_id}"
+                )
+            checkpoints_per_model[model_id] = resolve_checkpoints(
+                model_id, names=model_entry["checkpoints"]
+            )
         elif args.last is not None:
-            checkpoints_per_model[model_id] = resolve_checkpoints(model_id, last=args.last)
+            checkpoints_per_model[model_id] = resolve_checkpoints(
+                model_id, last=args.last
+            )
         else:
-            checkpoints_per_model[model_id] = resolve_checkpoints(model_id, total=args.total)
+            checkpoints_per_model[model_id] = resolve_checkpoints(
+                model_id, total=args.total
+            )
 
     # If --checkpoint-index is set, pick only that one checkpoint per model
     if args.checkpoint_index is not None:
         for model_id in checkpoints_per_model:
             ckpts = checkpoints_per_model[model_id]
             if args.checkpoint_index >= len(ckpts):
-                raise ValueError(f"--checkpoint-index {args.checkpoint_index} out of range (model {model_id} has {len(ckpts)} checkpoints)")
+                raise ValueError(
+                    f"--checkpoint-index {args.checkpoint_index} out of range (model {model_id} has {len(ckpts)} checkpoints)"
+                )
             checkpoints_per_model[model_id] = [ckpts[args.checkpoint_index]]
 
     print(f"Tasks: {tasks}")
