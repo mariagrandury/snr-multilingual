@@ -17,6 +17,12 @@ python scripts/run_local.py --tasks test --models test --names --no-wandb
 ### SLURM
 
 ```bash
+conda create -n snr python=3.11 -y
+conda activate snr
+pip install -r requirements.txt
+```
+
+```bash
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && git pull \
 && sbatch --time=00:30:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks test --models test --last 2 --limit 2
