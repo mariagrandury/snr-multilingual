@@ -12,13 +12,13 @@ venv/
 .venv/
 env/
 .env
+node_modules/
 
 # Results
 results/
 
 # IDE
 .vscode/
-.idea/
 
 # OS
 .DS_Store
