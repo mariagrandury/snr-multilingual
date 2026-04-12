@@ -1,0 +1,29 @@
+{
+    "pretraining": [
+        "hellaswag",
+        "arc_easy",
+        "arc_challenge",
+        "piqa",
+        "winogrande",
+        "openbookqa",
+        "boolq"
+    ],
+    "midtraining": [
+        "hellaswag",
+        "arc_easy",
+        "arc_challenge",
+        "mmlu",
+        "truthfulqa_mc2"
+    ],
+    "posttraining": [
+        "mmlu",
+        "truthfulqa_mc2",
+        "gsm8k",
+        "arc_challenge",
+        "hellaswag",
+        "winogrande"
+    ],
+    "test": [
+        "hellaswag"
+    ]
+}

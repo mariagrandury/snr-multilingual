@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Results
+results/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# W&B
+wandb/
+
+# Claude
+.claude/
+CLAUDE.md

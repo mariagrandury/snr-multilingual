@@ -1,0 +1,51 @@
+#!/bin/bash
+#SBATCH --job-name=lm-eval
+#SBATCH --output=logs/%j_%x.out
+#SBATCH --error=logs/%j_%x.err
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=04:00:00
+
+# ── Parse our custom args from those forwarded to the Python script ──
+# Usage: sbatch scripts/run_slurm.sh --tasks KEY --models KEY --last N [--limit L] [--time HH:MM:SS]
+
+PYTHON_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --time)
+            # Already handled by SBATCH override: sbatch --time=VALUE scripts/run_slurm.sh ...
+            shift 2
+            ;;
+        *)
+            PYTHON_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# ── Environment setup ──
+set -euo pipefail
+mkdir -p logs
+
+echo "Job ID: $SLURM_JOB_ID"
+echo "Node: $(hostname)"
+echo "GPUs: $CUDA_VISIBLE_DEVICES"
+echo "Date: $(date)"
+echo "Args: ${PYTHON_ARGS[*]}"
+
+# Activate your environment here (adjust path as needed)
+# source /path/to/venv/bin/activate
+# module load cuda/12.1
+
+# ── Run evaluation ──
+cd "$(dirname "$0")/.."
+
+python scripts/run_local.py \
+    --device cuda \
+    --batch-size auto \
+    "${PYTHON_ARGS[@]}"
+
+echo "Done: $(date)"

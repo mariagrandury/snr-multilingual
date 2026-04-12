@@ -1,0 +1,23 @@
+{
+    "pretraining": [
+        {
+            "id": "HuggingFaceTB/SmolLM3-3B-checkpoints"
+        }
+    ],
+    "midtraining": [
+        {
+            "id": "HuggingFaceTB/SmolLM3-3B-checkpoints"
+        }
+    ],
+    "posttraining": [
+        {
+            "id": "HuggingFaceTB/SmolLM3-3B-checkpoints"
+        }
+    ],
+    "test": [
+        {
+            "id": "HuggingFaceTB/SmolLM3-3B-checkpoints",
+            "checkpoints": ["main"]
+        }
+    ]
+}
