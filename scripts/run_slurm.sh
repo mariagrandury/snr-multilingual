@@ -40,7 +40,8 @@ echo "Date: $(date)"
 echo "Args: ${PYTHON_ARGS[*]}"
 
 # Activate environment
-source "iopsstor/scratch/cscs/mariagrandury/snr-multilingual/venv/bin/activate"
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate snr
 
 # ── Run evaluation ──
 cd "$(dirname "$0")/.."
