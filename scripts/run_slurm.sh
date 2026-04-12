@@ -1,12 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=lm-eval
-#SBATCH --output=logs/%j_%x.out
-#SBATCH --error=logs/%j_%x.err
+#SBATCH --account=infra01
+#SBATCH --job-name=eval
+#SBATCH --mem=460000
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --cpus-per-task=200
+#SBATCH --gres=gpu:4
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/%x_%j.out
+#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/%x_%j.err
+#SBATCH --exclusive
+#SBATCH --partition=normal
 #SBATCH --time=04:00:00
 
 # ── Parse our custom args from those forwarded to the Python script ──
