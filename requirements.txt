@@ -1,4 +1,4 @@
-lm_eval>=0.4.8
+lm-eval>=0.4.8
 wandb>=0.25.0
 huggingface_hub>=0.28.0
 torch>=2.4.0

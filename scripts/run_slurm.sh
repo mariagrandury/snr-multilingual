@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --account=infra01
-#SBATCH --job-name=eval
+#SBATCH --job-name=eval_snr
 #SBATCH --mem=460000
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=200
 #SBATCH --gres=gpu:4
-#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/%x_%j.out
-#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/%x_%j.err
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/%x_%j.out
+#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/%x_%j.err
 #SBATCH --exclusive
 #SBATCH --partition=normal
 #SBATCH --time=04:00:00
@@ -39,9 +39,8 @@ echo "GPUs: $CUDA_VISIBLE_DEVICES"
 echo "Date: $(date)"
 echo "Args: ${PYTHON_ARGS[*]}"
 
-# Activate your environment here (adjust path as needed)
-# source /path/to/venv/bin/activate
-# module load cuda/12.1
+# Activate environment
+source "iopsstor/scratch/cscs/mariagrandury/snr-multilingual/venv/bin/activate"
 
 # ── Run evaluation ──
 cd "$(dirname "$0")/.."
