@@ -1,6 +1,6 @@
 ---
 theme: scholarly
-layout: cover
+layout: section
 transition: 
 footerLeft: EPFL NLP
 footerMiddle: Signal-Aware Multilingual Evaluation
@@ -21,6 +21,12 @@ authors:
 ---
 
 # Signal-Aware Framework for Multilingual LM Evaluation
+
+*María Grandury, Angelika Romanou, Éléonore Hasler,*
+
+*Clara Meister, Antoine Bosselut*
+
+EPFL NLP 
 
 ---
 layout: agenda
@@ -83,26 +89,6 @@ icon: 🎯
 ---
 
 ## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
-
----
-
-# Prior Work
-
-**Heineman et al. (2025)**: Signal-and-Noise framework
-
-- Quantifies benchmark reliability via SNR
-- Higher SNR → more consistent model rankings across scales
-- Validated on English benchmarks only
-
-**Other related work:**
-
-- Chen et al. — scaling behavior of downstream tasks
-- Gupta et al. — SMART filtering of benchmark items
-- Zhou et al. — item response theory for benchmark reliability
-
-<!--
-Heineman et al. introduced the SNR framework showing that benchmarks with higher signal-to-noise ratio more reliably preserve model rankings. Chen et al. found that only a subset of tasks follow predictable scaling trends. Gupta et al. showed that filtering low-quality benchmark items reduces cost while preserving signal. Zhou et al. used item response theory to show many items have weak discriminative power.
--->
 
 ---
 layout: section
@@ -172,8 +158,8 @@ $$\text{SLE}(b) = \left| \hat{s}_b^{\text{large}} - s_b^{\text{large}} \right|$$
 
 </Block>
 
-**Key insight**: SNR is strongly correlated with decision accuracy (Heinemam et al.)
-→ SNR predicts how reliably a benchmark will transfer rankings across scales
+- **Heinemam et al. (2025):** SNR is strongly correlated with decision accuracy
+- SNR predicts how reliably a benchmark will transfer rankings across scales
 
 ---
 layout: section
@@ -249,7 +235,7 @@ title: "Experiment 1: Reproduction"
 subtitle: "Validation of the English SNR Framework"
 ---
 
-We compared two signal metrics: **relative dispersion** vs. **relative spread**
+Compared two signal metrics: **relative dispersion** vs. **relative spread**
 
 | Metric              | R         | R²        |
 | ------------------- | --------- | --------- |
@@ -291,6 +277,13 @@ $$\text{Noise} = \text{Var}_{\text{folds}}[s_b(m)]$$
 
 ✅ Computable from a **single evaluation run**
 
+
+---
+layout: default
+title: "Experiment 2: Benchmark Noise"
+subtitle: "Alternative to Checkpoint Noise"
+---
+
 Checkpoint noise requires intermediate checkpoints (rarely available). We propose **benchmark noise**: computable from a **single evaluation run** via k-fold splits.
 
 | Noise metric        | R         | R²        |
@@ -302,7 +295,7 @@ Checkpoint noise requires intermediate checkpoints (rarely available). We propos
 - Robust across all model sizes (150M–1B)
 - SNR with benchmark noise yields **stronger** correlation with decision accuracy
 
-<Highlight type="success">Not just easier to compute — also more predictive of decision accuracy</Highlight>
+> Not just easier to compute, also more predictive of decision accuracy
 
 <!--
 The original noise metric requires many intermediate training checkpoints for each model, which are rarely publicly available. The DataDecide suite is essentially the only open model family with this granularity. Our key contribution is proposing benchmark noise as an alternative: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run on any model, making the framework much more practical.
@@ -330,7 +323,7 @@ subtitle: "Framework reliability depends on model competence"
 
 <Block type="info" title="Key insight">
 
-Framework reliability is **conditional on model competence**. The SNR framework doesn't fail for multilingual settings in general — it fails when proxy models lack linguistic competence. → Need genuinely multilingual models.
+Framework reliability is **conditional on model competence**. The SNR framework doesn't fail for multilingual settings in general, it fails when proxy models lack linguistic competence. → Need genuinely multilingual models.
 
 </Block>
 
@@ -359,7 +352,7 @@ subtitle: "Bypassing the instruction-following bottleneck"
 - Low signal (0.05–0.16) expected: all DataDecide mixtures are English web variants
 - With diverse multilingual mixtures → expect much higher signal
 
-<Highlight type="success">Even small proxy models produce rankings that closely agree with 1B model rankings</Highlight>
+> Even small proxy models produce rankings that closely agree with 1B model rankings
 
 <!--
 Given the limitations of accuracy on downstream tasks, we explore bits-per-byte on raw multilingual text (Flores+ and Wiki40B). BPB measures how well a model predicts the next byte, without needing to understand a prompt format. This bypasses the instruction-following bottleneck that makes accuracy unreliable for non-English tasks.
@@ -369,13 +362,14 @@ The results are striking. While multilingual downstream tasks showed near-random
 
 ---
 layout: bullets
-title: Key Takeaways
+title: Preliminary Analysis
+subtitle: Key Takeaways
 icon: "→"
 ---
 
 - **Framework reproduces** on English benchmarks ✅
 - **Benchmark noise** is more practical AND more predictive than checkpoint noise ✅
-- **Multilingual extension weakens** with English-first models — model limitation, not framework limitation ⚠️
+- **Multilingual extension weakens** with English-first models (model limitation, not framework limitation) ⚠️
 - **BPB on raw corpora** yields higher decision accuracy and better SNR correlation than accuracy on downstream tasks ✅
 
 <!--
@@ -384,7 +378,8 @@ These four results paint a coherent picture. The framework is sound and reproduc
 
 ---
 layout: bullets
-title: Limitations
+title: Preliminary Analysis
+subtitle: Limitations
 icon: "⚠️"
 ---
 
@@ -566,6 +561,15 @@ subtitle: Sub-benchmark Selection
 
 - SMART
 - How to Select Datapoints for Efficient Human Evaluation of NLG Models? (https://arxiv.org/abs/2501.18251)
+
+Other related work:
+- Chen et al.: scaling behavior of downstream tasks
+- Gupta et al.: SMART filtering of benchmark items
+- Zhou et al.: item response theory for benchmark reliability
+
+<!--
+Chen et al. found that only a subset of tasks follow predictable scaling trends. Gupta et al. showed that filtering low-quality benchmark items reduces cost while preserving signal. Zhou et al. used item response theory to show many items have weak discriminative power.
+-->
 
 ---
 layout: default
