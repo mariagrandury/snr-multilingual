@@ -3,28 +3,6 @@
 
 Fetches the Allen AI signal-and-noise dataset (preliminary analysis data)
 and logs it to our W&B project for unified analysis.
-
-Usage:
-    # Import matching sizes (closest to our 175M/350M/600M/1B)
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --match-sizes
-
-    # Import matching tasks from configs/tasks.json
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --match-tasks
-
-    # Import matching sizes AND tasks (recommended)
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --match-sizes --match-tasks
-
-    # Import everything
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --all
-
-    # Import with explicit filters
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --sizes 150M 300M 750M 1B
-
-    # Dry run (just load and display stats)
-    python scripts/import_hf_to_wandb.py --split core --dry-run
-
-    # Save locally only
-    python scripts/import_hf_to_wandb.py --split core --tag preliminary --match-sizes --no-wandb
 """
 
 import argparse
@@ -65,11 +43,19 @@ def parse_args():
         action="store_true",
         help="Filter to tasks matching configs/tasks.json (all stages combined)",
     )
-    filter_group.add_argument("--all", action="store_true", help="Import everything (no filters)")
-    filter_group.add_argument("--sizes", nargs="+", help="Explicit list of sizes to include")
-    filter_group.add_argument("--tasks", nargs="+", help="Explicit list of tasks to include")
+    filter_group.add_argument(
+        "--all", action="store_true", help="Import everything (no filters)"
+    )
+    filter_group.add_argument(
+        "--sizes", nargs="+", help="Explicit list of sizes to include"
+    )
+    filter_group.add_argument(
+        "--tasks", nargs="+", help="Explicit list of tasks to include"
+    )
 
-    parser.add_argument("--dry-run", action="store_true", help="Load and display stats only")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Load and display stats only"
+    )
     parser.add_argument("--no-wandb", action="store_true", help="Save locally only")
     parser.add_argument("--cache-dir", help="Local cache for HF download")
     return parser.parse_args()
@@ -97,7 +83,9 @@ def main():
     # Load data from HuggingFace
     print(f"Loading {args.repo} (split={args.split})...")
     df = load_hf_dataset(args.repo, args.split, cache_dir=args.cache_dir)
-    print(f"Total: {len(df)} rows, {df['task'].nunique()} tasks, {df['model_size'].nunique()} sizes")
+    print(
+        f"Total: {len(df)} rows, {df['task'].nunique()} tasks, {df['model_size'].nunique()} sizes"
+    )
 
     # Apply filters
     if not args.all:
@@ -115,7 +103,9 @@ def main():
             for task in our_tasks:
                 mask |= df["task"].str.startswith(task + "_")
             df = df[mask]
-            print(f"Filtered to matching tasks ({len(our_tasks)} patterns): {len(df)} rows")
+            print(
+                f"Filtered to matching tasks ({len(our_tasks)} patterns): {len(df)} rows"
+            )
         elif args.tasks:
             df = df[df["task"].isin(args.tasks)]
             print(f"Filtered to tasks {args.tasks}: {len(df)} rows")
@@ -123,7 +113,9 @@ def main():
     # Display stats
     print(f"\nDataset summary:")
     print(f"  Rows: {len(df)}")
-    print(f"  Tasks ({df['task'].nunique()}): {sorted(df['task'].unique())[:20]}{'...' if df['task'].nunique() > 20 else ''}")
+    print(
+        f"  Tasks ({df['task'].nunique()}): {sorted(df['task'].unique())[:20]}{'...' if df['task'].nunique() > 20 else ''}"
+    )
     print(f"  Sizes: {sorted(df['model_size'].dropna().unique())}")
     print(f"  Mixes: {sorted(df['data_mix'].dropna().unique())}")
     print(f"  Models: {df['model_id'].nunique()}")
@@ -160,7 +152,9 @@ def _push_to_wandb(df, entity, project, *, tag, split):
             group_key = (group_key,)
 
         model_id = group_df["model_id"].iloc[0]
-        model_name = group_df["run_name"].iloc[0] if "run_name" in group_df else model_id
+        model_name = (
+            group_df["run_name"].iloc[0] if "run_name" in group_df else model_id
+        )
         model_size = group_df["model_size"].iloc[0]
         data_mix = group_df["data_mix"].iloc[0]
         run_name = f"{tag}_{model_name}"
