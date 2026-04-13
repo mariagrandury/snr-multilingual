@@ -29,6 +29,13 @@ authors:
 EPFL NLP 
 
 ---
+layout: image-right
+image: /motivation.gif
+ratio: "1:3"
+fit: contain
+---
+
+---
 layout: agenda
 title: Agenda
 items:
@@ -103,28 +110,27 @@ title: Key concepts
 subtitle: Signal and Noise
 ---
 
-<Block type="success" title="Signal">
+<Block type="success" title="Signal (Relative Dispersion / Normalized Max. Difference)">
 
-How well a benchmark $b$ separates models $m$ of similar scale trained on different data?
+How well a benchmark $b$ separates a pair of models $m_j, m_k$ of similar scale trained on different data:
 
-$$\text{Signal}(M) = \frac{\max_{m \in M} s(m) - \min_{m \in M} s(m)}{\frac{1}{|M|} \sum_{m \in M} s(m)}$$
-
-$$\text{Signal}(b) = \text{Var}_{\text{models}}\big[\bar{s}_b(m)\big]$$
+$$\text{Rel. Dispersion}(M) = \frac{\max_{j,k} |m_j - m_k|}{\bar{m}}$$
 
 </Block>
 
-<Block type="success" title="Noise">
+<Block type="success" title="Noise (Relative Std. Dev.)">
 
-Variability across checkpoints of a model $m$:
+Variability across the final $n$ training checkpoints of a model $m$:
 
-$$\text{Noise}(b) = \mathbb{E}_m\big[\text{Var}_{\text{runs}}[s_b(m)]\big]$$
+$$\text{Rel. Std.}(m) = \frac{\sqrt{\frac{1}{n-1} \sum_{i=1}^{n}(m_i - \bar{m})^2}}{\bar{m}}$$
 
 </Block>
 
-$$\text{SNR}(b) = \frac{\text{Signal}(b)}{\text{Noise}(b)}$$
+$$\text{SNR} = \frac{\text{Rel. Dispersion}(\text{final train checkpoint})}{\text{Rel. Std.}(\text{final $n$ train checkpoint})}$$
 
 <!--
 Signal:
+- Signal = normalized maximum difference between any pair of models
 - Measured as **relative dispersion** of scores across training mixtures
 - For a fixed benchmark and model size
 - Higher signal = benchmark separates mixtures more clearly
@@ -141,33 +147,56 @@ subtitle: Decision Accuracy and Scaling-Law Error
 
 <Block type="success" title="Decision Accuracy">
 
-Does the benchmark correctly identify which model is better?
+For all pairs of small models $(s_a, s_b)$ trained on datasets ($a$, $b$) and their large versions $(m_a, m_b)$, does the ranking for task $B$ hold?
 
-If small model A > B on a benchmark, does large model A > B hold?
-
-$$\text{DA}(b) = P\big(\text{rank}_b(m_1, m_2) = \text{rank}_{\text{true}}(m_1, m_2)\big)$$
+$$\text{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b) \in \mathcal{P}} \mathbb{1}\big[\text{sign}(B(s_a) - B(s_b)) = \text{sign}(B(m_a) - B(m_b))\big]$$
 
 </Block>
 
 
-<Block type="success" title="Scaling-Law Error">
+<Block type="success" title="Scaling-Law Prediction Error">
 
 Can we extrapolate performance from small to large models?
 
-$$\text{SLE}(b) = \left| \hat{s}_b^{\text{large}} - s_b^{\text{large}} \right|$$
+$$\text{Prediction Error} = \frac{|\text{Measured Value} - \text{True Value}|}{|\text{True Value}|}$$
 
 </Block>
 
-- **Heinemam et al. (2025):** SNR is strongly correlated with decision accuracy
+- **Heineman et al. (2025):** SNR is strongly correlated with decision accuracy
 - SNR predicts how reliably a benchmark will transfer rankings across scales
 
 ---
 layout: section
 ---
 
-# Original Paper Results
+# Insights from Signal-and-Noise Paper
 
-by AllenAI
+by Heineman et al. from AllenAI
+
+---
+layout: image-left
+image: /snr_paper_figure_1.png
+ratio: "25:1"
+fit: contain
+title: Signal-and-Noise Paper
+subtitle: Figure 1. Examples of signal and noise
+---
+
+
+---
+layout: image-left
+image: /snr_paper_figure_2.png
+ratio: "2:3"
+fit: contain
+title: Signal-and-Noise Paper
+subtitle: Figure 2. Correlation between SNR and Decision Accuracy
+---
+
+- **SNR predicts decision accuracy** ($R = 0.791$), while signal or noise alone do not
+- **Noise predicts scaling law error** ($R = 0.653$), noisier benchmarks have less reliable extrapolation
+- **Filtering subtasks by SNR** yields subsets that outperform full benchmarks (e.g., 16/57 MMLU subtasks → +2.6% DA)
+- **Averaging checkpoint scores** reduces noise and improves decision accuracy (+2.4% on 30-task avg.)
+- **Bits-per-byte (BPB)** improves DA over accuracy in 90% benchmarks, especially for math and code tasks
 
 ---
 layout: section
