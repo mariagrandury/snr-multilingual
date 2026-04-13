@@ -64,18 +64,6 @@ subtitle: Coverage vs. Efficiency
 - Others show **high variance**, **redundancy**, or **weak correlation** with downstream goals
 - Improvements on certain benchmarks **may not reflect real progress**
 
-<br/>
-
-<Block type="warning" title="The status quo">
-
-Practitioners evaluate on large benchmark suites with diminishing returns — or use small subsets with noisy, misaligned signals.
-
-</Block>
-
-<!--
-When you're training a multilingual model, you evaluate constantly — after every data mixture change, every hyperparameter tweak. But running 40 benchmarks is expensive, and many of those benchmarks are telling you the same thing, or worse, telling you nothing useful at all. You end up spending compute on evaluations that don't help your decisions.
--->
-
 ---
 
 # The Cost of Training Multilingual LLMs
@@ -90,9 +78,6 @@ Throughout training, practitioners must choose:
 
 These decisions are guided by **benchmark evaluations**
 
-<!--
-At every stage of training — pre-training, mid-training, and post-training — practitioners rely on benchmark scores to decide whether to keep a data mixture, change a hyperparameter, or continue training. But if the benchmark itself is noisy or uninformative, these decisions can be misleading, wasting enormous amounts of compute.
--->
 
 ---
 layout: bullets
@@ -106,18 +91,6 @@ icon: "⚠️"
 - **Redundancy**: Multiple benchmarks measure the same thing
 - **Weak correlation**: Improvements don't reflect real progress
 - **Cost**: Large suites are expensive to run frequently
-
-<!--
-Benchmarks vary widely in their diagnostic value. Some are sensitive to meaningful changes, while others exhibit high variance, are redundant with each other, or correlate weakly with downstream objectives. At the same time, running many benchmarks is expensive, especially during early training when evaluations happen frequently. This creates a tradeoff between evaluation coverage and evaluation efficiency.
--->
-
----
-layout: focus
-color: green
-icon: 🎯
----
-
-## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
 
 ---
 layout: bullets
@@ -135,6 +108,14 @@ icon: "🌍"
 <!--
 Most benchmark reliability research has been done on English benchmarks and English-first models. Yet multilingual models face fundamentally different challenges. The tools developed for English may not transfer. Understanding whether the SNR framework extends to multilingual settings is both urgent and crucial, given the growing importance of multilingual NLP.
 -->
+
+---
+layout: focus
+color: green
+icon: 🎯
+---
+
+## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
 
 ---
 
@@ -157,13 +138,23 @@ Heineman et al. introduced the SNR framework showing that benchmarks with higher
 -->
 
 ---
-title: Signal-to-Noise Ratio
-subtitle: Quantifying benchmark reliability
+layout: section
+---
+
+# Methodology
+
+The Signal-and-Noise Framework
+
+---
+title: Key concepts
+subtitle: Signal and Noise
 ---
 
 <Block type="success" title="Signal">
 
-How well a benchmark $b$ separates models $m$ of similar scale:
+How well a benchmark $b$ separates models $m$ of similar scale trained on different data?
+
+$$\text{Signal}(M) = \frac{\max_{m \in M} s(m) - \min_{m \in M} s(m)}{\frac{1}{|M|} \sum_{m \in M} s(m)}$$
 
 $$\text{Signal}(b) = \text{Var}_{\text{models}}\big[\bar{s}_b(m)\big]$$
 
@@ -177,125 +168,45 @@ $$\text{Noise}(b) = \mathbb{E}_m\big[\text{Var}_{\text{runs}}[s_b(m)]\big]$$
 
 </Block>
 
-<Block type="success" title="SNR">
-
 $$\text{SNR}(b) = \frac{\text{Signal}(b)}{\text{Noise}(b)}$$
 
-</Block>
-
 <!--
+Signal:
+- Measured as **relative dispersion** of scores across training mixtures
+- For a fixed benchmark and model size
+- Higher signal = benchmark separates mixtures more clearly
+
+Signal captures how much a benchmark's scores vary when you change the training data mixture but keep the model size fixed. If all mixtures produce the same score on a benchmark, then the benchmark has no signal — it can't help you choose between mixtures. We use relative dispersion, which the preliminary results confirm is better than relative spread (R = 0.811 vs R = 0.791).
+
 The key insight from Heineman et al. is simple but powerful. Signal measures how much benchmark scores vary across different models — you want benchmarks that can tell models apart. Noise measures how much scores fluctuate due to randomness — training seeds, checkpoint selection. The ratio gives you a single number: is this benchmark telling you something real, or just showing you noise? We're extending this framework from English-only to multilingual settings.
 -->
 
 ---
-title: Beyond SNR
-subtitle: Decision-theoretic metrics
+title: Key concepts
+subtitle: Decision Accuracy and Scaling-Law Error
 ---
 
-## Decision Accuracy and Scaling-Law Error
-
-<br/>
-
-### Decision Accuracy
+<Block type="success" title="Decision Accuracy">
 
 Does the benchmark correctly identify which model is better?
 
+If small model A > B on a benchmark, does large model A > B hold?
+
 $$\text{DA}(b) = P\big(\text{rank}_b(m_1, m_2) = \text{rank}_{\text{true}}(m_1, m_2)\big)$$
 
-<br/>
+</Block>
 
-### Scaling-Law Error
+
+<Block type="success" title="Scaling-Law Error">
 
 Can we extrapolate performance from small to large models?
 
 $$\text{SLE}(b) = \left| \hat{s}_b^{\text{large}} - s_b^{\text{large}} \right|$$
 
-<br/>
-
-<Block type="success" title="The trifecta">
-
-High SNR + high decision accuracy + low scaling-law error = a benchmark you can trust to guide training.
-
 </Block>
 
-<!--
-SNR alone isn't enough. We also measure decision accuracy — does the benchmark actually get the ranking right when comparing two models? And scaling-law error — can you use small model evaluations to predict how a large model will perform? Together, these three metrics tell you if a benchmark is reliable, accurate, and predictive. That's the trifecta for practical evaluation during training.
--->
-
----
-layout: section
----
-
-# Methodology
-
-The Signal-and-Noise Framework
-
----
-
-# Signal
-
-How well does a benchmark **separate** models trained on different data?
-
-$$\text{Signal}(M) = \frac{\max_{m \in M} s(m) - \min_{m \in M} s(m)}{\frac{1}{|M|} \sum_{m \in M} s(m)}$$
-
-- Measured as **relative dispersion** of scores across training mixtures
-- For a fixed benchmark and model size
-- Higher signal = benchmark separates mixtures more clearly
-
-<!--
-Signal captures how much a benchmark's scores vary when you change the training data mixture but keep the model size fixed. If all mixtures produce the same score on a benchmark, then the benchmark has no signal — it can't help you choose between mixtures. We use relative dispersion, which the preliminary results confirm is better than relative spread (R = 0.811 vs R = 0.791).
--->
-
----
-layout: compare
-title: "Noise: Two Approaches"
-leftLabel: Original
-rightLabel: Ours
-leftColor: amber
-rightColor: green
----
-
-### Checkpoint noise
-
-Score variability across **late training checkpoints**
-
-$$\text{Noise} = \frac{\frac{1}{|M|}\sum_{m} \sigma_{\text{step}}(m)}{\mu(M)}$$
-
-⚠️ Requires intermediate checkpoints (rarely available)
-
-::right::
-
-### Benchmark noise
-
-Score variability across **k-fold splits** of the evaluation set
-
-$$\text{Noise} = \text{Var}_{\text{folds}}[s_b(m)]$$
-
-✅ Computable from a **single evaluation run**
-
-<!--
-The original noise metric requires many intermediate training checkpoints for each model, which are rarely publicly available. The DataDecide suite is essentially the only open model family with this granularity. Our key contribution is proposing benchmark noise as an alternative: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run on any model, making the framework much more practical.
--->
-
----
-
-# Signal-to-Noise Ratio & Decision Accuracy
-
-$$\text{SNR} = \frac{\text{Signal}}{\text{Noise}}$$
-
-<br>
-
-**Decision Accuracy**: if small model A > B on a benchmark, does large model A > B hold?
-
-<br>
-
-**Key insight**: SNR is strongly correlated with decision accuracy
-
+**Key insight**: SNR is strongly correlated with decision accuracy (Heinemam et al.)
 → SNR predicts how reliably a benchmark will transfer rankings across scales
-
-<!--
-The SNR combines both metrics into a single score. A benchmark with high signal and low noise will have high SNR, and Heineman et al. showed this correlates strongly with decision accuracy. In other words, if you want to know which benchmarks to trust when comparing small proxy models, look at their SNR. This is the foundation of the framework.
--->
 
 ---
 layout: section
@@ -314,18 +225,27 @@ layout: section
 by Éléonore, Clara, Antoine
 
 ---
-layout: agenda
+layout: timeline
 title: Experiments
 items:
-  - "Reproduction of the English SNR Framework"
-  - "Benchmark Noise, A More Practical Noise Metric"
-  - "Extension to Multilingual Downstream Tasks"
-  - "BPB on Raw Text Corpora"
+  - year: "Exp 1"
+    title: "Reproduction"
+    description: "Reproduction of the English SNR Framework"
+  - year: "Exp 2"
+    title: "Benchmark Noise, A More Practical Noise Metric"
+    description: ""
+  - year: "Exp 3"
+    title: "Extension to Multilingual Downstream Tasks"
+    description: ""
+  - year: "Exp 4"
+    title: "BPB on Raw Text Corpora"
+    description: ""
 ---
 
 ---
-
-# Models: DataDecide Suite
+title: "Experimental setup"
+subtitle: "Models from the DataDecide Suite"
+---
 
 | Parameter             | Detail                                |
 | --------------------- | ------------------------------------- |
@@ -342,8 +262,9 @@ The DataDecide suite provides the model diversity needed for this analysis. The 
 -->
 
 ---
-
-# Benchmarks
+title: "Experimental setup"
+subtitle: "Benchmarks"
+---
 
 | Experiment                                 | Benchmarks                                                                                   |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
@@ -377,10 +298,31 @@ Heineman et al. claimed that relative dispersion is a better signal metric than 
 -->
 
 ---
-layout: default
+layout: compare
 title: "Experiment 2: Benchmark Noise"
-subtitle: "A more practical alternative for noise metric"
+leftLabel: Original
+rightLabel: Éléonore + Clara
+leftColor: amber
+rightColor: green
 ---
+
+### Checkpoint noise
+
+Score variability across **late training checkpoints**
+
+$$\text{Noise} = \frac{\frac{1}{|M|}\sum_{m} \sigma_{\text{step}}(m)}{\mu(M)}$$
+
+⚠️ Requires intermediate checkpoints (rarely available)
+
+::right::
+
+### Benchmark noise
+
+Score variability across **k-fold splits** of the evaluation set
+
+$$\text{Noise} = \text{Var}_{\text{folds}}[s_b(m)]$$
+
+✅ Computable from a **single evaluation run**
 
 Checkpoint noise requires intermediate checkpoints (rarely available). We propose **benchmark noise**: computable from a **single evaluation run** via k-fold splits.
 
@@ -396,6 +338,8 @@ Checkpoint noise requires intermediate checkpoints (rarely available). We propos
 <Highlight type="success">Not just easier to compute — also more predictive of decision accuracy</Highlight>
 
 <!--
+The original noise metric requires many intermediate training checkpoints for each model, which are rarely publicly available. The DataDecide suite is essentially the only open model family with this granularity. Our key contribution is proposing benchmark noise as an alternative: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run on any model, making the framework much more practical.
+
 This is a central result. Checkpoint noise requires dozens of training checkpoints per model, which are rarely publicly available. We propose benchmark noise: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run of a small model.
 
 The benchmark noise computed from just the 150M models correlates at R = 0.854 with checkpoint-to-checkpoint noise. This means both metrics capture the same underlying instability — the tendency of a benchmark to produce fluctuating scores.
