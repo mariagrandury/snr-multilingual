@@ -2,6 +2,7 @@
 theme: scholarly
 layout: cover
 transition: slide-left
+footerLeft: 
 footerMiddle: Signal-Aware Multilingual Evaluation
 description: Signal-Aware Framework for Multilingual LM Evaluation
 aspectRatio: 16/9
@@ -12,36 +13,42 @@ themeConfig:
   colorMode: dark
   sectionMode: dark
 authors:
-  - name: "María Grandury, Angelika Romanou, Eléonore, Clara Meister, Antoine Bosselut"
+  - name: "María Grandury"
+    institution: "EPFL NLP"
+  - name: "Angelika Romanou"
+    institution: "EPFL NLP"
+  - name: "Eléonore"
+    institution: "EPFL NLP"
+  - name: Clara Meister
+    institution: "EPFL NLP"
+  - name: "Antoine Bosselut"
     institution: "EPFL NLP"
 ---
 
 # Signal-Aware Framework for Multilingual LM Evaluation
 
 ---
-
-## layout: agenda
-
-- Motivation
-- Previous work & key concepts
-- Preliminary results (DataDecide, English)
-- **New results: DataDecide SNR + QAT multilingual SNR**
-- Current experiments & next steps
-- Open questions
-
+layout: agenda
+title: Agenda
+items:
+  - Motivation
+  - Key concepts & previous work
+  - Preliminary results (DataDecide, English)
+  - Current experiments & next steps
+  - Open questions
 ---
 
-## layout: section
+---
+layout: section
+---
 
 # The Problem
 
-## Evaluation is expensive and often uninformative
+Evaluation is expensive and often uninformative
 
 ---
-
 title: The Evaluation Dilemma
 subtitle: Coverage vs. Efficiency
-
 ---
 
 ## The Evaluation Dilemma
@@ -89,11 +96,9 @@ At every stage of training — pre-training, mid-training, and post-training —
 -->
 
 ---
-
 layout: bullets
 title: The Benchmark Problem
 icon: "⚠️"
-
 ---
 
 ## Not all benchmarks provide equally informative signals
@@ -108,21 +113,17 @@ Benchmarks vary widely in their diagnostic value. Some are sensitive to meaningf
 -->
 
 ---
-
 layout: focus
 color: green
 icon: 🎯
-
 ---
 
 ## Which benchmarks provide reliable signal at each stage of multilingual model training?
 
 ---
-
 layout: bullets
 title: Why Multilingual?
 icon: "🌍"
-
 ---
 
 ## This assumption is **especially fragile** in multilingual settings
@@ -157,10 +158,8 @@ Heineman et al. introduced the SNR framework showing that benchmarks with higher
 -->
 
 ---
-
 title: Signal-to-Noise Ratio
 subtitle: Quantifying benchmark reliability
-
 ---
 
 ## Signal-to-Noise Ratio (SNR)
@@ -196,10 +195,8 @@ The key insight from Heineman et al. is simple but powerful. Signal measures how
 -->
 
 ---
-
 title: Beyond SNR
 subtitle: Decision-theoretic metrics
-
 ---
 
 ## Decision Accuracy and Scaling-Law Error
@@ -233,8 +230,8 @@ SNR alone isn't enough. We also measure decision accuracy — does the benchmark
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 # Methodology
 
@@ -257,14 +254,12 @@ Signal captures how much a benchmark's scores vary when you change the training 
 -->
 
 ---
-
 layout: compare
 title: "Noise: Two Approaches"
 leftLabel: Original
 rightLabel: Ours
 leftColor: amber
 rightColor: green
-
 ---
 
 ### Checkpoint noise
@@ -310,24 +305,21 @@ The SNR combines both metrics into a single score. A benchmark with high signal 
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 # Preliminary Results
 
 by Élenorore, Clara, Antoine
 
 ---
-
 layout: agenda
 title: Preliminary Results
 items:
-
-- "Reproduction of the English SNR Framework"
-- "Benchmark Noise, A More Practical Noise Metric"
-- "Extension to Multilingual Downstream Tasks"
-- "BPB on Raw Text Corpora"
-
+  - "Reproduction of the English SNR Framework"
+  - "Benchmark Noise, A More Practical Noise Metric"
+  - "Extension to Multilingual Downstream Tasks"
+  - "BPB on Raw Text Corpora"
 ---
 
 ---
@@ -363,11 +355,9 @@ We use three sets of benchmarks across our experiments. The reproduction experim
 -->
 
 ---
-
 layout: results
 title: "Experiment 1: Reproduction"
 subtitle: "Validating the English SNR Framework"
-
 ---
 
 ## Reproduction of the English SNR Framework
@@ -388,11 +378,9 @@ Heineman et al. claimed that relative dispersion is a better signal metric than 
 -->
 
 ---
-
 layout: results
 title: "Experiment 2: Benchmark Noise"
 subtitle: "A more practical noise metric"
-
 ---
 
 ## Benchmark Noise: More Practical AND More Predictive
@@ -419,11 +407,9 @@ Not only is benchmark noise easier to compute, it actually produces a stronger S
 -->
 
 ---
-
 layout: results
 title: "Experiment 3: Multilingual Downstream Tasks"
 subtitle: "Framework reliability depends on model competence"
-
 ---
 
 ## Multilingual Extension: Framework Weakens
@@ -451,11 +437,9 @@ This is perhaps the most important finding: the framework is sound, but its appl
 -->
 
 ---
-
 layout: results
 title: "Experiment 4: BPB on Raw Text Corpora"
 subtitle: "Bypassing the instruction-following bottleneck"
-
 ---
 
 ## BPB: A Better Multilingual Evaluation Signal
@@ -480,11 +464,9 @@ The results are striking. While multilingual downstream tasks showed near-random
 -->
 
 ---
-
 layout: bullets
 title: Key Takeaways
 icon: "→"
-
 ---
 
 ## Key Takeaways
@@ -499,11 +481,9 @@ These four results paint a coherent picture. The framework is sound and reproduc
 -->
 
 ---
-
 layout: bullets
 title: Limitations
 icon: "⚠️"
-
 ---
 
 ## Limitations
@@ -519,32 +499,27 @@ The most significant limitation is the English-centric nature of the training da
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 # New Results
 
 SNR Analysis on DataDecide and Apertus QAT Models
 
 ---
-
 layout: agenda
 title: New Results
 items:
-
-- "SNR on DataDecide (AllenAI): English benchmark reliability at scale"
-- "SNR on Apertus QAT: Multilingual benchmarks across training variants"
-- "Cross-dataset SNR comparison"
-- "Implications for our custom model experiments"
-
+  - "SNR on DataDecide (AllenAI): English benchmark reliability at scale"
+  - "SNR on Apertus QAT: Multilingual benchmarks across training variants"
+  - "Cross-dataset SNR comparison"
+  - "Implications for our custom model experiments"
 ---
 
 ---
-
 layout: results
 title: "DataDecide SNR: 202 English Benchmarks"
 subtitle: "389K evaluations across 28 data mixtures"
-
 ---
 
 ## DataDecide SNR: Framework Validated at Scale
@@ -553,23 +528,23 @@ SNR computed over **202 tasks**, **105 models** (150M–1B), **28 data mixtures*
 
 <br/>
 
-| Metric | Value |
-| --- | --- |
-| **R (log-SNR vs DA)** | **0.617** |
-| **R²** | **0.380** |
-| Mean Decision Accuracy | 59.6% |
+| Metric                 | Value     |
+| ---------------------- | --------- |
+| **R (log-SNR vs DA)**  | **0.617** |
+| **R²**                 | **0.380** |
+| Mean Decision Accuracy | 59.6%     |
 
 <br/>
 
 **Top benchmarks by SNR + DA:**
 
-| Benchmark | SNR | Decision Accuracy |
-| --- | --- | --- |
-| ARC Easy | 74.4 | 94.7% |
-| MMLU | 41.2 | 90.7% |
-| MMLU Pro | 40.7 | 87.3% |
-| HellaSwag | 41.5 | 80.3% |
-| ARC Challenge | 32.7 | 85.2% |
+| Benchmark     | SNR  | Decision Accuracy |
+| ------------- | ---- | ----------------- |
+| ARC Easy      | 74.4 | 94.7%             |
+| MMLU          | 41.2 | 90.7%             |
+| MMLU Pro      | 40.7 | 87.3%             |
+| HellaSwag     | 41.5 | 80.3%             |
+| ARC Challenge | 32.7 | 85.2%             |
 
 <!--
 We ran our SNR toolkit on the full Allen AI signal-and-noise dataset — 389K evaluations of DataDecide models across 28 English web data mixtures. The log-SNR vs decision accuracy correlation is R=0.617, confirming that benchmarks with higher SNR more reliably preserve model rankings from small to large scale. ARC Easy, MMLU, and HellaSwag emerge as the most reliable English benchmarks, with both high SNR and high decision accuracy.
@@ -581,7 +556,7 @@ We ran our SNR toolkit on the full Allen AI signal-and-noise dataset — 389K ev
 
 <br/>
 
-<img src="/snr_vs_da_allenai.png" style="max-height: 420px; margin: 0 auto; display: block;" />
+<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
 
 <br/>
 
@@ -592,11 +567,9 @@ This scatter plot is the central visualization of the SNR framework. Each point 
 -->
 
 ---
-
 layout: results
 title: "Apertus QAT: Multilingual SNR"
 subtitle: "572 tasks across training variants"
-
 ---
 
 ## Apertus QAT: Multilingual Benchmark Reliability
@@ -607,22 +580,22 @@ Signal measures separation across **training variants** (base, SFT, long, longct
 
 <br/>
 
-| Metric | Value |
-| --- | --- |
-| **R (log-SNR vs DA)** | **0.126** |
-| Mean Decision Accuracy | 54.9% |
+| Metric                 | Value     |
+| ---------------------- | --------- |
+| **R (log-SNR vs DA)**  | **0.126** |
+| Mean Decision Accuracy | 54.9%     |
 
 <br/>
 
 **Top multilingual benchmarks by SNR:**
 
-| Benchmark | SNR | Decision Accuracy |
-| --- | --- | --- |
-| XCOPA (Indonesian) | 16.7 | 100% |
-| HellaSwag (Vietnamese) | 10.3 | 100% |
-| HellaSwag (Bengali) | 8.3 | 100% |
-| XCOPA (Vietnamese) | 8.3 | 100% |
-| XNLI (Thai) | 8.2 | 100% |
+| Benchmark              | SNR  | Decision Accuracy |
+| ---------------------- | ---- | ----------------- |
+| XCOPA (Indonesian)     | 16.7 | 100%              |
+| HellaSwag (Vietnamese) | 10.3 | 100%              |
+| HellaSwag (Bengali)    | 8.3  | 100%              |
+| XCOPA (Vietnamese)     | 8.3  | 100%              |
+| XNLI (Thai)            | 8.2  | 100%              |
 
 <!--
 For the QAT analysis, signal measures how much scores change across training variants — base distillation, SFT, long-context, etc. — rather than data mixtures. The weaker R=0.126 correlation is expected because training variants differ less than data mixtures. However, the multilingual results are striking: cross-lingual benchmarks like XCOPA and HellaSwag in non-English languages show very high SNR and perfect decision accuracy. This suggests that multilingual benchmarks CAN be highly reliable — provided the models have multilingual competence, which Apertus (distilled from an 8B multilingual model) does.
@@ -634,7 +607,7 @@ For the QAT analysis, signal measures how much scores change across training var
 
 <br/>
 
-<img src="/ranking_snr_qat.png" style="max-height: 440px; margin: 0 auto; display: block;" />
+<img src="" style="max-height: 440px; margin: 0 auto; display: block;" />
 
 <br/>
 
@@ -645,14 +618,12 @@ This ranking chart shows the top benchmarks by SNR from the QAT analysis. Striki
 -->
 
 ---
-
 layout: compare
 title: "Cross-Dataset Comparison"
 leftLabel: DataDecide (AllenAI)
 rightLabel: Apertus (QAT)
 leftColor: blue
 rightColor: green
-
 ---
 
 ### English benchmarks
@@ -681,7 +652,7 @@ The side-by-side comparison reveals important insights. DataDecide gives stronge
 
 <br/>
 
-<img src="/snr_correlation_allenai_vs_qat.png" style="max-height: 420px; margin: 0 auto; display: block;" />
+<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
 
 <br/>
 
@@ -697,7 +668,7 @@ This plot shows the SNR of each common benchmark in the AllenAI setting (x-axis)
 
 <br/>
 
-<img src="/comparison_top_benchmarks.png" style="max-height: 420px; margin: 0 auto; display: block;" />
+<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
 
 <br/>
 
@@ -708,11 +679,9 @@ The side-by-side top-20 ranking shows which benchmarks are consistently reliable
 -->
 
 ---
-
 layout: bullets
 title: Key Insights from New Analysis
 icon: "→"
-
 ---
 
 ## Key Insights
@@ -734,53 +703,45 @@ The most important finding is that the multilingual weakness of the preliminary 
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 # Current Progress & Next Steps
 
 ---
-
 layout: agenda
 title: Current Progress
 items:
-
-- "Phase 1: Model training (in progress)"
-- "Phase 2: Evaluation pipeline (operational)"
-- "Phase 3: SNR analysis toolkit (implemented + validated)"
-- "Phases 4–5: INCLUDE analysis & dissemination (upcoming)"
-
+  - "Phase 1: Model training (in progress)"
+  - "Phase 2: Evaluation pipeline (operational)"
+  - "Phase 3: SNR analysis toolkit (implemented + validated)"
+  - "Phases 4–5: INCLUDE analysis & dissemination (upcoming)"
 ---
 
 ---
-
 layout: timeline
 title: Research Timeline
 items:
-
-- year: "Phase 1"
-  title: "Model Training ⏳"
-  description: "36 small models (100M–1B), 3 data mixtures, 3 seeds — training on cluster"
-- year: "Phase 2"
-  title: "Evaluation ⏳"
-  description: "40 multilingual benchmarks via lm-eval-harness, results in W&B"
-- year: "Phase 3"
-  title: "SNR Analysis ✅"
-  description: "Toolkit validated on DataDecide (R=0.617) and Apertus QAT (572 multilingual tasks)"
-- year: "Phase 4"
-  title: "INCLUDE Analysis"
-  description: "Optimal subsets for 100+ countries across training stages"
-- year: "Phase 5"
-  title: "Dissemination"
-  description: "NeurIPS paper, HF benchmark subsets, open-source toolkit"
-
+  - year: "Phase 1"
+    title: "Model Training ⏳"
+    description: "36 small models (100M–1B), 3 data mixtures, 3 seeds — training on cluster"
+  - year: "Phase 2"
+    title: "Evaluation ⏳"
+    description: "40 multilingual benchmarks via lm-eval-harness, results in W&B"
+  - year: "Phase 3"
+    title: "SNR Analysis ✅"
+    description: "Toolkit validated on DataDecide (R=0.617) and Apertus QAT (572 multilingual tasks)"
+  - year: "Phase 4"
+    title: "INCLUDE Analysis"
+    description: "Optimal subsets for 100+ countries across training stages"
+  - year: "Phase 5"
+    title: "Dissemination"
+    description: "NeurIPS paper, HF benchmark subsets, open-source toolkit"
 ---
 
 ---
-
 title: Model and Benchmark Suites
 subtitle: Scale and coverage
-
 ---
 
 ## Experimental Setup
@@ -811,10 +772,8 @@ The experimental design is comprehensive. On the model side, 36 custom-trained m
 -->
 
 ---
-
 title: "Phase 1: Model Training"
 subtitle: "36 models across 4 scales"
-
 ---
 
 ## Phase 1: Model Training
@@ -853,10 +812,8 @@ In Phase 1, we pretrain 36 small models. Four sizes from 175M to 1B parameters, 
 -->
 
 ---
-
 title: "Phase 2: Model Evaluation"
 subtitle: "Model evaluation"
-
 ---
 
 ## Phase 2: Model Evaluation
@@ -888,10 +845,8 @@ In Phase 2, we evaluate across all three training stages. For pretraining, our 3
 -->
 
 ---
-
 title: "Phase 3: SNR Analysis"
 subtitle: "Signal, noise, and decision metrics"
-
 ---
 
 ## Phase 3: SNR Computation and Analysis
@@ -923,10 +878,8 @@ In Phase 3, we compute our five metrics for every benchmark at every training st
 -->
 
 ---
-
 title: "SNR Toolkit"
 subtitle: "Open-source implementation"
-
 ---
 
 ## SNR Analysis Toolkit (Implemented)
@@ -958,10 +911,8 @@ We've built a complete analysis toolkit that extends the original signal-and-noi
 -->
 
 ---
-
 title: "Phase 4: INCLUDE Analysis"
 subtitle: "Regional knowledge across 100+ countries"
-
 ---
 
 ## Phase 4: Multilingual Benchmark Analysis on INCLUDE
@@ -997,10 +948,8 @@ Phase 4 focuses on INCLUDE, our benchmark for regional knowledge. With over 100 
 -->
 
 ---
-
 title: "Phase 5: Dissemination"
 subtitle: "Open science deliverables"
-
 ---
 
 ## Phase 5: Dissemination
@@ -1040,17 +989,15 @@ Three concrete deliverables. The NeurIPS paper with comprehensive SNR analysis. 
 -->
 
 ---
-
-## layout: section
+layout: section
+---
 
 # Open Questions
 
 ---
-
 layout: bullets
 title: Open Questions
 icon: "?"
-
 ---
 
 ## Open Questions
