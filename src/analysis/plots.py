@@ -206,6 +206,113 @@ def correlation_matrix(
     return fig
 
 
+def cross_dataset_scatter(
+    results_a: pd.DataFrame,
+    results_b: pd.DataFrame,
+    *,
+    label_a: str = "Dataset A",
+    label_b: str = "Dataset B",
+    metric: str = "snr",
+) -> plt.Figure:
+    """Scatter plot comparing a metric across two datasets on common tasks.
+
+    Args:
+        results_a, results_b: DataFrames with at least 'task' and <metric> columns.
+        label_a, label_b: Axis labels for each dataset.
+        metric: Column to compare.
+    """
+    from scipy import stats as sp_stats
+
+    agg_a = results_a.groupby("task")[metric].mean().reset_index()
+    agg_b = results_b.groupby("task")[metric].mean().reset_index()
+    merged = agg_a.merge(agg_b, on="task", suffixes=("_a", "_b"))
+    merged = merged.dropna()
+    merged = merged[np.isfinite(merged[f"{metric}_a"]) & np.isfinite(merged[f"{metric}_b"])]
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(merged[f"{metric}_a"], merged[f"{metric}_b"], s=50, alpha=0.7)
+    for _, row in merged.iterrows():
+        ax.annotate(
+            _short_task_name(row["task"]),
+            (row[f"{metric}_a"], row[f"{metric}_b"]),
+            fontsize=6, alpha=0.7, xytext=(3, 3), textcoords="offset points",
+        )
+
+    if len(merged) >= 3:
+        r, _ = sp_stats.pearsonr(merged[f"{metric}_a"], merged[f"{metric}_b"])
+        ax.set_title(f"{metric.upper()} Correlation: {label_a} vs {label_b} (R={r:.3f})")
+    else:
+        ax.set_title(f"{metric.upper()}: {label_a} vs {label_b}")
+
+    lims = [
+        min(ax.get_xlim()[0], ax.get_ylim()[0]),
+        max(ax.get_xlim()[1], ax.get_ylim()[1]),
+    ]
+    ax.plot(lims, lims, "k--", alpha=0.3)
+    ax.set_xlabel(f"{metric.upper()} ({label_a})")
+    ax.set_ylabel(f"{metric.upper()} ({label_b})")
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    return fig
+
+
+def side_by_side_scatter(
+    results_a: pd.DataFrame,
+    results_b: pd.DataFrame,
+    *,
+    label_a: str = "Dataset A",
+    label_b: str = "Dataset B",
+) -> plt.Figure:
+    """Side-by-side SNR vs Decision Accuracy scatter for two datasets."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7))
+
+    for ax, df, title in [(ax1, results_a, label_a), (ax2, results_b, label_b)]:
+        agg = df.groupby("task").agg({"snr": "mean", "decision_accuracy": "mean"}).reset_index()
+        valid = agg.dropna(subset=["snr", "decision_accuracy"])
+        valid = valid[np.isfinite(valid["snr"])]
+        ax.scatter(valid["snr"], valid["decision_accuracy"], s=50, alpha=0.7)
+        for _, row in valid.iterrows():
+            ax.annotate(
+                _short_task_name(row["task"]),
+                (row["snr"], row["decision_accuracy"]),
+                fontsize=6, alpha=0.7, xytext=(3, 3), textcoords="offset points",
+            )
+        ax.set_xlabel("SNR")
+        ax.set_ylabel("Decision Accuracy")
+        ax.set_title(title)
+        ax.set_ylim(0.3, 1.05)
+        ax.grid(True, alpha=0.3)
+
+    fig.suptitle("SNR vs Decision Accuracy Comparison", fontsize=14)
+    fig.tight_layout()
+    return fig
+
+
+def side_by_side_ranking(
+    results_a: pd.DataFrame,
+    results_b: pd.DataFrame,
+    *,
+    label_a: str = "Dataset A",
+    label_b: str = "Dataset B",
+    metric: str = "snr",
+    top_n: int = 20,
+) -> plt.Figure:
+    """Side-by-side bar chart ranking for two datasets."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 10))
+
+    for ax, df, title in [(ax1, results_a, label_a), (ax2, results_b, label_b)]:
+        agg = df.groupby("task")[metric].mean().reset_index()
+        agg = agg.dropna().nlargest(top_n, metric).sort_values(metric)
+        colors = plt.cm.RdYlGn(np.linspace(0.2, 0.9, len(agg)))
+        ax.barh([_short_task_name(t) for t in agg["task"]], agg[metric], color=colors)
+        ax.set_xlabel(metric.upper())
+        ax.set_title(f"{title} Top {top_n}")
+
+    fig.suptitle(f"Top Benchmarks by {metric.upper()}", fontsize=14)
+    fig.tight_layout()
+    return fig
+
+
 # --- Internal helpers ---
 
 

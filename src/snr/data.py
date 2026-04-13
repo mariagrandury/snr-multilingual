@@ -384,6 +384,111 @@ def load_hf_dataset(
     return df
 
 
+def load_imported_results(
+    results_dir: Path | None = None,
+    *,
+    tag: str | None = None,
+) -> tuple[pd.DataFrame, dict]:
+    """Load imported multi-checkpoint results from local JSON files.
+
+    Handles the format produced by scripts/import_wandb.py.
+    Returns a canonical DataFrame plus a metadata dict with per-model stats
+    (checkpoint counts, task counts, etc.) useful for logging/debugging.
+
+    Args:
+        results_dir: Root results directory. Defaults to project results/.
+        tag: Only load files with this import_tag (e.g., "QAT"). None loads all.
+
+    Returns:
+        (df, metadata) where metadata = {model_name: {n_checkpoints, n_tasks, size, variant, tag}}.
+    """
+    import re
+
+    results_dir = results_dir or RESULTS_DIR
+    rows = []
+    metadata: dict[str, dict] = {}
+
+    for model_dir in sorted(results_dir.iterdir()):
+        imported_dir = model_dir / "imported"
+        if not imported_dir.is_dir():
+            continue
+
+        for results_file in sorted(imported_dir.glob("results_*.json")):
+            with open(results_file) as f:
+                data = json.load(f)
+
+            file_tag = data.get("import_tag", "")
+            if tag is not None and file_tag != tag:
+                continue
+
+            model_name = data.get("source_run_name", model_dir.name)
+            checkpoints = data.get("checkpoints", [])
+            n_ckpts = len(checkpoints)
+            n_tasks = len(checkpoints[0].get("results", {})) if n_ckpts > 0 else 0
+
+            # Parse size and variant from model name
+            size_match = re.search(r"(\d+\.?\d*[BM])", model_name)
+            model_size = size_match.group(1).upper() if size_match else "unknown"
+
+            name_lower = model_name.lower()
+            variant = "base"
+            for v in ("sft", "longctx", "long", "instruct"):
+                if v in name_lower:
+                    variant = v
+                    break
+
+            # Track metadata (keep entry with most checkpoints)
+            if model_name not in metadata or n_ckpts > metadata[model_name]["n_checkpoints"]:
+                metadata[model_name] = {
+                    "n_checkpoints": n_ckpts,
+                    "n_tasks": n_tasks,
+                    "size": model_size,
+                    "variant": variant,
+                    "tag": file_tag,
+                }
+
+            for ckpt_idx, checkpoint in enumerate(checkpoints):
+                for task_name, task_results in checkpoint.get("results", {}).items():
+                    for metric_key, value in task_results.items():
+                        if metric_key == "alias" or "stderr" in metric_key:
+                            continue
+                        try:
+                            value = float(value)
+                        except (TypeError, ValueError):
+                            continue
+                        rows.append({
+                            "model_id": model_name,
+                            "revision": str(ckpt_idx),
+                            "checkpoint_index": ckpt_idx,
+                            "task": task_name,
+                            "metric": metric_key,
+                            "score": value,
+                            "model_size": model_size,
+                            "data_mix": variant,
+                            "seed": None,
+                            "run_id": None,
+                            "run_name": model_name,
+                        })
+
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        print(f"Loaded {tag or 'all'}: {len(df)} rows, {df['task'].nunique()} tasks, "
+              f"{df['model_id'].nunique()} models, "
+              f"sizes={sorted(df['model_size'].dropna().unique())}")
+    return df, metadata
+
+
+def load_csv_results(csv_path: Path | str) -> pd.DataFrame:
+    """Load evaluation results from a saved CSV file (e.g., imported HF data)."""
+    csv_path = Path(csv_path)
+    if not csv_path.exists():
+        print(f"CSV not found: {csv_path}")
+        return pd.DataFrame()
+    df = pd.read_csv(csv_path)
+    print(f"Loaded {len(df)} rows from {csv_path}")
+    return df
+
+
 def get_primary_metric(df: pd.DataFrame, task: str) -> pd.DataFrame:
     """Filter DataFrame to the primary metric for a given task.
 
