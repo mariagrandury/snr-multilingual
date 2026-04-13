@@ -14,15 +14,10 @@ themeConfig:
   sectionMode: dark
 authors:
   - name: "María Grandury"
-    institution: "EPFL NLP"
   - name: "Angelika Romanou"
-    institution: "EPFL NLP"
   - name: "Éléonore Hasler"
-    institution: "EPFL NLP"
   - name: Clara Meister
-    institution: "EPFL NLP"
   - name: "Antoine Bosselut"
-    institution: "EPFL NLP"
 ---
 
 # Signal-Aware Framework for Multilingual LM Evaluation
@@ -32,9 +27,9 @@ layout: agenda
 title: Agenda
 items:
   - Motivation
-  - Key concepts & previous work
-  - Proposed methodology
-  - Open questions
+  - Key Concepts & Previous Results
+  - Proposed Methodology
+  - Open Questions
 ---
 
 ---
@@ -43,49 +38,20 @@ layout: section
 
 # The Problem
 
-Evaluation is expensive and often uninformative
+Training multilingual LMs requires constant evaluation decisions,
 
----
-title: The Evaluation Dilemma
-subtitle: Coverage vs. Efficiency
----
-
-## The Evaluation Dilemma
-
-<br/>
-
-### Training multilingual LMs requires constant evaluation decisions
-
-<br/>
-
-**But benchmarks vary wildly in diagnostic value:**
-
-- Some tasks are **sensitive** to meaningful changes in training
-- Others show **high variance**, **redundancy**, or **weak correlation** with downstream goals
-- Improvements on certain benchmarks **may not reflect real progress**
-
----
-
-# The Cost of Training Multilingual LLMs
-
-Training requires **billions of tokens** and **hundreds of thousands of euros** in compute
-
-Throughout training, practitioners must choose:
-
-- Data mixtures
-- Hyperparameters
-- Evaluation strategies
-
-These decisions are guided by **benchmark evaluations**
-
+but evaluation is expensive and often uninformative.
 
 ---
 layout: bullets
-title: The Benchmark Problem
+title: The Problem
+subtitle: Lack of Benchmark reliability
 icon: "⚠️"
 ---
 
-## Not all benchmarks provide equally informative signals
+Training LMs has a **high cost** and requires **constant decisions** (data mixtures, hyperparameters, etc.) guided by benchmark evaluations. However,
+
+## Not all benchmarks provide informative signals
 
 - **High variance**: Scores fluctuate across runs
 - **Redundancy**: Multiple benchmarks measure the same thing
@@ -94,7 +60,8 @@ icon: "⚠️"
 
 ---
 layout: bullets
-title: Why Multilingual?
+title: The Problem
+subtitle: Why Multilingual?
 icon: "🌍"
 ---
 
@@ -229,8 +196,8 @@ layout: timeline
 title: Experiments
 items:
   - year: "Exp 1"
-    title: "Reproduction"
-    description: "Reproduction of the English SNR Framework"
+    title: "Reproduction of the English SNR Framework"
+    description: ""
   - year: "Exp 2"
     title: "Benchmark Noise, A More Practical Noise Metric"
     description: ""
