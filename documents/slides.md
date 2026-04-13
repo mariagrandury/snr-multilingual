@@ -1,8 +1,8 @@
 ---
 theme: scholarly
 layout: cover
-transition: slide-left
-footerLeft: 
+transition: 
+footerLeft: EPFL NLP
 footerMiddle: Signal-Aware Multilingual Evaluation
 description: Signal-Aware Framework for Multilingual LM Evaluation
 aspectRatio: 16/9
@@ -17,7 +17,7 @@ authors:
     institution: "EPFL NLP"
   - name: "Angelika Romanou"
     institution: "EPFL NLP"
-  - name: "Eléonore"
+  - name: "Éléonore Hasler"
     institution: "EPFL NLP"
   - name: Clara Meister
     institution: "EPFL NLP"
@@ -33,8 +33,7 @@ title: Agenda
 items:
   - Motivation
   - Key concepts & previous work
-  - Preliminary results (DataDecide, English)
-  - Current experiments & next steps
+  - Proposed methodology
   - Open questions
 ---
 
@@ -118,7 +117,7 @@ color: green
 icon: 🎯
 ---
 
-## Which benchmarks provide reliable signal at each stage of multilingual model training?
+## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
 
 ---
 layout: bullets
@@ -162,31 +161,25 @@ title: Signal-to-Noise Ratio
 subtitle: Quantifying benchmark reliability
 ---
 
-## Signal-to-Noise Ratio (SNR)
+<Block type="success" title="Signal">
 
-<br/>
-
-**Signal**: How well a benchmark separates models of similar scale:
+How well a benchmark $b$ separates models $m$ of similar scale:
 
 $$\text{Signal}(b) = \text{Var}_{\text{models}}\big[\bar{s}_b(m)\big]$$
 
-<br/>
+</Block>
 
-**Noise**: Variability across checkpoints or stochastic runs:
+<Block type="success" title="Noise">
+
+Variability across checkpoints of a model $m$:
 
 $$\text{Noise}(b) = \mathbb{E}_m\big[\text{Var}_{\text{runs}}[s_b(m)]\big]$$
 
-<br/>
+</Block>
 
-**SNR**: The ratio that tells us if a benchmark is worth running:
+<Block type="success" title="SNR">
 
 $$\text{SNR}(b) = \frac{\text{Signal}(b)}{\text{Noise}(b)}$$
-
-<br/>
-
-<Block type="success" title="Takeaway">
-
-High SNR → benchmark reliably distinguishes models → better training decisions
 
 </Block>
 
@@ -706,17 +699,7 @@ The most important finding is that the multilingual weakness of the preliminary 
 layout: section
 ---
 
-# Current Progress & Next Steps
-
----
-layout: agenda
-title: Current Progress
-items:
-  - "Phase 1: Model training (in progress)"
-  - "Phase 2: Evaluation pipeline (operational)"
-  - "Phase 3: SNR analysis toolkit (implemented + validated)"
-  - "Phases 4–5: INCLUDE analysis & dissemination (upcoming)"
----
+# Proposed Methodology
 
 ---
 layout: timeline
@@ -724,63 +707,27 @@ title: Research Timeline
 items:
   - year: "Phase 1"
     title: "Model Training ⏳"
-    description: "36 small models (100M–1B), 3 data mixtures, 3 seeds — training on cluster"
+    description: "36 small models: 4 sizes (100M–1B), 3 data mixtures, 3 seeds"
   - year: "Phase 2"
-    title: "Evaluation ⏳"
-    description: "40 multilingual benchmarks via lm-eval-harness, results in W&B"
+    title: "Model Evaluation ⏳"
+    description: "40 multilingual benchmarks for pre-/mid-/post-training"
   - year: "Phase 3"
-    title: "SNR Analysis ✅"
-    description: "Toolkit validated on DataDecide (R=0.617) and Apertus QAT (572 multilingual tasks)"
+    title: "SNR Framework ✅"
+    description: "Framework implemented, validated on original AllenAI models"
   - year: "Phase 4"
     title: "INCLUDE Analysis"
     description: "Optimal subsets for 100+ countries across training stages"
   - year: "Phase 5"
     title: "Dissemination"
-    description: "NeurIPS paper, HF benchmark subsets, open-source toolkit"
+    description: "Paper, HF benchmark subsets, open-source toolkit"
 ---
-
----
-title: Model and Benchmark Suites
-subtitle: Scale and coverage
----
-
-## Experimental Setup
-
-<br/>
-
-### Model Suite
-
-| Component         | Details                                                  |
-| ----------------- | -------------------------------------------------------- |
-| **Custom models** | 4 sizes (100M–1B) x 3 mixtures x 3 seeds = **36 models** |
-| **Data sources**  | FineWeb (EN) + FineWeb2 (200+ languages)                 |
-| **Open-source**   | Apertus, OLMo, SmolLM (1B–70B, intermediate checkpoints) |
-
-<br/>
-
-### Benchmark Suite — 40 multilingual benchmarks
-
-| Category                  | Benchmarks                            |
-| ------------------------- | ------------------------------------- |
-| **Cross-lingual**         | XNLI, XCOPA, XStoryCloze, Belebele    |
-| **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
-| **Regional knowledge**    | INCLUDE (100+ countries), Global MMLU |
-| **Instruction-following** | IFEval                                |
-
-<!--
-The experimental design is comprehensive. On the model side, 36 custom-trained models give us controlled comparisons — same architecture, different data and seeds — plus open-source families that give us scale diversity up to 70B parameters with intermediate checkpoints. On the benchmark side, 40 tasks spanning cross-lingual understanding, QA, reasoning, regional knowledge, and instruction following. We evaluate with logprobs in both 0-shot and 5-shot setups to maximize comparability.
--->
 
 ---
 title: "Phase 1: Model Training"
-subtitle: "36 models across 4 scales"
+subtitle: "36 small models across 4 scales with 3 data mixtures"
 ---
 
-## Phase 1: Model Training
-
-<br/>
-
-### Architecture — 4 scales, LLaMA-style
+### Architecture
 
 | Label    | Layers | d_model | Heads | KV Heads | Non-emb params |
 | -------- | ------ | ------- | ----- | -------- | -------------- |
@@ -789,36 +736,17 @@ subtitle: "36 models across 4 scales"
 | **600M** | 24     | 1536    | 24    | 6        | 0.595B         |
 | **1B**   | 28     | 1792    | 28    | 7        | 0.944B         |
 
-<br/>
+### Data Mixtures
 
-### Data Mixtures — FineEdu2-DCLM + FineWeb2
-
-| Mixture   | FineEdu2-DCLM (EN) | FineWeb2 (multilingual) |
-| --------- | ------------------ | ----------------------- |
-| **Mix A** | 30%                | 70%                     |
-| **Mix B** | 60%                | 40%                     |
-| **Mix C** | 90%                | 10%                     |
-
-<br/>
-
-<Block type="info" title="Total">
-
-4 sizes x 3 mixtures x 3 seeds = **36 models** with full checkpoint history
-
-</Block>
-
-<!--
-In Phase 1, we pretrain 36 small models. Four sizes from 175M to 1B parameters, all using grouped query attention with a GQA ratio of 4. Each size is trained on three data mixtures that vary the ratio of English data from FineEdu2-DCLM to multilingual data from FineWeb2 — from mostly multilingual at 30-70, to balanced at 60-40, to mostly English at 90-10. Each configuration runs with three seeds, giving us 36 models total with full checkpoint histories for our SNR analysis.
--->
+- English data: FineEdu2-DCLM
+- Multilingual data: FineWeb2, high-quality filter
+- Mixtures: 30%-70%, 60%-40%, 90%-10%
+- 100B tokens
 
 ---
 title: "Phase 2: Model Evaluation"
-subtitle: "Model evaluation"
+subtitle: "Model Suite"
 ---
-
-## Phase 2: Model Evaluation
-
-<br/>
 
 | Stage             | Models                                                |
 | ----------------- | ----------------------------------------------------- |
@@ -832,30 +760,24 @@ subtitle: "Model evaluation"
 |                   | SmolLM3 3B                                            |
 |                   | OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR)              |
 
-<br/>
-
-<Block type="info" title="Coverage">
-
-Custom models for controlled pretraining analysis + open-source families for mid/post-training coverage up to **70B**
-
-</Block>
-
-<!--
-In Phase 2, we evaluate across all three training stages. For pretraining, our 36 custom models give us controlled comparisons — same architecture, different data and seeds — plus Apertus 1B and 3B. For midtraining, we use base checkpoints from SmolLM3, Apertus, and OLMo3, ranging from 3B to 70B. For post-training, we compare distilled, SFT, DPO, and RLVR variants across the same families. This lets us analyze which benchmarks are informative at each specific stage.
--->
+Custom models for controlled pretraining analysis + open-source families for mid/post-training coverage up to 70B.
 
 ---
-title: "Phase 3: SNR Analysis"
+title: "Phase 2: Model Evaluation"
+subtitle: "Evaluation Suite"
+---
+
+| Category                  | Benchmarks                            |
+| ------------------------- | ------------------------------------- |
+| **Cross-lingual**         | XNLI, XCOPA, XStoryCloze, Belebele    |
+| **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
+| **Regional knowledge**    | INCLUDE (100+ countries), Global MMLU |
+| **Instruction-following** | IFEval                                |
+
+---
+title: "Phase 3: SNR Computation and Analysis"
 subtitle: "Signal, noise, and decision metrics"
 ---
-
-## Phase 3: SNR Computation and Analysis
-
-<br/>
-
-For each of the **40 benchmarks**, compute:
-
-<br/>
 
 | Metric                | Question it answers                                      |
 | --------------------- | -------------------------------------------------------- |
@@ -865,128 +787,52 @@ For each of the **40 benchmarks**, compute:
 | **Decision Accuracy** | Does it correctly rank model pairs?                      |
 | **Scaling-Law Error** | Can small model results predict large model performance? |
 
-<br/>
-
 ### Key analysis dimensions
 
 - **Stage-specific:** Which benchmarks have high SNR at pre/mid/post-training?
-- **Subtask-level:** Which subtasks within a benchmark carry the signal?
+- **Sample-level:** Which samples within a benchmark carry the signal?
 - **Efficiency frontier:** Minimum benchmark subset for reliable decisions
 
-<!--
-In Phase 3, we compute our five metrics for every benchmark at every training stage. The goal is to identify stage-specific evaluation strategies. A benchmark that's highly informative during pretraining may be useless at post-training, and vice versa. We also go beyond benchmark-level analysis to examine individual subtasks — because within a benchmark like XNLI, some language pairs may be far more informative than others.
--->
-
 ---
-title: "SNR Toolkit"
-subtitle: "Open-source implementation"
----
-
-## SNR Analysis Toolkit (Implemented)
-
-<br/>
-
-### Modular Python package: `src/snr` + `src/analysis`
-
-<br/>
-
-| Module             | Functionality                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `snr.metrics`      | Signal (relative dispersion), noise (checkpoint + k-fold benchmark), SNR, decision accuracy |
-| `snr.data`         | Load results from W&B or local JSON, parse model metadata                                   |
-| `snr.compute`      | Orchestrate metrics across all benchmarks and training stages                               |
-| `analysis.plots`   | SNR vs DA scatter, signal-noise maps, benchmark rankings, stage comparisons                 |
-| `analysis.summary` | Results tables, benchmark recommendations per stage                                         |
-
-<br/>
-
-### Pipeline: `compute_snr.py` &rarr; `run_analysis.py`
-
-- Compute SNR from W&B or local results &rarr; CSV per stage
-- Generate plots, correlation matrices, and stage-specific recommendations
-- Supports both checkpoint noise and benchmark noise (k-fold)
-
-<!--
-We've built a complete analysis toolkit that extends the original signal-and-noise codebase. The key improvement is modularity: clean separation between metric computation, data loading, and visualization. The toolkit supports two noise computation methods — checkpoint noise for models with many intermediate checkpoints, and our proposed benchmark noise via k-fold splits for single-run analysis. Everything integrates with W&B for experiment tracking.
--->
-
----
-title: "Phase 4: INCLUDE Analysis"
+title: "Phase 4: Thorough Analysis on INCLUDE"
 subtitle: "Regional knowledge across 100+ countries"
 ---
 
-## Phase 4: Multilingual Benchmark Analysis on INCLUDE
+<Block type="info" title="INCLUDE v2">
 
-<br/>
-
-<Block type="info" title="INCLUDE Benchmark">
-
-Internally developed benchmark evaluating **regional knowledge** across **100+ countries** in local languages and scripts.
+Internally developed benchmark evaluating **regional knowledge** across **120 country-language** pairs.
 
 </Block>
 
-<br/>
-
 ### Analysis goals
 
-- Apply SNR framework to **country-level subtasks**
-- Identify which country subsets are most diagnostic at each training stage
+- Apply SNR framework to country-level subsets
+- Identify which sample clusters have higher SNR at each training stage
 - Produce **optimal evaluation subsets** that maximize signal while minimizing cost
-
-<br/>
-
-### Deliverable
-
-Publish recommended INCLUDE subsets on Hugging Face:
-
-- **Pretraining subset**: countries that track early capability development
-- **Midtraining subset**: countries sensitive to data mixture changes
-- **Post-training subset**: countries that reflect instruction-following quality
-
-<!--
-Phase 4 focuses on INCLUDE, our benchmark for regional knowledge. With over 100 countries, running the full benchmark is expensive. By applying SNR analysis at the country level, we can identify which country subsets are most informative at each training stage. The practical output: published subsets on Hugging Face so practitioners can evaluate efficiently without sacrificing diagnostic quality.
--->
 
 ---
 title: "Phase 5: Dissemination"
 subtitle: "Open science deliverables"
 ---
 
-## Phase 5: Dissemination
-
-<br/>
-
-**Paper**
+**Paper** contributions:
 
 - SNR scores and stage-specific recommendations for 40 multilingual benchmarks
 - Analysis of benchmark reliability across pre/mid/post-training
 
 <br/>
 
-**INCLUDE Subset Recommendations** on Hugging Face
+**INCLUDE Subsets** on Hugging Face:
 
-- Optimal country subsets for each training stage
-- Coverage of 100+ countries
+- High-signal language-country subsets for each training stage
 
 <br/>
 
-**Open-Source Toolkit** (in progress)
+Open-Source Toolkit:
 
 - Modular Python package: metrics, data loading, visualization
-- Compute SNR on your own benchmarks and models via `compute_snr.py`
-- Stage-specific analysis and recommendations via `run_analysis.py`
-
-<br/>
-
-<Block type="success" title="Open science">
-
-Everything open-source — enabling the community to make better evaluation decisions for multilingual models.
-
-</Block>
-
-<!--
-Three concrete deliverables. The NeurIPS paper with comprehensive SNR analysis. On Hugging Face, recommended INCLUDE subsets per training stage. And an open-source Python toolkit so anyone can compute SNR for their own benchmarks and models.
--->
+- Compute SNR on your own benchmarks and models
+- Stage-specific automated analysis and recommendations
 
 ---
 layout: section
@@ -997,10 +843,8 @@ layout: section
 ---
 layout: bullets
 title: Open Questions
-icon: "?"
+icon: "💡"
 ---
-
-## Open Questions
 
 - **Data mix signal vs training recipe signal**: Our custom models will provide true data mix signal (EN/multilingual ratios) — will R improve beyond 0.617?
 - **Benchmark noise calibration**: How many folds (k) and samples are needed for stable noise estimates?
