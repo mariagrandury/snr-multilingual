@@ -283,8 +283,8 @@ Heineman et al. claimed that relative dispersion is a better signal metric than 
 layout: compare
 title: "Experiment 2: Benchmark Noise"
 leftLabel: Original
-rightLabel: Éléonore + Clara
-leftColor: amber
+rightLabel: Éléonore & Clara
+leftColor: blue
 rightColor: green
 ---
 
@@ -300,9 +300,9 @@ $$\text{Noise} = \frac{\frac{1}{|M|}\sum_{m} \sigma_{\text{step}}(m)}{\mu(M)}$$
 
 ### Benchmark noise
 
-Score variability across **k-fold splits** of the evaluation set
+Relative std. dev. across **$k$-fold splits** of the evaluation set
 
-$$\text{Noise} = \text{Var}_{\text{folds}}[s_b(m)]$$
+$$\text{Noise} = \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
 
 ✅ Computable from a **single evaluation run**
 
@@ -313,27 +313,20 @@ title: "Experiment 2: Benchmark Noise"
 subtitle: "Alternative to Checkpoint Noise"
 ---
 
-Checkpoint noise requires intermediate checkpoints (rarely available). We propose **benchmark noise**: computable from a **single evaluation run** via k-fold splits.
+Benchmark noise correlates with checkpoint noise ($R = 0.854$), confirming both capture the same instability. Using it in SNR **improves** prediction of decision accuracy:
 
-| Noise metric        | R         | R²        |
-| ------------------- | --------- | --------- |
-| Checkpoint noise    | 0.811     | 0.658     |
-| **Benchmark noise** | **0.854** | **0.730** |
+| SNR noise metric             | R         | R²        |
+| ---------------------------- | --------- | --------- |
+| Checkpoint noise             | 0.760     | 0.578     |
+| **Benchmark noise (k=5)**    | **0.808** | **0.653** |
 
-- Benchmark noise (150M models) correlates strongly with checkpoint noise: **R = 0.854**
-- Robust across all model sizes (150M–1B)
-- SNR with benchmark noise yields **stronger** correlation with decision accuracy
+- Computable from a **single evaluation run** of any model (no checkpoints needed)
+- Robust across model sizes (150M–1B)
 
 > Not just easier to compute, also more predictive of decision accuracy
 
 <!--
-The original noise metric requires many intermediate training checkpoints for each model, which are rarely publicly available. The DataDecide suite is essentially the only open model family with this granularity. Our key contribution is proposing benchmark noise as an alternative: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run on any model, making the framework much more practical.
-
-This is a central result. Checkpoint noise requires dozens of training checkpoints per model, which are rarely publicly available. We propose benchmark noise: partition the evaluation set into k=5 folds, compute scores on each fold, and measure the standard deviation. This can be done from a single evaluation run of a small model.
-
-The benchmark noise computed from just the 150M models correlates at R = 0.854 with checkpoint-to-checkpoint noise. This means both metrics capture the same underlying instability — the tendency of a benchmark to produce fluctuating scores.
-
-Not only is benchmark noise easier to compute, it actually produces a stronger SNR-decision accuracy correlation than the original checkpoint noise. This is likely because benchmark noise captures a complementary source of instability — the finite sample nature of the evaluation set — that checkpoint noise misses.
+Benchmark noise (k=5 folds, relative std dev across folds) correlates with checkpoint noise at R = 0.854 (Figure 11), confirming both capture the same underlying instability. Crucially, using benchmark noise in SNR yields a STRONGER correlation with decision accuracy (R = 0.808 vs R = 0.760, Figure 15) — not just a convenient approximation but a better metric. Computable from a single evaluation run on any model, no intermediate checkpoints needed.
 -->
 
 ---
