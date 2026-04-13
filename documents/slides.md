@@ -301,13 +301,21 @@ The SNR combines both metrics into a single score. A benchmark with high signal 
 layout: section
 ---
 
+# Original Paper Results
+
+by AllenAI
+
+---
+layout: section
+---
+
 # Preliminary Results
 
-by Élenorore, Clara, Antoine
+by Éléonore, Clara, Antoine
 
 ---
 layout: agenda
-title: Preliminary Results
+title: Experiments
 items:
   - "Reproduction of the English SNR Framework"
   - "Benchmark Noise, A More Practical Noise Metric"
@@ -348,12 +356,10 @@ We use three sets of benchmarks across our experiments. The reproduction experim
 -->
 
 ---
-layout: results
+layout: default
 title: "Experiment 1: Reproduction"
-subtitle: "Validating the English SNR Framework"
+subtitle: "Validation of the English SNR Framework"
 ---
-
-## Reproduction of the English SNR Framework
 
 We compared two signal metrics: **relative dispersion** vs. **relative spread**
 
@@ -371,12 +377,10 @@ Heineman et al. claimed that relative dispersion is a better signal metric than 
 -->
 
 ---
-layout: results
+layout: default
 title: "Experiment 2: Benchmark Noise"
-subtitle: "A more practical noise metric"
+subtitle: "A more practical alternative for noise metric"
 ---
-
-## Benchmark Noise: More Practical AND More Predictive
 
 Checkpoint noise requires intermediate checkpoints (rarely available). We propose **benchmark noise**: computable from a **single evaluation run** via k-fold splits.
 
@@ -400,12 +404,10 @@ Not only is benchmark noise easier to compute, it actually produces a stronger S
 -->
 
 ---
-layout: results
+layout: default
 title: "Experiment 3: Multilingual Downstream Tasks"
 subtitle: "Framework reliability depends on model competence"
 ---
-
-## Multilingual Extension: Framework Weakens
 
 | Task subset                 | R     | R²    |
 | --------------------------- | ----- | ----- |
@@ -430,12 +432,10 @@ This is perhaps the most important finding: the framework is sound, but its appl
 -->
 
 ---
-layout: results
+layout: default
 title: "Experiment 4: BPB on Raw Text Corpora"
 subtitle: "Bypassing the instruction-following bottleneck"
 ---
-
-## BPB: A Better Multilingual Evaluation Signal
 
 **Accuracy** is discrete and unreliable when models don't understand English-centric prompts. **Bits-per-byte (BPB)** is continuous, requires no instruction-following, and is more stable.
 
@@ -462,8 +462,6 @@ title: Key Takeaways
 icon: "→"
 ---
 
-## Key Takeaways
-
 - **Framework reproduces** on English benchmarks ✅
 - **Benchmark noise** is more practical AND more predictive than checkpoint noise ✅
 - **Multilingual extension weakens** with English-first models — model limitation, not framework limitation ⚠️
@@ -479,8 +477,6 @@ title: Limitations
 icon: "⚠️"
 ---
 
-## Limitations
-
 - **English-only training data**: all DataDecide mixtures are English web crawl derivatives
 - **No architectural variation**: models differ only in data mixture and seed
 - **Small benchmark sizes**: some folds contain fewer items than recommended
@@ -489,210 +485,6 @@ icon: "⚠️"
 
 <!--
 The most significant limitation is the English-centric nature of the training data. This directly explains the weak multilingual results and limits how much we can conclude about the framework's applicability to multilingual models. The lack of architectural variation means we haven't tested whether the framework helps choose between model architectures. And the small fold sizes for some benchmarks (e.g., MMLU with only 57 items per fold) are a theoretical concern, even though the correlations are empirically strong.
--->
-
----
-layout: section
----
-
-# New Results
-
-SNR Analysis on DataDecide and Apertus QAT Models
-
----
-layout: agenda
-title: New Results
-items:
-  - "SNR on DataDecide (AllenAI): English benchmark reliability at scale"
-  - "SNR on Apertus QAT: Multilingual benchmarks across training variants"
-  - "Cross-dataset SNR comparison"
-  - "Implications for our custom model experiments"
----
-
----
-layout: results
-title: "DataDecide SNR: 202 English Benchmarks"
-subtitle: "389K evaluations across 28 data mixtures"
----
-
-## DataDecide SNR: Framework Validated at Scale
-
-SNR computed over **202 tasks**, **105 models** (150M–1B), **28 data mixtures**
-
-<br/>
-
-| Metric                 | Value     |
-| ---------------------- | --------- |
-| **R (log-SNR vs DA)**  | **0.617** |
-| **R²**                 | **0.380** |
-| Mean Decision Accuracy | 59.6%     |
-
-<br/>
-
-**Top benchmarks by SNR + DA:**
-
-| Benchmark     | SNR  | Decision Accuracy |
-| ------------- | ---- | ----------------- |
-| ARC Easy      | 74.4 | 94.7%             |
-| MMLU          | 41.2 | 90.7%             |
-| MMLU Pro      | 40.7 | 87.3%             |
-| HellaSwag     | 41.5 | 80.3%             |
-| ARC Challenge | 32.7 | 85.2%             |
-
-<!--
-We ran our SNR toolkit on the full Allen AI signal-and-noise dataset — 389K evaluations of DataDecide models across 28 English web data mixtures. The log-SNR vs decision accuracy correlation is R=0.617, confirming that benchmarks with higher SNR more reliably preserve model rankings from small to large scale. ARC Easy, MMLU, and HellaSwag emerge as the most reliable English benchmarks, with both high SNR and high decision accuracy.
--->
-
----
-
-## DataDecide: SNR vs Decision Accuracy
-
-<br/>
-
-<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
-
-<br/>
-
-R = **0.617** with 95% confidence band. Benchmarks in the upper-right quadrant are the most reliable: high SNR and high decision accuracy.
-
-<!--
-This scatter plot is the central visualization of the SNR framework. Each point is a benchmark. The x-axis shows SNR (signal-to-noise ratio) and the y-axis shows decision accuracy (how often small model rankings agree with large model rankings). The log-linear fit with R=0.617 confirms that SNR is a good predictor of decision accuracy. ARC Easy, MMLU, and AutoBencher are standout benchmarks in the upper-right quadrant.
--->
-
----
-layout: results
-title: "Apertus QAT: Multilingual SNR"
-subtitle: "572 tasks across training variants"
----
-
-## Apertus QAT: Multilingual Benchmark Reliability
-
-SNR computed over **572 tasks** (including multilingual), **22 Apertus models** (0.6B–8B)
-
-Signal measures separation across **training variants** (base, SFT, long, longctx)
-
-<br/>
-
-| Metric                 | Value     |
-| ---------------------- | --------- |
-| **R (log-SNR vs DA)**  | **0.126** |
-| Mean Decision Accuracy | 54.9%     |
-
-<br/>
-
-**Top multilingual benchmarks by SNR:**
-
-| Benchmark              | SNR  | Decision Accuracy |
-| ---------------------- | ---- | ----------------- |
-| XCOPA (Indonesian)     | 16.7 | 100%              |
-| HellaSwag (Vietnamese) | 10.3 | 100%              |
-| HellaSwag (Bengali)    | 8.3  | 100%              |
-| XCOPA (Vietnamese)     | 8.3  | 100%              |
-| XNLI (Thai)            | 8.2  | 100%              |
-
-<!--
-For the QAT analysis, signal measures how much scores change across training variants — base distillation, SFT, long-context, etc. — rather than data mixtures. The weaker R=0.126 correlation is expected because training variants differ less than data mixtures. However, the multilingual results are striking: cross-lingual benchmarks like XCOPA and HellaSwag in non-English languages show very high SNR and perfect decision accuracy. This suggests that multilingual benchmarks CAN be highly reliable — provided the models have multilingual competence, which Apertus (distilled from an 8B multilingual model) does.
--->
-
----
-
-## QAT: Top Multilingual Benchmarks by SNR
-
-<br/>
-
-<img src="" style="max-height: 440px; margin: 0 auto; display: block;" />
-
-<br/>
-
-Multilingual benchmarks (XCOPA, HellaSwag, XNLI in non-English) dominate the top SNR rankings — the first evidence that the SNR framework **works for multilingual evaluation**.
-
-<!--
-This ranking chart shows the top benchmarks by SNR from the QAT analysis. Strikingly, the top positions are dominated by multilingual benchmarks — XCOPA in Indonesian, HellaSwag in Vietnamese, XNLI variants. This is a fundamental advance over the preliminary results, where multilingual tasks showed near-zero correlation. The difference: Apertus models have genuine multilingual competence from their 8B parent, while DataDecide models were English-only.
--->
-
----
-layout: compare
-title: "Cross-Dataset Comparison"
-leftLabel: DataDecide (AllenAI)
-rightLabel: Apertus (QAT)
-leftColor: blue
-rightColor: green
----
-
-### English benchmarks
-
-- **R = 0.617** (log-SNR vs DA)
-- 28 data mixtures as signal source
-- Top: ARC Easy, MMLU, HellaSwag
-- Strong correlation confirms framework
-
-::right::
-
-### Multilingual benchmarks
-
-- **R = 0.126** (log-SNR vs DA)
-- Training variants as signal source
-- Top: XCOPA_id, HellaSwag_vi, XNLI_th
-- Weaker R but **multilingual benchmarks now informative**
-
-<!--
-The side-by-side comparison reveals important insights. DataDecide gives stronger overall correlation because data mixtures create more variance than training recipe variants. But the QAT analysis provides the first evidence that the SNR framework extends to multilingual settings when models have multilingual competence. The cross-dataset SNR correlation of R=0.408 across 64 common tasks shows moderate agreement — benchmarks that are reliable in one setting tend to be reliable in the other.
--->
-
----
-
-## Cross-Dataset SNR Correlation
-
-<br/>
-
-<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
-
-<br/>
-
-**R = 0.408** across 64 common tasks. Benchmarks reliable in the DataDecide setting tend to be reliable in the QAT setting too — partial transfer of SNR rankings across model families.
-
-<!--
-This plot shows the SNR of each common benchmark in the AllenAI setting (x-axis) vs the QAT setting (y-axis). The positive correlation of R=0.408 suggests that benchmark reliability is partially an intrinsic property of the benchmark, not just an artifact of the specific model family. However, the scatter shows significant divergence for some tasks — indicating that model family and training setup also matter.
--->
-
----
-
-## Top Benchmarks: DataDecide vs QAT
-
-<br/>
-
-<img src="" style="max-height: 420px; margin: 0 auto; display: block;" />
-
-<br/>
-
-ARC Easy, HellaSwag, MMLU, and ARC Challenge appear in top 20 for **both** model families — robust benchmark choices regardless of training setting.
-
-<!--
-The side-by-side top-20 ranking shows which benchmarks are consistently reliable across both model families. ARC Easy, HellaSwag, MMLU, and ARC Challenge rank highly in both, making them robust choices for evaluation. This is a practical takeaway: these benchmarks can be trusted across different model architectures and training procedures.
--->
-
----
-layout: bullets
-title: Key Insights from New Analysis
-icon: "→"
----
-
-## Key Insights
-
-- **SNR framework scales**: R=0.617 across 202 tasks on DataDecide confirms Heineman et al.'s findings at larger scale
-- **Multilingual SNR works** when models have multilingual competence: XCOPA, HellaSwag, XNLI in non-English show high SNR with Apertus
-- **Cross-dataset transfer**: R=0.408 shows benchmark reliability partially transfers across model families
-- **Robust benchmarks**: ARC Easy, MMLU, HellaSwag are reliable regardless of model family or training setup
-- **Training variant signal** is weaker than data mix signal (R=0.126 vs 0.617) but still informative
-
-<Block type="success" title="Milestone">
-
-First quantitative evidence that the SNR framework extends to multilingual evaluation — resolving the R=0.045 limitation from the preliminary analysis.
-
-</Block>
-
-<!--
-The most important finding is that the multilingual weakness of the preliminary analysis was a model competence issue, not a framework issue. With Apertus models that have genuine multilingual capabilities, multilingual benchmarks like XCOPA-Indonesian and HellaSwag-Vietnamese show the highest SNR values. This validates our research hypothesis and motivates the custom multilingual model training in Phase 1.
 -->
 
 ---
