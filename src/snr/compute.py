@@ -183,7 +183,12 @@ def log_results_to_wandb(
 
 
 def _compute_signal(df: pd.DataFrame, n_last: int) -> float:
-    """Compute signal as relative dispersion of mix-level mean scores."""
+    """Compute signal as relative dispersion of mix-level mean scores.
+
+    Matches Allen AI snr_simple.compute_snr_small_scale():
+    - Groups by mix, takes last n_last checkpoints per mix
+    - Computes mean per mix → relative_dispersion across mix means
+    """
     mixes = df["data_mix"].dropna().unique()
     if len(mixes) < 2:
         return 0.0
@@ -191,8 +196,7 @@ def _compute_signal(df: pd.DataFrame, n_last: int) -> float:
     scores_per_mix = []
     for mix in mixes:
         mix_df = df[df["data_mix"] == mix].sort_values("checkpoint_index")
-        # Use last N checkpoints (or all if fewer)
-        scores = mix_df["score"].values[-n_last:]
+        scores = mix_df["score"].dropna().values[-n_last:]
         if len(scores) > 0:
             scores_per_mix.append(scores)
 
@@ -203,18 +207,33 @@ def _compute_signal(df: pd.DataFrame, n_last: int) -> float:
 
 
 def _compute_checkpoint_noise(df: pd.DataFrame, n_last: int) -> float:
-    """Compute checkpoint noise from score variability across late checkpoints."""
+    """Compute checkpoint noise: std/mean over pooled late-checkpoint scores.
+
+    Matches Allen AI snr_simple.compute_snr_small_scale():
+        noise_scores = scores_arr.flatten()
+        noise = std(noise_scores) / mean(noise_scores)
+
+    All checkpoint scores across all mixes are concatenated, then:
+        noise = std(all_flat) / mean(all_flat)
+
+    This pools cross-mix and within-mix variance, which is the correct
+    denominator for the SNR ratio (signal also measures cross-mix variance).
+    """
     mixes = df["data_mix"].dropna().unique()
+
     if len(mixes) == 0:
-        # No mix info: use all scores
-        scores = df.sort_values("checkpoint_index")["score"].values[-n_last:]
+        # No mix info: use all scores directly
+        scores = df.sort_values("checkpoint_index")["score"].dropna().values[-n_last:]
+        if len(scores) < 2:
+            return 0.0
         return metrics.relative_spread(scores)
 
+    # Collect last n_last checkpoints per mix, then pool
     scores_per_mix = []
     for mix in mixes:
         mix_df = df[df["data_mix"] == mix].sort_values("checkpoint_index")
-        scores = mix_df["score"].values[-n_last:]
-        if len(scores) > 1:
+        scores = mix_df["score"].dropna().values[-n_last:]
+        if len(scores) > 0:
             scores_per_mix.append(scores)
 
     if not scores_per_mix:
@@ -239,12 +258,27 @@ def _compute_decision_accuracy(
 ) -> float:
     """Compute decision accuracy between small and large model rankings.
 
-    Aligns models by data_mix (or model_id if no mix info).
-    For lower-is-better metrics (BPB, loss), flips scores before comparison.
-    """
-    group_col = "data_mix" if small_df["data_mix"].notna().any() else "model_id"
+    Matches EPFL multilingual preliminary compute_decision_accuracy_cross_size():
+    - Groups by data_mix (base_name in preliminary) to get one score per mix
+    - Compares pairwise rankings between small and large scale
+    - Supports metric directionality (higher_is_better)
 
-    # Get one score per model: mean across checkpoints
+    Falls back to model_id grouping when neither df has mix info.
+    """
+    # Choose grouping column: prefer data_mix if EITHER df has it,
+    # but both must have it for alignment to work
+    small_has_mix = small_df["data_mix"].notna().any()
+    large_has_mix = large_df["data_mix"].notna().any()
+
+    if small_has_mix and large_has_mix:
+        group_col = "data_mix"
+    elif not small_has_mix and not large_has_mix:
+        group_col = "model_id"
+    else:
+        # Mismatched: one has mix, other doesn't — can't align
+        return float("nan")
+
+    # Get one score per model/mix: mean across checkpoints
     small_scores = small_df.groupby(group_col)["score"].mean().sort_index()
     large_scores = large_df.groupby(group_col)["score"].mean().sort_index()
 
