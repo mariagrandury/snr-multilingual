@@ -422,7 +422,7 @@ items:
     description: "Optimal subsets for 100+ countries across training stages"
   - year: "Phase 5"
     title: "Dissemination"
-    description: "Paper, HF benchmark subsets, open-source toolkit"
+    <!-- description: "Paper, HF benchmark subsets, open-source toolkit" -->
 ---
 
 ---
@@ -453,7 +453,7 @@ subtitle: "Model Suite"
 
 | Stage             | Models                                                |
 | ----------------- | ----------------------------------------------------- |
-| **Pretraining**   | Custom 100M, 300M, 500M, 1B (3 mixtures each)         |
+| **Pretraining**   | Custom 175M, 350M, 600M, 1B (3 mixtures each)         |
 |                   | Apertus 1B, Apertus 3B                                |
 | **Midtraining**   | SmolLM3 3B Base                                       |
 |                   | Apertus 8B Base, Apertus 70B Base                     |
@@ -503,7 +503,7 @@ subtitle: "Regional knowledge across 100+ countries"
 
 <Block type="info" title="INCLUDE v2">
 
-Internally developed benchmark evaluating **regional knowledge** across **120 country-language** pairs.
+Benchmark evaluating **regional knowledge** across **120 country-language** pairs.
 
 </Block>
 
@@ -518,20 +518,20 @@ title: "Phase 5: Dissemination"
 subtitle: "Open science deliverables"
 ---
 
-**Paper** contributions:
+### **Paper** contributions
 
 - SNR scores and stage-specific recommendations for 40 multilingual benchmarks
 - Analysis of benchmark reliability across pre/mid/post-training
 
 <br/>
 
-**INCLUDE Subsets** on Hugging Face:
+### **INCLUDE Subsets** on Hugging Face
 
 - High-signal language-country subsets for each training stage
 
 <br/>
 
-Open-Source Toolkit:
+### Open-Source Toolkit
 
 - Modular Python package: metrics, data loading, visualization
 - Compute SNR on your own benchmarks and models
@@ -543,19 +543,39 @@ layout: section
 
 # Open Questions
 
+Please share your wisdom!
+
 ---
 layout: bullets
 title: Open Questions
 icon: "💡"
 ---
 
-- **Data mix signal vs training recipe signal**: Our custom models will provide true data mix signal (EN/multilingual ratios) — will R improve beyond 0.617?
-- **Benchmark noise calibration**: How many folds (k) and samples are needed for stable noise estimates?
-- **Sub-benchmark selection**: Given a budget of N evaluations, which subset maximizes decision accuracy?
-- **Language coverage**: Do SNR-optimal subsets cover all language families, or cluster around high-resource languages?
-- **Stage transitions**: Which benchmarks are reliably informative across pre/mid/post-training vs stage-specific?
-- **Cross-architecture SNR transfer**: R=0.408 between DataDecide and Apertus — will this hold for our custom models?
+- **Sub-benchmark selection**: How to approach methodologically sub-benchmark selection?
+- **Custom models' architecture**: Any comments or improvements on the custom models?
+- **Noise**: Do we use checkpoint noise or benchmark noise? Do we extend benchmark noise analysis?
+- **Language coverage**
 
-<!--
-These questions now build on concrete data. The data mix signal question is sharpened by the QAT finding that training recipe signal is weaker (R=0.126 vs 0.617) — our custom models with explicit EN/multilingual mix ratios should produce much stronger signal. The cross-architecture transfer question at R=0.408 suggests benchmark reliability partially transfers, but we need to verify this with our own model family.
--->
+---
+layout: default
+title: Open Questions
+subtitle: Sub-benchmark Selection
+---
+
+### How to approach methodologically sub-benchmark selection?
+
+- SMART
+- How to Select Datapoints for Efficient Human Evaluation of NLG Models? (https://arxiv.org/abs/2501.18251)
+
+---
+layout: default
+title: Open Questions
+subtitle: Custom models architecture
+---
+
+### Comments or improvements on the custom model training?
+
+- ATLAS: Adaptive Transfer Scaling Laws for Multilingual Pretraining, Fine-tuning, and Decoding the Curse of Multilinguality (https://arxiv.org/pdf/2510.22037)
+  - For similar losses to a 1B model on 100B English tokens, for $n$ languages
+  - Model size = 1B x $n$^0.243
+  - Dataset size = 100B x $n$^0.728
