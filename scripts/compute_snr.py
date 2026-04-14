@@ -3,16 +3,19 @@
 
 Usage:
     # From local results directory
-    python scripts/compute_snr.py --results-dir results/ --output results/snr/snr_custom.csv
+    python scripts/compute_snr.py --results-dir results/
 
-    # From W&B
-    python scripts/compute_snr.py --wandb-project snr-experiments --output results/snr/snr_wandb.csv
+    # From all W&B projects in configs/wandb.json "pull" key
+    python scripts/compute_snr.py --pull
+
+    # From a single W&B project
+    python scripts/compute_snr.py --wandb-project ist/SwissAI-QAT-evals
 
     # Specify models and tasks
-    python scripts/compute_snr.py --results-dir results/ --models SmolLM2-135M Qwen3-0.6B --tasks hellaswag piqa
+    python scripts/compute_snr.py --pull --models Apertus-0.6B-from8B Qwen3-0.6B --tasks hellaswag piqa
 
-    # With decision accuracy (requires --target-models)
-    python scripts/compute_snr.py --results-dir results/ --target-models SmolLM3-3B SmolLM3-3B-Base
+    # With decision accuracy
+    python scripts/compute_snr.py --pull --target-models SmolLM3-3B SmolLM3-3B-Base
 """
 
 import argparse
@@ -20,12 +23,10 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.snr.compute import compute_all_metrics
-from src.snr.data import load_results_dir, load_wandb_results
+from src.snr.data import load_results_dir, load_wandb_projects, load_wandb_results
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
 
@@ -34,18 +35,18 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Compute SNR metrics")
 
     source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--results-dir", type=str, help="Local results directory")
+    source.add_argument("--wandb-project", type=str, help="Single W&B project (entity/project)")
     source.add_argument(
-        "--results-dir", type=str, help="Local results directory"
-    )
-    source.add_argument(
-        "--wandb-project", type=str, help="W&B project name"
+        "--pull", action="store_true",
+        help="Pull from all W&B projects listed in configs/wandb.json 'pull' key",
     )
 
     parser.add_argument("--output", type=str, default="results/snr/snr.csv", help="Output CSV path")
     parser.add_argument("--models", nargs="+", help="Model names for SNR (default: all)")
     parser.add_argument(
         "--tasks", nargs="+",
-        help="Tasks to evaluate (default: all). Can also be a stage name from configs/tasks.json.",
+        help="Tasks to evaluate (default: all). Can be a stage name from configs/tasks.json.",
     )
     parser.add_argument(
         "--target-models", nargs="+",
@@ -55,7 +56,6 @@ def parse_args():
         "--last-n", type=int, default=5,
         help="Number of final checkpoints for noise estimation (default: 5)",
     )
-    parser.add_argument("--wandb-tags", nargs="+", help="W&B run tags to filter")
 
     return parser.parse_args()
 
@@ -88,20 +88,25 @@ def main():
     if args.results_dir:
         print(f"Loading results from {args.results_dir}")
         df = load_results_dir(args.results_dir)
+    elif args.wandb_project:
+        print(f"Loading results from W&B: {args.wandb_project}")
+        df = load_wandb_results(args.wandb_project)
     else:
         with open(CONFIGS_DIR / "wandb.json") as f:
             wandb_config = json.load(f)
-        entity = wandb_config["entity"]
-        print(f"Loading results from W&B: {entity}/{args.wandb_project}")
-        df = load_wandb_results(entity, args.wandb_project, tags=args.wandb_tags)
+        projects = wandb_config["pull"]
+        print(f"Pulling from {len(projects)} W&B projects:")
+        df = load_wandb_projects(projects)
 
     if df.empty:
         print("No results found.")
         sys.exit(1)
 
-    print(f"Loaded {len(df)} result rows")
-    print(f"  Models: {sorted(df['model'].unique())}")
-    print(f"  Tasks: {sorted(df['task'].unique())}")
+    print(f"\nLoaded {len(df)} rows total")
+    print(f"  Models ({df['model'].nunique()}): {sorted(df['model'].unique())}")
+    print(f"  Tasks: {df['task'].nunique()}")
+    print(f"  Checkpoints per model: "
+          f"{df.groupby('model')['checkpoint'].nunique().to_dict()}")
 
     # Resolve arguments
     tasks = resolve_tasks(args.tasks)
@@ -132,10 +137,17 @@ def main():
     print(f"  Mean noise: {results['noise'].mean():.4f}")
     if "decision_accuracy" in results.columns:
         valid_da = results["decision_accuracy"].dropna()
-        print(f"  Mean decision accuracy: {valid_da.mean():.2%}")
+        if not valid_da.empty:
+            print(f"  Mean decision accuracy: {valid_da.mean():.2%}")
 
-    print(f"\nTop 5 tasks by SNR:")
-    print(results.nlargest(5, "snr")[["task", "signal", "noise", "snr"]].to_string(index=False))
+    print(f"\nTop 10 tasks by SNR:")
+    cols = ["task", "signal", "noise", "snr"]
+    if "decision_accuracy" in results.columns:
+        cols.append("decision_accuracy")
+    print(results.nlargest(10, "snr")[cols].to_string(index=False))
+
+    print(f"\nBottom 10 tasks by SNR:")
+    print(results.nsmallest(10, "snr")[cols].to_string(index=False))
 
 
 if __name__ == "__main__":

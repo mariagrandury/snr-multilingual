@@ -1,11 +1,14 @@
 """Load evaluation results from lm-evaluation-harness JSON files or W&B.
 
 Produces a flat DataFrame with columns:
-    model, revision, task, metric, score
-suitable for SNR computation.
+    model, checkpoint, task, metric, score
+where each row is one (model, checkpoint, task) observation.
+The checkpoint column carries the training step (int) so that scores
+can be ordered chronologically for noise estimation.
 """
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -32,17 +35,37 @@ def _extract_primary_score(task_results: dict) -> tuple[str, float] | None:
     return None
 
 
+def _rows_from_results_dict(
+    results: dict, model_name: str, checkpoint: int,
+) -> list[dict]:
+    """Extract rows from a {"task": {"acc": ...}} results dict."""
+    rows = []
+    for task_name, task_results in results.items():
+        result = _extract_primary_score(task_results)
+        if result is None:
+            continue
+        metric_name, score = result
+        rows.append({
+            "model": model_name,
+            "checkpoint": checkpoint,
+            "task": task_name,
+            "metric": metric_name,
+            "score": score,
+        })
+    return rows
+
+
 def load_results_dir(results_dir: str | Path) -> pd.DataFrame:
     """Load all lm-evaluation-harness results from a directory tree.
 
-    Expected structure:
-        results_dir/{model_name}/{revision}/results_*.json
+    Handles two formats produced by import_wandb.py:
+      1. Flat: {"results": {...}, "OptStep": N}
+      2. Multi-checkpoint: {"checkpoints": [{"results": {...}, "OptStep": N}, ...]}
 
-    Each JSON has:
-        {"results": {"task_name": {"acc": 0.5, "acc_norm": 0.6, ...}}}
+    Also handles native lm_eval output: {"results": {...}} (checkpoint=0).
 
     Returns:
-        DataFrame with columns: model, revision, task, metric, score
+        DataFrame with columns: model, checkpoint, task, metric, score
     """
     results_dir = Path(results_dir)
     rows = []
@@ -53,7 +76,6 @@ def load_results_dir(results_dir: str | Path) -> pd.DataFrame:
         if len(parts) < 3:
             continue
         model_name = parts[0]
-        revision = parts[1]
 
         with open(results_file) as f:
             try:
@@ -61,79 +83,108 @@ def load_results_dir(results_dir: str | Path) -> pd.DataFrame:
             except json.JSONDecodeError:
                 continue
 
-        if "results" not in data:
-            continue
-
-        for task_name, task_results in data["results"].items():
-            result = _extract_primary_score(task_results)
-            if result is None:
-                continue
-            metric_name, score = result
-            rows.append({
-                "model": model_name,
-                "revision": revision,
-                "task": task_name,
-                "metric": metric_name,
-                "score": score,
-            })
+        if "checkpoints" in data:
+            # Multi-checkpoint format from import_wandb.py
+            for cp in data["checkpoints"]:
+                if "results" not in cp:
+                    continue
+                step = int(cp.get("OptStep", 0) or 0)
+                rows.extend(_rows_from_results_dict(cp["results"], model_name, step))
+        elif "results" in data:
+            # Flat format (single checkpoint)
+            step = int(data.get("OptStep", 0) or 0)
+            rows.extend(_rows_from_results_dict(data["results"], model_name, step))
 
     df = pd.DataFrame(rows)
     if df.empty:
         return df
 
-    # If multiple result files exist per model/revision, keep the latest
-    df = df.drop_duplicates(subset=["model", "revision", "task"], keep="last")
-    return df.reset_index(drop=True)
+    df = df.drop_duplicates(subset=["model", "checkpoint", "task"], keep="last")
+    return df.sort_values(["model", "checkpoint"]).reset_index(drop=True)
 
 
 def load_wandb_results(
-    entity: str, project: str, tags: list[str] | None = None
+    entity_project: str,
+    tags: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Download evaluation results from W&B.
+    """Download evaluation results with full checkpoint history from W&B.
 
     Args:
-        entity: W&B entity (user or team).
-        project: W&B project name.
+        entity_project: W&B path as "entity/project".
         tags: Optional tags to filter runs.
 
     Returns:
-        DataFrame with columns: model, revision, task, metric, score
+        DataFrame with columns: model, checkpoint, task, metric, score
     """
     import wandb
 
-    api = wandb.Api()
+    api = wandb.Api(timeout=60)
     filters = {}
     if tags:
         filters["tags"] = {"$in": tags}
 
-    runs = api.runs(f"{entity}/{project}", filters=filters or None)
+    runs = api.runs(entity_project, filters=filters or None)
     rows = []
 
     for run in runs:
-        config = run.config
-        model_name = config.get("model_id", run.name).split("/")[-1]
-        revision = config.get("revision", "unknown")
+        model_name = run.name
+        try:
+            history = run.history(samples=10000, pandas=True)
+        except Exception as e:
+            print(f"    WARNING: failed to fetch history for {model_name}: {e}")
+            continue
 
-        summary = dict(run.summary)
-        for key, value in summary.items():
-            if "/" not in key or not isinstance(value, (int, float)):
-                continue
-            task, metric = key.rsplit("/", 1)
-            if "stderr" in metric:
-                continue
-            rows.append({
-                "model": model_name,
-                "revision": revision,
-                "task": task,
-                "metric": metric,
-                "score": value,
-            })
+        for _, hist_row in history.iterrows():
+            raw_step = hist_row.get("OptStep", hist_row.get("OptimizerStep", 0))
+            step = int(raw_step) if isinstance(raw_step, (int, float)) and not math.isnan(raw_step) else 0
+
+            for col, value in hist_row.items():
+                if "/" not in col or not isinstance(value, (int, float)):
+                    continue
+                if math.isnan(value):
+                    continue
+                if col.startswith("_") or col.startswith("system."):
+                    continue
+                task, metric = col.rsplit("/", 1)
+                if "stderr" in metric:
+                    continue
+                rows.append({
+                    "model": model_name,
+                    "checkpoint": step,
+                    "task": task,
+                    "metric": metric,
+                    "score": value,
+                })
 
     df = pd.DataFrame(rows)
     if df.empty:
         return df
-    df = df.drop_duplicates(subset=["model", "revision", "task"], keep="last")
-    return df.reset_index(drop=True)
+    df = df.drop_duplicates(subset=["model", "checkpoint", "task"], keep="last")
+    return df.sort_values(["model", "checkpoint"]).reset_index(drop=True)
+
+
+def load_wandb_projects(projects: list[str]) -> pd.DataFrame:
+    """Load and concatenate results from multiple W&B projects.
+
+    Args:
+        projects: List of "entity/project" strings.
+
+    Returns:
+        Combined DataFrame with an extra 'source' column.
+    """
+    dfs = []
+    for proj in projects:
+        print(f"  Pulling {proj}...")
+        df = load_wandb_results(proj)
+        if not df.empty:
+            df["source"] = proj
+            dfs.append(df)
+            print(f"    {len(df)} rows, {df['model'].nunique()} models, "
+                  f"{df['task'].nunique()} tasks, "
+                  f"{df.groupby('model')['checkpoint'].nunique().mean():.1f} avg checkpoints/model")
+    if not dfs:
+        return pd.DataFrame()
+    return pd.concat(dfs, ignore_index=True)
 
 
 def extract_step(revision: str) -> int | None:
