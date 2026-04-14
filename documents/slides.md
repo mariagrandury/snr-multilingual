@@ -399,19 +399,29 @@ subtitle: "36 small models across 4 scales with 3 data mixtures"
 
 ### Architecture
 
-| Label    | Layers | d_model | Heads | KV Heads | Non-emb params |
-| -------- | ------ | ------- | ----- | -------- | -------------- |
-| **175M** | 16     | 1024    | 16    | 4        | 0.176B         |
-| **350M** | 20     | 1280    | 20    | 5        | 0.344B         |
-| **600M** | 24     | 1536    | 24    | 6        | 0.595B         |
-| **1B**   | 28     | 1792    | 28    | 7        | 0.944B         |
+| Label    | Layers | d_model | Head dim | Heads | KV Heads | FFW Mult | Non-emb Params |
+| -------- | ------ | ------- | -------- | ----- | -------- | ---- | --------- |
+| **175M** | 16     | 1024    | 64 | 16    | 4        | 4 | 0.176B         |
+| **350M** | 20     | 1280    | 64 | 20    | 5        | 4 | 0.344B         |
+| **600M** | 24     | 1536    | 64 | 24    | 6        | 4 | 0.595B         |
+| **1B**   | 28     | 1792    | 64 | 28    | 7        | 4 | 0.944B         |
 
-<!-- TODO update architecture values from hyperparams config -->
+Differences with Apertus:
+- Tied embeddings (128k vocab, many params dedicated to embeddings)
+- No goldfish loss (memorization not an issue at these scales)
+- No cross-document attention masking
+
+---
+title: "Phase 1: Model Training"
+subtitle: "36 small models across 4 scales with 3 data mixtures"
+---
 
 ### Data Mixtures
 
 - English data: FineEdu2-DCLM
-- Multilingual data: FineWeb2, high-quality filter
+- Multilingual data: FineWeb2
+  - Apertus' high-quality filter
+  - Use original naturally occurring language distribution
 - Mixtures: 30%-70%, 60%-40%, 90%-10%
 - Tokens: 100B in total
 
@@ -422,17 +432,17 @@ title: "Phase 2: Model Evaluation"
 subtitle: "Model Suite"
 ---
 
-| Stage             | Models                                                |
-| ----------------- | ----------------------------------------------------- |
-| **Pretraining**   | Custom 175M, 350M, 600M, 1B (3 mixtures each)         |
-|                   | Apertus 1B, Apertus 3B                                |
-| **Midtraining**   | SmolLM3 3B Base                                       |
-|                   | Apertus 8B Base, Apertus 70B Base                     |
-|                   | OLMo3 7B Base                                         |
-| **Post-training** | Apertus 0.6B / 1.7B Distilled                         |
-|                   | Apertus 1.7B Distilled SFT, 8B Instruct, 70B Instruct |
-|                   | SmolLM3 3B                                            |
-|                   | OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR)              |
+| Stage             | < 1B | 3B | 7-8B | 70 B  |
+| ----------------- | ------------------------------------ | --- | --- | --- |
+| **Pretraining**   | Custom 175M, 350M, 600M, 1B (3 mixtures each)  | | | | |
+|                   | Apertus 1B | Apertus 3B                            | | |
+| **Midtraining**   |  | SmolLM3 3B Base                                 | | |
+|                   | | | Apertus 8B Base |  Apertus 70B Base                   | | 
+|                   | | | OLMo3 7B Base                                         |
+| **Post-training** | Apertus 0.6B / 1.7B Distilled                       |  |
+|                   | Apertus 1.7B Distilled SFT | | 8B Instruct | 70B Instruct |
+|                   | | SmolLM3 3B                                        | | |
+|                   | | | OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR)    |  |
 
 Custom models for controlled pretraining analysis + open-source families for mid/post-training coverage up to 70B.
 
@@ -548,6 +558,26 @@ Other related work:
 <!--
 Chen et al. found that only a subset of tasks follow predictable scaling trends. Gupta et al. showed that filtering low-quality benchmark items reduces cost while preserving signal. Zhou et al. used item response theory to show many items have weak discriminative power.
 -->
+
+---
+layout: default
+title: Open Questions
+subtitle: Custom models architecture
+---
+
+### Architecture
+
+| Label    | Layers | d_model | Head dim | Heads | KV Heads | FFW Mult | Non-emb Params |
+| -------- | ------ | ------- | -------- | ----- | -------- | ---- | --------- |
+| **175M** | 16     | 1024    | 64 | 16    | 4        | 4 | 0.176B         |
+| **350M** | 20     | 1280    | 64 | 20    | 5        | 4 | 0.344B         |
+| **600M** | 24     | 1536    | 64 | 24    | 6        | 4 | 0.595B         |
+| **1B**   | 28     | 1792    | 64 | 28    | 7        | 4 | 0.944B         |
+
+Differences with Apertus:
+- Tied embeddings (128k vocab, many params dedicated to embeddings)
+- No goldfish loss (memorization not an issue at these scales)
+- No cross-document attention masking
 
 ---
 layout: default
