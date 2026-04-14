@@ -105,6 +105,18 @@ layout: section
 
 The Signal-and-Noise Framework
 
+
+---
+layout: image-right
+image: /cubes.png
+ratio: "1:6"
+fit: contain
+title: Key concepts
+subtitle: Signal and Noise
+---
+
+
+
 ---
 title: Key concepts
 subtitle: Signal and Noise
@@ -112,23 +124,31 @@ subtitle: Signal and Noise
 
 <Block type="success" title="Signal (Relative Dispersion / Normalized Max. Difference)">
 
-How well a benchmark $b$ separates a pair of models $m_j, m_k$ of similar scale trained on different data:
+How well a benchmark $b$ separates a pair of model scores $m_j, m_k$ of similar scale $s$ trained on different settings:
 
-$$\text{Rel. Dispersion}(M) = \frac{\max_{j,k} |m_j - m_k|}{\bar{m}}$$
+$$\text{Rel. Dispersion}(b, s) = \frac{\max_{j,k} |m_j - m_k|}{\bar{m}}$$
 
 </Block>
 
 <Block type="success" title="Noise (Relative Std. Dev.)">
 
-Variability across the final $n$ training checkpoints of a model $m$:
+Benchmark $b$ variability across the final $n$ training checkpoints of a model $m$:
 
-$$\text{Rel. Std.}(m) = \frac{\sqrt{\frac{1}{n-1} \sum_{i=1}^{n}(m_i - \bar{m})^2}}{\bar{m}}$$
+$$\text{Rel. Std.}(b, m) = \frac{\sqrt{\frac{1}{n-1} \sum_{i=1}^{n}(m_i - \bar{m})^2}}{\bar{m}}$$
 
 </Block>
 
-$$\text{SNR} = \frac{\text{Rel. Dispersion}(\text{final train checkpoint})}{\text{Rel. Std.}(\text{final $n$ train checkpoint})}$$
+$$\text{SNR} = \frac{\text{Avg. Rel. Dispersion}(\text{final checkpoint})}{\text{Rel. Std.}(\text{final $n$ checkpoints})}$$
 
 <!--
+
+4.1. Paper
+To calculate signal we
+use the final checkpoint of each of the 25 small models, and to calculate noise, we use the standard
+deviation around the final 5 checkpoints of the small-scale models. Since we have a measure of
+noise for each model, we use the average of the noise across the small models.
+
+
 Signal:
 - Signal = normalized maximum difference between any pair of models
 - Measured as **relative dispersion** of scores across training mixtures
