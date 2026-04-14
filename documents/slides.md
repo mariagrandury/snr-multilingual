@@ -411,7 +411,12 @@ Differences with Apertus:
 - No goldfish loss (memorization not an issue at these scales)
 - No cross-document attention masking
 
+
 ---
+layout: image-right
+image: /fineweb2_languages_cropped.png
+ratio: "3:1"
+fit: contain
 title: "Phase 1: Model Training"
 subtitle: "36 small models across 4 scales with 3 data mixtures"
 ---
@@ -421,30 +426,39 @@ subtitle: "36 small models across 4 scales with 3 data mixtures"
 - English data: FineEdu2-DCLM
 - Multilingual data: FineWeb2
   - Apertus' high-quality filter
+  - Top 200 languages
   - Use original naturally occurring language distribution
 - Mixtures: 30%-70%, 60%-40%, 90%-10%
 - Tokens: 100B in total
-
-<!-- Include languages_estimates.json? -->
 
 ---
 title: "Phase 2: Model Evaluation"
 subtitle: "Model Suite"
 ---
 
-| Stage             | < 1B | 3B | 7-8B | 70 B  |
-| ----------------- | ------------------------------------ | --- | --- | --- |
-| **Pretraining**   | Custom 175M, 350M, 600M, 1B (3 mixtures each)  | | | | |
-|                   | Apertus 1B | Apertus 3B                            | | |
-| **Midtraining**   |  | SmolLM3 3B Base                                 | | |
-|                   | | | Apertus 8B Base |  Apertus 70B Base                   | | 
-|                   | | | OLMo3 7B Base                                         |
-| **Post-training** | Apertus 0.6B / 1.7B Distilled                       |  |
-|                   | Apertus 1.7B Distilled SFT | | 8B Instruct | 70B Instruct |
-|                   | | SmolLM3 3B                                        | | |
-|                   | | | OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR)    |  |
+| Size | Pretraining | Midtraining | Post-training |
+|------|-------------|-------------|---------------|
+| **< 1B** | Custom 175M, 350M, 600M, 1B (3 mixtures each); Apertus 1B | — | Apertus 0.6B / 1.7B Distilled, Apertus 1.7B Distilled SFT |
+| **3B** | Apertus 3B | SmolLM3 3B Base | SmolLM3 3B |
+| **8B** | — | Apertus 8B Base; OLMo3 7B Base | Apertus 8B Instruct; OLMo3 7B SFT, 7B DPO, 7B Instruct (RLVR) |
+| **70B** | — | Apertus 70B Base | 70B Instruct |
 
-Custom models for controlled pretraining analysis + open-source families for mid/post-training coverage up to 70B.
+Model selection:
+- Custom models for controlled pretraining analysis (as AllenAI)
+- Open-source families for mid/post-training coverage up to 70B
+
+<!-- 
+
+title: "Phase 2: Model Evaluation"
+subtitle: "Evaluation Suite"
+
+
+Benchmark selection
+- Benchmarks commonly used in literature
+- Benchmarks with high SNR in AllenAI and Éléonore's analyses 
+- Bechmarks covering underserved languages 
+- Include V2 for in depth analysis 
+-->
 
 ---
 title: "Phase 2: Model Evaluation"
@@ -455,10 +469,10 @@ subtitle: "Evaluation Suite"
 | ------------------------- | ------------------------------------- |
 | **Cross-lingual**         | XNLI, XCOPA, XStoryCloze, Belebele    |
 | **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
-| **Regional knowledge**    | INCLUDE (100+ countries), Global MMLU |
+| **Regional knowledge**    | INCLUDE v2, Global MMLU |
 | **Instruction-following** | IFEval                                |
 
-<!-- Update the list of benchmarks, including languages and training stage -->
+<!-- TODO Update the list of benchmarks, including languages and training stage -->
 
 ---
 title: "Phase 3: SNR Computation and Analysis"
