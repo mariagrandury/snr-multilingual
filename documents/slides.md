@@ -402,11 +402,11 @@ items:
     title: "Model Evaluation ⏳"
     description: "40 multilingual benchmarks for pre-/mid-/post-training"
   - year: "Phase 3"
-    title: "SNR Framework ✅"
-    description: "Framework implemented, validated on original AllenAI models"
+    title: "SNR Framework ⏳"
+    description: "Framework implemented, currently designing extension"
   - year: "Phase 4"
     title: "INCLUDE Analysis"
-    description: "Optimal subsets for 100+ countries across training stages"
+    description: "Optimal subsets for 120 countries across training stages"
   - year: "Phase 5"
     title: "Dissemination"
     <!-- description: "Paper, HF benchmark subsets, open-source toolkit" -->
@@ -485,14 +485,13 @@ title: "Phase 2: Model Evaluation"
 subtitle: "Evaluation Suite"
 ---
 
-| Category                  | Benchmarks                            |
-| ------------------------- | ------------------------------------- |
-| **Cross-lingual**         | XNLI, XCOPA, XStoryCloze, Belebele    |
-| **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
-| **Regional knowledge**    | INCLUDE v2, Global MMLU |
-| **Instruction-following** | IFEval                                |
-
-<!-- TODO Update the list of benchmarks, including languages and training stage -->
+| Category | Pretraining | Midtraining | Post-training |
+|----------|-------------|-------------|---------------|
+| **Language Modeling & Completion** |  hellaswag, piqa, xnli, xcopa, pawsx, xwinograd, m_arc, wikitext, lambada, | hellaswag, piqa, xnli, xcopa, pawsx, xwinograd, m_arc, wikitext, lambada | hellaswag |
+| **Commonsense & Reasoning** | commonsense_qa, openbookqa, ai2_arc, winogrande, gsm8k | commonsense_qa, openbookqa, ai2_arc, winogrande, gsm8k | bbh, drop, gsm8k_cot, hendrycks_math, mathqa |
+| **Knowledge & QA** | mmlu, global_mmlu, squadv2, include_base_44 | mmlu, global_mmlu, squadv2, include_base_44 | mmlu_flan_cot_zeroshot, global_mmlu, truthfulqa, truthfulqa, blend, cultural_bench  |
+| **Code** | — | — | humaneval_instruct, mbpp_instruct |
+| **Instruction-Following & Safety** | — | — | ifeval, acp_bench, harmbench, toxigen, bbq |
 
 ---
 title: "Phase 3: SNR Computation and Analysis"
@@ -568,9 +567,10 @@ title: Open Questions
 icon: "💡"
 ---
 
+- **Signal definition**: How to calculate signal? Across which dimensions?
+- **Noise definition**: Do we use checkpoint noise or benchmark noise? Do we extend benchmark noise analysis?
 - **Sub-benchmark selection**: How to approach methodologically sub-benchmark selection?
 - **Custom models' architecture**: Any comments or improvements on the custom models?
-- **Noise**: Do we use checkpoint noise or benchmark noise? Do we extend benchmark noise analysis?
 - **Language coverage**
 
 ---
