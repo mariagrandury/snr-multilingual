@@ -1,4 +1,16 @@
 {
     "entity": "mariagrandury-epflnlp",
-    "project": {"pretrain": "data-mix-small", "evals": "snr-experiments"}
+    "project": {"pretrain": "data-mix-small", "evals": "snr-experiments"},
+    "pull": 
+        {"projects": [
+            "ist/SwissAI-QAT-evals",
+            "epflmlo-epfl/swissai-eval-main-v1.1",
+            "epflmlo-epfl/swissai-eval-main-v1.5",
+            "epflmlo-epfl/swissai-eval-main-v1.6"
+        ],
+        "model_families": [
+            "apertus",
+            "olmo",
+            "smollm"
+       ]}
 }
