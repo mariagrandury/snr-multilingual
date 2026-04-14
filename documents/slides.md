@@ -206,7 +206,7 @@ layout: section
 
 by Éléonore, Clara, Antoine
 
----
+<!--
 layout: timeline
 title: Experiments
 items:
@@ -222,61 +222,29 @@ items:
   - year: "Exp 4"
     title: "BPB on Raw Text Corpora"
     description: ""
----
-
----
-title: "Experimental setup"
-subtitle: "Models from the DataDecide Suite"
----
-
-| Parameter             | Detail                                |
-| --------------------- | ------------------------------------- |
-| **Source**            | Allen AI DataDecide models            |
-| **Sizes**             | 4M to 1B parameters                   |
-| **Training mixtures** | 10–25 English-centric web corpora     |
-| **Seeds**             | Up to 3 per configuration             |
-| **Mixtures include**  | DCLM, Dolma, Falcon, FineWeb variants |
-
-All mixtures are **English-centric** (Common Crawl derivatives)
-
-<!--
-The DataDecide suite provides the model diversity needed for this analysis. The models vary in training data mixture and random seed, but share the same architecture and tokenizer. Importantly, all training mixtures are English-centric — they are filtered/mixed versions of Common Crawl data. This is a key limitation for the multilingual experiments, as the models have minimal exposure to non-English languages.
--->
-
----
-title: "Experimental setup"
-subtitle: "Benchmarks"
----
-
-| Experiment                                 | Benchmarks                                                                                   |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| **Reproduction experiment** (English)      | ARC, HellaSwag, MMLU, WinoGrande, PIQA, OpenBookQA, BoolQ, SocialIQA, CSQA                   |
-| **Multilingual downstream tasks**          | Belebele, XStoryCloze, XNLI, XWinograd, XCOPA, BanglaMMlu, Click, TruthfulQA-multi, and more |
-| **BPB evaluation sets** (raw text corpora) | Flores+ (10 subsets, ~220 languages) and Wiki40B (5 subsets, ~40 languages)                  |
-
-<!--
-We use three sets of benchmarks across our experiments. The reproduction experiment uses the same English benchmarks as Heineman et al. The multilingual experiment adds a broad set of multilingual downstream tasks. Finally, we evaluate on raw text corpora using bits-per-byte (BPB), which bypasses the instruction-following bottleneck that makes accuracy unreliable for non-English tasks.
 -->
 
 ---
 layout: default
-title: "Experiment 1: Reproduction"
-subtitle: "Validation of the English SNR Framework"
+title: Experimental Setup
+subtitle: Models & Benchmarks
 ---
 
-Compared two signal metrics: **relative dispersion** vs. **relative spread**
+### Models
 
-| Metric              | R         | R²        |
-| ------------------- | --------- | --------- |
-| Relative dispersion | **0.811** | **0.658** |
-| Relative spread     | 0.791     | 0.626     |
+- Allen AI DataDecide models, 4M-1B params
+- All mixtures are **English-centric** (inc. DCLM, Dolma, Falcon, FineWeb)
 
-**Relative dispersion** gives a stronger SNR–decision accuracy correlation
+### Benchmarks
 
-→ Adopted as the signal metric for all subsequent experiments
+| Experiment                                 | Benchmarks                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| **Reproduction experiment** (English)      | ARC, HellaSwag, MMLU, WinoGrande, PIQA, OpenBookQA, BoolQ, SocialIQA, CSQA                   |
+| **Multilingual downstream tasks**          | BanglaMMLU, BertaQA, Belebele,  BlimpNL, CaBBQ, Click, CrowsPairs, DarijaHellaswag, EgyHellaswag, EUS Proficiency, EUS Reading, EUS Trivia, TruthfulQA-multi, TurBlimp-Core, TurkishMMLU, xCOPA, XStoryCloze, XNLI-eu, xWinograd |
+| **BPB evaluation sets** (raw text corpora) | Flores+ (10 subsets, ~220 languages) and Wiki40B (5 subsets, ~40 languages)                  |
 
 <!--
-Heineman et al. claimed that relative dispersion is a better signal metric than relative spread, but their published plots actually used relative spread. Our re-analysis confirms their claim: relative dispersion yields a stronger correlation between SNR and decision accuracy. This is an important validation step — it shows the framework produces consistent results and gives us confidence to build on it.
+Screenshot with benchmark details in documents/public.
 -->
 
 ---
@@ -290,7 +258,7 @@ rightColor: green
 
 ### Checkpoint noise
 
-Score variability across **late training checkpoints**
+Std. dev. over **late training checkpoints**, aggregated across models, normalized by benchmark-level mean 
 
 $$\text{Noise} = \frac{\frac{1}{|M|}\sum_{m} \sigma_{\text{step}}(m)}{\mu(M)}$$
 
@@ -300,20 +268,24 @@ $$\text{Noise} = \frac{\frac{1}{|M|}\sum_{m} \sigma_{\text{step}}(m)}{\mu(M)}$$
 
 ### Benchmark noise
 
-Relative std. dev. across **$k$-fold splits** of the evaluation set
+Relative std. dev. across **$k$-fold splits** of the evaluation set, averaged across models
 
-$$\text{Noise} = \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
+$$\text{Noise} = \frac{1}{|M|} \sum_{m} \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}} $$
 
 ✅ Computable from a **single evaluation run**
 
 
 ---
-layout: default
+layout: image-left
+image: /snr_preliminary_figure_3.png
+ratio: "2:2"
+fit: contain
 title: "Experiment 2: Benchmark Noise"
-subtitle: "Alternative to Checkpoint Noise"
+subtitle: Correlation between SNR and Decision Accuracy
 ---
 
-Benchmark noise correlates with checkpoint noise ($R = 0.854$), confirming both capture the same instability. Using it in SNR **improves** prediction of decision accuracy:
+- Benchmark noise correlates with checkpoint noise ($R = 0.854$).
+- Using it in SNR **improves** prediction of decision accuracy:
 
 | SNR noise metric             | R         | R²        |
 | ---------------------------- | --------- | --------- |
@@ -330,7 +302,10 @@ Benchmark noise (k=5 folds, relative std dev across folds) correlates with check
 -->
 
 ---
-layout: default
+layout: image-left
+image: /snr_preliminary_figure_7.png
+ratio: "2:3"
+fit: contain
 title: "Experiment 3: Multilingual Downstream Tasks"
 subtitle: "Framework reliability depends on model competence"
 ---
@@ -341,13 +316,9 @@ subtitle: "Framework reliability depends on model competence"
 | All non-English tasks       | 0.045 | 0.002 |
 | Non-English (excl. 3 worst) | 0.293 | 0.086 |
 
-**Why?** Small English-first models perform **near-randomly** on underrepresented languages → uninformative rankings. No framework can recover signal from random scores.
+Small English-first models perform **near-randomly** on underrepresented languages → uninformative rankings.
 
-<Block type="info" title="Key insight">
-
-Framework reliability is **conditional on model competence**. The SNR framework doesn't fail for multilingual settings in general, it fails when proxy models lack linguistic competence. → Need genuinely multilingual models.
-
-</Block>
+> Framework reliability is **conditional on model competence**. The SNR framework doesn't fail for multilingual settings in general, it fails when proxy models lack linguistic competence. → Need multilingual models.
 
 <!--
 When we apply the framework to multilingual downstream tasks, the correlation essentially disappears for non-English tasks (R = 0.045). The 3 most unstable benchmarks — click, bangla_mmlu, belebele — cover languages most underrepresented in training data. Removing them raises the non-English correlation to R = 0.293.
@@ -394,27 +365,6 @@ icon: "→"
 - **Multilingual extension weakens** with English-first models (model limitation, not framework limitation) ⚠️
 - **BPB on raw corpora** yields higher decision accuracy and better SNR correlation than accuracy on downstream tasks ✅
 
-<!--
-These four results paint a coherent picture. The framework is sound and reproducible. Our new noise metric is an improvement. The challenges in multilingual settings come from the English-first nature of the models, not from a fundamental flaw in the approach. And BPB offers a promising alternative evaluation strategy that bypasses the instruction-following bottleneck.
--->
-
----
-layout: bullets
-title: Preliminary Analysis
-subtitle: Limitations
-icon: "⚠️"
----
-
-- **English-only training data**: all DataDecide mixtures are English web crawl derivatives
-- **No architectural variation**: models differ only in data mixture and seed
-- **Small benchmark sizes**: some folds contain fewer items than recommended
-- **Inverse scaling**: tasks like TruthfulQA violate the "bigger = better" assumption
-- **Single model family**: results constrained to DataDecide suite
-
-<!--
-The most significant limitation is the English-centric nature of the training data. This directly explains the weak multilingual results and limits how much we can conclude about the framework's applicability to multilingual models. The lack of architectural variation means we haven't tested whether the framework helps choose between model architectures. And the small fold sizes for some benchmarks (e.g., MMLU with only 57 items per fold) are a theoretical concern, even though the correlations are empirically strong.
--->
-
 ---
 layout: section
 ---
@@ -456,12 +406,16 @@ subtitle: "36 small models across 4 scales with 3 data mixtures"
 | **600M** | 24     | 1536    | 24    | 6        | 0.595B         |
 | **1B**   | 28     | 1792    | 28    | 7        | 0.944B         |
 
+<!-- TODO update architecture values from hyperparams config -->
+
 ### Data Mixtures
 
 - English data: FineEdu2-DCLM
 - Multilingual data: FineWeb2, high-quality filter
 - Mixtures: 30%-70%, 60%-40%, 90%-10%
-- 100B tokens
+- Tokens: 100B in total
+
+<!-- Include languages_estimates.json? -->
 
 ---
 title: "Phase 2: Model Evaluation"
@@ -493,6 +447,8 @@ subtitle: "Evaluation Suite"
 | **QA & Reasoning**        | XQuAD, MGSM, XLSum                    |
 | **Regional knowledge**    | INCLUDE (100+ countries), Global MMLU |
 | **Instruction-following** | IFEval                                |
+
+<!-- Update the list of benchmarks, including languages and training stage -->
 
 ---
 title: "Phase 3: SNR Computation and Analysis"
