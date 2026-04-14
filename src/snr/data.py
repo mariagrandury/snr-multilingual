@@ -152,7 +152,7 @@ def load_wandb_results(
             for col, value in hist_row.items():
                 if "/" not in col or not isinstance(value, (int, float)):
                     continue
-                if math.isnan(value):
+                if math.isnan(value) or value < 0:
                     continue
                 if col.startswith("_") or col.startswith("system."):
                     continue
