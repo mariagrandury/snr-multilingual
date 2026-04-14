@@ -94,9 +94,13 @@ def main():
     else:
         with open(CONFIGS_DIR / "wandb.json") as f:
             wandb_config = json.load(f)
-        projects = wandb_config["pull"]
-        print(f"Pulling from {len(projects)} W&B projects:")
-        df = load_wandb_projects(projects)
+        pull_config = wandb_config["pull"]
+        projects = pull_config["projects"]
+        model_families = pull_config.get("model_families")
+        print(f"Pulling from {len(projects)} W&B projects")
+        if model_families:
+            print(f"  Filtering to model families: {model_families}")
+        df = load_wandb_projects(projects, model_families=model_families)
 
     if df.empty:
         print("No results found.")

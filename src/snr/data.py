@@ -103,15 +103,24 @@ def load_results_dir(results_dir: str | Path) -> pd.DataFrame:
     return df.sort_values(["model", "checkpoint"]).reset_index(drop=True)
 
 
+def _matches_family(name: str, families: list[str]) -> bool:
+    """Check if a model name matches any of the family prefixes (case-insensitive)."""
+    name_lower = name.lower()
+    return any(f in name_lower for f in families)
+
+
 def load_wandb_results(
     entity_project: str,
     tags: list[str] | None = None,
+    model_families: list[str] | None = None,
 ) -> pd.DataFrame:
     """Download evaluation results with full checkpoint history from W&B.
 
     Args:
         entity_project: W&B path as "entity/project".
         tags: Optional tags to filter runs.
+        model_families: If provided, only fetch runs whose name contains
+            one of these strings (case-insensitive).
 
     Returns:
         DataFrame with columns: model, checkpoint, task, metric, score
@@ -128,6 +137,8 @@ def load_wandb_results(
 
     for run in runs:
         model_name = run.name
+        if model_families and not _matches_family(model_name, model_families):
+            continue
         try:
             history = run.history(samples=10000, pandas=True)
         except Exception as e:
@@ -163,11 +174,16 @@ def load_wandb_results(
     return df.sort_values(["model", "checkpoint"]).reset_index(drop=True)
 
 
-def load_wandb_projects(projects: list[str]) -> pd.DataFrame:
+def load_wandb_projects(
+    projects: list[str],
+    model_families: list[str] | None = None,
+) -> pd.DataFrame:
     """Load and concatenate results from multiple W&B projects.
 
     Args:
         projects: List of "entity/project" strings.
+        model_families: If provided, only fetch runs whose name contains
+            one of these strings (case-insensitive).
 
     Returns:
         Combined DataFrame with an extra 'source' column.
@@ -175,7 +191,7 @@ def load_wandb_projects(projects: list[str]) -> pd.DataFrame:
     dfs = []
     for proj in projects:
         print(f"  Pulling {proj}...")
-        df = load_wandb_results(proj)
+        df = load_wandb_results(proj, model_families=model_families)
         if not df.empty:
             df["source"] = proj
             dfs.append(df)
