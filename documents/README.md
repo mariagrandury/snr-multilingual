@@ -9,3 +9,7 @@ Static documents:
 Slides (Work in progress):
 
 - slides.md: Source to generate slides using slidev with the scholarly theme.
+
+inform eval design decisions, check if correlation with dadat source, preprocessing pipeline, etc
+
+recommended taxonomy
