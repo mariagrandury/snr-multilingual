@@ -20,7 +20,12 @@ import re
 import numpy as np
 import pandas as pd
 
-from src.snr.metrics import decision_accuracy, signal_to_noise_ratio
+from src.snr.metrics import (
+    decision_accuracy,
+    relative_dispersion,
+    relative_spread,
+    signal_to_noise_ratio,
+)
 
 # ---------------------------------------------------------------------------
 # Size extraction and grouping
@@ -145,16 +150,15 @@ def compute_snr_for_task(
     signal_scores = np.array([np.mean(t) for t in per_model_tails])
     noise_scores = np.concatenate(per_model_tails)
 
-    if np.mean(signal_scores) == 0 or np.mean(noise_scores) == 0:
-        return None
-
+    sig = relative_dispersion(signal_scores)
+    noi = relative_spread(noise_scores)
     snr_value = signal_to_noise_ratio(signal_scores, noise_scores)
-    if not np.isfinite(snr_value):
+    if sig == 0 or noi == 0 or not np.isfinite(snr_value):
         return None
 
     return {
-        "signal": (np.max(signal_scores) - np.min(signal_scores)) / np.mean(signal_scores),
-        "noise": np.std(noise_scores) / np.mean(noise_scores),
+        "signal": sig,
+        "noise": noi,
         "snr": snr_value,
         "n_models": len(per_model_tails),
         "n_checkpoints": int(noise_scores.size),

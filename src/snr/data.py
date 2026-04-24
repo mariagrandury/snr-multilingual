@@ -8,7 +8,6 @@ can be ordered chronologically for noise estimation.
 """
 
 import json
-import math
 import re
 from pathlib import Path
 
@@ -133,7 +132,7 @@ def load_wandb_results(
         filters["tags"] = {"$in": tags}
 
     runs = api.runs(entity_project, filters=filters or None)
-    rows = []
+    frames = []
 
     for run in runs:
         model_name = run.name
@@ -144,34 +143,51 @@ def load_wandb_results(
         except Exception as e:
             print(f"    WARNING: failed to fetch history for {model_name}: {e}")
             continue
+        if history is None or history.empty:
+            continue
 
-        for _, hist_row in history.iterrows():
-            raw_step = hist_row.get("OptStep", hist_row.get("OptimizerStep", 0))
-            step = int(raw_step) if isinstance(raw_step, (int, float)) and not math.isnan(raw_step) else 0
+        frame = _history_to_long(history, model_name)
+        if not frame.empty:
+            frames.append(frame)
 
-            for col, value in hist_row.items():
-                if "/" not in col or not isinstance(value, (int, float)):
-                    continue
-                if math.isnan(value) or value < 0:
-                    continue
-                if col.startswith("_") or col.startswith("system."):
-                    continue
-                task, metric = col.rsplit("/", 1)
-                if "stderr" in metric:
-                    continue
-                rows.append({
-                    "model": model_name,
-                    "checkpoint": step,
-                    "task": task,
-                    "metric": metric,
-                    "score": value,
-                })
-
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return df
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
     df = df.drop_duplicates(subset=["model", "checkpoint", "task"], keep="last")
     return df.sort_values(["model", "checkpoint"]).reset_index(drop=True)
+
+
+def _history_to_long(history: pd.DataFrame, model_name: str) -> pd.DataFrame:
+    """Vectorized melt of a wandb run.history frame into long form."""
+    if "OptStep" in history.columns:
+        steps = history["OptStep"]
+    elif "OptimizerStep" in history.columns:
+        steps = history["OptimizerStep"]
+    else:
+        steps = pd.Series(0, index=history.index)
+    steps = pd.to_numeric(steps, errors="coerce").fillna(0).astype(int)
+
+    metric_cols = [
+        c for c in history.columns
+        if "/" in c
+        and not c.startswith(("_", "system."))
+        and "stderr" not in c.rsplit("/", 1)[-1]
+    ]
+    if not metric_cols:
+        return pd.DataFrame()
+
+    sub = history[metric_cols].apply(pd.to_numeric, errors="coerce")
+    sub = sub.assign(checkpoint=steps.values)
+    long = sub.melt(id_vars="checkpoint", var_name="task_metric", value_name="score")
+    long = long.dropna(subset=["score"])
+    long = long[long["score"] >= 0]
+    if long.empty:
+        return long
+    task_metric = long["task_metric"].str.rsplit("/", n=1, expand=True)
+    long["task"] = task_metric[0]
+    long["metric"] = task_metric[1]
+    long["model"] = model_name
+    return long[["model", "checkpoint", "task", "metric", "score"]]
 
 
 def load_wandb_projects(

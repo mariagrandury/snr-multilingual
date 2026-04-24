@@ -77,6 +77,73 @@ def snr_vs_decision_accuracy(
     return fig
 
 
+def snr_vs_da_pair(
+    df: pd.DataFrame,
+    small_size_group: str,
+    target_size_group: str,
+    title: str | None = None,
+) -> plt.Figure | None:
+    """Per-pair scatter: SNR (small group) vs DA (small → target).
+
+    Returns None when the input has fewer than 5 valid points.
+    """
+    da_col = f"da_{target_size_group}"
+    if da_col not in df.columns:
+        return None
+
+    sub = df[df["size_group"] == small_size_group].dropna(subset=["snr", da_col]).copy()
+    sub = sub[(sub["snr"] > 0) & np.isfinite(sub["snr"])]
+    if len(sub) < 5:
+        return None
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    color = SIZE_GROUP_COLORS.get(small_size_group, "gray")
+    ax.scatter(sub["snr"], sub[da_col], s=12, alpha=0.7, color=color, edgecolors="none")
+
+    _add_fit_line(ax, sub["snr"].values, sub[da_col].values)
+
+    ax.set_xscale("log")
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.1f}"))
+    ax.set_xlabel("SNR = Rel. Dispersion / Rel. Std.", fontsize=12)
+    ax.set_ylabel("Decision Accuracy", fontsize=12)
+    ax.set_ylim(-0.05, 1.05)
+    ax.axhline(0.5, color="gray", linestyle=":", alpha=0.3)
+    ax.set_title(title or f"SNR vs DA ({small_size_group} → {target_size_group})", fontsize=12)
+    ax.grid(True, linestyle="--", alpha=0.3, which="both")
+    fig.tight_layout()
+    return fig
+
+
+def snr_distribution(
+    df: pd.DataFrame,
+    title: str = "SNR Distribution",
+) -> plt.Figure | None:
+    """Histogram of SNR per size group (one subplot per group)."""
+    sub = df[np.isfinite(df["snr"]) & (df["snr"] > 0)]
+    sizes = sorted(sub["size_group"].unique())
+    if not sizes:
+        return None
+
+    fig, axes = plt.subplots(1, len(sizes), figsize=(4 * len(sizes), 4), sharey=True)
+    if len(sizes) == 1:
+        axes = [axes]
+
+    for ax, sg in zip(axes, sizes):
+        vals = sub[sub["size_group"] == sg]["snr"]
+        ax.hist(vals, bins=20, color=SIZE_GROUP_COLORS.get(sg, "steelblue"),
+                alpha=0.7, edgecolor="white")
+        ax.axvline(vals.median(), color="red", linestyle="--", alpha=0.7,
+                   label=f"median={vals.median():.2f}")
+        ax.set_xlabel("SNR", fontsize=11)
+        ax.set_title(sg, fontsize=12)
+        ax.legend(fontsize=8)
+
+    axes[0].set_ylabel("Count", fontsize=11)
+    fig.suptitle(title, fontsize=13)
+    fig.tight_layout()
+    return fig
+
+
 def signal_noise_scatter(
     df: pd.DataFrame,
     title: str = "Signal vs Noise",
