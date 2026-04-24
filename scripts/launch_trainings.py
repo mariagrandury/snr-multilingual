@@ -70,9 +70,10 @@ TEST_LR_WARMUP_ITERS = 10
 TEST_LR_WSD_DECAY_ITERS = 20
 TEST_MBS = 1
 
-SCRIPT_DIR = Path(__file__).parent
-SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
-CONFIG_FILE = SCRIPT_DIR / "hyperparams.json"
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+SUBMIT_SCRIPT = REPO_ROOT / "src" / "pretrain" / "submit-apertus-data-mix.sh"
+CONFIG_FILE = REPO_ROOT / "configs" / "hyperparams.json"
 
 
 def build_export_vars(

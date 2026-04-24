@@ -10,12 +10,63 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import pandas as pd
 
-from src.snr.data import load_hf_dataset
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+
+
+def load_hf_dataset(
+    repo_id: str,
+    split: str,
+    *,
+    cache_dir: str | None = None,
+) -> pd.DataFrame:
+    """Load a HF parquet dataset (e.g. allenai/signal-and-noise) into our schema.
+
+    Returned columns: model_id, run_name, task, metric, score, checkpoint_index,
+    model_size, data_mix.
+    """
+    from huggingface_hub import snapshot_download
+
+    local_path = snapshot_download(
+        repo_id=repo_id,
+        repo_type="dataset",
+        local_dir=cache_dir,
+    )
+
+    data_dir = Path(local_path) / "data"
+    parquet_files = sorted(data_dir.glob(f"{split}*.parquet"))
+    if not parquet_files:
+        parquet_files = sorted(Path(local_path).glob(f"*{split}*.parquet"))
+    if not parquet_files:
+        raise FileNotFoundError(
+            f"No parquet files found for split '{split}' in {local_path}"
+        )
+
+    raw = pd.concat(
+        [pd.read_parquet(f, engine="fastparquet") for f in parquet_files],
+        ignore_index=True,
+    )
+
+    raw = raw.dropna(subset=["primary_score"])
+
+    def _col(name, default=None):
+        return raw[name] if name in raw.columns else pd.Series([default] * len(raw))
+
+    size = _col("size").where(_col("size").notna() & (_col("size") != ""), None)
+    return pd.DataFrame({
+        "model_id": _col("model_path").where(_col("model_path").notna(), _col("model")).astype(str),
+        "run_name": _col("model").fillna("").astype(str),
+        "task": raw["task"].astype(str),
+        "metric": "primary_score",
+        "score": raw["primary_score"].astype(float),
+        "checkpoint_index": _col("step", 0).fillna(0).astype(int),
+        "model_size": size,
+        "data_mix": _col("mix").where(_col("mix").notna(), None),
+    })
 
 # DataDecide sizes closest to our custom model sizes (175M/350M/600M/1B)
 MATCHING_SIZES = ["150M", "300M", "750M", "1B"]

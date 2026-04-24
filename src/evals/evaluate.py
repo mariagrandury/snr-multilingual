@@ -6,7 +6,7 @@ from pathlib import Path
 import lm_eval
 from lm_eval.loggers import WandbLogger
 
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+RESULTS_DIR = Path(__file__).resolve().parents[2] / "results"
 WANDB_ENTITY = "mariagrandury-epflnlp"
 WANDB_PROJECT = "snr-experiments"
 
@@ -120,7 +120,7 @@ def run_evaluation(
 
 def run_all(
     models: list[dict],
-    checkpoints_per_model: dict[str, list[str]],
+    checkpoints_per_model: dict[str, list[str] | list[tuple[int, str]]],
     tasks: list[str],
     *,
     device: str = "cpu",
@@ -128,17 +128,27 @@ def run_all(
     limit: int | None = None,
     log_wandb: bool = True,
 ):
-    """Run evaluation for all models and their resolved checkpoints."""
+    """Run evaluation for all models and their resolved checkpoints.
+
+    `checkpoints_per_model` may contain either revision strings (indexed by
+    enumeration order) or `(checkpoint_index, revision)` tuples — the latter
+    lets callers preserve the original checkpoint position when running a
+    subset (e.g. `--checkpoint-index i` for parallel SLURM jobs).
+    """
     for model_entry in models:
         model_id = model_entry["id"]
-        revisions = checkpoints_per_model[model_id]
-        for idx, revision in enumerate(revisions):
+        entries = checkpoints_per_model[model_id]
+        for fallback_idx, entry in enumerate(entries):
+            if isinstance(entry, tuple):
+                checkpoint_index, revision = entry
+            else:
+                checkpoint_index, revision = fallback_idx, entry
             try:
                 run_evaluation(
                     model_id,
                     revision,
                     tasks,
-                    checkpoint_index=idx,
+                    checkpoint_index=checkpoint_index,
                     device=device,
                     batch_size=batch_size,
                     limit=limit,

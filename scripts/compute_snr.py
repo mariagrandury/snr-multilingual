@@ -35,7 +35,6 @@ def parse_args():
 
     parser.add_argument("--output", type=str, default="results/snr/snr.csv")
     parser.add_argument("--tasks", nargs="+", help="Tasks (or stage name from configs/tasks.json)")
-    parser.add_argument("--target-size-group", type=str, help='Target size for DA (e.g., "~8B")')
     parser.add_argument("--last-n", type=int, default=5, help="Final checkpoints for noise")
     parser.add_argument("--min-models", type=int, default=2, help="Min models per size group")
 
@@ -83,7 +82,6 @@ def main():
     results = compute_all_metrics(
         df,
         tasks=resolve_tasks(args.tasks),
-        target_size_group=args.target_size_group,
         last_n_checkpoints=args.last_n,
         min_models=args.min_models,
     )
@@ -102,10 +100,11 @@ def main():
     print(f"  Mean signal: {results['signal'].mean():.4f}")
     print(f"  Mean noise: {results['noise'].mean():.4f}")
 
-    if "decision_accuracy" in results.columns:
-        valid_da = results["decision_accuracy"].dropna()
+    da_cols = [c for c in results.columns if c.startswith("da_")]
+    for da_col in da_cols:
+        valid_da = results[da_col].dropna()
         if not valid_da.empty:
-            print(f"  Mean DA: {valid_da.mean():.2%} ({len(valid_da)} tasks)")
+            print(f"  Mean {da_col}: {valid_da.mean():.2%} ({len(valid_da)} tasks)")
 
     for sg in sorted(results["size_group"].unique()):
         g = results[results["size_group"] == sg]

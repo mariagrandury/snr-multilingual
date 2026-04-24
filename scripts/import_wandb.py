@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.evaluate import RESULTS_DIR, WANDB_ENTITY, WANDB_PROJECT
+from src.evals.evaluate import RESULTS_DIR, WANDB_ENTITY, WANDB_PROJECT
 
 
 def parse_args():

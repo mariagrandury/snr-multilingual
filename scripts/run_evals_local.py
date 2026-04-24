@@ -70,6 +70,7 @@ def main():
             )
 
     # If --checkpoint-index is set, pick only that one checkpoint per model
+    # but preserve the original index so W&B charts plot the right x value.
     if args.checkpoint_index is not None:
         for model_id in checkpoints_per_model:
             ckpts = checkpoints_per_model[model_id]
@@ -77,11 +78,14 @@ def main():
                 raise ValueError(
                     f"--checkpoint-index {args.checkpoint_index} out of range (model {model_id} has {len(ckpts)} checkpoints)"
                 )
-            checkpoints_per_model[model_id] = [ckpts[args.checkpoint_index]]
+            checkpoints_per_model[model_id] = [
+                (args.checkpoint_index, ckpts[args.checkpoint_index])
+            ]
 
     print(f"Tasks: {tasks}")
     for model_id, ckpts in checkpoints_per_model.items():
-        print(f"Model: {model_id} -> checkpoints: {ckpts}")
+        labels = [c[1] if isinstance(c, tuple) else c for c in ckpts]
+        print(f"Model: {model_id} -> checkpoints: {labels}")
 
     run_all(
         models,

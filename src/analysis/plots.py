@@ -4,20 +4,10 @@ Reproduces the visual style from Heineman et al. (2025) "Signal and Noise",
 adapted for our size-grouped multilingual setting.
 """
 
-import sys
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
-
-# Import reference plot utilities
-_SNR_ROOT = str(Path(__file__).resolve().parent.parent / "signal-and-noise")
-if _SNR_ROOT not in sys.path:
-    sys.path.insert(0, _SNR_ROOT)
-
-from snr.plot import draw_pareto_frontier  # noqa: E402
 
 
 SIZE_GROUP_COLORS = {
@@ -32,15 +22,26 @@ SIZE_GROUP_COLORS = {
 
 def snr_vs_decision_accuracy(
     df: pd.DataFrame,
-    title: str = "Signal-to-Noise Ratio",
+    target_size_group: str,
+    title: str | None = None,
 ) -> plt.Figure:
     """Scatter of SNR vs decision accuracy, colored by size group.
 
     Reproduces Figure 2 from the paper: log-scale SNR on x-axis,
     decision accuracy on y-axis, fit line with R² annotation,
     points colored by model size.
+
+    `target_size_group` selects which `da_<size>` column to use
+    (i.e. which target group the small-scale models are trying to predict).
     """
-    plot_df = df.dropna(subset=["snr", "decision_accuracy"]).copy()
+    da_col = f"da_{target_size_group}"
+    if da_col not in df.columns:
+        raise KeyError(f"{da_col!r} not in DataFrame; available: "
+                       f"{[c for c in df.columns if c.startswith('da_')]}")
+    if title is None:
+        title = f"SNR vs DA (target {target_size_group})"
+
+    plot_df = df.dropna(subset=["snr", da_col]).copy()
     plot_df = plot_df[(plot_df["snr"] > 0) & np.isfinite(plot_df["snr"])]
     if plot_df.empty:
         fig, ax = plt.subplots()
@@ -54,13 +55,13 @@ def snr_vs_decision_accuracy(
         mask = plot_df["size_group"] == sg
         color = SIZE_GROUP_COLORS.get(sg, "gray")
         ax.scatter(
-            plot_df.loc[mask, "snr"], plot_df.loc[mask, "decision_accuracy"],
+            plot_df.loc[mask, "snr"], plot_df.loc[mask, da_col],
             s=10, alpha=0.7, color=color, label=sg, edgecolors="none",
         )
 
     # Fit line across all points
     x = plot_df["snr"].values
-    y = plot_df["decision_accuracy"].values
+    y = plot_df[da_col].values
     _add_fit_line(ax, x, y)
 
     ax.set_xscale("log")
@@ -137,9 +138,9 @@ def benchmark_ranking(
 
 
 def correlation_matrix(df: pd.DataFrame) -> plt.Figure:
-    """Correlation heatmap of SNR metrics."""
-    metric_cols = [c for c in ["signal", "noise", "snr", "decision_accuracy"]
-                   if c in df.columns]
+    """Correlation heatmap of SNR metrics (includes every `da_<size>` column)."""
+    da_cols = [c for c in df.columns if c.startswith("da_")]
+    metric_cols = [c for c in ["signal", "noise", "snr"] if c in df.columns] + da_cols
     corr = df[metric_cols].corr()
 
     fig, ax = plt.subplots(figsize=(6, 5))

@@ -142,33 +142,22 @@ def compute_snr_for_task(
     if len(per_model_tails) < 2:
         return None
 
-    # Pad to same length so we get a proper (n_models, last_n) array
-    max_len = max(len(t) for t in per_model_tails)
-    scores_arr = np.array([
-        np.pad(t, (max_len - len(t), 0), mode="edge") for t in per_model_tails
-    ])
+    signal_scores = np.array([np.mean(t) for t in per_model_tails])
+    noise_scores = np.concatenate(per_model_tails)
 
-    signal_scores = np.array([np.mean(row) for row in scores_arr])
-    noise_scores = scores_arr.flatten()
-
-    mean_s = np.mean(signal_scores)
-    mean_n = np.mean(noise_scores)
-    if mean_s == 0 or mean_n == 0:
+    if np.mean(signal_scores) == 0 or np.mean(noise_scores) == 0:
         return None
 
     snr_value = signal_to_noise_ratio(signal_scores, noise_scores)
     if not np.isfinite(snr_value):
         return None
 
-    sig = (np.max(signal_scores) - np.min(signal_scores)) / mean_s
-    noi = np.std(noise_scores) / mean_n
-
     return {
-        "signal": sig,
-        "noise": noi,
+        "signal": (np.max(signal_scores) - np.min(signal_scores)) / np.mean(signal_scores),
+        "noise": np.std(noise_scores) / np.mean(noise_scores),
         "snr": snr_value,
         "n_models": len(per_model_tails),
-        "n_checkpoints": scores_arr.size,
+        "n_checkpoints": int(noise_scores.size),
     }
 
 

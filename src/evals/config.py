@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
+CONFIGS_DIR = Path(__file__).resolve().parents[2] / "configs"
 
 
 def load_tasks(key: str) -> list[str]:

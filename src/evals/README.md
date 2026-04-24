@@ -9,9 +9,9 @@ Evaluates HuggingFace model checkpoints on lm-evaluation-harness tasks. Results 
 ### Local (CPU/testing)
 
 ```bash
-python scripts/run_local.py --tasks test --models test --last 2 --limit 2
-python scripts/run_local.py --tasks pretraining --models pretraining --total 5
-python scripts/run_local.py --tasks test --models test --names --no-wandb
+python scripts/run_evals_local.py --tasks test --models test --last 2 --limit 2
+python scripts/run_evals_local.py --tasks pretraining --models pretraining --total 5
+python scripts/run_evals_local.py --tasks test --models test --names --no-wandb
 ```
 
 ### SLURM
@@ -29,7 +29,7 @@ Launch a quick test (<10s):
 ```bash
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && git pull \
-&& sbatch --time=00:30:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks test --models test --last 2 --limit 2
+&& sbatch --time=00:30:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_evals_slurm.sh --tasks test --models test --last 2 --limit 2
 ```
 
 Review the logs:
@@ -43,7 +43,7 @@ Evaluate multiple checkpoints:
 ```bash
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && git pull \
-&& sbatch --time=02:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10
+&& sbatch --time=02:00:00 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/scripts/run_evals_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10
 ```
 
 Evaluate multiple checkpoints in parallel:
@@ -53,7 +53,7 @@ cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/ \
 && git pull && \
 for i in $(seq 0 9); do
     sbatch --time=02:00:00 --job-name="eval_SmolLM3_${i}" \
-        scripts/run_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10 --checkpoint-index "$i"
+        scripts/run_evals_slurm.sh --tasks pretraining --models SmolLM3-3B --total 10 --checkpoint-index "$i"
 done
 ```
 

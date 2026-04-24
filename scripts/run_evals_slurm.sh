@@ -13,13 +13,13 @@
 #SBATCH --time=04:00:00
 
 # ── Parse our custom args from those forwarded to the Python script ──
-# Usage: sbatch scripts/run_slurm.sh --tasks KEY --models KEY --last N [--limit L] [--time HH:MM:SS]
+# Usage: sbatch scripts/run_evals_slurm.sh --tasks KEY --models KEY --last N [--limit L] [--time HH:MM:SS]
 
 PYTHON_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --time)
-            # Already handled by SBATCH override: sbatch --time=VALUE scripts/run_slurm.sh ...
+            # Already handled by SBATCH override: sbatch --time=VALUE scripts/run_evals_slurm.sh ...
             shift 2
             ;;
         *)
@@ -47,7 +47,7 @@ conda activate snr
 REPO_DIR=/iopsstor/scratch/cscs/mariagrandury/snr-multilingual
 cd "$REPO_DIR"
 
-python scripts/run_local.py \
+python scripts/run_evals_local.py \
     --device cuda \
     --batch-size auto \
     "${PYTHON_ARGS[@]}"
