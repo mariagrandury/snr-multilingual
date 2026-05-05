@@ -1,0 +1,13 @@
+Qwen/Qwen3.5-0.8B
+Qwen/Qwen3.5-2B
+Qwen/Qwen3.5-4B
+Qwen/Qwen3.5-9B
+Qwen/Qwen3-0.6B
+Qwen/Qwen3-1.7B
+Qwen/Qwen3-4B
+Qwen/Qwen3-8B
+HuggingFaceTB/SmolLM2-135M
+HuggingFaceTB/SmolLM2-360M
+HuggingFaceTB/SmolLM2-1.7B
+HuggingFaceTB/SmolLM3-3B
+allenai/OLMo-2-0425-1B
