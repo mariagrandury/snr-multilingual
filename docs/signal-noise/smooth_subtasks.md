@@ -1,0 +1,1 @@
+--8<-- "src/signal-and-noise/results/smooth_subtasks/README.md"

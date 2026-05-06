@@ -44,7 +44,9 @@ nav:
   - Signal & Noise:
       - Overview: signal-noise/index.md
       - SNR Definition: signal-noise/snr-definition.md
-      - AutoBencher: signal-noise/autobencher.md
+      - Benchmark Creation: signal-noise/benchmark_creation.md
+      - AllenAI Comparison: signal-noise/allenai_comparison.md
+      - Smooth Subtasks: signal-noise/smooth_subtasks.md
   - Documents: documents.md
   - Slides: /slides/
 
@@ -75,6 +77,9 @@ markdown_extensions:
 
 plugins:
   - search
+
+hooks:
+  - mkdocs_hooks.py
 
 extra_javascript:
   - https://polyfill.io/v3/polyfill.min.js?features=es6
