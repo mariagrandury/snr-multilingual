@@ -1,8 +1,8 @@
 [build]
-  base = "documents"
-  command = "pnpm run build"
-  publish = "dist"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- slides.md"
+  command = "bash build.sh"
+  publish = "site"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- '*.md'"
 
 [build.environment]
   NODE_VERSION = "20"
+  PYTHON_VERSION = "3.11"

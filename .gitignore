@@ -4,6 +4,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+site/
 *.egg
 .eggs/
 
@@ -13,9 +14,6 @@ venv/
 env/
 .env
 node_modules/
-
-# Results
-results/
 
 # IDE
 .vscode/
@@ -28,4 +26,3 @@ wandb/
 
 # Claude
 .claude/
-CLAUDE.md

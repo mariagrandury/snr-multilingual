@@ -1,0 +1,1 @@
+--8<-- "src/signal-and-noise/snr/autobencher/README.md"

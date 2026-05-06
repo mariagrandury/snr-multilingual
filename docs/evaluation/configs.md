@@ -1,0 +1,1 @@
+--8<-- "src/evals/configs/signal_to_ratio/README.md"
