@@ -1,0 +1,28 @@
+.env
+logs/*.out
+logs/*.err
+wandb
+
+__pycache__
+
+# vim
+**.un~
+**.swp
+
+# PyCharm
+.idea
+
+logs_archive/
+logs*
+core*
+
+lm_eval_reference
+Megatron-LM/
+
+.DS_Store
+
+scripts/cscs_serving_api_key.txt
+scripts/hf_token.txt
+scripts/wandb_api_key.txt
+
+.claude/
