@@ -1,0 +1,109 @@
+[
+  {
+    "family": "arc",
+    "context": "An astronomer observes that a planet rotates faster after a meteorite impact. Which is the most likely effect of this increase in rotation?",
+    "options": [
+      "Planetary density will decrease.",
+      "Planetary years will become longer.",
+      "Planetary days will become shorter.",
+      "Planetary gravity will become stronger."
+    ]
+  },
+  {
+    "family": "belebele",
+    "context": "Make sure your hand is as relaxed as possible while still hitting all the notes correctly - also try not to make much extraneous motion with your fingers. This way, you will tire yourself out as little as possible. Remember there's no need to hit the keys with a lot of force for extra volume like on the piano. On the accordion, to get extra volume, you use the bellows with more pressure or speed. According to the passage, what would not be considered an accurate tip for successfully playing the accordion?",
+    "options": [
+      "For additional volume, increase the force with which you hit the keys",
+      "Keep unnecessary movement to a minimum in order to preserve your stamina",
+      "Be mindful of hitting the notes while maintaining a relaxed hand",
+      "Increase the speed with which you operate the bellows to achieve extra volume"
+    ]
+  },
+  {
+    "family": "global_mmlu",
+    "context": "Find the degree for the given field extension Q(sqrt(2), sqrt(3), sqrt(18)) over Q.",
+    "options": [
+      "0",
+      "4",
+      "2",
+      "6"
+    ]
+  },
+  {
+    "family": "global_mmlu_full",
+    "context": "Find the degree for the given field extension Q(sqrt(2), sqrt(3), sqrt(18)) over Q.",
+    "options": [
+      "0",
+      "4",
+      "2",
+      "6"
+    ]
+  },
+  {
+    "family": "global_piqa_completions",
+    "context": "To serve condiments at a BBQ,",
+    "options": [
+      "use a waffle iron for the various condiments.",
+      "use a muffin tin for the various condiments."
+    ]
+  },
+  {
+    "family": "hellaswag",
+    "context": "A man is sitting on a roof. he",
+    "options": [
+      "is using wrap to wrap a pair of skis.",
+      "is ripping level tiles off.",
+      "is holding a rubik's cube.",
+      "starts pulling up roofing on a roof."
+    ]
+  },
+  {
+    "family": "multiblimp",
+    "context": "Yes, lovely creature,",
+    "options": [
+      "Yes, lovely creature, is n't she?",
+      "Yes, lovely creature, am n't she?"
+    ]
+  },
+  {
+    "family": "paws",
+    "context": "The exception was between late 2005 and 2009 when he played in Sweden with Carlstad United BK , Serbia with FK Borac Čačak and Russian FC Terek Grozny . The exception was between late 2005 and 2009 , when he played in Sweden with Carlstad United BK , Serbia with FK Borac Čačak and the Russian FC Terek Grozny .",
+    "options": [
+      "No",
+      "Yes"
+    ]
+  },
+  {
+    "family": "xcopa",
+    "context": "L'oggetto era incartato nella plastica bollata.",
+    "options": [
+      "Era delicato.",
+      "Era piccolo."
+    ]
+  },
+  {
+    "family": "xnli",
+    "context": "Well, I wasn't even thinking about that, but I was so frustrated, and, I ended up talking to him again. I havent spoken to him again.",
+    "options": [
+      "entailment",
+      "neutral",
+      "contradiction"
+    ]
+  },
+  {
+    "family": "xstorycloze",
+    "context": "I became a Law and Order fan in 2011. I was recovering from a stroke. When I got home I tried to watch every episode. It was hard trying to binge watch 20 Year's of a show.",
+    "options": [
+      "I think Law and Order is one of the worst shows ever made.",
+      "Eventually I watched them all."
+    ]
+  },
+  {
+    "family": "xwinograd",
+    "context": "The city councilmen refused the demonstrators a permit because _ feared violence.",
+    "options": [
+      "the demonstrators",
+      "The city councilmen"
+    ]
+  }
+]

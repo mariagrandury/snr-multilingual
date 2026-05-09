@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk -F',' 'NR>1 {print $4}' /Users/mariagrandury/Projects/epfl/signal-and-noise/results/smooth_subtasks/per_sample/summary_all.csv)",
+      "Bash(python results/allenai_comparison/build_allenai_variants.py)",
+      "Bash(python results/allenai_comparison/analyze.py)",
+      "Bash(python multilingual/snr_definition_postprocess.py)",
+      "Bash(python multilingual/run_apertus_snr_variants.py)",
+      "Bash(python multilingual/analyze_snr_variants.py)",
+      "Bash(python results/acc_vs_flops/analyze_above_random.py)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c \"import datasets; print\\(datasets.__version__\\)\")"
+    ]
+  }
+}
