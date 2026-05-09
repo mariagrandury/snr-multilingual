@@ -144,6 +144,16 @@ fi
 # (CLAUDE.md eval bug 5).
 export HF_HOME=${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}
 export HF_HUB_CACHE=${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}
+# Datasets-only offline mode. The 2026-05-09 SNR launch cascaded ~140 jobs to
+# FAILED inside `datasets.load_dataset()` because the burst made `datasets`
+# probe the hub for the latest revision of m_truthfulqa / m_hellaswag /
+# multiblimp ⇒ 429 ⇒ "FileNotFoundError: hf://datasets/.../val.jsonl". The
+# datasets are pre-staged at HF_HOME/datasets/<repo>/<lang>/0.0.0/<rev>/, so
+# skipping the hub probe here is the right thing. We deliberately do NOT set
+# HF_HUB_OFFLINE — that broke `AutoTokenizer.from_pretrained("alehc/swissai-
+# tokenizer")` because transformers' cache layout doesn't satisfy strict
+# offline lookups.
+export HF_DATASETS_OFFLINE=${HF_DATASETS_OFFLINE:-1}
 GPUS_PER_NODE=4
 
 # Print configuration.
@@ -386,7 +396,7 @@ REPO_DIR="$PWD"
 # container, so re-export the ones _run_per_task.sh needs by host-side
 # interpolation into the bash -lc heredoc. Single-quote the values so
 # arbitrary characters in TASKS/CMD_BASE survive intact.
-INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' BATCH_TASKS='${BATCH_TASKS:-0}' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE'"
+INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' BATCH_TASKS='${BATCH_TASKS:-0}' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE'"
 
 if [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
   srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml bash -lc "

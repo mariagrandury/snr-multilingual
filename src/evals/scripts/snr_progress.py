@@ -114,10 +114,32 @@ def list_hf_branches(repo_url: str, total: int | None, last: int | None,
     return [b for b in out.splitlines() if b.strip()]
 
 
+def parse_seed_iters(specs: list[str] | None) -> dict[str, set[int]]:
+    """Parse repeated --seed-iters flags like 'seed28=6000,28000,42000'.
+
+    Returns a {seed_str: {iter_int}} mapping. Cells whose seed is in the map
+    are restricted to the listed iters; other seeds keep the canonical set.
+    """
+    out: dict[str, set[int]] = {}
+    for spec in specs or []:
+        if "=" not in spec:
+            raise SystemExit(f"--seed-iters expects seed=N,N,N (got '{spec}')")
+        seed, csv = spec.split("=", 1)
+        out[seed.strip()] = {int(x) for x in csv.split(",") if x.strip()}
+    return out
+
+
+def cell_seed(model_name: str) -> str | None:
+    """Extract seed token from a name like apertus-...-seed1904."""
+    m = re.search(r"-seed(\d+)$", model_name)
+    return f"seed{m.group(1)}" if m else None
+
+
 def enumerate_targets_from_models_file(
     models_file: Path,
     dense_tail: int | None = 5,
     tail_pct: int | None = 10,
+    seed_iters: dict[str, set[int]] | None = None,
 ) -> list[Target]:
     """Return one Target per (model, ckpt) selected per the size-based rule.
 
@@ -169,6 +191,10 @@ def enumerate_targets_from_models_file(
     for kind, spec, base in entries:
         if kind == "meg_small":
             iters = canonical_iters or small_meg_iters.get(base, [])
+            # Restrict iters for cells whose seed has an explicit policy.
+            seed = cell_seed(base)
+            if seed_iters and seed in seed_iters:
+                iters = [it for it in iters if it in seed_iters[seed]]
             for it in iters:
                 targets.append(
                     Target(model_name=base, ckpt_id=f"iter{it}", name=f"{base}-iter{it}")
@@ -296,7 +322,22 @@ def main() -> None:
         action="store_true",
         help="Show per-task status for each ckpt (verbose).",
     )
+    p.add_argument(
+        "--seed-iters",
+        action="append",
+        default=None,
+        help=(
+            "Restrict iters for a specific seed. Format: seed28=6000,28000,42000 "
+            "(repeatable). Cells whose seed is listed only emit the listed iters; "
+            "other seeds keep the canonical 13-iter set."
+        ),
+    )
     args = p.parse_args()
+    seed_iters = parse_seed_iters(args.seed_iters)
+    # Always written next to this script. Launchers read it directly so they
+    # don't re-enumerate the matrix per cell. Schema:
+    #   name,status,done,total,remaining,active_jobids
+    csv_path = REPO / "snr_progress.csv"
 
     if args.models is None:
         args.models = sorted(
@@ -306,7 +347,9 @@ def main() -> None:
     # Enumerate targets
     targets: list[Target] = []
     for mf in args.models:
-        targets.extend(enumerate_targets_from_models_file(Path(mf)))
+        targets.extend(
+            enumerate_targets_from_models_file(Path(mf), seed_iters=seed_iters)
+        )
 
     if args.filter:
         targets = [t for t in targets if args.filter in t.name]
@@ -336,6 +379,22 @@ def main() -> None:
         if done > 0:
             return "in_progress"  # has partial results, no active job — partial leftover
         return "not_submitted"
+
+    # Always-on CSV snapshot: schema name,status,done,total,remaining,active_jobids.
+    # The launchers (launch_pretraining_{hf,megatron}.sh) read this directly to size
+    # jobs and decide what to submit, without re-enumerating per cell. Written
+    # BEFORE --status / --filter narrows `targets`, so the on-disk file always
+    # describes the FULL matrix that the snapshot was taken over.
+    import csv as _csv
+    all_tasks_set = set(all_tasks)
+    with csv_path.open("w", newline="") as fh:
+        w = _csv.writer(fh)
+        w.writerow(["name", "status", "done", "total", "remaining", "active_jobids"])
+        for t in sorted(targets, key=lambda x: x.name):
+            done = len(t.completed & all_tasks_set)
+            remaining = ",".join(task for task in all_tasks if task not in t.completed)
+            jobids = ",".join(j[0] for j in t.pending_jobs)
+            w.writerow([t.name, status_for(t), done, total_tasks, remaining, jobids])
 
     if args.status != "all":
         targets = [t for t in targets if status_for(t) == args.status]

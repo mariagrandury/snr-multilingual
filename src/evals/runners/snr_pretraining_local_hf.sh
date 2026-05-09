@@ -1,4 +1,9 @@
 #!/bin/bash
+# DEPRECATED 2026-05-09 — superseded by scripts/launch_pretraining_hf.sh,
+# which adds per-size TP/PP (this runner uses the buggy default TP=4 that
+# kills 350M/600M/1B at vLLM init — bug 14), pre-filters TASKS per cell
+# from snr_progress.csv, and sizes walltime per cell. Kept here for
+# reference; do NOT use for new launches.
 # SNR pretraining runner — vLLM eval against locally-staged HF checkpoints
 # (the converted-from-Megatron snapshots under
 #  /iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/).

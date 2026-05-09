@@ -1,4 +1,9 @@
 #!/bin/bash
+# DEPRECATED 2026-05-09 — superseded by scripts/launch_pretraining_hf.sh,
+# which generalises this script's per-size TP/PP + idempotent inline-sbatch
+# pattern across the full canonical (cell, iter) matrix and reads
+# snr_progress.csv for completion + active-job state. Kept here for
+# reference; do NOT use for new launches.
 # Launch a focused eval subset on `normal` (350M/600M/1B) and `debug` (175M).
 #
 # Scope:
