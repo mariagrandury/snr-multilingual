@@ -1,0 +1,2 @@
+/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap0.6b-from8b-TOP256-long/checkpoints/
+/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap1b-from8b-TOP256-long/checkpoints/

@@ -1,0 +1,4 @@
+/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/full-128k-apertus
+/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/pilot-128k-apertus
+/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/small-128k-apertus
+/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/tiny-128k-apertus

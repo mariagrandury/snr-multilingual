@@ -1,0 +1,11 @@
+TriviaQA
+SQuAD
+ARC_Easy
+Jeopardy
+AutoBencher
+HellaSwag
+MMLU
+ARC_Challenge
+SocialIQA
+PIQA
+AGI_Eval

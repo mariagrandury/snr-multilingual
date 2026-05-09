@@ -1,0 +1,41 @@
+truthfulqa-multi_mc1_en
+truthfulqa-multi_mc1_es
+truthfulqa-multi_mc1_eu
+
+
+=== datasets in cache that contain a *.py loader script ===
+    mlqa.py 
+    cmmlu.py 
+    aexams.py 
+
+
+mlqa_ar_ar
+mlqa_en_en
+mlqa_es_es
+mlqa_hi_hi
+mlqa_vi_vi
+mlqa_zh_zh
+paws_en
+paws_es
+paws_eu
+paws_ja
+paws_zh
+xcopa_eu
+xcopa_sw
+xcopa_th
+xcopa_tr
+xcopa_vi
+xcopa_zh
+xwinograd_en
+xwinograd_jp
+xwinograd_ru
+xwinograd_zh
+aexams
+cmmlu
+ceval-valid
+arabic_leaderboard_complete
+belebele_tel_Telu
+xstorycloze_te
+
+
+

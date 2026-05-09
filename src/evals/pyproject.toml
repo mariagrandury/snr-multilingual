@@ -1,0 +1,10 @@
+[project]
+name = "swissai-evals"
+version = "0.1.0"
+description = "Swissai evaluation scripts"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.3.0",
+    "wandb>=0.20.1",
+]

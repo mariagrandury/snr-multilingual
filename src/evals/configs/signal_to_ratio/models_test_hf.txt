@@ -1,0 +1,1 @@
+https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints
