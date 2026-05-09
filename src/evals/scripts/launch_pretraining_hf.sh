@@ -20,9 +20,16 @@
 #   600M  TP=2 PP=2   (kv=6 → TP=2 max; PP=2 uses remaining 2 GPUs)
 #   1B    TP=1 PP=4   (kv=7 → only TP=1; PP=4 fills the node)
 #
-# Walltime sizing (conservative, per user spec 2026-05-09):
-#   wall = COLD_START + remaining_tasks * per_task_min, capped at 11:59:00
-#   COLD_START = 25 min; per_task_min: 175M=2, 350M=4, 600M=6, 1B=8.
+# Walltime sizing (re-fit on 2026-05-09 from 4 size-test jobs after fixing
+# the cache/offline cascade — see notes in evaluate.sbatch). With BATCH_TASKS=1
+# + HF_DATASETS_OFFLINE=1 + populated cache, ALL sizes finished 67 tasks in
+# ~23-25 min. Cold start (pip install + vLLM init + dataset load) dominates;
+# per-task generation is fast and roughly size-independent because vLLM batches
+# efficiently. Old estimates (cold=25, per_task=2-8 min/size) over-allocated by
+# 2-9x and hurt queue priority. New shape:
+#   wall = max(MIN_WALL, COLD_START + remaining_tasks * per_task_min) capped at 11:59:00
+#   COLD_START = 15 min; per_task_min = 0.5 (single value, all sizes); MIN_WALL = 20 min.
+# So 67 tasks → 15 + 33.5 ≈ 49 min walltime (2x observed), 5 tasks → 20 min floor.
 #
 # Canonical seed → iter policy (encoded in the snr_progress.csv refresh):
 #   seeds 1904, 1797 → all 13 canonical iters (2k, 6k, 12k, 18k, 22k, 28k,
@@ -72,18 +79,21 @@ if (( REFRESH )); then
 fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }
 
-# Per-size config.
+# Per-size config. TP/PP picked per CLAUDE.md bug 14 (vLLM kv_heads constraint).
 tp_for()        { case "$1" in 175M) echo 4;; 350M) echo 1;; 600M) echo 2;; 1B) echo 1;; esac; }
 pp_for()        { case "$1" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; esac; }
-per_task_min()  { case "$1" in 175M) echo 2;; 350M) echo 4;; 600M) echo 6;; 1B) echo 8;; esac; }
-COLD_START_MIN=25
-CAP_MIN=719   # 11:59:00 — normal-partition wall cap
+COLD_START_MIN=15   # pip install + vLLM init + dataset load (offline cache hit)
+PER_TASK_MIN=0.5    # batch-mode generation; ~size-independent
+MIN_WALL_MIN=25     # floor — even 1-task jobs need vLLM init time
+CAP_MIN=719         # 11:59:00 — normal-partition wall cap
 
 walltime_for() {
-    local size=$1 remaining=$2
-    local pt; pt=$(per_task_min "$size")
-    local m=$(( COLD_START_MIN + remaining * pt ))
-    (( m > CAP_MIN )) && m=$CAP_MIN
+    local remaining=$1
+    # Use awk for floating-point math (PER_TASK_MIN is fractional).
+    local m=$(awk -v c=$COLD_START_MIN -v p=$PER_TASK_MIN -v n=$remaining \
+                  'BEGIN { printf "%d\n", c + n * p + 0.999 }')
+    (( m < MIN_WALL_MIN )) && m=$MIN_WALL_MIN
+    (( m > CAP_MIN ))      && m=$CAP_MIN
     printf "%02d:%02d:00" $(( m / 60 )) $(( m % 60 ))
 }
 
@@ -145,7 +155,7 @@ while IFS=$'\t' read -r name status done total remaining active_jobids; do
     n_remaining=$(awk -F, '{print NF}' <<<"$remaining")
     tp=$(tp_for "$size")
     pp=$(pp_for "$size")
-    wall=$(walltime_for "$size" "$n_remaining")
+    wall=$(walltime_for "$n_remaining")
 
     if (( DRY_RUN )); then
         echo "  would submit: $name  TP=$tp PP=$pp  --time=$wall  remaining=$n_remaining"
