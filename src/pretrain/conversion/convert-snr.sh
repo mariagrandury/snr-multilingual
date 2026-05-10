@@ -221,7 +221,8 @@ valid_iters_for_cell() {
     echo "${out[*]}"
 }
 
-partition_for_size() { case "$1" in 175M) echo debug ;; *) echo normal ;; esac; }
+# To launch in debug mode, update time to 01:30:00
+partition_for_size() { case "$1" in 175M) echo normal ;; *) echo normal ;; esac; }
 # Per-iter wall is ~35-40s across ALL sizes (sacct on 12 jobs with done>=5,
 # 2026-04..05): 175M=35s, 350M=36s, 600M=38s, 1B=38s. The cost is dominated
 # by torch_dist->torch shard load + safetensors write, NOT by GPU compute,
