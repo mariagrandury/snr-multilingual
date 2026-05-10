@@ -56,6 +56,19 @@ cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain && \
 
 ---
 
+## Hard rules
+
+- **Never delete checkpoints, eval results, or force-push.** The previous
+  `launch_resumes.sh` had a `wipe_checkpoints()` step for `[corrupt]` models
+  that ran `rm -rf checkpoints/`. That path is gone (removed 2026-05-09).
+  When the disk state for a model is unrecoverable (iter dirs exist but none
+  is a valid `.metadata + .distcp` checkpoint), the launcher now **skips the
+  model with a warning** so the user can inspect and decide manually. The
+  cost of a corrupt dir sitting on disk is near-zero compared to losing
+  recoverable training time.
+
+---
+
 ## Hard-won failure modes
 
 ### 1. Megatron `_extra_state` strictness on resumes
@@ -79,10 +92,19 @@ may already point at it. Symptom on the next resume:
 FileNotFoundError: ... /checkpoints/iter_NNNNNNN/__35_0.distcp
 ```
 
-`pretrain_progress.py` flags this as `[corrupt]`; `launch_resumes.sh`
-handles it by wiping `checkpoints/` and submitting a fresh from-scratch
-run. We hit this on `175M-fwEdu60-fw240-seed28` on 2026-05-04 (every iter
-dir from 0002000–0014000 was empty or shell, no recovery possible).
+`pretrain_progress.py` flags any iter that fails the `.metadata + .distcp`
+check as not valid. The launcher behaves differently depending on whether
+*any* valid iter remains:
+
+- **Some valid iter remains** (most cases): the launcher resumes from the
+  latest valid iter — by rewinding `latest_checkpointed_iteration.txt`
+  before sbatch if needed — leaving the corrupt iter dirs in place. They
+  get overwritten when training next traverses that step, or are otherwise
+  harmless.
+- **No valid iter at all** (e.g. `175M-fwEdu60-fw240-seed28` on 2026-05-04,
+  iter dirs `0002000`–`0014000` all shell): the launcher **skips with a
+  warning** and waits for manual cleanup. We do not auto-`rm -rf` the
+  checkpoints/ tree.
 
 ### 3. Slurm reports `COMPLETED` even when the inner step crashed
 The wrapper `submit-apertus-data-mix.sh` exits cleanly after `srun` returns,

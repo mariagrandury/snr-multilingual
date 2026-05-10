@@ -201,6 +201,7 @@ def run_filtered(
     partition: Optional[str] = None,
     account: Optional[str] = None,
     dependency: Optional[str] = None,
+    training_steps: Optional[int] = None,
 ) -> None:
     sizes = (
         {size_filter: data["configs"][size_filter]} if size_filter else data["configs"]
@@ -223,7 +224,8 @@ def run_filtered(
                 submit(
                     job_name=f"apertus-{model_size.lower()}-edu{fw_edu}-fw2{fw2}-seed{seed}",
                     export_vars=build_export_vars(
-                        model_size, cfg, fw_edu=fw_edu, fw2=fw2, seed=seed
+                        model_size, cfg, fw_edu=fw_edu, fw2=fw2, seed=seed,
+                        training_steps=training_steps,
                     ),
                     dry_run=dry_run,
                     nodes=cfg.get("nodes"),
@@ -292,6 +294,14 @@ if __name__ == "__main__":
         help="Pass-through to sbatch --dependency (e.g. 'singleton' to ensure "
              "only one job with the same name runs at a time).",
     )
+    parser.add_argument(
+        "--training-steps",
+        metavar="N",
+        type=int,
+        help="Override TRAINING_STEPS (default: 50000 from the submit script). "
+             "Used by launch_resumes.sh to cap training at a specific "
+             "canonical iter when filling a mid-training gap.",
+    )
     args = parser.parse_args()
 
     if not SUBMIT_SCRIPT.exists():
@@ -338,4 +348,5 @@ if __name__ == "__main__":
             partition=args.partition,
             account=args.account,
             dependency=args.dependency,
+            training_steps=args.training_steps,
         )

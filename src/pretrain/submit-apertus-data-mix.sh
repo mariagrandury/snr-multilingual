@@ -170,6 +170,11 @@ CHECKPOINTING_ARGS=(
 	# resuming older checkpoints saved with a different TE version.
 	# Real model weights still load; only TE bookkeeping is skipped.
 	--dist-ckpt-strictness log_unexpected
+	# Preserve the saved 50000-iter LR/WSD schedule across resumes even when
+	# --train-iters is reduced (mid-gap backfill via launch_resumes.sh).
+	# Bypasses the OptimizerParamScheduler train_samples assertion. Safe for
+	# fresh starts (no checkpoint to load) and end-gap resumes (CLI matches).
+	--use-checkpoint-opt_param-scheduler
 )
 
 MIXED_PRECISION_ARGS=(
