@@ -1,4 +1,8 @@
 #!/bin/bash
+# DEPRECATED 2026-05-09 — superseded by scripts/launch_pretraining_megatron.sh,
+# which folds this script's walltime-sized rescue pattern into the canonical
+# (cell, iter) matrix and reads snr_progress.csv for completion + active-job
+# state. Kept here for reference; do NOT use for new launches.
 # Submit one sbatch per ckpt that needs work — both [in_progress] (partial
 # results, no active job) and [not_submitted] (no results, no job) entries
 # from snr_progress.py. Already-running ckpts are skipped (they have a

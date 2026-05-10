@@ -1,4 +1,8 @@
 #!/bin/bash
+# DEPRECATED 2026-05-09 — superseded by scripts/launch_pretraining_hf.sh
+# (vLLM) and scripts/launch_pretraining_megatron.sh. The new launchers
+# read snr_progress.csv (auto-refreshed) and are per-cell remaining-task
+# aware. Kept here for reference; do NOT use for new launches.
 # SNR stage runner - GENERATED from /tmp/snr_models_1B.txt (selection: --total 10)
 # Regenerate: bash scripts/generate_snr_runner.sh --models /tmp/snr_models_1B.txt --total 10 > $0
 

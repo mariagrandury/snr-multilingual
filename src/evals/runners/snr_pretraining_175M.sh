@@ -1,4 +1,8 @@
 #!/bin/bash
+# DEPRECATED 2026-05-09 — superseded by scripts/launch_pretraining_hf.sh
+# (vLLM) and scripts/launch_pretraining_megatron.sh. The new launchers
+# read snr_progress.csv (auto-refreshed) and are per-cell remaining-task
+# aware. Kept here for reference; do NOT use for new launches.
 # SNR stage runner - 175M, canonical 10 iters (matches the 175M section of
 # snr_pretraining_all.sh — NOT what generate_snr_runner.sh produces, since
 # the 175M models stopped at ~48000-49000 and the generator's "evenly spaced
