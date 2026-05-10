@@ -36,6 +36,15 @@ ceval-valid
 arabic_leaderboard_complete
 belebele_tel_Telu
 xstorycloze_te
+include_base_44_telugu
 
 
-
+include_base_44_arabic
+include_base_44_basque
+include_base_44_chinese
+include_base_44_hindi
+include_base_44_japanese
+include_base_44_russian
+include_base_44_spanish
+include_base_44_turkish
+include_base_44_vietnamese
