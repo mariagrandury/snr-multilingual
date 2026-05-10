@@ -30,22 +30,22 @@ size lowercased and dashed, e.g. `apertus-175m-edu60-fw240-seed28`.
 
 ---
 
-## The three scripts and how they fit
+## The four scripts and how they fit
 
 | File | Role |
 |---|---|
-| [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh) | The sbatch template. Reads env vars (MODEL_SIZE, NUM_LAYERS, …, FW_EDU_RATIO, FW2_RATIO, SEED, TRAINING_STEPS, LR, MBS) injected by the launcher. `--save` and `--load` both point at the experiment's checkpoint dir, so the same script handles fresh and resume runs. |
-| [`launch_trainings.py`](launch_trainings.py) | Wraps `sbatch --export=…` from [`hyperparams_deep.json`](hyperparams_deep.json). One sbatch per (size, mix, seed). Default `SEEDS = [28, 1797, 1904]`. Supports `--size`, `--mix_en`, `--seed` filters, `--dry-run`, `--test`, and pass-throughs (`--time`, `--account`, `--dependency`). |
-| [`launch_resumes.sh`](launch_resumes.sh) | **The right entry point for "make all 36 cells reach 50000"**. Iterates the canonical cross-product, parses the progress dashboard, and per cell dispatches: `[done]` → skip · already in `squeue` → skip · `[in_progress]` → resume (auto-time) · `[corrupt]` → `rm -rf checkpoints/` then submit fresh · `[no_ckpts]`/no dir → submit fresh. Re-runnable. |
+| [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh) | The sbatch template. Reads env vars (MODEL_SIZE, NUM_LAYERS, …, FW_EDU_RATIO, FW2_RATIO, SEED, TRAINING_STEPS, LR, MBS) injected by the launcher. `--save` and `--load` both point at the experiment's checkpoint dir, so the same script handles fresh and resume runs. Pinned to `--use-checkpoint-opt_param-scheduler` (see failure mode #6). |
+| [`launch_trainings.py`](launch_trainings.py) | Wraps `sbatch --export=…` from [`hyperparams_deep.json`](hyperparams_deep.json). One sbatch per (size, mix, seed). Default `SEEDS = [28, 1797, 1904]`. Supports `--size`, `--mix_en`, `--seed` filters, `--dry-run`, `--test`, `--training-steps N` (cap an early exit), and pass-throughs (`--time`, `--account`, `--dependency`). |
+| [`pretrain_progress.py`](pretrain_progress.py) | Status. Three modes: text dashboard (default); `--plot PATH` writes `PATH` (canonical-stage 3-panel heatmap with HF/Hub stages, queries the Hub) plus a companion `PATH_all` (every 2000-step iter, megatron-presence only); `--actions` emits one machine-readable line per cell — `done` / `fresh\t<target>` / `corrupt\t<n_iters>` / `resume\t<load_iter>\t<target>` — consumed by `launch_resumes.sh`. |
+| [`launch_resumes.sh`](launch_resumes.sh) | **The right entry point for "fill every canonical iter ≤ target"**. Reads `pretrain_progress.py --actions`, dispatches per cell: `done` → skip · in `squeue` → skip · `fresh` → submit a from-scratch run · `resume <load_iter> <target>` → if `<load_iter>` is below the current `latest_checkpointed_iteration.txt` marker (mid-gap backfill), rewind the marker first, then submit with `--training-steps <target>` · `corrupt` → **skip with a warning** (we never auto-rm). Re-runnable. |
 
-Live state is read from
-`/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/pretrain_progress.py`
-(this is the same script the eval repo uses; it lives over there because
-both sides depend on it). It validates each `iter_NNNNNNN/` has both
-`.metadata` and ≥ 1 `.distcp` shard before counting it as resumable, and
-emits `[corrupt] (latest valid: …)` when the marker file points at a dir
-that's missing shards — so `launch_resumes.sh` knows to wipe instead of
-submit a doomed resume.
+`pretrain_progress.py` validates each `iter_NNNNNNN/` has both `.metadata`
+and ≥ 1 `.distcp` shard before counting it as valid. Mid-gap canonicals
+(missing iter X with X+ canonicals present) are filled one-at-a-time — the
+launcher targets the *earliest* missing canonical per cell per call, and
+re-running picks up the next gap once the previous job finishes (jobs on
+the same cell would race the checkpoint dir, so chaining is left to the
+operator).
 
 The standard one-liner to drive everything to 50000:
 
@@ -133,13 +133,65 @@ canonical seed `1904` had to be passed explicitly with `--seed 1904`, and
 `64` was never actually run. The default is now the canonical
 `[28, 1797, 1904]`. If you see seed `64` referenced anywhere, it's stale.
 
+### 6. `OptimizerParamScheduler` train_iters mismatch on mid-gap fills
+Megatron's `OptimizerParamScheduler.load_state_dict` runs an exact-match
+assertion on the schedule total (`train_iters × GBS` = `train_samples`)
+between the CLI args and the checkpoint. For the canonical sweep the saved
+value is **25_200_000** samples (50000 iters × 504 GBS). When `launch_resumes.sh`
+fills a mid-gap (e.g. canonical 22000 missing → submit with `--train-iters
+22000`), the CLI value becomes 11_088_000 samples and the load aborts with:
+
+```
+AssertionError: OptimizerParamScheduler: class input value 11088000 and
+checkpointvalue 25200000 for total number of iterations do not match
+```
+
+Fix (pinned in [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh)
+on 2026-05-10): add `--use-checkpoint-opt_param-scheduler`. Megatron then
+keeps the schedule values **from the saved checkpoint** (peak LR 9.79e-4 for
+175M, the original 50000-iter WSD curve, etc.) and the assertion is
+bypassed. The training loop still exits at `--train-iters`, so the
+mid-gap window stays in the saved schedule's correct phase (peak constant
+through canonical 22000 since WSD decay only starts at 40000) and the LR
+that lands on the recovered canonical is identical to the original
+trajectory's LR at that step.
+
+**Don't reach for `--override-opt_param-scheduler` instead** — that would
+recompute the scheduler from CLI args (warmup/decay-iters relative to the
+new `train_iters`) and put the model deep in WSD decay at iter 22000,
+which is exactly what we do *not* want.
+
+Verified end-to-end on 2026-05-10 against three canonicals (175M-edu90-seed28
+→ 22000, 600M-edu30-seed1797 → 34000, 175M-edu60-seed1797 → 18000): LR /
+loss / sample-count / token-count all continuous across the resume
+boundary, no spike on the recovered canonical.
+
+---
+
+## Per-size cluster cost
+
+Sampled from 1.26M iter lines across all training logs (2026-05-10):
+
+| size | nodes | MBS | median ms/iter | hours to 50000 (steady) |
+|---|---|---|---|---|
+| 175M | 6 | 7 | **800** | ~11.1 h |
+| 350M | 14 | 3 | **565** | ~7.8 h |
+| 600M | 21 | 6 | **520** | ~7.2 h |
+| 1B | 21 | 6 | **715** | ~9.9 h |
+
+These match the `ITER_MS` table in `launch_resumes.sh` and feed `auto_time()`,
+which adds a 2h30m margin for SIGUSR2 grace + cold-start + buffer. p20–p80
+spread is ~2 ms for 600M/1B; for 175M and 350M, p80 is inflated by save-iter
+overhead (less amortized at smaller node counts) — true per-iter is right
+at the median.
+
 ---
 
 ## Live state (read, don't trust this file's snapshots)
 
 ```bash
 # Per-model progress + corrupt detection
-python3.11 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/pretrain_progress.py --target 50000
+python3.11 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/pretrain_progress.py --target 50000
 
 # Drive the gap to zero (idempotent)
 cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain && \
