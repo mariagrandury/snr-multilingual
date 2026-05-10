@@ -55,6 +55,13 @@ amortized than the larger sizes); the medians above already reflect this.
 - [`find_hyperparams_deep.py`](find_hyperparams_deep.py) — one-shot generator for `hyperparams_deep.json`.
 - `hyperparams.json` / `find_hyperparams.py` / `calculate_params_lr_bs.py` / `fetch_hf_model_hyperparams.py` / `hf_models.txt` / `hf_model_hyperparams.csv` — exploratory artifacts kept for reference.
 
+### Conversion + Hub push (under [`conversion/`](conversion/))
+
+- [`conversion/convert-snr.sh`](conversion/convert-snr.sh) — Megatron `torch_dist` → `torch` → HuggingFace conversion for the sweep. Three modes: per-iter, sbatch wrapper (loops a plan file inside the container), launcher (walks the 36 cells, writes per-size plans, optionally `--submit`s). Walltime auto-set per size to **02:00:00** (full 117-iter sweep is ~78 min wall + overhead; per-iter cost is ~35-40s and uniform across sizes since the bottleneck is shard I/O, not GPU compute).
+- [`conversion/push-snr.py`](conversion/push-snr.py) — push converted iter dirs to the per-seed `snr-models-<seed>` HF orgs as `stage1-step-<NNNNN>` branches; mirrors the latest iter to `main`. 429-aware backoff. Run from the login node (only needs `HF_TOKEN`).
+
+> `convert-snr.sh` still depends on Megatron internals (`torchdist_2_torch.py`, `tools/checkpoint/{convert,loader_core,saver_swissai_hf}.py`) — those can't move because they `import megatron.core` and `pretrain_gpt`. The script reaches them via `$MEGATRON_LM_DIR` (default `/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM`).
+
 ### Misc
 - `create_data_mixture.py` — one-shot data-mixture builder (the data is already built and frozen at `/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/mix_100B_<edu>_<fw2>`).
 - `merge_wandb_experiment.py` — post-hoc W&B run merging across resumes.
