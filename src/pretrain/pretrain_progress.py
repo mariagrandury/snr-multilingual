@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""Pretraining progress dashboard.
+"""Pretraining progress: per-cell machine-readable actions + plots.
 
-Scans the Megatron checkpoints tree and prints, for each model, the latest
-iteration saved, the number of iter_* dirs on disk, and a progress bar
-toward --target (default 50000). The companion to scripts/snr_progress.py
-(which tracks evaluation progress).
+Default: prints one tab-separated action line per canonical cell, targeting
+every 2000-step iter (so "done" means every `iter_NNNNNNN` from 2000..50000
+is valid on disk). Output format:
+
+    <model>\tdone
+    <model>\tfresh\t<target>
+    <model>\tcorrupt\t<n_iters>
+    <model>\tresume\t<load_iter>\t<target>
+
+Consumed by `launch_resumes.sh`.
 
 Examples:
     python3.11 pretrain_progress.py
-    python3.11 pretrain_progress.py --filter seed1904
-    python3.11 pretrain_progress.py --all                # include non-canonical exp dirs
+    python3.11 pretrain_progress.py --filter seed1797
     python3.11 pretrain_progress.py --target 50000
     python3.11 pretrain_progress.py --plot progress.png   # writes progress.png + progress_all.png
     python3.11 pretrain_progress.py --plot progress.png --no-hub  # skip Hub query
-    python3.11 pretrain_progress.py --actions             # machine-readable per-model action
 """
 from __future__ import annotations
 
@@ -31,7 +35,6 @@ HF_STAGING_ROOT = Path("/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
 # three accounts: snr-models-1904, snr-models-1797, snr-models-28).
 def hf_org_for_seed(seed: int) -> str:
     return f"snr-models-{seed}"
-CANONICAL_RE = re.compile(r"^apertus-(175M|350M|600M|1B)-fwEdu\d+-fw2\d+-seed\d+$")
 ITER_RE = re.compile(r"^iter_(\d+)$")
 
 # Per-seed iter policy (single source of truth for the whole pipeline:
@@ -43,8 +46,6 @@ ITERS_OTHER    = [6000, 10000, 20000, 30000, 42000, 44000, 46000, 48000, 50000]
 def canonical_iters_for_seed(seed: int) -> list[int]:
     return ITERS_SEED1904 if seed == 1904 else ITERS_OTHER
 
-# Union of all per-seed iters — used by the canonical-stage heatmap (columns).
-CANONICAL_ITERS = sorted(set(ITERS_SEED1904) | set(ITERS_OTHER))
 # All training save points: Megatron writes every 2000 iters (CHECKPOINT_STEPS).
 CHECKPOINT_INTERVAL = 2000
 TARGET_ITER = 50000
@@ -52,12 +53,6 @@ ALL_ITERS = list(range(CHECKPOINT_INTERVAL, TARGET_ITER + 1, CHECKPOINT_INTERVAL
 SIZES = ["175M", "350M", "600M", "1B"]
 MIXES = [(30, 70), (60, 40), (90, 10)]
 SEEDS = [1904, 1797, 28]
-
-
-def _seed_of(cell_name: str) -> int:
-    """Extract the seed int from a canonical cell name."""
-    m = re.search(r"-seed(\d+)$", cell_name)
-    return int(m.group(1)) if m else 0
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -110,13 +105,6 @@ def model_progress(
     max_iter = max(iters) if iters else None
     max_valid = max(valid_iters) if valid_iters else None
     return marker, len(iters), max_iter, max_valid, valid_iters
-
-
-def render_bar(done: int, total: int, width: int = 25) -> str:
-    if total <= 0:
-        return "[" + " " * width + "]"
-    filled = max(0, min(width, int(round(width * done / total))))
-    return "[" + "#" * filled + "-" * (width - filled) + "]"
 
 
 # ---------------------------------------------------------------------------
@@ -176,14 +164,15 @@ def _hub_branches_for_cell(api, cell: str, seed: int,
 
 
 def _build_status_matrix(seed: int, hub_branches: dict[str, set[str]],
+                        iters: list[int],
                         ckpt_root: Path = CKPT_ROOT) -> "list[list[int]]":
-    """Return a 12 × len(CANONICAL_ITERS) matrix of status codes for one seed."""
+    """Return a 12 × len(iters) matrix of status codes for one seed."""
     matrix: list[list[int]] = []
     for size in SIZES:
         for fw_edu, fw2 in MIXES:
             cell = f"apertus-{size}-fwEdu{fw_edu}-fw2{fw2}-seed{seed}"
             row: list[int] = []
-            for step in CANONICAL_ITERS:
+            for step in iters:
                 meg_ok = is_valid_iter_dir(
                     ckpt_root / cell / "checkpoints" / f"iter_{step:07d}"
                 )
@@ -247,7 +236,6 @@ def make_plot(out_path: Path, query_hub: bool = True,
     norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], cmap.N)
 
     row_labels = [f"{s}-fwEdu{e}/{w}" for s in SIZES for e, w in MIXES]
-    col_labels = [f"{i // 1000}k" for i in CANONICAL_ITERS]
 
     fig, axes = plt.subplots(
         1, len(SEEDS),
@@ -258,16 +246,18 @@ def make_plot(out_path: Path, query_hub: bool = True,
         axes = [axes]
 
     for ax, seed in zip(axes, SEEDS):
-        matrix = _build_status_matrix(seed, hub_branches, ckpt_root)
+        seed_iters = canonical_iters_for_seed(seed)
+        col_labels = [f"{i // 1000}k" for i in seed_iters]
+        matrix = _build_status_matrix(seed, hub_branches, seed_iters, ckpt_root)
         ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
-        ax.set_xticks(range(len(CANONICAL_ITERS)))
+        ax.set_xticks(range(len(seed_iters)))
         ax.set_xticklabels(col_labels, rotation=45, ha="right", fontsize=8)
         ax.set_yticks(range(len(row_labels)))
         ax.set_yticklabels(row_labels, fontsize=8)
         ax.set_title(f"seed {seed}")
         ax.set_xlabel("canonical iter")
         # Light grid between cells.
-        ax.set_xticks([x - 0.5 for x in range(1, len(CANONICAL_ITERS))], minor=True)
+        ax.set_xticks([x - 0.5 for x in range(1, len(seed_iters))], minor=True)
         ax.set_yticks([y - 0.5 for y in range(1, len(row_labels))], minor=True)
         ax.grid(which="minor", color="white", linewidth=0.5)
         ax.tick_params(which="minor", length=0)
@@ -300,7 +290,6 @@ def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
     norm = BoundaryNorm([-0.5, 0.5, 1.5], cmap.N)
 
     row_labels = [f"{s}-fwEdu{e}/{w}" for s in SIZES for e, w in MIXES]
-    canonical_set = set(CANONICAL_ITERS)
     col_labels = [f"{i // 1000}k" for i in ALL_ITERS]
 
     fig, axes = plt.subplots(
@@ -312,11 +301,12 @@ def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
         axes = [axes]
 
     for ax, seed in zip(axes, SEEDS):
+        canonical_set = set(canonical_iters_for_seed(seed))
         matrix = _build_all_iters_matrix(seed, ckpt_root)
         ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
         ax.set_xticks(range(len(ALL_ITERS)))
         ax.set_xticklabels(col_labels, rotation=90, fontsize=6)
-        # Bold + slightly larger font for canonical iter labels so they pop.
+        # Bold + slightly larger font for this seed's canonical iter labels.
         for lbl, it in zip(ax.get_xticklabels(), ALL_ITERS):
             if it in canonical_set:
                 lbl.set_fontweight("bold")
@@ -344,7 +334,7 @@ def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Machine-readable per-model action mode (consumed by launch_resumes.sh).
+# Machine-readable per-model action output (consumed by launch_resumes.sh).
 #
 # Output (one line per model, tab-separated):
 #   <model>\tdone
@@ -352,17 +342,21 @@ def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
 #   <model>\tcorrupt\t<n_iters>               # iter dirs exist but none valid → skip + warn
 #   <model>\tresume\t<load_iter>\t<target>    # resume from <load_iter>, train until <target>
 #
+# Target set: EVERY 2000-step iter ≤ --target (the full set Megatron writes
+# during training). "done" therefore means every iter_NNNNNNN from
+# CHECKPOINT_INTERVAL..target is a valid checkpoint on disk.
+#
 # We never emit a "wipe" action — the launcher must not auto-delete checkpoint
 # directories. A corrupt model is reported and left alone for manual review.
 #
 # Decision logic per model:
-#   • All canonical iters ≤ target valid    → done
+#   • All target iters valid                → done
 #   • No iter dirs on disk                  → fresh
 #   • Iter dirs exist but no valid ones     → corrupt (skip)
-#   • Any canonical iter > max_existing_canonical missing (end-gap)
+#   • Any target iter > max_existing missing (end-gap)
 #       → resume from max_valid until <target>
-#   • Otherwise (mid-gap only): earliest missing canonical
-#       → resume from max valid iter strictly less than that canonical, until canonical
+#   • Otherwise (mid-gap only): earliest missing target iter
+#       → resume from max valid iter strictly less than that, until that iter
 #     If a model has both end- and mid-gaps, end wins (per spec).
 #     Re-running picks up the next mid-gap after the previous job finishes.
 # ---------------------------------------------------------------------------
@@ -383,28 +377,25 @@ def emit_actions(target: int, root: Path = CKPT_ROOT,
                  filter_substr: str | None = None) -> None:
     """Print per-model action lines for the resume launcher (see above).
 
-    The canonical iter set is picked per-cell from `canonical_iters_for_seed`:
-    seed1904 uses ITERS_SEED1904; seed28 / seed1797 use ITERS_OTHER. This
-    matches the rest of the pipeline (eval CSV, conversion plan files).
+    Targets every 2000-step iter ≤ target (ALL_ITERS), so "done" means every
+    iter_NNNNNNN in that range is a valid checkpoint on disk.
     """
+    target_iters = [i for i in ALL_ITERS if i <= target]
     for d in _canonical_models(root):
         if filter_substr and filter_substr not in d.name:
             continue
         marker, n_iters, max_iter, max_valid, valid_iters = model_progress(d)
 
-        canonical_target_iters = [
-            c for c in canonical_iters_for_seed(_seed_of(d.name)) if c <= target
-        ]
-        existing_canonical = [c for c in canonical_target_iters if c in valid_iters]
-        missing_canonical = [c for c in canonical_target_iters if c not in valid_iters]
+        existing = [c for c in target_iters if c in valid_iters]
+        missing = [c for c in target_iters if c not in valid_iters]
 
-        if not missing_canonical:
+        if not missing:
             print(f"{d.name}\tdone")
             continue
 
-        max_existing = max(existing_canonical) if existing_canonical else 0
-        end_missing = [c for c in missing_canonical if c > max_existing]
-        mid_missing = [c for c in missing_canonical if c < max_existing]
+        max_existing = max(existing) if existing else 0
+        end_missing = [c for c in missing if c > max_existing]
+        mid_missing = [c for c in missing if c < max_existing]
 
         if end_missing:
             # Drive to the final target. Spec: end wins over mid.
@@ -417,12 +408,12 @@ def emit_actions(target: int, root: Path = CKPT_ROOT,
             else:
                 print(f"{d.name}\tresume\t{max_valid}\t{target}")
         else:
-            # Mid-only: target the earliest missing canonical.
+            # Mid-only: target the earliest missing iter.
             target_iter = mid_missing[0]
             valid_before = [v for v in valid_iters if v < target_iter]
             load_iter = max(valid_before) if valid_before else 0
             if load_iter == 0:
-                # Edge case: no valid iter strictly before this mid canonical
+                # Edge case: no valid iter strictly before this mid target
                 # (e.g. only later iters are valid). Skip and let the user look.
                 if n_iters > 0:
                     print(f"{d.name}\tcorrupt\t{n_iters}")
@@ -442,13 +433,8 @@ def main() -> None:
         help=f"Megatron run root (default: {CKPT_ROOT})",
     )
     p.add_argument("--filter", default=None, help="Substring filter on model dir name.")
-    p.add_argument(
-        "--all",
-        action="store_true",
-        help="Include non-canonical experiment directories (default: only "
-             "apertus-{175M,350M,600M,1B}-fwEdu*-fw2*-seed* dirs).",
-    )
-    p.add_argument("--target", type=int, default=TARGET_ITER, help="Target iteration for progress bar.")
+    p.add_argument("--target", type=int, default=TARGET_ITER,
+                   help="Target iteration (default: 50000).")
     p.add_argument(
         "--plot",
         metavar="PATH",
@@ -462,74 +448,13 @@ def main() -> None:
         help="With --plot, skip the HF Hub branch lookup (treat all branches "
              "as missing). Useful when the Hub API is rate-limited.",
     )
-    p.add_argument(
-        "--actions",
-        action="store_true",
-        help="Print one machine-readable line per canonical model: "
-             "<model>\\tdone | fresh\\t<target> | corrupt\\t<n_iters> | "
-             "resume\\t<load_iter>\\t<target>. Consumed by launch_resumes.sh.",
-    )
     args = p.parse_args()
 
     if args.plot:
         make_plot(Path(args.plot), query_hub=not args.no_hub, ckpt_root=Path(args.root))
         return
 
-    if args.actions:
-        emit_actions(args.target, root=Path(args.root), filter_substr=args.filter)
-        return
-
-    root = Path(args.root)
-    if not root.is_dir():
-        raise SystemExit(f"root not found: {root}")
-
-    models = sorted(d for d in root.iterdir() if d.is_dir())
-    if not args.all:
-        models = [d for d in models if CANONICAL_RE.match(d.name)]
-    if args.filter:
-        models = [d for d in models if args.filter in d.name]
-
-    if not models:
-        print("No matching model directories.")
-        return
-
-    name_w = max(len(d.name) for d in models)
-    done_count = 0
-    corrupt_count = 0
-    for d in models:
-        marker, n_iters, max_iter, max_valid, _ = model_progress(d)
-        latest = marker if marker is not None else max_iter
-        # corrupt: marker (or fallback max_iter) points at an iter that is
-        # not actually loadable. Either no valid iter exists at all, or the
-        # latest valid iter is older than what marker claims.
-        corrupt = (latest is not None) and (
-            max_valid is None or max_valid < latest
-        )
-        bar = render_bar((max_valid if corrupt else latest) or 0, args.target)
-        latest_s = f"{latest}" if latest is not None else "-"
-        if latest is not None and latest >= args.target and not corrupt:
-            done_count += 1
-            tag = "[done]"
-        elif latest is None:
-            tag = "[no_ckpts]"
-        elif corrupt:
-            corrupt_count += 1
-            valid_s = f"{max_valid}" if max_valid is not None else "none"
-            tag = f"[corrupt] (latest valid: {valid_s})"
-        else:
-            tag = "[in_progress]"
-        print(
-            f"  {bar} {latest_s:>6} / {args.target}   "
-            f"saved={n_iters:>3}  {d.name:<{name_w}}  {tag}"
-        )
-
-    msg = (
-        f"\nSummary: {done_count}/{len(models)} models reached iter {args.target} "
-        f"({100 * done_count / len(models):.0f}%)"
-    )
-    if corrupt_count:
-        msg += f" — {corrupt_count} corrupt"
-    print(msg)
+    emit_actions(args.target, root=Path(args.root), filter_substr=args.filter)
 
 
 if __name__ == "__main__":

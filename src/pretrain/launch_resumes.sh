@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Drive every (size, mix, seed) cell to having all canonical checkpoints saved.
+# Drive every (size, mix, seed) cell to having every 2000-step checkpoint saved.
 #
-# Per-model action comes from `pretrain_progress.py --actions`:
+# Per-model action comes from `pretrain_progress.py` (target set: every iter
+# 2000..50000 — the full set Megatron writes during training):
 #
-#   done                              → skip (all canonical iters ≤ target valid)
+#   done                              → skip (every iter ≤ target valid)
 #   fresh   <target>                  → submit a fresh from-scratch run to <target>
 #   corrupt <n_iters>                 → SKIP + warn (iter dirs exist but none valid;
 #                                         we never auto-rm checkpoints — manual review)
@@ -172,7 +173,7 @@ rewind_marker() {
 # Pull per-model actions from pretrain_progress.py (one tab-separated line each).
 # Format: <model>\tdone | fresh\t<target> | corrupt\t<n_iters> |
 #         resume\t<load_iter>\t<target>
-ACTIONS_OUT=$(python3.11 "$PROGRESS" "${FILTER_ARGS[@]}" --target "$TARGET" --actions)
+ACTIONS_OUT=$(python3.11 "$PROGRESS" "${FILTER_ARGS[@]}" --target "$TARGET")
 
 while IFS=$'\t' read -r model action a b _rest; do
   [[ -z "${model:-}" ]] && continue
