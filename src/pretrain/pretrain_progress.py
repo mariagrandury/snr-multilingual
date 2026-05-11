@@ -1,29 +1,33 @@
 #!/usr/bin/env python3
 """Pretraining progress: per-cell machine-readable actions + plots.
 
-Default: prints one tab-separated action line per canonical cell, targeting
-every 2000-step iter (so "done" means every `iter_NNNNNNN` from 2000..50000
-is valid on disk). Output format:
-
-    <model>\tdone
-    <model>\tfresh\t<target>
-    <model>\tcorrupt\t<n_iters>
-    <model>\tresume\t<load_iter>\t<target>
-
-Consumed by `launch_resumes.sh`.
+Every invocation does two things:
+  1. Prints one tab-separated action line per cell to stdout (consumed by
+     `launch_resumes.sh`). Targets every 2000-step iter; "done" means every
+     `iter_NNNNNNN` from 2000..50000 is valid on disk. Output format:
+         <model>\tdone
+         <model>\tfresh\t<target>
+         <model>\tcorrupt\t<n_iters>
+         <model>\tresume\t<load_iter>\t<target>
+  2. Regenerates `pretrain_progress.png` + `pretrain_progress_all.png` next
+     to this script. The "pushed to hub" (green) status is persisted in the
+     PNG's own metadata (PNG tEXt chunk, key `pushed_state`) and is
+     monotonic — once green, never demoted. `push-snr.py` calls
+     `record_pushed(cell, iters)` to extend this state; `--hub` queries the
+     hub and merges any new branches into the same state.
 
 Examples:
     python3.11 pretrain_progress.py
     python3.11 pretrain_progress.py --filter seed1797
-    python3.11 pretrain_progress.py --target 50000
-    python3.11 pretrain_progress.py --plot progress.png   # writes progress.png + progress_all.png
-    python3.11 pretrain_progress.py --plot progress.png --no-hub  # skip Hub query
+    python3.11 pretrain_progress.py --hub       # also query the HF Hub
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -53,6 +57,72 @@ ALL_ITERS = list(range(CHECKPOINT_INTERVAL, TARGET_ITER + 1, CHECKPOINT_INTERVAL
 SIZES = ["175M", "350M", "600M", "1B"]
 MIXES = [(30, 70), (60, 40), (90, 10)]
 SEEDS = [1904, 1797, 28]
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_PLOT_PATH = SCRIPT_DIR / "pretrain_progress.png"
+# Key under which the pushed-to-hub set is stashed inside the PNG's tEXt chunks.
+PUSHED_STATE_KEY = "pushed_state"
+BRANCH_RE = re.compile(r"^stage1-step-(\d+)$")
+
+
+def _load_pushed_state(plot_path: Path) -> "dict[str, set[int]]":
+    """Read the embedded pushed-to-hub state from the PNG's tEXt metadata.
+
+    Empty dict if the plot doesn't exist yet or the chunk is absent/corrupt.
+    """
+    if not plot_path.is_file():
+        return {}
+    try:
+        from PIL import Image  # Pillow ships with matplotlib.
+    except ImportError:
+        return {}
+    try:
+        with Image.open(plot_path) as img:
+            raw = img.info.get(PUSHED_STATE_KEY)
+    except Exception:
+        return {}
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    return {cell: {int(i) for i in iters} for cell, iters in data.items()}
+
+
+def _pushed_state_json(state: "dict[str, set[int]]") -> str:
+    serializable = {cell: sorted(iters) for cell, iters in state.items() if iters}
+    return json.dumps(serializable, separators=(",", ":"), sort_keys=True)
+
+
+def record_pushed(cell: str, iters, plot_path: Path = DEFAULT_PLOT_PATH) -> None:
+    """Append (cell, iters) to the embedded pushed-state of the plot PNG.
+
+    Updates only the PNG's tEXt metadata in place — does NOT re-render the
+    heatmap. Callers (e.g. push-snr.py) batch many pushes and then call
+    `update_plot()` once at the end to refresh the rendered colors.
+
+    No-op if the plot doesn't exist yet — run `update_plot()` first.
+    """
+    if not plot_path.is_file():
+        return
+    state = _load_pushed_state(plot_path)
+    state.setdefault(cell, set()).update(int(i) for i in iters)
+    try:
+        from PIL import Image, PngImagePlugin
+    except ImportError:
+        return
+    with Image.open(plot_path) as img:
+        pnginfo = PngImagePlugin.PngInfo()
+        for k, v in img.info.items():
+            if k == PUSHED_STATE_KEY:
+                continue
+            if isinstance(v, bytes):
+                v = v.decode("utf-8", errors="replace")
+            if isinstance(v, str):
+                pnginfo.add_text(k, v)
+        pnginfo.add_text(PUSHED_STATE_KEY, _pushed_state_json(state))
+        img.save(plot_path, pnginfo=pnginfo)
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -124,10 +194,11 @@ def _has_hf_staged(cell: str, step: int, hf_root: Path = HF_STAGING_ROOT) -> boo
     return (d / "config.json").is_file() and any(d.glob("model.safetensors*"))
 
 
-def _hub_branches_for_cell(api, cell: str, seed: int,
-                           max_attempts: int = 6) -> set[str]:
-    """Return the set of branch names on snr-models-<seed>/<cell>. Empty set on
-    repo-not-found (404) or unrecoverable errors. 429-aware retry."""
+def _hub_pushed_iters_for_cell(api, cell: str, seed: int,
+                               max_attempts: int = 6) -> "set[int]":
+    """Return the set of iter ints with a `stage1-step-N` branch on
+    snr-models-<seed>/<cell>. Empty set on repo-not-found or unrecoverable
+    errors. 429-aware retry."""
     from huggingface_hub.utils import HfHubHTTPError, RepositoryNotFoundError
 
     repo_id = f"{hf_org_for_seed(seed)}/{cell}"
@@ -135,7 +206,8 @@ def _hub_branches_for_cell(api, cell: str, seed: int,
     for attempt in range(max_attempts):
         try:
             refs = api.list_repo_refs(repo_id, repo_type="model")
-            return {b.name for b in refs.branches}
+            return {int(m.group(1)) for b in refs.branches
+                    if (m := BRANCH_RE.match(b.name))}
         except RepositoryNotFoundError:
             return set()
         except HfHubHTTPError as e:
@@ -155,15 +227,15 @@ def _hub_branches_for_cell(api, cell: str, seed: int,
                     wait = delay
                     delay *= 2
                 wait += 5
-                print(f"[plot] 429 on {repo_id}; sleeping {wait:.0f}s")
+                print(f"[plot] 429 on {repo_id}; sleeping {wait:.0f}s", file=sys.stderr)
                 time.sleep(wait)
                 continue
-            print(f"[plot] giving up on {repo_id}: {e}")
+            print(f"[plot] giving up on {repo_id}: {e}", file=sys.stderr)
             return set()
     return set()
 
 
-def _build_status_matrix(seed: int, hub_branches: dict[str, set[str]],
+def _build_status_matrix(seed: int, pushed_state: "dict[str, set[int]]",
                         iters: list[int],
                         ckpt_root: Path = CKPT_ROOT) -> "list[list[int]]":
     """Return a 12 × len(iters) matrix of status codes for one seed."""
@@ -172,6 +244,7 @@ def _build_status_matrix(seed: int, hub_branches: dict[str, set[str]],
         for fw_edu, fw2 in MIXES:
             cell = f"apertus-{size}-fwEdu{fw_edu}-fw2{fw2}-seed{seed}"
             row: list[int] = []
+            cell_pushed = pushed_state.get(cell, set())
             for step in iters:
                 meg_ok = is_valid_iter_dir(
                     ckpt_root / cell / "checkpoints" / f"iter_{step:07d}"
@@ -183,8 +256,7 @@ def _build_status_matrix(seed: int, hub_branches: dict[str, set[str]],
                 if not hf_ok:
                     row.append(1)
                     continue
-                branch = f"stage1-step-{step:05d}"
-                if branch in hub_branches.get(cell, set()):
+                if step in cell_pushed:
                     row.append(3)
                 else:
                     row.append(2)
@@ -208,14 +280,22 @@ def _build_all_iters_matrix(seed: int, ckpt_root: Path = CKPT_ROOT) -> "list[lis
     return matrix
 
 
-def make_plot(out_path: Path, query_hub: bool = True,
-              ckpt_root: Path = CKPT_ROOT) -> None:
+def update_plot(query_hub: bool = False, plot_path: Path = DEFAULT_PLOT_PATH,
+                ckpt_root: Path = CKPT_ROOT) -> None:
+    """Refresh `pretrain_progress.png` + `pretrain_progress_all.png` at
+    `plot_path`'s directory.
+
+    The pushed-to-hub set is loaded from the existing PNG's tEXt metadata
+    (monotonic — only ever extended). With `query_hub=True`, the hub is
+    queried and any newly-discovered `stage1-step-N` branches are merged in.
+    The new PNG is written with the updated set embedded back in its metadata.
+    """
     import matplotlib.pyplot as plt
     from matplotlib.colors import BoundaryNorm, ListedColormap
     from matplotlib.patches import Patch
 
-    # Pre-fetch hub branches for all 36 cells (or skip if --no-hub).
-    hub_branches: dict[str, set[str]] = {}
+    pushed_state = _load_pushed_state(plot_path)
+
     if query_hub:
         from huggingface_hub import HfApi
 
@@ -226,11 +306,12 @@ def make_plot(out_path: Path, query_hub: bool = True,
             for e, w in MIXES
             for seed in SEEDS
         ]
-        print(f"[plot] querying {len(cells)} repos across {sorted({hf_org_for_seed(s) for _, s in cells})}...")
+        orgs = sorted({hf_org_for_seed(s) for _, s in cells})
+        print(f"[plot] querying {len(cells)} repos across {orgs}...", file=sys.stderr)
         for cell, seed in cells:
-            hub_branches[cell] = _hub_branches_for_cell(api, cell, seed)
-    else:
-        print("[plot] --no-hub: skipping Hub query (all branches treated as missing)")
+            iters = _hub_pushed_iters_for_cell(api, cell, seed)
+            if iters:
+                pushed_state.setdefault(cell, set()).update(iters)
 
     cmap = ListedColormap(["#cc4040", "#ff9933", "#f4d03f", "#90ee90"])
     norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], cmap.N)
@@ -248,7 +329,7 @@ def make_plot(out_path: Path, query_hub: bool = True,
     for ax, seed in zip(axes, SEEDS):
         seed_iters = canonical_iters_for_seed(seed)
         col_labels = [f"{i // 1000}k" for i in seed_iters]
-        matrix = _build_status_matrix(seed, hub_branches, seed_iters, ckpt_root)
+        matrix = _build_status_matrix(seed, pushed_state, seed_iters, ckpt_root)
         ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
         ax.set_xticks(range(len(seed_iters)))
         ax.set_xticklabels(col_labels, rotation=45, ha="right", fontsize=8)
@@ -272,12 +353,15 @@ def make_plot(out_path: Path, query_hub: bool = True,
                bbox_to_anchor=(0.5, -0.02), frameon=False)
     fig.suptitle("Pretraining progress: megatron → HF → snr-models hub", y=1.02)
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    fig.savefig(
+        plot_path, dpi=150, bbox_inches="tight",
+        metadata={PUSHED_STATE_KEY: _pushed_state_json(pushed_state)},
+    )
     plt.close(fig)
-    print(f"[plot] saved {out_path}")
+    print(f"[plot] saved {plot_path}", file=sys.stderr)
 
     # Companion plot covering every 2000-step ckpt — the operational view.
-    all_path = out_path.with_name(out_path.stem + "_all" + out_path.suffix)
+    all_path = plot_path.with_name(plot_path.stem + "_all" + plot_path.suffix)
     _make_all_iters_plot(all_path, ckpt_root)
 
 
@@ -330,7 +414,7 @@ def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print(f"[plot] saved {out_path}")
+    print(f"[plot] saved {out_path}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -436,25 +520,17 @@ def main() -> None:
     p.add_argument("--target", type=int, default=TARGET_ITER,
                    help="Target iteration (default: 50000).")
     p.add_argument(
-        "--plot",
-        metavar="PATH",
-        help="Write a 3-panel heatmap (one per seed) showing per-cell stage "
-             "status (missing → megatron → HF → hub) to PATH, plus a companion "
-             "all-2000-step-iters plot at PATH_all.png, and exit.",
-    )
-    p.add_argument(
-        "--no-hub",
+        "--hub",
         action="store_true",
-        help="With --plot, skip the HF Hub branch lookup (treat all branches "
-             "as missing). Useful when the Hub API is rate-limited.",
+        help="Also query the HF Hub for branches (slow: ~10s for 36 repos). "
+             "Newly-discovered branches are merged into the PNG's embedded "
+             "pushed-state. Without this flag, pushed status comes only from "
+             "what `push-snr.py` has recorded.",
     )
     args = p.parse_args()
 
-    if args.plot:
-        make_plot(Path(args.plot), query_hub=not args.no_hub, ckpt_root=Path(args.root))
-        return
-
     emit_actions(args.target, root=Path(args.root), filter_substr=args.filter)
+    update_plot(query_hub=args.hub, ckpt_root=Path(args.root))
 
 
 if __name__ == "__main__":

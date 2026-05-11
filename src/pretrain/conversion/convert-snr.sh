@@ -173,6 +173,16 @@ if (( total_fail > 0 )); then
     printf '  - %s\\n' \"\${failed_list[@]}\"
 fi
 "
+
+    # Refresh the pretraining progress plot — newly-staged HF dirs now show
+    # up as yellow via the filesystem check. Runs on the slurm host (outside
+    # the container) with the user's snr conda env. Best-effort.
+    PRETRAIN_PROGRESS="$(dirname "$SCRIPT_PATH")/../pretrain_progress.py"
+    SNR_PY="$HOME/miniconda3/envs/snr/bin/python"
+    if [[ -f "$PRETRAIN_PROGRESS" && -x "$SNR_PY" ]]; then
+        "$SNR_PY" "$PRETRAIN_PROGRESS" >/dev/null \
+            || echo "[convert-snr/sbatch] warning: progress plot refresh failed"
+    fi
     exit 0
 fi
 

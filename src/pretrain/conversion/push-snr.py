@@ -148,14 +148,16 @@ def main_is_empty_stub(api: HfApi, repo_id: str) -> bool:
     )
 
 
-def push_iter(api: HfApi, repo_id: str, src: Path, branch: str, dry_run: bool, force: bool) -> None:
+def push_iter(api: HfApi, repo_id: str, src: Path, branch: str, dry_run: bool, force: bool) -> bool:
+    """Returns True iff the branch is confirmed live on the hub after this
+    call (newly uploaded, or already present). False on dry-run."""
     branches = existing_branches(api, repo_id)
     if branch in branches and not force:
         print(f"[push-snr] {repo_id}@{branch}: already exists, skipping (use --force to re-push)")
-        return
+        return True
     if dry_run:
         print(f"[push-snr] (dry-run) would upload {src} -> {repo_id}@{branch}")
-        return
+        return False
     if branch != "main" and branch not in branches:
         _retry_on_429(api.create_branch, repo_id, branch=branch, exist_ok=True)
     _retry_on_429(
@@ -167,6 +169,7 @@ def push_iter(api: HfApi, repo_id: str, src: Path, branch: str, dry_run: bool, f
         repo_type="model",
     )
     print(f"[push-snr] pushed {repo_id}@{branch}")
+    return True
 
 
 def main() -> int:
@@ -199,12 +202,14 @@ def main() -> int:
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     ensure_repo(api, repo_id, args.dry_run)
 
+    confirmed_steps: list[int] = []
     for i, (step, src) in enumerate(pairs):
         # 5-digit zero-pad so branch names sort lexicographically
         # (stage1-step-02000 < stage1-step-50000). Original training caps at
         # 50000 iters, so 5 digits is enough.
         branch = f"stage1-step-{step:05d}"
-        push_iter(api, repo_id, src, branch, args.dry_run, args.force)
+        if push_iter(api, repo_id, src, branch, args.dry_run, args.force):
+            confirmed_steps.append(step)
         # Spread API calls across the team-plan rate-limit window (3000
         # req / 5 min). Without this, a cell with many real uploads bursts
         # through the budget and the next cell starts in a saturated state.
@@ -221,6 +226,18 @@ def main() -> int:
             push_iter(api, repo_id, latest_src, "main", args.dry_run, force=True)
         else:
             print(f"[push-snr] {repo_id}@main: already populated, skipping (use --force to re-mirror)")
+
+    # Persist the green status in the progress plot's embedded state and
+    # refresh the rendered colors. Best-effort: a plot-update failure must
+    # not fail the push.
+    if confirmed_steps:
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+            from pretrain_progress import record_pushed, update_plot
+            record_pushed(name, confirmed_steps)
+            update_plot()
+        except Exception as e:
+            print(f"[push-snr] warning: progress plot not updated: {e}", file=sys.stderr)
 
     print(f"[push-snr] done: {repo_id}")
     return 0
