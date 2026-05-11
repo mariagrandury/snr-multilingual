@@ -192,9 +192,12 @@ def enumerate_targets_from_models_file(
         if kind == "meg_small":
             iters = canonical_iters or small_meg_iters.get(base, [])
             # Restrict iters for cells whose seed has an explicit policy.
+            # Use the user-provided list verbatim (sorted) — don't intersect
+            # with `canonical_iters`, otherwise non-canonical iters like
+            # 10000 / 20000 / 30000 would be silently dropped.
             seed = cell_seed(base)
             if seed_iters and seed in seed_iters:
-                iters = [it for it in iters if it in seed_iters[seed]]
+                iters = sorted(seed_iters[seed])
             for it in iters:
                 targets.append(
                     Target(model_name=base, ckpt_id=f"iter{it}", name=f"{base}-iter{it}")
@@ -291,6 +294,154 @@ def render_bar(done: int, total: int, width: int = 25) -> str:
     return "[" + "#" * filled + "-" * (width - filled) + "]"
 
 
+# ---------------------------------------------------------------------------
+# Heatmap: per-(task, checkpoint) status from snr_progress.csv
+#   rows    — tasks, ORDER preserved from tasks_file (e.g. tasks_pretraining_full.txt)
+#   cols    — every canonical-sweep ckpt (4 sizes × 9 cells × 13 iters = 468),
+#             sorted by (size, cell name alphabetical, iter ascending)
+#   cell    — green: task done · orange: pending · white: ckpt not in CSV (we
+#             don't intend to eval that ckpt-benchmark combination)
+#   x-axis  — no per-ckpt labels, just black vertical lines between size groups
+# ---------------------------------------------------------------------------
+
+HEATMAP_SIZES = ["175M", "350M", "600M", "1B"]
+HEATMAP_MIXES = [(30, 70), (60, 40), (90, 10)]
+HEATMAP_SEEDS = [28, 1797, 1904]
+# Per-seed iter sets we actually want to evaluate (2026-05-10). Used as the
+# default `--seed-iters` policy in `main()`, which means: the CSV snapshot,
+# the heatmap, and every launcher that calls `snr_progress.py` will all
+# restrict the canonical sweep to these (cell × iter) combinations unless
+# the caller passes `--seed-iters` explicitly.
+#   seed1904 → 9 picks from the canonical 13-iter set
+#   seed28 / seed1797 → 10000-stepped grid (10k/20k/30k iters NOT canonical)
+ITERS_SEED1904 = [6000, 12000, 22000, 28000, 42000, 44000, 46000, 48000, 50000]
+ITERS_OTHER   = [6000, 10000, 20000, 30000, 42000, 44000, 46000, 48000, 50000]
+
+
+def default_seed_iters() -> dict[str, set[int]]:
+    """Default per-seed iter policy. Applied when no --seed-iters is passed."""
+    return {
+        "seed1904": set(ITERS_SEED1904),
+        "seed1797": set(ITERS_OTHER),
+        "seed28":   set(ITERS_OTHER),
+    }
+
+
+def make_eval_progress_heatmap(
+    csv_path: Path, tasks_file: Path, out_path: Path
+) -> None:
+    """Render a tasks × checkpoints heatmap from `csv_path` to `out_path`.
+
+    See the module-level comment block above for the cell-color semantics
+    and the column ordering rule.
+    """
+    import csv as _csv
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import BoundaryNorm, ListedColormap
+    from matplotlib.patches import Patch
+
+    tasks = [
+        line.strip()
+        for line in tasks_file.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+    # CSV: name -> set of pending tasks. Missing key  ==>  white column.
+    csv_rows: dict[str, set[str]] = {}
+    with csv_path.open() as fh:
+        for r in _csv.DictReader(fh):
+            rem = (r.get("remaining") or "").strip()
+            csv_rows[r["name"]] = set(rem.split(",")) if rem else set()
+
+    # Build the column list and capture size-group boundaries.
+    # Per-seed iter set: seed1904 uses ITERS_SEED1904; others use
+    # ITERS_OTHER. (The two sets are the same length, so each cell
+    # contributes the same number of columns.)
+    columns: list[str] = []
+    size_boundaries: list[int] = []  # column indices where a new size starts (excl. 0)
+    for s_idx, size in enumerate(HEATMAP_SIZES):
+        if s_idx > 0:
+            size_boundaries.append(len(columns))
+        cells = sorted(
+            (f"apertus-{size}-fwEdu{e}-fw2{w}-seed{s}", s)
+            for (e, w) in HEATMAP_MIXES
+            for s in HEATMAP_SEEDS
+        )
+        for cell, seed in cells:
+            iters = ITERS_SEED1904 if seed == 1904 else ITERS_OTHER
+            for it in iters:
+                columns.append(f"{cell}-iter{it}")
+
+    n_rows = len(tasks)
+    n_cols = len(columns)
+    # 0 = white (no row in CSV), 1 = orange (pending), 2 = green (done)
+    matrix = [[0] * n_cols for _ in range(n_rows)]
+    for j, name in enumerate(columns):
+        rem = csv_rows.get(name)
+        if rem is None:
+            continue  # white
+        for i, task in enumerate(tasks):
+            matrix[i][j] = 1 if task in rem else 2
+
+    cmap = ListedColormap(["#ffffff", "#ff9933", "#90ee90"])
+    norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5], cmap.N)
+
+    fig, ax = plt.subplots(
+        figsize=(max(12, n_cols * 0.04), max(8, n_rows * 0.10 + 1.5))
+    )
+    ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto", interpolation="nearest")
+
+    ax.set_yticks(range(n_rows))
+    ax.set_yticklabels(tasks, fontsize=5)
+    ax.set_xticks([])
+
+    for b in size_boundaries:
+        ax.axvline(b - 0.5, color="black", linewidth=1.2)
+
+    # Size labels centered above each block.
+    block_starts = [0, *size_boundaries, n_cols]
+    for i_block, size in enumerate(HEATMAP_SIZES):
+        left, right = block_starts[i_block], block_starts[i_block + 1]
+        ax.text(
+            (left + right - 1) / 2, -1.5, size,
+            ha="center", va="bottom", fontsize=11, fontweight="bold",
+        )
+
+    ax.set_xlim(-0.5, n_cols - 0.5)
+    ax.set_ylim(n_rows - 0.5, -1.5)
+    n_iters_each = len(ITERS_SEED1904)  # same length as ITERS_OTHER
+    ax.set_xlabel(
+        f"checkpoints (per size: 9 cells × {n_iters_each} iters, "
+        "sorted alphabetical × iter ascending; "
+        "seed1904 iters differ from seed28 / seed1797 — see HEATMAP_ITERS_* in script)"
+    )
+
+    # Tally the legend for context.
+    n_done = sum(1 for row in matrix for v in row if v == 2)
+    n_pending = sum(1 for row in matrix for v in row if v == 1)
+    n_white = n_rows * n_cols - n_done - n_pending
+    legend_handles = [
+        Patch(facecolor="#ffffff", edgecolor="black",
+              label=f"not in pipeline ({n_white})"),
+        Patch(color="#ff9933", label=f"pending ({n_pending})"),
+        Patch(color="#90ee90", label=f"done ({n_done})"),
+    ]
+    ax.legend(
+        handles=legend_handles, loc="upper center",
+        bbox_to_anchor=(0.5, -0.04), ncol=3, frameon=False,
+    )
+
+    fig.suptitle(
+        f"Eval progress: {n_rows} tasks × {n_cols} checkpoints "
+        f"({100 * n_done / max(n_rows * n_cols, 1):.1f}% done)",
+        y=0.995,
+    )
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[plot] saved {out_path}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument(
@@ -332,8 +483,20 @@ def main() -> None:
             "other seeds keep the canonical 13-iter set."
         ),
     )
+    p.add_argument(
+        "--plot",
+        metavar="PATH",
+        help=(
+            "After writing the CSV snapshot, render a tasks × checkpoints heatmap "
+            "to PATH. Rows = tasks in --tasks-file order. Columns = the canonical "
+            "4×9×13 sweep (sorted by size, then alphabetical). Cell color: green = "
+            "task done, orange = pending, white = ckpt not in CSV."
+        ),
+    )
     args = p.parse_args()
-    seed_iters = parse_seed_iters(args.seed_iters)
+    # Per-seed iter policy: caller's --seed-iters wins; otherwise apply the
+    # project default (ITERS_SEED1904 / ITERS_OTHER above).
+    seed_iters = parse_seed_iters(args.seed_iters) if args.seed_iters else default_seed_iters()
     # Always written next to this script. Launchers read it directly so they
     # don't re-enumerate the matrix per cell. Schema:
     #   name,status,done,total,remaining,active_jobids
@@ -395,6 +558,9 @@ def main() -> None:
             remaining = ",".join(task for task in all_tasks if task not in t.completed)
             jobids = ",".join(j[0] for j in t.pending_jobs)
             w.writerow([t.name, status_for(t), done, total_tasks, remaining, jobids])
+
+    if args.plot:
+        make_eval_progress_heatmap(csv_path, tasks_path, Path(args.plot))
 
     if args.status != "all":
         targets = [t for t in targets if status_for(t) == args.status]

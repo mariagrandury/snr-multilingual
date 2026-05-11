@@ -71,10 +71,12 @@ CSV=$REPO_DIR/snr_progress.csv
 # so the on-disk file stays consistent for both humans and launchers.
 if (( REFRESH )); then
     echo "[hf] refreshing $CSV ..."
+    # Per-seed iter policy is the default in snr_progress.py
+    # (ITERS_SEED1904 / ITERS_OTHER); pass --seed-iters here only to
+    # override.
     python3.11 scripts/snr_progress.py \
         --models "$MODELS_FILE" \
         --tasks-file "$TASKS_FILE" \
-        --seed-iters seed28=6000,28000,42000,44000,46000,48000,50000 \
         > /dev/null
 fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }
@@ -82,15 +84,19 @@ fi
 # Per-size config. TP/PP picked per CLAUDE.md bug 14 (vLLM kv_heads constraint).
 tp_for()        { case "$1" in 175M) echo 4;; 350M) echo 1;; 600M) echo 2;; 1B) echo 1;; esac; }
 pp_for()        { case "$1" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; esac; }
+# Per-size per-task minute estimates (re-fit 2026-05-10 after the iter50000
+# batch hit 13/36 TIMEOUT on the new 52-task pretraining-full mix). The flat
+# 0.5 min/task estimate worked for 175M but undershot for larger sizes where
+# generation cost grows: 1B is ~3x slower than 175M, 600M/350M ~2x.
+per_task_min()  { case "$1" in 175M) echo 1.0;; 350M) echo 1.0;; 600M) echo 1.0;; 1B) echo 1.5;; esac; }
 COLD_START_MIN=15   # pip install + vLLM init + dataset load (offline cache hit)
-PER_TASK_MIN=0.5    # batch-mode generation; ~size-independent
 MIN_WALL_MIN=25     # floor — even 1-task jobs need vLLM init time
 CAP_MIN=719         # 11:59:00 — normal-partition wall cap
 
 walltime_for() {
-    local remaining=$1
-    # Use awk for floating-point math (PER_TASK_MIN is fractional).
-    local m=$(awk -v c=$COLD_START_MIN -v p=$PER_TASK_MIN -v n=$remaining \
+    local size=$1 remaining=$2
+    local pt; pt=$(per_task_min "$size")
+    local m=$(awk -v c=$COLD_START_MIN -v p=$pt -v n=$remaining \
                   'BEGIN { printf "%d\n", c + n * p + 0.999 }')
     (( m < MIN_WALL_MIN )) && m=$MIN_WALL_MIN
     (( m > CAP_MIN ))      && m=$CAP_MIN
@@ -155,7 +161,7 @@ while IFS=$'\t' read -r name status done total remaining active_jobids; do
     n_remaining=$(awk -F, '{print NF}' <<<"$remaining")
     tp=$(tp_for "$size")
     pp=$(pp_for "$size")
-    wall=$(walltime_for "$n_remaining")
+    wall=$(walltime_for "$size" "$n_remaining")
 
     if (( DRY_RUN )); then
         echo "  would submit: $name  TP=$tp PP=$pp  --time=$wall  remaining=$n_remaining"

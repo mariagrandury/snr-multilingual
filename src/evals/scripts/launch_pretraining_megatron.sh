@@ -54,10 +54,12 @@ CSV=$REPO_DIR/snr_progress.csv
 
 if (( REFRESH )); then
     echo "[meg] refreshing $CSV ..."
+    # Per-seed iter policy is the default in snr_progress.py
+    # (ITERS_SEED1904 / ITERS_OTHER); pass --seed-iters here only to
+    # override.
     python3.11 scripts/snr_progress.py \
         --models "$MODELS_FILE" \
         --tasks-file "$TASKS_FILE" \
-        --seed-iters seed28=6000,28000,42000,44000,46000,48000,50000 \
         > /dev/null
 fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }

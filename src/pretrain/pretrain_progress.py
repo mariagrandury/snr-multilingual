@@ -34,12 +34,17 @@ def hf_org_for_seed(seed: int) -> str:
 CANONICAL_RE = re.compile(r"^apertus-(175M|350M|600M|1B)-fwEdu\d+-fw2\d+-seed\d+$")
 ITER_RE = re.compile(r"^iter_(\d+)$")
 
-# The 13 canonical eval iters used everywhere in this project (convert-snr.sh,
-# the SNR runner, etc.). The canonical heatmap uses these as columns.
-CANONICAL_ITERS = [
-    2000, 6000, 12000, 18000, 22000, 28000, 34000,
-    38000, 42000, 44000, 46000, 48000, 50000,
-]
+# Per-seed iter policy (single source of truth for the whole pipeline:
+# pretraining, conversion, eval). Mirrors evals/scripts/snr_progress.py's
+# ITERS_SEED1904 / ITERS_OTHER — keep both files in sync when this changes.
+ITERS_SEED1904 = [6000, 12000, 22000, 28000, 42000, 44000, 46000, 48000, 50000]
+ITERS_OTHER    = [6000, 10000, 20000, 30000, 42000, 44000, 46000, 48000, 50000]
+
+def canonical_iters_for_seed(seed: int) -> list[int]:
+    return ITERS_SEED1904 if seed == 1904 else ITERS_OTHER
+
+# Union of all per-seed iters — used by the canonical-stage heatmap (columns).
+CANONICAL_ITERS = sorted(set(ITERS_SEED1904) | set(ITERS_OTHER))
 # All training save points: Megatron writes every 2000 iters (CHECKPOINT_STEPS).
 CHECKPOINT_INTERVAL = 2000
 TARGET_ITER = 50000
@@ -47,6 +52,12 @@ ALL_ITERS = list(range(CHECKPOINT_INTERVAL, TARGET_ITER + 1, CHECKPOINT_INTERVAL
 SIZES = ["175M", "350M", "600M", "1B"]
 MIXES = [(30, 70), (60, 40), (90, 10)]
 SEEDS = [1904, 1797, 28]
+
+
+def _seed_of(cell_name: str) -> int:
+    """Extract the seed int from a canonical cell name."""
+    m = re.search(r"-seed(\d+)$", cell_name)
+    return int(m.group(1)) if m else 0
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -370,13 +381,20 @@ def _canonical_models(root: Path) -> list[Path]:
 
 def emit_actions(target: int, root: Path = CKPT_ROOT,
                  filter_substr: str | None = None) -> None:
-    """Print per-model action lines for the resume launcher (see above)."""
-    canonical_target_iters = [c for c in CANONICAL_ITERS if c <= target]
+    """Print per-model action lines for the resume launcher (see above).
+
+    The canonical iter set is picked per-cell from `canonical_iters_for_seed`:
+    seed1904 uses ITERS_SEED1904; seed28 / seed1797 use ITERS_OTHER. This
+    matches the rest of the pipeline (eval CSV, conversion plan files).
+    """
     for d in _canonical_models(root):
         if filter_substr and filter_substr not in d.name:
             continue
         marker, n_iters, max_iter, max_valid, valid_iters = model_progress(d)
 
+        canonical_target_iters = [
+            c for c in canonical_iters_for_seed(_seed_of(d.name)) if c <= target
+        ]
         existing_canonical = [c for c in canonical_target_iters if c in valid_iters]
         missing_canonical = [c for c in canonical_target_iters if c not in valid_iters]
 
