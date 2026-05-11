@@ -7,7 +7,7 @@ truthfulqa-multi_mc1_eu
     mlqa.py 
     cmmlu.py 
     aexams.py 
-
+social_iqa
 
 mlqa_ar_ar
 mlqa_en_en
