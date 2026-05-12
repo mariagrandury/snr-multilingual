@@ -6,4 +6,6 @@ bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_r
 bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/conversion/convert-snr.sh --submit
 
 bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/launch_pretraining_hf.sh
+
+python /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/push_all_results.py
 ```
