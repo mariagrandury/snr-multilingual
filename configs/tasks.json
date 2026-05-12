@@ -1,0 +1,1832 @@
+{
+  "tasks": {
+    "AGI_Eval": {
+      "language": "en",
+      "benchmark": "AGI_Eval",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "ARC_Challenge": {
+      "language": "en",
+      "benchmark": "ARC_Challenge",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "ARC_Easy": {
+      "language": "en",
+      "benchmark": "ARC_Easy",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "AutoBencher": {
+      "language": "en",
+      "benchmark": "AutoBencher",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "HellaSwag": {
+      "language": "en",
+      "benchmark": "HellaSwag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "Jeopardy": {
+      "language": "en",
+      "benchmark": "Jeopardy",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "MMLU": {
+      "language": "en",
+      "benchmark": "MMLU",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "PIQA": {
+      "language": "en",
+      "benchmark": "PIQA",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "SQuAD": {
+      "language": "en",
+      "benchmark": "SQuAD",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "SocialIQA": {
+      "language": "en",
+      "benchmark": "SocialIQA",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "TriviaQA": {
+      "language": "en",
+      "benchmark": "TriviaQA",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "acp_bench": {
+      "language": "en",
+      "benchmark": "acp_bench",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aexams": {
+      "language": "ar",
+      "benchmark": "aexams",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "agieval_cn": {
+      "language": "cn",
+      "benchmark": "agieval_cn",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "agieval_en": {
+      "language": "en",
+      "benchmark": "agieval",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "ai2_arc": {
+      "language": "en",
+      "benchmark": "ai2_arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arabic_leaderboard_complete": {
+      "language": "ar",
+      "benchmark": "arabic_leaderboard_complete",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_ar": {
+      "language": "ar",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_challenge": {
+      "language": "en",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_easy": {
+      "language": "en",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_es": {
+      "language": "es",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_eu": {
+      "language": "eu",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_hi": {
+      "language": "hi",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_ru": {
+      "language": "ru",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_vi": {
+      "language": "vi",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "arc_zh": {
+      "language": "zh",
+      "benchmark": "arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "bbh": {
+      "language": "en",
+      "benchmark": "bbh",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "bbq": {
+      "language": "en",
+      "benchmark": "bbq",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "belebele_arb_Arab": {
+      "language": "ar",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_eng_Latn": {
+      "language": "en",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_eus_Latn": {
+      "language": "eu",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_hin_Deva": {
+      "language": "hi",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_jpn_Jpan": {
+      "language": "ja",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_rus_Cyrl": {
+      "language": "ru",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_spa_Latn": {
+      "language": "es",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_swh_Latn": {
+      "language": "sw",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_tel_Telu": {
+      "language": "te",
+      "benchmark": "belebele_tel_Telu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_tha_Thai": {
+      "language": "th",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_tur_Latn": {
+      "language": "tr",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_vie_Latn": {
+      "language": "vi",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_zho_Hans": {
+      "language": "zh",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "blend": {
+      "language": "multi",
+      "benchmark": "blend",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "ceval-valid": {
+      "language": "??",
+      "benchmark": "ceval-valid",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "cmmlu": {
+      "language": "cn",
+      "benchmark": "cmmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "commonsense_qa": {
+      "language": "en",
+      "benchmark": "commonsense_qa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "cultural_bench": {
+      "language": "??",
+      "benchmark": "cultural_bench",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "drop": {
+      "language": "en",
+      "benchmark": "drop",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu": {
+      "language": "??",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining",
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_ar": {
+      "language": "ar",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_en": {
+      "language": "en",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_es": {
+      "language": "es",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_hi": {
+      "language": "hi",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_ja": {
+      "language": "ja",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_ru": {
+      "language": "ru",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_sw": {
+      "language": "sw",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_tr": {
+      "language": "tr",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_vi": {
+      "language": "vi",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_mmlu_full_zh": {
+      "language": "zh",
+      "benchmark": "global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_arb_arab": {
+      "language": "ar",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_cmn_hans": {
+      "language": "zh",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_eng_latn": {
+      "language": "en",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_hin_deva": {
+      "language": "hi",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_jpn_jpan": {
+      "language": "ja",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_rus_cyrl": {
+      "language": "ru",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_spa_latn_spai": {
+      "language": "es",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_swh_latn": {
+      "language": "sw",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_tha_thai": {
+      "language": "th",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_tur_latn": {
+      "language": "tr",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_vie_latn": {
+      "language": "vi",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "gsm8k": {
+      "language": "en",
+      "benchmark": "gsm8k",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "gsm8k_cot": {
+      "language": "en",
+      "benchmark": "gsm8k_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "harmbench": {
+      "language": "en",
+      "benchmark": "harmbench",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "hellaswag": {
+      "language": "en",
+      "benchmark": "hellaswag",
+      "stages": [
+        "posttraining",
+        "pretraining"
+      ]
+    },
+    "hellaswag_ar": {
+      "language": "ar",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hellaswag_es": {
+      "language": "es",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hellaswag_eu": {
+      "language": "eu",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hellaswag_hi": {
+      "language": "hi",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hellaswag_multilingual": {
+      "language": "??",
+      "benchmark": "hellaswag_multilingual",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "hellaswag_ru": {
+      "language": "ru",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hellaswag_vi": {
+      "language": "vi",
+      "benchmark": "hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "hendrycks_math": {
+      "language": "en",
+      "benchmark": "hendrycks_math",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "humaneval_instruct": {
+      "language": "en",
+      "benchmark": "humaneval_instruct",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "ifeval": {
+      "language": "en",
+      "benchmark": "ifeval",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "include_base_44": {
+      "language": "??",
+      "benchmark": "include_base_44",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_albanian": {
+      "language": "??",
+      "benchmark": "include_base_44_albanian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_arabic": {
+      "language": "ar",
+      "benchmark": "include_base_44_arabic",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_armenian": {
+      "language": "??",
+      "benchmark": "include_base_44_armenian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_azerbaijani": {
+      "language": "??",
+      "benchmark": "include_base_44_azerbaijani",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_basque": {
+      "language": "??",
+      "benchmark": "include_base_44_basque",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_belarusian": {
+      "language": "??",
+      "benchmark": "include_base_44_belarusian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_bengali": {
+      "language": "??",
+      "benchmark": "include_base_44_bengali",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_bulgarian": {
+      "language": "??",
+      "benchmark": "include_base_44_bulgarian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_chinese": {
+      "language": "??",
+      "benchmark": "include_base_44_chinese",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_croatian": {
+      "language": "??",
+      "benchmark": "include_base_44_croatian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_dutch": {
+      "language": "??",
+      "benchmark": "include_base_44_dutch",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_finnish": {
+      "language": "??",
+      "benchmark": "include_base_44_finnish",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_french": {
+      "language": "fr",
+      "benchmark": "include_base_44_french",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_georgian": {
+      "language": "??",
+      "benchmark": "include_base_44_georgian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_german": {
+      "language": "de",
+      "benchmark": "include_base_44_german",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_greek": {
+      "language": "??",
+      "benchmark": "include_base_44_greek",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_hebrew": {
+      "language": "??",
+      "benchmark": "include_base_44_hebrew",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_hindi": {
+      "language": "hi",
+      "benchmark": "include_base_44_hindi",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_hungarian": {
+      "language": "??",
+      "benchmark": "include_base_44_hungarian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_indonesian": {
+      "language": "??",
+      "benchmark": "include_base_44_indonesian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_italian": {
+      "language": "it",
+      "benchmark": "include_base_44_italian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_japanese": {
+      "language": "jp",
+      "benchmark": "include_base_44_japanese",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_kazakh": {
+      "language": "??",
+      "benchmark": "include_base_44_kazakh",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_korean": {
+      "language": "ko",
+      "benchmark": "include_base_44_korean",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_lithuanian": {
+      "language": "??",
+      "benchmark": "include_base_44_lithuanian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_malay": {
+      "language": "??",
+      "benchmark": "include_base_44_malay",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_malayalam": {
+      "language": "??",
+      "benchmark": "include_base_44_malayalam",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_nepali": {
+      "language": "??",
+      "benchmark": "include_base_44_nepali",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_north_macedonian": {
+      "language": "??",
+      "benchmark": "include_base_44_north_macedonian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_persian": {
+      "language": "??",
+      "benchmark": "include_base_44_persian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_polish": {
+      "language": "??",
+      "benchmark": "include_base_44_polish",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_portuguese": {
+      "language": "pt",
+      "benchmark": "include_base_44_portuguese",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_russian": {
+      "language": "ru",
+      "benchmark": "include_base_44_russian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_serbian": {
+      "language": "??",
+      "benchmark": "include_base_44_serbian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_spanish": {
+      "language": "es",
+      "benchmark": "include_base_44_spanish",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_tagalog": {
+      "language": "??",
+      "benchmark": "include_base_44_tagalog",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_tamil": {
+      "language": "??",
+      "benchmark": "include_base_44_tamil",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_telugu": {
+      "language": "??",
+      "benchmark": "include_base_44_telugu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_turkish": {
+      "language": "??",
+      "benchmark": "include_base_44_turkish",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_ukrainian": {
+      "language": "uk",
+      "benchmark": "include_base_44_ukrainian",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_uzbek": {
+      "language": "??",
+      "benchmark": "include_base_44_uzbek",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "include_base_44_vietnamese": {
+      "language": "vi",
+      "benchmark": "include_base_44_vietnamese",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada": {
+      "language": "en",
+      "benchmark": "lambada",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai": {
+      "language": "multi",
+      "benchmark": "lambada_openai",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "m_arc": {
+      "language": "multi",
+      "benchmark": "m_arc",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "m_hellaswag": {
+      "language": "multi",
+      "benchmark": "m_hellaswag",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mathqa": {
+      "language": "en",
+      "benchmark": "mathqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mbpp_instruct": {
+      "language": "en",
+      "benchmark": "mbpp_instruct",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_cot_native": {
+      "language": "multi",
+      "benchmark": "mgsm_cot_native",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_direct_en": {
+      "language": "en",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_es": {
+      "language": "es",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_eu": {
+      "language": "eu",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_ja": {
+      "language": "ja",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_ru": {
+      "language": "ru",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_sw": {
+      "language": "sw",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_th": {
+      "language": "th",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mgsm_direct_zh": {
+      "language": "zh",
+      "benchmark": "mgsm_direct",
+      "stages": [
+        "midtraining"
+      ]
+    },
+    "mlqa_ar_ar": {
+      "language": "ar",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mlqa_en_en": {
+      "language": "en",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mlqa_es_es": {
+      "language": "es",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mlqa_hi_hi": {
+      "language": "hi",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mlqa_vi_vi": {
+      "language": "vi",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mlqa_zh_zh": {
+      "language": "zh",
+      "benchmark": "mlqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mmlu": {
+      "language": "en",
+      "benchmark": "mmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "mmlu_flan_cot_zeroshot": {
+      "language": "en",
+      "benchmark": "mmlu_flan_cot_zeroshot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "multiblimp_arb": {
+      "language": "ar",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_eng": {
+      "language": "en",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_eus": {
+      "language": "eu",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_hin": {
+      "language": "hi",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_rus": {
+      "language": "ru",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_spa": {
+      "language": "es",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_tur": {
+      "language": "tr",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "openbookqa": {
+      "language": "en",
+      "benchmark": "openbookqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "paws_en": {
+      "language": "en",
+      "benchmark": "paws",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "paws_es": {
+      "language": "es",
+      "benchmark": "paws",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "paws_eu": {
+      "language": "eu",
+      "benchmark": "paws",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "paws_ja": {
+      "language": "ja",
+      "benchmark": "paws",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "paws_zh": {
+      "language": "zh",
+      "benchmark": "paws",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "pawsx": {
+      "language": "multi",
+      "benchmark": "pawsx",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "piqa": {
+      "language": "en",
+      "benchmark": "piqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "social_iqa": {
+      "language": "en",
+      "benchmark": "social_iqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "squadv2": {
+      "language": "en",
+      "benchmark": "squadv2",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "toxigen": {
+      "language": "en",
+      "benchmark": "toxigen",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "triviaqa": {
+      "language": "en",
+      "benchmark": "triviaqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa": {
+      "language": "en",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa-multi_mc1_en": {
+      "language": "en",
+      "benchmark": "truthfulqa-multi_mc1",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa-multi_mc1_es": {
+      "language": "es",
+      "benchmark": "truthfulqa-multi_mc1",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa-multi_mc1_eu": {
+      "language": "eu",
+      "benchmark": "truthfulqa-multi_mc1",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_ar_mc1": {
+      "language": "ar",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_es_mc1": {
+      "language": "es",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_eu_mc1": {
+      "language": "eu",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_hi_mc1": {
+      "language": "hi",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_mc1": {
+      "language": "en",
+      "benchmark": "truthfulqa_mc1",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_multilingual": {
+      "language": "multi",
+      "benchmark": "truthfulqa_multilingual",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa_ru_mc1": {
+      "language": "ru",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_vi_mc1": {
+      "language": "vi",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "truthfulqa_zh_mc1": {
+      "language": "zh",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "wikitext": {
+      "language": "en",
+      "benchmark": "wikitext",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "winogrande": {
+      "language": "en",
+      "benchmark": "winogrande",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa": {
+      "language": "multi",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_eu": {
+      "language": "eu",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_sw": {
+      "language": "sw",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_th": {
+      "language": "th",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_tr": {
+      "language": "tr",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_vi": {
+      "language": "vi",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_zh": {
+      "language": "zh",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli": {
+      "language": "multi",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_ar": {
+      "language": "ar",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_en": {
+      "language": "en",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_es": {
+      "language": "es",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_eu": {
+      "language": "eu",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_hi": {
+      "language": "hi",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_ru": {
+      "language": "ru",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_sw": {
+      "language": "sw",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_th": {
+      "language": "th",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_tr": {
+      "language": "tr",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_vi": {
+      "language": "vi",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xnli_zh": {
+      "language": "zh",
+      "benchmark": "xnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_ar": {
+      "language": "ar",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_en": {
+      "language": "en",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_es": {
+      "language": "es",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_eu": {
+      "language": "eu",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_hi": {
+      "language": "hi",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_ru": {
+      "language": "ru",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_sw": {
+      "language": "sw",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_te": {
+      "language": "te",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_zh": {
+      "language": "zh",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xwinograd": {
+      "language": "multi",
+      "benchmark": "xwinograd",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xwinograd_en": {
+      "language": "en",
+      "benchmark": "xwinograd",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xwinograd_jp": {
+      "language": "ja",
+      "benchmark": "xwinograd",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xwinograd_ru": {
+      "language": "ru",
+      "benchmark": "xwinograd",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xwinograd_zh": {
+      "language": "zh",
+      "benchmark": "xwinograd",
+      "stages": [
+        "pretraining"
+      ]
+    }
+  },
+  "groups": {
+    "pretraining_full": [
+      "arc_easy",
+      "arc_challenge",
+      "arc_ar",
+      "arc_es",
+      "arc_eu",
+      "arc_hi",
+      "arc_ru",
+      "arc_vi",
+      "arc_zh",
+      "belebele_arb_Arab",
+      "belebele_eng_Latn",
+      "belebele_eus_Latn",
+      "belebele_hin_Deva",
+      "belebele_jpn_Jpan",
+      "belebele_rus_Cyrl",
+      "belebele_spa_Latn",
+      "belebele_swh_Latn",
+      "belebele_tha_Thai",
+      "belebele_tur_Latn",
+      "belebele_vie_Latn",
+      "belebele_zho_Hans",
+      "global_mmlu_full_ar",
+      "global_mmlu_full_en",
+      "global_mmlu_full_es",
+      "global_mmlu_full_hi",
+      "global_mmlu_full_ja",
+      "global_mmlu_full_ru",
+      "global_mmlu_full_sw",
+      "global_mmlu_full_tr",
+      "global_mmlu_full_vi",
+      "global_mmlu_full_zh",
+      "global_piqa_completions_arb_arab",
+      "global_piqa_completions_cmn_hans",
+      "global_piqa_completions_eng_latn",
+      "global_piqa_completions_hin_deva",
+      "global_piqa_completions_jpn_jpan",
+      "global_piqa_completions_rus_cyrl",
+      "global_piqa_completions_spa_latn_spai",
+      "global_piqa_completions_swh_latn",
+      "global_piqa_completions_tha_thai",
+      "global_piqa_completions_tur_latn",
+      "global_piqa_completions_vie_latn",
+      "hellaswag",
+      "hellaswag_ar",
+      "hellaswag_es",
+      "hellaswag_eu",
+      "hellaswag_hi",
+      "hellaswag_ru",
+      "hellaswag_vi",
+      "multiblimp_eng",
+      "multiblimp_spa",
+      "multiblimp_rus",
+      "multiblimp_tur",
+      "multiblimp_hin",
+      "multiblimp_arb",
+      "multiblimp_eus",
+      "truthfulqa_mc1",
+      "truthfulqa_ar_mc1",
+      "truthfulqa_es_mc1",
+      "truthfulqa_eu_mc1",
+      "truthfulqa_hi_mc1",
+      "truthfulqa_ru_mc1",
+      "truthfulqa_vi_mc1",
+      "truthfulqa_zh_mc1",
+      "xnli_ar",
+      "xnli_en",
+      "xnli_es",
+      "xnli_eu",
+      "xnli_hi",
+      "xnli_ru",
+      "xnli_sw",
+      "xnli_th",
+      "xnli_tr",
+      "xnli_vi",
+      "xnli_zh",
+      "xstorycloze_ar",
+      "xstorycloze_en",
+      "xstorycloze_es",
+      "xstorycloze_eu",
+      "xstorycloze_hi",
+      "xstorycloze_ru",
+      "xstorycloze_sw",
+      "xstorycloze_zh",
+      "paws_en",
+      "paws_es",
+      "paws_eu",
+      "paws_ja",
+      "paws_zh",
+      "xcopa_eu",
+      "xcopa_sw",
+      "xcopa_th",
+      "xcopa_tr",
+      "xcopa_vi",
+      "xcopa_zh",
+      "xwinograd_en",
+      "xwinograd_jp",
+      "xwinograd_ru",
+      "xwinograd_zh",
+      "include_base_44_arabic",
+      "include_base_44_basque",
+      "include_base_44_chinese",
+      "include_base_44_hindi",
+      "include_base_44_japanese",
+      "include_base_44_russian",
+      "include_base_44_spanish",
+      "include_base_44_turkish",
+      "include_base_44_vietnamese",
+      "piqa",
+      "mmlu",
+      "triviaqa",
+      "squadv2",
+      "agieval_en",
+      "agieval_cn",
+      "winogrande",
+      "openbookqa",
+      "commonsense_qa",
+      "arabic_leaderboard_complete",
+      "belebele_tel_Telu",
+      "xstorycloze_te",
+      "include_base_44_telugu"
+    ],
+    "pretraining_classic": [
+      "global_mmlu",
+      "hellaswag",
+      "piqa",
+      "openbookqa",
+      "wikitext",
+      "include_base_44",
+      "m_hellaswag",
+      "xwinograd",
+      "commonsense_qa",
+      "squadv2",
+      "mmlu",
+      "m_arc",
+      "lambada",
+      "lambada_openai",
+      "gsm8k",
+      "xnli",
+      "xcopa",
+      "pawsx",
+      "ai2_arc",
+      "winogrande"
+    ],
+    "pretraining_extra": [
+      "truthfulqa-multi_mc1_en",
+      "truthfulqa-multi_mc1_es",
+      "truthfulqa-multi_mc1_eu",
+      "social_iqa",
+      "mlqa_ar_ar",
+      "mlqa_en_en",
+      "mlqa_es_es",
+      "mlqa_hi_hi",
+      "mlqa_vi_vi",
+      "mlqa_zh_zh",
+      "paws_en",
+      "paws_es",
+      "paws_eu",
+      "paws_ja",
+      "paws_zh",
+      "xcopa_eu",
+      "xcopa_sw",
+      "xcopa_th",
+      "xcopa_tr",
+      "xcopa_vi",
+      "xcopa_zh",
+      "xwinograd_en",
+      "xwinograd_jp",
+      "xwinograd_ru",
+      "xwinograd_zh",
+      "aexams",
+      "cmmlu",
+      "ceval-valid",
+      "arabic_leaderboard_complete",
+      "belebele_tel_Telu",
+      "xstorycloze_te",
+      "include_base_44_telugu",
+      "include_base_44_arabic",
+      "include_base_44_basque",
+      "include_base_44_chinese",
+      "include_base_44_hindi",
+      "include_base_44_japanese",
+      "include_base_44_russian",
+      "include_base_44_spanish",
+      "include_base_44_turkish",
+      "include_base_44_vietnamese"
+    ],
+    "pretraining_random": [
+      "arc_challenge",
+      "arc_ar",
+      "arc_es",
+      "arc_eu",
+      "arc_hi",
+      "arc_ru",
+      "arc_vi",
+      "arc_zh",
+      "belebele_arb_Arab",
+      "belebele_eng_Latn",
+      "belebele_eus_Latn",
+      "belebele_hin_Deva",
+      "belebele_jpn_Jpan",
+      "belebele_rus_Cyrl",
+      "belebele_spa_Latn",
+      "belebele_swh_Latn",
+      "belebele_tha_Thai",
+      "belebele_tur_Latn",
+      "belebele_vie_Latn",
+      "belebele_zho_Hans",
+      "global_mmlu_full_ar",
+      "global_mmlu_full_en",
+      "global_mmlu_full_es",
+      "global_mmlu_full_hi",
+      "global_mmlu_full_ja",
+      "global_mmlu_full_ru",
+      "global_mmlu_full_sw",
+      "global_mmlu_full_tr",
+      "global_mmlu_full_vi",
+      "global_mmlu_full_zh"
+    ],
+    "pretraining_allenai": [
+      "TriviaQA",
+      "SQuAD",
+      "ARC_Easy",
+      "Jeopardy",
+      "AutoBencher",
+      "HellaSwag",
+      "MMLU",
+      "ARC_Challenge",
+      "SocialIQA",
+      "PIQA",
+      "AGI_Eval"
+    ],
+    "midtraining": [
+      "mgsm_direct_en",
+      "mgsm_direct_es",
+      "mgsm_direct_eu",
+      "mgsm_direct_ja",
+      "mgsm_direct_ru",
+      "mgsm_direct_sw",
+      "mgsm_direct_th",
+      "mgsm_direct_zh"
+    ],
+    "posttraining": [
+      "mmlu_flan_cot_zeroshot",
+      "truthfulqa",
+      "bbh",
+      "drop",
+      "acp_bench",
+      "gsm8k_cot",
+      "hendrycks_math",
+      "mathqa",
+      "humaneval_instruct",
+      "mbpp_instruct",
+      "ifeval",
+      "hellaswag",
+      "harmbench",
+      "toxigen",
+      "bbq",
+      "global_mmlu",
+      "truthfulqa_multilingual",
+      "mgsm_cot_native",
+      "hellaswag_multilingual",
+      "blend",
+      "cultural_bench"
+    ],
+    "include_base_44": [
+      "include_base_44_albanian",
+      "include_base_44_arabic",
+      "include_base_44_armenian",
+      "include_base_44_azerbaijani",
+      "include_base_44_basque",
+      "include_base_44_belarusian",
+      "include_base_44_bengali",
+      "include_base_44_bulgarian",
+      "include_base_44_chinese",
+      "include_base_44_croatian",
+      "include_base_44_dutch",
+      "include_base_44_finnish",
+      "include_base_44_french",
+      "include_base_44_georgian",
+      "include_base_44_german",
+      "include_base_44_greek",
+      "include_base_44_hebrew",
+      "include_base_44_hindi",
+      "include_base_44_hungarian",
+      "include_base_44_indonesian",
+      "include_base_44_italian",
+      "include_base_44_japanese",
+      "include_base_44_kazakh",
+      "include_base_44_korean",
+      "include_base_44_lithuanian",
+      "include_base_44_malay",
+      "include_base_44_malayalam",
+      "include_base_44_nepali",
+      "include_base_44_north_macedonian",
+      "include_base_44_persian",
+      "include_base_44_polish",
+      "include_base_44_portuguese",
+      "include_base_44_russian",
+      "include_base_44_serbian",
+      "include_base_44_spanish",
+      "include_base_44_tagalog",
+      "include_base_44_tamil",
+      "include_base_44_telugu",
+      "include_base_44_turkish",
+      "include_base_44_ukrainian",
+      "include_base_44_uzbek",
+      "include_base_44_vietnamese"
+    ],
+    "test": [
+      "hellaswag"
+    ]
+  }
+}
