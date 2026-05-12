@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
 """SNR evaluation progress dashboard.
 
-Enumerates the target (model, checkpoint) tuples implied by the
-configs/signal_to_ratio/models_pretraining_*.txt files (10 ckpts for
-models <3B, last ckpt for >=3B), cross-references the eval_logs
-directory for completed tasks, and queries `squeue` for pending/running
-jobs. Prints a per-checkpoint summary by default, and per-task detail
-with --details.
+Enumerates the target (model, checkpoint) tuples declared in
+configs/models.json (filtered by --pool or --filter), cross-references
+the eval_logs directory for completed tasks, and queries `squeue` for
+pending/running jobs. Prints a per-checkpoint summary by default, and
+per-task detail with --details.
 
 Examples:
-    # Per-ckpt summary across all models_pretraining_*.txt files
-    python scripts/snr_progress.py
+    # Per-ckpt summary for the recommended pool (all 3 seeds + externals)
+    python scripts/snr_progress.py --pool seeds_28_1797_1904
 
-    # Restrict to one models file
-    python scripts/snr_progress.py --models configs/signal_to_ratio/models_pretraining_custom.txt
+    # Restrict to one Apertus seed pool
+    python scripts/snr_progress.py --pool seeds_1904
 
     # Per-task breakdown for a specific checkpoint
-    python scripts/snr_progress.py --details --filter apertus-350M-fwEdu30-fw270-seed1904-iter2000
+    python scripts/snr_progress.py --pool seeds_28_1797_1904 \
+        --details --filter apertus-350M-fwEdu30-fw270-seed1904-iter6000
 
     # Show only ckpts with no submitted jobs
-    python scripts/snr_progress.py --status not_submitted
+    python scripts/snr_progress.py --pool seeds_28_1797_1904 \
+        --status not_submitted
 """
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import os
 import re
@@ -35,12 +35,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "scripts" / "utils"))
+from configs import (  # noqa: E402
+    expand_pool, get_model, iters_for, load_pools, load_tasks,
+    tasks_for_group,
+)
+
 LOGS_BASE = Path(
     "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 )
 DEFAULT_ENTITY = "mariagrandury-epflnlp"
 DEFAULT_PROJECT = "snr-experiments"
-SMALL_MODEL_THRESHOLD_B = 3.0  # in billions
 
 
 @dataclass
@@ -54,172 +59,29 @@ class Target:
     pending_jobs: list[tuple[str, str, str]] = field(default_factory=list)  # (jobid, jobname, state)
 
 
-def parse_size_b(model_name: str) -> float | None:
-    """Extract model size in billions from a name like apertus-350M-..., apertus-1B-..., -3b-, -7B-."""
-    m = re.search(r"(\d+(?:\.\d+)?)\s*([MmBb])", model_name)
-    if not m:
-        return None
-    n, unit = float(m.group(1)), m.group(2).lower()
-    return n / 1000 if unit == "m" else n
+def enumerate_targets_from_json(model_names: list[str]) -> list[Target]:
+    """Return one Target per (model, ckpt) declared in configs/models.json.
 
+    For each model in ``model_names``, expands its ``checkpoints.full_eval``
+    list. The harness NAME convention is preserved verbatim from the
+    historical pipeline:
 
-def derive_base_name(spec: str) -> str:
-    """Mirror scripts/generate_snr_runner.sh:derive_name."""
-    m = spec
-    if m.startswith("https://huggingface.co/"):
-        m = m[len("https://huggingface.co/") :]
-        return m.rstrip("/").split("/")[-1]
-    m = m.rstrip("/")
-    if m.endswith("/checkpoints"):
-        m = m[: -len("/checkpoints")]
-    return os.path.basename(m)
-
-
-def _list_cmd(spec: str, total: int | None, last: int | None,
-              dense_tail: int | None, tail_pct: int | None) -> list[str]:
-    cmd = [str(REPO / "scripts" / "list_checkpoints.sh"), spec]
-    cmd += ["--total", str(total)] if total else ["--last", str(last)]
-    if dense_tail:
-        cmd += ["--dense-tail", str(dense_tail)]
-    if tail_pct:
-        cmd += ["--tail-pct", str(tail_pct)]
-    return cmd
-
-
-def list_megatron_iters(ckpt_dir: str, total: int | None, last: int | None,
-                        dense_tail: int | None = None,
-                        tail_pct: int | None = None) -> list[int]:
-    """Run scripts/list_checkpoints.sh to get the same enumeration the generator uses."""
-    try:
-        out = subprocess.check_output(
-            _list_cmd(ckpt_dir, total, last, dense_tail, tail_pct),
-            stderr=subprocess.DEVNULL, text=True,
-        )
-    except subprocess.CalledProcessError:
-        return []
-    return [int(x) for x in out.split() if x.strip().isdigit()]
-
-
-def list_hf_branches(repo_url: str, total: int | None, last: int | None,
-                     dense_tail: int | None = None,
-                     tail_pct: int | None = None) -> list[str]:
-    """Same logic for HF repos via list_checkpoints.sh."""
-    try:
-        out = subprocess.check_output(
-            _list_cmd(repo_url, total, last, dense_tail, tail_pct),
-            stderr=subprocess.DEVNULL, text=True,
-        )
-    except subprocess.CalledProcessError:
-        return []
-    return [b for b in out.splitlines() if b.strip()]
-
-
-def parse_seed_iters(specs: list[str] | None) -> dict[str, set[int]]:
-    """Parse repeated --seed-iters flags like 'seed28=6000,28000,42000'.
-
-    Returns a {seed_str: {iter_int}} mapping. Cells whose seed is in the map
-    are restricted to the listed iters; other seeds keep the canonical set.
+      - Megatron iter checkpoints: ``<model>-iter<N>``
+      - HF branch checkpoints:     ``<model>-<branch>``
     """
-    out: dict[str, set[int]] = {}
-    for spec in specs or []:
-        if "=" not in spec:
-            raise SystemExit(f"--seed-iters expects seed=N,N,N (got '{spec}')")
-        seed, csv = spec.split("=", 1)
-        out[seed.strip()] = {int(x) for x in csv.split(",") if x.strip()}
-    return out
-
-
-def cell_seed(model_name: str) -> str | None:
-    """Extract seed token from a name like apertus-...-seed1904."""
-    m = re.search(r"-seed(\d+)$", model_name)
-    return f"seed{m.group(1)}" if m else None
-
-
-def enumerate_targets_from_models_file(
-    models_file: Path,
-    dense_tail: int | None = 5,
-    tail_pct: int | None = 10,
-    seed_iters: dict[str, set[int]] | None = None,
-) -> list[Target]:
-    """Return one Target per (model, ckpt) selected per the size-based rule.
-
-    For <3B models we pick 10 evenly spaced ckpts plus up to ``dense_tail`` more
-    from the last ``tail_pct`` percent of training. To keep the curve points
-    comparable across runs of different lengths (some models in the file are
-    still mid-resume and don't have iter 50000 on disk yet), we derive the
-    canonical iter set from the longest fully-trained reference model in the
-    same file and apply it to ALL small-size Megatron models. Half-trained
-    models will list iters they don't have on disk yet — those show up as
-    ``not_submitted`` until the resume training fills them in.
-
-    For >=3B we just take the last 1 ckpt (sufficient for HF reference models).
-    """
-    # First pass: classify entries and collect on-disk iters for small Megatron.
-    entries: list[tuple[str, str, str]] = []  # (kind, spec, base)
-    small_meg_iters: dict[str, list[int]] = {}  # base -> on-disk iters
-    for line in models_file.read_text().splitlines():
-        spec = line.strip()
-        if not spec or spec.startswith("#"):
-            continue
-        base = derive_base_name(spec)
-        size_b = parse_size_b(base)
-        small = size_b is None or size_b < SMALL_MODEL_THRESHOLD_B
-        if spec.startswith(("/iopsstor", "/capstor")):
-            kind = "meg_small" if small else "meg_large"
-            entries.append((kind, spec, base))
-            if small:
-                small_meg_iters[base] = list_megatron_iters(
-                    spec, 10, None, dense_tail, tail_pct
-                )
-        elif spec.startswith("https://huggingface.co/"):
-            entries.append(("hf_small" if small else "hf_large", spec, base))
-        else:
-            print(f"# WARNING: unrecognized format: {spec}", file=sys.stderr)
-
-    # Canonical iter set = the longest list among small Megatron models. Ties
-    # broken by max iter so a fully-trained model wins over a half-trained one
-    # of the same length.
-    canonical_iters: list[int] | None = None
-    if small_meg_iters:
-        canonical_iters = max(
-            small_meg_iters.values(),
-            key=lambda its: (len(its), max(its) if its else 0),
-        )
-
-    # Second pass: emit Targets.
     targets: list[Target] = []
-    for kind, spec, base in entries:
-        if kind == "meg_small":
-            iters = canonical_iters or small_meg_iters.get(base, [])
-            # Restrict iters for cells whose seed has an explicit policy.
-            # Use the user-provided list verbatim (sorted) — don't intersect
-            # with `canonical_iters`, otherwise non-canonical iters like
-            # 10000 / 20000 / 30000 would be silently dropped.
-            seed = cell_seed(base)
-            if seed_iters and seed in seed_iters:
-                iters = sorted(seed_iters[seed])
-            for it in iters:
-                targets.append(
-                    Target(model_name=base, ckpt_id=f"iter{it}", name=f"{base}-iter{it}")
-                )
-        elif kind == "meg_large":
-            iters = list_megatron_iters(spec, None, 1)
-            for it in iters:
-                targets.append(
-                    Target(model_name=base, ckpt_id=f"iter{it}", name=f"{base}-iter{it}")
-                )
-        elif kind == "hf_small":
-            branches = list_hf_branches(spec, 10, None, dense_tail, tail_pct)
-            for br in branches:
-                targets.append(
-                    Target(model_name=base, ckpt_id=br, name=f"{base}-{br}")
-                )
-        elif kind == "hf_large":
-            branches = list_hf_branches(spec, None, 1)
-            for br in branches:
-                targets.append(
-                    Target(model_name=base, ckpt_id=br, name=f"{base}-{br}")
-                )
+    for name in model_names:
+        entry = get_model(name)
+        ckpts = iters_for(name, subset="full_eval")
+        kind = entry["checkpoint_kind"]
+        for c in ckpts:
+            if kind == "megatron_iter":
+                ckpt_id = f"iter{c}"
+            else:  # hf_branch / hf_local
+                ckpt_id = c["branch"] if isinstance(c, dict) else str(c)
+            targets.append(
+                Target(model_name=name, ckpt_id=ckpt_id, name=f"{name}-{ckpt_id}")
+            )
     return targets
 
 
@@ -244,14 +106,16 @@ def scan_completed_tasks(name: str, entity: str, project: str) -> set[str]:
 
 
 def squeue_jobs() -> list[dict]:
-    """All jobs visible to me (running + pending)."""
+    """All jobs visible to me (running + pending). Returns [] on hosts
+    without `squeue` (e.g. local Mac) so the script still produces a
+    CSV without job-pending info."""
     try:
         out = subprocess.check_output(
             ["squeue", "--me", "--noheader", "-o", "%i|%j|%t|%P|%M|%L"],
             text=True,
             stderr=subprocess.DEVNULL,
         )
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return []
     rows = []
     for line in out.splitlines():
@@ -296,9 +160,11 @@ def render_bar(done: int, total: int, width: int = 25) -> str:
 
 # ---------------------------------------------------------------------------
 # Heatmap: per-(task, checkpoint) status from snr_progress.csv
-#   rows    — tasks, ORDER preserved from tasks_file (e.g. tasks_pretraining_full.txt)
-#   cols    — every canonical-sweep ckpt (4 sizes × 9 cells × 13 iters = 468),
-#             sorted by (size, cell name alphabetical, iter ascending)
+#   rows    — tasks, ORDER preserved from the task group (--tasks-group).
+#   cols    — every canonical-sweep ckpt (4 sizes × 9 cells × 9 iters/cell),
+#             sorted by (size, cell name alphabetical, iter ascending).
+#             Per-cell iter list comes from configs/models.json
+#             `checkpoints.full_eval`.
 #   cell    — green: task done · orange: pending · white: ckpt not in CSV (we
 #             don't intend to eval that ckpt-benchmark combination)
 #   x-axis  — no per-ckpt labels, just black vertical lines between size groups
@@ -307,28 +173,10 @@ def render_bar(done: int, total: int, width: int = 25) -> str:
 HEATMAP_SIZES = ["175M", "350M", "600M", "1B"]
 HEATMAP_MIXES = [(30, 70), (60, 40), (90, 10)]
 HEATMAP_SEEDS = [28, 1797, 1904]
-# Per-seed iter sets we actually want to evaluate (2026-05-10). Used as the
-# default `--seed-iters` policy in `main()`, which means: the CSV snapshot,
-# the heatmap, and every launcher that calls `snr_progress.py` will all
-# restrict the canonical sweep to these (cell × iter) combinations unless
-# the caller passes `--seed-iters` explicitly.
-#   seed1904 → 9 picks from the canonical 13-iter set
-#   seed28 / seed1797 → 10000-stepped grid (10k/20k/30k iters NOT canonical)
-ITERS_SEED1904 = [6000, 12000, 22000, 28000, 42000, 44000, 46000, 48000, 50000]
-ITERS_OTHER   = [6000, 10000, 20000, 30000, 42000, 44000, 46000, 48000, 50000]
-
-
-def default_seed_iters() -> dict[str, set[int]]:
-    """Default per-seed iter policy. Applied when no --seed-iters is passed."""
-    return {
-        "seed1904": set(ITERS_SEED1904),
-        "seed1797": set(ITERS_OTHER),
-        "seed28":   set(ITERS_OTHER),
-    }
 
 
 def make_eval_progress_heatmap(
-    csv_path: Path, tasks_file: Path, out_path: Path
+    csv_path: Path, tasks: list[str], out_path: Path
 ) -> None:
     """Render a tasks × checkpoints heatmap from `csv_path` to `out_path`.
 
@@ -340,12 +188,6 @@ def make_eval_progress_heatmap(
     from matplotlib.colors import BoundaryNorm, ListedColormap
     from matplotlib.patches import Patch
 
-    tasks = [
-        line.strip()
-        for line in tasks_file.read_text().splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-
     # CSV: name -> set of pending tasks. Missing key  ==>  white column.
     csv_rows: dict[str, set[str]] = {}
     with csv_path.open() as fh:
@@ -353,23 +195,20 @@ def make_eval_progress_heatmap(
             rem = (r.get("remaining") or "").strip()
             csv_rows[r["name"]] = set(rem.split(",")) if rem else set()
 
-    # Build the column list and capture size-group boundaries.
-    # Per-seed iter set: seed1904 uses ITERS_SEED1904; others use
-    # ITERS_OTHER. (The two sets are the same length, so each cell
-    # contributes the same number of columns.)
+    # Build the column list and capture size-group boundaries. Per-cell
+    # iter list comes from configs/models.json `checkpoints.full_eval`.
     columns: list[str] = []
     size_boundaries: list[int] = []  # column indices where a new size starts (excl. 0)
     for s_idx, size in enumerate(HEATMAP_SIZES):
         if s_idx > 0:
             size_boundaries.append(len(columns))
         cells = sorted(
-            (f"apertus-{size}-fwEdu{e}-fw2{w}-seed{s}", s)
+            f"apertus-{size}-fwEdu{e}-fw2{w}-seed{s}"
             for (e, w) in HEATMAP_MIXES
             for s in HEATMAP_SEEDS
         )
-        for cell, seed in cells:
-            iters = ITERS_SEED1904 if seed == 1904 else ITERS_OTHER
-            for it in iters:
+        for cell in cells:
+            for it in iters_for(cell, subset="full_eval"):
                 columns.append(f"{cell}-iter{it}")
 
     n_rows = len(tasks)
@@ -409,11 +248,14 @@ def make_eval_progress_heatmap(
 
     ax.set_xlim(-0.5, n_cols - 0.5)
     ax.set_ylim(n_rows - 0.5, -1.5)
-    n_iters_each = len(ITERS_SEED1904)  # same length as ITERS_OTHER
+    n_iters_each = len(iters_for(
+        f"apertus-{HEATMAP_SIZES[0]}-fwEdu{HEATMAP_MIXES[0][0]}-fw2{HEATMAP_MIXES[0][1]}-seed{HEATMAP_SEEDS[-1]}",
+        subset="full_eval",
+    ))
     ax.set_xlabel(
         f"checkpoints (per size: 9 cells × {n_iters_each} iters, "
-        "sorted alphabetical × iter ascending; "
-        "seed1904 iters differ from seed28 / seed1797 — see HEATMAP_ITERS_* in script)"
+        "sorted alphabetical × iter ascending; per-seed iter sets in "
+        "configs/models.json `checkpoints.full_eval`)"
     )
 
     # Tally the legend for context.
@@ -445,15 +287,15 @@ def make_eval_progress_heatmap(
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument(
-        "--models",
-        action="append",
-        default=None,
-        help="Path to a models_pretraining_*.txt file (repeatable). Default: all matching files.",
+        "--pool",
+        required=True,
+        help="Pool name from configs/models.json. Enumerates the pool's "
+             "models × their checkpoints.full_eval lists.",
     )
     p.add_argument(
-        "--tasks-file",
-        default=str(REPO / "configs" / "signal_to_ratio" / "tasks_pretraining_full.txt"),
-        help="Task list file used to compute total tasks per ckpt.",
+        "--tasks-group",
+        default="pretraining_full",
+        help="Task group name from configs/tasks.json (default: pretraining_full).",
     )
     p.add_argument("--entity", default=DEFAULT_ENTITY)
     p.add_argument("--project", default=DEFAULT_PROJECT)
@@ -474,58 +316,32 @@ def main() -> None:
         help="Show per-task status for each ckpt (verbose).",
     )
     p.add_argument(
-        "--seed-iters",
-        action="append",
-        default=None,
-        help=(
-            "Restrict iters for a specific seed. Format: seed28=6000,28000,42000 "
-            "(repeatable). Cells whose seed is listed only emit the listed iters; "
-            "other seeds keep the canonical 13-iter set."
-        ),
-    )
-    p.add_argument(
         "--plot",
         metavar="PATH",
         help=(
-            "After writing the CSV snapshot, render a tasks × checkpoints heatmap "
-            "to PATH. Rows = tasks in --tasks-file order. Columns = the canonical "
-            "4×9×13 sweep (sorted by size, then alphabetical). Cell color: green = "
-            "task done, orange = pending, white = ckpt not in CSV."
+            "After writing the CSV snapshot, render a tasks × checkpoints "
+            "heatmap to PATH. Rows = tasks in --tasks-group order. "
+            "Columns = pool members × full_eval iters. Cell color: green "
+            "= task done, orange = pending, white = ckpt not in CSV."
         ),
     )
     args = p.parse_args()
-    # Per-seed iter policy: caller's --seed-iters wins; otherwise apply the
-    # project default (ITERS_SEED1904 / ITERS_OTHER above).
-    seed_iters = parse_seed_iters(args.seed_iters) if args.seed_iters else default_seed_iters()
-    # Always written next to this script. Launchers read it directly so they
-    # don't re-enumerate the matrix per cell. Schema:
-    #   name,status,done,total,remaining,active_jobids
+
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+
     csv_path = REPO / "snr_progress.csv"
 
-    if args.models is None:
-        args.models = sorted(
-            glob.glob(str(REPO / "configs" / "signal_to_ratio" / "models_pretraining_*.txt"))
-        )
-
-    # Enumerate targets
-    targets: list[Target] = []
-    for mf in args.models:
-        targets.extend(
-            enumerate_targets_from_models_file(Path(mf), seed_iters=seed_iters)
-        )
+    # Enumerate targets directly from configs/models.json via the pool.
+    model_names = expand_pool(args.pool)
+    targets = enumerate_targets_from_json(model_names)
 
     if args.filter:
         targets = [t for t in targets if args.filter in t.name]
 
-    # Tasks
-    tasks_path = Path(args.tasks_file)
-    all_tasks = sorted(
-        {
-            line.strip()
-            for line in tasks_path.read_text().splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        }
-    )
+    # Tasks come from configs/tasks.json groups.
+    all_tasks = sorted(set(tasks_for_group(args.tasks_group)))
     total_tasks = len(all_tasks)
 
     # Scan completion + jobs
@@ -560,7 +376,7 @@ def main() -> None:
             w.writerow([t.name, status_for(t), done, total_tasks, remaining, jobids])
 
     if args.plot:
-        make_eval_progress_heatmap(csv_path, tasks_path, Path(args.plot))
+        make_eval_progress_heatmap(csv_path, all_tasks, Path(args.plot))
 
     if args.status != "all":
         targets = [t for t in targets if status_for(t) == args.status]

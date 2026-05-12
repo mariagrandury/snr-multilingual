@@ -12,6 +12,12 @@ $LOGS_ROOT/$ENTITY/$PROJECT/$NAME/harness/, every prior eval_*/ run for:
   * `results_*.json` files whose top-level `.results` dict has the task as
     a key (saved by runs that finished cleanly and merged).
 
+Task list source — exactly one of:
+  --tasks-group GROUP   read from configs/tasks.json `groups.GROUP`
+                        (used by launchers / hf_base_runner.sh)
+  --tasks LIST          comma-separated task names (used by the inner
+                        _run_per_task.sh loop to pass a filtered list)
+
 Exit code is 0 if at least one task is remaining, 1 if everything is
 already done — handy for `if ! _eval_status ...; then continue; fi`.
 """
@@ -20,6 +26,10 @@ import json
 import os
 import sys
 from pathlib import Path
+
+# Make `configs` importable from the cluster's runtime path.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
+from configs import tasks_for_group  # noqa: E402
 
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 DEFAULT_ENTITY = "mariagrandury-epflnlp"
@@ -52,36 +62,22 @@ def completed_tasks(name, entity, project, logs_root):
     return completed
 
 
-def parse_tasks_input(tasks_arg):
-    """tasks_arg is either a path to a file (one task per line, # comments) or a
-    comma-separated string. Comma-separated lists from the inner runner can
-    exceed Linux's NAME_MAX (255 bytes), so guard against the OSError that
-    Path.is_file() raises in that case (errno 36 / ENAMETOOLONG)."""
-    is_file = False
-    if "," not in tasks_arg and len(tasks_arg) < 4000:
-        try:
-            is_file = Path(tasks_arg).is_file()
-        except OSError:
-            is_file = False
-    if is_file:
-        return [
-            line.strip()
-            for line in Path(tasks_arg).read_text().splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        ]
-    return [t.strip() for t in tasks_arg.split(",") if t.strip()]
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--name", required=True, help="Harness NAME (model-ckpt)")
-    ap.add_argument("--tasks", required=True, help="File path or comma-list of task names")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--tasks-group", help="Group name in configs/tasks.json.")
+    src.add_argument("--tasks", help="Comma-separated task names "
+                     "(used by _run_per_task.sh's inner loop).")
     ap.add_argument("--entity", default=os.environ.get("WANDB_ENTITY", DEFAULT_ENTITY))
     ap.add_argument("--project", default=os.environ.get("WANDB_PROJECT", DEFAULT_PROJECT))
     ap.add_argument("--logs-root", default=os.environ.get("LOGS_ROOT", DEFAULT_LOGS_ROOT))
     args = ap.parse_args()
 
-    expected = parse_tasks_input(args.tasks)
+    if args.tasks_group:
+        expected = tasks_for_group(args.tasks_group)
+    else:
+        expected = [t.strip() for t in args.tasks.split(",") if t.strip()]
     done = completed_tasks(args.name, args.entity, args.project, args.logs_root)
     remaining = [t for t in expected if t not in done]
 

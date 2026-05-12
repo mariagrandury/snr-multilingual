@@ -63,20 +63,18 @@ done
 
 REPO_DIR=$PWD
 HF_BASE=/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints
-MODELS_FILE=$REPO_DIR/configs/signal_to_ratio/models_pretraining_custom_all.txt
-TASKS_FILE=$REPO_DIR/configs/signal_to_ratio/tasks_pretraining_full.txt
+POOL=${POOL:-seeds_28_1797_1904}        # default pool — all Apertus custom seeds
+TASKS_GROUP=${TASKS_GROUP:-pretraining_full}
 CSV=$REPO_DIR/snr_progress.csv
 
-# Refresh the snapshot once at script start. Same flags the dashboard uses,
-# so the on-disk file stays consistent for both humans and launchers.
+# Refresh the snapshot once at script start. snr_progress.py reads pool
+# membership + per-cell iter lists from configs/models.json, so the
+# on-disk file stays consistent for both humans and launchers.
 if (( REFRESH )); then
     echo "[hf] refreshing $CSV ..."
-    # Per-seed iter policy is the default in snr_progress.py
-    # (ITERS_SEED1904 / ITERS_OTHER); pass --seed-iters here only to
-    # override.
     python3.11 scripts/snr_progress.py \
-        --models "$MODELS_FILE" \
-        --tasks-file "$TASKS_FILE" \
+        --pool "$POOL" \
+        --tasks-group "$TASKS_GROUP" \
         > /dev/null
 fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }

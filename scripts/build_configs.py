@@ -27,9 +27,14 @@ SIZE_PARAMS = {"175M": 175_000_000, "350M": 350_000_000,
 MIXES = [(30, 70), (60, 40), (90, 10)]
 SEEDS = [28, 1797, 1904]
 
-# Three checkpoint schedules — keyed by seed.
-# seed1904 has the original 13-ckpt sparse schedule that started the project.
-# seed28 and seed1797 use the dense 25-ckpt schedule (every 2000 iters).
+# Per-seed checkpoint schedules.
+#
+#   `all`        — every iter actually produced by training.
+#   `dense_tail` — last 5 iters (used for trailing-N noise).
+#   `10_ckpts`   — 10 evenly-spaced iters (history/progress views).
+#   `da_ckpts`   — 5 iters for decision-accuracy computation.
+#   `full_eval`  — derived = sorted(set(dense_tail) | set(da_ckpts));
+#                  the canonical eval sweep that snr_progress.csv covers.
 CKPT_SCHEDULES = {
     1904: {
         "final": 50000,
@@ -57,6 +62,10 @@ CKPT_SCHEDULES = {
         "da_ckpts": [6000, 10000, 20000, 30000, 50000],
     },
 }
+# Derive `full_eval` from dense_tail ∪ da_ckpts so it can't drift.
+for _seed, _sched in CKPT_SCHEDULES.items():
+    _sched["full_eval"] = sorted(set(_sched["dense_tail"])
+                                  | set(_sched["da_ckpts"]))
 
 MEG_BASE = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small"
 HF_LOCAL_BASE = "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
@@ -417,7 +426,15 @@ def _read_list(path: Path) -> list[str]:
     return out
 
 
-def build_tasks_json() -> dict:
+def build_tasks_json(merge_existing: bool = True) -> dict:
+    """Build the {tasks, groups} dict.
+
+    When ``merge_existing`` is True (default) and configs/tasks.json
+    already exists, every task entry's ``language`` field is preserved
+    from the on-disk copy so manual annotations (e.g. ``"multi"`` for
+    multilingual benchmarks, language tags the auto-derivation can't
+    infer) are not clobbered on re-build.
+    """
     group_files = {
         "pretraining_full":     EVALS_CONFIGS / "tasks_pretraining_full.txt",
         "pretraining_classic":  EVALS_CONFIGS / "tasks_pretraining_classic.txt",
@@ -449,12 +466,31 @@ def build_tasks_json() -> dict:
         "posttraining": "posttraining",
         "test": "pretraining",
     }
+
+    # Manual `language` annotations from the existing tasks.json
+    # (preserves "multi", and language tags the auto-derivation
+    # doesn't infer, e.g. "cn"/"jp" instead of the canonical "zh"/"ja").
+    existing_lang: dict[str, str] = {}
+    existing_path = CONFIGS / "tasks.json"
+    if merge_existing and existing_path.exists():
+        try:
+            prev = json.loads(existing_path.read_text())
+            for t, e in prev.get("tasks", {}).items():
+                if isinstance(e, dict) and "language" in e:
+                    existing_lang[t] = e["language"]
+        except Exception:
+            pass
+
     tasks_section = {}
     for t, gs in sorted(task_to_groups.items()):
         stages = sorted({GROUP_TO_STAGE[g] for g in gs
                          if g in GROUP_TO_STAGE})
+        # Manual annotation wins over auto-derivation (so "multi" / "cn" /
+        # etc. survive re-builds). Auto-derive is the fallback for newly
+        # added tasks.
+        lang = existing_lang.get(t) or _language_of(t)
         tasks_section[t] = {
-            "language": _language_of(t),
+            "language": lang,
             "benchmark": _benchmark_of(t),
             "stages": stages,
         }

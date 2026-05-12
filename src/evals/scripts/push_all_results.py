@@ -52,175 +52,81 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# Shared loader + lifted I/O helpers.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
+from configs import get_model, load_models, metric_for, tokens_for  # noqa: E402
+from results_io import aggregate_parents, collect, flatten  # noqa: E402
+
 LOGS_BASE = Path(
     "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 )
 ENTITY = "mariagrandury-epflnlp"
 PROJECT = "snr-experiments"
 
-# --- Tokens-per-step lookup tables ---------------------------------------
-# Megatron training config (see ../../pretrain/submit-apertus-data-mix.sh):
-# global_batch_size = 504, sequence_length = 4096
-MEG_TOKENS_PER_ITER = 504 * 4096  # ≈ 2.064 M
+# --- name → (model, ckpt) parsing -----------------------------------------
+# Tokens / params come from configs/models.json (see configs.tokens_for and
+# configs.get_model). `flatten` lives in utils/results_io.py; per-task
+# metric override comes from configs.metric_for.
 
-# HF reference model stages → cumulative tokens at the *end* of each stage.
-# We only eval the last ckpt of each stage, so this is the value at that ckpt.
-# Numbers are best-effort from each provider's docs; refine when exact figures land.
-HF_STAGE_TOKENS = {
-    ("Olmo-3-1025-7B", 1): 6_000_000_000_000,    # ~6 T  (long pretrain)
-    ("Olmo-3-1025-7B", 2): 6_190_000_000_000,    # +~190 B mid-training mix
-    ("Olmo-3-1025-7B", 3): 6_240_000_000_000,    # +~50 B annealing
-    ("SmolLM3-3B-checkpoints", 1): 7_200_000_000_000,
-    ("SmolLM3-3B-checkpoints", 2): 8_800_000_000_000,
-    ("SmolLM3-3B-checkpoints", 3): 9_900_000_000_000,
-}
-
-# `<repo>-main` → cumulative tokens at the published checkpoint.
-HF_MAIN_TOKENS = {
-    "Apertus-8B-2509": 15_000_000_000_000,    # 15 T per Apertus card
-    "Apertus-70B-2509": 15_000_000_000_000,
-}
-
-
-def model_params(model: str) -> int | None:
-    """Approximate total params from the model display name (the value parse_name
-    uses as run name). Used for FLOPs ≈ 6 × params × tokens.
-
-    Recognises:
-      - apertus-<size>-fwEdu...                 → <size>
-      - <repo>-stage<K> / <repo> with `-NB-`    → NB
-    """
-    m = re.match(r"^apertus-(\d+)([MB])-", model, re.IGNORECASE)
-    if m:
-        return int(m.group(1)) * (10**6 if m.group(2).upper() == "M" else 10**9)
-    # Match any "-NB-" or trailing "-NB" anywhere in the name (Apertus-8B-2509,
-    # SmolLM3-3B-checkpoints-stage1, Olmo-3-1025-7B-stage1, …).
-    m = re.search(r"-(\d+)B(?:-|$)", model)
-    if m:
-        return int(m.group(1)) * 10**9
-    return None
+_NAME_RE_MEG = re.compile(
+    r"^(?P<model>.+)-iter(?P<n>\d+)$"
+)
+_NAME_RE_HF_STAGE = re.compile(
+    r"^(?P<model>.+)-(?P<branch>(?:stage|step|main)[A-Za-z0-9._\-]*)$"
+)
 
 
 def parse_name(name: str) -> dict | None:
-    """NAME → {model, step, tokens}. Returns None if unparseable or if we
-    don't know how to translate the NAME to a token count.
+    """NAME → {model, step, tokens}. Reads tokens/params from configs/models.json.
 
-    - apertus-<size>-fwEdu<X>-fw<Y>-seed<S>-iter<N>
-        → step=N, tokens = N × MEG_TOKENS_PER_ITER
-    - <repo>-stage<K>-step-?<N>(-...)?
-        → step=N, tokens = HF_STAGE_TOKENS[(repo, K)]  (None ⇒ skip)
-    - <repo>-step<N>-tokens<M>(B|T)
-        → step=N, tokens = M × {1e9, 1e12}
-    - <repo>-main
-        → step=0, tokens = HF_MAIN_TOKENS[repo]        (None ⇒ skip)
+    Returns None if the NAME isn't recognised or the model isn't declared
+    in configs/models.json (we can't compute tokens without the JSON entry).
     """
-    m = re.match(r"^(?P<model>apertus-\d+[MB]-fwEdu\d+-fw\d+-seed\d+)-iter(?P<n>\d+)$", name)
-    if m:
-        n = int(m.group("n"))
-        return {"model": m.group("model"), "step": n, "tokens": n * MEG_TOKENS_PER_ITER}
-    m = re.match(r"^(?P<repo>.+?)-stage(?P<stage>\d+)-step-?(?P<n>\d+)(?:-.*)?$", name)
-    if m:
-        repo, stage = m.group("repo"), int(m.group("stage"))
-        tokens = HF_STAGE_TOKENS.get((repo, stage))
-        if tokens is None:
-            return None
-        return {"model": f"{repo}-stage{stage}", "step": int(m.group("n")), "tokens": tokens}
-    m = re.match(r"^(?P<repo>.+?)-step(?P<n>\d+)-tokens(?P<mag>[\d.]+)(?P<unit>[BT])$", name)
-    if m:
-        unit = 1e9 if m.group("unit") == "B" else 1e12
-        tokens = int(float(m.group("mag")) * unit)
-        return {"model": m.group("repo"), "step": int(m.group("n")), "tokens": tokens}
-    m = re.match(r"^(?P<repo>.+?)-main$", name)
-    if m:
-        repo = m.group("repo")
-        tokens = HF_MAIN_TOKENS.get(repo)
-        if tokens is None:
-            return None
-        return {"model": repo, "step": 0, "tokens": tokens}
+    models = load_models()
+
+    # Megatron iter form: <model>-iter<N>
+    m = _NAME_RE_MEG.match(name)
+    if m and m.group("model") in models:
+        model = m.group("model")
+        step = int(m.group("n"))
+        return {"model": model, "step": step, "tokens": tokens_for(model, step)}
+
+    # HF branch form: <model>-<branch>. Strip the model name as the longest
+    # prefix that's in models.json; the remainder is the branch.
+    # (Handles names like "SmolLM3-3B-checkpoints-stage1-step-3440000".)
+    for model in sorted(models, key=len, reverse=True):
+        if name == model:
+            # bare model name = main branch
+            return {"model": model, "step": 0,
+                    "tokens": tokens_for(model, "main")}
+        prefix = model + "-"
+        if name.startswith(prefix):
+            branch = name[len(prefix):]
+            try:
+                tokens = tokens_for(model, branch)
+            except KeyError:
+                continue
+            # `step` is the numeric tail of the branch name where present,
+            # else 0 (single-branch refs).
+            step_match = re.search(r"-(\d+)$", branch)
+            step = int(step_match.group(1)) if step_match else 0
+            return {"model": model, "step": step, "tokens": tokens}
     return None
 
 
-def collect(name_dir: Path) -> dict[str, dict]:
-    """Union of every results_*.json under harness/. Pulls both `results`
-    (per-task scores) and `groups` (aggregate scores like `mmlu` that the
-    merge step strips). Merged files take precedence over per-task partials
-    for the same task name."""
-    scores: dict[str, dict] = {}
-
-    def merge_file(path: Path, override: bool):
-        try:
-            data = json.loads(path.read_text())
-        except Exception:
-            return
-        for source in ("results", "groups"):
-            for k, v in (data.get(source) or {}).items():
-                if isinstance(v, dict) and (override or k not in scores):
-                    scores[k] = v
-
-    base = name_dir / "harness"
-    if not base.is_dir():
-        return scores
-    for f in sorted(base.glob("eval_*/results_*.json")):
-        merge_file(f, override=True)
-    for f in sorted(base.glob("eval_*/per_task/*/*/results_*.json")):
-        merge_file(f, override=False)
-    return scores
+def model_params(model: str) -> int | None:
+    """Read `params` straight from configs/models.json. None if model isn't
+    declared (FLOPs chart will be empty for that model)."""
+    try:
+        return get_model(model).get("params")
+    except KeyError:
+        return None
 
 
-def aggregate_parents(scores: dict[str, dict]) -> dict[str, dict]:
-    """Drop subtopic tasks if their parent aggregate is also in `scores`.
-
-    A task `T` is a subtopic of `P` iff `P` is an underscore-prefix of `T`
-    AND `P` is itself in `scores`. So if both `mmlu` (aggregate from `groups`)
-    and `mmlu_anatomy` are present, only `mmlu` survives. Same for
-    `global_mmlu_full_zh` vs `global_mmlu_full_zh_stem`,
-    `global_mmlu_full_zh_humanities`, …
-
-    Singleton benchmarks with no parent (`arc_challenge`, `belebele_eng_Latn`,
-    `hellaswag`) pass through untouched.
-    """
-    keys = set(scores)
-
-    def has_parent(task: str) -> bool:
-        parts = task.split("_")
-        for i in range(len(parts) - 1, 0, -1):
-            if "_".join(parts[:i]) in keys:
-                return True
-        return False
-
-    return {t: v for t, v in scores.items() if not has_parent(t)}
-
-
-def flatten(scores: dict[str, dict]) -> dict[str, float]:
-    """{task: {'metric,filter': val}} → {'task/metric': val}.
-
-    Exactly one metric per task: prefer `acc`; fall back to `exact_match`
-    (mgsm-style); skip the task otherwise. Stderr / acc_norm / acc_bytes /
-    degeneration are intentionally dropped — the workspace charts only show
-    the headline number per benchmark.
-    """
-    out: dict[str, float] = {}
-    for task, metrics in scores.items():
-        if not isinstance(metrics, dict):
-            continue
-        acc_key = next(
-            (k for k in metrics if k.split(",", 1)[0].strip() == "acc"),
-            None,
-        )
-        if acc_key is not None:
-            v = metrics[acc_key]
-            if isinstance(v, (int, float)):
-                out[f"{task}/acc"] = float(v)
-            continue
-        em_key = next(
-            (k for k in metrics if k.split(",", 1)[0].strip() == "exact_match"),
-            None,
-        )
-        if em_key is not None:
-            v = metrics[em_key]
-            if isinstance(v, (int, float)):
-                out[f"{task}/exact_match"] = float(v)
-    return out
+def _flatten_with_overrides(scores: dict[str, dict]) -> dict[str, float]:
+    """Wrap results_io.flatten with the per-task metric override from
+    configs/tasks.json (e.g. ifeval → exact_match)."""
+    return flatten(scores, task_metric_override=metric_for)
 
 
 RUN_ID_SUFFIX = "-v6"   # bump if W&B blacklists existing IDs (409 on re-create after delete)
@@ -336,7 +242,7 @@ def main():
 
     # Single-NAME mode: just this one ckpt.
     if args.name:
-        flat = flatten(aggregate_parents(collect(project_dir / args.name)))
+        flat = _flatten_with_overrides(aggregate_parents(collect(project_dir / args.name)))
         if not flat:
             sys.exit(f"No results found for {args.name}")
         parsed = parse_name(args.name)
@@ -367,7 +273,7 @@ def main():
             continue
         if pat and not pat.search(name_dir.name):
             continue
-        flat = flatten(aggregate_parents(collect(name_dir)))
+        flat = _flatten_with_overrides(aggregate_parents(collect(name_dir)))
         if not flat:
             continue
         parsed = parse_name(name_dir.name)

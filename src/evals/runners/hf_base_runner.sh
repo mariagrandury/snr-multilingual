@@ -61,12 +61,13 @@ for MODEL in "${!MODEL_CHECKPOINTS[@]}"; do
     echo "  Checkpoint iter: $CKPT_ITER (only applies to local Megatron checkpoints)"
 
     # Idempotency: skip the whole sbatch if every task in $TASKS already
-    # has results on disk for this checkpoint. Lets the same launch
-    # command be re-run (or run by a colleague) without redoing work.
-    # Only applies when TASKS is set (the launcher always sets it).
+    # has results on disk for this checkpoint. _eval_status.py now wants
+    # either a group name from configs/tasks.json or a comma list; $TASKS
+    # is a file path (set by launch_evaluations.sh), so flatten it here.
     if [[ -n "${TASKS:-}" ]]; then
+        TASKS_CSV_LIST=$(grep -v '^\s*#' "$TASKS" | grep -v '^\s*$' | paste -sd, -)
         if ! python3 scripts/_eval_status.py \
-                --name "$MODEL" --tasks "$TASKS" \
+                --name "$MODEL" --tasks "$TASKS_CSV_LIST" \
                 --entity "$WANDB_ENTITY" --project "$WANDB_PROJECT" >/dev/null 2>&1; then
             echo "  SKIP: all tasks already have results for $MODEL"
             continue

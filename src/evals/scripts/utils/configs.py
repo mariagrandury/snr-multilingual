@@ -200,8 +200,8 @@ def iters_for(model_name: str, subset: str = "all",
                          f"valid: {_VALID_CKPT_SUBSETS}")
     entry = get_model(model_name, path)
     ckpts = entry["checkpoints"]
-    if subset == "full_eval":
-        subset = "all"
+    # Missing subset → fall back to `all` (most models without an
+    # explicit full_eval just want every available ckpt).
     return ckpts.get(subset, ckpts.get("all", []))
 
 
