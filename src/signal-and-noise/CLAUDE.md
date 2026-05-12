@@ -9,6 +9,18 @@
   applies to all destructive shell operations (`rm`, `mv` to a
   different parent, `git rm`, etc.).
 
+- **Reuse existing code aggressively; keep new code simple and
+  boilerplate-free.** Before writing a new helper, grep the repo for
+  one that already does the job (e.g. `get_slice`,
+  `signal_to_noise_ratio`, `decision_acc_fast`, `_is_language_aggregate`,
+  the loader helpers in `snr/download/`, the shared CLI patterns in
+  `multilingual/`). Don't reimplement, don't wrap-for-wrap's-sake, and
+  don't add defensive scaffolding ("just in case" config flags,
+  pre-validation of arguments that won't be wrong, try/except around
+  pure-Python logic). When extending a script, the new diff should
+  read like a small addition, not a rewrite. Prefer one direct call
+  over a chain of pass-through helpers.
+
 
 This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/signal-and-noise),
 augmented to run the SNR / decision-accuracy pipeline on the 12 **custom Apertus
