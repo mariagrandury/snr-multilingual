@@ -34,6 +34,7 @@ applying that formula.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from collections import defaultdict
@@ -51,7 +52,9 @@ from multilingual.analyze_snr_variants import (
     _BENCHMARK_FAMILY_OVERRIDES, _LANG_MAP, assign_language, benchmark_family,
 )
 from snr.constants import PLOT_DIR
-from snr.download.apertus import load_apertus_eval_results
+from snr.download.apertus import (
+    load_apertus_eval_results, load_reference_hf_eval_results,
+)
 from snr.metrics import signal_to_noise_ratio
 
 # 2-letter language codes used by global_mmlu_full subject keys.
@@ -59,46 +62,54 @@ _GMF_LANGS = ("ar", "en", "es", "hi", "ja", "ru", "sw", "tr", "vi", "zh")
 
 ALL_SIZES = ["175M", "350M", "600M", "1B"]
 LAST_N = 5
-OUT_DIR = PLOT_DIR / "smooth_subtasks"
+DEFAULT_SEEDS = [1904]
+OUT_ROOT = PLOT_DIR / "smooth_subtasks"
 
 
-### SNR primitives (per-mix arrays, single subtask vs. averaged subset) ###
+def _seeds_subdir(seeds: list[int]) -> str:
+    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
 
 
-def _per_mix_last_n(scores_df: pd.DataFrame, last_n: int = LAST_N) -> list[np.ndarray]:
-    """Sorted-by-step, grouped-by-mix list of last-n score arrays. Mirrors
-    snr.snr_simple.compute_snr_small_scale (jagged-tolerant)."""
+### SNR primitives (per-model arrays, single subtask vs. averaged subset) ###
+
+
+def _per_model_last_n(scores_df: pd.DataFrame, last_n: int = LAST_N) -> list[np.ndarray]:
+    """Sorted-by-step, grouped-by-``model`` list of last-n score arrays.
+    Mirrors snr.snr_simple.compute_snr_small_scale (jagged-tolerant); each
+    unique value of the ``model`` column is one training run, so the
+    signal pool naturally combines Apertus (mix, seed) tuples (one model
+    name per tuple) with external reference models (one model name per
+    HF release)."""
     scores_df = scores_df.sort_values("step")
     return [
         np.asarray(lst[-last_n:], dtype=float)
-        for lst in scores_df.groupby("mix")["primary_score"].apply(list)
+        for lst in scores_df.groupby("model")["primary_score"].apply(list)
     ]
 
 
 def snr_for_subset(df: pd.DataFrame, subtasks: list[str], size: str) -> float:
-    """SNR after averaging per-(mix, step) scores across ``subtasks``.
+    """SNR after averaging per-(model, step) scores across ``subtasks``.
 
     For one subtask this collapses to compute_snr_small_scale. With more
     subtasks we average across whichever subtasks are present at each
-    (mix, step). A strict inner-join (require all subtasks at every
-    kept (mix, step)) leaves arc/global_mmlu empty at most sizes
-    because not every language is evaluated at every ckpt; the relaxed
-    average is the pragmatic substitute and matches the intuition of
-    "score on the multilingual subset = mean across the languages we
-    have."
+    (model, step). A strict inner-join (require all subtasks at every
+    kept cell) leaves arc/global_mmlu empty at most sizes because not
+    every language is evaluated at every ckpt; the relaxed average is
+    the pragmatic substitute and matches the intuition of "score on the
+    multilingual subset = mean across the languages we have."
     """
     sub = df[(df["size"] == size) & (df["task"].isin(subtasks))]
     if sub.empty:
         return float("nan")
     if len(subtasks) == 1:
-        arrays = _per_mix_last_n(sub)
+        arrays = _per_model_last_n(sub)
     else:
         avg = (
-            sub.groupby(["mix", "step"])["primary_score"]
+            sub.groupby(["model", "step"])["primary_score"]
             .mean()
             .reset_index()
         )
-        arrays = _per_mix_last_n(avg)
+        arrays = _per_model_last_n(avg)
 
     arrays = [a for a in arrays if a.size >= 2]
     if len(arrays) < 2:
@@ -362,15 +373,15 @@ def load_gmf_subjects_df(df: pd.DataFrame | None = None) -> pd.DataFrame:
         return pd.DataFrame()
     long = pd.concat(sub_rows, ignore_index=True)
     grouped = (
-        long.groupby(["model", "mix", "size", "step", "subject"], as_index=False)
+        long.groupby(["model", "mix", "seed", "size", "step", "subject"],
+                     as_index=False)
         .agg(primary_score=("primary_score", "mean"),
              n_languages=("language", "nunique"),
-             seed=("seed", "first"),
              tokens=("tokens", "first"),
              compute=("compute", "first"))
         .rename(columns={"subject": "task"})
     )
-    return grouped.sort_values(["size", "mix", "step", "task"]).reset_index(drop=True)
+    return grouped.sort_values(["size", "mix", "seed", "step", "task"]).reset_index(drop=True)
 
 
 def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | None:
@@ -379,15 +390,18 @@ def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | No
         print("No global_mmlu_full_<lang>_<subject> rows found — skipping.")
         return None
     subjects = sorted(df_gmf["task"].unique())
-    coverage = df_gmf.groupby("size")["mix"].nunique()
+    coverage = (
+        df_gmf.groupby("size")[["mix", "seed"]]
+        .apply(lambda g: g.drop_duplicates().shape[0])
+    )
     print(f"global_mmlu_full subjects: {len(subjects)}; "
-          f"per-size #mixes with data: {coverage.to_dict()}")
-    print(f"  mean #languages averaged per (mix, step, subject): "
+          f"per-size #(mix, seed) units with data: {coverage.to_dict()}")
+    print(f"  mean #languages averaged per cell: "
           f"{df_gmf['n_languages'].mean():.2f} (max=10)")
     insufficient = [s for s, n in coverage.items() if n < 2]
     if insufficient:
-        print(f"  warning: sizes {insufficient} have <2 mixes with per-subject "
-              f"data; SNR is undefined there.")
+        print(f"  warning: sizes {insufficient} have <2 (mix, seed) units "
+              f"with per-subject data; SNR is undefined there.")
 
     rows = []
     per_size = {}
@@ -523,27 +537,67 @@ def build_summary(out_dir: Path) -> Path:
     return csv_path
 
 
-def main():
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+def build_pool(seeds: list[int], include_external: bool) -> pd.DataFrame:
+    """SNR signal-pool dataframe: Apertus rows filtered to ``seeds`` plus
+    (optionally) every reference_hf row. Externals don't have a ``seed``
+    so they are gated only by ``include_external``."""
+    df_a = load_apertus_eval_results()
+    df_a = df_a[df_a["seed"].isin(seeds)].copy()
+    frames = [df_a]
+    if include_external:
+        try:
+            df_e = load_reference_hf_eval_results()
+            if not df_e.empty:
+                frames.append(df_e)
+        except FileNotFoundError:
+            print("  (no reference_hf parquet found — SNR pool is Apertus only)")
+    return pd.concat(frames, ignore_index=True)
 
-    df = load_apertus_eval_results()
-    print(f"Loaded {len(df):,} rows | {df['model'].nunique()} models | "
-          f"{df['task'].nunique()} tasks")
+
+def main(seeds: list[int], out_dir: Path, include_external: bool = True):
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    df_apertus = load_apertus_eval_results()
+    df_apertus = df_apertus[df_apertus["seed"].isin(seeds)].copy()
+    df = build_pool(seeds, include_external)
+    pool_n_models = df.groupby("size")["model"].nunique().to_dict()
+    print(f"Loaded {len(df_apertus):,} Apertus rows (seeds={seeds}) + "
+          f"{len(df) - len(df_apertus):,} external rows | "
+          f"models per size in SNR pool: {pool_n_models}")
 
     print("\n=== Case 1: multilingual families (task = family, subtask = language) ===")
-    run_per_benchmark(df, OUT_DIR)
+    run_per_benchmark(df, out_dir)
 
     print("\n=== Case 2: global_mmlu_full subjects "
           "(task = global_mmlu_full, subtask = subject) ===")
-    run_gmf_subjects(OUT_DIR, df=df)
+    # Cases 2/3 build a per-subject view by averaging across global_mmlu
+    # langs; the per-(lang, subject) facets only exist for Apertus, so
+    # pass the Apertus-only frame here.
+    run_gmf_subjects(out_dir, df=df_apertus)
 
     print("\n=== Case 3: global_mmlu_full subjects per language "
           "(task = global_mmlu_full_<lang>, subtask = subject) ===")
-    run_gmf_subjects_per_language(OUT_DIR, df=df)
+    run_gmf_subjects_per_language(out_dir, df=df_apertus)
 
     print("\n=== Summary: snr_gain ranking across cases ===")
-    build_summary(OUT_DIR)
+    build_summary(out_dir)
+
+
+def _parse_seeds(value: str) -> list[int]:
+    return sorted({int(x) for x in value.split(",") if x.strip()})
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--seeds", type=_parse_seeds, default=DEFAULT_SEEDS,
+                   help="Comma-separated list of training seeds to include "
+                        "(default: 1904).")
+    p.add_argument("--no-external", action="store_true",
+                   help="Disable external reference_hf rows in the SNR pool.")
+    p.add_argument("--out-subdir", default=None,
+                   help="Subdir under results/smooth_subtasks/ (default: "
+                        "'seeds_<a>_<b>_...' derived from --seeds).")
+    args = p.parse_args()
+    out_subdir = args.out_subdir or _seeds_subdir(args.seeds)
+    main(seeds=args.seeds, out_dir=OUT_ROOT / out_subdir,
+         include_external=not args.no_external)

@@ -21,6 +21,7 @@ SNR signal here is `snr_mpd_1B`.
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -36,7 +37,9 @@ from multilingual.analyze_snr_variants import assign_language, benchmark_family 
 from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-SNR_CSV = ROOT / "results" / "snr_definition" / "snr_variants_per_task.csv"
+# Backwards-compat defaults. Overridden per-run via --snr-dir / --out-dir
+# so each seed pool gets its own outputs.
+DEFAULT_SNR_DIR = ROOT / "results" / "snr_definition" / "seeds_1904"
 SNR_COL = "snr_mpd_1B"
 
 # --- Categorical labels for grouping -----------------------------------------
@@ -162,8 +165,8 @@ CATEGORY_ORDER = [
 ORIGIN_ORDER = ["originally_multilingual", "english_translated"]
 
 
-def load_per_task_snr() -> pd.DataFrame:
-    df = pd.read_csv(SNR_CSV, usecols=["task", SNR_COL])
+def load_per_task_snr(snr_csv: Path) -> pd.DataFrame:
+    df = pd.read_csv(snr_csv, usecols=["task", SNR_COL])
     df["family"] = df["task"].map(benchmark_family)
     df["language"] = df["task"].map(assign_language)
     keep = [
@@ -175,7 +178,7 @@ def load_per_task_snr() -> pd.DataFrame:
     return df
 
 
-def per_family_aggregate(per_task: pd.DataFrame) -> pd.DataFrame:
+def per_family_aggregate(per_task: pd.DataFrame, length_csv: Path) -> pd.DataFrame:
     g = per_task.groupby("family")[SNR_COL]
     out = pd.DataFrame({
         "n_tasks": g.size(),
@@ -187,8 +190,8 @@ def per_family_aggregate(per_task: pd.DataFrame) -> pd.DataFrame:
         columns={"index": "family"}
     )
     merged = out.merge(meta, on="family", how="left")
-    # Phase B: optional length features written by length_features.py.
-    length_csv = HERE / "length_features.csv"
+    # Phase B: optional length features written by length_features.py
+    # (shared across seed pools, lives at benchmark_creation/length_features.csv).
     if length_csv.exists():
         lf = pd.read_csv(length_csv)
         merged = merged.merge(lf, on="family", how="left")
@@ -396,19 +399,25 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
-def main() -> None:
-    print(f"Loading {SNR_CSV.relative_to(ROOT)}")
-    per_task = load_per_task_snr()
+def main(snr_dir: Path, out_dir: Path) -> None:
+    snr_csv = snr_dir / "snr_variants_per_task.csv"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"SNR pool : {snr_dir.name}")
+    print(f"SNR CSV  : {snr_csv}")
+    print(f"Out dir  : {out_dir}")
+
+    per_task = load_per_task_snr(snr_csv)
     print(f"  → {len(per_task)} per-language aggregate tasks across "
           f"{per_task['family'].nunique()} families")
 
-    per_family = per_family_aggregate(per_task)
-    out_csv = HERE / "per_family_snr.csv"
+    length_csv = out_dir / "length_features.csv"
+    per_family = per_family_aggregate(per_task, length_csv)
+    out_csv = out_dir / "per_family_snr.csv"
     per_family.to_csv(out_csv, index=False)
     print(f"Wrote {out_csv.name}")
 
     per_task_overrides = per_task_with_overrides(per_task)
-    per_task_csv = HERE / "per_task_snr.csv"
+    per_task_csv = out_dir / "per_task_snr.csv"
     per_task_overrides.to_csv(per_task_csv, index=False)
     print(f"Wrote {per_task_csv.name}")
 
@@ -423,7 +432,7 @@ def main() -> None:
         order=CATEGORY_ORDER,
         label_col="family",
         title=f"Per-family median {SNR_COL} by curation process",
-        out_path=HERE / "snr_by_curation_process.png",
+        out_path=out_dir / "snr_by_curation_process.png",
     )
     group_rows.append({"view": "family/curation", "H": H, "p": p, "n_groups": ng})
 
@@ -436,7 +445,7 @@ def main() -> None:
         order=ORIGIN_ORDER,
         label_col="family",
         title=f"Per-family median {SNR_COL} by source origin",
-        out_path=HERE / "snr_by_data_source.png",
+        out_path=out_dir / "snr_by_data_source.png",
     )
     group_rows.append({"view": "family/source", "H": H, "p": p, "n_groups": ng})
 
@@ -451,12 +460,12 @@ def main() -> None:
         order=CATEGORY_ORDER,
         label_col=None,
         title=f"Per-task {SNR_COL} by curation process (xnli_eu re-tagged as MT+post-edit)",
-        out_path=HERE / "snr_by_curation_per_task.png",
+        out_path=out_dir / "snr_by_curation_per_task.png",
     )
     group_rows.append({"view": "task/curation", "H": H, "p": p, "n_groups": ng})
 
     # 4) Headline: ranked bar chart of family medians, colored by curation.
-    _ranked_bar(per_family, HERE / "snr_per_family_ranked.png")
+    _ranked_bar(per_family, out_dir / "snr_per_family_ranked.png")
     print("Wrote snr_per_family_ranked.png")
 
     # --- Task-format axes (Phase A) ----------------------------------------
@@ -469,7 +478,7 @@ def main() -> None:
         order=["2", "3", "4"],
         label_col="family",
         title=f"Per-family median {SNR_COL} by number of answer options",
-        out_path=HERE / "snr_by_n_options.png",
+        out_path=out_dir / "snr_by_n_options.png",
     )
     group_rows.append({"view": "family/n_options", "H": H, "p": p, "n_groups": ng})
 
@@ -483,7 +492,7 @@ def main() -> None:
         order=format_order,
         label_col="family",
         title=f"Per-family median {SNR_COL} by task format",
-        out_path=HERE / "snr_by_format.png",
+        out_path=out_dir / "snr_by_format.png",
     )
     group_rows.append({"view": "family/format", "H": H, "p": p, "n_groups": ng})
 
@@ -496,12 +505,12 @@ def main() -> None:
         order=["no_passage", "passage"],
         label_col="family",
         title=f"Per-family median {SNR_COL} by passage flag",
-        out_path=HERE / "snr_by_passage.png",
+        out_path=out_dir / "snr_by_passage.png",
     )
     group_rows.append({"view": "family/passage", "H": H, "p": p, "n_groups": ng})
 
     # Continuous: SNR vs random_baseline (n_options = 1/baseline)
-    _scatter_baseline(per_family, HERE / "snr_vs_random_baseline.png")
+    _scatter_baseline(per_family, out_dir / "snr_vs_random_baseline.png")
     print("Wrote snr_vs_random_baseline.png")
 
     # --- Length features (Phase B) -----------------------------------------
@@ -513,7 +522,7 @@ def main() -> None:
             ("context_to_option_ratio",  "snr_vs_context_option_ratio.png"),
         ]:
             rho, p = _scatter_length(
-                per_family, col, HERE / fname,
+                per_family, col, out_dir / fname,
                 title=f"SNR vs {col}",
             )
             group_rows.append({
@@ -521,10 +530,10 @@ def main() -> None:
                 "H": float("nan"), "p": p, "n_groups": len(per_family),
                 "spearman_rho": rho,
             })
-        _length_grid(per_family, HERE / "snr_vs_length_features.png")
+        _length_grid(per_family, out_dir / "snr_vs_length_features.png")
         print("Wrote snr_vs_length_features.png")
 
-    pd.DataFrame(group_rows).to_csv(HERE / "group_stats.csv", index=False)
+    pd.DataFrame(group_rows).to_csv(out_dir / "group_stats.csv", index=False)
     print(f"\nWrote group_stats.csv")
 
     print("\nPer-family table (sorted by snr_median desc):")
@@ -536,4 +545,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--snr-dir", type=Path, default=DEFAULT_SNR_DIR,
+                   help="snr_definition/seeds_<...>/ dir whose "
+                        "snr_variants_per_task.csv we read.")
+    p.add_argument("--out-dir", type=Path, default=None,
+                   help="Output dir. Defaults to "
+                        "results/benchmark_creation/<snr_dir.name>/.")
+    args = p.parse_args()
+    out_dir = args.out_dir or (HERE / args.snr_dir.name)
+    main(snr_dir=args.snr_dir, out_dir=out_dir)

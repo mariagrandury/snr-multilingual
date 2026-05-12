@@ -51,7 +51,12 @@ from snr.download.apertus import (
 
 ALL_SIZES = ["175M", "350M", "600M", "1B"]
 LAST_N = 5
-OUT_ROOT = PLOT_DIR / "smooth_subtasks" / "per_sample"
+DEFAULT_SEEDS = [1904]
+OUT_ROOT = PLOT_DIR / "smooth_subtasks"
+
+
+def _seeds_subdir(seeds: list[int]) -> str:
+    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
 
 _SAMPLES_FNAME_RE = re.compile(r"^samples_(?P<task>.+)_\d{4}-\d{2}-\d{2}T.*\.jsonl$")
 
@@ -91,13 +96,17 @@ def _load_one_samples_file(path: Path) -> dict[int, float]:
 
 
 def load_samples(
-    tasks: set[str], eval_root: Path = DEFAULT_EVAL_ROOT
+    tasks: set[str], eval_root: Path = DEFAULT_EVAL_ROOT,
+    seeds: set[int] | None = None,
 ) -> dict[str, dict[tuple[str, str, int], dict[int, float]]]:
     """{task: {(size, mix, step): {doc_id: acc}}} for the requested tasks.
 
     Multiple samples files for the same (ckpt, task) can exist if the
     eval was rerun; the lexicographically last filename (which encodes
     a UTC timestamp) wins.
+
+    Pass ``seeds`` to restrict to a subset of training seeds (filtered
+    at the directory-walk step via the seed encoded in the ckpt dir name).
     """
     eval_root = Path(eval_root)
     # Collect candidate files per (ckpt_dir, task), keep lexicographically
@@ -108,6 +117,8 @@ def load_samples(
     for ckpt_dir in tqdm(ckpt_dirs, desc="scanning ckpt dirs"):
         meta = _parse_ckpt_id(ckpt_dir.name)
         if meta is None:
+            continue
+        if seeds is not None and meta["seed"] not in seeds:
             continue
         ckpt_meta[ckpt_dir] = meta
         for f in ckpt_dir.rglob("samples_*.jsonl"):
@@ -436,31 +447,33 @@ def run_one_task(task: str, by_ckpt: dict, out_root: Path,
     return out_dir
 
 
-def main():
-    df_meta = load_apertus_eval_results()
+def main(seeds: list[int], out_root: Path):
+    df_meta_all = load_apertus_eval_results()
+    df_meta = df_meta_all[df_meta_all["seed"].isin(seeds)].copy()
     families = collect_multilingual_families(df_meta)
     tasks = sorted({t for ts in families.values() for t in ts})
-    print(f"Targeting {len(tasks)} multilingual language-tasks "
+    print(f"Seeds: {seeds}  → "
+          f"targeting {len(tasks)} multilingual language-tasks "
           f"({len(families)} families).")
 
-    samples = load_samples(set(tasks))
+    samples = load_samples(set(tasks), seeds=set(int(s) for s in seeds))
     print(f"Parsed samples for {len(samples)} tasks.")
 
-    OUT_ROOT.mkdir(parents=True, exist_ok=True)
+    out_root.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(0)
     written = 0
     for task in tqdm(tasks, desc="tasks"):
         if task not in samples:
             continue
-        out = run_one_task(task, samples[task], OUT_ROOT, rng)
+        out = run_one_task(task, samples[task], out_root, rng)
         if out is not None:
             written += 1
 
     # Roll-up: aggregate every task's summary.csv into one master file so
     # users don't have to grep across 98 dirs.
     master_rows = []
-    for csv in OUT_ROOT.rglob("summary.csv"):
-        if csv.parent == OUT_ROOT:
+    for csv in out_root.rglob("summary.csv"):
+        if csv.parent == out_root:
             continue
         df = pd.read_csv(csv)
         df["task"] = csv.parent.name
@@ -471,12 +484,26 @@ def main():
         cols = ["language", "task"] + [c for c in master.columns
                                        if c not in ("language", "task")]
         master = master[cols].sort_values(["language", "task", "size"])
-        master_path = OUT_ROOT / "summary_all.csv"
+        master_path = out_root / "summary_all.csv"
         master.to_csv(master_path, index=False)
         print(f"Wrote roll-up → {master_path}")
 
-    print(f"Wrote {written} per-task output dirs under {OUT_ROOT}")
+    print(f"Wrote {written} per-task output dirs under {out_root}")
+
+
+def _parse_seeds(value: str) -> list[int]:
+    return sorted({int(x) for x in value.split(",") if x.strip()})
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--seeds", type=_parse_seeds, default=DEFAULT_SEEDS,
+                   help="Comma-separated list of training seeds to include "
+                        "(default: 1904).")
+    p.add_argument("--out-subdir", default=None,
+                   help="Subdir under results/smooth_subtasks/<...>/per_sample "
+                        "(default: 'seeds_<a>_<b>_.../per_sample').")
+    args = p.parse_args()
+    out_subdir = args.out_subdir or f"{_seeds_subdir(args.seeds)}/per_sample"
+    main(seeds=args.seeds, out_root=OUT_ROOT / out_subdir)

@@ -13,9 +13,11 @@ as "reliable" on both corpora?
 
 ## Setup
 
-- **Apertus side** (12 custom pretrains × 13 ckpts, 3 data mixes): per-
-  task SNR table from
-  [`../snr_definition/snr_variants_per_task.csv`](../snr_definition/snr_variants_per_task.csv).
+- **Apertus side** (multi-seed, 3 mixes × 3 seeds × 4 sizes): per-task
+  SNR table from one of the seed-pool subdirs under
+  [`../snr_definition/`](../snr_definition/). Each pool gives its own
+  cross-corpus comparison output under the matching subdir here
+  (`seeds_1904/`, `seeds_28_1797/`, `seeds_28_1797_1904/`).
 - **AllenAI side** (DataDecide ladder, 25 mixes × 5 ckpts at sizes
   150M / 300M / 750M / 1B): pulled at runtime via
   `snr.download.hf.pull_predictions_from_hf("allenai/signal-and-noise",
@@ -23,106 +25,103 @@ as "reliable" on both corpora?
   [`build_allenai_variants.py`](build_allenai_variants.py), which
   reuses every primitive from
   [`multilingual/run_apertus_snr_variants.py`](../../multilingual/run_apertus_snr_variants.py)
-  (`per_mix_inputs`, `variant_signal_noise_snr`, the 22-aggregator
-  `AGGREGATION_FUNCTIONS` list).
+  (`per_model_inputs`, `variant_signal_noise_snr`,
+  `compute_size_decision_accuracy`, the 22-aggregator
+  `AGGREGATION_FUNCTIONS` list). The shared driver groups by `model`
+  for the signal pool and by `model_family` (model name minus the
+  size token) for DA — so neither corpus needs a `seed` column to
+  contribute.
 - **Task-name reconciliation.** Apertus only ran the multilingual
-  `global_mmlu_full_en_<subject>` view of MMLU on the full ckpt-series;
-  the vanilla `mmlu_<subject>` rows in the Apertus parquet are
-  single-shot and have no SNR. AllenAI uses the vanilla `mmlu_<subject>`
-  names. We canonicalise Apertus names via
-  `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]`. Without this aliasing
-  the comparison collapses to 3 shared tasks (arc_*, hellaswag); with it,
-  61 tasks have valid SNR on both sides.
+  `global_mmlu_full_en_<subject>` view of MMLU on the full ckpt-series.
+  AllenAI uses the vanilla `mmlu_<subject>` names. We canonicalise
+  Apertus names via `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]`.
+  Note: the multilingual Apertus variants CSV (parent-task filter)
+  collapses MMLU subject facets into `mmlu`, so the post-alias shared
+  set is **7 standalone English tasks** (`arc_challenge`, `arc_easy`,
+  `csqa`, `hellaswag`, `mmlu`, `openbookqa`, `piqa`) rather than the
+  ~61-row subject-grained view in the earlier (single-seed,
+  no-parent-filter) iteration. Re-running the per-subject MMLU rows
+  through the Apertus pipeline would re-expand this universe.
 - **Headline correlation axis:** `log10(snr_<V>_1B)` on each corpus,
-  Pearson r over the 61 shared tasks.
+  Pearson r over the 7 shared tasks. Per-corpus top-K lists are
+  ranked over this same 7-task universe.
 - **Third corpus (`reference_hf`) — skipped.** SmolLM3-3B / Olmo-3-7B /
-  Apertus-8B each have a single training mix (`main`/`stage1`), so the
-  data-mix-spread term in every SNR variant is undefined. The rank-
-  agreement comparison would have to use raw `primary_score` (a
-  capability number, not a noise-relative one), conflating "task is
-  reliable" with "task is easy for this model" — so we don't include it.
+  Apertus-8B each have a single training mix, so the data-mix-spread
+  term in every SNR variant is undefined. The rank-agreement
+  comparison would have to use raw `primary_score` (a capability
+  number, not a noise-relative one), conflating "task is reliable"
+  with "task is easy for this model" — so we don't include it.
 
 ## Main results
 
-### Headline scatter (best variant: `discrepancy`, n = 61, r = 0.697)
+### Headline — best variant per Apertus pool
 
-![headline scatter](snr_apertus_vs_snr_allenai_discrepancy.png)
+| pool | best variant | r | runner-up | r |
+|---|---|---:|---|---:|
+| `seeds_1904` (single seed) | `dispersion` / `range` | **0.753** | `dist_std` | 0.728 |
+| `seeds_28_1797` (train) | `discrepancy` | **0.842** | `star_discrepancy` | 0.831 |
+| `seeds_28_1797_1904` (pooled, recommended) | `star_discrepancy_shifted` | **0.935** | `discrepancy` | 0.816 |
 
-The cross-corpus correlation of per-task `log10(SNR)` is positive and
-strong for the discrepancy-family variants. The y > x bias is expected:
-AllenAI's DataDecide has 25 data mixes vs Apertus's 3, so its
-mix-spread "signal" is on a different absolute scale. What transfers is
-the **rank** of tasks, not the absolute SNR magnitude.
+Per-pool full tables under
+[`seeds_<...>/pearson_r_per_variant.csv`](seeds_28_1797_1904/pearson_r_per_variant.csv);
+per-variant scatter grids at
+[`seeds_<...>/snr_apertus_vs_snr_allenai_grid.png`](seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png).
 
-### Per-variant Pearson r at the headline (1B ↔ 1B)
+Cross-corpus Pearson r between log10(SNR) is consistently high across
+all three Apertus seed pools, and the pooled pool is the strongest —
+adding seeds tightens the SNR estimate on the Apertus side (more
+model_families per size) and brings it closer to AllenAI's 25-mix
+DataDecide reference.
 
-| variant | r | variant | r |
-|---|---:|---|---:|
-| discrepancy | **0.697** | rel_std | 0.040 |
-| star_discrepancy | 0.661 | iqr | 0.042 |
-| rel_star_discrepancy | 0.633 | rel_dispersion | 0.048 |
-| dispersion_shifted | 0.620 | rel_mpd | 0.054 |
-| gini | 0.550 | rel_mpsd | 0.007 |
-
-Full table: [`pearson_r_per_variant.csv`](pearson_r_per_variant.csv).
-Per-variant scatter grid (sorted by r): see
-[`snr_apertus_vs_snr_allenai_grid.png`](snr_apertus_vs_snr_allenai_grid.png).
-
-**Take-away:** the *discrepancy-family* variants
-(`discrepancy`, `star_discrepancy`, `rel_star_discrepancy`,
-`dispersion_shifted`, `gini`) transfer cleanly across corpora.
+**Take-away:** the **discrepancy family** (`discrepancy`,
+`star_discrepancy`, `star_discrepancy_shifted`, `dispersion_shifted`,
+`gini`) and the **dispersion family** transfer cleanly across corpora.
 The *relative-spread* variants (`rel_std`, `rel_mpd`, `rel_mpsd`,
 `iqr`, `rel_dispersion`) — including the upstream AllenAI default
-`rel_std` — are essentially uncorrelated between the two corpora.
+`rel_std` — correlate weakly across the two corpora; they're robust
+within-corpus but not transferable.
 
-### Size sweep — correlation strengthens at smaller sizes
+### Size sweep — correlation strengthens with more model_families
 
-Mean Pearson r across all 22 variants at every matched-size pair:
+Each `<pool>/pearson_r_size_sweep.csv` gives the mean Pearson r across
+all 22 variants at every matched-size pair. A consistent pattern across
+pools: cross-corpus agreement at small Apertus sizes is strong, and the
+1B → 1B agreement improves materially as we go from single-seed
+(`seeds_1904`) to pooled (`seeds_28_1797_1904`) — because the pooled
+pool has 9 model_families per size feeding the SNR estimate vs 3 for
+single-seed.
 
-| Apertus → AllenAI | mean r |
-|---|---:|
-| 175M → 150M | 0.517 |
-| 350M → 300M | 0.445 |
-| 600M → 750M | 0.384 |
-| 1B → 1B     | 0.257 |
+### Cross-corpus-reliable benchmarks (top-K agreement)
 
-Counter-intuitively, the cross-corpus agreement is **strongest at the
-smallest sizes** and degrades as the models grow. Apertus has only 3
-mixes per size (vs AllenAI's 25), and one of the three 1B mixes
-(`fwEdu90`) is half-trained — so the Apertus 1B SNR estimates are the
-least statistically powerful, and that's precisely where the correlation
-loses ground. The lesson is that the *shape* of which-tasks-are-noisy
-emerges already at 175M; if you want to vet a benchmark for reliability
-on Apertus-style data, you don't need to wait for the 1B run.
-Full table: [`pearson_r_size_sweep.csv`](pearson_r_size_sweep.csv).
+Each `<pool>/agreement.md` tabulates the intersection / Jaccard of the
+two corpora's top-K tasks (ranked over the 7-task shared universe). All
+three pools converge on the same shortlist:
 
-### Cross-corpus-reliable benchmarks (`discrepancy` SNR, top-K)
-
-[`agreement.md`](agreement.md) tabulates the intersection / Jaccard of
-each corpus's top-K tasks (ranked over the 63-task shared universe).
-
-| K | \|∩\| | \|∩\|/K | Jaccard |
+| K | seeds_1904 | seeds_28_1797 | seeds_28_1797_1904 |
 |---|---:|---:|---:|
-| 5 | 3 | 0.60 | 0.43 |
-| 10 | 7 | 0.70 | 0.54 |
-| 20 | 13 | 0.65 | 0.48 |
+| 5 | 4/5 (Jaccard 0.67) | **5/5** (Jaccard 1.0) | **5/5** (Jaccard 1.0) |
+| 10 | 7/7 (Jaccard 1.0) | 7/7 (Jaccard 1.0) | 7/7 (Jaccard 1.0) |
+| 20 | 7/7 (Jaccard 1.0) | 7/7 (Jaccard 1.0) | 7/7 (Jaccard 1.0) |
 
-**Benchmarks reliable in BOTH top-10s** — the headline "transferable
-reliability" list:
+**Benchmarks reliable in BOTH corpora (top-10, all pools):**
 
 - `arc_challenge`
 - `arc_easy`
+- `csqa` (alias: `commonsense_qa` in Apertus)
 - `hellaswag`
 - `mmlu`
-- `mmlu_moral_scenarios`
-- `mmlu_professional_law`
-- `mmlu_professional_psychology`
+- `openbookqa`
+- `piqa`
 
 These are the tasks where pretraining-data-mix differences produce a
-measurable, robust ranking on **both** the Apertus 1B run and the
-AllenAI 1B DataDecide ladder. They are good candidates for
-small-scale-decision benchmarks regardless of which pretraining
-distribution you're working with.
+measurable, robust ranking on **both** the multilingual Apertus runs
+and the AllenAI DataDecide ladder. Strong candidates for the English
+side of multilingual benchmark suites — independent of which
+pretraining distribution you're working with.
+
+**To enlarge the shared universe:** re-run the per-subject MMLU rows
+(or the OLMES task IDs listed below) through the multilingual Apertus
+pipeline so they appear in the parent-task variants CSV.
 
 ## Adding more benchmarks to Apertus (expand the shared-task universe)
 
@@ -254,13 +253,16 @@ jeopardy`. In `lm-evaluation-harness`: `drop`, `squad`, `triviaqa`,
 | file | description |
 |---|---|
 | [`INSTRUCTIONS.md`](INSTRUCTIONS.md) | execution plan |
-| [`build_allenai_variants.py`](build_allenai_variants.py) | pulls AllenAI `core` parquet, runs the 22-variant SNR loop, writes `allenai_snr_variants_per_task.csv` |
-| [`analyze.py`](analyze.py) | loads both per-task tables, applies the `global_mmlu_full_en_*` ↔ `mmlu_*` alias, writes every CSV / PNG / agreement.md below |
-| `allenai_snr_variants_per_task.csv` | 241 tasks × 267 cols (22 variants × 4 sizes × 3 stats + 3 size-DA) |
-| `task_overlap.csv` | per-task `in_apertus`, `in_allenai`, `shared` flags (post-aliasing) |
-| `pearson_r_per_variant.csv` | headline 1B↔1B Pearson r per variant (sorted by r desc) |
-| `pearson_r_size_sweep.csv` | long-format Pearson r at every matched-size pair |
-| `snr_apertus_vs_snr_allenai_discrepancy.png` | headline scatter, best variant |
-| `snr_apertus_vs_snr_allenai_grid.png` | per-variant scatter grid, sorted by r |
-| `top_apertus.csv` / `top_allenai.csv` | top-20 tasks by `snr_discrepancy_1B` per corpus (over the shared-task universe) |
-| `agreement.md` | top-K intersection / Jaccard table + per-corpus top-20 lists |
+| [`build_allenai_variants.py`](build_allenai_variants.py) | pulls AllenAI `core` parquet, runs the 22-variant SNR loop (shares `per_model_inputs`, `compute_size_decision_accuracy` with the Apertus driver — both group by `model` / `model_family`), writes `allenai_snr_variants_per_task.csv` |
+| [`analyze.py`](analyze.py) | loads the Apertus side from `--apertus-dir results/snr_definition/seeds_<...>/`, the AllenAI side from `allenai_snr_variants_per_task.csv`, applies the `global_mmlu_full_en_*` ↔ `mmlu_*` alias, writes every CSV / PNG / agreement.md into the matching subdir here |
+| `allenai_snr_variants_per_task.csv` | 241 tasks × 267 cols (22 variants × 4 sizes × 3 stats + 3 size-DA). Shared across pools — produced by `build_allenai_variants.py`. |
+| `seeds_<pool>/` (one per Apertus pool) | per-pool comparison outputs: `task_overlap.csv`, `pearson_r_per_variant.csv`, `pearson_r_size_sweep.csv`, `snr_apertus_vs_snr_allenai_<best_variant>.png`, `snr_apertus_vs_snr_allenai_grid.png`, `top_apertus.csv`, `top_allenai.csv`, `agreement.md` |
+
+To run all three:
+```bash
+python results/allenai_comparison/build_allenai_variants.py   # one-time
+for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
+    python results/allenai_comparison/analyze.py \
+        --apertus-dir results/snr_definition/$pool
+done
+```

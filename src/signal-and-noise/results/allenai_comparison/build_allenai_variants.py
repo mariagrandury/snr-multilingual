@@ -31,10 +31,14 @@ from snr.download.hf import pull_predictions_from_hf
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
 # Reuse the Apertus driver's helpers verbatim — same shape of inputs.
+# The Apertus driver renamed `per_mix_inputs` → `per_model_inputs` when
+# it generalised the signal pool to "any unique model at this size";
+# AllenAI's per-(mix, seed) DataDecide runs are uniquely identified by
+# their `model` column, so the same per-model grouping applies.
 from multilingual.run_apertus_snr_variants import (
     _safe,
     compute_size_decision_accuracy,
-    per_mix_inputs,
+    per_model_inputs,
     variant_key,
     variant_signal_noise_snr,
 )
@@ -103,6 +107,12 @@ def run() -> Path:
         f"canonical seed: {seed} (counts: {seed_counts})"
     )
 
+    # Pre-filter to the canonical seed once; `per_model_inputs` and
+    # `compute_size_decision_accuracy` then operate on a single-seed slice
+    # (matching the legacy behavior).
+    df_seed = df[df["seed"] == seed].copy() if seed is not None else df
+
+    seeds_arg = [seed] if seed is not None else None
     rows: list[dict] = []
     for task in tqdm(tasks, desc="Tasks"):
         row = {"task": task}
@@ -110,12 +120,12 @@ def run() -> Path:
         # Size-DA: rank at small@last vs target@last.
         for s in SMALL_SIZES:
             row[f"decision_acc_size_{s}"] = _safe(
-                compute_size_decision_accuracy, df, task, s, TARGET_SIZE,
-                seed=seed,
+                compute_size_decision_accuracy, df_seed, task, s, TARGET_SIZE,
+                seeds=seeds_arg,
             )
 
         # 22 variants × 4 sizes × 3 stats.
-        size_inputs = {s: per_mix_inputs(df, task, s, seed=seed) for s in ALL_SIZES}
+        size_inputs = {s: per_model_inputs(df_seed, task, s) for s in ALL_SIZES}
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for s in ALL_SIZES:

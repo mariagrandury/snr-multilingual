@@ -14,6 +14,7 @@ Outputs (all in this directory):
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -33,9 +34,9 @@ from snr.snr_variants import AGGREGATION_FUNCTIONS
 
 from multilingual.run_apertus_snr_variants import variant_key
 
-OUT_DIR = PLOT_DIR / "allenai_comparison"
-APERTUS_CSV = PLOT_DIR / "snr_definition" / "snr_variants_per_task.csv"
-ALLENAI_CSV = OUT_DIR / "allenai_snr_variants_per_task.csv"
+ROOT_OUT = PLOT_DIR / "allenai_comparison"
+DEFAULT_APERTUS_DIR = PLOT_DIR / "snr_definition" / "seeds_1904"
+ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 
 APERTUS_SIZE = "1B"   # largest size in Apertus
 ALLENAI_SIZE = "1B"   # matched: AllenAI also has 1B in DataDecide
@@ -84,11 +85,11 @@ def _canonicalise_apertus_task(t: str) -> str:
     return _TASK_ALIASES.get(t, t)
 
 
-def _load_apertus_with_alias() -> pd.DataFrame:
+def _load_apertus_with_alias(apertus_csv: Path) -> pd.DataFrame:
     """Apply the canonicalisation, then drop duplicate canonical names by
     keeping the row with the most non-NaN values (i.e., the alias wins
     over the empty vanilla row whenever both exist)."""
-    df = pd.read_csv(APERTUS_CSV, index_col="task")
+    df = pd.read_csv(apertus_csv, index_col="task")
     df = df.reset_index()
     df["_canonical"] = df["task"].map(_canonicalise_apertus_task)
     df["_n_finite"] = df.drop(columns=["task", "_canonical"]).notna().sum(axis=1)
@@ -277,15 +278,20 @@ def _agreement_at_k(top_a: pd.Index, top_b: pd.Index, k: int) -> dict:
 
 # --- driver ----------------------------------------------------------------
 
-def run() -> None:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+def run(apertus_dir: Path, out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    apertus_csv = apertus_dir / "snr_variants_per_task.csv"
+    print(f"Apertus pool : {apertus_dir.name}")
+    print(f"Apertus CSV  : {apertus_csv}")
+    print(f"AllenAI CSV  : {ALLENAI_CSV}")
+    print(f"Output dir   : {out_dir}")
 
-    ap_df = _load_apertus_with_alias()
+    ap_df = _load_apertus_with_alias(apertus_csv)
     al_df = pd.read_csv(ALLENAI_CSV, index_col="task")
 
     # Task overlap.
     overlap = _build_task_overlap(set(ap_df.index), set(al_df.index))
-    overlap.to_csv(OUT_DIR / "task_overlap.csv")
+    overlap.to_csv(out_dir / "task_overlap.csv")
     shared = overlap[overlap["shared"]].index.tolist()
     print(
         f"Apertus: {len(ap_df)} tasks  |  AllenAI: {len(al_df)} tasks  "
@@ -295,7 +301,7 @@ def run() -> None:
     # Per-variant Pearson r at the headline (Apertus@1B ↔ AllenAI@1B).
     summary, per_variant_xy = _per_variant_pearson(ap_df, al_df, shared)
     summary = summary.sort_values("r", ascending=False)
-    summary.to_csv(OUT_DIR / "pearson_r_per_variant.csv")
+    summary.to_csv(out_dir / "pearson_r_per_variant.csv")
     print("\nPer-variant Pearson r (top 5 / bottom 5):")
     print(summary.head(5).round(3))
     print("...")
@@ -303,18 +309,18 @@ def run() -> None:
 
     # Long-format size sweep: same r but at every matched-size pair.
     sweep = _pearson_size_sweep(ap_df, al_df, shared)
-    sweep.to_csv(OUT_DIR / "pearson_r_size_sweep.csv", index=False)
+    sweep.to_csv(out_dir / "pearson_r_size_sweep.csv", index=False)
 
     # Headline scatter on the best variant.
     best_variant = summary["r"].idxmax()
     best_r = summary.loc[best_variant, "r"]
     best_n = int(summary.loc[best_variant, "n"])
-    headline_path = OUT_DIR / f"snr_apertus_vs_snr_allenai_{best_variant}.png"
+    headline_path = out_dir / f"snr_apertus_vs_snr_allenai_{best_variant}.png"
     _plot_scatter(per_variant_xy[best_variant], best_variant, best_r, best_n, headline_path)
     print(f"\nHeadline scatter ({best_variant}, r={best_r:.3f}) → {headline_path.name}")
 
     # Per-variant grid.
-    grid_path = OUT_DIR / "snr_apertus_vs_snr_allenai_grid.png"
+    grid_path = out_dir / "snr_apertus_vs_snr_allenai_grid.png"
     _plot_grid(per_variant_xy, summary, grid_path)
     print(f"Variant grid → {grid_path.name}")
 
@@ -330,8 +336,8 @@ def run() -> None:
     K_LIST = [5, 10, 20]
     top_ap_full = _top_k_table(ap_shared, snr_col_ap, max(K_LIST))
     top_al_full = _top_k_table(al_shared, snr_col_al, max(K_LIST))
-    top_ap_full.to_csv(OUT_DIR / "top_apertus.csv")
-    top_al_full.to_csv(OUT_DIR / "top_allenai.csv")
+    top_ap_full.to_csv(out_dir / "top_apertus.csv")
+    top_al_full.to_csv(out_dir / "top_allenai.csv")
 
     rows = []
     for k in K_LIST:
@@ -395,10 +401,23 @@ def run() -> None:
         top_al_full.round(3).to_markdown(),
         "",
     ]
-    (OUT_DIR / "agreement.md").write_text("\n".join(md_lines))
+    (out_dir / "agreement.md").write_text("\n".join(md_lines))
     print("\nAgreement table:")
     print(agreement_df.to_string(index=False))
 
 
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--apertus-dir", type=Path, default=DEFAULT_APERTUS_DIR,
+                   help="snr_definition/seeds_<...>/ dir whose "
+                        "snr_variants_per_task.csv is the Apertus side.")
+    p.add_argument("--out-dir", type=Path, default=None,
+                   help="Output dir for plots/tables. Defaults to "
+                        "results/allenai_comparison/<apertus_dir.name>/.")
+    args = p.parse_args()
+    out_dir = args.out_dir or (ROOT_OUT / args.apertus_dir.name)
+    run(apertus_dir=args.apertus_dir, out_dir=out_dir)
+
+
 if __name__ == "__main__":
-    run()
+    main()

@@ -9,6 +9,7 @@ This file is the curve-viewer.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -32,21 +33,26 @@ SMALL_SIZES = ["175M", "350M", "600M"]
 TARGET_SIZE = "1B"
 PLOTTED_MIXES = ["fwEdu30", "fwEdu60", "fwEdu90"]
 COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c"]
-SEED = 1904
-OUT_DIR = PLOT_DIR
+DEFAULT_SEED = 1904
+OUT_ROOT = PLOT_DIR / "acc_vs_flops"
 
 
-def _draw_task(ax, df, task, task_idx, all_sizes):
+def _seeds_subdir(seeds: list[int]) -> str:
+    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
+
+
+def _draw_task(ax, df, task, task_idx, all_sizes, seed):
     plot_task_curves(
         ax, task, signal_label=f"signal ({TARGET_SIZE})",
         plotted_sizes=all_sizes, plotted_mixes=PLOTTED_MIXES,
-        metric="primary_score", df=df, colors=COLORS, SEED=SEED, task_idx=task_idx,
+        metric="primary_score", df=df, colors=COLORS, SEED=seed, task_idx=task_idx,
         n_mixes_label=f"{len(PLOTTED_MIXES)} data mixtures",
         xc_label="", signal_size=TARGET_SIZE,
     )
 
 
-def _plot_grid(df, group_label, tasks, subplot_titles, out_path, all_sizes, ncols=3):
+def _plot_grid(df, group_label, tasks, subplot_titles, out_path, all_sizes, seed,
+               ncols=3):
     """Render `tasks` as subplots of one figure, saved to `out_path`."""
     n = len(tasks)
     if n == 0:
@@ -57,7 +63,7 @@ def _plot_grid(df, group_label, tasks, subplot_titles, out_path, all_sizes, ncol
     for idx, (task, subtitle) in enumerate(zip(tasks, subplot_titles)):
         ax = axes[idx // ncols][idx % ncols]
         try:
-            _draw_task(ax, df, task, idx, all_sizes)
+            _draw_task(ax, df, task, idx, all_sizes, seed)
             ax.set_title(f"{subtitle} — {task}", fontsize=10)
             drawn += 1
         except Exception:
@@ -74,7 +80,7 @@ def _plot_grid(df, group_label, tasks, subplot_titles, out_path, all_sizes, ncol
     return True
 
 
-def _plot_grouped_curves(df, tasks, all_sizes, out_dir):
+def _plot_grouped_curves(df, tasks, all_sizes, out_dir, seed):
     """Emit two combined views: one figure per benchmark family (subplots = languages)
     and one figure per language (subplots = benchmark families)."""
     by_family = defaultdict(list)
@@ -93,7 +99,7 @@ def _plot_grouped_curves(df, tasks, all_sizes, out_dir):
         fam_tasks_sorted = sorted(fam_tasks, key=assign_language)
         subtitles = [assign_language(t) for t in fam_tasks_sorted]
         if _plot_grid(df, f"benchmark: {family}", fam_tasks_sorted, subtitles,
-                      per_bench_dir / f"{family}.png", all_sizes):
+                      per_bench_dir / f"{family}.png", all_sizes, seed):
             n_bench += 1
 
     n_lang = 0
@@ -101,24 +107,34 @@ def _plot_grouped_curves(df, tasks, all_sizes, out_dir):
         lang_tasks_sorted = sorted(lang_tasks, key=benchmark_family)
         subtitles = [benchmark_family(t) for t in lang_tasks_sorted]
         if _plot_grid(df, f"language: {lang}", lang_tasks_sorted, subtitles,
-                      per_lang_dir / f"{lang}.png", all_sizes):
+                      per_lang_dir / f"{lang}.png", all_sizes, seed):
             n_lang += 1
 
     return n_bench, n_lang
 
 
-def run():
+def run(seed: int, out_dir: Path):
     df = load_apertus_eval_results()
     tasks = sorted(df["task"].unique())
-    print(f"Loaded {len(df):,} rows | {df['model'].nunique()} models | {len(tasks)} tasks")
+    print(f"Loaded {len(df):,} rows | {df['model'].nunique()} models | {len(tasks)} tasks "
+          f"| curve seed = {seed}")
 
     all_sizes = SMALL_SIZES + [TARGET_SIZE]
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    n_bench, n_lang = _plot_grouped_curves(df, tasks, all_sizes, OUT_DIR / "acc_vs_flops")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    n_bench, n_lang = _plot_grouped_curves(df, tasks, all_sizes, out_dir, seed)
 
-    print(f"\nWrote {n_bench} per-benchmark grids → {OUT_DIR / 'acc_vs_flops' / 'per_benchmark'}")
-    print(f"Wrote {n_lang} per-language grids → {OUT_DIR / 'acc_vs_flops' / 'per_language'}")
+    print(f"\nWrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
+    print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
 
 
 if __name__ == "__main__":
-    run()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--seed", type=int, default=DEFAULT_SEED,
+                   help="Single seed whose curves to draw (default: 1904). "
+                        "Multi-seed overlays get unreadable, so pick one.")
+    p.add_argument("--out-subdir", default=None,
+                   help="Subdir under results/ (default: "
+                        "'seeds_<seed>').")
+    args = p.parse_args()
+    out_subdir = args.out_subdir or _seeds_subdir([args.seed])
+    run(seed=args.seed, out_dir=OUT_ROOT / out_subdir)

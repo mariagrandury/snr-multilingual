@@ -1,5 +1,14 @@
 # CLAUDE.md
 
+## Working rules
+
+- **Never `rm -rf`, `mv`, or otherwise delete/relocate files or
+  directories without first asking the user for permission.** Even if
+  files look orphaned, redundant, or "obviously stale," ask first —
+  the user may be intentionally keeping them, or moving them may
+  break tracked paths. This applies to all destructive shell
+  operations (`rm`, `mv` to a different parent, `git rm`, etc.).
+
 ## Project Overview
 
 This project extends the Signal-and-Noise (SNR) framework (Heineman et al., 2025) from English-only to multilingual settings.

@@ -15,6 +15,7 @@ Q4 (top benchmarks per language) — under the global-best DA-size variant,
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -27,12 +28,11 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    _per_language_pearson_table, assign_language, da_ckpt_pairs,
-    da_size_pairs, list_variants,
+    DEFAULT_OUT_DIR, OUT_ROOT, _per_language_pearson_table, assign_language,
+    da_ckpt_pairs, da_size_pairs, list_variants,
 )
 from snr.constants import PLOT_DIR  # noqa: E402
 
-OUT_DIR = PLOT_DIR / "snr_definition"
 TARGET_SIZE = "1B"
 TOP_K = 5
 
@@ -331,24 +331,24 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
 
 # --- driver ----------------------------------------------------------------
 
-def main():
-    csv_path = OUT_DIR / "snr_variants_per_task.csv"
+def main(out_dir: Path = DEFAULT_OUT_DIR):
+    csv_path = out_dir / "snr_variants_per_task.csv"
     df = pd.read_csv(csv_path, index_col="task")
 
     # Q1 + Q2
     best_df = best_variant_per_language(df)
-    best_path = OUT_DIR / "best_variant_per_language.csv"
+    best_path = out_dir / "best_variant_per_language.csv"
     best_df.to_csv(best_path, index=False)
     print(f"Wrote → {best_path}")
     print(best_df.to_string(index=False))
 
     render_best_variant_per_language(
-        best_df, OUT_DIR / "best_variant_per_language.png")
-    print(f"Wrote → {OUT_DIR / 'best_variant_per_language.png'}")
+        best_df, out_dir / "best_variant_per_language.png")
+    print(f"Wrote → {out_dir / 'best_variant_per_language.png'}")
 
     render_variant_family_per_language(
-        best_df, OUT_DIR / "best_variant_family_per_language.png")
-    print(f"Wrote → {OUT_DIR / 'best_variant_family_per_language.png'}")
+        best_df, out_dir / "best_variant_family_per_language.png")
+    print(f"Wrote → {out_dir / 'best_variant_family_per_language.png'}")
 
     # Roll up best_df by family for the README narrative.
     fam_df = best_df.copy()
@@ -356,38 +356,44 @@ def main():
         _VARIANT_FAMILY).fillna("??")
     fam_df["family_da_ckpt"] = fam_df["best_variant_da_ckpt"].map(
         _VARIANT_FAMILY).fillna("??")
-    fam_df.to_csv(OUT_DIR / "best_variant_family_per_language.csv", index=False)
-    print(f"Wrote → {OUT_DIR / 'best_variant_family_per_language.csv'}")
+    fam_df.to_csv(out_dir / "best_variant_family_per_language.csv", index=False)
+    print(f"Wrote → {out_dir / 'best_variant_family_per_language.csv'}")
 
     cluster_df = variant_clusters(best_df)
-    cluster_path = OUT_DIR / "variant_clusters.csv"
+    cluster_path = out_dir / "variant_clusters.csv"
     cluster_df.to_csv(cluster_path, index=False)
     print(f"\nWrote → {cluster_path}")
     print(cluster_df.to_string(index=False))
 
     # Q3
     tv_df = top_variants_overall(df)
-    tv_path = OUT_DIR / "top_variants_overall.csv"
+    tv_path = out_dir / "top_variants_overall.csv"
     tv_df.to_csv(tv_path, index=False)
     print(f"\nWrote → {tv_path}")
     print(tv_df.head(8).to_string(index=False))
 
-    render_top_variants_overall(tv_df, OUT_DIR / "top_variants_overall.png")
-    print(f"Wrote → {OUT_DIR / 'top_variants_overall.png'}")
+    render_top_variants_overall(tv_df, out_dir / "top_variants_overall.png")
+    print(f"Wrote → {out_dir / 'top_variants_overall.png'}")
 
     g_best = tv_df.iloc[0]["variant"]
     print(f"\nGlobal best variant (mean Pearson r across languages, DA-size): {g_best}")
 
     # Q4
     top_df = top_benchmarks_per_language(df, g_best)
-    top_path = OUT_DIR / "top_benchmarks_per_language.csv"
+    top_path = out_dir / "top_benchmarks_per_language.csv"
     top_df.to_csv(top_path, index=False)
     print(f"\nWrote → {top_path}  ({len(top_df)} rows)")
 
     render_top_benchmarks_grid(
-        top_df, g_best, OUT_DIR / "top_benchmarks_per_language.png")
-    print(f"Wrote → {OUT_DIR / 'top_benchmarks_per_language.png'}")
+        top_df, g_best, out_dir / "top_benchmarks_per_language.png")
+    print(f"Wrote → {out_dir / 'top_benchmarks_per_language.png'}")
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
+                   help="Directory containing snr_variants_per_task.csv "
+                        "and where outputs will be written. Default: "
+                        f"{DEFAULT_OUT_DIR}")
+    args = p.parse_args()
+    main(out_dir=args.out_dir)

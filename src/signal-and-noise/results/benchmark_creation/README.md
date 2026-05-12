@@ -17,12 +17,17 @@ format; Phase B: item lengths). The combined story is:
 
 ## Setup
 
-- **SNR signal:** `snr_mpd_1B` from
-  [../snr_definition/snr_variants_per_task.csv](../snr_definition/snr_variants_per_task.csv).
-  Q1 picked `mpd` (mean pairwise distance) as the headline variant —
-  highest mean Pearson r vs decision accuracy across languages.
+- **SNR signal:** `snr_mpd_1B` from one of the seed-pool subdirs under
+  [../snr_definition/](../snr_definition/). Q1 picked `mpd` (mean
+  pairwise distance) as a top dispersion-family variant; it stays in
+  the global top-7 across all three seed pools.
 - **Per-family aggregate:** median of `snr_mpd_1B` across the family's
   per-language aggregate tasks.
+- **Outputs are partitioned by seed pool**: each Apertus seed pool
+  gets its own subdir here (`seeds_1904/`, `seeds_28_1797/`,
+  `seeds_28_1797_1904/`) with the same set of files
+  (per_family_snr.csv, per_task_snr.csv, group_stats.csv,
+  snr_by_*.png).
 - **Metadata:** [data_info.md](data_info.md) — paper-style paragraphs +
   a schema table, cross-referenced against the
   `lm-evaluation-harness` task READMEs. The `FAMILY_META` dict in
@@ -31,37 +36,46 @@ format; Phase B: item lengths). The combined story is:
   100 English (or default-config) items per family from each
   benchmark's HF dataset and computes character-length statistics for
   context vs options. Output: [length_features.csv](length_features.csv).
+  Shared across pools.
 - **Coverage caveat (carried forward):** `global_mmlu` (Lite, 6 langs)
   is excluded from the SNR analysis — only one Apertus model was
-  evaluated on it (350M, single config), so `mpd_1B` is NaN
-  everywhere. arc_de/fr and hellaswag_de/fr are also NaN at 1B.
+  evaluated on it, so `mpd_1B` is NaN everywhere. arc_de/fr and
+  hellaswag_de/fr are also NaN at 1B.
   `global_piqa_completions_spa_latn_spai` is filtered by
-  `_is_language_aggregate` (3 trailing tokens). Net pool: **88
-  per-language tasks across 11 families.**
+  `_is_language_aggregate` (3 trailing tokens).
 
-## Headline ranking
+## Headline ranking (pool: `seeds_28_1797_1904`, recommended)
 
-![Per-family SNR ranking colored by curation category](snr_per_family_ranked.png)
+![Per-family SNR ranking](seeds_28_1797_1904/snr_per_family_ranked.png)
 
-Per-family median `snr_mpd_1B` (full table: [per_family_snr.csv](per_family_snr.csv)):
+Per-family median `snr_mpd_1B` (full table:
+[seeds_28_1797_1904/per_family_snr.csv](seeds_28_1797_1904/per_family_snr.csv)):
 
-| family | median | n_tasks | curation | format | n_opts | ctx (chars) | opt (chars) |
-|---|---:|---:|---|---|---:|---:|---:|
-| multiblimp | 4.42 | 7 | template_generated | minimal_pair | 2 | 46 | 119 |
-| xstorycloze | 2.04 | 8 | human_translation | completion | 2 | 189 | 38 |
-| hellaswag | 2.04 | 6 | machine_translation | completion | 4 | 118 | 61 |
-| xwinograd | 1.56 | 4 | originally_multilingual | completion | 2 | 74 | 7 |
-| global_piqa_completions | 1.25 | 10 | originally_multilingual | completion | 2 | 38 | 54 |
-| paws | 1.05 | 5 | human_translation | classification | 2 | 224 | 2.5 |
-| xcopa | 0.92 | 6 | human_translation | completion | 2 | 37 | 31 |
-| xnli | 0.91 | 11 | human_translation | classification | 3 | 127 | 10 |
-| arc | 0.74 | 9 | machine_translation | mcq_question_only | 4 | 122 | 28 |
-| belebele | 0.48 | 12 | human_translation | mrc_passage | 4 | 558 | 21 |
-| global_mmlu_full | 0.40 | 10 | mt_post_edited | mcq_question_only | 4 | 120 | 11 |
+| family | median | n_tasks | curation | format | n_opts |
+|---|---:|---:|---|---|---:|
+| multiblimp | **3.81** | 7 | template_generated | minimal_pair | 2 |
+| xwinograd | 2.12 | 4 | originally_multilingual | completion | 2 |
+| xstorycloze | 1.96 | 8 | human_translation | completion | 2 |
+| paws | 1.60 | 5 | human_translation | classification | 2 |
+| xcopa | 1.43 | 6 | human_translation | completion | 2 |
+| hellaswag | 1.37 | 6 | machine_translation | completion | 4 |
+| xnli | 1.12 | 11 | human_translation | classification | 3 |
+| global_piqa_completions | 1.02 | 11 | originally_multilingual | completion | 2 |
+| belebele | 0.70 | 12 | human_translation | mrc_passage | 4 |
+| global_mmlu_full | 0.66 | 10 | mt_post_edited | mcq_question_only | 4 |
+| arc | 0.62 | 9 | machine_translation | mcq_question_only | 4 |
+
+Rank order is stable across seed pools — minor reshuffling in the
+mid-tier between pools, but the top (multiblimp / xwinograd /
+xstorycloze) and bottom (belebele / global_mmlu_full / arc) blocks
+are unchanged. See
+[seeds_1904/per_family_snr.csv](seeds_1904/per_family_snr.csv) and
+[seeds_28_1797/per_family_snr.csv](seeds_28_1797/per_family_snr.csv)
+for the single-seed and train-pool views.
 
 ## Phase 0 — curation process (the original Q4 question)
 
-![Per-family SNR by curation process](snr_by_curation_process.png)
+![Per-family SNR by curation process](seeds_28_1797_1904/snr_by_curation_process.png)
 
 | view | test | H | p |
 |---|---|---:|---:|
@@ -70,7 +84,7 @@ Per-family median `snr_mpd_1B` (full table: [per_family_snr.csv](per_family_snr.
 | task / curation_category (with `xnli_eu` re-tag) | Kruskal-Wallis | 32.3 | <1e-6 |
 
 The family-level test does not reach significance for any curation
-view (see [snr_by_data_source.png](snr_by_data_source.png) too). The
+view (see [snr_by_data_source.png](seeds_28_1797_1904/snr_by_data_source.png) too). The
 per-task test only reaches significance because multiblimp's
 template-generated tasks pull the `template_generated` group up; if
 you drop multiblimp the residual differences across the other four
@@ -79,9 +93,9 @@ predict SNR.**
 
 ## Phase A — task format (the strongest categorical predictor)
 
-![Per-family SNR by task format](snr_by_format.png)
+![Per-family SNR by task format](seeds_28_1797_1904/snr_by_format.png)
 
-![Per-family SNR by number of answer options](snr_by_n_options.png)
+![Per-family SNR by number of answer options](seeds_28_1797_1904/snr_by_n_options.png)
 
 | view | test | statistic | p |
 |---|---|---:|---:|
@@ -90,7 +104,7 @@ predict SNR.**
 | family / passage flag | Kruskal-Wallis | H = 0.38 | 0.54 |
 | family / random_baseline (continuous) | Spearman ρ | **+0.62** | **0.041** |
 
-![SNR vs random baseline](snr_vs_random_baseline.png)
+![SNR vs random baseline](seeds_28_1797_1904/snr_vs_random_baseline.png)
 
 The continuous Spearman correlation between SNR and random baseline
 (= 1 / n_options) is **+0.62, p = 0.041** — the only significant
@@ -124,7 +138,7 @@ does.
 
 ## Phase B — item lengths (extends Phase A quantitatively)
 
-![SNR vs length features](snr_vs_length_features.png)
+![SNR vs length features](seeds_28_1797_1904/snr_vs_length_features.png)
 
 100 English-or-default items per family pulled from each benchmark's
 HF dataset; character-length statistics in
@@ -196,34 +210,39 @@ Concretely:
 
 ## Directory contents
 
+Shared at the top of this dir:
 - [INSTRUCTIONS.md](INSTRUCTIONS.md), [data_info.md](data_info.md) —
   research-question spec and per-family paper-style metadata.
-- [analyze.py](analyze.py) — runs Phases 0/A/B; emits the CSVs and
-  plots below.
+- [analyze.py](analyze.py) — runs Phases 0/A/B; takes `--snr-dir`
+  (a `snr_definition/seeds_<...>/` dir) and emits the per-pool CSVs
+  and plots into the matching subdir here.
 - [length_features.py](length_features.py) — Phase B HF sampler;
   writes [length_features.csv](length_features.csv) and
   [sample_items.json](sample_items.json) (one example item per
-  family, kept for any Phase C topic tagging).
-- [per_family_snr.csv](per_family_snr.csv) — one row per family,
-  carries SNR aggregates + all metadata + length features.
-- [per_task_snr.csv](per_task_snr.csv) — one row per per-language
-  aggregate task, carrying the per-task curation override (`xnli_eu`
-  re-tagged as `mt_post_edited`).
-- [group_stats.csv](group_stats.csv) — Kruskal-Wallis (and Spearman
-  for continuous axes) for every grouping view.
-- Phase 0 plots:
-  [snr_per_family_ranked.png](snr_per_family_ranked.png) (headline),
-  [snr_by_curation_process.png](snr_by_curation_process.png),
-  [snr_by_data_source.png](snr_by_data_source.png),
-  [snr_by_curation_per_task.png](snr_by_curation_per_task.png).
-- Phase A plots:
-  [snr_by_n_options.png](snr_by_n_options.png),
-  [snr_by_format.png](snr_by_format.png),
-  [snr_by_passage.png](snr_by_passage.png),
-  [snr_vs_random_baseline.png](snr_vs_random_baseline.png).
-- Phase B plots:
-  [snr_vs_length_features.png](snr_vs_length_features.png) (3-panel
-  combined),
-  [snr_vs_context_len.png](snr_vs_context_len.png),
-  [snr_vs_option_len.png](snr_vs_option_len.png),
-  [snr_vs_context_option_ratio.png](snr_vs_context_option_ratio.png).
+  family, kept for any Phase C topic tagging). Pool-agnostic.
+
+Per Apertus seed pool (`seeds_1904/`, `seeds_28_1797/`,
+`seeds_28_1797_1904/`):
+- `per_family_snr.csv` — one row per family with SNR aggregates +
+  metadata + length features.
+- `per_task_snr.csv` — one row per per-language aggregate task with
+  the per-task curation override (`xnli_eu` re-tagged
+  `mt_post_edited`).
+- `group_stats.csv` — Kruskal-Wallis (and Spearman for continuous
+  axes) for every grouping view.
+- Phase 0 plots: `snr_per_family_ranked.png` (headline),
+  `snr_by_curation_process.png`, `snr_by_data_source.png`,
+  `snr_by_curation_per_task.png`.
+- Phase A plots: `snr_by_n_options.png`, `snr_by_format.png`,
+  `snr_by_passage.png`, `snr_vs_random_baseline.png`.
+- Phase B plots: `snr_vs_length_features.png` (3-panel combined),
+  `snr_vs_context_len.png`, `snr_vs_option_len.png`,
+  `snr_vs_context_option_ratio.png`.
+
+To regenerate all three pools:
+```bash
+for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
+    python results/benchmark_creation/analyze.py \
+        --snr-dir results/snr_definition/$pool
+done
+```

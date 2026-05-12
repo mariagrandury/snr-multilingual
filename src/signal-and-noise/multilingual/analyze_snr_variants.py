@@ -24,6 +24,7 @@ single source of truth.
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -39,8 +40,8 @@ if str(_REPO) not in sys.path:
 from snr.constants import PLOT_DIR
 from snr.plot import config_snr_ax
 
-OUT_DIR = PLOT_DIR / "snr_definition"
-CSV_PATH = OUT_DIR / "snr_variants_per_task.csv"
+OUT_ROOT = PLOT_DIR / "snr_definition"
+DEFAULT_OUT_DIR = OUT_ROOT / "seeds_1904"
 
 SMALL_SIZES = ["175M", "350M", "600M"]
 TARGET_SIZE = "1B"
@@ -489,8 +490,8 @@ for _s in ALL_SIZES:
 
 def _render_for_da(df: pd.DataFrame, variants: list[str], subdir: str,
                    da_kind: str, pairs_factory, color_by_size: bool,
-                   label: str):
-    out_dir = OUT_DIR / subdir
+                   label: str, out_root: Path):
+    out_dir = out_root / subdir
     out_dir.mkdir(parents=True, exist_ok=True)
     da_pairs = list(pairs_factory())
 
@@ -526,33 +527,40 @@ def _render_for_da(df: pd.DataFrame, variants: list[str], subdir: str,
             print(f"Wrote → {path}")
 
 
-def main():
-    df = pd.read_csv(CSV_PATH, index_col="task")
+def main(out_dir: Path = DEFAULT_OUT_DIR):
+    csv_path = out_dir / "snr_variants_per_task.csv"
+    df = pd.read_csv(csv_path, index_col="task")
     variants = list_variants(df)
     n_size = sum(1 for c in df.columns if c.startswith("decision_acc_size_"))
     n_ckpt = sum(1 for c in df.columns if c.startswith("decision_acc_ckpt_"))
-    print(f"Loaded {len(df)} tasks × {df.shape[1]} columns "
+    print(f"Loaded {len(df)} tasks × {df.shape[1]} columns from {csv_path} "
           f"({len(variants)} variants × {len(ALL_SIZES)} sizes × 3 stats "
           f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)\n")
 
     for subdir, da_kind, pairs_factory, color_by_size, label in _DA_DEFS:
-        print(f"=== DA-{da_kind} ({label}) → {OUT_DIR / subdir} ===")
+        print(f"=== DA-{da_kind} ({label}) → {out_dir / subdir} ===")
         _render_for_da(df, variants, subdir, da_kind, pairs_factory,
-                       color_by_size, label)
+                       color_by_size, label, out_root=out_dir)
         print()
 
     # Variant correlation matrix (pool over all sizes/tasks).
     corr = _variant_corr_matrix(df, variants)
-    if _draw_corr_matrix(corr, OUT_DIR / "variant_correlation_matrix.png",
+    if _draw_corr_matrix(corr, out_dir / "variant_correlation_matrix.png",
                          title="Inter-variant correlation of log10(SNR) "
                                "(pooled over tasks × sizes)"):
-        print(f"Wrote → {OUT_DIR / 'variant_correlation_matrix.png'}")
+        print(f"Wrote → {out_dir / 'variant_correlation_matrix.png'}")
 
     # Per-variant scatter: r(SNR, DA-size) vs r(SNR, DA-ckpt).
     if _draw_da_size_vs_da_ckpt(df, variants,
-                                OUT_DIR / "da_size_vs_da_ckpt.png"):
-        print(f"Wrote → {OUT_DIR / 'da_size_vs_da_ckpt.png'}")
+                                out_dir / "da_size_vs_da_ckpt.png"):
+        print(f"Wrote → {out_dir / 'da_size_vs_da_ckpt.png'}")
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
+                   help="Directory containing snr_variants_per_task.csv "
+                        "and where plots will be written. Default: "
+                        f"{DEFAULT_OUT_DIR}")
+    args = p.parse_args()
+    main(out_dir=args.out_dir)

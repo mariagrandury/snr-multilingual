@@ -1,5 +1,15 @@
 # Context for Claude — signal-and-noise (Apertus fork)
 
+## Working rules
+
+- **Never `rm -rf`, `mv`, or otherwise delete/relocate files or
+  directories without first asking the user for permission.** Even
+  files that look orphaned, redundant, or "obviously stale" may be
+  intentionally kept or referenced elsewhere — ask first. This
+  applies to all destructive shell operations (`rm`, `mv` to a
+  different parent, `git rm`, etc.).
+
+
 This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/signal-and-noise),
 augmented to run the SNR / decision-accuracy pipeline on the 12 **custom Apertus
 pretraining checkpoints** evaluated by the sister `evals/` package

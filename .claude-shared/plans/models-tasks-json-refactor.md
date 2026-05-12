@@ -205,17 +205,17 @@ Notes on the schema:
 }
 ```
 
-- `stages` is a list (some tasks span pretraining + midtraining — see [tasks_include.txt](src/evals/configs/signal_to_ratio/tasks_include.txt)).
-- Optional `metric` per task — when declared, [push_all_results.py](src/evals/scripts/push_all_results.py)'s `flatten()` uses exactly that key; otherwise it falls back to the existing `acc` → `exact_match` heuristic.
+- `stages` is a list (some tasks span pretraining + midtraining).
+- Include `metric` per task — when declared, [push_all_results.py](src/evals/scripts/push_all_results.py)'s `flatten()` uses exactly that key; otherwise it falls back to the existing `acc` → `exact_match` heuristic.
 - `groups` mirror today's `tasks_*.txt` files 1-to-1 so the migration is a string-list swap.
 
 ## Migration order
 
-Each phase is independently committable and leaves both pretrain resumes and eval submissions running.
+Each phase is independently committable.
 
 ### Phase 0 — additive, no behavior change
 
-1. Author `configs/models.json` and `configs/tasks.json` at the repo root (matches the layout already documented in [snr-multilingual/CLAUDE.md](CLAUDE.md)). Generate from the 7 model txt files + 8 task txt files + the user's a06 spec.
+1. Author `configs/models.json` and `configs/tasks.json` at the repo root (matches the layout already documented in [snr-multilingual/CLAUDE.md](CLAUDE.md)). Generate from the model txt files + task txt files, preserving the checkpoint lists from this schema above.
 2. Add a thin loader at `src/evals/scripts/utils/configs.py` (functions: `load_models()`, `load_tasks(group=…)`, `iters_for(model, subset='full_eval')`, `tokens_for(model, ckpt_id)`). All three pipelines import from here.
 3. Lift `collect()` and `aggregate_parents()` out of [push_all_results.py](src/evals/scripts/push_all_results.py) into the same `utils/` module so [snr/download/apertus.py](src/signal-and-noise/snr/download/apertus.py)'s implicit `sys.path` import has a stable home (mitigates R2).
 4. Parity test: enumerated `(model, ckpt)` cells from JSON must equal the cells produced by today's [snr_progress.py](src/evals/scripts/snr_progress.py) on every existing `models_*.txt` — byte-identical `snr_progress.csv` against a snapshotted reference.
