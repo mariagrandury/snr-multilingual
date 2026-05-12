@@ -33,13 +33,15 @@ from scipy import stats
 # Reach the multilingual helpers without writing outside this dir.
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
 from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-# Backwards-compat defaults. Overridden per-run via --snr-dir / --out-dir
-# so each seed pool gets its own outputs.
-DEFAULT_SNR_DIR = ROOT / "results" / "snr_definition" / "seeds_1904"
+SNR_DEFINITION_ROOT = ROOT / "results" / "snr_definition"
 SNR_COL = "snr_mpd_1B"
 
 # --- Categorical labels for grouping -----------------------------------------
@@ -546,12 +548,12 @@ def main(snr_dir: Path, out_dir: Path) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--snr-dir", type=Path, default=DEFAULT_SNR_DIR,
-                   help="snr_definition/seeds_<...>/ dir whose "
-                        "snr_variants_per_task.csv we read.")
-    p.add_argument("--out-dir", type=Path, default=None,
-                   help="Output dir. Defaults to "
-                        "results/benchmark_creation/<snr_dir.name>/.")
+    p.add_argument("--pool", required=True,
+                   help="Pool name from configs/models.json. Reads "
+                        "results/snr_definition/<pool>/snr_variants_per_task.csv, "
+                        "writes results/benchmark_creation/<pool>/.")
     args = p.parse_args()
-    out_dir = args.out_dir or (HERE / args.snr_dir.name)
-    main(snr_dir=args.snr_dir, out_dir=out_dir)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+    main(snr_dir=SNR_DEFINITION_ROOT / args.pool, out_dir=HERE / args.pool)

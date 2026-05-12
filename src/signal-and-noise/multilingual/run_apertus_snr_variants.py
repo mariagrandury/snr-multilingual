@@ -39,7 +39,6 @@ The CSV is the single source of truth for analyze_snr_variants.py.
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
@@ -47,18 +46,33 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+# Put `src/` on sys.path so `evals.scripts.utils.configs` imports
+# resolve via implicit namespace packages.
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from evals.scripts.utils.configs import (  # noqa: E402
+    add_family_column,
+    expand_pool,
+    load_pools,
+    pool_include_external,
+)
 from multilingual.analyze_snr_variants import (
-    _ENGLISH_ONLY_TASKS, assign_language, benchmark_family,
+    _ENGLISH_ONLY_TASKS,
+    assign_language,
+    benchmark_family,
 )
 from multilingual.smooth_subtasks import _is_language_aggregate
 from snr.constants import PLOT_DIR
 from snr.dataloader import get_slice
 from snr.download.apertus import (
-    load_apertus_eval_results, load_reference_hf_eval_results,
+    load_apertus_eval_results,
+    load_reference_hf_eval_results,
 )
 from snr.metrics import decision_acc_fast
 from snr.snr_variants import AGGREGATION_FUNCTIONS
@@ -68,62 +82,11 @@ TARGET_SIZE = "1B"
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
 LAST_N = 5
 CKPT_DA_EARLY_STEPS = [6000, 18000, 28000]
-DEFAULT_SEEDS = [1904]
 OUT_ROOT = PLOT_DIR / "snr_definition"
 
-# Dedup set for missing-ckpt warnings — log each (size, early_step, mix)
+# Dedup set for missing-ckpt warnings — log each (size, early_step, family)
 # combination at most once across the whole run, regardless of task.
 _LOGGED_MISSING_CKPTS: set = set()
-
-
-# --- model_family: cross-size identity helper -------------------------------
-
-# Sizes we know about. The size token is stripped from a model name to
-# produce a `model_family` that crosses sizes. We deliberately keep seed
-# (and any other axis like mix) IN the family ID — they encode different
-# training runs that we want to track separately across sizes.
-_SIZE_TOKENS = (
-    "175M", "350M", "600M", "1B",  # Apertus
-    "150M", "300M", "750M",        # AllenAI DataDecide
-    "190M",                         # AllenAI ladder
-    "3B", "7B", "8B", "13B", "32B", "70B",  # external HF
-)
-
-
-def _strip_size_from_name(model: str, size: str) -> str:
-    """Drop the ``size`` token (with adjacent dashes) from a model name.
-
-    Returns a cross-size identity for the same training run. We do **not**
-    strip seeds, mixes, or other recipe tokens — so `apertus-175M-fwEdu30-
-    fw270-seed28` and `...-seed1797` produce distinct families. Examples:
-        apertus-175M-fwEdu30-fw270-seed1904 → apertus-fwEdu30-fw270-seed1904
-        allenai/DataDecide-c4-150M          → allenai/DataDecide-c4
-        SmolLM3-3B-Base                     → SmolLM3-Base
-        Olmo-3-1025-7B                      → Olmo-3-1025
-    """
-    if not isinstance(model, str) or not isinstance(size, str):
-        return model
-    if size not in _SIZE_TOKENS:
-        return model
-    # Match `-<size>-`, `-<size>$`, `<size>-`, or `<size>$` as a token
-    # (require a non-word boundary on each side to avoid partial matches
-    # like `100M` swallowing `0M`).
-    pattern = re.compile(rf"(?:^|(?<=[-/])){re.escape(size)}(?=[-/]|$)")
-    new = pattern.sub("", model)
-    # Clean up resulting `--` or trailing/leading `-`.
-    new = re.sub(r"-{2,}", "-", new).strip("-/")
-    return new or model
-
-
-def add_model_family(df: pd.DataFrame) -> pd.DataFrame:
-    """Add a ``model_family`` column to ``df``. Idempotent."""
-    if "model_family" in df.columns:
-        return df
-    df = df.copy()
-    df["model_family"] = [
-        _strip_size_from_name(m, s) for m, s in zip(df["model"], df["size"])
-    ]
-    return df
 
 
 def _safe(fn, *args, **kwargs):
@@ -136,73 +99,70 @@ def _safe(fn, *args, **kwargs):
 
 # --- decision accuracy ------------------------------------------------------
 
-def compute_size_decision_accuracy(df, task, small_size, target_size=TARGET_SIZE,
-                                   seeds=None):
+
+def compute_size_decision_accuracy(
+    df, task, small_size, target_size=TARGET_SIZE, model_filter=None
+):
     """DA across model sizes: small_size@last vs target_size@last.
 
-    The cross-size identity is ``model_family`` — the model name with
-    only the size token stripped (so different mixes / seeds remain
-    separate, but ``apertus-175M-fwEdu30-…-seed1904`` and the
-    corresponding 1B model collapse to the same family).
+    The cross-size identity is ``family`` — the model name with only
+    the size token stripped (so different mixes / seeds remain separate,
+    but ``apertus-175M-fwEdu30-…-seed1904`` and the corresponding 1B
+    model collapse to the same family).
 
-    ``seeds`` restricts the Apertus side of the pool to a list of
-    training seeds (rows whose ``seed`` is in the list, plus rows whose
-    seed is NaN — those are external models with no seed column).
-    Returns NaN if fewer than 2 common model families survive across
-    both sizes.
+    ``model_filter`` (optional) restricts the rows to a set of model
+    names — passed by `run()` from `expand_pool(<pool>)`. Returns NaN if
+    fewer than 2 common families survive across both sizes.
     """
-    df = add_model_family(df)
-    if seeds is not None:
-        seeds_set = set(int(s) for s in seeds)
-        keep = df["seed"].isna() | df["seed"].isin(seeds_set)
-        df = df[keep]
+    df = add_family_column(df)
+    if model_filter is not None:
+        df = df[df["model"].isin(model_filter)]
     scores_small = df[(df["size"] == small_size) & (df["task"] == task)]
     scores_target = df[(df["size"] == target_size) & (df["task"] == task)]
     if scores_small.empty or scores_target.empty:
         return float("nan")
-    scores_small = scores_small.loc[
-        scores_small.groupby("model_family")["step"].idxmax()
-    ]
-    scores_target = scores_target.loc[
-        scores_target.groupby("model_family")["step"].idxmax()
-    ]
-    keys_small = set(scores_small["model_family"])
-    keys_target = set(scores_target["model_family"])
+    scores_small = scores_small.loc[scores_small.groupby("family")["step"].idxmax()]
+    scores_target = scores_target.loc[scores_target.groupby("family")["step"].idxmax()]
+    keys_small = set(scores_small["family"])
+    keys_target = set(scores_target["family"])
     common = sorted(keys_small & keys_target)
     if len(common) < 2:
         return float("nan")
-    s = scores_small.set_index("model_family").loc[common, "primary_score"]
-    t = scores_target.set_index("model_family").loc[common, "primary_score"]
+    s = scores_small.set_index("family").loc[common, "primary_score"]
+    t = scores_target.set_index("family").loc[common, "primary_score"]
     return decision_acc_fast(s.to_numpy(), t.to_numpy())
 
 
-def compute_ckpt_decision_accuracy(df, task, size, early_step, seeds=None):
-    """DA within a single size: ``model_family`` ranking at exactly
+def compute_ckpt_decision_accuracy(df, task, size, early_step, model_filter=None):
+    """DA within a single size: ``family`` ranking at exactly
     ``early_step`` vs the same family's max-step ckpt.
 
-    Within a single size, each model_family has exactly one model — so
+    Within a single size, each family has exactly one model — so
     the grouping is essentially per-model. A missing ckpt is logged
-    once per ``(size, early_step, model_family)`` combination across
+    once per ``(size, early_step, family)`` combination across
     the whole run. If fewer than 2 families survive, returns NaN.
+
+    ``model_filter`` (optional) restricts the rows to a set of model
+    names — passed by `run()` from `expand_pool(<pool>)`.
     """
-    df = add_model_family(df)
-    if seeds is not None:
-        seeds_set = set(int(s) for s in seeds)
-        keep = df["seed"].isna() | df["seed"].isin(seeds_set)
-        df = df[keep]
+    df = add_family_column(df)
+    if model_filter is not None:
+        df = df[df["model"].isin(model_filter)]
     scores = df[(df["size"] == size) & (df["task"] == task)]
     if scores.empty:
         return float("nan")
     early, late, keys = [], [], []
-    for fam, g in scores.groupby("model_family"):
+    for fam, g in scores.groupby("family"):
         g_early = g[g["step"] == early_step]
         if g_early.empty:
             key = (size, early_step, fam)
             if key not in _LOGGED_MISSING_CKPTS:
                 _LOGGED_MISSING_CKPTS.add(key)
-                print(f"  ckpt-DA: no row at step={early_step} for "
-                      f"size={size} family={fam} "
-                      f"(first seen on task={task}) — skipped")
+                print(
+                    f"  ckpt-DA: no row at step={early_step} for "
+                    f"size={size} family={fam} "
+                    f"(first seen on task={task}) — skipped"
+                )
             continue
         max_row = g.loc[g["step"].idxmax()]
         early.append(float(g_early["primary_score"].iloc[0]))
@@ -214,6 +174,7 @@ def compute_ckpt_decision_accuracy(df, task, size, early_step, seeds=None):
 
 
 # --- per-model arrays for snr_variants --------------------------------------
+
 
 def per_model_inputs(df, task, size, last_n=LAST_N):
     """Build the four per-model arrays expected by snr_variants aggregators.
@@ -277,23 +238,20 @@ def variant_key(func_dict):
 # --- variants metadata table ------------------------------------------------
 
 
-def _seeds_subdir(seeds: list[int]) -> str:
-    """``[1904] → 'seeds_1904'``; ``[28, 1797] → 'seeds_28_1797'``."""
-    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
-
-
 def variants_definitions_df() -> pd.DataFrame:
     """One row per aggregator describing what its signal/noise/snr mean."""
     rows = []
     for fd in AGGREGATION_FUNCTIONS:
-        rows.append({
-            "variant": variant_key(fd),
-            "title": fd["title"],
-            "latex": fd["latex"],
-            "signal_label": fd["signal_xlabel"],
-            "noise_label": fd["noise_xlabel"],
-            "snr_label": fd["snr_xlabel"],
-        })
+        rows.append(
+            {
+                "variant": variant_key(fd),
+                "title": fd["title"],
+                "latex": fd["latex"],
+                "signal_label": fd["signal_xlabel"],
+                "noise_label": fd["noise_xlabel"],
+                "snr_label": fd["snr_xlabel"],
+            }
+        )
     return pd.DataFrame(rows).set_index("variant")
 
 
@@ -315,6 +273,7 @@ def write_variants_definitions(out_dir: Path) -> Path:
 
 # --- driver -----------------------------------------------------------------
 
+
 def _is_parent_task(task: str) -> bool:
     """Match the cluster's ``aggregate_parents`` semantics: keep one row per
     "real" evaluation, dropping the per-(lang, subject) facets that the
@@ -332,14 +291,18 @@ def _is_parent_task(task: str) -> bool:
     return _is_language_aggregate(task, benchmark_family(task))
 
 
-def build_snr_pool(seeds: list[int], include_external: bool) -> pd.DataFrame:
-    """SNR signal-pool dataframe: Apertus rows filtered to ``seeds`` plus
-    (optionally) every reference_hf row. Externals don't have a ``seed``
-    so they are gated only by ``include_external``."""
+def build_snr_pool(pool: str) -> pd.DataFrame:
+    """SNR signal-pool dataframe for the named pool. Apertus rows are
+    filtered to the pool's `members` (resolved via configs/models.json
+    via expand_pool). When the pool sets `include_external=true`, every
+    reference_hf row joins the pool (HF refs have no `seed` and only live
+    at their native sizes — the per_model groupby handles them via the
+    model name)."""
+    pool_models = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
-    df_a = df_a[df_a["seed"].isin(seeds)].copy()
+    df_a = df_a[df_a["model"].isin(pool_models)].copy()
     frames = [df_a]
-    if include_external:
+    if pool_include_external(pool):
         try:
             df_e = load_reference_hf_eval_results()
             if not df_e.empty:
@@ -349,23 +312,27 @@ def build_snr_pool(seeds: list[int], include_external: bool) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def run(seeds: list[int], out_dir: Path, include_external: bool = True):
+def run(pool: str, out_dir: Path):
     df_apertus = load_apertus_eval_results()  # for DA (cross-size axis)
-    df_pool = build_snr_pool(seeds, include_external)  # for SNR signal/noise
+    df_pool = build_snr_pool(pool)  # for SNR signal/noise
     all_tasks = sorted(df_pool["task"].unique())
     tasks = [t for t in all_tasks if _is_parent_task(t)]
 
+    pool_models = set(expand_pool(pool))
+    da_models = df_apertus["model"].isin(pool_models)
     pool_n_models = df_pool.groupby("size")["model"].nunique().to_dict()
-    apertus_n_units = df_apertus[df_apertus["seed"].isin(seeds)].groupby("size")[
-        ["mix", "seed"]
-    ].apply(lambda g: g.drop_duplicates().shape[0]).to_dict()
-    print(f"Loaded {len(df_apertus):,} Apertus rows + "
-          f"{len(df_pool) - len(df_apertus[df_apertus['seed'].isin(seeds)]):,} "
-          f"external rows | {len(tasks)} parent tasks "
-          f"(filtered from {len(all_tasks)} total)")
-    print(f"Seeds: {seeds}  include_external: {include_external}")
+    apertus_n_families = df_apertus[da_models].groupby("size")["family"].nunique().to_dict()
+    print(
+        f"Pool '{pool}': {len(pool_models)} Apertus model(s); "
+        f"include_external={pool_include_external(pool)}"
+    )
+    print(
+        f"Loaded {len(df_apertus):,} Apertus rows + "
+        f"{len(df_pool) - da_models.sum():,} external rows | "
+        f"{len(tasks)} parent tasks (filtered from {len(all_tasks)} total)"
+    )
     print(f"  Total SNR-pool models per size: {pool_n_models}")
-    print(f"  Apertus (mix, seed) DA-axis units per size: {apertus_n_units}")
+    print(f"  Apertus DA-axis families per size: {apertus_n_families}")
 
     write_variants_definitions(out_dir)
 
@@ -373,15 +340,26 @@ def run(seeds: list[int], out_dir: Path, include_external: bool = True):
     for task in tqdm(tasks, desc="Tasks"):
         row = {"task": task}
 
+        # DA stays on the Apertus axis (cross-size families). Pool's model
+        # list restricts which families participate; `model_filter` below
+        # passes the names to the DA helpers' internal filter.
         for s in SMALL_SIZES:
             row[f"decision_acc_size_{s}"] = _safe(
-                compute_size_decision_accuracy, df_apertus, task, s, seeds=seeds
+                compute_size_decision_accuracy,
+                df_apertus,
+                task,
+                s,
+                model_filter=pool_models,
             )
         for early in CKPT_DA_EARLY_STEPS:
             for s in ALL_SIZES:
                 row[f"decision_acc_ckpt_{early}_{s}"] = _safe(
                     compute_ckpt_decision_accuracy,
-                    df_apertus, task, s, early, seeds=seeds
+                    df_apertus,
+                    task,
+                    s,
+                    early,
+                    model_filter=pool_models,
                 )
 
         size_inputs = {s: per_model_inputs(df_pool, task, s) for s in ALL_SIZES}
@@ -401,31 +379,32 @@ def run(seeds: list[int], out_dir: Path, include_external: bool = True):
     n_size = len(SMALL_SIZES)
     n_ckpt = len(CKPT_DA_EARLY_STEPS) * len(ALL_SIZES)
     print(f"\nWrote CSV → {csv_path}")
-    print(f"  {len(out)} tasks × {len(out.columns)} columns "
-          f"({len(AGGREGATION_FUNCTIONS)} variants × {len(ALL_SIZES)} sizes × 3 stats "
-          f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)")
-
-
-def _parse_seeds(value: str) -> list[int]:
-    return sorted({int(x) for x in value.split(",") if x.strip()})
+    print(
+        f"  {len(out)} tasks × {len(out.columns)} columns "
+        f"({len(AGGREGATION_FUNCTIONS)} variants × {len(ALL_SIZES)} sizes × 3 stats "
+        f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)"
+    )
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--seeds", type=_parse_seeds, default=DEFAULT_SEEDS,
-                   help="Comma-separated list of training seeds to include "
-                        "in the Apertus SNR/DA pool (default: 1904).")
-    p.add_argument("--no-external", action="store_true",
-                   help="Disable the external reference_hf parquet "
-                        "rows in the SNR signal pool.")
-    p.add_argument("--out-subdir", default=None,
-                   help="Subdir under results/snr_definition/ (default: "
-                        "'seeds_<a>_<b>_...' derived from --seeds).")
+    p.add_argument(
+        "--pool",
+        required=True,
+        help="Pool name from configs/models.json (e.g. "
+        "seeds_1904, seeds_28_1797, seeds_28_1797_1904, "
+        "pretraining_a06).",
+    )
+    p.add_argument(
+        "--out-subdir",
+        default=None,
+        help="Subdir under results/snr_definition/ " "(default: <pool>).",
+    )
     args = p.parse_args()
-    out_subdir = args.out_subdir or _seeds_subdir(args.seeds)
-    out_dir = OUT_ROOT / out_subdir
-    run(seeds=args.seeds, out_dir=out_dir,
-        include_external=not args.no_external)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; " f"available: {sorted(load_pools().keys())}")
+    out_dir = OUT_ROOT / (args.out_subdir or args.pool)
+    run(pool=args.pool, out_dir=out_dir)
 
 
 if __name__ == "__main__":

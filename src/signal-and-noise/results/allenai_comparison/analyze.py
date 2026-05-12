@@ -22,6 +22,10 @@ _REPO = Path(__file__).resolve().parent.parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
 import math
 
 import matplotlib.pyplot as plt
@@ -32,10 +36,11 @@ from scipy.stats import pearsonr
 from snr.constants import PLOT_DIR
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.run_apertus_snr_variants import variant_key
 
 ROOT_OUT = PLOT_DIR / "allenai_comparison"
-DEFAULT_APERTUS_DIR = PLOT_DIR / "snr_definition" / "seeds_1904"
+SNR_DEFINITION_ROOT = PLOT_DIR / "snr_definition"
 ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 
 APERTUS_SIZE = "1B"   # largest size in Apertus
@@ -408,15 +413,16 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--apertus-dir", type=Path, default=DEFAULT_APERTUS_DIR,
-                   help="snr_definition/seeds_<...>/ dir whose "
-                        "snr_variants_per_task.csv is the Apertus side.")
-    p.add_argument("--out-dir", type=Path, default=None,
-                   help="Output dir for plots/tables. Defaults to "
-                        "results/allenai_comparison/<apertus_dir.name>/.")
+    p.add_argument("--pool", required=True,
+                   help="Apertus pool name (from configs/models.json). "
+                        "Reads results/snr_definition/<pool>/, writes "
+                        "results/allenai_comparison/<pool>/.")
     args = p.parse_args()
-    out_dir = args.out_dir or (ROOT_OUT / args.apertus_dir.name)
-    run(apertus_dir=args.apertus_dir, out_dir=out_dir)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+    run(apertus_dir=SNR_DEFINITION_ROOT / args.pool,
+        out_dir=ROOT_OUT / args.pool)
 
 
 if __name__ == "__main__":

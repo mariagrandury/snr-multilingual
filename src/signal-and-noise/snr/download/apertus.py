@@ -23,11 +23,21 @@ load to match the historical short form (``fwEdu30``).
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 from snr.constants import DATA_DIR
+
+# Shared configs loader (lives under src/evals/scripts/utils/). One-shot
+# `src/` on sys.path so `from evals.scripts.utils.configs import …`
+# resolves via Python's implicit namespace packages — same content
+# whether the script is invoked from cluster or local.
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import add_family_column  # noqa: E402
 
 DEFAULT_DATA_DIR = Path(
     os.environ.get("SNR_MULTILINGUAL_DATA_DIR", DATA_DIR / "multilingual_snr" / "data")
@@ -47,6 +57,7 @@ _TOKENS_PER_ITER = 504 * 4096
 # Match historical regex (still used by per-sample script when run on the
 # cluster).
 import re  # noqa: E402
+
 _MODEL_RE = re.compile(
     r"^apertus-(?P<size>175M|350M|600M|1B)-fwEdu(?P<edu>30|60|90)-fw(?P<fw>270|240|210)-seed(?P<seed>\d+)-iter(?P<iter>\d+)$"
 )
@@ -79,8 +90,17 @@ def _read_parquet(path: Path) -> pd.DataFrame:
     df = pd.read_parquet(path)
     # Schema sanity: keep the columns the SNR pipeline expects, drop the
     # rest so downstream pivots stay cheap.
-    keep = ["model", "size", "mix", "seed", "step", "task",
-            "primary_score", "model_tokens", "flops"]
+    keep = [
+        "model",
+        "size",
+        "mix",
+        "seed",
+        "step",
+        "task",
+        "primary_score",
+        "model_tokens",
+        "flops",
+    ]
     df = df[[c for c in keep if c in df.columns]].copy()
     df["mix"] = df["mix"].map(_normalise_mix)
     df = df.rename(columns={"model_tokens": "tokens", "flops": "compute"})
@@ -92,10 +112,16 @@ def _read_parquet(path: Path) -> pd.DataFrame:
         df["seed"] = pd.to_numeric(df["seed"], errors="coerce")
     df = df.dropna(subset=["primary_score", "step"])
     # Numeric size sort (string sort would give 175M, 1B, 350M, 600M).
-    df = df.assign(_size_num=df["size"].map(_size_key)).sort_values(
-        ["_size_num", "mix", "step", "task"]
-    ).drop(columns="_size_num").reset_index(drop=True)
-    return df
+    df = (
+        df.assign(_size_num=df["size"].map(_size_key))
+        .sort_values(["_size_num", "mix", "step", "task"])
+        .drop(columns="_size_num")
+        .reset_index(drop=True)
+    )
+    # Attach the cross-size identity once at load time so every consumer
+    # sees `family` (matches configs/models.json declarations for known
+    # models; falls back to size-stripping for dynamic rows e.g. AllenAI).
+    return add_family_column(df)
 
 
 def load_apertus_eval_results(
@@ -128,7 +154,10 @@ def load_all_eval_results(
     a["source"] = "apertus"
     r["source"] = "reference_hf"
     out = pd.concat([a, r], ignore_index=True)
-    out = out.assign(_size_num=out["size"].map(_size_key)).sort_values(
-        ["source", "_size_num", "mix", "step", "task"]
-    ).drop(columns="_size_num").reset_index(drop=True)
+    out = (
+        out.assign(_size_num=out["size"].map(_size_key))
+        .sort_values(["source", "_size_num", "mix", "step", "task"])
+        .drop(columns="_size_num")
+        .reset_index(drop=True)
+    )
     return out

@@ -27,8 +27,13 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    DEFAULT_OUT_DIR, OUT_ROOT, _per_language_pearson_table, assign_language,
+    OUT_ROOT, _per_language_pearson_table, assign_language,
     da_ckpt_pairs, da_size_pairs, list_variants,
 )
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -331,7 +336,7 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
 
 # --- driver ----------------------------------------------------------------
 
-def main(out_dir: Path = DEFAULT_OUT_DIR):
+def main(out_dir: Path):
     csv_path = out_dir / "snr_variants_per_task.csv"
     df = pd.read_csv(csv_path, index_col="task")
 
@@ -391,9 +396,11 @@ def main(out_dir: Path = DEFAULT_OUT_DIR):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
-                   help="Directory containing snr_variants_per_task.csv "
-                        "and where outputs will be written. Default: "
-                        f"{DEFAULT_OUT_DIR}")
+    p.add_argument("--pool", required=True,
+                   help="Pool name from configs/models.json. "
+                        "Reads results/snr_definition/<pool>/snr_variants_per_task.csv.")
     args = p.parse_args()
-    main(out_dir=args.out_dir)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+    main(out_dir=OUT_ROOT / args.pool)

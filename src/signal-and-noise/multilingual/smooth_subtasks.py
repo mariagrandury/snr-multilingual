@@ -57,17 +57,19 @@ from snr.download.apertus import (
 )
 from snr.metrics import signal_to_noise_ratio
 
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import (  # noqa: E402
+    expand_pool, load_pools, pool_include_external,
+)
+
 # 2-letter language codes used by global_mmlu_full subject keys.
 _GMF_LANGS = ("ar", "en", "es", "hi", "ja", "ru", "sw", "tr", "vi", "zh")
 
 ALL_SIZES = ["175M", "350M", "600M", "1B"]
 LAST_N = 5
-DEFAULT_SEEDS = [1904]
 OUT_ROOT = PLOT_DIR / "smooth_subtasks"
-
-
-def _seeds_subdir(seeds: list[int]) -> str:
-    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
 
 
 ### SNR primitives (per-model arrays, single subtask vs. averaged subset) ###
@@ -537,14 +539,15 @@ def build_summary(out_dir: Path) -> Path:
     return csv_path
 
 
-def build_pool(seeds: list[int], include_external: bool) -> pd.DataFrame:
-    """SNR signal-pool dataframe: Apertus rows filtered to ``seeds`` plus
-    (optionally) every reference_hf row. Externals don't have a ``seed``
-    so they are gated only by ``include_external``."""
+def build_pool(pool: str) -> pd.DataFrame:
+    """SNR signal-pool dataframe for the named pool: Apertus rows matching
+    the pool's `members` (resolved via configs/models.json), plus every
+    reference_hf row when `include_external=true`."""
+    pool_models = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
-    df_a = df_a[df_a["seed"].isin(seeds)].copy()
+    df_a = df_a[df_a["model"].isin(pool_models)].copy()
     frames = [df_a]
-    if include_external:
+    if pool_include_external(pool):
         try:
             df_e = load_reference_hf_eval_results()
             if not df_e.empty:
@@ -554,14 +557,15 @@ def build_pool(seeds: list[int], include_external: bool) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def main(seeds: list[int], out_dir: Path, include_external: bool = True):
+def main(pool: str, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    pool_models = set(expand_pool(pool))
     df_apertus = load_apertus_eval_results()
-    df_apertus = df_apertus[df_apertus["seed"].isin(seeds)].copy()
-    df = build_pool(seeds, include_external)
+    df_apertus = df_apertus[df_apertus["model"].isin(pool_models)].copy()
+    df = build_pool(pool)
     pool_n_models = df.groupby("size")["model"].nunique().to_dict()
-    print(f"Loaded {len(df_apertus):,} Apertus rows (seeds={seeds}) + "
+    print(f"Pool '{pool}': {len(df_apertus):,} Apertus rows + "
           f"{len(df) - len(df_apertus):,} external rows | "
           f"models per size in SNR pool: {pool_n_models}")
 
@@ -583,21 +587,12 @@ def main(seeds: list[int], out_dir: Path, include_external: bool = True):
     build_summary(out_dir)
 
 
-def _parse_seeds(value: str) -> list[int]:
-    return sorted({int(x) for x in value.split(",") if x.strip()})
-
-
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--seeds", type=_parse_seeds, default=DEFAULT_SEEDS,
-                   help="Comma-separated list of training seeds to include "
-                        "(default: 1904).")
-    p.add_argument("--no-external", action="store_true",
-                   help="Disable external reference_hf rows in the SNR pool.")
-    p.add_argument("--out-subdir", default=None,
-                   help="Subdir under results/smooth_subtasks/ (default: "
-                        "'seeds_<a>_<b>_...' derived from --seeds).")
+    p.add_argument("--pool", required=True,
+                   help="Pool name from configs/models.json.")
     args = p.parse_args()
-    out_subdir = args.out_subdir or _seeds_subdir(args.seeds)
-    main(seeds=args.seeds, out_dir=OUT_ROOT / out_subdir,
-         include_external=not args.no_external)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+    main(pool=args.pool, out_dir=OUT_ROOT / args.pool)

@@ -40,8 +40,14 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    _per_language_pearson_table, da_ckpt_pairs, da_size_pairs, list_variants,
+    OUT_ROOT, _per_language_pearson_table, da_ckpt_pairs, da_size_pairs,
+    list_variants,
 )
 from multilingual.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
 
@@ -309,25 +315,29 @@ def write_summary(out_dir: Path, train_dir: Path, test_dir: Path,
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--train-dir", type=Path, required=True,
-                   help="snr_definition/<seeds_*> dir for the 'train' split.")
-    p.add_argument("--test-dir", type=Path, required=True,
-                   help="snr_definition/<seeds_*> dir for the 'test' split.")
-    p.add_argument("--out-dir", type=Path, default=None,
-                   help="Output dir for comparison artifacts (default: "
-                        "<train>/<train.name>__vs__<test.name>).")
+    p.add_argument("--train-pool", required=True,
+                   help="Pool name (from configs/models.json) used as the "
+                        "'train' split. Reads results/snr_definition/<pool>/.")
+    p.add_argument("--test-pool", required=True,
+                   help="Pool name used as the held-out 'test' split.")
     args = p.parse_args()
 
-    out_dir = args.out_dir or (
-        args.train_dir.parent / f"{args.train_dir.name}__vs__{args.test_dir.name}"
-    )
+    pools = load_pools()
+    for which, name in [("train", args.train_pool), ("test", args.test_pool)]:
+        if name not in pools:
+            p.error(f"unknown {which} pool {name!r}; "
+                    f"available: {sorted(pools.keys())}")
+
+    train_dir = OUT_ROOT / args.train_pool
+    test_dir = OUT_ROOT / args.test_pool
+    out_dir = OUT_ROOT / f"{args.train_pool}__vs__{args.test_pool}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"train = {args.train_dir}")
-    print(f"test  = {args.test_dir}")
+    print(f"train = {train_dir}")
+    print(f"test  = {test_dir}")
     print(f"out   = {out_dir}")
 
-    df_train = _load(args.train_dir)
-    df_test = _load(args.test_dir)
+    df_train = _load(train_dir)
+    df_test = _load(test_dir)
 
     longs = []
     agreements = {}
@@ -386,7 +396,7 @@ def main():
     print(f"Spearman rank correlation across splits: "
           f"DA-size={rank_corrs['size']:+.3f}  DA-ckpt={rank_corrs['ckpt']:+.3f}")
 
-    write_summary(out_dir, args.train_dir, args.test_dir,
+    write_summary(out_dir, train_dir, test_dir,
                   agreements["size"], agreements["ckpt"], long_all,
                   rank_corrs=rank_corrs)
 

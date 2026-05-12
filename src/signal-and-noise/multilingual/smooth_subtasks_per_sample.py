@@ -49,14 +49,16 @@ from snr.download.apertus import (
     load_apertus_eval_results,
 )
 
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import (  # noqa: E402
+    expand_pool, get_model, load_pools,
+)
+
 ALL_SIZES = ["175M", "350M", "600M", "1B"]
 LAST_N = 5
-DEFAULT_SEEDS = [1904]
 OUT_ROOT = PLOT_DIR / "smooth_subtasks"
-
-
-def _seeds_subdir(seeds: list[int]) -> str:
-    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
 
 _SAMPLES_FNAME_RE = re.compile(r"^samples_(?P<task>.+)_\d{4}-\d{2}-\d{2}T.*\.jsonl$")
 
@@ -447,16 +449,19 @@ def run_one_task(task: str, by_ckpt: dict, out_root: Path,
     return out_dir
 
 
-def main(seeds: list[int], out_root: Path):
+def main(pool: str, out_root: Path):
+    pool_models = set(expand_pool(pool))
+    seeds = sorted({get_model(m)["seed"] for m in pool_models
+                    if get_model(m).get("seed") is not None})
     df_meta_all = load_apertus_eval_results()
-    df_meta = df_meta_all[df_meta_all["seed"].isin(seeds)].copy()
+    df_meta = df_meta_all[df_meta_all["model"].isin(pool_models)].copy()
     families = collect_multilingual_families(df_meta)
     tasks = sorted({t for ts in families.values() for t in ts})
-    print(f"Seeds: {seeds}  → "
+    print(f"Pool '{pool}' (seeds={seeds}) → "
           f"targeting {len(tasks)} multilingual language-tasks "
           f"({len(families)} families).")
 
-    samples = load_samples(set(tasks), seeds=set(int(s) for s in seeds))
+    samples = load_samples(set(tasks), seeds=set(seeds))
     print(f"Parsed samples for {len(samples)} tasks.")
 
     out_root.mkdir(parents=True, exist_ok=True)
@@ -491,19 +496,14 @@ def main(seeds: list[int], out_root: Path):
     print(f"Wrote {written} per-task output dirs under {out_root}")
 
 
-def _parse_seeds(value: str) -> list[int]:
-    return sorted({int(x) for x in value.split(",") if x.strip()})
-
-
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--seeds", type=_parse_seeds, default=DEFAULT_SEEDS,
-                   help="Comma-separated list of training seeds to include "
-                        "(default: 1904).")
-    p.add_argument("--out-subdir", default=None,
-                   help="Subdir under results/smooth_subtasks/<...>/per_sample "
-                        "(default: 'seeds_<a>_<b>_.../per_sample').")
+    p.add_argument("--pool", required=True,
+                   help="Pool name from configs/models.json. "
+                        "Output → results/smooth_subtasks/<pool>/per_sample/.")
     args = p.parse_args()
-    out_subdir = args.out_subdir or f"{_seeds_subdir(args.seeds)}/per_sample"
-    main(seeds=args.seeds, out_root=OUT_ROOT / out_subdir)
+    if args.pool not in load_pools():
+        p.error(f"unknown pool {args.pool!r}; "
+                f"available: {sorted(load_pools().keys())}")
+    main(pool=args.pool, out_root=OUT_ROOT / args.pool / "per_sample")

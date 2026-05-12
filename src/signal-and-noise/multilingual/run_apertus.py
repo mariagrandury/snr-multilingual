@@ -37,10 +37,6 @@ DEFAULT_SEED = 1904
 OUT_ROOT = PLOT_DIR / "acc_vs_flops"
 
 
-def _seeds_subdir(seeds: list[int]) -> str:
-    return "seeds_" + "_".join(str(s) for s in sorted(seeds))
-
-
 def _draw_task(ax, df, task, task_idx, all_sizes, seed):
     plot_task_curves(
         ax, task, signal_label=f"signal ({TARGET_SIZE})",
@@ -131,10 +127,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--seed", type=int, default=DEFAULT_SEED,
                    help="Single seed whose curves to draw (default: 1904). "
-                        "Multi-seed overlays get unreadable, so pick one.")
-    p.add_argument("--out-subdir", default=None,
-                   help="Subdir under results/ (default: "
-                        "'seeds_<seed>').")
+                        "Multi-seed overlays get unreadable; pick one. "
+                        "Output → results/acc_vs_flops/seed_<seed>/.")
     args = p.parse_args()
-    out_subdir = args.out_subdir or _seeds_subdir([args.seed])
-    run(seed=args.seed, out_dir=OUT_ROOT / out_subdir)
+    run(seed=args.seed, out_dir=OUT_ROOT / f"seed_{args.seed}")

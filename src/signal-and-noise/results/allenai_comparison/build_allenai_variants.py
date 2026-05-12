@@ -112,7 +112,10 @@ def run() -> Path:
     # (matching the legacy behavior).
     df_seed = df[df["seed"] == seed].copy() if seed is not None else df
 
-    seeds_arg = [seed] if seed is not None else None
+    # AllenAI rows aren't in configs/models.json, so the model_filter
+    # equivalent for the new DA functions is the full set of AllenAI
+    # model names — equivalent to no filter for this corpus.
+    model_filter = set(df_seed["model"].unique())
     rows: list[dict] = []
     for task in tqdm(tasks, desc="Tasks"):
         row = {"task": task}
@@ -121,7 +124,7 @@ def run() -> Path:
         for s in SMALL_SIZES:
             row[f"decision_acc_size_{s}"] = _safe(
                 compute_size_decision_accuracy, df_seed, task, s, TARGET_SIZE,
-                seeds=seeds_arg,
+                model_filter=model_filter,
             )
 
         # 22 variants × 4 sizes × 3 stats.
