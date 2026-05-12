@@ -8,4 +8,9 @@ bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/conversi
 bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/launch_pretraining_hf.sh
 
 python /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/push_all_results.py
+
+python /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/build_hf_dataset.py \
+    --include-multilingual-evals \
+    --push --private \
+    --repo-id multilingual-snr/multilingual-snr-eval-results
 ```
