@@ -1,0 +1,10 @@
+https://huggingface.co/Qwen/Qwen3-0.6B-Base
+https://huggingface.co/Qwen/Qwen3-1.7B-Base
+https://huggingface.co/google/gemma-3-1b-pt
+https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints
+https://huggingface.co/google/gemma-3-4b-pt
+https://huggingface.co/Qwen/Qwen3.5-4B-Base
+https://huggingface.co/Qwen/Qwen3-8B-Base
+https://huggingface.co/google/gemma-3-12b-pt
+https://huggingface.co/Qwen/Qwen3-14B-Base
+https://huggingface.co/google/gemma-3-27b-pt
