@@ -47,7 +47,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 REPO_DIR=$PWD
-MEG_BASE=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small
+# Checkpoint paths are no longer hardcoded — each model's megatron checkpoint
+# dir comes from configs/models.json `backends.megatron` (so custom apertus
+# AND a06 main-run cells both resolve correctly). Pick the a06 pool with
+# `POOL=pretraining_a06 bash scripts/launch_pretraining_megatron.sh`.
 POOL=${POOL:-seeds_28_1797_1904}        # default pool — all Apertus custom seeds
 TASKS_GROUP=${TASKS_GROUP:-pretraining_full}
 CSV=$REPO_DIR/snr_progress.csv
@@ -62,8 +65,9 @@ fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }
 
 # Megatron eval is ~2x slower than vLLM at same model size (no batched
-# kv-cache reuse, more all-reduce traffic). Estimates from observed runs.
-per_task_min()  { case "$1" in 175M) echo 4;; 350M) echo 6;; 600M) echo 8;; 1B) echo 10;; esac; }
+# kv-cache reuse, more all-reduce traffic). Estimates from observed runs;
+# 3B is an estimate (no observed a06-3B run yet), `*` is a safe default.
+per_task_min()  { case "$1" in 175M) echo 4;; 350M) echo 6;; 600M) echo 8;; 1B) echo 10;; 3B) echo 16;; *) echo 10;; esac; }
 COLD_START_MIN=20   # megatron has no vLLM compile cache to warm
 CAP_MIN=719
 
@@ -78,27 +82,46 @@ walltime_for() {
 SBATCH_RES_ARGS=()
 [[ -n "$RESERVATION" ]] && SBATCH_RES_ARGS=(--reservation="$RESERVATION")
 
-# Same iter-desc / size-desc submit order as the HF launcher.
+# Resolve model / size / megatron-checkpoint dir per CSV row from
+# configs/models.json — no name-regex parsing, so custom apertus AND a06
+# main-run cells both work. Emits the original 6 CSV columns plus
+# model, size, ckpt_path, iter, \x1f-delimited (non-whitespace separator
+# so empty fields like active_jobids survive the bash `read`). Same
+# iter-desc / size-desc submit order as the HF launcher.
 SORTED=$(awk -F, 'NR>1 { print $0 }' "$CSV" | python3.11 -c "
 import sys, csv
-rows = list(csv.reader(sys.stdin))
-size_rank = {'1B': 0, '600M': 1, '350M': 2, '175M': 3}
-def key(r):
-    name = r[0]
-    parts = name.split('-')
-    size = parts[1]
-    iter_n = int(parts[-1].replace('iter', ''))
-    return (-iter_n, size_rank.get(size, 9))
-rows.sort(key=key)
-for r in rows:
-    print('\t'.join([r[0], r[1], r[2], r[3], r[4], r[5]]))
+sys.path.insert(0, 'scripts/utils')
+from configs import get_model
+size_rank = {'3B': 0, '1B': 1, '600M': 2, '350M': 3, '175M': 4}
+out = []
+for r in csv.reader(sys.stdin):
+    if len(r) < 6:
+        continue
+    model, sep, it = r[0].rpartition('-iter')
+    if not sep or not it.isdigit():
+        print('  WARN: name is not <model>-iter<N>: ' + r[0], file=sys.stderr)
+        continue
+    try:
+        e = get_model(model)
+    except KeyError:
+        print('  WARN: model not in models.json: ' + model, file=sys.stderr)
+        continue
+    ckpt = (e.get('backends') or {}).get('megatron')
+    if not ckpt:
+        print('  WARN: no megatron backend for ' + model, file=sys.stderr)
+        continue
+    out.append((r, model, e['size'], ckpt.rstrip('/'), int(it)))
+out.sort(key=lambda x: (-x[4], size_rank.get(x[2], 9)))
+for r, model, size, ckpt, it in out:
+    print('\x1f'.join([r[0], r[1], r[2], r[3], r[4], r[5],
+                       model, size, ckpt, str(it)]))
 ")
 
 submitted=0; skipped_active=0; skipped_done=0; skipped_no_ckpt=0; skipped_filter=0
 echo "[meg] partition=$PARTITION dry_run=$DRY_RUN filter=${FILTER:-<none>}"
 echo ""
 
-while IFS=$'\t' read -r name status done total remaining active_jobids; do
+while IFS=$'\x1f' read -r name status done total remaining active_jobids model size ckpt_path iter; do
     [[ -z "$name" ]] && continue
     if [[ -n "$FILTER" && "$name" != *"$FILTER"* ]]; then
         skipped_filter=$((skipped_filter + 1)); continue
@@ -111,15 +134,8 @@ while IFS=$'\t' read -r name status done total remaining active_jobids; do
         skipped_active=$((skipped_active + 1)); continue
     fi
 
-    if [[ "$name" =~ ^(apertus-([0-9]+[MB])-fwEdu[0-9]+-fw2[0-9]+-seed[0-9]+)-iter([0-9]+)$ ]]; then
-        cell=${BASH_REMATCH[1]}
-        size=${BASH_REMATCH[2]}
-        iter=${BASH_REMATCH[3]}
-    else
-        echo "  WARN: unparseable name: $name"; continue
-    fi
-
-    ckpt_path="$MEG_BASE/$cell/checkpoints"
+    # model / size / ckpt_path / iter were resolved from configs/models.json
+    # by the python sort block above — works for custom apertus + a06 alike.
     iter_dir=$(printf "%s/iter_%07d" "$ckpt_path" "$iter")
     if [[ ! -d "$iter_dir" ]]; then
         skipped_no_ckpt=$((skipped_no_ckpt + 1)); continue
