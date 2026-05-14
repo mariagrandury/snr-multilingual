@@ -1,19 +1,142 @@
-"""One-time bootstrap: build configs/models.json and configs/tasks.json
-from the existing models_*.txt / tasks_*.txt files in
+"""One-time bootstrap: build configs/models.json, configs/tasks.json and
+configs/hf_wandb.json from the existing models_*.txt / tasks_*.txt files in
 src/evals/configs/signal_to_ratio/.
 
 After this runs, the JSONs are the source of truth — this script is
-kept for traceability but not re-run automatically.
+kept for traceability and re-run only when the canonical data below
+changes (it's faithful: a re-run reproduces the JSONs exactly).
+
+models.json schema (per model):
+  source, family, size, params, [hyperparams_key, mix_en, mix_fw2, seed],
+  checkpoint_kind, backends,
+  stages: { <phase>: { tokens, num_iters, tokens_per_iter, checkpoints } }
+where <phase> ∈ {pretraining, midtraining, posttraining}. checkpoints holds
+`final` + the subset lists (all / 10_ckpts / da_ckpts / dense_tail / full_eval)
+— ints for megatron_iter models, branch-name strings for hf_branch models.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 CONFIGS = REPO / "configs"
 EVALS_CONFIGS = REPO / "src" / "evals" / "configs" / "signal_to_ratio"
+HYPERPARAMS_DEEP = REPO / "src" / "pretrain" / "hyperparams_deep.json"
+
+
+# --- Stage helpers ----------------------------------------------------------
+
+def _meg_tokens_per_iter() -> int:
+    """global_batch_size × seq_len from hyperparams_deep.json — the canonical
+    megatron tokens-per-iter (504 × 4096 = 2064384)."""
+    g = json.loads(HYPERPARAMS_DEEP.read_text())["global"]
+    return g["global_batch_size"] * g["seq_len"]
+
+
+MEG_TOKENS_PER_ITER = _meg_tokens_per_iter()
+
+
+def _branch_step(branch: str) -> int | None:
+    """Step number embedded in an HF branch name — handles `stepN`,
+    `step-N`, `stageK-stepN`, `stageK-step-N`, `stepN-tokensXXX`. None for
+    `main` (no step)."""
+    m = re.search(r"step-?(\d+)", branch)
+    return int(m.group(1)) if m else None
+
+
+def _branch_sort_key(branch: str):
+    """Order HF branches by step; `main` (no step) sorts last."""
+    s = _branch_step(branch)
+    return (s is None, s or 0)
+
+
+def _pick5(lst: list) -> list:
+    """5 ~evenly-spaced picks from a list (HF da_ckpts). Returns the list
+    unchanged if it has ≤ 5 entries."""
+    if len(lst) <= 5:
+        return list(lst)
+    idx = sorted({round(i * (len(lst) - 1) / 4) for i in range(5)})
+    return [lst[i] for i in idx]
+
+
+def _full_eval(dense_tail: list, da_ckpts: list, key=None) -> list:
+    """Canonical eval set = sorted(dense_tail ∪ da_ckpts)."""
+    u = set(dense_tail) | set(da_ckpts)
+    return sorted(u, key=key)
+
+
+def _meg_stage(schedule: dict) -> dict:
+    """A `stages.<phase>` entry for a megatron-iter model.
+
+    `schedule`: {final, all, dense_tail, 10_ckpts, da_ckpts} of iter ints.
+    Derives `full_eval`; tokens/num_iters/tokens_per_iter from the iter count.
+    """
+    ck = {
+        "final": schedule.get("final"),
+        "all": schedule.get("all", []),
+        "dense_tail": schedule.get("dense_tail", []),
+        "10_ckpts": schedule.get("10_ckpts", []),
+        "da_ckpts": schedule.get("da_ckpts", []),
+    }
+    ck["full_eval"] = _full_eval(ck["dense_tail"], ck["da_ckpts"])
+    num_iters = ck["final"]
+    return {
+        "tokens": num_iters * MEG_TOKENS_PER_ITER if num_iters else None,
+        "num_iters": num_iters,
+        "tokens_per_iter": MEG_TOKENS_PER_ITER,
+        "checkpoints": ck,
+    }
+
+
+def _hf_stage(tokens: int | None, ckpt_data: dict) -> dict:
+    """A `stages.<phase>` entry for an hf_branch model.
+
+    `ckpt_data` is either:
+      - {final, 10_ckpts, dense_tail} → derives all / da_ckpts / full_eval
+      - {final, all}                 → an explicit short branch list (e.g.
+                                       a midtraining stage with no subsets)
+    tokens_per_iter = tokens / num_iters (num_iters = max branch step); the
+    per-branch token count is recovered at load time from the branch name
+    (`-tokensXXX`) or `step × tokens_per_iter`, so it isn't stored here.
+    """
+    if "all" in ckpt_data:
+        all_b = sorted(ckpt_data["all"], key=_branch_sort_key)
+        ck = {"final": ckpt_data["final"], "all": all_b}
+    else:
+        ten, tail = ckpt_data["10_ckpts"], ckpt_data["dense_tail"]
+        da = _pick5(ten)
+        all_b = sorted(set(ten) | set(tail), key=_branch_sort_key)
+        ck = {
+            "final": ckpt_data["final"],
+            "all": all_b,
+            "dense_tail": tail,
+            "10_ckpts": ten,
+            "da_ckpts": da,
+            "full_eval": _full_eval(tail, da, key=_branch_sort_key),
+        }
+    steps = [s for s in (_branch_step(b) for b in all_b) if s is not None]
+    num_iters = max(steps) if steps else None
+    return {
+        "tokens": tokens,
+        "num_iters": num_iters,
+        "tokens_per_iter": tokens / num_iters if (tokens and num_iters) else None,
+        "checkpoints": ck,
+    }
+
+
+def _main_only_stage(tokens: int | None) -> dict:
+    """A `stages.<phase>` entry for a model published only at `main`
+    (no intermediate checkpoints)."""
+    return {
+        "tokens": tokens,
+        "num_iters": None,
+        "tokens_per_iter": None,
+        "checkpoints": {"final": "main", "all": ["main"]},
+    }
+
 
 # --- Apertus custom pretrains (36 cells) ------------------------------------
 
@@ -62,10 +185,6 @@ CKPT_SCHEDULES = {
         "da_ckpts": [6000, 10000, 20000, 30000, 50000],
     },
 }
-# Derive `full_eval` from dense_tail ∪ da_ckpts so it can't drift.
-for _seed, _sched in CKPT_SCHEDULES.items():
-    _sched["full_eval"] = sorted(set(_sched["dense_tail"])
-                                  | set(_sched["da_ckpts"]))
 
 MEG_BASE = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small"
 HF_LOCAL_BASE = "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
@@ -81,7 +200,6 @@ def custom_pretrain_entries() -> dict:
                 out[name] = {
                     "source": "snr-pretraining-custom",
                     "family": family,
-                    "stage": "pretraining",
                     "size": size,
                     "params": SIZE_PARAMS[size],
                     "hyperparams_key": size,
@@ -93,7 +211,9 @@ def custom_pretrain_entries() -> dict:
                         "megatron": f"{MEG_BASE}/{name}/checkpoints/",
                         "hf_local": f"{HF_LOCAL_BASE}/{name}/",
                     },
-                    "checkpoints": CKPT_SCHEDULES[seed],
+                    "stages": {
+                        "pretraining": _meg_stage(CKPT_SCHEDULES[seed]),
+                    },
                 }
     return out
 
@@ -113,41 +233,43 @@ def a06_pretrain_entries() -> dict:
         "apertus3-1b-21-nodes": {
             "source": "snr-pretraining-a06",
             "family": "apertus3-a06",
-            "stage": "pretraining",
             "size": "1B",
             "params": 1_000_000_000,
             "checkpoint_kind": "megatron_iter",
             "backends": {
                 "megatron": f"{A06_BASE}/apertus3-1b-21-nodes/checkpoints/"
             },
-            "checkpoints": {
-                "final": 380000,
-                "all": a06_1b_iters,
-                "dense_tail": [320000, 340000, 360000, 370000, 380000],
-                "10_ckpts": [20000, 60000, 100000, 140000, 180000,
-                             220000, 260000, 300000, 340000, 380000],
-                "da_ckpts": [20000, 60000, 100000, 140000, 180000,
-                             220000, 260000, 300000, 340000, 380000],
+            "stages": {
+                "pretraining": _meg_stage({
+                    "final": 380000,
+                    "all": a06_1b_iters,
+                    "dense_tail": [320000, 340000, 360000, 370000, 380000],
+                    "10_ckpts": [20000, 60000, 100000, 140000, 180000,
+                                 220000, 260000, 300000, 340000, 380000],
+                    "da_ckpts": [20000, 60000, 100000, 140000, 180000,
+                                 220000, 260000, 300000, 340000, 380000],
+                }),
             },
         },
         "apertus3-3b-64-nodes": {
             "source": "snr-pretraining-a06",
             "family": "apertus3-a06",
-            "stage": "pretraining",
             "size": "3B",
             "params": 3_000_000_000,
             "checkpoint_kind": "megatron_iter",
             "backends": {
                 "megatron": f"{A06_BASE}/apertus3-3b-64-nodes/checkpoints/"
             },
-            "checkpoints": {
-                "final": 165000,
-                "all": a06_3b_iters,
-                "dense_tail": [135000, 150000, 155000, 160000, 165000],
-                "10_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
-                             105000, 120000, 135000, 150000, 165000],
-                "da_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
-                             105000, 120000, 135000, 150000, 165000],
+            "stages": {
+                "pretraining": _meg_stage({
+                    "final": 165000,
+                    "all": a06_3b_iters,
+                    "dense_tail": [135000, 150000, 155000, 160000, 165000],
+                    "10_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
+                                 105000, 120000, 135000, 150000, 165000],
+                    "da_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
+                                 105000, 120000, 135000, 150000, 165000],
+                }),
             },
         },
     }
@@ -155,32 +277,101 @@ def a06_pretrain_entries() -> dict:
 
 # --- HF reference (pretraining + midtraining + posttraining) ----------------
 
-def hf_entry(name, hf_url, size, params, family, stage,
-             checkpoints=None, source="huggingface-reference"):
-    if checkpoints is None:
-        checkpoints = {"all": [{"branch": "main", "tokens": None}]}
+# Multi-checkpoint HF repos: {model: {phase: ckpt_data}}. ckpt_data is either
+# {tokens, final, 10_ckpts, dense_tail} (subsets derived) or {tokens, final,
+# all} (an explicit short branch list). Per the SNR convention, `pretraining`
+# is the repo's stage1 and `midtraining` is its stage2/3.
+HF_CKPTS = {
+    "Apertus-8B-2509": {
+        "pretraining": {
+            "tokens": 15_000_000_000_000,
+            "final": "main",
+            "10_ckpts": [
+                "step400000-tokens1680B", "step750000-tokens3150B",
+                "step1194000-tokens5014B", "step1432000-tokens6014B",
+                "step1750000-tokens7652B", "step1900000-tokens8912B",
+                "step2100000-tokens10592B", "step2250000-tokens11852B",
+                "step2450000-tokens13532B", "step2627139-tokens15T",
+            ],
+            "dense_tail": [
+                "step2500000-tokens13952B", "step2550000-tokens14372B",
+                "step2600000-tokens14792B", "main",
+            ],
+        },
+    },
+    "Olmo-3-1025-7B": {
+        "pretraining": {
+            "tokens": 6_000_000_000_000,
+            "final": "stage1-step1413814",
+            "10_ckpts": [
+                "stage1-step141000", "stage1-step283000", "stage1-step424000",
+                "stage1-step566000", "stage1-step707000", "stage1-step848000",
+                "stage1-step990000", "stage1-step1131000",
+                "stage1-step1272000", "stage1-step1413814",
+            ],
+            "dense_tail": [
+                "stage1-step1273000", "stage1-step1308000",
+                "stage1-step1343000", "stage1-step1379000",
+            ],
+        },
+    },
+    "SmolLM3-3B-checkpoints": {
+        "pretraining": {
+            "tokens": 7_200_000_000_000,
+            "final": "stage1-step-3440000",
+            "10_ckpts": [
+                "stage1-step-360000", "stage1-step-720000",
+                "stage1-step-1040000", "stage1-step-1400000",
+                "stage1-step-1720000", "stage1-step-2080000",
+                "stage1-step-2400000", "stage1-step-2760000",
+                "stage1-step-3080000", "stage1-step-3440000",
+            ],
+            "dense_tail": [
+                "stage1-step-3120000", "stage1-step-3200000",
+                "stage1-step-3280000", "stage1-step-3360000",
+            ],
+        },
+        # stage2 + stage3 finals only — no intermediate checkpoints published.
+        "midtraining": {
+            "tokens": 9_900_000_000_000,
+            "final": "stage3-step-4720000",
+            "all": ["stage2-step-4200000", "stage3-step-4720000"],
+        },
+    },
+}
+
+
+def hf_entry(name, hf_url, size, params, family, phase,
+             source="huggingface-reference", main_tokens=None):
+    """Build one hf_branch model entry. Models in HF_CKPTS get their
+    multi-stage checkpoint lists; everything else is a single-stage
+    `phase` model published only at `main` (with `main_tokens` if known)."""
+    if name in HF_CKPTS:
+        stages = {ph: _hf_stage(cd["tokens"], cd)
+                  for ph, cd in HF_CKPTS[name].items()}
+    else:
+        stages = {phase: _main_only_stage(main_tokens)}
     return {
         "source": source,
         "family": family,
-        "stage": stage,
         "size": size,
         "params": params,
         "checkpoint_kind": "hf_branch",
         "backends": {"hf": hf_url},
-        "checkpoints": checkpoints,
+        "stages": stages,
     }
 
 
 def hf_entries() -> dict:
-    # (model_key, hf_url, size, params, family, stage, source[, checkpoints])
+    # (name, url, size, params, family, phase, source, main_tokens)
     rows = [
         # ---------- Swiss-AI reference: pretraining ----------
         ("Apertus-8B-2509", "https://huggingface.co/swiss-ai/Apertus-8B-2509",
-         "8B", 8_000_000_000, "Apertus-2509", "pretraining", "swiss-ai-reference",
-         {"all": [{"branch": "main", "tokens": 15_000_000_000_000}]}),
+         "8B", 8_000_000_000, "Apertus-2509", "pretraining",
+         "swiss-ai-reference", None),
         ("Apertus-70B-2509", "https://huggingface.co/swiss-ai/Apertus-70B-2509",
-         "70B", 70_000_000_000, "Apertus-2509", "pretraining", "swiss-ai-reference",
-         {"all": [{"branch": "main", "tokens": 15_000_000_000_000}]}),
+         "70B", 70_000_000_000, "Apertus-2509", "pretraining",
+         "swiss-ai-reference", 15_000_000_000_000),
 
         # ---------- HF reference: pretraining ----------
         ("Qwen3-0.6B-Base", "https://huggingface.co/Qwen/Qwen3-0.6B-Base",
@@ -202,20 +393,13 @@ def hf_entries() -> dict:
         ("gemma-3-27b-pt", "https://huggingface.co/google/gemma-3-27b-pt",
          "27B", 27_000_000_000, "gemma-3-pt", "pretraining"),
         ("SmolLM3-3B-Base", "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-Base",
-         "3B", 3_000_000_000, "SmolLM3-Base", "pretraining"),
+         "3B", 3_000_000_000, "SmolLM3-Base", "pretraining",
+         "huggingface-reference", 11_200_000_000_000),
         ("SmolLM3-3B-checkpoints",
          "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints",
-         "3B", 3_000_000_000, "SmolLM3-checkpoints", "pretraining",
-         "huggingface-reference",
-         {"all": [
-             {"branch": "stage1-step-3440000", "tokens": 7_200_000_000_000},
-             {"branch": "stage2-step-4200000", "tokens": 8_800_000_000_000},
-             {"branch": "stage3-step-4720000", "tokens": 9_900_000_000_000},
-         ]}),
-
-        # ---------- HF reference: midtraining ----------
+         "3B", 3_000_000_000, "SmolLM3-checkpoints", "pretraining"),
         ("Olmo-3-1025-7B", "https://huggingface.co/allenai/Olmo-3-1025-7B",
-         "7B", 7_000_000_000, "Olmo-3-1025", "midtraining"),
+         "7B", 7_000_000_000, "Olmo-3-1025", "pretraining"),
 
         # ---------- HF reference: posttraining ----------
         ("Qwen3-0.6B", "https://huggingface.co/Qwen/Qwen3-0.6B",
@@ -262,17 +446,11 @@ def hf_entries() -> dict:
     ]
     out = {}
     for row in rows:
-        if len(row) == 6:
-            name, url, size, params, family, stage = row
-            out[name] = hf_entry(name, url, size, params, family, stage)
-        elif len(row) == 7:
-            name, url, size, params, family, stage, source = row
-            out[name] = hf_entry(name, url, size, params, family, stage,
-                                 source=source)
-        elif len(row) == 8:
-            name, url, size, params, family, stage, source, ckpts = row
-            out[name] = hf_entry(name, url, size, params, family, stage,
-                                 checkpoints=ckpts, source=source)
+        name, url, size, params, family, phase = row[:6]
+        source = row[6] if len(row) > 6 else "huggingface-reference"
+        main_tokens = row[7] if len(row) > 7 else None
+        out[name] = hf_entry(name, url, size, params, family, phase,
+                             source=source, main_tokens=main_tokens)
     return out
 
 
@@ -292,14 +470,15 @@ def distill_entries() -> dict:
         name: {
             "source": "distillation",
             "family": "ap-from8b-TOP256",
-            "stage": "posttraining",
             "size": size,
             "params": params,
             "checkpoint_kind": "megatron_iter",
             "backends": {
                 "megatron": f"{DISTILL_BASE}/{dir_name}/checkpoints/"
             },
-            "checkpoints": {"final": None, "all": []},
+            "stages": {
+                "posttraining": _meg_stage({"final": None, "all": []}),
+            },
         }
         for name, size, params, dir_name in rows
     }
@@ -316,12 +495,11 @@ def tokenizer_lm_entries() -> dict:
         f"tokenizer-lm-{r}-128k-apertus": {
             "source": "tokenizer-lm",
             "family": "tokenizer-lm-128k-apertus",
-            "stage": "pretraining",
             "size": "TBD",
             "params": None,
             "checkpoint_kind": "hf_local",
             "backends": {"hf_local": f"{TOKLM_BASE}/{r}-128k-apertus"},
-            "checkpoints": {"all": [{"branch": "main", "tokens": None}]},
+            "stages": {"pretraining": _main_only_stage(None)},
         }
         for r in rows
     }
@@ -365,6 +543,63 @@ POOLS = {
             {"source": "huggingface-reference"},
             {"source": "swiss-ai-reference"},
         ],
+    },
+}
+
+
+# --- Sources → parquet split ------------------------------------------------
+#
+# Every model's `source` maps to exactly one parquet split in the published
+# `multilingual-snr/multilingual-snr-eval-results` dataset. `split: null`
+# means the source is evaluated but not published (build_hf_dataset.py skips
+# its rows). The parquet filename is `{split}-00000-of-00001.parquet` (see
+# HF_WANDB["parquet_pattern"]).
+SOURCES = {
+    "snr-pretraining-custom": {"split": "pretraining_custom"},
+    "snr-pretraining-a06":    {"split": "pretraining_a06"},
+    "swiss-ai-reference":     {"split": "reference_hf"},
+    "huggingface-reference":  {"split": "reference_hf"},
+    "daslab-testing":         {"split": None},
+    "distillation":           {"split": None},
+    "tokenizer-lm":           {"split": None},
+}
+
+
+# --- SNR analysis parameters ------------------------------------------------
+#
+# SNR is always computed on the custom 4-size ladder (175M/350M/600M/1B);
+# decision accuracy uses those plus larger reference models. These are
+# global — there is no per-pool / per-family override.
+SNR = {
+    "small_sizes": ["175M", "350M", "600M"],
+    "target_size": "1B",
+    "plotted_mixes": ["fwEdu30", "fwEdu60", "fwEdu90"],
+    "da_early_steps": [6000, 18000, 28000],
+    "last_n": 5,
+}
+
+
+# --- HF / W&B infra config (configs/hf_wandb.json) --------------------------
+
+HF_WANDB = {
+    "repo_id": "multilingual-snr/multilingual-snr-eval-results",
+    "parquet_pattern": "{split}-00000-of-00001.parquet",
+    "wandb": {
+        "entity": "mariagrandury-epflnlp",
+        "project": "snr-experiments",
+    },
+    "multilingual_evals": {
+        # raw/<bench>/<model_dir>/.../results_*.json sources to merge from.
+        # epfl-nlp/multilingual-evals is intentionally omitted (private
+        # storage over quota → 403); the multilingual-snr repo is a superset.
+        "raw_source_repos": ["multilingual-snr/multilingual-snr-eval-results"],
+        # remote raw/ model-dir name → configs/models.json key.
+        "model_dirs": {
+            "apertus-8b-2509": "Apertus-8B-2509",
+            "olmo-3-1025-7b": "Olmo-3-1025-7B",
+            "smollm3-3b-checkpoints": "SmolLM3-3B-checkpoints",
+            "smollm3-3b-base": "SmolLM3-3B-Base",
+        },
     },
 }
 
@@ -507,13 +742,19 @@ def main():
     models.update(distill_entries())
     models.update(tokenizer_lm_entries())
 
-    models_json = {"models": models, "pools": POOLS}
+    models_json = {"models": models, "pools": POOLS,
+                   "sources": SOURCES, "snr": SNR}
     CONFIGS.mkdir(parents=True, exist_ok=True)
     (CONFIGS / "models.json").write_text(
         json.dumps(models_json, indent=2) + "\n"
     )
     print(f"Wrote configs/models.json — {len(models)} models, "
-          f"{len(POOLS)} pools")
+          f"{len(POOLS)} pools, {len(SOURCES)} sources")
+
+    (CONFIGS / "hf_wandb.json").write_text(
+        json.dumps(HF_WANDB, indent=2) + "\n"
+    )
+    print(f"Wrote configs/hf_wandb.json — repo {HF_WANDB['repo_id']}")
 
     tasks_json = build_tasks_json()
     (CONFIGS / "tasks.json").write_text(

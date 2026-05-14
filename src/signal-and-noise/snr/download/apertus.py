@@ -1,11 +1,13 @@
-"""Load eval results for the Apertus / reference-HF runs from local parquet.
+"""Load eval results for the Apertus / a06 / reference-HF runs from local parquet.
 
 The `multilingual-snr/multilingual-snr-eval-results` HuggingFace dataset
-ships two parquet splits already in the schema expected by
+ships three parquet splits already in the schema expected by
 `snr.dataloader.get_slice`:
 
-  - data/pretraining_custom-*.parquet   (12 Apertus pretrained models;
-        sizes 175M/350M/600M/1B; mixes fwEdu30/60/90; seed 1904; 13 ckpts)
+  - data/pretraining_custom-*.parquet   (36 Apertus pretrained models;
+        sizes 175M/350M/600M/1B; mixes fwEdu30/60/90; seeds 28/1797/1904)
+  - data/pretraining_a06-*.parquet      (a06 main pretraining runs:
+        apertus3-{1b,3b}-*-nodes)
   - data/reference_hf-*.parquet         (external HF reference models:
         SmolLM3-3B (incl. step-checkpoints), Olmo-3-7B, Apertus-8B)
 
@@ -37,22 +39,31 @@ from snr.constants import DATA_DIR
 _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
-from evals.scripts.utils.configs import add_family_column  # noqa: E402
+from evals.scripts.utils.configs import (  # noqa: E402
+    add_family_column,
+    parquet_name,
+    split_for_source,
+)
 
 DEFAULT_DATA_DIR = Path(
     os.environ.get("SNR_MULTILINGUAL_DATA_DIR", DATA_DIR / "multilingual_snr" / "data")
 )
-PRETRAIN_PARQUET = "pretraining_custom-00000-of-00001.parquet"
-REFERENCE_PARQUET = "reference_hf-00000-of-00001.parquet"
 
-# Backwards-compat aliases used by smooth_subtasks_per_sample.py (which
-# still scans samples_*.jsonl — that path only works on the cluster).
+
+def _parquet_path(data_dir: str | Path, source: str) -> Path:
+    """<data_dir>/<split-for-source>-00000-of-00001.parquet — both the
+    source→split map and the filename pattern come from configs/."""
+    return Path(data_dir) / parquet_name(split_for_source(source))
+
+# Used by smooth_subtasks_per_sample.py (which scans samples_*.jsonl
+# directly — cluster-only path; not consumed by the parquet loaders
+# below). Params/tokens-per-iter constants for the FLOPs / token axes
+# moved to configs/models.json + src/evals/scripts/utils/configs.py
+# (use `tokens_for(name, ckpt)` / `get_model(name)["params"]`).
 DEFAULT_EVAL_ROOT = Path(
     "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/"
     "mariagrandury-epflnlp/snr-experiments"
 )
-_PARAMS = {"175M": 175e6, "350M": 350e6, "600M": 600e6, "1B": 1.0e9}
-_TOKENS_PER_ITER = 504 * 4096
 
 # Match historical regex (still used by per-sample script when run on the
 # cluster).
@@ -127,8 +138,18 @@ def _read_parquet(path: Path) -> pd.DataFrame:
 def load_apertus_eval_results(
     data_dir: str | Path = DEFAULT_DATA_DIR,
 ) -> pd.DataFrame:
-    """One row per (model, ckpt, task) for the 12 Apertus custom pretrains."""
-    return _read_parquet(Path(data_dir) / PRETRAIN_PARQUET)
+    """One row per (model, ckpt, task) for the 36 Apertus custom pretrains
+    (4 sizes × 3 mixes × 3 seeds)."""
+    return _read_parquet(_parquet_path(data_dir, "snr-pretraining-custom"))
+
+
+def load_a06_eval_results(
+    data_dir: str | Path = DEFAULT_DATA_DIR,
+) -> pd.DataFrame:
+    """a06 main pretraining runs (apertus3-{1b,3b}-*-nodes). Columns match
+    `load_apertus_eval_results` — `mix` is always ``main``, `seed` is
+    NaN, and `step` is the megatron iter count."""
+    return _read_parquet(_parquet_path(data_dir, "snr-pretraining-a06"))
 
 
 def load_reference_hf_eval_results(
@@ -137,23 +158,32 @@ def load_reference_hf_eval_results(
     """Reference HF runs (SmolLM3, Olmo-3, Apertus-8B). Columns match
     `load_apertus_eval_results` — `mix` is the HF "stage1"/"main", and
     `step` is the model's training step (not directly comparable to
-    Apertus iter counts)."""
-    return _read_parquet(Path(data_dir) / REFERENCE_PARQUET)
+    Apertus iter counts). `swiss-ai-reference` shares the same parquet
+    split, so either source resolves to it."""
+    return _read_parquet(_parquet_path(data_dir, "huggingface-reference"))
 
 
 def load_all_eval_results(
     data_dir: str | Path = DEFAULT_DATA_DIR,
 ) -> pd.DataFrame:
-    """Concatenated pretraining_custom + reference_hf, with a `source`
-    column to distinguish them. Use when an analysis benefits from
-    pooling extra step-series data points (DA-ckpt, noise estimates,
-    rank correlations) — the per-mix SNR computations themselves only
-    apply within each source's own (size, mix) grid."""
-    a = load_apertus_eval_results(data_dir)
-    r = load_reference_hf_eval_results(data_dir)
-    a["source"] = "apertus"
-    r["source"] = "reference_hf"
-    out = pd.concat([a, r], ignore_index=True)
+    """Concatenated pretraining_custom + pretraining_a06 + reference_hf,
+    with a `source` column to distinguish them. Use when an analysis
+    benefits from pooling extra step-series data points (DA-ckpt, noise
+    estimates, rank correlations) — the per-mix SNR computations themselves
+    only apply within each source's own (size, mix) grid."""
+    parts = []
+    for src, loader in (
+        ("apertus", load_apertus_eval_results),
+        ("a06", load_a06_eval_results),
+        ("reference_hf", load_reference_hf_eval_results),
+    ):
+        try:
+            df = loader(data_dir)
+        except FileNotFoundError:
+            continue
+        df["source"] = src
+        parts.append(df)
+    out = pd.concat(parts, ignore_index=True)
     out = (
         out.assign(_size_num=out["size"].map(_size_key))
         .sort_values(["source", "_size_num", "mix", "step", "task"])

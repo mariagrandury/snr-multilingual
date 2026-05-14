@@ -96,9 +96,13 @@ def parse_name(name: str) -> dict | None:
     # (Handles names like "SmolLM3-3B-checkpoints-stage1-step-3440000".)
     for model in sorted(models, key=len, reverse=True):
         if name == model:
-            # bare model name = main branch
-            return {"model": model, "step": 0,
-                    "tokens": tokens_for(model, "main")}
+            # bare model name = main branch (None tokens if the model has
+            # no `main` checkpoint, e.g. a multi-stage checkpoints repo).
+            try:
+                tokens = tokens_for(model, "main")
+            except KeyError:
+                tokens = None
+            return {"model": model, "step": 0, "tokens": tokens}
         prefix = model + "-"
         if name.startswith(prefix):
             branch = name[len(prefix):]

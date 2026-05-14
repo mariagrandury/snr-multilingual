@@ -1,4 +1,4 @@
-"""Shared loader for configs/models.json + configs/tasks.json.
+"""Shared loader for configs/models.json + configs/tasks.json + configs/hf_wandb.json.
 
 Single source of truth for the eval / pretrain / signal-and-noise
 pipelines. See .claude-shared/plans/models-tasks-json-refactor.md for
@@ -9,8 +9,16 @@ Path conventions:
   /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/scripts/utils/).
 - signal-and-noise code runs locally on the Mac
   (/Users/mariagrandury/Projects/epfl/snr-multilingual/src/signal-and-noise/...).
-- configs/models.json + configs/tasks.json live at the SHARED repo
-  root — same content readable from either host.
+- configs/*.json live at the SHARED repo root — same content readable
+  from either host.
+
+What lives where:
+- models.json   → `models` (each with a `stages` dict), `pools`,
+                  `sources` (source→parquet split), `snr` (SNR analysis params)
+- tasks.json    → `tasks`, `groups`
+- hf_wandb.json → published-dataset + infra config (HF repo id, parquet
+                  filename pattern, W&B entity/project, multilingual-evals
+                  raw/ sources)
 """
 
 from __future__ import annotations
@@ -25,6 +33,7 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_MODELS_JSON = _REPO_ROOT / "configs" / "models.json"
 DEFAULT_TASKS_JSON = _REPO_ROOT / "configs" / "tasks.json"
+DEFAULT_HF_WANDB_JSON = _REPO_ROOT / "configs" / "hf_wandb.json"
 
 # Size tokens recognised by the auto-derive branch of `family_of`. Add to
 # this list when a new model size appears (extending here is cheaper than
@@ -73,7 +82,7 @@ def filter_models(source: str | list[str] | None = None,
     for name, entry in load_models(path).items():
         if src_set is not None and entry.get("source") not in src_set:
             continue
-        if stage is not None and entry.get("stage") != stage:
+        if stage is not None and stage not in entry.get("stages", {}):
             continue
         if family is not None and entry.get("family") != family:
             continue
@@ -113,6 +122,47 @@ def expand_pool(name: str,
 def pool_include_external(name: str,
                           path: str | Path = DEFAULT_MODELS_JSON) -> bool:
     return load_pools(path)[name].get("include_external", False)
+
+
+# --- Sources → parquet split ------------------------------------------------
+
+@lru_cache(maxsize=4)
+def load_sources(path: str | Path = DEFAULT_MODELS_JSON) -> dict[str, Any]:
+    """{source_name: {split: str | None}} from the `sources` section."""
+    return json.loads(Path(path).read_text()).get("sources", {})
+
+
+def split_for_source(source: str,
+                     path: str | Path = DEFAULT_MODELS_JSON) -> str | None:
+    """Parquet split for a model `source`. None means the source is not
+    published to the dataset (build_hf_dataset.py skips its rows).
+    KeyError if the source isn't declared."""
+    return load_sources(path)[source]["split"]
+
+
+# --- SNR analysis params ----------------------------------------------------
+
+@lru_cache(maxsize=4)
+def load_snr_params(path: str | Path = DEFAULT_MODELS_JSON) -> dict[str, Any]:
+    """The `snr` section: small_sizes, target_size, plotted_mixes,
+    da_early_steps, last_n. Global — SNR is always the 4-size custom
+    ladder; there is no per-pool override."""
+    return json.loads(Path(path).read_text())["snr"]
+
+
+# --- HF / W&B infra config (configs/hf_wandb.json) --------------------------
+
+@lru_cache(maxsize=4)
+def load_hf_wandb_config(path: str | Path = DEFAULT_HF_WANDB_JSON) -> dict[str, Any]:
+    """Published-dataset + infra config: repo_id, parquet_pattern, wandb
+    {entity, project}, multilingual_evals {raw_source_repos, model_dirs}."""
+    return json.loads(Path(path).read_text())
+
+
+def parquet_name(split: str, path: str | Path = DEFAULT_HF_WANDB_JSON) -> str:
+    """Parquet filename for a split, e.g. `pretraining_custom` →
+    `pretraining_custom-00000-of-00001.parquet`."""
+    return load_hf_wandb_config(path)["parquet_pattern"].format(split=split)
 
 
 # --- Family helpers ---------------------------------------------------------
@@ -177,66 +227,108 @@ def add_family_column(df, path: str | Path = DEFAULT_MODELS_JSON):
     return df
 
 
-# --- Checkpoints ------------------------------------------------------------
+# --- Stages & checkpoints ---------------------------------------------------
+#
+# Each model has a `stages` dict — {<phase>: {tokens, num_iters,
+# tokens_per_iter, checkpoints}} — where <phase> is pretraining /
+# midtraining / posttraining. `checkpoints` holds `final` plus the subset
+# lists below (ints for megatron_iter models, branch-name strings for
+# hf_branch models).
 
 _VALID_CKPT_SUBSETS = ("all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval")
 
+# step number embedded in an HF branch name (`stepN`, `step-N`,
+# `stageK-step-N`, `stepN-tokensXXX`); `-tokensXXX(B|T)` explicit count.
+_BRANCH_STEP_RE = re.compile(r"step-?(\d+)")
+_BRANCH_TOKENS_RE = re.compile(r"-tokens([\d.]+)([BT])")
 
-def iters_for(model_name: str, subset: str = "all",
+
+def stages_of(model_name: str,
+              path: str | Path = DEFAULT_MODELS_JSON) -> dict:
+    """The model's `stages` dict — {phase: {tokens, num_iters,
+    tokens_per_iter, checkpoints}}."""
+    return get_model(model_name, path)["stages"]
+
+
+def _stage_containing(entry: dict, ckpt_id) -> dict:
+    """The `stages.<phase>` dict whose `checkpoints.all` lists `ckpt_id`.
+    Falls back to the sole stage when the model has exactly one (covers a
+    megatron eval at a non-canonical iter — tokens = iter × tpi is still
+    exact). Raises KeyError when no stage matches a multi-stage model."""
+    stages = entry["stages"]
+    for sdata in stages.values():
+        if ckpt_id in sdata["checkpoints"].get("all", []):
+            return sdata
+    if len(stages) == 1:
+        return next(iter(stages.values()))
+    raise KeyError(f"ckpt {ckpt_id!r} not in any stage's checkpoints")
+
+
+def iters_for(model_name: str, subset: str = "all", stage: str | None = None,
               path: str | Path = DEFAULT_MODELS_JSON) -> list:
     """Return the checkpoint list for `model_name`.
 
     For `checkpoint_kind="megatron_iter"`: returns `list[int]` of iters.
-    For `checkpoint_kind="hf_branch"`: returns `list[{"branch": str,
-    "tokens": int | None}]`.
+    For `checkpoint_kind="hf_branch"`: returns `list[str]` of branch names.
 
-    `subset` selects the named subset under `checkpoints/`. `"full_eval"`
-    is an alias for whichever subset the eval pipeline currently
-    canonicalises on — default is `all`. Falls back to `all` if the
-    requested subset is absent.
+    `subset` selects the named subset under a stage's `checkpoints/` (falls
+    back to `all` if absent). `stage` selects one phase; when None, the
+    union across every stage is returned (in stage-declaration order) —
+    single-stage models therefore just get that stage's subset.
     """
     if subset not in _VALID_CKPT_SUBSETS:
         raise ValueError(f"Unknown subset {subset!r}; "
                          f"valid: {_VALID_CKPT_SUBSETS}")
-    entry = get_model(model_name, path)
-    ckpts = entry["checkpoints"]
-    # Missing subset → fall back to `all` (most models without an
-    # explicit full_eval just want every available ckpt).
-    return ckpts.get(subset, ckpts.get("all", []))
+    stages = stages_of(model_name, path)
+    if stage is not None:
+        ck = stages[stage]["checkpoints"]
+        return ck.get(subset, ck.get("all", []))
+    out: list = []
+    for sdata in stages.values():
+        ck = sdata["checkpoints"]
+        out.extend(ck.get(subset, ck.get("all", [])))
+    return out
+
+
+def _hf_branch_tokens(branch: str, sdata: dict) -> int | float | None:
+    """Cumulative tokens for one HF branch within its stage:
+    `main` → stage total; `-tokensXXX(B|T)` in the name → that explicit
+    count; `stepN` → `step × stage.tokens_per_iter` (linear interp)."""
+    if branch == "main":
+        return sdata["tokens"]
+    m = _BRANCH_TOKENS_RE.search(branch)
+    if m:
+        return float(m.group(1)) * (1e9 if m.group(2) == "B" else 1e12)
+    m = _BRANCH_STEP_RE.search(branch)
+    if m and sdata["tokens_per_iter"] is not None:
+        return int(m.group(1)) * sdata["tokens_per_iter"]
+    return None
 
 
 def tokens_for(model_name: str, ckpt_id,
-               hyperparams_path: str | Path | None = None,
-               path: str | Path = DEFAULT_MODELS_JSON) -> int | None:
-    """Tokens at `ckpt_id`. Branches on `checkpoint_kind`:
+               path: str | Path = DEFAULT_MODELS_JSON) -> int | float | None:
+    """Cumulative training tokens at `ckpt_id` (an iter int for
+    megatron_iter models, a branch-name string for hf_branch models).
 
-    - `megatron_iter`: ckpt_id is an iter (int). Tokens =
-      iter × global_batch_size × seq_len, read from hyperparams_deep.json
-      (default: <repo>/src/pretrain/hyperparams_deep.json).
-    - `hf_branch`: ckpt_id is a branch string. Tokens is the explicit
-      value stored on that branch entry (may be None).
+    - megatron_iter: `iter × stage.tokens_per_iter` — exact for any iter.
+    - hf_branch / hf_local: `ckpt_id` must be a branch declared in some
+      stage's `checkpoints.all`; raises KeyError otherwise (so callers can
+      reject NAMEs that don't correspond to a canonical checkpoint).
     """
     entry = get_model(model_name, path)
     kind = entry["checkpoint_kind"]
+
     if kind == "megatron_iter":
         if not isinstance(ckpt_id, int):
             raise TypeError(f"megatron_iter expects int ckpt_id, "
                             f"got {ckpt_id!r}")
-        return ckpt_id * _meg_tokens_per_step(hyperparams_path)
-    if kind in ("hf_branch", "hf_local"):
-        for branch_entry in entry["checkpoints"]["all"]:
-            if branch_entry["branch"] == ckpt_id:
-                return branch_entry.get("tokens")
-        raise KeyError(f"branch {ckpt_id!r} not in {model_name}'s checkpoints")
-    raise ValueError(f"Unknown checkpoint_kind {kind!r} for {model_name!r}")
+        tpi = _stage_containing(entry, ckpt_id)["tokens_per_iter"]
+        return ckpt_id * tpi if tpi is not None else None
 
-
-@lru_cache(maxsize=2)
-def _meg_tokens_per_step(path: str | Path | None = None) -> int:
-    if path is None:
-        path = _REPO_ROOT / "src" / "pretrain" / "hyperparams_deep.json"
-    g = json.loads(Path(path).read_text())["global"]
-    return g["global_batch_size"] * g["seq_len"]
+    for sdata in entry["stages"].values():
+        if ckpt_id in sdata["checkpoints"].get("all", []):
+            return _hf_branch_tokens(ckpt_id, sdata)
+    raise KeyError(f"branch {ckpt_id!r} not in {model_name}'s checkpoints")
 
 
 # --- Tasks ------------------------------------------------------------------

@@ -41,17 +41,19 @@ _SRC = Path(__file__).resolve().parents[2]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
 
 from snr.constants import PLOT_DIR
 from snr.plot import config_snr_ax
 
 OUT_ROOT = PLOT_DIR / "snr_definition"
 
-SMALL_SIZES = ["175M", "350M", "600M"]
-TARGET_SIZE = "1B"
+# SNR analysis params — single source of truth in configs/models.json.
+_SNR = load_snr_params()
+SMALL_SIZES = _SNR["small_sizes"]
+TARGET_SIZE = _SNR["target_size"]
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
-CKPT_DA_EARLY_STEPS = [6000, 18000, 28000]
+CKPT_DA_EARLY_STEPS = _SNR["da_early_steps"]
 
 SIZE_PALETTE = {
     "175M": "#1f77b4",

@@ -60,6 +60,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     add_family_column,
     expand_pool,
     load_pools,
+    load_snr_params,
     pool_include_external,
 )
 from multilingual.analyze_snr_variants import (
@@ -77,11 +78,13 @@ from snr.download.apertus import (
 from snr.metrics import decision_acc_fast
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
-SMALL_SIZES = ["175M", "350M", "600M"]
-TARGET_SIZE = "1B"
+# SNR analysis params — single source of truth in configs/models.json.
+_SNR = load_snr_params()
+SMALL_SIZES = _SNR["small_sizes"]
+TARGET_SIZE = _SNR["target_size"]
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
-LAST_N = 5
-CKPT_DA_EARLY_STEPS = [6000, 18000, 28000]
+LAST_N = _SNR["last_n"]
+CKPT_DA_EARLY_STEPS = _SNR["da_early_steps"]
 OUT_ROOT = PLOT_DIR / "snr_definition"
 
 # Dedup set for missing-ckpt warnings — log each (size, early_step, family)

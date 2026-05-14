@@ -3,7 +3,6 @@
     "apertus-175M-fwEdu30-fw270-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed28",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -15,78 +14,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu30-fw270-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1797",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -98,78 +103,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu30-fw270-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1904",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -181,66 +192,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu60-fw240-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed28",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -252,78 +269,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu60-fw240-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1797",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -335,78 +358,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu60-fw240-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1904",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -418,66 +447,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu90-fw210-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed28",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -489,78 +524,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu90-fw210-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1797",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -572,78 +613,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-175M-fwEdu90-fw210-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1904",
-      "stage": "pretraining",
       "size": "175M",
       "params": 175000000,
       "hyperparams_key": "175M",
@@ -655,66 +702,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu30-fw270-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed28",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -726,78 +779,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu30-fw270-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1797",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -809,78 +868,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu30-fw270-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1904",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -892,66 +957,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu60-fw240-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed28",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -963,78 +1034,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu60-fw240-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1797",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -1046,78 +1123,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu60-fw240-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1904",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -1129,66 +1212,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu90-fw210-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed28",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -1200,78 +1289,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu90-fw210-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1797",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -1283,78 +1378,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-350M-fwEdu90-fw210-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1904",
-      "stage": "pretraining",
       "size": "350M",
       "params": 350000000,
       "hyperparams_key": "350M",
@@ -1366,66 +1467,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu30-fw270-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed28",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1437,78 +1544,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu30-fw270-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1797",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1520,78 +1633,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu30-fw270-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1904",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1603,66 +1722,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu60-fw240-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed28",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1674,78 +1799,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu60-fw240-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1797",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1757,78 +1888,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu60-fw240-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1904",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1840,66 +1977,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu90-fw210-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed28",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1911,78 +2054,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu90-fw210-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1797",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -1994,78 +2143,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-600M-fwEdu90-fw210-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1904",
-      "stage": "pretraining",
       "size": "600M",
       "params": 600000000,
       "hyperparams_key": "600M",
@@ -2077,66 +2232,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu30-fw270-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed28",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2148,78 +2309,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu30-fw270-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1797",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2231,78 +2398,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu30-fw270-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu30-fw270-seed1904",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2314,66 +2487,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu60-fw240-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed28",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2385,78 +2564,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu60-fw240-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1797",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2468,78 +2653,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu60-fw240-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu60-fw240-seed1904",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2551,66 +2742,72 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu90-fw210-seed28": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed28",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2622,78 +2819,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed28/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed28/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu90-fw210-seed1797": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1797",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2705,78 +2908,84 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed1797/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed1797/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          4000,
-          6000,
-          8000,
-          10000,
-          12000,
-          14000,
-          16000,
-          18000,
-          20000,
-          22000,
-          24000,
-          26000,
-          28000,
-          30000,
-          32000,
-          34000,
-          36000,
-          38000,
-          40000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          10000,
-          16000,
-          20000,
-          26000,
-          30000,
-          36000,
-          40000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          10000,
-          20000,
-          30000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          10000,
-          20000,
-          30000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              20000,
+              30000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              20000,
+              30000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus-1B-fwEdu90-fw210-seed1904": {
       "source": "snr-pretraining-custom",
       "family": "apertus-fwEdu90-fw210-seed1904",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "hyperparams_key": "1B",
@@ -2788,873 +2997,1229 @@
         "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed1904/checkpoints/",
         "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed1904/"
       },
-      "checkpoints": {
-        "final": 50000,
-        "all": [
-          2000,
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "dense_tail": [
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ],
-        "10_ckpts": [
-          6000,
-          12000,
-          18000,
-          22000,
-          28000,
-          34000,
-          38000,
-          42000,
-          46000,
-          50000
-        ],
-        "da_ckpts": [
-          6000,
-          12000,
-          22000,
-          28000,
-          50000
-        ],
-        "full_eval": [
-          6000,
-          12000,
-          22000,
-          28000,
-          42000,
-          44000,
-          46000,
-          48000,
-          50000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          }
+        }
       }
     },
     "apertus3-1b-21-nodes": {
       "source": "snr-pretraining-a06",
       "family": "apertus3-a06",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
         "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-1b-21-nodes/checkpoints/"
       },
-      "checkpoints": {
-        "final": 380000,
-        "all": [
-          20000,
-          40000,
-          60000,
-          80000,
-          100000,
-          120000,
-          140000,
-          160000,
-          180000,
-          200000,
-          220000,
-          240000,
-          260000,
-          280000,
-          300000,
-          320000,
-          340000,
-          360000,
-          370000,
-          380000
-        ],
-        "dense_tail": [
-          320000,
-          340000,
-          360000,
-          370000,
-          380000
-        ],
-        "10_ckpts": [
-          20000,
-          60000,
-          100000,
-          140000,
-          180000,
-          220000,
-          260000,
-          300000,
-          340000,
-          380000
-        ],
-        "da_ckpts": [
-          20000,
-          60000,
-          100000,
-          140000,
-          180000,
-          220000,
-          260000,
-          300000,
-          340000,
-          380000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 784465920000,
+          "num_iters": 380000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 380000,
+            "all": [
+              20000,
+              40000,
+              60000,
+              80000,
+              100000,
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ],
+            "dense_tail": [
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ],
+            "10_ckpts": [
+              20000,
+              60000,
+              100000,
+              140000,
+              180000,
+              220000,
+              260000,
+              300000,
+              340000,
+              380000
+            ],
+            "da_ckpts": [
+              20000,
+              60000,
+              100000,
+              140000,
+              180000,
+              220000,
+              260000,
+              300000,
+              340000,
+              380000
+            ],
+            "full_eval": [
+              20000,
+              60000,
+              100000,
+              140000,
+              180000,
+              220000,
+              260000,
+              300000,
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ]
+          }
+        }
       }
     },
     "apertus3-3b-64-nodes": {
       "source": "snr-pretraining-a06",
       "family": "apertus3-a06",
-      "stage": "pretraining",
       "size": "3B",
       "params": 3000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
         "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-3b-64-nodes/checkpoints/"
       },
-      "checkpoints": {
-        "final": 165000,
-        "all": [
-          15000,
-          30000,
-          45000,
-          60000,
-          75000,
-          90000,
-          105000,
-          120000,
-          135000,
-          150000,
-          155000,
-          160000,
-          165000
-        ],
-        "dense_tail": [
-          135000,
-          150000,
-          155000,
-          160000,
-          165000
-        ],
-        "10_ckpts": [
-          15000,
-          30000,
-          45000,
-          60000,
-          75000,
-          90000,
-          105000,
-          120000,
-          135000,
-          150000,
-          165000
-        ],
-        "da_ckpts": [
-          15000,
-          30000,
-          45000,
-          60000,
-          75000,
-          90000,
-          105000,
-          120000,
-          135000,
-          150000,
-          165000
-        ]
+      "stages": {
+        "pretraining": {
+          "tokens": 340623360000,
+          "num_iters": 165000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 165000,
+            "all": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ],
+            "dense_tail": [
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ],
+            "10_ckpts": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              165000
+            ],
+            "da_ckpts": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              165000
+            ],
+            "full_eval": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ]
+          }
+        }
       }
     },
     "Apertus-8B-2509": {
       "source": "swiss-ai-reference",
       "family": "Apertus-2509",
-      "stage": "pretraining",
       "size": "8B",
       "params": 8000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/swiss-ai/Apertus-8B-2509"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": 15000000000000
+      "stages": {
+        "pretraining": {
+          "tokens": 15000000000000,
+          "num_iters": 2627139,
+          "tokens_per_iter": 5709633.178906788,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step1750000-tokens7652B",
+              "step1900000-tokens8912B",
+              "step2100000-tokens10592B",
+              "step2250000-tokens11852B",
+              "step2450000-tokens13532B",
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "step2627139-tokens15T",
+              "main"
+            ],
+            "dense_tail": [
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "main"
+            ],
+            "10_ckpts": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step1750000-tokens7652B",
+              "step1900000-tokens8912B",
+              "step2100000-tokens10592B",
+              "step2250000-tokens11852B",
+              "step2450000-tokens13532B",
+              "step2627139-tokens15T"
+            ],
+            "da_ckpts": [
+              "step400000-tokens1680B",
+              "step1194000-tokens5014B",
+              "step1750000-tokens7652B",
+              "step2250000-tokens11852B",
+              "step2627139-tokens15T"
+            ],
+            "full_eval": [
+              "step400000-tokens1680B",
+              "step1194000-tokens5014B",
+              "step1750000-tokens7652B",
+              "step2250000-tokens11852B",
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "step2627139-tokens15T",
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Apertus-70B-2509": {
       "source": "swiss-ai-reference",
       "family": "Apertus-2509",
-      "stage": "pretraining",
       "size": "70B",
       "params": 70000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/swiss-ai/Apertus-70B-2509"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": 15000000000000
+      "stages": {
+        "pretraining": {
+          "tokens": 15000000000000,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-0.6B-Base": {
       "source": "huggingface-reference",
       "family": "Qwen3-Base",
-      "stage": "pretraining",
       "size": "0.6B",
       "params": 600000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-0.6B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-1.7B-Base": {
       "source": "huggingface-reference",
       "family": "Qwen3-Base",
-      "stage": "pretraining",
       "size": "1.7B",
       "params": 1700000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-1.7B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-4B-Base": {
       "source": "huggingface-reference",
       "family": "Qwen3-Base",
-      "stage": "pretraining",
       "size": "4B",
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3.5-4B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-8B-Base": {
       "source": "huggingface-reference",
       "family": "Qwen3-Base",
-      "stage": "pretraining",
       "size": "8B",
       "params": 8000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-8B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-14B-Base": {
       "source": "huggingface-reference",
       "family": "Qwen3-Base",
-      "stage": "pretraining",
       "size": "14B",
       "params": 14000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-14B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-1b-pt": {
       "source": "huggingface-reference",
       "family": "gemma-3-pt",
-      "stage": "pretraining",
       "size": "1B",
       "params": 1000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-1b-pt"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-4b-pt": {
       "source": "huggingface-reference",
       "family": "gemma-3-pt",
-      "stage": "pretraining",
       "size": "4B",
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-4b-pt"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-12b-pt": {
       "source": "huggingface-reference",
       "family": "gemma-3-pt",
-      "stage": "pretraining",
       "size": "12B",
       "params": 12000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-12b-pt"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-27b-pt": {
       "source": "huggingface-reference",
       "family": "gemma-3-pt",
-      "stage": "pretraining",
       "size": "27B",
       "params": 27000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-27b-pt"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "SmolLM3-3B-Base": {
       "source": "huggingface-reference",
       "family": "SmolLM3-Base",
-      "stage": "pretraining",
       "size": "3B",
       "params": 3000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-Base"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": 11200000000000,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "SmolLM3-3B-checkpoints": {
       "source": "huggingface-reference",
       "family": "SmolLM3-checkpoints",
-      "stage": "pretraining",
       "size": "3B",
       "params": 3000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "stage1-step-3440000",
-            "tokens": 7200000000000
-          },
-          {
-            "branch": "stage2-step-4200000",
-            "tokens": 8800000000000
-          },
-          {
-            "branch": "stage3-step-4720000",
-            "tokens": 9900000000000
+      "stages": {
+        "pretraining": {
+          "tokens": 7200000000000,
+          "num_iters": 3440000,
+          "tokens_per_iter": 2093023.2558139535,
+          "checkpoints": {
+            "final": "stage1-step-3440000",
+            "all": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-2080000",
+              "stage1-step-2400000",
+              "stage1-step-2760000",
+              "stage1-step-3080000",
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000",
+              "stage1-step-3440000"
+            ],
+            "dense_tail": [
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000"
+            ],
+            "10_ckpts": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-2080000",
+              "stage1-step-2400000",
+              "stage1-step-2760000",
+              "stage1-step-3080000",
+              "stage1-step-3440000"
+            ],
+            "da_ckpts": [
+              "stage1-step-360000",
+              "stage1-step-1040000",
+              "stage1-step-1720000",
+              "stage1-step-2760000",
+              "stage1-step-3440000"
+            ],
+            "full_eval": [
+              "stage1-step-360000",
+              "stage1-step-1040000",
+              "stage1-step-1720000",
+              "stage1-step-2760000",
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000",
+              "stage1-step-3440000"
+            ]
           }
-        ]
+        },
+        "midtraining": {
+          "tokens": 9900000000000,
+          "num_iters": 4720000,
+          "tokens_per_iter": 2097457.627118644,
+          "checkpoints": {
+            "final": "stage3-step-4720000",
+            "all": [
+              "stage2-step-4200000",
+              "stage3-step-4720000"
+            ]
+          }
+        }
       }
     },
     "Olmo-3-1025-7B": {
       "source": "huggingface-reference",
       "family": "Olmo-3-1025",
-      "stage": "midtraining",
       "size": "7B",
       "params": 7000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/allenai/Olmo-3-1025-7B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": 6000000000000,
+          "num_iters": 1413814,
+          "tokens_per_iter": 4243839.713003267,
+          "checkpoints": {
+            "final": "stage1-step1413814",
+            "all": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step848000",
+              "stage1-step990000",
+              "stage1-step1131000",
+              "stage1-step1272000",
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000",
+              "stage1-step1413814"
+            ],
+            "dense_tail": [
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000"
+            ],
+            "10_ckpts": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step848000",
+              "stage1-step990000",
+              "stage1-step1131000",
+              "stage1-step1272000",
+              "stage1-step1413814"
+            ],
+            "da_ckpts": [
+              "stage1-step141000",
+              "stage1-step424000",
+              "stage1-step707000",
+              "stage1-step1131000",
+              "stage1-step1413814"
+            ],
+            "full_eval": [
+              "stage1-step141000",
+              "stage1-step424000",
+              "stage1-step707000",
+              "stage1-step1131000",
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000",
+              "stage1-step1413814"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-0.6B": {
       "source": "huggingface-reference",
       "family": "Qwen3-it",
-      "stage": "posttraining",
       "size": "0.6B",
       "params": 600000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-0.6B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-1.7B": {
       "source": "huggingface-reference",
       "family": "Qwen3-it",
-      "stage": "posttraining",
       "size": "1.7B",
       "params": 1700000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-1.7B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-4B": {
       "source": "huggingface-reference",
       "family": "Qwen3-it",
-      "stage": "posttraining",
       "size": "4B",
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3.5-4B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-8B": {
       "source": "huggingface-reference",
       "family": "Qwen3-it",
-      "stage": "posttraining",
       "size": "8B",
       "params": 8000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-8B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Qwen3-14B": {
       "source": "huggingface-reference",
       "family": "Qwen3-it",
-      "stage": "posttraining",
       "size": "14B",
       "params": 14000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/Qwen/Qwen3-14B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-1b-it": {
       "source": "huggingface-reference",
       "family": "gemma-3-it",
-      "stage": "posttraining",
       "size": "1B",
       "params": 1000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-1b-it"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-4b-it": {
       "source": "huggingface-reference",
       "family": "gemma-3-it",
-      "stage": "posttraining",
       "size": "4B",
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-4b-it"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-12b-it": {
       "source": "huggingface-reference",
       "family": "gemma-3-it",
-      "stage": "posttraining",
       "size": "12B",
       "params": 12000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-12b-it"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "gemma-3-27b-it": {
       "source": "huggingface-reference",
       "family": "gemma-3-it",
-      "stage": "posttraining",
       "size": "27B",
       "params": 27000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/google/gemma-3-27b-it"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "SmolLM3-3B": {
       "source": "huggingface-reference",
       "family": "SmolLM3-it",
-      "stage": "posttraining",
       "size": "3B",
       "params": 3000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Apertus-1.7B-it800000-SFT": {
       "source": "daslab-testing",
       "family": "Apertus-it-SFT-1",
-      "stage": "posttraining",
       "size": "1.7B",
       "params": 1700000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/daslab-testing/Apertus-1.7B-it800000-SFT"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Olmo-3-7B-Instruct-SFT": {
       "source": "huggingface-reference",
       "family": "Olmo-3-Instruct-SFT",
-      "stage": "posttraining",
       "size": "7B",
       "params": 7000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct-SFT"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Olmo-3-7B-Instruct-DPO": {
       "source": "huggingface-reference",
       "family": "Olmo-3-Instruct-DPO",
-      "stage": "posttraining",
       "size": "7B",
       "params": 7000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct-DPO"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Olmo-3-7B-Instruct": {
       "source": "huggingface-reference",
       "family": "Olmo-3-Instruct",
-      "stage": "posttraining",
       "size": "7B",
       "params": 7000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Apertus-8B-Instruct-2509": {
       "source": "swiss-ai-reference",
       "family": "Apertus-Instruct-2509",
-      "stage": "posttraining",
       "size": "8B",
       "params": 8000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "Apertus-70B-Instruct-2509": {
       "source": "swiss-ai-reference",
       "family": "Apertus-Instruct-2509",
-      "stage": "posttraining",
       "size": "70B",
       "params": 70000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
         "hf": "https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "apertus-0.6b-from8b-TOP256-long": {
       "source": "distillation",
       "family": "ap-from8b-TOP256",
-      "stage": "posttraining",
       "size": "0.6B",
       "params": 600000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
         "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap0.6b-from8b-TOP256-long/checkpoints/"
       },
-      "checkpoints": {
-        "final": null,
-        "all": []
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": null,
+            "all": [],
+            "dense_tail": [],
+            "10_ckpts": [],
+            "da_ckpts": [],
+            "full_eval": []
+          }
+        }
       }
     },
     "apertus-1b-from8b-TOP256-long": {
       "source": "distillation",
       "family": "ap-from8b-TOP256",
-      "stage": "posttraining",
       "size": "1B",
       "params": 1000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
         "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap1b-from8b-TOP256-long/checkpoints/"
       },
-      "checkpoints": {
-        "final": null,
-        "all": []
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": null,
+            "all": [],
+            "dense_tail": [],
+            "10_ckpts": [],
+            "da_ckpts": [],
+            "full_eval": []
+          }
+        }
       }
     },
     "tokenizer-lm-tiny-128k-apertus": {
       "source": "tokenizer-lm",
       "family": "tokenizer-lm-128k-apertus",
-      "stage": "pretraining",
       "size": "TBD",
       "params": null,
       "checkpoint_kind": "hf_local",
       "backends": {
         "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/tiny-128k-apertus"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "tokenizer-lm-small-128k-apertus": {
       "source": "tokenizer-lm",
       "family": "tokenizer-lm-128k-apertus",
-      "stage": "pretraining",
       "size": "TBD",
       "params": null,
       "checkpoint_kind": "hf_local",
       "backends": {
         "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/small-128k-apertus"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "tokenizer-lm-pilot-128k-apertus": {
       "source": "tokenizer-lm",
       "family": "tokenizer-lm-128k-apertus",
-      "stage": "pretraining",
       "size": "TBD",
       "params": null,
       "checkpoint_kind": "hf_local",
       "backends": {
         "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/pilot-128k-apertus"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     },
     "tokenizer-lm-full-128k-apertus": {
       "source": "tokenizer-lm",
       "family": "tokenizer-lm-128k-apertus",
-      "stage": "pretraining",
       "size": "TBD",
       "params": null,
       "checkpoint_kind": "hf_local",
       "backends": {
         "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/full-128k-apertus"
       },
-      "checkpoints": {
-        "all": [
-          {
-            "branch": "main",
-            "tokens": null
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
           }
-        ]
+        }
       }
     }
   },
@@ -3723,5 +4288,47 @@
         }
       ]
     }
+  },
+  "sources": {
+    "snr-pretraining-custom": {
+      "split": "pretraining_custom"
+    },
+    "snr-pretraining-a06": {
+      "split": "pretraining_a06"
+    },
+    "swiss-ai-reference": {
+      "split": "reference_hf"
+    },
+    "huggingface-reference": {
+      "split": "reference_hf"
+    },
+    "daslab-testing": {
+      "split": null
+    },
+    "distillation": {
+      "split": null
+    },
+    "tokenizer-lm": {
+      "split": null
+    }
+  },
+  "snr": {
+    "small_sizes": [
+      "175M",
+      "350M",
+      "600M"
+    ],
+    "target_size": "1B",
+    "plotted_mixes": [
+      "fwEdu30",
+      "fwEdu60",
+      "fwEdu90"
+    ],
+    "da_early_steps": [
+      6000,
+      18000,
+      28000
+    ],
+    "last_n": 5
   }
 }

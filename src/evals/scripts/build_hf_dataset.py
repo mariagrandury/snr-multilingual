@@ -5,15 +5,17 @@ Mirrors the structure of allenai/signal-and-noise: a flat per-suite parquet
 with one row per (model, model_revision, task), aggregate metrics only — no
 per-instance predictions.
 
-Splits emitted:
-  - pretraining_custom: 12 apertus megatron checkpoints × N iters
-  - reference_hf:       Apertus-8B/70B (main) + Olmo-3 stages + SmolLM3 stages
+Splits emitted (one per `source` in configs/models.json):
+  - pretraining_custom: 36 apertus megatron pretrains (4 sizes × 3 mixes × 3 seeds)
+  - pretraining_a06:    a06 main runs (apertus3-{1b,3b}-*-nodes)
+  - reference_hf:       swiss-ai-reference + huggingface-reference (Qwen3,
+                        gemma-3, SmolLM3, Olmo-3, Apertus-8B/70B-2509)
 
 Usage:
-  # Local eval_logs only (default)
-  python scripts/build_hf_dataset.py --out-dir /tmp/snr-hf-dataset --dry-run
+  # Local eval_logs only — writes parquet to --out-dir, no upload (default)
+  python scripts/build_hf_dataset.py --out-dir /tmp/snr-hf-dataset
 
-  # Local + remote epfl-nlp/multilingual-evals
+  # Local + remote multilingual-snr raw/, then upload
   python scripts/build_hf_dataset.py --include-multilingual-evals \\
       --push --repo-id multilingual-snr/multilingual-snr-eval-results
 """
@@ -28,20 +30,24 @@ from pathlib import Path
 
 import pandas as pd
 
-# Reuse logic from push_all_results.py
+# Reuse logic from push_all_results.py + shared configs loader.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from push_all_results import (  # type: ignore
-    LOGS_BASE,
-    MEG_TOKENS_PER_ITER,
-    HF_STAGE_TOKENS,
-    HF_MAIN_TOKENS,
-    model_params,
-    parse_name,
-    collect,
+sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
+from configs import (  # noqa: E402
+    family_of,
+    get_model,
+    load_hf_wandb_config,
+    split_for_source,
+    tokens_for,
 )
+from results_io import collect  # noqa: E402
+from push_all_results import LOGS_BASE, model_params, parse_name  # noqa: E402
 
-ENTITY = "mariagrandury-epflnlp"
-PROJECT = "snr-experiments"
+# W&B coordinates + published-dataset config from configs/hf_wandb.json.
+_HF_WANDB_CFG = load_hf_wandb_config()
+ENTITY = _HF_WANDB_CFG["wandb"]["entity"]
+PROJECT = _HF_WANDB_CFG["wandb"]["project"]
+REPO_ID = _HF_WANDB_CFG["repo_id"]
 
 # Tasks for which the result file uses these as the "primary" metric (in order).
 PRIMARY_METRIC_PRIORITY = ["acc", "exact_match", "pass@1", "f1"]
@@ -98,88 +104,68 @@ def pick_primary(metrics: dict[str, float]) -> tuple[str | None, float | None]:
     return None, None
 
 
-def parse_size_to_params(size: str) -> int | None:
-    m = re.match(r"^(\d+)([MB])$", size, re.IGNORECASE)
-    if not m:
-        return None
-    return int(m.group(1)) * (10**6 if m.group(2).upper() == "M" else 10**9)
+_CUSTOM_RE = re.compile(
+    r"^apertus-\d+[MB]-(?P<mix>fwEdu\d+-fw\d+)-seed(?P<seed>\d+)-iter\d+$"
+)
 
 
 def name_to_metadata(name: str) -> dict | None:
     """Extract model metadata from a NAME (eval_logs subdir).
 
-    Returns a dict with fields: model, model_revision, model_type, step,
-    tokens, params, size, mix, seed, split. Returns None for unparseable
-    names (debug artifacts etc.) so they're skipped.
+    Delegates the NAME → (model, step, tokens) parse to push_all_results
+    (which reads models.json + tokens_for). Fills the parquet-specific
+    fields (size, params, family, mix, seed, model_revision, split) from
+    the model's configs/models.json entry.
     """
-    # Apertus megatron: apertus-<size>-fwEdu<X>-fw<Y>-seed<S>-iter<N>
-    m = re.match(
-        r"^(?P<model>apertus-(?P<size>\d+[MB])-fwEdu(?P<edu>\d+)-fw(?P<fw>\d+)-seed(?P<seed>\d+))-iter(?P<n>\d+)$",
-        name,
-    )
-    if m:
-        n = int(m.group("n"))
-        return {
-            "name": name,
-            "model": m.group("model"),
-            "model_revision": f"iter{n}",
-            "model_type": "custom_pretraining",
-            "step": n,
-            "tokens": float(n * MEG_TOKENS_PER_ITER),
-            "params": parse_size_to_params(m.group("size")),
-            "size": m.group("size"),
-            "mix": f"fwEdu{m.group('edu')}-fw{m.group('fw')}",
-            "seed": int(m.group("seed")),
-            "split": "pretraining_custom",
-        }
+    parsed = parse_name(name)
+    if parsed is None:
+        return None
+    model, step, tokens = parsed["model"], parsed["step"], parsed["tokens"]
+    try:
+        entry = get_model(model)
+    except KeyError:
+        return None
+    src = entry.get("source")
+    # `split is None` → source is evaluated but not published; skip the row.
+    split = split_for_source(src) if src else None
+    if split is None:
+        return None
 
-    # HF stage: <repo>-stage<K>-step-?<N>(-...)?
-    m = re.match(r"^(?P<repo>.+?)-stage(?P<stage>\d+)-step-?(?P<n>\d+)(?:-.*)?$", name)
-    if m:
-        repo, stage = m.group("repo"), int(m.group("stage"))
-        tokens = HF_STAGE_TOKENS.get((repo, stage))
-        if tokens is None:
-            return None
-        size_match = re.search(r"-(\d+)B(?:-|$)", repo)
-        params = int(size_match.group(1)) * 10**9 if size_match else None
-        return {
-            "name": name,
-            "model": repo,
-            "model_revision": f"stage{stage}-step{m.group('n')}",
-            "model_type": "reference_hf",
-            "step": int(m.group("n")),
-            "tokens": float(tokens),
-            "params": params,
-            "size": f"{size_match.group(1)}B" if size_match else None,
-            "mix": f"stage{stage}",
-            "seed": None,
-            "split": "reference_hf",
-        }
+    # mix / seed depend on source. Custom Apertus encodes both in the
+    # NAME; a06 has neither; HF reference derives mix from the branch
+    # (stage<K> or main).
+    if src == "snr-pretraining-custom":
+        m = _CUSTOM_RE.match(name)
+        mix = m.group("mix") if m else None
+        seed = int(m.group("seed")) if m else entry.get("seed")
+        revision = f"iter{step}"
+    elif src == "snr-pretraining-a06":
+        mix = "main"
+        seed = entry.get("seed")
+        revision = f"iter{step}"
+    else:
+        # HF: revision = remainder after stripping `<model>-`; bare model = main.
+        revision = name[len(model) + 1:] if name.startswith(model + "-") else "main"
+        if not revision:
+            revision = "main"
+        m = re.match(r"^stage(\d+)", revision)
+        mix = f"stage{m.group(1)}" if m else "main"
+        seed = None
 
-    # HF main: <repo>-main
-    m = re.match(r"^(?P<repo>.+?)-main$", name)
-    if m:
-        repo = m.group("repo")
-        tokens = HF_MAIN_TOKENS.get(repo)
-        if tokens is None:
-            return None
-        size_match = re.search(r"-(\d+)B(?:-|$)", repo)
-        params = int(size_match.group(1)) * 10**9 if size_match else None
-        return {
-            "name": name,
-            "model": repo,
-            "model_revision": "main",
-            "model_type": "reference_hf",
-            "step": 0,
-            "tokens": float(tokens),
-            "params": params,
-            "size": f"{size_match.group(1)}B" if size_match else None,
-            "mix": "main",
-            "seed": None,
-            "split": "reference_hf",
-        }
-
-    return None
+    return {
+        "name": name,
+        "model": model,
+        "model_revision": revision,
+        "model_type": "custom_pretraining" if src.startswith("snr-pretraining") else "reference_hf",
+        "step": step,
+        "tokens": float(tokens) if tokens else None,
+        "params": entry.get("params"),
+        "size": entry.get("size"),
+        "family": entry.get("family"),
+        "mix": mix,
+        "seed": seed,
+        "split": split,
+    }
 
 
 def collect_eval_metadata(name_dir: Path) -> dict:
@@ -271,6 +257,7 @@ def build_rows(project_dir: Path) -> list[dict]:
                 "task": task,
                 "name": meta["name"],
                 "model": meta["model"],
+                "family": meta["family"],
                 "model_revision": meta["model_revision"],
                 "model_type": meta["model_type"],
                 "model_path": eval_meta["model_path"],
@@ -319,67 +306,46 @@ def build_rows(project_dir: Path) -> list[dict]:
 #     - HuggingFaceTB__SmolLM3-3B-Base    ← internal lm-eval output dir; alias to `main`
 #     - depth-3 (no ckpt)                 ← treated as `main`
 
-MULTILINGUAL_EVALS_REPO = "epfl-nlp/multilingual-evals"
+# Remote raw/ sources to merge from + the model_dir → models.json key map,
+# all from configs/hf_wandb.json. Listed in priority order — when the same
+# (model, revision, task) appears in multiple repos, the first repo's value
+# wins (dedupe is order-preserving). `epfl-nlp/multilingual-evals` is
+# intentionally omitted from raw_source_repos (private storage over quota →
+# 403; the multilingual-snr repo is a superset).
+RAW_SOURCE_REPOS = _HF_WANDB_CFG["multilingual_evals"]["raw_source_repos"]
 
-# All remote raw/ sources to merge from. Listed in priority order — when
-# the same (model, revision, task) appears in multiple repos, the first
-# repo's value wins (dedupe is order-preserving).
-#
-# `epfl-nlp/multilingual-evals` is intentionally omitted: that org's private
-# storage is over quota, so downloads return 403. The multilingual-snr repo
-# already contains a superset of those files.
-RAW_SOURCE_REPOS = [
-    "multilingual-snr/multilingual-snr-eval-results",
-]
-
-# (model_dir → display model name, params, size_str, model_type, split)
-MULTILINGUAL_EVAL_MODELS = {
-    "apertus-8b-2509": {
-        "model": "Apertus-8B-2509",
-        "params": 8_000_000_000,
-        "size": "8B",
-        "model_type": "reference_hf",
-        "split": "reference_hf",
-    },
-    "olmo-3-1025-7b": {
-        "model": "Olmo-3-1025-7B",
-        "params": 7_000_000_000,
-        "size": "7B",
-        "model_type": "reference_hf",
-        "split": "reference_hf",
-    },
-    "smollm3-3b-checkpoints": {
-        "model": "SmolLM3-3B-checkpoints",
-        "params": 3_000_000_000,
-        "size": "3B",
-        "model_type": "reference_hf",
-        "split": "reference_hf",
-    },
-    "smollm3-3b-base": {
-        "model": "SmolLM3-3B-Base",
-        "params": 3_000_000_000,
-        "size": "3B",
-        "model_type": "reference_hf",
-        "split": "reference_hf",
-    },
-}
-
-# Linear-interpolation references for stage1 intermediate steps. Each tuple
-# is (final_step, tokens_at_final_step). Implies tokens_per_step = b/a.
-STAGE1_TOKENS_PER_STEP = {
-    "Olmo-3-1025-7B": 6_000_000_000_000 / 1_413_814,
-    "SmolLM3-3B-checkpoints": 7_200_000_000_000 / 3_440_000,
-}
+# model_dir (remote raw/ folder name) → models.json key. Display name +
+# every other field (params, size, family, split) is looked up from the
+# canonical entry — `model` is the only thing we need a manual map for
+# because the remote layout uses lowercase / hyphenated variants.
+MULTILINGUAL_EVAL_MODELS = _HF_WANDB_CFG["multilingual_evals"]["model_dirs"]
 
 
-def parse_ckpt_dir(model_info: dict, ckpt_dir: str | None) -> dict | None:
+def _branch_tokens(model: str, branch: str) -> float | None:
+    """Return canonical-branch tokens via configs.tokens_for, or None when
+    the branch isn't declared (e.g. intermediate stage steps)."""
+    try:
+        v = tokens_for(model, branch)
+    except (KeyError, ValueError):
+        return None
+    return float(v) if v else None
+
+
+def _stage1_tokens_per_step(model: str) -> float | None:
+    """Linear-interp tokens-per-step for stage-1 *intermediate* checkpoints
+    that aren't declared as canonical branches in configs/models.json. Per
+    the SNR stage convention, the repo's `stage1` is its `pretraining`
+    stage — so this is that stage's `tokens_per_iter`. None when unknown."""
+    pre = get_model(model).get("stages", {}).get("pretraining")
+    return pre.get("tokens_per_iter") if pre else None
+
+
+def parse_ckpt_dir(model: str, ckpt_dir: str | None) -> dict | None:
     """Map (model, ckpt_dir) → {model_revision, step, tokens, mix}.
 
     `ckpt_dir is None` means a depth-3 file under the model dir (no checkpoint
     subdir) — treated as the `main` revision.
     """
-    model = model_info["model"]
-
     # Treat None / 'main' / inner-repo dirs as the canonical 'main' ckpt
     if ckpt_dir is None or ckpt_dir == "main" or ckpt_dir in {
         "HuggingFaceTB__SmolLM3-3B-Base",
@@ -387,57 +353,38 @@ def parse_ckpt_dir(model_info: dict, ckpt_dir: str | None) -> dict | None:
         "allenai__Olmo-3-1025-7B",
         "HuggingFaceTB__SmolLM3-3B-checkpoints",
     }:
-        tokens = HF_MAIN_TOKENS.get(model)
-        if tokens is None and model == "SmolLM3-3B-Base":
-            tokens = 11_200_000_000_000  # SmolLM3-3B-Base released as 11.2T tokens
         return {
             "model_revision": "main",
             "step": 0,
-            "tokens": float(tokens) if tokens else None,
+            "tokens": _branch_tokens(model, "main"),
             "mix": "main",
         }
 
-    # Apertus-style: step<N>-tokens<X>(B|T)
+    # Apertus-style: step<N>-tokens<X>(B|T) — tokens are explicit in the dir name.
     m = re.match(r"^step(?P<n>\d+)-tokens(?P<mag>[\d.]+)(?P<unit>[BT])$", ckpt_dir)
     if m:
         unit = 1e9 if m.group("unit") == "B" else 1e12
-        tokens = float(m.group("mag")) * unit
         return {
             "model_revision": ckpt_dir,
             "step": int(m.group("n")),
-            "tokens": tokens,
+            "tokens": float(m.group("mag")) * unit,
             "mix": "main",
         }
 
     # SmolLM3-checkpoints style: stage<K>-step-<N>  (with hyphen)
-    m = re.match(r"^stage(?P<stage>\d+)-step-(?P<n>\d+)$", ckpt_dir)
+    # Olmo style:                 stage<K>-step<N>(-suffix)?
+    m = re.match(r"^stage(?P<stage>\d+)-step-?(?P<n>\d+)(?:-.*)?$", ckpt_dir)
     if m:
         stage, n = int(m.group("stage")), int(m.group("n"))
-        if stage == 1 and model in STAGE1_TOKENS_PER_STEP:
-            tokens = n * STAGE1_TOKENS_PER_STEP[model]
-        else:
-            tokens = HF_STAGE_TOKENS.get((model, stage))
-            if tokens is None:
-                return None
-            tokens = float(tokens)
-        return {
-            "model_revision": f"stage{stage}-step{n}",
-            "step": n,
-            "tokens": tokens,
-            "mix": f"stage{stage}",
-        }
-
-    # Olmo style: stage<K>-step<N>(-suffix)?
-    m = re.match(r"^stage(?P<stage>\d+)-step(?P<n>\d+)(?:-.*)?$", ckpt_dir)
-    if m:
-        stage, n = int(m.group("stage")), int(m.group("n"))
-        if stage == 1 and model in STAGE1_TOKENS_PER_STEP:
-            tokens = n * STAGE1_TOKENS_PER_STEP[model]
-        else:
-            tokens = HF_STAGE_TOKENS.get((model, stage))
-            if tokens is None:
-                return None
-            tokens = float(tokens)
+        # Try the canonical-branch lookup first (covers the final step of
+        # each stage); fall back to linear interpolation for intermediates.
+        tokens = _branch_tokens(model, ckpt_dir)
+        if tokens is None and stage == 1:
+            per_step = _stage1_tokens_per_step(model)
+            if per_step is not None:
+                tokens = n * per_step
+        if tokens is None:
+            return None
         return {
             "model_revision": ckpt_dir,
             "step": n,
@@ -449,17 +396,20 @@ def parse_ckpt_dir(model_info: dict, ckpt_dir: str | None) -> dict | None:
 
 
 def fetch_multilingual_evals_rows(
-    repo_ids: list[str] | str = MULTILINGUAL_EVALS_REPO,
+    repo_ids: list[str] | str | None = None,
 ) -> list[dict]:
     """List & download every results_*.json in one or more HF dataset repos
     that follow the colleague's `raw/<bench>/<model>/<ckpt>/results_*.json`
     layout. Returns rows in the same shape as build_rows().
 
-    When multiple repos are given, the first repo's path wins on conflict
-    (so order matters: put the more authoritative repo first).
+    `repo_ids` defaults to `RAW_SOURCE_REPOS` (configs/hf_wandb.json). When
+    multiple repos are given, the first repo's path wins on conflict (so
+    order matters: put the more authoritative repo first).
     """
     from huggingface_hub import HfApi, hf_hub_download
 
+    if repo_ids is None:
+        repo_ids = RAW_SOURCE_REPOS
     if isinstance(repo_ids, str):
         repo_ids = [repo_ids]
 
@@ -503,8 +453,13 @@ def fetch_multilingual_evals_rows(
     for (model_dir, ckpt_dir), repo_paths in sorted(
         groups.items(), key=lambda kv: (kv[0][0], kv[0][1] or "")
     ):
-        info = MULTILINGUAL_EVAL_MODELS[model_dir]
-        ckpt_meta = parse_ckpt_dir(info, ckpt_dir)
+        model = MULTILINGUAL_EVAL_MODELS[model_dir]
+        try:
+            entry = get_model(model)
+        except KeyError:
+            skipped.append(f"{model_dir}/{ckpt_dir} (not in models.json)")
+            continue
+        ckpt_meta = parse_ckpt_dir(model, ckpt_dir)
         if ckpt_meta is None:
             skipped.append(f"{model_dir}/{ckpt_dir}")
             continue
@@ -555,10 +510,15 @@ def fetch_multilingual_evals_rows(
         if not scores:
             continue
 
-        params = info["params"]
+        params = entry.get("params")
         tokens = ckpt_meta["tokens"]
         flops = (6 * params * tokens) if (params and tokens) else None
-        full_name = f"{info['model']}-{ckpt_meta['model_revision']}"
+        full_name = f"{model}-{ckpt_meta['model_revision']}"
+        src = entry.get("source")
+        split = split_for_source(src) if src else None
+        if split is None:
+            skipped.append(f"{model_dir}/{ckpt_dir} (source {src!r} not published)")
+            continue
 
         for task, raw_metrics in scores.items():
             if not isinstance(raw_metrics, dict):
@@ -567,19 +527,20 @@ def fetch_multilingual_evals_rows(
             primary_metric, primary_score = pick_primary(metrics)
 
             rows.append({
-                "split": info["split"],
+                "split": split,
                 "task": task,
                 "name": full_name,
-                "model": info["model"],
+                "model": model,
+                "family": entry.get("family"),
                 "model_revision": ckpt_meta["model_revision"],
-                "model_type": info["model_type"],
+                "model_type": "reference_hf",
                 "model_path": model_path,
                 "model_source": model_source,
-                "model_params": float(params),
+                "model_params": float(params) if params else None,
                 "model_tokens": float(tokens) if tokens else None,
                 "flops": float(flops) if flops else None,
                 "step": ckpt_meta["step"],
-                "size": info["size"],
+                "size": entry.get("size"),
                 "mix": ckpt_meta["mix"],
                 "seed": None,
                 "primary_score": primary_score,
@@ -623,6 +584,7 @@ def _arrow_schema():
         ("task", pa.large_string()),
         ("name", pa.large_string()),
         ("model", pa.large_string()),
+        ("family", pa.large_string()),
         ("model_revision", pa.large_string()),
         ("model_type", pa.large_string()),
         ("model_path", pa.large_string()),
@@ -696,6 +658,8 @@ configs:
     data_files:
       - split: pretraining_custom
         path: data/pretraining_custom-*.parquet
+      - split: pretraining_a06
+        path: data/pretraining_a06-*.parquet
       - split: reference_hf
         path: data/reference_hf-*.parquet
 ---
@@ -714,8 +678,9 @@ per-instance predictions.
 
 | Split | Models | Description |
 |---|---|---|
-| `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed1904 | 12 custom megatron pretraining curves at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
-| `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the [`epfl-nlp/multilingual-evals`](https://huggingface.co/datasets/epfl-nlp/multilingual-evals) raw/ folder |
+| `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
+| `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
+| `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
 
 ## Columns
 
@@ -724,6 +689,7 @@ per-instance predictions.
 | `task` | str | lm-eval-harness task name (e.g. `mmlu`, `belebele_eng_Latn`) |
 | `name` | str | Full evaluation NAME — `<model>-<revision>` |
 | `model` | str | Base model name |
+| `family` | str | Cross-size identity (e.g. `apertus-fwEdu30-fw270-seed1904`, `SmolLM3-checkpoints`) — used to group runs of different sizes when computing decision accuracy |
 | `model_revision` | str | `iter<N>`, `stage<K>-step<N>`, or `main` |
 | `model_type` | str | `custom_pretraining` or `reference_hf` |
 | `model_path` | str | Checkpoint path or HF repo id used for evaluation |
@@ -765,12 +731,12 @@ def main():
     p.add_argument("--out-dir", default="/tmp/snr-hf-dataset",
                    help="Local staging directory for parquet + README")
     p.add_argument("--push", action="store_true", help="After writing, upload to HF")
-    p.add_argument("--repo-id", default="multilingual-snr/multilingual-snr-eval-results",
+    p.add_argument("--repo-id", default=REPO_ID,
                    help="HF dataset repo (created if missing)")
     p.add_argument("--private", action="store_true", help="Create private dataset")
     p.add_argument(
         "--include-multilingual-evals", action="store_true",
-        help=f"Also pull rows from {MULTILINGUAL_EVALS_REPO}",
+        help=f"Also pull rows from the raw/ sources {RAW_SOURCE_REPOS}",
     )
     p.add_argument(
         "--multilingual-evals-only", action="store_true",
