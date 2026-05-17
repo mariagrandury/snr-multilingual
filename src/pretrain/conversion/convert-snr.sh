@@ -92,7 +92,13 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
     # — and many seed1797/seed28 canonical iters too). Delegates to the single
     # source-of-truth helper in pretrain_progress.py (--is-valid CLI). python3
     # (not python3.11) because we're inside the eval container.
-    PROGRESS_PY="$(dirname "$SCRIPT_PATH")/../pretrain_progress.py"
+    # Inside sbatch context $0 (and thus SCRIPT_PATH) is the slurm_script copy
+    # under /var/spool/slurmd/, so the script-relative path doesn't resolve.
+    # Prefer env override (set by Mode 2 INNER_EXPORTS), then script-relative
+    # (works for standalone direct invocations), with an absolute fallback.
+    PROGRESS_PY="${PROGRESS_PY:-$(dirname "$SCRIPT_PATH")/../pretrain_progress.py}"
+    [[ -f "$PROGRESS_PY" ]] || \
+        PROGRESS_PY="/iopsstor/scratch/cscs/$USER/snr-multilingual/src/pretrain/pretrain_progress.py"
     if ! python3 "$PROGRESS_PY" --is-valid "$SRC_ITER_DIR"; then
         echo "[convert-snr] SKIP: $SRC_ITER_DIR is not a valid checkpoint"
         exit 0
@@ -213,7 +219,10 @@ fi
     # Refresh the pretraining progress plot — newly-staged HF dirs now show
     # up as yellow via the filesystem check. Runs on the slurm host (outside
     # the container) with the user's snr conda env. Best-effort.
+    # SCRIPT_PATH inside sbatch is the slurm_script copy; same fallback as Mode 1.
     PRETRAIN_PROGRESS="$(dirname "$SCRIPT_PATH")/../pretrain_progress.py"
+    [[ -f "$PRETRAIN_PROGRESS" ]] || \
+        PRETRAIN_PROGRESS="/iopsstor/scratch/cscs/$USER/snr-multilingual/src/pretrain/pretrain_progress.py"
     SNR_PY="$HOME/miniconda3/envs/snr/bin/python"
     if [[ -f "$PRETRAIN_PROGRESS" && -x "$SNR_PY" ]]; then
         "$SNR_PY" "$PRETRAIN_PROGRESS" >/dev/null \
@@ -244,6 +253,7 @@ SUBMIT=0
 PARTITION=""
 TIME=""
 RESERVATION=""
+ALL_ITERS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -251,6 +261,7 @@ while [[ $# -gt 0 ]]; do
     --sizes) shift; while [[ $# -gt 0 && "$1" != --* ]]; do SIZES+=("$1"); shift; done ;;
     --models) MODELS="$2"; shift 2 ;;
     --iters) ITERS="$2"; shift 2 ;;
+    --all-iters) ALL_ITERS=1; shift ;;
     --partition) PARTITION="$2"; shift 2 ;;
     --time) TIME="$2"; shift 2 ;;
     --reservation) RESERVATION="$2"; shift 2 ;;
@@ -330,19 +341,32 @@ PYEOF
 fi
 
 valid_iters_for_cell() {
-    local cell=$1 seed=$2 d out=() iters
-    if [[ "$seed" == "1904" ]]; then
-        iters=("${ITERS_SEED1904[@]}")
-    else
-        iters=("${ITERS_OTHER[@]}")
-    fi
+    local cell=$1 seed=$2 d out=() iters it
     # Validity check delegates to the canonical helper in pretrain_progress.py
     # (--is-valid CLI). Mode 3 runs on the login node → python3.11.
     local progress_py="$(dirname "$SCRIPT_PATH")/../pretrain_progress.py"
-    for it in "${iters[@]}"; do
-        d="$ROOT/$cell/checkpoints/iter_$(printf '%07d' "$it")"
-        python3.11 "$progress_py" --is-valid "$d" 2>/dev/null && out+=("$it")
-    done
+    if [[ $ALL_ITERS -eq 1 ]]; then
+        # Every iter dir on disk that lands on a 2000-step boundary.
+        # Excludes SIGUSR2-triggered intermediate exit dirs (e.g. iter_0049180,
+        # iter_0032619) — those are training-grace artifacts, not canonical
+        # eval/inspection points. --is-valid filters async-save shells.
+        for d in "$ROOT/$cell/checkpoints"/iter_*/; do
+            [[ -d "$d" ]] || continue
+            it=$(basename "$d"); it=${it#iter_}; it=$((10#$it))
+            (( it % 2000 == 0 )) || continue
+            python3.11 "$progress_py" --is-valid "$ROOT/$cell/checkpoints/iter_$(printf '%07d' "$it")" 2>/dev/null && out+=("$it")
+        done
+    else
+        if [[ "$seed" == "1904" ]]; then
+            iters=("${ITERS_SEED1904[@]}")
+        else
+            iters=("${ITERS_OTHER[@]}")
+        fi
+        for it in "${iters[@]}"; do
+            d="$ROOT/$cell/checkpoints/iter_$(printf '%07d' "$it")"
+            python3.11 "$progress_py" --is-valid "$d" 2>/dev/null && out+=("$it")
+        done
+    fi
     echo "${out[*]}"
 }
 
