@@ -61,16 +61,26 @@ for MODEL in "${!MODEL_CHECKPOINTS[@]}"; do
     echo "  Checkpoint iter: $CKPT_ITER (only applies to local Megatron checkpoints)"
 
     # Idempotency: skip the whole sbatch if every task in $TASKS already
-    # has results on disk for this checkpoint. _eval_status.py now wants
-    # either a group name from configs/tasks.json or a comma list; $TASKS
-    # is a file path (set by launch_evaluations.sh), so flatten it here.
+    # has results on disk for this checkpoint. _eval_status.py wants either
+    # a group name from configs/tasks.json or a comma list; $TASKS is a
+    # file path (set by launch_evaluations.sh), so flatten it here.
+    # rc=0 → tasks remaining (submit), rc=1 → all done (SKIP), rc>=2 → crash
+    # (fall through and submit anyway — per CLAUDE.md bug #7, never equate
+    # "filter failure" with "nothing to do").
+    # python3.11 (not python3) because configs.py uses 3.7+ syntax (`from
+    # __future__ import annotations`) and the cluster login node's python3
+    # is 3.6 — would SyntaxError and erroneously trigger the SKIP branch.
     if [[ -n "${TASKS:-}" ]]; then
         TASKS_CSV_LIST=$(grep -v '^\s*#' "$TASKS" | grep -v '^\s*$' | paste -sd, -)
-        if ! python3 scripts/_eval_status.py \
+        python3.11 scripts/_eval_status.py \
                 --name "$MODEL" --tasks "$TASKS_CSV_LIST" \
-                --entity "$WANDB_ENTITY" --project "$WANDB_PROJECT" >/dev/null 2>&1; then
+                --entity "$WANDB_ENTITY" --project "$WANDB_PROJECT" >/dev/null 2>&1
+        rc=$?
+        if (( rc == 1 )); then
             echo "  SKIP: all tasks already have results for $MODEL"
             continue
+        elif (( rc != 0 )); then
+            echo "  WARN: _eval_status.py crashed (rc=$rc) — submitting anyway"
         fi
     fi
 
