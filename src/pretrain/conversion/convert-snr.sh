@@ -270,7 +270,11 @@ TS=$(date +%Y%m%d-%H%M%S)
 # the path for non-custom-sweep models such as the a06 main runs.
 if [[ -n "$MODELS" ]]; then
     SRC_DIR=$(cd "$(dirname "$SCRIPT_PATH")/../.." && pwd)   # .../src
-    plan="$PLAN_DIR/plan-models-${TS}.txt"
+    # Include the models list in the filename so simultaneous submissions for
+    # different models don't collide on the plan path (which is captured in
+    # the sbatch --export and read by the job at run time).
+    _models_slug=${MODELS//,/_}
+    plan="$PLAN_DIR/plan-models-${_models_slug}-${TS}.txt"
     python3.11 - "$SRC_DIR" "$MODELS" "$ITERS" > "$plan" <<'PYEOF'
 import glob, os, sys
 src_dir, models_arg, iters_arg = sys.argv[1], sys.argv[2], sys.argv[3]

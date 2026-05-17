@@ -3067,7 +3067,8 @@
       "params": 1000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
-        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-1b-21-nodes/checkpoints/"
+        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-1b-21-nodes/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus3-1b-21-nodes/"
       },
       "stages": {
         "pretraining": {
@@ -3155,7 +3156,8 @@
       "params": 3000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
-        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-3b-64-nodes/checkpoints/"
+        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-3b-64-nodes/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus3-3b-64-nodes/"
       },
       "stages": {
         "pretraining": {

@@ -62,7 +62,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 REPO_DIR=$PWD
-HF_BASE=/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints
+# Per-cell hf_local dir is no longer hardcoded — each model's converted-HF
+# checkpoint dir is read from configs/models.json `backends.hf_local`, so
+# custom apertus AND a06 (and any other model) work without a name-regex.
+# Pick the a06 pool with `POOL=pretraining_a06 bash scripts/launch_pretraining_hf.sh`.
 POOL=${POOL:-seeds_28_1797_1904}        # default pool — all Apertus custom seeds
 TASKS_GROUP=${TASKS_GROUP:-pretraining_full}
 CSV=$REPO_DIR/snr_progress.csv
@@ -79,14 +82,33 @@ if (( REFRESH )); then
 fi
 [[ -f "$CSV" ]] || { echo "ERROR: $CSV missing (run without --no-refresh)" >&2; exit 1; }
 
-# Per-size config. TP/PP picked per CLAUDE.md bug 14 (vLLM kv_heads constraint).
-tp_for()        { case "$1" in 175M) echo 4;; 350M) echo 1;; 600M) echo 2;; 1B) echo 1;; esac; }
-pp_for()        { case "$1" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; esac; }
+# TP/PP picked per CLAUDE.md bug 14 (vLLM kv_heads constraint).
+# Custom apertus kv heads: 175M=4, 350M=5, 600M=6, 1B=7.
+# a06 apertus3-1b-21-nodes kv=8 (TP=4 OK, all 4 GPUs via TP).
+# a06 apertus3-3b-64-nodes kv unknown until first conversion lands — safe TP=1 PP=4.
+# Per-model overrides take precedence over the size-based defaults.
+tp_for() {
+    local size=$1 model=${2:-}
+    case "$model" in
+        apertus3-1b-21-nodes) echo 4; return;;
+        apertus3-3b-64-nodes) echo 1; return;;
+    esac
+    case "$size" in 175M) echo 4;; 350M) echo 1;; 600M) echo 2;; 1B) echo 1;; *) echo 1;; esac
+}
+pp_for() {
+    local size=$1 model=${2:-}
+    case "$model" in
+        apertus3-1b-21-nodes) echo 1; return;;
+        apertus3-3b-64-nodes) echo 4; return;;
+    esac
+    case "$size" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; *) echo 1;; esac
+}
 # Per-size per-task minute estimates (re-fit 2026-05-10 after the iter50000
 # batch hit 13/36 TIMEOUT on the new 52-task pretraining-full mix). The flat
 # 0.5 min/task estimate worked for 175M but undershot for larger sizes where
-# generation cost grows: 1B is ~3x slower than 175M, 600M/350M ~2x.
-per_task_min()  { case "$1" in 175M) echo 1.0;; 350M) echo 1.0;; 600M) echo 1.0;; 1B) echo 1.5;; esac; }
+# generation cost grows: 1B is ~3x slower than 175M, 600M/350M ~2x. 3B is
+# extrapolated (no a06 vLLM eval observed yet).
+per_task_min()  { case "$1" in 175M) echo 1.0;; 350M) echo 1.0;; 600M) echo 1.0;; 1B) echo 1.5;; 3B) echo 2.5;; *) echo 1.5;; esac; }
 COLD_START_MIN=15   # pip install + vLLM init + dataset load (offline cache hit)
 MIN_WALL_MIN=25     # floor — even 1-task jobs need vLLM init time
 CAP_MIN=719         # 11:59:00 — normal-partition wall cap
@@ -104,31 +126,46 @@ walltime_for() {
 SBATCH_RES_ARGS=()
 [[ -n "$RESERVATION" ]] && SBATCH_RES_ARGS=(--reservation="$RESERVATION")
 
-# Submit order: iter desc (50k → 2k), size desc (1B → 175M). 1B jobs are the
-# longest so they hit the queue first; 175M jobs backfill while the big ones
-# wait. Sort the CSV rows accordingly via awk.
+# Resolve model / size / hf_local-checkpoint dir per CSV row from
+# configs/models.json — no name-regex parsing, so custom apertus AND a06
+# (and any other model with `backends.hf_local`) both work. Emits the
+# original 6 CSV columns plus model, size, hf_base, iter, \x1f-delimited
+# (non-whitespace separator so empty fields like active_jobids survive
+# the bash `read`). Sort: iter desc (380k → 2k), size desc (3B → 175M).
 SORTED=$(awk -F, 'NR>1 { print $0 }' "$CSV" | python3.11 -c "
 import sys, csv
-rows = list(csv.reader(sys.stdin))
-size_rank = {'1B': 0, '600M': 1, '350M': 2, '175M': 3}
-def key(r):
-    name = r[0]
-    # apertus-{size}-fwEdu{edu}-fw2{fw2}-seed{seed}-iter{iter}
-    parts = name.split('-')
-    size = parts[1]
-    iter_n = int(parts[-1].replace('iter', ''))
-    return (-iter_n, size_rank.get(size, 9))
-rows.sort(key=key)
-for r in rows:
-    # Re-quote the remaining-task field (column 5) since it embeds commas.
-    print('\t'.join([r[0], r[1], r[2], r[3], r[4], r[5]]))
+sys.path.insert(0, 'scripts/utils')
+from configs import get_model
+size_rank = {'3B': 0, '1B': 1, '600M': 2, '350M': 3, '175M': 4}
+out = []
+for r in csv.reader(sys.stdin):
+    if len(r) < 6:
+        continue
+    model, sep, it = r[0].rpartition('-iter')
+    if not sep or not it.isdigit():
+        print('  WARN: name is not <model>-iter<N>: ' + r[0], file=sys.stderr)
+        continue
+    try:
+        e = get_model(model)
+    except KeyError:
+        print('  WARN: model not in models.json: ' + model, file=sys.stderr)
+        continue
+    hf = (e.get('backends') or {}).get('hf_local')
+    if not hf:
+        print('  WARN: no hf_local backend for ' + model, file=sys.stderr)
+        continue
+    out.append((r, model, e['size'], hf.rstrip('/'), int(it)))
+out.sort(key=lambda x: (-x[4], size_rank.get(x[2], 9)))
+for r, model, size, hf, it in out:
+    print('\x1f'.join([r[0], r[1], r[2], r[3], r[4], r[5],
+                       model, size, hf, str(it)]))
 ")
 
 submitted=0; skipped_active=0; skipped_done=0; skipped_no_ckpt=0; skipped_filter=0
 echo "[hf] partition=$PARTITION dry_run=$DRY_RUN filter=${FILTER:-<none>}"
 echo ""
 
-while IFS=$'\t' read -r name status done total remaining active_jobids; do
+while IFS=$'\x1f' read -r name status done total remaining active_jobids model size hf_base iter; do
     [[ -z "$name" ]] && continue
     if [[ -n "$FILTER" && "$name" != *"$FILTER"* ]]; then
         skipped_filter=$((skipped_filter + 1)); continue
@@ -141,24 +178,16 @@ while IFS=$'\t' read -r name status done total remaining active_jobids; do
         skipped_active=$((skipped_active + 1)); continue
     fi
 
-    # Parse size + cell + iter from the canonical NAME format.
-    # apertus-{size}-fwEdu{edu}-fw2{fw2}-seed{seed}-iter{iter}
-    if [[ "$name" =~ ^(apertus-([0-9]+[MB])-fwEdu[0-9]+-fw2[0-9]+-seed[0-9]+)-iter([0-9]+)$ ]]; then
-        cell=${BASH_REMATCH[1]}
-        size=${BASH_REMATCH[2]}
-        iter=${BASH_REMATCH[3]}
-    else
-        echo "  WARN: unparseable name: $name"; continue
-    fi
-
-    iter_dir=$(printf "%s/%s/iter_%07d" "$HF_BASE" "$cell" "$iter")
+    # model / size / hf_base / iter were resolved from configs/models.json
+    # by the python sort block above — works for custom apertus + a06 alike.
+    iter_dir=$(printf "%s/iter_%07d" "$hf_base" "$iter")
     if [[ ! -f "$iter_dir/config.json" ]] || ! ls "$iter_dir"/model.safetensors* >/dev/null 2>&1; then
         skipped_no_ckpt=$((skipped_no_ckpt + 1)); continue
     fi
 
     n_remaining=$(awk -F, '{print NF}' <<<"$remaining")
-    tp=$(tp_for "$size")
-    pp=$(pp_for "$size")
+    tp=$(tp_for "$size" "$model")
+    pp=$(pp_for "$size" "$model")
     wall=$(walltime_for "$size" "$n_remaining")
 
     if (( DRY_RUN )); then
