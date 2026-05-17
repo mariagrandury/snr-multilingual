@@ -248,8 +248,9 @@ def a06_pretrain_entries() -> dict:
                     "dense_tail": [320000, 340000, 360000, 370000, 380000],
                     "10_ckpts": [20000, 60000, 100000, 140000, 180000,
                                  220000, 260000, 300000, 340000, 380000],
-                    "da_ckpts": [20000, 60000, 100000, 140000, 180000,
-                                 220000, 260000, 300000, 340000, 380000],
+                    # da picks at 10%, 33%, 50%, 66%, 100% of training
+                    # (× 380k, snapped to the 20k iter grid).
+                    "da_ckpts": [40000, 120000, 200000, 260000, 380000],
                 }),
             },
         },
@@ -270,8 +271,9 @@ def a06_pretrain_entries() -> dict:
                     "dense_tail": [135000, 150000, 155000, 160000, 165000],
                     "10_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
                                  105000, 120000, 135000, 150000, 165000],
-                    "da_ckpts": [15000, 30000, 45000, 60000, 75000, 90000,
-                                 105000, 120000, 135000, 150000, 165000],
+                    # da picks at 10%, 33%, 50%, 66%, 100% of training
+                    # (× 165k, snapped to the 15k iter grid).
+                    "da_ckpts": [15000, 60000, 90000, 105000, 165000],
                 }),
             },
         },
@@ -507,9 +509,40 @@ def hf_entries() -> dict:
     return out
 
 
-# --- Posttraining Megatron (distillation) -----------------------------------
-
+# --- Distillation (treated as pretraining for SNR-style eval) ---------------
+#
+# Megatron checkpoints from the swissai distillation runs (ap-from8b-TOP256).
+# Both models are trained to iter 800000 with checkpoints every 20000 iters.
+# 0.6b starts at iter 20000 (40 regular iters); 1b starts at iter 120000
+# (35 regular iters — the early ones aren't on disk). Both have a handful of
+# non-canonical save points (e.g. iter_0125067) that we ignore for eval.
 DISTILL_BASE = "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill"
+
+DISTILL_SCHEDULES = {
+    "apertus-0.6b-from8b-TOP256-long": {
+        # 40 iters in [20000, 800000] step 20000
+        "final": 800000,
+        "all": list(range(20000, 800001, 20000)),
+        "dense_tail": [720000, 740000, 760000, 780000, 800000],
+        # 10 evenly spaced, every 80k from 80k to 800k
+        "10_ckpts": [80000, 160000, 240000, 320000, 400000, 480000,
+                     560000, 640000, 720000, 800000],
+        # da picks at 10%, 33%, 50%, 66%, 100% of training (snapped to 20k grid)
+        "da_ckpts": [80000, 260000, 400000, 520000, 800000],
+    },
+    "apertus-1b-from8b-TOP256-long": {
+        # 35 iters in [120000, 800000] step 20000
+        "final": 800000,
+        "all": list(range(120000, 800001, 20000)),
+        "dense_tail": [720000, 740000, 760000, 780000, 800000],
+        # 10 evenly spaced from 120k to 800k (every ~75k, snapped to 20k grid)
+        "10_ckpts": [120000, 160000, 240000, 320000, 400000, 480000,
+                     560000, 640000, 720000, 800000],
+        # da picks at 10%, 33%, 50%, 66%, 100% of training (snapped to 20k grid);
+        # 10% would be 80k but 1b's earliest on-disk iter is 120k, so use 120k.
+        "da_ckpts": [120000, 260000, 400000, 520000, 800000],
+    },
+}
 
 
 def distill_entries() -> dict:
@@ -527,10 +560,11 @@ def distill_entries() -> dict:
             "params": params,
             "checkpoint_kind": "megatron_iter",
             "backends": {
-                "megatron": f"{DISTILL_BASE}/{dir_name}/checkpoints/"
+                "megatron": f"{DISTILL_BASE}/{dir_name}/checkpoints/",
+                "hf_local": f"{HF_LOCAL_BASE}/{name}/",
             },
             "stages": {
-                "posttraining": _meg_stage({"final": None, "all": []}),
+                "pretraining": _meg_stage(DISTILL_SCHEDULES[name]),
             },
         }
         for name, size, params, dir_name in rows
@@ -587,6 +621,13 @@ POOLS = {
         "description": "Apertus3 a06 main-run checkpoints (1B and 3B).",
         "stage": "pretraining",
         "members": [{"source": "snr-pretraining-a06"}],
+        "include_external": False,
+    },
+    "pretraining_distill": {
+        "description": "Distillation checkpoints (ap-from8b-TOP256, 0.6B + 1B). "
+                       "Treated as pretraining-style runs for SNR evaluation.",
+        "stage": "pretraining",
+        "members": [{"source": "distillation"}],
         "include_external": False,
     },
     "pretraining_hf_reference": {

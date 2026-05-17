@@ -3119,26 +3119,17 @@
               380000
             ],
             "da_ckpts": [
-              20000,
-              60000,
-              100000,
-              140000,
-              180000,
-              220000,
+              40000,
+              120000,
+              200000,
               260000,
-              300000,
-              340000,
               380000
             ],
             "full_eval": [
-              20000,
-              60000,
-              100000,
-              140000,
-              180000,
-              220000,
+              40000,
+              120000,
+              200000,
               260000,
-              300000,
               320000,
               340000,
               360000,
@@ -3203,26 +3194,16 @@
             ],
             "da_ckpts": [
               15000,
-              30000,
-              45000,
               60000,
-              75000,
               90000,
               105000,
-              120000,
-              135000,
-              150000,
               165000
             ],
             "full_eval": [
               15000,
-              30000,
-              45000,
               60000,
-              75000,
               90000,
               105000,
-              120000,
               135000,
               150000,
               155000,
@@ -4549,20 +4530,95 @@
       "params": 600000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
-        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap0.6b-from8b-TOP256-long/checkpoints/"
+        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap0.6b-from8b-TOP256-long/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-0.6b-from8b-TOP256-long/"
       },
       "stages": {
-        "posttraining": {
-          "tokens": null,
-          "num_iters": null,
+        "pretraining": {
+          "tokens": 1651507200000,
+          "num_iters": 800000,
           "tokens_per_iter": 2064384,
           "checkpoints": {
-            "final": null,
-            "all": [],
-            "dense_tail": [],
-            "10_ckpts": [],
-            "da_ckpts": [],
-            "full_eval": []
+            "final": 800000,
+            "all": [
+              20000,
+              40000,
+              60000,
+              80000,
+              100000,
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              380000,
+              400000,
+              420000,
+              440000,
+              460000,
+              480000,
+              500000,
+              520000,
+              540000,
+              560000,
+              580000,
+              600000,
+              620000,
+              640000,
+              660000,
+              680000,
+              700000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "dense_tail": [
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "10_ckpts": [
+              80000,
+              160000,
+              240000,
+              320000,
+              400000,
+              480000,
+              560000,
+              640000,
+              720000,
+              800000
+            ],
+            "da_ckpts": [
+              80000,
+              260000,
+              400000,
+              520000,
+              800000
+            ],
+            "full_eval": [
+              80000,
+              260000,
+              400000,
+              520000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ]
           }
         }
       }
@@ -4574,20 +4630,90 @@
       "params": 1000000000,
       "checkpoint_kind": "megatron_iter",
       "backends": {
-        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap1b-from8b-TOP256-long/checkpoints/"
+        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap1b-from8b-TOP256-long/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1b-from8b-TOP256-long/"
       },
       "stages": {
-        "posttraining": {
-          "tokens": null,
-          "num_iters": null,
+        "pretraining": {
+          "tokens": 1651507200000,
+          "num_iters": 800000,
           "tokens_per_iter": 2064384,
           "checkpoints": {
-            "final": null,
-            "all": [],
-            "dense_tail": [],
-            "10_ckpts": [],
-            "da_ckpts": [],
-            "full_eval": []
+            "final": 800000,
+            "all": [
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              380000,
+              400000,
+              420000,
+              440000,
+              460000,
+              480000,
+              500000,
+              520000,
+              540000,
+              560000,
+              580000,
+              600000,
+              620000,
+              640000,
+              660000,
+              680000,
+              700000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "dense_tail": [
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "10_ckpts": [
+              120000,
+              160000,
+              240000,
+              320000,
+              400000,
+              480000,
+              560000,
+              640000,
+              720000,
+              800000
+            ],
+            "da_ckpts": [
+              120000,
+              260000,
+              400000,
+              520000,
+              800000
+            ],
+            "full_eval": [
+              120000,
+              260000,
+              400000,
+              520000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ]
           }
         }
       }
@@ -4734,6 +4860,16 @@
       "members": [
         {
           "source": "snr-pretraining-a06"
+        }
+      ],
+      "include_external": false
+    },
+    "pretraining_distill": {
+      "description": "Distillation checkpoints (ap-from8b-TOP256, 0.6B + 1B). Treated as pretraining-style runs for SNR evaluation.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "distillation"
         }
       ],
       "include_external": false

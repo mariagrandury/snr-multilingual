@@ -86,12 +86,15 @@ fi
 # Custom apertus kv heads: 175M=4, 350M=5, 600M=6, 1B=7.
 # a06 apertus3-1b-21-nodes kv=8 (TP=4 OK, all 4 GPUs via TP).
 # a06 apertus3-3b-64-nodes kv unknown until first conversion lands — safe TP=1 PP=4.
+# Distill ap-from8b-TOP256: 0.6b kv=4, 1b kv=8 — both fit TP=4 cleanly.
 # Per-model overrides take precedence over the size-based defaults.
 tp_for() {
     local size=$1 model=${2:-}
     case "$model" in
         apertus3-1b-21-nodes) echo 4; return;;
         apertus3-3b-64-nodes) echo 1; return;;
+        apertus-0.6b-from8b-TOP256-long) echo 4; return;;
+        apertus-1b-from8b-TOP256-long)   echo 4; return;;
     esac
     case "$size" in 175M) echo 4;; 350M) echo 1;; 600M) echo 2;; 1B) echo 1;; *) echo 1;; esac
 }
@@ -100,6 +103,8 @@ pp_for() {
     case "$model" in
         apertus3-1b-21-nodes) echo 1; return;;
         apertus3-3b-64-nodes) echo 4; return;;
+        apertus-0.6b-from8b-TOP256-long) echo 1; return;;
+        apertus-1b-from8b-TOP256-long)   echo 1; return;;
     esac
     case "$size" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; *) echo 1;; esac
 }
