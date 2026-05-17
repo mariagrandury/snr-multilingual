@@ -1,0 +1,25 @@
+{
+  "languages": {
+    "ar": {"language": "Arabic", "lang_family": "Semitic", "script": "Arabic", "iso2": "ar", "iso3": "ara"},
+    "de": {"language": "German", "lang_family": "Germanic", "script": "Latin", "iso2": "de", "iso3": "deu"},
+    "en": {"language": "English", "lang_family": "Germanic", "script": "Latin", "iso2": "en", "iso3": "eng"},
+    "es": {"language": "Spanish", "lang_family": "Romance", "script": "Latin", "iso2": "es", "iso3": "spa"},
+    "eu": {"language": "Basque", "lang_family": "Isolate", "script": "Latin", "iso2": "eu", "iso3": "eus"},
+    "fr": {"language": "French", "lang_family": "Romance", "script": "Latin", "iso2": "fr", "iso3": "fra"},
+    "hi": {"language": "Hindi", "lang_family": "Indo-Aryan", "script": "Devanagari", "iso2": "hi", "iso3": "hin"},
+    "ja": {"language": "Japanese", "lang_family": "Japonic", "script": "Japanese", "iso2": "ja", "iso3": "jpn"},
+    "ko": {"language": "Korean", "lang_family": "Koreanic", "script": "Hangul", "iso2": "ko", "iso3": "kor"},
+    "pt": {"language": "Portuguese", "lang_family": "Romance", "script": "Latin", "iso2": "pt", "iso3": "por"},
+    "ru": {"language": "Russian", "lang_family": "Slavic", "script": "Cyrillic", "iso2": "ru", "iso3": "rus"},
+    "sw": {"language": "Swahili", "lang_family": "Bantu", "script": "Latin", "iso2": "sw", "iso3": "swa"},
+    "te": {"language": "Telugu", "lang_family": "Dravidian", "script": "Telugu", "iso2": "te", "iso3": "tel"},
+    "th": {"language": "Thai", "lang_family": "Tai", "script": "Thai", "iso2": "th", "iso3": "tha"},
+    "uk": {"language": "Ukrainian", "lang_family": "Slavic", "script": "Cyrillic", "iso2": "uk", "iso3": "ukr"},
+    "vi": {"language": "Vietnamese", "lang_family": "Austroasiatic", "script": "Latin", "iso2": "vi", "iso3": "vie"},
+    "zh": {"language": "Chinese", "lang_family": "Sinitic", "script": "Han", "iso2": "zh", "iso3": "zho"}
+  },
+  "groups": {
+    "generalization": ["de", "fr", "pt", "sw", "te", "uk"],
+    "main": ["ar", "en", "es", "eu", "hi", "ja", "ko", "ru", "th", "vi", "zh"]
+  }
+}

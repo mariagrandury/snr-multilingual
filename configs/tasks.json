@@ -114,7 +114,7 @@
     },
     "arabic_leaderboard_complete": {
       "language": "ar",
-      "benchmark": "arabic_leaderboard_complete",
+      "benchmark": "arabic",
       "stages": [
         "pretraining"
       ]
@@ -180,6 +180,48 @@
       "benchmark": "arc",
       "stages": [
         "pretraining"
+      ]
+    },
+    "aya_redteaming_arabic": {
+      "language": "ar",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aya_redteaming_english": {
+      "language": "en",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aya_redteaming_french": {
+      "language": "fr",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aya_redteaming_hindi": {
+      "language": "hi",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aya_redteaming_russian": {
+      "language": "ru",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "aya_redteaming_spanish": {
+      "language": "es",
+      "benchmark": "aya_redteaming",
+      "stages": [
+        "posttraining"
       ]
     },
     "bbh": {
@@ -254,7 +296,7 @@
     },
     "belebele_tel_Telu": {
       "language": "te",
-      "benchmark": "belebele_tel_Telu",
+      "benchmark": "belebele",
       "stages": [
         "pretraining"
       ]
@@ -287,9 +329,58 @@
         "pretraining"
       ]
     },
-    "blend": {
-      "language": "multi",
-      "benchmark": "blend",
+    "blend_algeria_sample": {
+      "language": "ar",
+      "benchmark": "blend_algeria_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_china_sample": {
+      "language": "zh",
+      "benchmark": "blend_china_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_mexico_sample": {
+      "language": "es",
+      "benchmark": "blend_mexico_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_north_korea_sample": {
+      "language": "ko",
+      "benchmark": "blend_north_korea_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_northern_nigeria_sample": {
+      "language": "en",
+      "benchmark": "blend_northern_nigeria_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_south_korea_sample": {
+      "language": "ko",
+      "benchmark": "blend_south_korea_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_spain_sample": {
+      "language": "es",
+      "benchmark": "blend_spain_sample",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "blend_us_sample": {
+      "language": "en",
+      "benchmark": "blend_us_sample",
       "stages": [
         "posttraining"
       ]
@@ -315,9 +406,352 @@
         "pretraining"
       ]
     },
-    "cultural_bench": {
-      "language": "??",
-      "benchmark": "cultural_bench",
+    "cultural_bench_easy_argentina": {
+      "language": "es",
+      "benchmark": "cultural_bench_easy_argentina",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_australia": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_australia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_brazil": {
+      "language": "pt",
+      "benchmark": "cultural_bench_easy_brazil",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_canada": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_canada",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_chile": {
+      "language": "es",
+      "benchmark": "cultural_bench_easy_chile",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_china": {
+      "language": "zh",
+      "benchmark": "cultural_bench_easy_china",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_france": {
+      "language": "fr",
+      "benchmark": "cultural_bench_easy_france",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_germany": {
+      "language": "de",
+      "benchmark": "cultural_bench_easy_germany",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_india": {
+      "language": "hi",
+      "benchmark": "cultural_bench_easy_india",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_japan": {
+      "language": "ja",
+      "benchmark": "cultural_bench_easy_japan",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_mexico": {
+      "language": "es",
+      "benchmark": "cultural_bench_easy_mexico",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_morocco": {
+      "language": "ar",
+      "benchmark": "cultural_bench_easy_morocco",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_nigeria": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_nigeria",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_peru": {
+      "language": "es",
+      "benchmark": "cultural_bench_easy_peru",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_russia": {
+      "language": "ru",
+      "benchmark": "cultural_bench_easy_russia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_saudi_arabia": {
+      "language": "ar",
+      "benchmark": "cultural_bench_easy_saudi_arabia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_south_africa": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_south_africa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_south_korea": {
+      "language": "ko",
+      "benchmark": "cultural_bench_easy_south_korea",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_spain": {
+      "language": "es",
+      "benchmark": "cultural_bench_easy_spain",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_thailand": {
+      "language": "th",
+      "benchmark": "cultural_bench_easy_thailand",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_ukraine": {
+      "language": "uk",
+      "benchmark": "cultural_bench_easy_ukraine",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_united_kingdom": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_united_kingdom",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_united_states": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_united_states",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_vietnam": {
+      "language": "vi",
+      "benchmark": "cultural_bench_easy_vietnam",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_easy_zimbabwe": {
+      "language": "en",
+      "benchmark": "cultural_bench_easy_zimbabwe",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_argentina": {
+      "language": "es",
+      "benchmark": "cultural_bench_hard_argentina",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_australia": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_australia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_brazil": {
+      "language": "pt",
+      "benchmark": "cultural_bench_hard_brazil",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_canada": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_canada",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_chile": {
+      "language": "es",
+      "benchmark": "cultural_bench_hard_chile",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_china": {
+      "language": "zh",
+      "benchmark": "cultural_bench_hard_china",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_france": {
+      "language": "fr",
+      "benchmark": "cultural_bench_hard_france",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_germany": {
+      "language": "de",
+      "benchmark": "cultural_bench_hard_germany",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_india": {
+      "language": "hi",
+      "benchmark": "cultural_bench_hard_india",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_japan": {
+      "language": "ja",
+      "benchmark": "cultural_bench_hard_japan",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_mexico": {
+      "language": "es",
+      "benchmark": "cultural_bench_hard_mexico",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_morocco": {
+      "language": "ar",
+      "benchmark": "cultural_bench_hard_morocco",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_nigeria": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_nigeria",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_peru": {
+      "language": "es",
+      "benchmark": "cultural_bench_hard_peru",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_russia": {
+      "language": "ru",
+      "benchmark": "cultural_bench_hard_russia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_saudi_arabia": {
+      "language": "ar",
+      "benchmark": "cultural_bench_hard_saudi_arabia",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_south_africa": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_south_africa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_south_korea": {
+      "language": "ko",
+      "benchmark": "cultural_bench_hard_south_korea",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_spain": {
+      "language": "es",
+      "benchmark": "cultural_bench_hard_spain",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_thailand": {
+      "language": "th",
+      "benchmark": "cultural_bench_hard_thailand",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_ukraine": {
+      "language": "uk",
+      "benchmark": "cultural_bench_hard_ukraine",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_united_kingdom": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_united_kingdom",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_united_states": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_united_states",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_vietnam": {
+      "language": "vi",
+      "benchmark": "cultural_bench_hard_vietnam",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "cultural_bench_hard_zimbabwe": {
+      "language": "en",
+      "benchmark": "cultural_bench_hard_zimbabwe",
       "stages": [
         "posttraining"
       ]
@@ -330,11 +764,45 @@
       ]
     },
     "global_mmlu": {
-      "language": "??",
+      "language": "multi",
       "benchmark": "global_mmlu",
       "stages": [
-        "posttraining",
         "pretraining"
+      ]
+    },
+    "global_mmlu_ar_gen_0shot": {
+      "language": "ar",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_de_gen_0shot": {
+      "language": "de",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_en_gen_0shot": {
+      "language": "en",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_es_gen_0shot": {
+      "language": "es",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_fr_gen_0shot": {
+      "language": "fr",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
       ]
     },
     "global_mmlu_full_ar": {
@@ -405,6 +873,48 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
+      ]
+    },
+    "global_mmlu_hi_gen_0shot": {
+      "language": "hi",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_ja_gen_0shot": {
+      "language": "ja",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_ko_gen_0shot": {
+      "language": "ko",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_pt_gen_0shot": {
+      "language": "pt",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_sw_gen_0shot": {
+      "language": "sw",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "global_mmlu_zh_gen_0shot": {
+      "language": "zh",
+      "benchmark": "global_mmlu",
+      "stages": [
+        "posttraining"
       ]
     },
     "global_piqa_completions_arb_arab": {
@@ -517,13 +1027,22 @@
       "language": "ar",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
+      ]
+    },
+    "hellaswag_de": {
+      "language": "de",
+      "benchmark": "hellaswag",
+      "stages": [
+        "posttraining"
       ]
     },
     "hellaswag_es": {
       "language": "es",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
       ]
     },
@@ -531,19 +1050,28 @@
       "language": "eu",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
+      ]
+    },
+    "hellaswag_fr": {
+      "language": "fr",
+      "benchmark": "hellaswag",
+      "stages": [
+        "posttraining"
       ]
     },
     "hellaswag_hi": {
       "language": "hi",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
       ]
     },
-    "hellaswag_multilingual": {
-      "language": "??",
-      "benchmark": "hellaswag_multilingual",
+    "hellaswag_pt": {
+      "language": "pt",
+      "benchmark": "hellaswag",
       "stages": [
         "posttraining"
       ]
@@ -552,13 +1080,29 @@
       "language": "ru",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
+      ]
+    },
+    "hellaswag_te": {
+      "language": "te",
+      "benchmark": "hellaswag",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "hellaswag_uk": {
+      "language": "uk",
+      "benchmark": "hellaswag",
+      "stages": [
+        "posttraining"
       ]
     },
     "hellaswag_vi": {
       "language": "vi",
       "benchmark": "hellaswag",
       "stages": [
+        "posttraining",
         "pretraining"
       ]
     },
@@ -592,294 +1136,294 @@
     },
     "include_base_44_albanian": {
       "language": "??",
-      "benchmark": "include_base_44_albanian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_arabic": {
       "language": "ar",
-      "benchmark": "include_base_44_arabic",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_armenian": {
       "language": "??",
-      "benchmark": "include_base_44_armenian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_azerbaijani": {
       "language": "??",
-      "benchmark": "include_base_44_azerbaijani",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_basque": {
-      "language": "??",
-      "benchmark": "include_base_44_basque",
+      "language": "eu",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_belarusian": {
       "language": "??",
-      "benchmark": "include_base_44_belarusian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_bengali": {
       "language": "??",
-      "benchmark": "include_base_44_bengali",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_bulgarian": {
       "language": "??",
-      "benchmark": "include_base_44_bulgarian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_chinese": {
-      "language": "??",
-      "benchmark": "include_base_44_chinese",
+      "language": "zh",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_croatian": {
       "language": "??",
-      "benchmark": "include_base_44_croatian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_dutch": {
       "language": "??",
-      "benchmark": "include_base_44_dutch",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_finnish": {
       "language": "??",
-      "benchmark": "include_base_44_finnish",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_french": {
       "language": "fr",
-      "benchmark": "include_base_44_french",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_georgian": {
       "language": "??",
-      "benchmark": "include_base_44_georgian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_german": {
       "language": "de",
-      "benchmark": "include_base_44_german",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_greek": {
       "language": "??",
-      "benchmark": "include_base_44_greek",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_hebrew": {
       "language": "??",
-      "benchmark": "include_base_44_hebrew",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_hindi": {
       "language": "hi",
-      "benchmark": "include_base_44_hindi",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_hungarian": {
       "language": "??",
-      "benchmark": "include_base_44_hungarian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_indonesian": {
       "language": "??",
-      "benchmark": "include_base_44_indonesian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_italian": {
       "language": "it",
-      "benchmark": "include_base_44_italian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_japanese": {
       "language": "jp",
-      "benchmark": "include_base_44_japanese",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_kazakh": {
       "language": "??",
-      "benchmark": "include_base_44_kazakh",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_korean": {
       "language": "ko",
-      "benchmark": "include_base_44_korean",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_lithuanian": {
       "language": "??",
-      "benchmark": "include_base_44_lithuanian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_malay": {
       "language": "??",
-      "benchmark": "include_base_44_malay",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_malayalam": {
       "language": "??",
-      "benchmark": "include_base_44_malayalam",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_nepali": {
       "language": "??",
-      "benchmark": "include_base_44_nepali",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_north_macedonian": {
       "language": "??",
-      "benchmark": "include_base_44_north_macedonian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_persian": {
       "language": "??",
-      "benchmark": "include_base_44_persian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_polish": {
       "language": "??",
-      "benchmark": "include_base_44_polish",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_portuguese": {
       "language": "pt",
-      "benchmark": "include_base_44_portuguese",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_russian": {
       "language": "ru",
-      "benchmark": "include_base_44_russian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_serbian": {
       "language": "??",
-      "benchmark": "include_base_44_serbian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_spanish": {
       "language": "es",
-      "benchmark": "include_base_44_spanish",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_tagalog": {
       "language": "??",
-      "benchmark": "include_base_44_tagalog",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_tamil": {
       "language": "??",
-      "benchmark": "include_base_44_tamil",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_telugu": {
-      "language": "??",
-      "benchmark": "include_base_44_telugu",
+      "language": "te",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_turkish": {
-      "language": "??",
-      "benchmark": "include_base_44_turkish",
+      "language": "tr",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_ukrainian": {
       "language": "uk",
-      "benchmark": "include_base_44_ukrainian",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_uzbek": {
       "language": "??",
-      "benchmark": "include_base_44_uzbek",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_vietnamese": {
       "language": "vi",
-      "benchmark": "include_base_44_vietnamese",
+      "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
@@ -989,6 +1533,13 @@
         "midtraining"
       ]
     },
+    "mgsm_en_cot": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "mlqa_ar_ar": {
       "language": "ar",
       "benchmark": "mlqa",
@@ -1041,6 +1592,13 @@
     "mmlu_flan_cot_zeroshot": {
       "language": "en",
       "benchmark": "mmlu_flan_cot_zeroshot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "multi-if": {
+      "language": "multi",
+      "benchmark": "multi-if",
       "stages": [
         "posttraining"
       ]
@@ -1150,6 +1708,48 @@
         "pretraining"
       ]
     },
+    "polyglotoxicitypromptsllama_small_english": {
+      "language": "en",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "polyglotoxicitypromptsllama_small_french": {
+      "language": "fr",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "polyglotoxicitypromptsllama_small_german": {
+      "language": "de",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "polyglotoxicitypromptsllama_small_hindi": {
+      "language": "hi",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "polyglotoxicitypromptsllama_small_portuguese": {
+      "language": "pt",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "polyglotoxicitypromptsllama_small_spanish": {
+      "language": "es",
+      "benchmark": "polyglotoxicitypromptsllama_small",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "social_iqa": {
       "language": "en",
       "benchmark": "social_iqa",
@@ -1213,11 +1813,32 @@
         "pretraining"
       ]
     },
+    "truthfulqa_ar_mc2": {
+      "language": "ar",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa_de_mc2": {
+      "language": "de",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "truthfulqa_es_mc1": {
       "language": "es",
       "benchmark": "truthfulqa",
       "stages": [
         "pretraining"
+      ]
+    },
+    "truthfulqa_es_mc2": {
+      "language": "es",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
       ]
     },
     "truthfulqa_eu_mc1": {
@@ -1227,11 +1848,32 @@
         "pretraining"
       ]
     },
+    "truthfulqa_eu_mc2": {
+      "language": "eu",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa_fr_mc2": {
+      "language": "fr",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "truthfulqa_hi_mc1": {
       "language": "hi",
       "benchmark": "truthfulqa",
       "stages": [
         "pretraining"
+      ]
+    },
+    "truthfulqa_hi_mc2": {
+      "language": "hi",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
       ]
     },
     "truthfulqa_mc1": {
@@ -1241,9 +1883,9 @@
         "pretraining"
       ]
     },
-    "truthfulqa_multilingual": {
-      "language": "multi",
-      "benchmark": "truthfulqa_multilingual",
+    "truthfulqa_pt_mc2": {
+      "language": "pt",
+      "benchmark": "truthfulqa",
       "stages": [
         "posttraining"
       ]
@@ -1255,6 +1897,27 @@
         "pretraining"
       ]
     },
+    "truthfulqa_ru_mc2": {
+      "language": "ru",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa_te_mc2": {
+      "language": "te",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "truthfulqa_uk_mc2": {
+      "language": "uk",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "truthfulqa_vi_mc1": {
       "language": "vi",
       "benchmark": "truthfulqa",
@@ -1262,11 +1925,25 @@
         "pretraining"
       ]
     },
+    "truthfulqa_vi_mc2": {
+      "language": "vi",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
+      ]
+    },
     "truthfulqa_zh_mc1": {
       "language": "zh",
       "benchmark": "truthfulqa",
       "stages": [
         "pretraining"
+      ]
+    },
+    "truthfulqa_zh_mc2": {
+      "language": "zh",
+      "benchmark": "truthfulqa",
+      "stages": [
+        "posttraining"
       ]
     },
     "wikitext": {
@@ -1759,27 +2436,128 @@
       "mgsm_direct_zh"
     ],
     "posttraining": [
-      "mmlu_flan_cot_zeroshot",
-      "truthfulqa",
-      "bbh",
-      "drop",
       "acp_bench",
-      "gsm8k_cot",
-      "hendrycks_math",
-      "mathqa",
-      "humaneval_instruct",
-      "mbpp_instruct",
-      "ifeval",
-      "hellaswag",
-      "harmbench",
-      "toxigen",
+      "aya_redteaming_arabic",
+      "aya_redteaming_english",
+      "aya_redteaming_french",
+      "aya_redteaming_hindi",
+      "aya_redteaming_russian",
+      "aya_redteaming_spanish",
+      "bbh",
       "bbq",
-      "global_mmlu",
-      "truthfulqa_multilingual",
+      "blend_algeria_sample",
+      "blend_china_sample",
+      "blend_mexico_sample",
+      "blend_north_korea_sample",
+      "blend_northern_nigeria_sample",
+      "blend_south_korea_sample",
+      "blend_spain_sample",
+      "blend_us_sample",
+      "cultural_bench_easy_argentina",
+      "cultural_bench_easy_australia",
+      "cultural_bench_easy_brazil",
+      "cultural_bench_easy_canada",
+      "cultural_bench_easy_chile",
+      "cultural_bench_easy_china",
+      "cultural_bench_easy_france",
+      "cultural_bench_easy_germany",
+      "cultural_bench_easy_india",
+      "cultural_bench_easy_japan",
+      "cultural_bench_easy_mexico",
+      "cultural_bench_easy_morocco",
+      "cultural_bench_easy_nigeria",
+      "cultural_bench_easy_peru",
+      "cultural_bench_easy_russia",
+      "cultural_bench_easy_saudi_arabia",
+      "cultural_bench_easy_south_africa",
+      "cultural_bench_easy_south_korea",
+      "cultural_bench_easy_spain",
+      "cultural_bench_easy_thailand",
+      "cultural_bench_easy_ukraine",
+      "cultural_bench_easy_united_kingdom",
+      "cultural_bench_easy_united_states",
+      "cultural_bench_easy_vietnam",
+      "cultural_bench_easy_zimbabwe",
+      "cultural_bench_hard_argentina",
+      "cultural_bench_hard_australia",
+      "cultural_bench_hard_brazil",
+      "cultural_bench_hard_canada",
+      "cultural_bench_hard_chile",
+      "cultural_bench_hard_china",
+      "cultural_bench_hard_france",
+      "cultural_bench_hard_germany",
+      "cultural_bench_hard_india",
+      "cultural_bench_hard_japan",
+      "cultural_bench_hard_mexico",
+      "cultural_bench_hard_morocco",
+      "cultural_bench_hard_nigeria",
+      "cultural_bench_hard_peru",
+      "cultural_bench_hard_russia",
+      "cultural_bench_hard_saudi_arabia",
+      "cultural_bench_hard_south_africa",
+      "cultural_bench_hard_south_korea",
+      "cultural_bench_hard_spain",
+      "cultural_bench_hard_thailand",
+      "cultural_bench_hard_ukraine",
+      "cultural_bench_hard_united_kingdom",
+      "cultural_bench_hard_united_states",
+      "cultural_bench_hard_vietnam",
+      "cultural_bench_hard_zimbabwe",
+      "drop",
+      "global_mmlu_ar_gen_0shot",
+      "global_mmlu_de_gen_0shot",
+      "global_mmlu_en_gen_0shot",
+      "global_mmlu_es_gen_0shot",
+      "global_mmlu_fr_gen_0shot",
+      "global_mmlu_hi_gen_0shot",
+      "global_mmlu_ja_gen_0shot",
+      "global_mmlu_ko_gen_0shot",
+      "global_mmlu_pt_gen_0shot",
+      "global_mmlu_sw_gen_0shot",
+      "global_mmlu_zh_gen_0shot",
+      "gsm8k_cot",
+      "harmbench",
+      "hellaswag",
+      "hellaswag_ar",
+      "hellaswag_de",
+      "hellaswag_es",
+      "hellaswag_eu",
+      "hellaswag_fr",
+      "hellaswag_hi",
+      "hellaswag_pt",
+      "hellaswag_ru",
+      "hellaswag_te",
+      "hellaswag_uk",
+      "hellaswag_vi",
+      "hendrycks_math",
+      "humaneval_instruct",
+      "ifeval",
+      "mathqa",
+      "mbpp_instruct",
       "mgsm_cot_native",
-      "hellaswag_multilingual",
-      "blend",
-      "cultural_bench"
+      "mgsm_en_cot",
+      "mmlu_flan_cot_zeroshot",
+      "multi-if",
+      "polyglotoxicitypromptsllama_small_english",
+      "polyglotoxicitypromptsllama_small_french",
+      "polyglotoxicitypromptsllama_small_german",
+      "polyglotoxicitypromptsllama_small_hindi",
+      "polyglotoxicitypromptsllama_small_portuguese",
+      "polyglotoxicitypromptsllama_small_spanish",
+      "toxigen",
+      "truthfulqa",
+      "truthfulqa_ar_mc2",
+      "truthfulqa_de_mc2",
+      "truthfulqa_es_mc2",
+      "truthfulqa_eu_mc2",
+      "truthfulqa_fr_mc2",
+      "truthfulqa_hi_mc2",
+      "truthfulqa_pt_mc2",
+      "truthfulqa_ru_mc2",
+      "truthfulqa_te_mc2",
+      "truthfulqa_uk_mc2",
+      "truthfulqa_vi_mc2",
+      "truthfulqa_zh_mc2"
     ],
     "include_base_44": [
       "include_base_44_albanian",

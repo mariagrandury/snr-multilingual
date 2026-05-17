@@ -221,6 +221,7 @@ def custom_pretrain_entries() -> dict:
 # --- a06 pretrains (2 cells) -----------------------------------------------
 
 A06_BASE = "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1"
+HF_STAGING_BASE = "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
 
 
 def a06_pretrain_entries() -> dict:
@@ -237,7 +238,8 @@ def a06_pretrain_entries() -> dict:
             "params": 1_000_000_000,
             "checkpoint_kind": "megatron_iter",
             "backends": {
-                "megatron": f"{A06_BASE}/apertus3-1b-21-nodes/checkpoints/"
+                "megatron": f"{A06_BASE}/apertus3-1b-21-nodes/checkpoints/",
+                "hf_local": f"{HF_STAGING_BASE}/apertus3-1b-21-nodes/"
             },
             "stages": {
                 "pretraining": _meg_stage({
@@ -258,7 +260,8 @@ def a06_pretrain_entries() -> dict:
             "params": 3_000_000_000,
             "checkpoint_kind": "megatron_iter",
             "backends": {
-                "megatron": f"{A06_BASE}/apertus3-3b-64-nodes/checkpoints/"
+                "megatron": f"{A06_BASE}/apertus3-3b-64-nodes/checkpoints/",
+                "hf_local": f"{HF_STAGING_BASE}/apertus3-3b-64-nodes/"
             },
             "stages": {
                 "pretraining": _meg_stage({
@@ -392,57 +395,107 @@ def hf_entries() -> dict:
          "12B", 12_000_000_000, "gemma-3-pt", "pretraining"),
         ("gemma-3-27b-pt", "https://huggingface.co/google/gemma-3-27b-pt",
          "27B", 27_000_000_000, "gemma-3-pt", "pretraining"),
+        ("Olmo-3-1025-7B", "https://huggingface.co/allenai/Olmo-3-1025-7B",
+         "7B", 7_000_000_000, "Olmo-3-1025", "pretraining"),
         ("SmolLM3-3B-Base", "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-Base",
          "3B", 3_000_000_000, "SmolLM3-Base", "pretraining",
          "huggingface-reference", 11_200_000_000_000),
         ("SmolLM3-3B-checkpoints",
          "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints",
          "3B", 3_000_000_000, "SmolLM3-checkpoints", "pretraining"),
-        ("Olmo-3-1025-7B", "https://huggingface.co/allenai/Olmo-3-1025-7B",
-         "7B", 7_000_000_000, "Olmo-3-1025", "pretraining"),
+        ("tiny-aya-base", "https://huggingface.co/CohereLabs/tiny-aya-base",
+         "3B", 3_349_200_000, "tiny-aya-base", "pretraining"),
 
         # ---------- HF reference: posttraining ----------
-        ("Qwen3-0.6B", "https://huggingface.co/Qwen/Qwen3-0.6B",
-         "0.6B", 600_000_000, "Qwen3-it", "posttraining"),
-        ("Qwen3-1.7B", "https://huggingface.co/Qwen/Qwen3-1.7B",
-         "1.7B", 1_700_000_000, "Qwen3-it", "posttraining"),
-        ("Qwen3-4B", "https://huggingface.co/Qwen/Qwen3.5-4B",
-         "4B", 4_000_000_000, "Qwen3-it", "posttraining"),
-        ("Qwen3-8B", "https://huggingface.co/Qwen/Qwen3-8B",
-         "8B", 8_000_000_000, "Qwen3-it", "posttraining"),
-        ("Qwen3-14B", "https://huggingface.co/Qwen/Qwen3-14B",
-         "14B", 14_000_000_000, "Qwen3-it", "posttraining"),
-        ("gemma-3-1b-it", "https://huggingface.co/google/gemma-3-1b-it",
-         "1B", 1_000_000_000, "gemma-3-it", "posttraining"),
-        ("gemma-3-4b-it", "https://huggingface.co/google/gemma-3-4b-it",
-         "4B", 4_000_000_000, "gemma-3-it", "posttraining"),
-        ("gemma-3-12b-it", "https://huggingface.co/google/gemma-3-12b-it",
-         "12B", 12_000_000_000, "gemma-3-it", "posttraining"),
-        ("gemma-3-27b-it", "https://huggingface.co/google/gemma-3-27b-it",
-         "27B", 27_000_000_000, "gemma-3-it", "posttraining"),
-        ("SmolLM3-3B", "https://huggingface.co/HuggingFaceTB/SmolLM3-3B",
-         "3B", 3_000_000_000, "SmolLM3-it", "posttraining"),
         ("Apertus-1.7B-it800000-SFT",
          "https://huggingface.co/daslab-testing/Apertus-1.7B-it800000-SFT",
          "1.7B", 1_700_000_000, "Apertus-it-SFT-1", "posttraining",
          "daslab-testing"),
-        ("Olmo-3-7B-Instruct-SFT",
-         "https://huggingface.co/allenai/Olmo-3-7B-Instruct-SFT",
-         "7B", 7_000_000_000, "Olmo-3-Instruct-SFT", "posttraining"),
-        ("Olmo-3-7B-Instruct-DPO",
-         "https://huggingface.co/allenai/Olmo-3-7B-Instruct-DPO",
-         "7B", 7_000_000_000, "Olmo-3-Instruct-DPO", "posttraining"),
-        ("Olmo-3-7B-Instruct",
-         "https://huggingface.co/allenai/Olmo-3-7B-Instruct",
-         "7B", 7_000_000_000, "Olmo-3-Instruct", "posttraining"),
-        ("Apertus-8B-Instruct-2509",
-         "https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509",
-         "8B", 8_000_000_000, "Apertus-Instruct-2509", "posttraining",
-         "swiss-ai-reference"),
         ("Apertus-70B-Instruct-2509",
          "https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509",
          "70B", 70_000_000_000, "Apertus-Instruct-2509", "posttraining",
          "swiss-ai-reference"),
+        ("Apertus-8B-Instruct-2509",
+         "https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509",
+         "8B", 8_000_000_000, "Apertus-Instruct-2509", "posttraining",
+         "swiss-ai-reference"),
+        ("Ministral-3-14B-Instruct-2512",
+         "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512",
+         "14B", 14_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+        ("Ministral-3-3B-Instruct-2512",
+         "https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512",
+         "3B", 3_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+        ("Ministral-3-8B-Instruct-2512",
+         "https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512",
+         "8B", 8_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+        ("Mistral-Small-3.2-24B-Instruct-2506",
+         "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+         "24B", 24_000_000_000, "Mistral-Small-3.2-Instruct-2506", "posttraining"),
+        ("Olmo-3-7B-Instruct",
+         "https://huggingface.co/allenai/Olmo-3-7B-Instruct",
+         "7B", 7_000_000_000, "Olmo-3-Instruct", "posttraining"),
+        ("Olmo-3-7B-Instruct-DPO",
+         "https://huggingface.co/allenai/Olmo-3-7B-Instruct-DPO",
+         "7B", 7_000_000_000, "Olmo-3-Instruct-DPO", "posttraining"),
+        ("Olmo-3-7B-Instruct-SFT",
+         "https://huggingface.co/allenai/Olmo-3-7B-Instruct-SFT",
+         "7B", 7_000_000_000, "Olmo-3-Instruct-SFT", "posttraining"),
+        ("Qwen3-0.6B", "https://huggingface.co/Qwen/Qwen3-0.6B",
+         "0.6B", 600_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3-14B", "https://huggingface.co/Qwen/Qwen3-14B",
+         "14B", 14_000_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3-1.7B", "https://huggingface.co/Qwen/Qwen3-1.7B",
+         "1.7B", 1_700_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3-30B-A3B", "https://huggingface.co/Qwen/Qwen3-30B-A3B",
+         "30B-A3B", 30_000_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3-4B", "https://huggingface.co/Qwen/Qwen3.5-4B",
+         "4B", 4_000_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3-8B", "https://huggingface.co/Qwen/Qwen3-8B",
+         "8B", 8_000_000_000, "Qwen3-it", "posttraining"),
+        ("Qwen3.5-0.8B", "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+         "0.8B", 800_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-122B-A10B", "https://huggingface.co/Qwen/Qwen3.5-122B-A10B",
+         "122B-A10B", 122_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-27B", "https://huggingface.co/Qwen/Qwen3.5-27B",
+         "27B", 27_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-2B", "https://huggingface.co/Qwen/Qwen3.5-2B",
+         "2B", 2_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-35B-A3B", "https://huggingface.co/Qwen/Qwen3.5-35B-A3B",
+         "35B-A3B", 35_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-4B", "https://huggingface.co/Qwen/Qwen3.5-4B",
+         "4B", 4_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("Qwen3.5-9B", "https://huggingface.co/Qwen/Qwen3.5-9B",
+         "9B", 9_000_000_000, "Qwen3.5-it", "posttraining"),
+        ("SmolLM3-3B", "https://huggingface.co/HuggingFaceTB/SmolLM3-3B",
+         "3B", 3_000_000_000, "SmolLM3-it", "posttraining"),
+        ("aya-expanse-32b",
+         "https://huggingface.co/CohereLabs/aya-expanse-32b",
+         "32B", 32_000_000_000, "aya-expanse", "posttraining"),
+        ("aya-expanse-8b",
+         "https://huggingface.co/CohereLabs/aya-expanse-8b",
+         "8B", 8_000_000_000, "aya-expanse", "posttraining"),
+        ("gemma-3-12b-it", "https://huggingface.co/google/gemma-3-12b-it",
+         "12B", 12_000_000_000, "gemma-3-it", "posttraining"),
+        ("gemma-3-1b-it", "https://huggingface.co/google/gemma-3-1b-it",
+         "1B", 1_000_000_000, "gemma-3-it", "posttraining"),
+        ("gemma-3-270m-it", "https://huggingface.co/google/gemma-3-270m-it",
+         "270M", 270_000_000, "gemma-3-it", "posttraining"),
+        ("gemma-3-27b-it", "https://huggingface.co/google/gemma-3-27b-it",
+         "27B", 27_000_000_000, "gemma-3-it", "posttraining"),
+        ("gemma-3-4b-it", "https://huggingface.co/google/gemma-3-4b-it",
+         "4B", 4_000_000_000, "gemma-3-it", "posttraining"),
+        ("tiny-aya-earth",
+         "https://huggingface.co/CohereLabs/tiny-aya-earth",
+         "3B", 3_349_200_000, "tiny-aya", "posttraining"),
+        ("tiny-aya-fire",
+         "https://huggingface.co/CohereLabs/tiny-aya-fire",
+         "3B", 3_349_200_000, "tiny-aya", "posttraining"),
+        ("tiny-aya-global",
+         "https://huggingface.co/CohereLabs/tiny-aya-global",
+         "3B", 3_349_200_000, "tiny-aya", "posttraining"),
+        ("tiny-aya-water",
+         "https://huggingface.co/CohereLabs/tiny-aya-water",
+         "3B", 3_349_200_000, "tiny-aya", "posttraining"),
     ]
     out = {}
     for row in rows:
@@ -607,13 +660,28 @@ HF_WANDB = {
 # --- Tasks ------------------------------------------------------------------
 
 # Language token → ISO code mapping mirrors multilingual/analyze_snr_variants.py
+# Covers iso2 + iso3 + full English name forms so subtask names like
+# `_arabic`, `_korean`, `_portuguese` auto-derive correctly. Project-scoped
+# canonical codes are defined in configs/languages.json.
 LANG_MAP = {
-    "ar": "ar", "arb": "ar", "de": "de", "es": "es", "spa": "es",
-    "eu": "eu", "eus": "eu", "fr": "fr", "hi": "hi", "hin": "hi",
-    "ru": "ru", "rus": "ru", "vi": "vi", "vie": "vi",
-    "zh": "zh", "zho": "zh", "cmn": "zh", "ja": "ja", "jp": "ja", "jpn": "ja",
-    "sw": "sw", "swh": "sw", "th": "th", "tha": "th",
-    "tr": "tr", "tur": "tr", "en": "en", "eng": "en", "te": "te",
+    "ar": "ar", "arb": "ar", "ara": "ar", "arabic": "ar",
+    "de": "de", "deu": "de", "ger": "de", "german": "de",
+    "en": "en", "eng": "en", "english": "en",
+    "es": "es", "spa": "es", "spanish": "es",
+    "eu": "eu", "eus": "eu", "baq": "eu", "basque": "eu",
+    "fr": "fr", "fra": "fr", "fre": "fr", "french": "fr",
+    "hi": "hi", "hin": "hi", "hindi": "hi",
+    "ja": "ja", "jp": "ja", "jpn": "ja", "japanese": "ja",
+    "ko": "ko", "kor": "ko", "korean": "ko",
+    "pt": "pt", "por": "pt", "portuguese": "pt",
+    "ru": "ru", "rus": "ru", "russian": "ru",
+    "sw": "sw", "swh": "sw", "swa": "sw", "swahili": "sw",
+    "te": "te", "tel": "te", "telugu": "te",
+    "th": "th", "tha": "th", "thai": "th",
+    "tr": "tr", "tur": "tr", "turkish": "tr",
+    "uk": "uk", "ukr": "uk", "ukrainian": "uk",
+    "vi": "vi", "vie": "vi", "vietnamese": "vi",
+    "zh": "zh", "zho": "zh", "cmn": "zh", "chinese": "zh", "mandarin": "zh",
 }
 
 
@@ -621,6 +689,12 @@ def _benchmark_of(task: str) -> str:
     """Strip language/script suffix to get the benchmark family name."""
     if task in {"arc_challenge", "arc_easy"}:
         return "arc"
+    # Suite-prefix shortcuts: collapse per-language siblings under one
+    # benchmark family even when the language suffix is a full name
+    # (e.g. include_base_44_tamil → include_base_44).
+    for prefix in ("include_base_44_",):
+        if task.startswith(prefix):
+            return prefix.rstrip("_")
     parts = task.split("_")
     out = []
     for p in parts:
@@ -722,8 +796,11 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
                          if g in GROUP_TO_STAGE})
         # Manual annotation wins over auto-derivation (so "multi" / "cn" /
         # etc. survive re-builds). Auto-derive is the fallback for newly
-        # added tasks.
-        lang = existing_lang.get(t) or _language_of(t)
+        # added tasks. `??` is the failure marker — not a real annotation —
+        # so it's re-derived (lets LANG_MAP extensions take effect on a
+        # rebuild for previously-unresolved tokens).
+        prev = existing_lang.get(t)
+        lang = prev if prev and prev != "??" else _language_of(t)
         tasks_section[t] = {
             "language": lang,
             "benchmark": _benchmark_of(t),
