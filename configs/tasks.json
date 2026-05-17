@@ -2437,12 +2437,6 @@
     ],
     "posttraining": [
       "acp_bench",
-      "aya_redteaming_arabic",
-      "aya_redteaming_english",
-      "aya_redteaming_french",
-      "aya_redteaming_hindi",
-      "aya_redteaming_russian",
-      "aya_redteaming_spanish",
       "bbh",
       "bbq",
       "blend_algeria_sample",
@@ -2516,7 +2510,6 @@
       "global_mmlu_sw_gen_0shot",
       "global_mmlu_zh_gen_0shot",
       "gsm8k_cot",
-      "harmbench",
       "hellaswag",
       "hellaswag_ar",
       "hellaswag_de",
@@ -2558,6 +2551,15 @@
       "truthfulqa_uk_mc2",
       "truthfulqa_vi_mc2",
       "truthfulqa_zh_mc2"
+    ],
+    "posttraining_llm_judge": [
+      "aya_redteaming_arabic",
+      "aya_redteaming_english",
+      "aya_redteaming_french",
+      "aya_redteaming_hindi",
+      "aya_redteaming_russian",
+      "aya_redteaming_spanish",
+      "harmbench"
     ],
     "include_base_44": [
       "include_base_44_albanian",

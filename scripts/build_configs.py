@@ -786,15 +786,19 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
     infer) are not clobbered on re-build.
     """
     group_files = {
-        "pretraining_full":     EVALS_CONFIGS / "tasks_pretraining_full.txt",
-        "pretraining_classic":  EVALS_CONFIGS / "tasks_pretraining_classic.txt",
-        "pretraining_extra":    EVALS_CONFIGS / "tasks_pretraining_extra.txt",
-        "pretraining_random":   EVALS_CONFIGS / "tasks_pretraining_random.txt",
-        "pretraining_allenai":  EVALS_CONFIGS / "tasks_pretraining_allenai.txt",
-        "midtraining":          EVALS_CONFIGS / "tasks_midtraining.txt",
-        "posttraining":         EVALS_CONFIGS / "tasks_posttraining.txt",
-        "include_base_44":      EVALS_CONFIGS / "tasks_include.txt",
-        "test":                 EVALS_CONFIGS / "tasks_test.txt",
+        "pretraining_full":         EVALS_CONFIGS / "tasks_pretraining_full.txt",
+        "pretraining_classic":      EVALS_CONFIGS / "tasks_pretraining_classic.txt",
+        "pretraining_extra":        EVALS_CONFIGS / "tasks_pretraining_extra.txt",
+        "pretraining_random":       EVALS_CONFIGS / "tasks_pretraining_random.txt",
+        "pretraining_allenai":      EVALS_CONFIGS / "tasks_pretraining_allenai.txt",
+        "midtraining":              EVALS_CONFIGS / "tasks_midtraining.txt",
+        "posttraining":             EVALS_CONFIGS / "tasks_posttraining.txt",
+        # Posttraining tasks that need an external LLM-as-judge (CSCS_SERVING_API).
+        # Split out of `posttraining` so the main sweep doesn't hang on
+        # judge-call timeouts when the serving key isn't configured.
+        "posttraining_llm_judge":   EVALS_CONFIGS / "tasks_posttraining_llm_judge.txt",
+        "include_base_44":          EVALS_CONFIGS / "tasks_include.txt",
+        "test":                     EVALS_CONFIGS / "tasks_test.txt",
     }
     groups = {g: _read_list(p) for g, p in group_files.items() if p.exists()}
 
@@ -814,6 +818,7 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
         "include_base_44": "pretraining",
         "midtraining": "midtraining",
         "posttraining": "posttraining",
+        "posttraining_llm_judge": "posttraining",
         "test": "pretraining",
     }
 
