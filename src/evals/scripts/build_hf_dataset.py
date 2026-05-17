@@ -242,7 +242,7 @@ def build_rows(project_dir: Path) -> list[dict]:
             continue
         eval_meta = collect_eval_metadata(name_dir)
 
-        flops = (6 * meta["params"] * meta["tokens"]) if meta["params"] else None
+        flops = (6 * meta["params"] * meta["tokens"]) if (meta["params"] and meta["tokens"]) else None
 
         for task, raw_metrics in scores.items():
             if not isinstance(raw_metrics, dict):
@@ -662,6 +662,10 @@ configs:
         path: data/pretraining_a06-*.parquet
       - split: reference_hf
         path: data/reference_hf-*.parquet
+      - split: posttraining
+        path: data/posttraining-*.parquet
+      - split: distillation
+        path: data/distillation-*.parquet
 ---
 
 # SwissAI Evals — SNR Experiments
@@ -681,6 +685,8 @@ per-instance predictions.
 | `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
 | `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
 | `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
+| `posttraining` | Apertus-8B-Instruct-2509, gemma-3-1b-it, Olmo-3-7B-Instruct (+ other instruct variants as eval results land) | Instruct/post-trained reference checkpoints evaluated on the same task suite |
+| `distillation` | apertus-{{0.6b, 1b}}-from8b-TOP256-long | Distillation runs (megatron checkpoints distilled from Apertus-8B) |
 
 ## Columns
 

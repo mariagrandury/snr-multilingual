@@ -3742,7 +3742,7 @@
       }
     },
     "Apertus-70B-Instruct-2509": {
-      "source": "swiss-ai-reference",
+      "source": "posttraining",
       "family": "Apertus-Instruct-2509",
       "size": "70B",
       "params": 70000000000,
@@ -3765,7 +3765,7 @@
       }
     },
     "Apertus-8B-Instruct-2509": {
-      "source": "swiss-ai-reference",
+      "source": "posttraining",
       "family": "Apertus-Instruct-2509",
       "size": "8B",
       "params": 8000000000,
@@ -3788,7 +3788,7 @@
       }
     },
     "Ministral-3-14B-Instruct-2512": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Ministral-3-Instruct-2512",
       "size": "14B",
       "params": 14000000000,
@@ -3811,7 +3811,7 @@
       }
     },
     "Ministral-3-3B-Instruct-2512": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Ministral-3-Instruct-2512",
       "size": "3B",
       "params": 3000000000,
@@ -3834,7 +3834,7 @@
       }
     },
     "Ministral-3-8B-Instruct-2512": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Ministral-3-Instruct-2512",
       "size": "8B",
       "params": 8000000000,
@@ -3857,7 +3857,7 @@
       }
     },
     "Mistral-Small-3.2-24B-Instruct-2506": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Mistral-Small-3.2-Instruct-2506",
       "size": "24B",
       "params": 24000000000,
@@ -3880,7 +3880,7 @@
       }
     },
     "Olmo-3-7B-Instruct": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Olmo-3-Instruct",
       "size": "7B",
       "params": 7000000000,
@@ -3903,7 +3903,7 @@
       }
     },
     "Olmo-3-7B-Instruct-DPO": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Olmo-3-Instruct-DPO",
       "size": "7B",
       "params": 7000000000,
@@ -3926,7 +3926,7 @@
       }
     },
     "Olmo-3-7B-Instruct-SFT": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "Olmo-3-Instruct-SFT",
       "size": "7B",
       "params": 7000000000,
@@ -4317,7 +4317,7 @@
       }
     },
     "gemma-3-12b-it": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "gemma-3-it",
       "size": "12B",
       "params": 12000000000,
@@ -4340,7 +4340,7 @@
       }
     },
     "gemma-3-1b-it": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "gemma-3-it",
       "size": "1B",
       "params": 1000000000,
@@ -4363,7 +4363,7 @@
       }
     },
     "gemma-3-270m-it": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "gemma-3-it",
       "size": "270M",
       "params": 270000000,
@@ -4386,7 +4386,7 @@
       }
     },
     "gemma-3-27b-it": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "gemma-3-it",
       "size": "27B",
       "params": 27000000000,
@@ -4409,7 +4409,7 @@
       }
     },
     "gemma-3-4b-it": {
-      "source": "huggingface-reference",
+      "source": "posttraining",
       "family": "gemma-3-it",
       "size": "4B",
       "params": 4000000000,
@@ -4900,10 +4900,13 @@
     "huggingface-reference": {
       "split": "reference_hf"
     },
-    "daslab-testing": {
-      "split": null
+    "posttraining": {
+      "split": "posttraining"
     },
     "distillation": {
+      "split": "distillation"
+    },
+    "daslab-testing": {
       "split": null
     },
     "tokenizer-lm": {

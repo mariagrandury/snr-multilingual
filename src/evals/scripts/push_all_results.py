@@ -108,7 +108,12 @@ def parse_name(name: str) -> dict | None:
             branch = name[len(prefix):]
             try:
                 tokens = tokens_for(model, branch)
-            except KeyError:
+            except (KeyError, TypeError):
+                # KeyError: branch not declared as a canonical ckpt.
+                # TypeError: caller fell through to a megatron_iter model
+                # with a non-numeric branch suffix (e.g. `iter42000-vllmcheck`
+                # for a one-off sanity eval) — that NAME doesn't correspond
+                # to a real canonical ckpt; let the outer loop skip it.
                 continue
             # `step` is the numeric tail of the branch name where present,
             # else 0 (single-branch refs).
@@ -167,7 +172,7 @@ def push_one(model: str, params: int | None,
     run.define_metric("*", step_metric="flops")
 
     for step, tokens, flat in entries:
-        flops = 6 * params * tokens if params else None
+        flops = 6 * params * tokens if (params and tokens) else None
         duration = flat.get("eval_duration_seconds")
 
         log: dict[str, float] = {"iter": step, "tokens": tokens}
@@ -256,10 +261,11 @@ def main():
         params = model_params(model)
         if args.eval_duration is not None:
             flat["eval_duration_seconds"] = float(args.eval_duration)
-        flops = (6 * params * tokens) if params else None
-        flops_str = f", flops={flops:.2e}" if flops else " (params unknown)"
+        flops = (6 * params * tokens) if (params and tokens) else None
+        flops_str = f", flops={flops:.2e}" if flops else " (flops unknown)"
+        tokens_str = f"tokens={tokens:.2e}" if tokens else "tokens=?"
         print(f"Will push 1 model to {args.entity}/{args.project}: "
-              f"{model} @ step={step}, tokens={tokens:.2e}{flops_str}, {len(flat)} metrics")
+              f"{model} @ step={step}, {tokens_str}{flops_str}, {len(flat)} metrics")
         if args.dry_run:
             print("(dry-run) — not pushing.")
             return
@@ -298,12 +304,13 @@ def main():
     for model, entries in sorted(grouped.items()):
         params = model_params(model)
         steps = [s for s, _, _ in entries]
-        tok_lo = min(t for _, t, _ in entries)
-        tok_hi = max(t for _, t, _ in entries)
+        toks = [t for _, t, _ in entries if t is not None]
+        tok_str = (f"tokens ∈ [{min(toks):.2e}, {max(toks):.2e}]"
+                   if toks else "tokens=?")
         n_metrics = sum(len(m) for _, _, m in entries)
         params_str = f"params={params:.2e}" if params else "params=?"
         print(f"  {model}: {len(entries)} ckpt(s) at steps {steps}, "
-              f"tokens ∈ [{tok_lo:.2e}, {tok_hi:.2e}], {params_str}, {n_metrics} metrics")
+              f"{tok_str}, {params_str}, {n_metrics} metrics")
     if skipped:
         print(f"  skipped ({len(skipped)} unparseable NAME(s)): {skipped}")
 
