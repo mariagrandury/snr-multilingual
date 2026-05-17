@@ -126,9 +126,26 @@ def record_pushed(cell: str, iters, plot_path: Path = DEFAULT_PLOT_PATH) -> None
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
-    """A torch_dist checkpoint is loadable only when the dir contains both
-    a .metadata file AND at least one .distcp shard. Empty dirs and "shell"
-    dirs (.metadata + common.pt + metadata.json with no shards) are not."""
+    """The single source of truth for "is this iter dir loadable?".
+
+    Shell call sites (launch_resumes.sh, convert-snr.sh) invoke this via
+    the ``--is-valid <iter_dir>`` CLI at the bottom of this file; Python
+    callers import it directly. Centralising the check means future
+    tightening (e.g. byte-level shard-name parsing of .metadata) only
+    needs to land here.
+
+    KNOWN LIMITATION (tracked, do-not-fix-here): the loose ".metadata +
+    ≥1 .distcp" check passes some dirs that Megatron's load_checkpoint
+    can't actually load — we hit this on iter_0002000 of
+    apertus-175M-fwEdu30-fw270-seed1904 (2026-05-14): 41 shards on disk,
+    same set as the known-good iter_0050000, yet the resume crashed in
+    dist_checkpointing.load. Attempts at a tighter byte-level
+    .metadata parse over-rejected good iters because Megatron's loader
+    is more lenient than the on-disk metadata suggests. Until we
+    reverse-engineer Megatron's exact load semantics, this stays loose
+    and the marker-stuck-on-failed-resume issue (C2 in the May review)
+    is documented as a known bug.
+    """
     if not iter_dir.is_dir():
         return False
     if not (iter_dir / ".metadata").is_file():
@@ -534,4 +551,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # CLI subcommand for shell scripts that need the canonical validity check:
+    #   python3.11 pretrain_progress.py --is-valid <iter_dir>
+    # Returns exit 0 if the dir is a loadable torch_dist checkpoint, 1 otherwise.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--is-valid":
+        if len(sys.argv) != 3:
+            print("usage: pretrain_progress.py --is-valid <iter_dir>", file=sys.stderr)
+            sys.exit(2)
+        sys.exit(0 if is_valid_iter_dir(Path(sys.argv[2])) else 1)
     main()

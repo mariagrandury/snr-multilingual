@@ -158,11 +158,13 @@ rewind_marker() {
     echo "    (dry-run) would rewind $marker_file: ${cur:-<missing>} → $want"
     return 0
   fi
-  # Sanity check: the iter dir we're pointing at must exist and contain a
-  # .distcp shard. If it doesn't, refuse to rewind — abort the model.
+  # Sanity check: the iter dir we're pointing at must be a loadable
+  # torch_dist checkpoint. Delegates to the single source-of-truth helper
+  # in pretrain_progress.py (--is-valid CLI) so all call sites share the
+  # same definition of "valid".
   local iter_dir
   iter_dir=$(printf '%s/iter_%07d' "$ckpt_dir" "$want")
-  if [[ ! -f "$iter_dir/.metadata" ]] || ! ls "$iter_dir"/*.distcp >/dev/null 2>&1; then
+  if ! python3.11 "$LAUNCHER_DIR/pretrain_progress.py" --is-valid "$iter_dir"; then
     echo "    !! refusing to rewind marker for $model: $iter_dir is not a valid checkpoint" >&2
     return 1
   fi
