@@ -1,0 +1,558 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2026
+
+% The authors should use one of these tracks.
+% Before accepting by the NeurIPS conference, select one of the options below.
+% 0. "default" for submission
+\usepackage{neurips_2026}
+% the "default" option is equal to the "main" option, which is used for the Main Track with double-blind reviewing.
+% 1. "main" option is used for the Main Track
+%  \usepackage[main]{neurips_2026}
+% 2. "position" option is used for the Position Paper Track
+%  \usepackage[position]{neurips_2026}
+% 3. "eandd" option is used for the Evaluations & Datasets Track
+ % \usepackage[eandd]{neurips_2026}
+ % if you want to opt-in for a de-anomymized submission (not recommended, but OK):
+ %\usepackage[eandd, nonanonymous]{neurips_2026}
+% 4. "creativeai" option is used for the Creative AI Track
+%  \usepackage[creativeai]{neurips_2026}
+% 5. "sglblindworkshop" option is used for the Workshop with single-blind reviewing
+ % \usepackage[sglblindworkshop]{neurips_2026}
+% 6. "dblblindworkshop" option is used for the Workshop with double-blind reviewing
+%  \usepackage[dblblindworkshop]{neurips_2026}
+
+% After being accepted, the authors should add "final" behind the track to compile a camera-ready version.
+% 1. Main Track
+ % \usepackage[main, final]{neurips_2026}
+% 2. Position Paper Track
+%  \usepackage[position, final]{neurips_2026}
+% 3. Evaluations & Datasets Track
+ % \usepackage[eandd, final]{neurips_2026}
+% 4. Creative AI Track
+%  \usepackage[creativeai, final]{neurips_2026}
+% 5. Workshop with single-blind reviewing
+%  \usepackage[sglblindworkshop, final]{neurips_2026}
+% 6. Workshop with double-blind reviewing
+%  \usepackage[dblblindworkshop, final]{neurips_2026}
+% Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote.
+% For workshops (5., 6.), the authors should add the name of the workshop, "\workshoptitle" command is used to set the workshop title.
+% \workshoptitle{WORKSHOP TITLE}
+
+% "preprint" option is used for arXiv or other preprint submissions
+ % \usepackage[preprint]{neurips_2026}
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2026}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\setlength{\marginparwidth}{2.1cm} 
+\usepackage[textsize=tiny]{todonotes}
+\newcommand{\note}[4][]{\todo[author=#2,color=#3,size=\scriptsize,fancyline,caption={},#1]{#4}} % default note settings, used by macros below
+\newcommand{\tiago}[2][]{\note[#1]{\textbf{Tiago}}{cyan!30}{#2}}
+\newcommand{\Tiago}[2][]{\tiago[#1,inline]{#2}}
+\newcommand{\clara}[2][]{\note[#1]{\textbf{Clara}}{orange!30}{#2}}
+\newcommand{\Clara}[2][]{\clara[#1,inline]{#2}}
+
+\newcommand{\missingref}[1]{\textcolor{teal}{\textbf{Add ref: } #1}}
+%\newcommand{\todo}[1]{\textcolor{blue}{\textbf{TODO: } #1}}
+\newcommand{\rewrite}[1]{\textcolor{orange}{#1}}
+\newcommand{\futurework}[1]{\textcolor{gray}{#1}}
+
+
+% Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
+\title{Signal-Aware Framework for Multilingual Language Model Evaluation}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  David S.~Hippocampus\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  Cranberry-Lemon University\\
+  Pittsburgh, PA 15213 \\
+  \texttt{hippo@cs.cranberry-lemon.edu} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+\input{macros}
+
+\maketitle
+
+
+\begin{abstract}
+Training multilingual language models requires repeated decisions about data mixtures and hyperparameters, typically guided by expensive and redundant benchmark suites that exhibit high variance, particularly in multilingual settings. We propose a framework to identify which benchmarks, and which benchmark subsets, reliably preserve multilingual model rankings across model sizes and training checkpoints. We pretrain 12 multilingual models with varied data mixtures and sizes ranging from 175M to 1B parameters, and extend our analysis to 8B parameters using open-source multilingual models. We provide a generalizable language-based benchmark reliability map for pretraining evaluation, covering an initial set of 12 typologically diverse languages, enabling cheaper, better-informed multilingual model development. 
+\rewrite{We further analyze benchmark design decisions and show that linguistically-grounded, native-language tasks yield higher decision accuracy than English-sourced machine translations.}
+\end{abstract}
+
+\Clara{What is our contribution above and beyond Heinaman et. al.:
+\begin{itemize}
+    \item High decision accuracy is a useful property of a benchmark. Heinaman et. al. found monolingual benchmarks with this property. Firstly, do multilingual benchmarks with this property even exist (not obvious this is the case given that a model needs to learn many more languages and so we might not actually be able to get meaningful performance from smaller models)
+    \item If such benchmarks exist, can we find a metric that correlates well with decision accuracy in the multilingual setting, such that we can assess "quality" of benchmarks without having to train larger models? Use metrics from Heinaman et. al. as starting point, but explore others. Maybe something that involves variance/spread across languages?
+    \item Heinaman et. al. use smaller model performance. Can we also use early checkpoints from larger models, and does this possibly work better? (Frame this as: we just want to spend less compute to assess these benchmarks, and that can be done via smaller models or less training of large models). Use flops as common denominator.
+    \item How does this change as we increase/decrease the number of languages in the LM's training dataset?
+\end{itemize}}
+
+
+\section{Introduction}
+\label{sec:introduction}
+\Clara{Suggestion for flow of intro:\\
+Evals guide model development, but they are expensive, sometimes saturated and can be noisy. This is particularly the case for multilingual benchmarks, where we have to evaluate many languages, and there can be variation in quality across per-langauge subsets (cite). 
+Given this central role of benchmarks and these negative properties that we need to watch out for, we would expect there to be a better understanding of “which benchmarks matter”.
+Recent work has looked into this for the monolingual setting, trying to find metrics that can ultimately both save compute and avoid misleading signals. 
+But the multilingual benchmark landscape hasnt received similar attention. 
+That's where our work comes in!
+%We need a method for identifying high quality benchmarks, that will both save compute and not lead us down the wrong path.
+}
+
+Training multilingual language models requires billions of tokens and hundreds of thousands of euros in compute. Throughout training (pre-training, mid-training, and post-training), practitioners must repeatedly choose data mixtures and hyperparameters that determine the final model quality. These decisions are typically guided by evaluation on benchmark tasks. However, not all benchmarks provide equally informative signals for training decisions. Benchmarks vary in their diagnostic value; some tasks are sensitive to changes in training data or model configuration, while others exhibit high variance, redundancy, or weak correlation with downstream objectives. Consequently, improvements on certain benchmarks may not reflect meaningful progress for the aspects of model behavior that practitioners seek to optimize.
+
+At the same time, large benchmark suites incur non-trivial evaluation cost, particularly during early and intermediate stages of training when models are evaluated frequently. This creates a practical tradeoff between evaluation coverage: assessing many tasks to capture diverse capabilities, and evaluation efficiency: limiting the computational overhead required to obtain feedback during training. Despite the central role of benchmarks in guiding model development, it remains unclear which benchmarks provide reliable and informative signals for training decisions across different stages of multilingual model training. As a result, practitioners often evaluate on extensive benchmark suites with diminishing diagnostic returns, or rely on small subsets of tasks whose signals may be noisy or misaligned with the decisions being made. Systematically identifying benchmarks that provide meaningful, stage-specific diagnostic signal could substantially improve the efficiency and reliability of multilingual model development.
+
+Recent work has begun to examine the diagnostic value and efficiency of language model benchmarks, recognizing that not all benchmarks provide equally informative signals for guiding model development. \cite{heineman2025signalnoiseframeworkreducing} introduce a signal-to-noise ratio (SNR) framework that quantifies benchmark reliability for English models. 
+%In this framework, signal measures how well a benchmark separates models of similar scale, while noise captures variability in scores across training checkpoints or stochastic runs. 
+Their empirical analysis shows that benchmarks with higher SNR more consistently preserve model rankings across scales, improving the accuracy of training decisions and reducing error when extrapolating performance using scaling laws. This work highlights that benchmark choice directly affects the reliability of decisions made during model development.
+
+Other work focuses on improving evaluation efficiency without sacrificing diagnostic signal. \cite{chen2025scalinglawspredictingdownstream} study the scaling behavior of downstream tasks and find that some benchmarks follow predictable scaling trends while others do not, suggesting that only a subset of tasks may be necessary to forecast final model performance. \cite{gupta-etal-2025-improving-smart} propose SMART filtering, which removes contaminated, redundant, or overly easy examples from benchmark datasets. Their results show that filtering such examples can substantially reduce evaluation cost while preserving agreement with independent measures of model quality, indicating that many benchmark items contribute little useful signal. Similarly, \cite{Zhou_Huang_Zhao_Han_Wang_Chen_Yang_Bao_Dong_Xu_Zhu_Cao_Zhao_2026_lostinbenchmarks} analyze benchmark reliability through item response theory, demonstrating that many widely used benchmarks contain items with weak discriminative power and that smaller, carefully selected subsets can produce more stable and interpretable model comparisons. 
+
+Together, these works suggest that benchmark effectiveness depends not only on coverage but also on how much reliable signal a benchmark provides relative to its evaluation cost. However, existing studies primarily focus on English benchmarks and general model ranking. Our goal is to extend the aforementioned frameworks to multilingual settings and identify the most reliable multilingual benchmarks for each training stage that correlate with final model performance. This will enable practitioners to make better, cheaper decisions during multilingual model development.
+
+\AR{Why existing decision accuracy metrics methods/metrics might fail for the multilingual case? (1) Different languages might have different decision accuracy metrics, (2) different languages respond differently to scaling laws, and (3) how does the language transfer between languages affect benchmark selection? Why does the cost of running all evals increase in the multilingual case? Merge paragraphs 2-3-4, and add one paragraph for multilingual.}
+
+\AR{Limitations of existing SNR work when applied in the multilingual setting: - Low signal in the low-resource on small models, - bias to the noise on the floor, - subtasks on the multilingual bench, - checkpoint assumes end-to-end language, - different SNR on translated vs original benchmarks, - moise-correlation across languages}
+
+
+
+Research questions (Figure \ref{fig:research-questions}):
+\begin{itemize}
+    \item Which multilingual benchmarks produce reliable model rankings at small scale, such that those rankings can inform model design decisions during early-stage ablations and generalize to larger models?
+    \item Can benchmark metrics that, computed at small scale, serve as a proxy for decision accuracy, removing the need to evaluate large models?
+    \item Which benchmark design choices lead to higher decision accuracy? Types of questions (driving license, topics), hard questions, filtering decisions, etc -> what makes a good question
+\end{itemize}
+
+
+36 models, calculate DA on 24 models, leave 12,
+calculate at 1% 5% 20% FLOPS
+check on the 12 if the same benchmarks have high SNR
+
+create a language-dependent metric
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{images/research_questions_gray.png}
+    \caption{Research questions guiding the definition, validation, and extension of the multilingual SNR framework. Figure TBD, was just to show the research questions.}
+    \label{fig:research-questions}
+\end{figure}
+
+\section{Related Work}
+
+
+
+\section{Methodology}
+\label{sec:methodology}
+
+
+
+We extend the Signal and Noise framework of \cite{heineman2025signalnoiseframeworkreducing} from English to multilingual language model development. We define reliability metrics, which we then calculate for a set of multilingual models and benchmarks.
+
+\subsection{Reliability Metrics}
+
+\textbf{Decision accuracy.} Decision accuracy (DA) measures how well the ranking induced by small proxy models matches the ranking induced by larger target models. 
+
+$$\text{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b) \in \mathcal{P}} \mathbb{1}\big[\text{sign}(B(s_a) - B(s_b)) = \text{sign}(B(m_a) - B(m_b))\big]$$
+
+where $\mathcal{P}$ is the set of pairs of training mixtures, $s_a$ is the small proxy model trained on mixture $a$, $m_a$ is the corresponding target model, and $B(\cdot)$ is the benchmark score. A higher decision accuracy means the small-scale ranking transfers reliably to the large-scale ranking.
+
+\todo{Different defs for DA checkpoint and size}
+
+
+\textbf{Signal.} We measure signal as the relative dispersion of model scores across training data mixtures, for a fixed benchmark and model size:
+
+$$\text{Signal}(M) = \frac{\max_{j,k \in M} |s(m_j) - s(m_k)|}{\bar{s}(M)}$$
+
+where $s(m)$ is the score of model $m$ on the benchmark, $M$ is the set of models, and $\bar{s}(M)$ is their mean score. A higher signal means the benchmark separates training mixtures more clearly. We adopt relative dispersion over relative spread after an empirical comparison that reports a stronger correlation with decision accuracy ($R = 0.811$ vs. $R = 0.791$) on the original DataDecide setup of \cite{magnusson2025datadecidepredictbestpretraining}.
+
+\textbf{Checkpoint noise.} 
+
+
+\textbf{Signal-to-noise ratio.} We define the signal-to-noise ratio as signal divided by benchmark noise:
+
+$$\text{SNR}(M) = \frac{\text{Signal}(M)}{\text{Noise}(M)}$$
+
+A higher SNR means score differences across models are large relative to the benchmark's intrinsic variability.
+
+
+
+\subsection{Models}
+\label{subsec:methodology-models}
+
+We pretrain 36 small models across four scales, 175M, 350M, 600M, and 1B non-embedding parameters, using three English/multilingual data mixtures (30/70, 60/40, and 90/10) and three random seeds each.
+
+\textbf{Custom proxy models.} 
+All models follow a decoder-only transformer architecture with grouped query attention, rotary positional embeddings (RoPE) and XiELU as the activation function. The architecture scales by jointly increasing depth, model dimension, and number of attention heads while keeping the KV head ratio fixed at 1/4. All models are trained on approximately 100B tokens drawn from FineEdu-DCLM and FineWeb2 \citep{penedo2025fineweb2pipelinescale}, with a shared vocabulary of 131,072 tokens. Since this vocabulary size places a large fraction of parameters in the embeddings at these scales, we tie input and output embeddings. Training is done in BF16 mixed precision using Megatron-LM CITE.
+
+
+\textbf{Data mixtures.} We construct 3 mixtures by varying the ratio of English to multilingual data, namely 90/10, 60/40, and 30/70. The English component comes from FineWeb-Edu \citep{lozhkov2024fineweb-edu} filtered through the DCLM pipeline [CITE]. The multilingual component is drawn from FineWeb2 \citep{penedo2025fineweb2pipelinescale} using the Apertus high-quality filter CITE?, covering the top 200 languages and preserving the original language distribution of the corpus.
+
+\textbf{Open-source models.} We extend the analysis to larger scales and later training stages with three open-source multilingual model families: Apertus \citep{apertus2025apertusdemocratizingopencompliant}, SmolLM3 \citep{bakouch2025smollm3}, and OLMo3 \citep{olmo2025olmo3}. For pretraining, we add Apertus 1B, 3B, and 8B base. For mid-training, we include SmolLM3 3B Base, OLMo3 7B Base, and Apertus 8B and 70B base. For post-training, we include Apertus 0.6B and 1.7B distilled and distilled SFT, SmolLM3 3B Instruct, OLMo3 7B SFT, DPO, and Instruct (RLVR), and Apertus 8B. \futurework{and 70B Instruct}.
+
+Full model details are reported in Appendix \ref{app:model-details}.
+
+\subsection{Benchmarks}
+\label{subsec:methodology-benchmarks}
+
+\textbf{Languages.} We evaluate on 11 languages: English, Spanish, Russian, Hindi, Chinese, Japanese, Arabic, Turkish, Swahili, Vietnamese, and Basque. The selection balances typological breadth with benchmark availability. Following the resource taxonomy of \cite{joshi-etal-2020-language-resources}, we include languages from across the resource spectrum, from high-resource (English, Spanish, Russian, Chinese, Japanese, Arabic) through mid-resource (Hindi, Turkish, Vietnamese) to lower-resource (Swahili, Basque). The set covers seven language families and one language isolate: Indo-European with four branches (Germanic, Romance, Slavic, Indo-Aryan), Sino-Tibetan, Japonic, Afro-Asiatic, Turkic, Niger-Congo, Austroasiatic, and Basque. Six writing systems are represented: Latin, Cyrillic, Han, Devanagari, Arabic, and Japanese mixed scripts. The set also covers typological features that stress tokenization and modeling in different ways. \cite{petrov2023tokenizersunfairness} and \cite{ahia-etal-2023-tokenization-cost} show that the same content can require many more tokens in some languages than in others.
+%, with differences of up to 15 times across the languages of the FLORES-200 benchmark CITE.
+This gap is largest for non-Latin scripts and for morphologically rich languages, and it directly affects training compute, context length, and inference cost. \cite{limisiewicz-etal-2023-tokenization-vocabulary} further show that vocabulary allocation and overlap across languages systematically influence downstream task performance. Our set covers the main axes along which these effects vary: agglutinative morphology (Turkish, Basque), absence of explicit word boundaries (Chinese, Japanese), root-and-pattern morphology (Arabic), tonal systems (Chinese, Vietnamese), and noun-class agreement (Swahili). Basque, as a language isolate \cite{Campbell2010LanguageIsolates}, gives a clean diagnostic case in which transfer from typologically related high-resource languages is not available.
+
+
+\begin{table*}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Language selection.}
+\label{tab:languages}
+\begin{tabular}{lllll}
+\toprule
+Code & Language & Family & Script & Resource \\ % \\ & Notable property \\
+\midrule
+en & English                & IE, Germanic           & Latin           & High \\ % & Reference baseline \\
+es & Spanish                & IE, Romance            & Latin           & High \\ %  & Wide regional coverage \\
+ru & Russian                & IE, Slavic             & Cyrillic        & High \\ % & script, rich morphology \\
+hi & Hindi                  & IE, Indo-Aryan         & Devanagari      & Mid \\ % & South Asian, script \\
+zh & Mandarin Chinese       & Sino-Tibetan           & Han             & High \\ %  & Logographic, tonal, no spaces \\
+ja & Japanese               & Japonic                & Kanji + Kana    & High \\ %  & Mixed scripts, isolate family \\
+ar & Modern Std. Arabic & Afro-Asiatic, Semitic  & Arabic          & High \\ %  & Root-and-pattern morphology \\
+tr & Turkish                & Turkic                 & Latin           & Mid \\ %  & Agglutinative, vowel harmony \\
+th & Thai                   & Tai-Kadai              & Thai            & Mid \\ %  & Tonal, no spaces \\
+sw & Swahili                & Niger-Congo, Bantu     & Latin           & Low \\ %  & Sub-Saharan Africa, noun classes \\
+eu & Basque & Isolated & Latin & Low \\
+vi & Vietnamese & & & Mid \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\textbf{Pretraining benchmarks.} We evaluate 10 multilingual benchmarks covering several capabilities. We intentionally select benchmarks that are widely adopted in pre-training evaluation.
+%: world knowledge, reading comprehension, natural language inference, commonsense reasoning (decomposed into physical, narrative, and activity-based variants), mathematical reasoning, grammatical acceptability, and truthfulness. 
+World knowledge is measured with Global MMLU \citep{singh2024globalmmluunderstandingaddressing} and the multilingual MMLU and ARC of the Okapi suite CITE; reading comprehension with Belebele CITE; and natural language inference with XNLI CIE. For commonsense reasoning we use three complementary benchmarks: Global PIQA for physical commonsense CITE, XStoryCloze for narrative commonsense CITE, and the multilingual HellaSwag of Okapi for activity-based commonsense CITE. Truthfulness is measured with the multilingual TruthfulQA of Okapi CITE, and mathematical reasoning with MGSM in its direct (no chain-of-thought) variant CITE, the form usable on pretrained models that do not yet produce reliable chain-of-thought outputs. Grammatical acceptability is measured with MultiBLiMP CITE. The combination of capabilities is intentional: grammatical acceptability emerges early in pretraining and provides signal at small model scales, while knowledge and mathematical reasoning emerge later and discriminate larger models.
+
+% - add egyhellaswag?
+% - turkishmmlu?
+
+\futurework{
+\textbf{Midtraining benchmarks.} The pretraining and mid-training suites largely overlap, with the midtraining suite evaluating more reasoning capabilities, including math, code, and long-context tasks (TBD, multilingual benchmarks).
+}
+
+\futurework{
+\textbf{Post-training benchmarks.} The post-training suite adds code (...), instruction-following and safety (M-IFEval, HarmBench, CrowsPairs), and chain-of-thought reasoning tasks (...).
+}
+
+Full benchmark details are reported in Appendix \ref{app:benchmark-details}.
+
+
+\begin{table*}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Benchmark suite.}
+\label{tab:benchmarks}
+\begin{tabular}{llll}
+\toprule
+Benchmark & Capability & Languages & Data \\
+\midrule
+\texttt{arc\_challenge}                       & scientific knowledge       & en                                            & original          \\
+\texttt{arc\_*}                               & scientific knowledge       & ar, es, eu, hi, ru, vi, zh                    & MT                \\
+\texttt{belebele\_*}                          & reading comprehension      & ar, en, es, eu, hi, ja, ru, sw, vi, zh        & human translation \\
+\texttt{global\_mmlu\_*}                      & world knowledge            & ar, en, es, hi, ja, ru, sw, tr, vi, zh        & reviewed MT       \\
+\texttt{global\_piqa\_completions\_*}         & physical commonsense       & ar, en, es, hi, ja, ru, sw, tr, vi, zh        & original          \\
+\texttt{hellaswag}                            & activity commonsense       & en                                            & original          \\
+\texttt{hellaswag\_*}                         & activity commonsense       & ar, es, eu, hi, ru, vi                        & MT                \\
+\texttt{mlqa\_*\_*}                      & cross-lingual QA     & en, ar, es, hi, vi, zh                    & CHECK \\
+\texttt{mgsm\_direct\_*}                      & mathematical reasoning     & en, es, eu, ja, ru, sw, zh                    & human translation \\
+\texttt{multiblimp\_*}                        & grammatical acceptability  & ar, en, es, eu, hi, ru, tr                    & synthetic         \\
+\texttt{truthfulqa\_mc1}                      & truthfulness               & en                                            & original          \\
+\texttt{truthfulqa\_*\_mc1}                   & truthfulness               & ar, es, eu, hi, ru, vi, zh                    & MT                \\
+\texttt{xnli\_*}                              & natural language inference & ar, en, es, eu, hi, ru, sw, tr, vi, zh        & human translation \\
+\texttt{xstorycloze\_*}                       & narrative commonsense      & ar, en, es, eu, hi, ru, sw, zh                & human translation \\
+\texttt{mlqa\_*}                       & QA      &   &   \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Results}
+\label{sec:results}
+
+\begin{enumerate}
+    \item Evaluate 10 evenly-spaced checkpoints + 5 in the last 10\% FLOPS, both of custom models and open-source
+    \item Calculate SNR with different definitions
+    \item Calculate correlation with DA
+    \begin{itemize}
+        \item DA by size: same architecture, different size (e.g. 1B to 8B)
+        \item DA by checkpoint: same architecture, same size, early checkpoint (e.g. checkpoint at 10\% FLOPS predicts last checkpoint)
+    \end{itemize}
+\end{enumerate}
+
+We evaluate 10 evenly-spaced checkpoints plus 5 in the last 10\% FLOPS, from both our custom models and external open-source models.
+
+\clearpage
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.95\linewidth]{images/acc_vs_flops__per_benchmark__multiblimp.png}
+    \caption{Acc vs FLOPS (Multiblimp)}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.95\linewidth]{acc_vs_flops__per_benchmark__belebele.png}
+    \caption{Belebele}
+    \label{fig:placeholder}
+\end{figure}
+
+\clearpage
+
+\subsection{Signal and Noise definition}
+
+
+\paragraph{Signal.} Given the final checkpoints of training runs under similar compute spend $C_\text{final}$, we evaluate multiple approaches to measuring signal:
+
+\begin{itemize}
+    \item \textbf{Variance} measures average squared distance from the mean: $\text{Var}(C_\text{final}) = \frac{1}{n} \sum_{i=1}^{n} \|c_i - \bar{c}\|^2$
+    \item \textbf{Mean distance} measures average pairwise distance between points: $\text{Mean Dist}(C_\text{final}) = \frac{2}{n(n-1)} \sum_{i < j} \|c_i - c_j\|$
+    \item \textbf{Relative standard deviation}, or the coefficient of variation, measures the standard deviation divided by the mean: $\text{Rel. Std.}(C_\text{final}) = \frac{\sqrt{\text{Var}(C_\text{final})}}{\text{Mean}(C_\text{final})}$
+    \item \textbf{Star Discrepancy} measures the largest difference between any point and the uniform distribution: $\text{Discrepancy}(C_\text{final}) = \sup_{t \in [0,1]} \left| \frac{1}{n} \sum_{i=1}^n \mathbf{1}\{c_i \leq t\} - t \right|$. 
+    \item \textbf{Dispersion} measures the largest difference between any two points, or the largest unfilled space in the range of performance: $\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|$. 
+\end{itemize}
+
+\paragraph{Noise.} 
+
+- checkpoint
+- benchmark (k fold)
+
+\section{Analysis}
+\label{sec:analysis}
+
+
+\subsection{Framework generalization}
+
+\paragraph{Extrapolation to other languages.}
+We know which multilingual benchmarks have high SNR and high DA for 10 diverse languages. We now want to see if these benchmarks also have high DA for languages out of the test set. We first consider languages close to the considered languages in terms of family and script: French, German, and Ukranian (TBD). We then consider languages with more different characteristics: Vietnamese and TBD.
+For this experiment, we calculate the DA of the corresponding benchmarks on the new target languages.  We evaluate 5 checkpoints (1 at 10\% progress and max 5 in the final 10\%) of the 1B and 7B models, calculate the SNR, calculate the DA by size and by checkpoint, and analyze whether they have high DA as expected and which cases fail.
+
+\paragraph{Extrapolation to inform other model design decisions.}
+The original experiments consider custom models trained on different multilingual data mixtures. For this experiment, we relaunch the same experiment considering custom models ranging from 175M to 1B parameters with different tokenizers. In particular, we consider 4 tokenizers: parity-aware one, a SuperBPE one, and two standard BPE  (one English-heavy and one multilingual).
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{images/tokenizer_languages.png}
+    \caption{Tokenizer languages (Clara's experiments)}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{images/tokenizers.png}
+    \caption{Tokenizers (Clara's experiments)}
+    \label{fig:placeholder}
+\end{figure}
+
+\paragraph{Comparison with other benchmark validity frameworks.}
+Experiment setup: We evaluate highly informative benchmarks proposed by related work, with the definition of "informative" depending on each research question. We then compute the SNR value and DA of these benchmarks, and analyze the intersection between "validity" definitions. In particular, we consider the following frameworks: the SNR for English benchmarks proposed by \cite{heineman2025signalnoiseframeworkreducing} (sure), FineTasks (sure), the SMART framework (TBD), and TBD.
+
+For this experiment, we calculate the DA of the corresponding highly informative benchmarks.  We evaluate 5 checkpoints (1 at 10\% progress and max 5 in the final 10\%) of the 1B and 7B models, calculate the SNR, calculate the DA by size and by checkpoint, and analyze whether they have high DA as expected and which cases fail.
+
+We also consider for this comparison, the computational cost of each framework. To calculate SNR we need to evaluate XX models of size XX and have access to XX checkpoints.
+
+\begin{table}[ht]
+\centering
+\caption{
+  Multilingual coverage of the English benchmarks used by \cite{heineman2025signalnoiseframeworkreducing} in the
+  \texttt{lm-evaluation-harness}.
+  The `Considered languages` column lists the intersection with
+  \{\textsc{en, ar, es, hi, vi, zh, ja, ru, tr, sw, eu}\}.
+}
+\label{tab:multilingual-benchmarks}
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Benchmark}
+  & \textbf{Multilingual task in harness}
+  & \textbf{Total}
+  & \textbf{Considered languages} \\
+\midrule
+TriviaQA
+  & ---
+  & 1
+  & en \\
+\addlinespace
+SQuAD
+  & \texttt{mlqa}
+  & 7
+  & en, ar, es, hi, vi, zh \\
+\addlinespace
+ARC Easy
+  & \texttt{arc\_multilingual}
+  & 26
+  & ar, es, hi, vi, zh, ru \\
+\addlinespace
+ARC Challenge
+  & \texttt{arc\_multilingual}
+  & 26
+  & ar, es, hi, vi, zh, ru \\
+\addlinespace
+Jeopardy
+  & ---
+  & 1
+  & en \\
+\addlinespace
+AutoBencher
+  & not in harness
+  & ---
+  & --- \\
+\addlinespace
+HellaSwag
+  & \texttt{hellaswag\_multilingual}
+  & 30
+  & ar, es, eu, hi, ru, vi \\
+\addlinespace
+MMLU
+  & \texttt{global\_mmlu\_full}
+  & 42
+  & en, ar, es, hi, vi, zh, ja, ru, tr, sw \\
+\addlinespace
+SocialIQA
+  & ---
+  & 1
+  & en \\
+\addlinespace
+PIQA
+  & \texttt{global\_piqa},
+    \texttt{piqa\_eu},
+  & 100+
+  & en, ar, es, hi, vi, zh, ja, ru, tr, sw \\
+\addlinespace
+AGI Eval
+  & \texttt{agieval\_en}, \texttt{agieval\_cn}
+  & 2
+  & en, zh \\
+\addlinespace
+HumanEval
+  & ---
+  & 1
+  & en \\
+\addlinespace
+MBPP
+  & ---
+  & 1
+  & en \\
+\addlinespace
+Minerva MATH
+  & ---
+  & 1
+  & en \\
+\addlinespace
+GSM8K
+  & \texttt{mgsm}
+  & 11
+  & en, es, ru, zh, ja, sw \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{How to build better benchmarks (or select better subsets of them)}
+
+Now that we have shown that high SNR correlates with high DA, we will explore how to improve SNR.
+We will explore different levels:
+benchmark creation decision (e.g., data source, data curation method)
+subsampling methods (e.g. select harder questions, remove semantically similar questions),
+
+
+\subsubsection{Benchmark creation decisions}
+
+We document the data source and data curation method of the 10 benchmarks considered and compute the correlation between these characteristics and SNR.
+
+\paragraph{Data source.} We differentiate between web data, news, literature, crowdsourced, expert generated, or synthetically generated.
+
+\paragraph{Data curation.} Since we're considering multilingual benchmarks, we focus on how whether the data was machine or manually translated, as well as on the review process.
+
+\subsubsection{Subsampling methods}
+
+
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+
+\begin{ack}
+Use unnumbered first level headings for the acknowledgments.
+\end{ack}
+
+
+\bibliographystyle{plainnat}
+\bibliography{references/llms,references/benchmarks,references/pt_datasets, references/bench_validity, references/linguistics, references/software, references/tokenizers, references/scaling_laws}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+
+\input{src/a_model_details}
+\input{src/b_benchmark_details}
+\input{src/c_snr_definitions}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+% \input{checklist.tex} % TODO
+
+
+\end{document}
