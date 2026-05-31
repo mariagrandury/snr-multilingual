@@ -1,53 +1,90 @@
-# Conversion scripts
+# Megatron → HuggingFace checkpoint conversion
 
-This readme explains how to perform megatron to huggingface conversions.
-To do this conversion, the first thing to ask is if you have been saving megatron checkpoints using `torch_dist` format.
-This is specified by the `--ckpt-format=torch_dist`, and is the default value.
-If you have been using the swiss-ai templates, you most likely are.
-In this case, first you will need to save your checkpoint in the `torch` format by running the `torchdist_2_torch.py`:
-```
+> Two-step pipeline to convert Megatron `torch_dist` checkpoints to HF
+> format so they can be evaluated with `lm-evaluation-harness` (via the
+> vLLM backend) and pushed to the HF Hub.
+
+The sweep-level driver
+([`convert-snr.sh`](convert-snr.sh)) wraps both steps and walks all 36
+cells × 13 canonical iters; this README documents the underlying single-
+checkpoint flow.
+
+## Step 1 — `torch_dist` → `torch`
+
+If you trained with `--ckpt-format=torch_dist` (the swiss-ai template
+default), first convert to the plain `torch` format:
+
+```bash
 CUDA_DEVICE_MAX_CONNECTIONS=1 torchrun scripts/conversion/torchdist_2_torch.py \
-	--bf16 \
-	--load CHECKPOINT_PATH \
-	--ckpt-convert-save INTERMEDIATE_CHECKPOINT_PATH \
-	--ckpt-step ITERATION_STEP  # Optional, if not specified you will load the latest checkpoint available.
+    --bf16 \
+    --load CHECKPOINT_PATH \
+    --ckpt-convert-save INTERMEDIATE_CHECKPOINT_PATH \
+    --ckpt-step ITERATION_STEP   # optional; defaults to latest
 ```
-If you get a `ModuleNotFoundError: No module named 'megatron'`, try setting `PYTHONPATH=$PWD`.
-For converting larger models (e.g. 70B) you will need to use pass `--nproc-per-node=4` to `torchrun` and `--pipeline-model-parallel-size=4` to the `torchdist_2_torch.py` script.
-Note that this decision will not change how you call the `convert.py` next (i.e. don't set `--pipeline-model-parallel-size` with the `convert.py` script).
 
-Keep in mind that the `CHECKPOINT_PATH` is the root directory that stores all of the checkpoints, and usually its contents like this: `iter_0001000/ iter_0002000/ latest_checkpointed_iteration.txt progress.txt`.
-The `INTERMEDIATE_CHECKPOINT_PATH` will be needed for the following step, after which can be safely removed.
+`CHECKPOINT_PATH` is the **root** directory holding all the iter dirs
+(`iter_0001000/ iter_0002000/ … latest_checkpointed_iteration.txt
+progress.txt`), not an individual iter dir.
 
-The next step is to perform the actual huggingface conversions.
-In the next snippet, replace `CHECKPOINT_PATH` with `INTERMEDIATE_CHECKPOINT_PATH` if you ran the previous step:
-```
+If you get `ModuleNotFoundError: No module named 'megatron'`, set
+`PYTHONPATH=$PWD`.
+
+For larger models (e.g. 70B), pass `--nproc-per-node=4` to `torchrun`
+and `--pipeline-model-parallel-size=4` to the script. The PP value does
+**not** carry over to `convert.py` below — don't set it there.
+
+The `INTERMEDIATE_CHECKPOINT_PATH` is consumed by Step 2 and can be
+removed afterward.
+
+## Step 2 — `torch` → HuggingFace
+
+```bash
 python tools/checkpoint/convert.py \
-	--model-type GPT \
-	--loader core \
-	--saver swissai_hf \
-	--load-dir CHECKPOINT_PATH \
-	--save-dir SAVE_DIR \
-	--hf-tokenizer HF_TOKENIZER_NAME  # Optional, set it to save the tokenizer config in `SAVE_DIR`.
+    --model-type GPT \
+    --loader core \
+    --saver swissai_hf \
+    --load-dir CHECKPOINT_PATH \
+    --save-dir SAVE_DIR \
+    --hf-tokenizer HF_TOKENIZER_NAME   # optional; saves tokenizer in SAVE_DIR
 ```
-Set `--test-logits` if you want to make sure logits of the converted model match with the megatron implementation (only possible with TP1,PP1).
-In order to be able to convert Apertus models, we instantiate a custom HF `ApertusForCausalLM`; make sure to install the latest version of the transformers fork before running the conversion:
-```
+
+If Step 1 was run, replace `CHECKPOINT_PATH` with
+`INTERMEDIATE_CHECKPOINT_PATH`.
+
+Add `--test-logits` to verify that the HF model's logits match the
+Megatron implementation (TP1, PP1 only).
+
+Apertus models use a custom `ApertusForCausalLM`. Install the latest
+swiss-ai transformers fork before converting:
+
+```bash
 git clone https://github.com/swiss-ai/transformers.git
 cd transformers
 pip install -e .
 ```
 
-Your Huggingface converted model will be in `SAVE_DIR` and you can use it normally:
-```
+## Use the converted model
+
+```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
 tokenizer = AutoTokenizer.from_pretrained(SAVE_DIR)
-model = AutoModelForCausalLM.from_pretrained(SAVE_DIR, device_map="auto", torch_dtype="auto")
+model = AutoModelForCausalLM.from_pretrained(
+    SAVE_DIR, device_map="auto", torch_dtype="auto"
+)
 
 prompt = "What's the best way to get in shape?"
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-output = model.generate(inputs.input_ids, attention_mask=inputs.attention_mask, max_new_tokens=256,do_sample=True)
+output = model.generate(
+    inputs.input_ids,
+    attention_mask=inputs.attention_mask,
+    max_new_tokens=256,
+    do_sample=True,
+)
 print(tokenizer.decode(output[0], skip_special_tokens=True))
 ```
 
-See `scripts/conversion/do-convert.sh` for an end-to-end megatron->hf conversion example.
+End-to-end single-checkpoint example: `scripts/conversion/do-convert.sh`.
+For the full 36-cell × 13-iter sweep, use the wrapper
+[`convert-snr.sh`](convert-snr.sh) — three modes (per-iter, sbatch
+wrapper, launcher with `--submit`).

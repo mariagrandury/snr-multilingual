@@ -1,16 +1,13 @@
 # Signal-Aware Framework for Multilingual LM Evaluation
 
-The objective of this project is to answer this research question:
+> Which (subsets of) benchmarks provide reliable signal at each stage of
+> multilingual model training?
 
-> Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
-
-## Overview
-
-- **Pretraining**: Pretrain custom small multilingual models. 4 sizes (175M, 350M, 600M, 1B) × 3 data mixtures (FineWeb-Edu 30/60/90) × 3 seeds (28, 1797, 1904) = 36 models. Run only on the cluster.
-- **Evaluation**: Evaluate HuggingFace model checkpoints on lm-evaluation-harness tasks. Results saved locally and pushed to W&B and to a public HF dataset ([`multilingual-snr/multilingual-snr-eval-results`](https://huggingface.co/datasets/multilingual-snr/multilingual-snr-eval-results)).
-- **SNR**: Calculate signal, noise, SNR, decision accuracy, and (where applicable) scaling-law error for all the benchmarks. 22 SNR variants × 4 sizes × the 115–121 multilingual parent tasks.
-- **Analysis**: Per-language and across-language correlation of SNR-vs-DA, plus subset-search to find which subtasks elevate SNR for each benchmark family. Train/test seed split to test that the framework's recommendations generalize.
-- **Slides**: [`documents/`](documents/) — Slidev presentation summarizing methodology and findings.
+This project extends the Signal-and-Noise framework (Heineman et al.,
+2025) from the original English DataDecide / OLMo ladder to a
+controlled multilingual sweep: 4 sizes × 3 data mixtures × 3 seeds = 36
+small Apertus pretrains, evaluated on 80+ multilingual tasks, then run
+through the full SNR / decision-accuracy stack.
 
 ## Answer to the research question
 
@@ -20,60 +17,102 @@ The objective of this project is to answer this research question:
    global default.** Mean Pearson r between log10(SNR) and decision
    accuracy is ~+0.30 across 12 languages, and the dispersion-cluster
    ranking is stable across seed splits (DA-ckpt r between train and
-   test splits = +0.69).
-2. **Use `multiblimp_<lang>` and `xstorycloze_<lang>` /
+   test pools = +0.69).
+2. **Use `multiblimp_<lang>`, `xstorycloze_<lang>` and
    `hellaswag_<lang>` as the per-language reliability anchors.** They
-   dominate the SNR ranking in every language where they exist and
-   have decision-accuracy ≈ 1.0 — they actually rank model variants
-   in the way large-model evaluations do.
+   dominate the SNR ranking in every language where they exist and have
+   decision-accuracy ≈ 1.0 — they rank model variants in the way large-
+   model evaluations do.
 
-**The framework generalizes at the global-ranking level.** The
-Spearman rank correlation between the train and test pools' global
-variant orderings is **+0.84 (DA-size)** and **+0.90 (DA-ckpt)** — the
-"which variants are good" question is stable across seed pools. But
-the *exact* per-language argmax changes (only 1/14 languages keep the
-same pick), so per-language tuning that beats the dispersion baseline
-should be treated as overfitting until validated on at least one more
-seed.
+**The framework generalizes at the global-ranking level.** Spearman rank
+correlation between the train and test pools' global variant orderings
+is **+0.84 (DA-size)** and **+0.90 (DA-ckpt)** — *which* variants are
+good is stable across seed pools. But the *exact* per-language argmax
+changes (only 1/14 languages keep the same pick), so per-language
+tuning that beats the dispersion baseline should be treated as
+overfitting until validated on at least one more seed.
 
-**Benchmarks to de-prioritise:** `xnli_<lang>` rows often have high
-SNR but DA-size = 0 (perfect rank disagreement with the 1B target),
-so they're misleading reliability signals. `mgsm_direct` is currently
-broken in the parquet (NaN scores).
+**Cross-corpus check.** On the seven English benchmarks shared with the
+AllenAI DataDecide ladder, the pooled Apertus SNR (9 model_families per
+size) correlates with AllenAI SNR at **Pearson r = 0.935** for the
+discrepancy family. Top-10 reliable benchmarks agree by Jaccard 1.0:
+`arc_challenge`, `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`,
+`piqa`.
 
-See [`src/signal-and-noise/results/snr_definition/README.md`](src/signal-and-noise/results/snr_definition/README.md)
-for the full per-language tables and the train/test split summary.
+**What predicts SNR.** Task design — **number of options** and **option
+length** — explains most of the variance. Curation method (MT / human /
+template) does not. Per-family Spearman:
+ρ = +0.62 (random baseline, p = 0.041); ρ = +0.54 (option length,
+p = 0.089); ρ = 0.84 (curation, p = 0.66, not significant).
 
-## Project structure
+**What subsets elevate SNR.** Best subsets substantially beat full sets
+on multilingual benchmarks: Belebele 350M `+0.89` SNR with a 4-language
+subset; Global-MMLU 175M `+0.96` with `international_law` alone. Subject
+picks are highly stable across seed pools; language picks are partially
+stable; per-(language, subject) picks are pool-sensitive.
 
-- [`configs/`](configs/) — `tasks.json` and `models.json` define what to evaluate
-- [`documents/`](documents/) — reports and slides presenting the motivation and progress of the project
-- [`src/`](src/) — core logic (config loading, model pretraining, evaluation, analysis)
-- [`scripts/`](scripts/) — thin runner wrappers (local + SLURM)
-- [`results/`](results/) — local output (gitignored)
-- [`preliminary-analysis/`](preliminary-analysis/) — code and report from a preliminary analysis of the framework
+**Benchmarks to de-prioritise.** `xnli_<lang>` rows often have high SNR
+but DA-size = 0 — perfect rank disagreement with the 1B target. High
+SNR there is misleading. `mgsm_direct` is currently broken in the
+parquet (NaN scores).
 
-## Key results dirs
+The full per-language tables and seed-split summaries live in
+[`src/signal-and-noise/results/`](src/signal-and-noise/results/) — one
+subdir per research question.
+
+## The pipeline in three sections
+
+### 1. [Pretraining](src/pretrain/) — build the model pool
+
+- **36 small multilingual Apertus models**: 4 sizes (175M, 350M, 600M,
+  1B) × 3 data mixtures of FineWeb-Edu + FineWeb2-HQ (30/70, 60/40,
+  90/10) × 3 seeds (28, 1797, 1904). All trained to iter 50 000
+  (~100 B tokens at GBS 504 × seq 4096).
+- Per-size cluster cost: 175M ~11 h, 350M ~7.8 h, 600M ~7.2 h, 1B ~9.9 h.
+- The canonical entry point is the idempotent
+  [`launch_resumes.sh`](src/pretrain/launch_resumes.sh) — drives the
+  full sweep to 100% canonical coverage.
+
+### 2. [Evaluation](src/evals/) — measure them
+
+- Cluster-side SLURM pipeline built on
+  [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
+  with W&B integration.
+- 86 tasks per checkpoint (per-language multilingual + standalone
+  English benchmarks); 10 evenly-spaced + 4 dense-tail canonical iters
+  per model.
+- Results saved locally to `eval_logs/`, pushed to the
+  [`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments)
+  W&B project, and packaged into the public HF dataset
+  [`multilingual-snr/multilingual-snr-eval-results`](https://huggingface.co/datasets/multilingual-snr/multilingual-snr-eval-results).
+- The SNR experiments are organised into three stages
+  ([pretraining](src/evals/configs/signal_to_ratio/), midtraining,
+  posttraining) with separate runners + idempotent re-launch.
+
+### 3. [Signal & Noise](src/signal-and-noise/) — analyse them
+
+Four self-contained reports, one per research question. Each is read
+results-first; the per-pool subdirs hold the CSVs and PNGs.
+
+| Report | Question |
+|---|---|
+| [`results/snr_definition/`](src/signal-and-noise/results/snr_definition/) | Which SNR variant best correlates with decision accuracy across languages? Does the choice generalize across seeds? |
+| [`results/benchmark_creation/`](src/signal-and-noise/results/benchmark_creation/) | What benchmark design features (curation, format, option count, item length) predict SNR? |
+| [`results/allenai_comparison/`](src/signal-and-noise/results/allenai_comparison/) | Do our SNR rankings agree with AllenAI DataDecide on shared English tasks? |
+| [`results/smooth_subtasks/`](src/signal-and-noise/results/smooth_subtasks/) | Per benchmark, can a language or MMLU-subject subset elevate SNR and DA? |
 
 Each analysis is partitioned by Apertus seed pool: **`seeds_1904`**
 (single-seed test), **`seeds_28_1797`** (held-out train), and
 **`seeds_28_1797_1904`** (pooled all seeds, recommended for downstream
-work).
+work). The `seeds_28_1797__vs__seeds_1904/` subdir under `snr_definition/`
+holds the train/test framework-generalization summary.
 
-- [`src/signal-and-noise/results/snr_definition/seeds_<pool>/`](src/signal-and-noise/results/snr_definition/)
-  — per-task SNR/DA tables + Q1–Q4 plots (best variant per language,
-  top variants overall, top benchmarks per language)
-- [`src/signal-and-noise/results/snr_definition/seeds_28_1797__vs__seeds_1904/`](src/signal-and-noise/results/snr_definition/seeds_28_1797__vs__seeds_1904/)
-  — framework-generalization summary across train/test seed pools
-  (agreement metrics, retention, Spearman ρ on variant ranking,
-  scatter)
-- [`src/signal-and-noise/results/smooth_subtasks/seeds_<pool>/`](src/signal-and-noise/results/smooth_subtasks/)
-  — subset-search outputs (per-benchmark + per-(lang, subject) GMF +
-  per_sample under [per_sample/](src/signal-and-noise/results/smooth_subtasks/per_sample/))
-- [`src/signal-and-noise/results/allenai_comparison/seeds_<pool>/`](src/signal-and-noise/results/allenai_comparison/)
-  — cross-corpus transfer of SNR rankings to AllenAI DataDecide
-- [`src/signal-and-noise/results/benchmark_creation/seeds_<pool>/`](src/signal-and-noise/results/benchmark_creation/)
-  — per-family SNR vs benchmark-design metadata (curation, format,
-  option count, item length)
-- [`src/signal-and-noise/results/acc_vs_flops/seeds_<seed>/`](src/signal-and-noise/results/acc_vs_flops/)
-  — training curves (acc vs FLOPs) for each individual seed
+## Project structure
+
+- [`configs/`](configs/) — `tasks.json` and `models.json` define what to evaluate
+- [`documents/`](documents/) — reports and slides
+- [`src/`](src/) — core logic (pretrain, evaluate, analyse)
+- [`scripts/`](scripts/) — thin runner wrappers (local + SLURM)
+- [`results/`](results/) — local output (gitignored)
+- [`preliminary-analysis/`](preliminary-analysis/) — early-version code +
+  report, kept for reference

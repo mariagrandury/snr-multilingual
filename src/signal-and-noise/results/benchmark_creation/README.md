@@ -1,48 +1,23 @@
-# `benchmark_creation/` — what makes a benchmark high-SNR?
+# What makes a benchmark high-SNR?
 
-> Step-by-step plan: [INSTRUCTIONS.md](INSTRUCTIONS.md). Use one
-> Claude session per research question — see
-> [../PARALLEL_SESSIONS.md](../PARALLEL_SESSIONS.md).
+> Why do some multilingual benchmarks separate models cleanly under the SNR
+> framework and others don't? Is it curation quality, task format, item
+> length, or something else?
 
-## Research question
+## TL;DR
 
-The original Q4 (v0) was *"do high-SNR benchmarks share data-source /
-curation-process traits?"* — see Phase 0 below. After v0 left most of
-the variance unexplained, two extra axes were added (Phase A: task
-format; Phase B: item lengths). The combined story is:
+**Curation method does not predict SNR. Task design — specifically how
+many candidate options the model has to compare, and how long those
+options are — does.**
 
-> **Curation method does not predict SNR. Task design — and
-> specifically how many candidate options the model has to compare,
-> and how long those options are — does.**
-
-## Setup
-
-- **SNR signal:** `snr_mpd_1B` from one of the seed-pool subdirs under
-  [../snr_definition/](../snr_definition/). Q1 picked `mpd` (mean
-  pairwise distance) as a top dispersion-family variant; it stays in
-  the global top-7 across all three seed pools.
-- **Per-family aggregate:** median of `snr_mpd_1B` across the family's
-  per-language aggregate tasks.
-- **Outputs are partitioned by seed pool**: each Apertus seed pool
-  gets its own subdir here (`seeds_1904/`, `seeds_28_1797/`,
-  `seeds_28_1797_1904/`) with the same set of files
-  (per_family_snr.csv, per_task_snr.csv, group_stats.csv,
-  snr_by_*.png).
-- **Metadata:** [data_info.md](data_info.md) — paper-style paragraphs +
-  a schema table, cross-referenced against the
-  `lm-evaluation-harness` task READMEs. The `FAMILY_META` dict in
-  [analyze.py](analyze.py) is the machine-readable mirror.
-- **Length features:** [length_features.py](length_features.py) pulls
-  100 English (or default-config) items per family from each
-  benchmark's HF dataset and computes character-length statistics for
-  context vs options. Output: [length_features.csv](length_features.csv).
-  Shared across pools.
-- **Coverage caveat (carried forward):** `global_mmlu` (Lite, 6 langs)
-  is excluded from the SNR analysis — only one Apertus model was
-  evaluated on it, so `mpd_1B` is NaN everywhere. arc_de/fr and
-  hellaswag_de/fr are also NaN at 1B.
-  `global_piqa_completions_spa_latn_spai` is filtered by
-  `_is_language_aggregate` (3 trailing tokens).
+The strongest single-axis predictor is the number of answer options
+(Spearman ρ = **+0.62, p = 0.041**): 2-option tasks have higher SNR than
+4-option tasks, holding everything else equal. Option length follows the
+same logic (ρ = **+0.54, p = 0.089**): longer per-option text concentrates
+more discriminating tokens, sharpening per-item log-likelihood. The
+curation-method question (the original Q4) explains <1% of family-level
+SNR variance (Kruskal-Wallis p = 0.66) — once task design is held
+constant, curation doesn't matter.
 
 ## Headline ranking (pool: `seeds_28_1797_1904`, recommended)
 
@@ -65,13 +40,34 @@ Per-family median `snr_mpd_1B` (full table:
 | global_mmlu_full | 0.66 | 10 | mt_post_edited | mcq_question_only | 4 |
 | arc | 0.62 | 9 | machine_translation | mcq_question_only | 4 |
 
-Rank order is stable across seed pools — minor reshuffling in the
-mid-tier between pools, but the top (multiblimp / xwinograd /
-xstorycloze) and bottom (belebele / global_mmlu_full / arc) blocks
-are unchanged. See
-[seeds_1904/per_family_snr.csv](seeds_1904/per_family_snr.csv) and
-[seeds_28_1797/per_family_snr.csv](seeds_28_1797/per_family_snr.csv)
-for the single-seed and train-pool views.
+Rank order is stable across seed pools — minor reshuffling in the mid-tier
+but the top (`multiblimp` / `xwinograd` / `xstorycloze`) and bottom
+(`belebele` / `global_mmlu_full` / `arc`) blocks are unchanged. Single-seed
+and train-pool views:
+[seeds_1904/per_family_snr.csv](seeds_1904/per_family_snr.csv),
+[seeds_28_1797/per_family_snr.csv](seeds_28_1797/per_family_snr.csv).
+
+## Combined picture — what predicts SNR?
+
+In rough order of evidence strength:
+
+| effect | direction | strength |
+|---|---|---|
+| n_options / random_baseline | fewer options → higher SNR | **strong** (Spearman ρ=+0.62, p=0.04) |
+| option length | longer options → higher SNR | borderline (ρ=+0.54, p=0.09) |
+| task format (minimal_pair > completion > classification > MC > MRC) | as listed | borderline (KW p=0.06) |
+| context : option ratio | lower ratio → higher SNR | weak (ρ=-0.47, p=0.14) |
+| context length | shorter context → higher SNR | weak (ρ=-0.33, p=0.33) |
+| source origin (English-translated vs originally-multilingual) | originally-multilingual median higher | weak (KW p=0.10) |
+| passage in prompt | no effect | none |
+| curation category (MT / human / template / etc.) | no effect | none (p=0.66) |
+
+The curation question that motivated v0 is not where the variance lives.
+**Task design — option count and option length — explains most of what we
+can explain on this 11-family pool.** All effects are borderline-
+significant due to the small sample (n=11 families), but they're mutually
+consistent and point at the same mechanism: tasks where the model has to
+pick between fewer, longer log-likelihood-scored completions are SNR-higher.
 
 ## Phase 0 — curation process (the original Q4 question)
 
@@ -83,13 +79,12 @@ for the single-seed and train-pool views.
 | family / source_origin (2-way) | Kruskal-Wallis | 2.67 | 0.10 |
 | task / curation_category (with `xnli_eu` re-tag) | Kruskal-Wallis | 32.3 | <1e-6 |
 
-The family-level test does not reach significance for any curation
-view (see [snr_by_data_source.png](seeds_28_1797_1904/snr_by_data_source.png) too). The
-per-task test only reaches significance because multiblimp's
-template-generated tasks pull the `template_generated` group up; if
-you drop multiblimp the residual differences across the other four
-categories are not significant. **Curation method alone does not
-predict SNR.**
+The family-level test does not reach significance for any curation view
+(see [snr_by_data_source.png](seeds_28_1797_1904/snr_by_data_source.png)).
+The per-task test only reaches significance because multiblimp's
+template-generated tasks pull the `template_generated` group up; if you
+drop multiblimp, the residual differences across the other four categories
+are not significant. **Curation method alone does not predict SNR.**
 
 ## Phase A — task format (the strongest categorical predictor)
 
@@ -108,40 +103,40 @@ predict SNR.**
 
 The continuous Spearman correlation between SNR and random baseline
 (= 1 / n_options) is **+0.62, p = 0.041** — the only significant
-single-axis result in the entire benchmark-creation analysis.
-Concretely: 2-option tasks have higher SNR than 4-option tasks,
-holding everything else equal. The probable mechanism is that
-log-likelihood comparison across two completions is sharper than
-across four — every additional option introduces another noisy LL
-estimate that has to be ranked correctly.
+single-axis result in the entire benchmark-creation analysis. Concretely:
+2-option tasks have higher SNR than 4-option tasks, holding everything
+else equal. The probable mechanism is that log-likelihood comparison
+across two completions is sharper than across four — every additional
+option introduces another noisy LL estimate that has to be ranked
+correctly.
 
-The format axis (5-way Kruskal-Wallis p = 0.058) tells the same story
-in categorical form:
+The format axis (5-way KW p = 0.058) tells the same story categorically:
+
 - `minimal_pair` (multiblimp): single family, very high SNR.
 - `completion` (n=5): 2nd-tier, median ≈ 1.6.
 - `classification` (n=2): 3rd-tier, ~1.0.
 - `mcq_question_only` (n=2): 4th-tier, ~0.55.
 - `mrc_passage` (n=1, belebele): lowest, 0.48.
 
-The two earlier surprises now resolve:
-- **Belebele**: only `mrc_passage` family AND 4 options — both
-  strongest negative predictors stack.
-- **MultiBLiMP**: minimal-pair format gives uniquely sharp signal
-  because each item is a 1-token contrast, not "automatic generation
-  produces better data."
+Two earlier surprises now resolve:
 
-The `passage` flag (whether the prompt contains a long passage)
-is **not** a useful predictor (p = 0.54). XStoryCloze (4-sentence
-context, completion task) has high SNR; Belebele (long passage, MRC)
-has low SNR — passage length doesn't matter, what's done with it
-does.
+- **Belebele**: only `mrc_passage` family AND 4 options — both strongest
+  negative predictors stack.
+- **MultiBLiMP**: minimal-pair format gives uniquely sharp signal because
+  each item is a 1-token contrast, not "automatic generation produces
+  better data."
+
+The `passage` flag (whether the prompt contains a long passage) is **not**
+a useful predictor (p = 0.54). XStoryCloze (4-sentence context, completion
+task) has high SNR; Belebele (long passage, MRC) has low SNR — passage
+length doesn't matter, what's done with it does.
 
 ## Phase B — item lengths (extends Phase A quantitatively)
 
 ![SNR vs length features](seeds_28_1797_1904/snr_vs_length_features.png)
 
-100 English-or-default items per family pulled from each benchmark's
-HF dataset; character-length statistics in
+100 English-or-default items per family pulled from each benchmark's HF
+dataset; character-length statistics in
 [length_features.csv](length_features.csv).
 
 | feature | Spearman ρ | p | sign as predicted? |
@@ -150,86 +145,99 @@ HF dataset; character-length statistics in
 | **option length** | **+0.54** | **0.089** | **yes (borderline)** |
 | context : option ratio | -0.47 | 0.14 | yes (weak) |
 
-The strongest length feature is **option length** (ρ = +0.54): tasks
-with longer per-option text — full sentences for log-likelihood
-comparison — have higher SNR. The mechanism is the same as Phase A's
-n_options effect, just in a continuous variable: longer options give
-more discriminating tokens, which sharpens per-item log-likelihood.
+The strongest length feature is **option length** (ρ = +0.54): tasks with
+longer per-option text — full sentences for log-likelihood comparison —
+have higher SNR. Same mechanism as Phase A's n_options effect, in
+continuous form: longer options give more discriminating tokens, which
+sharpens per-item log-likelihood.
 
 Concrete examples:
-- **PAWS** (option = "Yes" / "No", 2.5 chars) sits at SNR 1.05
-  despite being binary; its short labels concentrate the signal in
-  one or two tokens.
-- **MultiBLiMP** (option = full grammatical sentence, 119 chars)
-  sits at SNR 4.42 — 100× more discriminating tokens than PAWS, same
-  n_options.
+
+- **PAWS** (option = "Yes" / "No", 2.5 chars) sits at SNR 1.05 despite
+  being binary; its short labels concentrate the signal in one or two
+  tokens.
+- **MultiBLiMP** (option = full grammatical sentence, 119 chars) sits at
+  SNR 4.42 — 100× more discriminating tokens than PAWS, same n_options.
 - **HellaSwag** (option = full continuation, 61 chars) escapes the
-  4-option penalty and sits at SNR 2.04, beating ARC (option = a
-  short noun phrase, 28 chars) at SNR 0.74.
+  4-option penalty and sits at SNR 2.04, beating ARC (option = a short
+  noun phrase, 28 chars) at SNR 0.74.
 
-`context_len_chars` and `context_to_option_ratio` move in the
-expected direction (longer context → lower SNR; higher ratio → lower
-SNR) but neither reaches significance individually with n=11.
+`context_len_chars` and `context_to_option_ratio` move in the expected
+direction (longer context → lower SNR; higher ratio → lower SNR) but
+neither reaches significance individually with n=11.
 
-## Combined picture
+## Methodology
 
-In rough order of evidence strength:
-
-| effect | direction | strength |
-|---|---|---|
-| n_options / random_baseline | fewer options → higher SNR | **strong** (Spearman ρ=+0.62, p=0.04) |
-| option length | longer options → higher SNR | borderline (ρ=+0.54, p=0.09) |
-| task format (minimal_pair > completion > classification > MC > MRC) | as listed | borderline (KW p=0.06) |
-| context : option ratio | lower ratio → higher SNR | weak (ρ=-0.47, p=0.14) |
-| context length | shorter context → higher SNR | weak (ρ=-0.33, p=0.33) |
-| source origin (English-translated vs originally-multilingual) | originally-multilingual median higher | weak (KW p=0.10) |
-| passage in prompt | no effect | none |
-| curation category (MT / human / template / etc.) | no effect | none (p=0.66) |
-
-The curation question that motivated v0 is not where the variance
-lives. **Task design — option count and option length — explains
-most of what we can explain on this 11-family pool.** All effects are
-borderline-significant due to the small sample, but they're all
-mutually consistent and point at the same mechanism: tasks where the
-model has to pick between fewer, longer log-likelihood-scored
-completions are SNR-higher.
+- **SNR signal:** `snr_mpd_1B` from one of the seed-pool subdirs under
+  [../snr_definition/](../snr_definition/). Q1 picked `mpd` (mean pairwise
+  distance) as a top dispersion-family variant; it stays in the global
+  top-7 across all three seed pools.
+- **Per-family aggregate:** median of `snr_mpd_1B` across the family's
+  per-language aggregate tasks.
+- **Outputs partitioned by seed pool**: each Apertus seed pool has its own
+  subdir (`seeds_1904/`, `seeds_28_1797/`, `seeds_28_1797_1904/`) with the
+  same set of files.
+- **Metadata source:** [data_info.md](data_info.md) — paper-style
+  paragraphs + a schema table, cross-referenced against the
+  `lm-evaluation-harness` task READMEs. The `FAMILY_META` dict in
+  [analyze.py](analyze.py) is the machine-readable mirror.
+- **Length features:** [length_features.py](length_features.py) pulls 100
+  English (or default-config) items per family from each benchmark's HF
+  dataset and computes character-length statistics for context vs options.
+  Pool-agnostic; output: [length_features.csv](length_features.csv).
+- **Coverage caveats:** `global_mmlu` (Lite, 6 langs) is excluded — only
+  one Apertus model evaluated, so `mpd_1B` is NaN. `arc_de/fr` and
+  `hellaswag_de/fr` are also NaN at 1B.
+  `global_piqa_completions_spa_latn_spai` is filtered by
+  `_is_language_aggregate` (3 trailing tokens).
 
 ## Recommended follow-up
 
 A controlled comparison would tighten the story: pick families with
-matched task format and contrast curation methods within it.
-Concretely:
-- **HellaSwag (MT) vs XStoryCloze (human translation)**: both
-  4-or-2-option completion, both have a passage context. SNR ~2.04
-  for both — first direct evidence that curation doesn't matter when
-  format is held constant.
-- **ARC (MT) vs Global-MMLU-Full (MT+post-edit)**: both 4-option
-  MCQ, same source dataset family. ARC 0.74 vs MMLU-Full 0.40 —
-  domain-fragmentation effect (57 subjects vs single domain) shows up
-  here. Phase C topic-tagging would quantify it.
+matched task format and contrast curation methods within it. Concretely:
+
+- **HellaSwag (MT) vs XStoryCloze (human translation)**: both 4-or-2-option
+  completion with passage context. SNR ~2.04 for both — direct evidence
+  that curation doesn't matter when format is held constant.
+- **ARC (MT) vs Global-MMLU-Full (MT+post-edit)**: both 4-option MCQ, same
+  source dataset family. ARC 0.74 vs MMLU-Full 0.40 — domain-fragmentation
+  effect (57 subjects vs single domain) shows up here. Phase C
+  topic-tagging would quantify it.
+
+## Reproduce
+
+```bash
+# Per-pool analysis (run for each seed pool)
+for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
+    python results/benchmark_creation/analyze.py --pool $pool
+done
+
+# One-time HF dataset length sampling (pool-agnostic)
+python results/benchmark_creation/length_features.py
+```
 
 ## Directory contents
 
 Shared at the top of this dir:
+
 - [INSTRUCTIONS.md](INSTRUCTIONS.md), [data_info.md](data_info.md) —
   research-question spec and per-family paper-style metadata.
-- [analyze.py](analyze.py) — runs Phases 0/A/B; takes `--snr-dir`
-  (a `snr_definition/seeds_<...>/` dir) and emits the per-pool CSVs
-  and plots into the matching subdir here.
-- [length_features.py](length_features.py) — Phase B HF sampler;
-  writes [length_features.csv](length_features.csv) and
-  [sample_items.json](sample_items.json) (one example item per
-  family, kept for any Phase C topic tagging). Pool-agnostic.
+- [analyze.py](analyze.py) — runs Phases 0/A/B; takes `--pool` and emits
+  the per-pool CSVs and plots into the matching subdir.
+- [length_features.py](length_features.py) — Phase B HF sampler; writes
+  [length_features.csv](length_features.csv) and
+  [sample_items.json](sample_items.json) (one example item per family,
+  kept for any Phase C topic tagging). Pool-agnostic.
 
 Per Apertus seed pool (`seeds_1904/`, `seeds_28_1797/`,
 `seeds_28_1797_1904/`):
-- `per_family_snr.csv` — one row per family with SNR aggregates +
-  metadata + length features.
-- `per_task_snr.csv` — one row per per-language aggregate task with
-  the per-task curation override (`xnli_eu` re-tagged
-  `mt_post_edited`).
-- `group_stats.csv` — Kruskal-Wallis (and Spearman for continuous
-  axes) for every grouping view.
+
+- `per_family_snr.csv` — one row per family with SNR aggregates + metadata
+  + length features.
+- `per_task_snr.csv` — one row per per-language aggregate task with the
+  per-task curation override (`xnli_eu` re-tagged `mt_post_edited`).
+- `group_stats.csv` — Kruskal-Wallis (and Spearman for continuous axes)
+  for every grouping view.
 - Phase 0 plots: `snr_per_family_ranked.png` (headline),
   `snr_by_curation_process.png`, `snr_by_data_source.png`,
   `snr_by_curation_per_task.png`.
@@ -238,11 +246,3 @@ Per Apertus seed pool (`seeds_1904/`, `seeds_28_1797/`,
 - Phase B plots: `snr_vs_length_features.png` (3-panel combined),
   `snr_vs_context_len.png`, `snr_vs_option_len.png`,
   `snr_vs_context_option_ratio.png`.
-
-To regenerate all three pools:
-```bash
-for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
-    python results/benchmark_creation/analyze.py \
-        --snr-dir results/snr_definition/$pool
-done
-```
