@@ -407,6 +407,8 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
         "",
     ]
     (out_dir / "agreement.md").write_text("\n".join(md_lines))
+    agreement_df.to_csv(out_dir / "agreement.csv", index=False)
+    print(f"Wrote → {out_dir / 'agreement.csv'}")
     print("\nAgreement table:")
     print(agreement_df.to_string(index=False))
 

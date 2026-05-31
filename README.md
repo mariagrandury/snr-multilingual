@@ -15,9 +15,9 @@ through the full SNR / decision-accuracy stack.
 
 1. **Use `quartile_deviation` (or any dispersion-family variant) as the
    global default.** Mean Pearson r between log10(SNR) and decision
-   accuracy is ~+0.30 across 12 languages, and the dispersion-cluster
+   accuracy is ~+0.34 across 12 languages, and the dispersion-cluster
    ranking is stable across seed splits (DA-ckpt r between train and
-   test pools = +0.69).
+   test pools = +0.70).
 2. **Use `multiblimp_<lang>`, `xstorycloze_<lang>` and
    `hellaswag_<lang>` as the per-language reliability anchors.** They
    dominate the SNR ranking in every language where they exist and have
@@ -26,7 +26,7 @@ through the full SNR / decision-accuracy stack.
 
 **The framework generalizes at the global-ranking level.** Spearman rank
 correlation between the train and test pools' global variant orderings
-is **+0.84 (DA-size)** and **+0.90 (DA-ckpt)** — *which* variants are
+is **+0.83 (DA-size)** and **+0.91 (DA-ckpt)** — *which* variants are
 good is stable across seed pools. But the *exact* per-language argmax
 changes (only 1/14 languages keep the same pick), so per-language
 tuning that beats the dispersion baseline should be treated as
@@ -39,11 +39,14 @@ discrepancy family. Top-10 reliable benchmarks agree by Jaccard 1.0:
 `arc_challenge`, `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`,
 `piqa`.
 
-**What predicts SNR.** Task design — **number of options** and **option
-length** — explains most of the variance. Curation method (MT / human /
-template) does not. Per-family Spearman:
-ρ = +0.62 (random baseline, p = 0.041); ρ = +0.54 (option length,
-p = 0.089); ρ = 0.84 (curation, p = 0.66, not significant).
+**What predicts SNR.** Task design — primarily the **number of answer
+options** — explains most of what we can explain. Per-family Spearman
+ρ = +0.77 against the random baseline (p = 0.006); family-level
+Kruskal-Wallis on n_options is H = 5.5, p = 0.019. Curation method (MT /
+human / template) does not predict SNR (H = 1.44, p = 0.49). Option
+length follows the same qualitative mechanism (longer options →
+sharper per-item log-likelihood) but doesn't reach significance at the
+per-family level on n = 11.
 
 **What subsets elevate SNR.** Best subsets substantially beat full sets
 on multilingual benchmarks: Belebele 350M `+0.89` SNR with a 4-language

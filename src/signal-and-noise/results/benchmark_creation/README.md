@@ -11,13 +11,16 @@ many candidate options the model has to compare, and how long those
 options are — does.**
 
 The strongest single-axis predictor is the number of answer options
-(Spearman ρ = **+0.62, p = 0.041**): 2-option tasks have higher SNR than
-4-option tasks, holding everything else equal. Option length follows the
-same logic (ρ = **+0.54, p = 0.089**): longer per-option text concentrates
-more discriminating tokens, sharpening per-item log-likelihood. The
-curation-method question (the original Q4) explains <1% of family-level
-SNR variance (Kruskal-Wallis p = 0.66) — once task design is held
-constant, curation doesn't matter.
+(Spearman ρ = **+0.77, p = 0.006** against the random baseline; family-
+level Kruskal-Wallis **H = 5.5, p = 0.019**): 2-option tasks have higher
+SNR than 4-option tasks, holding everything else equal. The probable
+mechanism — every additional option introduces another noisy log-
+likelihood estimate to rank — shows up qualitatively in option length
+too (multiblimp's full-sentence options vs PAWS's "Yes"/"No"), but at the
+per-family level (n = 11) length features alone don't reach significance.
+The curation-method question (the original Q4) explains <1% of family-
+level SNR variance (Kruskal-Wallis H = 1.44, p = 0.49) — once task design
+is held constant, curation doesn't matter.
 
 ## Headline ranking (pool: `seeds_28_1797_1904`, recommended)
 
@@ -53,14 +56,13 @@ In rough order of evidence strength:
 
 | effect | direction | strength |
 |---|---|---|
-| n_options / random_baseline | fewer options → higher SNR | **strong** (Spearman ρ=+0.62, p=0.04) |
-| option length | longer options → higher SNR | borderline (ρ=+0.54, p=0.09) |
-| task format (minimal_pair > completion > classification > MC > MRC) | as listed | borderline (KW p=0.06) |
-| context : option ratio | lower ratio → higher SNR | weak (ρ=-0.47, p=0.14) |
-| context length | shorter context → higher SNR | weak (ρ=-0.33, p=0.33) |
-| source origin (English-translated vs originally-multilingual) | originally-multilingual median higher | weak (KW p=0.10) |
-| passage in prompt | no effect | none |
-| curation category (MT / human / template / etc.) | no effect | none (p=0.66) |
+| n_options / random_baseline | fewer options → higher SNR | **strong** (Spearman ρ=+0.77, p=0.006; KW H=5.5, p=0.019) |
+| task format | minimal_pair > completion > MCQ > MRC | KW H=4.29, p=0.117 |
+| option length | longer options → higher SNR | weak at per-family level (ρ=+0.13); qualitative only |
+| context length | shorter context → higher SNR | weak (ρ=-0.23) |
+| source origin (English-translated vs originally-multilingual) | originally-multilingual median higher | KW H=2.04, p=0.15 |
+| passage in prompt | no effect | KW H=0.0, p=1.0 |
+| curation category (MT / human / template / etc.) | no effect | KW H=1.44, p=0.49 |
 
 The curation question that motivated v0 is not where the variance lives.
 **Task design — option count and option length — explains most of what we
@@ -73,11 +75,15 @@ pick between fewer, longer log-likelihood-scored completions are SNR-higher.
 
 ![Per-family SNR by curation process](seeds_28_1797_1904/snr_by_curation_process.png)
 
+Source: [`seeds_28_1797_1904/group_stats.csv`](seeds_28_1797_1904/group_stats.csv)
+(every grouping view: one row per view with `H` / `p` / `n_groups` /
+optional `spearman_rho`).
+
 | view | test | H | p |
 |---|---|---:|---:|
-| family / curation_category (5-way) | Kruskal-Wallis | 0.84 | 0.66 |
-| family / source_origin (2-way) | Kruskal-Wallis | 2.67 | 0.10 |
-| task / curation_category (with `xnli_eu` re-tag) | Kruskal-Wallis | 32.3 | <1e-6 |
+| family / curation_category (3-way) | Kruskal-Wallis | 1.44 | 0.49 |
+| family / source_origin (2-way) | Kruskal-Wallis | 2.04 | 0.15 |
+| task / curation_category (with `xnli_eu` re-tag) | Kruskal-Wallis | 26.41 | <1e-4 |
 
 The family-level test does not reach significance for any curation view
 (see [snr_by_data_source.png](seeds_28_1797_1904/snr_by_data_source.png)).
@@ -94,29 +100,31 @@ are not significant. **Curation method alone does not predict SNR.**
 
 | view | test | statistic | p |
 |---|---|---:|---:|
-| family / format (5-way) | Kruskal-Wallis | H = 5.69 | **0.058** |
-| family / n_options (2/3/4-way) | Kruskal-Wallis | H = 2.91 | 0.088 |
-| family / passage flag | Kruskal-Wallis | H = 0.38 | 0.54 |
-| family / random_baseline (continuous) | Spearman ρ | **+0.62** | **0.041** |
+| family / format (3-way) | Kruskal-Wallis | H = 4.29 | 0.117 |
+| family / n_options (2-way) | Kruskal-Wallis | **H = 5.50** | **0.019** |
+| family / passage flag | Kruskal-Wallis | H = 0.00 | 1.00 |
+| family / random_baseline (continuous) | Spearman ρ | **+0.77** | **0.006** |
 
 ![SNR vs random baseline](seeds_28_1797_1904/snr_vs_random_baseline.png)
 
 The continuous Spearman correlation between SNR and random baseline
-(= 1 / n_options) is **+0.62, p = 0.041** — the only significant
-single-axis result in the entire benchmark-creation analysis. Concretely:
-2-option tasks have higher SNR than 4-option tasks, holding everything
-else equal. The probable mechanism is that log-likelihood comparison
-across two completions is sharper than across four — every additional
-option introduces another noisy LL estimate that has to be ranked
-correctly.
+(= 1 / n_options) is **+0.77, p = 0.006** — the strongest single-axis
+result in the benchmark-creation analysis. The categorical 2-vs-4-option
+split is also significant at the family level (KW H = 5.5, p = 0.019).
+Concretely: 2-option tasks have higher SNR than 4-option tasks, holding
+everything else equal. The probable mechanism is that log-likelihood
+comparison across two completions is sharper than across four — every
+additional option introduces another noisy LL estimate that has to be
+ranked correctly.
 
-The format axis (5-way KW p = 0.058) tells the same story categorically:
+The format axis tells the same story categorically (5 underlying values;
+the 3-way KW test in `group_stats.csv` excludes singleton groups):
 
-- `minimal_pair` (multiblimp): single family, very high SNR.
+- `minimal_pair` (n=1, multiblimp): very high SNR (3.81).
 - `completion` (n=5): 2nd-tier, median ≈ 1.6.
-- `classification` (n=2): 3rd-tier, ~1.0.
-- `mcq_question_only` (n=2): 4th-tier, ~0.55.
-- `mrc_passage` (n=1, belebele): lowest, 0.48.
+- `classification` (n=2): 3rd-tier, ~1.4.
+- `mcq_question_only` (n=2): 4th-tier, ~0.64.
+- `mrc_passage` (n=1, belebele): lowest, 0.70.
 
 Two earlier surprises now resolve:
 
@@ -139,17 +147,21 @@ length doesn't matter, what's done with it does.
 dataset; character-length statistics in
 [length_features.csv](length_features.csv).
 
+Source: [`seeds_28_1797_1904/group_stats.csv`](seeds_28_1797_1904/group_stats.csv)
+rows `family/context_len_chars_median`, `family/option_len_chars_median`,
+`family/context_to_option_ratio`.
+
 | feature | Spearman ρ | p | sign as predicted? |
 |---|---:|---:|---|
-| context length | -0.33 | 0.33 | yes (weak) |
-| **option length** | **+0.54** | **0.089** | **yes (borderline)** |
-| context : option ratio | -0.47 | 0.14 | yes (weak) |
+| context length | -0.23 | 0.50 | yes (weak) |
+| option length | +0.13 | 0.71 | yes (weak) |
+| context : option ratio | -0.15 | 0.67 | yes (weak) |
 
-The strongest length feature is **option length** (ρ = +0.54): tasks with
-longer per-option text — full sentences for log-likelihood comparison —
-have higher SNR. Same mechanism as Phase A's n_options effect, in
-continuous form: longer options give more discriminating tokens, which
-sharpens per-item log-likelihood.
+Length features at the per-family level do not reach significance with
+n = 11. The mechanism still shows up in concrete examples below — longer
+per-option text concentrates more discriminating tokens — but the
+continuous per-family signal is dominated by the categorical option-count
+effect (Phase A above).
 
 Concrete examples:
 

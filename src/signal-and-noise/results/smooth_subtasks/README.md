@@ -53,7 +53,9 @@ smaller in absolute terms but similar in _direction_.
 ### Case 1 — per-benchmark family (subtask = language)
 
 For most multilingual families a 1–5-language subset beats the full
-language set:
+language set. Source:
+[`seeds_28_1797/per_benchmark.csv`](seeds_28_1797/per_benchmark.csv)
+(rows of the `summary.csv` filter `case == "per_benchmark"`):
 
 | task             | size | full_set_snr | best_n | best_snr | snr_gain | best subset                                              |
 | ---------------- | ---- | -----------: | -----: | -------: | -------: | -------------------------------------------------------- |
@@ -79,7 +81,8 @@ them. `mgsm_direct` is in the parquet but excluded (every row's
 
 Treating each MMLU subject as a subtask (averaged across the 10 GMF
 languages) reproduces the upstream finding that a top-N subject subset
-tracks the full set:
+tracks the full set. Source:
+[`seeds_28_1797/global_mmlu_full.csv`](seeds_28_1797/global_mmlu_full.csv).
 
 | size | full_set_snr | best_n | best_snr | snr_gain | best subset                                                                            |
 | ---- | -----------: | -----: | -------: | -------: | -------------------------------------------------------------------------------------- |
@@ -96,7 +99,8 @@ averaged per cell — full coverage.
 
 Per-language gains are smaller than under single-seed because the
 multi-seed signal pool already lifts the full-set SNR. But the top picks
-per language are stable:
+per language are stable. Source:
+[`seeds_28_1797/global_mmlu_full_per_language.csv`](seeds_28_1797/global_mmlu_full_per_language.csv).
 
 | language | size | full_set_snr | best_n | best_snr | snr_gain | best subset                                                                                    |
 | -------- | ---- | -----------: | -----: | -------: | -------: | ---------------------------------------------------------------------------------------------- |

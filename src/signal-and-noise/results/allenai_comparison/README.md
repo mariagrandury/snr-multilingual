@@ -24,6 +24,10 @@ pool for downstream benchmark selection.**
 
 ## Headline — best variant per Apertus pool
 
+Each pool's first two rows of
+[`seeds_<pool>/pearson_r_per_variant.csv`](seeds_28_1797_1904/pearson_r_per_variant.csv)
+(sorted by `r` descending):
+
 | pool | best variant | r | runner-up | r |
 |---|---|---:|---|---:|
 | `seeds_1904` (single seed) | `dispersion` / `range` | **0.753** | `dist_std` | 0.728 |
@@ -39,9 +43,12 @@ per-variant scatter grids at
 
 ## Cross-corpus-reliable benchmarks (top-K agreement)
 
-Each `<pool>/agreement.md` tabulates the intersection / Jaccard of the two
-corpora's top-K tasks (ranked over the 7-task shared universe). All three
-pools converge on the same shortlist:
+Each `<pool>/agreement.csv` tabulates the intersection / Jaccard of the
+two corpora's top-K tasks (ranked over the 7-task shared universe);
+`<pool>/agreement.md` is the human-readable mirror. All three pools
+converge on the same shortlist (numbers below are the `intersection_over_k`
+column of each pool's
+[`agreement.csv`](seeds_28_1797_1904/agreement.csv)):
 
 | K | seeds_1904 | seeds_28_1797 | seeds_28_1797_1904 |
 |---|---:|---:|---:|

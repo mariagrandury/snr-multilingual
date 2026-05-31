@@ -310,6 +310,34 @@ def write_summary(out_dir: Path, train_dir: Path, test_dir: Path,
     out_path.write_text("\n".join(lines) + "\n")
     print(f"Wrote → {out_path}")
 
+    # Headline metrics as a machine-readable CSV — same values as the
+    # markdown table at the top of summary.md, one row per metric × DA flavor.
+    headline = pd.DataFrame([
+        {"metric": "exact_variant_agreement",
+         "da_kind": "size", "value": a_var_size, "n": n_size},
+        {"metric": "exact_variant_agreement",
+         "da_kind": "ckpt", "value": a_var_ckpt, "n": n_ckpt},
+        {"metric": "family_agreement",
+         "da_kind": "size", "value": a_fam_size, "n": n_size},
+        {"metric": "family_agreement",
+         "da_kind": "ckpt", "value": a_fam_ckpt, "n": n_ckpt},
+        {"metric": "pearson_r_cells",
+         "da_kind": "size", "value": r_size, "n": n_size_cells},
+        {"metric": "pearson_r_cells",
+         "da_kind": "ckpt", "value": r_ckpt, "n": n_ckpt_cells},
+        {"metric": "spearman_rank_global",
+         "da_kind": "size", "value": rank_size, "n": float("nan")},
+        {"metric": "spearman_rank_global",
+         "da_kind": "ckpt", "value": rank_ckpt, "n": float("nan")},
+        {"metric": "retention",
+         "da_kind": "size", "value": ret_size, "n": n_ret_size},
+        {"metric": "retention",
+         "da_kind": "ckpt", "value": ret_ckpt, "n": n_ret_ckpt},
+    ])
+    headline_path = out_dir / "headline_metrics.csv"
+    headline.to_csv(headline_path, index=False)
+    print(f"Wrote → {headline_path}")
+
 
 # --- driver -----------------------------------------------------------------
 

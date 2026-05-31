@@ -412,7 +412,7 @@ def main(snr_dir: Path, out_dir: Path) -> None:
     print(f"  → {len(per_task)} per-language aggregate tasks across "
           f"{per_task['family'].nunique()} families")
 
-    length_csv = out_dir / "length_features.csv"
+    length_csv = out_dir.parent / "length_features.csv"
     per_family = per_family_aggregate(per_task, length_csv)
     out_csv = out_dir / "per_family_snr.csv"
     per_family.to_csv(out_csv, index=False)

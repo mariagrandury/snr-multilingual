@@ -9,9 +9,9 @@
 
 **Use `quartile_deviation` (or any dispersion-family variant) as the global
 default.** Across 12 languages, mean Pearson r between log10(SNR) and
-decision accuracy is **+0.326** on the train pool — leading a tight 6-way
+decision accuracy is **+0.343** on the train pool — leading a tight 6-way
 dispersion tie. The global ranking of variants is **highly stable across
-seed splits** (Spearman ρ = +0.84 on DA-size, +0.90 on DA-ckpt), but the
+seed splits** (Spearman ρ = +0.83 on DA-size, +0.91 on DA-ckpt), but the
 *exact* per-language argmax is not — only 1/14 languages keep the same
 pick, and 2/14 keep the same family. Per-language tuning that promises a
 correlation above the dispersion baseline should be treated as overfitting
@@ -28,30 +28,21 @@ relative to the 1B target.
 
 ## Headline — global best variant (train pool: `seeds_28_1797`)
 
-**`quartile_deviation`** at mean Pearson r ≈ **+0.326** (DA-size), narrowly
-leading a 6-way dispersion-cluster tie:
+**`quartile_deviation`** at mean Pearson r ≈ **+0.343** (DA-size), narrowly
+leading a 6-way dispersion-cluster tie. Numbers below are the first 8 rows
+of [`seeds_28_1797/top_variants_overall.csv`](seeds_28_1797/top_variants_overall.csv)
+(full table: all 22 variants):
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---:|---:|---:|
-| **`quartile_deviation`** | **0.326** | 0.314 | **0.320** |
-| `aad` | 0.320 | 0.311 | 0.315 |
-| `mpd` | 0.311 | 0.306 | 0.309 |
-| `rms_deviation` | 0.310 | 0.305 | 0.307 |
-| `dist_std` | 0.306 | 0.300 | 0.303 |
-| `dispersion`, `range` | 0.296 | 0.291 | 0.294 |
-| `gini` | 0.289 | 0.216 | 0.252 |
-| `iqr` | 0.288 | 0.271 | 0.279 |
-| `mad` | 0.282 | 0.289 | 0.286 |
-| `dispersion_shifted` | 0.281 | 0.241 | 0.261 |
-| `rel_std` | 0.276 | 0.266 | 0.271 |
-| `star_discrepancy_shifted` | 0.274 | 0.188 | 0.231 |
-| `rel_mpd` / `rel_dispersion` | 0.260–0.280 | 0.247–0.267 | 0.255–0.273 |
-| `discrepancy` | 0.244 | 0.189 | 0.217 |
-| `star_discrepancy` | 0.250 | 0.206 | 0.228 |
-| `mpsd` | 0.214 | 0.237 | 0.226 |
-| `rel_star_discrepancy` | 0.119 | 0.087 | 0.103 |
-| `tukey` | 0.009 | -0.019 | -0.005 |
-| `projection` | -0.025 | -0.016 | -0.020 |
+| **`quartile_deviation`** | **0.343** | 0.314 | **0.329** |
+| `aad` | 0.334 | 0.311 | 0.323 |
+| `mpd` | 0.324 | 0.307 | 0.316 |
+| `rms_deviation` | 0.323 | 0.305 | 0.314 |
+| `dist_std` | 0.318 | 0.302 | 0.310 |
+| `dispersion`, `range` | 0.308 | 0.293 | 0.300 |
+| `gini` | 0.301 | 0.222 | 0.262 |
+| `iqr` | 0.299 | 0.271 | 0.285 |
 
 The dispersion block (`quartile_deviation`, `aad`, `mpd`, `rms_deviation`,
 `dist_std`, `dispersion`, `range`) is algebraically redundant at our pool
@@ -76,18 +67,18 @@ Full table: [`seeds_28_1797/best_variant_per_language.csv`](seeds_28_1797/best_v
 
 | lang | best variant | r | runner-up | r |
 |---|---|---:|---|---:|
-| tr | `rel_mpsd` | **+0.821** | `mpsd` | +0.821 |
-| vi | `dist_std` | **+0.687** | `rms_deviation` | +0.684 |
-| ru | `iqr` | **+0.607** | `rel_mpd` | +0.604 |
-| en | `iqr` | **+0.592** | `rel_mpd` | +0.589 |
-| ar | `discrepancy` | +0.560 | `star_discrepancy` | +0.515 |
-| hi | `star_discrepancy_shifted` | +0.552 | `gini` | +0.514 |
-| es | `dispersion_shifted` | +0.537 | `star_discrepancy` | +0.489 |
-| th | `tukey` | +0.528 | `rel_star_discrepancy` | +0.441 |
-| sw | `quartile_deviation` | +0.492 | `aad` | +0.425 |
-| eu | `discrepancy` | +0.294 | `rel_star_discrepancy` | +0.285 |
-| zh | `dispersion_shifted` | +0.258 | `star_discrepancy` | +0.219 |
-| ja | `star_discrepancy_shifted` | +0.096 | `dist_std` | +0.077 |
+| tr | `mpsd` | **+0.875** | `rel_mpsd` | +0.867 |
+| vi | `dist_std` | **+0.683** | `rms_deviation` | +0.677 |
+| ru | `iqr` | **+0.627** | `rel_mpd` | +0.621 |
+| en | `iqr` | **+0.602** | `rel_mpd` | +0.589 |
+| th | `tukey` | +0.563 | `rel_star_discrepancy` | +0.513 |
+| hi | `star_discrepancy_shifted` | +0.543 | `gini` | +0.520 |
+| es | `dispersion_shifted` | +0.538 | `gini` | +0.489 |
+| ar | `discrepancy` | +0.534 | `star_discrepancy` | +0.495 |
+| sw | `quartile_deviation` | +0.512 | `aad` | +0.462 |
+| eu | `discrepancy` | +0.315 | `gini` | +0.277 |
+| zh | `dispersion_shifted` | +0.258 | `star_discrepancy` | +0.217 |
+| ja | `star_discrepancy_shifted` | +0.034 | `dist_std` | +0.025 |
 
 `de` and `fr` are dropped — ≤4 valid (task, size) cells on either pool.
 Per-language r values are **2–3× stronger than on the single-seed test
@@ -99,12 +90,11 @@ Variant-family rollup (DA-size, train pool):
 
 | family | langs |
 |---|---|
-| **dispersion** | sw, vi |
-| **discrepancy** | ar, es, eu, hi (via `star_discrepancy_shifted`), zh |
+| **dispersion** | sw, tr, vi |
+| **discrepancy** | ar, es, eu, hi, ja, zh |
 | **rel_spread** | en, ru |
 | **robust (`mad`)** | (none in train) |
 | **depth** | th (via `tukey`) |
-| **other** (`rel_mpsd`) | tr |
 
 Test pool (single seed, `seeds_1904`) — for comparison:
 
@@ -153,21 +143,31 @@ high-SNR-but-misranked cases (mostly `xnli_<lang>`).
 Train on `{28, 1797}`, evaluate on `{1904}`. Full report:
 [`seeds_28_1797__vs__seeds_1904/summary.md`](seeds_28_1797__vs__seeds_1904/summary.md).
 
+Source: [`seeds_28_1797__vs__seeds_1904/headline_metrics.csv`](seeds_28_1797__vs__seeds_1904/headline_metrics.csv)
+(one row per metric × DA flavor).
+
 |  | DA-size | DA-ckpt |
 |---|---:|---:|
 | Exact-variant agreement (lang-level) | **7% (1/14)** | **7% (1/14)** |
 | Family-level agreement (lang-level) | 14% (2/14) | 14% (2/14) |
-| Pearson r between splits (over all 264 variant cells) | +0.272 | +0.694 |
-| **Spearman ρ on global variant ranking** | **+0.843** | **+0.903** |
-| Retention of train-best on test (r_train_pick / r_test_best) | 53% | 73% |
+| Pearson r between splits (over all 264 variant cells) | +0.300 | +0.696 |
+| **Spearman ρ on global variant ranking** | **+0.831** | **+0.908** |
+| Retention of train-best on test (r_train_pick / r_test_best) | 53% | 77% |
+
+Per-language details:
+[`seeds_28_1797__vs__seeds_1904/per_language_agreement_da_size.csv`](seeds_28_1797__vs__seeds_1904/per_language_agreement_da_size.csv)
+and
+[`…_da_ckpt.csv`](seeds_28_1797__vs__seeds_1904/per_language_agreement_da_ckpt.csv).
+The 264-cell scatter:
+[`variant_r_train_vs_test.csv`](seeds_28_1797__vs__seeds_1904/variant_r_train_vs_test.csv).
 
 **The global ranking of which SNR variants correlate with DA is highly
 stable across seed splits.** The dispersion cluster is consistently on top
-in both pools (Spearman ρ = +0.84 / +0.90).
+in both pools (Spearman ρ = +0.83 / +0.91).
 
 **The exact best variant per language does not generalize** — 1/14
 languages keep the pick, 2/14 keep the family. But picking any
-dispersion-cluster member retains 73% of the optimal DA-ckpt correlation
+dispersion-cluster member retains 77% of the optimal DA-ckpt correlation
 on the held-out seed.
 
 ![Per-(language, variant) Pearson r — train vs test split](seeds_28_1797__vs__seeds_1904/variant_r_train_vs_test.png)
@@ -233,14 +233,14 @@ units.
 
 - **The dispersion family is the portable global default.**
   `quartile_deviation` / `aad` / `mpd` / `rms_deviation` / `dispersion` /
-  `range` tie within ~0.02 at mean r ≈ 0.30 across the 12 languages, and
+  `range` tie within ~0.04 at mean r ≈ 0.33 across the 12 languages, and
   the ranking holds on the held-out seed (Spearman ρ on the global variant
-  ranking = **+0.84 DA-size, +0.90 DA-ckpt**; pooled per-cell Pearson r =
-  +0.27 / +0.69).
+  ranking = **+0.83 DA-size, +0.91 DA-ckpt**; pooled per-cell Pearson r =
+  +0.30 / +0.70).
 - **Per-language tuning does not generalize across seed splits.** Only
   1/14 (7%) of languages keep the same best variant; 2/14 (14%) keep the
   family. Picking the train-best variant retains 53% of the optimal r on
-  DA-size and 73% on DA-ckpt — useful but noticeably degraded.
+  DA-size and 77% on DA-ckpt — useful but noticeably degraded.
 - **DA-ckpt is more transferable than DA-size.** Within-size early-vs-late
   ckpt ranking is less seed-sensitive than cross-size ranking.
 - **The `(mix, seed)` model unit doubles the signal pool.** With 6 model
