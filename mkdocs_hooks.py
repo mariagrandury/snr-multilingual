@@ -10,6 +10,9 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 # its README so those relative paths resolve in the rendered site.
 INCLUDES = [
     ("src/signal-and-noise/results/snr_definition", "signal-noise"),
+    ("src/signal-and-noise/results/allenai_comparison", "signal-noise"),
+    ("src/signal-and-noise/results/benchmark_creation", "signal-noise"),
+    ("src/signal-and-noise/results/smooth_subtasks", "signal-noise"),
 ]
 
 
