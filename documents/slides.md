@@ -557,6 +557,537 @@ subtitle: "Open science deliverables"
 layout: section
 ---
 
+# Results — Multilingual SNR Framework
+
+Four analyses on 36 Apertus pretrains (4 sizes × 3 mixes × 3 seeds)
+
+---
+layout: focus
+color: blue
+icon: 🔬
+---
+
+## Which SNR definition best correlates with decision accuracy across 12 languages?
+
+---
+layout: figure
+image: /results/top_variants_overall.png
+title: SNR Definition
+subtitle: "Q3 — Top variants across languages (DA-size & DA-ckpt)"
+---
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: Findings
+icon: "✅"
+---
+
+- **`quartile_deviation` is the global default**: mean Pearson r ≈ **+0.343** (DA-size)
+- 6-way dispersion-cluster tie: `aad`, `mpd`, `rms_deviation`, `dist_std`, `dispersion`, `range` all within ~0.04
+- Inter-variant correlation in the cluster: **r ≥ 0.999** — algebraically redundant
+- `tukey`, `projection` (depth-based): **r ≈ 0** with DA → avoid at this pool size
+
+---
+layout: figure
+image: /results/top_benchmarks_per_language.png
+title: SNR Definition
+subtitle: Top-5 benchmarks per language under `quartile_deviation` @ 1B
+---
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: Best benchmarks per language
+icon: "🌐"
+---
+
+- **`multiblimp_<lang>` ranks #1** wherever it exists (ar, en, es, eu, hi, ru, tr) — by 3–5× the runner-up
+- Without multiblimp: **`xstorycloze_<lang>`** (sw, th, vi, zh) or **`hellaswag_<lang>`** (ja)
+- **Drop `xnli_<lang>`** rows where DA-size = 0 — high SNR but mis-ranks the 1B target
+
+---
+layout: figure
+image: /results/variant_r_train_vs_test.png
+title: SNR Definition
+subtitle: Train vs test split — per-(lang, variant) Pearson r
+---
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: "Generalization across seed splits"
+icon: "🔁"
+---
+
+- Global ranking is **highly stable**: Spearman ρ = **+0.83** (DA-size), **+0.91** (DA-ckpt)
+- Per-language picks are **not** stable: 1/14 keep variant, 2/14 keep family
+- DA-ckpt cluster lies tightly on the diagonal; DA-size scatter is wider → DA-ckpt is the portable metric
+- Retention of train-best on test: 53% (DA-size), **77% (DA-ckpt)**
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: Methodology
+icon: "⚙️"
+---
+
+- **22 SNR variants** × 4 sizes × 115 multilingual parent tasks
+- Three pools: `seeds_28_1797` (train, 6 model_families/size), `seeds_1904` (test, 3), `seeds_28_1797_1904` (pooled, 9)
+- **DA-size**: small-last-ckpt → 1B-last-ckpt rank agreement (3 small sizes)
+- **DA-ckpt**: within-size early → late ckpt agreement (3 early ckpts × 4 sizes)
+- Per-language correlation: Pearson r between log10(SNR) and DA
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: Possible logical bugs
+icon: "🐛"
+---
+
+- **Dispersion cluster's r ≥ 0.999** → Spearman ρ on global ranking is artificially stabilised by redundancy
+- DA-size uses the 1B model as the rank target, but 1B itself isn't fully converged at iter 50K → measures rank-agreement with a small-ish proxy
+- Train/test split: per-language argmax is computed on only **6 (mix, seed) units** in train; argmax-of-noisy-vector is biased
+- Languages with `de`, `fr` ≤4 valid cells are dropped silently — agreement denominators effectively shrink to 12
+
+---
+layout: bullets
+title: SNR Definition
+subtitle: Methodology improvements
+icon: "💡"
+---
+
+- **Bootstrap CIs** on the per-language Pearson r and the cross-pool Spearman ρ
+- Collapse the dispersion cluster to one representative before computing ranking statistics
+- Use a **larger target** (e.g. Apertus 8B) for DA-size instead of the 1B custom pretrain
+- Add a third independent seed pool to test generalization without re-using the same 1904 split
+
+---
+layout: section
+---
+
+# Benchmark Creation
+
+What makes a benchmark high-SNR? Curation vs task design.
+
+---
+layout: focus
+color: blue
+icon: 🔬
+---
+
+## What benchmark design features (curation, format, option count, item length) predict SNR?
+
+---
+layout: figure
+image: /results/snr_per_family_ranked.png
+title: Benchmark Creation
+subtitle: Per-family median SNR (pooled pool)
+---
+
+---
+layout: bullets
+title: Benchmark Creation
+subtitle: Findings
+icon: "✅"
+---
+
+- **Number of answer options is the strongest predictor**: Spearman ρ = **+0.77** (p = 0.006); KW H = 5.5 (p = 0.019)
+- **Curation method explains <1% variance**: KW H = 1.44 (p = 0.49) — once task design is held constant, curation doesn't matter
+- Top SNR families: **multiblimp** (3.8), **xwinograd** (2.1), **xstorycloze** (2.0)
+- Bottom: **belebele** (0.7), **global_mmlu_full** (0.7), **arc** (0.6) — all 4-option MCQ
+
+---
+layout: figure
+image: /results/snr_vs_random_baseline.png
+title: Benchmark Creation
+subtitle: SNR vs random baseline (1 / n_options)
+---
+
+---
+layout: bullets
+title: Benchmark Creation
+subtitle: "Why fewer options → higher SNR"
+icon: "🎯"
+---
+
+- Each option adds another noisy log-likelihood estimate that must be ranked correctly
+- 2-option tasks: log-likelihood comparison is sharper
+- Multiblimp's minimal-pair format = single-token contrast → uniquely sharp signal
+- Length features show the same direction qualitatively but don't reach significance at n=11
+
+---
+layout: bullets
+title: Benchmark Creation
+subtitle: Methodology
+icon: "⚙️"
+---
+
+- **11 benchmark families**, SNR signal = `snr_mpd_1B` from snr_definition pooled pool
+- Per-family aggregate: median across per-language aggregate tasks in the family
+- Three phases: curation (Phase 0), task format (Phase A), item lengths (Phase B)
+- Statistical tests: Kruskal-Wallis (categorical), Spearman ρ (continuous)
+- Outputs in `seeds_<pool>/group_stats.csv`, `per_family_snr.csv`
+
+---
+layout: bullets
+title: Benchmark Creation
+subtitle: Possible logical bugs
+icon: "🐛"
+---
+
+- **n = 11 families** → every test is underpowered; Spearman on a 3-valued discrete variable (n_options ∈ {2,3,4}) is fragile
+- `template_generated` is only used by multiblimp — confounded with `minimal_pair` format
+- `snr_median` per family weights families with more language-aggregates more (xnli has 11 langs, multiblimp 7)
+- `random_baseline` is `1 / n_options` — perfectly co-linear with n_options, not an independent axis
+
+---
+layout: bullets
+title: Benchmark Creation
+subtitle: Methodology improvements
+icon: "💡"
+---
+
+- **Controlled comparison**: hold format constant, vary curation (HellaSwag MT vs XStoryCloze human)
+- Replace marginal KW tests with a single regression on (format + n_options + curation)
+- Add more benchmarks (truthfulqa, mgsm, agieval, …) — the families needed for the curation question
+- Re-sample length features from the full multilingual splits, not just English (current Phase B)
+
+---
+layout: section
+---
+
+# AllenAI Cross-Corpus Comparison
+
+Do our Apertus-derived SNR rankings transfer to AllenAI DataDecide?
+
+---
+layout: focus
+color: blue
+icon: 🔬
+---
+
+## Do the SNR variants we recommend on Apertus also correlate with AllenAI DataDecide on the shared English benchmarks?
+
+---
+layout: figure
+image: /results/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png
+title: AllenAI Comparison
+subtitle: "Apertus vs AllenAI SNR — best variant (pooled pool)"
+---
+
+---
+layout: bullets
+title: AllenAI Comparison
+subtitle: Findings
+icon: "✅"
+---
+
+- **Pooled-pool cross-corpus Pearson r = 0.935** (`star_discrepancy_shifted` variant)
+- Top-10 reliable benchmarks **agree by Jaccard 1.0** on both corpora
+- Cross-corpus-reliable: `arc_challenge`, `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`, `piqa`
+- **Discrepancy + dispersion families transfer**; relative-spread family does not (incl. upstream AllenAI default `rel_std`)
+
+---
+layout: figure
+image: /results/snr_apertus_vs_snr_allenai_grid.png
+title: AllenAI Comparison
+subtitle: Variant × size scatter grid
+---
+
+---
+layout: bullets
+title: AllenAI Comparison
+subtitle: Methodology
+icon: "⚙️"
+---
+
+- **Apertus side**: 22 SNR variants × 4 sizes × 7 shared tasks (pooled pool, 9 model_families/size)
+- **AllenAI side**: same 22 variants on the DataDecide ladder (25 mixes × 5 ckpts)
+- Task-name reconciliation: `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]` (alias)
+- **Headline axis**: log10(SNR_1B) on each corpus, Pearson r over 7 tasks
+- Top-K agreement: intersection / Jaccard at K ∈ {5, 10, 20}
+
+---
+layout: bullets
+title: AllenAI Comparison
+subtitle: Possible logical bugs
+icon: "🐛"
+---
+
+- **Only 7 shared tasks** → 95% CI on r=0.935 is very wide (Pearson on n=7 is fragile)
+- MMLU alias: Apertus runs **Cohere Full** translation, AllenAI runs original Hendrycks MMLU → not the same content
+- Variant ranking shifts across pools (`dispersion`→`discrepancy`→`star_discrepancy_shifted`) — could be argmax-of-noise rather than signal
+- Reference HF models (single-mix) skipped from SNR pool, but they're part of AllenAI's DataDecide universe — apples-to-oranges
+
+---
+layout: bullets
+title: AllenAI Comparison
+subtitle: Methodology improvements
+icon: "💡"
+---
+
+- Re-run **original `mmlu`** (not `global_mmlu_full_en`) on Apertus → drop the alias, compare like-for-like
+- Add the 53 `mmlu_<subject>:mc` rows to Apertus → expand shared universe from 7 to ~60
+- **Bootstrap CIs** on the cross-corpus Pearson r
+- Report **Spearman ρ** alongside Pearson r (rank-based is more robust at n=7)
+
+---
+layout: section
+---
+
+# Smooth Subtasks — Per-Subtask
+
+Selecting languages or MMLU subjects inside a benchmark
+
+---
+layout: focus
+color: blue
+icon: 🔬
+---
+
+## Per benchmark, can a subset of **subtasks** (languages / MMLU subjects) give higher SNR than the full set?
+
+---
+layout: figure
+image: /results/global_mmlu_full_subjects.png
+title: Per-subtask
+subtitle: "Case 2 — MMLU subject subset curves per size"
+---
+
+---
+layout: bullets
+title: Per-subtask
+subtitle: Findings
+icon: "✅"
+---
+
+- **Best subsets substantially beat full sets**, across all three logical cases
+- **Case 1** (language subset): Belebele 350M `+0.89` (full 1.97 → 4-lang 2.86); GMF 175M `+0.87`
+- **Case 2** (MMLU subject, mean over 10 langs): 175M `+0.96` (`international_law` alone); 1B `+0.88` (`virology | human_aging`)
+- **Case 3** (subject × language): up to `+1.28` (Spanish 175M, `formal_logic`); up to `+1.27` (Swahili 350M)
+
+---
+layout: figure
+image: /results/belebele.png
+title: Per-subtask
+subtitle: "Case 1 — Belebele subset SNR per size"
+---
+
+---
+layout: bullets
+title: Per-subtask
+subtitle: "Stability across seed pools"
+icon: "🔁"
+---
+
+- **Case 2 (subjects) is highly stable**: `world_religions`, `international_law`, `human_aging`, `marketing` recur across pools
+- **Case 1 (languages) is partially stable**: `xcopa` always collapses to one language; the winning language can flip
+- **Case 3 (subject × language) is the most pool-sensitive** — argmax rarely repeats
+- **Recipe**: keep subsets that recur in BOTH train (`seeds_28_1797`) and test (`seeds_1904`) pools
+
+---
+layout: bullets
+title: Per-subtask
+subtitle: Methodology
+icon: "⚙️"
+---
+
+- 36 Apertus models, last-5 ckpts per (size, mix, seed) → 9 model_units per size
+- Subset search: rank subtasks by standalone SNR, add greedily, record cumulative SNR
+- Best subset = prefix that maximises the cumulative curve; random-order baseline alongside
+- Three cases × 3 seed pools × 4 sizes → 100-row `summary.csv` ranked by `snr_gain`
+- Combined-subset score = mean across (model, step) of included subtasks (relaxed inner-join)
+
+---
+layout: bullets
+title: Per-subtask
+subtitle: Possible logical bugs
+icon: "🐛"
+---
+
+- **Selection and evaluation on the same data** → reported gains are optimistic; no held-out fold
+- **Greedy argmax** of a noisy cumulative curve is biased upward (the prefix that won this run won't win the next)
+- **Relaxed inner-join**: combined-subset denominator changes from cell to cell with coverage gaps → inflates/deflates both signal and noise
+- `mgsm_direct` silently dropped (NaN parquet); English `truthfulqa_mc1` dropped by singleton filter
+
+---
+layout: bullets
+title: Per-subtask
+subtitle: Methodology improvements
+icon: "💡"
+---
+
+- **K-fold over (mix, seed) units**: pick subset on K-1 folds, score on the held-out fold
+- **Strict inner-join** with an explicit imputation rule (mean / EM) instead of variable coverage
+- **Bootstrap CIs** on every `snr_gain` so we know when the gap is real
+- **Group selection at higher granularity** (subject family / topic / difficulty bin) where Case 3 is unstable
+
+---
+layout: section
+---
+
+# Smooth Subtasks — Per-Sample
+
+Selecting individual items inside a benchmark
+
+---
+layout: focus
+color: blue
+icon: 🔬
+---
+
+## Per benchmark, which **individual items** (doc-ids) maximise SNR? Does the per-item ranking transfer across model sizes?
+
+---
+layout: figure
+image: /results/per_sample_xcopa_sw.png
+title: Per-sample
+subtitle: "xcopa_sw — cumulative SNR sweep over ranked items (1B)"
+---
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Findings
+icon: "✅"
+---
+
+- A per-sample subset **beats the full set in 100%** of (lang, task, size) cells (320 cells, 80 benchmarks)
+- Median `snr_gain` = **+0.641**, max **+2.68** (xcopa_sw 1B: 500 items → best 12 items)
+- Only **40% (median)** of items carry any cross-mix signal; the rest are "dead" and dropped
+- **Winning subset is tiny** — median **2%** of items
+- **Neither subset nor ranking transfers across scale** — median Jaccard `0.03`, Spearman `0.05`
+
+---
+layout: figure
+image: /results/per_sample_paws_eu.png
+title: Per-sample
+subtitle: "paws_eu — cumulative SNR sweep over ranked items (175M)"
+---
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Four selection methods (A/B/C/D)
+icon: "🔀"
+---
+
+- **A — `greedy_snr_rank`**: rank items by individual SNR, sweep cumulative. The AllenAI baseline.
+- **B — `forward_greedy`**: start from best item, add the one that maximally lifts joint SNR. Catches interactions; `O(N·K)`.
+- **C — `irt_discrimination`**: 2PL IRT model on items × ckpts, keep high-`a_i` items, then A. Noisy at our ~5-ckpt scale.
+- **D — `variance_prefilter`** *(default)*: drop dead items first, then A. Cheap, matches AllenAI semantics on informative items.
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Why the argmax is so small
+icon: "🔍"
+---
+
+- **Objective spikes early**: SNR = signal / noise; numerator regresses toward the mean faster than the denominator falls
+- **Per-item ranking is mostly noise**: each item's SNR rests on ~5 ckpts × 3 mixes → cross-size Spearman ≈ **0.05**
+- A noisy ranking + a knife-edge argmax → over-fit to a few lucky items
+- The cumulative curve has a **broad near-peak plateau** — a much larger subset sits within a hair of the peak
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Methodology
+icon: "⚙️"
+---
+
+- 36 Apertus models, samples from `samples_*.jsonl` (cluster-only)
+- SNR primitive: `signal_to_noise_ratio` over per-mix last-5-ckpt arrays — same as the subtask track
+- Search spaces: ~1.1k items per `arc_*`, ~14k per `mmlu_*` → exhaustive enumeration impossible
+- Four interchangeable methods via `smooth_subtasks_per_sample.py --method {A,B,C,D}`
+- Each method writes to its own dir under `per_sample/<method>/<lang>/<task>/`
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Possible logical bugs
+icon: "🐛"
+---
+
+- **Selection and evaluation on the same samples** → 2.5% subsets that beat full-set in-sample but collapse out-of-sample
+- **Per-item SNR estimate noise**: ~5 ckpts × 3 mixes → tiny n; the "best" item ranking is dominated by sampling noise (Spearman ≈ 0.05)
+- **Binary-acc divide-by-zero**: a sample with all-correct ckpts has noise = 0 → SNR = ∞, guarded to NaN — drops informative cases
+- **IRT (Option C) examinees** are checkpoints from one trajectory — non-independent; `a_i` estimates are unreliable
+- Per-sample SNR scale is **not comparable** to per-subtask SNR (binary acc vs aggregate)
+
+---
+layout: bullets
+title: Per-sample
+subtitle: "Improvements — relax the selection rule (Lever 1)"
+icon: "💡"
+---
+
+Cheapest lever — re-reads the `cumulative_snrs` array we already produce, no extra compute.
+
+- **Still-beats-full-set rule**: report the *largest* subset with SNR ≥ full-set SNR (instead of the knife-edge argmax)
+- **1-SE / ε-plateau rule**: take the largest `N` within one SE of the peak — analogous to the lasso 1-SE rule
+- **Target-size rule**: fix a practitioner size (e.g. 25–50% of items), report retained SNR there
+
+---
+layout: bullets
+title: Per-sample
+subtitle: "Improvements — denoise the per-item informativeness (Lever 2)"
+icon: "💡"
+---
+
+Fixes the root cause — the ranking is mostly noise at ~5 ckpts × 3 mixes.
+
+- **Pool across seeds (and sizes)**: average each item's SNR over the 3 seeds before ranking
+- **Shrinkage**: empirical-Bayes shrink per-item SNR toward the benchmark mean; or use IRT `a_i` as a smoother quality proxy
+- **Group selection**: select at subtask / topic / difficulty bin granularity — exactly the Case 1–3 unit that *is* partially stable
+
+---
+layout: bullets
+title: Per-sample
+subtitle: "Improvements — make trust measurable (Lever 3)"
+icon: "💡"
+---
+
+The reported `snr_gain` has no out-of-sample number today.
+
+- **Held-out seed-pool CV**: select on `seeds_28_1797`, measure SNR *and* decision accuracy on `seeds_1904`
+- **Stability selection**: bootstrap ckpts/seeds, run the sweep many times, keep items chosen in ≥ X% of runs
+- Both yield larger consensus subsets *with* an out-of-sample trust number to report
+
+---
+layout: bullets
+title: Per-sample
+subtitle: "Improvements — change the objective (Lever 4)"
+icon: "💡"
+---
+
+The SNR ratio spikes; decision accuracy saturates instead.
+
+- **Optimise decision accuracy**, not raw SNR: smallest subset hitting a DA threshold is much larger and easier to defend
+- DA is what practitioners actually want — "does the subset rank model pairs correctly?"
+- Plot the DA curve alongside the SNR curve; report both
+
+---
+layout: bullets
+title: Per-sample
+subtitle: Recommended recipe
+icon: "🎯"
+---
+
+Stack one lever per layer:
+
+1. **Pool seeds (Lever 2)** → denoise the per-item ranking
+2. **1-SE rule that still beats the full set (Lever 1)** → larger subset on the plateau
+3. **Held-out seed-pool CV (Lever 3)** → out-of-sample trust number
+4. **DA curve alongside SNR (Lever 4)** → practitioner-facing objective
+
+If the denoised per-item subset still fails to transfer → empirical case for **group-level selection** as the trustworthy unit.
+
+---
+layout: section
+---
+
 # Open Questions
 
 Please share your wisdom!
