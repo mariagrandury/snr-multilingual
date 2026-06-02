@@ -1,25 +1,27 @@
-"""Render SNR-vs-decision-accuracy plots from snr_variants_per_task.csv.
+"""Render SNR-vs-decision-accuracy results from snr_variants_per_task.csv.
 
-Per DA definition (and per language) we render one grid:
-  rows = SNR variants (ordered by mean Pearson r across cols)
-  cols = the three DA pairs that define the DA family
+The full per-variant Pearson r (log10 SNR vs DA) is written to a CSV — the
+ranking for every variant, every DA definition, both overall and per
+language — so nothing is lost. Scatter grids are then rendered only for the
+TOP_N variants (by mean Pearson r) per DA definition, to keep the PNG count
+small.
 
+Per DA definition we rank SNR variants by mean Pearson r across cols:
   DA-size (3 cols): SNR(<small>) vs DA(<small>@last → 1B@last) for
                     small ∈ {175M, 350M, 600M}.
   DA-ckpt (3 cols): SNR(size) vs DA(<size>@<early> → <size>@max) for
                     early ∈ {6000, 18000, 28000}, pooling all 4 sizes
                     into one panel (color = size).
 
-Outputs:
-  results/snr_definition/da_size/snr_vs_decision_accuracy.png
-  results/snr_definition/da_size/snr_vs_decision_accuracy_<lang>.png
-  results/snr_definition/da_size/heatmap_pearson_r.png
-  results/snr_definition/da_size/variant_correlation_matrix.png
-  (parallel set under da_ckpt/)
-  results/snr_definition/da_size_vs_da_ckpt.png
+Outputs (per pool, under results/snr_definition/<pool>/):
+  snr_variant_ranking.csv                     — all variants × DA-defs × scope
+  <da_def>/snr_vs_decision_accuracy.png       — top-3 variants only
+  <da_def>/heatmap_pearson_r.png              — all variants × language
+  variant_correlation_matrix.png
+  da_size_vs_da_ckpt.png
 
-The CSV at results/snr_definition/snr_variants_per_task.csv stays the
-single source of truth.
+The CSV at results/snr_definition/<pool>/snr_variants_per_task.csv stays the
+single source of truth for the raw per-task SNR/DA values.
 """
 
 from __future__ import annotations
@@ -41,7 +43,11 @@ _SRC = Path(__file__).resolve().parents[2]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
+from evals.scripts.utils.configs import (  # noqa: E402
+    bucket_order,
+    load_pools,
+    load_snr_params,
+)
 
 from snr.constants import PLOT_DIR
 from snr.plot import config_snr_ax
@@ -49,21 +55,29 @@ from snr.plot import config_snr_ax
 OUT_ROOT = PLOT_DIR / "snr_definition"
 
 # SNR analysis params — single source of truth in configs/models.json.
+# The size axis is the *bucket* (size_bucket); the actual buckets/targets to
+# render are read from the per-task CSV columns, so this script adapts to
+# whatever run_apertus_snr_variants produced (incl. >1B buckets + scaling-DA).
 _SNR = load_snr_params()
 SMALL_SIZES = _SNR["small_sizes"]
 TARGET_SIZE = _SNR["target_size"]
-ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
-CKPT_DA_EARLY_STEPS = _SNR["da_early_steps"]
+_BUCKETS = bucket_order()
+# Longest-first alternation so "12-14B" matches before "1B" etc.
+_BUCKET_RE = "|".join(sorted((re.escape(b) for b in _BUCKETS), key=len, reverse=True))
 
-SIZE_PALETTE = {
-    "175M": "#1f77b4",
-    "350M": "#ff7f0e",
-    "600M": "#2ca02c",
-    "1B":   "#9467bd",
-}
+
+def _bucket_color(bucket: str):
+    """Stable color per bucket via the configured bucket order."""
+    idx = _BUCKETS.index(bucket) if bucket in _BUCKETS else 0
+    return plt.cm.viridis(idx / max(1, len(_BUCKETS) - 1))
+
 
 # Minimum number of pooled (task, size) points to draw a regression line.
 _MIN_FIT_POINTS = 5
+
+# Only render scatter grids for the top-N variants (by mean Pearson r) per DA
+# definition. The full ranking for every variant lands in snr_variant_ranking.csv.
+TOP_N = 3
 
 
 # --- language assignment -----------------------------------------------------
@@ -133,9 +147,10 @@ def benchmark_family(task: str) -> str:
 # --- column helpers ---------------------------------------------------------
 
 def list_variants(df: pd.DataFrame) -> list[str]:
-    """Variants are the unique tokens between ``snr_`` and the final ``_<size>``."""
+    """Variants are the unique tokens between ``snr_`` and the final
+    ``_<bucket>`` (bucket labels can contain hyphens/dots, e.g. ``7-9B``)."""
     variants = set()
-    pat = re.compile(r"^snr_(.+)_([0-9]+[MB])$")
+    pat = re.compile(rf"^snr_(.+?)_({_BUCKET_RE})$")
     for col in df.columns:
         m = pat.match(col)
         if m:
@@ -143,43 +158,58 @@ def list_variants(df: pd.DataFrame) -> list[str]:
     return sorted(variants)
 
 
+def buckets_in_df(df: pd.DataFrame) -> list[str]:
+    """Size buckets present in the CSV's ``snr_*`` columns, in size order."""
+    pat = re.compile(rf"^snr_.+_({_BUCKET_RE})$")
+    found = {m.group(1) for c in df.columns if (m := pat.match(c))}
+    return [b for b in _BUCKETS if b in found]
+
+
 def stat_col(stat: str, variant: str, size: str) -> str:
     return f"{stat}_{variant}_{size}"
 
 
-def da_size_col(size: str) -> str:
-    return f"decision_acc_size_{size}"
-
-
-def da_ckpt_col(early_step: int, size: str) -> str:
-    return f"decision_acc_ckpt_{early_step}_{size}"
-
-
 # --- column iterator per DA definition --------------------------------------
 
-def da_size_pairs():
-    """Yield (col_label, snr_sizes, da_col) per DA-size col.
+def da_size_pairs(df: pd.DataFrame):
+    """Yield (col_label, snr_buckets, da_col) per DA-size col found in the CSV.
 
-    For DA-size each column has exactly one (small) size and we plot its
-    SNR against its own DA — no pooling.
+    Canonical columns ``decision_acc_size_<bucket>`` are small→1B; scaling
+    columns ``decision_acc_size_<small>_to_<target>`` carry their own target.
+    Each pair plots SNR(small bucket) against that DA column — no pooling.
     """
-    for s in SMALL_SIZES:
-        yield (f"{s} → {TARGET_SIZE}", [s], da_size_col(s))
+    can = re.compile(rf"^decision_acc_size_({_BUCKET_RE})$")
+    sca = re.compile(rf"^decision_acc_size_({_BUCKET_RE})_to_({_BUCKET_RE})$")
+    canon, scaling = [], []
+    for col in df.columns:
+        if (m := sca.match(col)):
+            scaling.append((f"{m.group(1)} → {m.group(2)}", [m.group(1)], col))
+        elif (m := can.match(col)):
+            canon.append((f"{m.group(1)} → {TARGET_SIZE}", [m.group(1)], col))
+    canon.sort(key=lambda t: _BUCKETS.index(t[1][0]) if t[1][0] in _BUCKETS else 0)
+    return canon + scaling
 
 
-def da_ckpt_pairs(sizes: list[str] = None):
-    """Yield (col_label, snr_sizes, da_col_for_size) per DA-ckpt col.
-
-    Pass ``sizes=[one_size]`` to restrict each panel to a single model
-    size (used by the ``da_ckpt/da_ckpt_<size>/`` subfolders); pass the
-    default ``ALL_SIZES`` for the cross-size pooled view.
-    """
-    if sizes is None:
-        sizes = ALL_SIZES
-    for early in CKPT_DA_EARLY_STEPS:
-        def _da_col(size, early=early):
-            return da_ckpt_col(early, size)
-        yield (f"ckpt {early} → max", list(sizes), _da_col)
+def da_ckpt_pairs(df: pd.DataFrame, sizes: list[str] = None):
+    """Yield (col_label, snr_buckets, da_col_for_bucket) per ckpt-DA fraction
+    found in the CSV. Pass ``sizes=[one_bucket]`` to restrict each panel to a
+    single bucket (the ``da_ckpt/da_ckpt_<bucket>/`` subfolders); default pools
+    every bucket present (cross-size view)."""
+    pat = re.compile(rf"^decision_acc_ckpt_(f\d+)_({_BUCKET_RE})$")
+    fracs, buckets = set(), set()
+    for col in df.columns:
+        if (m := pat.match(col)):
+            fracs.add(m.group(1))
+            buckets.add(m.group(2))
+    frac_list = sorted(fracs, key=lambda f: int(f[1:]))
+    all_b = [b for b in _BUCKETS if b in buckets]
+    use = sizes if sizes is not None else all_b
+    out = []
+    for fl in frac_list:
+        def _da_col(bucket, fl=fl):
+            return f"decision_acc_ckpt_{fl}_{bucket}"
+        out.append((f"ckpt {fl} → max", list(use), _da_col))
+    return out
 
 
 # --- data extraction --------------------------------------------------------
@@ -249,18 +279,18 @@ def _scatter_panel(ax, data: dict, log_x: bool, plot_fit: bool, color_by_size: b
         ax.set_visible(False)
         return 0
     if color_by_size:
-        for size in ALL_SIZES:
+        for size in [b for b in _BUCKETS if b in set(data["size"])]:
             idx = [i for i, s in enumerate(data["size"]) if s == size]
             if not idx:
                 continue
             xs = np.asarray(data["x"])[idx]
             ys = np.asarray(data["y"])[idx]
-            ax.scatter(xs, ys, alpha=0.7, s=12, label=size, color=SIZE_PALETTE[size])
+            ax.scatter(xs, ys, alpha=0.7, s=12, label=size, color=_bucket_color(size))
     else:
-        # Single size per panel — color it by that size for visual continuity.
+        # Single bucket per panel — color it by that bucket for continuity.
         size = data["size"][0] if data["size"] else None
         ax.scatter(data["x"], data["y"], alpha=0.7, s=12,
-                   color=SIZE_PALETTE.get(size))
+                   color=_bucket_color(size) if size else None)
     n = len(data["x"])
     config_snr_ax(
         ax, np.asarray(data["x"]), np.asarray(data["y"]), texts=[],
@@ -399,9 +429,10 @@ def _variant_corr_matrix(df: pd.DataFrame, variants: list[str]) -> pd.DataFrame:
     over every (task, size) cell. Tells you which variants are
     algebraically redundant."""
     cols = {}
+    buckets = buckets_in_df(df)
     for v in variants:
         all_x = []
-        for s in ALL_SIZES:
+        for s in buckets:
             c = stat_col("snr", v, s)
             if c not in df.columns:
                 continue
@@ -439,8 +470,8 @@ def _draw_da_size_vs_da_ckpt(df: pd.DataFrame, variants: list[str],
                              save_path: Path):
     """Per variant: x = mean(r) for DA-size, y = mean(r) for DA-ckpt.
     Above the diagonal: DA-ckpt agrees more with the variant; below: DA-size."""
-    da_size = list(da_size_pairs())
-    da_ckpt = list(da_ckpt_pairs())
+    da_size = list(da_size_pairs(df))
+    da_ckpt = list(da_ckpt_pairs(df))
     rows = []
     for v in variants:
         rs_size = [r for r in variant_col_rs(df, v, da_size) if np.isfinite(r)]
@@ -478,77 +509,84 @@ def _draw_da_size_vs_da_ckpt(df: pd.DataFrame, variants: list[str],
 
 # --- driver ----------------------------------------------------------------
 
-# (subdir, da_kind, da_pairs_factory, color_by_size, label)
-# DA-ckpt has one cross-size pooled view (``da_ckpt/da_ckpt_mix``, color=size)
-# plus one mono-color view per model size. The per-size views remove the
-# cross-size confound; the mix view is kept for cross-size comparison.
-_DA_DEFS: list[tuple] = [
-    ("da_size", "size", lambda: list(da_size_pairs()), False, "all sizes"),
-    ("da_ckpt/da_ckpt_mix", "ckpt", lambda: list(da_ckpt_pairs()), True,
-     "all sizes"),
-]
-for _s in ALL_SIZES:
-    _DA_DEFS.append((
-        f"da_ckpt/da_ckpt_{_s}", "ckpt",
-        (lambda s=_s: list(da_ckpt_pairs([s]))),
-        False, _s,
-    ))
+def _da_defs(df: pd.DataFrame) -> list[tuple]:
+    """(subdir, da_kind, da_pairs, color_by_size, label), built from the CSV.
+
+    DA-ckpt has one cross-bucket pooled view (``da_ckpt/da_ckpt_mix``,
+    color=bucket) plus one mono-color view per bucket present. The per-bucket
+    views remove the cross-size confound; the mix view is kept for comparison.
+    Buckets with no ckpt-DA column (single-ckpt-only) are skipped."""
+    defs = [
+        ("da_size", "size", da_size_pairs(df), False, "all sizes"),
+        ("da_ckpt/da_ckpt_mix", "ckpt", da_ckpt_pairs(df), True, "all sizes"),
+    ]
+    for b in buckets_in_df(df):
+        pairs = da_ckpt_pairs(df, [b])
+        if pairs and any(b in sizes for _, sizes, _ in pairs):
+            defs.append((f"da_ckpt/da_ckpt_{b}", "ckpt", pairs, False, b))
+    return defs
 
 
 def _render_for_da(df: pd.DataFrame, variants: list[str], subdir: str,
-                   da_kind: str, pairs_factory, color_by_size: bool,
-                   label: str, out_root: Path):
+                   da_kind: str, da_pairs: list, color_by_size: bool,
+                   label: str, out_root: Path, csv_rows: list):
+    """Rank variants for this DA definition, append the full ranking (overall
+    per-column + per-language pooled r) to ``csv_rows``, and render the scatter
+    grid for the TOP_N variants only plus the compact per-language heatmap."""
     out_dir = out_root / subdir
     out_dir.mkdir(parents=True, exist_ok=True)
-    da_pairs = list(pairs_factory())
+    col_labels = [lab for lab, _, _ in da_pairs]
 
     ranked = rank_variants(df, variants, da_pairs)
-    title = (f"SNR vs decision accuracy (DA-{da_kind}, {label}) — all benchmarks "
-             f"(variants ordered by mean Pearson r)")
-    if render_grid(df, ranked, da_pairs,
+    # Persist the overall ranking: one row per (variant, col) plus a mean row.
+    for variant, rs, mean_r in ranked:
+        for col_label, r in zip(col_labels, rs):
+            csv_rows.append({"da_def": subdir, "scope": "all", "variant": variant,
+                             "column": col_label, "pearson_r": r})
+        csv_rows.append({"da_def": subdir, "scope": "all", "variant": variant,
+                         "column": "mean", "pearson_r": mean_r})
+
+    # Per-language pooled r (the heatmap data) — persist every cell.
+    table = _per_language_pearson_table(df, variants, da_pairs)
+    for variant in table.index:
+        for lang in table.columns:
+            csv_rows.append({"da_def": subdir, "scope": lang, "variant": variant,
+                             "column": "pooled", "pearson_r": table.loc[variant, lang]})
+
+    title = (f"SNR vs decision accuracy (DA-{da_kind}, {label}) — top {TOP_N} "
+             f"variants by mean Pearson r")
+    if render_grid(df, ranked[:TOP_N], da_pairs,
                    out_dir / "snr_vs_decision_accuracy.png", title,
                    color_by_size=color_by_size):
         print(f"Wrote → {out_dir / 'snr_vs_decision_accuracy.png'}")
 
-    # Heatmap of (variant × language) Pearson r.
-    table = _per_language_pearson_table(df, variants, da_pairs)
     if _draw_heatmap(table, out_dir / "heatmap_pearson_r.png",
                      title=f"Pearson r — log10(SNR) vs DA-{da_kind} ({label}, per language)"):
         print(f"Wrote → {out_dir / 'heatmap_pearson_r.png'}")
-
-    # Per-language grids.
-    df_lang = df.copy()
-    df_lang["language"] = [assign_language(t) for t in df_lang.index]
-    for lang, sub in sorted(df_lang.groupby("language")):
-        sub = sub.drop(columns=["language"])
-        if _max_valid_da_per_pair(sub, da_pairs) < _MIN_FIT_POINTS:
-            print(f"  skip {lang}: too few valid DA-{da_kind} points "
-                  f"(need ≥{_MIN_FIT_POINTS}).")
-            continue
-        ranked_lang = rank_variants(sub, variants, da_pairs)
-        path = out_dir / f"snr_vs_decision_accuracy_{lang}.png"
-        title_l = (f"SNR vs decision accuracy (DA-{da_kind}, {label}) — {lang} "
-                   f"({len(sub)} benchmarks; variants ordered by mean Pearson r)")
-        if render_grid(sub, ranked_lang, da_pairs, path, title_l,
-                       color_by_size=color_by_size):
-            print(f"Wrote → {path}")
 
 
 def main(out_dir: Path):
     csv_path = out_dir / "snr_variants_per_task.csv"
     df = pd.read_csv(csv_path, index_col="task")
     variants = list_variants(df)
+    buckets = buckets_in_df(df)
     n_size = sum(1 for c in df.columns if c.startswith("decision_acc_size_"))
     n_ckpt = sum(1 for c in df.columns if c.startswith("decision_acc_ckpt_"))
     print(f"Loaded {len(df)} tasks × {df.shape[1]} columns from {csv_path} "
-          f"({len(variants)} variants × {len(ALL_SIZES)} sizes × 3 stats "
-          f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)\n")
+          f"({len(variants)} variants × {len(buckets)} buckets × 3 stats "
+          f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)")
+    print(f"  Buckets: {buckets}\n")
 
-    for subdir, da_kind, pairs_factory, color_by_size, label in _DA_DEFS:
+    csv_rows: list = []
+    for subdir, da_kind, da_pairs, color_by_size, label in _da_defs(df):
         print(f"=== DA-{da_kind} ({label}) → {out_dir / subdir} ===")
-        _render_for_da(df, variants, subdir, da_kind, pairs_factory,
-                       color_by_size, label, out_root=out_dir)
+        _render_for_da(df, variants, subdir, da_kind, da_pairs,
+                       color_by_size, label, out_root=out_dir, csv_rows=csv_rows)
         print()
+
+    ranking_path = out_dir / "snr_variant_ranking.csv"
+    pd.DataFrame(csv_rows).to_csv(ranking_path, index=False)
+    print(f"Wrote ranking CSV → {ranking_path} ({len(csv_rows)} rows)\n")
 
     # Variant correlation matrix (pool over all sizes/tasks).
     corr = _variant_corr_matrix(df, variants)
@@ -566,10 +604,12 @@ def main(out_dir: Path):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--pool", required=True,
-                   help="Pool name from configs/models.json. "
-                        "Output dir = results/snr_definition/<pool>/.")
+                   help="Pool name from configs/models.json (tiers: seeds_1904, "
+                        "seeds_28_1797, seeds_28_1797_1904, custom_swissai_hf). "
+                        "Output dir = results/snr_definition/<stage>/<pool>/.")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(out_dir=OUT_ROOT / args.pool)
+    stage = load_pools()[args.pool].get("stage", "pretraining")
+    main(out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)

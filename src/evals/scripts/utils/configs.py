@@ -145,9 +145,50 @@ def split_for_source(source: str,
 @lru_cache(maxsize=4)
 def load_snr_params(path: str | Path = DEFAULT_MODELS_JSON) -> dict[str, Any]:
     """The `snr` section: small_sizes, target_size, plotted_mixes,
-    da_early_steps, last_n. Global — SNR is always the 4-size custom
-    ladder; there is no per-pool override."""
+    da_early_fracs, last_n, size_buckets. Global — there is no per-pool
+    override."""
     return json.loads(Path(path).read_text())["snr"]
+
+
+@lru_cache(maxsize=4)
+def _bucket_map(path: str | Path = DEFAULT_MODELS_JSON) -> dict[str, str]:
+    """raw size label → bucket label, from snr.size_buckets (order preserved)."""
+    out: dict[str, str] = {}
+    for b in load_snr_params(path).get("size_buckets", []):
+        for s in b["sizes"]:
+            out[s] = b["label"]
+    return out
+
+
+def size_bucket(size: str, path: str | Path = DEFAULT_MODELS_JSON) -> str:
+    """Map a raw size label (e.g. ``7B``, ``8B``) to its analysis bucket
+    (``7-9B``). Nearby large sizes share a bucket so each has ≥2 models for
+    cross-model signal/noise; custom sizes are singleton buckets. Unknown
+    labels pass through unchanged."""
+    return _bucket_map(path).get(size, size)
+
+
+def bucket_order(path: str | Path = DEFAULT_MODELS_JSON) -> list[str]:
+    """Bucket labels in ascending-size order (config order)."""
+    return [b["label"] for b in load_snr_params(path).get("size_buckets", [])]
+
+
+_EXTERNAL_SOURCES = (
+    "huggingface-reference", "swiss-ai-reference",
+    "snr-pretraining-a06", "distillation",
+)
+
+
+def stage_external_models(stage: str,
+                          path: str | Path = DEFAULT_MODELS_JSON) -> set[str]:
+    """Model names from the external sources (reference_hf / a06 / distillation)
+    that have the given ``stage`` declared. Used to keep, e.g., instruct
+    checkpoints out of the *pretraining* SNR pool when folding externals — the
+    reference_hf parquet ships both pretraining and posttraining models."""
+    out: set[str] = set()
+    for src in _EXTERNAL_SOURCES:
+        out |= set(filter_models(source=src, stage=stage, path=path))
+    return out
 
 
 # --- HF / W&B infra config (configs/hf_wandb.json) --------------------------

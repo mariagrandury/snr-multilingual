@@ -38,8 +38,15 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 from snr.constants import PLOT_DIR
 
+_SRC = Path(__file__).resolve().parents[2]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import load_snr_params  # noqa: E402
+
+# Per-sample committed intermediates are custom-only (the 4-size ladder).
+_SNR = load_snr_params()
 D_ROOT = PLOT_DIR / "smooth_subtasks" / "per_sample" / "variance_prefilter"
-SIZES = ["175M", "350M", "600M", "1B"]
+SIZES = _SNR["small_sizes"] + [_SNR["target_size"]]
 
 
 def _read_subset(task_dir: Path, size: str):

@@ -31,30 +31,31 @@ _SRC = Path(__file__).resolve().parents[2]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    OUT_ROOT, _per_language_pearson_table, assign_language,
+    _per_language_pearson_table, assign_language,
     da_ckpt_pairs, da_size_pairs, list_variants,
 )
 from snr.constants import PLOT_DIR  # noqa: E402
 
-TARGET_SIZE = "1B"
+TARGET_SIZE = load_snr_params()["target_size"]
 TOP_K = 5
 
 
 # --- per-DA helpers ---------------------------------------------------------
 
-def _pairs_for(da_kind: str):
-    """``da_size_pairs`` or ``da_ckpt_pairs`` (cross-size pooled)."""
+def _pairs_for(df: pd.DataFrame, da_kind: str):
+    """``da_size_pairs`` or ``da_ckpt_pairs`` (cross-size pooled), built from
+    the CSV columns of ``df``."""
     if da_kind == "size":
-        return list(da_size_pairs())
+        return list(da_size_pairs(df))
     if da_kind == "ckpt":
-        return list(da_ckpt_pairs())
+        return list(da_ckpt_pairs(df))
     raise ValueError(da_kind)
 
 
 def _table(df: pd.DataFrame, da_kind: str) -> pd.DataFrame:
-    return _per_language_pearson_table(df, list_variants(df), _pairs_for(da_kind))
+    return _per_language_pearson_table(df, list_variants(df), _pairs_for(df, da_kind))
 
 
 # --- Q1 + Q2: best variant per language under each DA flavor ---------------
@@ -279,11 +280,14 @@ def top_benchmarks_per_language(df: pd.DataFrame, variant: str,
     df["language"] = [assign_language(t) for t in df.index]
     df = df[df["language"] != "??"]
     da_size_col = f"decision_acc_size_{size}"
-    # Mean ckpt-DA across the 3 early-step pairs at the same model size
-    # (1B; the same size we use for SNR ranking).
-    ckpt_cols = [f"decision_acc_ckpt_{e}_{size}"
-                 for e in (6000, 18000, 28000)]
-    df["da_ckpt_mean"] = df[ckpt_cols].mean(axis=1, skipna=True)
+    # Mean ckpt-DA across the relative-fraction early ckpts at the same bucket
+    # (1B; the same bucket we use for SNR ranking). Columns are named with the
+    # fraction label (f12/f36/f56), so select them by pattern.
+    import re as _re
+    ckpt_cols = [c for c in df.columns
+                 if _re.match(rf"^decision_acc_ckpt_f\d+_{_re.escape(size)}$", c)]
+    df["da_ckpt_mean"] = (df[ckpt_cols].mean(axis=1, skipna=True)
+                          if ckpt_cols else np.nan)
 
     rows = []
     for lang, sub in df.groupby("language"):
@@ -397,10 +401,12 @@ def main(out_dir: Path):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--pool", required=True,
-                   help="Pool name from configs/models.json. "
-                        "Reads results/snr_definition/<pool>/snr_variants_per_task.csv.")
+                   help="Pool name from configs/models.json (tiers: 1seed, "
+                        "2seeds, 3seeds, 3seeds_swissai_hf). Reads "
+                        "results/<stage>/snr_definition/<pool>/snr_variants_per_task.csv.")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(out_dir=OUT_ROOT / args.pool)
+    stage = load_pools()[args.pool].get("stage", "pretraining")
+    main(out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)

@@ -556,4 +556,6 @@ if __name__ == "__main__":
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(snr_dir=SNR_DEFINITION_ROOT / args.pool, out_dir=HERE / args.pool)
+    stage = load_pools()[args.pool].get("stage", "pretraining")
+    main(snr_dir=SNR_DEFINITION_ROOT / stage / args.pool,
+         out_dir=HERE / stage / args.pool)

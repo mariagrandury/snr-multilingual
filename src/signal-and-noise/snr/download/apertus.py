@@ -81,6 +81,17 @@ def _normalise_mix(mix: str) -> str:
     return mix
 
 
+# Size-label aliases — ``0.6B`` and ``600M`` are the same 600,000,000-param
+# scale (the distilled ap-from8b-0.6b run and the custom 600M models). The
+# DA / SNR pipeline groups on the exact `size` string, so canonicalise to the
+# custom-grid label `600M` to let the distilled family join the 600M tier.
+_SIZE_ALIASES = {"0.6B": "600M"}
+
+
+def _normalise_size(s: str) -> str:
+    return _SIZE_ALIASES.get(s, s) if isinstance(s, str) else s
+
+
 def _size_key(s: str) -> float:
     """``175M`` → 0.175, ``1B`` → 1.0, ``7B`` → 7.0. Used for numeric
     size ordering — lexicographic sort would put ``1B`` before ``350M``."""
@@ -114,6 +125,7 @@ def _read_parquet(path: Path) -> pd.DataFrame:
     ]
     df = df[[c for c in keep if c in df.columns]].copy()
     df["mix"] = df["mix"].map(_normalise_mix)
+    df["size"] = df["size"].map(_normalise_size)
     df = df.rename(columns={"model_tokens": "tokens", "flops": "compute"})
     # Coerce numerics — the reference_hf split has NaN seeds.
     for c in ("step", "primary_score", "tokens", "compute"):
@@ -150,6 +162,15 @@ def load_a06_eval_results(
     `load_apertus_eval_results` — `mix` is always ``main``, `seed` is
     NaN, and `step` is the megatron iter count."""
     return _read_parquet(_parquet_path(data_dir, "snr-pretraining-a06"))
+
+
+def load_distillation_eval_results(
+    data_dir: str | Path = DEFAULT_DATA_DIR,
+) -> pd.DataFrame:
+    """Distillation runs (apertus-{0.6b,1b}-from8b-TOP256-long). Columns
+    match `load_apertus_eval_results` — `mix` is always ``main``, `seed`
+    is NaN, and `step` is the megatron iter count."""
+    return _read_parquet(_parquet_path(data_dir, "distillation"))
 
 
 def load_reference_hf_eval_results(

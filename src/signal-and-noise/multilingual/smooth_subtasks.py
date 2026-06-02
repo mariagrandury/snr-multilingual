@@ -53,7 +53,8 @@ from multilingual.analyze_snr_variants import (
 )
 from snr.constants import PLOT_DIR
 from snr.download.apertus import (
-    load_apertus_eval_results, load_reference_hf_eval_results,
+    load_a06_eval_results, load_apertus_eval_results,
+    load_distillation_eval_results, load_reference_hf_eval_results,
 )
 from snr.metrics import signal_to_noise_ratio
 
@@ -61,15 +62,28 @@ _SRC = Path(__file__).resolve().parents[2]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
-    expand_pool, load_pools, pool_include_external,
+    bucket_order, expand_pool, load_pools, load_snr_params,
+    pool_include_external, size_bucket, stage_external_models,
 )
 
 # 2-letter language codes used by global_mmlu_full subject keys.
 _GMF_LANGS = ("ar", "en", "es", "hi", "ja", "ru", "sw", "tr", "vi", "zh")
 
-ALL_SIZES = ["175M", "350M", "600M", "1B"]
-LAST_N = 5
+LAST_N = load_snr_params()["last_n"]
 OUT_ROOT = PLOT_DIR / "smooth_subtasks"
+
+
+def _with_bucket(df: pd.DataFrame) -> pd.DataFrame:
+    """Attach the size-bucket column (nearby large sizes pool together)."""
+    df = df.copy()
+    df["bucket"] = df["size"].map(size_bucket)
+    return df
+
+
+def _sizes(df: pd.DataFrame) -> list[str]:
+    """Size buckets present in df, in ascending-size order."""
+    present = set(df["bucket"].dropna()) if "bucket" in df.columns else set()
+    return [b for b in bucket_order() if b in present]
 
 
 ### SNR primitives (per-model arrays, single subtask vs. averaged subset) ###
@@ -100,7 +114,7 @@ def snr_for_subset(df: pd.DataFrame, subtasks: list[str], size: str) -> float:
     the pragmatic substitute and matches the intuition of "score on the
     multilingual subset = mean across the languages we have."
     """
-    sub = df[(df["size"] == size) & (df["task"].isin(subtasks))]
+    sub = df[(df["bucket"] == size) & (df["task"].isin(subtasks))]
     if sub.empty:
         return float("nan")
     if len(subtasks) == 1:
@@ -310,7 +324,7 @@ def run_per_benchmark(df: pd.DataFrame, out_dir: Path) -> Path:
     plot_dir = out_dir / "per_benchmark_plots"
     for family, langs in tqdm(sorted(families.items()), desc="families"):
         per_size = {}
-        for size in ALL_SIZES:
+        for size in _sizes(df):
             sweep = sweep_subset_snrs(df, langs, size)
             per_size[size] = sweep
             rows.append(_result_row(family, size, sweep))
@@ -383,7 +397,9 @@ def load_gmf_subjects_df(df: pd.DataFrame | None = None) -> pd.DataFrame:
              compute=("compute", "first"))
         .rename(columns={"subject": "task"})
     )
-    return grouped.sort_values(["size", "mix", "seed", "step", "task"]).reset_index(drop=True)
+    return _with_bucket(
+        grouped.sort_values(["size", "mix", "seed", "step", "task"]).reset_index(drop=True)
+    )
 
 
 def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | None:
@@ -407,7 +423,7 @@ def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | No
 
     rows = []
     per_size = {}
-    for size in ALL_SIZES:
+    for size in _sizes(df_gmf):
         sweep = sweep_subset_snrs(df_gmf, subjects, size)
         per_size[size] = sweep
         rows.append(_result_row("global_mmlu_full", size, sweep))
@@ -448,7 +464,9 @@ def load_gmf_per_language_df(df: pd.DataFrame | None = None) -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     out = pd.concat(rows, ignore_index=True)
-    return out.sort_values(["language", "size", "mix", "step", "task"]).reset_index(drop=True)
+    return _with_bucket(
+        out.sort_values(["language", "size", "mix", "step", "task"]).reset_index(drop=True)
+    )
 
 
 def run_gmf_subjects_per_language(out_dir: Path, df: pd.DataFrame | None = None) -> Path | None:
@@ -466,7 +484,7 @@ def run_gmf_subjects_per_language(out_dir: Path, df: pd.DataFrame | None = None)
         df_l = df_lang[df_lang["language"] == lang]
         subjects = sorted(df_l["task"].unique())
         per_size = {}
-        for size in ALL_SIZES:
+        for size in _sizes(df_l):
             sweep = sweep_subset_snrs(df_l, subjects, size)
             per_size[size] = sweep
             row = _result_row(f"global_mmlu_full_{lang}", size, sweep)
@@ -542,19 +560,25 @@ def build_summary(out_dir: Path) -> Path:
 def build_pool(pool: str) -> pd.DataFrame:
     """SNR signal-pool dataframe for the named pool: Apertus rows matching
     the pool's `members` (resolved via configs/models.json), plus every
-    reference_hf row when `include_external=true`."""
+    external pretraining-checkpoint row (reference_hf / a06 / distillation)
+    when `include_external=true`. Mirrors run_apertus_snr_variants.build_snr_pool."""
     pool_models = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
     df_a = df_a[df_a["model"].isin(pool_models)].copy()
     frames = [df_a]
     if pool_include_external(pool):
-        try:
-            df_e = load_reference_hf_eval_results()
+        allowed = stage_external_models(load_pools()[pool].get("stage", "pretraining"))
+        for loader in (load_reference_hf_eval_results,
+                       load_a06_eval_results,
+                       load_distillation_eval_results):
+            try:
+                df_e = loader()
+            except FileNotFoundError:
+                continue
+            df_e = df_e[df_e["model"].isin(allowed)]
             if not df_e.empty:
                 frames.append(df_e)
-        except FileNotFoundError:
-            print("  (no reference_hf parquet found — SNR pool is Apertus only)")
-    return pd.concat(frames, ignore_index=True)
+    return _with_bucket(pd.concat(frames, ignore_index=True))
 
 
 def main(pool: str, out_dir: Path):
@@ -564,10 +588,10 @@ def main(pool: str, out_dir: Path):
     df_apertus = load_apertus_eval_results()
     df_apertus = df_apertus[df_apertus["model"].isin(pool_models)].copy()
     df = build_pool(pool)
-    pool_n_models = df.groupby("size")["model"].nunique().to_dict()
+    pool_n_models = df.groupby("bucket")["model"].nunique().to_dict()
     print(f"Pool '{pool}': {len(df_apertus):,} Apertus rows + "
           f"{len(df) - len(df_apertus):,} external rows | "
-          f"models per size in SNR pool: {pool_n_models}")
+          f"models per bucket in SNR pool: {pool_n_models}")
 
     print("\n=== Case 1: multilingual families (task = family, subtask = language) ===")
     run_per_benchmark(df, out_dir)
@@ -590,9 +614,12 @@ def main(pool: str, out_dir: Path):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--pool", required=True,
-                   help="Pool name from configs/models.json.")
+                   help="Pool name from configs/models.json (tiers: 1seed, "
+                        "2seeds, 3seeds, 3seeds_swissai_hf).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(pool=args.pool, out_dir=OUT_ROOT / "per_subtask" / args.pool)
+    stage = load_pools()[args.pool].get("stage", "pretraining")
+    main(pool=args.pool,
+         out_dir=PLOT_DIR / "smooth_subtasks" / stage / args.pool)

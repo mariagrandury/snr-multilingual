@@ -46,10 +46,11 @@ if str(_SRC) not in sys.path:
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    OUT_ROOT, _per_language_pearson_table, da_ckpt_pairs, da_size_pairs,
+    _per_language_pearson_table, da_ckpt_pairs, da_size_pairs,
     list_variants,
 )
 from multilingual.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
+from snr.constants import PLOT_DIR  # noqa: E402
 
 
 # --- helpers ----------------------------------------------------------------
@@ -64,7 +65,7 @@ def _load(out_dir: Path) -> pd.DataFrame:
 
 
 def _table_for(df: pd.DataFrame, kind: str) -> pd.DataFrame:
-    pairs = list(da_size_pairs()) if kind == "size" else list(da_ckpt_pairs())
+    pairs = list(da_size_pairs(df)) if kind == "size" else list(da_ckpt_pairs(df))
     return _per_language_pearson_table(df, list_variants(df), pairs)
 
 
@@ -356,9 +357,12 @@ def main():
             p.error(f"unknown {which} pool {name!r}; "
                     f"available: {sorted(pools.keys())}")
 
-    train_dir = OUT_ROOT / args.train_pool
-    test_dir = OUT_ROOT / args.test_pool
-    out_dir = OUT_ROOT / f"{args.train_pool}__vs__{args.test_pool}"
+    stage_train = pools[args.train_pool].get("stage", "pretraining")
+    stage_test = pools[args.test_pool].get("stage", "pretraining")
+    snr_root = PLOT_DIR / "snr_definition" / stage_train
+    train_dir = snr_root / args.train_pool
+    test_dir = PLOT_DIR / "snr_definition" / stage_test / args.test_pool
+    out_dir = snr_root / f"{args.train_pool}__vs__{args.test_pool}"
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"train = {train_dir}")
     print(f"test  = {test_dir}")
