@@ -595,4 +595,4 @@ if __name__ == "__main__":
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(pool=args.pool, out_dir=OUT_ROOT / args.pool)
+    main(pool=args.pool, out_dir=OUT_ROOT / "per_subtask" / args.pool)

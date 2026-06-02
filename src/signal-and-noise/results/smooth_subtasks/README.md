@@ -20,9 +20,10 @@ Three cases:
   `international_law` alone. 1B: `+0.88` with `virology|human_aging`.
 - **Case 3 — MMLU subject per language**: per-language gains up to
   `+1.28` SNR (Spanish 175M, `formal_logic`).
-- **Per-sample (cluster-only Option D)** finds doc-id subsets with even
-  larger gains — up to `+2.68` on `xcopa_sw` — but on a different scale
-  (binary acc per item vs aggregate scores).
+- **Per-sample (cluster-only; default Option D `variance_prefilter`)**
+  finds doc-id subsets with even larger gains — up to `+2.68` on
+  `xcopa_sw` — but on a different scale (binary acc per item vs aggregate
+  scores). Three more proposers (A/B/C) are available; see below.
 
 **Stability across seed pools is uneven.** Case 2 (subject-level) is
 highly stable: `world_religions`, `international_law`, `human_aging`,
@@ -114,15 +115,25 @@ per language are stable. Source:
 Plots per language under
 `seeds_28_1797/global_mmlu_full_per_language_plots/`.
 
-### Per-sample (Option D, cluster-only)
+### Per-sample (Options A/B/C/D, cluster-only)
 
-The per-sample sweep is cluster-only (needs `samples_*.jsonl`) and
-its outputs are unchanged — committed under [per_sample/](per_sample/)
-for audit. Same method as before: variance prefilter drops "dead"
-samples, then rank surviving samples by per-sample SNR and walk the
-cumulative sweep on doc-ids.
+The per-sample sweep is cluster-only (needs `samples_*.jsonl`).
+[`smooth_subtasks_per_sample.py`](../../multilingual/smooth_subtasks_per_sample.py)
+implements four interchangeable proposers, one output dir each under
+[per_sample/](per_sample/) (see its
+[PROPOSALS.md](per_sample/PROPOSALS.md)):
 
-`per_sample/summary_all.csv` has 328 rows. Per-sample acc is binary
+- `variance_prefilter` (**D**, default) — drop "dead" samples, then rank
+  survivors by per-sample SNR and sweep cumulatively on doc-ids.
+- `greedy_snr_rank` (**A**) — same sweep, no prefilter (upstream baseline).
+- `forward_greedy` (**B**) — forward-select the sample that maximises
+  combined SNR, capped pool/budget (`--b-pool` / `--b-budget`).
+- `irt_discrimination` (**C**) — `girth` 2PL fit, keep high-discrimination
+  items, then rank by SNR. Exploratory: the checkpoint examinee pool is
+  thin and correlated.
+
+The numbers below are the **D** (`variance_prefilter`) run.
+`per_sample/variance_prefilter/summary_all.csv` has 328 rows. Per-sample acc is binary
 0/1, so the relative-std SNR primitive operates on a different scale
 than per-task SNR (a single sample with
 all-correct ckpts has noise=0 → infinite SNR, guarded to NaN). **Absolute SNR values are not directly comparable
@@ -214,34 +225,60 @@ prefer subsets that recur in both lists.**
 ## Reproduce
 
 ```bash
-# Each Apertus seed pool
+# Subtask-level subset search (Cases 1-3) — each Apertus seed pool
 for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
-    python multilingual/smooth_subtasks.py --pool $pool
+    python multilingual/smooth_subtasks.py --pool $pool   # → per_subtask/<pool>/
 done
 
-# Per-sample (cluster only — needs samples_*.jsonl)
+# Per-sample subset search — runs all four proposers (A/B/C/D) by default,
+# one output dir each under per_sample/. Cluster only (needs samples_*.jsonl).
 for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
     python multilingual/smooth_subtasks_per_sample.py --pool $pool
 done
+# A single method, e.g. just the default D:
+#   ... --method variance_prefilter   (or --method D)
+
+# Compare the four proposers + extract paper highlights
+#   → per_sample/comparison/{method_comparison.csv,method_summary.csv,highlights.md}
+python multilingual/compare_per_sample_methods.py
+
+# Reuse only the committed Option-D intermediates (no raw samples needed):
+# informative-fraction, gain distribution, cross-size subset/SNR stability
+#   → per_sample/variance_prefilter/analysis/{*.csv,highlights.md}
+python multilingual/analyze_per_sample_d.py
 ```
 
 ## Directory layout
 
 ```
 results/smooth_subtasks/
-├── seeds_28_1797/                ← train pool
-│   ├── summary.csv               ← 100 rows ranked by snr_gain
-│   ├── per_benchmark.csv + per_benchmark_plots/      ← Case 1
-│   ├── global_mmlu_full.csv + .png                   ← Case 2
-│   └── global_mmlu_full_per_language.csv + plots/    ← Case 3
-├── seeds_1904/                   ← held-out test pool (same layout)
-├── seeds_28_1797_1904/           ← pooled all seeds (recommended)
-└── per_sample/                   ← Option D cluster-run outputs
-    └── seeds_<...>/              ← per-pool when re-run (currently
-                                    holds the single-seed legacy tree)
+├── per_subtask/                  ← subtask-level subset search (Cases 1-3)
+│   ├── seeds_28_1797/            ← train pool
+│   │   ├── summary.csv           ← 100 rows ranked by snr_gain
+│   │   ├── per_benchmark.csv + per_benchmark_plots/      ← Case 1
+│   │   ├── global_mmlu_full.csv + .png                   ← Case 2
+│   │   └── global_mmlu_full_per_language.csv + plots/    ← Case 3
+│   ├── seeds_1904/               ← held-out test pool (same layout)
+│   └── seeds_28_1797_1904/       ← pooled all seeds (recommended)
+└── per_sample/                   ← per-sample subset search, cluster-only
+    ├── PROPOSALS.md              ← A/B/C/D design notes
+    ├── comparison/               ← cross-method tables + paper highlights
+    │   └── method_comparison.csv, method_summary.csv, highlights.md
+    └── <method>/                 ← one per proposer: variance_prefilter (D),
+        ├── summary_all.csv         greedy_snr_rank (A), forward_greedy (B),
+        └── <lang>/<task>/          irt_discrimination (C). <lang>/<task>
+                                     subdirs hold summary.csv, ranked_samples.csv,
+                                     best_subset_<size>.txt, cumulative_snr.png
 ```
 
-Per seed pool:
+The `comparison/` dir is built by
+[`multilingual/compare_per_sample_methods.py`](../../multilingual/compare_per_sample_methods.py),
+which merges the four `summary_all.csv` roll-ups into a per-cell table,
+per-method aggregates (win rate, median gain, subset size), best-subset
+overlap (A vs D, A vs C), and a `highlights.md` with the headline numbers
+worth lifting into a paper.
+
+Per seed pool (under `per_subtask/<pool>/`):
 
 - `summary.csv` — every (case, task, size) ranked by `snr_gain`. Built by
   `build_summary` in
@@ -254,6 +291,9 @@ Per seed pool:
   `global_mmlu_full_per_language_plots/` — Case 3 outputs (one PNG per
   language, 10 in total).
 
-`per_sample/` (shared across pools) — Option D cluster-run outputs:
-`PROPOSALS.md`, `summary_all.csv`, plus one subdir per language each
-holding one subdir per task.
+`per_sample/<method>/` (cluster-only) — one dir per proposer
+(`variance_prefilter`, `greedy_snr_rank`, `forward_greedy`,
+`irt_discrimination`), each holding a `summary_all.csv` roll-up plus one
+`<lang>/<task>/` subdir per language-benchmark. Each per-task summary.csv
+now carries `language` and `task` columns. `PROPOSALS.md` (the design
+notes) sits at the `per_sample/` root.

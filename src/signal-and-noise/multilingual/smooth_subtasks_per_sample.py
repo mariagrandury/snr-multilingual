@@ -1,26 +1,41 @@
-"""Per-sample SNR subset search (Option D from PROPOSALS.md).
+"""Per-sample SNR subset search (Options A/B/C/D from PROPOSALS.md).
 
 For each language-specific multilingual benchmark (arc_es, xnli_de,
 belebele_zh, ...), find the subset of samples (lm-eval doc_ids) that
 maximizes SNR.
 
-Method (Option D):
+Shared pipeline:
   1. Walk Apertus eval_logs and parse every ``samples_<task>_*.jsonl``
      for the requested tasks, keeping only ``doc_id`` and ``acc``.
   2. Per task × size, build an (n_ckpts × n_samples) acc matrix plus
      per-ckpt (mix, step) metadata.
-  3. Variance prefilter: drop "dead" samples (per-mix mean accuracy
-     constant across the 3 mixes — they carry no signal).
-  4. Per-sample SNR using the same primitive as the rest of the repo
+  3. Per-sample SNR using the same primitive as the rest of the repo
      (signal = range of per-mix means / mean; noise = std of per-mix
      last-5-ckpt scores pooled / mean), vectorised over samples.
-  5. Sort surviving samples by SNR; sweep cumulative subset 1..N and
-     pick argmax. Also a random-order baseline for sanity.
+  4. A *proposer* orders / selects candidate samples (this is the only
+     step that differs between methods — see below).
+  5. Sweep the cumulative subset 1..N over the proposed order and pick
+     argmax. Also a random-order baseline for sanity.
   6. Write per-(lang, benchmark) outputs under
-     ``results/smooth_subtasks/per_sample/<lang>/<benchmark>_<lang>/``.
+     ``results/smooth_subtasks/per_sample/<method>/<lang>/<benchmark>_<lang>/``.
 
-Other proposed search strategies (forward greedy, IRT, random) are
-documented in the same dir's ``PROPOSALS.md``.
+Proposers (``--method``; one output dir each, named below):
+  A ``greedy_snr_rank``    — rank *all* samples by per-sample SNR. No
+                             prefilter. Matches upstream AllenAI semantics.
+  B ``forward_greedy``     — cap the candidate pool to the top ``--b-pool``
+                             samples by SNR, then forward-select up to
+                             ``--b-budget``, adding at each step the sample
+                             that maximises combined-subset SNR. Captures
+                             interactions A misses.
+  C ``irt_discrimination`` — fit a 2PL IRT model (items = samples,
+                             examinees = checkpoints) with ``girth``, keep
+                             the top ``--c-keep-frac`` by discrimination,
+                             then order survivors by SNR ("C then A").
+  D ``variance_prefilter`` — drop "dead" samples (per-mix mean constant
+                             across mixes) then Option A. The default.
+
+Design rationale + the unimplemented random/black-box search are in the
+sibling ``PROPOSALS.md``.
 """
 
 from __future__ import annotations
@@ -29,6 +44,7 @@ import json
 import re
 import sys
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -278,43 +294,140 @@ def _argmax_safe(values: list[float]) -> int:
     return int(np.argmax(arr))
 
 
+### Subset proposers (A/B/C/D from PROPOSALS.md) ###
+#
+# A proposer maps (acc matrix, mix metadata, per-sample SNR) → an ordered
+# array of column indices. The cumulative sweep then walks that order. The
+# proposer is the *only* step that differs between methods; everything
+# upstream (matrices, per-sample SNR) and downstream (sweep, outputs) is
+# shared.
+
+
+def _order_by_snr(cols: np.ndarray, snrs: np.ndarray) -> np.ndarray:
+    """Order ``cols`` by their per-sample SNR descending; NaN SNRs last."""
+    s = snrs[cols]
+    finite = np.isfinite(s)
+    order_finite = cols[finite][np.argsort(-s[finite])]
+    return np.concatenate([order_finite, cols[~finite]])
+
+
+def propose_greedy_snr_rank(A, mix_rows, snrs, rng, params) -> np.ndarray:
+    """Option A: rank *all* samples by per-sample SNR. No prefilter."""
+    return _order_by_snr(np.arange(A.shape[1]), snrs)
+
+
+def propose_variance_prefilter(A, mix_rows, snrs, rng, params) -> np.ndarray:
+    """Option D: drop dead samples (constant per-mix mean) then Option A."""
+    cols = np.flatnonzero(_variance_prefilter_mask(A, mix_rows))
+    return _order_by_snr(cols, snrs)
+
+
+def propose_forward_greedy(A, mix_rows, snrs, rng, params) -> np.ndarray:
+    """Option B: cap the candidate pool to the top ``b_pool`` samples by
+    Option-A SNR, then forward-select up to ``b_budget`` samples, adding at
+    each step the one that maximises combined-subset SNR. The returned order
+    *is* the selection order, so the cumulative sweep evaluates each prefix.
+    """
+    finite = np.flatnonzero(np.isfinite(snrs))
+    if finite.size == 0:
+        return np.empty(0, dtype=int)
+    remaining = list(finite[np.argsort(-snrs[finite])][: params["b_pool"]])
+    selected: list[int] = []
+    cur_sum = np.zeros(A.shape[0], dtype=np.float64)
+    for k in range(min(params["b_budget"], len(remaining))):
+        rem = np.asarray(remaining)
+        trial = (cur_sum[:, None] + A[:, rem]) / (k + 1)  # (n_ckpts, |rem|)
+        j = _argmax_safe(list(_per_sample_snr(trial, mix_rows)))
+        if j < 0:
+            break
+        c = remaining.pop(j)
+        selected.append(c)
+        cur_sum += A[:, c]
+    return np.asarray(selected, dtype=int)
+
+
+def propose_irt_discrimination(A, mix_rows, snrs, rng, params) -> np.ndarray:
+    """Option C: fit a 2PL IRT model (items = samples, examinees =
+    checkpoints) with ``girth``, keep the top ``c_keep_frac`` of samples by
+    discrimination, then order survivors by SNR ("C then A").
+
+    Items with no across-checkpoint variance (all-correct / all-wrong) carry
+    no discrimination signal and break the fit, so they're dropped first.
+    """
+    data = A.T  # girth wants (n_items, n_examinees) dichotomous
+    cols = np.flatnonzero(data.std(axis=1) > 0)
+    if cols.size == 0:
+        return np.empty(0, dtype=int)
+    from girth import twopl_mml  # lazy: only Option C pulls in girth
+
+    estimates = twopl_mml(data[cols].astype(int))
+    discrimination = np.asarray(estimates["Discrimination"], dtype=float)
+    n_keep = max(1, round(params["c_keep_frac"] * cols.size))
+    survivors = cols[np.argsort(-discrimination)[:n_keep]]
+    return _order_by_snr(survivors, snrs)
+
+
+@dataclass(frozen=True)
+class Method:
+    key: str          # CLI letter (A/B/C/D)
+    dirname: str      # output subdir under per_sample/
+    propose: object   # callable(A, mix_rows, snrs, rng, params) -> ordered cols
+
+
+METHODS = {
+    "A": Method("A", "greedy_snr_rank", propose_greedy_snr_rank),
+    "B": Method("B", "forward_greedy", propose_forward_greedy),
+    "C": Method("C", "irt_discrimination", propose_irt_discrimination),
+    "D": Method("D", "variance_prefilter", propose_variance_prefilter),
+}
+
+
+def resolve_methods(spec: str) -> list[Method]:
+    """``spec`` is 'all', or a comma list of letters (A/B/C/D) or dir names."""
+    if spec.strip().lower() == "all":
+        return [METHODS[k] for k in ("A", "B", "C", "D")]
+    by_dirname = {m.dirname: m for m in METHODS.values()}
+    out = []
+    for tok in (t.strip() for t in spec.split(",")):
+        if tok.upper() in METHODS:
+            out.append(METHODS[tok.upper()])
+        elif tok in by_dirname:
+            out.append(by_dirname[tok])
+        else:
+            raise SystemExit(
+                f"unknown method {tok!r}; choose from {list(METHODS)}, "
+                f"{list(by_dirname)}, or 'all'"
+            )
+    return out
+
+
 ### Phase 3: per-task driver + outputs ###
 
 
 def _run_one_size(
     A: np.ndarray, ckpts: list[tuple[str, str, int]], doc_ids: list[int],
-    rng: np.random.Generator,
+    rng: np.random.Generator, propose, params: dict,
 ) -> dict | None:
     mix_rows = _last_n_rows_per_mix(ckpts)
     if len(mix_rows) < 2:
         return None
-    keep = _variance_prefilter_mask(A, mix_rows)
     n_total = A.shape[1]
-    if not keep.any():
-        return {"n_total": n_total, "n_after_prefilter": 0}
-
-    survivor_idx = np.flatnonzero(keep)
-    snrs = _per_sample_snr(A, mix_rows)
-    survivor_snrs = snrs[survivor_idx]
-
-    # Sort survivors by SNR descending; NaNs to the end.
-    finite = np.isfinite(survivor_snrs)
-    order_finite = survivor_idx[finite][np.argsort(-survivor_snrs[finite])]
-    order_nan = survivor_idx[~finite]
-    ordered = np.concatenate([order_finite, order_nan])
+    snrs = _per_sample_snr(A, mix_rows)  # per-sample SNR: ordering + reporting
+    ordered = propose(A, mix_rows, snrs, rng, params)
+    if ordered.size == 0:
+        return {"n_total": n_total, "n_candidates": 0}
 
     cumulative = _cumulative_subset_snrs(A, ordered, mix_rows)
     rand_order = ordered.copy()
     rng.shuffle(rand_order)
     rand_cumulative = _cumulative_subset_snrs(A, rand_order, mix_rows)
 
-    full_idx = np.arange(A.shape[1])
-    _, _, full_set_snr = _signal_noise(A[:, full_idx].mean(axis=1), mix_rows)
+    _, _, full_set_snr = _signal_noise(A.mean(axis=1), mix_rows)
 
     best_idx = _argmax_safe(cumulative)
     return {
         "n_total": n_total,
-        "n_after_prefilter": int(keep.sum()),
+        "n_candidates": int(ordered.size),
         "ordered": ordered,
         "ordered_doc_ids": [doc_ids[i] for i in ordered],
         "cumulative_snrs": cumulative,
@@ -342,8 +455,8 @@ def _plot_cumulative(task: str, per_size: dict[str, dict], save_path: Path):
         if r["best_n"] > 0:
             ax.axvline(r["best_n"], color="grey", linestyle="--", linewidth=0.6)
         ax.set_title(
-            f"{task} — {size}  (N={r['n_total']}, after prefilter "
-            f"{r['n_after_prefilter']}; best top-{r['best_n']}, "
+            f"{task} — {size}  (N={r['n_total']}, candidates "
+            f"{r['n_candidates']}; best top-{r['best_n']}, "
             f"best SNR {r['best_snr']:.3f}, full {r['full_set_snr']:.3f})",
             fontsize=9,
         )
@@ -357,26 +470,29 @@ def _plot_cumulative(task: str, per_size: dict[str, dict], save_path: Path):
     plt.close(fig)
 
 
-def _write_outputs(task: str, per_size: dict[str, dict], doc_ids_per_size: dict,
-                   out_dir: Path):
+def _write_outputs(task: str, language: str, per_size: dict[str, dict],
+                   doc_ids_per_size: dict, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # summary.csv: one row per size
+    # summary.csv: one row per size. ``language``/``task`` are redundant with
+    # the directory path but carried in every row so the file is self-describing
+    # and the roll-up is a plain concat.
     sum_rows = []
     for size in ALL_SIZES:
+        base = {"language": language, "task": task, "size": size}
         r = per_size.get(size)
         if not r:
-            sum_rows.append({"size": size, "status": "no_data"})
+            sum_rows.append({**base, "status": "no_data"})
             continue
         if "cumulative_snrs" not in r:
-            sum_rows.append({"size": size, "status": "all_dead",
+            sum_rows.append({**base, "status": "all_dead",
                              "n_total": r["n_total"],
-                             "n_after_prefilter": r["n_after_prefilter"]})
+                             "n_candidates": r["n_candidates"]})
             continue
         sum_rows.append({
-            "size": size, "status": "ok",
+            **base, "status": "ok",
             "n_total": r["n_total"],
-            "n_after_prefilter": r["n_after_prefilter"],
+            "n_candidates": r["n_candidates"],
             "best_n": r["best_n"],
             "best_snr": r["best_snr"],
             "full_set_snr": r["full_set_snr"],
@@ -427,7 +543,7 @@ def _write_outputs(task: str, per_size: dict[str, dict], doc_ids_per_size: dict,
 
 
 def run_one_task(task: str, by_ckpt: dict, out_root: Path,
-                 rng: np.random.Generator):
+                 rng: np.random.Generator, propose, params: dict):
     lang = assign_language(task)
     if lang == "??":
         return None
@@ -442,14 +558,27 @@ def run_one_task(task: str, by_ckpt: dict, out_root: Path,
             continue
         A, ckpts, doc_ids = built
         doc_ids_per_size[size] = doc_ids
-        result = _run_one_size(A, ckpts, doc_ids, rng)
-        per_size[size] = result
+        per_size[size] = _run_one_size(A, ckpts, doc_ids, rng, propose, params)
 
-    _write_outputs(task, per_size, doc_ids_per_size, out_dir)
+    _write_outputs(task, lang, per_size, doc_ids_per_size, out_dir)
     return out_dir
 
 
-def main(pool: str, out_root: Path):
+def _write_rollup(out_root: Path):
+    """Concat every task's summary.csv into one master file (each summary
+    already carries the language/task columns), so users don't grep across
+    ~98 dirs."""
+    master_rows = [pd.read_csv(csv) for csv in out_root.rglob("summary.csv")
+                   if csv.parent != out_root]
+    if not master_rows:
+        return
+    master = pd.concat(master_rows, ignore_index=True)
+    master = master.sort_values(["language", "task", "size"])
+    master.to_csv(out_root / "summary_all.csv", index=False)
+    print(f"  roll-up → {out_root / 'summary_all.csv'}")
+
+
+def main(pool: str, methods: list[Method], params: dict):
     pool_models = set(expand_pool(pool))
     seeds = sorted({get_model(m)["seed"] for m in pool_models
                     if get_model(m).get("seed") is not None})
@@ -461,49 +590,49 @@ def main(pool: str, out_root: Path):
           f"targeting {len(tasks)} multilingual language-tasks "
           f"({len(families)} families).")
 
+    # Parse samples once; every method reuses the same matrices.
     samples = load_samples(set(tasks), seeds=set(seeds))
     print(f"Parsed samples for {len(samples)} tasks.")
 
-    out_root.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(0)
-    written = 0
-    for task in tqdm(tasks, desc="tasks"):
-        if task not in samples:
-            continue
-        out = run_one_task(task, samples[task], out_root, rng)
-        if out is not None:
-            written += 1
-
-    # Roll-up: aggregate every task's summary.csv into one master file so
-    # users don't have to grep across 98 dirs.
-    master_rows = []
-    for csv in out_root.rglob("summary.csv"):
-        if csv.parent == out_root:
-            continue
-        df = pd.read_csv(csv)
-        df["task"] = csv.parent.name
-        df["language"] = csv.parent.parent.name
-        master_rows.append(df)
-    if master_rows:
-        master = pd.concat(master_rows, ignore_index=True)
-        cols = ["language", "task"] + [c for c in master.columns
-                                       if c not in ("language", "task")]
-        master = master[cols].sort_values(["language", "task", "size"])
-        master_path = out_root / "summary_all.csv"
-        master.to_csv(master_path, index=False)
-        print(f"Wrote roll-up → {master_path}")
-
-    print(f"Wrote {written} per-task output dirs under {out_root}")
+    for method in methods:
+        out_root = OUT_ROOT / "per_sample" / method.dirname
+        out_root.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(0)
+        written = 0
+        for task in tqdm(tasks, desc=f"{method.dirname}"):
+            if task not in samples:
+                continue
+            out = run_one_task(task, samples[task], out_root, rng,
+                               method.propose, params)
+            if out is not None:
+                written += 1
+        _write_rollup(out_root)
+        print(f"[{method.dirname}] wrote {written} per-task dirs under {out_root}")
 
 
 if __name__ == "__main__":
     import argparse
-    p = argparse.ArgumentParser(description=__doc__)
+    p = argparse.ArgumentParser(description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", required=True,
-                   help="Pool name from configs/models.json. "
-                        "Output → results/smooth_subtasks/<pool>/per_sample/.")
+                   help="Pool name from configs/models.json. Output → "
+                        "results/smooth_subtasks/per_sample/<method>/.")
+    p.add_argument("--method", default="all",
+                   help="Proposer(s): 'all', or a comma list of letters "
+                        "(A/B/C/D) or dir names (greedy_snr_rank, "
+                        "forward_greedy, irt_discrimination, variance_prefilter). "
+                        "Default: all.")
+    p.add_argument("--b-pool", type=int, default=500,
+                   help="Option B: cap candidate pool to top-N by SNR (default 500).")
+    p.add_argument("--b-budget", type=int, default=100,
+                   help="Option B: forward-select up to K samples (default 100).")
+    p.add_argument("--c-keep-frac", type=float, default=0.5,
+                   help="Option C: keep top fraction by IRT discrimination "
+                        "(default 0.5).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
-    main(pool=args.pool, out_root=OUT_ROOT / args.pool / "per_sample")
+    main(pool=args.pool, methods=resolve_methods(args.method),
+         params={"b_pool": args.b_pool, "b_budget": args.b_budget,
+                 "c_keep_frac": args.c_keep_frac})
