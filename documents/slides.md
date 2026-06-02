@@ -54,7 +54,6 @@ layout: section
 Training multilingual LMs requires constant evaluation decisions,
 
 but evaluation is expensive and often uninformative.
-
 ---
 layout: bullets
 title: The Problem
@@ -560,7 +559,6 @@ layout: section
 # Results — Multilingual SNR Framework
 
 Four analyses on 36 Apertus pretrains (4 sizes × 3 mixes × 3 seeds)
-
 ---
 layout: focus
 color: blue
@@ -669,7 +667,6 @@ layout: section
 # Benchmark Creation
 
 What makes a benchmark high-SNR? Curation vs task design.
-
 ---
 layout: focus
 color: blue

@@ -1,0 +1,16 @@
+/* Deck-wide overrides (auto-loaded by Slidev). */
+
+/* All section layouts: white background, theme-blue titles. */
+.slidev-layout.section {
+  background: #fff;
+  color: #2d3748;
+}
+.slidev-layout.section h1 {
+  color: var(--slidev-theme-primary, #1e3a5f);
+  border-bottom-color: rgba(45, 55, 72, 0.15);
+}
+.slidev-layout.section h2,
+.slidev-layout.section h3,
+.slidev-layout.section p {
+  color: rgba(45, 55, 72, 0.75);
+}
