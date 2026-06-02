@@ -7,6 +7,9 @@
   --scholarly-font-serif: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
   --scholarly-font-sans: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
   --scholarly-font-body: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
+
+  /* White slide background instead of the theme's warm beige (#fdfbf7). */
+  --scholarly-bg-warm: #fff;
 }
 
 /* All section layouts: white background, theme-blue titles. */
