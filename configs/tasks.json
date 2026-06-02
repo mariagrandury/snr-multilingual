@@ -350,27 +350,6 @@
         "posttraining"
       ]
     },
-    "blend_north_korea_sample": {
-      "language": "ko",
-      "benchmark": "blend_north_korea_sample",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "blend_northern_nigeria_sample": {
-      "language": "en",
-      "benchmark": "blend_northern_nigeria_sample",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "blend_south_korea_sample": {
-      "language": "ko",
-      "benchmark": "blend_south_korea_sample",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "blend_spain_sample": {
       "language": "es",
       "benchmark": "blend_spain_sample",
@@ -420,13 +399,6 @@
         "posttraining"
       ]
     },
-    "cultural_bench_easy_brazil": {
-      "language": "pt",
-      "benchmark": "cultural_bench_easy_brazil",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "cultural_bench_easy_canada": {
       "language": "en",
       "benchmark": "cultural_bench_easy_canada",
@@ -444,20 +416,6 @@
     "cultural_bench_easy_china": {
       "language": "zh",
       "benchmark": "cultural_bench_easy_china",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_easy_france": {
-      "language": "fr",
-      "benchmark": "cultural_bench_easy_france",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_easy_germany": {
-      "language": "de",
-      "benchmark": "cultural_bench_easy_germany",
       "stages": [
         "posttraining"
       ]
@@ -525,30 +483,9 @@
         "posttraining"
       ]
     },
-    "cultural_bench_easy_south_korea": {
-      "language": "ko",
-      "benchmark": "cultural_bench_easy_south_korea",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "cultural_bench_easy_spain": {
       "language": "es",
       "benchmark": "cultural_bench_easy_spain",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_easy_thailand": {
-      "language": "th",
-      "benchmark": "cultural_bench_easy_thailand",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_easy_ukraine": {
-      "language": "uk",
-      "benchmark": "cultural_bench_easy_ukraine",
       "stages": [
         "posttraining"
       ]
@@ -595,13 +532,6 @@
         "posttraining"
       ]
     },
-    "cultural_bench_hard_brazil": {
-      "language": "pt",
-      "benchmark": "cultural_bench_hard_brazil",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "cultural_bench_hard_canada": {
       "language": "en",
       "benchmark": "cultural_bench_hard_canada",
@@ -619,20 +549,6 @@
     "cultural_bench_hard_china": {
       "language": "zh",
       "benchmark": "cultural_bench_hard_china",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_hard_france": {
-      "language": "fr",
-      "benchmark": "cultural_bench_hard_france",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_hard_germany": {
-      "language": "de",
-      "benchmark": "cultural_bench_hard_germany",
       "stages": [
         "posttraining"
       ]
@@ -700,30 +616,9 @@
         "posttraining"
       ]
     },
-    "cultural_bench_hard_south_korea": {
-      "language": "ko",
-      "benchmark": "cultural_bench_hard_south_korea",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "cultural_bench_hard_spain": {
       "language": "es",
       "benchmark": "cultural_bench_hard_spain",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_hard_thailand": {
-      "language": "th",
-      "benchmark": "cultural_bench_hard_thailand",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "cultural_bench_hard_ukraine": {
-      "language": "uk",
-      "benchmark": "cultural_bench_hard_ukraine",
       "stages": [
         "posttraining"
       ]
@@ -777,13 +672,6 @@
         "posttraining"
       ]
     },
-    "global_mmlu_de_gen_0shot": {
-      "language": "de",
-      "benchmark": "global_mmlu",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "global_mmlu_en_gen_0shot": {
       "language": "en",
       "benchmark": "global_mmlu",
@@ -793,13 +681,6 @@
     },
     "global_mmlu_es_gen_0shot": {
       "language": "es",
-      "benchmark": "global_mmlu",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "global_mmlu_fr_gen_0shot": {
-      "language": "fr",
       "benchmark": "global_mmlu",
       "stages": [
         "posttraining"
@@ -884,20 +765,6 @@
     },
     "global_mmlu_ja_gen_0shot": {
       "language": "ja",
-      "benchmark": "global_mmlu",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "global_mmlu_ko_gen_0shot": {
-      "language": "ko",
-      "benchmark": "global_mmlu",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "global_mmlu_pt_gen_0shot": {
-      "language": "pt",
       "benchmark": "global_mmlu",
       "stages": [
         "posttraining"
@@ -1031,13 +898,6 @@
         "pretraining"
       ]
     },
-    "hellaswag_de": {
-      "language": "de",
-      "benchmark": "hellaswag",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "hellaswag_es": {
       "language": "es",
       "benchmark": "hellaswag",
@@ -1054,13 +914,6 @@
         "pretraining"
       ]
     },
-    "hellaswag_fr": {
-      "language": "fr",
-      "benchmark": "hellaswag",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "hellaswag_hi": {
       "language": "hi",
       "benchmark": "hellaswag",
@@ -1069,33 +922,12 @@
         "pretraining"
       ]
     },
-    "hellaswag_pt": {
-      "language": "pt",
-      "benchmark": "hellaswag",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "hellaswag_ru": {
       "language": "ru",
       "benchmark": "hellaswag",
       "stages": [
         "posttraining",
         "pretraining"
-      ]
-    },
-    "hellaswag_te": {
-      "language": "te",
-      "benchmark": "hellaswag",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "hellaswag_uk": {
-      "language": "uk",
-      "benchmark": "hellaswag",
-      "stages": [
-        "posttraining"
       ]
     },
     "hellaswag_vi": {
@@ -1470,13 +1302,6 @@
         "posttraining"
       ]
     },
-    "mgsm_cot_native": {
-      "language": "multi",
-      "benchmark": "mgsm_cot_native",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "mgsm_direct_en": {
       "language": "en",
       "benchmark": "mgsm_direct",
@@ -1533,9 +1358,100 @@
         "midtraining"
       ]
     },
-    "mgsm_en_cot": {
+    "mgsm_en_cot_en": {
       "language": "en",
       "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_es": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_ja": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_ru": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_sw": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_th": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_en_cot_zh": {
+      "language": "en",
+      "benchmark": "mgsm",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_en": {
+      "language": "en",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_es": {
+      "language": "es",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_ja": {
+      "language": "ja",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_ru": {
+      "language": "ru",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_sw": {
+      "language": "sw",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_th": {
+      "language": "th",
+      "benchmark": "mgsm_native_cot",
+      "stages": [
+        "posttraining"
+      ]
+    },
+    "mgsm_native_cot_zh": {
+      "language": "zh",
+      "benchmark": "mgsm_native_cot",
       "stages": [
         "posttraining"
       ]
@@ -1778,13 +1694,6 @@
         "pretraining"
       ]
     },
-    "truthfulqa": {
-      "language": "en",
-      "benchmark": "truthfulqa",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "truthfulqa-multi_mc1_en": {
       "language": "en",
       "benchmark": "truthfulqa-multi_mc1",
@@ -1820,13 +1729,6 @@
         "posttraining"
       ]
     },
-    "truthfulqa_de_mc2": {
-      "language": "de",
-      "benchmark": "truthfulqa",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "truthfulqa_es_mc1": {
       "language": "es",
       "benchmark": "truthfulqa",
@@ -1855,13 +1757,6 @@
         "posttraining"
       ]
     },
-    "truthfulqa_fr_mc2": {
-      "language": "fr",
-      "benchmark": "truthfulqa",
-      "stages": [
-        "posttraining"
-      ]
-    },
     "truthfulqa_hi_mc1": {
       "language": "hi",
       "benchmark": "truthfulqa",
@@ -1883,9 +1778,9 @@
         "pretraining"
       ]
     },
-    "truthfulqa_pt_mc2": {
-      "language": "pt",
-      "benchmark": "truthfulqa",
+    "truthfulqa_mc2": {
+      "language": "??",
+      "benchmark": "truthfulqa_mc2",
       "stages": [
         "posttraining"
       ]
@@ -1899,20 +1794,6 @@
     },
     "truthfulqa_ru_mc2": {
       "language": "ru",
-      "benchmark": "truthfulqa",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "truthfulqa_te_mc2": {
-      "language": "te",
-      "benchmark": "truthfulqa",
-      "stages": [
-        "posttraining"
-      ]
-    },
-    "truthfulqa_uk_mc2": {
-      "language": "uk",
       "benchmark": "truthfulqa",
       "stages": [
         "posttraining"
@@ -2442,19 +2323,13 @@
       "blend_algeria_sample",
       "blend_china_sample",
       "blend_mexico_sample",
-      "blend_north_korea_sample",
-      "blend_northern_nigeria_sample",
-      "blend_south_korea_sample",
       "blend_spain_sample",
       "blend_us_sample",
       "cultural_bench_easy_argentina",
       "cultural_bench_easy_australia",
-      "cultural_bench_easy_brazil",
       "cultural_bench_easy_canada",
       "cultural_bench_easy_chile",
       "cultural_bench_easy_china",
-      "cultural_bench_easy_france",
-      "cultural_bench_easy_germany",
       "cultural_bench_easy_india",
       "cultural_bench_easy_japan",
       "cultural_bench_easy_mexico",
@@ -2464,22 +2339,16 @@
       "cultural_bench_easy_russia",
       "cultural_bench_easy_saudi_arabia",
       "cultural_bench_easy_south_africa",
-      "cultural_bench_easy_south_korea",
       "cultural_bench_easy_spain",
-      "cultural_bench_easy_thailand",
-      "cultural_bench_easy_ukraine",
       "cultural_bench_easy_united_kingdom",
       "cultural_bench_easy_united_states",
       "cultural_bench_easy_vietnam",
       "cultural_bench_easy_zimbabwe",
       "cultural_bench_hard_argentina",
       "cultural_bench_hard_australia",
-      "cultural_bench_hard_brazil",
       "cultural_bench_hard_canada",
       "cultural_bench_hard_chile",
       "cultural_bench_hard_china",
-      "cultural_bench_hard_france",
-      "cultural_bench_hard_germany",
       "cultural_bench_hard_india",
       "cultural_bench_hard_japan",
       "cultural_bench_hard_mexico",
@@ -2489,66 +2358,55 @@
       "cultural_bench_hard_russia",
       "cultural_bench_hard_saudi_arabia",
       "cultural_bench_hard_south_africa",
-      "cultural_bench_hard_south_korea",
       "cultural_bench_hard_spain",
-      "cultural_bench_hard_thailand",
-      "cultural_bench_hard_ukraine",
       "cultural_bench_hard_united_kingdom",
       "cultural_bench_hard_united_states",
       "cultural_bench_hard_vietnam",
       "cultural_bench_hard_zimbabwe",
       "drop",
       "global_mmlu_ar_gen_0shot",
-      "global_mmlu_de_gen_0shot",
       "global_mmlu_en_gen_0shot",
       "global_mmlu_es_gen_0shot",
-      "global_mmlu_fr_gen_0shot",
       "global_mmlu_hi_gen_0shot",
       "global_mmlu_ja_gen_0shot",
-      "global_mmlu_ko_gen_0shot",
-      "global_mmlu_pt_gen_0shot",
       "global_mmlu_sw_gen_0shot",
       "global_mmlu_zh_gen_0shot",
       "gsm8k_cot",
       "hellaswag",
       "hellaswag_ar",
-      "hellaswag_de",
       "hellaswag_es",
       "hellaswag_eu",
-      "hellaswag_fr",
       "hellaswag_hi",
-      "hellaswag_pt",
       "hellaswag_ru",
-      "hellaswag_te",
-      "hellaswag_uk",
       "hellaswag_vi",
       "hendrycks_math",
       "humaneval_instruct",
       "ifeval",
       "mathqa",
       "mbpp_instruct",
-      "mgsm_cot_native",
-      "mgsm_en_cot",
+      "mgsm_native_cot_en",
+      "mgsm_native_cot_es",
+      "mgsm_native_cot_ja",
+      "mgsm_native_cot_ru",
+      "mgsm_native_cot_sw",
+      "mgsm_native_cot_th",
+      "mgsm_native_cot_zh",
+      "mgsm_en_cot_en",
+      "mgsm_en_cot_es",
+      "mgsm_en_cot_ja",
+      "mgsm_en_cot_ru",
+      "mgsm_en_cot_sw",
+      "mgsm_en_cot_th",
+      "mgsm_en_cot_zh",
       "mmlu_flan_cot_zeroshot",
       "multi-if",
-      "polyglotoxicitypromptsllama_small_english",
-      "polyglotoxicitypromptsllama_small_french",
-      "polyglotoxicitypromptsllama_small_german",
-      "polyglotoxicitypromptsllama_small_hindi",
-      "polyglotoxicitypromptsllama_small_portuguese",
-      "polyglotoxicitypromptsllama_small_spanish",
       "toxigen",
-      "truthfulqa",
+      "truthfulqa_mc2",
       "truthfulqa_ar_mc2",
-      "truthfulqa_de_mc2",
       "truthfulqa_es_mc2",
       "truthfulqa_eu_mc2",
-      "truthfulqa_fr_mc2",
       "truthfulqa_hi_mc2",
-      "truthfulqa_pt_mc2",
       "truthfulqa_ru_mc2",
-      "truthfulqa_te_mc2",
-      "truthfulqa_uk_mc2",
       "truthfulqa_vi_mc2",
       "truthfulqa_zh_mc2"
     ],
@@ -2559,7 +2417,13 @@
       "aya_redteaming_hindi",
       "aya_redteaming_russian",
       "aya_redteaming_spanish",
-      "harmbench"
+      "harmbench",
+      "polyglotoxicitypromptsllama_small_english",
+      "polyglotoxicitypromptsllama_small_french",
+      "polyglotoxicitypromptsllama_small_german",
+      "polyglotoxicitypromptsllama_small_hindi",
+      "polyglotoxicitypromptsllama_small_portuguese",
+      "polyglotoxicitypromptsllama_small_spanish"
     ],
     "include_base_44": [
       "include_base_44_albanian",

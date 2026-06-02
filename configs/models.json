@@ -70,22 +70,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -159,22 +164,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -236,6 +246,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -243,6 +254,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -251,7 +263,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -325,22 +340,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -414,22 +434,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -491,6 +516,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -498,6 +524,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -506,7 +533,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -580,22 +610,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -669,22 +704,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -746,6 +786,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -753,6 +794,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -761,7 +803,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -835,22 +880,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -924,22 +974,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1001,6 +1056,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -1008,6 +1064,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -1016,7 +1073,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1090,22 +1150,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1179,22 +1244,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1256,6 +1326,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -1263,6 +1334,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -1271,7 +1343,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1345,22 +1420,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1434,22 +1514,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1511,6 +1596,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -1518,6 +1604,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -1526,7 +1613,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1600,22 +1690,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1689,22 +1784,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1766,6 +1866,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -1773,6 +1874,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -1781,7 +1883,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1855,22 +1960,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -1944,22 +2054,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2021,6 +2136,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -2028,6 +2144,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -2036,7 +2153,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2110,22 +2230,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2199,22 +2324,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2276,6 +2406,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -2283,6 +2414,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -2291,7 +2423,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2365,22 +2500,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2454,22 +2594,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2531,6 +2676,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -2538,6 +2684,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -2546,7 +2693,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2620,22 +2770,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2709,22 +2864,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2786,6 +2946,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -2793,6 +2954,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -2801,7 +2963,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2875,22 +3040,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -2964,22 +3134,27 @@
             "da_ckpts": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               50000
             ],
             "full_eval": [
               6000,
               10000,
+              16000,
               20000,
-              30000,
+              26000,
               42000,
               44000,
               46000,
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3041,6 +3216,7 @@
             "da_ckpts": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               50000
@@ -3048,6 +3224,7 @@
             "full_eval": [
               6000,
               12000,
+              18000,
               22000,
               28000,
               42000,
@@ -3056,7 +3233,10 @@
               48000,
               50000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3120,23 +3300,28 @@
             ],
             "da_ckpts": [
               40000,
+              80000,
               120000,
+              160000,
               200000,
-              260000,
               380000
             ],
             "full_eval": [
               40000,
+              80000,
               120000,
+              160000,
               200000,
-              260000,
               320000,
               340000,
               360000,
               370000,
               380000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3194,23 +3379,28 @@
             ],
             "da_ckpts": [
               15000,
+              30000,
+              45000,
               60000,
               90000,
-              105000,
               165000
             ],
             "full_eval": [
               15000,
+              30000,
+              45000,
               60000,
               90000,
-              105000,
               135000,
               150000,
               155000,
               160000,
               165000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3266,23 +3456,25 @@
             ],
             "da_ckpts": [
               "step400000-tokens1680B",
+              "step750000-tokens3150B",
               "step1194000-tokens5014B",
-              "step1750000-tokens7652B",
-              "step2250000-tokens11852B",
+              "step1432000-tokens6014B",
               "step2627139-tokens15T"
             ],
             "full_eval": [
               "step400000-tokens1680B",
+              "step750000-tokens3150B",
               "step1194000-tokens5014B",
-              "step1750000-tokens7652B",
-              "step2250000-tokens11852B",
+              "step1432000-tokens6014B",
               "step2500000-tokens13952B",
               "step2550000-tokens14372B",
               "step2600000-tokens14792B",
-              "step2627139-tokens15T",
-              "main"
+              "step2627139-tokens15T"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3305,7 +3497,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3328,7 +3523,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3351,7 +3549,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3362,7 +3563,7 @@
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
-        "hf": "https://huggingface.co/Qwen/Qwen3.5-4B-Base"
+        "hf": "https://huggingface.co/Qwen/Qwen3-4B-Base"
       },
       "stages": {
         "pretraining": {
@@ -3374,7 +3575,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3397,7 +3601,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3420,7 +3627,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3443,7 +3653,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3466,7 +3679,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3489,7 +3705,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3512,13 +3731,16 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
     "Olmo-3-1025-7B": {
       "source": "huggingface-reference",
-      "family": "Olmo-3-1025",
+      "family": "Olmo-3-base",
       "size": "7B",
       "params": 7000000000,
       "checkpoint_kind": "hf_branch",
@@ -3568,46 +3790,28 @@
             ],
             "da_ckpts": [
               "stage1-step141000",
+              "stage1-step283000",
               "stage1-step424000",
+              "stage1-step566000",
               "stage1-step707000",
-              "stage1-step1131000",
               "stage1-step1413814"
             ],
             "full_eval": [
               "stage1-step141000",
+              "stage1-step283000",
               "stage1-step424000",
+              "stage1-step566000",
               "stage1-step707000",
-              "stage1-step1131000",
               "stage1-step1273000",
               "stage1-step1308000",
               "stage1-step1343000",
               "stage1-step1379000",
               "stage1-step1413814"
             ]
-          }
-        }
-      }
-    },
-    "SmolLM3-3B-Base": {
-      "source": "huggingface-reference",
-      "family": "SmolLM3-Base",
-      "size": "3B",
-      "params": 3000000000,
-      "checkpoint_kind": "hf_branch",
-      "backends": {
-        "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-Base"
-      },
-      "stages": {
-        "pretraining": {
-          "tokens": 11200000000000,
-          "num_iters": null,
-          "tokens_per_iter": null,
-          "checkpoints": {
-            "final": "main",
-            "all": [
-              "main"
-            ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3663,23 +3867,28 @@
             ],
             "da_ckpts": [
               "stage1-step-360000",
+              "stage1-step-720000",
               "stage1-step-1040000",
+              "stage1-step-1400000",
               "stage1-step-1720000",
-              "stage1-step-2760000",
               "stage1-step-3440000"
             ],
             "full_eval": [
               "stage1-step-360000",
+              "stage1-step-720000",
               "stage1-step-1040000",
+              "stage1-step-1400000",
               "stage1-step-1720000",
-              "stage1-step-2760000",
               "stage1-step-3120000",
               "stage1-step-3200000",
               "stage1-step-3280000",
               "stage1-step-3360000",
               "stage1-step-3440000"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         },
         "midtraining": {
           "tokens": 9900000000000,
@@ -3688,10 +3897,107 @@
           "checkpoints": {
             "final": "stage3-step-4720000",
             "all": [
+              "stage2-step-3480000",
+              "stage2-step-3520000",
+              "stage2-step-3560000",
+              "stage2-step-3600000",
+              "stage2-step-3640000",
+              "stage2-step-3680000",
+              "stage2-step-3720000",
+              "stage2-step-3760000",
+              "stage2-step-3800000",
+              "stage2-step-3840000",
+              "stage2-step-3880000",
+              "stage2-step-3920000",
+              "stage2-step-3960000",
+              "stage2-step-4000000",
+              "stage2-step-4040000",
+              "stage2-step-4080000",
+              "stage2-step-4120000",
+              "stage2-step-4160000",
               "stage2-step-4200000",
+              "stage3-step-4240000",
+              "stage3-step-4280000",
+              "stage3-step-4320000",
+              "stage3-step-4360000",
+              "stage3-step-4400000",
+              "stage3-step-4440000",
+              "stage3-step-4480000",
+              "stage3-step-4520000",
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
+              "stage3-step-4720000"
+            ],
+            "dense_tail": [
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
+              "stage3-step-4720000"
+            ],
+            "10_ckpts": [
+              "stage2-step-3600000",
+              "stage2-step-3720000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4120000",
+              "stage3-step-4240000",
+              "stage3-step-4360000",
+              "stage3-step-4480000",
+              "stage3-step-4600000",
+              "stage3-step-4720000"
+            ],
+            "da_ckpts": [
+              "stage2-step-3560000",
+              "stage2-step-3680000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4080000",
+              "stage3-step-4720000"
+            ],
+            "full_eval": [
+              "stage2-step-3560000",
+              "stage2-step-3680000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4080000",
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
               "stage3-step-4720000"
             ]
-          }
+          },
+          "eval_groups": [
+            "midtraining"
+          ]
+        },
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "it-mid-training",
+              "it-SFT",
+              "it-soup-APO",
+              "it-LC-expert",
+              "main"
+            ],
+            "full_eval": [
+              "it-mid-training",
+              "it-SFT",
+              "it-soup-APO",
+              "it-LC-expert",
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -3714,7 +4020,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -3742,7 +4051,7 @@
       }
     },
     "Apertus-70B-Instruct-2509": {
-      "source": "posttraining",
+      "source": "swiss-ai-reference",
       "family": "Apertus-Instruct-2509",
       "size": "70B",
       "params": 70000000000,
@@ -3760,12 +4069,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Apertus-8B-Instruct-2509": {
-      "source": "posttraining",
+      "source": "swiss-ai-reference",
       "family": "Apertus-Instruct-2509",
       "size": "8B",
       "params": 8000000000,
@@ -3783,12 +4095,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Ministral-3-14B-Instruct-2512": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Ministral-3-Instruct-2512",
       "size": "14B",
       "params": 14000000000,
@@ -3806,12 +4121,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Ministral-3-3B-Instruct-2512": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Ministral-3-Instruct-2512",
       "size": "3B",
       "params": 3000000000,
@@ -3829,12 +4147,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Ministral-3-8B-Instruct-2512": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Ministral-3-Instruct-2512",
       "size": "8B",
       "params": 8000000000,
@@ -3852,12 +4173,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Mistral-Small-3.2-24B-Instruct-2506": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Mistral-Small-3.2-Instruct-2506",
       "size": "24B",
       "params": 24000000000,
@@ -3875,12 +4199,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Olmo-3-7B-Instruct": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Olmo-3-Instruct",
       "size": "7B",
       "params": 7000000000,
@@ -3898,12 +4225,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Olmo-3-7B-Instruct-DPO": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Olmo-3-Instruct-DPO",
       "size": "7B",
       "params": 7000000000,
@@ -3921,12 +4251,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "Olmo-3-7B-Instruct-SFT": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "Olmo-3-Instruct-SFT",
       "size": "7B",
       "params": 7000000000,
@@ -3944,7 +4277,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -3967,7 +4303,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -3990,7 +4329,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4013,7 +4355,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4036,7 +4381,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4047,7 +4395,7 @@
       "params": 4000000000,
       "checkpoint_kind": "hf_branch",
       "backends": {
-        "hf": "https://huggingface.co/Qwen/Qwen3.5-4B"
+        "hf": "https://huggingface.co/Qwen/Qwen3-4B"
       },
       "stages": {
         "posttraining": {
@@ -4059,7 +4407,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4082,7 +4433,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4266,7 +4620,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4289,7 +4646,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4312,12 +4672,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "gemma-3-12b-it": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "gemma-3-it",
       "size": "12B",
       "params": 12000000000,
@@ -4335,12 +4698,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "gemma-3-1b-it": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "gemma-3-it",
       "size": "1B",
       "params": 1000000000,
@@ -4358,12 +4724,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "gemma-3-270m-it": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "gemma-3-it",
       "size": "270M",
       "params": 270000000,
@@ -4381,12 +4750,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "gemma-3-27b-it": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "gemma-3-it",
       "size": "27B",
       "params": 27000000000,
@@ -4404,12 +4776,15 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
     "gemma-3-4b-it": {
-      "source": "posttraining",
+      "source": "huggingface-reference",
       "family": "gemma-3-it",
       "size": "4B",
       "params": 4000000000,
@@ -4427,7 +4802,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4450,7 +4828,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4473,7 +4854,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4496,7 +4880,10 @@
             "all": [
               "main"
             ]
-          }
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
         }
       }
     },
@@ -4511,6 +4898,918 @@
       },
       "stages": {
         "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-1125-32B": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-base",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-1125-32B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-SFT",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-DPO",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-4-E2B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "E2B",
+      "params": 2000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E2B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E2B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "E2B",
+      "params": 2000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E2B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E4B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "E4B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E4B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E4B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "E4B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E4B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-26B-A4B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "26B-A4B",
+      "params": 26540000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-26B-A4B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-26B-A4B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "26B-A4B",
+      "params": 26540000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-26B-A4B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-31B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "31B",
+      "params": 32680000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-31B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-31B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "31B",
+      "params": 32680000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-31B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-3-270m": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "270M",
+      "params": 268000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-270m"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "Qwen3.5-4B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-Base",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-4B-Base"
+      },
+      "stages": {
+        "pretraining": {
           "tokens": null,
           "num_iters": null,
           "tokens_per_iter": null,
@@ -4603,23 +5902,28 @@
             ],
             "da_ckpts": [
               80000,
-              260000,
+              160000,
+              240000,
+              320000,
               400000,
-              520000,
               800000
             ],
             "full_eval": [
               80000,
-              260000,
+              160000,
+              240000,
+              320000,
               400000,
-              520000,
               720000,
               740000,
               760000,
               780000,
               800000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -4698,23 +6002,28 @@
             ],
             "da_ckpts": [
               120000,
-              260000,
+              160000,
+              240000,
+              320000,
               400000,
-              520000,
               800000
             ],
             "full_eval": [
               120000,
-              260000,
+              160000,
+              240000,
+              320000,
               400000,
-              520000,
               720000,
               740000,
               760000,
               780000,
               800000
             ]
-          }
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
         }
       }
     },
@@ -4852,7 +6161,10 @@
           ]
         }
       ],
-      "include_external": true
+      "include_external": true,
+      "eval_groups": [
+        "pretraining_full"
+      ]
     },
     "pretraining_a06": {
       "description": "Apertus3 a06 main-run checkpoints (1B and 3B).",
@@ -4862,7 +6174,10 @@
           "source": "snr-pretraining-a06"
         }
       ],
-      "include_external": false
+      "include_external": false,
+      "eval_groups": [
+        "pretraining_full"
+      ]
     },
     "pretraining_distill": {
       "description": "Distillation checkpoints (ap-from8b-TOP256, 0.6B + 1B). Treated as pretraining-style runs for SNR evaluation.",
@@ -4872,10 +6187,13 @@
           "source": "distillation"
         }
       ],
-      "include_external": false
+      "include_external": false,
+      "eval_groups": [
+        "pretraining_full"
+      ]
     },
     "pretraining_hf_reference": {
-      "description": "All HF / Swiss-AI reference pretrains.",
+      "description": "All HF / Swiss-AI reference pretraining ckpts.",
       "stage": "pretraining",
       "members": [
         {
@@ -4884,6 +6202,39 @@
         {
           "source": "swiss-ai-reference"
         }
+      ],
+      "eval_groups": [
+        "pretraining_full"
+      ]
+    },
+    "posttraining_hf_reference": {
+      "description": "All HF / Swiss-AI reference posttraining ckpts.",
+      "stage": "posttraining",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        }
+      ],
+      "eval_groups": [
+        "posttraining"
+      ]
+    },
+    "midtraining_hf_reference": {
+      "description": "HF / Swiss-AI reference models with a midtraining stage (currently SmolLM3-3B-checkpoints stage2/stage3).",
+      "stage": "midtraining",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        }
+      ],
+      "eval_groups": [
+        "midtraining"
       ]
     }
   },
