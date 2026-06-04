@@ -12,15 +12,24 @@ MMLU rows aliased into the shared set: **1** of 7 total.
 
 Other Apertus → AllenAI aliases that hit the shared set: `commonsense_qa → csqa`.
 
-## Top-K agreement
+## Cross-corpus agreement over the shared tasks (the result)
+
+Best variant `rms_deviation`, n = 7 shared tasks:
+
+| metric | value |
+|---|---:|
+| **Pearson r** (log₁₀ SNR values) | **+0.837** |
+| **Spearman ρ** (rank order) | **+0.643** |
+
+> With only 7 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 7 spans the whole universe, so Jaccard is trivially 1.0. Only K < 7 is reported below.
+
+## Top-K agreement (non-trivial K only)
 
 | K | n_intersection | intersection / K | Jaccard | Shared top-K tasks |
 |---|---:|---:|---:|---|
 | 5 | 4 | 0.80 | 0.67 | arc_easy, hellaswag, mmlu, piqa |
-| 10 | 7 | 0.70 | 1.00 | arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa |
-| 20 | 7 | 0.35 | 1.00 | arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa |
 
-## Top-20 per corpus
+## Full ranking per corpus (all shared tasks)
 
 ### Apertus
 

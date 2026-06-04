@@ -31,7 +31,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 
 from snr.constants import PLOT_DIR
 from snr.snr_variants import AGGREGATION_FUNCTIONS
@@ -338,12 +338,30 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
     ap_shared = ap_df.loc[shared]
     al_shared = al_df.loc[shared]
 
-    K_LIST = [5, 10, 20]
-    top_ap_full = _top_k_table(ap_shared, snr_col_ap, max(K_LIST))
-    top_al_full = _top_k_table(al_shared, snr_col_al, max(K_LIST))
+    # The shared universe is small (e.g. 7 English tasks). Set-overlap (top-K
+    # Jaccard) is only meaningful for K < universe size — any K ≥ N returns the
+    # whole universe on both sides → Jaccard ≡ 1.0 by construction. So the
+    # headline agreement is the CORRELATION over the shared tasks (values:
+    # Pearson on log10 SNR; ranking: Spearman ρ), and top-K is reported only at
+    # non-trivial K.
+    n_shared = len(shared)
+    ap_vec = pd.to_numeric(ap_shared[snr_col_ap], errors="coerce")
+    al_vec = pd.to_numeric(al_shared[snr_col_al], errors="coerce")
+    xy = pd.concat([ap_vec, al_vec], axis=1, keys=["ap", "al"]).dropna()
+    xy = xy[(xy["ap"] > 0) & (xy["al"] > 0)]
+    rank_rho = float(spearmanr(xy["ap"], xy["al"]).correlation) if len(xy) >= 3 else float("nan")
+    val_r = float(pearsonr(np.log10(xy["ap"]), np.log10(xy["al"]))[0]) if len(xy) >= 3 else float("nan")
+    print(f"\nShared-task agreement ({best_variant}, n={len(xy)}): "
+          f"Pearson(log SNR)={val_r:+.3f}  Spearman ρ={rank_rho:+.3f}")
+
+    # Per-corpus full ranking over the shared set (all N tasks).
+    top_ap_full = _top_k_table(ap_shared, snr_col_ap, n_shared)
+    top_al_full = _top_k_table(al_shared, snr_col_al, n_shared)
     top_ap_full.to_csv(out_dir / "top_apertus.csv")
     top_al_full.to_csv(out_dir / "top_allenai.csv")
 
+    # Only non-trivial K (K < universe); fall back to N-1 if all of 5/10/20 are ≥ N.
+    K_LIST = [k for k in (5, 10, 20) if k < n_shared] or [max(2, n_shared - 1)]
     rows = []
     for k in K_LIST:
         ap_k = _top_k_table(ap_shared, snr_col_ap, k).index
@@ -383,7 +401,20 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
         + (", ".join(f"`{a}`" for a in other_aliases) if other_aliases else "_none_")
         + ".",
         "",
-        "## Top-K agreement",
+        "## Cross-corpus agreement over the shared tasks (the result)",
+        "",
+        f"Best variant `{best_variant}`, n = {len(xy)} shared tasks:",
+        "",
+        "| metric | value |",
+        "|---|---:|",
+        f"| **Pearson r** (log₁₀ SNR values) | **{val_r:+.3f}** |",
+        f"| **Spearman ρ** (rank order) | **{rank_rho:+.3f}** |",
+        "",
+        f"> With only {n_shared} shared tasks, **top-K set overlap is NOT a "
+        f"result** — any K ≥ {n_shared} spans the whole universe, so Jaccard is "
+        f"trivially 1.0. Only K < {n_shared} is reported below.",
+        "",
+        "## Top-K agreement (non-trivial K only)",
         "",
         "| K | n_intersection | intersection / K | Jaccard | Shared top-K tasks |",
         "|---|---:|---:|---:|---|",
@@ -395,7 +426,7 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
         )
     md_lines += [
         "",
-        f"## Top-{max(K_LIST)} per corpus",
+        "## Full ranking per corpus (all shared tasks)",
         "",
         "### Apertus",
         "",
@@ -408,6 +439,10 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
     ]
     (out_dir / "agreement.md").write_text("\n".join(md_lines))
     agreement_df.to_csv(out_dir / "agreement.csv", index=False)
+    pd.DataFrame([{
+        "variant": best_variant, "n_shared": len(xy),
+        "pearson_log_snr": val_r, "spearman_rank": rank_rho,
+    }]).to_csv(out_dir / "shared_task_agreement.csv", index=False)
     print(f"Wrote → {out_dir / 'agreement.csv'}")
     print("\nAgreement table:")
     print(agreement_df.to_string(index=False))
