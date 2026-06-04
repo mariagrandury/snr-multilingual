@@ -71,6 +71,7 @@ from multilingual.analyze_snr_variants import (
     assign_language,
     benchmark_family,
 )
+from multilingual.above_random import SIZES as AR_SIZES, scores_and_mask
 from multilingual.smooth_subtasks import _is_language_aggregate
 from snr.constants import PLOT_DIR
 from snr.dataloader import get_slice
@@ -387,6 +388,15 @@ def run(pool: str, out_dir: Path):
     pool_models = set(expand_pool(pool))
     all_models = set(df_pool["model"])
     is_external = ~df_pool["model"].isin(pool_models)
+
+    # Above-random gate (raw-metric competence check): keep a (task, custom-size)
+    # SNR cell only if its mean score beats chance by the margin. Random cells
+    # carry no usable signal, so their signal/noise/snr are NaN'd here — the gate
+    # propagates to every analysis that reads this CSV. External-size buckets
+    # (3B, 7-9B, …) aren't gated (no custom random baseline at those sizes).
+    _, _ar_mask, _ = scores_and_mask(df_pool[df_pool["model"].isin(pool_models)])
+    above_random = {(t, s) for s in AR_SIZES if s in _ar_mask.columns
+                    for t in _ar_mask.index[_ar_mask[s] == 1]}
     pool_n_models = df_pool.groupby("bucket")["model"].nunique().to_dict()
     da_n_families = df_pool.groupby("bucket")["family"].nunique().to_dict()
     print(
@@ -437,7 +447,11 @@ def run(pool: str, out_dir: Path):
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for b in pool_buckets:
-                sig, noi, snr = variant_signal_noise_snr(size_inputs[b], fd["func"])
+                # Gate custom-size cells: random benchmarks carry no signal.
+                if b in AR_SIZES and (task, b) not in above_random:
+                    sig = noi = snr = np.nan
+                else:
+                    sig, noi, snr = variant_signal_noise_snr(size_inputs[b], fd["func"])
                 row[f"signal_{key}_{b}"] = sig
                 row[f"noise_{key}_{b}"] = noi
                 row[f"snr_{key}_{b}"] = snr

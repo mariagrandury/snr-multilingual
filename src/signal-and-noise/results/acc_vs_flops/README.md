@@ -48,10 +48,47 @@ markers out to 70B** to extend the compute axis past the custom 1B ceiling.
 
 ![English benchmarks accuracy vs FLOPs](pretraining/custom_swissai_hf/per_language/en.png)
 
+## Above-random gate (foundational — RQs depend on it)
+
+Before a benchmark can carry signal the models must clear **chance**
+(`1 / n_options`). [`above_random.py`](../../multilingual/above_random.py)
+computes this at the raw-metric level, depending **only** on raw eval scores
+and the intrinsic per-family answer-option counts (`N_OPTIONS` in that file) —
+it reads no RQ output, so every RQ depends on the gate, never the reverse.
+
+```bash
+python multilingual/above_random.py --pool custom_swissai_hf
+```
+
+For each (benchmark, custom size group) it averages the raw `primary_score`
+over all models at that size (final ckpt per model). A cell is **above random**
+iff `mean > 1/n_options + 0.05`. `run_apertus_snr_variants.py` imports
+`scores_and_mask` and NaN-s every random `(benchmark, size)` SNR cell, so the
+gate propagates to all downstream analyses — **random benchmarks are never used.**
+
+Of **118 benchmarks, 44 clear chance at ≥ 1 size** (74 are random everywhere);
+it's almost entirely an answer-count effect:
+
+| options | chance | above at ≥1 size | above at 1B |
+|---:|---:|---:|---:|
+| 2 | 0.50 | 28 / 42 | 28 / 42 |
+| 3 | 0.33 | 7 / 11 | 7 / 11 |
+| 4 | 0.25 | **9 / 63** | 7 / 63 |
+| 5 | 0.20 | 0 / 2 | 0 / 2 |
+
+4-option knowledge MCQA (`belebele`, multilingual `arc`, `global_mmlu`) sit at
+chance; `hellaswag` (4-option but contentful) is the exception. Some tasks clear
+chance only with scale (`arc_challenge`, `xnli_th` at 600M+; `paws_en` at 1B).
+
 ## Files
 
 - `pretraining/<pool>/acc_vs_flops_signal.csv` — per-task mixture-Signal (full
   ranking; all 118 parent tasks).
+- `…/above_random_scores.csv` — row per benchmark, column per size group, value =
+  mean score across all models at that size (+ `n_options`, `random_baseline`,
+  `options_exact`). From `multilingual/above_random.py`.
+- `…/above_random_mask.csv` — same shape; value = 1 (above random) / 0 (random) /
+  blank (no models). The gate consumed by the SNR pipeline.
 - `…/per_benchmark/<family>.png` — top-3 families, subplots per language,
   external scaling markers overlaid.
 - `…/per_language/<lang>.png` — per language, subplots = top-3 families.
