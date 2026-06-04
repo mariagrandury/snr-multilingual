@@ -52,7 +52,7 @@ layouts below (they override/extend Slidev built-ins like `center`,
 |---|---|---|
 | `section` | `sectionMode: light \| dark` | Divider slide. **In this deck restyled white via [style.css](style.css)** (see below) — the `sectionMode` prop does **not** take effect here. |
 | `bullets` | `icon` (bullet char, default `▸`) | Title/subtitle come from `title:`/`subtitle:` frontmatter. Most common layout in the deck. |
-| `figure` | `image` (use this, **not** `src` — `src` is reserved by Slidev), `caption`, `label`, `title`, `subtitle`, `height` (default `60%`), `fit: contain \| cover` | Single captioned figure. |
+| `figure` | `image` (use this, **not** `src` — `src` is reserved by Slidev), `caption`, `label`, `title`, `subtitle`, `height` (default `55vh` — **use `vh`, not `%`**, see below), `fit: contain \| cover` | Single captioned figure. |
 | `focus` | `color: primary \| blue \| green \| amber \| red \| purple`, `icon` (emoji) | Big centered statement with an accent border. |
 | `default` | `density: auto \| compact \| normal \| relaxed`, `title`, `subtitle` | Title auto-extracted from first `#` if `title:` unset. |
 | `image-left` | `image`, `ratio` (image:content, e.g. `2:3`), `fit: cover \| contain \| fill`, `position` | Image column on the left. |
@@ -100,6 +100,29 @@ icon: 🎯
 
 Slidev also has built-in `image`, `full`, and `none` layouts (see
 https://sli.dev/builtin/layouts).
+
+### Sizing `figure` images — use `vh`, not `%`
+
+The `figure` layout maps its `height` prop straight to the image's CSS
+`max-height` (`figure.vue`). A **percentage** (`height: 88%`) resolves
+against a flex parent with no definite height, so it does **not** constrain
+the image — a tall figure renders at natural size and overflows / gets pushed
+to the bottom of the slide. **Always give `height` in viewport units**:
+
+```yaml
+---
+layout: figure
+image: /results/per_sample_xcopa_sw.png
+fit: contain      # never crop
+height: 78vh      # ~78% of slide height; leaves room for header + footer + caption
+---
+```
+
+Rule of thumb: with a title/subtitle header, `78vh` fits comfortably; push to
+`~82vh` if the slide has no caption, drop to `~70vh` if it has a long caption.
+Default (unset) is `55vh`, which is small — set it explicitly for full-bleed
+figures. For `image-left`/`image-right` the equivalent knobs are `fit: contain`
+plus the `ratio` prop (give the image column more columns).
 
 ## Updating the style
 
