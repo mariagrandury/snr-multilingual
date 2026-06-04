@@ -10,64 +10,69 @@ cross-checked against the pure `seeds_28_1797_1904` pool.
 
 ## TL;DR (paper takeaways)
 
-1. **Curation method does *not* predict SNR.** At the family level (the honest
-   unit — tasks inside a family share a translation pipeline) curation explains
-   essentially none of the SNR variance: Kruskal–Wallis **H = 0.77, p = 0.68**.
-   Data source (originally-multilingual vs translated) is also non-significant
-   (**p = 0.10**), and presence of a reading passage has **zero** effect
-   (**p = 1.0**).
-2. **Task design — the answer space — is what predicts SNR.** Fewer candidate
-   options ⇒ higher SNR: the top of the ranking is all **2-option** families
-   (`multiblimp`, `xwinograd`, `xstorycloze`), the bottom is all **4-option**
-   (`global_mmlu_full`, `arc`, `belebele`). Family-level Kruskal–Wallis on
-   option count is **H = 3.7, p = 0.055** and on format **H = 5.0, p = 0.08** —
-   the strongest axes available, borderline only because n = 11 families.
-   Mechanism: every extra option adds another noisy log-likelihood to rank.
-3. **The one 4-option outlier is `hellaswag`** (SNR 2.05) — long, contentful
-   completions, not a question-only MCQ — which is consistent with #2: it's the
-   *comparison* that matters, and HellaSwag's options are information-rich.
+1. **The answer-count effect now lives in the above-random gate, upstream of
+   SNR.** Every 4-option *translated knowledge* MCQA — `belebele`,
+   `global_mmlu_full`, `truthfulqa`, `agieval`, `arabic_leaderboard` — sits at
+   chance and is dropped before SNR is computed. Only **9 families survive the
+   gate**, and 7 of them are 2-option. The penalty for a large answer space is
+   real, but it's expressed as *exclusion*, not as a low SNR score.
+2. **Among survivors, no single design feature is individually significant.**
+   With the high-option families already gone, family-level Kruskal–Wallis on
+   option count drops to **H = 1.78, p = 0.18** and on format to **H = 0, p =
+   1.0** — there's too little variation left (n = 9, mostly 2-option) to resolve
+   them. The mechanism still holds qualitatively (the survivors' top is all
+   2-option), but the within-survivor test is underpowered.
+3. **Curation method still explains nothing.** Family-level Kruskal–Wallis on
+   curation is **H = 0.5, p = 0.78**; data source **p = 0.44**; reading passage
+   **p = 1.0**. Once the gate fixes the answer space, how a benchmark was built
+   does not predict its reliability.
+4. **The two 4-option survivors are `hellaswag` and English `arc`** (SNR ≈ 2.05)
+   — contentful completions / standards that clear chance, consistent with #1:
+   it's the information in the *comparison* that matters, not the option count
+   alone.
 
 ## Headline ranking (pool `custom_swissai_hf`)
 
-Per-family median `snr_mpd_1B`
+Per-family median SNR @ 1B, **above-random families only** (the gate drops the
+at-chance 4-option MCQA before this table)
 ([`per_family_snr.csv`](pretraining/custom_swissai_hf/per_family_snr.csv)):
 
 | family | median SNR | n | curation | format | n_opts |
 |---|---:|---:|---|---|---:|
 | **`multiblimp`** | **3.85** | 7 | template_generated | minimal_pair | **2** |
+| `paws` | 2.55 | 2 | human_translation | classification | **2** |
 | `xwinograd` | 2.48 | 4 | originally_multilingual | completion | **2** |
-| `xstorycloze` | 2.36 | 8 | human_translation | completion | **2** |
-| `hellaswag` | 2.05 | 6 | machine_translation | completion | 4 |
-| `paws` | 1.94 | 5 | human_translation | classification | **2** |
-| `xcopa` | 1.51 | 6 | human_translation | completion | **2** |
-| `global_piqa_completions` | 1.29 | 11 | originally_multilingual | completion | **2** |
-| `xnli` | 1.15 | 11 | human_translation | classification | 3 |
-| `global_mmlu_full` | 0.81 | 10 | mt_post_edited | mcq_question_only | 4 |
-| `arc` | 0.78 | 9 | machine_translation | mcq_question_only | 4 |
-| **`belebele`** | **0.70** | 12 | human_translation | mrc_passage | 4 |
+| `xstorycloze` | 2.27 | 5 | human_translation | completion | **2** |
+| `xcopa` | 2.06 | 4 | human_translation | completion | **2** |
+| `hellaswag` | 2.05 | 4 | machine_translation | completion | 4 |
+| `arc` | 2.05 | 2 | machine_translation | mcq_question_only | 4 |
+| `global_piqa_completions` | 1.45 | 5 | originally_multilingual | completion | **2** |
+| **`xnli`** | **1.15** | 7 | human_translation | classification | 3 |
 
-`multiblimp` (template-generated minimal pairs, 2 options) tops every pool;
-`belebele`/`arc`/`global_mmlu_full` (4-option question-only MCQ / passage MRC)
-sit at the bottom regardless of curation quality. Rank order is stable across
-seed pools.
+`multiblimp` (template-generated minimal pairs, 2 options) tops the table; the
+4-option survivors `hellaswag` / English `arc` sit mid-pack; `xnli` (3-option
+NLI) is last. The previously bottom-ranked `belebele` / `global_mmlu_full` no
+longer appear — they're gated out as at-chance.
 
 ![Per-family SNR ranking](pretraining/custom_swissai_hf/snr_per_family_ranked.png)
 
 ## Significance of each design axis (family-level Kruskal–Wallis)
 
-From [`group_stats.csv`](pretraining/custom_swissai_hf/group_stats.csv):
+From [`group_stats.csv`](pretraining/custom_swissai_hf/group_stats.csv) — over
+the **9 above-random survivors** (high-option families already removed by the
+gate, which is why the option/format axes lose power):
 
 | axis | H | p | verdict |
 |---|---:|---:|---|
-| **n_options** | **3.68** | **0.055** | strongest; fewer ⇒ higher SNR |
-| format | 5.04 | 0.080 | minimal-pair/completion > MCQ |
-| data source | 2.67 | 0.10 | n.s. |
-| **curation method** | **0.77** | **0.68** | **no effect** |
+| n_options | 1.78 | 0.18 | n.s. among survivors (penalty is upstream, in the gate) |
+| format | 0.00 | 1.0 | n.s. (survivors are nearly all completion / 2-option) |
+| data source | 0.60 | 0.44 | n.s. |
+| **curation method** | **0.50** | **0.78** | **no effect** |
 | reading passage | 0.00 | 1.0 | no effect |
 
-(At the *task* level, curation reaches significance — H = 19.7, p = 6e-4 — but
-that is the format/option confound leaking through, since each curation method
-is tied to a format; the family-level test controls for it.)
+(At the *task* level, curation still reaches significance — H = 13.5, p =
+0.0036 — but that is the format/option confound leaking through, since each
+curation method is tied to a format; the family-level test controls for it.)
 
 ![SNR by answer-option count](pretraining/custom_swissai_hf/snr_by_n_options.png)
 

@@ -14,18 +14,19 @@ picked at relative training fractions so external trajectories participate).
 
 ## TL;DR (paper takeaways)
 
-1. **`rel_mpd` (relative mean pairwise distance) is the global-best SNR
-   definition.** On the full pool it reaches mean Pearson r **+0.40 (DA-size)**
-   and **+0.52 (DA-ckpt)** across 12 languages — top of a tight
-   relative-spread / dispersion block. Use it (or any dispersion-family member)
-   as the default; **never `tukey` / `projection`** (anti-correlated, r ≤ 0).
-2. **Checkpoint-DA is the more SNR-aligned target than size-DA** — the winners'
-   DA-ckpt r (0.46–0.52) exceeds their DA-size r (~0.40). SNR tracks "does this
+1. **The dispersion family is the global-best SNR definition — but two
+   different members lead the two DA targets.** `dist_std` dominates **DA-size**
+   (mean Pearson r **+0.32**, far ahead of the runner-up at +0.14), while the
+   mean-pairwise-distance / relative-spread cluster (`rel_mpd` / `mpd` / `mpsd`)
+   leads **DA-ckpt** (≈ **+0.51**). All are dispersion-family; recommend the
+   *family*, not an exact variant. **Never `tukey` / `projection`** (r ≤ 0).
+2. **Checkpoint-DA is the more SNR-aligned target than size-DA** — the DA-ckpt
+   leaders (≈0.50) exceed the DA-size leader (0.32). SNR tracks "does this
    benchmark separate a run's own early vs late checkpoints" better than "does
    it predict the 1B model".
-3. **More model variation sharpens the relative variants.** The global winner
-   moves from absolute `mpd` (1 seed) to **`rel_mpd`** (3 seeds + externals),
-   and the top correlation rises from +0.31 to +0.52.
+3. **More model variation sharpens the signal.** The DA-size winner moves from
+   absolute `mpd` (1 seed) to `rel_mpd` (3 pure seeds) to **`dist_std`** (3
+   seeds + externals), and the top DA-size r climbs **+0.31 → +0.39**.
 4. **The variant *ranking* generalizes across seeds** (Spearman ρ = **+0.80**
    DA-size, **+0.93** DA-ckpt, train 2 seeds → held-out seed) — but the
    *per-language argmax does not* (0/14 languages keep the exact pick). Report
@@ -39,22 +40,24 @@ Mean Pearson r of log10(SNR) vs DA across 12 languages — top and bottom of
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---:|---:|---:|
-| **`rel_mpd`** | **0.400** | **0.519** | **0.460** |
-| `rel_std` | 0.396 | 0.455 | 0.426 |
-| `iqr` | 0.389 | 0.390 | 0.390 |
-| `quartile_deviation` | 0.386 | 0.410 | 0.398 |
-| `aad` | 0.382 | 0.484 | 0.433 |
-| `mpd` | 0.368 | 0.512 | 0.440 |
-| `rms_deviation` | 0.367 | 0.461 | 0.414 |
+| **`dist_std`** | **0.318** | **0.434** | **0.376** |
+| `star_discrepancy_shifted` | 0.141 | 0.154 | 0.148 |
+| `gini` | 0.134 | 0.119 | 0.126 |
+| `rel_mpd` | 0.112 | **0.506** | 0.309 |
+| `rel_std` | 0.111 | 0.500 | 0.305 |
+| `mpd` | 0.105 | 0.504 | 0.304 |
+| `mpsd` | 0.059 | **0.507** | 0.283 |
 | … | | | |
-| `projection` | 0.012 | −0.391 | −0.189 |
-| **`tukey`** | **−0.006** | **−0.034** | **−0.020** |
+| `tukey` | 0.055 | 0.220 | 0.137 |
+| **`projection`** | **−0.026** | **−0.266** | **−0.146** |
 
-The top block (`rel_mpd`/`rel_std` + the dispersion cluster `quartile_deviation`/
-`aad`/`mpd`/`rms_deviation`/`dist_std`) is algebraically near-redundant
-(inter-variant r ≥ 0.999), so any member works as the default. Depth metrics
-(`tukey`, `projection`) need more dimensions than the model pool provides and
-collapse.
+Two regimes: **`dist_std` alone dominates DA-size** (0.318 vs 0.14 for the next
+variant — it is *not* redundant with the other dispersion members here), while
+the **mean-pairwise-distance / relative-spread cluster** (`rel_mpd` / `mpd` /
+`mpsd` / `aad` / `rms_deviation` / `mad`) ties at ≈ 0.50 for **DA-ckpt**. All
+are dispersion-family, so the family-level recommendation is robust even though
+the exact argmax differs by target. Depth metrics (`tukey`, `projection`) need
+more dimensions than the model pool provides and collapse (r ≤ 0).
 
 ![SNR variants ranked by correlation with DA](pretraining/custom_swissai_hf/top_variants_overall.png)
 
@@ -64,16 +67,18 @@ collapse.
 
 Top-variant correlation by tier (each cell is that tier's best variant's mean r):
 
-| pool | best variant | DA-size r | DA-ckpt r |
+| pool | best variant (DA-size) | DA-size r | DA-ckpt r |
 |---|---|---:|---:|
 | `seeds_1904` (1 seed) | `mpd` | 0.312 | 0.296 |
 | `seeds_28_1797` (2 seeds) | `rel_mpd` | 0.326 | 0.276 |
 | `seeds_28_1797_1904` (3 seeds) | `rel_mpd` | 0.392 | 0.379 |
-| **`custom_swissai_hf`** (3 seeds + externals) | **`rel_mpd`** | **0.400** | **0.519** |
+| **`custom_swissai_hf`** (3 seeds + externals) | **`dist_std`** | **0.318** | 0.434 |
 
-Adding the external pretraining models is what unlocks the large **DA-ckpt**
-gain (0.379 → **0.519**): their multi-checkpoint trajectories give the
-relative-fraction ckpt-DA far more, more-diverse points to fit.
+The externals don't lift the DA-size leader (the winner flips to `dist_std`,
+0.32, on par with the pure 3-seed 0.39), but their multi-checkpoint
+trajectories give the relative-fraction ckpt-DA far more points to fit: the
+relative cluster's **DA-ckpt** r rises from 0.379 (3 pure seeds) to **0.51**
+(`rel_mpd` / `mpsd`) once externals are folded in.
 
 ## Seed generalization (holdout: `seeds_28_1797` → `seeds_1904`)
 
@@ -97,25 +102,26 @@ default, not language-specific SNR definitions.
 
 From [`top_benchmarks_per_language.csv`](pretraining/custom_swissai_hf/top_benchmarks_per_language.csv):
 
+SNR is the global-best variant (`dist_std`) @ 1B over the above-random tasks:
+
 | lang | top benchmark | SNR | DA-ckpt |
 |---|---|---:|---:|
-| ar | `hellaswag_ar` | 6.88 | **0.89** |
-| en | `mmlu` | 6.04 | 0.65 |
-| es | `hellaswag_es` | 4.88 | **0.86** |
-| eu | `xnli_eu` | **8.51** | 0.70 |
-| hi | `hellaswag_hi` | 7.83 | **0.88** |
-| ja | `xwinograd_jp` | 5.24 | 0.76 |
-| ru | `multiblimp_rus` | **8.84** | **0.86** |
-| sw | `xstorycloze_sw` | 5.18 | 0.73 |
-| th | `xnli_th` | 4.71 | 0.75 |
-| tr | `multiblimp_tur` | 4.58 | 0.79 |
-| vi | `hellaswag_vi` | 5.08 | **0.84** |
-| zh | `belebele_zho_Hans` | 3.72 | 0.53 |
+| ar | `multiblimp_arb` | 2.65 | **0.87** |
+| en | `xwinograd_en` | 2.40 | **0.83** |
+| es | `multiblimp_spa` | **3.37** | **0.85** |
+| eu | `multiblimp_eus` | 1.28 | 0.64 |
+| hi | `multiblimp_hin` | **4.95** | **0.85** |
+| ja | `xwinograd_jp` | 2.28 | 0.76 |
+| ru | `multiblimp_rus` | **7.08** | **0.86** |
+| th | `xnli_th` | 1.28 | 0.75 |
+| tr | `multiblimp_tur` | 2.75 | 0.79 |
+| vi | `xcopa_vi` | 1.61 | 0.76 |
+| zh | `xcopa_zh` | 1.57 | 0.61 |
 
-**`hellaswag_<lang>`, `multiblimp_<lang>` and `xstorycloze_<lang>` are the
-recurring high-signal, high-DA benchmarks.** `xnli_<lang>` reaches the highest
-raw SNR (eu 8.5) but its DA-size is often 0 (mis-ranks vs the 1B target) — keep
-it only where DA is non-trivial.
+**`multiblimp_<lang>` is the most reliable benchmark in 7 of 11 languages**,
+with `xwinograd` / `xcopa` recurring; `xnli_th` leads only where those are
+absent. `sw` has no above-random benchmark left and drops out. (DA-size is NaN
+by definition at the 1B target, so DA-ckpt@1B is shown.)
 
 ![Top-5 benchmarks per language by SNR](pretraining/custom_swissai_hf/top_benchmarks_per_language.png)
 

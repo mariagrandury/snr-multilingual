@@ -520,11 +520,11 @@ subtitle: Signal ≠ Reliability
 icon: "⚠️"
 ---
 
-The top-Signal families (`belebele`, `agieval_sat`, `arabic_leaderboard`) are exactly the **lowest-SNR families** in the analysis (RQ3) — `belebele` is *last* by SNR.
+The top-Signal families (`belebele`, `agieval_sat`, `arabic_leaderboard`) are exactly the ones the **above-random gate removes** — they sit *at chance*, so they never enter the SNR analysis at all.
 
-- They swing a lot with the data mixture (**high signal**) **but are also high-noise**
-- Signal-to-noise stays **low** → raw mixture sensitivity **is not** reliability
-- This is why SNR (signal **÷** noise) ranks `multiblimp` / `hellaswag` (low absolute swing, very low noise) **above** `belebele`
+- They swing a lot with the data mixture (**high signal**) **but are also high-noise**, and the models can't even clear chance on them
+- Raw mixture sensitivity **is not** reliability → high Signal ≠ usable SNR
+- SNR (signal **÷** noise) instead ranks `multiblimp` / `hellaswag` (low absolute swing, very low noise) at the **top**
 
 
 ---
@@ -621,18 +621,18 @@ subtitle: Highlighted results
 icon: "✅"
 ---
 
-- **`rel_mpd` and the dispersion / relative-spread family win** — top variant on `custom_swissai_hf`: DA-size r **0.400**, DA-ckpt r **0.519**
-- **Better results with more seeds**: top DA-size r climbs 0.31 → 0.33 → 0.39 (1 → 2 → 3 seeds)
-- **Adding external models mainly lifts DA-ckpt** (0.379 → 0.519 at 3 seeds)
-- `tukey`, `projection` (depth): **r ≈ 0** with DA → useless at this pool size
-- **Variant ranking transfers to a held-out seed** — Spearman ρ **+0.80** (DA-size), **+0.93** (DA-ckpt); exact per-language argmax does not (family-level agreement 14% / 36%)
+- **The dispersion family wins.** On `custom_swissai_hf`, `dist_std` is the global best — DA-size r **0.32** (far ahead of the next variant at 0.14), DA-ckpt r **0.43**, overall **0.38**
+- **DA-ckpt is led by the mean-pairwise-distance / relative-spread cluster** (`rel_mpd`, `mpd`, `mpsd` ≈ **0.51**) — all dispersion-family members
+- **Better results with more seeds**: top DA-size r climbs **0.31 → 0.33 → 0.39** (1 → 2 → 3 seeds)
+- `tukey`, `projection` (depth): **r ≤ 0** with DA → useless at this pool size
+- **Variant ranking transfers to a held-out seed** — Spearman ρ **+0.80** (DA-size), **+0.93** (DA-ckpt); the exact per-language argmax does **not** (family-level agreement 14% / 36%)
 
 ---
 title: RQ1 — SNR Definition
-subtitle: "Highest-SNR benchmark per language (rel_mpd)"
+subtitle: "Highest-SNR benchmark per language (dist_std)"
 ---
 
-Most reliable benchmark in each language under the chosen definition (`rel_mpd` SNR @ 1B):
+Most reliable above-random benchmark in each language under the chosen definition (`dist_std` SNR @ 1B):
 
 <div class="grid grid-cols-2 gap-x-8">
 
@@ -640,12 +640,12 @@ Most reliable benchmark in each language under the chosen definition (`rel_mpd` 
 
 | lang | top benchmark | SNR |
 |---|---|---:|
-| ar | **`hellaswag_ar`** | 6.9 |
-| en | **`mmlu`** | 6.0 |
-| es | **`hellaswag_es`** | 4.9 |
-| eu | **`xnli_eu`** | 8.5 |
-| hi | **`hellaswag_hi`** | 7.8 |
-| ja | **`xwinograd_jp`** | 5.2 |
+| ar | **`multiblimp_arb`** | 2.6 |
+| en | **`xwinograd_en`** | 2.4 |
+| es | **`multiblimp_spa`** | 3.4 |
+| eu | **`multiblimp_eus`** | 1.3 |
+| hi | **`multiblimp_hin`** | 4.9 |
+| ja | **`xwinograd_jp`** | 2.3 |
 
 </div>
 
@@ -653,18 +653,17 @@ Most reliable benchmark in each language under the chosen definition (`rel_mpd` 
 
 | lang | top benchmark | SNR |
 |---|---|---:|
-| ru | **`multiblimp_rus`** | 8.8 |
-| sw | **`xstorycloze_sw`** | 5.2 |
-| th | **`xnli_th`** | 4.7 |
-| tr | **`multiblimp_tur`** | 4.6 |
-| vi | **`hellaswag_vi`** | 5.1 |
-| zh | **`belebele_zho_Hans`** | 3.7 |
+| ru | **`multiblimp_rus`** | 7.1 |
+| th | **`xnli_th`** | 1.3 |
+| tr | **`multiblimp_tur`** | 2.7 |
+| vi | **`xcopa_vi`** | 1.6 |
+| zh | **`xcopa_zh`** | 1.6 |
 
 </div>
 
 </div>
 
-**`hellaswag` (5 languages), `multiblimp`, and `xstorycloze`** recur as the most reliable formats; `xnli` / `belebele` lead only where those are absent.
+**`multiblimp` is the most reliable benchmark in 7 of 11 languages**, with `xwinograd` / `xcopa` recurring; `xnli` leads only where those are absent. (`sw` has no above-random benchmark and is dropped.)
 
 ---
 layout: figure
@@ -672,7 +671,7 @@ image: /results/top_benchmarks_per_language.png
 fit: contain
 height: 80vh
 title: RQ1 — SNR Definition
-subtitle: "Top-5 benchmarks per language by SNR (rel_mpd @ 1B)"
+subtitle: "Top-5 benchmarks per language by SNR (dist_std @ 1B)"
 ---
 
 ---
@@ -710,11 +709,11 @@ icon: "⚙️"
 
 ---
 layout: figure
-image: /results/snr_apertus_vs_snr_allenai_rms_deviation.png
+image: /results/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png
 fit: contain
 height: 30vh
 title: RQ2 — Framework Generalization
-subtitle: "Apertus vs AllenAI SNR — best variant (rms_deviation)"
+subtitle: "Apertus vs AllenAI SNR — pure 3-seed pool, best variant (star_discrepancy_shifted)"
 ---
 
 ---
@@ -729,7 +728,7 @@ icon: "✅"
 - **Dispersion + discrepancy families transfer**; the relative-spread family (incl. AllenAI's own default `rel_std`) does **not**
 - Only **7** English tasks overlap → top-K set overlap is uninformative (K ≥ 7 = whole universe ⇒ Jaccard trivially 1.0); **the correlation, not the overlap, is the result**
 <!--
-- n = 7 shared (arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa): report Pearson r (values) + Spearman ρ (rank), NOT top-K Jaccard. Spearman noisy at n=7 / variant-dependent (comprehensive-pool rms_deviation gives ρ=0.64).
+- n = 7 shared (arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa): report Pearson r (values) + Spearman ρ (rank), NOT top-K Jaccard. The pure 3-seed pool is the like-for-like comparison; on the externals pool the above-random gate drops the at-chance MCQA, shrinking the shared set to 4 (mpsd r=0.996, ρ=1.0 over those 4) — use the pure pool for the cross-corpus claim.
 -->
 
 
@@ -837,7 +836,7 @@ subtitle: Methodology
 icon: "⚙️"
 ---
 
-- **11 benchmark families**; SNR signal = `snr_mpd_1B` from the `custom_swissai_hf` pool
+- **9 above-random benchmark families** (the gate already drops every at-chance 4-option MCQA); SNR signal = per-family median SNR @ 1B from the `custom_swissai_hf` pool
 - Per-family aggregate: median across the family's per-language aggregate tasks
 - Three phases: **curation** (Phase 0), **task format** (Phase A), **item lengths** (Phase B)
 - Statistical tests: Kruskal-Wallis (categorical), Spearman ρ (continuous)
@@ -847,8 +846,8 @@ icon: "⚙️"
 layout: figure
 image: /results/snr_per_family_ranked.png
 height: 30vh
-title: RQ3 — Benchmark Creation
-subtitle: Per-family median SNR (custom_swissai_hf)
+title: RQ4 — Benchmark Creation
+subtitle: Per-family median SNR — 9 above-random families (custom_swissai_hf)
 ---
 
 ---
@@ -858,10 +857,10 @@ subtitle: Highlighted results
 icon: "✅"
 ---
 
-- **Task design beats curation.** Fewer answer options → higher SNR is the strongest design signal (KW H = 3.7, **p = 0.055**), with task format close behind (H = 5.0, p = 0.080)
-- **Curation method explains nothing** (family/curation KW H = 0.77, **p = 0.68**) — once task design is fixed, curation doesn't matter
-- Top SNR: **multiblimp** (3.9), **xwinograd** (2.5), **xstorycloze** (2.4)
-- Bottom: **global_mmlu_full** (0.8), **arc** (0.8), **belebele** (0.7) — all 4-option MCQ
+- **The answer-count penalty is now upstream, in the gate.** It drops every 4-option translated knowledge MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) before SNR is even computed
+- Top SNR (all 2-option): **multiblimp** (3.9), **paws** (2.5), **xwinograd** (2.5), **xstorycloze** (2.3), **xcopa** (2.1)
+- The only 4-option survivors are **`hellaswag`** (2.1) and English **`arc`** (2.0) — contentful; bottom: **global_piqa** (1.5), **xnli** (1.2)
+- **Among the 9 survivors no single design feature is significant** (n_options KW H = 1.8, p = 0.18; format H = 0, p = 1.0) — and **curation still explains nothing** (H = 0.5, **p = 0.78**)
 - Mechanism: each option adds another noisy log-likelihood estimate to rank → 2-option comparisons are sharper
 
 ---
@@ -873,7 +872,7 @@ icon: "💡"
 
 - **Controlled comparison**: hold format constant, vary curation (HellaSwag MT vs XStoryCloze human translation)
 - Replace marginal KW tests with a **single regression** on (format + n_options + curation)
-- **Add more families** (truthfulqa, mgsm, agieval, …) — n=11 is underpowered
+- **Add more families** (truthfulqa, mgsm, agieval, …) — n=9 survivors is underpowered
 - Re-sample **length features from the full multilingual splits**, not just English
 
 ---
@@ -889,10 +888,10 @@ subtitle: "Answer to the research question"
 icon: "→"
 ---
 
-- **RQ1:** The **dispersion / relative-spread** family (`rel_mpd`) tracks decision accuracy best (overall r **≈ 0.46**). The *family* ranking holds across seeds (Spearman ρ **+0.80 / +0.93**); the per-language argmax does not.
-- **RQ2:.** The top-10 reliable English benchmarks are **identical** on Apertus and AllenAI DataDecide (Jaccard **1.0**, cross-corpus r **0.84–0.92**).
-- **RQ3:** **Fewer answer options ⇒ higher SNR**. Task design beats curation, which has no measurable effect.
-- **RQ4:** **Subtask subsets beat full benchmarks** (MMLU subjects most stable); per-item selection overfits across scale.
+- **RQ1:** The **dispersion** family (`dist_std`) tracks decision accuracy best (overall r **≈ 0.38**). The *family* ranking holds across seeds (Spearman ρ **+0.80 / +0.93**); the per-language argmax does not.
+- **RQ2:** SNR **transfers to AllenAI DataDecide** on the 7 shared English benchmarks — cross-corpus Pearson r **0.92**, Spearman ρ **0.93** (pure 3-seed pool); dispersion + discrepancy families transfer, relative-spread does not.
+- **RQ3:** **Subtask subsets beat full benchmarks** (MMLU subjects most stable); per-item selection overfits across scale.
+- **RQ4:** The **above-random gate encodes the answer-count penalty** (drops 4-option knowledge MCQA); among survivors **curation has no measurable effect**.
 
 <!-- BEGIN generated signal slides (multilingual/da_per_benchmark.py) -->
 

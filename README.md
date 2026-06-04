@@ -13,46 +13,54 @@ through the full SNR / decision-accuracy stack.
 
 **Two-level recommendation:**
 
-1. **Use `quartile_deviation` (or any dispersion-family variant) as the
-   global default.** Mean Pearson r between log10(SNR) and decision
-   accuracy is ~+0.34 across 12 languages, and the dispersion-cluster
-   ranking is stable across seed splits (DA-ckpt r between train and
-   test pools = +0.70).
-2. **Use `multiblimp_<lang>`, `xstorycloze_<lang>` and
-   `hellaswag_<lang>` as the per-language reliability anchors.** They
-   dominate the SNR ranking in every language where they exist and have
-   decision-accuracy ≈ 1.0 — they rank model variants in the way large-
-   model evaluations do.
+1. **Use a dispersion-family variant as the global default.** `dist_std`
+   leads on DA-size (mean Pearson r between log10(SNR) and decision
+   accuracy ≈ **+0.32**, far ahead of the field), while the
+   mean-pairwise-distance / relative-spread cluster (`rel_mpd` / `mpd` /
+   `mpsd`) leads on DA-ckpt (≈ **+0.51**) — all dispersion-family, so
+   recommend the *family*, not an exact variant. Never `tukey` /
+   `projection` (anti-correlated, r ≤ 0).
+2. **Use `multiblimp_<lang>` as the per-language reliability anchor**,
+   with `xwinograd` / `xcopa` recurring. Under the chosen definition
+   (`dist_std` @ 1B) `multiblimp` is the highest-SNR above-random
+   benchmark in **7 of 11 languages**, with checkpoint-DA ≈ 0.85 — it
+   ranks model variants the way a larger-model evaluation would.
 
 **The framework generalizes at the global-ranking level.** Spearman rank
 correlation between the train and test pools' global variant orderings
-is **+0.83 (DA-size)** and **+0.91 (DA-ckpt)** — *which* variants are
+is **+0.80 (DA-size)** and **+0.93 (DA-ckpt)** — *which* variants are
 good is stable across seed pools. But the *exact* per-language argmax
-changes (only 1/14 languages keep the same pick), so per-language
-tuning that beats the dispersion baseline should be treated as
-overfitting until validated on at least one more seed.
+changes (0–1/14 languages keep the same pick), so per-language tuning
+that beats the dispersion baseline should be treated as overfitting
+until validated on at least one more seed.
 
 **Cross-corpus check.** On the seven English benchmarks shared with the
-AllenAI DataDecide ladder, the pooled Apertus SNR (9 model_families per
-size) correlates with AllenAI SNR at **Pearson r = 0.935** for the
-discrepancy family. Top-10 reliable benchmarks agree by Jaccard 1.0:
-`arc_challenge`, `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`,
-`piqa`.
+AllenAI DataDecide ladder, the pure 3-seed Apertus SNR correlates with
+AllenAI SNR at **Pearson r = 0.92** (Spearman ρ = 0.93) for the
+discrepancy / dispersion family — the dispersion + discrepancy variants
+transfer, the relative-spread family does not. With only 7 shared tasks,
+top-K set overlap is uninformative (Jaccard ≡ 1.0 for K ≥ 7); the
+correlation is the result. (Folding in the >1B external models is *not*
+the right comparison: the above-random gate drops the at-chance MCQA,
+shrinking the shared set to 4.)
 
-**What predicts SNR.** Task design — primarily the **number of answer
-options** — explains most of what we can explain. Per-family Spearman
-ρ = +0.77 against the random baseline (p = 0.006); family-level
-Kruskal-Wallis on n_options is H = 5.5, p = 0.019. Curation method (MT /
-human / template) does not predict SNR (H = 1.44, p = 0.49). Option
-length follows the same qualitative mechanism (longer options →
-sharper per-item log-likelihood) but doesn't reach significance at the
-per-family level on n = 11.
+**What predicts SNR.** The **answer-count penalty is enforced upstream by
+the above-random gate** — every 4-option translated knowledge MCQA
+(`belebele`, `global_mmlu_full`, `truthfulqa`) sits at chance and is
+dropped before SNR is computed, leaving 9 mostly-2-option survivors.
+Among those survivors no single design feature is individually
+significant (family-level Kruskal-Wallis on n_options H = 1.8, p = 0.18;
+format H = 0, p = 1.0 — too little variation left), and **curation method
+(MT / human / template) does not predict SNR** (H = 0.5, p = 0.78). The
+mechanism still holds qualitatively (fewer options → sharper per-item
+log-likelihood), but the within-survivor test is underpowered at n = 9.
 
 **What subsets elevate SNR.** Best subsets substantially beat full sets
-on multilingual benchmarks: Belebele 350M `+0.89` SNR with a 4-language
-subset; Global-MMLU 175M `+0.96` with `international_law` alone. Subject
-picks are highly stable across seed pools; language picks are partially
-stable; per-(language, subject) picks are pool-sensitive.
+on multilingual benchmarks: Belebele 350M `+1.16` SNR with a 3-language
+subset; Global-MMLU 175M `+1.52` with `medical_genetics` alone;
+per-language Global-MMLU-tr 1B `+1.56`. Subject picks are highly stable
+across seed pools; language picks are partially stable; per-(language,
+subject) picks are pool-sensitive.
 
 **Benchmarks to de-prioritise.** `xnli_<lang>` rows often have high SNR
 but DA-size = 0 — perfect rank disagreement with the 1B target. High

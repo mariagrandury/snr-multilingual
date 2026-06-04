@@ -17,24 +17,25 @@ Hendrycks original — 1 of the 7) — see `agreement.md`.
 ## TL;DR (paper takeaways)
 
 1. **SNR *values* transfer across corpora.** Pearson r of log₁₀(SNR₁B) over the
-   7 shared English tasks is **0.84** (comprehensive pool), and rises with seeds
-   **0.75 (1 seed) → 0.84 (2 seeds) → 0.92 (3 seeds)**. The pure 3-seed pool
-   gives the tightest like-for-like fit (**r = 0.92, p = 0.003**), even though
-   absolute SNR is ~5× higher on AllenAI's wider model range.
+   7 shared English tasks rises with seeds **0.75 (1 seed) → 0.84 (2 seeds) →
+   0.92 (3 seeds)**. The pure 3-seed pool gives the tightest like-for-like fit
+   (**r = 0.92, p = 0.003**), even though absolute SNR is ~5× higher on
+   AllenAI's wider model range.
 2. **On the pure 3-seed pool the rank order agrees too** (Spearman ρ = **0.93**,
-   best variant `star_discrepancy_shifted`). On the comprehensive pool the value
-   correlation holds (0.84) but the rank is looser (ρ = 0.64) — at n=7 Spearman
-   is noisy and variant-dependent. Top-5 sets share 4/5.
+   best variant `star_discrepancy_shifted`) — agreement on **both** value and
+   rank over all 7 shared tasks. (At n=7, Spearman is noisy and variant-dependent
+   in the other pools.)
 3. **Discrepancy / dispersion variants transfer; relative-spread does not.**
    The cross-corpus winners are `star_discrepancy_shifted` / `discrepancy` /
    `rms_deviation` / `dispersion`. The relative-spread family (`rel_std`,
    `rel_mpd`, `iqr`) — incl. AllenAI's own default `rel_std` — is robust
    *within* a corpus but correlates weakly *across* corpora.
 4. **For cross-corpus claims, use the pure custom pool, not the external one.**
-   AllenAI SNR is a small-model quantity; adding our >1B external models
-   (`custom_swissai_hf`) shifts the shared-task SNR and drops cross-corpus r
-   from 0.92 → 0.84. The externals are for scaling/power (RQ1), not for the
-   AllenAI comparison.
+   On `custom_swissai_hf` the above-random gate drops the at-chance translated
+   MCQA, shrinking the shared universe from **7 to 4 tasks**; over those 4,
+   `mpsd` gives r = 0.996 / ρ = 1.0 — perfect but on too few tasks to compare
+   like-for-like with the pure-pool 7-task fit. The externals are for
+   scaling/power (RQ1), not for the AllenAI comparison.
 
 ## Cross-corpus correlation by pool
 
@@ -46,11 +47,12 @@ Best variant per pool, Pearson r over the 7 shared English tasks
 | `seeds_1904` (1 seed) | `dispersion` / `range` | 0.751 | 0.786 |
 | `seeds_28_1797` (2 seeds) | `discrepancy` | 0.836 | 0.643 |
 | **`seeds_28_1797_1904`** (3 seeds) | **`star_discrepancy_shifted`** | **0.924** | **0.929** |
-| `custom_swissai_hf` (+ externals) | `rms_deviation` | 0.837 | 0.643 |
+| `custom_swissai_hf` (+ externals) | `mpsd` | 0.996 | 1.000 |
 
-(Pearson on log₁₀ SNR; Spearman on rank — both over the 7 shared tasks, so
-n=7: indicative, not tight. The pure 3-seed pool agrees on **both** value and
-rank; Spearman is variant-dependent and noisy elsewhere.)
+(Pearson on log₁₀ SNR; Spearman on rank. The pure pools share all **7** tasks;
+`custom_swissai_hf` shares only **4** after the above-random gate, so its
+r = 0.996 / ρ = 1.0 is over a much smaller universe — indicative, not
+comparable. The pure 3-seed pool is the like-for-like result.)
 
 ![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png)
 
@@ -62,14 +64,12 @@ The honest agreement metric, since the universe is only 7 tasks
 | pool / best variant | Pearson r (values) | Spearman ρ (rank) |
 |---|---:|---:|
 | **`seeds_28_1797_1904`** / `star_discrepancy_shifted` | **0.92** | **0.93** |
-| `custom_swissai_hf` / `rms_deviation` | 0.84 | 0.64 |
+| `custom_swissai_hf` / `mpsd` (n=4) | 1.00 | 1.00 |
 
 On the pure 3-seed pool both the SNR *values* and their *rank order* agree
-across corpora. Per-corpus order (comprehensive pool, `rms_deviation`): Apertus
-`piqa > arc_easy > hellaswag > csqa > mmlu > arc_challenge > openbookqa`;
-AllenAI `arc_easy > hellaswag > mmlu > piqa > arc_challenge > csqa > openbookqa`
-— extremes agree (`openbookqa` last; `arc_easy`/`hellaswag` near top), the
-middle reshuffles.
+across corpora over all 7 shared tasks (`star_discrepancy_shifted`, ρ = 0.93).
+The comprehensive `custom_swissai_hf` pool now keeps only 4 shared tasks after
+the gate, so its perfect ρ = 1.0 reflects a 4-task universe, not a tighter fit.
 
 > **Do not report top-K Jaccard here.** With 7 shared tasks, any K ≥ 7 returns
 > the whole universe on both sides → Jaccard ≡ 1.0 by construction (the script

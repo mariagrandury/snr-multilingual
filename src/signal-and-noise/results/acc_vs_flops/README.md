@@ -22,13 +22,14 @@ markers out to 70B** to extend the compute axis past the custom 1B ceiling.
 
 1. **The benchmarks that separate data mixtures most are `belebele`,
    `agieval_sat`, and `arabic_leaderboard`** — top-3 by mixture-Signal at 1B.
-2. **Mixture-Signal ≠ SNR.** These top-Signal families are exactly RQ2's
-   *lowest-SNR* families (`belebele` is last by SNR). They swing a lot with the
-   data mixture (high signal) **but are also high-noise**, so signal-to-noise
-   stays low. The lesson for the paper: *raw mixture sensitivity is not
-   reliability* — a benchmark must be divided by its noise (SNR), which is why
-   RQ1/RQ2 rank `multiblimp`/`hellaswag` (low absolute swing, very low noise)
-   above `belebele`.
+2. **Mixture-Signal ≠ SNR.** These top-Signal families are exactly the ones the
+   above-random gate **removes** — they sit at chance, so they never enter the
+   SNR analysis at all. They swing a lot with the data mixture (high signal)
+   **but are also high-noise and don't clear chance**. The lesson for the paper:
+   *raw mixture sensitivity is not reliability* — a benchmark must clear chance
+   and be divided by its noise (SNR), which is why RQ1/RQ4 rank
+   `multiblimp`/`hellaswag` (low absolute swing, very low noise) at the top
+   while `belebele` is gated out.
 3. **Scaling overlay**: on `custom_swissai_hf` the external models extend the
    curves to 8B–70B, but cross-size *decision accuracy* above 1B stays
    family-coverage-limited (see RQ1's scaling-DA note) — the overlay is for
