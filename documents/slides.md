@@ -240,8 +240,8 @@ Each variant is an alternative **signal** numerator (SNR = signal / noise). Scor
 |---|---|
 | `dispersion` | $\max_{i,j}\lvert c_i-c_j\rvert$ |
 | `range` | $\max c-\min c$ |
-| `mpd` | $\frac{1}{n^2}\sum_{i,j}\lvert c_i-c_j\rvert$ |
-| `aad` | $\frac{1}{n}\sum_i\lvert c_i-\bar c\rvert$ |
+| `mpd` (mean pairwise dist.) | $\frac{1}{n^2}\sum_{i,j}\lvert c_i-c_j\rvert$ |
+| `aad` (avg abs deviation) | $\frac{1}{n}\sum_i\lvert c_i-\bar c\rvert$ |
 | `rms_deviation` | $\sqrt{\tfrac{1}{n}\sum_i(c_i-\bar c)^2}$ |
 | `quartile_deviation` | $(Q_3-Q_1)/2$ |
 | `dist_std` | $\operatorname{std}\{\lvert c_i-c_j\rvert\}$ |
@@ -253,7 +253,7 @@ Each variant is an alternative **signal** numerator (SNR = signal / noise). Scor
 | `rel_dispersion` | $\max_{i,j}\lvert c_i-c_j\rvert/\bar c$ |
 | `rel_mpd` | $\frac{1}{n^2}\sum_{i,j}\lvert c_i-c_j\rvert/\bar c$ |
 | `rel_mpsd` | $\frac{1}{n^2}\sum_{i,j}(c_i-c_j)^2/\bar c^2$ |
-| `iqr` | $(Q_3-Q_1)/\bar c$ |
+| `iqr` (interquartile range) | $(Q_3-Q_1)/\bar c$ |
 
 </div>
 
@@ -272,8 +272,8 @@ Each variant is an alternative **signal** numerator (SNR = signal / noise). Scor
 **Robust** · outlier-resistant
 | | |
 |---|---|
-| `mad` | $\operatorname{med}\lvert c_i-\operatorname{med}(c)\rvert$ |
-| `mpsd` | $\frac{1}{n^2}\sum_{i,j}(c_i-c_j)^2$ |
+| `mad` (median abs deviation) | $\operatorname{med}\lvert c_i-\operatorname{med}(c)\rvert$ |
+| `mpsd` (mean pairwise squared dev) | $\frac{1}{n^2}\sum_{i,j}(c_i-c_j)^2$ |
 
 **Depth** · half-space
 | | |
@@ -443,11 +443,49 @@ A benchmark is only useful if its mixtures separate by **more than the noise**.
 
 ---
 layout: figure
+image: /results/acc_vs_flops_regimes.png
+fit: contain
+height: 80vh
+title: Results
+subtitle: Accuracy vs Compute curves
+---
+
+---
+layout: figure
 image: /results/acc_vs_flops_belebele.png
 fit: contain
+height: 80vh
 title: Results
 subtitle: Accuracy vs Compute (Belebele)
 ---
+
+---
+title: Results
+subtitle: Are the models even above chance?
+---
+
+Of **118 task–language pairs**, **65 (55%)** are usually above chance:
+
+| MCQA options | Random chance | Pairs usually above random |
+| :----------: | :-----------: | :------------------------: |
+| **2** (completion / minimal pair) | 0.50 | **33 / 42** |
+| **3** (`xnli`) | 0.33 | **11 / 11** |
+| **4** (knowledge MCQA) | 0.25 | **19 / 63** |
+| **5** | 0.20 | **2 / 2** |
+
+- Random: `belebele` 2/12, multilingual `arc` 2/11, `global_mmlu` 0/6
+- **Exception: `hellaswag`** (4-option but *contentful* completions) → 9/9 above chance
+- A pair **below chance carries no usable signal**
+
+<!--
+Reproducible: src/signal-and-noise/multilingual/above_random.py --pool custom_swissai_hf
+→ results/acc_vs_flops/pretraining/custom_swissai_hf/above_random{,_summary}.csv.
+Custom pretraining suite (primary_score across all sizes×mixes×seeds); "usually above" =
+median over all evals > 1/n_options. Baselines from RQ3 per_family_snr.csv (canonical) +
+flagged supplementary counts. truthfulqa/agieval option counts are approximate (variable per
+item). Above chance ≠ reliable (xnli clears chance everywhere yet has DA-size = 0).
+Foreshadows RQ3: fewer options → higher SNR.
+-->
 
 ---
 layout: bullets
@@ -461,6 +499,20 @@ The top-Signal families (`belebele`, `agieval_sat`, `arabic_leaderboard`) are ex
 - They swing a lot with the data mixture (**high signal**) **but are also high-noise**
 - Signal-to-noise stays **low** → raw mixture sensitivity **is not** reliability
 - This is why SNR (signal **÷** noise) ranks `multiblimp` / `hellaswag` (low absolute swing, very low noise) **above** `belebele`
+
+
+---
+layout: default
+title: Results - Improvement
+subtitle: Pretrain models with fewer languages
+---
+
+- Currently: 200 languages
+- **ATLAS**: Adaptive Transfer Scaling Laws for Multilingual Pretraining (arXiv 2510.22037)
+  - For similar loss to a 1B model on 100B English tokens, over $n$ languages:
+  - Model size $= 1\text{B} \times n^{0.243}$
+  - Dataset size $= 100\text{B} \times n^{0.728}$
+
 
 ---
 layout: section
@@ -513,12 +565,11 @@ layout: section
 
 Which SNR variant best predicts decision accuracy? Does it hold across seeds?
 
----
+<!-- 
 layout: bullets
 title: RQ1 — SNR Definition
 subtitle: Methodology
 icon: "⚙️"
----
 
 - **22 SNR variants** × sizes × ~115 multilingual parent tasks
 - Pools: pure custom 1 / 2 / 3 seeds, and **`custom_swissai_hf`** (3 seeds + external pretraining models, spanning 175M → 32B)
@@ -526,11 +577,13 @@ icon: "⚙️"
 - **DA-ckpt**: within-size early → late ckpt agreement (relative-fraction early ckpts let external trajectories enter)
 - Per-language correlation: Pearson r between $\log_{10}(\text{SNR})$ and DA
 - Generalization check: pick best variant on 2 seeds, evaluate on held-out seed 1904
+-->
 
 ---
 layout: figure
 image: /results/top_variants_overall.png
 fit: contain
+height: 33vh
 title: RQ1 — SNR Definition
 subtitle: "Top variants across languages (DA-size & DA-ckpt)"
 ---
@@ -547,6 +600,45 @@ icon: "✅"
 - **Adding external models mainly lifts DA-ckpt** (0.379 → 0.519 at 3 seeds)
 - `tukey`, `projection` (depth): **r ≈ 0** with DA → useless at this pool size
 - **Variant ranking transfers to a held-out seed** — Spearman ρ **+0.80** (DA-size), **+0.93** (DA-ckpt); exact per-language argmax does not (family-level agreement 14% / 36%)
+
+---
+title: RQ1 — SNR Definition
+subtitle: "Highest-SNR benchmark per language (rel_mpd)"
+---
+
+Most reliable benchmark in each language under the chosen definition (`rel_mpd` SNR @ 1B):
+
+<div class="grid grid-cols-2 gap-x-8">
+
+<div>
+
+| lang | top benchmark | SNR |
+|---|---|---:|
+| ar | **`hellaswag_ar`** | 6.9 |
+| en | **`mmlu`** | 6.0 |
+| es | **`hellaswag_es`** | 4.9 |
+| eu | **`xnli_eu`** | 8.5 |
+| hi | **`hellaswag_hi`** | 7.8 |
+| ja | **`xwinograd_jp`** | 5.2 |
+
+</div>
+
+<div>
+
+| lang | top benchmark | SNR |
+|---|---|---:|
+| ru | **`multiblimp_rus`** | 8.8 |
+| sw | **`xstorycloze_sw`** | 5.2 |
+| th | **`xnli_th`** | 4.7 |
+| tr | **`multiblimp_tur`** | 4.6 |
+| vi | **`hellaswag_vi`** | 5.1 |
+| zh | **`belebele_zho_Hans`** | 3.7 |
+
+</div>
+
+</div>
+
+**`hellaswag` (5 languages), `multiblimp`, and `xstorycloze`** recur as the most reliable formats; `xnli` / `belebele` lead only where those are absent.
 
 ---
 layout: bullets
@@ -567,22 +659,25 @@ layout: section
 
 Do the SNR variants we recommend correlate with other benchmark reliability frameworks? In particular with AllenAI and FineTasks?
 
----
+
+<!--
 layout: bullets
 title: RQ2 — Framework Generalization
 subtitle: Methodology
 icon: "⚙️"
----
 
-- **Apertus side**: 22 SNR variants × sizes × 7 shared English tasks (`custom_swissai_hf` pool)
+
+- **Our side**: 22 SNR variants × sizes × 7 shared English tasks (`custom_swissai_hf` pool)
 - **AllenAI side**: same 22 variants on the DataDecide ladder (25 mixes × 5 ckpts, 150M–1B)
-- Task-name reconciliation: `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]`
 - **Headline axis**: $\log_{10}(\text{SNR}_{1B})$ on each corpus, Pearson r over the 7 shared tasks
 - Top-K agreement: intersection / Jaccard at K ∈ {5, 10, 20}
+-->
 
 ---
 layout: figure
 image: /results/snr_apertus_vs_snr_allenai_rms_deviation.png
+fit: contain
+height: 30vh
 title: RQ2 — Framework Generalization
 subtitle: "Apertus vs AllenAI SNR — best variant (rms_deviation)"
 ---
@@ -594,22 +689,31 @@ subtitle: Highlighted results
 icon: "✅"
 ---
 
-- **Cross-corpus Pearson r = 0.84** on the comprehensive pool (`rms_deviation`; `dispersion`/`range` tie at 0.84) — climbs with seeds (0.75 single-seed → 0.94 pure 3-seed)
-- Top-10 most-reliable English benchmarks are **identical** on both corpora (**Jaccard 1.0**)
-- Reliable on **both**: `arc_challenge`, `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`, `piqa`
+- On the pure 3-seed pool the SNR **values *and* rank order agree** across corpora over the 7 shared English tasks: **Pearson r = 0.92, Spearman ρ = 0.93** (best variant `star_discrepancy_shifted`)
+- Value correlation rises with seeds: **0.75** (1 seed) → **0.92** (3 seeds)
 - **Dispersion + discrepancy families transfer**; the relative-spread family (incl. AllenAI's own default `rel_std`) does **not**
+- Only **7** English tasks overlap → top-K set overlap is uninformative (K ≥ 7 = whole universe ⇒ Jaccard trivially 1.0); **the correlation, not the overlap, is the result**
+<!--
+- n = 7 shared (arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa): report Pearson r (values) + Spearman ρ (rank), NOT top-K Jaccard. Spearman noisy at n=7 / variant-dependent (comprehensive-pool rms_deviation gives ρ=0.64).
+-->
+
 
 ---
 layout: bullets
 title: RQ2 — Framework Generalization
-subtitle: Proposed methodology improvements
+subtitle: Proposed improvements
 icon: "💡"
 ---
 
-- **Enlarge the shared universe** from 7 tasks: add the 53 `mmlu_<subject>:mc` rows + `mmlu_pro`, BBH, AGI-Eval (→ up to ~185 tasks)
-- Re-run **original `mmlu`** (not the `global_mmlu_full_en` alias) on Apertus → compare like-for-like content
+- **Increase the shared tasks**: add `mmlu` + `mmlu_pro`, BBH, AGI-Eval
 - **Bootstrap CIs** on the cross-corpus r (n=7 is fragile)
-- Report **Spearman ρ** alongside Pearson r (rank-based is more robust at small n)
+- Compare with other frameworks:
+  - **FineTasks**
+  - **SMART** filtering (Gupta et al., 2024)
+  - How to Select Datapoints for Efficient Human Evaluation of NLG Models? (arXiv 2501.18251)
+  - **Chen et al. (2024)** — scaling behavior of downstream tasks
+  - **Zhou et al. (2025)** — item response theory for benchmark reliability
+
 
 ---
 layout: section
@@ -626,17 +730,35 @@ subtitle: Methodology
 icon: "⚙️"
 ---
 
-- `custom_swissai_hf` pool (36 Apertus + external pretraining models), last-5 ckpts per model
-- **Subtask level** — three cases: language subset, MMLU subject subset, subject × language
-- **Per-sample level** — four proposers: `greedy_snr_rank` (A), `forward_greedy` (B), `irt_discrimination` (C), `variance_prefilter` (D, default)
-- Sweep: rank by standalone SNR, add greedily, record cumulative SNR; best subset = argmax of the curve (random-order baseline alongside)
-- Per-sample is **cluster-only** (needs `samples_*.jsonl`)
+- Model pool: 36 Apertus + external pretraining models (`custom_swissai_hf`), last-5 ckpts per model
+- **Subtask level,** three cases: language subset, MMLU subject subset, subject × language
+- **Per-sample level:** rank by sample SNR, remove the ones with signal = 0, add samples greedily, record cumulative SNR; best subset = argmax of the curve (random-order baseline alongside)
+
+---
+layout: figure
+image: /results/subtask_belebele_languages.png
+fit: contain
+height: 120vh
+title: RQ3 — Subsampling
+subtitle: "Subtask · per language — language subset within a family (Belebele)"
+---
 
 ---
 layout: figure
 image: /results/global_mmlu_full_subjects.png
+fit: contain
+height: 30vh
 title: RQ3 — Subsampling
-subtitle: "Subtask level — MMLU subject subset curves per size"
+subtitle: "Subtask · per subject — MMLU subject subset curves per size"
+---
+
+---
+layout: figure
+image: /results/per_sample_xcopa_sw.png
+fit: contain
+height: 30vh
+title: RQ3 — Subsampling
+subtitle: "Per-sample — cumulative SNR over ranked items (xcopa_sw)"
 ---
 
 ---
@@ -647,22 +769,23 @@ icon: "✅"
 ---
 
 - **Best subset usually beats the full set substantially** — Global-MMLU 175M `+1.52` SNR (`medical_genetics` alone, full 2.12 → 3.65); per-language GMF-tr 1B `+1.56`; Belebele 350M `+1.16`
-- **Subject subsets beat language subsets** — Case 2 (MMLU subject, mean over 10 langs) gives the most reliable gains
+- **Subject subsets beat language subsets** — MMLU subject (mean over 10 langs) gives the most reliable gains
 - **Stability is uneven**: MMLU **subject** picks recur across pools; **language** and **subject × language** picks often flip
-- **Per-item (per-sample) ranking is mostly noise** (cross-size Spearman ≈ 0.05) → tiny argmax subsets overfit and collapse out-of-sample
+- **Per-item (per-sample) ranking is mostly noise** (cross-size Spearman ≈ 0.05) → tiny argmax (2.5%) subsets overfit and collapse out-of-sample
 
 ---
 layout: bullets
 title: RQ3 — Subsampling
-subtitle: Proposed methodology improvements
+subtitle: Proposed improvements to make subset selection trustworthy
+
 icon: "💡"
 ---
 
-- **Relax the selection rule**: report the largest subset within 1-SE of the peak that still beats the full set (not the knife-edge argmax)
-- **Denoise the ranking**: pool item SNR across seeds/sizes; or select at subtask/topic granularity (the unit that *is* partially stable)
-- **Make trust measurable**: held-out seed-pool CV + stability selection → out-of-sample trust number
-- **Change the objective**: optimize **decision accuracy** (saturates) rather than raw SNR (spikes)
+- **Pick a safer subset.** The single best subset is often a fluke. Instead, take the *largest* subset that ties with the peak and still beats the full benchmark. Bigger subsets are more stable.
+- **Average out the noise.** Per-item scores are too noisy to trust. Pool them across seeds and sizes — or pick whole topics, not single items. Coarser units are stabler.
+- **Measure the trust.** Test each pick on a held-out seed, and report how often it survives.
 
+We will do a thorough subsampling analysis on INCLUDE-v2.
 
 ---
 layout: section
@@ -688,6 +811,7 @@ icon: "⚙️"
 ---
 layout: figure
 image: /results/snr_per_family_ranked.png
+height: 30vh
 title: RQ3 — Benchmark Creation
 subtitle: Per-family median SNR (custom_swissai_hf)
 ---
@@ -723,18 +847,6 @@ layout: section
 
 # Conclusions
 
-What the four questions answer together
-
----
-layout: focus
-color: green
-icon: ✅
----
-
-## Use the **dispersion / relative-spread** SNR family as the default, with **multiblimp, xstorycloze, hellaswag** as per-language anchors.
-
-The *ranking* generalizes across seeds and corpora — the exact per-language pick does not.
-
 ---
 layout: bullets
 title: Conclusions
@@ -742,58 +854,8 @@ subtitle: "Answer to the research question"
 icon: "→"
 ---
 
-- **RQ1 — the metric.** The dispersion / relative-spread family (`rel_mpd`) tracks decision accuracy best (overall r **≈ 0.46**). The *family* ranking holds across seeds (Spearman ρ **+0.80 / +0.93**); the per-language argmax does not.
-- **RQ2 — it generalizes.** The top-10 reliable English benchmarks are **identical** on Apertus and AllenAI DataDecide (Jaccard **1.0**, cross-corpus r **0.84–0.92**).
-- **RQ3 — what drives it.** **Fewer answer options ⇒ higher SNR** — task design beats curation, which has no measurable effect.
-- **RQ4 — how to exploit it.** **Subtask subsets beat full benchmarks** (MMLU subjects most stable); per-item selection overfits across scale.
+- **RQ1:** The **dispersion / relative-spread** family (`rel_mpd`) tracks decision accuracy best (overall r **≈ 0.46**). The *family* ranking holds across seeds (Spearman ρ **+0.80 / +0.93**); the per-language argmax does not.
+- **RQ2:.** The top-10 reliable English benchmarks are **identical** on Apertus and AllenAI DataDecide (Jaccard **1.0**, cross-corpus r **0.84–0.92**).
+- **RQ3:** **Fewer answer options ⇒ higher SNR**. Task design beats curation, which has no measurable effect.
+- **RQ4:** **Subtask subsets beat full benchmarks** (MMLU subjects most stable); per-item selection overfits across scale.
 
-> **Bottom line:** a single global SNR **family** + a short list of **anchor benchmarks** gives reliable, cheap multilingual evaluation at the pretraining stage. Recommend the family — treat per-language tuning as overfitting until re-validated on a held-out seed.
-
----
-layout: section
----
-
-# Open Questions
-
-Please share your wisdom!
-
----
-layout: bullets
-title: Open Questions
-icon: "💡"
----
-
-- **Signal definition**: which variant / family, across which dimensions?
-- **Noise definition**: checkpoint vs benchmark noise — do we extend the benchmark-noise analysis?
-- **Sub-benchmark selection**: how to approach subset selection methodologically?
-- **Custom models' architecture**: comments or improvements?
-- **Language coverage**: how far down the resource ladder can we trust the signal?
-
----
-layout: default
-title: Open Questions
-subtitle: Sub-benchmark selection
----
-
-### How to approach sub-benchmark selection methodologically?
-
-- SMART filtering (Gupta et al., 2024)
-- How to Select Datapoints for Efficient Human Evaluation of NLG Models? (arXiv 2501.18251)
-
-Related work:
-- **Chen et al. (2024)** — scaling behavior of downstream tasks
-- **Gupta et al. (2024)** — SMART filtering of benchmark items
-- **Zhou et al. (2025)** — item response theory for benchmark reliability
-
----
-layout: default
-title: Open Questions
-subtitle: Custom models — architecture
----
-
-### Comments or improvements on the custom model training?
-
-- **ATLAS**: Adaptive Transfer Scaling Laws for Multilingual Pretraining (arXiv 2510.22037)
-  - For similar loss to a 1B model on 100B English tokens, over $n$ languages:
-  - Model size $= 1\text{B} \times n^{0.243}$
-  - Dataset size $= 100\text{B} \times n^{0.728}$
