@@ -403,6 +403,32 @@ The custom suite caps at 1B. Open-source families extend the compute axis to **7
 | **≥ 12B** | — | gemma-3 12–27B; OLMo-3 13–32B; Qwen3 14B+ | Apertus 70B Instruct |
 
 ---
+title: Experimental Setup — Models
+subtitle: "Families spanning >=2 buckets"
+---
+
+Families spanning >=2 buckets:
+  Apertus-2509                                  ['7-9B', '70B']
+  OLMo-2-base                                   ['1B', '7-9B', '12-14B', '27-32B']
+  Olmo-3-base                                   ['7-9B', '27-32B']
+  Qwen3-Base                                    ['600M', '1.7B', '4B', '7-9B', '12-14B']
+  ap-from8b-TOP256                              ['600M', '1B']
+  apertus-fwEdu30-fw270-seed1797                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu30-fw270-seed1904                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu30-fw270-seed28                  ['175M', '350M', '600M', '1B']
+  apertus-fwEdu60-fw240-seed1797                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu60-fw240-seed1904                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu60-fw240-seed28                  ['175M', '350M', '600M', '1B']
+  apertus-fwEdu90-fw210-seed1797                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu90-fw210-seed1904                ['175M', '350M', '600M', '1B']
+  apertus-fwEdu90-fw210-seed28                  ['175M', '350M', '600M', '1B']
+  apertus3-a06                                  ['1B', '3B']
+  gemma-3-pt                                    ['270M', '1B', '4B', '12-14B', '27-32B']
+
+Buckets present: ['175M', '270M', '350M', '600M', '1B', '1.7B', '3B', '4B', '7-9B', '12-14B', '27-32B', '70B']
+
+
+---
 title: Experimental Setup — Benchmarks
 subtitle: "Pretraining suite: 22 benchmark families, 12+ languages"
 ---
@@ -464,27 +490,27 @@ title: Results
 subtitle: Are the models even above chance?
 ---
 
-Of **118 task–language pairs**, **65 (55%)** are usually above chance:
+A benchmark only carries signal if the models clear **chance** (`1 / #options`) by a margin. Per (benchmark, size) we average the score over all models; **above random** iff `mean > chance + 0.05`. Only **44 of 118 benchmarks** clear chance at any size — and it's an **answer-count** effect:
 
-| MCQA options | Random chance | Pairs usually above random |
-| :----------: | :-----------: | :------------------------: |
-| **2** (completion / minimal pair) | 0.50 | **33 / 42** |
-| **3** (`xnli`) | 0.33 | **11 / 11** |
-| **4** (knowledge MCQA) | 0.25 | **19 / 63** |
-| **5** | 0.20 | **2 / 2** |
+| MCQA options | Random chance | Benchmarks above random |
+| :----------: | :-----------: | :---------------------: |
+| **2** (completion / minimal pair) | 0.50 | **28 / 42** |
+| **3** (`xnli`) | 0.33 | **7 / 11** |
+| **4** (knowledge MCQA) | 0.25 | **9 / 63** |
+| **5** | 0.20 | **0 / 2** |
 
-- Random: `belebele` 2/12, multilingual `arc` 2/11, `global_mmlu` 0/6
-- **Exception: `hellaswag`** (4-option but *contentful* completions) → 9/9 above chance
-- A pair **below chance carries no usable signal**
+- The only 4-option survivors: **`hellaswag`** (contentful completions) and English **`arc_easy` / `arc_challenge`**
+- Translated knowledge MCQA sit **at chance**: `belebele` 0/12, `global_mmlu(_full)` 0/16, `truthfulqa` 0/8, `arc_<lang>` 0/9
+- **The gate is enforced**: random (benchmark, size) cells are dropped from SNR and every downstream RQ
 
 <!--
 Reproducible: src/signal-and-noise/multilingual/above_random.py --pool custom_swissai_hf
-→ results/acc_vs_flops/pretraining/custom_swissai_hf/above_random{,_summary}.csv.
-Custom pretraining suite (primary_score across all sizes×mixes×seeds); "usually above" =
-median over all evals > 1/n_options. Baselines from RQ3 per_family_snr.csv (canonical) +
-flagged supplementary counts. truthfulqa/agieval option counts are approximate (variable per
-item). Above chance ≠ reliable (xnli clears chance everywhere yet has DA-size = 0).
-Foreshadows RQ3: fewer options → higher SNR.
+→ above_random_scores.csv (mean score per benchmark×size) + above_random_mask.csv (0/1).
+Per (benchmark, size): mean primary_score over all models at that size (final ckpt) >
+1/n_options + 0.05. n_options is intrinsic benchmark metadata (above_random.N_OPTIONS) — the
+gate reads NO RQ output, so RQs depend on it, not the reverse. run_apertus_snr_variants.py
+imports scores_and_mask and NaN-s random SNR cells. Above chance ≠ reliable (xnli clears
+chance yet has DA-size = 0). Foreshadows RQ3: fewer options → higher SNR.
 -->
 
 ---
@@ -639,6 +665,15 @@ Most reliable benchmark in each language under the chosen definition (`rel_mpd` 
 </div>
 
 **`hellaswag` (5 languages), `multiblimp`, and `xstorycloze`** recur as the most reliable formats; `xnli` / `belebele` lead only where those are absent.
+
+---
+layout: figure
+image: /results/top_benchmarks_per_language.png
+fit: contain
+height: 80vh
+title: RQ1 — SNR Definition
+subtitle: "Top-5 benchmarks per language by SNR (rel_mpd @ 1B)"
+---
 
 ---
 layout: bullets

@@ -1,7 +1,7 @@
 # Top-K reliability agreement
 
-Variant used: **RMS Deviation** (`rms_deviation`)
-Apertus SNR column: `snr_rms_deviation_1B`  ·  AllenAI SNR column: `snr_rms_deviation_1B`
+Variant used: **Mean Squared Pairwise Distance** (`mpsd`)
+Apertus SNR column: `snr_mpsd_1B`  ·  AllenAI SNR column: `snr_mpsd_1B`
 Shared-task universe: **7** tasks.
 
 ## ⚠️ Methodological caveat — MMLU aliasing
@@ -14,12 +14,12 @@ Other Apertus → AllenAI aliases that hit the shared set: `commonsense_qa → c
 
 ## Cross-corpus agreement over the shared tasks (the result)
 
-Best variant `rms_deviation`, n = 7 shared tasks:
+Best variant `mpsd`, n = 4 shared tasks:
 
 | metric | value |
 |---|---:|
-| **Pearson r** (log₁₀ SNR values) | **+0.837** |
-| **Spearman ρ** (rank order) | **+0.643** |
+| **Pearson r** (log₁₀ SNR values) | **+0.996** |
+| **Spearman ρ** (rank order) | **+1.000** |
 
 > With only 7 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 7 spans the whole universe, so Jaccard is trivially 1.0. Only K < 7 is reported below.
 
@@ -27,7 +27,7 @@ Best variant `rms_deviation`, n = 7 shared tasks:
 
 | K | n_intersection | intersection / K | Jaccard | Shared top-K tasks |
 |---|---:|---:|---:|---|
-| 5 | 4 | 0.80 | 0.67 | arc_easy, hellaswag, mmlu, piqa |
+| 5 | 3 | 0.60 | 0.50 | arc_challenge, arc_easy, hellaswag |
 
 ## Full ranking per corpus (all shared tasks)
 
@@ -35,22 +35,19 @@ Best variant `rms_deviation`, n = 7 shared tasks:
 
 | task          |   snr |
 |:--------------|------:|
-| piqa          | 2.175 |
-| arc_easy      | 1.968 |
-| hellaswag     | 1.91  |
-| csqa          | 1.508 |
-| mmlu          | 1.444 |
-| arc_challenge | 1.304 |
-| openbookqa    | 0.699 |
+| arc_easy      | 0.105 |
+| hellaswag     | 0.08  |
+| arc_challenge | 0.076 |
+| piqa          | 0.062 |
 
 ### AllenAI
 
-| task          |    snr |
-|:--------------|-------:|
-| arc_easy      | 11.836 |
-| hellaswag     |  7.248 |
-| mmlu          |  5.903 |
-| piqa          |  5.369 |
-| arc_challenge |  4.787 |
-| csqa          |  4.107 |
-| openbookqa    |  2.077 |
+| task          |   snr |
+|:--------------|------:|
+| arc_easy      | 1.545 |
+| hellaswag     | 0.482 |
+| arc_challenge | 0.463 |
+| mmlu          | 0.332 |
+| csqa          | 0.248 |
+| piqa          | 0.171 |
+| openbookqa    | 0.116 |
