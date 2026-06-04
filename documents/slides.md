@@ -627,43 +627,30 @@ icon: "✅"
 - `tukey`, `projection` (depth): **r ≤ 0** with DA → useless at this pool size
 - **Variant ranking transfers to a held-out seed** — Spearman ρ **+0.80** (DA-size), **+0.93** (DA-ckpt); the exact per-language argmax does **not** (family-level agreement 14% / 36%)
 
+<!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
 ---
 title: RQ1 — SNR Definition
-subtitle: "Highest-SNR benchmark per language (dist_std)"
+subtitle: "Results (auto) — most reliable benchmark per language (`dist_std` @ 1B)"
 ---
 
-Most reliable above-random benchmark in each language under the chosen definition (`dist_std` SNR @ 1B):
+| lang | top benchmark | SNR | DA-ckpt@1B |
+|---|---|---|---|
+| ar | `multiblimp_arb` | 2.6 | 0.87 |
+| en | `xwinograd_en` | 2.4 | 0.83 |
+| es | `multiblimp_spa` | 3.4 | 0.85 |
+| eu | `multiblimp_eus` | 1.3 | 0.64 |
+| hi | `multiblimp_hin` | 4.9 | 0.85 |
+| ja | `xwinograd_jp` | 2.3 | 0.76 |
+| ru | `multiblimp_rus` | 7.1 | 0.86 |
+| th | `xnli_th` | 1.3 | 0.75 |
+| tr | `multiblimp_tur` | 2.7 | 0.79 |
+| vi | `xcopa_vi` | 1.6 | 0.76 |
+| zh | `xcopa_zh` | 1.6 | 0.61 |
 
-<div class="grid grid-cols-2 gap-x-8">
-
-<div>
-
-| lang | top benchmark | SNR |
-|---|---|---:|
-| ar | **`multiblimp_arb`** | 2.6 |
-| en | **`xwinograd_en`** | 2.4 |
-| es | **`multiblimp_spa`** | 3.4 |
-| eu | **`multiblimp_eus`** | 1.3 |
-| hi | **`multiblimp_hin`** | 4.9 |
-| ja | **`xwinograd_jp`** | 2.3 |
-
-</div>
-
-<div>
-
-| lang | top benchmark | SNR |
-|---|---|---:|
-| ru | **`multiblimp_rus`** | 7.1 |
-| th | **`xnli_th`** | 1.3 |
-| tr | **`multiblimp_tur`** | 2.7 |
-| vi | **`xcopa_vi`** | 1.6 |
-| zh | **`xcopa_zh`** | 1.6 |
-
-</div>
-
-</div>
-
-**`multiblimp` is the most reliable benchmark in 7 of 11 languages**, with `xwinograd` / `xcopa` recurring; `xnli` leads only where those are absent. (`sw` has no above-random benchmark and is dropped.)
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq1-results -->
 
 ---
 layout: figure
@@ -731,6 +718,26 @@ icon: "✅"
 - n = 7 shared (arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa): report Pearson r (values) + Spearman ρ (rank), NOT top-K Jaccard. The pure 3-seed pool is the like-for-like comparison; on the externals pool the above-random gate drops the at-chance MCQA, shrinking the shared set to 4 (mpsd r=0.996, ρ=1.0 over those 4) — use the pure pool for the cross-corpus claim.
 -->
 
+
+<!-- BEGIN auto:rq2-results (allenai_comparison/analyze.py) -->
+---
+title: RQ2 — Framework Generalization
+subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
+---
+
+| pool | best variant | Pearson r | Spearman ρ | n_shared |
+|---|---|---|---|---|
+| `seeds_1904` | `dispersion` | 0.75 | 0.79 | 7 |
+| `seeds_28_1797` | `discrepancy` | 0.84 | 0.64 | 7 |
+| `seeds_28_1797_1904` | `star_discrepancy_shifted` | 0.92 | 0.93 | 7 |
+| `custom_swissai_hf` | `mpsd` | 1.00 | 1.00 | 4 |
+
+Pure pools share all 7 English tasks; `custom_swissai_hf` shares fewer after the above-random gate — the pure 3-seed pool is the like-for-like fit.
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq2-results -->
 
 ---
 layout: bullets
@@ -807,6 +814,28 @@ icon: "✅"
 - **Stability is uneven**: MMLU **subject** picks recur across pools; **language** and **subject × language** picks often flip
 - **Per-item (per-sample) ranking is mostly noise** (cross-size Spearman ≈ 0.05) → tiny argmax (2.5%) subsets overfit and collapse out-of-sample
 
+<!-- BEGIN auto:rq3-results (smooth_subtasks.py) -->
+---
+title: RQ3 — Subsampling
+subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
+---
+
+| case | task | size | full → best SNR | +gain |
+|---|---|---|---|---|
+| global_mmlu_full_per_language | `global_mmlu_full_tr` | 1B | 1.85 → 3.41 | +1.56 |
+| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 |
+| per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.68 → 3.02 | +1.34 |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 |
+| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.18 → 3.45 | +1.27 |
+| per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 |
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq3-results -->
+
 ---
 layout: bullets
 title: RQ3 — Subsampling
@@ -862,6 +891,29 @@ icon: "✅"
 - The only 4-option survivors are **`hellaswag`** (2.1) and English **`arc`** (2.0) — contentful; bottom: **global_piqa** (1.5), **xnli** (1.2)
 - **Among the 9 survivors no single design feature is significant** (n_options KW H = 1.8, p = 0.18; format H = 0, p = 1.0) — and **curation still explains nothing** (H = 0.5, **p = 0.78**)
 - Mechanism: each option adds another noisy log-likelihood estimate to rank → 2-option comparisons are sharper
+
+<!-- BEGIN auto:rq4-results (benchmark_creation/analyze.py) -->
+---
+title: RQ4 — Benchmark Creation
+subtitle: "Results (auto) — per-family SNR, above-random survivors"
+---
+
+| family | median SNR | n_opts | format |
+|---|---|---|---|
+| `multiblimp` | 3.85 | 2 | minimal_pair |
+| `paws` | 2.55 | 2 | classification |
+| `xwinograd` | 2.48 | 2 | completion |
+| `xstorycloze` | 2.27 | 2 | completion |
+| `xcopa` | 2.06 | 2 | completion |
+| `hellaswag` | 2.05 | 4 | completion |
+| `arc` | 2.05 | 4 | mcq_question_only |
+| `global_piqa_completions` | 1.45 | 2 | completion |
+| `xnli` | 1.15 | 3 | classification |
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq4-results -->
 
 ---
 layout: bullets

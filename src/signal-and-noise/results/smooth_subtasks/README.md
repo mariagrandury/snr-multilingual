@@ -1,88 +1,83 @@
 # RQ4 — Can a subset of subtasks give higher SNR than the full set?
 
+## Research question
+
 > Per benchmark, does a subset of subtasks — a subset of *languages* in a
 > multilingual family, or a subset of *subjects* in MMLU, or a subset of
 > individual *items* — give higher SNR than the full set, and does the same
 > subset hold across seeds and scales?
 
+<!-- BEGIN auto:highlight (smooth_subtasks.py --pool custom_swissai_hf) -->
+## Highlighted result
+
+- **`global_mmlu_full_tr` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.85 → 3.41** (**+1.56**) with `high_school_world_history|international_law|machine_learning|high_school_computer_science|… (+4)`.
+- **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.12 → 3.65** (**+1.52**) with `medical_genetics`.
+- **`paws` 3B (per_benchmark)** — a subset beats the full set: SNR **0.37 → 1.81** (**+1.44**) with `paws_eu`.
+- **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject subset matches or beats the full ~48-subject set across sizes (`medical_genetics`, `human_aging`, `international_law`, world-history recur).
+- **Per-item (per-sample) ranking is mostly noise / overfits across scale** — per-sample subsets give even larger gains but their best picks barely overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer subtask-level selection.
+<!-- END auto:highlight -->
+
+## Experimental setup
+
 Subtask-level outputs under `pretraining/<pool>/`; per-item (Option D) under
-`per_sample/variance_prefilter/`. The three subtask cases: **Case 1** language
-subset of a family · **Case 2** MMLU subject subset (mean over 10 languages) ·
-**Case 3** MMLU subject subset per language.
+`per_sample/variance_prefilter/`. Three subtask cases plus a per-item view:
 
-## TL;DR (paper takeaways)
+- **Case 1** — language subset of a multilingual family. `task` = the benchmark
+  family (arc, belebele, global_mmlu, xnli, …); `subtask` = the per-language
+  tasks in that family (arc_de, arc_es, …). Which language subset, ordered by
+  per-language SNR, gives the highest combined SNR for the family?
+- **Case 2** — MMLU subject subset (mean over the 10 global_mmlu languages).
+  `task` = `global_mmlu_full`; `subtask` = one subject, whose per-(model, ckpt)
+  score is the mean across the 10 languages.
+- **Case 3** — MMLU subject subset per language (no cross-language averaging).
+  `task` = `global_mmlu_full_<lang>`; `subtask` = one subject within that
+  language.
+- **Per-item (Option D)** — `per_sample/variance_prefilter/`. Subset selection at
+  the individual-item level (per-sample SNR on binary item accuracy — not
+  comparable to subtask-level SNR).
 
-1. **A subset beats the full set in essentially every (benchmark, size) cell,
-   usually a *single* subtask, by a large margin.** Top subtask-level gains on
-   `custom_swissai_hf` (`snr_gain = best − full`):
+The SNR primitive is `signal_to_noise_ratio` over per-mix, last-N-ckpt arrays
+(same formula as `snr.snr_simple.compute_snr_small_scale`). Combined-subset SNR
+averages per-(mix, step) scores across the included subtasks before applying
+that formula. For each (task, size) the subtasks are ranked by standalone SNR
+and cumulative subsets of size 1..N are swept; `best_n` / `best_subset` is the
+cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
 
-   | case | task / size | full → best SNR | gain | winning subset |
-   |---|---|---|---:|---|
-   | Case 2 | `global_mmlu_full` 175M | 2.12 → **3.65** | **+1.52** | `medical_genetics` (1 subject) |
-   | Case 3 | `global_mmlu_full_tr` 1B | 1.85 → 3.41 | +1.56 | 8 subjects |
-   | Case 1 | `xstorycloze` 3B | 0.54 → 1.99 | +1.45 | `xstorycloze_eu` (1 lang) |
+<!-- BEGIN auto:results (smooth_subtasks.py --pool custom_swissai_hf) -->
+## Results
 
-2. **Case 2 (MMLU subjects) is the strongest and most stable lever:** a 1–2
-   subject subset matches or beats the full ~48-subject set across sizes
-   (175M `medical_genetics` alone; 600M `human_sexuality|clinical_knowledge`;
-   1B `human_aging|virology`). Recurring high-SNR subjects across pools:
-   **`medical_genetics`, `human_aging`, `international_law`, world-history**.
-3. **Case 1 (languages): a few languages carry the family.** `eu`, `zh`, `vi`
-   recur as high-signal picks; `arc` collapses to a single language and `xcopa`
-   to one or two. The *winning* language can flip across seeds — treat picks as
-   candidates and prefer those that recur in train+test pools.
-4. **Per-item selection (Option D) gives even larger gains but does NOT
-   transfer across scale — so prefer subtask-level selection.** A per-sample
-   subset beats the full set in **100%** of 320 cells (median **+0.64**, max
-   **+2.68** on `xcopa_sw` 1B), keeping a median of just **2%** of items. But
-   cross-size best-subset **Jaccard ≈ 0.03** and SNR-rank **Spearman ≈ 0.05**
-   (≈ 0) — the per-item picks are scale-specific (and estimation-noisy), which
-   is the empirical argument for operating at the subtask level (Cases 1–3),
-   not the item level.
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python multilingual/smooth_subtasks.py --pool custom_swissai_hf`.
 
-## Case 2 — MMLU subject subset (pool `custom_swissai_hf`)
+**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
 
-A handful of subjects reaches the full-set SNR ceiling
-([`global_mmlu_full.csv`](pretraining/custom_swissai_hf/global_mmlu_full.csv)):
+| case | task | size | full → best SNR | +gain | best subset |
+|---|---|---|---|---|---|
+| global_mmlu_full_per_language | `global_mmlu_full_tr` | 1B | 1.85 → 3.41 | +1.56 | `high_school_world_history` \| `international_law` \| `machine_learning` \| `high_school_computer_science` \| `… (+4)` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 | `medical_genetics` |
+| per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.68 → 3.02 | +1.34 | `public_relations` \| `philosophy` \| `high_school_chemistry` \| `security_studies` \| `… (+2)` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 | `prehistory` \| `college_medicine` \| `high_school_geography` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 | `high_school_world_history` \| `international_law` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.18 → 3.45 | +1.27 | `human_sexuality` \| `clinical_knowledge` |
+| per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
+| per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 | `belebele_swh_Latn` \| `belebele_hin_Deva` \| `belebele_eus_Latn` |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
+| global_mmlu_full_per_language | `global_mmlu_full_en` | 175M | 1.92 → 3.01 | +1.10 | `high_school_world_history` |
+| per_benchmark | `truthfulqa` | 7-9B | 0.79 → 1.87 | +1.09 | `truthfulqa_hi_mc2` |
 
-| size | full-set SNR | best subset | best SNR | gain |
-|---|---:|---|---:|---:|
-| 175M | 2.12 | **`medical_genetics`** | **3.65** | **+1.52** |
-| 600M | 2.18 | `human_sexuality \| clinical_knowledge` | 3.45 | +1.27 |
-| 1B | 2.43 | `human_aging \| virology` | 3.37 | +0.93 |
+![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
+<!-- END auto:results -->
 
-![MMLU subject-subset SNR sweep](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
+## TODO
 
-## Case 1 — language subset of a family
-
-Full `summary.csv` ranks all (case, task, size) by `snr_gain`
-([`summary.csv`](pretraining/custom_swissai_hf/summary.csv)); per-family sweep
-curves in [`per_benchmark_plots/`](pretraining/custom_swissai_hf/per_benchmark_plots/).
-Representative single-language winners: `xstorycloze_eu`, `xcopa_vi`,
-`multiblimp_eng`, `arc_eu`.
-
-## Per-item (Option D) — `per_sample/variance_prefilter/analysis/`
-
-From [`highlights.md`](per_sample/variance_prefilter/analysis/highlights.md):
-
-| metric | value |
-|---|---|
-| cells where a subset beats the full set | **100%** (320/320) |
-| median SNR gain | **+0.64** |
-| max SNR gain | **+2.68** (`xcopa_sw`, 1B) |
-| median % of items kept | **2%** |
-| cross-size subset **Jaccard** | **0.03** |
-| cross-size SNR-rank **Spearman** | **0.05** |
-
-(Per-sample SNR is on binary item accuracy — not comparable to subtask-level
-SNR. Proposers B/C are cluster-only; A ≡ D on committed data.)
-
-## Selection recipe
-
-Treat best-subset picks as candidates; **prefer subsets that recur in both
-train and test seed pools** (Case 2 subjects are the safest; per-item picks the
-least transferable). Outputs regenerated for `seeds_28_1797_1904` and
-`custom_swissai_hf`.
+- [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
+      `human_aging`, `international_law`, world-history), not an exact subset —
+      only subsets that recur in both train and test seed pools transfer.
+- [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
+      train and test seed pools (Case 2 subjects are the safest; per-item picks
+      the least transferable).
+- [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
+      Jaccard / SNR-rank Spearman of the winning subsets.
 
 ## Files
 

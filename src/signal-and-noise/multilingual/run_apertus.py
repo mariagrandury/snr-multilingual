@@ -54,6 +54,8 @@ from multilingual.analyze_snr_variants import (  # noqa: E402
     _ENGLISH_ONLY_TASKS, assign_language, benchmark_family,
 )
 from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
+from multilingual.autodoc import (  # noqa: E402
+    CANONICAL_POOL, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results,
@@ -277,6 +279,78 @@ def run(pool: str, out_dir: Path, seed: int | None = None, top_n: int = TOP_N):
     n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed)
     print(f"Wrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
     print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
+
+    # Auto-refresh the acc_vs_flops README (canonical pool only — no-op else).
+    generate_readme(pool, out_dir)
+
+
+# --- auto-generated README (acc-vs-FLOPs Signal + above-random gate) --------
+
+def generate_readme(pool: str, out_dir: Path) -> None:
+    """Rewrite the auto blocks of results/acc_vs_flops/README.md (canonical pool
+    only): top mixture-Signal families + the above-random gate breakdown. The
+    gate numbers come from the `custom` above-random report (custom pretrains,
+    the SNR gate's domain)."""
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    sig = pd.read_csv(out_dir / "acc_vs_flops_signal.csv")
+    fam_rank = (sig.groupby("family")["signal"].mean()
+                .sort_values(ascending=False))
+    top3 = list(fam_rank.head(3).index)
+    top_sig = sig.sort_values("signal", ascending=False).head(5)
+
+    # above-random gate from the `custom` report (buckets 175M…1B)
+    mask = pd.read_csv(PLOT_DIR / "acc_vs_flops" / stage / "custom"
+                       / "above_random_mask.csv")
+    buckets = [c for c in ("175M", "350M", "600M", "1B") if c in mask.columns]
+    above_any = (mask[buckets] == 1).any(axis=1)
+    above_1b = (mask["1B"] == 1) if "1B" in mask.columns else above_any
+    n_total, n_above = len(mask), int(above_any.sum())
+
+    highlight = "\n".join([
+        f"- **The benchmarks that separate data mixtures most: "
+        f"`{'`, `'.join(top3)}`** — top-3 families by mixture-Signal "
+        f"((max−min)/mean of per-mix final scores) at {TARGET_SIZE}.",
+        f"- **Mixture-Signal ≠ reliability.** These top-Signal families are exactly "
+        f"the ones the above-random gate **removes** — they sit at chance, so they "
+        f"never enter the SNR analysis. Of **{n_total} benchmarks, {n_above} clear "
+        f"chance at ≥1 size** ({n_total - n_above} are random everywhere) — almost "
+        f"entirely an answer-count effect.",
+    ])
+
+    sig_rows = [[f"`{r.task}`", r.family, r.language, fmt(r.signal, 3)]
+                for r in top_sig.itertuples()]
+    t_signal = md_table(["task", "family", "lang", "Signal"], sig_rows)
+
+    gate_rows = []
+    for n_opt, g in mask.assign(_any=above_any, _1b=above_1b).groupby("n_options"):
+        gate_rows.append([int(n_opt), fmt(1.0 / int(n_opt), 2),
+                          f"{int(g['_any'].sum())} / {len(g)}",
+                          f"{int(g['_1b'].sum())} / {len(g)}"])
+    t_gate = md_table(["options", "chance", "above ≥1 size", "above @1B"], gate_rows)
+
+    results = "\n\n".join([
+        f"Headline numbers from the `{pool}` pool (Signal) and the `custom` "
+        f"above-random report. Regenerate: "
+        f"`python multilingual/run_apertus.py --pool {pool}` and "
+        f"`python multilingual/above_random.py`.",
+        f"**Top benchmarks by mixture-Signal** (full ranking in "
+        f"`pretraining/{pool}/acc_vs_flops_signal.csv`):",
+        t_signal,
+        f"![top-Signal family accuracy vs FLOPs](pretraining/{pool}/per_benchmark/{top3[0]}.png)",
+        f"**Above-random gate** — a benchmark must beat chance (`1/n_options`) by "
+        f"+0.05; `run_apertus_snr_variants.py` NaN-s every random `(benchmark, size)` "
+        f"SNR cell, so the gate propagates to all RQs. Almost entirely an "
+        f"answer-count effect:",
+        t_gate,
+    ])
+
+    readme = PLOT_DIR / "acc_vs_flops" / "README.md"
+    gen = f"run_apertus.py --pool {pool}"
+    replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
+    replace_block(readme, "results", "## Results\n\n" + results, gen)
+    print(f"Wrote auto README blocks → {readme}")
 
 
 def main():

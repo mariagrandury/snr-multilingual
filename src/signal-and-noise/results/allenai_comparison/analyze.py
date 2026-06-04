@@ -37,6 +37,8 @@ from snr.constants import PLOT_DIR
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
+from multilingual.autodoc import (  # noqa: E402
+    ALLENAI_POOL, CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from multilingual.run_apertus_snr_variants import variant_key
 
 ROOT_OUT = PLOT_DIR / "allenai_comparison"
@@ -281,9 +283,125 @@ def _agreement_at_k(top_a: pd.Index, top_b: pd.Index, k: int) -> dict:
     }
 
 
+# --- auto-generated README (RQ3) -------------------------------------------
+# Rewrites the marker-delimited "Highlighted result" / "Results" blocks of
+# results/allenai_comparison/README.md. Fires only for the AllenAI canonical
+# pool — the pure 3-seed pool, the like-for-like cross-corpus comparison
+# (externals shift the shared-task SNR). The canonical-pool invocation runs
+# last in the pipeline, so all four pools' shared_task_agreement.csv exist.
+# RQ / setup / TODO prose lives outside the markers.
+
+_POOL_TIERS = [
+    ("seeds_1904", "1 seed"),
+    ("seeds_28_1797", "2 seeds"),
+    ("seeds_28_1797_1904", "3 seeds"),
+    ("custom_swissai_hf", "+ externals"),
+]
+
+
+def _read_agreement(stage: str, pool: str):
+    p = ROOT_OUT / stage / pool / "shared_task_agreement.csv"
+    return pd.read_csv(p).iloc[0] if p.exists() else None
+
+
+def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
+    rows = {p: _read_agreement(stage, p) for p, _ in _POOL_TIERS}
+    g = rows[ALLENAI_POOL]                       # canonical (pure 3-seed)
+    ext = rows["custom_swissai_hf"]              # gated externals pool
+    pure_r = " → ".join(
+        fmt(rows[p]["pearson_log_snr"], 2)
+        for p in ("seeds_1904", "seeds_28_1797", "seeds_28_1797_1904"))
+
+    highlight = "\n".join([
+        f"- **On the pure 3-seed pool (`{ALLENAI_POOL}`) both SNR values and rank order "
+        f"agree across corpora** — best variant `{g.variant}`, Pearson r of log₁₀(SNR) "
+        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ of the rank order **{fmt(g.spearman_rank)}** "
+        f"over the {int(g.n_shared)} shared English tasks.",
+        f"- **The value correlation rises with seeds** — Pearson r {pure_r} "
+        f"(1 → 2 → 3 seeds): more seeds tighten the cross-corpus SNR fit.",
+        f"- **Dispersion + discrepancy families transfer; relative-spread does not** — "
+        f"the cross-corpus winners are discrepancy/dispersion variants "
+        f"(`{rows['seeds_1904'].variant}`, `{rows['seeds_28_1797'].variant}`, `{g.variant}`), "
+        f"not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).",
+        f"- **Only 7 English tasks overlap, so the *correlation* is the result, not top-K "
+        f"Jaccard** (any K ≥ 7 spans the whole universe → Jaccard ≡ 1.0). On "
+        f"`custom_swissai_hf` the above-random gate shrinks the shared set to "
+        f"n_shared = **{int(ext.n_shared)}**, so use the pure pool for the like-for-like fit.",
+    ])
+
+    rs = []
+    for p, lab in _POOL_TIERS:
+        r = rows[p]
+        if r is None:
+            continue
+        rs.append([f"`{p}` ({lab})", f"`{r.variant}`", fmt(r.pearson_log_snr),
+                   fmt(r.spearman_rank), int(r.n_shared)])
+    t_pools = md_table(
+        ["pool", "best variant", "Pearson r", "Spearman ρ", "n_shared"], rs)
+
+    results = "\n\n".join([
+        f"Cross-corpus agreement by pool (headline = the pure 3-seed pool "
+        f"`{ALLENAI_POOL}`). Regenerate with "
+        f"`python results/allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
+        "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
+        "log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus "
+        "variant. The pure pools share all 7 tasks; `custom_swissai_hf` shares fewer "
+        "after the above-random gate, so it is indicative, not comparable:",
+        t_pools,
+        f"![Apertus vs AllenAI SNR — 3-seed pool, best variant]"
+        f"(pretraining/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",
+        f"![Apertus vs AllenAI SNR across variants]"
+        f"(pretraining/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_grid.png)",
+    ])
+    return highlight, results
+
+
+def generate_readme(stage: str, pool: str) -> None:
+    """Rewrite the auto blocks of results/allenai_comparison/README.md.
+
+    Fires on the LAST pipeline tier (``CANONICAL_POOL``) so every pool's
+    ``shared_task_agreement.csv`` already exists for the by-pool table; the
+    README content still features ``ALLENAI_POOL`` (the pure 3-seed pool) as the
+    like-for-like cross-corpus headline."""
+    if pool != CANONICAL_POOL:
+        return
+    highlight, results = _readme_blocks(stage, pool)
+    readme = ROOT_OUT / "README.md"
+    gen = f"analyze.py --pool {pool}"
+    replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
+    replace_block(readme, "results", "## Results\n\n" + results, gen)
+    print(f"Wrote auto README blocks → {readme}")
+
+
+def generate_slides(stage: str, pool: str) -> None:
+    """Rewrite the RQ2 auto results slide (fires on the last tier; all pools'
+    agreement CSVs then exist)."""
+    if pool != CANONICAL_POOL:
+        return
+    rows = []
+    for p, lab in _POOL_TIERS:
+        r = _read_agreement(stage, p)
+        if r is None:
+            continue
+        rows.append([f"`{p}`", f"`{r.variant}`", fmt(r.pearson_log_snr),
+                     fmt(r.spearman_rank), int(r.n_shared)])
+    slide = (
+        "---\n"
+        "title: RQ2 — Framework Generalization\n"
+        "subtitle: \"Results (auto) — cross-corpus agreement with AllenAI by pool\"\n"
+        "---\n\n"
+        f"{md_table(['pool', 'best variant', 'Pearson r', 'Spearman ρ', 'n_shared'], rows)}\n\n"
+        "Pure pools share all 7 English tasks; `custom_swissai_hf` shares fewer "
+        "after the above-random gate — the pure 3-seed pool is the like-for-like fit.\n\n"
+        "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
+    )
+    replace_block(SLIDES, "rq2-results", slide, "allenai_comparison/analyze.py")
+    print(f"Wrote RQ2 results slide → {SLIDES}")
+
+
 # --- driver ----------------------------------------------------------------
 
-def run(apertus_dir: Path, out_dir: Path) -> None:
+def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     apertus_csv = apertus_dir / "snr_variants_per_task.csv"
     print(f"Apertus pool : {apertus_dir.name}")
@@ -447,6 +565,11 @@ def run(apertus_dir: Path, out_dir: Path) -> None:
     print("\nAgreement table:")
     print(agreement_df.to_string(index=False))
 
+    # Auto-refresh the README "Highlighted result" / "Results" blocks + RQ2
+    # results slide (fires on the last tier — no-op otherwise).
+    generate_readme(stage, pool)
+    generate_slides(stage, pool)
+
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
@@ -459,7 +582,8 @@ def main():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    run(apertus_dir=SNR_DEFINITION_ROOT / stage / args.pool,
+    run(stage=stage, pool=args.pool,
+        apertus_dir=SNR_DEFINITION_ROOT / stage / args.pool,
         out_dir=ROOT_OUT / stage / args.pool)
 
 

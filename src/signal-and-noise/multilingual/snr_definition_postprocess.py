@@ -33,9 +33,11 @@ if str(_SRC) not in sys.path:
 
 from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
 from multilingual.analyze_snr_variants import (  # noqa: E402
-    _per_language_pearson_table, assign_language,
+    _per_language_pearson_table, assign_language, benchmark_family,
     da_ckpt_pairs, da_size_pairs, list_variants,
 )
+from multilingual.autodoc import (  # noqa: E402
+    CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
 
 TARGET_SIZE = load_snr_params()["target_size"]
@@ -338,9 +340,169 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
     plt.close(fig)
 
 
+# --- auto-generated README + slides (RQ1) ----------------------------------
+# These rewrite the marker-delimited "Highlighted result" / "Results" blocks of
+# results/snr_definition/README.md and the RQ1 results slide. They fire only for
+# the canonical pool (so the per-tier pipeline loop writes the docs once, from
+# the comprehensive pool, after the pure-pool CSVs already exist for the
+# statistical-power table). RQ / setup / TODO prose lives outside the markers.
+
+_POOL_TIERS = [
+    ("seeds_1904", "1 seed"),
+    ("seeds_28_1797", "2 seeds"),
+    ("seeds_28_1797_1904", "3 seeds"),
+    ("custom_swissai_hf", "3 seeds + externals"),
+]
+
+
+def _snr_dir(stage: str, pool: str) -> Path:
+    return PLOT_DIR / "snr_definition" / stage / pool
+
+
+def _read_tv(stage: str, pool: str) -> pd.DataFrame | None:
+    p = _snr_dir(stage, pool) / "top_variants_overall.csv"
+    return pd.read_csv(p) if p.exists() else None
+
+
+def _anchor_rank1(stage: str, pool: str) -> pd.DataFrame:
+    """Rank-1 benchmark per language from top_benchmarks_per_language.csv."""
+    df = pd.read_csv(_snr_dir(stage, pool) / "top_benchmarks_per_language.csv")
+    return df[df["rank"] == 1].sort_values("language").reset_index(drop=True)
+
+
+def _holdout_metrics(stage: str) -> dict:
+    hm = pd.read_csv(_snr_dir(stage, "seeds_28_1797__vs__seeds_1904")
+                     / "headline_metrics.csv")
+    return {(r.metric, r.da_kind): float(r.value) for r in hm.itertuples()}
+
+
+def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
+    tv = _read_tv(stage, pool)
+    g = tv.iloc[0]                                   # best by DA-size
+    ckpt_sorted = tv.sort_values("mean_r_da_ckpt", ascending=False)
+    ckpt_leaders = ckpt_sorted.head(3)["variant"].tolist()
+    ckpt_r = ckpt_sorted.iloc[0]["mean_r_da_ckpt"]
+    anchor = _anchor_rank1(stage, pool)
+    fam_counts = anchor["task"].map(benchmark_family).value_counts()
+    fam_name, fam_n = fam_counts.index[0], int(fam_counts.iloc[0])
+    n_langs = anchor["language"].nunique()
+    hm = _holdout_metrics(stage)
+
+    highlight = "\n".join([
+        f"- **Global-best SNR definition (`{pool}`): `{g.variant}`** — mean Pearson r of "
+        f"log₁₀(SNR) vs decision accuracy **{fmt(g.mean_r_da_size)}** (DA-size), "
+        f"**{fmt(g.mean_r_da_ckpt)}** (DA-ckpt), {fmt(g.mean_r_overall)} overall. "
+        f"DA-ckpt is led by the mean-pairwise-distance / relative-spread cluster "
+        f"(`{'`/`'.join(ckpt_leaders)}` ≈ {fmt(ckpt_r)}) — all dispersion-family, so "
+        f"recommend the *family*, not an exact variant.",
+        f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
+        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {TARGET_SIZE}).",
+        f"- **Generalizes across seeds at the family level** — variant-ranking Spearman ρ "
+        f"**{fmt(hm[('spearman_rank_global','size')])}** (DA-size) / "
+        f"**{fmt(hm[('spearman_rank_global','ckpt')])}** (DA-ckpt); the exact per-language "
+        f"argmax does not. **Never `tukey` / `projection`** (r ≤ 0).",
+    ])
+
+    # 1) variant ranking — top 7 + bottom 2
+    vr = []
+    for _, r in tv.head(7).iterrows():
+        vr.append([f"`{r.variant}`", fmt(r.mean_r_da_size), fmt(r.mean_r_da_ckpt),
+                   fmt(r.mean_r_overall)])
+    vr.append(["…", "", "", ""])
+    for _, r in tv.tail(2).iterrows():
+        vr.append([f"`{r.variant}`", fmt(r.mean_r_da_size), fmt(r.mean_r_da_ckpt),
+                   fmt(r.mean_r_overall)])
+    t_variants = md_table(["variant", "DA-size r", "DA-ckpt r", "overall"], vr)
+
+    # 2) statistical power by pool
+    pw = []
+    for p, lab in _POOL_TIERS:
+        tvp = _read_tv(stage, p)
+        if tvp is None:
+            continue
+        bp = tvp.iloc[0]
+        pw.append([f"`{p}` ({lab})", f"`{bp.variant}`", fmt(bp.mean_r_da_size),
+                   fmt(bp.mean_r_da_ckpt)])
+    t_power = md_table(["pool", "best variant (DA-size)", "DA-size r", "DA-ckpt r"], pw)
+
+    # 3) per-language anchor
+    an = [[r.language, f"`{r.task}`", fmt(r.snr), fmt(r.da_ckpt_1B_mean)]
+          for _, r in anchor.iterrows()]
+    t_anchor = md_table(["lang", "top benchmark", "SNR", "DA-ckpt@1B"], an)
+
+    # 4) seed holdout
+    pct = lambda m, k: f"{hm[(m, k)]:.0%}"
+    ho = [
+        ["Spearman ρ on global variant ranking",
+         fmt(hm[("spearman_rank_global", "size")]), fmt(hm[("spearman_rank_global", "ckpt")])],
+        ["Pearson r between splits (all cells)",
+         fmt(hm[("pearson_r_cells", "size")]), fmt(hm[("pearson_r_cells", "ckpt")])],
+        ["Exact-variant agreement (per lang)",
+         pct("exact_variant_agreement", "size"), pct("exact_variant_agreement", "ckpt")],
+        ["Family-level agreement (per lang)",
+         pct("family_agreement", "size"), pct("family_agreement", "ckpt")],
+        ["Retention of train-best r on test",
+         pct("retention", "size"), pct("retention", "ckpt")],
+    ]
+    t_holdout = md_table(["metric", "DA-size", "DA-ckpt"], ho)
+
+    results = "\n\n".join([
+        f"Headline numbers from the `{pool}` pool. Regenerate with "
+        f"`python multilingual/snr_definition_postprocess.py --pool {pool}`.",
+        "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages "
+        "(top of a tight dispersion block; depth metrics collapse):",
+        t_variants,
+        f"![SNR variants ranked by correlation with DA](pretraining/{pool}/top_variants_overall.png)",
+        "**Statistical power by pool** — each pool's best DA-size variant:",
+        t_power,
+        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {TARGET_SIZE} over "
+        "above-random tasks (DA-size is NaN at the 1B target, so DA-ckpt@1B is shown):",
+        t_anchor,
+        f"![Top-5 benchmarks per language by SNR](pretraining/{pool}/top_benchmarks_per_language.png)",
+        "**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`:",
+        t_holdout,
+    ])
+    return highlight, results
+
+
+def generate_readme(stage: str, pool: str) -> None:
+    """Rewrite the auto blocks of results/snr_definition/README.md (canonical
+    pool only)."""
+    if pool != CANONICAL_POOL:
+        return
+    highlight, results = _readme_blocks(stage, pool)
+    readme = PLOT_DIR / "snr_definition" / "README.md"
+    gen = f"snr_definition_postprocess.py --pool {pool}"
+    replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
+    replace_block(readme, "results", "## Results\n\n" + results, gen)
+    print(f"Wrote auto README blocks → {readme}")
+
+
+def generate_slides(stage: str, pool: str) -> None:
+    """Rewrite the RQ1 auto results slide in the deck (canonical pool only)."""
+    if pool != CANONICAL_POOL:
+        return
+    anchor = _anchor_rank1(stage, pool)
+    g_variant = _read_tv(stage, pool).iloc[0]["variant"]
+    rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_1B_mean)]
+            for _, r in anchor.iterrows()]
+    slide = (
+        "---\n"
+        "title: RQ1 — SNR Definition\n"
+        f"subtitle: \"Results (auto) — most reliable benchmark per language "
+        f"(`{g_variant}` @ {TARGET_SIZE})\"\n"
+        "---\n\n"
+        f"{md_table(['lang', 'top benchmark', 'SNR', 'DA-ckpt@1B'], rows)}\n\n"
+        "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
+    )
+    replace_block(SLIDES, "rq1-results", slide,
+                  "snr_definition_postprocess.py")
+    print(f"Wrote RQ1 results slide → {SLIDES}")
+
+
 # --- driver ----------------------------------------------------------------
 
-def main(out_dir: Path):
+def main(stage: str, pool: str, out_dir: Path):
     csv_path = out_dir / "snr_variants_per_task.csv"
     df = pd.read_csv(csv_path, index_col="task")
 
@@ -397,6 +559,11 @@ def main(out_dir: Path):
         top_df, g_best, out_dir / "top_benchmarks_per_language.png")
     print(f"Wrote → {out_dir / 'top_benchmarks_per_language.png'}")
 
+    # Auto-refresh the README "Highlighted result" / "Results" blocks and the
+    # RQ1 results slide (canonical pool only — no-op otherwise).
+    generate_readme(stage, pool)
+    generate_slides(stage, pool)
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
@@ -409,4 +576,5 @@ if __name__ == "__main__":
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)
+    main(stage=stage, pool=args.pool,
+         out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)

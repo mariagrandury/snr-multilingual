@@ -38,6 +38,8 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from multilingual.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
+from multilingual.autodoc import (  # noqa: E402
+    CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -401,7 +403,105 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
-def main(snr_dir: Path, out_dir: Path) -> None:
+# --- auto-generated README block (canonical pool only) ----------------------
+# Rewrites the marker-delimited "Highlighted result" / "Results" blocks of
+# results/benchmark_creation/README.md. RQ / setup / TODO prose lives outside
+# the markers and is never touched.
+
+def generate_readme(stage: str, pool: str) -> None:
+    """Rewrite the auto blocks of results/benchmark_creation/README.md
+    (canonical pool only)."""
+    if pool != CANONICAL_POOL:
+        return
+    out_dir = HERE / stage / pool
+    per_family = pd.read_csv(out_dir / "per_family_snr.csv").sort_values(
+        "snr_median", ascending=False)
+    gs = pd.read_csv(out_dir / "group_stats.csv").set_index("view")
+    n_families = len(per_family)
+
+    def hp(view: str) -> tuple[str, str]:
+        row = gs.loc[view]
+        return fmt(row["H"]), fmt(row["p"])
+
+    nopt_H, nopt_p = hp("family/n_options")
+    fmt_H, fmt_p = hp("family/format")
+    cur_H, cur_p = hp("family/curation")
+
+    highlight = "\n".join([
+        "- **The answer-count penalty lives in the above-random gate, upstream "
+        "of SNR.** Every at-chance 4-option *translated knowledge* MCQA "
+        "(`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is "
+        f"computed, leaving **{n_families} families** that clear the gate — most "
+        "of them 2-option.",
+        "- **Among survivors, no single design feature is individually "
+        f"significant.** Family-level Kruskal–Wallis on option count is "
+        f"**H = {nopt_H}, p = {nopt_p}** and on task format **H = {fmt_H}, "
+        f"p = {fmt_p}** — too little variation left (mostly 2-option) to resolve "
+        "them.",
+        f"- **Curation method explains nothing** — family-level Kruskal–Wallis "
+        f"on curation is **H = {cur_H}, p = {cur_p}**. Once the gate fixes the "
+        "answer space, how a benchmark was built does not predict its "
+        "reliability.",
+    ])
+
+    rank_rows = [
+        [f"`{r.family}`", fmt(r.snr_median), int(r.n_tasks), r.format,
+         int(r.n_options)]
+        for _, r in per_family.iterrows()
+    ]
+    t_rank = md_table(["family", "median SNR", "n", "format", "n_opts"],
+                      rank_rows)
+
+    fam_views = [
+        ("n_options", "family/n_options"),
+        ("format", "family/format"),
+        ("data source", "family/source"),
+        ("curation method", "family/curation"),
+        ("reading passage", "family/passage"),
+    ]
+    sig_rows = [[axis, *hp(view)] for axis, view in fam_views]
+    t_sig = md_table(["axis", "H", "p"], sig_rows)
+
+    results = "\n\n".join([
+        f"Headline numbers from the `{pool}` pool. Regenerate with "
+        f"`python results/benchmark_creation/analyze.py --pool {pool}`.",
+        "**Per-family SNR ranking** — median `snr_mpd_1B` over each family's "
+        "per-language tasks, above-random survivors only:",
+        t_rank,
+        f"![Per-family SNR ranking](pretraining/{pool}/snr_per_family_ranked.png)",
+        "**Significance of each design axis** — family-level Kruskal–Wallis "
+        "over the survivors (high-option families already removed by the gate):",
+        t_sig,
+    ])
+
+    readme = HERE / "README.md"
+    gen = f"analyze.py --pool {pool}"
+    replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
+    replace_block(readme, "results", "## Results\n\n" + results, gen)
+    print(f"Wrote auto README blocks → {readme}")
+
+
+def generate_slides(stage: str, pool: str) -> None:
+    """Rewrite the RQ4 auto results slide (canonical pool only)."""
+    if pool != CANONICAL_POOL:
+        return
+    per_family = pd.read_csv(HERE / stage / pool / "per_family_snr.csv").sort_values(
+        "snr_median", ascending=False)
+    rows = [[f"`{r.family}`", fmt(r.snr_median), int(r.n_options), r.format]
+            for _, r in per_family.iterrows()]
+    slide = (
+        "---\n"
+        "title: RQ4 — Benchmark Creation\n"
+        "subtitle: \"Results (auto) — per-family SNR, above-random survivors\"\n"
+        "---\n\n"
+        f"{md_table(['family', 'median SNR', 'n_opts', 'format'], rows)}\n\n"
+        "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
+    )
+    replace_block(SLIDES, "rq4-results", slide, "benchmark_creation/analyze.py")
+    print(f"Wrote RQ4 results slide → {SLIDES}")
+
+
+def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:
     snr_csv = snr_dir / "snr_variants_per_task.csv"
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"SNR pool : {snr_dir.name}")
@@ -545,6 +645,11 @@ def main(snr_dir: Path, out_dir: Path) -> None:
     with pd.option_context("display.max_colwidth", 36, "display.width", 160):
         print(per_family[cols].to_string(index=False))
 
+    # Auto-refresh the README "Highlighted result" / "Results" blocks
+    # (canonical pool only — no-op otherwise).
+    generate_readme(stage, pool)
+    generate_slides(stage, pool)
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
@@ -558,4 +663,4 @@ if __name__ == "__main__":
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
     main(snr_dir=SNR_DEFINITION_ROOT / stage / args.pool,
-         out_dir=HERE / stage / args.pool)
+         out_dir=HERE / stage / args.pool, stage=stage, pool=args.pool)

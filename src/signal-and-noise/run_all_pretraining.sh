@@ -26,6 +26,11 @@ done
 echo "############################## SEED-SPLIT HOLDOUT ##############################"
 run $PY multilingual/compare_seed_splits.py --train-pool seeds_28_1797 --test-pool seeds_1904
 
+# The snr_definition README's seed-generalization table reads the holdout above,
+# which runs after the tier loop — refresh the canonical RQ1 docs now that it
+# exists (idempotent; rewrites only the auto:* blocks).
+run $PY multilingual/snr_definition_postprocess.py --pool custom_swissai_hf
+
 echo "############################## RQ4 smooth_subtasks ##############################"
 run $PY multilingual/smooth_subtasks.py --pool seeds_28_1797_1904
 run $PY multilingual/smooth_subtasks.py --pool custom_swissai_hf
@@ -33,7 +38,10 @@ run $PY multilingual/smooth_subtasks.py --pool custom_swissai_hf
 echo "############################## RQ4 per-sample (local reuse) ##############################"
 run $PY multilingual/analyze_per_sample_d.py
 
-echo "############################## acc-vs-flops (top-N) ##############################"
+echo "############################## above-random gate + acc-vs-flops (top-N) #############"
+# above_random writes the custom / custom_swiss_hf gate reports that
+# run_apertus's README generator reads — run it first.
+run $PY multilingual/above_random.py
 run $PY multilingual/run_apertus.py --pool seeds_28_1797_1904
 run $PY multilingual/run_apertus.py --pool custom_swissai_hf
 

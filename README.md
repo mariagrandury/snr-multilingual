@@ -23,7 +23,7 @@ through the full SNR / decision-accuracy stack.
 2. **Use `multiblimp_<lang>` as the per-language reliability anchor**,
    with `xwinograd` / `xcopa` recurring. Under the chosen definition
    (`dist_std` @ 1B) `multiblimp` is the highest-SNR above-random
-   benchmark in **7 of 11 languages**, with checkpoint-DA ≈ 0.85 — it
+   benchmark in **6 of 11 languages**, with checkpoint-DA ≈ 0.85 — it
    ranks model variants the way a larger-model evaluation would.
 
 **The framework generalizes at the global-ranking level.** Spearman rank

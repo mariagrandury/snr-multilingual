@@ -51,6 +51,8 @@ if str(_REPO) not in sys.path:
 from multilingual.analyze_snr_variants import (
     _BENCHMARK_FAMILY_OVERRIDES, _LANG_MAP, assign_language, benchmark_family,
 )
+from multilingual.autodoc import (
+    CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR
 from snr.download.apertus import (
     load_a06_eval_results, load_apertus_eval_results,
@@ -557,6 +559,94 @@ def build_summary(out_dir: Path) -> Path:
     return csv_path
 
 
+### Auto-generated README blocks (canonical pool only) ###
+
+
+def _short_case(case: str) -> str:
+    """Strip the ``caseN_`` prefix from a summary ``case`` label."""
+    return case.split("_", 1)[1] if "_" in case else case
+
+
+def generate_readme(stage: str, pool: str) -> None:
+    """Rewrite the auto blocks of results/smooth_subtasks/README.md (canonical
+    pool only), reading that pool's summary.csv."""
+    if pool != CANONICAL_POOL:
+        return
+    out_dir = OUT_ROOT / stage / pool
+    summary = pd.read_csv(out_dir / "summary.csv")
+    top = summary.head(3)
+
+    bullets = []
+    for _, r in top.iterrows():
+        bullets.append(
+            f"- **`{r.task}` {r['size']} ({_short_case(r.case)})** — a subset beats "
+            f"the full set: SNR **{fmt(r.full_set_snr)} → {fmt(r.best_snr)}** "
+            f"(**+{fmt(r.snr_gain)}**) with `{r.best_subset_short}`."
+        )
+    bullets.append(
+        "- **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject "
+        "subset matches or beats the full ~48-subject set across sizes "
+        "(`medical_genetics`, `human_aging`, `international_law`, world-history recur)."
+    )
+    bullets.append(
+        "- **Per-item (per-sample) ranking is mostly noise / overfits across scale** "
+        "— per-sample subsets give even larger gains but their best picks barely "
+        "overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer "
+        "subtask-level selection."
+    )
+    highlight = "## Highlighted result\n\n" + "\n".join(bullets)
+
+    rows = []
+    for _, r in summary.head(12).iterrows():
+        subset = "`" + r.best_subset_short.replace("|", "` \\| `") + "`"
+        rows.append([
+            _short_case(r.case), f"`{r.task}`", r["size"],
+            f"{fmt(r.full_set_snr)} → {fmt(r.best_snr)}",
+            f"+{fmt(r.snr_gain)}", subset,
+        ])
+    table = md_table(
+        ["case", "task", "size", "full → best SNR", "+gain", "best subset"], rows)
+
+    images = []
+    for img in ("global_mmlu_full_subjects.png",):
+        if (out_dir / img).exists():
+            images.append(f"![]({stage}/{pool}/{img})")
+
+    results = "\n\n".join([
+        f"## Results\n\nHeadline numbers from the `{pool}` pool. Regenerate with "
+        f"`python multilingual/smooth_subtasks.py --pool {pool}`.",
+        "**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:",
+        table,
+        *images,
+    ])
+
+    readme = OUT_ROOT / "README.md"
+    gen = f"smooth_subtasks.py --pool {pool}"
+    replace_block(readme, "highlight", highlight, gen)
+    replace_block(readme, "results", results, gen)
+    print(f"Wrote auto README blocks → {readme}")
+
+
+def generate_slides(stage: str, pool: str) -> None:
+    """Rewrite the RQ3 auto results slide (canonical pool only)."""
+    if pool != CANONICAL_POOL:
+        return
+    summary = pd.read_csv(OUT_ROOT / stage / pool / "summary.csv")
+    rows = [[_short_case(r.case), f"`{r.task}`", r["size"],
+             f"{fmt(r.full_set_snr)} → {fmt(r.best_snr)}", f"+{fmt(r.snr_gain)}"]
+            for _, r in summary.head(8).iterrows()]
+    slide = (
+        "---\n"
+        "title: RQ3 — Subsampling\n"
+        "subtitle: \"Results (auto) — top subset gains (SNR: full → best subset)\"\n"
+        "---\n\n"
+        f"{md_table(['case', 'task', 'size', 'full → best SNR', '+gain'], rows)}\n\n"
+        "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
+    )
+    replace_block(SLIDES, "rq3-results", slide, "smooth_subtasks.py")
+    print(f"Wrote RQ3 results slide → {SLIDES}")
+
+
 def build_pool(pool: str) -> pd.DataFrame:
     """SNR signal-pool dataframe for the named pool: Apertus rows matching
     the pool's `members` (resolved via configs/models.json), plus every
@@ -581,7 +671,7 @@ def build_pool(pool: str) -> pd.DataFrame:
     return _with_bucket(pd.concat(frames, ignore_index=True))
 
 
-def main(pool: str, out_dir: Path):
+def main(stage: str, pool: str, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pool_models = set(expand_pool(pool))
@@ -610,6 +700,11 @@ def main(pool: str, out_dir: Path):
     print("\n=== Summary: snr_gain ranking across cases ===")
     build_summary(out_dir)
 
+    # Auto-refresh the README "Highlighted result" / "Results" blocks
+    # (canonical pool only — no-op otherwise).
+    generate_readme(stage, pool)
+    generate_slides(stage, pool)
+
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
@@ -621,5 +716,5 @@ if __name__ == "__main__":
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(pool=args.pool,
+    main(stage=stage, pool=args.pool,
          out_dir=PLOT_DIR / "smooth_subtasks" / stage / args.pool)
