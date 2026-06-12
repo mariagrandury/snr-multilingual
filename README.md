@@ -68,7 +68,7 @@ SNR there is misleading. `mgsm_direct` is currently broken in the
 parquet (NaN scores).
 
 The full per-language tables and seed-split summaries live in
-[`src/signal-and-noise/results/`](src/signal-and-noise/results/) — one
+[`src/signal-and-noise/analysis/`](src/signal-and-noise/analysis/) — one
 subdir per research question.
 
 ## The pipeline in three sections
@@ -107,10 +107,10 @@ results-first; the per-pool subdirs hold the CSVs and PNGs.
 
 | Report | Question |
 |---|---|
-| [`results/snr_definition/`](src/signal-and-noise/results/snr_definition/) | Which SNR variant best correlates with decision accuracy across languages? Does the choice generalize across seeds? |
-| [`results/benchmark_creation/`](src/signal-and-noise/results/benchmark_creation/) | What benchmark design features (curation, format, option count, item length) predict SNR? |
-| [`results/allenai_comparison/`](src/signal-and-noise/results/allenai_comparison/) | Do our SNR rankings agree with AllenAI DataDecide on shared English tasks? |
-| [`results/smooth_subtasks/`](src/signal-and-noise/results/smooth_subtasks/) | Per benchmark, can a language or MMLU-subject subset elevate SNR and DA? |
+| [`analysis/rq02_snr_definition/`](src/signal-and-noise/analysis/rq02_snr_definition/) | Which SNR variant best correlates with decision accuracy across languages? Does the choice generalize across seeds? |
+| [`analysis/rq05_benchmark_creation/`](src/signal-and-noise/analysis/rq05_benchmark_creation/) | What benchmark design features (curation, format, option count, item length) predict SNR? |
+| [`analysis/rq03_allenai_comparison/`](src/signal-and-noise/analysis/rq03_allenai_comparison/) | Do our SNR rankings agree with AllenAI DataDecide on shared English tasks? |
+| [`analysis/rq04_smooth_subtasks/`](src/signal-and-noise/analysis/rq04_smooth_subtasks/) | Per benchmark, can a language or MMLU-subject subset elevate SNR and DA? |
 
 Each analysis is partitioned by Apertus seed pool: **`seeds_1904`**
 (single-seed test), **`seeds_28_1797`** (held-out train), and

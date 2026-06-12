@@ -26,7 +26,7 @@ either per-checkpoint or per-size? Two flavors:
 
 ## Existing code (REUSE)
 
-- [multilingual/smooth_subtasks.py](../../multilingual/smooth_subtasks.py)
+- [analysis/rq04_smooth_subtasks/smooth_subtasks.py](../../analysis/rq04_smooth_subtasks/smooth_subtasks.py)
   — three cases:
   - **Case 1**: per-benchmark family, subtask = language. CSV →
     `per_benchmark.csv`; plots → `per_benchmark_plots/`.
@@ -36,7 +36,7 @@ either per-checkpoint or per-size? Two flavors:
   - **Case 3**: `global_mmlu_full_<lang>`, subtask = subject (per
     language). CSV → `global_mmlu_full_per_language.csv`; plots →
     `global_mmlu_full_per_language_plots/`.
-- [multilingual/smooth_subtasks_per_sample.py](../../multilingual/smooth_subtasks_per_sample.py)
+- [analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py](../../analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py)
   — Option D from `PROPOSALS.md`: variance prefilter + per-sample SNR
   ranking. **Cluster-only** — needs `samples_*.jsonl`.
 
@@ -51,7 +51,7 @@ so it gives the per-language aggregates only.
 ### Step 1 — run Cases 1–3 fresh
 
 ```bash
-python multilingual/smooth_subtasks.py
+python analysis/rq04_smooth_subtasks/smooth_subtasks.py
 ```
 
 Should regenerate `per_benchmark.csv`, `per_benchmark_plots/`,
@@ -85,7 +85,7 @@ README will headline.
 If the cluster eval_logs tree is *not* mounted (it isn't, locally),
 add a paragraph to the README that:
 - Documents the method (cite
-  `multilingual/smooth_subtasks_per_sample.py`).
+  `analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py`).
 - States it requires `eval_logs/.../samples_*.jsonl` — produce a
   one-line example command.
 - Notes that the prior cluster run's outputs are committed under
@@ -93,14 +93,14 @@ add a paragraph to the README that:
 
 If a cluster path *is* available, run:
 ```bash
-python multilingual/smooth_subtasks_per_sample.py
+python analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py
 ```
 and embed `per_sample/summary_all.csv` as a top-snr-gain table in the
 README (sorted descending by `snr_gain`).
 
 ### Step 5 — README
 
-Write `results/smooth_subtasks/README.md`:
+Write `analysis/rq04_smooth_subtasks/README.md`:
 
 - **Research questions** — verbatim.
 - **Setup** — describe the SNR primitive (per-mix last-5-ckpt arrays;

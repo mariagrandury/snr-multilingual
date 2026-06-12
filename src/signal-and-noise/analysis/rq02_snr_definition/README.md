@@ -30,7 +30,7 @@ discrepancy / robust / depth); the headline numbers reflect the comprehensive
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool custom_swissai_hf) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python multilingual/snr_definition_postprocess.py --pool custom_swissai_hf`.
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool custom_swissai_hf`.
 
 **Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages (top of a tight dispersion block; depth metrics collapse):
 

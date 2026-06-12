@@ -23,14 +23,14 @@ import sys
 from pathlib import Path
 
 # Make `snr` and `analysis` importable when this file is run directly.
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 # Shared loader (cluster + local). configs lives at
 # <repo>/src/evals/scripts/utils/configs.py — repo root is 3 parents above
-# this file (multilingual/run_apertus.py → signal-and-noise → src → repo).
-_SRC = Path(__file__).resolve().parents[2]
+# this file (analysis/rq00_acc_vs_flops/run_apertus.py → signal-and-noise → src → repo).
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
@@ -50,20 +50,21 @@ import pandas as pd  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
-from multilingual.analyze_snr_variants import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _ENGLISH_ONLY_TASKS, assign_language, benchmark_family,
 )
-from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
-from multilingual.autodoc import (  # noqa: E402
+from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate  # noqa: E402
+from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
+from analysis.paths import ACC_VS_FLOPS
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results,
     load_apertus_eval_results,
     load_distillation_eval_results,
     load_reference_hf_eval_results,
 )
-from analysis.plotting.datadecide import plot_task_curves  # noqa: E402
+from allenai_analysis.plotting.datadecide import plot_task_curves  # noqa: E402
 
 # SNR analysis params — single source of truth in configs/models.json.
 _SNR = load_snr_params()
@@ -73,7 +74,7 @@ PLOTTED_MIXES = _SNR["plotted_mixes"]
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
 
 COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c"]
-OUT_ROOT = PLOT_DIR / "acc_vs_flops"
+OUT_ROOT = ACC_VS_FLOPS
 
 # Only render curve grids for the top-N benchmark families by Signal (relative
 # dispersion of final scores across mixtures at the target size — the project's
@@ -301,7 +302,7 @@ def generate_readme(pool: str, out_dir: Path) -> None:
     top_sig = sig.sort_values("signal", ascending=False).head(5)
 
     # above-random gate from the `custom` report (buckets 175M…1B)
-    mask = pd.read_csv(PLOT_DIR / "acc_vs_flops" / stage / "custom"
+    mask = pd.read_csv(ACC_VS_FLOPS / stage / "custom"
                        / "above_random_mask.csv")
     buckets = [c for c in ("175M", "350M", "600M", "1B") if c in mask.columns]
     above_any = (mask[buckets] == 1).any(axis=1)
@@ -333,8 +334,8 @@ def generate_readme(pool: str, out_dir: Path) -> None:
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool (Signal) and the `custom` "
         f"above-random report. Regenerate: "
-        f"`python multilingual/run_apertus.py --pool {pool}` and "
-        f"`python multilingual/above_random.py`.",
+        f"`python analysis/rq00_acc_vs_flops/run_apertus.py --pool {pool}` and "
+        f"`python analysis/rq00_acc_vs_flops/above_random.py`.",
         f"**Top benchmarks by mixture-Signal** (full ranking in "
         f"`pretraining/{pool}/acc_vs_flops_signal.csv`):",
         t_signal,
@@ -346,7 +347,7 @@ def generate_readme(pool: str, out_dir: Path) -> None:
         t_gate,
     ])
 
-    readme = PLOT_DIR / "acc_vs_flops" / "README.md"
+    readme = ACC_VS_FLOPS / "README.md"
     gen = f"run_apertus.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
     replace_block(readme, "results", "## Results\n\n" + results, gen)
@@ -376,7 +377,7 @@ def main():
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
     run(pool=args.pool,
-        out_dir=PLOT_DIR / "acc_vs_flops" / stage / (args.out_subdir or args.pool),
+        out_dir=ACC_VS_FLOPS / stage / (args.out_subdir or args.pool),
         seed=args.seed)
 
 

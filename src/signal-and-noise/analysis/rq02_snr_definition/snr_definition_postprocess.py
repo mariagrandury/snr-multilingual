@@ -23,22 +23,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
-from multilingual.analyze_snr_variants import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, assign_language, benchmark_family,
     da_ckpt_pairs, da_size_pairs, list_variants,
 )
-from multilingual.autodoc import (  # noqa: E402
+from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
+from analysis.paths import SNR_DEFINITION
 
 TARGET_SIZE = load_snr_params()["target_size"]
 TOP_K = 5
@@ -356,7 +357,7 @@ _POOL_TIERS = [
 
 
 def _snr_dir(stage: str, pool: str) -> Path:
-    return PLOT_DIR / "snr_definition" / stage / pool
+    return SNR_DEFINITION / stage / pool
 
 
 def _read_tv(stage: str, pool: str) -> pd.DataFrame | None:
@@ -448,7 +449,7 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
 
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool. Regenerate with "
-        f"`python multilingual/snr_definition_postprocess.py --pool {pool}`.",
+        f"`python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool {pool}`.",
         "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages "
         "(top of a tight dispersion block; depth metrics collapse):",
         t_variants,
@@ -471,7 +472,7 @@ def generate_readme(stage: str, pool: str) -> None:
     if pool != CANONICAL_POOL:
         return
     highlight, results = _readme_blocks(stage, pool)
-    readme = PLOT_DIR / "snr_definition" / "README.md"
+    readme = SNR_DEFINITION / "README.md"
     gen = f"snr_definition_postprocess.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + highlight, gen)
     replace_block(readme, "results", "## Results\n\n" + results, gen)
@@ -577,4 +578,4 @@ if __name__ == "__main__":
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
     main(stage=stage, pool=args.pool,
-         out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)
+         out_dir=SNR_DEFINITION / stage / args.pool)

@@ -37,13 +37,14 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from multilingual.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
-from multilingual.autodoc import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
+from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
-from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
+from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate  # noqa: E402
+from analysis.paths import SNR_DEFINITION  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-SNR_DEFINITION_ROOT = ROOT / "results" / "snr_definition"
+SNR_DEFINITION_ROOT = SNR_DEFINITION
 SNR_COL = "snr_mpd_1B"
 
 # --- Categorical labels for grouping -----------------------------------------
@@ -405,11 +406,11 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
 
 # --- auto-generated README block (canonical pool only) ----------------------
 # Rewrites the marker-delimited "Highlighted result" / "Results" blocks of
-# results/benchmark_creation/README.md. RQ / setup / TODO prose lives outside
+# analysis/rq05_benchmark_creation/README.md. RQ / setup / TODO prose lives outside
 # the markers and is never touched.
 
 def generate_readme(stage: str, pool: str) -> None:
-    """Rewrite the auto blocks of results/benchmark_creation/README.md
+    """Rewrite the auto blocks of analysis/rq05_benchmark_creation/README.md
     (canonical pool only)."""
     if pool != CANONICAL_POOL:
         return
@@ -464,7 +465,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool. Regenerate with "
-        f"`python results/benchmark_creation/analyze.py --pool {pool}`.",
+        f"`python analysis/rq05_benchmark_creation/analyze.py --pool {pool}`.",
         "**Per-family SNR ranking** — median `snr_mpd_1B` over each family's "
         "per-language tasks, above-random survivors only:",
         t_rank,
@@ -656,7 +657,7 @@ if __name__ == "__main__":
     p.add_argument("--pool", required=True,
                    help="Pool name from configs/models.json. Reads "
                         "results/snr_definition/<pool>/snr_variants_per_task.csv, "
-                        "writes results/benchmark_creation/<pool>/.")
+                        "writes analysis/rq05_benchmark_creation/<pool>/.")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "

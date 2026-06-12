@@ -2,7 +2,7 @@
 
 Inputs (must already exist):
   results/snr_definition/snr_variants_per_task.csv
-  results/allenai_comparison/allenai_snr_variants_per_task.csv
+  analysis/rq03_allenai_comparison/allenai_snr_variants_per_task.csv
 
 Outputs (all in this directory):
   task_overlap.csv
@@ -34,15 +34,16 @@ import pandas as pd
 from scipy.stats import pearsonr, spearmanr
 
 from snr.constants import PLOT_DIR
+from analysis.paths import ALLENAI_COMPARISON, SNR_DEFINITION
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from multilingual.autodoc import (  # noqa: E402
+from analysis.autodoc import (  # noqa: E402
     ALLENAI_POOL, CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
-from multilingual.run_apertus_snr_variants import variant_key
+from analysis.rq02_snr_definition.run_apertus_snr_variants import variant_key
 
-ROOT_OUT = PLOT_DIR / "allenai_comparison"
-SNR_DEFINITION_ROOT = PLOT_DIR / "snr_definition"
+ROOT_OUT = ALLENAI_COMPARISON
+SNR_DEFINITION_ROOT = SNR_DEFINITION
 ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 
 APERTUS_SIZE = "1B"   # largest size in Apertus
@@ -285,7 +286,7 @@ def _agreement_at_k(top_a: pd.Index, top_b: pd.Index, k: int) -> dict:
 
 # --- auto-generated README (RQ3) -------------------------------------------
 # Rewrites the marker-delimited "Highlighted result" / "Results" blocks of
-# results/allenai_comparison/README.md. Fires only for the AllenAI canonical
+# analysis/rq03_allenai_comparison/README.md. Fires only for the AllenAI canonical
 # pool — the pure 3-seed pool, the like-for-like cross-corpus comparison
 # (externals shift the shared-task SNR). The canonical-pool invocation runs
 # last in the pipeline, so all four pools' shared_task_agreement.csv exist.
@@ -342,7 +343,7 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     results = "\n\n".join([
         f"Cross-corpus agreement by pool (headline = the pure 3-seed pool "
         f"`{ALLENAI_POOL}`). Regenerate with "
-        f"`python results/allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
+        f"`python analysis/rq03_allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
         "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
         "log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus "
         "variant. The pure pools share all 7 tasks; `custom_swissai_hf` shares fewer "
@@ -357,7 +358,7 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
 
 
 def generate_readme(stage: str, pool: str) -> None:
-    """Rewrite the auto blocks of results/allenai_comparison/README.md.
+    """Rewrite the auto blocks of analysis/rq03_allenai_comparison/README.md.
 
     Fires on the LAST pipeline tier (``CANONICAL_POOL``) so every pool's
     ``shared_task_agreement.csv`` already exists for the by-pool table; the
@@ -576,7 +577,7 @@ def main():
     p.add_argument("--pool", required=True,
                    help="Apertus pool name (from configs/models.json). "
                         "Reads results/snr_definition/<pool>/, writes "
-                        "results/allenai_comparison/<pool>/.")
+                        "analysis/rq03_allenai_comparison/<pool>/.")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "

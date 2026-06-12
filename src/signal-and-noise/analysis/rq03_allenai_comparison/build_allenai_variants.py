@@ -1,6 +1,6 @@
 """Recompute the 22 SNR variants on the AllenAI DataDecide / OLMo `core` split.
 
-This is the AllenAI counterpart of `multilingual/run_apertus_snr_variants.py`.
+This is the AllenAI counterpart of `analysis/rq02_snr_definition/run_apertus_snr_variants.py`.
 We reuse all of that script's primitives — `per_mix_inputs`,
 `variant_signal_noise_snr`, `variant_key`, `compute_size_decision_accuracy`,
 the `AGGREGATION_FUNCTIONS` list — and only swap the DataFrame source.
@@ -27,6 +27,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from snr.constants import PLOT_DIR
+from analysis.paths import ALLENAI_COMPARISON
 from snr.download.hf import pull_predictions_from_hf
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
@@ -35,7 +36,7 @@ from snr.snr_variants import AGGREGATION_FUNCTIONS
 # it generalised the signal pool to "any unique model at this size";
 # AllenAI's per-(mix, seed) DataDecide runs are uniquely identified by
 # their `model` column, so the same per-model grouping applies.
-from multilingual.run_apertus_snr_variants import (
+from analysis.rq02_snr_definition.run_apertus_snr_variants import (
     _safe,
     compute_size_decision_accuracy,
     per_model_inputs,
@@ -46,7 +47,7 @@ from multilingual.run_apertus_snr_variants import (
 SMALL_SIZES = ["150M", "300M", "750M"]
 TARGET_SIZE = "1B"
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
-OUT_DIR = PLOT_DIR / "allenai_comparison"
+OUT_DIR = ALLENAI_COMPARISON
 OUT_CSV = OUT_DIR / "allenai_snr_variants_per_task.csv"
 
 

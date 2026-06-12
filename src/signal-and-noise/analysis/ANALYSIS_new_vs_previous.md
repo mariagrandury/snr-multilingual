@@ -1,17 +1,17 @@
 # Pretraining SNR analysis — new results vs previous
 
 Comparison of the extended pipeline against the previous committed results
-(git HEAD, `results/snr_definition/seeds_*`). Supersedes the earlier draft at
+(git HEAD, `analysis/rq02_snr_definition/seeds_*`). Supersedes the earlier draft at
 `results/pretraining/ANALYSIS_new_vs_previous.md`.
 
 ## Output layout (new)
 
 `results/<analysis>/<stage>/<pool>/`, e.g.
-`results/snr_definition/pretraining/custom_swissai_hf/`,
-`results/acc_vs_flops/pretraining/seeds_28_1797_1904/`,
-`results/benchmark_creation/pretraining/<pool>/`,
-`results/allenai_comparison/pretraining/<pool>/`,
-`results/smooth_subtasks/pretraining/<pool>/`.
+`analysis/rq02_snr_definition/pretraining/custom_swissai_hf/`,
+`analysis/rq00_acc_vs_flops/pretraining/seeds_28_1797_1904/`,
+`analysis/rq05_benchmark_creation/pretraining/<pool>/`,
+`analysis/rq03_allenai_comparison/pretraining/<pool>/`,
+`analysis/rq04_smooth_subtasks/pretraining/<pool>/`.
 
 **Model-set tiers** (pools): pure custom `seeds_1904` (1 seed), `seeds_28_1797`
 (2 seeds), `seeds_28_1797_1904` (3 seeds), and `custom_swissai_hf` (3 seeds +
@@ -90,7 +90,7 @@ the more portable axis.
 
 `smooth_subtasks` reran for `seeds_28_1797_1904` and `custom_swissai_hf` over
 the bucketed pool; per-benchmark and global-MMLU subject-subset CSVs refreshed
-under `results/smooth_subtasks/pretraining/<pool>/`. Per-item (Option-D)
+under `analysis/rq04_smooth_subtasks/pretraining/<pool>/`. Per-item (Option-D)
 analysis reran on the committed intermediates (320 cells / 80 benchmarks);
 per-sample raw logs remain cluster-only.
 

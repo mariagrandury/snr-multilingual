@@ -37,7 +37,7 @@ from snr.constants import PLOT_DIR
 from snr.snr_variants import AGGREGATION_FUNCTIONS
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from multilingual.run_apertus_snr_variants import variant_key
+from analysis.rq02_snr_definition.run_apertus_snr_variants import variant_key
 
 ROOT_OUT = PLOT_DIR / "allenai_comparison"
 SNR_DEFINITION_ROOT = PLOT_DIR / "snr_definition"

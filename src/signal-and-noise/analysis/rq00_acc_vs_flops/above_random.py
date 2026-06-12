@@ -28,8 +28,8 @@ per-family answer-option counts (`N_OPTIONS` below, `random_baseline =
 1 / n_options`); it never reads any RQ output, so every RQ depends on this
 gate and not the reverse.
 
-    python multilingual/above_random.py            # writes both reports
-    python multilingual/above_random.py --only custom_swiss_hf
+    python analysis/rq00_acc_vs_flops/above_random.py            # writes both reports
+    python analysis/rq00_acc_vs_flops/above_random.py --only custom_swiss_hf
 """
 
 from __future__ import annotations
@@ -38,10 +38,10 @@ import argparse
 import sys
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
@@ -49,10 +49,11 @@ import pandas as pd  # noqa: E402
 
 from evals.scripts.utils.configs import (  # noqa: E402
     bucket_order, load_pools, load_snr_params, size_bucket)
-from multilingual.analyze_snr_variants import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     assign_language, benchmark_family)
-from multilingual.run_apertus import _is_parent_task  # noqa: E402
+from analysis.rq00_acc_vs_flops.run_apertus import _is_parent_task  # noqa: E402
 from snr.constants import PLOT_DIR  # noqa: E402
+from analysis.paths import ACC_VS_FLOPS
 
 # A benchmark must beat chance by more than this to count as "above random".
 MARGIN = 0.05
@@ -122,7 +123,7 @@ def scores_and_mask(df: pd.DataFrame, margin: float = MARGIN, sizes: list[str] =
 def load_mask(pool: str) -> pd.DataFrame | None:
     """Read the committed mask (task × bucket, Int64 0/1), or None if absent."""
     stage = load_pools()[pool].get("stage", "pretraining")
-    path = PLOT_DIR / "acc_vs_flops" / stage / pool / "above_random_mask.csv"
+    path = ACC_VS_FLOPS / stage / pool / "above_random_mask.csv"
     if not path.exists():
         return None
     m = pd.read_csv(path, index_col="task")
@@ -141,14 +142,14 @@ def run(label: str, pool: str) -> None:
     # (custom_swissai_hf) and is custom-only otherwise (seeds_28_1797_1904).
     # Lazy import: run_apertus_snr_variants imports SIZES/scores_and_mask from
     # here, so a module-top import would be circular.
-    from multilingual.run_apertus_snr_variants import build_snr_pool
+    from analysis.rq02_snr_definition.run_apertus_snr_variants import build_snr_pool
 
     df = build_snr_pool(pool)
     buckets = [b for b in bucket_order() if b in set(df["size"].map(size_bucket).dropna())]
     scores, mask, meta = scores_and_mask(df, sizes=buckets)
 
     stage = load_pools()[pool].get("stage", "pretraining")
-    out_dir = PLOT_DIR / "acc_vs_flops" / stage / label
+    out_dir = ACC_VS_FLOPS / stage / label
     out_dir.mkdir(parents=True, exist_ok=True)
     scores_out, mask_out = meta.join(scores), meta.join(mask)
     scores_out.index.name = mask_out.index.name = "task"
@@ -194,7 +195,7 @@ def md_table(header: list[str], rows: list[list[str]]) -> str:
 def _ar_slide(label: str, stage: str, caption: str) -> str:
     """One above-random slide: benchmark-family rows × size buckets, cell =
     mean score (bold = beats chance + MARGIN)."""
-    df = pd.read_csv(PLOT_DIR / "acc_vs_flops" / stage / label / "above_random_scores.csv")
+    df = pd.read_csv(ACC_VS_FLOPS / stage / label / "above_random_scores.csv")
     sizes = [c for c in bucket_order() if c in df.columns]
     base = df.groupby("family")["random_baseline"].first()
     means = df.groupby("family")[sizes].mean()

@@ -221,11 +221,11 @@ matched task format and contrast curation methods within it. Concretely:
 ```bash
 # Per-pool analysis (run for each seed pool)
 for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
-    python results/benchmark_creation/analyze.py --pool $pool
+    python analysis/rq05_benchmark_creation/analyze.py --pool $pool
 done
 
 # One-time HF dataset length sampling (pool-agnostic)
-python results/benchmark_creation/length_features.py
+python analysis/rq05_benchmark_creation/length_features.py
 ```
 
 ## Directory contents

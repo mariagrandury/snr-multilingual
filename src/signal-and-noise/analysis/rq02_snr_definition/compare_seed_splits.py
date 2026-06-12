@@ -21,7 +21,7 @@ Outputs land under ``<out_dir>/<train_dir.name>__vs__<test_dir.name>/``:
   - ``summary.md`` — short human-readable report.
 
 CLI:
-  python multilingual/compare_seed_splits.py \
+  python analysis/rq02_snr_definition/compare_seed_splits.py \
       --train-dir results/snr_definition/seeds_28_1797 \
       --test-dir  results/snr_definition/seeds_1904
 """
@@ -36,21 +36,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from multilingual.analyze_snr_variants import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, da_ckpt_pairs, da_size_pairs,
     list_variants,
 )
-from multilingual.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
+from analysis.rq02_snr_definition.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
 from snr.constants import PLOT_DIR  # noqa: E402
+from analysis.paths import SNR_DEFINITION
 
 
 # --- helpers ----------------------------------------------------------------
@@ -359,9 +360,9 @@ def main():
 
     stage_train = pools[args.train_pool].get("stage", "pretraining")
     stage_test = pools[args.test_pool].get("stage", "pretraining")
-    snr_root = PLOT_DIR / "snr_definition" / stage_train
+    snr_root = SNR_DEFINITION / stage_train
     train_dir = snr_root / args.train_pool
-    test_dir = PLOT_DIR / "snr_definition" / stage_test / args.test_pool
+    test_dir = SNR_DEFINITION / stage_test / args.test_pool
     out_dir = snr_root / f"{args.train_pool}__vs__{args.test_pool}"
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"train = {train_dir}")

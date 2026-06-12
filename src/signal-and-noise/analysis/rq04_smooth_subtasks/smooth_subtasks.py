@@ -44,23 +44,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from multilingual.analyze_snr_variants import (
+from analysis.rq02_snr_definition.analyze_snr_variants import (
     _BENCHMARK_FAMILY_OVERRIDES, _LANG_MAP, assign_language, benchmark_family,
 )
-from multilingual.autodoc import (
+from analysis.autodoc import (
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR
+from analysis.paths import SMOOTH_SUBTASKS
 from snr.download.apertus import (
     load_a06_eval_results, load_apertus_eval_results,
     load_distillation_eval_results, load_reference_hf_eval_results,
 )
 from snr.metrics import signal_to_noise_ratio
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
@@ -72,7 +73,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 _GMF_LANGS = ("ar", "en", "es", "hi", "ja", "ru", "sw", "tr", "vi", "zh")
 
 LAST_N = load_snr_params()["last_n"]
-OUT_ROOT = PLOT_DIR / "smooth_subtasks"
+OUT_ROOT = SMOOTH_SUBTASKS
 
 
 def _with_bucket(df: pd.DataFrame) -> pd.DataFrame:
@@ -620,7 +621,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
     results = "\n\n".join([
         f"## Results\n\nHeadline numbers from the `{pool}` pool. Regenerate with "
-        f"`python multilingual/smooth_subtasks.py --pool {pool}`.",
+        f"`python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool {pool}`.",
         "**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:",
         table,
         *images,
@@ -723,4 +724,4 @@ if __name__ == "__main__":
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
     main(stage=stage, pool=args.pool,
-         out_dir=PLOT_DIR / "smooth_subtasks" / stage / args.pool)
+         out_dir=SMOOTH_SUBTASKS / stage / args.pool)

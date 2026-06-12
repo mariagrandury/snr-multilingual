@@ -101,7 +101,7 @@ to AllenAI's 25-mix DataDecide reference.
   150M / 300M / 750M / 1B): pulled once at build time and run through
   [`build_allenai_variants.py`](build_allenai_variants.py), which reuses
   every primitive from
-  [`multilingual/run_apertus_snr_variants.py`](../../multilingual/run_apertus_snr_variants.py)
+  [`analysis/rq02_snr_definition/run_apertus_snr_variants.py`](../../analysis/rq02_snr_definition/run_apertus_snr_variants.py)
   (`per_model_inputs`, `variant_signal_noise_snr`,
   `compute_size_decision_accuracy`, the 22-aggregator
   `AGGREGATION_FUNCTIONS` list). The shared driver groups by `model` for
@@ -161,11 +161,11 @@ non-evaluation probes):
 
 ```bash
 # One-time: build AllenAI CSV (pulls the core split through the 22-variant loop)
-python results/allenai_comparison/build_allenai_variants.py
+python analysis/rq03_allenai_comparison/build_allenai_variants.py
 
 # Per Apertus seed pool
 for pool in seeds_1904 seeds_28_1797 seeds_28_1797_1904; do
-    python results/allenai_comparison/analyze.py --pool $pool
+    python analysis/rq03_allenai_comparison/analyze.py --pool $pool
 done
 ```
 

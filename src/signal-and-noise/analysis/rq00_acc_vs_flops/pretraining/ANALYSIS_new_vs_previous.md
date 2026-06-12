@@ -1,7 +1,7 @@
 # Pretraining SNR analysis — new results vs previous
 
 Comparison of the extended pipeline (this run) against the previous committed
-results (git HEAD, `results/snr_definition/seeds_*`). Generated 2026-06-02.
+results (git HEAD, `analysis/rq02_snr_definition/seeds_*`). Generated 2026-06-02.
 
 ## What changed (inputs + method)
 

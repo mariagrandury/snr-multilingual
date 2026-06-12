@@ -37,8 +37,8 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from multilingual.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
-from multilingual.smooth_subtasks import _is_language_aggregate  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import assign_language, benchmark_family  # noqa: E402
+from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SNR_DEFINITION_ROOT = ROOT / "results" / "snr_definition"

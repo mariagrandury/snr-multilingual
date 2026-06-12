@@ -15,7 +15,7 @@ DataDecide ladder.
 
 ## Inputs
 
-- **Apertus side** — `results/snr_definition/snr_variants_per_task.csv`
+- **Apertus side** — `analysis/rq02_snr_definition/snr_variants_per_task.csv`
   (must have been produced by Question 1's session — depends on it).
 - **AllenAI side** — pulled with the upstream code:
   ```python
@@ -49,8 +49,8 @@ DataDecide ladder.
 
 ### Step 1 — produce an AllenAI variants CSV
 
-Reuse `multilingual/run_apertus_snr_variants.py` as a template. Write
-`results/allenai_comparison/build_allenai_variants.py`:
+Reuse `analysis/rq02_snr_definition/run_apertus_snr_variants.py` as a template. Write
+`analysis/rq03_allenai_comparison/build_allenai_variants.py`:
 
 - Load AllenAI parquet via `pull_predictions_from_hf`.
 - Pick small sizes from
@@ -108,14 +108,14 @@ variant) is in the top-K (K=10) within a corpus.
 
 - Build a 2-column ranked list:
   - `top_apertus.csv`: top 10 tasks by `snr_<V>_1B` from
-    `results/snr_definition/snr_variants_per_task.csv`.
+    `analysis/rq02_snr_definition/snr_variants_per_task.csv`.
   - `top_allenai.csv`: top 10 by `snr_<V>_750M` from
     `allenai_snr_variants_per_task.csv`.
 - `agreement.md`: tabulate intersection / Jaccard for K = 5, 10, 20.
 
 ### Step 5 — README
 
-Write `results/allenai_comparison/README.md`:
+Write `analysis/rq03_allenai_comparison/README.md`:
 
 - Research question (verbatim).
 - Setup: 3-4 sentences naming both data sources, the variant choice,
@@ -138,7 +138,7 @@ Write `results/allenai_comparison/README.md`:
 - `snr.snr_variants` aggregator inputs are `(step_noise, data_scores,
   data_noise, data_scores_last_n)` — same shape we already feed for
   Apertus; reuse `per_mix_inputs` from
-  `multilingual/run_apertus_snr_variants.py`.
+  `analysis/rq02_snr_definition/run_apertus_snr_variants.py`.
 - Don't re-run `compute_scaling_law_error` — that requires
   `olmo-ladder` and won't work with our environment.
 

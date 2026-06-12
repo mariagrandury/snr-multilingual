@@ -1,7 +1,7 @@
 # Benchmark metadata for `benchmark_creation/` analysis
 
 Fill one row per benchmark family. `family` keys must match
-`multilingual.analyze_snr_variants.benchmark_family` — i.e., the
+`analysis.rq02_snr_definition.analyze_snr_variants.benchmark_family` — i.e., the
 prefix of the multilingual task name with the language token stripped.
 The 12 families currently in scope (from
 `collect_multilingual_families`) are listed below.
@@ -264,11 +264,11 @@ Notes:
 - `n_languages` counts per-language *aggregate* tasks, not the
   per-(language, subject) facets that exist for `global_mmlu` and
   `global_mmlu_full`. These per-subject keys are filtered out by
-  `multilingual.smooth_subtasks.collect_multilingual_families`.
+  `analysis.rq04_smooth_subtasks.smooth_subtasks.collect_multilingual_families`.
 - `arc` n_languages = 11 because the family includes the English
   `arc_challenge` and `arc_easy` splits (collapsed via
   `_BENCHMARK_FAMILY_OVERRIDES`) plus 9 non-English translations,
-  per `multilingual.analyze_snr_variants.benchmark_family`.
+  per `analysis.rq02_snr_definition.analyze_snr_variants.benchmark_family`.
 - All 12 families here are scored as multiple-choice
   log-probability tasks (the `_completions` variant of Global-PIQA,
   the cloze-style XStoryCloze / XCOPA / XWinograd, the binary-choice

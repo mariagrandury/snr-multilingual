@@ -11,7 +11,7 @@ and writes:
                          (topic auto-tagging) so we don't re-pull.
 
 Run from the repo root:
-    python results/benchmark_creation/length_features.py
+    python analysis/rq05_benchmark_creation/length_features.py
 """
 from __future__ import annotations
 

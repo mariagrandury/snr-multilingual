@@ -26,14 +26,14 @@ each writes only inside its own subdirectory.
   Schema: `model, mix, size, step, task, primary_score, seed, tokens,
   compute` (mix is the short form `fwEdu30/60/90` for Apertus, `main` /
   `stage1` for HF refs).
-- Multilingual code lives under [multilingual/](../multilingual/).
+- Multilingual code lives under [analysis/](../).
   Helpers exposed:
-  - `multilingual.analyze_snr_variants.assign_language` /
+  - `analysis.rq02_snr_definition.analyze_snr_variants.assign_language` /
     `benchmark_family` — language code + family inference from task name.
-  - `multilingual.smooth_subtasks.collect_multilingual_families` —
+  - `analysis.rq04_smooth_subtasks.smooth_subtasks.collect_multilingual_families` —
     `{family: [per_language_aggregate_tasks]}` (filters out
     per-(lang, subject) facets).
-  - `multilingual.smooth_subtasks.load_gmf_subjects_df` /
+  - `analysis.rq04_smooth_subtasks.smooth_subtasks.load_gmf_subjects_df` /
     `load_gmf_per_language_df` — global_mmlu_full subject views.
 
 ## How to launch one session per question
@@ -43,29 +43,29 @@ matching prompt below verbatim. Each session is self-contained and
 should write only inside its own results subdir.
 
 ### Session 1 — snr_definition
-> Read `results/snr_definition/INSTRUCTIONS.md` and execute the plan.
-> Reuse `multilingual/run_apertus_snr_variants.py` and
-> `multilingual/analyze_snr_variants.py`. Do not write outside
-> `results/snr_definition/`.
+> Read `analysis/rq02_snr_definition/INSTRUCTIONS.md` and execute the plan.
+> Reuse `analysis/rq02_snr_definition/run_apertus_snr_variants.py` and
+> `analysis/rq02_snr_definition/analyze_snr_variants.py`. Do not write outside
+> `analysis/rq02_snr_definition/`.
 
 ### Session 2 — smooth_subtasks
-> Read `results/smooth_subtasks/INSTRUCTIONS.md` and execute the plan.
-> Reuse `multilingual/smooth_subtasks.py` and
-> `multilingual/smooth_subtasks_per_sample.py`. Do not write outside
-> `results/smooth_subtasks/`.
+> Read `analysis/rq04_smooth_subtasks/INSTRUCTIONS.md` and execute the plan.
+> Reuse `analysis/rq04_smooth_subtasks/smooth_subtasks.py` and
+> `analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py`. Do not write outside
+> `analysis/rq04_smooth_subtasks/`.
 
 ### Session 3 — allenai_comparison
-> Read `results/allenai_comparison/INSTRUCTIONS.md` and execute the plan.
-> Inputs: `results/snr_definition/snr_variants_per_task.csv` (must
+> Read `analysis/rq03_allenai_comparison/INSTRUCTIONS.md` and execute the plan.
+> Inputs: `analysis/rq02_snr_definition/snr_variants_per_task.csv` (must
 > exist before this session starts — depends on Session 1 having run at
 > least once) plus the upstream allenai parquet pulled from HF. Do not
-> write outside `results/allenai_comparison/`.
+> write outside `analysis/rq03_allenai_comparison/`.
 
 ### Session 4 — benchmark_creation
-> Read `results/benchmark_creation/INSTRUCTIONS.md`. Wait for the user
+> Read `analysis/rq05_benchmark_creation/INSTRUCTIONS.md`. Wait for the user
 > to paste benchmark metadata into `data_info.md` before computing
 > correlations; in the meantime stub the README and analysis script.
-> Do not write outside `results/benchmark_creation/`.
+> Do not write outside `analysis/rq05_benchmark_creation/`.
 
 ## Coordination rules
 

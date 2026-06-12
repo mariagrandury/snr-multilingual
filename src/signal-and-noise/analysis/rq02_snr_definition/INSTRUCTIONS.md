@@ -30,13 +30,13 @@ correlation?
 
 ## Existing code (REUSE)
 
-- [multilingual/run_apertus_snr_variants.py](../../multilingual/run_apertus_snr_variants.py)
+- [analysis/rq02_snr_definition/run_apertus_snr_variants.py](../../analysis/rq02_snr_definition/run_apertus_snr_variants.py)
   — emits `snr_variants_per_task.csv` (one row per task with
   `signal_<v>_<size>`, `noise_<v>_<size>`, `snr_<v>_<size>` columns
   for every variant × size, plus DA columns).
-- [multilingual/analyze_snr_variants.py](../../multilingual/analyze_snr_variants.py)
+- [analysis/rq02_snr_definition/analyze_snr_variants.py](../../analysis/rq02_snr_definition/analyze_snr_variants.py)
   — reads the CSV and renders every grid currently committed under
-  `results/snr_definition/`.
+  `analysis/rq02_snr_definition/`.
 
 Both scripts already work end-to-end on the local parquet (the loader
 was patched). Re-running gives reproducible artifacts.
@@ -46,17 +46,17 @@ was patched). Re-running gives reproducible artifacts.
 ### Step 1 — refresh the variants CSV
 
 ```bash
-python multilingual/run_apertus_snr_variants.py
+python analysis/rq02_snr_definition/run_apertus_snr_variants.py
 ```
 
 Confirms the loader works against the local parquet. Should write
-`results/snr_definition/snr_variants_per_task.csv` (~280 columns × ~820
+`analysis/rq02_snr_definition/snr_variants_per_task.csv` (~280 columns × ~820
 tasks).
 
 ### Step 2 — render existing plot grid
 
 ```bash
-python multilingual/analyze_snr_variants.py
+python analysis/rq02_snr_definition/analyze_snr_variants.py
 ```
 
 Produces:
@@ -81,7 +81,7 @@ inside `analyze_snr_variants.py:rank_variants`, identify:
   Pearson r across languages).
 - **Per-language best variant** = argmax per column.
 
-Save a new file `results/snr_definition/best_variant_per_language.csv`
+Save a new file `analysis/rq02_snr_definition/best_variant_per_language.csv`
 with columns `language, best_variant, mean_pearson_r,
 runner_up_variant`. Implement as a small `<10`-line script that reads
 `snr_variants_per_task.csv` and re-uses `_per_language_pearson_table`
@@ -131,7 +131,7 @@ section of the README.
 
 ### Step 7 — README
 
-Write `results/snr_definition/README.md`:
+Write `analysis/rq02_snr_definition/README.md`:
 
 - **Research questions** — verbatim from above.
 - **Setup** — 3–4 sentences: "12 Apertus pretrains, 3 mixes × 4 sizes,

@@ -33,19 +33,20 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 from snr.constants import PLOT_DIR
+from analysis.paths import SMOOTH_SUBTASKS
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_snr_params  # noqa: E402
 
 # Per-sample committed intermediates are custom-only (the 4-size ladder).
 _SNR = load_snr_params()
-D_ROOT = PLOT_DIR / "smooth_subtasks" / "per_sample" / "variance_prefilter"
+D_ROOT = SMOOTH_SUBTASKS / "per_sample" / "variance_prefilter"
 SIZES = _SNR["small_sizes"] + [_SNR["target_size"]]
 
 

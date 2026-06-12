@@ -35,7 +35,7 @@ from snr.snr_variants import AGGREGATION_FUNCTIONS
 # it generalised the signal pool to "any unique model at this size";
 # AllenAI's per-(mix, seed) DataDecide runs are uniquely identified by
 # their `model` column, so the same per-model grouping applies.
-from multilingual.run_apertus_snr_variants import (
+from analysis.rq02_snr_definition.run_apertus_snr_variants import (
     _safe,
     compute_size_decision_accuracy,
     per_model_inputs,

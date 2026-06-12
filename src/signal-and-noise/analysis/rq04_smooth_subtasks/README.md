@@ -46,7 +46,7 @@ cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
 <!-- BEGIN auto:results (smooth_subtasks.py --pool custom_swissai_hf) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python multilingual/smooth_subtasks.py --pool custom_swissai_hf`.
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool custom_swissai_hf`.
 
 **Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
 

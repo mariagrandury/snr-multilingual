@@ -14,7 +14,7 @@
   one that already does the job (e.g. `get_slice`,
   `signal_to_noise_ratio`, `decision_acc_fast`, `_is_language_aggregate`,
   the loader helpers in `snr/download/`, the shared CLI patterns in
-  `multilingual/`). Don't reimplement, don't wrap-for-wrap's-sake, and
+  `analysis/`). Don't reimplement, don't wrap-for-wrap's-sake, and
   don't add defensive scaffolding ("just in case" config flags,
   pre-validation of arguments that won't be wrong, try/except around
   pure-Python logic). When extending a script, the new diff should
@@ -50,7 +50,7 @@ schema `snr.dataloader.get_slice` expects.
 
 ```bash
 cd /Users/mariagrandury/Projects/epfl/snr-multilingual/src/signal-and-noise
-python multilingual/run_apertus.py --pool seeds_1904
+python analysis/rq00_acc_vs_flops/run_apertus.py --pool seeds_1904
 ```
 
 `run_apertus.py` is the curve-viewer. `--pool` (a pool name from
@@ -60,7 +60,7 @@ python multilingual/run_apertus.py --pool seeds_1904
   overlays are unreadable); `--seed` overrides the default.
 - `pretraining_a06` → per-(model, size) curves, no mix axis.
 
-Outputs land under `results/acc_vs_flops/<pool>/`:
+Outputs land under `analysis/rq00_acc_vs_flops/<pool>/`:
    - `per_benchmark/<family>.png` — one figure per benchmark family with
      subplots per language; built from
      `analysis.plotting.datadecide.plot_task_curves`
@@ -70,16 +70,16 @@ Outputs land under `results/acc_vs_flops/<pool>/`:
 The two views render the same per-task panels grouped two ways, so one run
 produces both.
 
-`multilingual/run_apertus_snr_variants.py` is the SNR/DA compute entry point
-(`--pool` required): it writes `results/snr_definition/<pool>/snr_variants_per_task.csv`,
+`analysis/rq02_snr_definition/run_apertus_snr_variants.py` is the SNR/DA compute entry point
+(`--pool` required): it writes `analysis/rq02_snr_definition/<pool>/snr_variants_per_task.csv`,
 with one column per (variant, size) using every aggregator in
 [snr/snr_variants.py](snr/snr_variants.py)'s `AGGREGATION_FUNCTIONS`. DA stays
 on the Apertus cross-size axis (the `family` column groups runs across sizes);
 the SNR signal pool optionally folds in `reference_hf` rows when the pool sets
 `include_external=true`.
 
-`multilingual/analyze_snr_variants.py` reads that CSV and renders
-`results/snr_definition/snr_vs_decision_accuracy.png` (one row of
+`analysis/rq02_snr_definition/analyze_snr_variants.py` reads that CSV and renders
+`analysis/rq02_snr_definition/snr_vs_decision_accuracy.png` (one row of
 size-panels per SNR variant, ordered top-to-bottom by overall R² with
 decision accuracy) plus per-language counterparts
 `snr_vs_decision_accuracy_<lang>.png`. No CSVs are emitted by the
@@ -110,7 +110,7 @@ pretraining_hf_reference   Qwen3 / gemma-3 / SmolLM3 / Olmo-3 / Apertus-8B,70B
   `configs.add_family_column` — DA computations group on this so a
   `175M`/`350M`/`600M`/`1B` quartet of the same (mix, seed) is one family.
 
-In `multilingual/run_apertus.py`:
+In `analysis/rq00_acc_vs_flops/run_apertus.py`:
 - `SMALL_SIZES = ["175M", "350M", "600M"]`, `TARGET_SIZE = "1B"`
 - `PLOTTED_MIXES = ["fwEdu30", "fwEdu60", "fwEdu90"]`
 - seed comes from the pool (`--seed` to override)
@@ -233,7 +233,7 @@ you're modifying the multilingual / variant pipelines, scan this list
 before editing.
 
 ### 1. `_is_language_aggregate` filter must accept 3- and 4-trailing-token forms
-`multilingual/smooth_subtasks.py:_is_language_aggregate` was originally
+`analysis/rq04_smooth_subtasks/smooth_subtasks.py:_is_language_aggregate` was originally
 `<family>_<lang>` or `<family>_<lang>_<script>` only, with a hard-coded
 ISO 15924 script list. That silently dropped:
 
@@ -333,7 +333,7 @@ If you change the eval cadence, expect more warnings and possibly
 more NaN cells in `da_ckpt` views.
 
 ### 9. `top_benchmarks_per_language` size column is parametric
-`multilingual/snr_definition_postprocess.py:top_benchmarks_per_language`
+`analysis/rq02_snr_definition/snr_definition_postprocess.py:top_benchmarks_per_language`
 used to hardcode `da_size_col = "decision_acc_size_600M"`. Now it
 follows the `size` arg (`f"decision_acc_size_{size}"`). At the default
 `size=1B` the column is NaN by definition — DA-size is `small_size →
@@ -360,7 +360,7 @@ that path.
 This repo tracks `allenai/signal-and-noise`. When pulling upstream, the
 local additions to watch for are:
 
-- `multilingual/run_apertus.py` (local-only entry point)
+- `analysis/rq00_acc_vs_flops/run_apertus.py` (local-only entry point)
 - `snr/download/apertus.py` (local-only loader)
 - The lazy import of `run_ladder` inside `compute_scaling_law_error`
   (`snr/snr_simple.py`) — done so the Apertus path doesn't need

@@ -36,7 +36,7 @@ Outputs (under `snr_definition/<stage>/<pool>/`):
 Slidev deck (`documents/slides.md`, between BEGIN/END markers — idempotent):
 2 above-random slides (custom / all models) + 1 DA-size slide per language.
 
-    python multilingual/da_per_benchmark.py --pool custom_swissai_hf
+    python analysis/rq01_decision_accuracy/da_per_benchmark.py --pool custom_swissai_hf
 """
 
 from __future__ import annotations
@@ -46,24 +46,25 @@ import re
 import sys
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 import pandas as pd  # noqa: E402
 
 from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
-from multilingual.above_random import (  # noqa: E402
+from analysis.rq00_acc_vs_flops.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
-from multilingual.analyze_snr_variants import (  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
+from analysis.paths import SNR_DEFINITION
 
 # Slidev deck the appendix slides are written into (repo-root/documents).
-_SLIDES = Path(__file__).resolve().parents[3] / "documents" / "slides.md"
+_SLIDES = Path(__file__).resolve().parents[4] / "documents" / "slides.md"
 
 _SIZE_CANON = re.compile(rf"^decision_acc_size_({_BUCKET_RE})$")
 _SIZE_SCALE = re.compile(rf"^decision_acc_size_({_BUCKET_RE})_to_({_BUCKET_RE})$")
@@ -140,7 +141,7 @@ def run(pool: str, out_dir: Path) -> None:
 # owns the per-language decision-accuracy slides and stitches the full block.
 
 _DA_BOLD = 0.75         # bold decision-accuracy cells at/above this
-_BEGIN = "<!-- BEGIN generated signal slides (multilingual/da_per_benchmark.py) -->"
+_BEGIN = "<!-- BEGIN generated signal slides (analysis/rq01_decision_accuracy/da_per_benchmark.py) -->"
 _END = "<!-- END generated signal slides -->"
 
 _LANG_NAME = {
@@ -235,7 +236,7 @@ def main():
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    run(pool=args.pool, out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)
+    run(pool=args.pool, out_dir=SNR_DEFINITION / stage / args.pool)
 
 
 if __name__ == "__main__":

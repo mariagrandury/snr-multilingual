@@ -47,7 +47,7 @@ scaling/power in RQ1, not for the AllenAI comparison).
 <!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
 ## Results
 
-Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1904`). Regenerate with `python results/allenai_comparison/analyze.py --pool custom_swissai_hf`.
+Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1904`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool custom_swissai_hf`.
 
 **Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The pure pools share all 7 tasks; `custom_swissai_hf` shares fewer after the above-random gate, so it is indicative, not comparable:
 

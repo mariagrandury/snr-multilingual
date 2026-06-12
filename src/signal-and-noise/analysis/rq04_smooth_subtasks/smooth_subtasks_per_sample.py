@@ -52,20 +52,21 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from multilingual.analyze_snr_variants import assign_language, benchmark_family
-from multilingual.smooth_subtasks import collect_multilingual_families
+from analysis.rq02_snr_definition.analyze_snr_variants import assign_language, benchmark_family
+from analysis.rq04_smooth_subtasks.smooth_subtasks import collect_multilingual_families
 from snr.constants import PLOT_DIR
+from analysis.paths import SMOOTH_SUBTASKS
 from snr.download.apertus import (
     DEFAULT_EVAL_ROOT,
     _MODEL_RE,
     load_apertus_eval_results,
 )
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
@@ -74,7 +75,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 
 ALL_SIZES = ["175M", "350M", "600M", "1B"]
 LAST_N = 5
-OUT_ROOT = PLOT_DIR / "smooth_subtasks"
+OUT_ROOT = SMOOTH_SUBTASKS
 
 _SAMPLES_FNAME_RE = re.compile(r"^samples_(?P<task>.+)_\d{4}-\d{2}-\d{2}T.*\.jsonl$")
 

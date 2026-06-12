@@ -42,13 +42,13 @@ import argparse
 import sys
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 # Put `src/` on sys.path so `evals.scripts.utils.configs` imports
 # resolve via implicit namespace packages.
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
@@ -66,14 +66,15 @@ from evals.scripts.utils.configs import (  # noqa: E402
     size_bucket,
     stage_external_models,
 )
-from multilingual.analyze_snr_variants import (
+from analysis.rq02_snr_definition.analyze_snr_variants import (
     _ENGLISH_ONLY_TASKS,
     assign_language,
     benchmark_family,
 )
-from multilingual.above_random import SIZES as AR_SIZES, scores_and_mask
-from multilingual.smooth_subtasks import _is_language_aggregate
+from analysis.rq00_acc_vs_flops.above_random import SIZES as AR_SIZES, scores_and_mask
+from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate
 from snr.constants import PLOT_DIR
+from analysis.paths import SNR_DEFINITION
 from snr.dataloader import get_slice
 from snr.download.apertus import (
     load_a06_eval_results,
@@ -97,7 +98,7 @@ LAST_N = _SNR["last_n"]
 # model's own max step (absolute custom iters wouldn't match external/a06/
 # distill trajectories).
 CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]
-OUT_ROOT = PLOT_DIR / "snr_definition"
+OUT_ROOT = SNR_DEFINITION
 
 
 def _frac_label(frac: float) -> str:
@@ -312,7 +313,7 @@ def _is_parent_task(task: str) -> bool:
         list in ``_ENGLISH_ONLY_TASKS``.
       - Multilingual per-language aggregates: the same
         ``_is_language_aggregate`` rule used in
-        ``multilingual.smooth_subtasks.collect_multilingual_families``.
+        ``analysis.rq04_smooth_subtasks.smooth_subtasks.collect_multilingual_families``.
     """
     if task in _ENGLISH_ONLY_TASKS:
         return True
@@ -498,7 +499,7 @@ def main():
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; " f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    out_dir = PLOT_DIR / "snr_definition" / stage / (args.out_subdir or args.pool)
+    out_dir = SNR_DEFINITION / stage / (args.out_subdir or args.pool)
     run(pool=args.pool, out_dir=out_dir)
 
 

@@ -35,11 +35,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-_REPO = Path(__file__).resolve().parent.parent
+_REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
@@ -50,9 +50,10 @@ from evals.scripts.utils.configs import (  # noqa: E402
 )
 
 from snr.constants import PLOT_DIR
+from analysis.paths import SNR_DEFINITION
 from snr.plot import config_snr_ax
 
-OUT_ROOT = PLOT_DIR / "snr_definition"
+OUT_ROOT = SNR_DEFINITION
 
 # SNR analysis params — single source of truth in configs/models.json.
 # The size axis is the *bucket* (size_bucket); the actual buckets/targets to
@@ -612,4 +613,4 @@ if __name__ == "__main__":
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(out_dir=PLOT_DIR / "snr_definition" / stage / args.pool)
+    main(out_dir=SNR_DEFINITION / stage / args.pool)

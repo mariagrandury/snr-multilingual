@@ -24,7 +24,7 @@ parent-aggregated (subjects collapse into the parent; languages stay distinct);
 each task's **Signal** = (max−min)/mean of per-mix final scores at 1B; only the
 top-3 families by Signal get curve grids.
 
-The **above-random gate** ([`above_random.py`](../../multilingual/above_random.py))
+The **above-random gate** ([`above_random.py`](../../analysis/rq00_acc_vs_flops/above_random.py))
 is foundational and depends **only** on raw eval scores and the intrinsic
 per-family answer-option counts (`N_OPTIONS` in that file) — it reads no RQ
 output, so every RQ depends on the gate, never the reverse. A `(benchmark, size)`
@@ -36,7 +36,7 @@ buckets 175M…1B — the SNR gate's domain).
 <!-- BEGIN auto:results (run_apertus.py --pool custom_swissai_hf) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` above-random report. Regenerate: `python multilingual/run_apertus.py --pool custom_swissai_hf` and `python multilingual/above_random.py`.
+Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` above-random report. Regenerate: `python analysis/rq00_acc_vs_flops/run_apertus.py --pool custom_swissai_hf` and `python analysis/rq00_acc_vs_flops/above_random.py`.
 
 **Top benchmarks by mixture-Signal** (full ranking in `pretraining/custom_swissai_hf/acc_vs_flops_signal.csv`):
 
@@ -73,7 +73,7 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
   ranking; all parent tasks).
 - `pretraining/custom/`, `pretraining/custom_swiss_hf/` —
   `above_random_scores.csv` / `above_random_mask.csv` (the gate; custom-only and
-  all-models reports). From `multilingual/above_random.py`.
+  all-models reports). From `analysis/rq00_acc_vs_flops/above_random.py`.
 - `…/per_benchmark/<family>.png` — top-3 families, subplots per language,
   external scaling markers overlaid.
 - `…/per_language/<lang>.png` — per language, subplots = top-3 families.

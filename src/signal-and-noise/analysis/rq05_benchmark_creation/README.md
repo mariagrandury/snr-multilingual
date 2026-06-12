@@ -29,7 +29,7 @@ before this analysis, so the families seen here are the gate's survivors.
 <!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python results/benchmark_creation/analyze.py --pool custom_swissai_hf`.
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool custom_swissai_hf`.
 
 **Per-family SNR ranking** — median `snr_mpd_1B` over each family's per-language tasks, above-random survivors only:
 

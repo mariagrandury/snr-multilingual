@@ -11,11 +11,11 @@ free-form, fewshot count — are out of scope for the v0 pass.)
 
 ## Inputs
 
-- `results/snr_definition/snr_variants_per_task.csv` — provided by
+- `analysis/rq02_snr_definition/snr_variants_per_task.csv` — provided by
   Question 1 (depends on it).
-- `results/benchmark_creation/data_info.md` — manually curated by the
+- `analysis/rq05_benchmark_creation/data_info.md` — manually curated by the
   user. Each row should describe one benchmark family with:
-  - `family` (must match `multilingual.analyze_snr_variants.benchmark_family`)
+  - `family` (must match `analysis.rq02_snr_definition.analyze_snr_variants.benchmark_family`)
   - `data_source` (free text, e.g. "MMLU translated by Cohere", "PIQA
     translated by Google", "human-authored").
   - `curation_process` (e.g. "machine translation", "human
@@ -44,7 +44,7 @@ If the file is missing or empty:
 When `data_info.md` is filled in:
 
 - Parse it into a DataFrame `meta` indexed by family.
-- Load `results/snr_definition/snr_variants_per_task.csv`.
+- Load `analysis/rq02_snr_definition/snr_variants_per_task.csv`.
 - Compute per-family SNR statistics for the selected best variant
   (default: `rel_std` since it's the simplest; verify by reading
   Question 1's headline). Aggregate: median, mean, max of
@@ -64,7 +64,7 @@ For each categorical metadata column (`data_source`, `curation_process`,
 
 ### Step 4 — README
 
-Write `results/benchmark_creation/README.md`:
+Write `analysis/rq05_benchmark_creation/README.md`:
 
 - Research question (verbatim).
 - Setup: paragraph describing where SNR comes from

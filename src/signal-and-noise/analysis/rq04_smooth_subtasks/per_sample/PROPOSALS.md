@@ -12,7 +12,7 @@ last-5-ckpt arrays). What varies between options is _how subsets are
 proposed_.
 
 **A, B, C and D are all implemented** in
-[`multilingual/smooth_subtasks_per_sample.py`](../../../multilingual/smooth_subtasks_per_sample.py),
+[`analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py`](../../../analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py),
 selectable with `--method` and each writing to its own dir under
 `per_sample/` (dir names in the headings below). **D is the default
 and the recommended starting point**; A is the upstream baseline, B
@@ -115,9 +115,9 @@ specific benchmark. All four run from the same entry point:
 
 ```bash
 # all four methods for a pool
-python multilingual/smooth_subtasks_per_sample.py --pool seeds_28_1797
+python analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py --pool seeds_28_1797
 # just one, with a bigger forward-greedy budget
-python multilingual/smooth_subtasks_per_sample.py --pool seeds_28_1797 \
+python analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py --pool seeds_28_1797 \
     --method forward_greedy --b-pool 1000 --b-budget 200
 ```
 
@@ -160,7 +160,7 @@ levers below are ordered cheapest-first.
 
 These read the `cumulative_snrs` array the sweep already produces, so they
 need no extra compute — only a different argmax rule in
-[`smooth_subtasks_per_sample.py`](../../../multilingual/smooth_subtasks_per_sample.py).
+[`smooth_subtasks_per_sample.py`](../../../analysis/rq04_smooth_subtasks/smooth_subtasks_per_sample.py).
 
 ### Lever 2 — Denoise the per-item informativeness _(fixes the root cause)_
 
