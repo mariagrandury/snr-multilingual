@@ -44,6 +44,69 @@ scaling/power in RQ1, not for the AllenAI comparison).
 > Apertus checkpoints, then drop the alias and compare like-for-like. See
 > `pretraining/<pool>/agreement.md` for the full caveat.
 
+## Methodology
+
+- **Apertus side** (multi-seed, 3 mixes × 3 seeds × 4 sizes): the per-task SNR
+  table from one of the seed-pool subdirs under
+  [`../rq02_snr_definition/`](../rq02_snr_definition/). Each pool produces its own
+  cross-corpus output (`pretraining/seeds_1904/`, `…/seeds_28_1797/`,
+  `…/seeds_28_1797_1904/`, `…/custom_swissai_hf/`).
+- **AllenAI side** (DataDecide ladder, 25 mixes × 5 ckpts at sizes
+  150M / 300M / 750M / 1B): pulled once at build time and run through
+  [build_allenai_variants.py](build_allenai_variants.py), which reuses every
+  primitive from
+  [run_apertus_snr_variants.py](../rq02_snr_definition/run_apertus_snr_variants.py)
+  (`per_model_inputs`, `variant_signal_noise_snr`) plus
+  `compute_size_decision_accuracy` from
+  [compute_da.py](../rq01_decision_accuracy/compute_da.py) and the 22-aggregator
+  `AGGREGATION_FUNCTIONS` list. The shared driver groups by `model` for the
+  signal pool and by `model_family` (model name minus the size token) for DA — so
+  neither corpus needs a `seed` column to contribute.
+- **Task-name reconciliation.** Apertus ran only the multilingual
+  `global_mmlu_full_en_<subject>` view of MMLU on the full ckpt-series; AllenAI
+  uses the vanilla `mmlu_<subject>` names. We canonicalise the Apertus names via
+  `global_mmlu_full_en[_<subj>] → mmlu[_<subj>]`. The parent-task filter on the
+  Apertus variants CSV collapses MMLU subject facets into `mmlu`, so the
+  post-alias shared set is the **7 standalone English tasks** (`arc_challenge`,
+  `arc_easy`, `csqa`, `hellaswag`, `mmlu`, `openbookqa`, `piqa`). This aliasing
+  is the headline caveat above — same task IDs, different MMLU content.
+- **Correlation axis.** `log10(snr_<V>_1B)` on each corpus, Pearson r (values)
+  and Spearman ρ (rank) over the 7 shared tasks; per-corpus top-K lists are
+  ranked over this same universe.
+- **Reference HF models skipped.** SmolLM3-3B / Olmo-3-7B / Apertus-8B each have a
+  single training mix, so the data-mix-spread term in every SNR variant is
+  undefined; including them would force the comparison onto raw `primary_score` (a
+  capability number), conflating "task is reliable" with "task is easy".
+
+**Which variant families transfer across corpora** (qualitative, stable across
+pools):
+
+| family | members | transfers? |
+|---|---|---|
+| **discrepancy** | `discrepancy`, `star_discrepancy`, `star_discrepancy_shifted`, `dispersion_shifted`, `gini` | **Yes** — top cross-corpus performers |
+| **dispersion** | `dispersion`, `range`, `mpd`, `aad`, `rms_deviation`, `quartile_deviation`, `dist_std` | **Yes** — strong, especially single-seed |
+| **relative-spread** | `rel_std`, `rel_mpd`, `rel_mpsd`, `iqr`, `rel_dispersion` | **No** — robust within-corpus, weak cross-corpus (includes AllenAI's default `rel_std`) |
+| **depth** | `tukey`, `projection` | **No** — uncorrelated with DA in the first place |
+
+**Enlarging the shared universe.** The 7-task overlap is the binding constraint;
+AllenAI's `core` split has ~178 tasks Apertus does not yet evaluate. Highest-yield
+additions, by category — adding them to the Apertus suite directly widens the
+comparison surface:
+
+| category | missing | how to add |
+|---|---:|---|
+| `mmlu_<subject>:mc` (multi-choice MMLU) | 53 | Apertus ran rank-classification (`global_mmlu_full_en_*`); add the `:mc` form. Roughly doubles MMLU coverage. |
+| `mmlu_pro` (+ 14 categories) | 19 | In OLMES and lm-eval (`mmlu_pro` / `mmlu_pro_<category>`). |
+| BBH (Big-Bench Hard) | 27 | `bbh_*` matches directly in lm-eval. |
+| AGI Eval | 19 | `agi_eval_*` (OLMES) ↔ `agieval_*` (lm-eval). |
+| Math | 14 | `gsm8k`, `gsm_plus`, `minerva_math_*` (lm-eval: `gsm8k`, `hendrycks_math_*`). |
+| OLMES core knowledge / commonsense | 10 | `:mc` forms of boolq, openbookqa, piqa, commonsense_qa, socialiqa, winogrande, truthfulqa_mc1. |
+| Generative QA | 8 | `drop`, `squad`, `triviaqa`, `medmcqa`, `jeopardy`. |
+| `arc_*:mc`, `hellaswag:mc`, Code | 7 | Multi-choice ARC/HellaSwag; `codex_humaneval`, `mbpp` (need code sandboxing). |
+
+Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
+`custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
+
 <!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
 ## Results
 

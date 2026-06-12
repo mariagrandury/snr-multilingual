@@ -33,6 +33,31 @@ cell is above random iff `mean score > 1/n_options + 0.05`;
 all downstream RQs. Numbers below are the `custom` report (custom pretrains,
 buckets 175M…1B — the SNR gate's domain).
 
+## Methodology — scaling beyond 1B
+
+The `custom_swissai_hf` pool extends the compute axis past the custom 1B ceiling
+by folding in the apertus3 a06, distilled, and reference-HF trajectories. Three
+mechanisms make that work:
+
+- **Bucketed size axis.** The four custom sizes (175M / 350M / 600M / 1B) stay
+  singletons; nearby external/large sizes pool into buckets so each holds ≥2
+  models. A bucket with ≥2 models contributes a computable cross-model signal and
+  decision accuracy; a singleton bucket (e.g. an isolated 70B) still plots its
+  final-checkpoint marker on the curves but is dropped from the noise/DA pool.
+- **Relative-fraction ckpt-DA.** External trajectories never hit the custom
+  absolute megatron iters, so checkpoint-DA selects each model's early checkpoint
+  at a *fraction* of its own max step rather than a fixed iter — letting the a06,
+  distillation, SmolLM3, Olmo-3 and Apertus-8B series participate and extending
+  ckpt-DA into the large buckets. (The computation lives in
+  [compute_da.py](../rq01_decision_accuracy/compute_da.py); the gate and curves
+  here just consume its trajectories.)
+- **Cross-bucket scaling-DA is family-coverage-limited.** Scaling-DA auto-detects
+  bucket pairs where ≥2 model *families* span both sizes (via within-family
+  ladders such as gemma-3 / OLMo). Above 1B this is sparse — few families ship
+  multiple sizes — so the few detectable pairs saturate at DA 1.0 on a handful of
+  shared tasks: directionally useful, not yet statistically strong. acc-vs-FLOPs
+  curves and the signal pool carry the >1B scaling story for now.
+
 <!-- BEGIN auto:results (run_apertus.py --pool custom_swissai_hf) -->
 ## Results
 

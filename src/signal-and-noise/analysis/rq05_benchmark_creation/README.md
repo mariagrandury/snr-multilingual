@@ -26,6 +26,41 @@ reading-passage flag — and tested with a family-level Kruskal–Wallis. The
 above-random gate (computed upstream of SNR) drops every at-chance benchmark
 before this analysis, so the families seen here are the gate's survivors.
 
+## Methodology
+
+Three phases, all on the per-family `snr_mpd_1B` signal (median across a
+family's per-language aggregate tasks):
+
+- **Phase 0 — curation process.** Group families by how their items were
+  produced (machine translation / human translation / template generation /
+  originally-multilingual authoring) and by source origin (English-translated
+  vs originally-multilingual); test with a family-level Kruskal–Wallis.
+- **Phase A — task format.** Axes: task format (`minimal_pair`, `completion`,
+  `classification`, `mcq_question_only`, `mrc_passage`), answer-option count
+  (`random_baseline = 1/n_options`, tested categorically 2-vs-4 and
+  continuously via Spearman), and a reading-passage flag.
+- **Phase B — item lengths.** [length_features.py](length_features.py) pulls
+  100 English/default items per family from each benchmark's HF dataset and
+  computes character-length statistics for context vs options; correlate with SNR.
+
+**Mechanism (the durable finding).** Reliability tracks the *answer space*, not
+curation: a benchmark is sharper when the model compares **fewer, longer**
+log-likelihood-scored completions — each extra option adds another noisy LL
+estimate to rank, and longer options concentrate more discriminating tokens.
+Illustrations at fixed option count: PAWS (options `Yes`/`No`, ~2 chars) is low
+despite being binary; MultiBLiMP (full-sentence minimal pairs) is the sharpest;
+HellaSwag (long 4-option completions) escapes the 4-option penalty that sinks
+ARC (short noun-phrase options). The `passage` flag itself doesn't matter —
+XStoryCloze (4-sentence context, completion) is high, Belebele (long passage,
+MRC) is low — what the prompt *does* with the passage is what counts.
+
+**Inputs & caveats.** Per-family metadata is hand-curated in
+[data_info.md](data_info.md) (paper-style paragraphs cross-referenced against the
+lm-eval task READMEs); the `FAMILY_META` dict in [analyze.py](analyze.py) is its
+machine-readable mirror, with a task-level `xnli_eu` override re-tagged
+`mt_post_edited`. `global_mmlu` (Lite, one Apertus model) and `arc_de/fr` /
+`hellaswag_de/fr` are NaN at 1B and excluded.
+
 <!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
 ## Results
 
@@ -68,6 +103,11 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
       format/option count) with a controlled within-format comparison.
 - [ ] Finish Phase B length features (context/option length, ratio) and fold
       them into the design-axis significance table.
+- [ ] Controlled within-format curation contrasts to nail the "curation doesn't
+      matter" claim: HellaSwag (MT) vs XStoryCloze (human translation) — both
+      completion; ARC (MT) vs Global-MMLU-Full (MT + post-edit) — both 4-option
+      MCQ from the same source family (would also expose the subject-fragmentation
+      effect: ARC's single domain vs MMLU's ~57 subjects).
 
 ## Files
 
