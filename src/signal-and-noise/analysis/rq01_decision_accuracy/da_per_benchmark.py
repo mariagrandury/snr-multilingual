@@ -61,7 +61,7 @@ from analysis.rq00_acc_vs_flops.above_random import (  # noqa: E402
 from analysis.utils import (  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
-from analysis.paths import SNR_DEFINITION
+from analysis.paths import DECISION_ACCURACY
 
 # Slidev deck the appendix slides are written into (repo-root/documents).
 _SLIDES = Path(__file__).resolve().parents[4] / "documents" / "slides.md"
@@ -114,7 +114,7 @@ def _pivot(long: pd.DataFrame, da_def: str) -> pd.DataFrame:
 
 
 def run(pool: str, out_dir: Path) -> None:
-    csv_path = out_dir / "snr_variants_per_task.csv"
+    csv_path = out_dir / "da_per_task.csv"
     df = pd.read_csv(csv_path, index_col="task")
     long = melt_da(df)
     long = long.sort_values(["da_def", "language", "benchmark", "comparison"])
@@ -236,7 +236,7 @@ def main():
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    run(pool=args.pool, out_dir=SNR_DEFINITION / stage / args.pool)
+    run(pool=args.pool, out_dir=DECISION_ACCURACY / stage / args.pool)
 
 
 if __name__ == "__main__":

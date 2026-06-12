@@ -13,16 +13,24 @@ set -uo pipefail
 cd "$(dirname "$0")"
 PY=python3
 TIERS=(seeds_1904 seeds_28_1797 seeds_28_1797_1904 custom_swissai_hf)
+DA=analysis/rq01_decision_accuracy/pretraining
 SNR=analysis/rq02_snr_definition/pretraining
 
 run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18; }
 
-echo "############################## PASS A — SNR compute ##############################"
+echo "############################## PASS A — DA then SNR compute ##############################"
+# Decision accuracy is the ground truth (rq01); SNR variants are the proxies
+# (rq02) and read the DA table, so DA is computed first.
 for t in "${TIERS[@]}"; do
+  if [ ! -f "$DA/$t/da_per_task.csv" ]; then
+    run $PY analysis/rq01_decision_accuracy/compute_da.py --pool "$t"
+  else
+    echo "  (DA cached: $DA/$t/da_per_task.csv)"
+  fi
   if [ ! -f "$SNR/$t/snr_variants_per_task.csv" ]; then
     run $PY analysis/rq02_snr_definition/run_apertus_snr_variants.py --pool "$t"
   else
-    echo "  (compute cached: $SNR/$t/snr_variants_per_task.csv)"
+    echo "  (SNR cached: $SNR/$t/snr_variants_per_task.csv)"
   fi
 done
 

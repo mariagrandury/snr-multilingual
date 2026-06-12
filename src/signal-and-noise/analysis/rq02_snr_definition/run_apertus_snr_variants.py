@@ -72,7 +72,7 @@ from analysis.utils import (
 )
 from analysis.rq00_acc_vs_flops.above_random import SIZES as AR_SIZES, scores_and_mask
 from snr.constants import PLOT_DIR
-from analysis.paths import SNR_DEFINITION
+from analysis.paths import SNR_DEFINITION, DECISION_ACCURACY
 from snr.dataloader import get_slice
 from snr.download.apertus import (
     load_a06_eval_results,
@@ -91,105 +91,6 @@ from snr.snr_variants import AGGREGATION_FUNCTIONS
 from analysis.utils import (  # noqa: E402
     SMALL_SIZES, TARGET_SIZE, LAST_N, CKPT_DA_EARLY_FRACS)
 OUT_ROOT = SNR_DEFINITION
-
-
-def _frac_label(frac: float) -> str:
-    """0.12 → 'f12' (stable ckpt-DA column token)."""
-    return f"f{int(round(frac * 100))}"
-
-
-# Dedup set for missing-ckpt warnings — log each (bucket, frac, family)
-# combination at most once across the whole run, regardless of task.
-_LOGGED_MISSING_CKPTS: set = set()
-
-
-def _safe(fn, *args, **kwargs):
-    try:
-        v = fn(*args, **kwargs)
-        return float(v) if np.isfinite(v) else float("nan")
-    except Exception:
-        return float("nan")
-
-
-# --- decision accuracy ------------------------------------------------------
-
-
-def compute_size_decision_accuracy(
-    df, task, small_size, target_size=TARGET_SIZE, model_filter=None
-):
-    """DA across size buckets: small_bucket@last vs target_bucket@last.
-
-    Operates on the ``bucket`` column (set by `run()` via `size_bucket`),
-    so ``small_size`` / ``target_size`` are bucket labels. The cross-size
-    identity is ``family`` (the model name with only the size token
-    stripped), so a family present at both buckets contributes one pair.
-
-    ``model_filter`` (optional) restricts the rows to a set of model
-    names. Returns NaN if fewer than 2 common families survive across
-    both buckets.
-    """
-    df = add_family_column(df)
-    if model_filter is not None:
-        df = df[df["model"].isin(model_filter)]
-    scores_small = df[(df["bucket"] == small_size) & (df["task"] == task)]
-    scores_target = df[(df["bucket"] == target_size) & (df["task"] == task)]
-    if scores_small.empty or scores_target.empty:
-        return float("nan")
-    scores_small = scores_small.loc[scores_small.groupby("family")["step"].idxmax()]
-    scores_target = scores_target.loc[scores_target.groupby("family")["step"].idxmax()]
-    keys_small = set(scores_small["family"])
-    keys_target = set(scores_target["family"])
-    common = sorted(keys_small & keys_target)
-    if len(common) < 2:
-        return float("nan")
-    s = scores_small.set_index("family").loc[common, "primary_score"]
-    t = scores_target.set_index("family").loc[common, "primary_score"]
-    return decision_acc_fast(s.to_numpy(), t.to_numpy())
-
-
-def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=None):
-    """DA within a size bucket: ``family`` ranking at an *early* ckpt vs the
-    same family's max-step ckpt.
-
-    The early ckpt is chosen per model as the checkpoint whose step is
-    closest to ``early_frac × (that model's own max step)`` — a relative
-    fraction rather than an absolute iter, so external / a06 / distillation
-    trajectories (whose step scales differ from the custom megatron iters)
-    participate. A family with only one checkpoint (single-ckpt HF refs)
-    has no distinct early ckpt and is logged once per ``(bucket, frac,
-    family)`` and skipped. If fewer than 2 families survive, returns NaN.
-
-    ``model_filter`` (optional) restricts the rows to a set of model names.
-    """
-    df = add_family_column(df)
-    if model_filter is not None:
-        df = df[df["model"].isin(model_filter)]
-    scores = df[(df["bucket"] == bucket) & (df["task"] == task)]
-    if scores.empty:
-        return float("nan")
-    early, late, keys = [], [], []
-    for fam, g in scores.groupby("family"):
-        g = g.sort_values("step")
-        max_step = g["step"].max()
-        g_pre = g[g["step"] < max_step]  # candidate early ckpts (exclude the last)
-        if g_pre.empty:
-            key = (bucket, early_frac, fam)
-            if key not in _LOGGED_MISSING_CKPTS:
-                _LOGGED_MISSING_CKPTS.add(key)
-                print(
-                    f"  ckpt-DA: only one ckpt for bucket={bucket} "
-                    f"family={fam} (first seen on task={task}) — skipped"
-                )
-            continue
-        target_step = early_frac * max_step
-        early_row = g_pre.iloc[(g_pre["step"] - target_step).abs().argmin()]
-        max_row = g.loc[g["step"].idxmax()]
-        early.append(float(early_row["primary_score"]))
-        late.append(float(max_row["primary_score"]))
-        keys.append(fam)
-    if len(keys) < 2:
-        return float("nan")
-    return decision_acc_fast(np.asarray(early), np.asarray(late))
 
 
 # --- per-model arrays for snr_variants --------------------------------------
@@ -298,36 +199,20 @@ def write_variants_definitions(out_dir: Path) -> Path:
 # _is_parent_task and build_snr_pool now live in analysis/utils.py (imported above).
 
 
-def _scaling_da_pairs(df_pool) -> list[tuple[str, str]]:
-    """Ordered (small_bucket, target_bucket) pairs (small < target by bucket
-    order) with ≥2 families present at both buckets — the cross-size pairs
-    where decision accuracy is computable. Excludes the canonical
-    small→TARGET_SIZE pairs (emitted separately as decision_acc_size_<small>)."""
-    present = [b for b in bucket_order() if b in set(df_pool["bucket"].dropna())]
-    fams = {b: set(df_pool[df_pool["bucket"] == b]["family"]) for b in present}
-    pairs = []
-    for i, sb in enumerate(present):
-        for tb in present[i + 1:]:
-            if sb in SMALL_SIZES and tb == TARGET_SIZE:
-                continue
-            if len(fams[sb] & fams[tb]) >= 2:
-                pairs.append((sb, tb))
-    return pairs
-
 
 def run(pool: str, out_dir: Path):
-    # One pooled dataframe drives both SNR signal/noise AND decision accuracy:
-    # custom-in-pool rows + folded-in externals (reference_hf / a06 /
-    # distillation when include_external). The size axis is the *bucket*
+    # The pool drives the SNR signal/noise (custom-in-pool rows + folded-in
+    # externals when include_external). The size axis is the *bucket*
     # (size_bucket): custom small sizes are singletons; larger sizes pool so
-    # each bucket has ≥2 models. Cross-bucket DA groups on `family`.
+    # each bucket has ≥2 models. Decision accuracy is computed upstream by
+    # rq01 (compute_da.py); this step reads that table and appends the SNR
+    # variant columns — DA first (the truth), SNR second (the proxies).
     df_pool = build_snr_pool(pool)
     df_pool["bucket"] = df_pool["size"].map(size_bucket)
     all_tasks = sorted(df_pool["task"].unique())
     tasks = [t for t in all_tasks if _is_parent_task(t)]
 
     pool_buckets = [b for b in bucket_order() if b in set(df_pool["bucket"].dropna())]
-    scaling_pairs = _scaling_da_pairs(df_pool)
 
     pool_models = set(expand_pool(pool))
     all_models = set(df_pool["model"])
@@ -342,7 +227,6 @@ def run(pool: str, out_dir: Path):
     above_random = {(t, s) for s in AR_SIZES if s in _ar_mask.columns
                     for t in _ar_mask.index[_ar_mask[s] == 1]}
     pool_n_models = df_pool.groupby("bucket")["model"].nunique().to_dict()
-    da_n_families = df_pool.groupby("bucket")["family"].nunique().to_dict()
     print(
         f"Pool '{pool}': {len(all_models & pool_models)} custom + "
         f"{len(all_models - pool_models)} external model(s); "
@@ -354,49 +238,17 @@ def run(pool: str, out_dir: Path):
     )
     print(f"  Buckets: {pool_buckets}")
     print(f"  Pool models per bucket: {pool_n_models}")
-    print(f"  DA-axis families per bucket: {da_n_families}")
-    if scaling_pairs:
-        print(f"  Scaling-DA pairs (≥2 shared families): {scaling_pairs}")
 
     write_variants_definitions(out_dir)
 
-    # Pre-slice the pool by task once. Every per-task call below
-    # (compute_*_decision_accuracy, per_model_inputs) filters its `df` arg by
-    # task, so passing the whole pool made each call re-scan all ~N rows — the
-    # dominant cost of this loop. Grouping once turns those O(N) boolean masks
-    # into O(rows-per-task). Numerically identical (same rows selected); the
-    # functions keep their signatures so external callers (build_allenai_variants)
-    # are unaffected.
+    # Pre-slice the pool by task once. per_model_inputs filters its `df` arg by
+    # task, so passing the whole pool made each call re-scan all ~N rows.
     df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
 
     rows = []
-    for task in tqdm(tasks, desc="Tasks"):
+    for task in tqdm(tasks, desc="SNR tasks"):
         row = {"task": task}
         dft = df_by_task[task]
-
-        # Core size-DA: small custom bucket@last → 1B target@last. Families
-        # present at both buckets contribute; the distilled 600M↔1B family
-        # joins the 600M column.
-        for s in SMALL_SIZES:
-            row[f"decision_acc_size_{s}"] = _safe(
-                compute_size_decision_accuracy, dft, task, s,
-            )
-        # Scaling-DA: every other cross-bucket pair with ≥2 shared families
-        # (lights up the larger ladder where multi-size families exist).
-        for sb, tb in scaling_pairs:
-            row[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
-                compute_size_decision_accuracy, dft, task, sb, tb,
-            )
-        # ckpt-DA: relative-fraction early ckpt vs max, per bucket — multi-ckpt
-        # externals (a06, distill, SmolLM3-checkpoints, Olmo-3, Apertus-8B)
-        # now participate.
-        for frac in CKPT_DA_EARLY_FRACS:
-            fl = _frac_label(frac)
-            for b in pool_buckets:
-                row[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
-                    compute_ckpt_decision_accuracy, dft, task, b, frac,
-                )
-
         size_inputs = {b: per_model_inputs(dft, task, b) for b in pool_buckets}
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
@@ -411,17 +263,27 @@ def run(pool: str, out_dir: Path):
                 row[f"snr_{key}_{b}"] = snr
         rows.append(row)
 
-    out = pd.DataFrame(rows).set_index("task").sort_index()
+    snr_df = pd.DataFrame(rows).set_index("task").sort_index()
+
+    # Copy the DA ground truth (rq01) and append the SNR columns. DA is computed
+    # before SNR, so the table must already exist.
+    da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_per_task.csv"
+    if not da_path.exists():
+        raise SystemExit(
+            f"DA table missing: {da_path}\n"
+            f"Run `compute_da.py --pool {pool}` first (DA is computed before SNR)."
+        )
+    da_df = pd.read_csv(da_path, index_col="task")
+    combined = da_df.join(snr_df)
+
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / "snr_variants_per_task.csv"
-    out.to_csv(csv_path)
-    n_size = len(SMALL_SIZES) + len(scaling_pairs)
-    n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
+    combined.to_csv(csv_path)
     print(f"\nWrote CSV → {csv_path}")
     print(
-        f"  {len(out)} tasks × {len(out.columns)} columns "
+        f"  {len(combined)} tasks × {len(combined.columns)} columns "
         f"({len(AGGREGATION_FUNCTIONS)} variants × {len(pool_buckets)} buckets × 3 stats "
-        f"+ {n_size} size-DA + {n_ckpt} ckpt-DA)"
+        f"+ {len(da_df.columns)} DA cols from rq01)"
     )
 
 
