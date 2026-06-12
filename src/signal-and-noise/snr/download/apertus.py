@@ -184,6 +184,17 @@ def load_reference_hf_eval_results(
     return _read_parquet(_parquet_path(data_dir, "huggingface-reference"))
 
 
+def load_posttraining_eval_results(
+    data_dir: str | Path = DEFAULT_DATA_DIR,
+) -> pd.DataFrame:
+    """Posttraining (instruct) runs — gemma-3-1b-it, Olmo-3-7B-Instruct,
+    Apertus-8B-Instruct — on the posttraining task suite. Columns match
+    `load_apertus_eval_results`; `mix` is ``main``, `seed` is NaN, one
+    final checkpoint per model. These models also appear in the
+    reference_hf split but on the pretraining tasks (disjoint task sets)."""
+    return _read_parquet(_parquet_path(data_dir, "posttraining"))
+
+
 def load_all_eval_results(
     data_dir: str | Path = DEFAULT_DATA_DIR,
 ) -> pd.DataFrame:

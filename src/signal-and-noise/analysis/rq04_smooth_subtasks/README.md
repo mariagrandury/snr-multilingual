@@ -10,7 +10,7 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool custom_swissai_hf) -->
 ## Highlighted result
 
-- **`global_mmlu_full_tr` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.85 → 3.41** (**+1.56**) with `high_school_world_history|international_law|machine_learning|high_school_computer_science|… (+4)`.
+- **`global_mmlu_full_vi` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **2.05 → 4.01** (**+1.95**) with `high_school_world_history|business_ethics|marketing`.
 - **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.12 → 3.65** (**+1.52**) with `medical_genetics`.
 - **`paws` 3B (per_benchmark)** — a subset beats the full set: SNR **0.37 → 1.81** (**+1.44**) with `paws_eu`.
 - **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject subset matches or beats the full ~48-subject set across sizes (`medical_genetics`, `human_aging`, `international_law`, world-history recur).
@@ -52,18 +52,18 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 
 | case | task | size | full → best SNR | +gain | best subset |
 |---|---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_tr` | 1B | 1.85 → 3.41 | +1.56 | `high_school_world_history` \| `international_law` \| `machine_learning` \| `high_school_computer_science` \| `… (+4)` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 | `high_school_world_history` \| `business_ethics` \| `marketing` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 | `medical_genetics` |
 | per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
-| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.68 → 3.02 | +1.34 | `public_relations` \| `philosophy` \| `high_school_chemistry` \| `security_studies` \| `… (+2)` |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 | `public_relations` \| `philosophy` |
 | global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 | `prehistory` \| `college_medicine` \| `high_school_geography` |
 | global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 | `high_school_world_history` \| `international_law` |
-| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.18 → 3.45 | +1.27 | `human_sexuality` \| `clinical_knowledge` |
 | per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
 | per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 | `belebele_swh_Latn` \| `belebele_hin_Deva` \| `belebele_eus_Latn` |
+| global_mmlu_full_per_language | `global_mmlu_full_ru` | 600M | 2.09 → 3.24 | +1.15 | `medical_genetics` \| `international_law` \| `high_school_statistics` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 3.15 → 4.27 | +1.13 | `other` \| `high_school_world_history` \| `marketing` \| `human_aging` \| `… (+4)` |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 1B | 2.91 → 4.03 | +1.12 | `marketing` \| `high_school_world_history` |
 | global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
-| global_mmlu_full_per_language | `global_mmlu_full_en` | 175M | 1.92 → 3.01 | +1.10 | `high_school_world_history` |
-| per_benchmark | `truthfulqa` | 7-9B | 0.79 → 1.87 | +1.09 | `truthfulqa_hi_mc2` |
 
 ![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

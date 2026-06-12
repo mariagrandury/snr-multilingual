@@ -19,9 +19,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parent.parent.parent
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+_REPO = Path(__file__).resolve().parent.parent.parent   # signal-and-noise
+_SRC = _REPO.parent                                       # src (for `evals`)
+for _p in (_REPO, _SRC):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 import pandas as pd
 from tqdm import tqdm
@@ -30,6 +32,7 @@ from snr.constants import PLOT_DIR
 from analysis.paths import ALLENAI_COMPARISON
 from snr.download.hf import pull_predictions_from_hf
 from snr.snr_variants import AGGREGATION_FUNCTIONS
+from evals.scripts.utils.configs import size_bucket
 
 # Reuse the Apertus driver's helpers verbatim — same shape of inputs.
 # The Apertus driver renamed `per_mix_inputs` → `per_model_inputs` when
@@ -79,6 +82,12 @@ def load_allenai_core() -> pd.DataFrame:
     df["primary_score"] = pd.to_numeric(df["primary_score"], errors="coerce")
     df = df.dropna(subset=["step", "primary_score"]).copy()
     df["step"] = df["step"].astype(int)
+
+    # per_model_inputs / compute_size_decision_accuracy select on `bucket`
+    # (the Apertus driver sets it via size_bucket in run()). AllenAI's
+    # DataDecide sizes (150M/300M/750M/1B) aren't in the custom bucket map,
+    # so they pass through unchanged — ALL_SIZES still match the bucket values.
+    df["bucket"] = df["size"].map(size_bucket)
 
     return df.sort_values(["size", "mix", "step", "task"]).reset_index(drop=True)
 

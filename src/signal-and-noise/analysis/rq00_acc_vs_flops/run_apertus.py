@@ -294,8 +294,8 @@ def generate_readme(pool: str, out_dir: Path) -> None:
     top3 = list(fam_rank.head(3).index)
     top_sig = sig.sort_values("signal", ascending=False).head(5)
 
-    # above-random gate from the `custom` report (buckets 175M…1B)
-    mask = pd.read_csv(ACC_VS_FLOPS / stage / "custom"
+    # above-random gate from the pure-custom report (buckets 175M…1B)
+    mask = pd.read_csv(ACC_VS_FLOPS / stage / "seeds_28_1797_1904"
                        / "above_random_mask.csv")
     buckets = [c for c in ("175M", "350M", "600M", "1B") if c in mask.columns]
     above_any = (mask[buckets] == 1).any(axis=1)

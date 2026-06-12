@@ -96,9 +96,10 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 
 - `pretraining/<pool>/acc_vs_flops_signal.csv` — per-task mixture-Signal (full
   ranking; all parent tasks).
-- `pretraining/custom/`, `pretraining/custom_swiss_hf/` —
-  `above_random_scores.csv` / `above_random_mask.csv` (the gate; custom-only and
-  all-models reports). From `analysis/rq00_acc_vs_flops/above_random.py`.
+- `pretraining/seeds_28_1797_1904/`, `pretraining/custom_swissai_hf/`,
+  `all/external/` — `above_random_scores.csv` / `above_random_mask.csv` (the
+  gate; pure-custom, all-models, and non-custom reports, pool-named). From
+  `analysis/rq00_acc_vs_flops/above_random.py`.
 - `…/per_benchmark/<family>.png` — top-3 families, subplots per language,
   external scaling markers overlaid.
 - `…/per_language/<lang>.png` — per language, subplots = top-3 families.

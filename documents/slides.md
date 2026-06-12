@@ -727,9 +727,9 @@ subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
 
 | pool | best variant | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `seeds_1904` | `dispersion` | 0.75 | 0.79 | 7 |
-| `seeds_28_1797` | `discrepancy` | 0.84 | 0.64 | 7 |
-| `seeds_28_1797_1904` | `star_discrepancy_shifted` | 0.92 | 0.93 | 7 |
+| `seeds_1904` | `projection` | 0.90 | 0.80 | 4 |
+| `seeds_28_1797` | `dispersion_shifted` | 1.00 | 1.00 | 4 |
+| `seeds_28_1797_1904` | `dispersion_shifted` | 0.98 | 1.00 | 4 |
 | `custom_swissai_hf` | `mpsd` | 1.00 | 1.00 | 4 |
 
 Pure pools share all 7 English tasks; `custom_swissai_hf` shares fewer after the above-random gate — the pure 3-seed pool is the like-for-like fit.
@@ -822,14 +822,14 @@ subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 
 | case | task | size | full → best SNR | +gain |
 |---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_tr` | 1B | 1.85 → 3.41 | +1.56 |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 |
 | global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 |
 | per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 |
-| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.68 → 3.02 | +1.34 |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 |
 | global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 |
 | global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 |
-| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.18 → 3.45 | +1.27 |
 | per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 |
+| per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }

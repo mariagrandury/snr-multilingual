@@ -7,12 +7,13 @@ checkpoint per model — same level as the acc-vs-FLOPs curves). A benchmark is
 by a margin: `mean > random_baseline + MARGIN` (MARGIN = 0.05). Anything at or
 below chance+margin is treated as random and carries no usable signal.
 
-Two reports are written, each a pair of CSVs under
-`results/acc_vs_flops/<stage>/<label>/`:
-- `custom/`          — only the custom Apertus pretrains (buckets 175M…1B).
-- `custom_swiss_hf/` — every model in scope (custom + a06 + distill + Swiss-AI
-                       / HF references), bucketed across the full ladder
-                       (175M, 350M, 600M, 1B, 3B, 4B, 7-9B, … 70B).
+One report per gated pool is written, each a pair of CSVs under the pool's own
+dir `acc_vs_flops/<stage>/<pool>/` (pool-named, matching every other RQ):
+- `seeds_28_1797_1904/` — only the custom Apertus pretrains (buckets 175M…1B).
+- `custom_swissai_hf/`  — every model in scope (custom + a06 + distill + Swiss-AI
+                          / HF references), bucketed across the full ladder
+                          (175M, 350M, 600M, 1B, 3B, 4B, 7-9B, … 70B).
+- `external/`           — every non-custom model (all parquets, incl posttraining).
 
 Each report writes:
 - `above_random_scores.csv` — row per benchmark, column per size bucket, value =
@@ -28,8 +29,8 @@ per-family answer-option counts (`N_OPTIONS` below, `random_baseline =
 1 / n_options`); it never reads any RQ output, so every RQ depends on this
 gate and not the reverse.
 
-    python analysis/rq00_acc_vs_flops/above_random.py            # writes both reports
-    python analysis/rq00_acc_vs_flops/above_random.py --only custom_swiss_hf
+    python analysis/rq00_acc_vs_flops/above_random.py            # writes all reports
+    python analysis/rq00_acc_vs_flops/above_random.py --only custom_swissai_hf
 """
 
 from __future__ import annotations
@@ -130,18 +131,24 @@ def load_mask(pool: str) -> pd.DataFrame | None:
     return m[[c for c in m.columns if c in bucket_order()]].astype("Int64")
 
 
-# The two reports: (label, pool). `custom` = custom pretrains only (the SNR
-# gate's domain, buckets 175M…1B); `custom_swiss_hf` = every model in scope
-# (custom + a06 + distill + Swiss-AI/HF refs) across the full bucket ladder.
-REPORTS = [("custom", "seeds_28_1797_1904"),
-           ("custom_swiss_hf", "custom_swissai_hf")]
+# Above-random reports, one per model-set pool we gate. Output dirs are
+# pool-named (matching every other RQ — no separate label namespace), each with
+# a caption for the appendix slide:
+#   seeds_28_1797_1904 = pure custom pretrains (the SNR gate's domain, 175M…1B)
+#   custom_swissai_hf   = custom + a06 + distill + Swiss-AI/HF refs (full ladder)
+#   external            = every non-custom model (all parquets, incl posttraining)
+REPORTS = [
+    ("seeds_28_1797_1904", "Custom Apertus pretrains only"),
+    ("custom_swissai_hf", "All models (custom + Swiss-AI/HF refs)"),
+    ("external", "All non-custom models (refs + a06 + distill + posttraining)"),
+]
 
 
-def run(label: str, pool: str) -> None:
+def run(pool: str) -> None:
     # build_snr_pool folds in the externals when the pool sets include_external
-    # (custom_swissai_hf) and is custom-only otherwise (seeds_28_1797_1904).
-    # Lazy import: run_apertus_snr_variants imports SIZES/scores_and_mask from
-    # here, so a module-top import would be circular.
+    # (custom_swissai_hf), is custom-only for seeds_*, and pools every non-custom
+    # model for `external`. Lazy import: run_apertus_snr_variants imports
+    # SIZES/scores_and_mask from here, so a module-top import would be circular.
     from analysis.utils import build_snr_pool
 
     df = build_snr_pool(pool)
@@ -149,7 +156,7 @@ def run(label: str, pool: str) -> None:
     scores, mask, meta = scores_and_mask(df, sizes=buckets)
 
     stage = load_pools()[pool].get("stage", "pretraining")
-    out_dir = ACC_VS_FLOPS / stage / label
+    out_dir = ACC_VS_FLOPS / stage / pool
     out_dir.mkdir(parents=True, exist_ok=True)
     scores_out, mask_out = meta.join(scores), meta.join(mask)
     scores_out.index.name = mask_out.index.name = "task"
@@ -159,7 +166,7 @@ def run(label: str, pool: str) -> None:
     above = (mask == 1).sum()
     have = mask.notna().sum()
     fully_random = ((mask == 0).sum(axis=1) == mask.notna().sum(axis=1)).sum()
-    print(f"[{label}] pool '{pool}': {len(scores)} benchmarks × {len(buckets)} "
+    print(f"[{pool}] {len(scores)} benchmarks × {len(buckets)} "
           f"buckets (margin = +{MARGIN} over chance)")
     for s in buckets:
         print(f"  {s:>7}: above random {int(above[s])}/{int(have[s])}")
@@ -224,23 +231,25 @@ def _ar_slide(label: str, stage: str, caption: str) -> str:
 
 
 def above_random_slides(stage: str = "pretraining") -> list[str]:
-    """The two above-random appendix slides (custom-only, then all models)."""
+    """Above-random appendix slides for the pretraining-stage pools (custom-only,
+    then all models). The `external` report lives at its own stage, so it isn't
+    in the pretraining deck — its CSVs are written by `run("external")`."""
     return [
-        _ar_slide("custom", stage, "Custom Apertus pretrains only"),
-        _ar_slide("custom_swiss_hf", stage,
-                  "All models (custom + Swiss-AI/HF refs)"),
+        _ar_slide(pool, stage, caption)
+        for pool, caption in REPORTS
+        if load_pools()[pool].get("stage", "pretraining") == stage
     ]
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--only", choices=[label for label, _ in REPORTS], default=None,
-                   help="Generate only this report (default: both).")
+    p.add_argument("--only", choices=[pool for pool, _ in REPORTS], default=None,
+                   help="Generate only this pool's report (default: all).")
     args = p.parse_args()
-    for label, pool in REPORTS:
-        if args.only and label != args.only:
+    for pool, _caption in REPORTS:
+        if args.only and pool != args.only:
             continue
-        run(label=label, pool=pool)
+        run(pool)
 
 
 if __name__ == "__main__":

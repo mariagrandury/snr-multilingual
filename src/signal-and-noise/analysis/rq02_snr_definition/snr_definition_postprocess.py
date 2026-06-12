@@ -398,10 +398,13 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         f"recommend the *family*, not an exact variant.",
         f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
         f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {TARGET_SIZE}).",
-        f"- **Generalizes across seeds at the family level** — variant-ranking Spearman ρ "
-        f"**{fmt(hm[('spearman_rank_global','size')])}** (DA-size) / "
-        f"**{fmt(hm[('spearman_rank_global','ckpt')])}** (DA-ckpt); the exact per-language "
-        f"argmax does not. **Never `tukey` / `projection`** (r ≤ 0).",
+        f"- **Variant ranking generalizes across seeds under DA-ckpt** (holdout "
+        f"Spearman ρ **{fmt(hm[('spearman_rank_global','ckpt')])}**) **but not under "
+        f"DA-size** (ρ **{fmt(hm[('spearman_rank_global','size')])}**): the DA-size "
+        f"per-variant correlations are small and near-tied, so their ranking is "
+        f"noise-dominated and does not survive a seed swap — treat DA-size variant "
+        f"ranking as unreliable. The exact per-language argmax never transfers. "
+        f"**Never `tukey` / `projection`** (r ≤ 0).",
     ])
 
     # 1) variant ranking — top 7 + bottom 2
@@ -460,7 +463,11 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         "above-random tasks (DA-size is NaN at the 1B target, so DA-ckpt@1B is shown):",
         t_anchor,
         f"![Top-5 benchmarks per language by SNR](pretraining/{pool}/top_benchmarks_per_language.png)",
-        "**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`:",
+        "**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`. "
+        "DA-ckpt ranking transfers; **DA-size does not** — its per-variant correlations "
+        "are small and clustered (top variants within ~0.1), so the global ranking is "
+        "noise-dominated and its Spearman ρ is unstable run-to-run (don't read it as a "
+        "real effect):",
         t_holdout,
     ])
     return highlight, results

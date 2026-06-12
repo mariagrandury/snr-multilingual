@@ -6251,6 +6251,28 @@
       "eval_groups": [
         "midtraining"
       ]
+    },
+    "external": {
+      "description": "Model-set tier: every non-custom model pooled across all four external parquets (reference_hf + a06 + distillation + posttraining), all models and all tasks, with no stage/name filtering. Cross-model signal/noise and within-family scaling DA over the external ladder. Stage 'all' (spans pretraining + posttraining) → outputs under <rq>/all/external/.",
+      "stage": "all",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        },
+        {
+          "source": "snr-pretraining-a06"
+        },
+        {
+          "source": "distillation"
+        },
+        {
+          "source": "posttraining"
+        }
+      ],
+      "load_all_external": true
     }
   },
   "sources": {

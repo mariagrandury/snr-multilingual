@@ -12,7 +12,7 @@
 
 - **Global-best SNR definition (`custom_swissai_hf`): `dist_std`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.32** (DA-size), **0.43** (DA-ckpt), 0.38 overall. DA-ckpt is led by the mean-pairwise-distance / relative-spread cluster (`mpsd`/`rel_mpd`/`rel_mpsd` ≈ 0.51) — all dispersion-family, so recommend the *family*, not an exact variant.
 - **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **6 of 11** languages (`dist_std` SNR @ 1B).
-- **Generalizes across seeds at the family level** — variant-ranking Spearman ρ **0.80** (DA-size) / **0.92** (DA-ckpt); the exact per-language argmax does not. **Never `tukey` / `projection`** (r ≤ 0).
+- **Variant ranking generalizes across seeds under DA-ckpt** (holdout Spearman ρ **0.81**) **but not under DA-size** (ρ **-0.07**): the DA-size per-variant correlations are small and near-tied, so their ranking is noise-dominated and does not survive a seed swap — treat DA-size variant ranking as unreliable. The exact per-language argmax never transfers. **Never `tukey` / `projection`** (r ≤ 0).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -53,9 +53,9 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 
 | pool | best variant (DA-size) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `seeds_1904` (1 seed) | `mpd` | 0.31 | 0.30 |
-| `seeds_28_1797` (2 seeds) | `rel_mpd` | 0.33 | 0.28 |
-| `seeds_28_1797_1904` (3 seeds) | `rel_mpd` | 0.39 | 0.38 |
+| `seeds_1904` (1 seed) | `mad` | 0.50 | 0.28 |
+| `seeds_28_1797` (2 seeds) | `rel_mpd` | 0.31 | 0.37 |
+| `seeds_28_1797_1904` (3 seeds) | `rel_std` | 0.43 | 0.48 |
 | `custom_swissai_hf` (3 seeds + externals) | `dist_std` | 0.32 | 0.43 |
 
 **Most reliable benchmark per language** — `dist_std` SNR @ 1B over above-random tasks (DA-size is NaN at the 1B target, so DA-ckpt@1B is shown):
@@ -76,15 +76,15 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 
 ![Top-5 benchmarks per language by SNR](pretraining/custom_swissai_hf/top_benchmarks_per_language.png)
 
-**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`:
+**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`. DA-ckpt ranking transfers; **DA-size does not** — its per-variant correlations are small and clustered (top variants within ~0.1), so the global ranking is noise-dominated and its Spearman ρ is unstable run-to-run (don't read it as a real effect):
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | 0.80 | 0.92 |
-| Pearson r between splits (all cells) | 0.57 | 0.73 |
-| Exact-variant agreement (per lang) | 0% | 7% |
-| Family-level agreement (per lang) | 14% | 36% |
-| Retention of train-best r on test | 62% | 78% |
+| Spearman ρ on global variant ranking | -0.07 | 0.81 |
+| Pearson r between splits (all cells) | 0.48 | 0.60 |
+| Exact-variant agreement (per lang) | 7% | 7% |
+| Family-level agreement (per lang) | 21% | 29% |
+| Retention of train-best r on test | 61% | 79% |
 <!-- END auto:results -->
 
 ## TODO

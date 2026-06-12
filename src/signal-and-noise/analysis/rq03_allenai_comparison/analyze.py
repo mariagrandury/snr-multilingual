@@ -313,21 +313,33 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         fmt(rows[p]["pearson_log_snr"], 2)
         for p in ("seeds_1904", "seeds_28_1797", "seeds_28_1797_1904"))
 
-    highlight = "\n".join([
-        f"- **On the pure 3-seed pool (`{ALLENAI_POOL}`) both SNR values and rank order "
-        f"agree across corpora** — best variant `{g.variant}`, Pearson r of log₁₀(SNR) "
-        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ of the rank order **{fmt(g.spearman_rank)}** "
-        f"over the {int(g.n_shared)} shared English tasks.",
+    n_pure = int(g.n_shared)
+    weak = n_pure <= 5   # too few shared tasks for the correlation to be robust
+    agree_bullet = (
+        f"- **On the pure 3-seed pool (`{ALLENAI_POOL}`) SNR values and rank order agree "
+        f"across corpora** — best variant `{g.variant}`, Pearson r of log₁₀(SNR) "
+        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ **{fmt(g.spearman_rank)}**"
+        + (f", but over only **{n_pure}** shared English tasks after the above-random gate "
+           f"— near-saturated, so indicative rather than robust."
+           if weak else f" over the {n_pure} shared English tasks."))
+    trend_bullet = (
+        f"- **Seed-count trend is not robust** — Pearson r {pure_r} (1 → 2 → 3 seeds) is "
+        f"over only ~{n_pure} shared tasks; with so few points the values saturate near "
+        f"1.0 and don't form a reliable monotone trend."
+        if weak else
         f"- **The value correlation rises with seeds** — Pearson r {pure_r} "
-        f"(1 → 2 → 3 seeds): more seeds tighten the cross-corpus SNR fit.",
+        f"(1 → 2 → 3 seeds): more seeds tighten the cross-corpus SNR fit.")
+    highlight = "\n".join([
+        agree_bullet,
+        trend_bullet,
         f"- **Dispersion + discrepancy families transfer; relative-spread does not** — "
         f"the cross-corpus winners are discrepancy/dispersion variants "
         f"(`{rows['seeds_1904'].variant}`, `{rows['seeds_28_1797'].variant}`, `{g.variant}`), "
         f"not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).",
-        f"- **Only 7 English tasks overlap, so the *correlation* is the result, not top-K "
-        f"Jaccard** (any K ≥ 7 spans the whole universe → Jaccard ≡ 1.0). On "
-        f"`custom_swissai_hf` the above-random gate shrinks the shared set to "
-        f"n_shared = **{int(ext.n_shared)}**, so use the pure pool for the like-for-like fit.",
+        f"- **Only 7 English tasks overlap the two corpora, and the above-random gate "
+        f"leaves just {n_pure} of them** — so the evidence is the SNR *correlation* over "
+        f"that handful, not top-K Jaccard (trivially 1.0 on so small a universe). "
+        f"`custom_swissai_hf` keeps n_shared = **{int(ext.n_shared)}**.",
     ])
 
     rs = []
@@ -346,8 +358,9 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         f"`python analysis/rq03_allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
         "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
         "log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus "
-        "variant. The pure pools share all 7 tasks; `custom_swissai_hf` shares fewer "
-        "after the above-random gate, so it is indicative, not comparable:",
+        "variant. The English overlap universe is 7 tasks; the above-random gate leaves "
+        "the `n_shared` shown per pool. Where `n_shared` is small (≤5) the correlations "
+        "are over a handful of points and should be read as indicative, not robust:",
         t_pools,
         f"![Apertus vs AllenAI SNR — 3-seed pool, best variant]"
         f"(pretraining/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",

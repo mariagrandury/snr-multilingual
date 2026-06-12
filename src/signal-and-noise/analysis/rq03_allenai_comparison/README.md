@@ -15,10 +15,10 @@
 <!-- BEGIN auto:highlight (analyze.py --pool custom_swissai_hf) -->
 ## Highlighted result
 
-- **On the pure 3-seed pool (`seeds_28_1797_1904`) both SNR values and rank order agree across corpora** — best variant `star_discrepancy_shifted`, Pearson r of log₁₀(SNR) **0.92**, Spearman ρ of the rank order **0.93** over the 7 shared English tasks.
-- **The value correlation rises with seeds** — Pearson r 0.75 → 0.84 → 0.92 (1 → 2 → 3 seeds): more seeds tighten the cross-corpus SNR fit.
-- **Dispersion + discrepancy families transfer; relative-spread does not** — the cross-corpus winners are discrepancy/dispersion variants (`dispersion`, `discrepancy`, `star_discrepancy_shifted`), not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).
-- **Only 7 English tasks overlap, so the *correlation* is the result, not top-K Jaccard** (any K ≥ 7 spans the whole universe → Jaccard ≡ 1.0). On `custom_swissai_hf` the above-random gate shrinks the shared set to n_shared = **4**, so use the pure pool for the like-for-like fit.
+- **On the pure 3-seed pool (`seeds_28_1797_1904`) SNR values and rank order agree across corpora** — best variant `dispersion_shifted`, Pearson r of log₁₀(SNR) **0.98**, Spearman ρ **1.00**, but over only **4** shared English tasks after the above-random gate — near-saturated, so indicative rather than robust.
+- **Seed-count trend is not robust** — Pearson r 0.90 → 1.00 → 0.98 (1 → 2 → 3 seeds) is over only ~4 shared tasks; with so few points the values saturate near 1.0 and don't form a reliable monotone trend.
+- **Dispersion + discrepancy families transfer; relative-spread does not** — the cross-corpus winners are discrepancy/dispersion variants (`projection`, `dispersion_shifted`, `dispersion_shifted`), not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).
+- **Only 7 English tasks overlap the two corpora, and the above-random gate leaves just 4 of them** — so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe). `custom_swissai_hf` keeps n_shared = **4**.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -112,16 +112,16 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 
 Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1904`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool custom_swissai_hf`.
 
-**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The pure pools share all 7 tasks; `custom_swissai_hf` shares fewer after the above-random gate, so it is indicative, not comparable:
+**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The English overlap universe is 7 tasks; the above-random gate leaves the `n_shared` shown per pool. Where `n_shared` is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
 
 | pool | best variant | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `seeds_1904` (1 seed) | `dispersion` | 0.75 | 0.79 | 7 |
-| `seeds_28_1797` (2 seeds) | `discrepancy` | 0.84 | 0.64 | 7 |
-| `seeds_28_1797_1904` (3 seeds) | `star_discrepancy_shifted` | 0.92 | 0.93 | 7 |
+| `seeds_1904` (1 seed) | `projection` | 0.90 | 0.80 | 4 |
+| `seeds_28_1797` (2 seeds) | `dispersion_shifted` | 1.00 | 1.00 | 4 |
+| `seeds_28_1797_1904` (3 seeds) | `dispersion_shifted` | 0.98 | 1.00 | 4 |
 | `custom_swissai_hf` (+ externals) | `mpsd` | 1.00 | 1.00 | 4 |
 
-![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png)
+![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_dispersion_shifted.png)
 
 ![Apertus vs AllenAI SNR across variants](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->

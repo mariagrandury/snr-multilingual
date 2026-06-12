@@ -371,7 +371,7 @@ def load_gmf_subjects_df(df: pd.DataFrame | None = None) -> pd.DataFrame:
     long = pd.concat(sub_rows, ignore_index=True)
     grouped = (
         long.groupby(["model", "mix", "seed", "size", "step", "subject"],
-                     as_index=False)
+                     as_index=False, dropna=False)   # seed is NaN for non-custom models
         .agg(primary_score=("primary_score", "mean"),
              n_languages=("language", "nunique"),
              tokens=("tokens", "first"),
@@ -517,10 +517,13 @@ def build_summary(out_dir: Path) -> Path:
     }
     frames = []
     for case, path in case_files.items():
-        if not path.exists():
-            print(f"  skip {case}: {path} not found")
+        if not path.exists() or path.stat().st_size == 0:
+            print(f"  skip {case}: no rows for this pool")
             continue
         df = pd.read_csv(path)
+        if df.empty:
+            print(f"  skip {case}: no rows for this pool")
+            continue
         df = df.assign(
             case=case,
             snr_gain=df["best_snr"] - df["full_set_snr"],
@@ -627,39 +630,22 @@ def generate_slides(stage: str, pool: str) -> None:
 
 
 def build_pool(pool: str) -> pd.DataFrame:
-    """SNR signal-pool dataframe for the named pool: Apertus rows matching
-    the pool's `members` (resolved via configs/models.json), plus every
-    external pretraining-checkpoint row (reference_hf / a06 / distillation)
-    when `include_external=true`. Mirrors run_apertus_snr_variants.build_snr_pool."""
-    pool_models = set(expand_pool(pool))
-    df_a = load_apertus_eval_results()
-    df_a = df_a[df_a["model"].isin(pool_models)].copy()
-    frames = [df_a]
-    if pool_include_external(pool):
-        allowed = stage_external_models(load_pools()[pool].get("stage", "pretraining"))
-        for loader in (load_reference_hf_eval_results,
-                       load_a06_eval_results,
-                       load_distillation_eval_results):
-            try:
-                df_e = loader()
-            except FileNotFoundError:
-                continue
-            df_e = df_e[df_e["model"].isin(allowed)]
-            if not df_e.empty:
-                frames.append(df_e)
-    return _with_bucket(pd.concat(frames, ignore_index=True))
+    """SNR signal-pool dataframe for the named pool, with a ``bucket`` column.
+
+    Delegates to the shared ``analysis.utils.build_snr_pool`` (single source of
+    truth — Apertus rows for the pool's members, externals folded per the pool's
+    stage, or every non-custom model for the ``external`` tier), so this RQ
+    respects stage/pool exactly like every other one — no local model filter."""
+    from analysis.utils import build_snr_pool
+    return _with_bucket(build_snr_pool(pool))
 
 
 def main(stage: str, pool: str, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pool_models = set(expand_pool(pool))
-    df_apertus = load_apertus_eval_results()
-    df_apertus = df_apertus[df_apertus["model"].isin(pool_models)].copy()
     df = build_pool(pool)
     pool_n_models = df.groupby("bucket")["model"].nunique().to_dict()
-    print(f"Pool '{pool}': {len(df_apertus):,} Apertus rows + "
-          f"{len(df) - len(df_apertus):,} external rows | "
+    print(f"Pool '{pool}': {len(df):,} rows | {df['model'].nunique()} models | "
           f"models per bucket in SNR pool: {pool_n_models}")
 
     print("\n=== Case 1: multilingual families (task = family, subtask = language) ===")
@@ -667,14 +653,15 @@ def main(stage: str, pool: str, out_dir: Path):
 
     print("\n=== Case 2: global_mmlu_full subjects "
           "(task = global_mmlu_full, subtask = subject) ===")
-    # Cases 2/3 build a per-subject view by averaging across global_mmlu
-    # langs; the per-(lang, subject) facets only exist for Apertus, so
-    # pass the Apertus-only frame here.
-    run_gmf_subjects(out_dir, df=df_apertus)
+    # Cases 2/3 build a per-subject view from the per-(lang, subject)
+    # `global_mmlu_full_<lang>_<subject>` facets present in the pool frame.
+    # Whichever of the pool's models carry those facets contribute; pools
+    # without them yield an empty case (skipped, not errored).
+    run_gmf_subjects(out_dir, df=df)
 
     print("\n=== Case 3: global_mmlu_full subjects per language "
           "(task = global_mmlu_full_<lang>, subtask = subject) ===")
-    run_gmf_subjects_per_language(out_dir, df=df_apertus)
+    run_gmf_subjects_per_language(out_dir, df=df)
 
     print("\n=== Summary: snr_gain ranking across cases ===")
     build_summary(out_dir)

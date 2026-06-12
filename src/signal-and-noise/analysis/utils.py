@@ -29,7 +29,8 @@ from evals.scripts.utils.configs import (  # noqa: E402
 )
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results, load_apertus_eval_results,
-    load_distillation_eval_results, load_reference_hf_eval_results,
+    load_distillation_eval_results, load_posttraining_eval_results,
+    load_reference_hf_eval_results,
 )
 
 # --- size params (single source of truth: configs/models.json) --------------
@@ -142,6 +143,26 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
     `seed` and live only at their native sizes, but per_model_inputs groups by
     model name, so each adds a fresh signal/noise point at its size.
     """
+    # The "external" tier pools every non-custom model across all four
+    # external parquets (reference_hf + a06 + distillation + posttraining),
+    # all models and all tasks, with no stage/name filtering. The instruct
+    # models live in both reference_hf (pretraining tasks) and posttraining
+    # (posttraining tasks) on disjoint task sets, so the concat has no
+    # duplicate (model, task) rows.
+    if load_pools()[pool].get("load_all_external"):
+        frames = []
+        for loader in (
+            load_reference_hf_eval_results,
+            load_a06_eval_results,
+            load_distillation_eval_results,
+            load_posttraining_eval_results,
+        ):
+            try:
+                frames.append(loader())
+            except FileNotFoundError:
+                continue
+        return pd.concat(frames, ignore_index=True)
+
     pool_models = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
     df_a = df_a[df_a["model"].isin(pool_models)].copy()
