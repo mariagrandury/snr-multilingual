@@ -2472,5 +2472,24 @@
     "test": [
       "hellaswag"
     ]
+  },
+  "benchmark_capabilities": {
+    "arc": "scientific knowledge",
+    "belebele": "reading comprehension",
+    "global_mmlu_full": "world knowledge",
+    "global_piqa_completions": "physical commonsense",
+    "hellaswag": "activity commonsense",
+    "mlqa": "cross-lingual QA",
+    "mgsm_direct": "mathematical reasoning",
+    "multiblimp": "grammatical acceptability",
+    "truthfulqa": "truthfulness",
+    "xnli": "natural language inference",
+    "xstorycloze": "narrative commonsense",
+    "xcopa": "causal commonsense",
+    "xwinograd": "coreference resolution",
+    "paws": "paraphrase detection",
+    "include_base_44": "regional knowledge",
+    "mgsm_native_cot": "mathematical reasoning",
+    "multi-if": "instruction following"
   }
 }
