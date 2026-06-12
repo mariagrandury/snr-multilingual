@@ -416,22 +416,32 @@ def run(pool: str, out_dir: Path):
 
     write_variants_definitions(out_dir)
 
+    # Pre-slice the pool by task once. Every per-task call below
+    # (compute_*_decision_accuracy, per_model_inputs) filters its `df` arg by
+    # task, so passing the whole pool made each call re-scan all ~N rows — the
+    # dominant cost of this loop. Grouping once turns those O(N) boolean masks
+    # into O(rows-per-task). Numerically identical (same rows selected); the
+    # functions keep their signatures so external callers (build_allenai_variants)
+    # are unaffected.
+    df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
+
     rows = []
     for task in tqdm(tasks, desc="Tasks"):
         row = {"task": task}
+        dft = df_by_task[task]
 
         # Core size-DA: small custom bucket@last → 1B target@last. Families
         # present at both buckets contribute; the distilled 600M↔1B family
         # joins the 600M column.
         for s in SMALL_SIZES:
             row[f"decision_acc_size_{s}"] = _safe(
-                compute_size_decision_accuracy, df_pool, task, s,
+                compute_size_decision_accuracy, dft, task, s,
             )
         # Scaling-DA: every other cross-bucket pair with ≥2 shared families
         # (lights up the larger ladder where multi-size families exist).
         for sb, tb in scaling_pairs:
             row[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
-                compute_size_decision_accuracy, df_pool, task, sb, tb,
+                compute_size_decision_accuracy, dft, task, sb, tb,
             )
         # ckpt-DA: relative-fraction early ckpt vs max, per bucket — multi-ckpt
         # externals (a06, distill, SmolLM3-checkpoints, Olmo-3, Apertus-8B)
@@ -440,10 +450,10 @@ def run(pool: str, out_dir: Path):
             fl = _frac_label(frac)
             for b in pool_buckets:
                 row[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
-                    compute_ckpt_decision_accuracy, df_pool, task, b, frac,
+                    compute_ckpt_decision_accuracy, dft, task, b, frac,
                 )
 
-        size_inputs = {b: per_model_inputs(df_pool, task, b) for b in pool_buckets}
+        size_inputs = {b: per_model_inputs(dft, task, b) for b in pool_buckets}
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for b in pool_buckets:

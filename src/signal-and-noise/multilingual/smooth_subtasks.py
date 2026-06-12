@@ -154,6 +154,12 @@ def sweep_subset_snrs(
     cumulative subsets of size 1..N. Also compute a random-order baseline.
     Returns dict with sorted_subtasks, cumulative_snrs, random_cumulative_snrs.
     """
+    # Pre-slice once to this (bucket, subtasks). Every snr_for_subset call below
+    # re-filters by (bucket == size) & task ∈ subtasks, so passing the full pool
+    # made each of the ~2·|subtasks| calls re-scan all rows — the dominant RQ3
+    # cost. Slicing here is numerically identical (snr_for_subset re-applies the
+    # same filter on the already-narrowed frame).
+    df = df[(df["bucket"] == size) & (df["task"].isin(subtasks))]
     per_subtask = {t: snr_for_subset(df, [t], size) for t in subtasks}
     sorted_subtasks = sorted(
         per_subtask.items(),

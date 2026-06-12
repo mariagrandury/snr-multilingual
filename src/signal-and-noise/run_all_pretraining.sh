@@ -2,6 +2,13 @@
 # Full pretraining-stage analysis across the 4 model-set tiers.
 # Idempotent: skips the per-task SNR compute when its CSV already exists.
 # Output layout: results/<analysis>/pretraining/<pool>/
+#
+# Three passes so dependencies resolve in one shot:
+#   A. SNR compute per tier (cheap since the per-task pre-slice; ~35s/pool).
+#   B. Seed-split holdout — needs the seeds_1904 + seeds_28_1797 CSVs from A,
+#      and is read by the snr_definition README, so it runs before pass C.
+#   C. Per-tier analysis + doc generation (the canonical pool, last, now sees
+#      the fresh holdout — no redundant re-run).
 set -uo pipefail
 cd "$(dirname "$0")"
 PY=python3
@@ -10,26 +17,26 @@ SNR=results/snr_definition/pretraining
 
 run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18; }
 
+echo "############################## PASS A — SNR compute ##############################"
 for t in "${TIERS[@]}"; do
-  echo "############################## TIER $t ##############################"
   if [ ! -f "$SNR/$t/snr_variants_per_task.csv" ]; then
     run $PY multilingual/run_apertus_snr_variants.py --pool "$t"
   else
     echo "  (compute cached: $SNR/$t/snr_variants_per_task.csv)"
   fi
+done
+
+echo "############################## PASS B — seed-split holdout ##############################"
+run $PY multilingual/compare_seed_splits.py --train-pool seeds_28_1797 --test-pool seeds_1904
+
+echo "############################## PASS C — analysis + docs ##############################"
+for t in "${TIERS[@]}"; do
+  echo "############################## TIER $t ##############################"
   run $PY multilingual/analyze_snr_variants.py --pool "$t"
   run $PY multilingual/snr_definition_postprocess.py --pool "$t"
   run $PY results/benchmark_creation/analyze.py --pool "$t"
   run $PY results/allenai_comparison/analyze.py --pool "$t"
 done
-
-echo "############################## SEED-SPLIT HOLDOUT ##############################"
-run $PY multilingual/compare_seed_splits.py --train-pool seeds_28_1797 --test-pool seeds_1904
-
-# The snr_definition README's seed-generalization table reads the holdout above,
-# which runs after the tier loop — refresh the canonical RQ1 docs now that it
-# exists (idempotent; rewrites only the auto:* blocks).
-run $PY multilingual/snr_definition_postprocess.py --pool custom_swissai_hf
 
 echo "############################## RQ4 smooth_subtasks ##############################"
 run $PY multilingual/smooth_subtasks.py --pool seeds_28_1797_1904
