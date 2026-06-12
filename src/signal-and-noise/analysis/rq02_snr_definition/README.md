@@ -17,10 +17,13 @@
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/` for the four model-set tiers:
+Outputs live under `pretraining/<pool>/` for the four custom-pretraining tiers:
 `seeds_1904` (1 seed) · `seeds_28_1797` (2 seeds) · `seeds_28_1797_1904`
 (3 seeds) · `custom_swissai_hf` (3 seeds + a06 + distillation + swiss-ai/HF
-**pretraining** references, instruct excluded). DA has two flavours: **DA-size**
+**pretraining** references, instruct excluded) — plus a fifth **model-set** tier
+`external` under `all/external/` (every non-custom model pooled across all
+parquets, sizes 270M…70B, no data-mixture axis; see the dedicated section below).
+DA has two flavours: **DA-size**
 (small→1B ranking) and **DA-ckpt** (early-→late-checkpoint ranking, early ckpt
 picked at relative training fractions so external trajectories participate).
 The 22 variants are grouped into families (dispersion / relative-spread /
@@ -86,6 +89,36 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | Family-level agreement (per lang) | 21% | 29% |
 | Retention of train-best r on test | 61% | 79% |
 <!-- END auto:results -->
+
+## External model-set tier (`all/external`)
+
+The `external` tier pools every non-custom model (reference HF, a06,
+distillation, posttraining; sizes 270M…70B) with **no data-mixture axis**. So
+"Signal" here is **cross-model dispersion** of final-checkpoint scores across the
+external ladder at each size bucket — *how far different model families separate
+on a benchmark*, not how far the three FineWeb mixtures separate. SNR magnitudes
+are therefore an order larger than the custom pool's (e.g. `multiblimp_rus` SNR
+≈ 119), and DA is the within-family scaling-DA over that ladder. Regenerate with
+`python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool external`.
+
+- **The dispersion family still leads — but `dist_std` drops out.** Overall (mean
+  Pearson r of log₁₀(SNR) vs DA across languages) the dispersion cluster tops the
+  table — `dispersion` / `mpd` / `range` / `aad` / `mad` / `rms_deviation` /
+  `quartile_deviation` all at **0.30 overall** (**0.44 DA-ckpt**), with `mpsd`
+  highest on DA-ckpt (0.45). The custom-pool winner `dist_std` is **undefined**
+  on this tier (NaN, like `tukey`); `projection` is again negative (DA-ckpt
+  −0.21). **Recommend the dispersion *family*, not an exact variant** — the same
+  conclusion as the custom pool, reached on a disjoint model set.
+- **DA-size is led by the discrepancy family** — `star_discrepancy` 0.20,
+  `discrepancy` 0.19, `gini` / `dispersion_shifted` / `star_discrepancy_shifted`
+  0.188 — but DA-size is sparse on the external ladder (most cross-bucket pairs
+  lack ≥2 spanning families), so DA-ckpt is the more trustworthy axis here.
+- **Per-language anchors shift from MultiBLiMP to HellaSwag + MultiBLiMP.** With
+  capable models clearing the gate, the long-completion 4-option `hellaswag_<lang>`
+  becomes the highest-SNR benchmark in several languages (ar 78.9, vi 38.5, ru
+  69.6, es 53.8 — second only to MultiBLiMP), while `multiblimp_<lang>` stays top
+  in en/es/eu/hi/ru/tr. The exact per-language argmax still does not transfer
+  across tiers — only the dispersion/relative-spread *family* does.
 
 ## TODO
 

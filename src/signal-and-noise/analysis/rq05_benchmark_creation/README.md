@@ -93,6 +93,32 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | reading passage | 0.00 | 1.00 |
 <!-- END auto:results -->
 
+## External model-set tier (`all/external`)
+
+Re-running the design-axis analysis on the `external` tier (cross-model
+dispersion over the 270M…70B external ladder) is the sharpest test of RQ2's
+mechanism, because the capable external models clear the above-random gate on the
+4-option translated MCQA the custom pool drops. Outputs in `all/external/`;
+regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool external`.
+
+- **The above-random gate now passes 11 families, including the 4-option ones**
+  (`hellaswag`, `global_mmlu_full`, `arc`, `belebele`) that the custom pool gated
+  out — so the survivor set is no longer almost-all-2-option.
+- **The 4-option penalty disappears: HellaSwag is the *highest*-SNR family.**
+  Per-family median SNR ranks `hellaswag` **5.98** (4-option) above `paws` 4.69,
+  `xwinograd` 4.61, `global_mmlu_full` 4.58, `xstorycloze` 2.61, `multiblimp` 2.59,
+  `arc` 2.30, `xcopa` 1.87, `belebele` 1.68, `xnli` 0.69, `global_piqa_completions`
+  0.49. A long-completion 4-option benchmark sitting at the top is the mechanism's
+  prediction: option count only hurts when the model is too weak to clear chance
+  (RQ0), not intrinsically.
+- **Still no single design feature is significant — and option count is *less* so.**
+  Family-level Kruskal–Wallis on option count is now **H = 0.05, p = 0.83** (vs
+  H = 1.78 in the custom pool), on format **H = 0.00, p = 1.00**, on curation
+  **H = 1.44, p = 0.49**, on data source **H = 0.17, p = 0.68**, on reading
+  passage **H = 0.38, p = 0.54**. With the 4-option families restored to the
+  survivor set, option count loses what little predictive power it had — confirming
+  the penalty lived in the capability-driven gate, not in benchmark design.
+
 ## TODO
 
 - [ ] Bootstrap CIs on the per-family SNR medians and on each Kruskal–Wallis H.

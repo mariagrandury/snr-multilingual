@@ -68,6 +68,33 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 ![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
 
+## External model-set tier (`all/external`)
+
+Run on the `external` tier the SNR is **cross-model dispersion** over the
+270M…70B external ladder (no mixture axis), and only the three subtask cases run
+(no per-item Option-D pass). Outputs in `all/external/`; regenerate with
+`python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool external`.
+
+**Subset-beats-full survives the change of model set.** Even though the external
+ladder's full-set SNRs are low (the heterogeneous model families wash out a
+benchmark's combined signal), a small subtask subset recovers it — the gains are
+as large as on the custom pool:
+
+| case | task | size | full → best SNR | +gain | best subset |
+|---|---|---|---|---|---|
+| case3_global_mmlu_full_per_language | `global_mmlu_full_ar` | 1B | 0.18 → 1.95 | +1.77 | `high_school_chemistry` |
+| case1_per_benchmark | `truthfulqa` | 1B | 0.52 → 1.96 | +1.44 | `truthfulqa_hi_mc2` \| `truthfulqa_vi_mc2` |
+| case1_per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
+| case1_per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
+| case1_per_benchmark | `global_piqa_completions` | 1B | 0.56 → 1.73 | +1.16 | `global_piqa_completions_eng_latn` |
+| case3_global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 0.87 → 1.93 | +1.06 | `high_school_chemistry` \| `elementary_mathematics` |
+
+The recurring levers carry over (MMLU subject subsets, per-language TruthfulQA
+`mc` splits, `paws_eu`), but the **exact** winning subjects differ from the custom
+pool (`high_school_chemistry` recurs here rather than world-history), reinforcing
+RQ4's headline: treat subset picks as a robust *lever*, not a transferable exact
+subset.
+
 ## TODO
 
 - [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,

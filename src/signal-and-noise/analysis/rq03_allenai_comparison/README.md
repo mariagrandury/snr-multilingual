@@ -23,9 +23,11 @@
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/` for the four model-set tiers:
+Outputs live under `pretraining/<pool>/` for the four custom-pretraining tiers:
 `seeds_1904` (1 seed) · `seeds_28_1797` (2 seeds) · `seeds_28_1797_1904`
-(3 seeds) · `custom_swissai_hf` (3 seeds + externals). For each pool we compute,
+(3 seeds) · `custom_swissai_hf` (3 seeds + externals) — plus the `external`
+model-set tier under `all/external/` (see the dedicated section below). For each
+pool we compute,
 over the shared English tasks, the cross-corpus Pearson r of log₁₀(SNR@1B)
 (values) and Spearman ρ (rank order), reporting the best-correlating variant.
 The pure 3-seed pool `seeds_28_1797_1904` is the canonical, like-for-like
@@ -125,6 +127,30 @@ Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1
 
 ![Apertus vs AllenAI SNR across variants](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
+
+## External model-set tier (`all/external`)
+
+The `external` tier (cross-model dispersion over the 270M…70B external ladder, no
+mixture axis) compares against the same AllenAI DataDecide SNR table.
+Outputs in `all/external/`; regenerate with
+`python analysis/rq03_allenai_comparison/analyze.py --pool external`.
+
+- **The cross-corpus agreement holds and rests on a wider base.** Best variant
+  **`star_discrepancy_shifted`** (a discrepancy-family member, consistent with the
+  custom pools), **Pearson r of log₁₀(SNR) +0.892**, **Spearman ρ +0.829** — over
+  **6** shared English tasks rather than the 4 the custom pool retains. The
+  external models clear the above-random gate on more of the 7-task English
+  overlap (`arc_easy`, `arc_challenge`, `csqa`, `hellaswag`, `mmlu`, `piqa`), so
+  the comparison is over more points, though still small enough to read as
+  indicative rather than robust.
+- **Same family transfers.** As on the custom pools, the cross-corpus winner is a
+  discrepancy/dispersion variant (`star_discrepancy_shifted`, then `discrepancy`
+  0.80, `dispersion_shifted` 0.78), not the mean-normalised relative-spread family
+  (incl. AllenAI's own `rel_std` ≈ 0.28). Both corpora rank `hellaswag` / `piqa`
+  at the top and `arc_challenge` / `csqa` at the bottom (top-5 Jaccard 0.67).
+- **MMLU-aliasing caveat still applies** — only 1 of the shared tasks is the
+  aliased `global_mmlu_full_en → mmlu` (different MMLU content); `commonsense_qa →
+  csqa` is the other alias. See `all/external/agreement.md`.
 
 ## TODO
 

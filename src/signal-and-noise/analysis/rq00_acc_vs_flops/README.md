@@ -85,6 +85,26 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 | 5 | 0.20 | 0 / 2 | 0 / 2 |
 <!-- END auto:results -->
 
+## External model-set tier (`all/external`)
+
+The fifth tier (`external` — every non-custom model pooled across the
+`reference_hf` + a06 + distillation + posttraining parquets, sizes 270M…70B,
+no mixture axis) gets only the above-random gate here, not the curves
+(`run_apertus.py` skips it). Its gate report lives in `all/external/`. Regenerate
+with `python analysis/rq00_acc_vs_flops/above_random.py`.
+
+**The answer-count penalty is a capability artifact, not an intrinsic benchmark
+property.** Where the custom 175M–1B pretrains clear chance on only **44 / 118**
+benchmarks (and just **9 / 63** four-option ones), the capable external models
+clear it on **122 / 124** — including **68 / 69** four-option families and **10 / 11**
+three-option ones. The translated 4-option MCQA (`belebele`, `global_mmlu_full`,
+`arc`, `truthfulqa`) that sits at chance for the small custom models is solidly
+above chance once a multi-billion-parameter model evaluates it. So the gate's
+near-total removal of 4-option families in the custom pool reflects *those models
+being too weak*, not the benchmarks being unusable — a distinction that drives the
+external-tier story in RQ2 (option count stops predicting SNR) and RQ5 (4-option
+HellaSwag tops the family ranking).
+
 ## TODO
 
 - [ ] Per-language curve panels for the gated-out families to visualise *how far*
