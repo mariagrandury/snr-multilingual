@@ -66,13 +66,11 @@ from evals.scripts.utils.configs import (  # noqa: E402
     size_bucket,
     stage_external_models,
 )
-from analysis.rq02_snr_definition.analyze_snr_variants import (
-    _ENGLISH_ONLY_TASKS,
-    assign_language,
-    benchmark_family,
+from analysis.utils import (
+    _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
+    assign_language, benchmark_family, build_snr_pool,
 )
 from analysis.rq00_acc_vs_flops.above_random import SIZES as AR_SIZES, scores_and_mask
-from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate
 from snr.constants import PLOT_DIR
 from analysis.paths import SNR_DEFINITION
 from snr.dataloader import get_slice
@@ -90,14 +88,8 @@ from snr.snr_variants import AGGREGATION_FUNCTIONS
 # large sizes (7B/8B → "7-9B") pool to ≥2 models. The custom small sizes are
 # singleton buckets, so SMALL_SIZES / TARGET_SIZE double as bucket labels for
 # the core holdout size-DA.
-_SNR = load_snr_params()
-SMALL_SIZES = _SNR["small_sizes"]
-TARGET_SIZE = _SNR["target_size"]
-LAST_N = _SNR["last_n"]
-# ckpt-DA early checkpoints are picked per-model at these fractions of each
-# model's own max step (absolute custom iters wouldn't match external/a06/
-# distill trajectories).
-CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]
+from analysis.utils import (  # noqa: E402
+    SMALL_SIZES, TARGET_SIZE, LAST_N, CKPT_DA_EARLY_FRACS)
 OUT_ROOT = SNR_DEFINITION
 
 
@@ -303,56 +295,7 @@ def write_variants_definitions(out_dir: Path) -> Path:
 # --- driver -----------------------------------------------------------------
 
 
-def _is_parent_task(task: str) -> bool:
-    """Match the cluster's ``aggregate_parents`` semantics: keep one row per
-    "real" evaluation, dropping the per-(lang, subject) facets that the
-    parquet ships alongside their language-aggregate parents.
-
-    Two branches:
-      - English standalone tasks (``mmlu``, ``hellaswag``, …): the explicit
-        list in ``_ENGLISH_ONLY_TASKS``.
-      - Multilingual per-language aggregates: the same
-        ``_is_language_aggregate`` rule used in
-        ``analysis.rq04_smooth_subtasks.smooth_subtasks.collect_multilingual_families``.
-    """
-    if task in _ENGLISH_ONLY_TASKS:
-        return True
-    return _is_language_aggregate(task, benchmark_family(task))
-
-
-def build_snr_pool(pool: str) -> pd.DataFrame:
-    """SNR signal-pool dataframe for the named pool. Apertus rows are
-    filtered to the pool's `members` (resolved via configs/models.json
-    via expand_pool). When the pool sets `include_external=true`, every
-    external pretraining row joins the pool — reference_hf (HF/Swiss-AI
-    refs), a06 (apertus3 main runs) and distillation (ap-from8b). These
-    have no `seed` and only live at their native sizes (so they never
-    join the custom cross-size DA axis), but per_model_inputs groups by
-    model name, so each adds a fresh signal/noise data point at its size.
-
-    External rows are restricted to models declared at the pool's stage, so
-    instruct/posttraining checkpoints in the reference_hf parquet never leak
-    into the pretraining pool."""
-    pool_models = set(expand_pool(pool))
-    df_a = load_apertus_eval_results()
-    df_a = df_a[df_a["model"].isin(pool_models)].copy()
-    frames = [df_a]
-    if pool_include_external(pool):
-        stage = load_pools()[pool].get("stage", "pretraining")
-        allowed = stage_external_models(stage)
-        for loader in (
-            load_reference_hf_eval_results,
-            load_a06_eval_results,
-            load_distillation_eval_results,
-        ):
-            try:
-                df_e = loader()
-            except FileNotFoundError:
-                continue
-            df_e = df_e[df_e["model"].isin(allowed)]
-            if not df_e.empty:
-                frames.append(df_e)
-    return pd.concat(frames, ignore_index=True)
+# _is_parent_task and build_snr_pool now live in analysis/utils.py (imported above).
 
 
 def _scaling_da_pairs(df_pool) -> list[tuple[str, str]]:

@@ -56,7 +56,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from analysis.rq02_snr_definition.analyze_snr_variants import assign_language, benchmark_family
+from analysis.utils import assign_language, benchmark_family
 from analysis.rq04_smooth_subtasks.smooth_subtasks import collect_multilingual_families
 from snr.constants import PLOT_DIR
 from analysis.paths import SMOOTH_SUBTASKS

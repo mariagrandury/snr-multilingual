@@ -49,9 +49,9 @@ import pandas as pd  # noqa: E402
 
 from evals.scripts.utils.configs import (  # noqa: E402
     bucket_order, load_pools, load_snr_params, size_bucket)
-from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
+from analysis.utils import (  # noqa: E402
     assign_language, benchmark_family)
-from analysis.rq00_acc_vs_flops.run_apertus import _is_parent_task  # noqa: E402
+from analysis.utils import _is_parent_task  # noqa: E402
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import ACC_VS_FLOPS
 
@@ -142,7 +142,7 @@ def run(label: str, pool: str) -> None:
     # (custom_swissai_hf) and is custom-only otherwise (seeds_28_1797_1904).
     # Lazy import: run_apertus_snr_variants imports SIZES/scores_and_mask from
     # here, so a module-top import would be circular.
-    from analysis.rq02_snr_definition.run_apertus_snr_variants import build_snr_pool
+    from analysis.utils import build_snr_pool
 
     df = build_snr_pool(pool)
     buckets = [b for b in bucket_order() if b in set(df["size"].map(size_bucket).dropna())]

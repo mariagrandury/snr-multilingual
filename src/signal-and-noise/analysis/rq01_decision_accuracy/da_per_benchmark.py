@@ -58,7 +58,7 @@ import pandas as pd  # noqa: E402
 from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
 from analysis.rq00_acc_vs_flops.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
-from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
+from analysis.utils import (  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import SNR_DEFINITION

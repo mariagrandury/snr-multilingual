@@ -50,10 +50,10 @@ import pandas as pd  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
-from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
-    _ENGLISH_ONLY_TASKS, assign_language, benchmark_family,
+from analysis.utils import (  # noqa: E402
+    _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
+    assign_language, benchmark_family,
 )
-from analysis.rq04_smooth_subtasks.smooth_subtasks import _is_language_aggregate  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -82,14 +82,7 @@ OUT_ROOT = ACC_VS_FLOPS
 TOP_N = 3
 
 
-def _is_parent_task(task: str) -> bool:
-    """Aggregate subject-subtasks into their parent (mmlu_anatomy → mmlu,
-    agieval_en_* → agieval_en, …) by keeping only parent rows. Language
-    variants (arc_de, global_mmlu_full_ar) stay distinct. Mirrors
-    run_apertus_snr_variants._is_parent_task."""
-    if task in _ENGLISH_ONLY_TASKS:
-        return True
-    return _is_language_aggregate(task, benchmark_family(task))
+# _is_parent_task now lives in analysis/utils.py (imported above).
 
 
 def _task_signal(df, task, seed):

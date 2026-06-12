@@ -55,16 +55,14 @@ from snr.plot import config_snr_ax
 
 OUT_ROOT = SNR_DEFINITION
 
-# SNR analysis params — single source of truth in configs/models.json.
-# The size axis is the *bucket* (size_bucket); the actual buckets/targets to
-# render are read from the per-task CSV columns, so this script adapts to
-# whatever run_apertus_snr_variants produced (incl. >1B buckets + scaling-DA).
-_SNR = load_snr_params()
-SMALL_SIZES = _SNR["small_sizes"]
-TARGET_SIZE = _SNR["target_size"]
-_BUCKETS = bucket_order()
-# Longest-first alternation so "12-14B" matches before "1B" etc.
-_BUCKET_RE = "|".join(sorted((re.escape(b) for b in _BUCKETS), key=len, reverse=True))
+# Shared task-name helpers + config-derived size params. These used to live
+# here; moved to analysis/utils.py so lower-numbered RQs import them without
+# depending on this module (keeps the rqNN run order a clean DAG).
+from analysis.utils import (  # noqa: E402
+    SMALL_SIZES, TARGET_SIZE, _BUCKETS, _BUCKET_RE,
+    _LANG_MAP, _ENGLISH_ONLY_TASKS, _BENCHMARK_FAMILY_OVERRIDES,
+    assign_language, benchmark_family,
+)
 
 
 def _bucket_color(bucket: str):
@@ -81,68 +79,8 @@ _MIN_FIT_POINTS = 5
 TOP_N = 3
 
 
-# --- language assignment -----------------------------------------------------
-
-_LANG_MAP = {
-    "ar": "ar", "arb": "ar",
-    "de": "de",
-    "es": "es", "spa": "es",
-    "eu": "eu", "eus": "eu",
-    "fr": "fr",
-    "hi": "hi", "hin": "hi",
-    "ru": "ru", "rus": "ru",
-    "vi": "vi", "vie": "vi",
-    "zh": "zh", "zho": "zh", "cmn": "zh",
-    "ja": "ja", "jp": "ja", "jpn": "ja",
-    "sw": "sw", "swh": "sw",
-    "th": "th", "tha": "th",
-    "tr": "tr", "tur": "tr",
-    "en": "en", "eng": "en",
-}
-
-_ENGLISH_ONLY_TASKS = {
-    "arc_challenge", "arc_easy", "commonsense_qa", "hellaswag", "mmlu",
-    "openbookqa", "piqa", "truthfulqa_mc1",
-}
-
-# Tasks that should be merged into a single benchmark family even though
-# their names don't share a prefix-up-to-language-token. Keep small and
-# explicit; only ARC's challenge/easy split matches this pattern in the
-# Apertus task list.
-_BENCHMARK_FAMILY_OVERRIDES = {
-    "arc_challenge": "arc",
-    "arc_easy": "arc",
-}
-
-
-def assign_language(task: str) -> str:
-    if task in _ENGLISH_ONLY_TASKS:
-        return "en"
-    for tok in task.split("_"):
-        if tok in _LANG_MAP:
-            return _LANG_MAP[tok]
-    return "??"
-
-
-def benchmark_family(task: str) -> str:
-    """Strip any language/script suffix, leaving the benchmark identifier.
-
-    Two explicit overrides via ``_BENCHMARK_FAMILY_OVERRIDES``:
-      - ``arc_challenge`` and ``arc_easy`` collapse to ``arc`` so they
-        end up in the same per-benchmark grid as ``arc_de``/``arc_es``/…
-      - English ``truthfulqa_mc1`` is left alone so it does not collapse
-        with the multilingual ``truthfulqa_<lang>_mc1`` variants (which
-        are Spanish/Russian/etc. — they belong in their own family).
-    """
-    if task in _BENCHMARK_FAMILY_OVERRIDES:
-        return _BENCHMARK_FAMILY_OVERRIDES[task]
-    parts = task.split("_")
-    out = []
-    for p in parts:
-        if p in _LANG_MAP:
-            break
-        out.append(p)
-    return "_".join(out) if out else parts[0]
+# language assignment + benchmark_family now live in analysis/utils.py
+# (imported above).
 
 
 # --- column helpers ---------------------------------------------------------
