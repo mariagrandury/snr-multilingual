@@ -89,11 +89,16 @@ as large as on the custom pool:
 | case1_per_benchmark | `global_piqa_completions` | 1B | 0.56 → 1.73 | +1.16 | `global_piqa_completions_eng_latn` |
 | case3_global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 0.87 → 1.93 | +1.06 | `high_school_chemistry` \| `elementary_mathematics` |
 
+![MMLU subject subsets vs full set (external)](all/external/global_mmlu_full_subjects.png)
+
 The recurring levers carry over (MMLU subject subsets, per-language TruthfulQA
 `mc` splits, `paws_eu`), but the **exact** winning subjects differ from the custom
 pool (`high_school_chemistry` recurs here rather than world-history), reinforcing
 RQ4's headline: treat subset picks as a robust *lever*, not a transferable exact
-subset.
+subset. Per-benchmark curves of the sweep (full vs best subset across the external
+ladder) for the highest-gain families:
+
+![TruthfulQA subset sweep (external)](all/external/per_benchmark_plots/truthfulqa.png)
 
 ## TODO
 

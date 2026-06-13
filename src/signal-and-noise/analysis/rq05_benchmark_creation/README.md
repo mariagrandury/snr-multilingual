@@ -101,23 +101,57 @@ mechanism, because the capable external models clear the above-random gate on th
 4-option translated MCQA the custom pool drops. Outputs in `all/external/`;
 regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool external`.
 
-- **The above-random gate now passes 11 families, including the 4-option ones**
-  (`hellaswag`, `global_mmlu_full`, `arc`, `belebele`) that the custom pool gated
-  out — so the survivor set is no longer almost-all-2-option.
-- **The 4-option penalty disappears: HellaSwag is the *highest*-SNR family.**
-  Per-family median SNR ranks `hellaswag` **5.98** (4-option) above `paws` 4.69,
-  `xwinograd` 4.61, `global_mmlu_full` 4.58, `xstorycloze` 2.61, `multiblimp` 2.59,
-  `arc` 2.30, `xcopa` 1.87, `belebele` 1.68, `xnli` 0.69, `global_piqa_completions`
-  0.49. A long-completion 4-option benchmark sitting at the top is the mechanism's
-  prediction: option count only hurts when the model is too weak to clear chance
-  (RQ0), not intrinsically.
-- **Still no single design feature is significant — and option count is *less* so.**
-  Family-level Kruskal–Wallis on option count is now **H = 0.05, p = 0.83** (vs
-  H = 1.78 in the custom pool), on format **H = 0.00, p = 1.00**, on curation
-  **H = 1.44, p = 0.49**, on data source **H = 0.17, p = 0.68**, on reading
-  passage **H = 0.38, p = 0.54**. With the 4-option families restored to the
-  survivor set, option count loses what little predictive power it had — confirming
-  the penalty lived in the capability-driven gate, not in benchmark design.
+The above-random gate now passes **11 families, including the 4-option ones**
+(`hellaswag`, `global_mmlu_full`, `arc`, `belebele`) the custom pool gated out, so
+the survivor set is no longer almost-all-2-option — and the answer-count penalty
+disappears entirely.
+
+**Per-family SNR ranking** — median per-family SNR over each family's
+per-language tasks, above-random survivors only. The highest-SNR family is now the
+**4-option** `hellaswag`, and 4-option families (★) are interleaved throughout
+rather than clustered at the bottom:
+
+| family | median SNR | n | format | n_opts |
+|---|---|---|---|---|
+| `hellaswag` ★ | **5.98** | 4 | completion | 4 |
+| `paws` | 4.69 | 2 | classification | 2 |
+| `xwinograd` | 4.61 | 4 | completion | 2 |
+| `global_mmlu_full` ★ | 4.58 | 1 | mcq_question_only | 4 |
+| `xstorycloze` | 2.61 | 5 | completion | 2 |
+| `multiblimp` | 2.59 | 7 | minimal_pair | 2 |
+| `arc` ★ | 2.30 | 2 | mcq_question_only | 4 |
+| `xcopa` | 1.87 | 4 | completion | 2 |
+| `belebele` ★ | 1.68 | 3 | mrc_passage | 4 |
+| `xnli` | 0.69 | 6 | classification | 3 |
+| `global_piqa_completions` | 0.49 | 5 | completion | 2 |
+
+![Per-family SNR ranking (external)](all/external/snr_per_family_ranked.png)
+
+A long-completion 4-option benchmark sitting at the very top is the mechanism's
+prediction: option count only hurts when the model is too weak to clear chance
+(RQ0), not intrinsically — what matters is comparing few, *long*, information-dense
+completions.
+
+**Significance of each design axis** — family-level Kruskal–Wallis. With the
+4-option families restored to the survivor set, option count loses what little
+predictive power it had in the custom pool (H 1.78 → **0.05**); no design axis is
+significant:
+
+| axis | H | p |
+|---|---|---|
+| n_options | **0.05** | 0.83 |
+| format | 0.00 | 1.00 |
+| data source | 0.17 | 0.68 |
+| curation method | 1.44 | 0.49 |
+| reading passage | 0.38 | 0.54 |
+
+![SNR by answer-option count (external) — no penalty](all/external/snr_by_n_options.png)
+
+**Paper-level claim.** Comparing the custom and external survivor sets isolates the
+confound: the apparent "fewer options ⇒ higher SNR" effect in the custom pool is an
+artifact of the capability-driven above-random gate (RQ0), not a property of
+benchmark design. Once capable models clear the gate, answer-option count carries
+no signal and the sharpest benchmarks span both 2- and 4-option formats.
 
 ## TODO
 

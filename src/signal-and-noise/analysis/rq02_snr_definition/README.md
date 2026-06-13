@@ -93,32 +93,56 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 ## External model-set tier (`all/external`)
 
 The `external` tier pools every non-custom model (reference HF, a06,
-distillation, posttraining; sizes 270M…70B) with **no data-mixture axis**. So
+distillation, posttraining; sizes 270M…70B) with **no data-mixture axis**, so
 "Signal" here is **cross-model dispersion** of final-checkpoint scores across the
-external ladder at each size bucket — *how far different model families separate
-on a benchmark*, not how far the three FineWeb mixtures separate. SNR magnitudes
-are therefore an order larger than the custom pool's (e.g. `multiblimp_rus` SNR
-≈ 119), and DA is the within-family scaling-DA over that ladder. Regenerate with
+external ladder — *how far different model families separate on a benchmark*,
+rather than how far the three FineWeb mixtures separate. SNR magnitudes are
+consequently an order larger than the custom pool's (e.g. `multiblimp_rus` SNR
+≈ 119) and DA is the within-family scaling-DA over that ladder. The headline —
+**recommend the dispersion *family*, not an exact variant** — holds on this
+disjoint model set, the strongest robustness check we have. Regenerate with
 `python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool external`.
 
-- **The dispersion family still leads — but `dist_std` drops out.** Overall (mean
-  Pearson r of log₁₀(SNR) vs DA across languages) the dispersion cluster tops the
-  table — `dispersion` / `mpd` / `range` / `aad` / `mad` / `rms_deviation` /
-  `quartile_deviation` all at **0.30 overall** (**0.44 DA-ckpt**), with `mpsd`
-  highest on DA-ckpt (0.45). The custom-pool winner `dist_std` is **undefined**
-  on this tier (NaN, like `tukey`); `projection` is again negative (DA-ckpt
-  −0.21). **Recommend the dispersion *family*, not an exact variant** — the same
-  conclusion as the custom pool, reached on a disjoint model set.
-- **DA-size is led by the discrepancy family** — `star_discrepancy` 0.20,
-  `discrepancy` 0.19, `gini` / `dispersion_shifted` / `star_discrepancy_shifted`
-  0.188 — but DA-size is sparse on the external ladder (most cross-bucket pairs
-  lack ≥2 spanning families), so DA-ckpt is the more trustworthy axis here.
-- **Per-language anchors shift from MultiBLiMP to HellaSwag + MultiBLiMP.** With
-  capable models clearing the gate, the long-completion 4-option `hellaswag_<lang>`
-  becomes the highest-SNR benchmark in several languages (ar 78.9, vi 38.5, ru
-  69.6, es 53.8 — second only to MultiBLiMP), while `multiblimp_<lang>` stays top
-  in en/es/eu/hi/ru/tr. The exact per-language argmax still does not transfer
-  across tiers — only the dispersion/relative-spread *family* does.
+**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages.
+The dispersion and relative-spread clusters lead overall and on DA-ckpt; the
+discrepancy cluster leads DA-size only; depth metrics fail; the custom-pool winner
+`dist_std` is undefined on this tier:
+
+| variant (family) | DA-size r | DA-ckpt r | overall |
+|---|---|---|---|
+| `dispersion` / `mpd` / `range` / `mad` (dispersion) | 0.16 | **0.44** | **0.30** |
+| `rel_std` / `rel_mpd` / `iqr` (relative-spread) | 0.16 | 0.43 | 0.30 |
+| `mpsd` (dispersion) | 0.10 | **0.45** | 0.27 |
+| `star_discrepancy` (discrepancy) | **0.20** | 0.05 | 0.12 |
+| `discrepancy` / `gini` / `dispersion_shifted` (discrepancy) | 0.19 | 0.07 | 0.13 |
+| `projection` (depth) | 0.06 | −0.21 | −0.07 |
+| `dist_std`, `tukey` | — | — | — |
+
+![SNR variants ranked by correlation with DA (external)](all/external/top_variants_overall.png)
+
+DA-size is sparse on the external ladder (most cross-bucket pairs lack ≥2
+spanning families), so **DA-ckpt is the more trustworthy axis here** — and on it
+the dispersion/relative-spread families win cleanly, agreeing with the custom
+pool's family-level recommendation.
+
+**Most reliable benchmark per language** — rank-1 benchmark by `dist_std` SNR @ 1B
+over above-random tasks. With capable models clearing the gate, the
+long-completion 4-option `hellaswag_<lang>` joins MultiBLiMP at the top:
+
+| lang | top benchmark | SNR | | lang | top benchmark | SNR |
+|---|---|---|---|---|---|---|
+| ar | `hellaswag_ar` | 78.9 | | ru | `multiblimp_rus` | 119.5 |
+| en | `multiblimp_eng` | 82.1 | | th | `xcopa_th` | 10.1 |
+| es | `multiblimp_spa` | 87.0 | | tr | `multiblimp_tur` | 40.5 |
+| eu | `multiblimp_eus` | 38.4 | | vi | `hellaswag_vi` | 38.5 |
+| hi | `multiblimp_hin` | 73.7 | | zh | `xstorycloze_zh` | 25.4 |
+| ja | `xwinograd_jp` | 20.5 | | | | |
+
+![Top benchmarks per language by SNR (external)](all/external/top_benchmarks_per_language.png)
+
+The exact per-language argmax still does not transfer across tiers — only the
+dispersion/relative-spread *family* does — so the paper-level claim is the family
+recommendation, with HellaSwag and MultiBLiMP as the durable multilingual anchors.
 
 ## TODO
 

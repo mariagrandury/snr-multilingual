@@ -85,25 +85,45 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 | 5 | 0.20 | 0 / 2 | 0 / 2 |
 <!-- END auto:results -->
 
-## External model-set tier (`all/external`)
+## Custom vs. external: the at-chance problem is a capability artifact
 
-The fifth tier (`external` — every non-custom model pooled across the
-`reference_hf` + a06 + distillation + posttraining parquets, sizes 270M…70B,
-no mixture axis) gets only the above-random gate here, not the curves
-(`run_apertus.py` skips it). Its gate report lives in `all/external/`. Regenerate
-with `python analysis/rq00_acc_vs_flops/above_random.py`.
+This is the foundational result the rest of the paper rests on. The
+above-random gate is identical for every model set, but what it removes depends
+entirely on *who is being evaluated*.
 
-**The answer-count penalty is a capability artifact, not an intrinsic benchmark
-property.** Where the custom 175M–1B pretrains clear chance on only **44 / 118**
-benchmarks (and just **9 / 63** four-option ones), the capable external models
-clear it on **122 / 124** — including **68 / 69** four-option families and **10 / 11**
-three-option ones. The translated 4-option MCQA (`belebele`, `global_mmlu_full`,
-`arc`, `truthfulqa`) that sits at chance for the small custom models is solidly
-above chance once a multi-billion-parameter model evaluates it. So the gate's
-near-total removal of 4-option families in the custom pool reflects *those models
-being too weak*, not the benchmarks being unusable — a distinction that drives the
-external-tier story in RQ2 (option count stops predicting SNR) and RQ5 (4-option
-HellaSwag tops the family ranking).
+**On the custom pretrains the gate is brutally selective.** Of 118 benchmarks,
+only **44 clear chance at ≥1 size and 74 are random everywhere** — the 175M–1B
+models we train are simply too weak to register signal on most translated
+knowledge MCQA. The loss is concentrated in the 4-option families: only **9 / 63**
+clear chance, so `belebele`, `global_mmlu_full`, `arc`, and `truthfulqa` are
+NaN-ed out before any SNR is computed. The surviving pool is therefore *almost
+entirely 2-option*, which is exactly what later biases the design-feature
+analyses (RQ2/RQ5) toward "fewer options ⇒ higher SNR".
+
+**Re-running the identical gate on the external tier dissolves the penalty.** The
+`external` model set (every non-custom model — `reference_hf` + a06 + distillation
++ posttraining, sizes 270M…70B; gate report in `all/external/`, curves skipped)
+clears chance on **122 / 124** benchmarks, including **68 / 69** four-option
+families. A 4-option translated benchmark is not intrinsically low-signal — it
+only looks that way under models too small to beat chance.
+
+| model set | models | benchmarks | above ≥1 size | 2-opt | 3-opt | 4-opt | 5-opt |
+|---|---|---|---|---|---|---|---|
+| `custom` (SNR-gate domain) | 175M–1B custom pretrains | 118 | **44 (37%)** | 28 / 42 | 7 / 11 | **9 / 63** | 0 / 2 |
+| `external` (`all/external`) | 270M–70B reference / a06 / distill / post | 124 | **122 (98%)** | 42 / 42 | 10 / 11 | **68 / 69** | 2 / 2 |
+
+The same benchmark tells the story directly: on the `custom_swissai_hf`
+acc-vs-FLOPs curves, Belebele sits flat at chance across the custom 175M–1B
+sweep, then the overlaid external final-checkpoint markers climb steeply toward
+0.8+ out to 70B.
+
+![Belebele: custom at chance, externals climb to 0.8+](pretraining/custom_swissai_hf/per_benchmark/belebele.png)
+
+**Implication for the paper.** The custom-pool gate measures *our models' scale*,
+not benchmark reliability; the external tier is the control that separates the
+two. This single distinction drives the external-tier findings downstream: option
+count stops predicting SNR (RQ2), and 4-option HellaSwag becomes the
+*highest*-SNR family once it clears the gate (RQ5).
 
 ## TODO
 
