@@ -12,8 +12,7 @@
     "model_dirs": {
       "apertus-8b-2509": "Apertus-8B-2509",
       "olmo-3-1025-7b": "Olmo-3-1025-7B",
-      "smollm3-3b-checkpoints": "SmolLM3-3B-checkpoints",
-      "smollm3-3b-base": "SmolLM3-3B-Base"
+      "smollm3-3b-checkpoints": "SmolLM3-3B-checkpoints"
     }
   }
 }

@@ -5,3 +5,13 @@ aya_redteaming_hindi
 aya_redteaming_russian
 aya_redteaming_spanish
 harmbench
+# PolygloToxicityPrompts — scored via the Google Perspective API
+# (process_results=metric.toxicity_perspective_api; needs PERSPECTIVE_API_KEY
+# + outbound internet). Hangs on compute nodes (no internet), so kept out of
+# the on-cluster batch run — run only where the API is reachable.
+polyglotoxicitypromptsllama_small_english
+polyglotoxicitypromptsllama_small_french
+polyglotoxicitypromptsllama_small_german
+polyglotoxicitypromptsllama_small_hindi
+polyglotoxicitypromptsllama_small_portuguese
+polyglotoxicitypromptsllama_small_spanish

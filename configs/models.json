@@ -3320,7 +3320,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3399,7 +3401,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3473,7 +3477,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3499,7 +3505,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3525,7 +3533,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3551,7 +3561,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3577,7 +3589,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3603,7 +3617,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3629,7 +3645,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3655,7 +3673,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3681,7 +3701,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3707,7 +3729,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3733,7 +3757,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3810,7 +3836,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -3887,7 +3915,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         },
         "midtraining": {
@@ -3971,7 +4001,9 @@
             ]
           },
           "eval_groups": [
-            "midtraining"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         },
         "posttraining": {
@@ -3979,23 +4011,23 @@
           "num_iters": null,
           "tokens_per_iter": null,
           "checkpoints": {
-            "final": "main",
+            "final": "it-soup-APO",
             "all": [
               "it-mid-training",
               "it-SFT",
               "it-soup-APO",
-              "it-LC-expert",
-              "main"
+              "it-LC-expert"
             ],
             "full_eval": [
               "it-mid-training",
               "it-SFT",
               "it-soup-APO",
-              "it-LC-expert",
-              "main"
+              "it-LC-expert"
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4022,7 +4054,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -4071,6 +4105,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4097,6 +4133,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4123,6 +4161,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4149,6 +4189,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4175,6 +4217,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4201,6 +4245,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4227,6 +4273,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4253,6 +4301,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4279,6 +4329,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4305,6 +4357,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4331,6 +4385,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4357,6 +4413,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4383,6 +4441,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4409,6 +4469,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4435,6 +4497,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4622,6 +4686,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4648,6 +4714,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4674,6 +4742,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4700,6 +4770,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4726,6 +4798,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4752,6 +4826,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4778,6 +4854,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4804,6 +4882,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4830,6 +4910,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4856,6 +4938,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4882,6 +4966,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4908,6 +4994,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4934,7 +5022,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -4960,6 +5050,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -4986,6 +5078,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5012,6 +5106,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5038,7 +5134,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -5064,6 +5162,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5090,6 +5190,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5116,6 +5218,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5142,7 +5246,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -5168,6 +5274,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5194,6 +5302,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5220,6 +5330,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5246,7 +5358,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -5272,6 +5386,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5298,6 +5414,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5324,6 +5442,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5350,7 +5470,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -5376,6 +5498,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5402,6 +5526,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5428,6 +5554,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5454,6 +5582,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5480,6 +5610,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5506,6 +5638,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5532,6 +5666,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5558,6 +5694,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5584,6 +5722,8 @@
             ]
           },
           "eval_groups": [
+            "pretraining_full",
+            "midtraining",
             "posttraining"
           ]
         }
@@ -5794,7 +5934,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -5922,7 +6064,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -6022,7 +6166,9 @@
             ]
           },
           "eval_groups": [
-            "pretraining_full"
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
           ]
         }
       }
@@ -6122,7 +6268,7 @@
   },
   "pools": {
     "seeds_1904": {
-      "description": "Model-set tier: custom seed 1904 only (held-out seed for the generalization check). Pure custom grid, no externals.",
+      "description": "Single-seed Apertus baseline (3 mixes \u00d7 1 seed). Held-out test for the framework-generalization story.",
       "stage": "pretraining",
       "members": [
         {
@@ -6132,10 +6278,10 @@
           ]
         }
       ],
-      "include_external": false
+      "include_external": true
     },
     "seeds_28_1797": {
-      "description": "Model-set tier: custom seeds 28+1797 (train seeds for the holdout check). Pure custom grid, no externals.",
+      "description": "Train pool for framework generalization (3 mixes \u00d7 2 seeds).",
       "stage": "pretraining",
       "members": [
         {
@@ -6146,25 +6292,10 @@
           ]
         }
       ],
-      "include_external": false
+      "include_external": true
     },
     "seeds_28_1797_1904": {
-      "description": "Model-set tier: all 3 custom seeds (28+1797+1904 = 9 families/size). Pure custom grid, no externals.",
-      "stage": "pretraining",
-      "members": [
-        {
-          "source": "snr-pretraining-custom",
-          "seeds": [
-            28,
-            1797,
-            1904
-          ]
-        }
-      ],
-      "include_external": false
-    },
-    "custom_swissai_hf": {
-      "description": "Model-set tier: all 3 custom seeds + every external pretraining-checkpoint model (swiss-ai-reference + huggingface-reference + a06 + distillation, filtered to the pretraining stage). Maximum statistical power and the >1B scaling ladder.",
+      "description": "Pooled all Apertus seeds (3 mixes \u00d7 3 seeds = 9 model_families per size). Recommended for downstream allenai_comparison / benchmark_creation work.",
       "stage": "pretraining",
       "members": [
         {
@@ -6191,7 +6322,9 @@
       ],
       "include_external": false,
       "eval_groups": [
-        "pretraining_full"
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
       ]
     },
     "pretraining_distill": {
@@ -6204,7 +6337,9 @@
       ],
       "include_external": false,
       "eval_groups": [
-        "pretraining_full"
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
       ]
     },
     "pretraining_hf_reference": {
@@ -6219,7 +6354,9 @@
         }
       ],
       "eval_groups": [
-        "pretraining_full"
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
       ]
     },
     "posttraining_hf_reference": {
@@ -6234,6 +6371,8 @@
         }
       ],
       "eval_groups": [
+        "pretraining_full",
+        "midtraining",
         "posttraining"
       ]
     },
@@ -6249,11 +6388,13 @@
         }
       ],
       "eval_groups": [
-        "midtraining"
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
       ]
     },
     "external": {
-      "description": "Model-set tier: every non-custom model pooled across all four external parquets (reference_hf + a06 + distillation + posttraining), all models and all tasks, with no stage/name filtering. Cross-model signal/noise and within-family scaling DA over the external ladder. Stage 'all' (spans pretraining + posttraining) → outputs under <rq>/all/external/.",
+      "description": "Model-set tier: every non-custom model pooled across all four external parquets (reference_hf + a06 + distillation + posttraining), all models and all tasks, with no stage/name filtering. Cross-model signal/noise and within-family scaling DA over the external ladder. Stage 'all' (spans pretraining + posttraining).",
       "stage": "all",
       "members": [
         {
@@ -6273,6 +6414,24 @@
         }
       ],
       "load_all_external": true
+    },
+    "custom_swissai_hf": {
+      "description": "Model-set tier: all 3 custom seeds + every external pretraining-checkpoint model (swiss-ai-reference + huggingface-reference + a06 + distillation, filtered to the pretraining stage). Maximum statistical power and the >1B scaling ladder.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-custom",
+          "seeds": [
+            28,
+            1797,
+            1904
+          ]
+        }
+      ],
+      "include_external": true,
+      "eval_groups": [
+        "pretraining_full"
+      ]
     }
   },
   "sources": {
@@ -6313,26 +6472,11 @@
       "fwEdu60",
       "fwEdu90"
     ],
-    "da_early_fracs": [
-      0.12,
-      0.36,
-      0.56
+    "da_early_steps": [
+      6000,
+      18000,
+      28000
     ],
-    "last_n": 5,
-    "size_buckets": [
-      { "label": "175M", "sizes": ["175M"] },
-      { "label": "270M", "sizes": ["270M"] },
-      { "label": "350M", "sizes": ["350M"] },
-      { "label": "600M", "sizes": ["600M", "0.6B"] },
-      { "label": "1B", "sizes": ["1B"] },
-      { "label": "1.7B", "sizes": ["1.7B"] },
-      { "label": "3B", "sizes": ["3B"] },
-      { "label": "4B", "sizes": ["4B"] },
-      { "label": "7-9B", "sizes": ["7B", "8B", "9B"] },
-      { "label": "12-14B", "sizes": ["12B", "13B", "14B"] },
-      { "label": "23-24B", "sizes": ["23B", "24B"] },
-      { "label": "27-32B", "sizes": ["27B", "30B-A3B", "32B"] },
-      { "label": "70B", "sizes": ["70B"] }
-    ]
+    "last_n": 5
   }
 }

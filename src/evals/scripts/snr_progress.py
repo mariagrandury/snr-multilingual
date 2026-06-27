@@ -37,8 +37,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts" / "utils"))
 from configs import (  # noqa: E402
-    expand_pool, get_model, iters_for, load_pools, load_tasks,
-    tasks_for_group,
+    expand_pool, get_model, iters_for, load_hf_wandb_config, load_models,
+    load_pools, load_tasks, stages_of, tasks_for_group,
 )
 
 LOGS_BASE = Path(
@@ -46,6 +46,125 @@ LOGS_BASE = Path(
 )
 DEFAULT_ENTITY = "mariagrandury-epflnlp"
 DEFAULT_PROJECT = "snr-experiments"
+
+# Splits in the published HF dataset (completion truth — disk logs get wiped).
+_DATASET_SPLITS = (
+    "pretraining_custom", "pretraining_a06", "reference_hf",
+    "posttraining", "distillation",
+)
+# snr conda env python (has huggingface_hub/pandas/pyarrow); system
+# python3.11 — which the launchers use — does not.
+_SNR_ENV_PYTHON = os.environ.get(
+    "SNR_ENV_PYTHON", "/users/mariagrandury/miniconda3/envs/snr/bin/python"
+)
+
+
+# ---------------------------------------------------------------------------
+# Completion truth = the published HF dataset (∪ disk scan). Scratch
+# auto-cleans eval files after ~30 days, so disk alone undercounts what has
+# actually been evaluated; the hub dataset is the authoritative record.
+# ---------------------------------------------------------------------------
+
+# The inline loader run under the snr env when this process can't import the
+# HF/parquet stack itself (system python3.11). Prints {name: [tasks]} JSON.
+_DATASET_LOADER_SRC = """
+import json, sys
+from collections import defaultdict
+import pyarrow.parquet as pq
+from huggingface_hub import hf_hub_download
+
+repo_id, splits = sys.argv[1], sys.argv[2].split(",")
+m = defaultdict(set)
+for split in splits:
+    try:
+        p = hf_hub_download(
+            repo_id, "data/%s-00000-of-00001.parquet" % split,
+            repo_type="dataset",
+        )
+        t = pq.read_table(p, columns=["name", "task"])
+        for n, tk in zip(t.column("name").to_pylist(),
+                         t.column("task").to_pylist()):
+            m[n].add(tk)
+    except Exception as e:
+        print("WARN split %s: %r" % (split, e), file=sys.stderr)
+print(json.dumps({k: sorted(v) for k, v in m.items()}))
+"""
+
+
+def _load_dataset_direct() -> dict[str, set[str]]:
+    """Load the hub dataset in-process (works under the snr env)."""
+    from collections import defaultdict
+
+    import pyarrow.parquet as pq  # noqa: F401  (ImportError ⇒ caller bridges)
+    from huggingface_hub import hf_hub_download
+
+    repo_id = load_hf_wandb_config()["repo_id"]
+    out: dict[str, set[str]] = defaultdict(set)
+    for split in _DATASET_SPLITS:
+        try:
+            path = hf_hub_download(
+                repo_id, f"data/{split}-00000-of-00001.parquet",
+                repo_type="dataset",
+            )
+            table = pq.read_table(path, columns=["name", "task"])
+            for n, tk in zip(table.column("name").to_pylist(),
+                             table.column("task").to_pylist()):
+                out[n].add(tk)
+        except Exception as e:  # one split missing/unreachable ≠ fatal
+            print(f"[snr_progress] warn: dataset split {split!r}: {e!r}",
+                  file=sys.stderr)
+    return dict(out)
+
+
+def _load_dataset_via_subprocess() -> dict[str, set[str]]:
+    """Bridge to the snr-env python (system python3.11 lacks the HF stack)."""
+    repo_id = load_hf_wandb_config()["repo_id"]
+    out = subprocess.check_output(
+        [_SNR_ENV_PYTHON, "-c", _DATASET_LOADER_SRC,
+         repo_id, ",".join(_DATASET_SPLITS)],
+        text=True,
+    )
+    return {k: set(v) for k, v in json.loads(out).items()}
+
+
+_DATASET_CACHE: dict[str, set[str]] | None = None
+
+
+def _dataset_completion() -> dict[str, set[str]]:
+    """`dict[name] -> {tasks}` of every (name, task) row in the published
+    HF dataset. Cached in-process. Graceful fallback to ``{}`` (disk-only)
+    on any failure — never crashes."""
+    global _DATASET_CACHE
+    if _DATASET_CACHE is not None:
+        return _DATASET_CACHE
+    try:
+        try:
+            _DATASET_CACHE = _load_dataset_direct()
+        except ImportError:
+            _DATASET_CACHE = _load_dataset_via_subprocess()
+    except Exception as e:
+        print(f"[snr_progress] warn: could not load HF dataset completion "
+              f"({e!r}); falling back to disk scan only.", file=sys.stderr)
+        _DATASET_CACHE = {}
+    return _DATASET_CACHE
+
+
+def completed_tasks(name: str, ckpt_id: str, entity: str,
+                    project: str) -> set[str]:
+    """Union of dataset-recorded ∪ on-disk completed tasks for a NAME.
+
+    For ``main`` checkpoints the eval NAME on disk / in the dataset is
+    sometimes the bare ``<model>`` (no ``-main`` suffix) — e.g.
+    ``gemma-3-1b-it`` vs the matrix NAME ``gemma-3-1b-it-main`` — so we
+    also fold in the bare-model key when ckpt is ``main``."""
+    ds = _dataset_completion()
+    done = set(ds.get(name, set()))
+    done |= scan_completed_tasks(name, entity, project)
+    if ckpt_id == "main" and name.endswith("-main"):
+        bare = name[: -len("-main")]
+        done |= set(ds.get(bare, set()))
+        done |= scan_completed_tasks(bare, entity, project)
+    return done
 
 
 @dataclass
@@ -59,7 +178,8 @@ class Target:
     pending_jobs: list[tuple[str, str, str]] = field(default_factory=list)  # (jobid, jobname, state)
 
 
-def enumerate_targets_from_json(model_names: list[str]) -> list[Target]:
+def enumerate_targets_from_json(model_names: list[str],
+                                stage: str | None = None) -> list[Target]:
     """Return one Target per (model, ckpt) declared in configs/models.json.
 
     For each model in ``model_names``, expands its ``checkpoints.full_eval``
@@ -68,11 +188,19 @@ def enumerate_targets_from_json(model_names: list[str]) -> list[Target]:
 
       - Megatron iter checkpoints: ``<model>-iter<N>``
       - HF branch checkpoints:     ``<model>-<branch>``
+
+    When ``stage`` is given (the pool's declared phase, e.g. ``posttraining``),
+    only that stage's checkpoints are enumerated — a model that has no such
+    stage contributes nothing. This is what keeps a posttraining pool from
+    listing the *base* checkpoints of its base-only members (Qwen3-*-Base,
+    gemma-3-*-pt, …).
     """
     targets: list[Target] = []
     for name in model_names:
         entry = get_model(name)
-        ckpts = iters_for(name, subset="full_eval")
+        if stage is not None and stage not in stages_of(name):
+            continue
+        ckpts = iters_for(name, subset="full_eval", stage=stage)
         kind = entry["checkpoint_kind"]
         for c in ckpts:
             if kind == "megatron_iter":
@@ -284,11 +412,164 @@ def make_eval_progress_heatmap(
     print(f"[plot] saved {out_path}")
 
 
+# ---------------------------------------------------------------------------
+# Matrix mode: the full (model, ckpt, eval_group) set declared via stage-level
+# `eval_groups` in configs/models.json. A model is in scope iff some stage has
+# `eval_groups`; the cells are that stage's `checkpoints.full_eval` × each
+# group in `eval_groups`.
+# ---------------------------------------------------------------------------
+
+# Ordered size tokens: small→large. Anything not here (30B-A3B, E2B, …) sorts
+# last (rank = len(list)), keeping non-standard tags at the bottom.
+_SIZE_ORDER = [
+    "270M", "175M", "350M", "600M", "0.6B", "750M", "1B", "1.7B", "3B",
+    "4B", "7B", "8B", "12B", "13B", "14B", "24B", "27B", "32B", "70B",
+]
+
+
+def _size_key(size: str | None) -> tuple[int, int]:
+    """Numeric sort key: known sizes small→large by `_SIZE_ORDER`,
+    non-standard tags (30B-A3B, E2B, …) sort last."""
+    try:
+        return (0, _SIZE_ORDER.index(size))
+    except ValueError:
+        return (1, 0)
+
+
+@dataclass
+class MatrixCell:
+    model: str
+    name: str          # f"{model}-{ckpt_id}"
+    ckpt_id: str
+    eval_group: str
+    family: str
+    size: str | None
+    done: int = 0
+    total: int = 0
+    remaining: list[str] = field(default_factory=list)
+    active_jobids: list[str] = field(default_factory=list)
+
+
+def enumerate_matrix() -> list[MatrixCell]:
+    """Every (model, ckpt, eval_group) cell from stage-level `eval_groups`."""
+    cells: list[MatrixCell] = []
+    for model, entry in load_models().items():
+        kind = entry.get("checkpoint_kind")
+        family = entry.get("family", model)
+        size = entry.get("size")
+        for stage, sdata in entry.get("stages", {}).items():
+            groups = sdata.get("eval_groups")
+            if not groups:
+                continue
+            for c in iters_for(model, subset="full_eval", stage=stage):
+                ckpt_id = f"iter{c}" if kind == "megatron_iter" else (
+                    c["branch"] if isinstance(c, dict) else str(c)
+                )
+                for group in groups:
+                    cells.append(MatrixCell(
+                        model=model, name=f"{model}-{ckpt_id}",
+                        ckpt_id=ckpt_id, eval_group=group,
+                        family=family, size=size,
+                    ))
+    return cells
+
+
+def matrix_status(cell: MatrixCell) -> str:
+    """Same semantics as the per-pool status_for()."""
+    if cell.total and cell.done == cell.total:
+        return "completed"
+    if cell.active_jobids:
+        return "in_progress"
+    if cell.done > 0:
+        return "in_progress"  # partial leftover, no active job
+    return "not_submitted"
+
+
+def run_matrix(entity: str, project: str) -> None:
+    cells = enumerate_matrix()
+
+    # Completion (dataset ∪ disk) + active jobs.
+    group_tasks: dict[str, set[str]] = {}
+    for cell in cells:
+        tasks = group_tasks.setdefault(
+            cell.eval_group, set(tasks_for_group(cell.eval_group)))
+        done_set = completed_tasks(cell.name, cell.ckpt_id, entity, project)
+        cell.total = len(tasks)
+        cell.done = len(done_set & tasks)
+        cell.remaining = sorted(t for t in tasks if t not in done_set)
+
+    # Attach squeue active jobs by eval-<NAME> prefix (reuse the matcher).
+    targets = [Target(model_name=c.model, ckpt_id=c.ckpt_id, name=c.name)
+               for c in cells]
+    attach_pending_jobs(targets, squeue_jobs())
+    jobs_by_name: dict[str, list[str]] = defaultdict(list)
+    for t in targets:
+        jobs_by_name[t.name].extend(j[0] for j in t.pending_jobs)
+    for cell in cells:
+        # dedupe preserving order
+        seen: set[str] = set()
+        cell.active_jobids = [j for j in jobs_by_name.get(cell.name, [])
+                              if not (j in seen or seen.add(j))]
+
+    # Order: family A→Z, size small→large, ckpt, eval_group.
+    cells.sort(key=lambda c: (c.family.lower(), _size_key(c.size),
+                              c.ckpt_id, c.eval_group))
+
+    # --- CSV ---------------------------------------------------------------
+    import csv as _csv
+    csv_path = REPO / "snr_progress_matrix.csv"
+    with csv_path.open("w", newline="") as fh:
+        w = _csv.writer(fh)
+        w.writerow(["model", "name", "eval_group", "status", "done",
+                    "total", "remaining", "active_jobids"])
+        for c in cells:
+            w.writerow([c.model, c.name, c.eval_group, matrix_status(c),
+                        c.done, c.total, ",".join(c.remaining),
+                        ",".join(c.active_jobids)])
+
+    # --- Summary by eval_group --------------------------------------------
+    print(f"=== SNR matrix: {len(cells)} (model, ckpt, eval_group) cells "
+          f"({entity}/{project}) ===\n")
+    by_group: dict[str, list[MatrixCell]] = defaultdict(list)
+    for c in cells:
+        by_group[c.eval_group].append(c)
+    for group in sorted(by_group):
+        gc = by_group[group]
+        cell_done = sum(c.done for c in gc)
+        cell_total = sum(c.total for c in gc)
+        st = defaultdict(int)
+        for c in gc:
+            st[matrix_status(c)] += 1
+        print(f"[{group}] {len(gc)} cells · {cell_done}/{cell_total} "
+              f"(model,ckpt,task) done ({100 * cell_done / max(cell_total, 1):.1f}%)")
+        for k in ("completed", "in_progress", "not_submitted"):
+            print(f"      {k:>14}: {st.get(k, 0)} cells")
+
+    # --- Per-model fully-done tally ---------------------------------------
+    by_model: dict[str, list[MatrixCell]] = defaultdict(list)
+    for c in cells:
+        by_model[c.model].append(c)
+    fully_done = [m for m, mc in by_model.items()
+                  if all(matrix_status(c) == "completed" for c in mc)]
+    not_done = [m for m in by_model if m not in fully_done]
+    print(f"\nPer-model: {len(fully_done)}/{len(by_model)} models fully done; "
+          f"{len(not_done)} not done.")
+    print(f"  fully done: {sorted(fully_done)}")
+    print(f"  not done  : {sorted(not_done)}")
+    print(f"\nWrote {csv_path}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument(
+        "--matrix",
+        action="store_true",
+        help="Full (model, ckpt, eval_group) matrix from stage-level "
+             "eval_groups in models.json. Writes snr_progress_matrix.csv.",
+    )
+    p.add_argument(
         "--pool",
-        required=True,
+        required=False,
         help="Pool name from configs/models.json. Enumerates the pool's "
              "models × their checkpoints.full_eval lists.",
     )
@@ -327,6 +608,13 @@ def main() -> None:
     )
     args = p.parse_args()
 
+    if args.matrix:
+        run_matrix(args.entity, args.project)
+        return
+
+    if not args.pool:
+        p.error("--pool is required (or pass --matrix for the full "
+                "(model, ckpt, eval_group) matrix).")
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
                 f"available: {sorted(load_pools().keys())}")
@@ -334,8 +622,12 @@ def main() -> None:
     csv_path = REPO / "snr_progress.csv"
 
     # Enumerate targets directly from configs/models.json via the pool.
+    # Checkpoints are selected from the pool's declared stage so a
+    # posttraining pool lists only post-trained ckpts (base-only members
+    # are skipped).
     model_names = expand_pool(args.pool)
-    targets = enumerate_targets_from_json(model_names)
+    pool_stage = load_pools()[args.pool].get("stage")
+    targets = enumerate_targets_from_json(model_names, stage=pool_stage)
 
     if args.filter:
         targets = [t for t in targets if args.filter in t.name]
@@ -344,9 +636,9 @@ def main() -> None:
     all_tasks = sorted(set(tasks_for_group(args.tasks_group)))
     total_tasks = len(all_tasks)
 
-    # Scan completion + jobs
+    # Completion = HF dataset (truth; disk logs get wiped) ∪ disk scan.
     for t in targets:
-        t.completed = scan_completed_tasks(t.name, args.entity, args.project)
+        t.completed = completed_tasks(t.name, t.ckpt_id, args.entity, args.project)
     attach_pending_jobs(targets, squeue_jobs())
 
     def status_for(t: Target) -> str:

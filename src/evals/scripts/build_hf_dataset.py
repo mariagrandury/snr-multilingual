@@ -574,6 +574,179 @@ def dedupe_rows(rows: list[dict]) -> list[dict]:
     return out
 
 
+# (model, model_revision, task) uniquely identifies a row in the published dataset.
+_ROW_KEY = ("model", "model_revision", "task")
+
+
+_EVAL_DIR_TS_RE = re.compile(r"^eval_(\d{8})_(\d{6})_\d+$")
+
+
+def _local_eval_dates(project_dir: Path) -> dict[str, str]:
+    """For every NAME under project_dir, return ISO timestamp of its most
+    recent eval_<YYYYMMDD>_<HHMMSS>_<jobid>/ subdir, parsed from the dir
+    NAME itself (NOT mtime — mtime can be touched/refreshed and would
+    misrepresent the actual eval date). Used as the per-row "local date"
+    when reconciling with hub timestamps in merge_with_hub_rows()."""
+    out: dict[str, str] = {}
+    for nd in project_dir.iterdir():
+        if not nd.is_dir():
+            continue
+        base = nd / "harness"
+        if not base.is_dir():
+            continue
+        latest_iso = ""
+        for e in base.iterdir():
+            m = _EVAL_DIR_TS_RE.match(e.name)
+            if not m or not e.is_dir():
+                continue
+            ymd, hms = m.group(1), m.group(2)
+            iso = f"{ymd[:4]}-{ymd[4:6]}-{ymd[6:8]}T{hms[:2]}:{hms[2:4]}:{hms[4:6]}"
+            if iso > latest_iso:
+                latest_iso = iso
+        if latest_iso:
+            out[nd.name] = latest_iso
+    return out
+
+
+def merge_with_hub_rows(
+    rows: list[dict], repo_id: str, project_dir: Path, out_dir: Path
+) -> tuple[list[dict], dict[str, dict]]:
+    """Defensive merge: combine locally-built rows with the published hub
+    parquets, per split. **HUB IS THE SOURCE OF TRUTH; only NEW local
+    rows are added.**
+
+    Policy:
+      - Keys present only on hub → keep hub row.
+      - Keys present only locally → add the local row.
+      - Keys present in both → keep hub row (never override). When the
+        scores differ, log the divergence to ``<out_dir>/conflicts/<split>.csv``
+        with both scores and both dates as an audit trail, but the hub
+        value still wins.
+
+    Rationale: scratch storage on /iopsstor auto-cleans eval files not
+    accessed for ~30 days. When the underlying eval files are gone, the
+    idempotency filter in ``_eval_status.py`` can't tell "never ran" from
+    "ran but cleaned" and re-triggers the eval — producing fresh rows
+    that drift from the hub by ~0.5-5% (normal lm_eval version drift).
+    Treating local as authoritative would silently replace the original
+    eval results with these accidental re-runs. Hub-always-wins prevents
+    that and keeps the published dataset consistent across the
+    cleanup/touch cycle.
+
+    Returns (merged_rows, report). ``report[split]`` summarises per-split
+    counts plus a small ``conflict_samples`` slice for stdout.
+    """
+    import csv
+    import pandas as pd
+    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.utils import HfHubHTTPError
+
+    api = HfApi()
+    local_dates = _local_eval_dates(project_dir)
+    conflict_dir = out_dir / "conflicts"
+    # Drop stale CSVs from earlier runs so file presence == "this run had conflicts".
+    if conflict_dir.is_dir():
+        for f in conflict_dir.glob("*.csv"):
+            f.unlink()
+    conflict_dir.mkdir(parents=True, exist_ok=True)
+
+    by_split: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        by_split[r["split"]].append(r)
+
+    # Union of splits we know about locally + every split currently published.
+    # (Iterating only by_split would miss hub-only splits — e.g. when local
+    # has 0 posttraining rows because the eval files were cleaned.)
+    known_splits = {
+        "pretraining_custom", "pretraining_a06", "posttraining",
+        "reference_hf", "distillation",
+    }
+    all_splits = set(by_split) | known_splits
+
+    merged: list[dict] = []
+    report: dict[str, dict] = {}
+
+    for split in sorted(all_splits):
+        loc_rows = by_split.get(split, [])
+        loc_by_key = {tuple(r[k] for k in _ROW_KEY): r for r in loc_rows}
+
+        try:
+            p = hf_hub_download(
+                repo_id, f"data/{split}-00000-of-00001.parquet",
+                repo_type="dataset",
+            )
+            hub_df = pd.read_parquet(p)
+            hub_rows = hub_df.to_dict(orient="records")
+            for h in hub_rows:
+                h["split"] = split  # parquet drops the split column; restore
+            try:
+                commits = api.list_repo_commits(
+                    repo_id, revision="main", repo_type="dataset"
+                )
+                hub_split_date = commits[0].created_at.isoformat(timespec="seconds")
+            except Exception:
+                hub_split_date = ""
+        except HfHubHTTPError:
+            hub_rows, hub_split_date = [], ""
+        except Exception as e:
+            print(f"  warn: hub download for split={split} failed: {e!r}; "
+                  f"treating hub as empty for this split")
+            hub_rows, hub_split_date = [], ""
+
+        hub_by_key = {tuple(r[k] for k in _ROW_KEY): r for r in hub_rows}
+
+        only_hub = set(hub_by_key) - set(loc_by_key)
+        only_loc = set(loc_by_key) - set(hub_by_key)
+        in_both = set(hub_by_key) & set(loc_by_key)
+
+        import math
+        def _is_null(v):
+            # pandas converts JSON null -> NaN; build_rows emits None. Treat both as null.
+            return v is None or (isinstance(v, float) and math.isnan(v))
+
+        conflicts: list[tuple] = []
+        for k in in_both:
+            h_row, l_row = hub_by_key[k], loc_by_key[k]
+            h_s, l_s = h_row.get("primary_score"), l_row.get("primary_score")
+            # No conflict if both null or scores equal within fp tolerance
+            both_null = _is_null(h_s) and _is_null(l_s)
+            equal = (not _is_null(h_s) and not _is_null(l_s)
+                     and abs(h_s - l_s) <= 1e-9)
+            if both_null or equal:
+                continue
+            local_date = local_dates.get(l_row.get("name", ""), "")
+            # HUB ALWAYS WINS — never overwrite published data with local
+            # re-evals. Conflict is logged for audit only.
+            conflicts.append((k, h_s, l_s, hub_split_date, local_date, "hub"))
+
+        if conflicts:
+            csv_path = conflict_dir / f"{split}.csv"
+            with csv_path.open("w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(["model", "model_revision", "task",
+                            "hub_score", "local_score",
+                            "hub_date", "local_date", "winner"])
+                for k, h_s, l_s, hd, ld, win in conflicts:
+                    w.writerow([k[0], k[1], k[2], h_s, l_s, hd, ld, win])
+
+        # Final merged set: kept-hub rows (now potentially with local
+        # overrides from conflicts) + local rows whose key was absent on hub.
+        merged.extend(hub_by_key.values())
+        merged.extend(loc_by_key[k] for k in only_loc)
+
+        report[split] = {
+            "hub": len(hub_rows),
+            "local": len(loc_rows),
+            "only_hub": len(only_hub),
+            "only_local_added": len(only_loc),
+            "in_both": len(in_both),
+            "score_conflicts": len(conflicts),
+            "conflict_samples": conflicts[:3],
+        }
+
+    return merged, report
+
+
 def _arrow_schema():
     """Single canonical schema used for every split, so HF Datasets can
     concatenate splits without a cast error (unlike upstream, which
@@ -621,9 +794,16 @@ def write_parquets(rows: list[dict], out_dir: Path) -> dict[str, Path]:
         by_split[r["split"]].append(r)
 
     schema = _arrow_schema()
+    schema_cols = [f.name for f in schema]
     paths: dict[str, Path] = {}
     for split, split_rows in sorted(by_split.items()):
-        df = pd.DataFrame(split_rows).drop(columns=["split"])
+        df = pd.DataFrame(split_rows).drop(columns=["split"], errors="ignore")
+        # Ensure every schema column exists (hub-derived rows from a parquet
+        # where a column was all-null lose the column on .to_dict() round-trip;
+        # without this, pa.Table.from_pandas(schema=...) raises KeyError).
+        for col in schema_cols:
+            if col not in df.columns:
+                df[col] = None
         df = df.sort_values(["model", "step", "task"]).reset_index(drop=True)
         table = pa.Table.from_pandas(df, schema=schema, preserve_index=False)
         path = data_dir / f"{split}-00000-of-00001.parquet"
@@ -767,10 +947,27 @@ def main():
 
     rows = dedupe_rows(rows)
     print(f"Built {len(rows)} rows after dedupe.")
+
+    # Defensive merge with the hub: protects against the scratch-cleanup
+    # scenario where local eval files have been wiped and the local rebuild
+    # is a strict SUBSET of the published hub data. Without this, pushing
+    # the rebuild would erase published rows. See merge_with_hub_rows() for
+    # the per-key conflict policy. Always on; output also includes
+    # <out_dir>/conflicts/<split>.csv for any divergent (key, score) pairs.
+    project_dir = LOGS_BASE / args.entity / args.project
+    out_dir = Path(args.out_dir)
+    rows, merge_report = merge_with_hub_rows(rows, args.repo_id, project_dir, out_dir)
+    print(f"\nMerge-with-hub report (hub is the source of truth; only new local rows are added):")
+    print(f"  {'split':22s}  {'hub':>7s} {'local':>7s} {'only_hub':>8s} {'+local':>6s} {'both':>5s} {'conflicts':>9s}")
+    for split, r in sorted(merge_report.items()):
+        print(f"  {split:22s}  {r['hub']:>7d} {r['local']:>7d} {r['only_hub']:>8d} "
+              f"{r['only_local_added']:>6d} {r['in_both']:>5d} {r['score_conflicts']:>9d}")
+    print(f"  Conflicts (if any) written to {out_dir}/conflicts/<split>.csv  (hub wins all; CSV is audit-only)")
+    print(f"Built {len(rows)} merged rows.")
+
     if not rows:
         sys.exit("No rows built — nothing to push.")
 
-    out_dir = Path(args.out_dir)
     paths = write_parquets(rows, out_dir)
     (out_dir / "README.md").write_text(README_TEMPLATE)
     print(f"Wrote README to {out_dir}/README.md")

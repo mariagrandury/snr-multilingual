@@ -47,42 +47,76 @@ def _branch_step(branch: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _ckpt_step(ckpt) -> int | None:
+    """Step/iteration VALUE of a checkpoint, whether it's a megatron iter int
+    or an HF branch-name string. None for stepless branches (e.g. `main`)."""
+    if isinstance(ckpt, int):
+        return ckpt
+    return _branch_step(ckpt)
+
+
 def _branch_sort_key(branch: str):
     """Order HF branches by step; `main` (no step) sorts last."""
     s = _branch_step(branch)
     return (s is None, s or 0)
 
 
-def _pick5(lst: list) -> list:
-    """5 ~evenly-spaced picks from a list (HF da_ckpts). Returns the list
-    unchanged if it has ≤ 5 entries."""
-    if len(lst) <= 5:
-        return list(lst)
-    idx = sorted({round(i * (len(lst) - 1) / 4) for i in range(5)})
-    return [lst[i] for i in idx]
+def _ckpt_sort_key(ckpt):
+    """Order checkpoints (ints or branch strings) by step; stepless sorts last."""
+    s = _ckpt_step(ckpt)
+    return (s is None, s or 0)
+
+
+def _da_grid(all_ckpts: list, last_step: int, prev_last: int = 0) -> list:
+    """Decision-accuracy checkpoints: the entries of ``all_ckpts`` nearest to
+    10/20/30/40/50/100 % of training, measured by step VALUE relative to
+    ``last_step`` (NOT list index). 0 % corresponds to ``prev_last`` — 0 for a
+    from-scratch first stage, the previous stage's last step for a continuation
+    stage. Ties resolve to the higher step. Dedup preserves order.
+
+    Only stepped checkpoints are candidates (stepless branches like `main`
+    are skipped)."""
+    cands = [c for c in all_ckpts if _ckpt_step(c) is not None]
+    span = last_step - prev_last
+    picks = []
+    for pct in (10, 20, 30, 40, 50, 100):
+        target = prev_last + span * pct / 100.0
+        best = min(cands, key=lambda c: (abs(_ckpt_step(c) - target), -_ckpt_step(c)))
+        picks.append(best)
+    seen = set()
+    out = []
+    for p in picks:
+        if p not in seen:
+            seen.add(p)
+            out.append(p)
+    return out
 
 
 def _full_eval(dense_tail: list, da_ckpts: list, key=None) -> list:
-    """Canonical eval set = sorted(dense_tail ∪ da_ckpts)."""
-    u = set(dense_tail) | set(da_ckpts)
-    return sorted(u, key=key)
+    """Canonical eval set = sorted(da_ckpts ∪ dense_tail), stepless dropped."""
+    u = {c for c in (set(dense_tail) | set(da_ckpts))
+         if _ckpt_step(c) is not None}
+    return sorted(u, key=key or _ckpt_sort_key)
 
 
-def _meg_stage(schedule: dict) -> dict:
+def _meg_stage(schedule: dict, prev_last: int = 0) -> dict:
     """A `stages.<phase>` entry for a megatron-iter model.
 
-    `schedule`: {final, all, dense_tail, 10_ckpts, da_ckpts} of iter ints.
-    Derives `full_eval`; tokens/num_iters/tokens_per_iter from the iter count.
+    `schedule`: {final, all, dense_tail, 10_ckpts} of iter ints. `da_ckpts`
+    is recomputed from `all` via the 10/20/30/40/50/100 % da-grid (any
+    `da_ckpts` in `schedule` is ignored). Derives `full_eval`;
+    tokens/num_iters/tokens_per_iter from the iter count.
     """
+    all_ck = schedule.get("all", [])
+    num_iters = schedule.get("final")
     ck = {
-        "final": schedule.get("final"),
-        "all": schedule.get("all", []),
+        "final": num_iters,
+        "all": all_ck,
         "dense_tail": schedule.get("dense_tail", []),
         "10_ckpts": schedule.get("10_ckpts", []),
-        "da_ckpts": schedule.get("da_ckpts", []),
+        "da_ckpts": _da_grid(all_ck, num_iters, prev_last) if all_ck else [],
     }
     ck["full_eval"] = _full_eval(ck["dense_tail"], ck["da_ckpts"])
-    num_iters = ck["final"]
     return {
         "tokens": num_iters * MEG_TOKENS_PER_ITER if num_iters else None,
         "num_iters": num_iters,
@@ -91,24 +125,34 @@ def _meg_stage(schedule: dict) -> dict:
     }
 
 
-def _hf_stage(tokens: int | None, ckpt_data: dict) -> dict:
+def _hf_stage(tokens: int | None, ckpt_data: dict, prev_last: int = 0) -> dict:
     """A `stages.<phase>` entry for an hf_branch model.
 
     `ckpt_data` is either:
       - {final, 10_ckpts, dense_tail} → derives all / da_ckpts / full_eval
-      - {final, all}                 → an explicit short branch list (e.g.
-                                       a midtraining stage with no subsets)
+      - {final, all}                 → an explicit branch list with no subsets
+        (a `dense_tail`/`10_ckpts` may also be supplied, in which case
+        da_ckpts/full_eval are derived from the explicit `all` list)
     tokens_per_iter = tokens / num_iters (num_iters = max branch step); the
     per-branch token count is recovered at load time from the branch name
     (`-tokensXXX`) or `step × tokens_per_iter`, so it isn't stored here.
+
+    `prev_last`: 0 % anchor for the da-grid (the previous stage's last step for
+    a continuation stage such as midtraining; 0 for a from-scratch stage).
     """
-    if "all" in ckpt_data:
+    if "all" in ckpt_data and "10_ckpts" not in ckpt_data:
         all_b = sorted(ckpt_data["all"], key=_branch_sort_key)
-        ck = {"final": ckpt_data["final"], "all": all_b}
+        ck = {"final": ckpt_data["final"], "all": all_b,
+              "full_eval": list(all_b)}
     else:
         ten, tail = ckpt_data["10_ckpts"], ckpt_data["dense_tail"]
-        da = _pick5(ten)
-        all_b = sorted(set(ten) | set(tail), key=_branch_sort_key)
+        if "all" in ckpt_data:
+            all_b = sorted(ckpt_data["all"], key=_branch_sort_key)
+        else:
+            all_b = sorted(set(ten) | set(tail), key=_branch_sort_key)
+        steps = [s for s in (_branch_step(b) for b in all_b) if s is not None]
+        last = max(steps) if steps else 0
+        da = _da_grid(all_b, last, prev_last)
         ck = {
             "final": ckpt_data["final"],
             "all": all_b,
@@ -336,11 +380,51 @@ HF_CKPTS = {
                 "stage1-step-3280000", "stage1-step-3360000",
             ],
         },
-        # stage2 + stage3 finals only — no intermediate checkpoints published.
+        # stage2 + stage3 mid-training, every 40000 steps. A continuation of
+        # the stage1 pretraining run, so the da-grid's 0 % anchor is stage1's
+        # last step (3440000), set via `prev_last` in hf_entry.
         "midtraining": {
             "tokens": 9_900_000_000_000,
             "final": "stage3-step-4720000",
-            "all": ["stage2-step-4200000", "stage3-step-4720000"],
+            "all": [
+                "stage2-step-3480000", "stage2-step-3520000",
+                "stage2-step-3560000", "stage2-step-3600000",
+                "stage2-step-3640000", "stage2-step-3680000",
+                "stage2-step-3720000", "stage2-step-3760000",
+                "stage2-step-3800000", "stage2-step-3840000",
+                "stage2-step-3880000", "stage2-step-3920000",
+                "stage2-step-3960000", "stage2-step-4000000",
+                "stage2-step-4040000", "stage2-step-4080000",
+                "stage2-step-4120000", "stage2-step-4160000",
+                "stage2-step-4200000", "stage3-step-4240000",
+                "stage3-step-4280000", "stage3-step-4320000",
+                "stage3-step-4360000", "stage3-step-4400000",
+                "stage3-step-4440000", "stage3-step-4480000",
+                "stage3-step-4520000", "stage3-step-4560000",
+                "stage3-step-4600000", "stage3-step-4640000",
+                "stage3-step-4680000", "stage3-step-4720000",
+            ],
+            "10_ckpts": [
+                "stage2-step-3600000", "stage2-step-3720000",
+                "stage2-step-3840000", "stage2-step-3960000",
+                "stage2-step-4120000", "stage3-step-4240000",
+                "stage3-step-4360000", "stage3-step-4480000",
+                "stage3-step-4600000", "stage3-step-4720000",
+            ],
+            "dense_tail": [
+                "stage3-step-4560000", "stage3-step-4600000",
+                "stage3-step-4640000", "stage3-step-4680000",
+                "stage3-step-4720000",
+            ],
+        },
+        # Post-training soup variants, published as named branches. `main` is
+        # DROPPED — its config fails vLLM ModelConfig validation (the it-* branch
+        # checkpoints load fine; only `main` is broken).
+        "posttraining": {
+            "tokens": None,
+            "final": "it-soup-APO",
+            "all": ["it-mid-training", "it-SFT", "it-soup-APO",
+                    "it-LC-expert"],
         },
     },
 }
@@ -352,8 +436,13 @@ def hf_entry(name, hf_url, size, params, family, phase,
     multi-stage checkpoint lists; everything else is a single-stage
     `phase` model published only at `main` (with `main_tokens` if known)."""
     if name in HF_CKPTS:
-        stages = {ph: _hf_stage(cd["tokens"], cd)
-                  for ph, cd in HF_CKPTS[name].items()}
+        stages = {}
+        prev_last = 0
+        for ph, cd in HF_CKPTS[name].items():
+            stages[ph] = _hf_stage(cd["tokens"], cd, prev_last=prev_last)
+            ni = stages[ph]["num_iters"]
+            if ni is not None:
+                prev_last = ni
     else:
         stages = {phase: _main_only_stage(main_tokens)}
     return {
@@ -383,7 +472,7 @@ def hf_entries() -> dict:
          "0.6B", 600_000_000, "Qwen3-Base", "pretraining"),
         ("Qwen3-1.7B-Base", "https://huggingface.co/Qwen/Qwen3-1.7B-Base",
          "1.7B", 1_700_000_000, "Qwen3-Base", "pretraining"),
-        ("Qwen3-4B-Base", "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+        ("Qwen3-4B-Base", "https://huggingface.co/Qwen/Qwen3-4B-Base",
          "4B", 4_000_000_000, "Qwen3-Base", "pretraining"),
         ("Qwen3-8B-Base", "https://huggingface.co/Qwen/Qwen3-8B-Base",
          "8B", 8_000_000_000, "Qwen3-Base", "pretraining"),
@@ -398,10 +487,7 @@ def hf_entries() -> dict:
         ("gemma-3-27b-pt", "https://huggingface.co/google/gemma-3-27b-pt",
          "27B", 27_000_000_000, "gemma-3-pt", "pretraining"),
         ("Olmo-3-1025-7B", "https://huggingface.co/allenai/Olmo-3-1025-7B",
-         "7B", 7_000_000_000, "Olmo-3-1025", "pretraining"),
-        ("SmolLM3-3B-Base", "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-Base",
-         "3B", 3_000_000_000, "SmolLM3-Base", "pretraining",
-         "huggingface-reference", 11_200_000_000_000),
+         "7B", 7_000_000_000, "Olmo-3-base", "pretraining"),
         ("SmolLM3-3B-checkpoints",
          "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints",
          "3B", 3_000_000_000, "SmolLM3-checkpoints", "pretraining"),
@@ -423,16 +509,20 @@ def hf_entries() -> dict:
          "swiss-ai-reference"),
         ("Ministral-3-14B-Instruct-2512",
          "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512",
-         "14B", 14_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+         "14B", 14_000_000_000, "Ministral-3-Instruct-2512", "posttraining",
+         "huggingface-reference"),
         ("Ministral-3-3B-Instruct-2512",
          "https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512",
-         "3B", 3_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+         "3B", 3_000_000_000, "Ministral-3-Instruct-2512", "posttraining",
+         "huggingface-reference"),
         ("Ministral-3-8B-Instruct-2512",
          "https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512",
-         "8B", 8_000_000_000, "Ministral-3-Instruct-2512", "posttraining"),
+         "8B", 8_000_000_000, "Ministral-3-Instruct-2512", "posttraining",
+         "huggingface-reference"),
         ("Mistral-Small-3.2-24B-Instruct-2506",
          "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506",
-         "24B", 24_000_000_000, "Mistral-Small-3.2-Instruct-2506", "posttraining"),
+         "24B", 24_000_000_000, "Mistral-Small-3.2-Instruct-2506", "posttraining",
+         "huggingface-reference"),
         ("Olmo-3-7B-Instruct",
          "https://huggingface.co/allenai/Olmo-3-7B-Instruct",
          "7B", 7_000_000_000, "Olmo-3-Instruct", "posttraining"),
@@ -450,7 +540,7 @@ def hf_entries() -> dict:
          "1.7B", 1_700_000_000, "Qwen3-it", "posttraining"),
         ("Qwen3-30B-A3B", "https://huggingface.co/Qwen/Qwen3-30B-A3B",
          "30B-A3B", 30_000_000_000, "Qwen3-it", "posttraining"),
-        ("Qwen3-4B", "https://huggingface.co/Qwen/Qwen3.5-4B",
+        ("Qwen3-4B", "https://huggingface.co/Qwen/Qwen3-4B",
          "4B", 4_000_000_000, "Qwen3-it", "posttraining"),
         ("Qwen3-8B", "https://huggingface.co/Qwen/Qwen3-8B",
          "8B", 8_000_000_000, "Qwen3-it", "posttraining"),
@@ -477,15 +567,15 @@ def hf_entries() -> dict:
          "https://huggingface.co/CohereLabs/aya-expanse-8b",
          "8B", 8_000_000_000, "aya-expanse", "posttraining"),
         ("gemma-3-12b-it", "https://huggingface.co/google/gemma-3-12b-it",
-         "12B", 12_000_000_000, "gemma-3-it", "posttraining"),
+         "12B", 12_000_000_000, "gemma-3-it", "posttraining", "huggingface-reference"),
         ("gemma-3-1b-it", "https://huggingface.co/google/gemma-3-1b-it",
-         "1B", 1_000_000_000, "gemma-3-it", "posttraining"),
+         "1B", 1_000_000_000, "gemma-3-it", "posttraining", "huggingface-reference"),
         ("gemma-3-270m-it", "https://huggingface.co/google/gemma-3-270m-it",
-         "270M", 270_000_000, "gemma-3-it", "posttraining"),
+         "270M", 270_000_000, "gemma-3-it", "posttraining", "huggingface-reference"),
         ("gemma-3-27b-it", "https://huggingface.co/google/gemma-3-27b-it",
-         "27B", 27_000_000_000, "gemma-3-it", "posttraining"),
+         "27B", 27_000_000_000, "gemma-3-it", "posttraining", "huggingface-reference"),
         ("gemma-3-4b-it", "https://huggingface.co/google/gemma-3-4b-it",
-         "4B", 4_000_000_000, "gemma-3-it", "posttraining"),
+         "4B", 4_000_000_000, "gemma-3-it", "posttraining", "huggingface-reference"),
         ("tiny-aya-earth",
          "https://huggingface.co/CohereLabs/tiny-aya-earth",
          "3B", 3_349_200_000, "tiny-aya", "posttraining"),
@@ -498,6 +588,97 @@ def hf_entries() -> dict:
         ("tiny-aya-water",
          "https://huggingface.co/CohereLabs/tiny-aya-water",
          "3B", 3_349_200_000, "tiny-aya", "posttraining"),
+
+        # ---------- OLMo-2 reference (base + SFT/DPO/Instruct) ----------
+        ("OLMo-2-0425-1B", "https://huggingface.co/allenai/OLMo-2-0425-1B",
+         "1B", 1_485_000_000, "OLMo-2-base", "pretraining"),
+        ("OLMo-2-0425-1B-SFT", "https://huggingface.co/allenai/OLMo-2-0425-1B-SFT",
+         "1B", 1_485_000_000, "OLMo-2-Instruct-SFT", "posttraining"),
+        ("OLMo-2-0425-1B-DPO", "https://huggingface.co/allenai/OLMo-2-0425-1B-DPO",
+         "1B", 1_485_000_000, "OLMo-2-Instruct-DPO", "posttraining"),
+        ("OLMo-2-0425-1B-Instruct",
+         "https://huggingface.co/allenai/OLMo-2-0425-1B-Instruct",
+         "1B", 1_485_000_000, "OLMo-2-Instruct", "posttraining"),
+        ("OLMo-2-1124-7B", "https://huggingface.co/allenai/OLMo-2-1124-7B",
+         "7B", 7_299_000_000, "OLMo-2-base", "pretraining"),
+        ("OLMo-2-1124-7B-SFT", "https://huggingface.co/allenai/OLMo-2-1124-7B-SFT",
+         "7B", 7_299_000_000, "OLMo-2-Instruct-SFT", "posttraining"),
+        ("OLMo-2-1124-7B-DPO", "https://huggingface.co/allenai/OLMo-2-1124-7B-DPO",
+         "7B", 7_299_000_000, "OLMo-2-Instruct-DPO", "posttraining"),
+        ("OLMo-2-1124-7B-Instruct",
+         "https://huggingface.co/allenai/OLMo-2-1124-7B-Instruct",
+         "7B", 7_299_000_000, "OLMo-2-Instruct", "posttraining"),
+        ("OLMo-2-1124-13B", "https://huggingface.co/allenai/OLMo-2-1124-13B",
+         "13B", 13_716_000_000, "OLMo-2-base", "pretraining"),
+        ("OLMo-2-1124-13B-SFT", "https://huggingface.co/allenai/OLMo-2-1124-13B-SFT",
+         "13B", 13_716_000_000, "OLMo-2-Instruct-SFT", "posttraining"),
+        ("OLMo-2-1124-13B-DPO", "https://huggingface.co/allenai/OLMo-2-1124-13B-DPO",
+         "13B", 13_716_000_000, "OLMo-2-Instruct-DPO", "posttraining"),
+        ("OLMo-2-1124-13B-Instruct",
+         "https://huggingface.co/allenai/OLMo-2-1124-13B-Instruct",
+         "13B", 13_716_000_000, "OLMo-2-Instruct", "posttraining"),
+        ("OLMo-2-0325-32B", "https://huggingface.co/allenai/OLMo-2-0325-32B",
+         "32B", 32_234_000_000, "OLMo-2-base", "pretraining"),
+        ("OLMo-2-0325-32B-SFT", "https://huggingface.co/allenai/OLMo-2-0325-32B-SFT",
+         "32B", 32_234_000_000, "OLMo-2-Instruct-SFT", "posttraining"),
+        ("OLMo-2-0325-32B-DPO", "https://huggingface.co/allenai/OLMo-2-0325-32B-DPO",
+         "32B", 32_234_000_000, "OLMo-2-Instruct-DPO", "posttraining"),
+        ("OLMo-2-0325-32B-Instruct",
+         "https://huggingface.co/allenai/OLMo-2-0325-32B-Instruct",
+         "32B", 32_234_000_000, "OLMo-2-Instruct", "posttraining"),
+
+        # ---------- Olmo-3 reference (32B base + Think + 3.1 Instruct) ----------
+        ("Olmo-3-1125-32B", "https://huggingface.co/allenai/Olmo-3-1125-32B",
+         "32B", 32_234_000_000, "Olmo-3-base", "pretraining"),
+        ("Olmo-3-7B-Think", "https://huggingface.co/allenai/Olmo-3-7B-Think",
+         "7B", 7_298_000_000, "Olmo-3-Think", "posttraining"),
+        ("Olmo-3-7B-Think-SFT",
+         "https://huggingface.co/allenai/Olmo-3-7B-Think-SFT",
+         "7B", 7_298_000_000, "Olmo-3-Think-SFT", "posttraining"),
+        ("Olmo-3-7B-Think-DPO",
+         "https://huggingface.co/allenai/Olmo-3-7B-Think-DPO",
+         "7B", 7_298_000_000, "Olmo-3-Think-DPO", "posttraining"),
+        ("Olmo-3-32B-Think", "https://huggingface.co/allenai/Olmo-3-32B-Think",
+         "32B", 32_234_000_000, "Olmo-3-Think", "posttraining"),
+        ("Olmo-3-32B-Think-SFT",
+         "https://huggingface.co/allenai/Olmo-3-32B-Think-SFT",
+         "32B", 32_234_000_000, "Olmo-3-Think-SFT", "posttraining"),
+        ("Olmo-3-32B-Think-DPO",
+         "https://huggingface.co/allenai/Olmo-3-32B-Think-DPO",
+         "32B", 32_234_000_000, "Olmo-3-Think-DPO", "posttraining"),
+        ("Olmo-3.1-32B-Instruct",
+         "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct",
+         "32B", 32_234_000_000, "Olmo-3-Instruct", "posttraining"),
+        ("Olmo-3.1-32B-Instruct-SFT",
+         "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-SFT",
+         "32B", 32_234_000_000, "Olmo-3-Instruct-SFT", "posttraining"),
+        ("Olmo-3.1-32B-Instruct-DPO",
+         "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-DPO",
+         "32B", 32_234_000_000, "Olmo-3-Instruct-DPO", "posttraining"),
+
+        # ---------- gemma-4 reference (pt + it) ----------
+        ("gemma-4-E2B", "https://huggingface.co/google/gemma-4-E2B",
+         "E2B", 2_000_000_000, "gemma-4-pt", "pretraining"),
+        ("gemma-4-E2B-it", "https://huggingface.co/google/gemma-4-E2B-it",
+         "E2B", 2_000_000_000, "gemma-4-it", "posttraining", "posttraining"),
+        ("gemma-4-E4B", "https://huggingface.co/google/gemma-4-E4B",
+         "E4B", 8_000_000_000, "gemma-4-pt", "pretraining"),
+        ("gemma-4-E4B-it", "https://huggingface.co/google/gemma-4-E4B-it",
+         "E4B", 8_000_000_000, "gemma-4-it", "posttraining", "posttraining"),
+        ("gemma-4-26B-A4B", "https://huggingface.co/google/gemma-4-26B-A4B",
+         "26B-A4B", 26_540_000_000, "gemma-4-pt", "pretraining"),
+        ("gemma-4-26B-A4B-it", "https://huggingface.co/google/gemma-4-26B-A4B-it",
+         "26B-A4B", 26_540_000_000, "gemma-4-it", "posttraining", "posttraining"),
+        ("gemma-4-31B", "https://huggingface.co/google/gemma-4-31B",
+         "31B", 32_680_000_000, "gemma-4-pt", "pretraining"),
+        ("gemma-4-31B-it", "https://huggingface.co/google/gemma-4-31B-it",
+         "31B", 32_680_000_000, "gemma-4-it", "posttraining", "posttraining"),
+
+        # ---------- misc reference pretrains ----------
+        ("gemma-3-270m", "https://huggingface.co/google/gemma-3-270m",
+         "270M", 268_000_000, "gemma-3-pt", "pretraining"),
+        ("Qwen3.5-4B-Base", "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+         "4B", 4_000_000_000, "Qwen3.5-Base", "pretraining"),
     ]
     out = {}
     for row in rows:
@@ -594,6 +775,11 @@ def tokenizer_lm_entries() -> dict:
 
 # --- Pools ------------------------------------------------------------------
 
+# Non-custom reference pools are evaluated on ALL three task groups regardless
+# of the model's nominal stage (comprehensive cross-stage SNR over the
+# reference models). The custom seeds_* pools keep pretraining_full only.
+ALL_EVAL_GROUPS = ["pretraining_full", "midtraining", "posttraining"]
+
 POOLS = {
     "seeds_1904": {
         "description": "Single-seed Apertus baseline (3 mixes × 1 seed). "
@@ -616,12 +802,14 @@ POOLS = {
         "members": [{"source": "snr-pretraining-custom",
                      "seeds": [28, 1797, 1904]}],
         "include_external": True,
+        "eval_groups": ["pretraining_full"],
     },
     "pretraining_a06": {
         "description": "Apertus3 a06 main-run checkpoints (1B and 3B).",
         "stage": "pretraining",
         "members": [{"source": "snr-pretraining-a06"}],
         "include_external": False,
+        "eval_groups": ALL_EVAL_GROUPS,
     },
     "pretraining_distill": {
         "description": "Distillation checkpoints (ap-from8b-TOP256, 0.6B + 1B). "
@@ -629,16 +817,120 @@ POOLS = {
         "stage": "pretraining",
         "members": [{"source": "distillation"}],
         "include_external": False,
+        "eval_groups": ALL_EVAL_GROUPS,
     },
     "pretraining_hf_reference": {
-        "description": "All HF / Swiss-AI reference pretrains.",
+        "description": "All HF / Swiss-AI reference pretraining ckpts.",
         "stage": "pretraining",
         "members": [
             {"source": "huggingface-reference"},
             {"source": "swiss-ai-reference"},
         ],
+        "eval_groups": ALL_EVAL_GROUPS,
+    },
+    "posttraining_hf_reference": {
+        "description": "All HF / Swiss-AI reference posttraining ckpts.",
+        "stage": "posttraining",
+        "members": [
+            {"source": "huggingface-reference"},
+            {"source": "swiss-ai-reference"},
+        ],
+        "eval_groups": ALL_EVAL_GROUPS,
+    },
+    "midtraining_hf_reference": {
+        "description": "HF / Swiss-AI reference models with a midtraining "
+                       "stage (currently SmolLM3-3B-checkpoints stage2/stage3).",
+        "stage": "midtraining",
+        "members": [
+            {"source": "huggingface-reference"},
+            {"source": "swiss-ai-reference"},
+        ],
+        "eval_groups": ALL_EVAL_GROUPS,
+    },
+    # --- Analysis-only model-set tiers (ported from refactor/shared_config).
+    # Consumed by the pool-driven signal-and-noise analysis, NOT the eval
+    # launchers. `external` spans pretraining+posttraining (stage 'all') over
+    # every non-custom model, all tasks, no stage/name filtering. ---
+    "external": {
+        "description": "Model-set tier: every non-custom model pooled across "
+                       "all four external parquets (reference_hf + a06 + "
+                       "distillation + posttraining), all models and all tasks, "
+                       "with no stage/name filtering. Cross-model signal/noise "
+                       "and within-family scaling DA over the external ladder. "
+                       "Stage 'all' (spans pretraining + posttraining).",
+        "stage": "all",
+        "members": [
+            {"source": "huggingface-reference"},
+            {"source": "swiss-ai-reference"},
+            {"source": "snr-pretraining-a06"},
+            {"source": "distillation"},
+            {"source": "posttraining"},
+        ],
+        "load_all_external": True,
+    },
+    "custom_swissai_hf": {
+        "description": "Model-set tier: all 3 custom seeds + every external "
+                       "pretraining-checkpoint model (swiss-ai-reference + "
+                       "huggingface-reference + a06 + distillation, filtered to "
+                       "the pretraining stage). Maximum statistical power and "
+                       "the >1B scaling ladder.",
+        "stage": "pretraining",
+        "members": [{"source": "snr-pretraining-custom", "seeds": [28, 1797, 1904]}],
+        "include_external": True,
+        "eval_groups": ["pretraining_full"],
     },
 }
+
+# Pools whose members get stage-level `eval_groups` written onto the built
+# models. Excludes the seeds_1904 / seeds_28_1797 sub-pools (covered by the
+# pooled seeds_28_1797_1904). Order is irrelevant — assignment is a union.
+EVAL_GROUP_POOLS = [
+    "seeds_28_1797_1904", "pretraining_a06", "pretraining_distill",
+    "pretraining_hf_reference", "posttraining_hf_reference",
+    "midtraining_hf_reference", "custom_swissai_hf",
+]
+
+# Default stage → eval-group when a pool has no explicit `eval_groups`.
+DEFAULT_STAGE_EVAL_GROUP = {
+    "pretraining": "pretraining_full",
+    "midtraining": "midtraining",
+    "posttraining": "posttraining",
+}
+
+# Model-name prefixes whose archs are multimodal / unsupported by the eval
+# harness — they never receive eval_groups.
+EVAL_GROUP_EXCLUDE_PREFIXES = ("Qwen3.5", "gemma-4")
+
+
+def assign_eval_groups(models: dict) -> None:
+    """Set stage-level `eval_groups` on built models in place, driven by pool
+    membership. For each in-scope pool, expand its members (match by `source`,
+    and `seed` when the member dict carries `seeds`) and union the pool's
+    eval-groups onto the stage matching the pool's `stage`. Models whose name
+    starts with an excluded prefix get no eval_groups."""
+    for pool_name in EVAL_GROUP_POOLS:
+        pool = POOLS[pool_name]
+        stage = pool["stage"]
+        groups = pool.get("eval_groups",
+                          [DEFAULT_STAGE_EVAL_GROUP[stage]])
+        for name, model in models.items():
+            if name.startswith(EVAL_GROUP_EXCLUDE_PREFIXES):
+                continue
+            if stage not in model["stages"]:
+                continue
+            for member in pool["members"]:
+                if member["source"] != model["source"]:
+                    continue
+                if "seeds" in member and model.get("seed") not in member["seeds"]:
+                    continue
+                st = model["stages"][stage]
+                existing = st.get("eval_groups", [])
+                merged = list(existing)
+                for g in groups:
+                    if g not in merged:
+                        merged.append(g)
+                st["eval_groups"] = merged
+                break
 
 
 # --- Sources → parquet split ------------------------------------------------
@@ -653,8 +945,9 @@ SOURCES = {
     "snr-pretraining-a06":    {"split": "pretraining_a06"},
     "swiss-ai-reference":     {"split": "reference_hf"},
     "huggingface-reference":  {"split": "reference_hf"},
+    "posttraining":           {"split": "posttraining"},
+    "distillation":           {"split": "distillation"},
     "daslab-testing":         {"split": None},
-    "distillation":           {"split": None},
     "tokenizer-lm":           {"split": None},
 }
 
@@ -692,7 +985,6 @@ HF_WANDB = {
             "apertus-8b-2509": "Apertus-8B-2509",
             "olmo-3-1025-7b": "Olmo-3-1025-7B",
             "smollm3-3b-checkpoints": "SmolLM3-3B-checkpoints",
-            "smollm3-3b-base": "SmolLM3-3B-Base",
         },
     },
 }
@@ -852,24 +1144,41 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
             "benchmark": _benchmark_of(t),
             "stages": stages,
         }
+    # Synthetic launch group: union of the three stage groups, so ONE job per
+    # checkpoint covers pretraining + midtraining + posttraining in a single
+    # BATCH_TASKS=1 lm_eval call (avoids the same-NAME collision of launching
+    # the three groups as separate jobs). Dedup preserves first-seen order.
+    groups["all_stages"] = list(dict.fromkeys(
+        groups.get("pretraining_full", [])
+        + groups.get("midtraining", [])
+        + groups.get("posttraining", [])))
+
     return {"tasks": tasks_section, "groups": groups}
 
 
 # --- Driver -----------------------------------------------------------------
 
-def main():
+def build_models() -> dict:
+    """Build the full {models, pools, sources, snr} dict, including the
+    stage-level `eval_groups` assignment. Pure / side-effect-free so callers
+    can diff it against the on-disk configs/models.json without writing."""
     models = {}
     models.update(custom_pretrain_entries())
     models.update(a06_pretrain_entries())
     models.update(hf_entries())
     models.update(distill_entries())
     models.update(tokenizer_lm_entries())
+    assign_eval_groups(models)
+    return {"models": models, "pools": POOLS, "sources": SOURCES, "snr": SNR}
 
-    models_json = {"models": models, "pools": POOLS,
-                   "sources": SOURCES, "snr": SNR}
+
+def main():
+    models_json = build_models()
+    models = models_json["models"]
+
     CONFIGS.mkdir(parents=True, exist_ok=True)
     (CONFIGS / "models.json").write_text(
-        json.dumps(models_json, indent=2) + "\n"
+        json.dumps(models_json, indent=2, ensure_ascii=True) + "\n"
     )
     print(f"Wrote configs/models.json — {len(models)} models, "
           f"{len(POOLS)} pools, {len(SOURCES)} sources")

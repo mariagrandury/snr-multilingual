@@ -70,6 +70,11 @@ POOL=${POOL:-seeds_28_1797_1904}        # default pool — all Apertus custom se
 TASKS_GROUP=${TASKS_GROUP:-pretraining_full}
 CSV=$REPO_DIR/snr_progress.csv
 
+# Posttraining tasks (ifeval/gsm8k_cot/humaneval_instruct/…) need a chat
+# template; pretraining/midtraining base evals don't.
+APPLY_CHAT=false
+[[ "$TASKS_GROUP" == posttraining* ]] && APPLY_CHAT=true
+
 # Refresh the snapshot once at script start. snr_progress.py reads pool
 # membership + per-cell iter lists from configs/models.json, so the
 # on-disk file stays consistent for both humans and launchers.
@@ -106,23 +111,66 @@ pp_for() {
         apertus-0.6b-from8b-TOP256-long) echo 1; return;;
         apertus-1b-from8b-TOP256-long)   echo 1; return;;
     esac
-    case "$size" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; *) echo 1;; esac
+    case "$size" in 175M) echo 1;; 350M) echo 4;; 600M) echo 2;; 1B) echo 4;; *) echo 4;; esac
+}
+# Hub (vLLM) path: vLLM rejects offline DP>1 for dense models (CLAUDE bug 11),
+# so we fill the 4-GPU node with tensor parallelism instead; PP>1 adds pipeline
+# bubbles AND crashes some archs with `'PPMissingLayer' has no attribute
+# attention_type`. So PP=1 and TP = largest of {4,2,1} dividing the model's
+# num_key_value_heads (CLAUDE bug 14: TP must divide kv-heads). Reads the cached
+# HF config; falls back to TP=1 if heads can't be read (e.g. gemma-3-4b nests them).
+tp_from_kv() {
+    HF_HUB_CACHE="${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models}" \
+    python3.11 - "$1" <<'PY'
+import json, glob, os, sys
+g = glob.glob(f"{os.environ['HF_HUB_CACHE']}/models--{sys.argv[1].replace('/','--')}/snapshots/*/config.json")
+kv = None
+if g:
+    tc = json.load(open(g[0])); tc = tc.get("text_config", tc)
+    kv = tc.get("num_key_value_heads", tc.get("num_attention_heads"))
+print(next((t for t in (4, 2, 1) if isinstance(kv, int) and kv % t == 0), 1))
+PY
 }
 # Per-size per-task minute estimates (re-fit 2026-05-10 after the iter50000
 # batch hit 13/36 TIMEOUT on the new 52-task pretraining-full mix). The flat
 # 0.5 min/task estimate worked for 175M but undershot for larger sizes where
 # generation cost grows: 1B is ~3x slower than 175M, 600M/350M ~2x. 3B is
 # extrapolated (no a06 vLLM eval observed yet).
-per_task_min()  { case "$1" in 175M) echo 1.0;; 350M) echo 1.0;; 600M) echo 1.0;; 1B) echo 1.5;; 3B) echo 2.5;; *) echo 1.5;; esac; }
-COLD_START_MIN=15   # pip install + vLLM init + dataset load (offline cache hit)
+# min/task (LOGPROB baseline), calibrated from REAL completed-eval walltimes
+# (sacct, 2026-05/06 full ~120-task pretraining runs): pure per-task (total minus
+# ~18m cold) ≈ 0.6 (≤1.7B), 0.9 (4B), 1.2 (7B), 1.4 (12B). Values below add a
+# ~1.3x safety margin and extrapolate 24-70B. Posttraining is generative
+# (autoregressive) and slower — see GEN_MULT in walltime_for (estimate, no
+# completed posttraining-full run to calibrate against yet).
+per_task_min()  { case "$1" in
+    175M|350M|600M|270M|0.6B|1B|1.7B) echo 1.0;;
+    3B|4B)        echo 1.3;;
+    7B|8B|30B-A3B) echo 1.7;;   # 30B-A3B is MoE, ~3B active compute
+    13B|14B)      echo 2.0;;
+    24B|27B|32B)  echo 3.0;;
+    70B)          echo 5.0;;
+    *)            echo 2.0;;
+  esac; }
+# cold start = pip install + vLLM init + dataset load + shard-load across 4 GPUs.
+# Real small full evals ran ~83-110m/120 tasks ⇒ ~18m cold; bigger models load slower.
+cold_start_for() { case "$1" in 70B) echo 35;; 24B|27B|32B|30B-A3B) echo 25;; *) echo 18;; esac; }
 MIN_WALL_MIN=25     # floor — even 1-task jobs need vLLM init time
 CAP_MIN=719         # 11:59:00 — normal-partition wall cap
 
 walltime_for() {
     local size=$1 remaining=$2
     local pt; pt=$(per_task_min "$size")
-    local m=$(awk -v c=$COLD_START_MIN -v p=$pt -v n=$remaining \
-                  'BEGIN { printf "%d\n", c + n * p + 0.999 }')
+    local c; c=$(cold_start_for "$size")
+    # Generative groups (posttraining/midtraining: mgsm/ifeval/humaneval CoT) run
+    # far slower per task than logprob. ESTIMATE (2.5x) — refine once a full
+    # posttraining sweep completes and we can re-read sacct.
+    local mult=1
+    [[ "$TASKS_GROUP" == posttraining* || "$TASKS_GROUP" == midtraining* ]] && mult=2.5
+    # all_stages = pretraining_full ∪ mid ∪ post (213 tasks, ~120 logprob + ~93
+    # generative) → blended factor between the logprob (1) and generative (2.5).
+    [[ "$TASKS_GROUP" == all_stages ]] && mult=1.8
+    local m=$(awk -v c=$c -v p=$pt -v n=$remaining -v g=$mult \
+                  'BEGIN { printf "%d\n", c + n * p * g + 0.999 }')
     (( m < MIN_WALL_MIN )) && m=$MIN_WALL_MIN
     (( m > CAP_MIN ))      && m=$CAP_MIN
     printf "%02d:%02d:00" $(( m / 60 )) $(( m % 60 ))
@@ -131,46 +179,64 @@ walltime_for() {
 SBATCH_RES_ARGS=()
 [[ -n "$RESERVATION" ]] && SBATCH_RES_ARGS=(--reservation="$RESERVATION")
 
-# Resolve model / size / hf_local-checkpoint dir per CSV row from
-# configs/models.json — no name-regex parsing, so custom apertus AND a06
-# (and any other model with `backends.hf_local`) both work. Emits the
-# original 6 CSV columns plus model, size, hf_base, iter, \x1f-delimited
-# (non-whitespace separator so empty fields like active_jobids survive
-# the bash `read`). Sort: iter desc (380k → 2k), size desc (3B → 175M).
+# Resolve model / size / checkpoint-source per CSV row from
+# configs/models.json. Dispatches on `checkpoint_kind`:
+#   * hf_branch  → mode=hub:   evaluate the HF-Hub repo at REVISION=<branch>
+#                  (Qwen / OLMo / gemma / aya reference models). No local
+#                  iter dir; the model's own tokenizer is used.
+#   * else       → mode=local: evaluate the converted snapshot under
+#                  backends.hf_local/iter_NNNNNNN (apertus / a06 / distill).
+# NAME → (model, ckpt) by longest models.json-key prefix, so neither the
+# `-iter<N>` nor the `-<branch>` form needs a regex. Emits the 6 CSV columns
+# plus model, size, mode, path, branch, iter (\x1f-delimited). Sort: iter
+# desc then size desc (hub rows have iter=-1 → sorted last, by size).
 SORTED=$(awk -F, 'NR>1 { print $0 }' "$CSV" | python3.11 -c "
 import sys, csv
 sys.path.insert(0, 'scripts/utils')
-from configs import get_model
-size_rank = {'3B': 0, '1B': 1, '600M': 2, '350M': 3, '175M': 4}
+from configs import get_model, load_models
+MODELS = load_models()
+size_rank = {'70B': -2, '32B': -1, '30B-A3B': -1, '3B': 0, '1B': 1,
+             '600M': 2, '350M': 3, '175M': 4}
+def split_name(name):
+    best = None
+    for k in MODELS:
+        if name == k or name.startswith(k + '-'):
+            if best is None or len(k) > len(best):
+                best = k
+    return (best, name[len(best)+1:]) if best else (None, None)
 out = []
 for r in csv.reader(sys.stdin):
     if len(r) < 6:
         continue
-    model, sep, it = r[0].rpartition('-iter')
-    if not sep or not it.isdigit():
-        print('  WARN: name is not <model>-iter<N>: ' + r[0], file=sys.stderr)
-        continue
-    try:
-        e = get_model(model)
-    except KeyError:
-        print('  WARN: model not in models.json: ' + model, file=sys.stderr)
-        continue
-    hf = (e.get('backends') or {}).get('hf_local')
-    if not hf:
-        print('  WARN: no hf_local backend for ' + model, file=sys.stderr)
-        continue
-    out.append((r, model, e['size'], hf.rstrip('/'), int(it)))
-out.sort(key=lambda x: (-x[4], size_rank.get(x[2], 9)))
-for r, model, size, hf, it in out:
+    model, ckpt = split_name(r[0])
+    if model is None:
+        print('  WARN: no models.json key matches: ' + r[0], file=sys.stderr); continue
+    e = get_model(model); be = e.get('backends') or {}
+    if not any((s or {}).get('eval_groups') for s in (e.get('stages') or {}).values()):
+        continue  # no eval_groups (unsupported arch, e.g. gemma-4 / Qwen3.5) → skip
+    if e['checkpoint_kind'] == 'hf_branch':
+        repo = (be.get('hf') or '').replace('https://huggingface.co/', '')
+        if not repo:
+            print('  WARN: no hf backend for ' + model, file=sys.stderr); continue
+        out.append((r, model, e['size'], 'hub', repo, ckpt, -1))
+    else:
+        hf = be.get('hf_local')
+        if not hf:
+            print('  WARN: no hf_local backend for ' + model, file=sys.stderr); continue
+        if not (ckpt.startswith('iter') and ckpt[4:].isdigit()):
+            print('  WARN: local ckpt not iter<N>: ' + r[0], file=sys.stderr); continue
+        out.append((r, model, e['size'], 'local', hf.rstrip('/'), '', int(ckpt[4:])))
+out.sort(key=lambda x: (-x[6], size_rank.get(x[2], 9)))
+for r, model, size, mode, path, branch, it in out:
     print('\x1f'.join([r[0], r[1], r[2], r[3], r[4], r[5],
-                       model, size, hf, str(it)]))
+                       model, size, mode, path, branch, str(it)]))
 ")
 
 submitted=0; skipped_active=0; skipped_done=0; skipped_no_ckpt=0; skipped_filter=0
-echo "[hf] partition=$PARTITION dry_run=$DRY_RUN filter=${FILTER:-<none>}"
+echo "[hf] partition=$PARTITION dry_run=$DRY_RUN filter=${FILTER:-<none>} tasks=$TASKS_GROUP chat=$APPLY_CHAT"
 echo ""
 
-while IFS=$'\x1f' read -r name status done total remaining active_jobids model size hf_base iter; do
+while IFS=$'\x1f' read -r name status done total remaining active_jobids model size mode path branch iter; do
     [[ -z "$name" ]] && continue
     if [[ -n "$FILTER" && "$name" != *"$FILTER"* ]]; then
         skipped_filter=$((skipped_filter + 1)); continue
@@ -183,48 +249,56 @@ while IFS=$'\x1f' read -r name status done total remaining active_jobids model s
         skipped_active=$((skipped_active + 1)); continue
     fi
 
-    # model / size / hf_base / iter were resolved from configs/models.json
-    # by the python sort block above — works for custom apertus + a06 alike.
-    iter_dir=$(printf "%s/iter_%07d" "$hf_base" "$iter")
-    if [[ ! -f "$iter_dir/config.json" ]] || ! ls "$iter_dir"/model.safetensors* >/dev/null 2>&1; then
-        skipped_no_ckpt=$((skipped_no_ckpt + 1)); continue
+    # Resolve the positional checkpoint arg per mode. local = converted iter
+    # dir (must exist on disk); hub = HF-Hub repo id evaluated at REVISION.
+    if [[ "$mode" == "local" ]]; then
+        ckpt_arg=$(printf "%s/iter_%07d" "$path" "$iter")
+        if [[ ! -f "$ckpt_arg/config.json" ]] || ! ls "$ckpt_arg"/model.safetensors* >/dev/null 2>&1; then
+            skipped_no_ckpt=$((skipped_no_ckpt + 1)); continue
+        fi
+    else
+        ckpt_arg="$path"   # HF-Hub repo id; evaluate.sbatch loads it at REVISION
     fi
 
     n_remaining=$(awk -F, '{print NF}' <<<"$remaining")
-    tp=$(tp_for "$size" "$model")
-    pp=$(pp_for "$size" "$model")
-    wall=$(walltime_for "$size" "$n_remaining")
+    if [[ "$mode" == "hub" ]]; then
+        tp=$(tp_from_kv "$path"); pp=1
+    else
+        tp=$(tp_for "$size" "$model"); pp=$(pp_for "$size" "$model")
+    fi
+    wall=${WALL_OVERRIDE:-$(walltime_for "$size" "$n_remaining")}
 
     if (( DRY_RUN )); then
-        echo "  would submit: $name  TP=$tp PP=$pp  --time=$wall  remaining=$n_remaining"
+        ref=$([[ "$mode" == hub ]] && echo "@$branch" || echo "@iter$iter")
+        echo "  would submit: $name  [$mode$ref]  TP=$tp PP=$pp  --time=$wall  remaining=$n_remaining"
         submitted=$((submitted + 1)); continue
     fi
 
-    # Export env via the parent shell rather than `--export=ALL,K=V,K=V`.
-    # sbatch's --export uses commas as the separator BETWEEN vars, so a value
-    # containing commas (TASKS=a,b,c) gets truncated at the first comma —
-    # which silently submitted "1 task per ckpt" jobs the first time around
-    # (caught by re-reading the .out logs after launch). The prefix-export
-    # form below puts the vars in sbatch's process env; sbatch's default
-    # --export=ALL then snapshots them intact for the slurm job.
-    jid=$(LM_EVAL_BACKEND=vllm \
-          TOKENIZER=alehc/swissai-tokenizer \
-          BOS=true \
-          APPLY_CHAT_TEMPLATE=false \
-          BATCH_TASKS=1 \
-          TP=$tp \
-          PP=$pp \
-          WANDB_ENTITY=mariagrandury-epflnlp \
-          WANDB_PROJECT=snr-experiments \
-          TASKS="$remaining" \
+    # Prefix-export (not --export=ALL,K=V): sbatch's --export splits vars on
+    # commas, truncating a comma-bearing TASKS=a,b,c at the first comma. The
+    # prefix form puts vars in sbatch's process env, snapshot intact by the
+    # default --export=ALL. Env differs by mode: local apertus needs the
+    # swissai tokenizer + BOS; hub models use their OWN tokenizer (NEVER the
+    # swissai one — wrong vocab) and pin REVISION (+ tokenizer_revision in
+    # evaluate.sbatch, CLAUDE bug 1).
+    ENVV=(LM_EVAL_BACKEND=vllm BATCH_TASKS=1 TP=$tp PP=$pp
+          APPLY_CHAT_TEMPLATE=$APPLY_CHAT
+          WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=snr-experiments
+          TASKS="$remaining")
+    if [[ "$mode" == "local" ]]; then
+        ENVV+=(TOKENIZER=alehc/swissai-tokenizer BOS=true)
+    else
+        ENVV+=(REVISION="$branch")
+    fi
+    jid=$(env "${ENVV[@]}" \
         sbatch --parsable \
             --job-name="eval-${name}" \
             --partition="$PARTITION" \
             --time="$wall" \
             "${SBATCH_RES_ARGS[@]}" \
-            scripts/evaluate.sbatch "$iter_dir" "$name") \
+            scripts/evaluate.sbatch "$ckpt_arg" "$name") \
         && {
-            echo "  $jid  $name  TP=$tp PP=$pp  $wall  remaining=$n_remaining"
+            echo "  $jid  $name  [$mode]  TP=$tp PP=$pp  $wall  remaining=$n_remaining"
             submitted=$((submitted + 1))
         } || {
             echo "  sbatch FAILED: $name"
