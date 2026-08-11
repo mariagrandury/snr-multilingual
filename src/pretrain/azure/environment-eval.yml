@@ -1,0 +1,9 @@
+$schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
+name: apertus-eval
+description: >
+  vLLM image for lm-eval, mirroring the cluster's vLLM backend
+  (containers/env_vllm.toml builds a swiss-ai vLLM fork; stock vLLM >= 0.10.2
+  has Apertus support, so the fork is only needed for its extra kwargs like
+  enable_thinking). The eval job pip-installs the swiss-ai
+  lm-evaluation-harness fork on top for the SNR task definitions.
+image: vllm/vllm-openai:v0.11.0

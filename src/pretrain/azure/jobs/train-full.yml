@@ -1,0 +1,55 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+experiment_name: apertus-azure
+display_name: apertus-175M-fwEdu30-fw270-seed28
+description: >
+  Full pretrain of one cell — defaults reproduce the guide cell (175M, mix
+  30/70, seed 28): 50000 iters = 103.2B tokens, checkpoint every 2000 iters.
+  ~4.5-6.5 days / ~$1600-2300 on 4x A100 (dedicated). Resubmit after any
+  failure or eviction to resume from the latest checkpoint. Other cells are
+  launched through launch_azure_trainings.py, which overrides the
+  architecture env vars and paths per size x mix x seed.
+code: ..
+command: bash train.sh
+environment: azureml:apertus-nemo@latest
+compute: azureml:gpu-train
+resources:
+  shm_size: 64g
+inputs:
+  data:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/tokenized/mix_30_70/full
+    mode: download
+outputs:
+  checkpoints:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/runs/apertus-175M-fwEdu30-fw270-seed28/checkpoints
+    mode: rw_mount
+  logs:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/runs/apertus-175M-fwEdu30-fw270-seed28/logs
+    mode: rw_mount
+  cache:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/runs/apertus-175M-fwEdu30-fw270-seed28/cache
+    mode: rw_mount
+environment_variables:
+  MODEL_SIZE: 175M
+  NUM_LAYERS: "16"
+  HIDDEN_SIZE: "1024"
+  FFN_HIDDEN_SIZE: "4096"
+  NUM_ATTENTION_HEADS: "16"
+  NUM_QUERY_GROUPS: "4"
+  MBS: "7"
+  LR: "0.00097919"
+  TRAINING_STEPS: "50000"
+  LR_WARMUP_ITERS: "2000"
+  LR_WSD_DECAY_ITERS: "10000"
+  SAVE_INTERVAL: "2000"
+  FW_EDU_RATIO: "30"
+  FW2_RATIO: "70"
+  SEED: "28"
+  DATA_DIR: ${{inputs.data}}
+  CKPT_DIR: ${{outputs.checkpoints}}
+  LOG_DIR: ${{outputs.logs}}
+  CACHE_DIR: ${{outputs.cache}}

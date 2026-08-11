@@ -1,0 +1,32 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+experiment_name: apertus-azure
+display_name: eval-apertus-175M-fwEdu30-fw270-seed28-iter50000
+description: >
+  lm-eval on one converted checkpoint, vLLM backend, cluster-identical
+  argument surface (see eval.sh). Defaults run hellaswag on the guide cell's
+  final checkpoint; other cells/checkpoints/tasks are launched through
+  launch_azure_evals.py or by overriding NAME, TASKS and the paths with --set.
+code: ..
+command: bash eval.sh
+environment: azureml:apertus-eval@latest
+compute: azureml:gpu-single
+resources:
+  shm_size: 16g
+inputs:
+  hf_model:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/models/apertus-175M-fwEdu30-fw270-seed28/iter_0050000
+    mode: download
+outputs:
+  results:
+    type: uri_folder
+    path: azureml://datastores/workspaceblobstore/paths/eval_logs
+    mode: rw_mount
+environment_variables:
+  # NAME must be "<configs/models.json key>-iter<N>" so push_all_results.py
+  # can resolve tokens/FLOPs for the W&B push.
+  NAME: apertus-175M-fwEdu30-fw270-seed28-iter50000
+  TASKS: hellaswag
+  MODEL: ${{inputs.hf_model}}
+  RESULTS_DIR: ${{outputs.results}}
