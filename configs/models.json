@@ -6264,6 +6264,124 @@
           }
         }
       }
+    },
+    "apertus-90M-fwEdu50-fw2ru50-seed28": {
+      "source": "snr-pretraining-bilingual",
+      "family": "apertus-enru-fwEdu50-fw2ru50-seed28",
+      "size": "90M",
+      "params": 194000000,
+      "hyperparams_key": "90M",
+      "mix_en": 50,
+      "mix_fw2": 50,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {},
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "auto": [
+              10000,
+              20000,
+              30000,
+              40000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "auto"
+          ]
+        }
+      }
+    },
+    "apertus-1.7B-fwEdu50-fw2ru50-seed28": {
+      "source": "snr-pretraining-bilingual",
+      "family": "apertus-enru-fwEdu50-fw2ru50-seed28",
+      "size": "1.7B",
+      "params": 1974000000,
+      "hyperparams_key": "1.7B",
+      "mix_en": 50,
+      "mix_fw2": 50,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {},
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "auto": [
+              10000,
+              20000,
+              30000,
+              40000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "auto"
+          ]
+        }
+      }
     }
   },
   "pools": {
@@ -6458,6 +6576,9 @@
     },
     "tokenizer-lm": {
       "split": null
+    },
+    "snr-pretraining-bilingual": {
+      "split": "pretraining_bilingual"
     }
   },
   "snr": {

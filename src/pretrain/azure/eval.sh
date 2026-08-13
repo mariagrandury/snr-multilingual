@@ -87,3 +87,15 @@ results = sorted(Path(sys.argv[1]).glob("results_*.json"))[-1]
 for task, metrics in json.load(open(results))["results"].items():
     print(task, {k: round(v, 4) for k, v in metrics.items() if isinstance(v, float)})
 EOF
+
+# Push to W&B (same project as cluster evals) right from the job — required
+# for auto-evals, convenient for manual ones. Needs the repo-root code
+# snapshot (configs/ + src/evals) and a WANDB_API_KEY.
+REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+if [ -n "${WANDB_API_KEY:-}" ] && [ -f "$REPO_ROOT/configs/models.json" ]; then
+  pip install --no-cache-dir -q wandb pandas
+  LOGS_ROOT="$RESULTS_DIR" python "$REPO_ROOT/src/evals/scripts/push_all_results.py" \
+      --entity "$WANDB_ENTITY" --project "$WANDB_PROJECT" --name "$NAME"
+else
+  echo "Skipping W&B push (no WANDB_API_KEY or repo snapshot); push locally via push_all_results.py"
+fi

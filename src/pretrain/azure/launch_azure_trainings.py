@@ -32,10 +32,21 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import filter_models, get_model  # noqa: E402
 
-CUSTOM_SOURCE = "snr-pretraining-custom"
+SOURCES = ["snr-pretraining-custom", "snr-pretraining-bilingual"]
 SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR.parent / "hyperparams_deep.json"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths"
+
+
+def mix_label(name: str, entry: dict) -> str:
+    """DATA_MIX_LABEL from the models.json key: apertus-<size>-<label>-seed<seed>."""
+    return (name.removeprefix(f"apertus-{entry['size']}-")
+                .removesuffix(f"-seed{entry['seed']}"))
+
+
+def mix_dir(entry: dict) -> str:
+    prefix = "mix_enru" if entry["source"] == "snr-pretraining-bilingual" else "mix"
+    return f"{prefix}_{entry['mix_en']}_{entry['mix_fw2']}"
 
 
 def az_args() -> list[str]:
@@ -47,10 +58,9 @@ def az_args() -> list[str]:
 
 
 def submit(name: str, cfg: dict, entry: dict, dry_run: bool) -> None:
-    mix = f"mix_{entry['mix_en']}_{entry['mix_fw2']}"
     overrides = {
         "display_name": name,
-        "inputs.data.path": f"{DATASTORE}/tokenized/{mix}/full",
+        "inputs.data.path": f"{DATASTORE}/tokenized/{mix_dir(entry)}/full",
         **{f"outputs.{o}.path": f"{DATASTORE}/runs/{name}/{o}"
            for o in ("checkpoints", "logs", "cache")},
         "environment_variables.MODEL_SIZE": entry["size"],
@@ -65,6 +75,7 @@ def submit(name: str, cfg: dict, entry: dict, dry_run: bool) -> None:
         "environment_variables.FW_EDU_RATIO": entry["mix_en"],
         "environment_variables.FW2_RATIO": entry["mix_fw2"],
         "environment_variables.SEED": entry["seed"],
+        "environment_variables.DATA_MIX_LABEL": mix_label(name, entry),
     }
     if os.environ.get("WANDB_API_KEY"):
         overrides["environment_variables.WANDB_API_KEY"] = os.environ["WANDB_API_KEY"]
@@ -92,7 +103,7 @@ def main() -> None:
     args = p.parse_args()
 
     data = json.loads(CONFIG_FILE.read_text())
-    names = filter_models(source=CUSTOM_SOURCE, size=args.size,
+    names = filter_models(source=SOURCES, size=args.size,
                           seeds=[args.seed] if args.seed is not None else None)
     launched = 0
     for name in names:

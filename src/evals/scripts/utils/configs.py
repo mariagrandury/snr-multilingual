@@ -276,7 +276,8 @@ def add_family_column(df, path: str | Path = DEFAULT_MODELS_JSON):
 # lists below (ints for megatron_iter models, branch-name strings for
 # hf_branch models).
 
-_VALID_CKPT_SUBSETS = ("all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval")
+_VALID_CKPT_SUBSETS = ("all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval",
+                       "auto")
 
 # step number embedded in an HF branch name (`stepN`, `step-N`,
 # `stageK-step-N`, `stepN-tokensXXX`); `-tokensXXX(B|T)` explicit count.

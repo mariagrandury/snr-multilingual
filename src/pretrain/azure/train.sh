@@ -38,7 +38,7 @@ MOCK_DATA=${MOCK_DATA:-false}
 
 WANDB_ENTITY=${WANDB_ENTITY:-mariagrandury-epflnlp}
 PROJECT_NAME=data-mix-small
-DATA_MIX_LABEL="fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}"
+DATA_MIX_LABEL=${DATA_MIX_LABEL:-"fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}"}
 EXP_NAME=apertus-${MODEL_SIZE}-${DATA_MIX_LABEL}-seed${SEED}
 #########################################
 

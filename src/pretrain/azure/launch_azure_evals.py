@@ -35,7 +35,7 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, iters_for, stages_of, tasks_for_group)
 
-CUSTOM_SOURCE = "snr-pretraining-custom"
+SOURCES = ["snr-pretraining-custom", "snr-pretraining-bilingual"]
 SCRIPT_DIR = Path(__file__).parent
 DATASTORE = "azureml://datastores/workspaceblobstore/paths"
 
@@ -93,12 +93,13 @@ def main() -> None:
     p.add_argument("--mix_en", type=int, choices=[30, 60, 90])
     p.add_argument("--seed", type=int)
     p.add_argument("--ckpts", default="final",
-                   choices=["final", "all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval"])
+                   choices=["final", "all", "dense_tail", "10_ckpts", "da_ckpts",
+                            "full_eval", "auto"])
     p.add_argument("--tasks", default="hellaswag")
     args = p.parse_args()
 
     tasks = resolve_tasks(args.tasks)
-    names = filter_models(source=CUSTOM_SOURCE, size=args.size,
+    names = filter_models(source=SOURCES, size=args.size,
                           seeds=[args.seed] if args.seed is not None else None)
     launched = 0
     for name in names:

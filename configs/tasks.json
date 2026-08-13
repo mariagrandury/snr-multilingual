@@ -2686,6 +2686,14 @@
       "truthfulqa_ru_mc2",
       "truthfulqa_vi_mc2",
       "truthfulqa_zh_mc2"
+    ],
+    "auto": [
+      "hellaswag",
+      "hellaswag_ru",
+      "global_mmlu_full_en",
+      "global_mmlu_full_ru",
+      "global_piqa_completions_eng_latn",
+      "global_piqa_completions_rus_cyrl"
     ]
   }
 }

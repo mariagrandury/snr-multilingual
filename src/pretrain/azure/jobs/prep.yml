@@ -13,6 +13,7 @@ command: >-
   --edu-ratio $EDU_RATIO
   --edu-config $EDU_CONFIG
   --workers $(nproc)
+  $EXTRA_ARGS
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-train
 outputs:
@@ -24,9 +25,18 @@ environment_variables:
   TOTAL_TOKENS_B: "5.16"     # pilot: 2500 iters x 2,064,384 tokens/iter
   EDU_RATIO: "0.3"           # 30% FineWeb-Edu / 70% FineWeb2-HQ
   EDU_CONFIG: sample-100BT   # full run needs sample-350BT
+  EXTRA_ARGS: ""             # e.g. "--languages ru" for the bilingual mixture
 # Full-scale variant (~415GB, several hours):
 #   az ml job create -f jobs/prep.yml $AZ_ML_ARGS \
 #     --set display_name=prep-data-full \
 #           environment_variables.TOTAL_TOKENS_B=103.2 \
 #           environment_variables.EDU_CONFIG=sample-350BT \
 #           outputs.tokenized.path=azureml://datastores/workspaceblobstore/paths/tokenized/mix_30_70/full
+# Bilingual EN+RU 50/50 variant (the 90M / 1.7B minimal plan):
+#   az ml job create -f jobs/prep.yml $AZ_ML_ARGS \
+#     --set display_name=prep-data-enru \
+#           environment_variables.TOTAL_TOKENS_B=103.2 \
+#           environment_variables.EDU_RATIO=0.5 \
+#           environment_variables.EDU_CONFIG=sample-350BT \
+#           environment_variables.EXTRA_ARGS="--languages ru" \
+#           outputs.tokenized.path=azureml://datastores/workspaceblobstore/paths/tokenized/mix_enru_50_50/full

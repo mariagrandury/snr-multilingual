@@ -266,9 +266,12 @@ tasks: `--set environment_variables.TASKS=hellaswag,hellaswag_es` (any
 comma-separated lm-eval names; the multilingual `hellaswag_*` variants are
 in the fork).
 
-**Push the eval to W&B** (`snr-experiments`, same as cluster evals) from your
-laptop — download the results, then run the repo's standard pusher with
-`LOGS_ROOT` pointed at them:
+**W&B push happens inside the eval job** when you pass your key
+(`--set environment_variables.WANDB_API_KEY=$WANDB_API_KEY`, which the
+launchers do automatically when `WANDB_API_KEY` is exported): the job runs the
+repo's standard `push_all_results.py` against its own results, appending one
+step to the model's curve in `mariagrandury-epflnlp/snr-experiments` — same
+project as the cluster evals. Without a key, push later from your laptop:
 
 ```bash
 az ml job download --name <eval job name> --output-name results --download-path /tmp/azure-evals $AZ_ML_ARGS
@@ -280,10 +283,77 @@ LOGS_ROOT=/tmp/azure-evals/named-outputs/results \
 ```
 
 (The NAME must be a `configs/models.json` key + `-iter<N>` — that's how the
-pusher resolves the tokens/FLOPs axes. All 36 sweep cells already have
-entries.)
+pusher resolves the tokens/FLOPs axes. All 36 sweep cells plus the two
+bilingual cells already have entries.)
 
-## 9. Launching the remaining cells
+## 9. Auto-evals every 5 checkpoints
+
+To see whether a training is progressing well with more information than the
+loss curve, every 5th saved checkpoint (with `SAVE_INTERVAL=2000`: iters
+10000, 20000, 30000, 40000, 50000) gets evaluated automatically on the
+**`auto`** benchmark group from `configs/tasks.json` — `hellaswag`,
+`hellaswag_ru`, `global_mmlu_full_en`, `global_mmlu_full_ru`,
+`global_piqa_completions_eng_latn`, `global_piqa_completions_rus_cyrl` —
+and pushed to the same W&B project (`snr-experiments`) as every other eval.
+Edit the group in `configs/tasks.json` to change the list.
+
+Start the watcher in a terminal alongside your training run:
+
+```bash
+source env.sh && export WANDB_API_KEY=<key>
+python auto_evals.py --watch 600        # one pass every 10 min; Ctrl-C to stop
+```
+
+Each pass lists the checkpoints in blob storage and, for every due iteration,
+submits the one step that's missing: first a `convert.yml` job (Megatron →
+HF), then — on a later pass, once the snapshot exists — an `eval.yml` job with
+`TASKS=auto`. Everything already evaluated or currently running is skipped, so
+the watcher is idempotent: stop it, restart it, run it twice — nothing
+duplicates, and a killed pass just means the next one picks up the remainder.
+`--dry-run` previews the submissions; `--every N` changes the cadence;
+`--name <cell>` watches a single run. In W&B, the auto-eval points appear on
+the model's per-benchmark curves (x-axis: flops/tokens/iter) as training
+progresses.
+
+## 10. The minimal plan: bilingual EN+RU, 90M and 1.7B
+
+The first real experiment on Azure: two 2-language models — FineWeb-Edu
+(English) + FineWeb2-HQ Russian, 50/50 by bytes — at **90M** (L15×d768,
+92.9M non-embedding params) and **1.7B** (L30×d2304, 1.67B), both trained
+like the sweep (50,000 iters ≈ 103.2B tokens, GBS 504, seq 4096; hyperparams
+in `../hyperparams_deep.json`, cells in `configs/models.json` as
+`apertus-{90M,1.7B}-fwEdu50-fw2ru50-seed28`), auto-evaluated every 5
+checkpoints.
+
+```bash
+source env.sh && export WANDB_API_KEY=<key>
+
+# 1. Bilingual mixture (~415GB tokenized; reusable by both sizes)
+az ml job create --file jobs/prep.yml $AZ_ML_ARGS \
+  --set display_name=prep-data-enru \
+        environment_variables.TOTAL_TOKENS_B=103.2 \
+        environment_variables.EDU_RATIO=0.5 \
+        environment_variables.EDU_CONFIG=sample-350BT \
+        environment_variables.EXTRA_ARGS="--languages ru" \
+        outputs.tokenized.path=azureml://datastores/workspaceblobstore/paths/tokenized/mix_enru_50_50/full
+
+# 2. Launch the trainings (queue both; with max_instances 1 they run in sequence)
+python launch_azure_trainings.py --size 90M  --seed 28
+python launch_azure_trainings.py --size 1.7B --seed 28
+
+# 3. Auto-evals while they train
+python auto_evals.py --watch 600
+```
+
+Expectations on the 4×A100 `gpu-train` cluster: **90M ≈ 2–3 days
+(~$700–1,000)**; **1.7B ≈ 3–4 weeks (~$8–12k)** — for the 1.7B seriously
+consider requesting H100-class quota (e.g. `Standard_ND96isr_H100_v5`, brings
+it to ~4–5 days) or raising `max_instances` is no help (single-node training).
+MBS is preset per size (21 for 90M, 2 for 1.7B) so the global batch of 504
+divides evenly on 1 or 4 GPUs. The final checkpoints then take the same
+convert → full-eval path as any other cell (`--ckpts final|full_eval`).
+
+## 11. Launching the remaining cells
 
 Every other size × mixture × seed cell uses the same `train-full.yml` /
 `eval.yml` templates; the launchers fill in the per-cell architecture
@@ -307,7 +377,7 @@ and each evaluated checkpoint needs a `convert.yml` run first. With one
 `max_instances: 1` cluster, submitted jobs queue and run one at a time —
 raise `max_instances` (and your quota) to run cells in parallel.
 
-## 10. Where everything is stored (and getting it out)
+## 12. Where everything is stored (and getting it out)
 
 All artifacts live in the workspace's blob storage under `workspaceblobstore`:
 
@@ -344,7 +414,7 @@ huggingface-cli upload <your-org>/apertus-175M-fwEdu30-fw270-seed28 \
   ./iter_0050000 . --revision stage1-step-50000 --private
 ```
 
-## 11. Teardown
+## 13. Teardown
 
 Compute scales to zero by itself; a parked setup costs only blob storage
 (~$12/month for ~600GB). To stop even that:
@@ -359,7 +429,7 @@ az group delete --name $AZ_RG --yes                        # deletes EVERYTHING
     models, eval results. Download (or push to HF / register elsewhere)
     anything you care about first.
 
-## 12. Common mistakes
+## 14. Common mistakes
 
 - **Compute create fails / job queues forever** → you have no quota in that
   region (step 3), or you edited `AZ_LOCATION` after creating the workspace

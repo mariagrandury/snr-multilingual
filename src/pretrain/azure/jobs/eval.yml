@@ -7,8 +7,10 @@ description: >
   argument surface (see eval.sh). Defaults run hellaswag on the guide cell's
   final checkpoint; other cells/checkpoints/tasks are launched through
   launch_azure_evals.py or by overriding NAME, TASKS and the paths with --set.
-code: ..
-command: bash eval.sh
+# Snapshot the repo root (filtered by the root .amlignore) so the job can run
+# src/evals/scripts/push_all_results.py against configs/ after the eval.
+code: ../../../..
+command: bash src/pretrain/azure/eval.sh
 environment: azureml:apertus-eval@latest
 compute: azureml:gpu-single
 resources:

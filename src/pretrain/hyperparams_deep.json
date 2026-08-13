@@ -62,6 +62,32 @@
       "seq_len": 4096,
       "train_iters": 50000,
       "lr": 0.00079383
+    },
+    "90M": {
+      "n_layers": 15,
+      "hidden_size": 768,
+      "ffn_hidden_size": 3072,
+      "num_attention_heads": 12,
+      "num_query_groups": 3,
+      "n_non_emb_params": 92897280.0,
+      "micro_batch_size": 21,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00106073
+    },
+    "1.7B": {
+      "n_layers": 30,
+      "hidden_size": 2304,
+      "ffn_hidden_size": 9216,
+      "num_attention_heads": 36,
+      "num_query_groups": 9,
+      "n_non_emb_params": 1672151040.0,
+      "micro_batch_size": 2,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00073909
     }
   }
 }
