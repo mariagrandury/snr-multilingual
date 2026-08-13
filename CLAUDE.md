@@ -71,7 +71,7 @@ preliminary-analysis/  # Prior work reference (signal-and-noise repo + thesis PD
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-ml.txt
 
 # Run evaluations locally
 python scripts/run_evals_local.py --tasks test --models SmolLM3-3B --names --limit 10 --no-wandb
