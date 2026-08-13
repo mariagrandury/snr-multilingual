@@ -46,7 +46,7 @@ BACKUP_CODEBASE=false # Set to `true` to copy the codebase to the experiment fol
 
 # Logging directories & artifacts
 WANDB_ENTITY=mariagrandury-epflnlp
-PROJECT_NAME=data-mix-small
+PROJECT_NAME=${PROJECT_NAME:-data-mix-small}  # override for the predictivity sweep
 SEED=${SEED:-28}
 DATA_MIX_LABEL=${DATA_MIX_LABEL:-"fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}"}
 EXP_NAME=apertus-${MODEL_SIZE}-${DATA_MIX_LABEL}-seed${SEED}
@@ -191,7 +191,10 @@ DISTRIBUTED_ARGS=(
 
 TOKENIZER_ARGS=(
 	--tokenizer-type HuggingFaceTokenizer
-	--tokenizer-model alehc/swissai-tokenizer
+	# Must match the tokenizer that produced the .bin token IDs. The
+	# predictivity sweep builds data with swiss-ai/Apertus-70B-2509, so its
+	# launcher overrides TOKENIZER_MODEL to keep the vocab/EOD ids consistent.
+	--tokenizer-model ${TOKENIZER_MODEL:-alehc/swissai-tokenizer}
 )
 
 DATA_ARGS=(
@@ -227,6 +230,12 @@ export PYTHONPATH=$MEGATRON_LM_DIR:$PYTHONPATH
 # Data Args
 if [ "$MOCK_DATA" = true ]; then
   DATA_ARGS="${DATA_ARGS[@]} --mock-data"
+elif [ -n "$DATA_BLEND" ]; then
+  # Pre-built blend (predictivity sweep): DATA_BLEND is a ready Megatron
+  # --data-path value, "w1 prefix1 [w2 prefix2 ...]", over already-tokenized
+  # .bin/.idx datasets (English DCLM + a setting's FineWeb-2). No directory
+  # expansion — the launcher composes the weights and prefixes.
+  DATA_ARGS="${DATA_ARGS[@]} --data-path $DATA_BLEND --data-cache-path $DATASET_CACHE_DIR"
 else
   DATA_ARGS="${DATA_ARGS[@]} --data-path $(python3 $MEGATRON_LM_DIR/scripts/tools/create_data_config.py -p $DATASETS) --data-cache-path $DATASET_CACHE_DIR"
 fi

@@ -20,16 +20,16 @@ Compute-planning note: with a 131K vocabulary, the output projection costs about
 
 Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different initialization and data-order seed); the rest get one seed.
 
-| Languages | 90M | 175M | 350M | 600M | 1B | 1.7B |
-|---|---|---|---|---|---|---|
-| 1   | ×3 | ✓ | ✓ | ✓ | ×3 | ✓ |
-| 2   | ✓  | ✓ | ✓ | ✓ | ✓  | — |
-| 8   | ✓  | ✓ | ✓ | ✓ | ✓  | ✓ |
-| 15  | ✓  | ✓ | ✓ | ✓ | ✓  | — |
-| 30  | ×3 | ✓ | ✓ | ✓ | ×3 | ✓ |
-| 50  | ✓  | ✓ | ✓ | ✓ | ✓  | — |
-| 100 | ✓  | ✓ | ✓ | ✓ | ✓  | ✓ |
-| 200 | ×3 | ✓ | ✓ | ✓ | ×3 | ✓ |
+| Languages | 90M | 175M | 350M | 600M | 1B  | 1.7B |
+| --------- | --- | ---- | ---- | ---- | --- | ---- |
+| 1         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 2         | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
+| 8         | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
+| 15        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
+| 30        | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
+| 100       | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
+| 200       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
 
 About 57 runs (at one intervention level).
 
@@ -50,13 +50,13 @@ The token budget is set per model size, and held constant across all language se
 D(N) = 5 × 20 × N = 100 × N (non-embedding N).
 
 | Size (non-emb) | 1×C = 20N | D(N) = 5×C |
-|---|---|---|
-| 90M   | 1.8B | 9B   |
-| 175M  | 3.5B | 17.5B |
-| 350M  | 7B   | 35B  |
-| 600M  | 12B  | 60B  |
-| 1B    | 20B  | 100B |
-| 1.7B  | 34B  | 170B |
+| -------------- | --------- | ---------- |
+| 90M            | 1.8B      | 9B         |
+| 175M           | 3.5B      | 17.5B      |
+| 350M           | 7B        | 35B        |
+| 600M           | 12B       | 60B        |
+| 1B             | 20B       | 100B       |
+| 1.7B           | 34B       | 170B       |
 
 Compute the exact token count for each model from its actual non-embedding parameter count (D = 100 × N).
 
@@ -76,15 +76,15 @@ Reasoning:
 To avoid tokenizing English once per setting, build the English data once and the FineWeb2 data once per setting, then blend them 50/50 at training time with the Megatron data loader's blend weights. So the artifacts are: one English dataset, one FineWeb2 dataset per multilingual setting, and one fixed validation set.
 
 | Setting (L) | FineWeb2 languages | FineWeb2 build tokens | English share at training time |
-|---|---|---|---|
-| 1   | 0 (English only) | —     | 100% |
-| 2   | 1   | 55B   | 50% |
-| 8   | 7   | 93.5B | 50% |
-| 15  | 14  | 55B   | 50% |
-| 30  | 29  | 93.5B | 50% |
-| 50  | 49  | 55B   | 50% |
-| 100 | 99  | 93.5B | 50% |
-| 200 | 199 | 93.5B | 50% |
+| ----------- | ------------------ | --------------------- | ------------------------------ |
+| 1           | 0 (English only)   | —                     | 100%                           |
+| 2           | 1                  | 55B                   | 50%                            |
+| 8           | 7                  | 93.5B                 | 50%                            |
+| 15          | 14                 | 55B                   | 50%                            |
+| 30          | 29                 | 93.5B                 | 50%                            |
+| 50          | 49                 | 55B                   | 50%                            |
+| 100         | 99                 | 93.5B                 | 50%                            |
+| 200         | 199                | 93.5B                 | 50%                            |
 
 Each FineWeb2 build is sized to half of the largest budget at that setting, with about 10% headroom: 93.5B where a 1.7B model trains (settings 8, 30, 100, 200; half of 170B plus headroom), 55B otherwise (half of 100B plus headroom). The English dataset is built once to 187B, which covers the 1-language setting's largest need (170B) and the English half of every other setting. The build script reports the realized per-language token counts and warns when a language runs out of data; at 200 languages, expect the lower-resource languages to run out, and record the shortfall.
 
@@ -231,14 +231,14 @@ Save checkpoints at several token counts within each run, not only at the end, s
 
 r(K), tokens per parameter:
 
-| K | 1 | 2 | 8 | 15 | 30 | 50 | 100 | 200 |
-|---|---|---|---|---|---|---|---|---|
-| r(K) | 20 | 28 | 56 | 76 | 107 | 137 | 193 | 272 |
+| K    | 1   | 2   | 8   | 15  | 30  | 50  | 100 | 200 |
+| ---- | --- | --- | --- | --- | --- | --- | --- | --- |
+| r(K) | 20  | 28  | 56  | 76  | 107 | 137 | 193 | 272 |
 
 ATLAS compute-optimal tokens, N × r(K), in billions:
 
-| Size | 1 | 2 | 8 | 15 | 30 | 50 | 100 | 200 |
-|---|---|---|---|---|---|---|---|---|
+| Size | 1    | 2    | 8    | 15   | 30   | 50   | 100  | 200  |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | 90M  | 1.8  | 2.5  | 5.0  | 6.8  | 9.6  | 12.4 | 17.4 | 24.5 |
 | 175M | 3.5  | 4.9  | 9.7  | 13.3 | 18.7 | 24.0 | 33.8 | 47.6 |
 | 350M | 7.0  | 9.8  | 19.5 | 26.6 | 37.4 | 48.1 | 67.6 | 95.1 |
