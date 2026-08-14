@@ -4,7 +4,7 @@ This guide reproduces one cell of the SNR pretraining sweep on Azure —
 **Apertus 175M, mixture 30% FineWeb-Edu / 70% FineWeb2-HQ, seed 28** — and
 evaluates it on **hellaswag**, assuming you have never used Azure before.
 Everything runs as [Azure Machine Learning](https://learn.microsoft.com/en-us/azure/machine-learning/)
-*command jobs*: you submit a YAML from your laptop, Azure boots a GPU node,
+_command jobs_: you submit a YAML from your laptop, Azure boots a GPU node,
 runs the job in a container, saves outputs to cloud storage and shuts the
 node down. You never SSH anywhere and you only pay while a job runs.
 
@@ -16,11 +16,11 @@ Every stage runs on `gpu-nc80-lp` (one `Standard_NC80adis_H100_v5` node:
 2× H100 94GB at the fixed low-priority meter, ~$3.63/h — the plan's economy
 pool, see the compute-budget sheet):
 
-| Stage | What it proves | Time | Cost |
-|---|---|---|---|
-| Smoke test | container + Megatron fork + checkpointing work | < 30 min | < $2 |
-| Pilot (5.16B tokens) | data pipeline + full loop + conversion + eval work | ~3–5 h | ~$15 |
-| Full run (103.2B tokens) | the real cell | ~2.5–3.5 days | ~$220–300 |
+| Stage                    | What it proves                                     | Time          | Cost      |
+| ------------------------ | -------------------------------------------------- | ------------- | --------- |
+| Smoke test               | container + Megatron fork + checkpointing work     | < 30 min      | < $2      |
+| Pilot (5.16B tokens)     | data pipeline + full loop + conversion + eval work | ~3–5 h        | ~$15      |
+| Full run (103.2B tokens) | the real cell                                      | ~2.5–3.5 days | ~$220–300 |
 
 Per-size ballpark for full 103.2B-token runs on `gpu-nc80-lp` (same data,
 same global batch): 175M ≈ 3 days / ~$240; 350M ≈ 5 days / ~$400;
@@ -69,7 +69,7 @@ Central** (`snr-es-rg`/`snr-es-ws`, NC80adis H100 low-priority — every size
 ≤600M plus evals) with a second workspace in **UK South**
 (`snr-uk-rg`/`snr-uk-ws`, ND96isr 8×H100 Spot — the 1B/1.7B pool); §11 sets
 up the UK one. If you're adapting this guide to another subscription, pick a
-region where *your* subscription can deploy the SKUs and stick to it. Then:
+region where _your_ subscription can deploy the SKUs and stick to it. Then:
 
 ```bash
 source env.sh
@@ -81,7 +81,7 @@ delete in one command):
 
 - **Workspace** (`$AZ_WS`) — the Azure ML project hub. It auto-creates a
   **storage account** whose blob container is exposed to jobs as the
-  `workspaceblobstore` *datastore*: that's where the tokenized data,
+  `workspaceblobstore` _datastore_: that's where the tokenized data,
   checkpoints, converted models and eval results will live.
 - **Environments** — pointers to the Docker images jobs run in:
   `apertus-nemo` (NGC NeMo 25.11, the x86 build of the same image the CSCS
@@ -95,18 +95,18 @@ delete in one command):
   costs ~$0.
 
 !!! warning "The compute creation fails until you have quota"
-    A brand-new subscription has **0 GPU quota** — do step 3 first if
-    `setup_azure.sh` fails on the compute step, then re-run it (it's
-    idempotent).
+A brand-new subscription has **0 GPU quota** — do step 3 first if
+`setup_azure.sh` fails on the compute step, then re-run it (it's
+idempotent).
 
 ## 3. Request GPU quota (the step that involves waiting)
 
-Azure meters GPU access in *vCPUs of a VM family*. This project needs
+Azure meters GPU access in _vCPUs of a VM family_. This project needs
 (both requests filed 2026-08-13; amounts and rationale in the
 compute-budget sheet):
 
 1. **`Standard NCadsH100v5 Family vCPUs`** in **Spain Central** — 160 cores
-   = 2 NC80adis nodes. The `gpu-nc80-lp` cluster bills the *low-priority*
+   = 2 NC80adis nodes. The `gpu-nc80-lp` cluster bills the _low-priority_
    meter, whose quota is a **separate counter** in Azure ML Studio →
    Quota — check it once the workspace exists (it often has a non-zero
    default).
@@ -114,8 +114,8 @@ compute-budget sheet):
    (1–2 ND96isr nodes to start; the predictivity plan scales to 16) plus
    its Spot counter.
 
-File absent families via Help + Support → *Service and subscription limits
-(quotas)*; H100-class requests open a support ticket (days, not minutes),
+File absent families via Help + Support → _Service and subscription limits
+(quotas)_; H100-class requests open a support ticket (days, not minutes),
 so file early. Verify what the region offers with:
 
 ```bash
@@ -168,7 +168,7 @@ appear in W&B under `mariagrandury-epflnlp/data-mix-small`.
 
 **All training data is built from the corpora curated at CSCS** — DCLM-edu
 (English) and FineWeb-2-HQ (multilingual), the filtered swiss-ai variants on
-`/capstor` — and tokenized *there*; nothing is downloaded from the HF Hub.
+`/capstor` — and tokenized _there_; nothing is downloaded from the HF Hub.
 Two scripts under `src/pretrain/` own the pipeline:
 
 - [`../create_data_mixture.py`](../create_data_mixture.py) — the worker:
@@ -202,7 +202,7 @@ python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb \
 
 Targets (printed by `--dry_run` first): 184.0B English; 52B (L2/L15/L50) or
 92.0B (L8/L30/L100) FineWeb-2 per setting; ~2.5TB of int32 `.bin`/`.idx`
-total. Blending happens at *training* time via Megatron blend weights, so
+total. Blending happens at _training_ time via Megatron blend weights, so
 each dataset is built exactly once.
 
 ### 5b. Ship to Azure with azcopy
@@ -224,9 +224,12 @@ az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
   --query '{account:account_name, container:container_name}'
 
 # 2. Mint a container SAS per workspace (write for the upload target,
-#    read on Spain for the copy) — paste the printed token after '?' below:
-az storage container generate-sas --account-name <es-account> --name <es-container> \
-  --permissions racwl --expiry $(date -u -d '+7 days' +%Y-%m-%dT%H:%MZ) \
+#    read on Spain for the copy) — plug in the account/container from step 1,
+#    and paste the printed token after '?' below. The date expression is
+#    portable (BSD/macOS `-v` first, GNU/Linux `-d` fallback):
+az storage container generate-sas --account-name <ES_ACCOUNT> --name <ES_CONTAINER> \
+  --permissions racwl \
+  --expiry "$(date -u -v+7d '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+7 days' '+%Y-%m-%dT%H:%MZ')" \
   --auth-mode login --as-user -o tsv
 
 # 3. From the CSCS login node — EN+RU first (unblocks §10), rest later:
@@ -319,11 +322,11 @@ az ml job create --file jobs/train-full.yml $AZ_ML_ARGS \
 ```
 
 !!! danger "Cost"
-    This job runs ~4.5–6.5 days at ~$14.7/h ≈ **$1,600–2,300**. Watch the
-    first hour in W&B before walking away; you can kill it any time with
-    `az ml job cancel --name <job name> $AZ_ML_ARGS` and lose at most the
-    iterations since the last checkpoint (≤ 2,000 ≈ 4 GPU-hours). Resume by
-    resubmitting.
+This job runs ~4.5–6.5 days at ~$14.7/h ≈ **$1,600–2,300**. Watch the
+first hour in W&B before walking away; you can kill it any time with
+`az ml job cancel --name <job name> $AZ_ML_ARGS` and lose at most the
+iterations since the last checkpoint (≤ 2,000 ≈ 4 GPU-hours). Resume by
+resubmitting.
 
 ## 8. Convert and evaluate on hellaswag
 
@@ -526,13 +529,13 @@ raise `max_instances` (and your quota) to run cells in parallel.
 
 All artifacts live in the workspace's blob storage under `workspaceblobstore`:
 
-| Path | Contents |
-|---|---|
-| `tokenized/mix_<edu>_<fw2>/<scale>` | `.bin`/`.idx` shards + `data_path.txt` |
-| `runs/<exp_name>/checkpoints` | Megatron `torch_dist` checkpoints (`iter_*/`) |
-| `runs/<exp_name>/logs` | TensorBoard + W&B offline files |
-| `models/<exp_name>/iter_<N>` | converted HF snapshots |
-| `eval_logs/<entity>/<project>/<NAME>/harness/eval_*/` | lm-eval results + samples |
+| Path                                                  | Contents                                      |
+| ----------------------------------------------------- | --------------------------------------------- |
+| `tokenized/mix_<edu>_<fw2>/<scale>`                   | `.bin`/`.idx` shards + `data_path.txt`        |
+| `runs/<exp_name>/checkpoints`                         | Megatron `torch_dist` checkpoints (`iter_*/`) |
+| `runs/<exp_name>/logs`                                | TensorBoard + W&B offline files               |
+| `models/<exp_name>/iter_<N>`                          | converted HF snapshots                        |
+| `eval_logs/<entity>/<project>/<NAME>/harness/eval_*/` | lm-eval results + samples                     |
 
 Browse it in Studio (**Data → Datastores → workspaceblobstore → Browse**) or
 [Azure Storage Explorer](https://azure.microsoft.com/en-us/products/storage/storage-explorer).
@@ -570,9 +573,9 @@ az group delete --name $AZ_RG --yes                        # deletes EVERYTHING
 ```
 
 !!! danger
-    `az group delete` destroys the storage account too — checkpoints,
-    models, eval results. Download (or push to HF / register elsewhere)
-    anything you care about first.
+`az group delete` destroys the storage account too — checkpoints,
+models, eval results. Download (or push to HF / register elsewhere)
+anything you care about first.
 
 ## 15. Common mistakes
 
@@ -595,7 +598,7 @@ az group delete --name $AZ_RG --yes                        # deletes EVERYTHING
   higher TP.
 - **`push_all_results.py` silently pushes nothing** → the eval `NAME`
   doesn't match a `configs/models.json` key + `-iter<N>`, or `LOGS_ROOT`
-  doesn't point at the directory that *contains* `<entity>/<project>/...`.
+  doesn't point at the directory that _contains_ `<entity>/<project>/...`.
 - **No W&B run appeared** → `WANDB_API_KEY` wasn't passed to the job
   (`--set environment_variables.WANDB_API_KEY=$WANDB_API_KEY`); the job
   still trains, logging only to TensorBoard (`runs/<exp>/logs/tensorboard`).
