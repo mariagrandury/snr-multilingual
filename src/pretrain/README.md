@@ -121,7 +121,7 @@ The script reaches them via `$MEGATRON_LM_DIR` (default
 
 ### Misc
 
-- [`create_data_mixture.py`](create_data_mixture.py) — one-shot data-mixture builder (the data is already built and frozen at `/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/mix_100B_<edu>_<fw2>`).
+- [`create_data_mixture.py`](create_data_mixture.py) — the low-level tokenize-and-blend worker (parquet → Megatron `.bin`/`.idx`); driven by [`build_data_mixtures.py`](build_data_mixtures.py) over the predictivity sweep (see §1 below). Not used by the frozen 36-cell data-mix-small mixtures.
 - [`merge_wandb_experiment.py`](merge_wandb_experiment.py) — post-hoc W&B run merging across resumes.
 - [`env.toml`](env.toml) — pyxis container env file.
 
