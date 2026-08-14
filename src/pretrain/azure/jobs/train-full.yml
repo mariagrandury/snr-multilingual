@@ -5,14 +5,14 @@ display_name: apertus-175M-fwEdu30-fw270-seed28
 description: >
   Full pretrain of one cell — defaults reproduce the guide cell (175M, mix
   30/70, seed 28): 50000 iters = 103.2B tokens, checkpoint every 2000 iters.
-  ~4.5-6.5 days / ~$1600-2300 on 4x A100 (dedicated). Resubmit after any
+  ~2.5-3.5 days / ~$220-300 on gpu-nc80-lp (2x H100, low-priority). Resubmit after any
   failure or eviction to resume from the latest checkpoint. Other cells are
   launched through launch_azure_trainings.py, which overrides the
   architecture env vars and paths per size x mix x seed.
 code: ..
 command: bash train.sh
 environment: azureml:apertus-nemo@latest
-compute: azureml:gpu-train
+compute: azureml:gpu-nc80-lp
 resources:
   shm_size: 64g
 inputs:

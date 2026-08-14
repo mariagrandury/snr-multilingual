@@ -1,9 +1,0 @@
-$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
-name: gpu-train
-type: amlcompute
-size: Standard_NC96ads_A100_v4   # 4x A100 80GB, 96 vCPU, ~3.5TB local NVMe
-min_instances: 0                 # scales to zero — you only pay while a job runs
-max_instances: 1
-idle_time_before_scale_down: 600
-tier: dedicated                  # switch to low_priority for ~70-90% discount
-                                 # (allocated as Spot: can be evicted; resubmit resumes)

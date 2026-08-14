@@ -4,7 +4,7 @@ Calculate params, lr, and batch size for the deep model configs in hyperparams_d
 
 Outputs:
   hyperparams_deep.json          — updated with computed training hyperparams
-  hyperparams_deep_explanation.txt — human-readable config table (mirrors find_hyperparams.py output)
+  hyperparams_deep_explanation.txt — human-readable config table (mirrors find_hyperparams_shallow.py output)
 """
 
 import json
@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from find_hyperparams import calculate_hyperparams, print_configs_table
+from find_hyperparams_shallow import calculate_hyperparams, print_configs_table
 
 SCRIPT_DIR = Path(__file__).parent
 

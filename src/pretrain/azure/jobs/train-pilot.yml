@@ -4,12 +4,12 @@ experiment_name: apertus-azure
 display_name: train-pilot
 description: >
   Pilot pretrain of the guide cell (175M, mix 30/70, seed 28) on ~5.16B tokens
-  (2500 iters). ~5-8h / ~$100 on 4x A100. Resubmitting the same job resumes
+  (2500 iters). ~3-5h / ~$15 on gpu-nc80-lp (2x H100, low-priority). Resubmitting the same job resumes
   from the latest checkpoint (fixed output paths + --load).
 code: ..
 command: bash train.sh
 environment: azureml:apertus-nemo@latest
-compute: azureml:gpu-train
+compute: azureml:gpu-nc80-lp
 resources:
   shm_size: 64g
 inputs:

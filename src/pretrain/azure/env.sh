@@ -30,12 +30,9 @@ export AZ_LOCATION="$AZ_ES_LOCATION"
 export AZ_RG="$AZ_ES_RG"
 export AZ_WS="$AZ_ES_WS"
 
-# Compute cluster names (created by setup_azure.sh, referenced by jobs/*.yml).
-# gpu-train/gpu-single are the guide's original A100 clusters — their SKU
-# (NCads_A100_v4) is not offered in Spain Central, so setup skips them there;
-# the H100 pools (gpu-nc80-lp / gpu-nd96-spot) are the ones the plan uses.
-export AZ_COMPUTE_TRAIN="gpu-train"   # 4x A100 80GB — data prep + training
-export AZ_COMPUTE_SINGLE="gpu-single" # 1x A100 80GB — smoke test, conversion, eval
+# Compute clusters (created by setup_azure.sh, referenced by jobs/*.yml):
+# gpu-nc80-lp in Spain Central, gpu-nd96-spot in UK South — see the
+# compute-*.yml files.
 
 # W&B (primary monitoring). Set the key in your shell, never in a committed file:
 #   export WANDB_API_KEY=...

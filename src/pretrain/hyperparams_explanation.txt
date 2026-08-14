@@ -114,3 +114,4 @@ the predictivity sweep derives its own D = 100 x N schedule at launch time.
 per-size "predictivity" schedule blocks (D = 100 x N, ~4% warmup, ~20% decay)
 added to both reviewed files and emitted by both generators — see the
 "predictivity_schedule" note in each JSON global section.
+Generator renamed find_hyperparams.py -> find_hyperparams_shallow.py.

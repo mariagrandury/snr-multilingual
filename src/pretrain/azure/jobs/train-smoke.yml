@@ -3,13 +3,13 @@ type: command
 experiment_name: apertus-azure
 display_name: train-smoke
 description: >
-  20-iteration mock-data smoke test on 1 GPU: validates the container, the
+  20-iteration mock-data smoke test on one gpu-nc80-lp node: validates the container, the
   swiss-ai Megatron fork (xielu/qknorm/ademamix kernels) and torch_dist
-  checkpoint saving before any real money is spent. <30 min, <$5.
+  checkpoint saving before any real money is spent. <30 min, <$2.
 code: ..
 command: bash train.sh
 environment: azureml:apertus-nemo@latest
-compute: azureml:gpu-single
+compute: azureml:gpu-nc80-lp
 resources:
   shm_size: 64g
 outputs:

@@ -65,7 +65,7 @@ width/depth ≈ 64 (the `find_hyperparams_deep.py` rule).
 ## Architecture per size — shallow variant (`hyperparams_shallow.json`)
 
 The model-depth intervention level: same six non-embedding sizes at
-width/depth ≈ 128 (the `find_hyperparams.py` rule: head_dim 64, FFN
+width/depth ≈ 128 (the `find_hyperparams_shallow.py` rule: head_dim 64, FFN
 multiplier searched over {3, 4, 6}, GQA ratio over {2, 3, 4}, best relative
 error; the 1B shape is pinned by the file's own DECISION note). Launched with
 `--arch shallow`.

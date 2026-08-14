@@ -9,7 +9,7 @@ description: >
 code: ..
 command: bash convert.sh
 environment: azureml:apertus-nemo@latest
-compute: azureml:gpu-single
+compute: azureml:gpu-nc80-lp
 resources:
   shm_size: 16g
 inputs:

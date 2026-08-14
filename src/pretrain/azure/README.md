@@ -12,22 +12,27 @@ The same scripts launch every other size × mixture × seed cell (step 9).
 
 **The three stages** (do them in order — each one validates the next):
 
-| Stage | What it proves | Compute | Time | Cost |
-|---|---|---|---|---|
-| Smoke test | container + Megatron fork + checkpointing work | 1× A100 | < 30 min | < $5 |
-| Pilot (5.16B tokens) | data pipeline + full loop + conversion + eval work | 4× A100 | ~5–8 h | ~$100–150 |
-| Full run (103.2B tokens) | the real cell | 4× A100 | ~4.5–6.5 days | ~$1,600–2,300 |
+Every stage runs on `gpu-nc80-lp` (one `Standard_NC80adis_H100_v5` node:
+2× H100 94GB at the fixed low-priority meter, ~$3.63/h — the plan's economy
+pool, see the compute-budget sheet):
 
-Per-size ballpark for full runs on 4× A100 (same data, same global batch):
-175M ≈ 4.5–6.5 days; 350M ≈ 7–10 days; 600M ≈ 10–14 days; 1B ≈ 2.5–4 weeks.
-The two big sizes are only sensible on Azure if you can get more/faster GPUs
-(e.g. H100 quota) — the cluster used 24–84 GH200s per run.
+| Stage | What it proves | Time | Cost |
+|---|---|---|---|
+| Smoke test | container + Megatron fork + checkpointing work | < 30 min | < $2 |
+| Pilot (5.16B tokens) | data pipeline + full loop + conversion + eval work | ~3–5 h | ~$15 |
+| Full run (103.2B tokens) | the real cell | ~2.5–3.5 days | ~$220–300 |
+
+Per-size ballpark for full 103.2B-token runs on `gpu-nc80-lp` (same data,
+same global batch): 175M ≈ 3 days / ~$240; 350M ≈ 5 days / ~$400;
+600M ≈ 7 days / ~$620; 1B ≈ 10–11 days / ~$920. The 1B (and anything
+bigger) belongs on the UK South `gpu-nd96-spot` pool instead — 8× H100 +
+InfiniBand cuts the 1B to ~2.5–3 days (§11).
 
 **Prerequisites**
 
 - An Azure account with a **pay-as-you-go subscription** (a free trial has no
   GPU quota). Create one at [azure.microsoft.com](https://azure.microsoft.com);
-  you'll need a credit card. Budget ≥ $150 for smoke+pilot, ≥ $2,500 with the
+  you'll need a credit card. Budget ≥ $25 for smoke+pilot, ≥ $350 with the
   full run.
 - A [wandb.ai](https://wandb.ai) account and API key (Settings → API keys) —
   W&B is the primary way you'll monitor training.
@@ -82,9 +87,8 @@ delete in one command):
 - **Compute clusters** — every `compute-*.yml` whose SKU the region offers
   (the rest are skipped with a warning). In Spain Central that's
   `gpu-nc80-lp` (`Standard_NC80adis_H100_v5`: 2× H100 94GB at the fixed
-  low-priority meter, ~$3.63/h — the workhorse); the guide's original A100
-  clusters `gpu-train` (4× A100 80GB, ~$14.7/h) and `gpu-single` (1× A100,
-  ~$3.7/h) only materialize in regions that offer `NCads_A100_v4`. All have
+  low-priority meter, ~$3.63/h) — every job in this guide runs on it; the
+  UK South workspace instead gets `gpu-nd96-spot` (§11). Clusters have
   `min_instances: 0`: nodes exist only while a job runs, so an idle setup
   costs ~$0.
 
@@ -95,41 +99,38 @@ delete in one command):
 
 ## 3. Request GPU quota (the step that involves waiting)
 
-Azure meters GPU access in *vCPUs of a VM family*. For this project's plan
-the families are **`Standard NCadsH100v5 Family vCPUs`** in Spain Central
-(160 cores = 2 NC80adis nodes; low-priority quota is a separate counter in
-ML Studio → Quota) and **`Standard NDSH100v5 Family vCPUs`** in UK South
-(96–192 cores + the Spot counter) — both already filed 2026-08-13, amounts
-and rationale in the compute-budget sheet. The generic A100 path below
-applies only if you're adapting the guide to a subscription that offers
-`NCADS_A100_v4` in your `$AZ_LOCATION`:
+Azure meters GPU access in *vCPUs of a VM family*. This project needs
+(both requests filed 2026-08-13; amounts and rationale in the
+compute-budget sheet):
 
-1. Go to the [Azure portal](https://portal.azure.com) → search **Quotas** →
-   **Compute** → filter by your region.
-2. Search for `NCADS_A100_v4`, tick it, click **New quota request**.
-3. Request **120 vCPUs** (= the 96-core 4-GPU machine + the 24-core 1-GPU
-   machine). If you only get 96, skip `gpu-single` and change
-   `compute: azureml:gpu-single` to `azureml:gpu-train` in
-   `jobs/convert.yml` and `jobs/eval.yml` (or pass
-   `--set compute=azureml:gpu-train` at submit time) — everything still
-   works, small jobs just run on the bigger node.
+1. **`Standard NCadsH100v5 Family vCPUs`** in **Spain Central** — 160 cores
+   = 2 NC80adis nodes. The `gpu-nc80-lp` cluster bills the *low-priority*
+   meter, whose quota is a **separate counter** in Azure ML Studio →
+   Quota — check it once the workspace exists (it often has a non-zero
+   default).
+2. **`Standard NDSH100v5 Family vCPUs`** in **UK South** — 96–192 cores
+   (1–2 ND96isr nodes to start; the predictivity plan scales to 16) plus
+   its Spot counter.
 
-Requests ≤ ~100 cores are usually auto-approved within minutes to hours;
-larger ones open a support ticket (days). If denied, try another region
-(then update `AZ_LOCATION` and re-run setup). Verify with:
+File absent families via Help + Support → *Service and subscription limits
+(quotas)*; H100-class requests open a support ticket (days, not minutes),
+so file early. Verify what the region offers with:
 
 ```bash
-az ml compute list-sizes --location $AZ_LOCATION --output table | grep NC96ads
+az ml compute list-sizes --location $AZ_LOCATION --output table | grep NC80adis
 ```
 
-Cost-saving option: `tier: low_priority` in `compute-*.yml` runs the same
-hardware at Spot prices (often 3–5× cheaper) but the node can be evicted at
-any time — fine for training here because resubmitting a job resumes from
-the last checkpoint (step 7), annoying for the one-shot conversion/eval jobs.
+Both clusters already use the discounted tiers (`tier: low_priority` in
+`compute-nc80-lowpri.yml` / `compute-nd96-spot.yml` — 77–81% below
+dedicated). The trade-off: a node can be evicted at any time. That's fine
+for training because resubmitting a job resumes from the last checkpoint
+(step 7); if an eviction ever bites a one-shot conversion/eval job, just
+resubmit it. Dedicated is the fallback only if evictions thrash — remove
+the `tier:` line and re-create the compute.
 
 ## 4. Smoke test (do not skip)
 
-This runs 20 training iterations on **mock data** on 1 GPU — it exercises
+This runs 20 training iterations on **mock data** on one node — it exercises
 the exact code path of the real run (swiss-ai Megatron fork, xIELU/QK-norm
 kernels, AdEMAMix optimizer, `torch_dist` checkpoint save) for pocket change:
 
@@ -195,8 +196,9 @@ az ml job create --file jobs/train-pilot.yml $AZ_ML_ARGS \
   --set environment_variables.WANDB_API_KEY=$WANDB_API_KEY
 ```
 
-2,500 iterations × 504 × 4096 tokens ≈ 5.16B tokens, ~5–8 h on 4× A100
-(gradient accumulation 18 to keep the cluster's global batch of 504).
+2,500 iterations × 504 × 4096 tokens ≈ 5.16B tokens, ~3–5 h on
+`gpu-nc80-lp` (2× H100; gradient accumulation keeps the cluster's global
+batch of 504).
 Monitor in **W&B** (`data-mix-small` project, run
 `apertus-175M-fwEdu30-fw270-seed28-azure-<id>`): `lm loss` should fall
 steeply below ~7 in the first few hundred iterations and grind toward ~3–4;
@@ -238,7 +240,7 @@ az ml job create --file jobs/train-full.yml $AZ_ML_ARGS \
 ## 8. Convert and evaluate on hellaswag
 
 **Convert** the final Megatron checkpoint to a Hugging Face snapshot
-(`ApertusForCausalLM`) — a few minutes on 1 GPU:
+(`ApertusForCausalLM`) — a few minutes on one node:
 
 ```bash
 az ml job create --file jobs/convert.yml $AZ_ML_ARGS
@@ -357,13 +359,13 @@ python launch_azure_trainings.py --size 1.7B --seed 28
 python auto_evals.py --watch 600
 ```
 
-Expectations on the 4×A100 `gpu-train` cluster: **90M ≈ 2–3 days
-(~$700–1,000)**; **1.7B ≈ 3–4 weeks (~$8–12k)** — for the 1.7B seriously
-consider requesting H100-class quota (e.g. `Standard_ND96isr_H100_v5`, brings
-it to ~4–5 days) or raising `max_instances` is no help (single-node training).
-MBS is preset per size (21 for 90M, 2 for 1.7B) so the global batch of 504
-divides evenly on 1 or 4 GPUs. The final checkpoints then take the same
-convert → full-eval path as any other cell (`--ckpts final|full_eval`).
+Expectations: the **90M ≈ 1.5–2 days (~$150)** on `gpu-nc80-lp`; the
+**1.7B belongs on the UK `gpu-nd96-spot` pool — ≈ 4–5 days (~$2,400)**
+(on the 2-GPU Spain node it would take ~2.5 weeks; raising `max_instances`
+doesn't help, training is single-node). MBS is preset per size (21 for 90M,
+2 for 1.7B) so the global batch of 504 divides evenly on 2 or 8 GPUs. The
+final checkpoints then take the same convert → full-eval path as any other
+cell (`--ckpts final|full_eval`).
 
 ## 11. The predictivity sweep (Spain Central + UK South, discounted meters)
 
@@ -514,7 +516,7 @@ Compute scales to zero by itself; a parked setup costs only blob storage
 (~$12/month for ~600GB). To stop even that:
 
 ```bash
-az ml compute delete --name gpu-train $AZ_ML_ARGS --yes    # keeps all data
+az ml compute delete --name gpu-nc80-lp $AZ_ML_ARGS --yes  # keeps all data
 az group delete --name $AZ_RG --yes                        # deletes EVERYTHING
 ```
 

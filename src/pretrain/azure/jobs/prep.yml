@@ -15,7 +15,7 @@ command: >-
   --workers $(nproc)
   $EXTRA_ARGS
 environment: azureml:apertus-nemo@latest
-compute: azureml:gpu-train
+compute: azureml:gpu-nc80-lp
 outputs:
   tokenized:
     type: uri_folder

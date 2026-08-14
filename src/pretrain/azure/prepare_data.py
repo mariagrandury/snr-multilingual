@@ -15,7 +15,7 @@ from this repo; the documented approximation is the project's "main" language
 group (configs/languages.json) minus English, weighted by each language's
 corpus size on the Hub.
 
-Runs inside the apertus-nemo container on gpu-train (see jobs/prep.yml):
+Runs inside the apertus-nemo container on gpu-nc80-lp (see jobs/prep.yml):
     python prepare_data.py --output <dir> --total-tokens-b 5.16 --edu-ratio 0.3
 """
 

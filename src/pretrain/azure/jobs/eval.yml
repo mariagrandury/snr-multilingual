@@ -12,7 +12,7 @@ description: >
 code: ../../../..
 command: bash src/pretrain/azure/eval.sh
 environment: azureml:apertus-eval@latest
-compute: azureml:gpu-single
+compute: azureml:gpu-nc80-lp
 resources:
   shm_size: 16g
 inputs:

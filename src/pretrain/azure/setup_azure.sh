@@ -30,7 +30,7 @@ echo "Environments ready"
 
 # Each compute needs its SKU offered in the workspace's region plus quota —
 # create whatever this region supports and skip the rest with a warning
-# (e.g. the A100 clusters don't exist in Spain Central, the ND cluster only
+# (the NC80adis cluster exists in Spain Central, the ND96isr cluster only
 # in UK South).
 for c in compute-*.yml; do
   az ml compute create --file "$c" $AZ_ML_ARGS --output none \

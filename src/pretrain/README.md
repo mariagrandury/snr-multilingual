@@ -104,7 +104,7 @@ missing canonical per cell per call, and re-running picks up the next gap.
 
 - [`hyperparams_deep.json`](hyperparams_deep.json) — **active** config consumed by `launch_trainings.py` and by the predictivity sweep (`--arch deep`, the baseline).
 - [`hyperparams_shallow.json`](hyperparams_shallow.json) — **active** shallow (width/depth 128) ladder at the same six non-embedding sizes — the predictivity sweep's model-depth intervention variant (`--arch shallow`).
-- [`find_hyperparams_deep.py`](find_hyperparams_deep.py) / [`find_hyperparams.py`](find_hyperparams.py) — one-shot generators for the two files above.
+- [`find_hyperparams_deep.py`](find_hyperparams_deep.py) / [`find_hyperparams_shallow.py`](find_hyperparams_shallow.py) — one-shot generators for the two files above.
 - `calculate_params_lr_bs.py` / `fetch_hf_model_hyperparams.py` / `hf_models.txt` / `hf_model_hyperparams.csv` — shared helpers and exploratory artefacts kept for reference.
 
 ### Conversion + Hub push (under [`conversion/`](conversion/))
