@@ -79,10 +79,11 @@ Assumptions and behaviors:
     written to the output.
   - If a source is exhausted before reaching its token target, a warning is
     printed and processing continues with the remaining sources.
-  - Checkpoints are saved after every completed parquet file and every N
-    documents (configurable). On resume, the .bin file is truncated to the
-    expected size to discard any partial writes, and the last partial file
-    may be re-tokenized (at most one ~1 GB parquet file).
+  - Checkpoints are saved only after every completed parquet file (a progress
+    line is still printed every N documents). On resume, the .bin file is
+    truncated back to the last completed file to discard any partial writes,
+    and the in-progress file is re-tokenized from its start (at most one
+    ~1 GB parquet file re-done, never duplicated).
 """
 
 import argparse
@@ -300,7 +301,15 @@ def estimate_tokens_per_byte(
 
 
 def get_total_file_bytes(parquet_files: List[str]) -> int:
-    """Sum of file sizes on disk (used as a proxy for content volume)."""
+    """Sum of on-disk (compressed) parquet sizes, a proxy for content volume.
+
+    Multiplied by the sampled tokens-per-text-byte ratio to *estimate* a
+    source's total tokens. Because parquet is compressed and holds more than
+    the text column, this is only an estimate: it drives language ranking
+    (--top_k_languages) and the relative per-language split of the FineWeb-2
+    target, never the totals — each source stops at its precisely counted
+    --target_tokens during the write.
+    """
     return sum(os.path.getsize(f) for f in parquet_files)
 
 
@@ -667,30 +676,26 @@ def process_sources(
                     total_docs += 1
                     source_docs += 1
 
+                    # Progress heartbeat only — do NOT save a checkpoint here.
+                    # A mid-file checkpoint would record file_idx of a
+                    # partially-consumed file while sequence_lengths already
+                    # include that file's partial docs; on resume the .bin is
+                    # truncated to those docs AND the file is re-tokenized from
+                    # row 0, duplicating its head. Checkpoints are taken only at
+                    # file boundaries (below), so resume redoes at most one file
+                    # cleanly.
                     if total_docs % args.checkpoint_interval == 0:
                         writer.flush()
-                        source_progress[name] = {
-                            "file_idx": file_idx,
-                            "source_toks": source_toks,
-                        }
-                        save_checkpoint(
-                            args.output_prefix,
-                            source_progress,
-                            writer.sequence_lengths,
-                            writer.document_indices,
-                            total_docs,
-                            total_toks,
-                            plan_serializable,
-                        )
                         print(
-                            f"    Checkpoint: {total_docs:,} docs, "
+                            f"    {total_docs:,} docs, "
                             f"{total_toks / 1e9:.4f}B tokens"
                         )
 
             # Completed this file — update progress to next file and
-            # checkpoint immediately so that a crash between here and the
-            # next periodic checkpoint doesn't cause this file to be
-            # re-processed (which would duplicate data in the .bin).
+            # checkpoint immediately. Checkpoints happen only at file
+            # boundaries, so on resume the .bin truncates back to a completed
+            # file and re-tokenizing the in-progress file from row 0 never
+            # duplicates data.
             source_progress[name] = {
                 "file_idx": file_idx + 1,
                 "source_toks": source_toks,
@@ -777,7 +782,8 @@ def main():
     )
     parser.add_argument(
         "--checkpoint_interval", type=int, default=DEFAULT_CHECKPOINT_INTERVAL,
-        help=f"Documents between checkpoint writes (default: {DEFAULT_CHECKPOINT_INTERVAL:,})",
+        help=f"Documents between progress heartbeats (default: {DEFAULT_CHECKPOINT_INTERVAL:,}); "
+             "checkpoints themselves are written only at parquet-file boundaries",
     )
     parser.add_argument(
         "--val_tokens_per_language", type=int,

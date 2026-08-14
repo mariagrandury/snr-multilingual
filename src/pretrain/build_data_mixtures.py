@@ -22,10 +22,11 @@ Build-token sizing:
   50% of that. Hence:
     fineweb_target(L) = largest_budget(L) * ML_SHARE * (1 + HEADROOM)
     english_target    = max_english_need  * (1 + HEADROOM)
-  where largest_budget(L) is 170B where the 1.7B model trains (L in 1,8,30,
-  100,200) and 100B otherwise, ML_SHARE = 0.50, and the English need is
-  bounded by the 1-language setting (100% English at 170B). This reproduces
-  the plan's 55B / 93.5B FineWeb-2 builds and 187B English build.
+  where largest_budget(L) is ~167B where the 1.7B model trains (L in 1,8,30,
+  100) and ~94B otherwise, ML_SHARE = 0.50, and the English need is bounded by
+  the 1-language setting (100% English at ~167B). With the reviewed deep-ladder
+  budgets (read from hyperparams_deep.json) this yields ~52B / ~92B FineWeb-2
+  builds and a ~184B English build.
 
 Usage:
   # Everything for scheme A into ./outputs (validation, English, all settings)
@@ -49,13 +50,16 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 CREATE_SCRIPT = SCRIPT_DIR / "create_data_mixture.py"
 
-# Per-size token budget D(N) = 5 x Chinchilla = 100 x N (non-embedding N),
-# in billions, from the deep ladder's actual non-embedding counts
-# (hyperparams_deep.json n_non_emb_params; the shallow variants match within
-# a few % so the same builds cover both arch families).
-SIZE_BUDGET_B = {
-    "90M": 9.3, "175M": 17.7, "350M": 34.5, "600M": 59.5, "1B": 94.5, "1.7B": 167.3,
-}
+# Per-size token budget D(N) = 5 x Chinchilla = 100 x N (non-embedding N), in
+# billions, read from the reviewed deep ladder's per-size predictivity schedule
+# (hyperparams_deep.json `predictivity.train_tokens`). The shallow variants
+# match within a few %, so the same builds cover both arch families.
+def _load_size_budget_b() -> dict:
+    configs = json.loads((SCRIPT_DIR / "hyperparams_deep.json").read_text())["configs"]
+    return {size: c["predictivity"]["train_tokens"] / 1e9 for size, c in configs.items()}
+
+
+SIZE_BUDGET_B = _load_size_budget_b()
 
 # The largest model trained at each language setting (from the Models table in
 # the plan, 200-language setting dropped 2026-08-13): the 1.7B reference
