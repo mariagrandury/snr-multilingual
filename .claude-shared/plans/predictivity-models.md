@@ -152,12 +152,12 @@ rows excluded from training via the manifest:
 |---|---|---|---|
 | L1 | — (100% EN) | — | 1.7B · 167.2B tokens |
 | L2 | 1 | 52.0B | 1B · 94.4B |
-| L8 | 7 | 92.5B | 1.7B · 167.2B |
+| L8 | 7 | 92.0B | 1.7B · 167.2B |
 | L15 | 14 | 52.0B | 1B |
-| L30 | 29 | 92.5B | 1.7B |
+| L30 | 29 | 92.0B | 1.7B |
 | L50 | 49 | 52.0B | 1B |
-| L100 | 99 | 92.5B | 1.7B |
-| English (shared) | — | 184.5B | bounds the L1 1.7B run |
+| L100 | 99 | 92.0B | 1.7B |
+| English (shared) | — | 184.0B | bounds the L1 1.7B run |
 | Validation (fixed) | 99 + EN | 5M tokens/language | reused by every model |
 
 Language lists: scheme A (resource-ranked) or scheme B (diversity-first),

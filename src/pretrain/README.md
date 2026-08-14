@@ -164,7 +164,7 @@ the finished `.bin`/`.idx` builds with azcopy: see the Azure guide's §5
 
 `--scheme {A,B}` picks the language lists
 (`language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).
-Targets: 184.5 B English (bounds the L=1 run), 52 B / 92.5 B FineWeb-2 per
+Targets: 184.0 B English (bounds the L=1 run), 52 B / 92.0 B FineWeb-2 per
 setting (half the largest run's budget + 10% headroom).
 
 ### 2. Launch the trainings

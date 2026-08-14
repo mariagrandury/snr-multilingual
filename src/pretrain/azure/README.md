@@ -200,8 +200,8 @@ python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb \
     --settings 8,15,30,50,100
 ```
 
-Targets (printed by `--dry_run` first): 184.5B English; 52B (L2/L15/L50) or
-92.5B (L8/L30/L100) FineWeb-2 per setting; ~2.5TB of int32 `.bin`/`.idx`
+Targets (printed by `--dry_run` first): 184.0B English; 52B (L2/L15/L50) or
+92.0B (L8/L30/L100) FineWeb-2 per setting; ~2.5TB of int32 `.bin`/`.idx`
 total. Blending happens at *training* time via Megatron blend weights, so
 each dataset is built exactly once.
 
