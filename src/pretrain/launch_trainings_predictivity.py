@@ -7,8 +7,8 @@ The grid (see
 
   * size            — the 6-rung ladder (90M..1.7B) shared by the reviewed
                        hyperparams files; --arch picks deep (hyperparams_deep
-                       .json, baseline) or shallow (hyperparams.json, the
-                       model-depth intervention level)
+                       .json, baseline) or shallow (hyperparams_shallow.json,
+                       the model-depth intervention level)
   * language setting — L in {1, 2, 8, 15, 30, 50, 100} (English + L-1
                        FineWeb-2 languages); not every size trains at every L.
   * seed            — one seed by default; three on the cells the plan marks
@@ -57,7 +57,7 @@ SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
 # the intervention axis. Deep is the baseline.
 HYPERPARAMS = {
     "deep": SCRIPT_DIR / "hyperparams_deep.json",
-    "shallow": SCRIPT_DIR / "hyperparams.json",
+    "shallow": SCRIPT_DIR / "hyperparams_shallow.json",
 }
 
 # W&B / checkpoint project for this sweep (kept separate from the old
@@ -123,14 +123,13 @@ def predictivity_cells() -> list[dict]:
 
 
 def schedule_for(cfg: dict) -> tuple[int, int, int]:
-    """Per-size predictivity schedule derived from the reviewed config's
-    non-embedding count: D = 100 x N tokens (5x Chinchilla) at 504 x 4096
-    tokens/iter, ~4% warmup and ~20% WSD decay (all rounded to 100). The
-    hyperparams files' own train_iters belong to other sweeps and are ignored."""
-    iters = round(100 * cfg["n_non_emb_params"] / (504 * 4096) / 100) * 100
-    warmup = max(100, round(iters * 0.04 / 100) * 100)
-    decay = round(iters * 0.20 / 100) * 100
-    return iters, warmup, decay
+    """Per-size predictivity schedule from the config's own "predictivity"
+    block (D = 100 x N tokens at 504 x 4096 tokens/iter, ~4% warmup, ~20% WSD
+    decay — see "predictivity_schedule" in the file's global section; the
+    generators keep the block in sync with the architecture). The top-level
+    train_iters belongs to the fixed-token SNR sweeps and is ignored here."""
+    p = cfg["predictivity"]
+    return p["train_iters"], p["lr_warmup_iters"], p["lr_wsd_decay_iters"]
 
 
 def data_blend(data_dir: str, L: int) -> str:
@@ -167,10 +166,10 @@ def build_export_vars(
 ) -> str:
     """Comma-separated KEY=VALUE string for sbatch --export.
 
-    Architecture and LR come from the selected reviewed hyperparams file
-    (deep or shallow); the training schedule is derived by schedule_for();
-    the data blend, tokenizer, and project name are the predictivity-specific
-    env hooks the submit script honours.
+    Architecture, LR, and the predictivity schedule come from the selected
+    reviewed hyperparams file (deep or shallow); the data blend, tokenizer,
+    and project name are the predictivity-specific env hooks the submit
+    script honours.
     """
     iters, warmup, decay = schedule_for(cfg)
     vars_dict = {

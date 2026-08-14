@@ -9,7 +9,7 @@ Placement is by size: <=600M runs go to the Spain Central workspace
 (gpu-nc80-lp, 2x H100, fixed low-priority pricing); 1B and 1.7B go to the UK
 South workspace (gpu-nd96-spot, 8x H100 + InfiniBand, Spot). --arch picks the
 reviewed architecture family (deep baseline or the shallow depth-intervention
-variant); the training schedule is derived per size by schedule_for(). Requires
+variant); the schedule comes from each config's "predictivity" block. Requires
 `source env.sh` (AZ_ML_ARGS_ES / AZ_ML_ARGS_UK) and the pre-built datasets
 uploaded to each workspace's blob store under
 predictivity/data/{english_dclm,fineweb_L<L>}/ (see the README's predictivity
@@ -100,7 +100,7 @@ def submit(cell: dict, cfg: dict, arch: str, dry_run: bool) -> None:
         cmd += ["--set", f"{k}={v}"]
 
     print(f"  job: {exp}  [{ws_var}]  ({iters} iters, "
-          f"{100 * cfg['n_non_emb_params'] / 1e9:.1f}B tokens)")
+          f"{cfg['predictivity']['train_tokens'] / 1e9:.1f}B tokens)")
     if dry_run:
         print("  " + " ".join(c if "WANDB_API_KEY" not in c else
                               "environment_variables.WANDB_API_KEY=***" for c in cmd) + "\n")

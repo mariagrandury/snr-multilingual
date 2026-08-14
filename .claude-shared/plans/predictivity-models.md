@@ -4,9 +4,10 @@ All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
 [compute budget](predictivity-compute-budget.md)). Source of truth: the two
 **reviewed** hyperparams files — `src/pretrain/hyperparams_deep.json` (deep
-baseline) and `src/pretrain/hyperparams.json` (shallow depth-intervention
-variant) — plus the launcher-derived schedule (`schedule_for()` in
-`launch_trainings_predictivity.py`); regenerate this sheet if they change.
+baseline) and `src/pretrain/hyperparams_shallow.json` (shallow
+depth-intervention variant) — including the D = 100·N training schedule,
+stored per size in each config's `predictivity` block; regenerate this sheet
+if they change.
 A rendered version lives at the "Predictivity Training Grid" artifact.
 Updated 2026-08-14.
 
@@ -61,7 +62,7 @@ width/depth ≈ 64 (the `find_hyperparams_deep.py` rule).
 | Non-emb params | 92.90M | 176.16M | 344.06M | 594.54M | 944.11M | 1,672.15M |
 | Total params (tied) | 193.6M | 310.4M | 511.9M | 795.9M | 1,179.0M | 1,974.1M |
 
-## Architecture per size — shallow variant (`hyperparams.json`)
+## Architecture per size — shallow variant (`hyperparams_shallow.json`)
 
 The model-depth intervention level: same six non-embedding sizes at
 width/depth ≈ 128 (the `find_hyperparams.py` rule: head_dim 64, FFN
@@ -82,8 +83,8 @@ error; the 1B shape is pinned by the file's own DECISION note). Launched with
 
 ## Training schedule per size
 
-D = 100 × N_non-emb exactly (5× Chinchilla), derived at launch from each
-file's `n_non_emb_params` (`schedule_for()`); one iteration = 504 × 4096 =
+D = 100 × N_non-emb exactly (5× Chinchilla), stored per size in each
+config's `predictivity` block; one iteration = 504 × 4096 =
 2,064,384 tokens; LR and micro-batch from the reviewed files (6ND-law
 generators); warmup ≈ 4% and WSD decay ≈ 20% of iterations (rounded to 100).
 

@@ -102,9 +102,10 @@ missing canonical per cell per call, and re-running picks up the next gap.
 
 ### Hyperparameters
 
-- [`hyperparams_deep.json`](hyperparams_deep.json) — **active** config consumed by `launch_trainings.py`.
-- [`find_hyperparams_deep.py`](find_hyperparams_deep.py) — one-shot generator for `hyperparams_deep.json`.
-- `hyperparams.json` / `find_hyperparams.py` / `calculate_params_lr_bs.py` / `fetch_hf_model_hyperparams.py` / `hf_models.txt` / `hf_model_hyperparams.csv` — exploratory artefacts kept for reference.
+- [`hyperparams_deep.json`](hyperparams_deep.json) — **active** config consumed by `launch_trainings.py` and by the predictivity sweep (`--arch deep`, the baseline).
+- [`hyperparams_shallow.json`](hyperparams_shallow.json) — **active** shallow (width/depth 128) ladder at the same six non-embedding sizes — the predictivity sweep's model-depth intervention variant (`--arch shallow`).
+- [`find_hyperparams_deep.py`](find_hyperparams_deep.py) / [`find_hyperparams.py`](find_hyperparams.py) — one-shot generators for the two files above.
+- `calculate_params_lr_bs.py` / `fetch_hf_model_hyperparams.py` / `hf_models.txt` / `hf_model_hyperparams.csv` — shared helpers and exploratory artefacts kept for reference.
 
 ### Conversion + Hub push (under [`conversion/`](conversion/))
 
@@ -166,9 +167,10 @@ enumerates the grid and submits one `sbatch` per cell, reusing
 `submit-apertus-data-mix.sh` via env hooks. Per-size architecture, LR, and
 micro-batch come from the reviewed hyperparams files — `--arch deep` (default,
 [`hyperparams_deep.json`](hyperparams_deep.json)) or `--arch shallow`
-([`hyperparams.json`](hyperparams.json), the model-depth intervention variant
-at the same non-embedding sizes). The budget D(N) = 100 × N and the WSD
-schedule (~4% warmup, ~20% decay) are derived per size by the launcher.
+([`hyperparams_shallow.json`](hyperparams_shallow.json), the model-depth
+intervention variant at the same non-embedding sizes). The budget
+D(N) = 100 × N and the WSD schedule (~4% warmup, ~20% decay) live in each
+config's `predictivity` block inside those files.
 Checkpoints land under `.../Meg-Runs/predictivity/<EXP_NAME>/`.
 
 ```bash

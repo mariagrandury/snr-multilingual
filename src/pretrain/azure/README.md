@@ -55,11 +55,14 @@ it into `env.sh` next.
 
 ## 2. Configure names and create the workspace
 
-Edit `env.sh`: set `AZ_SUBSCRIPTION` to your subscription id and
-`AZ_LOCATION` to the region where you'll request quota in step 3 (pick one
-and stick to it — quota, storage and compute are all per-region. For Europe
-try `francecentral` or `swedencentral`; `eastus` / `southcentralus` often
-have better GPU availability). Then:
+Edit `env.sh`: set `AZ_SUBSCRIPTION` to your subscription id. The regions are
+already decided for this project (quota, storage and compute are all
+per-region — see the compute-budget sheet): the **primary workspace is Spain
+Central** (`snr-es-rg`/`snr-es-ws`, NC80adis H100 low-priority — every size
+≤600M plus evals) with a second workspace in **UK South**
+(`snr-uk-rg`/`snr-uk-ws`, ND96isr 8×H100 Spot — the 1B/1.7B pool); §11 sets
+up the UK one. If you're adapting this guide to another subscription, pick a
+region where *your* subscription can deploy the SKUs and stick to it. Then:
 
 ```bash
 source env.sh
@@ -76,10 +79,14 @@ delete in one command):
 - **Environments** — pointers to the Docker images jobs run in:
   `apertus-nemo` (NGC NeMo 25.11, the x86 build of the same image the CSCS
   cluster uses) and `apertus-eval` (vLLM, for lm-eval).
-- **Compute clusters** — `gpu-train` (one `Standard_NC96ads_A100_v4` node:
-  4× A100 80GB, ~$14.7/h) and `gpu-single` (one `Standard_NC24ads_A100_v4`:
-  1× A100, ~$3.7/h). Both have `min_instances: 0`: nodes exist only while a
-  job runs, so an idle setup costs ~$0.
+- **Compute clusters** — every `compute-*.yml` whose SKU the region offers
+  (the rest are skipped with a warning). In Spain Central that's
+  `gpu-nc80-lp` (`Standard_NC80adis_H100_v5`: 2× H100 94GB at the fixed
+  low-priority meter, ~$3.63/h — the workhorse); the guide's original A100
+  clusters `gpu-train` (4× A100 80GB, ~$14.7/h) and `gpu-single` (1× A100,
+  ~$3.7/h) only materialize in regions that offer `NCads_A100_v4`. All have
+  `min_instances: 0`: nodes exist only while a job runs, so an idle setup
+  costs ~$0.
 
 !!! warning "The compute creation fails until you have quota"
     A brand-new subscription has **0 GPU quota** — do step 3 first if
@@ -88,9 +95,14 @@ delete in one command):
 
 ## 3. Request GPU quota (the step that involves waiting)
 
-Azure meters GPU access in *vCPUs of a VM family*. You need the
-**`Standard NCADS_A100_v4 Family vCPUs`** family (sometimes rendered
-"NCADSA100v4") in your `$AZ_LOCATION`:
+Azure meters GPU access in *vCPUs of a VM family*. For this project's plan
+the families are **`Standard NCadsH100v5 Family vCPUs`** in Spain Central
+(160 cores = 2 NC80adis nodes; low-priority quota is a separate counter in
+ML Studio → Quota) and **`Standard NDSH100v5 Family vCPUs`** in UK South
+(96–192 cores + the Spot counter) — both already filed 2026-08-13, amounts
+and rationale in the compute-budget sheet. The generic A100 path below
+applies only if you're adapting the guide to a subscription that offers
+`NCADS_A100_v4` in your `$AZ_LOCATION`:
 
 1. Go to the [Azure portal](https://portal.azure.com) → search **Quotas** →
    **Compute** → filter by your region.
@@ -375,9 +387,45 @@ predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
 ...                fineweb_L100/...
 ```
 
+Getting them there from CSCS — `azcopy` is a single static binary, so no
+root or install is needed on the login node, and the CSCS→Azure upload
+happens once (the Spain→UK duplication is a server-side copy inside Azure,
+nothing flows through CSCS again):
+
 ```bash
-azcopy copy 'outputs/*' 'https://<storageaccount>.blob.core.windows.net/<container>/predictivity/data/<SAS>' --recursive
+# 0. One-time, on the CSCS login node:
+wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
+export PATH="$PWD/azcopy_linux_amd64"*:$PATH
+
+# 1. On your laptop (has az + env.sh): find each workspace's storage account
+#    and container behind the workspaceblobstore datastore:
+az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_ES \
+  --query '{account:account_name, container:container_name}'
+az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
+  --query '{account:account_name, container:container_name}'
+
+# 2. Mint a container SAS per workspace (write for the upload target,
+#    read on Spain for the copy) — paste the printed token after '?' below:
+az storage container generate-sas --account-name <es-account> --name <es-container> \
+  --permissions racwl --expiry $(date -u -d '+7 days' +%Y-%m-%dT%H:%MZ) \
+  --auth-mode login --as-user -o tsv
+
+# 3. From the CSCS login node: upload the builds to the Spain workspace
+#    (one folder per build, holding its .bin/.idx pair):
+azcopy copy '<DATA_DIR>/*' \
+  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
+  --recursive
+
+# 4. Duplicate Spain -> UK entirely server-side (fast, no egress from CSCS):
+azcopy copy \
+  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
+  'https://<uk-account>.blob.core.windows.net/<uk-container>/predictivity/?<UK_SAS>' \
+  --recursive
 ```
+
+(If `--auth-mode login --as-user` is rejected on your account, generate the
+SAS from the portal instead: storage account → Containers → … → Generate SAS,
+permissions Read+Add+Create+Write+List.)
 
 **Launch** (same filters as the cluster launcher; jobs queue on the clusters
 and run as nodes free up — resubmitting any cell resumes it):
@@ -391,9 +439,9 @@ python launch_azure_predictivity.py --arch shallow     # the depth-intervention 
 ```
 
 `--arch` picks the reviewed architecture family — `deep` (default baseline,
-`../hyperparams_deep.json`) or `shallow` (`../hyperparams.json`, same
-non-embedding sizes at width/depth 128); the D(N) = 100 × N schedule is
-derived per size at launch. Runs land in W&B project `predictivity` as
+`../hyperparams_deep.json`) or `shallow` (`../hyperparams_shallow.json`, same
+non-embedding sizes at width/depth 128); the D(N) = 100 × N schedule comes
+from each config's `predictivity` block. Runs land in W&B project `predictivity` as
 `apertus-<size>-L<L>-seed<seed>` (shallow runs as `...-L<L>-shallow-...`).
 Micro-batch sizes tuned for the cluster are auto-shrunk per node (`train.sh`)
 so the global batch of 504 always divides; the 1.7B resolves to MBS 1 on the

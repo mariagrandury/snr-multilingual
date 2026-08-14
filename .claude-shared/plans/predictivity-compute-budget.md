@@ -110,9 +110,9 @@ check Studio → Quota once a workspace exists.
 
 ## Method & assumptions
 
-- Budgets: D(N) = 100 × N_non-emb per size (5× Chinchilla), from
-  `hyperparams_deep.json` `n_non_emb_params` (schedule derived at launch by
-  `launch_trainings_predictivity.py:schedule_for`).
+- Budgets: D(N) = 100 × N_non-emb per size (5× Chinchilla), stored in
+  `hyperparams_deep.json`'s per-size `predictivity` block (formula in the
+  file's `predictivity_schedule` note).
 - FLOPs: 6 · (N_non-emb + d·V) · D. Attention overhead folded into the MFU
   band (40% ± 15% relative).
 - Effective throughput: H100 0.40 PFLOP/s, A100 0.125 PFLOP/s.
@@ -339,9 +339,10 @@ EOF
 - **Reviewed hyperparams made the source of truth** (2026-08-14): the
   unreviewed `hyperparams_predictivity.json` (another session's output) and its
   generator were deleted. The sweep now reads the two reviewed files —
-  `hyperparams_deep.json` (deep baseline) and `hyperparams.json` (shallow
-  depth-intervention variant, retargeted to the same six sizes) — selected by
-  `--arch` in both launchers; D = 100·N schedules are derived at launch. Peak
+  `hyperparams_deep.json` (deep baseline) and `hyperparams_shallow.json`
+  (shallow depth-intervention variant, retargeted to the same six sizes) —
+  selected by `--arch` in both launchers; D = 100·N schedules are stored in
+  each config's `predictivity` block (added 2026-08-14, generators emit). Peak
   LRs dropped to the reviewed generators' 6ND law (e.g. 175M 1.217e-3 →
   0.979e-3, 90M 1.428e-3 → 1.061e-3, 1.7B 6.93e-4 → 7.39e-4). FLOPs and cost
   totals are unchanged (same N, same D); a shallow level differs by ±5% FLOPs

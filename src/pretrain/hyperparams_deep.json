@@ -4,7 +4,8 @@
     "seq_len": 4096,
     "desired_tokens": 100000000000,
     "global_batch_size": 504,
-    "head_dim": 64
+    "head_dim": 64,
+    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, all rounded to 100"
   },
   "configs": {
     "175M": {
@@ -19,7 +20,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00097919
+      "lr": 0.00097919,
+      "predictivity": {
+        "train_tokens": 17616076800,
+        "train_iters": 8500,
+        "lr_warmup_iters": 300,
+        "lr_wsd_decay_iters": 1700
+      }
     },
     "350M": {
       "n_layers": 20,
@@ -33,7 +40,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00090059
+      "lr": 0.00090059,
+      "predictivity": {
+        "train_tokens": 34406400000,
+        "train_iters": 16700,
+        "lr_warmup_iters": 700,
+        "lr_wsd_decay_iters": 3300
+      }
     },
     "600M": {
       "n_layers": 24,
@@ -47,7 +60,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00084107
+      "lr": 0.00084107,
+      "predictivity": {
+        "train_tokens": 59454259200,
+        "train_iters": 28800,
+        "lr_warmup_iters": 1200,
+        "lr_wsd_decay_iters": 5800
+      }
     },
     "1B": {
       "n_layers": 28,
@@ -61,7 +80,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00079383
+      "lr": 0.00079383,
+      "predictivity": {
+        "train_tokens": 94411161600,
+        "train_iters": 45700,
+        "lr_warmup_iters": 1800,
+        "lr_wsd_decay_iters": 9100
+      }
     },
     "90M": {
       "n_layers": 15,
@@ -75,7 +100,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00106073
+      "lr": 0.00106073,
+      "predictivity": {
+        "train_tokens": 9289728000,
+        "train_iters": 4500,
+        "lr_warmup_iters": 200,
+        "lr_wsd_decay_iters": 900
+      }
     },
     "1.7B": {
       "n_layers": 30,
@@ -89,7 +120,13 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
-      "lr": 0.00073909
+      "lr": 0.00073909,
+      "predictivity": {
+        "train_tokens": 167215104000,
+        "train_iters": 81000,
+        "lr_warmup_iters": 3200,
+        "lr_wsd_decay_iters": 16200
+      }
     }
   }
 }

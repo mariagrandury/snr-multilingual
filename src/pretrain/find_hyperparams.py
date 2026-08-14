@@ -315,6 +315,10 @@ def calculate_hyperparams_for_model_configs(
             }
         )
 
+        # Predictivity-sweep schedule (D = 100 x N, ~4% warmup, ~20% WSD
+        # decay, rounded to 100) mirrored per size so this file alone gives
+        # the full training config; the predictivity launchers read it.
+        p_iters = round(100 * n_non_emb / (gbs * seq_len) / 100) * 100
         json_configs[size_label] = {
             # Architecture
             "n_layers": nl,
@@ -322,6 +326,7 @@ def calculate_hyperparams_for_model_configs(
             "ffn_hidden_size": ffw_size,
             "num_attention_heads": nh,
             "num_query_groups": nkv,
+            "n_non_emb_params": n_non_emb,
             # Training
             "micro_batch_size": mbs,
             "global_batch_size": gbs,
@@ -329,6 +334,12 @@ def calculate_hyperparams_for_model_configs(
             "train_iters": train_iters,
             # Learning rate
             "lr": round(lr, 8),
+            "predictivity": {
+                "train_tokens": int(100 * n_non_emb),
+                "train_iters": p_iters,
+                "lr_warmup_iters": max(100, round(p_iters * 0.04 / 100) * 100),
+                "lr_wsd_decay_iters": round(p_iters * 0.20 / 100) * 100,
+            },
         }
 
     print_configs_table(
@@ -341,7 +352,7 @@ def calculate_hyperparams_for_model_configs(
         head_dim=head_dim,
     )
 
-    json_path = Path(__file__).parent / "hyperparams.json"
+    json_path = Path(__file__).parent / "hyperparams_shallow.json"
     with open(json_path, "w") as f:
         json.dump(
             {
@@ -351,6 +362,12 @@ def calculate_hyperparams_for_model_configs(
                     "desired_tokens": int(desired_tokens),
                     "global_batch_size": gbs,
                     "head_dim": head_dim,
+                    "predictivity_schedule": (
+                        "D = 100 x n_non_emb_params tokens (5x Chinchilla) at "
+                        "global_batch_size x seq_len tokens/iter; "
+                        "lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of "
+                        "train_iters, all rounded to 100"
+                    ),
                 },
                 "configs": json_configs,
             },

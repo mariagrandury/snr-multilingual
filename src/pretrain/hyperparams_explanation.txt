@@ -109,3 +109,8 @@ label    n_layers  d_model  wd_ratio  n_heads  gqa  n_kv  ffw_mult  n_non_emb  (
 Notes: 350M is the worst fit the wd-128 grid allows (-4.9%). train_iters
 follow this file's historical convention (generator-computed batch size);
 the predictivity sweep derives its own D = 100 x N schedule at launch time.
+
+2026-08-14 (later): file renamed hyperparams.json -> hyperparams_shallow.json;
+per-size "predictivity" schedule blocks (D = 100 x N, ~4% warmup, ~20% decay)
+added to both reviewed files and emitted by both generators — see the
+"predictivity_schedule" note in each JSON global section.

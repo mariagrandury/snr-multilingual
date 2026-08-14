@@ -84,6 +84,10 @@ def compute_configs(deep_data: dict) -> dict:
             }
         )
 
+        # Predictivity-sweep schedule (D = 100 x N, ~4% warmup, ~20% WSD
+        # decay, rounded to 100) mirrored per size so this file alone gives
+        # the full training config; the predictivity launchers read it.
+        p_iters = round(100 * n_non_emb / (gbs * seq_len) / 100) * 100
         json_configs[size_label] = {
             # Architecture
             "n_layers": nl,
@@ -99,6 +103,12 @@ def compute_configs(deep_data: dict) -> dict:
             "train_iters": train_iters,
             # Learning rate
             "lr": round(lr, 8),
+            "predictivity": {
+                "train_tokens": int(100 * n_non_emb),
+                "train_iters": p_iters,
+                "lr_warmup_iters": max(100, round(p_iters * 0.04 / 100) * 100),
+                "lr_wsd_decay_iters": round(p_iters * 0.20 / 100) * 100,
+            },
         }
 
     print_configs_table(
