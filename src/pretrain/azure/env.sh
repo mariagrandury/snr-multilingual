@@ -1,6 +1,16 @@
 # Azure names used by every script and job in this directory.
 # Edit once, then `source env.sh` before running any command from the guide.
 
+# Shell compatibility: the guide's `az ml` commands splat $AZ_ML_ARGS (a
+# string of two flags) and rely on word splitting. bash splits unquoted
+# scalars into separate words; zsh does not by default, so under zsh the two
+# flags arrive as ONE argument and az reports "--resource-group/-w required".
+# Enable bash-style splitting when this file is sourced into zsh (no-op in
+# bash, where $ZSH_VERSION is unset).
+if [ -n "${ZSH_VERSION:-}" ]; then
+  setopt SH_WORD_SPLIT
+fi
+
 # Find yours with: az account list --output table
 export AZ_SUBSCRIPTION="ef1ff20e-1168-4846-a78e-47d102dd35f6"
 
