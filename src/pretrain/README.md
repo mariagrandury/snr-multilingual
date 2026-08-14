@@ -156,18 +156,20 @@ python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb
 
 `--scheme {A,B}` picks the language lists
 (`language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).
-Targets: 187.5 B English (bounds the L=1 run), 55 B / 93.5 B FineWeb-2 per
+Targets: 184.5 B English (bounds the L=1 run), 52 B / 92.5 B FineWeb-2 per
 setting (half the largest run's budget + 10% headroom).
 
 ### 2. Launch the trainings
 
 [`launch_trainings_predictivity.py`](launch_trainings_predictivity.py)
 enumerates the grid and submits one `sbatch` per cell, reusing
-`submit-apertus-data-mix.sh` via env hooks. Per-size architecture, budget
-D(N) = 100 × N, LR, and WSD schedule come from
-[`hyperparams_predictivity.json`](hyperparams_predictivity.json) (regenerate
-with `python find_hyperparams_predictivity.py`). Checkpoints land under
-`.../Meg-Runs/predictivity/<EXP_NAME>/`.
+`submit-apertus-data-mix.sh` via env hooks. Per-size architecture, LR, and
+micro-batch come from the reviewed hyperparams files — `--arch deep` (default,
+[`hyperparams_deep.json`](hyperparams_deep.json)) or `--arch shallow`
+([`hyperparams.json`](hyperparams.json), the model-depth intervention variant
+at the same non-embedding sizes). The budget D(N) = 100 × N and the WSD
+schedule (~4% warmup, ~20% decay) are derived per size by the launcher.
+Checkpoints land under `.../Meg-Runs/predictivity/<EXP_NAME>/`.
 
 ```bash
 # Whole sweep — always dry-run first:
@@ -181,8 +183,11 @@ python launch_trainings_predictivity.py --data_dir <DATA_DIR>
 python launch_trainings_predictivity.py --data_dir <DATA_DIR> --size 600M
 python launch_trainings_predictivity.py --data_dir <DATA_DIR> --size 350M,175M
 
-# "all sizes up to 1B" = every rung except the 1.4B top:
-python launch_trainings_predictivity.py --data_dir <DATA_DIR> --size 75M,175M,350M,600M,1B
+# "all sizes up to 1B" = every rung except the 1.7B top:
+python launch_trainings_predictivity.py --data_dir <DATA_DIR> --size 90M,175M,350M,600M,1B
+
+# The shallow depth-intervention variant of the same grid:
+python launch_trainings_predictivity.py --data_dir <DATA_DIR> --arch shallow
 ```
 
 Filters compose with `--langs L` (one language setting) and `--seed`:
@@ -190,12 +195,12 @@ Filters compose with `--langs L` (one language setting) and `--seed`:
 ```bash
 python launch_trainings_predictivity.py --data_dir <DATA_DIR> --size 600M --langs 8
 python launch_trainings_predictivity.py --data_dir <DATA_DIR> --langs 1        # monolingual anchors
-python launch_trainings_predictivity.py --test --data_dir <DATA_DIR>          # 75M, L8, 50 steps
+python launch_trainings_predictivity.py --test --data_dir <DATA_DIR>          # 90M, L8, 50 steps
 ```
 
-Sizes: **75M, 175M, 350M, 600M, 1B, 1.4B** (1.4B trains only at L ∈ {1,8,30,
-100,200}). Language settings L ∈ {1, 2, 8, 15, 30, 50, 100, 200}. Three seeds
-(28, 1797, 1904) on the 175M and 1B columns at L ∈ {1, 30, 200}; one seed (1904)
+Sizes: **90M, 175M, 350M, 600M, 1B, 1.7B** (1.7B trains only at L ∈
+{1,8,30,100}). Language settings L ∈ {1, 2, 8, 15, 30, 50, 100}. Three seeds
+(28, 1797, 1904) on the 175M and 1B columns at L ∈ {1, 30, 100}; one seed (1904)
 elsewhere.
 
 ## See also

@@ -359,7 +359,7 @@ The small-to-large predictivity sweep (51 runs per intervention level; see
 `.claude-shared/plans/small-to-large-predictivity-training-plan.md` and the
 compute-budget sheet next to it) runs on **two workspaces**: Spain Central
 (`gpu-nc80-lp`, 2×H100 at the fixed low-priority meter — every size ≤600M)
-and UK South (`gpu-nd96-spot`, 8×H100 Spot — the 1B and 1.4B rungs). Set the
+and UK South (`gpu-nd96-spot`, 8×H100 Spot — the 1B and 1.7B rungs). Set the
 `AZ_ES_*` / `AZ_UK_*` names in `env.sh`, then run `setup_azure.sh` once per
 workspace (export `AZ_LOCATION/AZ_RG/AZ_WS` to each region's values first;
 computes whose SKU a region doesn't offer are skipped with a warning).
@@ -387,11 +387,16 @@ source env.sh && export WANDB_API_KEY=<key>
 python launch_azure_predictivity.py --dry-run          # the whole 51-job grid
 python launch_azure_predictivity.py --langs 1          # monolingual anchors first
 python launch_azure_predictivity.py                    # everything
+python launch_azure_predictivity.py --arch shallow     # the depth-intervention variant
 ```
 
-Runs land in W&B project `predictivity` as `apertus-<size>-L<L>-seed<seed>`.
+`--arch` picks the reviewed architecture family — `deep` (default baseline,
+`../hyperparams_deep.json`) or `shallow` (`../hyperparams.json`, same
+non-embedding sizes at width/depth 128); the D(N) = 100 × N schedule is
+derived per size at launch. Runs land in W&B project `predictivity` as
+`apertus-<size>-L<L>-seed<seed>` (shallow runs as `...-L<L>-shallow-...`).
 Micro-batch sizes tuned for the cluster are auto-shrunk per node (`train.sh`)
-so the global batch of 504 always divides; the 1.4B resolves to MBS 1 on the
+so the global batch of 504 always divides; the 1.7B resolves to MBS 1 on the
 8-GPU nodes — override with `--set environment_variables.MBS=3` if it fits.
 
 ## 12. Launching the remaining cells

@@ -7,8 +7,9 @@ description: >
   English (DCLM) + FineWeb-2 datasets, blended 50/50 at training time via
   DATA_BLEND (L=1 trains on English alone). Always submitted through
   launch_azure_predictivity.py, which fills in the architecture env vars from
-  hyperparams_predictivity.json, the input dataset paths, the blend, and the
-  compute (Spain NC80adis low-priority for <=600M, UK ND96isr Spot for 1B/1.4B).
+  the reviewed hyperparams file (--arch deep|shallow), the derived schedule,
+  the input dataset paths, the blend, and the compute (Spain NC80adis
+  low-priority for <=600M, UK ND96isr Spot for 1B/1.7B).
 code: ..
 command: bash train.sh
 environment: azureml:apertus-nemo@latest

@@ -4,8 +4,8 @@ Status 2026-08-14: **quota requests filed** (Spain Central NCadsH100v5, UK South
 NDSH100v5, dedicated + Spot/low-priority counters). This sheet is the budget of
 record for the small-to-large predictivity training plan
 ([small-to-large-predictivity-training-plan.md](small-to-large-predictivity-training-plan.md)),
-computed from the ladder in `src/pretrain/hyperparams_predictivity.json`
-(90M–1.7B; the file's earlier 75M/1.4B endpoints were a mistake, corrected 2026-08-14).
+computed from the 90M–1.7B deep ladder in `src/pretrain/hyperparams_deep.json`
+(the reviewed source of truth since 2026-08-14; see Appendix B).
 A rendered version lives at the "Predictivity Sweep Compute Budget" artifact
 (claude.ai/code/artifact/3d1f4011-c824-4899-b045-a5dc1d66bb17).
 
@@ -111,7 +111,8 @@ check Studio → Quota once a workspace exists.
 ## Method & assumptions
 
 - Budgets: D(N) = 100 × N_non-emb per size (5× Chinchilla), from
-  `hyperparams_predictivity.json` `train_tokens`.
+  `hyperparams_deep.json` `n_non_emb_params` (schedule derived at launch by
+  `launch_trainings_predictivity.py:schedule_for`).
 - FLOPs: 6 · (N_non-emb + d·V) · D. Attention overhead folded into the MFU
   band (40% ± 15% relative).
 - Effective throughput: H100 0.40 PFLOP/s, A100 0.125 PFLOP/s.
@@ -332,12 +333,20 @@ EOF
 - **200-language setting dropped, ×3 seeds moved to L=100** (2026-08-13);
   the validation set follows the trained languages (99 + English), not the
   old 199 list.
-- **Ladder endpoints corrected** (2026-08-14): `hyperparams_predictivity.json`
+- **Ladder endpoints corrected** (2026-08-14): the sweep's earlier config file
   mistakenly used 75M/1.4B; fixed to 90M (L15×d768, 92.9M non-emb) and 1.7B
-  (L30×d2304, 1.672B non-emb) per the plan, with LR from the file's own law
-  lr = 0.14015 · N^(-1/4) and exact D = 100·N budgets (4,500 and 81,000 iters).
-- Cluster-side caveat found during review: most `nodes`×`micro_batch_size`
-  pairs in `hyperparams_predictivity.json` don't divide GBS 504 on the
-  4-GPU-per-node cluster (e.g. 90M: 4 nodes = DP 16, but 16 ∤ 504) — fine on
-  Azure (train.sh auto-shrinks MBS for DP 1/2/4/8), must be fixed before any
-  CSCS launch.
+  (L30×d2304, 1.672B non-emb) per the plan.
+- **Reviewed hyperparams made the source of truth** (2026-08-14): the
+  unreviewed `hyperparams_predictivity.json` (another session's output) and its
+  generator were deleted. The sweep now reads the two reviewed files —
+  `hyperparams_deep.json` (deep baseline) and `hyperparams.json` (shallow
+  depth-intervention variant, retargeted to the same six sizes) — selected by
+  `--arch` in both launchers; D = 100·N schedules are derived at launch. Peak
+  LRs dropped to the reviewed generators' 6ND law (e.g. 175M 1.217e-3 →
+  0.979e-3, 90M 1.428e-3 → 1.061e-3, 1.7B 6.93e-4 → 7.39e-4). FLOPs and cost
+  totals are unchanged (same N, same D); a shallow level differs by ±5% FLOPs
+  at most (its N deviates ≤4.9% from the deep targets).
+- Cluster-side caveat (resolved with the deletion): the unreviewed file's
+  `nodes`×`micro_batch_size` pairs mostly didn't divide GBS 504 on the
+  4-GPU-per-node cluster. Every pair in `hyperparams_deep.json` now does
+  (audited 2026-08-14); Azure was never affected (train.sh auto-shrinks MBS).

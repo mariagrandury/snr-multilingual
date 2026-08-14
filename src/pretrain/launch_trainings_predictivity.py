@@ -5,7 +5,10 @@ Launch Slurm training jobs for the small-to-large predictivity sweep.
 The grid (see
 .claude-shared/plans/small-to-large-predictivity-training-plan.md):
 
-  * size            — the 6-rung ladder in hyperparams_predictivity.json
+  * size            — the 6-rung ladder (90M..1.7B) shared by the reviewed
+                       hyperparams files; --arch picks deep (hyperparams_deep
+                       .json, baseline) or shallow (hyperparams.json, the
+                       model-depth intervention level)
   * language setting — L in {1, 2, 8, 15, 30, 50, 100} (English + L-1
                        FineWeb-2 languages); not every size trains at every L.
   * seed            — one seed by default; three on the cells the plan marks
@@ -48,7 +51,14 @@ from typing import Optional
 
 SCRIPT_DIR = Path(__file__).parent
 SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
-CONFIG_FILE = SCRIPT_DIR / "hyperparams_predictivity.json"
+
+# The two reviewed architecture families cover the same six non-embedding
+# sizes; "shallow vs deep" (width/depth 128 vs 64) is the model-depth level of
+# the intervention axis. Deep is the baseline.
+HYPERPARAMS = {
+    "deep": SCRIPT_DIR / "hyperparams_deep.json",
+    "shallow": SCRIPT_DIR / "hyperparams.json",
+}
 
 # W&B / checkpoint project for this sweep (kept separate from the old
 # data-mix-small project so the two experiments don't share run curves).
@@ -112,6 +122,17 @@ def predictivity_cells() -> list[dict]:
     return cells
 
 
+def schedule_for(cfg: dict) -> tuple[int, int, int]:
+    """Per-size predictivity schedule derived from the reviewed config's
+    non-embedding count: D = 100 x N tokens (5x Chinchilla) at 504 x 4096
+    tokens/iter, ~4% warmup and ~20% WSD decay (all rounded to 100). The
+    hyperparams files' own train_iters belong to other sweeps and are ignored."""
+    iters = round(100 * cfg["n_non_emb_params"] / (504 * 4096) / 100) * 100
+    warmup = max(100, round(iters * 0.04 / 100) * 100)
+    decay = round(iters * 0.20 / 100) * 100
+    return iters, warmup, decay
+
+
 def data_blend(data_dir: str, L: int) -> str:
     """Megatron --data-path value blending English (DCLM) and FineWeb-2.
 
@@ -126,9 +147,10 @@ def data_blend(data_dir: str, L: int) -> str:
     return f"{EN_SHARE / 100:.2f} {english} {(100 - EN_SHARE) / 100:.2f} {fineweb}"
 
 
-def mix_label(L: int) -> str:
-    """Short label for EXP_NAME / job name: `L8` (50/50), or `L1` (100% English)."""
-    return f"L{L}"
+def mix_label(L: int, arch: str = "deep") -> str:
+    """Short label for EXP_NAME / job name: `L8` (50/50), `L1` (100% English);
+    the shallow depth-variant is marked, e.g. `L8-shallow`."""
+    return f"L{L}" + ("-shallow" if arch == "shallow" else "")
 
 
 def build_export_vars(
@@ -145,10 +167,12 @@ def build_export_vars(
 ) -> str:
     """Comma-separated KEY=VALUE string for sbatch --export.
 
-    Architecture + per-size training schedule come from
-    hyperparams_predictivity.json; the data blend, tokenizer, and project name
-    are the predictivity-specific env hooks the submit script honours.
+    Architecture and LR come from the selected reviewed hyperparams file
+    (deep or shallow); the training schedule is derived by schedule_for();
+    the data blend, tokenizer, and project name are the predictivity-specific
+    env hooks the submit script honours.
     """
+    iters, warmup, decay = schedule_for(cfg)
     vars_dict = {
         "MODEL_SIZE": size,
         "NUM_LAYERS": cfg["n_layers"],
@@ -157,17 +181,11 @@ def build_export_vars(
         "NUM_ATTENTION_HEADS": cfg["num_attention_heads"],
         "NUM_QUERY_GROUPS": cfg["num_query_groups"],
         "MBS": mbs if mbs is not None else cfg["micro_batch_size"],
-        "TRAINING_STEPS": (
-            training_steps if training_steps is not None else cfg["train_iters"]
-        ),
+        "TRAINING_STEPS": training_steps if training_steps is not None else iters,
         "LR": cfg["lr"],
-        "LR_WARMUP_ITERS": (
-            lr_warmup_iters if lr_warmup_iters is not None else cfg["lr_warmup_iters"]
-        ),
+        "LR_WARMUP_ITERS": lr_warmup_iters if lr_warmup_iters is not None else warmup,
         "LR_WSD_DECAY_ITERS": (
-            lr_wsd_decay_iters
-            if lr_wsd_decay_iters is not None
-            else cfg["lr_wsd_decay_iters"]
+            lr_wsd_decay_iters if lr_wsd_decay_iters is not None else decay
         ),
         "SEED": seed,
         # Predictivity-specific env hooks (see submit-apertus-data-mix.sh)
@@ -218,9 +236,9 @@ def job_name_for(size: str, mix: str, seed: int) -> str:
     return f"apertus-{size.lower()}-{mix}-seed{seed}"
 
 
-def run_test(data: dict, data_dir: str, dry_run: bool) -> None:
+def run_test(data: dict, data_dir: str, dry_run: bool, arch: str = "deep") -> None:
     cfg = data["configs"][TEST_SIZE]
-    mix = mix_label(TEST_LANGS)
+    mix = mix_label(TEST_LANGS, arch)
     print(
         f"=== Test run: {TEST_SIZE} | {mix} | seed {TEST_SEED} | {TEST_STEPS} steps ===\n"
     )
@@ -244,6 +262,7 @@ def run_filtered(
     data: dict,
     data_dir: str,
     dry_run: bool,
+    arch: str = "deep",
     size_filter: Optional[list[str]] = None,
     langs_filter: Optional[int] = None,
     seed_filter: Optional[int] = None,
@@ -264,7 +283,7 @@ def run_filtered(
     print(f"=== Launching {len(cells)} jobs ===\n")
     for c in cells:
         cfg = data["configs"][c["size"]]
-        mix = mix_label(c["L"])
+        mix = mix_label(c["L"], arch)
         submit(
             job_name=job_name_for(c["size"], mix, c["seed"]),
             export_vars=build_export_vars(
@@ -301,7 +320,7 @@ if __name__ == "__main__":
         "--size",
         metavar="SIZES",
         help="Filter by size — one or a comma-separated list of "
-        "keys in hyperparams_predictivity.json (e.g. "
+        "the ladder's size keys (e.g. "
         "'600M' or '175M,350M'). Default: all sizes.",
     )
     parser.add_argument(
@@ -311,6 +330,11 @@ if __name__ == "__main__":
         help=f"Filter by language setting (one of {LANG_SETTINGS})",
     )
     parser.add_argument("--seed", metavar="SEED", type=int, help="Filter by seed")
+    parser.add_argument(
+        "--arch", choices=["deep", "shallow"], default="deep",
+        help="Architecture family: deep (baseline, width/depth 64) or shallow "
+             "(width/depth 128 — the model-depth intervention level).",
+    )
     parser.add_argument(
         "--data_dir",
         default=DEFAULT_DATA_DIR,
@@ -336,10 +360,8 @@ if __name__ == "__main__":
 
     if not SUBMIT_SCRIPT.exists():
         sys.exit(f"Error: submit script not found: {SUBMIT_SCRIPT}")
-    if not CONFIG_FILE.exists():
-        sys.exit(
-            f"Error: {CONFIG_FILE} not found; run find_hyperparams_predictivity.py first"
-        )
+    if not HYPERPARAMS[args.arch].exists():
+        sys.exit(f"Error: hyperparams file not found: {HYPERPARAMS[args.arch]}")
 
     valid_sizes = list(SIZE_LANG_SETTINGS)
     size_filter = args.size.split(",") if args.size else None
@@ -351,22 +373,23 @@ if __name__ == "__main__":
             f"Error: --langs '{args.langs}' not valid. Choose from: {LANG_SETTINGS}"
         )
 
-    print(f"Config:   {CONFIG_FILE}")
+    print(f"Config:   {HYPERPARAMS[args.arch]} (arch: {args.arch})")
     print(f"Script:   {SUBMIT_SCRIPT}")
     print(f"Data dir: {args.data_dir}")
     if args.dry_run:
         print("(dry-run — sbatch commands will be printed but not executed)")
     print()
 
-    data = json.loads(CONFIG_FILE.read_text())
+    data = json.loads(HYPERPARAMS[args.arch].read_text())
 
     if args.test:
-        run_test(data, args.data_dir, args.dry_run)
+        run_test(data, args.data_dir, args.dry_run, arch=args.arch)
     else:
         run_filtered(
             data,
             args.data_dir,
             args.dry_run,
+            arch=args.arch,
             size_filter=size_filter,
             langs_filter=args.langs,
             seed_filter=args.seed,

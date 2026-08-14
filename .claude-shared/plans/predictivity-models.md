@@ -2,10 +2,13 @@
 
 All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
-[compute budget](predictivity-compute-budget.md)), generated from
-`src/pretrain/hyperparams_predictivity.json` (source of truth — regenerate this
-sheet if that file changes). A rendered version lives at the "Predictivity
-Training Grid" artifact. Updated 2026-08-14.
+[compute budget](predictivity-compute-budget.md)). Source of truth: the two
+**reviewed** hyperparams files — `src/pretrain/hyperparams_deep.json` (deep
+baseline) and `src/pretrain/hyperparams.json` (shallow depth-intervention
+variant) — plus the launcher-derived schedule (`schedule_for()` in
+`launch_trainings_predictivity.py`); regenerate this sheet if they change.
+A rendered version lives at the "Predictivity Training Grid" artifact.
+Updated 2026-08-14.
 
 ## The grid
 
@@ -26,6 +29,7 @@ lists per scheme in `src/pretrain/language_sets_scheme{A,B}.json`).
 
 **51 runs per intervention level × 3 levels ("transformations") = 153 runs.**
 Run naming: `apertus-<size>-L<L>-seed<seed>` (e.g. `apertus-1B-L30-seed28`);
+the shallow variant is marked in the label (`apertus-1B-L30-shallow-seed28`).
 W&B project `predictivity`.
 
 ## Transformations (the intervention axis)
@@ -39,12 +43,13 @@ the choice of axis is plan open question 4:
 |---|---|---|
 | Tokenizer | Apertus V1 (swiss-ai/Apertus-70B-2509) vs V2 candidate vs same-size alternative | BPB is byte-denominated → comparable across tokenizers; data rebuilt per tokenizer |
 | Sampling temperature | T = 1 vs larger (e.g. T ≈ 3.3 / α = 0.3) | most multilingual-specific; meaningless at L = 1 |
-| Model depth | deeper-narrower vs shallower-wider at equal non-emb size | most controlled; effect may be too small |
+| Model depth | deep (width/depth ≈ 64) vs shallow (width/depth ≈ 128) at equal non-emb size | **wired**: `--arch deep\|shallow` in both launchers, same data; 3rd level still open |
 
-## Architecture per size
+## Architecture per size — deep baseline (`hyperparams_deep.json`)
 
 Non-embedding parameter convention (Signal-and-Noise / OLMo ladder); tied
-embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated).
+embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated);
+width/depth ≈ 64 (the `find_hyperparams_deep.py` rule).
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
@@ -56,30 +61,66 @@ embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated).
 | Non-emb params | 92.90M | 176.16M | 344.06M | 594.54M | 944.11M | 1,672.15M |
 | Total params (tied) | 193.6M | 310.4M | 511.9M | 795.9M | 1,179.0M | 1,974.1M |
 
+## Architecture per size — shallow variant (`hyperparams.json`)
+
+The model-depth intervention level: same six non-embedding sizes at
+width/depth ≈ 128 (the `find_hyperparams.py` rule: head_dim 64, FFN
+multiplier searched over {3, 4, 6}, GQA ratio over {2, 3, 4}, best relative
+error; the 1B shape is pinned by the file's own DECISION note). Launched with
+`--arch shallow`.
+
+| | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| Layers | 8 | 9 | 11 | 15 | 16 | 21 |
+| d_model | 1024 | 1152 | 1408 | 1920 | 2048 | 2688 |
+| FFN size | 4096 | 6912 | 8448 | 7680 | 12288 | 10752 |
+| Attention heads | 16 | 18 | 22 | 30 | 32 | 42 |
+| KV groups | 8 | 6 | 11 | 10 | 8 | 21 |
+| Non-emb params | 92.27M | 175.18M | 327.11M | 589.82M | 973.08M | 1,669.05M |
+| vs deep target | −0.7% | −0.6% | −4.9% | −0.8% | +3.1% | −0.2% |
+| Total params (tied) | 226.5M | 326.2M | 511.7M | 841.5M | 1,241.5M | 2,021.4M |
+
 ## Training schedule per size
 
-D = 100 × N_non-emb exactly (5× Chinchilla); one iteration = 504 × 4096 =
-2,064,384 tokens; LR from lr = 0.14015 · N^(−1/4); warmup ≈ 4% and WSD decay
-≈ 20% of iterations (rounded to 100).
+D = 100 × N_non-emb exactly (5× Chinchilla), derived at launch from each
+file's `n_non_emb_params` (`schedule_for()`); one iteration = 504 × 4096 =
+2,064,384 tokens; LR and micro-batch from the reviewed files (6ND-law
+generators); warmup ≈ 4% and WSD decay ≈ 20% of iterations (rounded to 100).
+
+Deep baseline:
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
 | Train tokens | 9.29B | 17.62B | 34.41B | 59.45B | 94.41B | 167.22B |
 | Iterations | 4,500 | 8,500 | 16,700 | 28,800 | 45,700 | 81,000 |
-| Peak LR | 1.428e-3 | 1.217e-3 | 1.029e-3 | 8.976e-4 | 8.00e-4 | 6.931e-4 |
+| Peak LR | 1.061e-3 | 9.792e-4 | 9.006e-4 | 8.411e-4 | 7.938e-4 | 7.391e-4 |
 | LR warmup iters | 200 | 300 | 700 | 1,200 | 1,800 | 3,200 |
 | WSD decay iters | 900 | 1,700 | 3,300 | 5,800 | 9,100 | 16,200 |
-| Micro-batch (cluster) | 28 | 14 | 8 | 4 | 3 | 2 |
-| MBS resolved · 2×H100 | 28 | 14 | 7 | 4 | 3 | 2 |
-| MBS resolved · 8×H100 | 21 | 9 | 7 | 3 | 3 | 1 |
+| Micro-batch (cluster) · nodes | 21 · 3 | 7 · 6 | 3 · 14 | 6 · 21 | 6 · 21 | 2 · 21 |
+| MBS resolved · 2×H100 | 21 | 7 | 3 | 6 | 6 | 2 |
+| MBS resolved · 8×H100 | 21 | 7 | 3 | 3 | 3 | 1 |
 | Checkpoints (every 2,000 it) | 2 | 4 | 8 | 14 | 22 | 40 |
 | 1×C checkpoint (20N tokens) | iter 900 | 1,700 | 3,340 | 5,760 | 9,140 | 16,200 |
 
+Shallow variant (its own N → slightly different schedules):
+
+| | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| Train tokens | 9.23B | 17.52B | 32.71B | 58.98B | 97.31B | 166.91B |
+| Iterations | 4,500 | 8,500 | 15,800 | 28,600 | 47,100 | 80,800 |
+| Peak LR | 1.062e-3 | 9.799e-4 | 9.063e-4 | 8.419e-4 | 7.908e-4 | 7.393e-4 |
+| LR warmup iters | 200 | 300 | 600 | 1,100 | 1,900 | 3,200 |
+| WSD decay iters | 900 | 1,700 | 3,200 | 5,700 | 9,400 | 16,200 |
+| Micro-batch (config) | 24 | 14 | 8 | 4 | 3 | 2 |
+| MBS resolved · 2×H100 | 21 | 14 | 7 | 4 | 3 | 2 |
+| MBS resolved · 8×H100 | 21 | 9 | 7 | 3 | 3 | 1 |
+
 MBS auto-resolves per node so 504 % (DP × MBS) == 0 (`azure/train.sh`); the
 8-GPU 1.7B value of 1 can be hand-raised (`--set environment_variables.MBS=3`)
-if H100-94GB memory allows. The cluster `nodes` column of
-`hyperparams_predictivity.json` is currently inconsistent with GBS 504 on
-4-GPU nodes (see budget sheet, Appendix B) — Azure is unaffected.
+if H100-94GB memory allows. Every (nodes, MBS) pair in `hyperparams_deep.json`
+now satisfies the GBS-504 divisibility on the cluster's 4-GPU nodes (audited
+2026-08-14); the shallow file carries no `nodes` column — the cluster default
+applies, with the same auto-shrink.
 
 ## Shared training configuration (every run)
 

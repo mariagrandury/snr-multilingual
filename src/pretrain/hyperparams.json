@@ -7,41 +7,57 @@
     "head_dim": 64
   },
   "configs": {
-    "100M": {
+    "90M": {
       "n_layers": 8,
       "hidden_size": 1024,
       "ffn_hidden_size": 4096,
       "num_attention_heads": 16,
       "num_query_groups": 8,
+      "n_non_emb_params": 92274688.0,
       "micro_batch_size": 24,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 128000,
       "lr": 0.00106163
     },
-    "300M": {
-      "n_layers": 12,
-      "hidden_size": 1536,
-      "ffn_hidden_size": 6144,
-      "num_attention_heads": 24,
-      "num_query_groups": 8,
-      "micro_batch_size": 9,
+    "175M": {
+      "n_layers": 9,
+      "hidden_size": 1152,
+      "ffn_hidden_size": 6912,
+      "num_attention_heads": 18,
+      "num_query_groups": 6,
+      "n_non_emb_params": 175177728.0,
+      "micro_batch_size": 14,
       "global_batch_size": 504,
       "seq_len": 4096,
-      "train_iters": 86000,
-      "lr": 0.00091539
+      "train_iters": 88000,
+      "lr": 0.00097988
     },
-    "500M": {
-      "n_layers": 16,
-      "hidden_size": 2048,
-      "ffn_hidden_size": 6144,
-      "num_attention_heads": 32,
-      "num_query_groups": 8,
+    "350M": {
+      "n_layers": 11,
+      "hidden_size": 1408,
+      "ffn_hidden_size": 8448,
+      "num_attention_heads": 22,
+      "num_query_groups": 11,
+      "n_non_emb_params": 327106560.0,
+      "micro_batch_size": 8,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 78000,
+      "lr": 0.0009063
+    },
+    "600M": {
+      "n_layers": 15,
+      "hidden_size": 1920,
+      "ffn_hidden_size": 7680,
+      "num_attention_heads": 30,
+      "num_query_groups": 10,
+      "n_non_emb_params": 589824000.0,
       "micro_batch_size": 4,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 68000,
-      "lr": 0.00084544
+      "lr": 0.00084191
     },
     "1B": {
       "n_layers": 16,
@@ -49,11 +65,25 @@
       "ffn_hidden_size": 12288,
       "num_attention_heads": 32,
       "num_query_groups": 8,
+      "n_non_emb_params": 973078528.0,
       "micro_batch_size": 3,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 56000,
       "lr": 0.00079084
+    },
+    "1.7B": {
+      "n_layers": 21,
+      "hidden_size": 2688,
+      "ffn_hidden_size": 10752,
+      "num_attention_heads": 42,
+      "num_query_groups": 21,
+      "n_non_emb_params": 1669054464.0,
+      "micro_batch_size": 2,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 48000,
+      "lr": 0.00073926
     }
   }
 }

@@ -50,8 +50,9 @@ SCRIPT_DIR = Path(__file__).parent
 CREATE_SCRIPT = SCRIPT_DIR / "create_data_mixture.py"
 
 # Per-size token budget D(N) = 5 x Chinchilla = 100 x N (non-embedding N),
-# in billions, from the ladder's actual non-embedding counts
-# (hyperparams_predictivity.json train_tokens).
+# in billions, from the deep ladder's actual non-embedding counts
+# (hyperparams_deep.json n_non_emb_params; the shallow variants match within
+# a few % so the same builds cover both arch families).
 SIZE_BUDGET_B = {
     "90M": 9.3, "175M": 17.7, "350M": 34.5, "600M": 59.5, "1B": 94.5, "1.7B": 167.3,
 }
