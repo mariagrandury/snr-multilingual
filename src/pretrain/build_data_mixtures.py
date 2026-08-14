@@ -50,17 +50,19 @@ SCRIPT_DIR = Path(__file__).parent
 CREATE_SCRIPT = SCRIPT_DIR / "create_data_mixture.py"
 
 # Per-size token budget D(N) = 5 x Chinchilla = 100 x N (non-embedding N),
-# in billions, keyed by the nominal size label. Used only to size builds, so
-# the nominal (rounded) value with headroom is deliberate — see module docstring.
-SIZE_BUDGET_B = {"90M": 9, "175M": 17.5, "350M": 35, "600M": 60, "1B": 100, "1.7B": 170}
+# in billions, from the ladder's actual non-embedding counts
+# (hyperparams_predictivity.json train_tokens).
+SIZE_BUDGET_B = {
+    "90M": 9.3, "175M": 17.7, "350M": 34.5, "600M": 59.5, "1B": 94.5, "1.7B": 167.3,
+}
 
 # The largest model trained at each language setting (from the Models table in
-# the plan): the 1.7B reference exists only at L in {1, 8, 30, 100, 200}; the
-# 1B model is the largest everywhere else. This sets each setting's largest
-# single-run token budget.
+# the plan, 200-language setting dropped 2026-08-13): the 1.7B reference
+# exists only at L in {1, 8, 30, 100}; the 1B model is the largest everywhere
+# else. This sets each setting's largest single-run token budget.
 LARGEST_SIZE_PER_SETTING = {
     1: "1.7B", 2: "1B", 8: "1.7B", 15: "1B",
-    30: "1.7B", 50: "1B", 100: "1.7B", 200: "1.7B",
+    30: "1.7B", 50: "1B", 100: "1.7B",
 }
 
 # Multilingual fraction of a run at training time (fixed 50/50 English /
@@ -191,7 +193,7 @@ def print_build_plan(settings: list) -> None:
 
 
 def main():
-    all_settings = sorted(LARGEST_SIZE_PER_SETTING)  # 1,2,8,15,30,50,100,200
+    all_settings = sorted(LARGEST_SIZE_PER_SETTING)  # 1,2,8,15,30,50,100
 
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -246,7 +248,9 @@ def main():
     out = args.output_dir
     out.mkdir(parents=True, exist_ok=True)
     manifest = out / f"{VALIDATION_PREFIX}.manifest.json"
-    all_langs = fineweb_languages(sets, max(all_settings))  # FW_L200: all 199
+    # Validation covers the largest trained setting's languages (FW_L100 + EN)
+    # — the 200-language list was dropped along with the training setting.
+    all_langs = fineweb_languages(sets, max(all_settings))
 
     print(f"Scheme {args.scheme} | output_dir {out} | stage {args.stage}")
     print_build_plan(settings)

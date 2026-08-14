@@ -20,3 +20,18 @@ export WANDB_ENTITY="mariagrandury-epflnlp"
 
 # Convenience: every `az ml` call needs these two flags.
 export AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"
+
+# --- Predictivity sweep: two workspaces -------------------------------------
+# Spain Central (NC80adis H100, low-priority — economy pool: <=600M + evals)
+# and UK South (ND96isr 8xH100, Spot — 1B/1.4B pool). An AML compute cluster
+# lives in its workspace's region, hence one workspace per region. Run
+# setup_azure.sh once per workspace by exporting AZ_LOCATION/AZ_RG/AZ_WS to
+# the values below before calling it.
+export AZ_ES_LOCATION="spaincentral"
+export AZ_ES_RG="snr-es-rg"
+export AZ_ES_WS="snr-es-ws"
+export AZ_UK_LOCATION="uksouth"
+export AZ_UK_RG="snr-uk-rg"
+export AZ_UK_WS="snr-uk-ws"
+export AZ_ML_ARGS_ES="--resource-group $AZ_ES_RG --workspace-name $AZ_ES_WS"
+export AZ_ML_ARGS_UK="--resource-group $AZ_UK_RG --workspace-name $AZ_UK_WS"

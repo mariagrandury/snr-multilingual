@@ -37,7 +37,10 @@ SEED=${SEED:-28}
 MOCK_DATA=${MOCK_DATA:-false}
 
 WANDB_ENTITY=${WANDB_ENTITY:-mariagrandury-epflnlp}
-PROJECT_NAME=data-mix-small
+# Predictivity-sweep env hooks (same names the sbatch script honours):
+# PROJECT_NAME, TOKENIZER_MODEL, DATA_BLEND (a ready --data-path value).
+PROJECT_NAME=${PROJECT_NAME:-data-mix-small}
+TOKENIZER_MODEL=${TOKENIZER_MODEL:-alehc/swissai-tokenizer}
 DATA_MIX_LABEL=${DATA_MIX_LABEL:-"fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}"}
 EXP_NAME=apertus-${MODEL_SIZE}-${DATA_MIX_LABEL}-seed${SEED}
 #########################################
@@ -55,10 +58,11 @@ export HF_HOME=${HF_HOME:-/tmp/hf_home}   # tokenizer download cache
 export TORCH_CUDA_ARCH_LIST=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1)
 
 NPROC=$(nvidia-smi --list-gpus | wc -l)
-if (( GBS % (NPROC * MBS) != 0 )); then
-  echo "ERROR: global batch $GBS not divisible by num_gpus*micro_batch ($NPROC*$MBS)" >&2
-  exit 1
-fi
+# The per-size MBS values were tuned for the cluster's node counts; on Azure
+# nodes DP is 1/2/4/8, so shrink MBS to the nearest value that keeps
+# GBS % (DP * MBS) == 0 (e.g. on 8 GPUs: 28->21, 14->9, 8->7, 4->3, 2->1).
+while (( GBS % (NPROC * MBS) != 0 )); do MBS=$((MBS - 1)); done
+echo "[$(date)] micro batch size resolved to $MBS on $NPROC GPUs"
 
 #### Megatron Args #### (same groups as ../submit-apertus-data-mix.sh)
 TRANSFORMER_ENGINE_ARGS=(
@@ -159,7 +163,7 @@ DISTRIBUTED_ARGS=(
 
 TOKENIZER_ARGS=(
 	--tokenizer-type HuggingFaceTokenizer
-	--tokenizer-model alehc/swissai-tokenizer
+	--tokenizer-model $TOKENIZER_MODEL
 )
 
 DATA_ARGS=(
@@ -169,11 +173,16 @@ DATA_ARGS=(
 	--num-dataset-builder-threads 1
 )
 
-# Data Args: the tokenized dataset dir carries a data_path.txt manifest of
-# "<weight> <relative .bin/.idx prefix>" pairs written by prepare_data.py
-# (replaces the cluster's create_data_config.py directory scan).
+# Data Args, one of three sources:
+#  - MOCK_DATA=true: Megatron's synthetic data (smoke tests);
+#  - DATA_BLEND set: a ready "--data-path" weight/prefix list (predictivity
+#    sweep — composed by launch_azure_predictivity.py from the job's mounts);
+#  - else: the tokenized dataset dir's data_path.txt manifest of
+#    "<weight> <relative prefix>" pairs written by prepare_data.py.
 if [ "$MOCK_DATA" = true ]; then
   DATA_ARGS+=( --mock-data )
+elif [ -n "${DATA_BLEND:-}" ]; then
+  DATA_ARGS+=( --data-path $DATA_BLEND --data-cache-path $CACHE_DIR )
 else
   DATA_ARGS+=( --data-path $(awk -v d="$DATA_DIR" '{print $1, d"/"$2}' "$DATA_DIR/data_path.txt") )
   DATA_ARGS+=( --data-cache-path $CACHE_DIR )

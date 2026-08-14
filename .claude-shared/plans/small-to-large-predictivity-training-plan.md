@@ -72,7 +72,7 @@ Reasoning:
 - **Sources:** FineWeb2 for the non-English languages. Ayush recommended using the hq variant at fineweb2-hq. English from `dclm-edu-filterrobots_fine` (there is no eng_Latn in FineWeb2). Default tokenizer: swiss-ai/Apertus-70B-2509 (the V1 tokenizer).
 - **English share:** 50% in every multilingual setting; the other 50% is the FineWeb2 languages. The 1-language setting is 100% English. (See open question 2.)
 - **Allocation within the FineWeb2 50%:** temperature sampling with T = 1 by default (proportional to estimated per-language tokens). (See open question 1.)
-- **Language counts include English,** so the FineWeb2 language list for an L-setting has L − 1 entries. The lists are nested: the 1-language FineWeb2 list is a subset of the 7-language list, which is a subset of the 14-, 29-, 49-, and 99-language lists, all drawn from the 199 FineWeb2 languages used in the prior 200-language run (the full 199 list is still used for the validation build). The 29 FineWeb2 languages in the 30-setting are the TokEval set minus English.
+- **Language counts include English,** so the FineWeb2 language list for an L-setting has L − 1 entries. The lists are nested: the 1-language FineWeb2 list is a subset of the 7-language list, which is a subset of the 14-, 29-, 49-, and 99-language lists, all drawn from the 199 FineWeb2 languages used in the prior 200-language run. The validation build covers the 99-language list plus English (the largest trained setting). The 29 FineWeb2 languages in the 30-setting are the TokEval set minus English.
 
 To avoid tokenizing English once per setting, build the English data once and the FineWeb2 data once per setting, then blend them 50/50 at training time with the Megatron data loader's blend weights. So the artifacts are: one English dataset, one FineWeb2 dataset per multilingual setting, and one fixed validation set.
 
@@ -92,24 +92,24 @@ Each FineWeb2 build is sized to half of the largest budget at that setting, with
 
 Build one validation set, fixed and independent of temperature, token budget, and the language set, reused by every model. For each language, the validation set is the first 5M tokens of that language's first parquet file, capped at 30% of that file's rows so that single-file languages keep training data. The build records, per language, the token count, the UTF-8 byte count (the BPB denominator), and the number of leading rows assigned to validation (val_doc_count). Every training build is given this manifest and skips exactly those leading rows of the first file, so training and validation never overlap. This handles single-file languages, which exist in the tail.
 
-Build it once over the full 199 FineWeb2 languages plus English. A language whose first file is a single document gets no validation data and is flagged by the script.
+Build it once over the 99-language list (the largest trained setting) plus English. A language whose first file is a single document gets no validation data and is flagged by the script.
 
 ## Commands
 
-Run paths and `--output_prefix` values are placeholders; adjust to the cluster layout. The `$FW_Lx` placeholders are the FineWeb2 language lists described above (`$FW_L2` has 1 language, `$FW_L8` has 7, `$FW_L15` has 14, `$FW_L30` has 29, `$FW_L50` has 49, `$FW_L100` has 99, `$FW_L200` has 199), each a comma-separated list of `{lang}_{script}` codes with no spaces.
+Run paths and `--output_prefix` values are placeholders; adjust to the cluster layout. The `$FW_Lx` placeholders are the FineWeb2 language lists described above (`$FW_L2` has 1 language, `$FW_L8` has 7, `$FW_L15` has 14, `$FW_L30` has 29, `$FW_L50` has 49, `$FW_L100` has 99), each a comma-separated list of `{lang}_{script}` codes with no spaces.
 
 ### Step 1: build the validation set (once)
 
 ```bash
 python create_data_mixture.py \
   --build_validation \
-  --languages $FW_L200 \
+  --languages $FW_L100 \
   --val_tokens_per_language 5000000 \
   --val_max_fraction 0.3 \
   --output_prefix outputs/validation
 ```
 
-This writes `outputs/validation.fineweb_<lang>.bin`/`.idx` per language, `outputs/validation.dclm.bin`/`.idx` for English, and `outputs/validation.manifest.json` (per-language tokens, bytes, and val_doc_count). English is included automatically and does not need to be in `$FW_L200`.
+This writes `outputs/validation.fineweb_<lang>.bin`/`.idx` per language, `outputs/validation.dclm.bin`/`.idx` for English, and `outputs/validation.manifest.json` (per-language tokens, bytes, and val_doc_count). English is included automatically and does not need to be in `$FW_L100`.
 
 ### Step 2: build the English dataset (once)
 

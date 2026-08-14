@@ -6,10 +6,10 @@ The grid (see
 .claude-shared/plans/small-to-large-predictivity-training-plan.md):
 
   * size            — the 6-rung ladder in hyperparams_predictivity.json
-  * language setting — L in {1, 2, 8, 15, 30, 50, 100, 200} (English + L-1
+  * language setting — L in {1, 2, 8, 15, 30, 50, 100} (English + L-1
                        FineWeb-2 languages); not every size trains at every L.
   * seed            — one seed by default; three on the cells the plan marks
-                       x3 (the 175M and 1B columns at L in {1, 30, 200}).
+                       x3 (the 175M and 1B columns at L in {1, 30, 100}).
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 data mix (L=1 is 100% English), composed
@@ -66,29 +66,30 @@ DEFAULT_DATA_DIR = (
 
 # --- Grid definition (edit these to change the sweep) -----------------------
 
-LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100, 200]
+LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100]
 EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
 # Which language settings each size trains at. Every size covers all settings
-# except 1.4B, the top rung, which the plan trains only at L in {1,8,30,100,200}.
+# except 1.7B, the top rung, which the plan trains only at L in {1,8,30,100}.
+# (The 200-language setting was dropped 2026-08-13 for budget + deadline.)
 SIZE_LANG_SETTINGS = {
-    "75M": LANG_SETTINGS,
+    "90M": LANG_SETTINGS,
     "175M": LANG_SETTINGS,
     "350M": LANG_SETTINGS,
     "600M": LANG_SETTINGS,
     "1B": LANG_SETTINGS,
-    "1.4B": [1, 8, 30, 100, 200],
+    "1.7B": [1, 8, 30, 100],
 }
 
 # Cells trained with three seeds (else one). The plan marks the 175M and 1B
-# columns x3 at L in {1, 30, 200}.
+# columns x3 at L in {1, 30, 100}.
 SEED_SINGLE = [1904]
 SEED_TRIPLE = [28, 1797, 1904]
 TRIPLE_SIZES = {"175M", "1B"}
-TRIPLE_LANGS = {1, 30, 200}
+TRIPLE_LANGS = {1, 30, 100}
 
 # Test run: smallest size, one mid setting, 50 steps.
-TEST_SIZE = "75M"
+TEST_SIZE = "90M"
 TEST_LANGS = 8
 TEST_SEED = 1904
 TEST_STEPS = 50

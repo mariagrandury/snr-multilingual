@@ -353,7 +353,48 @@ MBS is preset per size (21 for 90M, 2 for 1.7B) so the global batch of 504
 divides evenly on 1 or 4 GPUs. The final checkpoints then take the same
 convert → full-eval path as any other cell (`--ckpts final|full_eval`).
 
-## 11. Launching the remaining cells
+## 11. The predictivity sweep (Spain Central + UK South, discounted meters)
+
+The small-to-large predictivity sweep (51 runs per intervention level; see
+`.claude-shared/plans/small-to-large-predictivity-training-plan.md` and the
+compute-budget sheet next to it) runs on **two workspaces**: Spain Central
+(`gpu-nc80-lp`, 2×H100 at the fixed low-priority meter — every size ≤600M)
+and UK South (`gpu-nd96-spot`, 8×H100 Spot — the 1B and 1.4B rungs). Set the
+`AZ_ES_*` / `AZ_UK_*` names in `env.sh`, then run `setup_azure.sh` once per
+workspace (export `AZ_LOCATION/AZ_RG/AZ_WS` to each region's values first;
+computes whose SKU a region doesn't offer are skipped with a warning).
+
+**Data**: the datasets are built once on the CSCS cluster with
+`../build_data_mixtures.py` (the FineWeb-2/DCLM parquet sources live there),
+then uploaded to *both* workspaces' blob stores with this layout — one
+folder per build, holding its `.bin`/`.idx` pair:
+
+```
+predictivity/data/english_dclm/english_dclm.{bin,idx}
+predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
+...                fineweb_L100/...
+```
+
+```bash
+azcopy copy 'outputs/*' 'https://<storageaccount>.blob.core.windows.net/<container>/predictivity/data/<SAS>' --recursive
+```
+
+**Launch** (same filters as the cluster launcher; jobs queue on the clusters
+and run as nodes free up — resubmitting any cell resumes it):
+
+```bash
+source env.sh && export WANDB_API_KEY=<key>
+python launch_azure_predictivity.py --dry-run          # the whole 51-job grid
+python launch_azure_predictivity.py --langs 1          # monolingual anchors first
+python launch_azure_predictivity.py                    # everything
+```
+
+Runs land in W&B project `predictivity` as `apertus-<size>-L<L>-seed<seed>`.
+Micro-batch sizes tuned for the cluster are auto-shrunk per node (`train.sh`)
+so the global batch of 504 always divides; the 1.4B resolves to MBS 1 on the
+8-GPU nodes — override with `--set environment_variables.MBS=3` if it fits.
+
+## 12. Launching the remaining cells
 
 Every other size × mixture × seed cell uses the same `train-full.yml` /
 `eval.yml` templates; the launchers fill in the per-cell architecture
@@ -377,7 +418,7 @@ and each evaluated checkpoint needs a `convert.yml` run first. With one
 `max_instances: 1` cluster, submitted jobs queue and run one at a time —
 raise `max_instances` (and your quota) to run cells in parallel.
 
-## 12. Where everything is stored (and getting it out)
+## 13. Where everything is stored (and getting it out)
 
 All artifacts live in the workspace's blob storage under `workspaceblobstore`:
 
@@ -414,7 +455,7 @@ huggingface-cli upload <your-org>/apertus-175M-fwEdu30-fw270-seed28 \
   ./iter_0050000 . --revision stage1-step-50000 --private
 ```
 
-## 13. Teardown
+## 14. Teardown
 
 Compute scales to zero by itself; a parked setup costs only blob storage
 (~$12/month for ~600GB). To stop even that:
@@ -429,7 +470,7 @@ az group delete --name $AZ_RG --yes                        # deletes EVERYTHING
     models, eval results. Download (or push to HF / register elsewhere)
     anything you care about first.
 
-## 14. Common mistakes
+## 15. Common mistakes
 
 - **Compute create fails / job queues forever** → you have no quota in that
   region (step 3), or you edited `AZ_LOCATION` after creating the workspace

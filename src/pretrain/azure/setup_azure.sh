@@ -28,11 +28,14 @@ az ml environment create --file environment-train.yml $AZ_ML_ARGS --output none
 az ml environment create --file environment-eval.yml $AZ_ML_ARGS --output none
 echo "Environments ready"
 
-az ml compute create --file compute-train.yml $AZ_ML_ARGS --output none
-echo "Compute $AZ_COMPUTE_TRAIN ready"
-# The 1-GPU cluster needs 24 extra vCPUs of quota; skip gracefully if denied
-# (README explains how to point every job at gpu-train instead).
-az ml compute create --file compute-single.yml $AZ_ML_ARGS --output none \
-  || echo "WARNING: could not create $AZ_COMPUTE_SINGLE (quota?). Use $AZ_COMPUTE_TRAIN for all jobs."
+# Each compute needs its SKU offered in the workspace's region plus quota —
+# create whatever this region supports and skip the rest with a warning
+# (e.g. the A100 clusters don't exist in Spain Central, the ND cluster only
+# in UK South).
+for c in compute-*.yml; do
+  az ml compute create --file "$c" $AZ_ML_ARGS --output none \
+    && echo "Compute $c ready" \
+    || echo "WARNING: $c not created here (SKU not offered in this region, or no quota yet)"
+done
 
 echo "Setup complete."
