@@ -18,7 +18,7 @@ happen in the original READMEs, not in `docs/`.
 - `mkdocs.yml` — Material theme config, nav, snippets extension wired
   to include READMEs from repo root
 - `docs/` — stub pages
-- `docs-requirements.txt` — `mkdocs`, `mkdocs-material`, `pymdown-extensions`
+- `requirements-docs.txt` — `mkdocs`, `mkdocs-material`, `pymdown-extensions`
 - `documents/package.json` — Slidev (pnpm)
 - `build.sh` — full build: mkdocs → `site/`, slidev → `site/slides/`
 - `netlify.toml` — runs `bash build.sh`, publishes `site/`,
@@ -29,7 +29,7 @@ happen in the original READMEs, not in `docs/`.
 Docs only (fast, just Python):
 
 ```bash
-pip install -r docs-requirements.txt
+pip install -r requirements-docs.txt
 mkdocs serve
 # → http://127.0.0.1:8000
 ```

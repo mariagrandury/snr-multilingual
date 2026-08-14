@@ -40,7 +40,8 @@ done
 SBATCH_RES_ARG=()
 [[ -n "$RESERVATION" ]] && SBATCH_RES_ARG=(--reservation="$RESERVATION")
 
-PROGRESS_ARGS=()
+POOL=${POOL:-seeds_28_1797_1904}
+PROGRESS_ARGS=(--pool "$POOL")
 [[ -n "$FILTER" ]] && PROGRESS_ARGS+=(--filter "$FILTER")
 
 declare -A PER_TASK_MIN=(["175M"]=4 ["350M"]=6 ["600M"]=8 ["1B"]=10)

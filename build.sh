@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 echo "==> Installing Python doc deps"
-pip install --quiet -r docs-requirements.txt
+pip install --quiet -r requirements-docs.txt
 
 echo "==> Building MkDocs"
 mkdocs build --clean

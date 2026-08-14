@@ -45,6 +45,8 @@ Examples:
     ls /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed28/checkpoints/
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import subprocess
@@ -52,14 +54,19 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# Data mixture percentages: (FW_EDU_RATIO, FW2_RATIO)
-DATA_RATIOS = [
-    ("30", "70"),
-    ("60", "40"),
-    ("90", "10"),
-]
+# Shared configs loader (src/evals/scripts/utils/configs.py). One-shot `src/`
+# on sys.path so `from evals.scripts.utils.configs import …` resolves via
+# Python's implicit namespace packages — same content cluster or local.
+_SRC = Path(__file__).resolve().parents[1]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+from evals.scripts.utils.configs import filter_models, get_model  # noqa: E402
 
-SEEDS = [28, 1797, 1904]
+# The custom-pretrain sweep (4 sizes × 3 mixes × 3 seeds = 36 cells) is
+# enumerated from configs/models.json — every cell with
+# source="snr-pretraining-custom". Architecture configs still come from
+# hyperparams_deep.json, keyed by each model's `hyperparams_key`.
+CUSTOM_SOURCE = "snr-pretraining-custom"
 
 # Test run configuration
 TEST_SIZE = "175M"
@@ -75,11 +82,17 @@ SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
 CONFIG_FILE = SCRIPT_DIR / "hyperparams_deep.json"
 
 
+def custom_cells() -> list[dict]:
+    """The 36 canonical custom-pretrain model entries from configs/models.json,
+    in size → mix → seed order (build_configs.py's insertion order)."""
+    return [get_model(name) for name in filter_models(source=CUSTOM_SOURCE)]
+
+
 def build_export_vars(
     model_size: str,
     cfg: dict,
-    fw_edu: Optional[str] = None,
-    fw2: Optional[str] = None,
+    fw_edu: Optional[str | int] = None,
+    fw2: Optional[str | int] = None,
     training_steps: Optional[int] = None,
     seed: Optional[int] = None,
     lr_warmup_iters: Optional[int] = None,
@@ -203,37 +216,36 @@ def run_filtered(
     dependency: Optional[str] = None,
     training_steps: Optional[int] = None,
 ) -> None:
-    sizes = (
-        {size_filter: data["configs"][size_filter]} if size_filter else data["configs"]
-    )
-    ratios = (
-        [r for r in DATA_RATIOS if r[0] == mix_en_filter]
-        if mix_en_filter
-        else DATA_RATIOS
-    )
-    seeds = [seed_filter] if seed_filter is not None else SEEDS
-
-    total = len(sizes) * len(ratios) * len(seeds)
-    print(
-        f"=== Launching {total} jobs"
-        f" ({len(sizes)} sizes × {len(ratios)} mixtures × {len(seeds)} seeds) ===\n"
-    )
-    for model_size, cfg in sizes.items():
-        for fw_edu, fw2 in ratios:
-            for seed in seeds:
-                submit(
-                    job_name=f"apertus-{model_size.lower()}-edu{fw_edu}-fw2{fw2}-seed{seed}",
-                    export_vars=build_export_vars(
-                        model_size, cfg, fw_edu=fw_edu, fw2=fw2, seed=seed,
-                        training_steps=training_steps,
-                    ),
-                    dry_run=dry_run,
-                    nodes=cfg.get("nodes"),
-                    time=time,
-                    partition=partition,
-                    account=account,
-                    dependency=dependency,
-                )
+    cells = [
+        e for e in custom_cells()
+        if (size_filter is None or e["size"] == size_filter)
+        and (mix_en_filter is None or str(e["mix_en"]) == mix_en_filter)
+        and (seed_filter is None or e["seed"] == seed_filter)
+    ]
+    if not cells:
+        print("No cells match the given filters.")
+        return
+    print(f"=== Launching {len(cells)} jobs ===\n")
+    for e in cells:
+        model_size = e["size"]
+        cfg = data["configs"][e["hyperparams_key"]]
+        submit(
+            job_name=(
+                f"apertus-{model_size.lower()}-edu{e['mix_en']}"
+                f"-fw2{e['mix_fw2']}-seed{e['seed']}"
+            ),
+            export_vars=build_export_vars(
+                model_size, cfg,
+                fw_edu=e["mix_en"], fw2=e["mix_fw2"], seed=e["seed"],
+                training_steps=training_steps,
+            ),
+            dry_run=dry_run,
+            nodes=cfg.get("nodes"),
+            time=time,
+            partition=partition,
+            account=account,
+            dependency=dependency,
+        )
 
 
 if __name__ == "__main__":
@@ -317,17 +329,17 @@ if __name__ == "__main__":
     with open(CONFIG_FILE) as f:
         data = json.load(f)
 
-    # Validate --size
-    if args.size and args.size not in data["configs"]:
-        valid = list(data["configs"].keys())
+    # Validate --size / --mix_en against the canonical custom-cell grid
+    # (dict.fromkeys dedups while keeping the JSON's size→mix→seed order).
+    cells = custom_cells()
+    valid_sizes = list(dict.fromkeys(e["size"] for e in cells))
+    valid_mix_en = list(dict.fromkeys(str(e["mix_en"]) for e in cells))
+    if args.size and args.size not in valid_sizes:
         print(
-            f"Error: --size '{args.size}' not found in JSON. Valid sizes: {valid}",
+            f"Error: --size '{args.size}' not valid. Choose from: {valid_sizes}",
             file=sys.stderr,
         )
         sys.exit(1)
-
-    # Validate --mix_en
-    valid_mix_en = [r[0] for r in DATA_RATIOS]
     if args.mix_en and args.mix_en not in valid_mix_en:
         print(
             f"Error: --mix_en '{args.mix_en}' not valid. Choose from: {valid_mix_en}",

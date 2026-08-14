@@ -1,0 +1,28 @@
+/* Deck-wide overrides (auto-loaded by Slidev). */
+
+/* Use Avenir for all text (headings + body). Doubled :root beats the
+   theme's [data-font-theme] rule regardless of stylesheet load order.
+   Code blocks keep their monospace stack. */
+:root:root {
+  --scholarly-font-serif: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
+  --scholarly-font-sans: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
+  --scholarly-font-body: "Avenir Next", "Avenir", "Nunito Sans", sans-serif;
+
+  /* White slide background instead of the theme's warm beige (#fdfbf7). */
+  --scholarly-bg-warm: #fff;
+}
+
+/* All section layouts: white background, theme-blue titles. */
+.slidev-layout.section {
+  background: #fff;
+  color: #2d3748;
+}
+.slidev-layout.section h1 {
+  color: var(--slidev-theme-primary, #1e3a5f);
+  border-bottom-color: rgba(45, 55, 72, 0.15);
+}
+.slidev-layout.section h2,
+.slidev-layout.section h3,
+.slidev-layout.section p {
+  color: rgba(45, 55, 72, 0.75);
+}

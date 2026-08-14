@@ -2,12 +2,17 @@ import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent.parent
-DATA_DIR = Path(os.environ.get('SNR_DATA_DIR', ROOT_DIR / 'analysis' / 'data'))
+# Eval parquet + datadecide data downloaded from HF live under
+# signal-and-noise/data/. The per-RQ analysis/ dirs hold outputs, not inputs.
+# Override with SNR_DATA_DIR.
+DATA_DIR = Path(os.environ.get('SNR_DATA_DIR', ROOT_DIR / 'data'))
+# Per-RQ analysis outputs no longer use PLOT_DIR — each script writes next to
+# itself under analysis/<rqNN>/. Kept for any upstream code that still imports it.
 PLOT_DIR = ROOT_DIR / 'results'
 
-# Create directories if they don't exist
 os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(PLOT_DIR, exist_ok=True)
+# results/ is unused by the per-RQ pipeline; don't auto-create it.
+# os.makedirs(PLOT_DIR, exist_ok=True)
 
 from snr.constants.plot import PRETTY_TASK_NAMES, SHORT_TASK_NAME
 from snr.constants.tasks import MMLU, MINERVA, MMLU_PRO, OLMES, OLMES_GEN, AGI_EVAL, BBH, MMLU_MC, OLMES_MC, PALOMA, CUSTOM_LOSS, MULTITASK_MATH, MULTITASK_CODE, MULTITASK_KNOWLEDGE, MULTITASK, OLMES_ALL, OLMES_ALL, MULTITASK

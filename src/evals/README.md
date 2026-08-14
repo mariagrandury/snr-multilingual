@@ -1,421 +1,211 @@
-# SwissAI Evaluation Pipeline
+# SNR evaluation pipeline
 
-Evaluation infrastructure for benchmarking Large Language Models on SLURM clusters (CSCS Alps). Built on top of [lm-evaluation-harness](https://github.com/swiss-ai/lm-evaluation-harness) with W&B integration for results tracking.
+> Evaluate language models at many training checkpoints to feed the SNR
+> framework. Built on top of
+> [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
+> with W&B integration; runs on the CSCS Alps SLURM cluster.
 
-## Quick Start
+## What this produces
 
-```bash
-# Evaluate a single model on the benchmark suite (with custom name)
-bash scripts/launch_evaluations.sh default --model meta-llama/Llama-3.1-8B-Instruct --name Llama-Baseline
+A single source of truth for every (model, checkpoint, task, metric)
+score in the project, in three forms:
 
-# Same, but split tasks across 4 parallel nodes for faster evaluation, name automatically infered
-bash scripts/launch_evaluations.sh default --model meta-llama/Llama-3.1-8B-Instruct --splits 4
+| Output | Where | Used by |
+|---|---|---|
+| Per-task JSON results + samples | `eval_logs/<entity>/<project>/<model>/harness/eval_<ts>_<jobid>/` | `build_hf_dataset.py` → HF dataset |
+| HF dataset (`multilingual-snr/multilingual-snr-eval-results`) | three parquet splits: `pretraining_custom`, `pretraining_a06`, `reference_hf` | the SNR framework in [`../signal-and-noise/`](../signal-and-noise/) |
+| W&B per-model curves | [`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments) | live dashboards, one line per benchmark per model |
 
-# Launch Megatron checkpoint without conversion (TODO: Verify), Megatron-iter defaults to: latest
-bash scripts/launch_evaluations.sh olmo-easy --model /capstor/store/../apertus-.../checkpoints/ --backend megatron_lm --name Megatron-Test-260216 --megatron-iter 4000000
+The HF dataset is the canonical input to every analysis in
+[`../signal-and-noise/`](../signal-and-noise/): the SNR-variant CSV, the
+benchmark_creation per-family ranking, the AllenAI cross-corpus
+comparison, and the subset-search outputs all start from it.
 
-# Launch with vllm backend - recommended!
-bash scripts/launch_evaluations.sh olmo-easy --model /capstor/store/../apertus-.../checkpoints/ --backend vllm
+## Models in scope
 
-# Evaluate a base model with 5-shot and easy eval set (matching OLMo3 technical report settings)
-bash scripts/launch_evaluations.sh olmo-easy --model Qwen/Qwen2.5-7B --num-fewshot 5
+**36 Apertus pretrains** (the canonical 4 sizes × 3 mixes × 3 seeds from
+[`../pretrain/`](../pretrain/)), plus reference HF models (Qwen3, Gemma-3,
+SmolLM3, Olmo-3, Apertus-8B/70B) and the a06 main runs (`apertus3-{1b,3b}-*-nodes`).
 
-# Evaluate a small model on a single task, useful for testing newly implemented tasks
-bash scripts/launch_evaluations.sh single --task multijail --model meta-llama/Llama-3.2-3B --backend vllm
-```
+The full list lives in [`configs/models.json`](configs/models.json) (the
+shared source of truth, read via
+[`scripts/utils/configs.py`](scripts/utils/configs.py)). Pools group them
+for downstream SNR analysis — see
+[`../signal-and-noise/README.md`](../signal-and-noise/README.md).
 
-## The Launch Script
+## Tasks in scope
 
-`scripts/launch_evaluations.sh` is the primary entry point for running evaluations. It supports three model selection modes and multiple benchmark suites.
+86 tasks per checkpoint — the deduplicated union of
+[`configs/signal_to_ratio/tasks_pretraining.txt`](configs/signal_to_ratio/tasks_pretraining.txt)
+and `tasks_pretraining_b.txt`, exposed as the launcher mode
+`snr-pretraining-full`. Coverage includes per-language benchmarks
+(`multiblimp_<lang>`, `xstorycloze_<lang>`, `xwinograd_<lang>`,
+`hellaswag_<lang>`, `xnli_<lang>`, `xcopa_<lang>`, `paws_<lang>`,
+`belebele_<lang>`, `global_mmlu_full_<lang>_<subject>`, …) for 12+
+languages and standalone English benchmarks (`arc_challenge`, `arc_easy`,
+`hellaswag`, `piqa`, `openbookqa`, `mmlu`, `commonsense_qa`, …).
 
-### Benchmark Suites
+Task lists live under [`configs/signal_to_ratio/`](configs/signal_to_ratio/):
 
-| Mode | Tasks | Description |
-|------|-------|-------------|
-| `default` | 40 tasks | Full Apertus benchmark suite with basic evaluation |
-| `multi-lingual` | 10 tasks | Apertus benchmark suite with multi-lingual evaluation |
-| `pretrain` | 35 tasks | Apertus pretraining benchmark suite |
-| `apertus-previous` | 14 tasks | Apertus benchmark suite with multi-lingual evaluation |
-| `olmo-easy` | 21 tasks | Base Easy Suite: perplexity/BPB-style evaluation (mmlu, hellaswag, arc, etc.) |
-| `olmo-main` | 23 tasks | Base Main Suite: generation + MC (gsm8k_cot, humaneval, drop, etc.) |
-| `olmo-heldout` | 2 tasks | Held-out Suite: mmlu_pro, bbh |
-| `olmo-safety` | 4 tasks | Safety Suite: harmbench, toxigen, wmdp, bbq |
-| `olmo-longcontext` | 1 task | Long-Context: RULER (8192 tokens) |
-| `olmo-complete` | 30 tasks | Union of all above (excludes long-context), deduplicated |
-| `single` | 1 task | One task, user-specified through `--task` |
+| File | Purpose |
+|---|---|
+| `tasks_pretraining.txt` | 48 tasks — pretraining-stage subset A |
+| `tasks_pretraining_b.txt` | 38 tasks — pretraining-stage subset B |
+| `tasks_pretraining_full.txt` | 86 tasks — dedup union, used by `snr-pretraining-full` |
+| `tasks_posttraining.txt` | post-training tasks (instruct/SFT) |
+| `*_main_table.txt` | matching `task/metric` pairs for the W&B summary table |
 
-Each mode has a corresponding task list (`configs/olmo3_<mode>.txt`) and metric config (`configs/olmo3_<mode>_main_table.txt`). Results are logged to separate W&B projects per mode (e.g., `swissai-evals-olmo3-easy`).
+## How to run
 
-### Model Selection Modes
+The two-step flow: **generate a runner** from a models file (lists which
+checkpoints to evaluate), then **launch** evaluations using the standard
+launcher script. See
+[`configs/signal_to_ratio/README.md`](configs/signal_to_ratio/README.md)
+for the canonical SNR-experiments instructions.
 
-**Mode 1: Single model** (recommended for quick evaluations)
-```bash
-bash scripts/launch_evaluations.sh <mode> --model <hf_path_or_local_path> [options]
-```
-Automatically derives the run name and detects whether to apply a chat template based on the model name (patterns: `-Instruct`, `-Chat`, `-SFT`, `-DPO`, `-it`, `-aligned`).
-
-**Mode 2: Model-list script** (for batch evaluation of predefined model sets)
-```bash
-bash scripts/launch_evaluations.sh <mode> --script runners/hf_eval_multiple_other_models.sh
-```
-Runs a script that defines a `MODEL_CHECKPOINTS` associative array and sources `hf_base_runner.sh`.
-
-**Mode 3: Default scripts** (edit the `EVALUATION_SCRIPTS` array inside the launcher)
-```bash
-bash scripts/launch_evaluations.sh <mode>
-```
-
-### Options
-
-| Flag | Description |
-|------|-------------|
-| `--name <name>` | Override the auto-derived evaluation run name |
-| `--chat-template` | Force enable chat template |
-| `--no-chat-template` | Force disable chat template |
-| `--tokenizer <path>` | Custom tokenizer (default: same as model) |
-| `--num-fewshot N` | Override num_fewshot globally. Tasks with explicit `num_fewshot: 0` in their YAML are never overridden. OLMo3 paper uses 5-shot for most MC tasks. |
-| `--backend <hf\|vllm>` | Inference backend (default: from sbatch script) |
-| `--splits K` | Split task list across K parallel SLURM nodes per model |
-
-
-### Examples
+The one-liner that drives the full sweep (idempotent — re-runnable):
 
 ```bash
-# OLMo3 paper-faithful 5-shot evaluation
-bash scripts/launch_evaluations.sh olmo-complete --model allenai/OLMo-2-1124-7B --num-fewshot 5
-
-# Large model with vLLM and 8-way task splitting
-bash scripts/launch_evaluations.sh default \
-  --model Qwen/Qwen2.5-72B-Instruct --backend vllm --splits 8
-
-# Run all models from a batch script on the safety suite
-bash scripts/launch_evaluations.sh olmo-safety \
-  --script runners/hf_eval_multiple_other_models.sh --splits 4
+cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals && git pull && \
+  bash scripts/launch_evaluations.sh snr-pretraining-full \
+      --script runners/snr_pretraining_all.sh --time 12:00:00
 ```
 
-#### Deprecated option:
+Re-running is safe at two layers:
 
-| `--bos` | Prepend BOS token (deprecated: previously for Apertus models, now automatically infered from chat temlate) |
+| Layer | Where | When |
+|---|---|---|
+| Per-checkpoint | [`runners/hf_base_runner.sh`](runners/hf_base_runner.sh) (calls `scripts/_eval_status.py`) | Before each `sbatch` — skips submission entirely if every task already has results for that ckpt |
+| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `scripts/_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits cleanly with no work |
 
----
+Both use the same disk-scan in
+[`scripts/_eval_status.py`](scripts/_eval_status.py): a task is "done" iff
+a non-empty `eval_*/per_task/<task>/` exists (killed runs) **or** any
+`eval_*/results_*.json` lists it under `.results` (clean runs).
 
-## Notes
+Live progress dashboard:
 
-> [!NOTE]
-> **vLLM vs HF inference**: Generation task results (gsm8k, squadv2) may differ slightly between backends (for instruction-tuned models).. Only compare results across models using the same backend. We recommend to perform all evaluations with the `vllm` backend (default) to ensure reproducability.
-- **Megatron-LM** If you want to run Megatron-LM models natively, you need clone the [Nvdia Megatron-LM repository](https://github.com/NVIDIA/Megatron-LM) to the evals-post-train directory (or change the location with the launch script):
-- **Time limits**: The default 12h SLURM limit works for most evaluations. For large suites on large models, use `--splits` to parallelize.
-- **WANDB_API_KEY**: Must be available either as an environment variable or in `scripts/wandb_api_key.txt`.
-- **HF_TOKEN**: Must be available either as an environment variable or in  `scripts/hf_token.txt`.
-- **CSCS_SERVING_API**: Must be available either as an environment variable or in `scripts/cscs_serving_api_key.txt` to run LLM-as-a-judge evals (e.g. AlpacaEval). Key can be optained [here](https://serving.swissai.cscs.ch).
+```bash
+python3.11 scripts/snr_progress.py                                    # per-ckpt summary
+python3.11 scripts/snr_progress.py --status not_submitted             # gaps
+python3.11 scripts/snr_progress.py --details --filter <NAME-substr>   # per-task
+```
 
----
+System Python on login nodes is 3.6; use `python3.11` for the dashboard.
 
-## Repository Structure
+## Outputs in detail
+
+### SLURM logs (per job)
+
+`<repo>/logs/<job_name>_<job_id>.{out,err}`. Job name pattern:
+
+- single-node: `eval-<model_name>`
+- split-K: `eval-<model_name>-split<i>` + `eval-<model_name>-aggregate`
+
+Where `<model_name>` is `<base>-iter<N>` (Megatron) or `<base>-<branch>`
+(HF).
+
+### Harness + W&B logs (per checkpoint)
+
+`$LOGS_ROOT/$WANDB_ENTITY/$WANDB_PROJECT/<model_name>/harness/eval_<timestamp>_<jobid>/`,
+with SNR defaults:
+
+- `LOGS_ROOT=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs`
+- `WANDB_ENTITY=mariagrandury-epflnlp`
+- `WANDB_PROJECT=snr-experiments`
+
+Each `eval_*/` contains one `results_<timestamp>.json` per task plus
+per-task `samples_<task>_<timestamp>.jsonl` files. The per-task
+sub-dirs `eval_*/per_task/<task>/` are written *as each task completes*,
+so walltime kills lose only the in-progress task.
+
+### W&B per-model curves
+
+[`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments)
+— one W&B run per *model* (not per ckpt), with each ckpt logged as one
+history step. Pushed by
+[`scripts/push_all_results.py`](scripts/push_all_results.py) from inside
+the eval job and also runnable on the login node for bulk rescue. FLOPs
+is the default x-axis (`define_metric(*, step_metric="flops")`); iter and
+tokens are also defined and can be swapped in the W&B UI.
+
+### HF dataset build
+
+`build_hf_dataset.py` walks `eval_logs/.../snr-experiments/` and emits the
+three parquet splits (`pretraining_custom`, `pretraining_a06`,
+`reference_hf`) consumed by the SNR analysis pipeline. The build resolves
+model metadata (size, params, tokens, family, split) from
+`configs/models.json` via the shared `configs.py` loader and computes
+`tokens` (Megatron iter × 504 × 4096 or HF branch value) and
+`compute ≈ 6 × params × tokens` at build time.
+
+## Repository structure (used paths only)
 
 ```
 evals/
-├── configs/                         # Task lists and model registry
-│   ├── _*.txt                       # actual task lists
-│   ├── _*_main_table.txt            # Corresponding metric specs for W&B summary tables
-│   ├── models.md                    # Model registry with paths and special flags
-│   ├── apertus/                     # Apertus task lists (english, multilingual, etc.)
-│   ├── olmo/                        # OLMo3 benchmark suites (easy, main, heldout, safety, longcontext, complete)
+├── configs/
+│   ├── models.json                      # shared model registry
+│   ├── tasks.json                       # task → stage mapping (where applicable)
+│   └── signal_to_ratio/                 # SNR experiment configs
+│       ├── README.md                    # canonical SNR-experiments how-to
+│       ├── models_pretraining_custom*.txt
+│       ├── models_midtraining_hf.txt
+│       ├── models_posttraining_hf.txt
+│       ├── models_test_{hf,megatron}.txt
+│       ├── tasks_pretraining{,_b,_full}.txt
+│       └── tasks_posttraining.txt
 ├── scripts/
-│   ├── launch_evaluations.sh  # Main launcher (recommended entry point)
-│   ├── evaluate.sbatch        # SLURM job script for HF/vLLM model evaluation
-│   ├── aggregate_splits.sbatch   # Aggregation job for split evaluations
-│   └── alignment/                   # Python package for W&B upload and data handling
-│       ├── wandb_alignment_utils.py # Core upload logic with stratified sample selection
-│       ├── update_wandb_alignment.py       # Per-model W&B upload script
-│       ├── update_wandb_all_models.py      # Batch upload for all models
-│       ├── merge_split_results.py          # Merges results from split evaluation jobs
-│       └── data_structures.py              # Sample, Metric, Task, ModelEvaluation classes
-├── runners/              # Multi-model evaluation scripts
-│   ├── hf_base_runner.sh            # Generic runner (handles split-aware job submission)
-│   ├── hf_eval_multiple_other_models.sh
-│   ├── hf_eval_multiple_other_base_models.sh
-│   ├── hf_eval_multiple_apertus_models.sh
-│   └── hf_eval_multiple_apertus_base_models.sh
-├── containers/                      # Container specs (Docker, env.toml for enroot/pyxis)
-│   ├── Dockerfile                   # CUDA 9.0+PTX, vLLM, FlashAttention-3
-│   ├── env.toml                     # Standard container config
-└── └── env_vllm.toml                # VLLM-based container config
+│   ├── launch_evaluations.sh            # primary entry point
+│   ├── evaluate.sbatch                  # SLURM job script
+│   ├── aggregate_splits.sbatch          # split-aggregation job
+│   ├── generate_snr_runner.sh           # runner generator
+│   ├── list_checkpoints.sh              # ckpt enumerator
+│   ├── snr_progress.py                  # progress dashboard
+│   ├── _eval_status.py                  # idempotency disk scan
+│   ├── _run_per_task.sh                 # inner per-task loop
+│   ├── push_all_results.py              # W&B per-model push
+│   ├── build_hf_dataset.py              # HF dataset builder
+│   └── utils/configs.py                 # shared config loader
+├── runners/
+│   ├── hf_base_runner.sh                # submission loop, idempotency gate
+│   ├── snr_pretraining_all.sh           # 36 models × 13 canonical iters = 468 cells
+│   ├── snr_pretraining_local_hf.sh      # vLLM on converted Megatron ckpts
+│   ├── snr_pretraining_hf_top.sh        # SmolLM3-3B / Olmo-3-7B / Apertus-8B (HF)
+│   └── snr_pretraining_hf_70b.sh        # Apertus-70B (HF)
+├── containers/
+│   ├── env.toml                         # standard HF eval container
+│   └── env_vllm.toml                    # vLLM container (recommended)
+└── logs/                                # SLURM stdout/stderr
 ```
 
----
-
-## Parallel Task Splitting
-
-For evaluations that would exceed the 12h SLURM time limit (or just to get results faster), the `--splits K` option distributes tasks across K parallel SLURM nodes.
-
-### How It Works
-
-1. The launcher submits K `sbatch` jobs, each with `NUM_SPLITS=K` and `SPLIT_INDEX=0..K-1`
-2. Each job reads the task list, splits it into K chunks, and runs only its chunk
-3. Each split job writes a marker file to `$HARNESS_DIR/split_markers/split_<i>.txt`
-4. An aggregation job (`aggregate_splits.sbatch`) is submitted with `--dependency=afterok:<all_split_job_ids>` -- it only runs once all splits succeed
-5. The aggregation job calls `merge_split_results.py` to combine `results_*.json` files and copy sample JSONL files, then uploads merged results to W&B
-
-```
-sbatch split-0  ─┐
-sbatch split-1  ─┤
-sbatch split-2  ─┤──> afterok ──> sbatch aggregate ──> W&B upload
-sbatch split-3  ─┘
-```
-
-No manual dependency management is needed -- the launcher handles everything via `sbatch --parsable` and `--dependency`.
-
-### Race Condition Safety
-
-- Split jobs do **not** upload to W&B individually. Only the single aggregation job does the upload, avoiding concurrent `wandb.init(resume="allow")` conflicts.
-- Output directories are unique per job ID (`eval_<timestamp>_$SLURM_JOBID`), so file writes never collide.
-
----
-
-## Task Configuration
-
-Task lists are plain text files in `configs/apertus/...` with one task name per line. Comments (`#`) and blank lines are supported:
-
-```
-# Math
-gsm8k_cot
-minerva_math
-
-# Code
-humaneval
-mbpp
-```
-
-The corresponding `*_main_table.txt` file specifies which `task/metric` pairs appear in the W&B summary table:
-
-```
-gsm8k_cot/exact_match,strict-match
-mmlu/acc
-arc_challenge/acc_norm
-```
-
-### Few-Shot Configuration
-
-lm-eval-harness uses a three-level hierarchy for `num_fewshot`:
-
-1. **Task YAML default** -- each task defines its own default (typically 0 for MC tasks)
-2. **CLI `--num_fewshot N`** -- overrides the task default globally
-3. **Explicit `num_fewshot: 0`** -- tasks like `coqa`, `lambada_openai` that explicitly set 0 are **never** overridden by the CLI flag
-
-Use `--num-fewshot 5` to match the OLMo3 paper settings. Tasks with hardcoded examples (e.g., `gsm8k_cot` has 8 chain-of-thought examples baked into its prompt template) are unaffected.
-
-### Adding Custom Task Suites
-
-1. Create `configs/my_suite.txt` with task names (one per line)
-2. Create `configs/my_suite_main_table.txt` with `task_name/metric_name` entries
-3. Add a new case in the `launch_evaluations.sh` mode selector, or export `TASKS` and `TABLE_METRICS` directly:
-
-```bash
-export TASKS=./configs/my_suite.txt
-export TABLE_METRICS=./configs/my_suite_main_table.txt
-bash scripts/launch_evaluations.sh olmo-complete --model my-model
-```
-
-Available task names can be found in `lm_eval_reference/tasks/` or by running `lm_eval --tasks list`.
-
----
-
-## W&B Integration
-
-### Metrics Upload
-
-Results are automatically uploaded to W&B after evaluation completes (or after aggregation for split jobs). Each model gets a W&B run with:
-
-- **`main_results`** table: summary metrics specified in the `*_main_table.txt` config
-- **Flat metrics**: all task metrics logged as `task_name/metric_name`
-- **`eval_duration`**: wall-clock time for the evaluation
-
-### Sample Upload (Stratified)
-
-Per task, **10 example prompts** are uploaded as W&B tables at `samples/{model_name}/{task_name}`:
-
-- **3 positive samples** (correctly answered, metric = 1.0)
-- **7 negative samples** (incorrectly answered, metric = 0.0)
-
-Samples are classified using binary metrics (`acc`, `exact_match`, `em`, `pass@1`). Each sample includes an `is_correct` field (`true`/`false`/`null`) for downstream filtering. If a task has no binary metric (e.g., perplexity), 10 random samples are uploaded instead.
-
-If one group is underrepresented (e.g., a model gets almost everything right), the remaining slots are filled from the other group.
-
-The stratified counts are configurable via `n_positive` and `n_negative` parameters in `create_model_evaluation_from_results()`.
-
-### Retrieving Samples via API
-
-Samples are stored as W&B Tables, retrievable via the W&B API:
-
-```python
-import wandb
-
-api = wandb.Api()
-run = api.run("entity/project/run_id")
-
-# Get a specific task's samples
-table = run.summary["samples/Llama-3.1-8B-Instruct/mmlu"]
-```
-
-Each row in the table is a flattened sample dict containing:
-
-| Field | Description |
-|-------|-------------|
-| `doc/*` | Original question/document fields from the dataset |
-| `target` | Expected answer |
-| `arguments/*` | The prompt sent to the model |
-| `filtered_resps` | Model's response after filtering |
-| `is_correct` | Stratification label: `true`, `false`, or `null` (non-binary task) |
-| `acc`, `exact_match`, etc. | Task-specific metric values |
-
-### Manual Upload
-
-```bash
-# Upload a single model's results
-python -m scripts.alignment.update_wandb_alignment \
-  --entity apertus --project swissai-evals \
-  --name Llama-3.1-8B-Instruct \
-  --logs_root /path/to/harness/eval_20250726_003542_12345 \
-  --main_metrics mmlu/acc arc_challenge/acc_norm gsm8k_cot/exact_match \
-  --eval_duration 3600
-
-# Batch upload all models from a logs directory
-python -m scripts.alignment.update_wandb_all_models \
-  --entity apertus --project swissai-evals \
-  --logs_root /path/to/eval-logs
-```
-
----
-
-## SBATCH Scripts
-
-### `scripts/evaluate.sbatch`
-
-Primary SLURM job script for HuggingFace-compatible model evaluation.
-
-**Resources**: 1 node, 4 GPUs, 288 CPUs, 460GB memory, 12h time limit.
-
-**Positional arguments**: `<model_path> <name>`
-
-**Environment variables** (all optional, with defaults):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `TASKS` | `configs/apertus/tasks_constrained.txt` | Task list file or comma-separated task names |
-| `TABLE_METRICS` | `configs/apertus/tasks_constrained_main_table.txt` | Metrics for W&B summary table |
-| `LM_EVAL_BACKEND` | `hf` | Backend: `hf` (accelerate), `vllm`, `megatron_lm` |
-| `APPLY_CHAT_TEMPLATE` | `false` | Apply chat template for instruct models |
-| `TOKENIZER` | same as model | Custom tokenizer path |
-| `BOS` | `false` | Prepend BOS token |
-| `BS` | `auto:20` | Batch size |
-| `SIZE` | `1` | Model size in billions (for model parallelism) |
-| `MAX_LENGTH` | `4096` | Maximum input sequence length |
-| `MAX_NEW_TOKENS` | `512` | Maximum generated tokens |
-| `LIMIT` | (unset) | Limit number of samples per task |
-| `NUM_FEWSHOT` | (unset) | Global few-shot override |
-| `NUM_SPLITS` / `SPLIT_INDEX` | `1` / `0` | Task splitting (set automatically by launcher) |
-| `LOGS_ROOT` | `/capstor/.../eval-logs` | Root directory for evaluation logs |
-| `WANDB_ENTITY` | `apertus` | W&B entity |
-| `WANDB_PROJECT` | `swissai-evals-test` | W&B project |
-
-The script auto-detects RULER long-context tasks and adjusts `MAX_LENGTH` and `max_model_len` accordingly.
-
----
-
-## Multi-Model Scripts
-
-Scripts in `runners/` define `MODEL_CHECKPOINTS` associative arrays and source `hf_base_runner.sh`:
-
-```bash
-# runners/hf_eval_multiple_other_models.sh
-declare -A MODEL_CHECKPOINTS=(
-    ["Llama-3.1-8B-Instruct"]="meta-llama/Llama-3.1-8B-Instruct"
-    ["OLMo-2-1124-7B-Instruct"]="allenai/OLMo-2-1124-7B-Instruct"
-    # Uncomment models as needed...
-)
-export APPLY_CHAT_TEMPLATE=true
-source runners/hf_base_runner.sh "SFT models"
-```
-
-`hf_base_runner.sh` handles the submission loop and split-aware job orchestration. It respects `NUM_SPLITS`, `SBATCH_SCRIPT`, and `WANDB_*` environment variables from the launcher.
-
-### Model Registry
-
-See `configs/models.md` for the full list of available models with their HF paths, local checkpoint paths, and required special flags. Key model families:
-
-- **Apertus** (1.0)
-- **Meta Llama** (3.1, 3.3)
-- **OLMo** (2-1124, 2-0325, 3)
-- **Qwen** (2.5, 3)
-- **Gemma** (3), **EuroLLM**, **Mistral**, **SmolLM**, **Marin**, and others
-
----
-
-## Container Setup
-
-The pipeline runs inside containers managed by enroot/pyxis on SLURM. Three container configurations are provided:
-
-| Config | Base Image | Use Case |
-|--------|-----------|----------|
-| `env.toml` | Based on CSCS container image | Standard HF evals |
-| `env_vllm.toml` | Based on custom VLLM 0.16 image, build from source on top of CSCS container image | Standard HF evals |
-
-Dependencies (lm-eval-harness, vLLM, etc.) are installed at runtime inside the container via `pip install`. This ensures the latest versions but adds ~2-3 minutes of startup overhead per job.
-
----
-
-## Extending the Pipeline
-
-### Adding a New Inference Backend
-
-The sbatch scripts support `hf`, `vllm`, and `megatron_lm` backends. To add a new one:
-
-1. Add a new `elif` block in `evaluate.sbatch` at the `LM_EVAL_BACKEND` dispatch section (~line 181)
-2. Set appropriate `COMMON_MODEL_ARGS` for the new backend
-3. Add any required pip install commands to `INSTALL_CMD`
-
-### Adding a New Task
-
-If the task exists in lm-eval-harness:
-1. Add the task name to your task list config file
-2. Add the `task_name/metric_name` entry to the corresponding `*_main_table.txt`
-
-If you need a custom task:
-1. Create a YAML task config in `lm_eval_reference/tasks/your_task/`
-2. Register it following the [lm-eval-harness task guide](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/task_guide.md)
-
-### Customizing Sample Upload
-
-The stratified sample selection in `scripts/alignment/wandb_alignment_utils.py` can be adjusted:
-
-```python
-# In create_model_evaluation_from_results():
-model_eval = create_model_evaluation_from_results(
-    model_name="my-model",
-    eval_dir=Path("/path/to/eval_dir"),
-    n_positive=5,   # number of correct samples to upload (default: 3)
-    n_negative=15,  # number of incorrect samples to upload (default: 7)
-)
-```
-
-The binary metrics used for correctness classification are defined in `BINARY_METRICS` at the top of `wandb_alignment_utils.py`. Add new metric names there if your tasks use different correctness indicators.
-
----
-
-### Task Separation (Legacy)
-
-The `swissai_eval` hierarchy and approximate time distribution:
-
-```
-swissai_eval (100%)
-├── english  (~46%)
-│   ├── english_pt1 (~10%)
-│   └── english_pt2 (~36%)
-└── multilingual (~54%)
-    ├── multilingual_pt1 (~8%)
-    └── multilingual_pt2 (~46%)
-```
-
-Rule of thumb for fitting within the 12h limit: ensure `2.5 * percentage * model_size_B < 100`.
-
+## Backends
+
+| Backend | When | Notes |
+|---|---|---|
+| `vllm` | **Recommended.** Faster + dramatically more memory-efficient than the Megatron eval path. Used by `runners/snr_pretraining_local_hf.sh` (vLLM on converted Megatron ckpts) and the HF runners. | Generation tasks (gsm8k, squadv2) may differ slightly between backends — only compare results across models using the same backend. |
+| `hf` (accelerate) | Default in `evaluate.sbatch`. | Slower; used when vLLM doesn't fit a particular task. |
+| `megatron_lm` | Direct evaluation of Megatron ckpts (no HF conversion). | Has known memory pressure issues; prefer the local-HF (vLLM) runner instead. |
+
+## Secrets
+
+`evaluate.sbatch` reads env first, files in `scripts/` as fallback:
+
+- `WANDB_API_KEY` — for the W&B push. Needs membership in
+  `mariagrandury-epflnlp` entity.
+- `HF_TOKEN` — for HF Hub fetches (reference HF models).
+- `CSCS_SERVING_API` — for LLM-as-judge evals (e.g. AlpacaEval). Key at
+  https://serving.swissai.cscs.ch.
+
+`HF_HOME` and `HF_HUB_CACHE` are forwarded into the container by
+`evaluate.sbatch` via `INNER_EXPORTS`; the populated cache lives at
+`/capstor/store/cscs/swissai/infra01/users/$USER/hf_models` (~258 GB,
+mounted by both `containers/env.toml` and `containers/env_vllm.toml`).
+
+## See also
+
+- [`configs/signal_to_ratio/README.md`](configs/signal_to_ratio/README.md)
+  — canonical SNR-experiments how-to: generate runners, launch, smoke
+  tests, rescue procedures.
+- [`CLAUDE.md`](CLAUDE.md) — back-of-house notes: bug history (vLLM
+  tokenizer revisions, Megatron container choice, idempotency edge cases,
+  HF Hub rate limits, …), cluster gotchas, the W&B layout.

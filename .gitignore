@@ -26,3 +26,6 @@ wandb/
 
 # Claude
 .claude/
+
+# Cluster-generated result trees (docs placeholders are written here at build time)
+src/signal-and-noise/results/

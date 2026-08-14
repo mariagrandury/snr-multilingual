@@ -1,21 +1,15 @@
 ### Signal and Noise: A Framework for Reducing Uncertainty in Language Model Evaluation
 
-<p align="center">
-  <a href="https://github.com/allenai/signal-and-noise/blob/main/LICENSE">
-    <img alt="GitHub License" src="https://img.shields.io/badge/license-Apache 2.0-green">
-  </a>
-  <a href="https://arxiv.org/abs/2508.13144">
-    <img alt="Paper URL" src="https://img.shields.io/badge/paper-arxiv-red">
-  </a>
-  <a href="https://allenai.org/blog/signal-noise">
-    <img alt="Blog" src="https://img.shields.io/badge/blog-allenai-pink">
-  </a>
-  <a href="https://huggingface.co/datasets/allenai/signal-and-noise">
-    <img alt="Huggingface URL" src="https://img.shields.io/badge/data-huggingface-yellow">
-  </a>
-</p>
+> Local fork of [allenai/signal-and-noise](https://github.com/allenai/signal-and-noise),
+> extended to run the SNR / decision-accuracy framework on our 36-model
+> multilingual Apertus sweep and 12 languages.
 
-Our work studies the ratio between *signal*, a benchmark's ability to separate models; and *noise*, a benchmark's sensitivity to random variability during training steps. 
+This README documents what we use in this project. For the framework
+itself — the definitions of signal, noise, decision accuracy, scaling-law
+error, and the AllenAI DataDecide / OLMo experiments — see the original
+paper (Heineman et al., 2025, [arXiv 2508.13144](https://arxiv.org/abs/2508.13144)).
+
+Our work studies the ratio between _signal_, a benchmark's ability to separate models; and _noise_, a benchmark's sensitivity to random variability during training steps.
 
 **Setup**
 
@@ -37,7 +31,7 @@ python snr/snr_simple.py
 <summary>Example output</summary>
 
 ```sh
-                                               Signal-and-Noise Analysis by Task                                               
+                                               Signal-and-Noise Analysis by Task
 +-----------------------------------------------------------------------------------------------------------------------------+
 |                     | Decision | Decision | Decision | Scaling | Scaling |      |      |      |       |      |       |      |
 |                     | Acc      | Acc      | Acc      | Law Err | Law Err | SNR  | SNR  | SNR  | SNR   | SNR  | SNR   | SNR  |
@@ -69,6 +63,7 @@ python snr/snr_simple.py
 | winogrande          | 50%      | 57%      | 62%      | 13.8%   | 14.3%   | 3.7  | 3.4  | 4.3  | 37.3  | 24.3 | 49.2  | 18.2 |
 +-----------------------------------------------------------------------------------------------------------------------------+
 ```
+
 </details>
 
 ---

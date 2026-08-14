@@ -37,7 +37,9 @@ theme:
 
 nav:
   - Home: index.md
-  - Pretraining: pretraining.md
+  - Pretraining:
+      - Overview: pretraining.md
+      - Conversion: pretraining/conversion.md
   - Evaluation:
       - Overview: evaluation/index.md
       - Signal-to-Ratio Configs: evaluation/configs.md

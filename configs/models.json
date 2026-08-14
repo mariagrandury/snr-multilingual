@@ -1,0 +1,6482 @@
+{
+  "models": {
+    "apertus-175M-fwEdu30-fw270-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed28",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu30-fw270-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1797",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu30-fw270-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1904",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu30-fw270-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu30-fw270-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu60-fw240-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed28",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu60-fw240-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1797",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu60-fw240-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1904",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu60-fw240-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu60-fw240-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu90-fw210-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed28",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu90-fw210-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1797",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-175M-fwEdu90-fw210-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1904",
+      "size": "175M",
+      "params": 175000000,
+      "hyperparams_key": "175M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-175M-fwEdu90-fw210-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-fwEdu90-fw210-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu30-fw270-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed28",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu30-fw270-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1797",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu30-fw270-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1904",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu30-fw270-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu30-fw270-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu60-fw240-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed28",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu60-fw240-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1797",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu60-fw240-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1904",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu60-fw240-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu60-fw240-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu90-fw210-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed28",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu90-fw210-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1797",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-350M-fwEdu90-fw210-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1904",
+      "size": "350M",
+      "params": 350000000,
+      "hyperparams_key": "350M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-350M-fwEdu90-fw210-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-fwEdu90-fw210-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu30-fw270-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed28",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu30-fw270-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1797",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu30-fw270-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1904",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu30-fw270-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu30-fw270-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu60-fw240-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed28",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu60-fw240-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1797",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu60-fw240-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1904",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu60-fw240-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu60-fw240-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu90-fw210-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed28",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu90-fw210-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1797",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-600M-fwEdu90-fw210-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1904",
+      "size": "600M",
+      "params": 600000000,
+      "hyperparams_key": "600M",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-600M-fwEdu90-fw210-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-fwEdu90-fw210-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu30-fw270-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed28",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu30-fw270-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1797",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu30-fw270-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu30-fw270-seed1904",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 30,
+      "mix_fw2": 70,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu30-fw270-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu30-fw270-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu60-fw240-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed28",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu60-fw240-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1797",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu60-fw240-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu60-fw240-seed1904",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 60,
+      "mix_fw2": 40,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu60-fw240-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu60-fw240-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu90-fw210-seed28": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed28",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu90-fw210-seed1797": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1797",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              30000,
+              36000,
+              40000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              10000,
+              16000,
+              20000,
+              26000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus-1B-fwEdu90-fw210-seed1904": {
+      "source": "snr-pretraining-custom",
+      "family": "apertus-fwEdu90-fw210-seed1904",
+      "size": "1B",
+      "params": 1000000000,
+      "hyperparams_key": "1B",
+      "mix_en": 90,
+      "mix_fw2": 10,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/apertus-1B-fwEdu90-fw210-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-fwEdu90-fw210-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 103219200000,
+          "num_iters": 50000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 50000,
+            "all": [
+              2000,
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "dense_tail": [
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ],
+            "10_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              34000,
+              38000,
+              42000,
+              46000,
+              50000
+            ],
+            "da_ckpts": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              50000
+            ],
+            "full_eval": [
+              6000,
+              12000,
+              18000,
+              22000,
+              28000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full"
+          ]
+        }
+      }
+    },
+    "apertus3-1b-21-nodes": {
+      "source": "snr-pretraining-a06",
+      "family": "apertus3-a06",
+      "size": "1B",
+      "params": 1000000000,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-1b-21-nodes/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus3-1b-21-nodes/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 784465920000,
+          "num_iters": 380000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 380000,
+            "all": [
+              20000,
+              40000,
+              60000,
+              80000,
+              100000,
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ],
+            "dense_tail": [
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ],
+            "10_ckpts": [
+              20000,
+              60000,
+              100000,
+              140000,
+              180000,
+              220000,
+              260000,
+              300000,
+              340000,
+              380000
+            ],
+            "da_ckpts": [
+              40000,
+              80000,
+              120000,
+              160000,
+              200000,
+              380000
+            ],
+            "full_eval": [
+              40000,
+              80000,
+              120000,
+              160000,
+              200000,
+              320000,
+              340000,
+              360000,
+              370000,
+              380000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "apertus3-3b-64-nodes": {
+      "source": "snr-pretraining-a06",
+      "family": "apertus3-a06",
+      "size": "3B",
+      "params": 3000000000,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/capstor/store/cscs/swissai/infra01/main_run_megatron/main_run_megatron_ahgele/Megatron-LM/logs/Meg-Runs/main-runs-v1/apertus3-3b-64-nodes/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus3-3b-64-nodes/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 340623360000,
+          "num_iters": 165000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 165000,
+            "all": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ],
+            "dense_tail": [
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ],
+            "10_ckpts": [
+              15000,
+              30000,
+              45000,
+              60000,
+              75000,
+              90000,
+              105000,
+              120000,
+              135000,
+              150000,
+              165000
+            ],
+            "da_ckpts": [
+              15000,
+              30000,
+              45000,
+              60000,
+              90000,
+              165000
+            ],
+            "full_eval": [
+              15000,
+              30000,
+              45000,
+              60000,
+              90000,
+              135000,
+              150000,
+              155000,
+              160000,
+              165000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Apertus-8B-2509": {
+      "source": "swiss-ai-reference",
+      "family": "Apertus-2509",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/swiss-ai/Apertus-8B-2509"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 15000000000000,
+          "num_iters": 2627139,
+          "tokens_per_iter": 5709633.178906788,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step1750000-tokens7652B",
+              "step1900000-tokens8912B",
+              "step2100000-tokens10592B",
+              "step2250000-tokens11852B",
+              "step2450000-tokens13532B",
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "step2627139-tokens15T",
+              "main"
+            ],
+            "dense_tail": [
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "main"
+            ],
+            "10_ckpts": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step1750000-tokens7652B",
+              "step1900000-tokens8912B",
+              "step2100000-tokens10592B",
+              "step2250000-tokens11852B",
+              "step2450000-tokens13532B",
+              "step2627139-tokens15T"
+            ],
+            "da_ckpts": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step2627139-tokens15T"
+            ],
+            "full_eval": [
+              "step400000-tokens1680B",
+              "step750000-tokens3150B",
+              "step1194000-tokens5014B",
+              "step1432000-tokens6014B",
+              "step2500000-tokens13952B",
+              "step2550000-tokens14372B",
+              "step2600000-tokens14792B",
+              "step2627139-tokens15T"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Apertus-70B-2509": {
+      "source": "swiss-ai-reference",
+      "family": "Apertus-2509",
+      "size": "70B",
+      "params": 70000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/swiss-ai/Apertus-70B-2509"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 15000000000000,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-0.6B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-Base",
+      "size": "0.6B",
+      "params": 600000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-0.6B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-1.7B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-Base",
+      "size": "1.7B",
+      "params": 1700000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-1.7B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-4B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-Base",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-4B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-8B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-Base",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-8B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-14B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-Base",
+      "size": "14B",
+      "params": 14000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-14B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-1b-pt": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "1B",
+      "params": 1000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-1b-pt"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-4b-pt": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-4b-pt"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-12b-pt": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "12B",
+      "params": 12000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-12b-pt"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-27b-pt": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "27B",
+      "params": 27000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-27b-pt"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-1025-7B": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-base",
+      "size": "7B",
+      "params": 7000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-1025-7B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 6000000000000,
+          "num_iters": 1413814,
+          "tokens_per_iter": 4243839.713003267,
+          "checkpoints": {
+            "final": "stage1-step1413814",
+            "all": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step848000",
+              "stage1-step990000",
+              "stage1-step1131000",
+              "stage1-step1272000",
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000",
+              "stage1-step1413814"
+            ],
+            "dense_tail": [
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000"
+            ],
+            "10_ckpts": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step848000",
+              "stage1-step990000",
+              "stage1-step1131000",
+              "stage1-step1272000",
+              "stage1-step1413814"
+            ],
+            "da_ckpts": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step1413814"
+            ],
+            "full_eval": [
+              "stage1-step141000",
+              "stage1-step283000",
+              "stage1-step424000",
+              "stage1-step566000",
+              "stage1-step707000",
+              "stage1-step1273000",
+              "stage1-step1308000",
+              "stage1-step1343000",
+              "stage1-step1379000",
+              "stage1-step1413814"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "SmolLM3-3B-checkpoints": {
+      "source": "huggingface-reference",
+      "family": "SmolLM3-checkpoints",
+      "size": "3B",
+      "params": 3000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B-checkpoints"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 7200000000000,
+          "num_iters": 3440000,
+          "tokens_per_iter": 2093023.2558139535,
+          "checkpoints": {
+            "final": "stage1-step-3440000",
+            "all": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-2080000",
+              "stage1-step-2400000",
+              "stage1-step-2760000",
+              "stage1-step-3080000",
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000",
+              "stage1-step-3440000"
+            ],
+            "dense_tail": [
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000"
+            ],
+            "10_ckpts": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-2080000",
+              "stage1-step-2400000",
+              "stage1-step-2760000",
+              "stage1-step-3080000",
+              "stage1-step-3440000"
+            ],
+            "da_ckpts": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-3440000"
+            ],
+            "full_eval": [
+              "stage1-step-360000",
+              "stage1-step-720000",
+              "stage1-step-1040000",
+              "stage1-step-1400000",
+              "stage1-step-1720000",
+              "stage1-step-3120000",
+              "stage1-step-3200000",
+              "stage1-step-3280000",
+              "stage1-step-3360000",
+              "stage1-step-3440000"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        },
+        "midtraining": {
+          "tokens": 9900000000000,
+          "num_iters": 4720000,
+          "tokens_per_iter": 2097457.627118644,
+          "checkpoints": {
+            "final": "stage3-step-4720000",
+            "all": [
+              "stage2-step-3480000",
+              "stage2-step-3520000",
+              "stage2-step-3560000",
+              "stage2-step-3600000",
+              "stage2-step-3640000",
+              "stage2-step-3680000",
+              "stage2-step-3720000",
+              "stage2-step-3760000",
+              "stage2-step-3800000",
+              "stage2-step-3840000",
+              "stage2-step-3880000",
+              "stage2-step-3920000",
+              "stage2-step-3960000",
+              "stage2-step-4000000",
+              "stage2-step-4040000",
+              "stage2-step-4080000",
+              "stage2-step-4120000",
+              "stage2-step-4160000",
+              "stage2-step-4200000",
+              "stage3-step-4240000",
+              "stage3-step-4280000",
+              "stage3-step-4320000",
+              "stage3-step-4360000",
+              "stage3-step-4400000",
+              "stage3-step-4440000",
+              "stage3-step-4480000",
+              "stage3-step-4520000",
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
+              "stage3-step-4720000"
+            ],
+            "dense_tail": [
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
+              "stage3-step-4720000"
+            ],
+            "10_ckpts": [
+              "stage2-step-3600000",
+              "stage2-step-3720000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4120000",
+              "stage3-step-4240000",
+              "stage3-step-4360000",
+              "stage3-step-4480000",
+              "stage3-step-4600000",
+              "stage3-step-4720000"
+            ],
+            "da_ckpts": [
+              "stage2-step-3560000",
+              "stage2-step-3680000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4080000",
+              "stage3-step-4720000"
+            ],
+            "full_eval": [
+              "stage2-step-3560000",
+              "stage2-step-3680000",
+              "stage2-step-3840000",
+              "stage2-step-3960000",
+              "stage2-step-4080000",
+              "stage3-step-4560000",
+              "stage3-step-4600000",
+              "stage3-step-4640000",
+              "stage3-step-4680000",
+              "stage3-step-4720000"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        },
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "it-soup-APO",
+            "all": [
+              "it-mid-training",
+              "it-SFT",
+              "it-soup-APO",
+              "it-LC-expert"
+            ],
+            "full_eval": [
+              "it-mid-training",
+              "it-SFT",
+              "it-soup-APO",
+              "it-LC-expert"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tiny-aya-base": {
+      "source": "huggingface-reference",
+      "family": "tiny-aya-base",
+      "size": "3B",
+      "params": 3349200000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/tiny-aya-base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Apertus-1.7B-it800000-SFT": {
+      "source": "daslab-testing",
+      "family": "Apertus-it-SFT-1",
+      "size": "1.7B",
+      "params": 1700000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/daslab-testing/Apertus-1.7B-it800000-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Apertus-70B-Instruct-2509": {
+      "source": "swiss-ai-reference",
+      "family": "Apertus-Instruct-2509",
+      "size": "70B",
+      "params": 70000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/swiss-ai/Apertus-70B-Instruct-2509"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Apertus-8B-Instruct-2509": {
+      "source": "swiss-ai-reference",
+      "family": "Apertus-Instruct-2509",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Ministral-3-14B-Instruct-2512": {
+      "source": "huggingface-reference",
+      "family": "Ministral-3-Instruct-2512",
+      "size": "14B",
+      "params": 14000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Ministral-3-3B-Instruct-2512": {
+      "source": "huggingface-reference",
+      "family": "Ministral-3-Instruct-2512",
+      "size": "3B",
+      "params": 3000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Ministral-3-8B-Instruct-2512": {
+      "source": "huggingface-reference",
+      "family": "Ministral-3-Instruct-2512",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Mistral-Small-3.2-24B-Instruct-2506": {
+      "source": "huggingface-reference",
+      "family": "Mistral-Small-3.2-Instruct-2506",
+      "size": "24B",
+      "params": 24000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct",
+      "size": "7B",
+      "params": 7000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Instruct-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-DPO",
+      "size": "7B",
+      "params": 7000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Instruct-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-SFT",
+      "size": "7B",
+      "params": 7000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Instruct-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-0.6B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "0.6B",
+      "params": 600000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-0.6B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-14B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "14B",
+      "params": 14000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-14B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-1.7B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "1.7B",
+      "params": 1700000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-1.7B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-30B-A3B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "30B-A3B",
+      "params": 30000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-30B-A3B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-4B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-4B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3-8B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3-it",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3-8B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3.5-0.8B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "0.8B",
+      "params": 800000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-122B-A10B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "122B-A10B",
+      "params": 122000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-122B-A10B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-27B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "27B",
+      "params": 27000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-27B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-2B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "2B",
+      "params": 2000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-2B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-35B-A3B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "35B-A3B",
+      "params": 35000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-35B-A3B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-4B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-4B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "Qwen3.5-9B": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-it",
+      "size": "9B",
+      "params": 9000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-9B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "SmolLM3-3B": {
+      "source": "huggingface-reference",
+      "family": "SmolLM3-it",
+      "size": "3B",
+      "params": 3000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "aya-expanse-32b": {
+      "source": "huggingface-reference",
+      "family": "aya-expanse",
+      "size": "32B",
+      "params": 32000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/aya-expanse-32b"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "aya-expanse-8b": {
+      "source": "huggingface-reference",
+      "family": "aya-expanse",
+      "size": "8B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/aya-expanse-8b"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-12b-it": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-it",
+      "size": "12B",
+      "params": 12000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-12b-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-1b-it": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-it",
+      "size": "1B",
+      "params": 1000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-1b-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-270m-it": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-it",
+      "size": "270M",
+      "params": 270000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-270m-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-27b-it": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-it",
+      "size": "27B",
+      "params": 27000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-27b-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-3-4b-it": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-it",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-4b-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tiny-aya-earth": {
+      "source": "huggingface-reference",
+      "family": "tiny-aya",
+      "size": "3B",
+      "params": 3349200000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/tiny-aya-earth"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tiny-aya-fire": {
+      "source": "huggingface-reference",
+      "family": "tiny-aya",
+      "size": "3B",
+      "params": 3349200000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/tiny-aya-fire"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tiny-aya-global": {
+      "source": "huggingface-reference",
+      "family": "tiny-aya",
+      "size": "3B",
+      "params": 3349200000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/tiny-aya-global"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tiny-aya-water": {
+      "source": "huggingface-reference",
+      "family": "tiny-aya",
+      "size": "3B",
+      "params": 3349200000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/CohereLabs/tiny-aya-water"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0425-1B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "1B",
+      "params": 1485000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0425-1B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-7B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "7B",
+      "params": 7299000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-7B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-1124-13B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "13B",
+      "params": 13716000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-1124-13B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-base",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-SFT": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-DPO": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "OLMo-2-0325-32B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "OLMo-2-Instruct",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/OLMo-2-0325-32B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-1125-32B": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-base",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-1125-32B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-SFT",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-7B-Think-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-DPO",
+      "size": "7B",
+      "params": 7298000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-7B-Think-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3-32B-Think-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Think-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3-32B-Think-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct-SFT": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-SFT",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-SFT"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Olmo-3.1-32B-Instruct-DPO": {
+      "source": "huggingface-reference",
+      "family": "Olmo-3-Instruct-DPO",
+      "size": "32B",
+      "params": 32234000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct-DPO"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "gemma-4-E2B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "E2B",
+      "params": 2000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E2B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E2B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "E2B",
+      "params": 2000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E2B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E4B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "E4B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E4B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-E4B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "E4B",
+      "params": 8000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-E4B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-26B-A4B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "26B-A4B",
+      "params": 26540000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-26B-A4B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-26B-A4B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "26B-A4B",
+      "params": 26540000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-26B-A4B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-31B": {
+      "source": "huggingface-reference",
+      "family": "gemma-4-pt",
+      "size": "31B",
+      "params": 32680000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-31B"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-4-31B-it": {
+      "source": "posttraining",
+      "family": "gemma-4-it",
+      "size": "31B",
+      "params": 32680000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-4-31B-it"
+      },
+      "stages": {
+        "posttraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "gemma-3-270m": {
+      "source": "huggingface-reference",
+      "family": "gemma-3-pt",
+      "size": "270M",
+      "params": 268000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/google/gemma-3-270m"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "Qwen3.5-4B-Base": {
+      "source": "huggingface-reference",
+      "family": "Qwen3.5-Base",
+      "size": "4B",
+      "params": 4000000000,
+      "checkpoint_kind": "hf_branch",
+      "backends": {
+        "hf": "https://huggingface.co/Qwen/Qwen3.5-4B-Base"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "apertus-0.6b-from8b-TOP256-long": {
+      "source": "distillation",
+      "family": "ap-from8b-TOP256",
+      "size": "0.6B",
+      "params": 600000000,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap0.6b-from8b-TOP256-long/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-0.6b-from8b-TOP256-long/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 1651507200000,
+          "num_iters": 800000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 800000,
+            "all": [
+              20000,
+              40000,
+              60000,
+              80000,
+              100000,
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              380000,
+              400000,
+              420000,
+              440000,
+              460000,
+              480000,
+              500000,
+              520000,
+              540000,
+              560000,
+              580000,
+              600000,
+              620000,
+              640000,
+              660000,
+              680000,
+              700000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "dense_tail": [
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "10_ckpts": [
+              80000,
+              160000,
+              240000,
+              320000,
+              400000,
+              480000,
+              560000,
+              640000,
+              720000,
+              800000
+            ],
+            "da_ckpts": [
+              80000,
+              160000,
+              240000,
+              320000,
+              400000,
+              800000
+            ],
+            "full_eval": [
+              80000,
+              160000,
+              240000,
+              320000,
+              400000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "apertus-1b-from8b-TOP256-long": {
+      "source": "distillation",
+      "family": "ap-from8b-TOP256",
+      "size": "1B",
+      "params": 1000000000,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/capstor/store/cscs/swissai/infra01/distillation/checkpoints/distill/ap1b-from8b-TOP256-long/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1b-from8b-TOP256-long/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 1651507200000,
+          "num_iters": 800000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 800000,
+            "all": [
+              120000,
+              140000,
+              160000,
+              180000,
+              200000,
+              220000,
+              240000,
+              260000,
+              280000,
+              300000,
+              320000,
+              340000,
+              360000,
+              380000,
+              400000,
+              420000,
+              440000,
+              460000,
+              480000,
+              500000,
+              520000,
+              540000,
+              560000,
+              580000,
+              600000,
+              620000,
+              640000,
+              660000,
+              680000,
+              700000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "dense_tail": [
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ],
+            "10_ckpts": [
+              120000,
+              160000,
+              240000,
+              320000,
+              400000,
+              480000,
+              560000,
+              640000,
+              720000,
+              800000
+            ],
+            "da_ckpts": [
+              120000,
+              160000,
+              240000,
+              320000,
+              400000,
+              800000
+            ],
+            "full_eval": [
+              120000,
+              160000,
+              240000,
+              320000,
+              400000,
+              720000,
+              740000,
+              760000,
+              780000,
+              800000
+            ]
+          },
+          "eval_groups": [
+            "pretraining_full",
+            "midtraining",
+            "posttraining"
+          ]
+        }
+      }
+    },
+    "tokenizer-lm-tiny-128k-apertus": {
+      "source": "tokenizer-lm",
+      "family": "tokenizer-lm-128k-apertus",
+      "size": "TBD",
+      "params": null,
+      "checkpoint_kind": "hf_local",
+      "backends": {
+        "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/tiny-128k-apertus"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "tokenizer-lm-small-128k-apertus": {
+      "source": "tokenizer-lm",
+      "family": "tokenizer-lm-128k-apertus",
+      "size": "TBD",
+      "params": null,
+      "checkpoint_kind": "hf_local",
+      "backends": {
+        "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/small-128k-apertus"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "tokenizer-lm-pilot-128k-apertus": {
+      "source": "tokenizer-lm",
+      "family": "tokenizer-lm-128k-apertus",
+      "size": "TBD",
+      "params": null,
+      "checkpoint_kind": "hf_local",
+      "backends": {
+        "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/pilot-128k-apertus"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    },
+    "tokenizer-lm-full-128k-apertus": {
+      "source": "tokenizer-lm",
+      "family": "tokenizer-lm-128k-apertus",
+      "size": "TBD",
+      "params": null,
+      "checkpoint_kind": "hf_local",
+      "backends": {
+        "hf_local": "/capstor/store/cscs/swissai/a139/cmeister/tokenizer-lm/hf-checkpoints/full-128k-apertus"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": null,
+          "num_iters": null,
+          "tokens_per_iter": null,
+          "checkpoints": {
+            "final": "main",
+            "all": [
+              "main"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "pools": {
+    "seeds_1904": {
+      "description": "Single-seed Apertus baseline (3 mixes \u00d7 1 seed). Held-out test for the framework-generalization story.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-custom",
+          "seeds": [
+            1904
+          ]
+        }
+      ],
+      "include_external": true
+    },
+    "seeds_28_1797": {
+      "description": "Train pool for framework generalization (3 mixes \u00d7 2 seeds).",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-custom",
+          "seeds": [
+            28,
+            1797
+          ]
+        }
+      ],
+      "include_external": true
+    },
+    "seeds_28_1797_1904": {
+      "description": "Pooled all Apertus seeds (3 mixes \u00d7 3 seeds = 9 model_families per size). Recommended for downstream allenai_comparison / benchmark_creation work.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-custom",
+          "seeds": [
+            28,
+            1797,
+            1904
+          ]
+        }
+      ],
+      "include_external": true,
+      "eval_groups": [
+        "pretraining_full"
+      ]
+    },
+    "pretraining_a06": {
+      "description": "Apertus3 a06 main-run checkpoints (1B and 3B).",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-a06"
+        }
+      ],
+      "include_external": false,
+      "eval_groups": [
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
+      ]
+    },
+    "pretraining_distill": {
+      "description": "Distillation checkpoints (ap-from8b-TOP256, 0.6B + 1B). Treated as pretraining-style runs for SNR evaluation.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "distillation"
+        }
+      ],
+      "include_external": false,
+      "eval_groups": [
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
+      ]
+    },
+    "pretraining_hf_reference": {
+      "description": "All HF / Swiss-AI reference pretraining ckpts.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        }
+      ],
+      "eval_groups": [
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
+      ]
+    },
+    "posttraining_hf_reference": {
+      "description": "All HF / Swiss-AI reference posttraining ckpts.",
+      "stage": "posttraining",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        }
+      ],
+      "eval_groups": [
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
+      ]
+    },
+    "midtraining_hf_reference": {
+      "description": "HF / Swiss-AI reference models with a midtraining stage (currently SmolLM3-3B-checkpoints stage2/stage3).",
+      "stage": "midtraining",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        }
+      ],
+      "eval_groups": [
+        "pretraining_full",
+        "midtraining",
+        "posttraining"
+      ]
+    },
+    "external": {
+      "description": "Model-set tier: every non-custom model pooled across all four external parquets (reference_hf + a06 + distillation + posttraining), all models and all tasks, with no stage/name filtering. Cross-model signal/noise and within-family scaling DA over the external ladder. Stage 'all' (spans pretraining + posttraining).",
+      "stage": "all",
+      "members": [
+        {
+          "source": "huggingface-reference"
+        },
+        {
+          "source": "swiss-ai-reference"
+        },
+        {
+          "source": "snr-pretraining-a06"
+        },
+        {
+          "source": "distillation"
+        },
+        {
+          "source": "posttraining"
+        }
+      ],
+      "load_all_external": true
+    },
+    "custom_swissai_hf": {
+      "description": "Model-set tier: all 3 custom seeds + every external pretraining-checkpoint model (swiss-ai-reference + huggingface-reference + a06 + distillation, filtered to the pretraining stage). Maximum statistical power and the >1B scaling ladder.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-custom",
+          "seeds": [
+            28,
+            1797,
+            1904
+          ]
+        }
+      ],
+      "include_external": true,
+      "eval_groups": [
+        "pretraining_full"
+      ]
+    }
+  },
+  "sources": {
+    "snr-pretraining-custom": {
+      "split": "pretraining_custom"
+    },
+    "snr-pretraining-a06": {
+      "split": "pretraining_a06"
+    },
+    "swiss-ai-reference": {
+      "split": "reference_hf"
+    },
+    "huggingface-reference": {
+      "split": "reference_hf"
+    },
+    "posttraining": {
+      "split": "posttraining"
+    },
+    "distillation": {
+      "split": "distillation"
+    },
+    "daslab-testing": {
+      "split": null
+    },
+    "tokenizer-lm": {
+      "split": null
+    }
+  },
+  "snr": {
+    "small_sizes": [
+      "175M",
+      "350M",
+      "600M"
+    ],
+    "target_size": "1B",
+    "plotted_mixes": [
+      "fwEdu30",
+      "fwEdu60",
+      "fwEdu90"
+    ],
+    "da_early_steps": [
+      6000,
+      18000,
+      28000
+    ],
+    "last_n": 5
+  }
+}

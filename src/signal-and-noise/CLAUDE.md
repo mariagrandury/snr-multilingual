@@ -14,7 +14,7 @@
   one that already does the job (e.g. `get_slice`,
   `signal_to_noise_ratio`, `decision_acc_fast`, `_is_language_aggregate`,
   the loader helpers in `snr/download/`, the shared CLI patterns in
-  `multilingual/`). Don't reimplement, don't wrap-for-wrap's-sake, and
+  `analysis/`). Don't reimplement, don't wrap-for-wrap's-sake, and
   don't add defensive scaffolding ("just in case" config flags,
   pre-validation of arguments that won't be wrong, try/except around
   pure-Python logic). When extending a script, the new diff should
@@ -23,11 +23,14 @@
 
 
 This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/signal-and-noise),
-augmented to run the SNR / decision-accuracy pipeline on the 12 **custom Apertus
-pretraining checkpoints** evaluated by the sister `evals/` package
-(`/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/`). The upstream
-README still applies for the AllenAI DataDecide / OLMo path; this file documents
-the Apertus extension.
+augmented to run the SNR / decision-accuracy pipeline on the **custom Apertus
+pretraining checkpoints** (36 models: 4 sizes × 3 mixes × 3 seeds), the **a06
+main runs** (`apertus3-{1b,3b}-*-nodes`), and **HF reference models** (Qwen3,
+gemma-3, SmolLM3, Olmo-3, Apertus-8B/70B) — all evaluated by the sister `evals/`
+package (`/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/`) and
+shipped as the `multilingual-snr/multilingual-snr-eval-results` HF dataset. The
+upstream README still applies for the AllenAI DataDecide / OLMo path; this file
+documents the Apertus extension.
 
 If you're picking this up cold, **read the upstream [README.md](README.md) first**
 to understand what signal, noise, decision accuracy, and scaling-law error mean.
@@ -38,43 +41,45 @@ This file is the back-of-house Claude memo for the local additions.
 ## What's actually running
 
 The Apertus pipeline reuses the upstream signal-and-noise compute + plotting
-helpers, but loads scores from the cluster's eval_logs tree instead of the
-HF parquet dataset.
+helpers. Scores are loaded from the **local parquet** of the
+`multilingual-snr/multilingual-snr-eval-results` HF dataset (built on the
+cluster by `src/evals/scripts/build_hf_dataset.py`, which walks the eval_logs
+tree). `snr/download/apertus.py` reads three parquet splits —
+`pretraining_custom`, `pretraining_a06`, `reference_hf` — each already in the
+schema `snr.dataloader.get_slice` expects.
 
 ```bash
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/signal-and-noise
-python multilingual/run_apertus.py
+cd /Users/mariagrandury/Projects/epfl/snr-multilingual/src/signal-and-noise
+python analysis/rq00_acc_vs_flops/run_apertus.py --pool seeds_1904
 ```
 
-That single entry point:
-1. Walks `<EVAL_ROOT>/<model>-iter<N>/` and parses every `eval_*/results_*.json`
-   into a long-form DataFrame (one row per `(model, ckpt, task)`).
-2. Feeds it into `snr.snr_simple.main` with Apertus-specific sizes:
-   `small_sizes=["175M", "350M", "600M"]`, `large_sizes_snr=["1B"]`,
-   `target_size="1B"`, `target_step=None` (latest available step per mix).
-3. Drops scaling-law error (`large_sizes_scaling=[]`) — we don't have a
-   ladder of Apertus models, so prediction error is not computed.
-4. Writes outputs under `results/` (the fork's repurposed `PLOT_DIR`):
-   - `snr_per_task.csv` — one row per task with `decision_acc_<size>` /
-     `snr_<size>` columns
-   - `acc_vs_flops/per_benchmark/<family>.png` — one figure per benchmark
-     family with subplots per language; built from
+`run_apertus.py` is the curve-viewer. `--pool` (a pool name from
+`configs/models.json`) selects which models to draw:
+- `seeds_<N>` pools → per-mix acc-vs-FLOPs curves per size, one figure per
+  (benchmark family) and per (language). One seed per pool (multi-seed
+  overlays are unreadable); `--seed` overrides the default.
+- `pretraining_a06` → per-(model, size) curves, no mix axis.
+
+Outputs land under `analysis/rq00_acc_vs_flops/<pool>/`:
+   - `per_benchmark/<family>.png` — one figure per benchmark family with
+     subplots per language; built from
      `analysis.plotting.datadecide.plot_task_curves`
-   - `acc_vs_flops/per_language/<lang>.png` — one figure per language
-     with subplots per benchmark family
-   - `snr_vs_decision_accuracy.png` — multi-panel scatter (one panel per
-     small size, 175M/350M/600M → 1B), via `snr.plot.plot_snr_da_grid`
+   - `per_language/<lang>.png` — one figure per language with subplots per
+     benchmark family
 
-The two `acc_vs_flops/` views render the same per-task panels grouped two
-ways, so re-running the pipeline produces both at once.
+The two views render the same per-task panels grouped two ways, so one run
+produces both.
 
-`multilingual/run_apertus_snr_variants.py` is a sibling entry point that
-writes `results/snr_definition/snr_variants_per_task.csv`, with one
-column per (variant, size) using every aggregator in
-[snr/snr_variants.py](snr/snr_variants.py)'s `AGGREGATION_FUNCTIONS`.
+`analysis/rq02_snr_definition/run_apertus_snr_variants.py` is the SNR/DA compute entry point
+(`--pool` required): it writes `analysis/rq02_snr_definition/<pool>/snr_variants_per_task.csv`,
+with one column per (variant, size) using every aggregator in
+[snr/snr_variants.py](snr/snr_variants.py)'s `AGGREGATION_FUNCTIONS`. DA stays
+on the Apertus cross-size axis (the `family` column groups runs across sizes);
+the SNR signal pool optionally folds in `reference_hf` rows when the pool sets
+`include_external=true`.
 
-`multilingual/analyze_snr_variants.py` reads that CSV and renders
-`results/snr_definition/snr_vs_decision_accuracy.png` (one row of
+`analysis/rq02_snr_definition/analyze_snr_variants.py` reads that CSV and renders
+`analysis/rq02_snr_definition/snr_vs_decision_accuracy.png` (one row of
 size-panels per SNR variant, ordered top-to-bottom by overall R² with
 decision accuracy) plus per-language counterparts
 `snr_vs_decision_accuracy_<lang>.png`. No CSVs are emitted by the
@@ -82,22 +87,33 @@ analysis step — the per-task CSV is the only persisted table.
 
 ---
 
-## Apertus models in scope (12 models)
+## Models in scope
+
+The full model set lives in `configs/models.json` (the shared source of
+truth, read via `src/evals/scripts/utils/configs.py`). Pools group them:
 
 ```
-apertus-{175M,350M,600M,1B}-fwEdu{30,60,90}-fw{270,240,210}-seed1904
+seeds_1904           apertus-{175M,350M,600M,1B}-fwEdu{30,60,90}-fw{270,240,210}-seed1904
+seeds_28_1797        … same grid, seeds 28 + 1797
+seeds_28_1797_1904   … all 36 custom pretrains
+pretraining_a06      apertus3-{1b,3b}-*-nodes  (a06 main runs)
+pretraining_hf_reference   Qwen3 / gemma-3 / SmolLM3 / Olmo-3 / Apertus-8B,70B
 ```
 
 - **mix** = `fwEdu{30,60,90}` (the parser strips the `fw270/240/210`
-  complement, so a model's `mix` field carries only the FW-Edu ratio)
-- **seed** = 1904 (constant; not the upstream DataDecide seed set)
-- **size** = `175M`, `350M`, `600M`, `1B`
+  complement, so a model's `mix` field carries only the FW-Edu ratio); a06
+  rows have `mix = main`.
+- **seed** = `28`, `1797`, `1904` for custom pretrains; NaN for a06 / HF.
+- **size** = `175M`, `350M`, `600M`, `1B` (custom); a06/HF at their native
+  sizes.
+- **family** = cross-size identity, attached at load by
+  `configs.add_family_column` — DA computations group on this so a
+  `175M`/`350M`/`600M`/`1B` quartet of the same (mix, seed) is one family.
 
-In `multilingual/run_apertus.py`:
-- `SMALL_SIZES = ["175M", "350M", "600M"]`
-- `TARGET_SIZE = "1B"`
+In `analysis/rq00_acc_vs_flops/run_apertus.py`:
+- `SMALL_SIZES = ["175M", "350M", "600M"]`, `TARGET_SIZE = "1B"`
 - `PLOTTED_MIXES = ["fwEdu30", "fwEdu60", "fwEdu90"]`
-- `SEED = 1904`
+- seed comes from the pool (`--seed` to override)
 
 Half-trained models (600M-fwEdu90, 1B-fwEdu90, the three 175M-fwEdu*) may
 have fewer than 5 ckpts on some mixes. `compute_snr_small_scale` in
@@ -110,56 +126,47 @@ ckpts, or SNR computation will crash on those mixes.
 
 ## Eval-results layout (read-only input)
 
-`snr/download/apertus.py` reads from:
+`snr/download/apertus.py` reads the **local parquet** of the
+`multilingual-snr/multilingual-snr-eval-results` HF dataset:
 
 ```
-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/
-    mariagrandury-epflnlp/snr-experiments/
-        <model>-iter<N>/
-            harness/eval_*/results_*.json     (clean lm-eval output)
-            harness/eval_*/per_task/<task>/   (partial, written per-task)
+$SNR_MULTILINGUAL_DATA_DIR  (default: <DATA_DIR>/multilingual_snr/data/)
+    pretraining_custom-00000-of-00001.parquet
+    pretraining_a06-00000-of-00001.parquet
+    reference_hf-00000-of-00001.parquet
 ```
 
-This tree is **populated by `src/evals/` (the eval submitter package)**, not
-by this one. Every Slurm eval job writes there. We just read it.
+That parquet is **built on the cluster by `src/evals/scripts/build_hf_dataset.py`**,
+which walks the eval_logs tree (`eval_logs/.../snr-experiments/<NAME>/`), reuses
+`src/evals/scripts/utils/results_io.collect` to read per-task results JSON,
+and resolves model metadata (size, params, family, tokens, split) from
+`configs/models.json` via the shared `configs.py` loader. The split a row
+lands in is its model's `source` (`snr-pretraining-custom` → `pretraining_custom`,
+`snr-pretraining-a06` → `pretraining_a06`, `swiss-ai-reference` /
+`huggingface-reference` → `reference_hf`).
 
-To avoid duplicating the parser, `snr/download/apertus.py` does:
-
-```python
-sys.path.insert(0, "/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals")
-from scripts.push_all_results import collect, aggregate_parents
-```
-
-If `src/evals/scripts/push_all_results.py` moves or its `collect` /
-`aggregate_parents` API changes, this import breaks. Both packages live
-under the same `snr-multilingual/src/` parent, so they should usually be
-in sync — but the coupling is implicit, not declared anywhere.
-
-`collect` reads both `results` and `groups` from per-task fragments so
-that aggregates like `mmlu` (which only live under `groups`) are
-recovered when results are merged from sharded per-task runs.
-`aggregate_parents` then folds e.g. `mmlu_anatomy`, `mmlu_humanities`, …
-into `mmlu` when `mmlu` is present in the same ckpt's results.
-
-The metric extracted per task is `acc,none` if present, else
-`exact_match,none`. `acc_norm`, `acc_bytes`, `*_stderr`, `degeneration`
-are intentionally dropped (matches the W&B push schema in the sister repo).
+`_read_parquet` keeps the SNR-relevant columns, renames `model_tokens` →
+`tokens` / `flops` → `compute`, strips the `-fwY` mix complement, numeric-
+size-sorts, and calls `configs.add_family_column` so every consumer sees
+`family`. The metric column is `primary_score` (already `acc` if present,
+else `exact_match`, computed at build time).
 
 ---
 
 ## Tokens / FLOPs (for the curves)
 
-Computed inside `load_apertus_eval_results`:
+`tokens` and `compute` are **columns in the parquet**, computed once at
+build time by `build_hf_dataset.py`:
 
-- Tokens per iter: `_TOKENS_PER_ITER = 504 * 4096` (Megatron training config:
-  `micro_batch_size * seq_len`).
-- Tokens at iter N: `step * _TOKENS_PER_ITER`.
-- Compute (FLOPs) ≈ `6 * params * tokens`, with `_PARAMS = {175M: 175e6,
-  350M: 350e6, 600M: 600e6, 1B: 1.0e9}`.
+- Megatron iter → tokens: `iter × global_batch_size × seq_len`, read from
+  `src/pretrain/hyperparams_deep.json` via `configs.tokens_for`.
+- HF branch → tokens: the explicit `tokens` value on each branch entry in
+  `configs/models.json`.
+- FLOPs ≈ `6 × params × tokens`, with `params` from `configs/models.json`.
 
-These approximations are the same ones used by `src/evals/`'s W&B push
-(`MEG_TOKENS_PER_ITER = 504 * 4096`) so axes line up across the two
-pipelines.
+`snr/download/apertus.py` no longer carries `_PARAMS` / `_TOKENS_PER_ITER`
+constants — those moved to `configs/models.json` +
+`configs.tokens_for` / `get_model(...)['params']`.
 
 ---
 
@@ -167,23 +174,22 @@ pipelines.
 
 `results/` is the destination. `PLOT_DIR` is set to `<repo>/results/` in
 this fork (upstream points it at `img/`); the directory is committed,
-unlike `img/` which is gitignored. Existing artifacts there are
-overwritten on each run.
+unlike `img/` which is gitignored. Outputs are namespaced by pool, so
+runs for different pools don't clobber each other.
 
-- `snr_per_task.csv` is the table version of the upstream Rich-print.
-- `snr_definition/snr_variants_per_task.csv` is the wide-format
-  counterpart from `run_apertus_snr_variants.py`: one column per
-  (variant, size) for every aggregator in `AGGREGATION_FUNCTIONS`.
-- `snr_definition/snr_vs_decision_accuracy.png` and
-  `snr_definition/snr_vs_decision_accuracy_<lang>.png` are the variant×
-  size scatter grids emitted by `analyze_snr_variants.py`.
-- `acc_vs_flops/per_benchmark/` and `acc_vs_flops/per_language/`
+- `acc_vs_flops/<pool>/per_benchmark/` and `acc_vs_flops/<pool>/per_language/`
   contain combined-grid PNGs (subplots per language and per benchmark
-  family respectively). Tasks with incomplete `(size, mix)` coverage are
-  silently skipped within a grid (the per-subplot try/except in
-  `_plot_grid` swallows the exception — if you expect a task panel and
-  it isn't drawn, that's why).
-- `snr_vs_decision_accuracy.png` is a 1×3 grid (175M / 350M / 600M → 1B).
+  family respectively), emitted by `run_apertus.py --pool <pool>`. Tasks
+  with incomplete `(size, mix)` coverage are silently skipped within a
+  grid (the per-subplot try/except in `_plot_grid` swallows the exception
+  — if you expect a task panel and it isn't drawn, that's why).
+- `snr_definition/<pool>/snr_variants_per_task.csv` is the wide-format
+  table from `run_apertus_snr_variants.py --pool <pool>`: one column per
+  (variant, size) for every aggregator in `AGGREGATION_FUNCTIONS`, plus
+  the `decision_acc_*` columns.
+- `snr_definition/<pool>/snr_vs_decision_accuracy.png` and
+  `…_<lang>.png` are the variant × size scatter grids emitted by
+  `analyze_snr_variants.py --pool <pool>`.
 
 ---
 
@@ -195,8 +201,10 @@ overwritten on each run.
 - **No outbound internet from compute nodes.** If you need to call
   `pull_predictions_from_hf` (only used for the upstream DataDecide /
   OLMo path, not Apertus), do it from the login node.
-- **`/iopsstor/scratch` is the work tree.** This repo and the eval_logs
-  it reads both live there.
+- **`/iopsstor/scratch` is the work tree.** On the cluster, this repo and
+  the eval_logs that `build_hf_dataset.py` reads both live there. The
+  signal-and-noise analysis itself usually runs locally on the Mac off
+  the downloaded parquet.
 
 ---
 
@@ -210,9 +218,10 @@ overwritten on each run.
 | `data-mix-small` (Megatron-LM) | `/iopsstor/scratch/cscs/mariagrandury/data-mix-small` | Pretraining; checkpoints under `Megatron-LM/logs/Meg-Runs/...` |
 
 Flow: `pretrain/` → checkpoints → `evals/` submits `lm_eval` jobs →
-`eval_logs/.../snr-experiments/<model>-iter<N>/` →
-`signal-and-noise/multilingual/run_apertus.py` reads those and produces
-SNR tables + plots.
+`eval_logs/.../snr-experiments/<NAME>/` → `evals/scripts/build_hf_dataset.py`
+→ `multilingual-snr/multilingual-snr-eval-results` parquet →
+`signal-and-noise/snr/download/apertus.py` loads it →
+`run_apertus.py` / `run_apertus_snr_variants.py` produce SNR tables + plots.
 
 ---
 
@@ -224,7 +233,7 @@ you're modifying the multilingual / variant pipelines, scan this list
 before editing.
 
 ### 1. `_is_language_aggregate` filter must accept 3- and 4-trailing-token forms
-`multilingual/smooth_subtasks.py:_is_language_aggregate` was originally
+`analysis/rq04_smooth_subtasks/smooth_subtasks.py:_is_language_aggregate` was originally
 `<family>_<lang>` or `<family>_<lang>_<script>` only, with a hard-coded
 ISO 15924 script list. That silently dropped:
 
@@ -324,7 +333,7 @@ If you change the eval cadence, expect more warnings and possibly
 more NaN cells in `da_ckpt` views.
 
 ### 9. `top_benchmarks_per_language` size column is parametric
-`multilingual/snr_definition_postprocess.py:top_benchmarks_per_language`
+`analysis/rq02_snr_definition/snr_definition_postprocess.py:top_benchmarks_per_language`
 used to hardcode `da_size_col = "decision_acc_size_600M"`. Now it
 follows the `size` arg (`f"decision_acc_size_{size}"`). At the default
 `size=1B` the column is NaN by definition — DA-size is `small_size →
@@ -335,12 +344,14 @@ different definitions in the same table.
 ### 10. AllenAI driver `_canonical_seed` for multi-seed corpora
 For datasets with multiple seeds (DataDecide), `_canonical_seed` in
 `build_allenai_variants.py` picks the most-common seed before the
-SNR computation. The Apertus driver pins `SEED=1904` (single-seed,
-no-op). The seed filter is defensive against multi-seed step
-interleaving in the trailing-N window — currently inert on the
-AllenAI `core` split (no seed column, one model per (size, mix, step,
-task)) but still active code; don't remove it without re-checking
-the random-seeds split.
+SNR computation. The Apertus driver no longer needs this: each Apertus
+seed is a **distinct model** in `configs/models.json`, and DA groups
+on the `family` column (which strips only the size token, not the
+seed). So `apertus-…-seed28` and `apertus-…-seed1797` are separate
+families and the multi-seed interleaving this guard protects against
+can't happen on the Apertus side. The guard is still live for the
+AllenAI `random-seeds` split — don't remove it without re-checking
+that path.
 
 ---
 
@@ -349,7 +360,7 @@ the random-seeds split.
 This repo tracks `allenai/signal-and-noise`. When pulling upstream, the
 local additions to watch for are:
 
-- `multilingual/run_apertus.py` (local-only entry point)
+- `analysis/rq00_acc_vs_flops/run_apertus.py` (local-only entry point)
 - `snr/download/apertus.py` (local-only loader)
 - The lazy import of `run_ladder` inside `compute_scaling_law_error`
   (`snr/snr_simple.py`) — done so the Apertus path doesn't need

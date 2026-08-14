@@ -15,6 +15,7 @@ license = { file = "LICENSE" }
 dependencies = [
     "adjustText",
     "datasets",
+    "girth",  # 2PL IRT fit for per-sample Option C (irt_discrimination)
     "huggingface_hub",
     "ipykernel",
     "ipython",
