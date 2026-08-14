@@ -2,7 +2,7 @@
 # Edit once, then `source env.sh` before running any command from the guide.
 
 # Find yours with: az account list --output table
-export AZ_SUBSCRIPTION="00000000-0000-0000-0000-000000000000"
+export AZ_SUBSCRIPTION="ef1ff20e-1168-4846-a78e-47d102dd35f6"
 
 # Region must be one where you obtained NCADS_A100_v4 quota (see README step 3).
 export AZ_LOCATION="francecentral"
@@ -23,7 +23,7 @@ export AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"
 
 # --- Predictivity sweep: two workspaces -------------------------------------
 # Spain Central (NC80adis H100, low-priority — economy pool: <=600M + evals)
-# and UK South (ND96isr 8xH100, Spot — 1B/1.4B pool). An AML compute cluster
+# and UK South (ND96isr 8xH100, Spot — 1B/1.7B pool). An AML compute cluster
 # lives in its workspace's region, hence one workspace per region. Run
 # setup_azure.sh once per workspace by exporting AZ_LOCATION/AZ_RG/AZ_WS to
 # the values below before calling it.
