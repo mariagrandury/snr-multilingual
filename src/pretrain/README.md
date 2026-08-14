@@ -146,14 +146,21 @@ language setting. They are blended 50/50 at train time, so each is built once.
 # Dry-run first — prints the per-build token targets and the exact commands:
 python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --dry_run
 
-# Build everything (validation + English + all 7 FineWeb-2 settings):
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR>
-
-# Or build a subset (each create_data_mixture.py run is resumable):
+# Recommended order — EN+RU first (validation, then the English dataset and
+# the L2 = rus_Cyrl build), so the bilingual minimal plan can start training
+# while the big multilingual builds run:
 python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage validation
 python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage english
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb --settings 8,30
+python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb --settings 2
+python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb --settings 8,15,30,50,100
+
+# (each create_data_mixture.py run is resumable; `--stage all` builds everything)
 ```
+
+Everything runs on the cluster's curated corpora (DCLM-edu + FineWeb-2-HQ on
+`/capstor`) — nothing is downloaded from the HF Hub. To train on Azure, ship
+the finished `.bin`/`.idx` builds with azcopy: see the Azure guide's §5
+([`azure/README.md`](azure/README.md)).
 
 `--scheme {A,B}` picks the language lists
 (`language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).

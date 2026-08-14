@@ -178,7 +178,7 @@ DATA_ARGS=(
 #  - DATA_BLEND set: a ready "--data-path" weight/prefix list (predictivity
 #    sweep — composed by launch_azure_predictivity.py from the job's mounts);
 #  - else: the tokenized dataset dir's data_path.txt manifest of
-#    "<weight> <relative prefix>" pairs written by prepare_data.py.
+#    "<weight> <relative prefix>" pairs shipped with the data (README §5).
 if [ "$MOCK_DATA" = true ]; then
   DATA_ARGS+=( --mock-data )
 elif [ -n "${DATA_BLEND:-}" ]; then

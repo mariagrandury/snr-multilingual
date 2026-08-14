@@ -36,8 +36,10 @@ InfiniBand cuts the 1B to ~2.5–3 days (§11).
   full run.
 - A [wandb.ai](https://wandb.ai) account and API key (Settings → API keys) —
   W&B is the primary way you'll monitor training.
-- No Hugging Face token needed: the tokenizer, FineWeb-Edu and FineWeb2-HQ
-  are all public.
+- No Hugging Face token needed: the tokenizer is public, and all training
+  data ships pre-tokenized from CSCS (§5) — nothing is downloaded from the
+  HF Hub.
+- CSCS access (login node) — the data mixtures are built there (§5).
 - The files referenced below all live in `src/pretrain/azure/`; run every
   command from that directory.
 
@@ -162,32 +164,121 @@ decreasing is the success signal, plus `successfully saved checkpoint at
 iteration 20` at the end. If `WANDB_API_KEY` was set you'll also see the run
 appear in W&B under `mariagrandury-epflnlp/data-mix-small`.
 
-## 5. Prepare the pilot data
+## 5. Generate the data mixtures (CSCS) and ship them to Azure
 
-The cluster consumed mixtures pre-tokenized at CSCS; on Azure
-`prepare_data.py` recreates them from the public sources: it streams
-**FineWeb-Edu** (English) and **FineWeb2-HQ** per language, tokenizes with
-`alehc/swissai-tokenizer` via Megatron's `preprocess_data.py`, and writes
-`.bin`/`.idx` shards plus a `data_path.txt` manifest of mixture weights.
+**All training data is built from the corpora curated at CSCS** — DCLM-edu
+(English) and FineWeb-2-HQ (multilingual), the filtered swiss-ai variants on
+`/capstor` — and tokenized *there*; nothing is downloaded from the HF Hub.
+Two scripts under `src/pretrain/` own the pipeline:
 
-!!! note "Approximation"
-    The exact language composition of the cluster's FineWeb2 corpus is not
-    recoverable from this repo. The documented approximation is the
-    project's `main` language group minus English
-    (`configs/languages.json`: es ru hi zh ja ar vi tr th sw eu), weighted
-    by each language's corpus size on the Hub; languages missing from
-    FineWeb2-HQ fall back to unfiltered FineWeb-2. The realized per-source
-    token counts are recorded in `data_path.txt`.
+- [`../create_data_mixture.py`](../create_data_mixture.py) — the worker:
+  streams the parquet sources, tokenizes with `swiss-ai/Apertus-70B-2509`,
+  writes Megatron `.bin`/`.idx`, builds the fixed validation set, and
+  excludes its rows from training via a manifest. Resumable after
+  preemption.
+- [`../build_data_mixtures.py`](../build_data_mixtures.py) — the driver:
+  turns the language schemes (`../language_sets_scheme{A,B}.json`) into
+  per-build `create_data_mixture.py` calls with the right token targets.
+
+### 5a. Build on CSCS — EN+RU first, then the rest
+
+The English + Russian pair unblocks the minimal plan (§10), so build and
+ship it first; the remaining multilingual builds run while those two models
+already train:
 
 ```bash
-az ml job create --file jobs/prep.yml $AZ_ML_ARGS
-az ml job stream --name <job name> $AZ_ML_ARGS
+# CSCS login node, from src/pretrain/ ($OUT on /capstor or /iopsstor)
+# 1. Fixed validation set + exclusion manifest (once — every build needs it)
+python build_data_mixtures.py --scheme A --output_dir $OUT --stage validation
+
+# 2. EN+RU: the shared English dataset + the L2 FineWeb-2 build (rus_Cyrl)
+python build_data_mixtures.py --scheme A --output_dir $OUT --stage english
+python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb --settings 2
+
+# 3. All remaining language settings (start §10 first, then run this)
+python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb \
+    --settings 8,15,30,50,100
 ```
 
-~1–2 h on the 96-core node (~$20). Verify the output in **Azure ML Studio →
-Data → Datastores → workspaceblobstore → Browse** → `tokenized/mix_30_70/pilot`:
-you should see `fineweb_edu_text_document.bin/.idx`, one `fw2_<lang>_...`
-pair per language, and `data_path.txt`.
+Targets (printed by `--dry_run` first): 184.5B English; 52B (L2/L15/L50) or
+92.5B (L8/L30/L100) FineWeb-2 per setting; ~2.5TB of int32 `.bin`/`.idx`
+total. Blending happens at *training* time via Megatron blend weights, so
+each dataset is built exactly once.
+
+### 5b. Ship to Azure with azcopy
+
+`azcopy` is a single static binary — no root or install on the login node.
+Upload once to the Spain workspace; the UK copy is server-side inside Azure
+(nothing flows through CSCS twice):
+
+```bash
+# 0. One-time, on the CSCS login node:
+wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
+export PATH="$PWD/azcopy_linux_amd64"*:$PATH
+
+# 1. On your laptop (has az + env.sh): find each workspace's storage account
+#    and container behind the workspaceblobstore datastore:
+az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_ES \
+  --query '{account:account_name, container:container_name}'
+az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
+  --query '{account:account_name, container:container_name}'
+
+# 2. Mint a container SAS per workspace (write for the upload target,
+#    read on Spain for the copy) — paste the printed token after '?' below:
+az storage container generate-sas --account-name <es-account> --name <es-container> \
+  --permissions racwl --expiry $(date -u -d '+7 days' +%Y-%m-%dT%H:%MZ) \
+  --auth-mode login --as-user -o tsv
+
+# 3. From the CSCS login node — EN+RU first (unblocks §10), rest later:
+azcopy copy "$OUT/english_dclm*" \
+  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/english_dclm/?<ES_SAS>'
+azcopy copy "$OUT/fineweb_L2*" \
+  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/fineweb_L2/?<ES_SAS>'
+# ...then each fineweb_L<L> build into its own folder the same way, plus
+# validation* into predictivity/data/validation/.
+
+# 4. Duplicate Spain -> UK entirely server-side (fast, no egress from CSCS):
+azcopy copy \
+  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
+  'https://<uk-account>.blob.core.windows.net/<uk-container>/predictivity/?<UK_SAS>' \
+  --recursive
+```
+
+(If `--auth-mode login --as-user` is rejected on your account, generate the
+SAS from the portal instead: storage account → Containers → … → Generate SAS,
+permissions Read+Add+Create+Write+List.)
+
+Final blob layout, one folder per build — what the predictivity jobs (§11)
+mount directly:
+
+```
+predictivity/data/english_dclm/english_dclm.{bin,idx}
+predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
+...                fineweb_L100/...
+predictivity/data/validation/validation*.{bin,idx} + validation.manifest.json
+```
+
+### 5c. The 36-cell sweep mixtures (pilot/full path, §6–§7 and §12)
+
+The `mix_<edu>_<fw2>` mixtures are **not rebuilt** either — copy the
+cluster's frozen tokenized mixtures as-is (their component `.bin`/`.idx`
+are symlinks, so tell azcopy to follow them) and write the `data_path.txt`
+manifest `train.sh` reads, weights proportional to the actual `.bin` sizes:
+
+```bash
+cd <CSCS_MIX_DIR>   # e.g. the frozen mix_100B_30_70
+total=$(du -cbL *.bin | tail -1 | cut -f1)
+for b in *.bin; do
+  printf '%.6f %s\n' "$(python3 -c "print($(stat -Lc%s "$b")/$total)")" "${b%.bin}"
+done > data_path.txt
+azcopy copy "$PWD/*" \
+  'https://<es-account>.blob.core.windows.net/<es-container>/tokenized/mix_30_70/full/?<ES_SAS>' \
+  --recursive --follow-symlinks
+```
+
+Verify in **Azure ML Studio → Data → Datastores → workspaceblobstore →
+Browse**: `tokenized/mix_30_70/full` holds the `.bin`/`.idx` pairs plus
+`data_path.txt`, and `predictivity/data/` the per-build folders.
 
 ## 6. Pilot training run
 
@@ -215,16 +306,13 @@ Two behaviours worth knowing before the full run:
   (`mode: download`, a few minutes) — don't change it to `ro_mount`;
   memory-mapped `.bin` reads over a blob mount are pathologically slow.
 
-## 7. Full data + full training run
+## 7. Full training run
+
+The full mixture is already on the blob store from §5c — the pilot and the
+full run read the same `tokenized/mix_30_70/full`, they just train a
+different number of iterations:
 
 ```bash
-# ~415GB of tokenized data; several hours on the 96-core node
-az ml job create --file jobs/prep.yml $AZ_ML_ARGS \
-  --set display_name=prep-data-full \
-        environment_variables.TOTAL_TOKENS_B=103.2 \
-        environment_variables.EDU_CONFIG=sample-350BT \
-        outputs.tokenized.path=azureml://datastores/workspaceblobstore/paths/tokenized/mix_30_70/full
-
 # the real thing: 50,000 iters, checkpoint every 2,000 (~every 4 h)
 az ml job create --file jobs/train-full.yml $AZ_ML_ARGS \
   --set environment_variables.WANDB_API_KEY=$WANDB_API_KEY
@@ -331,29 +419,37 @@ progresses.
 
 ## 10. The minimal plan: bilingual EN+RU, 90M and 1.7B
 
-The first real experiment on Azure: two 2-language models — FineWeb-Edu
-(English) + FineWeb2-HQ Russian, 50/50 by bytes — at **90M** (L15×d768,
-92.9M non-embedding params) and **1.7B** (L30×d2304, 1.67B), both trained
-like the sweep (50,000 iters ≈ 103.2B tokens, GBS 504, seq 4096; hyperparams
-in `../hyperparams_deep.json`, cells in `configs/models.json` as
+The first real experiment on Azure: two 2-language models — DCLM-edu
+(English) + FineWeb-2-HQ Russian, 50/50 — at **90M** (L15×d768, 92.9M
+non-embedding params) and **1.7B** (L30×d2304, 1.67B), both trained like
+the sweep (50,000 iters ≈ 103.2B tokens, GBS 504, seq 4096; hyperparams in
+`../hyperparams_deep.json`, cells in `configs/models.json` as
 `apertus-{90M,1.7B}-fwEdu50-fw2ru50-seed28`), auto-evaluated every 5
 checkpoints.
+
+The data is the CSCS-built EN+RU pair from §5a/§5b — the same
+`english_dclm` + `fineweb_L2` builds the predictivity sweep uses (the 52B
+L2 build covers this run's 51.6B Russian half). Compose the bilingual
+mixture dir **server-side** from the already-uploaded builds (no re-upload;
+repeat against the UK account for the 1.7B) and give it the 2-line blend
+manifest `train.sh` reads:
 
 ```bash
 source env.sh && export WANDB_API_KEY=<key>
 
-# 1. Bilingual mixture (~415GB tokenized; reusable by both sizes)
-az ml job create --file jobs/prep.yml $AZ_ML_ARGS \
-  --set display_name=prep-data-enru \
-        environment_variables.TOTAL_TOKENS_B=103.2 \
-        environment_variables.EDU_RATIO=0.5 \
-        environment_variables.EDU_CONFIG=sample-350BT \
-        environment_variables.EXTRA_ARGS="--languages ru" \
-        outputs.tokenized.path=azureml://datastores/workspaceblobstore/paths/tokenized/mix_enru_50_50/full
+# 1. Compose tokenized/mix_enru_50_50/full from the predictivity builds
+ES='https://<es-account>.blob.core.windows.net/<es-container>'
+azcopy copy "$ES/predictivity/data/english_dclm/?<ES_SAS>" \
+            "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>" --recursive
+azcopy copy "$ES/predictivity/data/fineweb_L2/?<ES_SAS>" \
+            "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>" --recursive
+printf '0.50 english_dclm/english_dclm\n0.50 fineweb_L2/fineweb_L2\n' > data_path.txt
+azcopy copy data_path.txt "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>"
 
-# 2. Launch the trainings (queue both; with max_instances 1 they run in sequence)
-python launch_azure_trainings.py --size 90M  --seed 28
-python launch_azure_trainings.py --size 1.7B --seed 28
+# 2. Launch the trainings: 90M on Spain, 1.7B on the UK Spot pool
+python launch_azure_trainings.py --size 90M --seed 28
+AZ_RG=$AZ_UK_RG AZ_WS=$AZ_UK_WS python launch_azure_trainings.py \
+    --size 1.7B --seed 28 --compute gpu-nd96-spot
 
 # 3. Auto-evals while they train
 python auto_evals.py --watch 600
@@ -378,56 +474,9 @@ and UK South (`gpu-nd96-spot`, 8×H100 Spot — the 1B and 1.7B rungs). Set the
 workspace (export `AZ_LOCATION/AZ_RG/AZ_WS` to each region's values first;
 computes whose SKU a region doesn't offer are skipped with a warning).
 
-**Data**: the datasets are built once on the CSCS cluster with
-`../build_data_mixtures.py` (the FineWeb-2/DCLM parquet sources live there),
-then uploaded to *both* workspaces' blob stores with this layout — one
-folder per build, holding its `.bin`/`.idx` pair:
-
-```
-predictivity/data/english_dclm/english_dclm.{bin,idx}
-predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
-...                fineweb_L100/...
-```
-
-Getting them there from CSCS — `azcopy` is a single static binary, so no
-root or install is needed on the login node, and the CSCS→Azure upload
-happens once (the Spain→UK duplication is a server-side copy inside Azure,
-nothing flows through CSCS again):
-
-```bash
-# 0. One-time, on the CSCS login node:
-wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
-export PATH="$PWD/azcopy_linux_amd64"*:$PATH
-
-# 1. On your laptop (has az + env.sh): find each workspace's storage account
-#    and container behind the workspaceblobstore datastore:
-az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_ES \
-  --query '{account:account_name, container:container_name}'
-az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
-  --query '{account:account_name, container:container_name}'
-
-# 2. Mint a container SAS per workspace (write for the upload target,
-#    read on Spain for the copy) — paste the printed token after '?' below:
-az storage container generate-sas --account-name <es-account> --name <es-container> \
-  --permissions racwl --expiry $(date -u -d '+7 days' +%Y-%m-%dT%H:%MZ) \
-  --auth-mode login --as-user -o tsv
-
-# 3. From the CSCS login node: upload the builds to the Spain workspace
-#    (one folder per build, holding its .bin/.idx pair):
-azcopy copy '<DATA_DIR>/*' \
-  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
-  --recursive
-
-# 4. Duplicate Spain -> UK entirely server-side (fast, no egress from CSCS):
-azcopy copy \
-  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
-  'https://<uk-account>.blob.core.windows.net/<uk-container>/predictivity/?<UK_SAS>' \
-  --recursive
-```
-
-(If `--auth-mode login --as-user` is rejected on your account, generate the
-SAS from the portal instead: storage account → Containers → … → Generate SAS,
-permissions Read+Add+Create+Write+List.)
+**Data**: the per-build folders under `predictivity/data/` in both
+workspaces' blob stores, built at CSCS and shipped with azcopy — the whole
+pipeline is §5 (build order: EN+RU first, then the remaining settings).
 
 **Launch** (same filters as the cluster launcher; jobs queue on the clusters
 and run as nodes free up — resubmitting any cell resumes it):
@@ -467,9 +516,9 @@ python launch_azure_trainings.py --size 350M --seed 28
 python launch_azure_evals.py --size 350M --seed 28 --ckpts full_eval --tasks pretraining_full --dry-run
 ```
 
-Each cell's mixture must exist first (`prep.yml` with
-`environment_variables.EDU_RATIO=0.6` → `tokenized/mix_60_40/full`, etc.),
-and each evaluated checkpoint needs a `convert.yml` run first. With one
+Each cell's mixture must exist first — the cluster's frozen tokenized
+mixture copied to `tokenized/mix_60_40/full` etc. per §5c — and each
+evaluated checkpoint needs a `convert.yml` run first. With one
 `max_instances: 1` cluster, submitted jobs queue and run one at a time —
 raise `max_instances` (and your quota) to run cells in parallel.
 

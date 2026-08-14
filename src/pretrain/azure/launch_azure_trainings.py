@@ -6,16 +6,20 @@ the Azure counterpart of ../launch_trainings.py (sbatch → `az ml job create`).
 Each selected cell submits jobs/train-full.yml with the cell's architecture
 env vars (from ../hyperparams_deep.json) and its own data/checkpoint paths.
 Requires `source env.sh` (AZ_RG/AZ_WS) and the setup from the README; the
-mixture the cell needs must already exist under tokenized/mix_<edu>_<fw2>/full
-(prepare_data.py --edu-ratio 0.3/0.6/0.9).
+mixture the cell needs must already exist under tokenized/mix_<edu>_<fw2>/full,
+copied from the CSCS-built datasets with azcopy (README section 5 — nothing
+is downloaded from the HF Hub).
 
 Usage:
-    python launch_azure_trainings.py [--dry-run]
+    python launch_azure_trainings.py [--dry-run] [--compute NAME]
                                      [--size SIZE] [--mix_en MIX_EN] [--seed SEED]
 
 Examples:
     python launch_azure_trainings.py --size 175M --mix_en 30 --seed 28
     python launch_azure_trainings.py --seed 1904 --dry-run   # one seed, all 12 cells
+    # big sizes on the UK workspace's 8xH100 Spot pool:
+    AZ_RG=$AZ_UK_RG AZ_WS=$AZ_UK_WS python launch_azure_trainings.py \
+        --size 1.7B --seed 28 --compute gpu-nd96-spot
 """
 
 from __future__ import annotations
@@ -57,9 +61,11 @@ def az_args() -> list[str]:
         sys.exit("AZ_RG/AZ_WS not set — run `source env.sh` first.")
 
 
-def submit(name: str, cfg: dict, entry: dict, dry_run: bool) -> None:
+def submit(name: str, cfg: dict, entry: dict, dry_run: bool,
+           compute: str | None = None) -> None:
     overrides = {
         "display_name": name,
+        **({"compute": f"azureml:{compute}"} if compute else {}),
         "inputs.data.path": f"{DATASTORE}/tokenized/{mix_dir(entry)}/full",
         **{f"outputs.{o}.path": f"{DATASTORE}/runs/{name}/{o}"
            for o in ("checkpoints", "logs", "cache")},
@@ -97,6 +103,9 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--compute",
+                   help="Override the job YAML's compute cluster (e.g. "
+                        "gpu-nd96-spot when targeting the UK workspace).")
     p.add_argument("--size")
     p.add_argument("--mix_en", type=int, choices=[30, 60, 90])
     p.add_argument("--seed", type=int)
@@ -110,7 +119,8 @@ def main() -> None:
         entry = get_model(name)
         if args.mix_en is not None and entry["mix_en"] != args.mix_en:
             continue
-        submit(name, data["configs"][entry["hyperparams_key"]], entry, args.dry_run)
+        submit(name, data["configs"][entry["hyperparams_key"]], entry,
+               args.dry_run, compute=args.compute)
         launched += 1
     print(f"{launched} job(s) {'printed' if args.dry_run else 'submitted'}.")
 

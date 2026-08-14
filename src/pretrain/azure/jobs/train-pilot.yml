@@ -15,7 +15,7 @@ resources:
 inputs:
   data:
     type: uri_folder
-    path: azureml://datastores/workspaceblobstore/paths/tokenized/mix_30_70/pilot
+    path: azureml://datastores/workspaceblobstore/paths/tokenized/mix_30_70/full
     mode: download   # copy .bin/.idx to node NVMe — memmap over blobfuse is pathological
 outputs:
   checkpoints:
