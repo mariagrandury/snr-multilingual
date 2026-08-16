@@ -189,14 +189,14 @@ already train:
 ```bash
 # CSCS login node, from src/pretrain/ ($OUT on /capstor or /iopsstor)
 # 1. Fixed validation set + exclusion manifest (once — every build needs it)
-python build_data_mixtures.py --scheme A --output_dir $OUT --stage validation
+python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mariagrandury/data/ --stage validation
 
 # 2. EN+RU: the shared English dataset + the L2 FineWeb-2 build (rus_Cyrl)
-python build_data_mixtures.py --scheme A --output_dir $OUT --stage english
-python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb --settings 2
+python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mariagrandury/data/ --stage english
+python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mariagrandury/data/ --stage fineweb --settings 2
 
 # 3. All remaining language settings (start §10 first, then run this)
-python build_data_mixtures.py --scheme A --output_dir $OUT --stage fineweb \
+python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mariagrandury/data/ --stage fineweb \
     --settings 8,15,30,50,100
 ```
 
