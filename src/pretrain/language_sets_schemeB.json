@@ -205,13 +205,13 @@
       "tat_Cyrl",
       "div_Thaa",
       "asm_Beng",
-      "hau_Latn",
       "epo_Latn",
       "snd_Arab",
       "kmr_Latn",
       "uig_Arab",
       "hif_Latn",
-      "ltz_Latn"
+      "ltz_Latn",
+      "plt_Latn"
     ],
     "FW_L200": [
       "rus_Cyrl",
