@@ -4,7 +4,7 @@ Status 2026-08-14: **quota requests filed** (Spain Central NCadsH100v5, UK South
 NDSH100v5, dedicated + Spot/low-priority counters). This sheet is the budget of
 record for the small-to-large predictivity training plan
 ([small-to-large-predictivity-training-plan.md](small-to-large-predictivity-training-plan.md)),
-computed from the 90M–1.7B deep ladder in `src/pretrain/hyperparams_deep.json`
+computed from the 90M–1.7B deep ladder in `src/pretrain/hyperparams/hyperparams_deep.json`
 (the reviewed source of truth since 2026-08-14; see Appendix B).
 A rendered version lives at the "Predictivity Sweep Compute Budget" artifact
 (claude.ai/code/artifact/3d1f4011-c824-4899-b045-a5dc1d66bb17).

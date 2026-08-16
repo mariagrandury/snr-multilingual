@@ -55,7 +55,7 @@ CREATE_SCRIPT = SCRIPT_DIR / "create_data_mixture.py"
 # (hyperparams_deep.json `predictivity.train_tokens`). The shallow variants
 # match within a few %, so the same builds cover both arch families.
 def _load_size_budget_b() -> dict:
-    configs = json.loads((SCRIPT_DIR / "hyperparams_deep.json").read_text())["configs"]
+    configs = json.loads((SCRIPT_DIR.parent / "hyperparams" / "hyperparams_deep.json").read_text())["configs"]
     return {size: c["predictivity"]["train_tokens"] / 1e9 for size, c in configs.items()}
 
 

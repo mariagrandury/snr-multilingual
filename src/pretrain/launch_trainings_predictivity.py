@@ -56,8 +56,8 @@ SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
 # sizes; "shallow vs deep" (width/depth 128 vs 64) is the model-depth level of
 # the intervention axis. Deep is the baseline.
 HYPERPARAMS = {
-    "deep": SCRIPT_DIR / "hyperparams_deep.json",
-    "shallow": SCRIPT_DIR / "hyperparams_shallow.json",
+    "deep": SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json",
+    "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
 }
 
 # W&B / checkpoint project for this sweep (kept separate from the old

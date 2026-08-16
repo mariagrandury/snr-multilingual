@@ -4,7 +4,7 @@ Launch Azure ML training jobs for (model size × data ratio × seed) cells —
 the Azure counterpart of ../launch_trainings.py (sbatch → `az ml job create`).
 
 Each selected cell submits jobs/train-full.yml with the cell's architecture
-env vars (from ../hyperparams_deep.json) and its own data/checkpoint paths.
+env vars (from ../hyperparams/hyperparams_deep.json) and its own data/checkpoint paths.
 Requires `source env.sh` (AZ_RG/AZ_WS) and the setup from the README; the
 mixture the cell needs must already exist under tokenized/mix_<edu>_<fw2>/full,
 copied from the CSCS-built datasets with azcopy (README section 5 — nothing
@@ -38,7 +38,7 @@ from evals.scripts.utils.configs import filter_models, get_model  # noqa: E402
 
 SOURCES = ["snr-pretraining-custom", "snr-pretraining-bilingual"]
 SCRIPT_DIR = Path(__file__).parent
-CONFIG_FILE = SCRIPT_DIR.parent / "hyperparams_deep.json"
+CONFIG_FILE = SCRIPT_DIR.parent / "hyperparams" / "hyperparams_deep.json"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths"
 
 

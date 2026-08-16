@@ -573,7 +573,7 @@ Notes on the schema:
 - **`source`** (was `family` in v1): provenance / data-source category. Used for grouping in pools and for loader branch logic (e.g. how to read `backends`).
 - **`family`** (new in v2): **cross-size identity** for DA. Two models share a `family` iff DA-size between them is meaningful (e.g. same training recipe at different scales). Explicit per-row in JSON — avoids fragile regex stripping for HF model names with non-standard size tokens.
 - `checkpoint_kind` discriminator lets consumers branch cleanly between `megatron_iter` (list of ints; tokens derived via `iter × tokens_per_step`) and `hf_branch` (list of `{branch, tokens}` dicts).
-- `hyperparams_key` back-links to [src/pretrain/hyperparams_deep.json](/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/hyperparams_deep.json) (kept separate, not folded — see R6).
+- `hyperparams_key` back-links to [src/pretrain/hyperparams/hyperparams_deep.json](/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/hyperparams/hyperparams_deep.json) (kept separate, not folded — see R6).
 - `tokens_per_step` is **not** stored per-model — derived from `hyperparams_deep.json["global"]["global_batch_size"] × ["seq_len"]` once.
 - `params` is the rounded total used for FLOPs (preserves historical W&B values exactly); `hyperparams_deep.json` keeps the precise `n_non_emb_params` for SNR consumers that want it.
 - `seed` is **only** set for Apertus pretrains; HF / a06 / distill entries omit it. The new framework no longer requires a seed field for DA.

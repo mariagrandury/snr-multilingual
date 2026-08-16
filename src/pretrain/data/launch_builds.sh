@@ -9,7 +9,7 @@
 # NOT launched here (already running as their own per-mix jobs):
 #   - L2 (Russian, 1.7B-sized) -> submit_build_l2.sh
 set -euo pipefail
-DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 ONE=$DIR/submit_build_one.sh
 OUT=/iopsstor/scratch/cscs/mariagrandury/data
 OUT_B=$OUT/schemeB

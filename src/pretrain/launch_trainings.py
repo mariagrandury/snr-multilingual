@@ -79,7 +79,7 @@ TEST_MBS = 1
 
 SCRIPT_DIR = Path(__file__).parent
 SUBMIT_SCRIPT = SCRIPT_DIR / "submit-apertus-data-mix.sh"
-CONFIG_FILE = SCRIPT_DIR / "hyperparams_deep.json"
+CONFIG_FILE = SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json"
 
 
 def custom_cells() -> list[dict]:

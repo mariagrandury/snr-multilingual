@@ -393,7 +393,7 @@ class _Tee:
 
 
 if __name__ == "__main__":
-    output_path = Path(__file__).parent / "hyperparams_explanation.txt"
+    output_path = Path(__file__).parent / "hyperparams_shallow_explanation.txt"
     log_file = open(output_path, "w")
     sys.stdout = _Tee(sys.__stdout__, log_file)
 

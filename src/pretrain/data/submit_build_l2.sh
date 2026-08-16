@@ -12,7 +12,7 @@
 set -euo pipefail
 source ~/.bashrc
 conda activate snr
-cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 
 # Tokenizer peaks at ~16-32 threads; cap so builds pack many-per-node (see
 # submit_build_one.sh). ~32 cores is plenty for one build.
@@ -20,7 +20,7 @@ export RAYON_NUM_THREADS=${SLURM_CPUS_PER_TASK:-32}
 export OMP_NUM_THREADS=$RAYON_NUM_THREADS
 export TOKENIZERS_PARALLELISM=true
 
-SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/submit_build_l2.sh
+SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_l2.sh
 OUT=/iopsstor/scratch/cscs/mariagrandury/data
 PREFIX=$OUT/fineweb_L2
 

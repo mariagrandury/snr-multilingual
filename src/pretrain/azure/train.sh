@@ -15,7 +15,7 @@ source get_megatron.sh
 
 ################ Configs ################
 # Defaults = the guide's walkthrough cell: 175M, mix 30/70, seed 28
-# (values from ../hyperparams_deep.json — overridden per cell by the launcher).
+# (values from ../hyperparams/hyperparams_deep.json — overridden per cell by the launcher).
 MODEL_SIZE=${MODEL_SIZE:-175M}
 NUM_LAYERS=${NUM_LAYERS:-16}
 HIDDEN_SIZE=${HIDDEN_SIZE:-1024}

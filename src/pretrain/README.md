@@ -88,7 +88,7 @@ heatmap with HF/Hub stages) and a companion `progress_all.png` (every
 | File                                                       | Role                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`launch_resumes.sh`](launch_resumes.sh)                   | The right entry point. Reads `pretrain_progress.py --actions`, dispatches per cell: `done` → skip · in `squeue` → skip · `fresh` → submit from-scratch · `resume <load_iter> <target>` → resume (rewinds `latest_checkpointed_iteration.txt` first if mid-gap) · `corrupt` → skip with a warning.                                     |
-| [`launch_trainings.py`](launch_trainings.py)               | Wraps `sbatch --export=…` from [`hyperparams_deep.json`](hyperparams_deep.json). Default `SEEDS = [28, 1797, 1904]`. Supports `--size`, `--mix_en`, `--seed` filters, `--dry-run`, `--test`, `--training-steps N` (cap early exit), pass-throughs (`--time`, `--account`, `--dependency`).                                            |
+| [`launch_trainings.py`](launch_trainings.py)               | Wraps `sbatch --export=…` from [`hyperparams/hyperparams_deep.json`](hyperparams/hyperparams_deep.json). Default `SEEDS = [28, 1797, 1904]`. Supports `--size`, `--mix_en`, `--seed` filters, `--dry-run`, `--test`, `--training-steps N` (cap early exit), pass-throughs (`--time`, `--account`, `--dependency`).                                            |
 | [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh) | The sbatch template. Reads env vars (`MODEL_SIZE`, …, `FW_EDU_RATIO`, `FW2_RATIO`, `SEED`, `TRAINING_STEPS`, `LR`, `MBS`) from the launcher. `--save` and `--load` both point at the same checkpoint dir, so the same script handles fresh and resume runs. Pinned to `--use-checkpoint-opt_param-scheduler` (mid-gap resume safety). |
 | [`pretrain_progress.py`](pretrain_progress.py)             | Status. Three modes: text dashboard (default); `--plot PATH` writes the heatmap + companion `progress_all`; `--actions` emits one machine-readable line per cell consumed by `launch_resumes.sh`. Validates `iter_NNNNNNN/` has both `.metadata` and ≥1 `.distcp` shard before counting it as valid.                                  |
 
@@ -102,10 +102,10 @@ missing canonical per cell per call, and re-running picks up the next gap.
 
 ### Hyperparameters
 
-- [`hyperparams_deep.json`](hyperparams_deep.json) — **active** config consumed by `launch_trainings.py` and by the predictivity sweep (`--arch deep`, the baseline).
-- [`hyperparams_shallow.json`](hyperparams_shallow.json) — **active** shallow (width/depth 128) ladder at the same six non-embedding sizes — the predictivity sweep's model-depth intervention variant (`--arch shallow`).
-- [`find_hyperparams_deep.py`](find_hyperparams_deep.py) / [`find_hyperparams_shallow.py`](find_hyperparams_shallow.py) — one-shot generators for the two files above.
-- `calculate_params_lr_bs.py` / `fetch_hf_model_hyperparams.py` / `hf_models.txt` / `hf_model_hyperparams.csv` — shared helpers and exploratory artefacts kept for reference.
+- [`hyperparams/hyperparams_deep.json`](hyperparams/hyperparams_deep.json) — **active** config consumed by `launch_trainings.py` and by the predictivity sweep (`--arch deep`, the baseline).
+- [`hyperparams/hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) — **active** shallow (width/depth 128) ladder at the same six non-embedding sizes — the predictivity sweep's model-depth intervention variant (`--arch shallow`).
+- [`hyperparams/find_hyperparams_deep.py`](hyperparams/find_hyperparams_deep.py) / [`hyperparams/find_hyperparams_shallow.py`](hyperparams/find_hyperparams_shallow.py) — one-shot generators for the two files above (they write the JSONs up here in `pretrain/`).
+- `hyperparams/calculate_params_lr_bs.py` / `hyperparams/fetch_hf_model_hyperparams.py` / `hyperparams/hf_models.txt` / `hyperparams/hf_model_hyperparams.csv` — shared helpers and exploratory artefacts kept for reference.
 
 ### Conversion + Hub push (under [`conversion/`](conversion/))
 
@@ -121,7 +121,7 @@ The script reaches them via `$MEGATRON_LM_DIR` (default
 
 ### Misc
 
-- [`create_data_mixture.py`](create_data_mixture.py) — the low-level tokenize-and-blend worker (parquet → Megatron `.bin`/`.idx`); driven by [`build_data_mixtures.py`](build_data_mixtures.py) over the predictivity sweep (see §1 below). Not used by the frozen 36-cell data-mix-small mixtures.
+- [`data/create_data_mixture.py`](data/create_data_mixture.py) — the low-level tokenize-and-blend worker (parquet → Megatron `.bin`/`.idx`); driven by [`data/build_data_mixtures.py`](data/build_data_mixtures.py) over the predictivity sweep (see §1 below). Not used by the frozen 36-cell data-mix-small mixtures.
 - [`merge_wandb_experiment.py`](merge_wandb_experiment.py) — post-hoc W&B run merging across resumes.
 - [`env.toml`](env.toml) — pyxis container env file.
 
@@ -137,16 +137,19 @@ wired — see the plan's open question 4.
 
 ### 1. Build the data mixtures (once)
 
-[`build_data_mixtures.py`](build_data_mixtures.py) drives
-[`create_data_mixture.py`](create_data_mixture.py) to build one fixed validation
-set, one English (DCLM) dataset, and one FineWeb-2 dataset per language setting;
-they are blended 50/50 at train time, so each is built once. Validation must be
-built first (english/fineweb read its manifest to hold out the same rows).
+The build scripts live in [`data/`](data/).
+[`data/build_data_mixtures.py`](data/build_data_mixtures.py) drives
+[`data/create_data_mixture.py`](data/create_data_mixture.py) to build one fixed
+validation set, one English (DCLM) dataset, and one FineWeb-2 dataset per
+language setting; they are blended 50/50 at train time, so each is built once.
+Validation must be built first (english/fineweb read its manifest to hold out
+the same rows).
 
 Launch **one self-chaining Slurm job per mixture** so they build in parallel and
 each `.bin`/`.idx` is ready to start its training run independently:
 
 ```bash
+cd data
 # EN+RU first — its own job, sized for the 1.7B run (rus_Cyrl, ~92B):
 sbatch submit_build_l2.sh
 
@@ -156,8 +159,8 @@ sbatch submit_build_l2.sh
 ./launch_builds.sh
 ```
 
-[`launch_builds.sh`](launch_builds.sh) fans out to
-[`submit_build_one.sh`](submit_build_one.sh) (one mixture per job). Each job caps
+[`data/launch_builds.sh`](data/launch_builds.sh) fans out to
+[`data/submit_build_one.sh`](data/submit_build_one.sh) (one mixture per job). Each job caps
 the tokenizer to ~32 cores — it peaks at ~16–32 threads, so ~9 builds pack per
 node — and self-chains a `--dependency=singleton` successor to resume past the
 12h wall. Builds are idempotent: a finished mixture (`.idx` present) is skipped,
@@ -171,7 +174,7 @@ the finished `.bin`/`.idx` builds with azcopy: see the Azure guide's §5
 ([`azure/README.md`](azure/README.md)).
 
 `--scheme {A,B}` picks the language lists
-(`language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).
+(`data/language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).
 Targets: 184.0 B English (bounds the L=1 run), 52 B / 92.0 B FineWeb-2 per
 setting (half the largest run's budget + 10% headroom).
 
@@ -181,8 +184,8 @@ setting (half the largest run's budget + 10% headroom).
 enumerates the grid and submits one `sbatch` per cell, reusing
 `submit-apertus-data-mix.sh` via env hooks. Per-size architecture, LR, and
 micro-batch come from the reviewed hyperparams files — `--arch deep` (default,
-[`hyperparams_deep.json`](hyperparams_deep.json)) or `--arch shallow`
-([`hyperparams_shallow.json`](hyperparams_shallow.json), the model-depth
+[`hyperparams/hyperparams_deep.json`](hyperparams/hyperparams_deep.json)) or `--arch shallow`
+([`hyperparams/hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json), the model-depth
 intervention variant at the same non-embedding sizes). The budget
 D(N) = 100 × N and the WSD schedule (~4% warmup, ~20% decay) live in each
 config's `predictivity` block inside those files.

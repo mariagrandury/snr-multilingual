@@ -168,16 +168,16 @@ appear in W&B under `mariagrandury-epflnlp/data-mix-small`.
 
 **All training data is built from the corpora curated at CSCS** — DCLM-edu
 (English) and FineWeb-2-HQ (multilingual), the filtered swiss-ai variants on
-`/capstor` — and tokenized _there_; nothing is downloaded from the HF Hub.
-Two scripts under `src/pretrain/` own the pipeline:
+`/capstor` — and tokenized *there*; nothing is downloaded from the HF Hub.
+Two scripts under `src/pretrain/data/` own the pipeline:
 
-- [`../create_data_mixture.py`](../create_data_mixture.py) — the worker:
+- [`../data/create_data_mixture.py`](../data/create_data_mixture.py) — the worker:
   streams the parquet sources, tokenizes with `swiss-ai/Apertus-70B-2509`,
   writes Megatron `.bin`/`.idx`, builds the fixed validation set, and
   excludes its rows from training via a manifest. Resumable after
   preemption.
-- [`../build_data_mixtures.py`](../build_data_mixtures.py) — the driver:
-  turns the language schemes (`../language_sets_scheme{A,B}.json`) into
+- [`../data/build_data_mixtures.py`](../data/build_data_mixtures.py) — the driver:
+  turns the language schemes (`../data/language_sets_scheme{A,B}.json`) into
   per-build `create_data_mixture.py` calls with the right token targets.
 
 ### 5a. Build on CSCS — EN+RU first, then the rest
@@ -187,7 +187,7 @@ ship it first; the remaining multilingual builds run while those two models
 already train:
 
 ```bash
-# CSCS login node, from src/pretrain/ ($OUT on /capstor or /iopsstor)
+# CSCS login node, from src/pretrain/data/ ($OUT on /capstor or /iopsstor)
 # 1. Fixed validation set + exclusion manifest (once — every build needs it)
 python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mariagrandury/data/ --stage validation
 
@@ -426,7 +426,7 @@ The first real experiment on Azure: two 2-language models — DCLM-edu
 (English) + FineWeb-2-HQ Russian, 50/50 — at **90M** (L15×d768, 92.9M
 non-embedding params) and **1.7B** (L30×d2304, 1.67B), both trained like
 the sweep (50,000 iters ≈ 103.2B tokens, GBS 504, seq 4096; hyperparams in
-`../hyperparams_deep.json`, cells in `configs/models.json` as
+`../hyperparams/hyperparams_deep.json`, cells in `configs/models.json` as
 `apertus-{90M,1.7B}-fwEdu50-fw2ru50-seed28`), auto-evaluated every 5
 checkpoints.
 
@@ -493,7 +493,7 @@ python launch_azure_predictivity.py --arch shallow     # the depth-intervention 
 ```
 
 `--arch` picks the reviewed architecture family — `deep` (default baseline,
-`../hyperparams_deep.json`) or `shallow` (`../hyperparams_shallow.json`, same
+`../hyperparams/hyperparams_deep.json`) or `shallow` (`../hyperparams/hyperparams_shallow.json`, same
 non-embedding sizes at width/depth 128); the D(N) = 100 × N schedule comes
 from each config's `predictivity` block. Runs land in W&B project `predictivity` as
 `apertus-<size>-L<L>-seed<seed>` (shallow runs as `...-L<L>-shallow-...`).
@@ -505,7 +505,7 @@ so the global batch of 504 always divides; the 1.7B resolves to MBS 1 on the
 
 Every other size × mixture × seed cell uses the same `train-full.yml` /
 `eval.yml` templates; the launchers fill in the per-cell architecture
-(from `../hyperparams_deep.json`), mixture and paths — same filter flags as
+(from `../hyperparams/hyperparams_deep.json`), mixture and paths — same filter flags as
 the cluster's `launch_trainings.py`:
 
 ```bash

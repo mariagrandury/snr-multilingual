@@ -3,8 +3,8 @@
 All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
 [compute budget](predictivity-compute-budget.md)). Source of truth: the two
-**reviewed** hyperparams files — `src/pretrain/hyperparams_deep.json` (deep
-baseline) and `src/pretrain/hyperparams_shallow.json` (shallow
+**reviewed** hyperparams files — `src/pretrain/hyperparams/hyperparams_deep.json` (deep
+baseline) and `src/pretrain/hyperparams/hyperparams_shallow.json` (shallow
 depth-intervention variant) — including the D = 100·N training schedule,
 stored per size in each config's `predictivity` block; regenerate this sheet
 if they change.
@@ -14,7 +14,7 @@ Updated 2026-08-14.
 ## The grid
 
 L ∈ {1, 2, 8, 15, 30, 50, 100} languages (English + L−1 FineWeb-2 languages,
-lists per scheme in `src/pretrain/language_sets_scheme{A,B}.json`).
+lists per scheme in `src/pretrain/data/language_sets_scheme{A,B}.json`).
 ✓ = one seed (1904) · **×3** = seeds 28, 1797, 1904.
 
 | Languages | 90M | 175M | 350M | 600M | 1B | 1.7B |
@@ -161,7 +161,7 @@ rows excluded from training via the manifest:
 | Validation (fixed) | 99 + EN | 5M tokens/language | reused by every model |
 
 Language lists: scheme A (resource-ranked) or scheme B (diversity-first),
-nested across settings — `src/pretrain/language_sets_scheme{A,B}.json`.
+nested across settings — `src/pretrain/data/language_sets_scheme{A,B}.json`.
 
 ## Evaluation
 

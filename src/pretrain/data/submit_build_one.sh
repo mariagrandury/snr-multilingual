@@ -18,7 +18,7 @@
 set -euo pipefail
 source ~/.bashrc
 conda activate snr
-cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 
 # The tokenizer (Rust/rayon) peaks at ~16-32 threads and slows past ~64, and the
 # serial write path is 20x faster than tokenization, so a build needs only a
@@ -28,7 +28,7 @@ export RAYON_NUM_THREADS=${SLURM_CPUS_PER_TASK:-32}
 export OMP_NUM_THREADS=$RAYON_NUM_THREADS
 export TOKENIZERS_PARALLELISM=true
 
-SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/submit_build_one.sh
+SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_one.sh
 LOGDIR=/iopsstor/scratch/cscs/mariagrandury/data/logs
 : "${BUILD_SCHEME:?set via --export}"; : "${BUILD_STAGE:?set via --export}"; : "${BUILD_OUT:?set via --export}"
 
