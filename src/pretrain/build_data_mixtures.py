@@ -137,9 +137,25 @@ def run(cmd: list, dry_run: bool) -> None:
         sys.exit(f"create_data_mixture.py failed (exit {result.returncode}); stopping.")
 
 
+def already_built(prefix: Path) -> bool:
+    """True once a create_data_mixture build has finished for this prefix.
+
+    create_data_mixture writes the .idx only in finalize() and removes its
+    .checkpoint.json only after that. So `.idx present and no .checkpoint.json`
+    marks a complete build; a partial (preempted) one still has the checkpoint.
+    This lets the sweep be resubmitted past the 12h wall: finished builds are
+    skipped instead of rebuilt from scratch (which would overwrite them).
+    """
+    return Path(f"{prefix}.idx").exists() and not Path(f"{prefix}.checkpoint.json").exists()
+
+
 def build_validation(out: Path, all_langs: str, args) -> None:
     """Step 1: the fixed validation set, once, over every FineWeb-2 language
     (English is added automatically by create_data_mixture.py)."""
+    manifest = out / f"{VALIDATION_PREFIX}.manifest.json"
+    if manifest.exists():
+        print(f"\n[validation] manifest present ({manifest}) — skipping.")
+        return
     run([
         sys.executable, str(CREATE_SCRIPT),
         "--build_validation",
@@ -152,12 +168,16 @@ def build_validation(out: Path, all_langs: str, args) -> None:
 
 def build_english(out: Path, manifest: Path, args) -> None:
     """Step 2: the single English (DCLM) dataset, validation rows excluded."""
+    prefix = out / ENGLISH_PREFIX
+    if already_built(prefix):
+        print(f"\n[{ENGLISH_PREFIX}] already built ({prefix}.idx present) — skipping.")
+        return
     run([
         sys.executable, str(CREATE_SCRIPT),
         "--target_tokens", str(english_target_tokens()),
         "--fineweb_pct", "0", "--dclm_pct", "100",
         "--validation_manifest", str(manifest),
-        "--output_prefix", str(out / ENGLISH_PREFIX),
+        "--output_prefix", str(prefix),
     ], args.dry_run)
 
 
@@ -168,6 +188,9 @@ def build_fineweb(out: Path, manifest: Path, sets: dict, setting: int, args) -> 
         print("\n[L=1] English-only setting — no FineWeb-2 build; trains on the English dataset alone.")
         return
     prefix = FINEWEB_PREFIX_FMT.format(L=setting)
+    if already_built(out / prefix):
+        print(f"\n[{prefix}] already built ({out / prefix}.idx present) — skipping.")
+        return
     run([
         sys.executable, str(CREATE_SCRIPT),
         "--target_tokens", str(fineweb_target_tokens(setting)),

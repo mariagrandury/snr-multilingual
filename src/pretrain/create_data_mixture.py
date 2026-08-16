@@ -522,10 +522,13 @@ def build_validation_set(
             continue
 
         first_file = files[0]
-        table = pq.read_table(first_file, columns=["text"])
-        texts = table.column("text").to_pylist()
-        del table
-        n_rows = len(texts)
+        # n_rows comes from the parquet footer (O(1)); we then stream the file
+        # in batches and stop at the token budget. Validation consumes only the
+        # first few thousand rows, so we never materialize the whole (multi-GB)
+        # file — a full to_pylist() spikes ~2.5 GB per source and gets a login
+        # node's long-running job reaped.
+        pf = pq.ParquetFile(first_file)
+        n_rows = pf.metadata.num_rows
         row_cap = int(args.val_max_fraction * n_rows)
 
         prefix = f"{args.output_prefix}.{name}"
@@ -534,23 +537,24 @@ def build_validation_set(
         n_bytes = 0
         n_docs = 0
         val_doc_count = 0  # number of leading rows assigned to validation
+        row_idx = 0
         stop = False
 
-        for batch_start in range(0, n_rows, args.batch_size):
+        for batch in pf.iter_batches(batch_size=args.batch_size, columns=["text"]):
             if stop:
                 break
-            batch_rows = texts[batch_start:batch_start + args.batch_size]
+            batch_rows = batch.column("text").to_pylist()
             # Tokenize the whole batch, mapping None/empty to "" to keep row
             # alignment (empty text tokenizes to an empty id list).
             safe = [t if t is not None else "" for t in batch_rows]
             encoded = tokenizer(safe, add_special_tokens=False)["input_ids"]
-            for offset, (text, ids) in enumerate(zip(batch_rows, encoded)):
-                row_idx = batch_start + offset
+            for text, ids in zip(batch_rows, encoded):
                 if toks >= args.val_tokens_per_language or row_idx >= row_cap:
                     stop = True
                     break
                 # rows[0:row_idx+1] are reserved for validation (boundary by row)
                 val_doc_count = row_idx + 1
+                row_idx += 1
                 if text is None or len(text) == 0 or len(ids) == 0:
                     continue
                 writer.add_document(np.array(ids, dtype=OUTPUT_DTYPE))
