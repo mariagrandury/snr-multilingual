@@ -138,24 +138,32 @@ wired — see the plan's open question 4.
 ### 1. Build the data mixtures (once)
 
 [`build_data_mixtures.py`](build_data_mixtures.py) drives
-[`create_data_mixture.py`](create_data_mixture.py) over the whole sweep: one
-fixed validation set, one English (DCLM) dataset, and one FineWeb-2 dataset per
-language setting. They are blended 50/50 at train time, so each is built once.
+[`create_data_mixture.py`](create_data_mixture.py) to build one fixed validation
+set, one English (DCLM) dataset, and one FineWeb-2 dataset per language setting;
+they are blended 50/50 at train time, so each is built once. Validation must be
+built first (english/fineweb read its manifest to hold out the same rows).
+
+Launch **one self-chaining Slurm job per mixture** so they build in parallel and
+each `.bin`/`.idx` is ready to start its training run independently:
 
 ```bash
-# Dry-run first — prints the per-build token targets and the exact commands:
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --dry_run
+# EN+RU first — its own job, sized for the 1.7B run (rus_Cyrl, ~92B):
+sbatch submit_build_l2.sh
 
-# Recommended order — EN+RU first (validation, then the English dataset and
-# the L2 = rus_Cyrl build), so the bilingual minimal plan can start training
-# while the big multilingual builds run:
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage validation
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage english
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb --settings 2
-python build_data_mixtures.py --scheme A --output_dir <DATA_DIR> --stage fineweb --settings 8,15,30,50,100
-
-# (each create_data_mixture.py run is resumable; `--stage all` builds everything)
+# Everything else — english + scheme A {8,15,30,50,100} + scheme B {8,15,30},
+# one job per mixture (validation is built once, up front, by the english job):
+./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
+./launch_builds.sh
 ```
+
+[`launch_builds.sh`](launch_builds.sh) fans out to
+[`submit_build_one.sh`](submit_build_one.sh) (one mixture per job). Each job caps
+the tokenizer to ~32 cores — it peaks at ~16–32 threads, so ~9 builds pack per
+node — and self-chains a `--dependency=singleton` successor to resume past the
+12h wall. Builds are idempotent: a finished mixture (`.idx` present) is skipped,
+a preempted one resumes from its checkpoint, so re-running is always safe.
+Scheme B lands in `<DATA_DIR>/schemeB/` (its own `--data_dir`, with the shared
+english build and validation manifest symlinked in).
 
 Everything runs on the cluster's curated corpora (DCLM-edu + FineWeb-2-HQ on
 `/capstor`) — nothing is downloaded from the HF Hub. To train on Azure, ship
