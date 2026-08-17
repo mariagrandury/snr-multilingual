@@ -294,13 +294,25 @@ def estimate_tokens_per_byte(
     sample_files: int = DEFAULT_SAMPLE_FILES,
     sample_rows: int = DEFAULT_SAMPLE_ROWS,
 ) -> float:
-    """Estimate tokens-per-byte ratio by tokenizing a sample of rows."""
+    """Estimate tokens-per-byte ratio by tokenizing a sample of rows.
+
+    Only the leading `sample_rows` rows of each sampled file are read. Reading
+    the file whole to keep 2000 rows costs a full decompress and ~2 GB of RSS
+    per file — 100 languages x 5 files is ~150 GB of I/O before a single token
+    is written, on every fresh build.
+    """
     files_to_sample = parquet_files[:sample_files]
     total_bytes = 0
     total_tokens = 0
     for f in files_to_sample:
-        table = pq.read_table(f, columns=["text"])
-        texts = table.column("text").to_pylist()[:sample_rows]
+        texts: List[Optional[str]] = []
+        for batch in pq.ParquetFile(f).iter_batches(
+            batch_size=min(sample_rows, DEFAULT_BATCH_SIZE), columns=["text"]
+        ):
+            texts.extend(batch.column("text").to_pylist())
+            if len(texts) >= sample_rows:
+                break
+        texts = texts[:sample_rows]
         if not texts:
             continue
         for text in texts:
