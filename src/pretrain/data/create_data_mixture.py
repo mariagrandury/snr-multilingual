@@ -161,7 +161,18 @@ class MegatronDatasetWriter:
             # crashed mid-write, leaving trailing garbage bytes.
             expected_bytes = sum(sequence_lengths) * np.dtype(OUTPUT_DTYPE).itemsize
             actual_bytes = os.path.getsize(self.bin_path)
-            if actual_bytes != expected_bytes:
+            if actual_bytes < expected_bytes:
+                # truncate() would pad with NULs here, silently turning the gap
+                # into token id 0 and corrupting the dataset at the seam. The
+                # .bin is only ever flushed before its checkpoint is written, so
+                # this means the two are out of sync (lost writes, wrong file).
+                raise RuntimeError(
+                    f"{self.bin_path} is SHORTER than its checkpoint expects "
+                    f"({actual_bytes} < {expected_bytes} bytes). Refusing to "
+                    f"zero-pad. The checkpoint and .bin disagree; inspect both "
+                    f"before rerunning."
+                )
+            if actual_bytes > expected_bytes:
                 print(
                     f"  Truncating .bin from {actual_bytes} to "
                     f"{expected_bytes} bytes (removing partial write)"
