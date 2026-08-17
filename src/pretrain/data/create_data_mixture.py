@@ -135,6 +135,10 @@ class MegatronDatasetWriter:
     """Writes Megatron IndexedDataset .bin/.idx files.
 
     Supports resume by accepting pre-existing state.
+
+    One parquet row = one document = one sequence, so the .idx document index
+    is always exactly arange(len(sequence_lengths) + 1). It is generated in
+    _write_idx rather than accumulated, so only sequence_lengths is tracked.
     """
 
     def __init__(
@@ -143,7 +147,6 @@ class MegatronDatasetWriter:
         *,
         resume: bool = False,
         sequence_lengths: Optional[List[int]] = None,
-        document_indices: Optional[List[int]] = None,
     ):
         self.output_prefix = output_prefix
         self.bin_path = output_prefix + ".bin"
@@ -151,7 +154,6 @@ class MegatronDatasetWriter:
 
         if resume and sequence_lengths is not None:
             self.sequence_lengths = sequence_lengths
-            self.document_indices = document_indices
             # Truncate .bin to the expected size in case the previous run
             # crashed mid-write, leaving trailing garbage bytes.
             expected_bytes = sum(sequence_lengths) * np.dtype(OUTPUT_DTYPE).itemsize
@@ -166,7 +168,6 @@ class MegatronDatasetWriter:
             self.bin_file = open(self.bin_path, "ab")
         else:
             self.sequence_lengths = []
-            self.document_indices = [0]
             self.bin_file = open(self.bin_path, "wb")
 
     def add_document(self, token_ids: np.ndarray) -> int:
@@ -177,7 +178,6 @@ class MegatronDatasetWriter:
         arr = token_ids.astype(OUTPUT_DTYPE)
         self.bin_file.write(arr.tobytes(order="C"))
         self.sequence_lengths.append(len(arr))
-        self.document_indices.append(len(self.sequence_lengths))
         return len(arr)
 
     def flush(self):
@@ -190,7 +190,8 @@ class MegatronDatasetWriter:
 
     def _write_idx(self):
         seq_lengths = np.array(self.sequence_lengths, dtype=np.int32)
-        doc_indices = np.array(self.document_indices, dtype=np.int64)
+        # One document per sequence: doc_indices == [0, 1, ..., n].
+        doc_indices = np.arange(len(seq_lengths) + 1, dtype=np.int64)
 
         # Build sequence pointers (byte offsets into .bin)
         itemsize = np.dtype(OUTPUT_DTYPE).itemsize
@@ -231,7 +232,6 @@ def save_checkpoint(
     output_prefix: str,
     source_progress: Dict,
     sequence_lengths: List[int],
-    document_indices: List[int],
     total_docs: int,
     total_toks: int,
     plan: List[dict],
@@ -243,7 +243,6 @@ def save_checkpoint(
         "total_toks": total_toks,
         "plan": plan,
         "num_sequences": len(sequence_lengths),
-        "num_documents": len(document_indices),
     }
     ckpt_file = checkpoint_path(output_prefix)
     # Every part of the checkpoint is written atomically (tmp file + rename).
@@ -253,8 +252,6 @@ def save_checkpoint(
     # the same way, and a multi-day build becomes unresumable.
     _atomic_save_npy(ckpt_file + ".seq_lengths.npy",
                      np.array(sequence_lengths, dtype=np.int32))
-    _atomic_save_npy(ckpt_file + ".doc_indices.npy",
-                     np.array(document_indices, dtype=np.int64))
     tmp = ckpt_file + ".tmp"
     with open(tmp, "w") as f:
         json.dump(ckpt, f, indent=2)
@@ -262,7 +259,12 @@ def save_checkpoint(
 
 
 def load_checkpoint(output_prefix: str) -> Optional[dict]:
-    """Load checkpoint if it exists."""
+    """Load checkpoint if it exists.
+
+    Checkpoints written before doc_indices was dropped still carry a
+    .doc_indices.npy next to this file; it is ignored (it only ever held
+    arange) so in-flight builds resume across the change without a rebuild.
+    """
     ckpt_file = checkpoint_path(output_prefix)
     if not os.path.isfile(ckpt_file):
         return None
@@ -270,9 +272,6 @@ def load_checkpoint(output_prefix: str) -> Optional[dict]:
         ckpt = json.load(f)
     ckpt["sequence_lengths"] = np.load(
         ckpt_file + ".seq_lengths.npy"
-    ).tolist()
-    ckpt["document_indices"] = np.load(
-        ckpt_file + ".doc_indices.npy"
     ).tolist()
     return ckpt
 
@@ -726,7 +725,6 @@ def process_sources(
                 args.output_prefix,
                 source_progress,
                 writer.sequence_lengths,
-                writer.document_indices,
                 total_docs,
                 total_toks,
                 plan_serializable,
@@ -924,7 +922,6 @@ def main():
             args.output_prefix,
             resume=True,
             sequence_lengths=ckpt["sequence_lengths"],
-            document_indices=ckpt["document_indices"],
         )
     else:
         writer = MegatronDatasetWriter(args.output_prefix)
