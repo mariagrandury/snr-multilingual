@@ -76,6 +76,18 @@ source env.sh
 bash setup_azure.sh
 ```
 
+**Credentials & W&B config.** `source env.sh` loads the Azure names _and_ the
+W&B **entity/project** from `configs/hf_wandb.json` (the single source of
+truth — nothing else hardcodes them). The two **secrets** — `WANDB_API_KEY`
+and your Hugging Face token — are _not_ in any file and are never re-entered
+in this guide: they live in your laptop's shell env / HF login. Each step that
+needs them just verifies they're present first, e.g.:
+
+```bash
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
+huggingface-cli whoami >/dev/null 2>&1 && echo "✓ HF logged in" || echo "✗ run: huggingface-cli login"
+```
+
 What this creates (all inside one **resource group**, a folder you can later
 delete in one command):
 
@@ -137,7 +149,8 @@ the exact code path of the real run (swiss-ai Megatron fork, xIELU/QK-norm
 kernels, AdEMAMix optimizer, `torch_dist` checkpoint save) for pocket change:
 
 ```bash
-export WANDB_API_KEY=<your key>       # optional but recommended
+source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (optional for the smoke test)"
 az ml job create --file jobs/train-smoke.yml $AZ_ML_ARGS \
   --set environment_variables.WANDB_API_KEY=$WANDB_API_KEY \
   --web                               # opens the job page in Azure ML Studio
@@ -162,7 +175,7 @@ like:
 Loss starting near 11.8 (= ln 131072, random init over the vocab) and
 decreasing is the success signal, plus `successfully saved checkpoint at
 iteration 20` at the end. If `WANDB_API_KEY` was set you'll also see the run
-appear in W&B under `mariagrandury-epflnlp/data-mix-small`.
+appear in W&B under `mariagrandury-epflnlp/msnr`.
 
 ## 5. Generate the data mixtures (CSCS) and ship them to Azure
 
@@ -211,40 +224,72 @@ each dataset is built exactly once.
 Upload once to the Spain workspace; the UK copy is server-side inside Azure
 (nothing flows through CSCS twice):
 
+**On your laptop** (has `az` + `env.sh`)
+
+1. Find each workspace's storage account and container behind the workspaceblobstore datastore:
+
 ```bash
-# 0. One-time, on the CSCS login node:
-wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
-export PATH="$PWD/azcopy_linux_amd64"*:$PATH
-
-# 1. On your laptop (has az + env.sh): find each workspace's storage account
-#    and container behind the workspaceblobstore datastore:
 az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_ES \
-  --query '{account:account_name, container:container_name}'
+ --query '{account:account_name, container:container_name}'
 az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
-  --query '{account:account_name, container:container_name}'
+ --query '{account:account_name, container:container_name}'
+```
 
-# 2. Mint a container SAS per workspace (write for the upload target,
-#    read on Spain for the copy) — plug in the account/container from step 1,
-#    and paste the printed token after '?' below. The date expression is
-#    portable (BSD/macOS `-v` first, GNU/Linux `-d` fallback):
-az storage container generate-sas --account-name <ES_ACCOUNT> --name <ES_CONTAINER> \
+The Spain (`AZ_ES_*`) storage behind `workspaceblobstore` — not secrets; re-run
+`az ml datastore show` if you ever recreate the workspace and these change:
+
+```
+account   = snreswsstorage217e4ec3bb
+container = azureml-blobstore-2ed07b42-5369-425f-b7f2-df29b3684e32
+```
+
+2. Mint a 7-day container SAS. It prints
+   a token that IS a secret: paste it into `ES_SAS` on the CSCS side below, never
+   into a committed file. The date expression is macOS/Linux portable:
+
+```bash
+az storage container generate-sas \
+  --account-name snreswsstorage217e4ec3bb \
+  --name azureml-blobstore-2ed07b42-5369-425f-b7f2-df29b3684e32 \
   --permissions racwl \
   --expiry "$(date -u -v+7d '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+7 days' '+%Y-%m-%dT%H:%MZ')" \
   --auth-mode login --as-user -o tsv
 
-# 3. From the CSCS login node — EN+RU first (unblocks §10), rest later:
-azcopy copy "$OUT/english_dclm*" \
-  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/english_dclm/?<ES_SAS>'
-azcopy copy "$OUT/fineweb_L2*" \
-  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/fineweb_L2/?<ES_SAS>'
-# ...then each fineweb_L<L> build into its own folder the same way, plus
-# validation* into predictivity/data/validation/.
+# (For UK later: az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK
+#  --query '{account:account_name, container:container_name}', then the same
+#  generate-sas against those.)
+```
 
-# 4. Duplicate Spain -> UK entirely server-side (fast, no egress from CSCS):
-azcopy copy \
-  'https://<es-account>.blob.core.windows.net/<es-container>/predictivity/data/?<ES_SAS>' \
-  'https://<uk-account>.blob.core.windows.net/<uk-container>/predictivity/?<UK_SAS>' \
-  --recursive
+**On the CSCS login node** — install azcopy, set the target + token once, then
+copy every build into its own folder (`$OUT` = the §5a build dir):
+
+```bash
+# azcopy is a single static binary — no root/install:
+wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
+export PATH="$PWD/azcopy_linux_amd64"*:$PATH
+
+# Spain target + the SAS token you just printed on your laptop:
+export ES="https://snreswsstorage217e4ec3bb.blob.core.windows.net/azureml-blobstore-2ed07b42-5369-425f-b7f2-df29b3684e32"
+export ES_SAS='PASTE_THE_TOKEN_HERE'
+
+# EN+RU first (unblocks §10), then the rest — one build per folder:
+azcopy copy "$OUT/english_dclm*" "$ES/predictivity/data/english_dclm/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L2*"   "$ES/predictivity/data/fineweb_L2/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L8*"   "$ES/predictivity/data/fineweb_L8/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L15*"  "$ES/predictivity/data/fineweb_L15/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L30*"  "$ES/predictivity/data/fineweb_L30/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L50*"  "$ES/predictivity/data/fineweb_L50/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L100*" "$ES/predictivity/data/fineweb_L100/?$ES_SAS"
+azcopy copy "$OUT/validation*"   "$ES/predictivity/data/validation/?$ES_SAS"
+
+# --- LATER (only after the UK workspace exists — §11) ---------------------
+# The UK account/container don't exist until you run setup_azure.sh for the UK
+# workspace, so `datastore show $AZ_ML_ARGS_UK` fails until then. Once it's up,
+# get its account/container, mint a UK SAS the same way, and duplicate Spain ->
+# UK entirely server-side (fast, no egress from CSCS):
+export UK="https://<uk-account>.blob.core.windows.net/<uk-container>"
+export UK_SAS='PASTE_THE_UK_TOKEN_HERE'
+azcopy copy "$ES/predictivity/data/?$ES_SAS" "$UK/predictivity/?$UK_SAS" --recursive
 ```
 
 (If `--auth-mode login --as-user` is rejected on your account, generate the
@@ -269,13 +314,14 @@ are symlinks, so tell azcopy to follow them) and write the `data_path.txt`
 manifest `train.sh` reads, weights proportional to the actual `.bin` sizes:
 
 ```bash
+# Reuses $ES / $ES_SAS exported in §5b (same CSCS login session).
 cd <CSCS_MIX_DIR>   # e.g. the frozen mix_100B_30_70
 total=$(du -cbL *.bin | tail -1 | cut -f1)
 for b in *.bin; do
   printf '%.6f %s\n' "$(python3 -c "print($(stat -Lc%s "$b")/$total)")" "${b%.bin}"
 done > data_path.txt
 azcopy copy "$PWD/*" \
-  'https://<es-account>.blob.core.windows.net/<es-container>/tokenized/mix_30_70/full/?<ES_SAS>' \
+  "$ES/tokenized/mix_30_70/full/?$ES_SAS" \
   --recursive --follow-symlinks
 ```
 
@@ -405,7 +451,8 @@ Edit the group in `configs/tasks.json` to change the list.
 Start the watcher in a terminal alongside your training run:
 
 ```bash
-source env.sh && export WANDB_API_KEY=<key>
+source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 python auto_evals.py --watch 600        # one pass every 10 min; Ctrl-C to stop
 ```
 
@@ -438,16 +485,19 @@ repeat against the UK account for the 1.7B) and give it the 2-line blend
 manifest `train.sh` reads:
 
 ```bash
-source env.sh && export WANDB_API_KEY=<key>
+source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 
 # 1. Compose tokenized/mix_enru_50_50/full from the predictivity builds
-ES='https://<es-account>.blob.core.windows.net/<es-container>'
-azcopy copy "$ES/predictivity/data/english_dclm/?<ES_SAS>" \
-            "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>" --recursive
-azcopy copy "$ES/predictivity/data/fineweb_L2/?<ES_SAS>" \
-            "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>" --recursive
+#    (same $ES / $ES_SAS as §5b; mint a fresh SAS if the old one expired):
+ES="https://snreswsstorage217e4ec3bb.blob.core.windows.net/azureml-blobstore-2ed07b42-5369-425f-b7f2-df29b3684e32"
+export ES_SAS='PASTE_THE_TOKEN_HERE'
+azcopy copy "$ES/predictivity/data/english_dclm/?$ES_SAS" \
+            "$ES/tokenized/mix_enru_50_50/full/?$ES_SAS" --recursive
+azcopy copy "$ES/predictivity/data/fineweb_L2/?$ES_SAS" \
+            "$ES/tokenized/mix_enru_50_50/full/?$ES_SAS" --recursive
 printf '0.50 english_dclm/english_dclm\n0.50 fineweb_L2/fineweb_L2\n' > data_path.txt
-azcopy copy data_path.txt "$ES/tokenized/mix_enru_50_50/full/?<ES_SAS>"
+azcopy copy data_path.txt "$ES/tokenized/mix_enru_50_50/full/?$ES_SAS"
 
 # 2. Launch the trainings: 90M on Spain, 1.7B on the UK Spot pool
 python launch_azure_trainings.py --size 90M --seed 28
@@ -485,7 +535,8 @@ pipeline is §5 (build order: EN+RU first, then the remaining settings).
 and run as nodes free up — resubmitting any cell resumes it):
 
 ```bash
-source env.sh && export WANDB_API_KEY=<key>
+source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 python launch_azure_predictivity.py --dry-run          # the whole 51-job grid
 python launch_azure_predictivity.py --langs 1          # monolingual anchors first
 python launch_azure_predictivity.py                    # everything
@@ -495,7 +546,9 @@ python launch_azure_predictivity.py --arch shallow     # the depth-intervention 
 `--arch` picks the reviewed architecture family — `deep` (default baseline,
 `../hyperparams/hyperparams_deep.json`) or `shallow` (`../hyperparams/hyperparams_shallow.json`, same
 non-embedding sizes at width/depth 128); the D(N) = 100 × N schedule comes
-from each config's `predictivity` block. Runs land in W&B project `predictivity` as
+from each config's `predictivity` block. Runs land in the W&B entity/project
+from `configs/hf_wandb.json` (currently `msnr`) — injected into every job by
+`launch_azure_predictivity.py`, no per-run setup — named
 `apertus-<size>-L<L>-seed<seed>` (shallow runs as `...-L<L>-shallow-...`).
 Micro-batch sizes tuned for the cluster are auto-shrunk per node (`train.sh`)
 so the global batch of 504 always divides; the 1.7B resolves to MBS 1 on the
@@ -509,7 +562,8 @@ Every other size × mixture × seed cell uses the same `train-full.yml` /
 the cluster's `launch_trainings.py`:
 
 ```bash
-source env.sh && export WANDB_API_KEY=<key>
+source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+[ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 
 # preview, then launch: all three mixtures of 350M seed 28
 python launch_azure_trainings.py --size 350M --seed 28 --dry-run
@@ -558,6 +612,8 @@ convention (repo per cell, branch per checkpoint — same as
 `../conversion/push-snr.py` uses on the cluster):
 
 ```bash
+# Uses your saved HF login (token on this laptop) — verify, don't re-enter:
+huggingface-cli whoami >/dev/null 2>&1 && echo "✓ HF logged in" || echo "✗ run: huggingface-cli login"
 huggingface-cli upload <your-org>/apertus-175M-fwEdu30-fw270-seed28 \
   ./iter_0050000 . --revision stage1-step-50000 --private
 ```

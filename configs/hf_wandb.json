@@ -3,7 +3,8 @@
   "parquet_pattern": "{split}-00000-of-00001.parquet",
   "wandb": {
     "entity": "mariagrandury-epflnlp",
-    "project": "snr-experiments"
+    "project_legacy": "snr-experiments",
+    "project": "msnr"
   },
   "multilingual_evals": {
     "raw_source_repos": [

@@ -39,7 +39,9 @@ outputs:
     path: azureml://datastores/workspaceblobstore/paths/predictivity/runs/placeholder/cache
     mode: rw_mount
 environment_variables:
-  PROJECT_NAME: predictivity
+  # Fallback only; launch_azure_predictivity.py overrides PROJECT_NAME and
+  # WANDB_ENTITY from configs/hf_wandb.json (the single source of truth).
+  PROJECT_NAME: msnr
   TOKENIZER_MODEL: swiss-ai/Apertus-70B-2509
   SAVE_INTERVAL: "2000"
   CKPT_DIR: ${{outputs.checkpoints}}

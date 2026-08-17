@@ -60,9 +60,12 @@ HYPERPARAMS = {
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
 }
 
-# W&B / checkpoint project for this sweep (kept separate from the old
-# data-mix-small project so the two experiments don't share run curves).
-PROJECT_NAME = "predictivity"
+# W&B for this sweep: single source of truth is configs/hf_wandb.json
+_HF_WANDB = json.loads(
+    (SCRIPT_DIR.parent.parent / "configs" / "hf_wandb.json").read_text()
+)["wandb"]
+WANDB_ENTITY = _HF_WANDB["entity"]
+PROJECT_NAME = _HF_WANDB["project"]
 
 # Tokenizer that produced the .bin token IDs (build_data_mixtures.py default).
 # Must match at train time or the vocab/EOD ids won't line up.
@@ -330,9 +333,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--seed", metavar="SEED", type=int, help="Filter by seed")
     parser.add_argument(
-        "--arch", choices=["deep", "shallow"], default="deep",
+        "--arch",
+        choices=["deep", "shallow"],
+        default="deep",
         help="Architecture family: deep (baseline, width/depth 64) or shallow "
-             "(width/depth 128 — the model-depth intervention level).",
+        "(width/depth 128 — the model-depth intervention level).",
     )
     parser.add_argument(
         "--data_dir",

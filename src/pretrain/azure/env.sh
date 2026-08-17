@@ -44,9 +44,14 @@ export AZ_WS="$AZ_ES_WS"
 # gpu-nc80-lp in Spain Central, gpu-nd96-spot in UK South — see the
 # compute-*.yml files.
 
-# W&B (primary monitoring). Set the key in your shell, never in a committed file:
-#   export WANDB_API_KEY=...
-export WANDB_ENTITY="mariagrandury-epflnlp"
+# W&B config — single source of truth is configs/hf_wandb.json (entity +
+# project), loaded here so nothing else hardcodes them. The API key is NOT
+# here and is never committed: it lives in your shell/login on your laptop and
+# is read from $WANDB_API_KEY when a job needs it (verify with `printenv`).
+_hfwandb="$(cd "$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")/../../.." && pwd)/configs/hf_wandb.json"
+export WANDB_ENTITY="$(python3 -c "import json;print(json.load(open('$_hfwandb'))['wandb']['entity'])" 2>/dev/null || echo mariagrandury-epflnlp)"
+export WANDB_PROJECT="$(python3 -c "import json;print(json.load(open('$_hfwandb'))['wandb']['project'])" 2>/dev/null || echo msnr)"
+unset _hfwandb
 
 # Convenience: every `az ml` call needs these two flags.
 export AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"
