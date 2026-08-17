@@ -3,7 +3,12 @@
 #SBATCH --time=11:59:59
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=24000
+# 32 cpus caps packing at ~9 builds per 288-core node; a node has ~460GB, so mem
+# is not the binding constraint. 48GB is generous headroom for the doc-count-
+# driven peak of the big multilingual builds (the writer holds all
+# sequence_lengths in memory, plus one streamed parquet batch), without reducing
+# packing (9 x 48 < 460).
+#SBATCH --mem=48000
 #SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data/logs/%x-%j.out
 #SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data/logs/%x-%j.out
 #SBATCH --no-requeue

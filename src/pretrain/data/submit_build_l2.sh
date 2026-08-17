@@ -4,7 +4,7 @@
 #SBATCH --time=11:59:59
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=24000
+#SBATCH --mem=48000  # doc-count-driven peak headroom; packing is cpu-bound (9/node), see submit_build_one.sh
 #SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data/build-l2-%j.out
 #SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data/build-l2-%j.out
 #SBATCH --no-requeue
