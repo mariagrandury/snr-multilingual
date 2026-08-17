@@ -83,7 +83,7 @@ LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100]
 EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
 # Which language settings each size trains at. Every size covers all settings
-# except 1.7B, the top rung, which the plan trains only at L in {1,8,30,100}.
+# except 1.7B, the top rung, which the plan trains only at L in {1,2,8,30,100}.
 # (The 200-language setting was dropped 2026-08-13 for budget + deadline.)
 SIZE_LANG_SETTINGS = {
     "90M": LANG_SETTINGS,
@@ -91,7 +91,7 @@ SIZE_LANG_SETTINGS = {
     "350M": LANG_SETTINGS,
     "600M": LANG_SETTINGS,
     "1B": LANG_SETTINGS,
-    "1.7B": [1, 8, 30, 100],
+    "1.7B": [1, 2, 8, 30, 100],
 }
 
 # Cells trained with three seeds (else one). The plan marks the 175M and 1B
