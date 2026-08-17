@@ -30,10 +30,10 @@ PREFIX=$OUT/fineweb_L2
 # Scheme A L2 = Russian (rus_Cyrl). Built in its own job, in parallel with the
 # main sweep's english build, because it is independent — it only needs the
 # validation manifest (already written), not the english data. Sized for the
-# LARGEST run we intend at L=2 — the 1.7B model, not just the 1B — reusing
-# build_data_mixtures' own sizing (SIZE_BUDGET[1.7B] x 50% ml share x 110%
-# headroom) so there is no hard-coded token count (~92B).
-TARGET=$(python -c "import build_data_mixtures as b; print(b.round_to_b(b.SIZE_BUDGET_B['1.7B']*b.ML_SHARE*(1+b.HEADROOM)))")
+# LARGEST run we intend at L=2 (the 1.7B model), straight from
+# build_data_mixtures' own sizing so this job and `--settings 2` can never
+# disagree (~92B).
+TARGET=$(python -c "import build_data_mixtures as b; print(b.fineweb_target_tokens(2))")
 
 # Already complete? (.idx present and the resume checkpoint removed.) Skip and,
 # crucially, do NOT requeue — this is what ends the singleton chain and prevents

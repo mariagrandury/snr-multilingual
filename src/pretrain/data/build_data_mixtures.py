@@ -63,10 +63,10 @@ SIZE_BUDGET_B = _load_size_budget_b()
 
 # The largest model trained at each language setting (from the Models table in
 # the plan, 200-language setting dropped 2026-08-13): the 1.7B reference
-# exists only at L in {1, 8, 30, 100}; the 1B model is the largest everywhere
+# exists at L in {1, 2, 8, 30, 100}; the 1B model is the largest everywhere
 # else. This sets each setting's largest single-run token budget.
 LARGEST_SIZE_PER_SETTING = {
-    1: "1.7B", 2: "1B", 8: "1.7B", 15: "1B",
+    1: "1.7B", 2: "1.7B", 8: "1.7B", 15: "1B",
     30: "1.7B", 50: "1B", 100: "1.7B",
 }
 
