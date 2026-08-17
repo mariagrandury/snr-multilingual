@@ -216,6 +216,17 @@ def checkpoint_path(output_prefix: str) -> str:
     return output_prefix + ".checkpoint.json"
 
 
+def _atomic_save_npy(path: str, arr: np.ndarray):
+    """np.save to a tmp file, then rename into place.
+
+    os.replace is atomic within a filesystem, so a reader either sees the
+    previous checkpoint or the new one, never a half-written array.
+    """
+    tmp = path + ".tmp.npy"  # np.save would append .npy anyway; be explicit
+    np.save(tmp, arr)
+    os.replace(tmp, path)
+
+
 def save_checkpoint(
     output_prefix: str,
     source_progress: Dict,
@@ -235,10 +246,15 @@ def save_checkpoint(
         "num_documents": len(document_indices),
     }
     ckpt_file = checkpoint_path(output_prefix)
-    # Save index arrays as numpy files for efficiency
-    np.save(ckpt_file + ".seq_lengths.npy", np.array(sequence_lengths, dtype=np.int32))
-    np.save(ckpt_file + ".doc_indices.npy", np.array(document_indices, dtype=np.int64))
-    # Write JSON atomically (write to tmp, then rename)
+    # Every part of the checkpoint is written atomically (tmp file + rename).
+    # These jobs are *designed* to be killed at the 12h wall, and a kill landing
+    # inside a multi-hundred-MB np.save would leave a truncated .npy that the
+    # JSON still points at: np.load then raises, every singleton successor dies
+    # the same way, and a multi-day build becomes unresumable.
+    _atomic_save_npy(ckpt_file + ".seq_lengths.npy",
+                     np.array(sequence_lengths, dtype=np.int32))
+    _atomic_save_npy(ckpt_file + ".doc_indices.npy",
+                     np.array(document_indices, dtype=np.int64))
     tmp = ckpt_file + ".tmp"
     with open(tmp, "w") as f:
         json.dump(ckpt, f, indent=2)
@@ -263,7 +279,8 @@ def load_checkpoint(output_prefix: str) -> Optional[dict]:
 
 def remove_checkpoint(output_prefix: str):
     """Remove checkpoint files after successful completion."""
-    for suffix in ["", ".seq_lengths.npy", ".doc_indices.npy"]:
+    for suffix in ["", ".seq_lengths.npy", ".doc_indices.npy",
+                   ".seq_lengths.npy.tmp.npy", ".doc_indices.npy.tmp.npy"]:
         path = checkpoint_path(output_prefix) + suffix
         if os.path.isfile(path):
             os.remove(path)
