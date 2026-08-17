@@ -60,12 +60,12 @@ HYPERPARAMS = {
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
 }
 
-# W&B for this sweep: single source of truth is configs/hf_wandb.json
-_HF_WANDB = json.loads(
+# W&B project for this sweep — single source of truth is configs/hf_wandb.json.
+# The entity is always "mariagrandury-epflnlp"; it is hardcoded in the training
+# entrypoints (submit-apertus-data-mix.sh / azure/train.sh), not threaded here.
+PROJECT_NAME = json.loads(
     (SCRIPT_DIR.parent.parent / "configs" / "hf_wandb.json").read_text()
-)["wandb"]
-WANDB_ENTITY = _HF_WANDB["entity"]
-PROJECT_NAME = _HF_WANDB["project"]
+)["wandb"]["project"]
 
 # Tokenizer that produced the .bin token IDs (build_data_mixtures.py default).
 # Must match at train time or the vocab/EOD ids won't line up.

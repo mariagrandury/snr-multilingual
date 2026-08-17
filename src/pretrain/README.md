@@ -189,7 +189,10 @@ micro-batch come from the reviewed hyperparams files — `--arch deep` (default,
 intervention variant at the same non-embedding sizes). The budget
 D(N) = 100 × N and the WSD schedule (~4% warmup, ~20% decay) live in each
 config's `predictivity` block inside those files.
-Checkpoints land under `.../Meg-Runs/predictivity/<EXP_NAME>/`.
+Checkpoints land under `.../Meg-Runs/predictivity/<EXP_NAME>/`. Runs log to W&B
+under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant and the
+project comes from [`configs/hf_wandb.json`](../../configs/hf_wandb.json)
+(`wandb.project`), the single place to change it.
 
 ```bash
 # Whole sweep — always dry-run first:

@@ -38,7 +38,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from launch_trainings_predictivity import (  # noqa: E402
-    EN_SHARE, HYPERPARAMS, PROJECT_NAME, TOKENIZER_MODEL, WANDB_ENTITY,
+    EN_SHARE, HYPERPARAMS, PROJECT_NAME, TOKENIZER_MODEL,
     mix_label, predictivity_cells, schedule_for)
 
 DATASTORE = "azureml://datastores/workspaceblobstore/paths/predictivity"
@@ -90,10 +90,10 @@ def submit(cell: dict, cfg: dict, arch: str, dry_run: bool) -> None:
         "environment_variables.SEED": seed,
         "environment_variables.DATA_MIX_LABEL": mix,
         "environment_variables.DATA_BLEND": data_blend(L),
-        # W&B entity/project from configs/hf_wandb.json (via the shared
-        # launcher constants) — the job container can't read the config itself
-        # (code context is src/pretrain/), so pass them in here.
-        "environment_variables.WANDB_ENTITY": WANDB_ENTITY,
+        # W&B project from configs/hf_wandb.json (via the shared launcher
+        # constant) — the job container can't read the repo config itself (code
+        # context is src/pretrain/), so pass it in here. The entity is the
+        # constant "mariagrandury-epflnlp", hardcoded in train.sh.
         "environment_variables.PROJECT_NAME": PROJECT_NAME,
     }
     if os.environ.get("WANDB_API_KEY"):

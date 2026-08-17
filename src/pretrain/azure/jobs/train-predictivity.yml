@@ -39,8 +39,9 @@ outputs:
     path: azureml://datastores/workspaceblobstore/paths/predictivity/runs/placeholder/cache
     mode: rw_mount
 environment_variables:
-  # Fallback only; launch_azure_predictivity.py overrides PROJECT_NAME and
-  # WANDB_ENTITY from configs/hf_wandb.json (the single source of truth).
+  # Fallback only; launch_azure_predictivity.py overrides PROJECT_NAME from
+  # configs/hf_wandb.json (the single source of truth for the project). The
+  # W&B entity is a constant hardcoded in train.sh.
   PROJECT_NAME: msnr
   TOKENIZER_MODEL: swiss-ai/Apertus-70B-2509
   SAVE_INTERVAL: "2000"

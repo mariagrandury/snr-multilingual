@@ -36,11 +36,11 @@ FW2_RATIO=${FW2_RATIO:-70}
 SEED=${SEED:-28}
 MOCK_DATA=${MOCK_DATA:-false}
 
-WANDB_ENTITY=${WANDB_ENTITY:-mariagrandury-epflnlp}
+WANDB_ENTITY=mariagrandury-epflnlp   # constant, not a launcher-passed variable
 # Predictivity-sweep env hooks (same names the sbatch script honours):
 # PROJECT_NAME, TOKENIZER_MODEL, DATA_BLEND (a ready --data-path value).
-# PROJECT_NAME/WANDB_ENTITY are normally injected by the launcher from
-# configs/hf_wandb.json; this default is the fallback for a raw job run.
+# PROJECT_NAME is injected by the launcher from configs/hf_wandb.json; this
+# default is the fallback for a raw job run.
 PROJECT_NAME=${PROJECT_NAME:-msnr}
 TOKENIZER_MODEL=${TOKENIZER_MODEL:-alehc/swissai-tokenizer}
 DATA_MIX_LABEL=${DATA_MIX_LABEL:-"fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}"}

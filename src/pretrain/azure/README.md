@@ -77,8 +77,10 @@ bash setup_azure.sh
 ```
 
 **Credentials & W&B config.** `source env.sh` loads the Azure names _and_ the
-W&B **entity/project** from `configs/hf_wandb.json` (the single source of
-truth — nothing else hardcodes them). The two **secrets** — `WANDB_API_KEY`
+W&B **project** from `configs/hf_wandb.json` (the single source of truth for
+the project — currently `msnr`). The W&B **entity** is the constant
+`mariagrandury-epflnlp`, hardcoded in the training entrypoint (`train.sh`), not
+threaded through the config. The two **secrets** — `WANDB_API_KEY`
 and your Hugging Face token — are _not_ in any file and are never re-entered
 in this guide: they live in your laptop's shell env / HF login. Each step that
 needs them just verifies they're present first, e.g.:
@@ -149,7 +151,7 @@ the exact code path of the real run (swiss-ai Megatron fork, xIELU/QK-norm
 kernels, AdEMAMix optimizer, `torch_dist` checkpoint save) for pocket change:
 
 ```bash
-source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+source env.sh   # W&B project from configs/hf_wandb.json (entity is constant in train.sh); key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (optional for the smoke test)"
 az ml job create --file jobs/train-smoke.yml $AZ_ML_ARGS \
   --set environment_variables.WANDB_API_KEY=$WANDB_API_KEY \
@@ -451,7 +453,7 @@ Edit the group in `configs/tasks.json` to change the list.
 Start the watcher in a terminal alongside your training run:
 
 ```bash
-source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+source env.sh   # W&B project from configs/hf_wandb.json (entity is constant in train.sh); key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 python auto_evals.py --watch 600        # one pass every 10 min; Ctrl-C to stop
 ```
@@ -485,7 +487,7 @@ repeat against the UK account for the 1.7B) and give it the 2-line blend
 manifest `train.sh` reads:
 
 ```bash
-source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+source env.sh   # W&B project from configs/hf_wandb.json (entity is constant in train.sh); key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 
 # 1. Compose tokenized/mix_enru_50_50/full from the predictivity builds
@@ -535,7 +537,7 @@ pipeline is §5 (build order: EN+RU first, then the remaining settings).
 and run as nodes free up — resubmitting any cell resumes it):
 
 ```bash
-source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+source env.sh   # W&B project from configs/hf_wandb.json (entity is constant in train.sh); key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 python launch_azure_predictivity.py --dry-run          # the whole 51-job grid
 python launch_azure_predictivity.py --langs 1          # monolingual anchors first
@@ -562,7 +564,7 @@ Every other size × mixture × seed cell uses the same `train-full.yml` /
 the cluster's `launch_trainings.py`:
 
 ```bash
-source env.sh   # W&B entity/project from configs/hf_wandb.json; key stays in your saved shell env
+source env.sh   # W&B project from configs/hf_wandb.json (entity is constant in train.sh); key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 
 # preview, then launch: all three mixtures of 350M seed 28
