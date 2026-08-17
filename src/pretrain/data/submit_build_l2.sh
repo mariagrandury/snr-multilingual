@@ -19,6 +19,9 @@ cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/d
 export RAYON_NUM_THREADS=${SLURM_CPUS_PER_TASK:-32}
 export OMP_NUM_THREADS=$RAYON_NUM_THREADS
 export TOKENIZERS_PARALLELISM=true
+# Line-level progress in the log instead of one flush at exit (see
+# submit_build_one.sh).
+export PYTHONUNBUFFERED=1
 
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_l2.sh
 OUT=/iopsstor/scratch/cscs/mariagrandury/data

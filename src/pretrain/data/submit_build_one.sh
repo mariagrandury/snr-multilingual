@@ -28,6 +28,12 @@ export RAYON_NUM_THREADS=${SLURM_CPUS_PER_TASK:-32}
 export OMP_NUM_THREADS=$RAYON_NUM_THREADS
 export TOKENIZERS_PARALLELISM=true
 
+# Without this, Python block-buffers stdout when it is a file, so a 12h build
+# shows NOTHING in its log until the process exits (and a wall-clock kill loses
+# the buffer entirely). Set for the wrapper and, via the environment, its
+# create_data_mixture.py child.
+export PYTHONUNBUFFERED=1
+
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_one.sh
 LOGDIR=/iopsstor/scratch/cscs/mariagrandury/data/logs
 : "${BUILD_SCHEME:?set via --export}"; : "${BUILD_STAGE:?set via --export}"; : "${BUILD_OUT:?set via --export}"
