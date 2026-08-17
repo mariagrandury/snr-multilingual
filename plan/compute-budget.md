@@ -123,6 +123,38 @@ check Studio → Quota once a workspace exists.
 
 ---
 
+# CSCS training time (Clariden GH200)
+
+Wall-clock to train the predictivity grid on CSCS — the cluster the sweep
+actually runs on — distinct from the Azure budget above. Nodes are 4× GH200
+each; global batch 504 × 4096. **Time/run is one complete model** (one
+size × language-setting × seed, scratch → full D = 100·N budget).
+
+| Size  | Tokens (D=100·N) | Iters  | Nodes | ms/iter | Time/run | 12h segments | Runs | Node-hours |
+| ----- | ---------------: | -----: | ----: | ------: | -------: | :----------: | ---: | ---------: |
+| 90M   |            9.3 B |  4,500 |     3 |    740* |   ~0.9 h |      1       |    7 |         19 |
+| 175M  |           17.6 B |  8,500 |     6 |     800 |   ~1.9 h |      1       |   13 |        147 |
+| 350M  |           34.4 B | 16,700 |    14 |     565 |   ~2.6 h |      1       |    7 |        257 |
+| 600M  |           59.5 B | 28,800 |    21 |     520 |   ~4.2 h |      1       |    7 |        612 |
+| 1B    |           94.4 B | 45,700 |    21 |     715 |   ~9.1 h |      1       |   13 |      2,478 |
+| 1.7B  |          167.2 B | 81,000 |    21 |  1,450* |  ~32.6 h |      3       |    5 |      3,426 |
+| **Σ** |                  |        |       |         |          |              |   52 |    ~6,940  |
+
+- **Runs execute in parallel** (each cell on its own node allocation), so the
+  ~360 serial run-hours are not calendar time — **node-hours (~6,940)** is the
+  compute cost. 1B + 1.7B are ~85% of it.
+- ms/iter for **175M–1B are measured** (medians over 1.26 M iter log lines from
+  the CSCS `data-mix-small` runs — same architecture, node counts, and batch,
+  so they transfer by iteration count). **\* 90M and 1.7B are extrapolated**
+  (not yet run on CSCS); 1.7B is the least certain (MBS = 2, memory-bound) —
+  likely 30–40 h/run, worth a short calibration run.
+- 1.7B exceeds the 12 h queue wall → ~3 resume segments/run, handled by the
+  standard `--use-checkpoint-opt_param-scheduler` + `launch_resumes.sh` path.
+- Steady-state compute only; excludes cold-start, save-iter overhead, and queue
+  wait. Counts include the 1.7B@L2 cell (1.7B = 5 runs).
+
+---
+
 # Appendix A — verbatim terminal evidence (María's machine, 2026-08-13)
 
 ## A.1 Azure ML quota families visible in Switzerland North (portal screenshots, transcribed)
