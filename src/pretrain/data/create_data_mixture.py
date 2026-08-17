@@ -658,25 +658,30 @@ def process_sources(
                 break
 
             parquet_path = files[file_idx]
-            table = pq.read_table(parquet_path, columns=["text"])
-            texts = table.column("text").to_pylist()
-            del table
+            # Stream the file batch-by-batch. A whole-file read_table().to_pylist()
+            # peaks at ~5 GB for a 1 GB DCLM parquet (Arrow table + Python str
+            # objects), and is wasted entirely when a source hits its target in
+            # the file's first batches. Batching bounds peak RSS independent of
+            # file size, leaving the doc-count-driven sequence_lengths list as
+            # the only term that grows with the build.
+            skip = val_skip if file_idx == 0 else 0  # leading validation rows
+            row_idx = 0
 
-            # Exclude the validation rows from the first file of this source.
-            # The boundary is by row index, so this is consistent on resume.
-            if file_idx == 0 and val_skip > 0:
-                texts = texts[val_skip:]
-
-            # Tokenize in batches
-            for batch_start in range(0, len(texts), args.batch_size):
+            for batch in pq.ParquetFile(parquet_path).iter_batches(
+                batch_size=args.batch_size, columns=["text"]
+            ):
                 if source_toks >= target:
                     break
 
-                batch_end = min(batch_start + args.batch_size, len(texts))
-                batch_texts = [
-                    t for t in texts[batch_start:batch_end]
-                    if t is not None and len(t) > 0
-                ]
+                n_rows = batch.num_rows
+                texts = batch.column("text").to_pylist()
+                # Exclude the validation rows from the first file of this source.
+                # The boundary is by row index, so this is consistent on resume.
+                if row_idx < skip:
+                    texts = texts[skip - row_idx:]
+                row_idx += n_rows
+
+                batch_texts = [t for t in texts if t is not None and len(t) > 0]
                 if not batch_texts:
                     continue
                 encoded = tokenizer(
