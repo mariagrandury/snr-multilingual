@@ -56,7 +56,10 @@ Assumptions and behaviors:
     of rows; Megatron's data loader handles sequence packing at training time.
   - Token dtype is int32 (Apertus vocab size 131K fits comfortably).
   - Token counts per language are estimated by sampling a few files, computing
-    a tokens-per-byte ratio, and multiplying by total file size on disk.
+    a tokens-per-on-disk-byte ratio, and multiplying by total file size on
+    disk. The ratio is measured per UTF-8 text byte and converted to on-disk
+    bytes using the text/file size ratio from the same files' parquet footers,
+    because parquet compression varies ~7x across languages.
   - Language ranking (--top_k_languages) and proportional allocation within
     FineWeb-2 are based on these estimated token counts.
   - Per-language allocation within FineWeb-2 uses temperature sampling:
@@ -288,13 +291,44 @@ def remove_checkpoint(output_prefix: str):
 # ---------------------------------------------------------------------------
 # Token estimation
 # ---------------------------------------------------------------------------
-def estimate_tokens_per_byte(
+def text_bytes_per_file_byte(parquet_file: str) -> float:
+    """Uncompressed `text` bytes per on-disk byte, from the parquet footer.
+
+    Reads metadata only (no column data). Bridges the two byte units below:
+    tokens are sampled per *uncompressed text* byte, but a source's volume is
+    measured as *compressed on-disk* size across all columns.
+    """
+    meta = pq.ParquetFile(parquet_file).metadata
+    text_uncompressed = sum(
+        meta.row_group(r).column(i).total_uncompressed_size
+        for r in range(meta.num_row_groups)
+        for i in range(meta.row_group(r).num_columns)
+        if meta.row_group(r).column(i).path_in_schema == "text"
+    )
+    return text_uncompressed / os.path.getsize(parquet_file)
+
+
+def estimate_tokens_per_file_byte(
     tokenizer,
     parquet_files: List[str],
     sample_files: int = DEFAULT_SAMPLE_FILES,
     sample_rows: int = DEFAULT_SAMPLE_ROWS,
 ) -> float:
-    """Estimate tokens-per-byte ratio by tokenizing a sample of rows.
+    """Estimate tokens per on-disk parquet byte, by sampling rows.
+
+    Returns a ratio in the same unit as get_total_file_bytes, so the product of
+    the two is a token estimate. Tokens are counted per UTF-8 text byte (stable
+    across documents), then converted to on-disk bytes with the text/file ratio
+    measured on the same sampled files.
+
+    That conversion is the whole point: parquet is compressed and carries
+    columns besides `text`, and the resulting factor ranges from 0.51
+    (deu_Latn) to 3.74 (hin_Deva) — a 7.3x spread. Multiplying a
+    tokens-per-text-byte ratio straight by on-disk size therefore skewed the
+    per-language proportions by that much, and those proportions ARE the
+    mixture (props ~ estimated tokens at T=1). Within a language the factor is
+    stable across files (<=5% between the sampled files and the whole set), so
+    sampling it costs no extra I/O.
 
     Only the leading `sample_rows` rows of each sampled file are read. Reading
     the file whole to keep 2000 rows costs a full decompress and ~2 GB of RSS
@@ -304,7 +338,12 @@ def estimate_tokens_per_byte(
     files_to_sample = parquet_files[:sample_files]
     total_bytes = 0
     total_tokens = 0
+    sampled_text_bytes = 0.0
+    sampled_file_bytes = 0
     for f in files_to_sample:
+        file_bytes = os.path.getsize(f)
+        sampled_file_bytes += file_bytes
+        sampled_text_bytes += text_bytes_per_file_byte(f) * file_bytes
         texts: List[Optional[str]] = []
         for batch in pq.ParquetFile(f).iter_batches(
             batch_size=min(sample_rows, DEFAULT_BATCH_SIZE), columns=["text"]
@@ -323,20 +362,20 @@ def estimate_tokens_per_byte(
             add_special_tokens=False,
         )
         total_tokens += sum(len(ids) for ids in encoded["input_ids"])
-    if total_bytes == 0:
+    if total_bytes == 0 or sampled_file_bytes == 0:
         return 0.0
-    return total_tokens / total_bytes
+    tokens_per_text_byte = total_tokens / total_bytes
+    return tokens_per_text_byte * (sampled_text_bytes / sampled_file_bytes)
 
 
 def get_total_file_bytes(parquet_files: List[str]) -> int:
     """Sum of on-disk (compressed) parquet sizes, a proxy for content volume.
 
-    Multiplied by the sampled tokens-per-text-byte ratio to *estimate* a
-    source's total tokens. Because parquet is compressed and holds more than
-    the text column, this is only an estimate: it drives language ranking
-    (--top_k_languages) and the relative per-language split of the FineWeb-2
-    target, never the totals — each source stops at its precisely counted
-    --target_tokens during the write.
+    Multiplied by the sampled tokens-per-*on-disk*-byte ratio to *estimate* a
+    source's total tokens. This is still only an estimate: it drives language
+    ranking (--top_k_languages) and the relative per-language split of the
+    FineWeb-2 target, never the totals — each source stops at its precisely
+    counted --target_tokens during the write.
     """
     return sum(os.path.getsize(f) for f in parquet_files)
 
@@ -413,7 +452,7 @@ def build_plan(
             print("\nEstimating tokens for selected languages...")
             for lang in selected_langs:
                 files = languages[lang]
-                tpb = estimate_tokens_per_byte(
+                tpb = estimate_tokens_per_file_byte(
                     tokenizer, files,
                     sample_files=args.sample_files,
                     sample_rows=DEFAULT_SAMPLE_ROWS,
@@ -424,7 +463,7 @@ def build_plan(
             print(f"Estimating tokens for {len(languages)} languages...")
             all_lang_estimates = {}
             for i, (lang, files) in enumerate(languages.items()):
-                tpb = estimate_tokens_per_byte(
+                tpb = estimate_tokens_per_file_byte(
                     tokenizer, files,
                     sample_files=args.sample_files,
                     sample_rows=DEFAULT_SAMPLE_ROWS,
@@ -465,7 +504,7 @@ def build_plan(
 
     # --- DCLM (English) source ---
     if dclm_target > 0 and dclm_files:
-        tpb = estimate_tokens_per_byte(
+        tpb = estimate_tokens_per_file_byte(
             tokenizer, dclm_files,
             sample_files=args.sample_files,
             sample_rows=DEFAULT_SAMPLE_ROWS,
