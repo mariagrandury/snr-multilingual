@@ -6266,16 +6266,20 @@
       }
     },
     "apertus-90M-L2-seed1904": {
-      "source": "snr-pretraining-bilingual",
+      "source": "snr-pretraining-predictivity",
       "family": "apertus-L2-seed1904",
       "size": "90M",
-      "params": 194000000,
+      "params": 193560576,
       "hyperparams_key": "90M",
-      "mix_en": 50,
-      "mix_fw2": 50,
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
       "seed": 1904,
       "checkpoint_kind": "megatron_iter",
-      "backends": {},
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L2-seed1904/"
+      },
       "stages": {
         "pretraining": {
           "tokens": 9289728000,
@@ -6293,16 +6297,2134 @@
       }
     },
     "apertus-1.7B-L2-seed1904": {
-      "source": "snr-pretraining-bilingual",
+      "source": "snr-pretraining-predictivity",
       "family": "apertus-L2-seed1904",
       "size": "1.7B",
-      "params": 1974000000,
+      "params": 1974140928,
       "hyperparams_key": "1.7B",
-      "mix_en": 50,
-      "mix_fw2": 50,
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
       "seed": 1904,
       "checkpoint_kind": "megatron_iter",
-      "backends": {},
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1.7B-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1.7B-L2-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000,
+              52000,
+              54000,
+              56000,
+              58000,
+              60000,
+              62000,
+              64000,
+              66000,
+              68000,
+              70000,
+              72000,
+              74000,
+              76000,
+              78000,
+              80000,
+              81000
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L15-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L15-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L15-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L15-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L50-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L50-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 50,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L50-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L50-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-90M-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "hyperparams_key": "90M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-90M-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-90M-L100-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              2000,
+              4000,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L1-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed28",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L1-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L1-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L1-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1797",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L1-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L1-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L2-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L2-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L2-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L15-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L15-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L15-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L15-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L30-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed28",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L30-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L30-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L30-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1797",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L30-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L30-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L50-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L50-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 50,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L50-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L50-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L100-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed28",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L100-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L100-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L100-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1797",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L100-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L100-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-175M-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "hyperparams_key": "175M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-175M-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-175M-L100-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17547264000,
+          "num_iters": 8500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8500,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              8500
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L2-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L2-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L2-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L15-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L15-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L15-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L15-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L50-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L50-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 50,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L50-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L50-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-350M-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "hyperparams_key": "350M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-350M-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-350M-L100-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34475212800,
+          "num_iters": 16700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              16700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L2-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L2-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L2-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L15-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L15-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L15-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L15-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L50-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L50-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 50,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L50-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L50-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-600M-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "hyperparams_key": "600M",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-600M-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-600M-L100-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L1-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed28",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L1-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L1-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L1-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1797",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L1-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L1-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L2-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L2-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 2,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L2-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L2-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L15-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L15-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L15-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L15-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L30-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed28",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L30-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L30-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L30-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1797",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L30-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L30-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L50-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L50-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 50,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L50-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L50-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L100-seed28": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed28",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 28,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L100-seed28/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L100-seed28/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L100-seed1797": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1797",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1797,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L100-seed1797/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L100-seed1797/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1B-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "hyperparams_key": "1B",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1B-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1B-L100-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94342348800,
+          "num_iters": 45700,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45700,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              45700
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1.7B-L1-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L1-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "hyperparams_key": "1.7B",
+      "L": 1,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1.7B-L1-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1.7B-L1-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000,
+              52000,
+              54000,
+              56000,
+              58000,
+              60000,
+              62000,
+              64000,
+              66000,
+              68000,
+              70000,
+              72000,
+              74000,
+              76000,
+              78000,
+              80000,
+              81000
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1.7B-L8-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L8-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "hyperparams_key": "1.7B",
+      "L": 8,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1.7B-L8-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1.7B-L8-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000,
+              52000,
+              54000,
+              56000,
+              58000,
+              60000,
+              62000,
+              64000,
+              66000,
+              68000,
+              70000,
+              72000,
+              74000,
+              76000,
+              78000,
+              80000,
+              81000
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1.7B-L30-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L30-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "hyperparams_key": "1.7B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1.7B-L30-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1.7B-L30-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              2000,
+              4000,
+              6000,
+              8000,
+              10000,
+              12000,
+              14000,
+              16000,
+              18000,
+              20000,
+              22000,
+              24000,
+              26000,
+              28000,
+              30000,
+              32000,
+              34000,
+              36000,
+              38000,
+              40000,
+              42000,
+              44000,
+              46000,
+              48000,
+              50000,
+              52000,
+              54000,
+              56000,
+              58000,
+              60000,
+              62000,
+              64000,
+              66000,
+              68000,
+              70000,
+              72000,
+              74000,
+              76000,
+              78000,
+              80000,
+              81000
+            ]
+          }
+        }
+      }
+    },
+    "apertus-1.7B-L100-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "apertus-L100-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "hyperparams_key": "1.7B",
+      "L": 100,
+      "arch": "deep",
+      "scheme": "A",
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/apertus-1.7B-L100-seed1904/checkpoints/",
+        "hf_local": "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints/apertus-1.7B-L100-seed1904/"
+      },
       "stages": {
         "pretraining": {
           "tokens": 167215104000,
@@ -6553,6 +8675,9 @@
     },
     "snr-pretraining-bilingual": {
       "split": "pretraining_bilingual"
+    },
+    "snr-pretraining-predictivity": {
+      "split": null
     }
   },
   "snr": {

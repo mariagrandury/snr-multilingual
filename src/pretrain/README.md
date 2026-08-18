@@ -9,10 +9,13 @@
 
 ## TL;DR — pretrain a model
 
-**On CSCS** (data on `/capstor`, jobs via sbatch):
+**On CSCS** (data on `/capstor`, jobs via sbatch; run from the login node):
 
 ```bash
 cd src/pretrain
+
+# 0. First time only (see "Before the first CSCS run" below):
+hf download swiss-ai/Apertus-70B-2509      # tokenizer into the HF cache
 
 # 1. Build the data mixtures (once; idempotent self-chaining Slurm jobs)
 cd data && ./launch_builds.sh --dry-run && ./launch_builds.sh && cd ..
@@ -20,15 +23,18 @@ cd data && ./launch_builds.sh --dry-run && ./launch_builds.sh && cd ..
 # 2. Launch — the launcher is IDEMPOTENT: done cells are skipped, active
 #    cells are skipped, partial cells are resumed with auto-sized walltime.
 #    Re-run the same command any time to drive the sweep to completion.
-python launch_trainings.py cscs --dry-run          # always preview first
-python launch_trainings.py cscs                    # whole sweep (or filter)
-python launch_trainings.py cscs --size 90M --langs 2   # one cell
+python3.11 launch_trainings.py cscs --dry-run      # always preview first
+python3.11 launch_trainings.py cscs                # whole sweep (or filter)
+python3.11 launch_trainings.py cscs --size 90M --langs 2   # one cell
 
-# 3. Monitor
+# 3. Auto-evals while training (tmux; converts + evals every 2nd checkpoint
+#    + each run's final one, pushes to W&B mariagrandury-epflnlp/msnr;
+#    the W&B key comes from your env or src/evals/scripts/wandb_api_key.txt)
+python3.11 auto_evals_cscs.py --watch 600
+
+# 4. Monitor
 python3.11 pretrain_progress.py                    # per-cell status lines
 python3.11 pretrain_progress.py --plot             # + the two heatmaps
-
-# 4. Convert + evaluate: conversion/convert-snr.sh, then ../evals/
 ```
 
 **On Azure** (one-time setup in [`azure/README.md`](azure/README.md) §1–§4,
@@ -45,7 +51,7 @@ python launch_trainings.py azure --dry-run         # same launcher, same flags
 python launch_trainings.py azure --langs 2 --size 90M     # first real cell
 python launch_trainings.py azure                   # the rest
 
-python azure/auto_evals.py --watch 600                   # auto convert+eval watcher
+python auto_evals_azure.py --watch 600                   # auto convert+eval watcher
 ```
 
 There is **no separate resume script**: `--save`/`--load` point at the same
@@ -89,6 +95,13 @@ keeps the reviewed value exactly).
 
 ## What's in this folder
 
+**Layout rule:** the top level holds shared code and platform *pairs*
+(`*_cscs` / `*_azure` side by side: the training wrappers, the auto-eval
+watchers); [`azure/`](azure/) holds everything only Azure needs (infra,
+job specs, in-job entrypoints); [`conversion/`](conversion/) is the CSCS
+conversion toolbox; [`data/`](data/) and [`hyperparams/`](hyperparams/)
+are pipeline stages.
+
 **The training path** (one shared arguments file, two thin wrappers, one
 launcher — the core design):
 
@@ -99,12 +112,15 @@ launcher — the core design):
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
 | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the two progress heatmaps (`--plot`). |
+| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. |
+| [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
+| [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
 
 **Subfolders:**
 
 | Dir | Contents |
 | --- | -------- |
-| [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher), [`auto_evals.py`](azure/auto_evals.py) (idempotent convert+eval watcher). |
+| [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
 | [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B}.json`](data/language_sets_schemeA.json) (the nested language lists), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per mixture — L2 goes through the same path, sized for its 1.7B run). |
 | [`hyperparams/`](hyperparams/) | The reviewed architecture ladders: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
@@ -239,20 +255,32 @@ aggregated over **every** run found on disk regardless of variant:
 Both PNGs are also refreshed automatically at the end of every
 `launch_trainings.py cscs` invocation, so they're always up to date.
 
-**Benchmark evals while pretraining:**
+**Benchmark evals while pretraining** — automated on both platforms with
+the same rule (**every 2nd saved checkpoint plus each run's final one**,
+whatever its iter) and the same destination (W&B
+**`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
+so loss and benchmark curves live side by side). Both watchers evaluate the
+`auto` benchmark group from [`configs/tasks.json`](../../configs/tasks.json)
+and are idempotent: stop them, restart them, run them twice — nothing
+duplicates.
 
-- **Azure** — automated: [`azure/auto_evals.py`](azure/auto_evals.py)
-  watches blob storage and, per due checkpoint (**every 2nd saved
-  checkpoint plus the run's final one**, whatever its iter), submits a
-  convert job then an eval job; the eval pushes to W&B
-  **`mariagrandury-epflnlp/msnr`** — the same project the training loss
-  logs to, so loss and benchmark curves live side by side. Run alongside
-  training: `source azure/env.sh && python azure/auto_evals.py --watch 600`.
-- **CSCS** — *not automated yet*: checkpoints are evaluated on demand with
-  the existing chain ([`conversion/convert-snr.sh`](conversion/convert-snr.sh)
-  → the [`../evals/`](../evals/) launchers), which needs `configs/models.json`
-  entries per cell (currently only the two L2 cells have them).
-  Porting the auto_evals watcher to CSCS is the natural follow-up.
+- **CSCS** — [`auto_evals_cscs.py`](auto_evals_cscs.py) scans the checkpoint
+  tree each pass and, per due checkpoint: submits a
+  [`conversion/convert-snr.sh`](conversion/convert-snr.sh) job (Megatron →
+  HF, models.json-driven — the watcher keeps `configs/models.json` in
+  sync with the grid automatically via
+  [`sync_models_json.py`](sync_models_json.py); commit the diff it makes),
+  then on a later pass an [`../evals/`](../evals/) `evaluate.sbatch` job
+  (vLLM, TP=1, `BATCH_TASKS=1`), which pushes to W&B from inside the job.
+
+  ```bash
+  python3.11 auto_evals_cscs.py --dry-run       # preview one pass
+  python3.11 auto_evals_cscs.py --watch 600     # tmux: a pass every 10 min
+  ```
+
+- **Azure** — [`auto_evals_azure.py`](auto_evals_azure.py) does the same
+  against blob storage:
+  `source azure/env.sh && python auto_evals_azure.py --watch 600`.
 
 ## Per-size cluster cost (steady state)
 
@@ -290,7 +318,6 @@ invocation resumes it.
   `pip install`s the lm-eval fork and every convert job pins transformers
   at startup (~minutes each); baking them into `apertus-eval` /
   `apertus-nemo` derivatives would shave that off all ~20 evals per cell.
-- **CSCS auto-evals** — port the `azure/auto_evals.py` watcher (see §3).
 
 ## Completed: the 36-model data-mix sweep (history)
 

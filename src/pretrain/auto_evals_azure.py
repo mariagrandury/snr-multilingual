@@ -13,8 +13,8 @@ results don't exist yet. Anything already done or in flight is skipped, so the
 convert -> eval sequencing simply resolves across successive passes. Run it
 alongside training:
 
-    source azure/env.sh && export WANDB_API_KEY=...   # key -> in-job W&B push
-    python azure/auto_evals.py --watch 600            # one pass every 10 min
+    source azure/env.sh          # + WANDB_API_KEY in your shell profile (laptop)
+    python auto_evals_azure.py --watch 600            # one pass every 10 min
 
 Same filters as the other launchers (--size/--seed/--name); default = every
 cell with checkpoints in the workspace's blob storage. --dry-run prints
@@ -32,16 +32,16 @@ import sys
 import time
 from pathlib import Path
 
-_SRC = Path(__file__).resolve().parents[2]
+_SRC = Path(__file__).resolve().parents[1]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, load_hf_wandb_config, stages_of)
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "azure"))
 from launch_evals import az_args, resolve_tasks, submit as submit_eval  # noqa: E402
 
-SOURCES = ["snr-pretraining-bilingual", "snr-pretraining-custom"]
+SOURCES = ["snr-pretraining-predictivity"]
 SCRIPT_DIR = Path(__file__).parent
 DATASTORE = "azureml://datastores/workspaceblobstore/paths"
 ACTIVE_STATES = {"NotStarted", "Queued", "Starting", "Preparing", "Running", "Finalizing"}
@@ -102,7 +102,7 @@ def submit_convert(name: str, it: int, dry_run: bool) -> None:
         "outputs.hf_model.path": f"{DATASTORE}/models/{name}/iter_{it:07d}",
     }
     cmd = ["az", "ml", "job", "create",
-           "--file", str(SCRIPT_DIR / "jobs" / "convert.yml"), *az_args()]
+           "--file", str(SCRIPT_DIR / "azure" / "jobs" / "convert.yml"), *az_args()]
     for k, v in overrides.items():
         cmd += ["--set", f"{k}={v}"]
     print(f"  submit: convert-{name}-iter{it}")
@@ -113,6 +113,11 @@ def submit_convert(name: str, it: int, dry_run: bool) -> None:
 
 
 def one_pass(names: list[str], auth: list[str], every: int, tasks: str, dry_run: bool) -> None:
+    # Keep configs/models.json following the grid (see sync_models_json).
+    from sync_models_json import sync
+    added, updated = sync()
+    if added or updated:
+        print(f"(models.json synced: +{len(added)} ~{len(updated)} cells — commit the diff)")
     running = active_jobs() if not dry_run else set()
     for name in names:
         iters = saved_iters(auth, name)

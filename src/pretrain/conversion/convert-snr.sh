@@ -162,9 +162,14 @@ if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
 
     # Forward HF cache vars + force offline so per-iter tokenizer loads hit local
     # cache (the saver and Megatron's HuggingFaceTokenizer both fetch the
-    # `alehc/swissai-tokenizer` repo, and the `/api/models/` freshness check
-    # will burn the team-plan rate-limit on a 9-cell × ~13-iter sweep).
+    # tokenizer repo, and the `/api/models/` freshness check will burn the
+    # team-plan rate-limit on a 9-cell × ~13-iter sweep). HF_TOKENIZER is
+    # forwarded so predictivity conversions embed the sweep's tokenizer
+    # (swiss-ai/Apertus-70B-2509) instead of the old-sweep default —
+    # pre-warm it into the cache first (offline mode can't download it).
     INNER_EXPORTS="export MEGATRON_LM_DIR='$MEGATRON_LM_DIR' PLAN_FILE='$PLAN_FILE' \
+HF_TOKENIZER='${HF_TOKENIZER:-alehc/swissai-tokenizer}' \
+STAGING_BASE='${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}' \
 HF_HOME='${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}' \
 HF_HUB_CACHE='${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}' \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1"

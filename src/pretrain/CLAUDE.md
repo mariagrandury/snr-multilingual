@@ -7,9 +7,9 @@ path. Companion to [README.md](README.md) (user-facing) and
 back-of-house memo: what's wired to what, and the failure modes worth
 remembering.
 
-The eval side lives in `../evals/` (cluster) with its own CLAUDE.md; the
-Azure eval path is `azure/{eval.sh, launch_evals.py,
-auto_evals.py}` here.
+The eval side lives in `../evals/` (cluster) with its own CLAUDE.md. Both
+platforms auto-evaluate during pretraining: `auto_evals_cscs.py` (cluster)
+and `auto_evals_azure.py` (blob storage), same due rule, same W&B project.
 
 ---
 
@@ -36,7 +36,9 @@ reintroduces the drift this design removed.
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | grid (52 cells) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the two progress heatmaps (`--plot`) |
-|  `azure/auto_evals.py` | Azure watcher: convert+eval every N saved checkpoints |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd + final) submits convert-snr then evaluate.sbatch; needs models.json entries (`sync_models_json.py`) |
+| `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
+|  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
 Cell name everywhere (job name, checkpoint dir, W&B prefix, parsed by
 `pretrain_progress.py`):
@@ -72,7 +74,7 @@ then never log again without a code-side id suffix.
 - **W&B**: entity is the constant `mariagrandury-epflnlp`
   (`megatron_args.sh`); the project comes from `configs/hf_wandb.json`
   (`msnr`) for BOTH training runs and the predictivity eval pushes
-  (`azure/eval.sh` reads it from the repo snapshot; `azure/auto_evals.py`
+  (`azure/eval.sh` reads it from the repo snapshot; `auto_evals_azure.py`
   keys its done-check on the same config), so loss and benchmark curves
   live in one project. Only the legacy 36-sweep eval infra in `../evals/`
   still points at `snr-experiments`.
@@ -158,7 +160,7 @@ python launch_trainings.py cscs --dry-run  # first
 python launch_trainings.py cscs            # then for real (skips done/active, resumes partial)
 
 # Azure: watcher submits convert+eval as checkpoints land
-source azure/env.sh && python azure/auto_evals.py --watch 600
+source azure/env.sh && python auto_evals_azure.py --watch 600
 ```
 
 ---

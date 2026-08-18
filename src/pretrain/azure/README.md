@@ -392,7 +392,7 @@ Start the watcher in a terminal alongside your training run:
 ```bash
 source azure/env.sh   # Azure names; W&B key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
-python azure/auto_evals.py --watch 600        # one pass every 10 min; Ctrl-C to stop
+python auto_evals_azure.py --watch 600        # one pass every 10 min; Ctrl-C to stop
 ```
 
 Each pass lists the checkpoints in blob storage and, for every due iteration,
