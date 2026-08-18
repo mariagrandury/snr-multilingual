@@ -8,7 +8,7 @@ The experiment builds, once each:
   - one FineWeb-2 training dataset per multilingual language setting,
 and then blends English + FineWeb-2 50/50 at *training* time with the Megatron
 data loader's blend weights (the 1-language setting is 100% English). See
-.claude-shared/plans/small-to-large-predictivity-training-plan.md.
+plan/small-to-large-predictivity-training-plan.md.
 
 This wrapper turns the FW_Lx language lists in language_sets_scheme{A,B}.json
 into `--languages` arguments and shells out to create_data_mixture.py with the

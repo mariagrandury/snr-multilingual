@@ -5,7 +5,7 @@
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
-> Full design: [`../../.claude-shared/plans/small-to-large-predictivity-training-plan.md`](../../.claude-shared/plans/small-to-large-predictivity-training-plan.md).
+> Full design: [`../../plan/small-to-large-predictivity-training-plan.md`](../../plan/small-to-large-predictivity-training-plan.md).
 
 ## TL;DR — pretrain a model
 

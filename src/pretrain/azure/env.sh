@@ -17,7 +17,7 @@ export AZ_SUBSCRIPTION="ef1ff20e-1168-4846-a78e-47d102dd35f6"
 
 # --- The two workspaces (final region/machine plan) -------------------------
 # Decided 2026-08-13 from this subscription's deployable SKUs and real meters
-# (see .claude-shared/plans/predictivity-compute-budget.md):
+# (see plan/compute-budget.md):
 #   Spain Central — NC80adis_H100_v5, low-priority meter ($1.82/GPU-h):
 #                   economy pool for every size <=600M, plus evals/conversion.
 #   UK South      — ND96isr_H100_v5 (8x H100 + InfiniBand), Spot ($2.84/GPU-h):

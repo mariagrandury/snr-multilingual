@@ -2,7 +2,7 @@
 """
 Launch predictivity-sweep training jobs on CSCS (sbatch) or Azure ML (az ml).
 
-The grid (see .claude-shared/plans/small-to-large-predictivity-training-plan.md):
+The grid (see plan/small-to-large-predictivity-training-plan.md):
 
   * size — the 6-rung ladder (90M..1.7B) shared by the reviewed hyperparams
            files; --arch picks deep (hyperparams/hyperparams_deep.json, the
