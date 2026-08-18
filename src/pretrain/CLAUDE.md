@@ -47,7 +47,20 @@ Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 Per-size schedule (iters/warmup/decay for D(N) = 100 × N) comes from the
 `predictivity` block in `hyperparams/hyperparams_{deep,shallow}.json` — the
 top-level `train_iters: 50000` in those files belongs to the finished
-36-model sweep, not this one.
+36-model sweep, not this one. Two more knobs are launcher-derived per cell
+(not in the JSONs): `ADEMAMIX_WARMUP` = the cell's target iters (alpha/beta3
+warm up over the full run — always the target, even on capped resumes, so
+every submission runs the same optimizer schedule) and `INIT_STD` =
+0.008944 × √(1792/hidden) (width-scaled init anchored at the 1B).
+
+W&B: one continuous run per cell across resumes — `megatron_args.sh` sets a
+deterministic `WANDB_RUN_ID` (the cell name, dots sanitized) +
+`WANDB_RESUME=allow`, so resubmissions append instead of fragmenting into
+one run per job. This replaced the old post-hoc merge tool
+(`merge_wandb_experiment.py`, deleted — its companion script never existed
+in this repo). Corollary of fixed ids: **never delete a run in msnr** — W&B
+blacklists deleted run ids forever (evals CLAUDE bug 9) and the cell could
+then never log again without a code-side id suffix.
 
 ---
 

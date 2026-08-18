@@ -76,7 +76,7 @@ fi
 # Build the (platform-identical) training command. TRIGGER_PATH adds the
 # SLURM graceful-exit flags — the one intentional CSCS-only delta.
 TRIGGER_PATH=$TRIGGER_DIR
-RUN_NAME=$EXP_NAME-$SLURM_JOB_ID
+RUN_NAME=$EXP_NAME   # stable: resumes append to ONE W&B run (see megatron_args.sh)
 WANDB_SAVE_DIR=$LOGGING_DIR
 source $SCRIPT_DIR/megatron_args.sh
 build_megatron_cmd || exit 1

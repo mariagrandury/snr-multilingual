@@ -45,7 +45,7 @@ MBS=${MBS:-7}
 while (( GBS % (NPROC * MBS) != 0 )); do MBS=$((MBS - 1)); done
 echo "[$(date)] micro batch size resolved to $MBS on $NPROC GPUs"
 
-RUN_NAME=$EXP_NAME-azure-${AZUREML_RUN_ID:-local}
+RUN_NAME=$EXP_NAME   # stable: resumes append to ONE W&B run (see megatron_args.sh)
 WANDB_SAVE_DIR=$LOG_DIR
 build_megatron_cmd
 

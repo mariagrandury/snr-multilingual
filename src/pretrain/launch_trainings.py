@@ -203,6 +203,17 @@ def data_blend(english: str, fineweb: str, L: int) -> str:
     return f"{EN_SHARE / 100:.2f} {english} {(100 - EN_SHARE) / 100:.2f} {fineweb}"
 
 
+# Width-scaled init anchor: 1/sqrt(hidden_size) scaling that keeps the
+# reviewed 0.008944 exactly at the 1B width (d=1792), so the init is
+# consistent across the 768..3072 ladder instead of one fixed value.
+INIT_STD_ANCHOR = 0.008944
+INIT_STD_ANCHOR_WIDTH = 1792
+
+
+def init_std(hidden_size: int) -> float:
+    return round(INIT_STD_ANCHOR * (INIT_STD_ANCHOR_WIDTH / hidden_size) ** 0.5, 6)
+
+
 def cell_env(
     cfg: dict,
     size: str,
@@ -231,6 +242,11 @@ def cell_env(
         "LR_WSD_DECAY_ITERS": (
             lr_wsd_decay_iters if lr_wsd_decay_iters is not None else decay
         ),
+        # AdEMAMix alpha/beta3 warm up over the cell's FULL schedule — always
+        # the target iters, never a capped resume's --training-steps, so every
+        # (re)submission runs the identical optimizer schedule.
+        "ADEMAMIX_WARMUP": iters,
+        "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
         "EXP_NAME": exp,
         "DATA_BLEND": blend,

@@ -72,10 +72,20 @@ idempotency check). Each size trains D(N) = 100 × N tokens (5×C); the
 per-size schedule lives in the `predictivity` block of the hyperparams files.
 
 Run name = Slurm job name = Azure display name = checkpoint dir = W&B run
-prefix: `apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`. Runs log to
+name: `apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`. Runs log to
 W&B under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant
 (`megatron_args.sh`) and the project comes from
 [`configs/hf_wandb.json`](../../configs/hf_wandb.json) (`wandb.project`).
+Each cell is **one continuous W&B run across resumes** (deterministic run
+id + `resume=allow` in `megatron_args.sh`), so multi-window trainings don't
+fragment into one run per job.
+
+Two schedule knobs are derived per cell by the launcher so the optimizer
+behaves identically at every ladder size: the AdEMAMix alpha/beta3 warmup
+spans the cell's full schedule (`ADEMAMIX_WARMUP` = target iters, replacing
+the old fixed 100 000 that short runs never finished), and the init std is
+width-scaled (`INIT_STD` = 0.008944 × √(1792/hidden), anchored so the 1B
+keeps the reviewed value exactly).
 
 ## What's in this folder
 
@@ -260,9 +270,27 @@ Both PNGs are also refreshed automatically at the end of every
 
 The medians feed `launch_trainings.py::ITER_MS` and `auto_time()` (walltime =
 remaining iters × rate + 2h30m margin for the 1h SIGUSR2 grace + cold-start).
-Runs longer than the 12h wall (1B, 1.7B) chain automatically: each job
+Runs longer than the 12h wall (1B, 1.7B) chain through resumes: each job
 checkpoints out at the SIGUSR2 signal and the next `launch_trainings.py cscs`
 invocation resumes it.
+
+## Possible future improvements
+
+- **Azure micro-batch tuning** — the cluster-tuned per-GPU MBS values are
+  memory-safe on Azure but leave throughput on the table with few GPUs
+  (e.g. 350M on the 2-GPU node runs MBS 3 × accum 84; memory likely allows
+  MBS 21). GBS 504 also forces odd divisors on 8-GPU nodes (600M/1B shrink
+  6 → 3; 7 would fit better if memory allows). Measure on a pilot, then
+  override per job with `--set environment_variables.MBS=…`.
+- **`--chain N` for long CSCS runs** — the 1.7B (~27 h) spans ~3 walltime
+  windows; today each window needs a fresh `launch_trainings.py cscs`
+  invocation (the active-job skip blocks pre-queued singleton chains). A
+  `--chain N` flag submitting N dependent jobs would make it hands-off.
+- **Bake eval/convert deps into the AML images** — every eval job
+  `pip install`s the lm-eval fork and every convert job pins transformers
+  at startup (~minutes each); baking them into `apertus-eval` /
+  `apertus-nemo` derivatives would shave that off all ~20 evals per cell.
+- **CSCS auto-evals** — port the `azure/auto_evals.py` watcher (see §3).
 
 ## Completed: the 36-model data-mix sweep (history)
 

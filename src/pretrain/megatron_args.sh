@@ -76,8 +76,14 @@ build_megatron_cmd() {
 		--adam-beta2 0.999
 		--ademamix-alpha 8
 		--ademamix-beta3 0.9999
-		--ademamix-beta3-warmup 100000
-		--ademamix-alpha-warmup 100000
+		# AdEMAMix alpha/beta3 warm up over the FULL run (the launcher sets
+		# ADEMAMIX_WARMUP to the cell's target iters), so the optimizer
+		# behaves the same at every ladder size — a fixed 100000 would leave
+		# the short runs (4500..81000 iters) with wildly different warmed-up
+		# fractions and confound the size-scaling fit. Resumes must pass the
+		# same value (the launcher derives it from the cell, so they do).
+		--ademamix-beta3-warmup ${ADEMAMIX_WARMUP:-100000}
+		--ademamix-alpha-warmup ${ADEMAMIX_WARMUP:-100000}
 	)
 
 	TRAINING_ARGS=(
@@ -104,7 +110,12 @@ build_megatron_cmd() {
 
 	INITIALIZATION_ARGS=(
 		--seed ${SEED:-1904}
-		--init-method-std 0.008944
+		# Width-scaled init: the launcher sets INIT_STD = 0.008944 x
+		# sqrt(1792 / hidden_size) — 1/sqrt(d) scaling anchored at the 1B
+		# (d=1792, which keeps the reviewed 0.008944 exactly), so the init
+		# is consistent across the 768..3072 ladder widths instead of one
+		# fixed value. Default = the old fixed value for raw runs.
+		--init-method-std ${INIT_STD:-0.008944}
 	)
 
 	LEARNING_RATE_ARGS=(
@@ -192,6 +203,12 @@ build_megatron_cmd() {
 	if [ -n "${WANDB_API_KEY:-}" ]; then
 		echo "[$(date)] WANDB API key detected. Enabling WANDB logging."
 		export WANDB_ENTITY
+		# One CONTINUOUS run per cell across resumes: a deterministic run id
+		# (the cell name; dots sanitized — "1.7B" is not a valid id char) +
+		# resume=allow makes every resubmission append to the same curve
+		# instead of opening a new fragment per job.
+		export WANDB_RUN_ID="${RUN_NAME//./-}"
+		export WANDB_RESUME=allow
 		TRAINING_CMD="$TRAINING_CMD \
 			--wandb-save-dir ${WANDB_SAVE_DIR:?set by the wrapper when W&B is on} \
 			--wandb-project ${PROJECT_NAME:-msnr} \
