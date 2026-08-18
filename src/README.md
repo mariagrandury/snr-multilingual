@@ -1,7 +1,7 @@
 Launch pretraining, convert checkpoints to Hugging Face format, and launch evals.
 
 ```bash
-bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_resumes.sh
+python /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_trainings.py cscs
 
 bash /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/conversion/convert-snr.sh --submit
 

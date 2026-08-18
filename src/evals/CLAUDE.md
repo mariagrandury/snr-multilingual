@@ -24,10 +24,10 @@ Two parallel tracks at any given time:
 2. **Pretraining of half-finished custom models** (separate repo at
    `/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain`).
    The full sweep now spans **3 seeds** (28, 1797, 1904) — 36 models total.
-   Resume jobs are managed via
-   [`/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_resumes.sh`](/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_resumes.sh),
-   which is idempotent (skips cells that already have a queued/running job by
-   matching the canonical Slurm name). Live status comes from
+   (2026-08: pretraining moved on to the predictivity sweep — launches and
+   resumes now go through the idempotent
+   `/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_trainings.py`;
+   the old `launch_resumes.sh` is retired.) Live status comes from
    [`scripts/pretrain_progress.py`](scripts/pretrain_progress.py) — see
    "Pretraining infrastructure" below.
 
@@ -735,28 +735,21 @@ read it for the training-side gotchas. Quick orientation:
   **Don't revert** the strictness flag without solving the underlying
   TE/Megatron version skew; **do** drop the reservation line once the
   reservation expires (currently runs until 11 May 12:00).
-- `launch_trainings.py` — wraps `sbatch --export=…` from `hyperparams_deep.json`.
-  Default `SEEDS = [28, 1797, 1904]` (the canonical SNR set). One sbatch per
-  (size × mix × seed); supports `--dry-run`, `--test`, and the usual filters.
-- `launch_resumes.sh` — **the right entry point for filling gaps**. Reads
-  `pretrain_progress.py`, iterates the canonical 4×3×3 cells, and dispatches
-  per cell: `[done]` → skip · already in `squeue` → skip · `[in_progress]` →
-  resume with auto-computed walltime · `[corrupt]` → wipe `checkpoints/` and
-  submit fresh · `[no_ckpts]` / no exp dir → submit fresh. Idempotent —
-  re-running is safe.
-- `pretrain_progress.py` (this repo at [`scripts/pretrain_progress.py`](scripts/pretrain_progress.py))
-  — also the truth source for the training side. Validates that each
-  `iter_NNNNNNN/` actually contains a `.metadata` file *and* ≥ 1 `.distcp`
-  shard before counting it as resumable. A marker pointing at an iter dir
-  with only `common.pt`/`metadata.json`/`.metadata` (no shards) is flagged
-  `[corrupt] (latest valid: …)` so launchers skip it instead of submitting
-  a doomed resume. We hit this on `175M-fwEdu60-fw240-seed28` on 2026-05-04.
+- `launch_trainings.py` — the idempotent launcher for the **predictivity
+  sweep** (2026-08 refactor), one submit per (size × L × seed) on CSCS or
+  Azure; re-running skips done/active cells and resumes partial ones with
+  auto-sized walltime (the old `launch_resumes.sh` is retired).
+- `pretrain_progress.py` — the truth source for the training side. Validates
+  that each `iter_NNNNNNN/` actually contains a `.metadata` file *and* ≥ 1
+  `.distcp` shard before counting it as resumable (a marker pointing at a
+  shard-less shell dir is the classic async-save failure; hit on
+  `175M-fwEdu60-fw240-seed28` on 2026-05-04).
 
-The pretraining checkpoint dir lives at
-`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`.
-EXP_NAME format: `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`.
-Slurm job-name format (used by `launch_resumes.sh` for dedup):
-`apertus-${size_lc}-edu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`.
+The 36-sweep checkpoint dirs live at
+`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
+(EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
+predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
+`apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`.
 
 ---
 

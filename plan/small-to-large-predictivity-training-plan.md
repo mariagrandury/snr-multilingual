@@ -23,14 +23,14 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 | Languages | 90M | 175M | 350M | 600M | 1B  | 1.7B |
 | --------- | --- | ---- | ---- | ---- | --- | ---- |
 | 1         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
-| 2         | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
+| 2         | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
 | 8         | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
 | 15        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
 | 30        | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
 | 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
 | 100       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
 
-About 51 runs (at one intervention level). (The 200-language setting was
+About 52 runs (at one intervention level). (The 200-language setting was
 dropped on 2026-08-13 to fit the compute budget and deadline; the ×3-seed
 rows are 1, 30 and 100.)
 

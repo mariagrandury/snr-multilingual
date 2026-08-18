@@ -227,17 +227,8 @@ def main() -> int:
         else:
             print(f"[push-snr] {repo_id}@main: already populated, skipping (use --force to re-mirror)")
 
-    # Persist the green status in the progress plot's embedded state and
-    # refresh the rendered colors. Best-effort: a plot-update failure must
-    # not fail the push.
-    if confirmed_steps:
-        try:
-            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-            from pretrain_progress import record_pushed, update_plot
-            record_pushed(name, confirmed_steps)
-            update_plot()
-        except Exception as e:
-            print(f"[push-snr] warning: progress plot not updated: {e}", file=sys.stderr)
+    # (The old 36-sweep progress plot used to track pushed-to-hub state here;
+    # pretrain_progress.py now covers the predictivity sweep and doesn't.)
 
     print(f"[push-snr] done: {repo_id}")
     return 0

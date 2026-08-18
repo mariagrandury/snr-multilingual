@@ -1,5 +1,6 @@
-# Azure names used by every script and job in this directory.
-# Edit once, then `source env.sh` before running any command from the guide.
+# Azure names used by every script and job spec in this azure/ directory.
+# Edit once, then `source azure/env.sh` (from src/pretrain) before running any
+# command from the guide (azure/README.md).
 
 # Shell compatibility: the guide's `az ml` commands splat $AZ_ML_ARGS (a
 # string of two flags) and rely on word splitting. bash splits unquoted
@@ -40,18 +41,15 @@ export AZ_LOCATION="$AZ_ES_LOCATION"
 export AZ_RG="$AZ_ES_RG"
 export AZ_WS="$AZ_ES_WS"
 
-# Compute clusters (created by setup_azure.sh, referenced by jobs/*.yml):
+# Compute clusters (created by setup_azure.sh, referenced by job_*_azure.yml):
 # gpu-nc80-lp in Spain Central, gpu-nd96-spot in UK South — see the
 # compute-*.yml files.
 
-# W&B config — single source of truth is configs/hf_wandb.json (entity +
-# project), loaded here so nothing else hardcodes them. The API key is NOT
-# here and is never committed: it lives in your shell/login on your laptop and
-# is read from $WANDB_API_KEY when a job needs it (verify with `printenv`).
-_hfwandb="$(cd "$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")/../../.." && pwd)/configs/hf_wandb.json"
-export WANDB_ENTITY="$(python3 -c "import json;print(json.load(open('$_hfwandb'))['wandb']['entity'])" 2>/dev/null || echo mariagrandury-epflnlp)"
-export WANDB_PROJECT="$(python3 -c "import json;print(json.load(open('$_hfwandb'))['wandb']['project'])" 2>/dev/null || echo msnr)"
-unset _hfwandb
+# W&B: the entity is the constant "mariagrandury-epflnlp" (hardcoded in
+# megatron_args.sh) and the training project comes from configs/hf_wandb.json
+# via launch_trainings.py — nothing to export here. The WANDB_API_KEY is NOT
+# in any file and is never committed: it lives in your shell/login on your
+# laptop and is read from $WANDB_API_KEY when a job needs it.
 
 # Convenience: every `az ml` call needs these two flags.
 export AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"

@@ -1,17 +1,17 @@
 $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
 type: command
-experiment_name: predictivity
+experiment_name: msnr
 display_name: predictivity-cell
 description: >
   One predictivity-sweep run (size x language setting x seed) on the pre-built
   English (DCLM) + FineWeb-2 datasets, blended 50/50 at training time via
   DATA_BLEND (L=1 trains on English alone). Always submitted through
-  launch_azure_predictivity.py, which fills in the architecture env vars from
+  `launch_trainings.py azure`, which fills in the architecture env vars from
   the reviewed hyperparams file (--arch deep|shallow), the derived schedule,
   the input dataset paths, the blend, and the compute (Spain NC80adis
   low-priority for <=600M, UK ND96isr Spot for 1B/1.7B).
-code: ..
-command: bash train.sh
+code: ../..
+command: bash launch_pretraining_azure.sh
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-nc80-lp
 resources:
@@ -39,9 +39,9 @@ outputs:
     path: azureml://datastores/workspaceblobstore/paths/predictivity/runs/placeholder/cache
     mode: rw_mount
 environment_variables:
-  # Fallback only; launch_azure_predictivity.py overrides PROJECT_NAME from
+  # Fallback only; launch_trainings.py overrides PROJECT_NAME from
   # configs/hf_wandb.json (the single source of truth for the project). The
-  # W&B entity is a constant hardcoded in train.sh.
+  # W&B entity is a constant hardcoded in megatron_args.sh.
   PROJECT_NAME: msnr
   TOKENIZER_MODEL: swiss-ai/Apertus-70B-2509
   SAVE_INTERVAL: "2000"

@@ -3,12 +3,13 @@
 Launch Azure ML eval jobs for (cell × checkpoint) combinations — the Azure
 counterpart of the SLURM runner chain (hf_base_runner.sh → evaluate.sbatch).
 
-Each selected checkpoint submits jobs/eval.yml pointed at the converted HF
-snapshot under models/<cell>/iter_<N> (produce those with jobs/convert.yml
-first) with NAME=<cell>-iter<N>, the id push_all_results.py resolves.
+Each selected checkpoint submits jobs/eval.yml pointed at the converted
+HF snapshot under models/<cell>/iter_<N> (produce those with
+jobs/convert.yml first) with NAME=<cell>-iter<N>, the id
+push_all_results.py resolves.
 
 Usage:
-    python launch_azure_evals.py [--dry-run]
+    python azure/launch_evals.py [--dry-run]
                                  [--size SIZE] [--mix_en MIX_EN] [--seed SEED]
                                  [--ckpts final|full_eval|dense_tail|10_ckpts|da_ckpts|all]
                                  [--tasks TASKS]
@@ -17,8 +18,8 @@ Usage:
 group name from configs/tasks.json (e.g. pretraining_full).
 
 Examples:
-    python launch_azure_evals.py --size 175M --mix_en 30 --seed 28            # hellaswag, final ckpt
-    python launch_azure_evals.py --seed 28 --ckpts full_eval --tasks pretraining_full
+    python azure/launch_evals.py --size 175M --mix_en 30 --seed 28            # hellaswag, final ckpt
+    python azure/launch_evals.py --seed 28 --ckpts full_eval --tasks pretraining_full
 """
 
 from __future__ import annotations
@@ -45,7 +46,7 @@ def az_args() -> list[str]:
         return ["--resource-group", os.environ["AZ_RG"],
                 "--workspace-name", os.environ["AZ_WS"]]
     except KeyError:
-        sys.exit("AZ_RG/AZ_WS not set — run `source env.sh` first.")
+        sys.exit("AZ_RG/AZ_WS not set — run `source azure/env.sh` first.")
 
 
 def resolve_tasks(spec: str) -> str:
@@ -72,8 +73,8 @@ def submit(name: str, it: int, tasks: str, dry_run: bool) -> None:
     if os.environ.get("WANDB_API_KEY"):
         overrides["environment_variables.WANDB_API_KEY"] = os.environ["WANDB_API_KEY"]
 
-    cmd = ["az", "ml", "job", "create", "--file", str(SCRIPT_DIR / "jobs" / "eval.yml"),
-           *az_args()]
+    cmd = ["az", "ml", "job", "create",
+           "--file", str(SCRIPT_DIR / "jobs" / "eval.yml"), *az_args()]
     for k, v in overrides.items():
         cmd += ["--set", f"{k}={v}"]
 

@@ -22,11 +22,12 @@ Build-token sizing:
   50% of that. Hence:
     fineweb_target(L) = largest_budget(L) * ML_SHARE * (1 + HEADROOM)
     english_target    = max_english_need  * (1 + HEADROOM)
-  where largest_budget(L) is ~167B where the 1.7B model trains (L in 1,8,30,
-  100) and ~94B otherwise, ML_SHARE = 0.50, and the English need is bounded by
-  the 1-language setting (100% English at ~167B). With the reviewed deep-ladder
-  budgets (read from hyperparams_deep.json) this yields ~52B / ~92B FineWeb-2
-  builds and a ~184B English build.
+  where largest_budget(L) is ~167B where the 1.7B model trains (L in
+  1,2,8,30,100) and ~94B otherwise,
+  ML_SHARE = 0.50, and the English need is bounded by the 1-language setting
+  (100% English at ~167B). With the reviewed deep-ladder budgets (read from
+  hyperparams_deep.json) this yields ~52B / ~92B FineWeb-2 builds and a ~184B
+  English build.
 
 Usage:
   # Everything for scheme A into ./outputs (validation, English, all settings)

@@ -24,8 +24,11 @@ HARNESS_LIMIT=${HARNESS_LIMIT:-}          # e.g. 10 for a smoke eval
 TP=${TP:-1}                               # TP=1 works for every SNR size
 PP=${PP:-1}                               # (350M/1B have 5/7 KV heads)
 VLLM_MEMORY_FRACTION=${VLLM_MEMORY_FRACTION:-0.75}
-WANDB_ENTITY=${WANDB_ENTITY:-mariagrandury-epflnlp}
-WANDB_PROJECT=${WANDB_PROJECT:-snr-experiments}
+WANDB_ENTITY=mariagrandury-epflnlp        # constant — same entity as training
+# Eval curves land in the SAME W&B project as the training runs (msnr) —
+# single source of truth is configs/hf_wandb.json in the repo-root snapshot.
+REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+WANDB_PROJECT=${WANDB_PROJECT:-$(python3 -c "import json;print(json.load(open('$REPO_ROOT/configs/hf_wandb.json'))['wandb']['project'])" 2>/dev/null || echo msnr)}
 
 export HF_HOME=${HF_HOME:-/tmp/hf_home}
 export HF_ALLOW_CODE_EVAL=1
@@ -88,10 +91,9 @@ for task, metrics in json.load(open(results))["results"].items():
     print(task, {k: round(v, 4) for k, v in metrics.items() if isinstance(v, float)})
 EOF
 
-# Push to W&B (same project as cluster evals) right from the job — required
-# for auto-evals, convenient for manual ones. Needs the repo-root code
-# snapshot (configs/ + src/evals) and a WANDB_API_KEY.
-REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+# Push to W&B (same project as the training runs — msnr) right from the job —
+# required for auto-evals, convenient for manual ones. Needs the repo-root
+# code snapshot (configs/ + src/evals) and a WANDB_API_KEY.
 if [ -n "${WANDB_API_KEY:-}" ] && [ -f "$REPO_ROOT/configs/models.json" ]; then
   pip install --no-cache-dir -q wandb pandas
   LOGS_ROOT="$RESULTS_DIR" python "$REPO_ROOT/src/evals/scripts/push_all_results.py" \

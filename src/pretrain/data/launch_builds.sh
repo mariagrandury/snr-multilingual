@@ -5,9 +5,6 @@
 #
 #   ./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
 #   ./launch_builds.sh             # submit
-#
-# NOT launched here (already running as their own per-mix jobs):
-#   - L2 (Russian, 1.7B-sized) -> submit_build_l2.sh
 set -euo pipefail
 DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 ONE=$DIR/submit_build_one.sh
@@ -36,7 +33,16 @@ submit() { # name exportvars [extra sbatch args...]
   if [ "$DRY" = --dry-run ]; then echo "DRY: ${cmd[*]}"; else echo "  $("${cmd[@]}")  [$name]"; fi
 }
 
-echo "english gated after: ${MAIN:-<none running>}"
+# L2 (Russian, sized for its largest run, the 1.7B) goes through the same
+# generic path as every other setting. If an old `build-l2` chain from the
+# retired submit_build_l2.sh is still running, gate the new L2 job after it —
+# both write the same fineweb_L2 prefix and must never run concurrently (the
+# idempotency guard then no-ops whichever starts after the build finishes).
+OLD_L2=$(squeue -u "$USER" -h -n build-l2 -o %i 2>/dev/null | head -1 || true)
+L2_DEP=(); [ -n "$OLD_L2" ] && L2_DEP=(--dependency=afterany:"$OLD_L2")
+
+echo "english gated after: ${MAIN:-<none running>}; L2 gated after: ${OLD_L2:-<none running>}"
 submit build-en "BUILD_SCHEME=A,BUILD_STAGE=english,BUILD_OUT=$OUT" "${EN_DEP[@]}"
+submit build-a-L2 "BUILD_SCHEME=A,BUILD_STAGE=fineweb,BUILD_SETTING=2,BUILD_OUT=$OUT" "${L2_DEP[@]}"
 for L in 8 15 30 50 100; do submit "build-a-L$L" "BUILD_SCHEME=A,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$OUT"; done
 for L in 8 15 30;        do submit "build-b-L$L" "BUILD_SCHEME=B,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$OUT_B"; done

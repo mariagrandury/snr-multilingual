@@ -1,11 +1,11 @@
 #!/bin/bash
 # One-time Azure setup: resource group, ML workspace, environments, compute.
-# Idempotent — safe to re-run. Requires: az CLI, `source env.sh`, and GPU
+# Idempotent — safe to re-run. Requires: az CLI, `source azure/env.sh`, and GPU
 # quota already granted in $AZ_LOCATION (README step 3).
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: "${AZ_SUBSCRIPTION:?source env.sh first}"
+: "${AZ_SUBSCRIPTION:?source azure/env.sh first}"
 
 az account set --subscription "$AZ_SUBSCRIPTION"
 az extension add --name ml --upgrade --yes

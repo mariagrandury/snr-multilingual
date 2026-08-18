@@ -1,13 +1,13 @@
 $schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
 type: command
-experiment_name: apertus-azure
+experiment_name: msnr
 display_name: convert-175M-iter50000
 description: >
   Convert one Megatron torch_dist checkpoint to a HuggingFace snapshot
   (ApertusForCausalLM). ~few minutes on 1 GPU. For other cells/iters override
   inputs.checkpoints.path, outputs.hf_model.path and CKPT_STEP with --set.
-code: ..
-command: bash convert.sh
+code: ../..
+command: bash azure/convert.sh
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-nc80-lp
 resources:

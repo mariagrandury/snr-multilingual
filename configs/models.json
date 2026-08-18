@@ -6265,83 +6265,51 @@
         }
       }
     },
-    "apertus-90M-fwEdu50-fw2ru50-seed28": {
+    "apertus-90M-L2-seed1904": {
       "source": "snr-pretraining-bilingual",
-      "family": "apertus-enru-fwEdu50-fw2ru50-seed28",
+      "family": "apertus-L2-seed1904",
       "size": "90M",
       "params": 194000000,
       "hyperparams_key": "90M",
       "mix_en": 50,
       "mix_fw2": 50,
-      "seed": 28,
+      "seed": 1904,
       "checkpoint_kind": "megatron_iter",
       "backends": {},
       "stages": {
         "pretraining": {
-          "tokens": 103219200000,
-          "num_iters": 50000,
+          "tokens": 9289728000,
+          "num_iters": 4500,
           "tokens_per_iter": 2064384,
           "checkpoints": {
-            "final": 50000,
+            "final": 4500,
             "all": [
               2000,
               4000,
-              6000,
-              8000,
-              10000,
-              12000,
-              14000,
-              16000,
-              18000,
-              20000,
-              22000,
-              24000,
-              26000,
-              28000,
-              30000,
-              32000,
-              34000,
-              36000,
-              38000,
-              40000,
-              42000,
-              44000,
-              46000,
-              48000,
-              50000
-            ],
-            "auto": [
-              10000,
-              20000,
-              30000,
-              40000,
-              50000
+              4500
             ]
-          },
-          "eval_groups": [
-            "auto"
-          ]
+          }
         }
       }
     },
-    "apertus-1.7B-fwEdu50-fw2ru50-seed28": {
+    "apertus-1.7B-L2-seed1904": {
       "source": "snr-pretraining-bilingual",
-      "family": "apertus-enru-fwEdu50-fw2ru50-seed28",
+      "family": "apertus-L2-seed1904",
       "size": "1.7B",
       "params": 1974000000,
       "hyperparams_key": "1.7B",
       "mix_en": 50,
       "mix_fw2": 50,
-      "seed": 28,
+      "seed": 1904,
       "checkpoint_kind": "megatron_iter",
       "backends": {},
       "stages": {
         "pretraining": {
-          "tokens": 103219200000,
-          "num_iters": 50000,
+          "tokens": 167215104000,
+          "num_iters": 81000,
           "tokens_per_iter": 2064384,
           "checkpoints": {
-            "final": 50000,
+            "final": 81000,
             "all": [
               2000,
               4000,
@@ -6367,19 +6335,25 @@
               44000,
               46000,
               48000,
-              50000
-            ],
-            "auto": [
-              10000,
-              20000,
-              30000,
-              40000,
-              50000
+              50000,
+              52000,
+              54000,
+              56000,
+              58000,
+              60000,
+              62000,
+              64000,
+              66000,
+              68000,
+              70000,
+              72000,
+              74000,
+              76000,
+              78000,
+              80000,
+              81000
             ]
-          },
-          "eval_groups": [
-            "auto"
-          ]
+          }
         }
       }
     }
