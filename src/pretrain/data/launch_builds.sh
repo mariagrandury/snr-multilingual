@@ -8,11 +8,12 @@
 set -euo pipefail
 DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 ONE=$DIR/submit_build_one.sh
-OUT=/iopsstor/scratch/cscs/mariagrandury/data
+OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data  # persistent capstor store
 OUT_B=$OUT/schemeB
+LOGS=/iopsstor/scratch/cscs/mariagrandury/data/logs   # build job logs stay on scratch (transient); matches submit_build_one.sh's #SBATCH --output
 DRY=${1:-}
 
-mkdir -p "$OUT_B" "$OUT/logs"
+mkdir -p "$OUT" "$OUT_B" "$LOGS"
 # Scheme B is its own --data_dir (downstream keys off dir, fixed fineweb_L{L}
 # name). Symlink the shared english build + validation manifest so schemeB/ is a
 # complete data_dir; english may dangle until built (the B build needs only the

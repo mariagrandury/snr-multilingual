@@ -92,7 +92,7 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 # Where data/build_data_mixtures.py wrote english_dclm.* and fineweb_L*.* on
 # the cluster — override with --data_dir.
 CSCS_DEFAULT_DATA_DIR = (
-    "/capstor/store/cscs/swissai/infra01/users/mariagrandury/predictivity-data"
+    "/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data"
 )
 
 AZURE_JOB_YML = SCRIPT_DIR / "azure" / "jobs" / "pretrain.yml"
