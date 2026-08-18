@@ -140,6 +140,28 @@ def _scheme_b_langs() -> set[int]:
 
 SCHEME_B_LANGS = _scheme_b_langs()
 
+
+def cell_languages(L: int, scheme: str = "A") -> set[str]:
+    """Canonical language codes a cell trains on: English plus its setting's
+    FineWeb-2 languages, mapped through the `fineweb_iso2` table in
+    configs/languages.json (covers the full 100-language set: iso639-1 where
+    one exists, the FineWeb iso3 otherwise, Arabic dialects folded into ar).
+    tasks.json tags its tasks with the same codes, so the auto-eval watchers
+    intersect the two to pick each cell's benchmark tasks."""
+    langs = {"en"}
+    if L == 1:
+        return langs
+    iso3_to_code = json.loads(
+        (SCRIPT_DIR.parent.parent / "configs" / "languages.json").read_text()
+    )["fineweb_iso2"]
+    sets_ = json.loads((SCRIPT_DIR / "data" /
+                        f"language_sets_scheme{scheme}.json").read_text())["sets"]
+    for code in sets_[f"FW_L{L}"]:
+        mapped = iso3_to_code.get(code.split("_")[0])
+        if mapped:
+            langs.add(mapped)
+    return langs
+
 # CSCS smoke test: smallest size, one mid setting, 50 steps.
 TEST_SIZE = "90M"
 TEST_LANGS = 8

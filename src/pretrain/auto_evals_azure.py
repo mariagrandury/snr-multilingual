@@ -36,7 +36,9 @@ _SRC = Path(__file__).resolve().parents[1]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
-    filter_models, load_hf_wandb_config, stages_of)
+    filter_models, get_model, load_hf_wandb_config, stages_of,
+    tasks_for_benchmarks)
+from launch_trainings import cell_languages  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
 from launch_evals import az_args, resolve_tasks, submit as submit_eval  # noqa: E402
@@ -44,6 +46,9 @@ from launch_evals import az_args, resolve_tasks, submit as submit_eval  # noqa: 
 SOURCES = ["snr-pretraining-predictivity"]
 SCRIPT_DIR = Path(__file__).parent
 DATASTORE = "azureml://datastores/workspaceblobstore/paths"
+AUTO_BENCHMARKS = json.loads(
+    (Path(__file__).resolve().parents[2] / "configs" /
+     "tasks.json").read_text())["groups"]["auto"]
 ACTIVE_STATES = {"NotStarted", "Queued", "Starting", "Preparing", "Running", "Finalizing"}
 # Eval results land under eval_logs/<entity>/<project>/ (azure/eval.sh) — the
 # project is msnr (configs/hf_wandb.json), the same one training logs to.
@@ -112,7 +117,10 @@ def submit_convert(name: str, it: int, dry_run: bool) -> None:
         subprocess.run(cmd, check=True)
 
 
-def one_pass(names: list[str], auth: list[str], every: int, tasks: str, dry_run: bool) -> None:
+def one_pass(names: list[str], auth: list[str], every: int,
+             tasks: str | None, dry_run: bool) -> None:
+    """`tasks` None = the auto group: per cell, every auto benchmark in
+    the languages that cell trains on (models.json carries L/scheme)."""
     # Keep configs/models.json following the grid (see sync_models_json).
     from sync_models_json import sync
     added, updated = sync()
@@ -129,6 +137,9 @@ def one_pass(names: list[str], auth: list[str], every: int, tasks: str, dry_run:
         ck = stages_of(name)["pretraining"]["checkpoints"]
         step = ck["all"][1] - ck["all"][0] if len(ck["all"]) > 1 else 2000
         due = [i for i in iters if i % (every * step) == 0 or i == ck["final"]]
+        m = get_model(name)
+        cell_tasks = tasks or ",".join(tasks_for_benchmarks(
+            AUTO_BENCHMARKS, cell_languages(m["L"], m["scheme"])))
         print(f"{name}: {len(iters)} ckpts saved, due for auto-eval: {due}")
         converted = {b.split("/")[2] for b in list_blobs(auth, f"models/{name}/")
                      if b.endswith("config.json")}
@@ -145,7 +156,7 @@ def one_pass(names: list[str], auth: list[str], every: int, tasks: str, dry_run:
                 if f"convert-{name}-iter{it}" not in running:
                     submit_convert(name, it, dry_run)
             elif f"eval-{name}-iter{it}" not in running:
-                submit_eval(name, it, tasks, dry_run)
+                submit_eval(name, it, cell_tasks, dry_run)
 
 
 def main() -> None:
@@ -166,7 +177,9 @@ def main() -> None:
     names = [args.name] if args.name else filter_models(
         source=SOURCES, size=args.size,
         seeds=[args.seed] if args.seed is not None else None)
-    tasks = resolve_tasks(args.tasks)
+    # "auto" resolves per cell (benchmarks x trained languages); anything
+    # else is a fixed task list/group as before.
+    tasks = None if args.tasks == "auto" else resolve_tasks(args.tasks)
     auth = storage_auth()
     while True:
         one_pass(names, auth, args.every, tasks, args.dry_run)

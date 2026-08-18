@@ -49,9 +49,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, exp_name,
-    predictivity_cells, schedule_for)
+    HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, cell_languages,
+    exp_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
+sys.path.insert(0, str(SCRIPT_DIR.parent))
+from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
 
 EVALS_DIR = SCRIPT_DIR.parent / "evals"
 CONVERT_SNR = SCRIPT_DIR / "conversion" / "convert-snr.sh"
@@ -71,9 +73,11 @@ CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
 EVAL_TIME = "04:00:00"  # the 6-task auto group is quick; be queue-friendly
 
 
-def auto_tasks() -> str:
-    """Comma-joined task list of the `auto` group in configs/tasks.json."""
-    return ",".join(json.loads(TASKS_JSON.read_text())["groups"]["auto"])
+def auto_benchmarks() -> list[str]:
+    """The `auto` group in configs/tasks.json — BENCHMARK names; each cell
+    is evaluated on every benchmark's tasks in the languages it trains on
+    (tasks_for_benchmarks x cell_languages)."""
+    return json.loads(TASKS_JSON.read_text())["groups"]["auto"]
 
 
 def saved_valid_iters(cell: str, root: Path) -> list[int]:
@@ -152,7 +156,7 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
 
 
 def one_pass(args, root: Path, staging: Path, logs_root: Path,
-             tasks: str) -> None:
+             benchmarks: list[str]) -> None:
     # Keep configs/models.json following the grid — conversion and the W&B
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync
@@ -178,6 +182,10 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         # targets end off the 2000-iter save grid) — same rule as Azure.
         due = [i for i in saved
                if i % (args.every * SAVE_INTERVAL) == 0 or i == target]
+        # The cell's task list: every auto benchmark, in the languages
+        # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
+        tasks = ",".join(tasks_for_benchmarks(
+            benchmarks, cell_languages(c["L"], scheme)))
         print(f"{cell}: {len(saved)} ckpts saved, due for auto-eval: {due}")
 
         to_convert = []
@@ -217,10 +225,10 @@ def main() -> None:
                    help=f"Eval results root (default: {DEFAULT_LOGS_ROOT})")
     args = p.parse_args()
 
-    tasks = auto_tasks()
+    benchmarks = auto_benchmarks()
     while True:
         one_pass(args, Path(args.root), Path(args.staging),
-                 Path(args.logs_root), tasks)
+                 Path(args.logs_root), benchmarks)
         if not args.watch:
             break
         time.sleep(args.watch)

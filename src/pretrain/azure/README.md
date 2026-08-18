@@ -378,10 +378,11 @@ pusher resolves the tokens/FLOPs axes.)
 
 To see whether a training is progressing well with more information than the
 loss curve, saved checkpoints get evaluated automatically on the **`auto`**
-benchmark group from `configs/tasks.json` — `hellaswag`, `hellaswag_ru`,
-`global_mmlu_full_en`, `global_mmlu_full_ru`,
-`global_piqa_completions_eng_latn`, `global_piqa_completions_rus_cyrl` —
-and pushed to the same W&B project (`msnr`) as the training runs. Due are
+group from `configs/tasks.json` — a list of **benchmark names**; each cell
+gets every listed benchmark's tasks in the languages it trains on (an L2
+cell gets `hellaswag` + `hellaswag_ru` + …, an L1 cell only the English
+variants) — and pushed to the same W&B project (`msnr`) as the training
+runs. Due are
 **every 2nd saved checkpoint plus the run's final one** whatever its iter
 (predictivity targets end off the save grid, e.g. 4500 or 81000);
 `--every N` changes the cadence. Edit the `auto` benchmark group in

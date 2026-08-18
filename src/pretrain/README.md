@@ -259,10 +259,17 @@ Both PNGs are also refreshed automatically at the end of every
 the same rule (**every 2nd saved checkpoint plus each run's final one**,
 whatever its iter) and the same destination (W&B
 **`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
-so loss and benchmark curves live side by side). Both watchers evaluate the
-`auto` benchmark group from [`configs/tasks.json`](../../configs/tasks.json)
-and are idempotent: stop them, restart them, run them twice — nothing
-duplicates.
+so loss and benchmark curves live side by side). The `auto` group in
+[`configs/tasks.json`](../../configs/tasks.json) lists **benchmark names**
+(arc, belebele, global_mmlu, hellaswag, include_base_44, multiblimp,
+xcopa, xnli, xstorycloze, xwinograd); each cell is evaluated on every
+listed benchmark's tasks **in the languages it trains on** (English + its
+setting's FineWeb-2 languages, mapped via
+[`configs/languages.json`](../../configs/languages.json)) — e.g. the L2
+cells get `hellaswag` + `hellaswag_ru` + … (18 tasks); L30 cells get 164,
+L100 cells 290 — the task languages cover the full 100-language set.
+Both watchers are idempotent: stop them, restart them, run them twice —
+nothing duplicates.
 
 - **CSCS** — [`auto_evals_cscs.py`](auto_evals_cscs.py) scans the checkpoint
   tree each pass and, per due checkpoint: submits a
