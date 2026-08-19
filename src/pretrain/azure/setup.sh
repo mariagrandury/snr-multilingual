@@ -7,6 +7,12 @@ cd "$(dirname "$0")"
 
 : "${AZ_SUBSCRIPTION:?source azure/env.sh first}"
 
+# env.sh expands AZ_ML_ARGS once at source time from the Spain defaults; the
+# UK bring-up re-exports only AZ_LOCATION/AZ_RG/AZ_WS, so recompute here or
+# the environment/compute registrations below silently land in Spain while
+# the UK workspace stays empty.
+AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"
+
 az account set --subscription "$AZ_SUBSCRIPTION"
 az extension add --name ml --upgrade --yes
 

@@ -69,14 +69,6 @@ ulimit -c 0
 cd $MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR:$PYTHONPATH
 
-# W&B key: same file fallback the eval scripts use — without it
-# megatron_args.sh silently sets WANDB_MODE=disabled and the whole run logs
-# no loss curves (unrecoverable later: the deterministic run id can't be
-# backfilled).
-if [ -z "${WANDB_API_KEY:-}" ] && [ -f "$SCRIPT_DIR/../evals/scripts/wandb_api_key.txt" ]; then
-  export WANDB_API_KEY=$(cat "$SCRIPT_DIR/../evals/scripts/wandb_api_key.txt")
-fi
-
 # Sync any previous run's W&B data before starting (wandb is in the container
 # on compute nodes — guard so a missing host binary doesn't pollute the log).
 if [ -n "$WANDB_API_KEY" ] && [ -d "$LOGGING_DIR/wandb/latest-run" ] && command -v wandb >/dev/null 2>&1; then

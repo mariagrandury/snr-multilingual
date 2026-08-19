@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -72,7 +73,26 @@ DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatro
 
 SAVE_INTERVAL = 2000
 CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
-EVAL_TIME = "04:00:00"  # the 6-task auto group is quick; be queue-friendly
+# The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime
+# can't fit both — and the whole batched run executes on 1 of the node's 4
+# GPUs (the ladder's KV-head counts force TP=1 and vLLM clamps dense DP to
+# 1). Per-task minutes extrapolated from the 36-sweep's per-task-mode
+# timings (launch_ckpts_in_progress.sh: 4-10 min/task on the full node),
+# ~/10 for batched mode, ~x2 for the single GPU. A walltime kill mid-batch
+# writes NO results_*.json, so an undersized job would just be resubmitted
+# and re-killed forever — err generous.
+MIN_PER_TASK = {"90M": 0.6, "175M": 0.8, "350M": 1.2, "600M": 1.6,
+                "1B": 2.0, "1.7B": 2.8}
+
+
+def eval_walltime(size: str, n_tasks: int) -> str:
+    """~1h overhead (container + vLLM cold start + W&B push) + per-task
+    budget, rounded up to 15 min, capped at the normal queue's 11:59:59
+    limit (launch_trainings.TIME_MAX_SEC) — an over-cap request is rejected
+    at submission and would crash the watch loop."""
+    minutes = math.ceil((60 + n_tasks * MIN_PER_TASK.get(size, 2.8)) / 15) * 15
+    minutes = min(minutes, 719)
+    return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 
 
 def auto_benchmarks() -> list[str]:
@@ -120,9 +140,10 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
-                tasks: str, dry_run: bool) -> None:
+                tasks: str, size: str, dry_run: bool) -> None:
     name = f"{cell}-iter{it}"
     hf_dir = staging / cell / f"iter_{it:07d}"
+    n_tasks = tasks.count(",") + 1
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
     # comma-joined TASKS list would be truncated at its first comma and the
@@ -140,11 +161,11 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
            "WANDB_PROJECT": PROJECT_NAME,
            "LOGS_ROOT": str(logs_root),
            "TASKS": tasks}
-    cmd = ["sbatch", f"--job-name=eval-{name}", f"--time={EVAL_TIME}",
+    cmd = ["sbatch", f"--job-name=eval-{name}",
+           f"--time={eval_walltime(size, n_tasks)}",
            "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
     print(f"  submit: eval-{name}")
     if dry_run:
-        n_tasks = tasks.count(",") + 1
         print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
         subprocess.run(cmd, cwd=EVALS_DIR, env=env, check=True)
@@ -215,7 +236,8 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             if evaluated(name, logs_root):
                 continue
             if hf_staged(cell, it, staging) and f"eval-{name}" not in running:
-                submit_eval(cell, it, staging, logs_root, tasks, args.dry_run)
+                submit_eval(cell, it, staging, logs_root, tasks, c["size"],
+                            args.dry_run)
 
 
 def main() -> None:

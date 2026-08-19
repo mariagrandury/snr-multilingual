@@ -40,6 +40,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
 from launch_trainings import UK_SIZES, cell_languages  # noqa: E402
+from sync_models_json import sync  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
 from launch_evals import az_args, resolve_tasks, submit as submit_eval  # noqa: E402
@@ -79,8 +80,20 @@ def storage_auth() -> list[str]:
 
 
 def list_blobs(auth: list[str], prefix: str) -> list[str]:
-    return az_json("storage", "blob", "list", *auth,
-                   "--prefix", prefix, "--query", "[].name", "--num-results", "5000")
+    """All blob names under prefix — paginated: a single call silently
+    truncates at --num-results, and an L=100 cell's eval_logs (one samples
+    file per task per eval) can exceed 5000 blobs."""
+    names, marker = [], None
+    while True:
+        cmd = ["storage", "blob", "list", *auth, "--prefix", prefix,
+               "--num-results", "5000", "--show-next-marker",
+               "--query", "[].{name:name,nextMarker:nextMarker}"]
+        page = az_json(*(cmd + (["--marker", marker] if marker else [])))
+        names += [b["name"] for b in page if b.get("name")]
+        # --show-next-marker appends one {"nextMarker": ...} element at the end
+        marker = page[-1].get("nextMarker") if page else None
+        if not marker:
+            return names
 
 
 def saved_iters(auth: list[str], name: str) -> list[int]:
@@ -101,7 +114,10 @@ def saved_iters(auth: list[str], name: str) -> list[int]:
 
 
 def active_jobs() -> set[str]:
-    jobs = az_json("ml", "job", "list", "--max-results", "200", *az_args(),
+    # --all-results: the default newest-200 window includes completed jobs,
+    # so a long-queued job falls out of it and gets resubmitted as a
+    # duplicate. The --query projection keeps the full listing small.
+    jobs = az_json("ml", "job", "list", "--all-results", "true", *az_args(),
                    "--query", "[].{d:display_name,s:status}")
     return {j["d"] for j in jobs if j["s"] in ACTIVE_STATES}
 
@@ -133,7 +149,6 @@ def one_pass(names: list[str], auth: list[str], every: int,
     """`tasks` None = the auto group: per cell, every auto benchmark in
     the languages that cell trains on (models.json carries L/scheme)."""
     # Keep configs/models.json following the grid (see sync_models_json).
-    from sync_models_json import sync
     added, updated = sync()
     if added or updated:
         print(f"(models.json synced: +{len(added)} ~{len(updated)} cells — commit the diff)")
@@ -151,8 +166,14 @@ def one_pass(names: list[str], auth: list[str], every: int,
         m = get_model(name)
         cell_tasks = tasks or ",".join(tasks_for_benchmarks(
             AUTO_BENCHMARKS, cell_languages(m["L"], m["scheme"])))
+        # Converted = the .hf_complete marker azure/convert.sh writes LAST —
+        # config.json lands on the rw_mount while save_pretrained is still
+        # uploading shards, so its presence alone would let a preempted
+        # convert job poison the iter forever (never re-converted, evaluated
+        # against partial weights). Marker-less snapshots from before the
+        # marker existed are simply re-converted (idempotent, same bytes).
         converted = {b.split("/")[2] for b in list_blobs(auth, f"models/{name}/")
-                     if b.endswith("config.json")}
+                     if b.endswith("/.hf_complete")}
         evaluated = {m.group(1)
                      for b in list_blobs(
                          auth,
@@ -169,7 +190,9 @@ def one_pass(names: list[str], auth: list[str], every: int,
         for it in due:
             if f"{name}-iter{it}" in evaluated:
                 continue
-            if f"iter_{it:07d}" in converted and f"eval-{name}-iter{it}" not in running:
+            if (f"iter_{it:07d}" in converted
+                    and f"convert-{name}-iter{it}" not in running
+                    and f"eval-{name}-iter{it}" not in running):
                 submit_eval(name, it, cell_tasks, dry_run, compute)
 
 
@@ -202,6 +225,10 @@ def main() -> None:
                 f"AZ_UK_{var[3:]} not set — run `source azure/env.sh` first.")
     compute = UK_COMPUTE if uk else None
 
+    # Sync models.json before resolving names: a freshly-launched grid cell
+    # passed via --name may not be registered yet (one_pass re-syncs each
+    # pass for cells appearing while watching).
+    sync()
     names = [args.name] if args.name else filter_models(
         source=SOURCES, size=args.size,
         seeds=[args.seed] if args.seed is not None else None)

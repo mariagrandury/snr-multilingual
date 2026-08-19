@@ -34,8 +34,12 @@ from huggingface_hub.utils import HfHubHTTPError
 ORG = "msnr"  # single PUBLIC org — public repos have no storage limit
 DEFAULT_STAGING = Path("/capstor/store/cscs/swissai/infra01/msnr-hf-models")
 
-# A converted iter dir is ready once it has a config + weights.
-WEIGHT_FILES = ("model.safetensors", "model.safetensors.index.json")
+# A converted iter dir is ready once it has the .hf_complete marker the
+# convert scripts touch LAST (it implies config + weights; those alone can
+# match a half-written save_pretrained, and a partial push is permanent via
+# the branch-exists skip). Marker-less pre-marker snapshots get backfilled
+# by the next convert job over the cell.
+WEIGHT_FILES = ("model.safetensors", "model.safetensors.index.json")  # main_is_empty_stub
 ITER_RE = re.compile(r"^iter_(\d+)$")
 CELL_PREFIX = "apertus-"
 
@@ -53,11 +57,9 @@ def iter_dirs(staging: Path, cell: str, requested: list[int] | None) -> list[tup
         step = int(m.group(1))
         if requested is not None and step not in requested:
             continue
-        if not (d / "config.json").is_file():
-            print(f"[push-snr] skip {d}: missing config.json")
-            continue
-        if not any((d / w).exists() for w in WEIGHT_FILES):
-            print(f"[push-snr] skip {d}: no weights")
+        if not (d / ".hf_complete").is_file():
+            print(f"[push-snr] skip {d}: no .hf_complete (conversion "
+                  f"incomplete or in flight — a convert-snr pass backfills it)")
             continue
         out.append((step, d))
     return out

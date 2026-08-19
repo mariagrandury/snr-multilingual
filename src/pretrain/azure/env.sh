@@ -35,8 +35,10 @@ export AZ_ML_ARGS_ES="--resource-group $AZ_ES_RG --workspace-name $AZ_ES_WS"
 export AZ_ML_ARGS_UK="--resource-group $AZ_UK_RG --workspace-name $AZ_UK_WS"
 
 # Primary workspace = Spain Central; the guide's single-workspace commands and
-# AZ_ML_ARGS point here. Re-export these three to the AZ_UK_* values before
-# running setup_azure.sh for the UK workspace.
+# AZ_ML_ARGS point here. For the UK workspace, re-export these three to the
+# AZ_UK_* values AND `export AZ_ML_ARGS="$AZ_ML_ARGS_UK"` — AZ_ML_ARGS below
+# is expanded once at source time, so the guide's `az ml ... $AZ_ML_ARGS`
+# commands keep pointing at Spain otherwise (setup.sh recomputes it itself).
 export AZ_LOCATION="$AZ_ES_LOCATION"
 export AZ_RG="$AZ_ES_RG"
 export AZ_WS="$AZ_ES_WS"

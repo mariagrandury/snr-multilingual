@@ -31,3 +31,10 @@ python "$MEGATRON_LM_DIR/tools/checkpoint/convert.py" \
 
 echo "Converted iter $CKPT_STEP -> $HF_OUT"
 ls -la "$HF_OUT"
+
+# Written LAST (same contract as convert-snr.sh): the watcher treats a
+# snapshot as converted only once this exists — config.json lands on the
+# rw_mount long before the weight shards, and a preempted spot job must not
+# leave a half-written snapshot that looks done forever. Non-empty on
+# purpose: blobfuse has been flaky about flushing 0-byte creates.
+echo done > "$HF_OUT/.hf_complete"

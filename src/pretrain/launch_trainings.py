@@ -402,8 +402,12 @@ def active_azure_jobs(ws_args: list[str]) -> set[str]:
     az failure — the check is best-effort)."""
     states = {"NotStarted", "Queued", "Starting", "Preparing", "Running", "Finalizing"}
     try:
+        # --all-results: the newest-200 default window includes completed
+        # jobs, so the eval watcher's convert/eval churn can push a live
+        # multi-day training out of it — and a blind dedup check would
+        # resubmit the training.
         out = subprocess.run(
-            ["az", "ml", "job", "list", "--max-results", "200", *ws_args,
+            ["az", "ml", "job", "list", "--all-results", "true", *ws_args,
              "--query", "[].{d:display_name,s:status}", "--output", "json"],
             capture_output=True, text=True, timeout=120)
         jobs = json.loads(out.stdout) if out.returncode == 0 else []
