@@ -21,7 +21,10 @@
 
 echo "START TIME: $(date)"
 SCRIPT_PATH=$(realpath $0)
-SCRIPT_DIR=$(dirname $SCRIPT_PATH)
+# sbatch spools this script to /var/spool/slurmd, so $0's dir is NOT the repo.
+# launch_trainings.py passes the real checkout dir via PRETRAIN_DIR (--export);
+# fall back to $0's dir for a manual `sbatch launch_pretraining_cscs.sh` run.
+SCRIPT_DIR="${PRETRAIN_DIR:-$(dirname "$SCRIPT_PATH")}"
 
 ################ Configs ################
 SEED=${SEED:-1904}

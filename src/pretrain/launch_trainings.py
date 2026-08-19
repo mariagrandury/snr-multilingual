@@ -357,7 +357,10 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
                 time: Optional[str] = None, account: Optional[str] = None,
                 dependency: Optional[str] = None) -> None:
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
-    cmd = ["sbatch", f"--job-name={env['EXP_NAME']}", f"--export=ALL,{export_vars}"]
+    # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
+    # from $0 — pass the real checkout dir here.
+    cmd = ["sbatch", f"--job-name={env['EXP_NAME']}",
+           f"--export=ALL,PRETRAIN_DIR={SCRIPT_DIR},{export_vars}"]
     if nodes is not None:
         cmd.append(f"--nodes={nodes}")
     if time is not None:

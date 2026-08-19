@@ -15,7 +15,7 @@
       "num_attention_heads": 16,
       "num_query_groups": 8,
       "n_non_emb_params": 92274688.0,
-      "micro_batch_size": 24,
+      "micro_batch_size": 7,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 128000,

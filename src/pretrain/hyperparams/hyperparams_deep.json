@@ -96,7 +96,7 @@
       "num_query_groups": 3,
       "n_non_emb_params": 92897280.0,
       "nodes": 3,
-      "micro_batch_size": 21,
+      "micro_batch_size": 7,
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 50000,
