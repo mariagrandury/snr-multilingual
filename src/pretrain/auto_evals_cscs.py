@@ -112,34 +112,42 @@ def evaluated(name: str, logs_root: Path) -> bool:
 
 
 def hf_staged(cell: str, it: int, staging: Path) -> bool:
-    d = staging / cell / f"iter_{it:07d}"
-    return (d / "config.json").is_file() and any(d.glob("model.safetensors*"))
+    """Converted AND complete: convert-snr.sh touches .hf_complete as its
+    last step (config.json + a weights glob alone can match a half-written
+    save_pretrained; its skip branch backfills the marker for snapshots
+    converted before the marker existed)."""
+    return (staging / cell / f"iter_{it:07d}" / ".hf_complete").is_file()
 
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
                 tasks: str, dry_run: bool) -> None:
     name = f"{cell}-iter{it}"
     hf_dir = staging / cell / f"iter_{it:07d}"
-    export = ",".join([
-        "ALL",
-        "LM_EVAL_BACKEND=vllm",
-        f"TOKENIZER={TOKENIZER_MODEL}",
-        "BOS=true",
-        "APPLY_CHAT_TEMPLATE=false",
-        "BATCH_TASKS=1",
-        "TP=1", "PP=1",
-        f"WANDB_ENTITY={WANDB_ENTITY}",
-        f"WANDB_PROJECT={PROJECT_NAME}",
-        f"LOGS_ROOT={logs_root}",
-        f"TASKS={tasks}",
-    ])
+    # Prefix-export via the process env rather than --export=ALL,K=V,...:
+    # sbatch's --export uses commas as separators BETWEEN vars, so the
+    # comma-joined TASKS list would be truncated at its first comma and the
+    # job would silently evaluate a single task (the trap the retired
+    # launch_pretraining_*.sh launchers documented). --export=ALL snapshots
+    # the submission env intact.
+    env = {**os.environ,
+           "LM_EVAL_BACKEND": "vllm",
+           "TOKENIZER": TOKENIZER_MODEL,
+           "BOS": "true",
+           "APPLY_CHAT_TEMPLATE": "false",
+           "BATCH_TASKS": "1",
+           "TP": "1", "PP": "1",
+           "WANDB_ENTITY": WANDB_ENTITY,
+           "WANDB_PROJECT": PROJECT_NAME,
+           "LOGS_ROOT": str(logs_root),
+           "TASKS": tasks}
     cmd = ["sbatch", f"--job-name=eval-{name}", f"--time={EVAL_TIME}",
-           f"--export={export}", "scripts/evaluate.sbatch", str(hf_dir), name]
+           "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
     print(f"  submit: eval-{name}")
     if dry_run:
-        print(f"    (cd {EVALS_DIR} && {' '.join(cmd)})")
+        n_tasks = tasks.count(",") + 1
+        print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
-        subprocess.run(cmd, cwd=EVALS_DIR, check=True)
+        subprocess.run(cmd, cwd=EVALS_DIR, env=env, check=True)
 
 
 def submit_convert(cell: str, iters: list[int], staging: Path,

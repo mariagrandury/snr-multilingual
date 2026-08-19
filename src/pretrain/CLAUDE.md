@@ -159,8 +159,9 @@ python3.11 pretrain_progress.py            # what a re-launch would do; --plot f
 python launch_trainings.py cscs --dry-run  # first
 python launch_trainings.py cscs            # then for real (skips done/active, resumes partial)
 
-# Azure: watcher submits convert+eval as checkpoints land
+# Azure: watcher submits convert+eval as checkpoints land (one per workspace)
 source azure/env.sh && python auto_evals_azure.py --watch 600
+python auto_evals_azure.py --workspace uk --watch 600   # 1B/1.7B cells
 ```
 
 ---

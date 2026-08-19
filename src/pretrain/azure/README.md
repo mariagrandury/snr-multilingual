@@ -393,8 +393,15 @@ Start the watcher in a terminal alongside your training run:
 ```bash
 source azure/env.sh   # Azure names; W&B key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
-python auto_evals_azure.py --watch 600        # one pass every 10 min; Ctrl-C to stop
+python auto_evals_azure.py --watch 600                 # Spain workspace (<=600M)
+python auto_evals_azure.py --workspace uk --watch 600  # UK workspace (1B/1.7B)
 ```
+
+The two workspaces have separate blob stores and compute, so run one
+watcher per workspace; `--workspace uk` switches the az CLI to the
+`AZ_UK_*` names and overrides the job YAMLs' Spain-only compute with
+`gpu-nd96-spot` (do the same with `--set compute=azureml:gpu-nd96-spot`
+when submitting `jobs/push.yml` in the UK workspace).
 
 Each pass lists the checkpoints in blob storage and, for every due iteration,
 submits the one step that's missing: first a `azure/jobs/convert.yml` job

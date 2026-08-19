@@ -51,7 +51,8 @@ python launch_trainings.py azure --dry-run         # same launcher, same flags
 python launch_trainings.py azure --langs 2 --size 90M     # first real cell
 python launch_trainings.py azure                   # the rest
 
-python auto_evals_azure.py --watch 600                   # auto convert+eval watcher
+python auto_evals_azure.py --watch 600                   # ES watcher (<=600M cells)
+python auto_evals_azure.py --workspace uk --watch 600    # UK watcher (1B/1.7B cells)
 ```
 
 There is **no separate resume script**: `--save`/`--load` point at the same
@@ -299,8 +300,11 @@ nothing duplicates.
   ```
 
 - **Azure** — [`auto_evals_azure.py`](auto_evals_azure.py) does the same
-  against blob storage:
-  `source azure/env.sh && python auto_evals_azure.py --watch 600`.
+  against blob storage, one watcher per workspace (each has its own blob
+  store and compute; the UK one overrides the job YAMLs' Spain-only
+  compute):
+  `source azure/env.sh && python auto_evals_azure.py --watch 600` and
+  `python auto_evals_azure.py --workspace uk --watch 600`.
 
 ## Per-size cluster cost (steady state)
 

@@ -8,3 +8,7 @@ site
 results
 src/signal-and-noise/results
 *.pdf
+venv
+.venv
+outputs
+__pycache__

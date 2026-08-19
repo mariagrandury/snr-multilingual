@@ -140,6 +140,7 @@ def push_iter(api: HfApi, repo_id: str, src: Path, branch: str, dry_run: bool, f
     _retry_on_429(
         api.upload_folder, repo_id=repo_id, folder_path=str(src), revision=branch,
         commit_message=f"Upload converted Megatron checkpoint ({branch})", repo_type="model",
+        ignore_patterns=[".hf_complete"],  # convert-snr.sh's completion marker
     )
     print(f"[push-snr] pushed {repo_id}@{branch}")
     return True

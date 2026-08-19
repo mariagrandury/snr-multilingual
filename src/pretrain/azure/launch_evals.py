@@ -62,7 +62,8 @@ def resolve_iters(name: str, subset: str) -> list[int]:
     return iters_for(name, subset=subset, stage="pretraining")
 
 
-def submit(name: str, it: int, tasks: str, dry_run: bool) -> None:
+def submit(name: str, it: int, tasks: str, dry_run: bool,
+           compute: str | None = None) -> None:
     eval_name = f"{name}-iter{it}"
     overrides = {
         "display_name": f"eval-{eval_name}",
@@ -70,6 +71,8 @@ def submit(name: str, it: int, tasks: str, dry_run: bool) -> None:
         "environment_variables.NAME": eval_name,
         "environment_variables.TASKS": tasks,
     }
+    if compute:  # the yml default only exists in the Spain workspace
+        overrides["compute"] = compute
     if os.environ.get("WANDB_API_KEY"):
         overrides["environment_variables.WANDB_API_KEY"] = os.environ["WANDB_API_KEY"]
 

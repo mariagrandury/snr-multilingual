@@ -110,6 +110,9 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
 
     if [[ -f "$SAVE_DIR/config.json" ]] && \
        ( [[ -f "$SAVE_DIR/model.safetensors.index.json" ]] || [[ -f "$SAVE_DIR/model.safetensors" ]] ); then
+        # Backfill the completion marker for snapshots converted before it
+        # existed — the auto-eval watchers key their "staged" check on it.
+        touch "$SAVE_DIR/.hf_complete"
         echo "[convert-snr] SKIP $EXP_NAME iter $CKPT_STEP: SAVE_DIR already populated"
         exit 0
     fi
@@ -141,6 +144,9 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
         "${extra[@]}"
 
     [[ "${KEEP_TMP_TORCH:-0}" == "1" ]] || rm -rf "$TORCH_CKPT_SAVE_PATH"
+    # Written LAST: the watchers treat a snapshot as staged only once this
+    # exists, so a half-written save_pretrained is never evaluated.
+    touch "$SAVE_DIR/.hf_complete"
     echo "[convert-snr] DONE $SAVE_DIR"
     exit 0
 fi
@@ -167,9 +173,16 @@ if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
     # forwarded so predictivity conversions embed the sweep's tokenizer
     # (swiss-ai/Apertus-70B-2509) instead of the old-sweep default —
     # pre-warm it into the cache first (offline mode can't download it).
+    # PROGRESS_PY and TMP_TORCH_BASE must cross the pyxis boundary too:
+    # without them the per-iter mode falls back to a hardcoded checkout path
+    # for --is-valid (silently SKIPping every iter when it doesn't resolve)
+    # and to $STAGING_BASE/_tmp_torch for the multi-GB torch intermediate
+    # (churning capstor now that STAGING_BASE points at the store).
     INNER_EXPORTS="export MEGATRON_LM_DIR='$MEGATRON_LM_DIR' PLAN_FILE='$PLAN_FILE' \
 HF_TOKENIZER='${HF_TOKENIZER:-alehc/swissai-tokenizer}' \
 STAGING_BASE='${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}' \
+TMP_TORCH_BASE='${TMP_TORCH_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints/_tmp_torch}' \
+PROGRESS_PY='${PROGRESS_PY:-}' \
 HF_HOME='${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}' \
 HF_HUB_CACHE='${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}' \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1"
@@ -331,6 +344,11 @@ PYEOF
 
     part="${PARTITION:-normal}"
     walltime="${TIME:-02:00:00}"
+    # Resolve the --is-valid helper from THIS checkout while $0 is still the
+    # real script path (inside sbatch it's the /var/spool/slurmd copy);
+    # --export=ALL carries it into the job env, INNER_EXPORTS into the
+    # container.
+    export PROGRESS_PY="${PROGRESS_PY:-$(dirname "$SCRIPT_PATH")/../pretrain_progress.py}"
     sbatch_args=(--partition="$part" --time="$walltime"
                  --job-name="convert-snr-models"
                  --export=ALL,PLAN_FILE="$plan")
