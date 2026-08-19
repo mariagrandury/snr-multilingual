@@ -214,10 +214,23 @@ manually), `--test`.
 
 - Pre-warm the tokenizer into the HF cache — compute nodes have no
   internet: `hf download swiss-ai/Apertus-70B-2509` on the login node.
-- Check the cluster's Megatron checkout matches the commit Azure pins
-  (`azure/get_megatron.sh::MEGATRON_COMMIT`), so both platforms run the
-  same training code, not just the same arguments:
+- Use the **`swiss-ai/Megatron-LM` fork** — it carries the Apertus kernels
+  (xIELU, apex qk-norm); a vanilla `nvidia/Megatron-LM` clone will not run.
+  Keep it at `/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM` and check
+  its checkout matches the commit Azure pins
+  (`azure/get_megatron.sh::MEGATRON_COMMIT`), so both platforms run the same
+  training code, not just the same arguments:
   `git -C /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM rev-parse HEAD`.
+- **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
+  cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
+  **every resume** dies in `get_reformulation_metadata` with `AttributeError:
+  'Metadata' object has no attribute 'mcore_data'` (our checkpoints predate
+  `mcore_data`; the patch synthesizes the reformulation metadata from the saved
+  tensor sizes). Copy the tracked, patched file over the fork's:
+  ```bash
+  cp patches/dist_checkpointing_strategies_torch.py \
+     /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
+  ```
 
 **Idempotency** (why re-running is always safe): per cell the launcher
 

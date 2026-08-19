@@ -57,6 +57,7 @@ build_megatron_cmd() {
 		--xielu
 		--qk-layernorm
 		--qknorm-impl apex
+		--attention-backend flash
 	)
 
 	LOGGING_ARGS=(

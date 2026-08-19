@@ -304,7 +304,11 @@ def cscs_mbs(nodes: int, mbs: int) -> int:
 # Per-size steady-state iter time (ms), for walltime sizing. 175M..1B sampled
 # from the 36-sweep training logs (same architectures/node counts); 90M and
 # 1.7B are estimates — tighten them from the first real runs.
-ITER_MS = {"90M": 800, "175M": 800, "350M": 565, "600M": 520, "1B": 715, "1.7B": 1200}
+# Steady-state ms/iter with flash attention (--attention-backend flash in
+# megatron_args.sh). Measured: 90M=1230, 350M=550; others param-scaled with
+# margin. Unfused attention (the Megatron `auto` default) was ~2.5x these and
+# is what walled the first round of jobs — do not revert to auto.
+ITER_MS = {"90M": 1300, "175M": 1000, "350M": 700, "600M": 950, "1B": 1200, "1.7B": 1750}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
@@ -312,7 +316,7 @@ TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
 
 def auto_time(size: str, remaining_iters: int) -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
-    total = remaining_iters * ITER_MS.get(size, 800) // 1000 + TIME_MARGIN_SEC
+    total = remaining_iters * ITER_MS.get(size, 1200) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
     total = min(max(total, TIME_MIN_SEC), TIME_MAX_SEC)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
