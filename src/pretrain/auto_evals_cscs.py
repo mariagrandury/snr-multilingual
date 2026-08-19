@@ -64,8 +64,10 @@ PROJECT_NAME = json.loads(
     (SCRIPT_DIR.parent.parent / "configs" / "hf_wandb.json").read_text()
 )["wandb"]["project"]
 
-# Shared trees (ACL'd for every collaborator — see evals CLAUDE.md).
-DEFAULT_STAGING = f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/snr-hf-checkpoints"
+# Converted HF checkpoints are the durable copy — persist them on capstor store
+# (push-snr.py mirrors this tree to the public msnr Hub org). Not iopsstor
+# scratch, which is auto-purged.
+DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
 SAVE_INTERVAL = 2000
@@ -146,7 +148,10 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
            "--iters", ",".join(str(i) for i in iters), "--submit"]
     env = {**os.environ,
            "HF_TOKENIZER": TOKENIZER_MODEL,   # forwarded into the container
-           "STAGING_BASE": str(staging)}
+           "STAGING_BASE": str(staging),      # final HF -> capstor (durable)
+           # keep the large intermediate torch checkpoint on scratch (fast,
+           # transient) instead of churning it on capstor.
+           "TMP_TORCH_BASE": f"/iopsstor/scratch/cscs/{os.environ.get('USER', 'mariagrandury')}/snr-hf-checkpoints/_tmp_torch"}
     print(f"  submit: convert {cell} iters {iters}")
     if dry_run:
         print(f"    (HF_TOKENIZER={TOKENIZER_MODEL} STAGING_BASE={staging} "
@@ -186,22 +191,23 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
         tasks = ",".join(tasks_for_benchmarks(
             benchmarks, cell_languages(c["L"], scheme)))
-        print(f"{cell}: {len(saved)} ckpts saved, due for auto-eval: {due}")
+        # Convert EVERY saved checkpoint (persist all of them to capstor), but
+        # evaluate only the due ones — conversion is the durability step, eval
+        # is the expensive one we sample at 1/N.
+        to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
+        print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | eval due {due}")
 
-        to_convert = []
-        for it in due:
-            name = f"{cell}-iter{it}"
-            if evaluated(name, logs_root):
-                continue
-            if not hf_staged(cell, it, staging):
-                to_convert.append(it)
-            elif f"eval-{name}" not in running:
-                submit_eval(cell, it, staging, logs_root, tasks, args.dry_run)
         if to_convert and not convert_busy:
             submit_convert(cell, to_convert, staging, args.dry_run)
             # One conversion sbatch at a time (they share a Slurm name, so
             # dedupe is coarse); the next pass converts the remaining cells.
             convert_busy = True
+        for it in due:
+            name = f"{cell}-iter{it}"
+            if evaluated(name, logs_root):
+                continue
+            if hf_staged(cell, it, staging) and f"eval-{name}" not in running:
+                submit_eval(cell, it, staging, logs_root, tasks, args.dry_run)
 
 
 def main() -> None:
