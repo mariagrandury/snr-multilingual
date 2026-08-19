@@ -120,7 +120,7 @@ SIZE_LANG_SETTINGS = {
 SEED_SINGLE = [1904]
 SEED_TRIPLE = [28, 1797, 1904]
 TRIPLE_SIZES = {"175M", "1B"}
-TRIPLE_LANGS = {1, 30, 100}
+TRIPLE_LANGS = {1, 2, 30, 100}
 
 
 def _scheme_b_langs() -> set[int]:
