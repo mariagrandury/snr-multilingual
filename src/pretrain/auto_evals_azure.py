@@ -140,7 +140,6 @@ def one_pass(names: list[str], auth: list[str], every: int,
         m = get_model(name)
         cell_tasks = tasks or ",".join(tasks_for_benchmarks(
             AUTO_BENCHMARKS, cell_languages(m["L"], m["scheme"])))
-        print(f"{name}: {len(iters)} ckpts saved, due for auto-eval: {due}")
         converted = {b.split("/")[2] for b in list_blobs(auth, f"models/{name}/")
                      if b.endswith("config.json")}
         evaluated = {m.group(1)
@@ -149,13 +148,17 @@ def one_pass(names: list[str], auth: list[str], every: int,
                          f"eval_logs/{WANDB['entity']}/{WANDB['project']}/{name}-iter")
                      if "results_" in b
                      for m in [re.search(rf"/({re.escape(name)}-iter\d+)/harness/", b)] if m}
+        to_convert = [it for it in iters if f"iter_{it:07d}" not in converted]
+        print(f"{name}: {len(iters)} saved | convert {to_convert or '-'} | eval due {due}")
+        # Convert EVERY saved checkpoint (persist all HF snapshots to blob) — the
+        # converted models are the durable copy; eval only samples 1/N of them.
+        for it in to_convert:
+            if f"convert-{name}-iter{it}" not in running:
+                submit_convert(name, it, dry_run)
         for it in due:
             if f"{name}-iter{it}" in evaluated:
                 continue
-            if f"iter_{it:07d}" not in converted:
-                if f"convert-{name}-iter{it}" not in running:
-                    submit_convert(name, it, dry_run)
-            elif f"eval-{name}-iter{it}" not in running:
+            if f"iter_{it:07d}" in converted and f"eval-{name}-iter{it}" not in running:
                 submit_eval(name, it, cell_tasks, dry_run)
 
 
