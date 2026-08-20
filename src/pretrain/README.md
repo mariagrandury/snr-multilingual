@@ -233,6 +233,17 @@ manually), `--test`.
      /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
   ```
 
+- **Train off the iopsstor copy of the data, not the capstor master.** Megatron
+  memmaps the `.bin` files and reads them shuffled (random access): capstor is
+  ~28× slower per read and up to 200× on the tail, which stalls training
+  unpredictably (CLAUDE.md #8). `launch_builds.sh` writes the durable master to
+  capstor; `--data_dir` defaults to the iopsstor stage. iopsstor is purged
+  ~30 days, so after a purge re-stage before launching:
+  ```bash
+  cp /capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/{english_dclm,fineweb_L*}.{bin,idx} \
+     /iopsstor/scratch/cscs/$USER/data/
+  ```
+
 **Idempotency** (why re-running is always safe): per cell the launcher
 
 1. skips it when its latest valid checkpoint has reached its target ("done");

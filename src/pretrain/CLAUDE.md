@@ -149,6 +149,51 @@ WSD decay at the wrong step. Verified end-to-end 2026-05-10.
   `GBS % (NPROC × MBS) == 0`; the training math (GBS 504 × seq 4096) is
   identical to the cluster — only gradient accumulation differs.
 
+### 8. The capstor dataloader stall (2026-08-20)
+**Train off `/iopsstor`, never off the `/capstor` master copy.** Megatron
+memmaps the `.bin` token files and, because samples are shuffled, reads
+effectively *random* windows out of them — capstor's worst case. It is
+bandwidth-optimised shared storage, not IOPS. This is the same failure the
+Azure note in #7 describes; the cluster is not exempt.
+
+Measured on byte-identical copies of the same file, 112 KB random reads
+(= MBS 7 × seq 4096 tokens), both stores probed alternately with the same
+offsets so cluster load hits both arms equally:
+
+| store | median | p99 | max | MB/s |
+| ----- | -----: | --: | --: | ---: |
+| capstor  | 13.5 ms | 166 ms | 433 ms | 8 |
+| iopsstor | 0.5 ms  | 5 ms   | 13 ms  | 235 |
+
+~28× on the median, up to 200× on the tail — **single process**, before the
+contention of 12–84 ranks × 4 dataloader workers all seeking at once.
+
+**How it presented (and why it fooled us for a day):** iterations swung
+wildly — deep-175M ran `14890 → 976 → 4424 → 832 ms` inside one job. Averaging
+the last 20 iterations made some configs look uniformly slow, and the two
+worst offenders (deep-175M, shallow-90M) happened to share `hidden=1024,
+ffn=4096`, so it read as a power-of-2 GEMM-aliasing effect. It was not:
+
+- A standalone GEMM benchmark at every ladder shape came out **flat**
+  (553–633 TFLOP/s); the pow2 shapes were fine and *padded* controls
+  (ffn 4224) were slightly **slower**. Hypothesis dead.
+- The giveaway was the **distribution, not the mean**: the "slow" configs hit
+  **838 ms at p10** — as fast as the healthy ones — then blew out to 3000–6000.
+  A fixed geometry cannot do that. Wide spread ⇒ stall, not arithmetic.
+
+**Rules that follow.** Diagnose ms/iter with median + p10/p90 over a
+*mid-run* window; never a trailing average (the tail catches async-checkpoint
+saves and end-of-run flushes — it inflated shallow-350M from 507 to 1487 ms).
+A tight distribution means compute-bound and the number is trustworthy; a wide
+one means you are measuring the filesystem. `ITER_MS` fitted during the
+capstor period is contaminated — re-measure from a clean iopsstor run.
+
+**The layout:** capstor is the durable master (iopsstor scratch is purged
+~30 days) and `data/launch_builds.sh` writes there; the training copy is
+staged on iopsstor and `CSCS_DEFAULT_DATA_DIR` points at it. After a purge,
+re-stage from capstor before launching (README "Before the first CSCS run").
+Checkpoints were always on iopsstor and stay there — same reasoning.
+
 ---
 
 ## Live state (read, don't trust snapshots)

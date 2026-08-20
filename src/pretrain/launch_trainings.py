@@ -89,11 +89,18 @@ TOKENIZER_MODEL = "swiss-ai/Apertus-70B-2509"
 # --- Platform endpoints ------------------------------------------------------
 
 CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
-# Where data/build_data_mixtures.py wrote english_dclm.* and fineweb_L*.* on
-# the cluster — override with --data_dir.
-CSCS_DEFAULT_DATA_DIR = (
-    "/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data"
-)
+# Where training READS english_dclm.* and fineweb_L*.* — override with
+# --data_dir. This MUST be an iopsstor path, not the capstor master copy:
+# Megatron memmaps the .bin files and reads shuffled (= random access), which
+# is capstor's worst case. Measured on identical copies of the same file,
+# 112 KB random reads: capstor median 13.5 ms / p99 166 ms / max 433 ms vs
+# iopsstor 0.5 ms / 5 ms / 13 ms — ~28x on the median and up to 200x on the
+# tail, single-process, before the contention of 12-84 ranks x 4 workers.
+# Training off capstor made iterations swing 838 -> 6059 ms at random (see
+# CLAUDE.md "The capstor dataloader stall"). capstor stays the durable master
+# (iopsstor is purged ~30 days); data/launch_builds.sh writes there and the
+# copy is staged here for training.
+CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
 
 AZURE_JOB_YML = SCRIPT_DIR / "azure" / "jobs" / "pretrain.yml"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths/predictivity"
