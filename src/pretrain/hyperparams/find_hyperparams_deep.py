@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from calculate_params_lr_bs import get_learning_rate
 from find_hyperparams_shallow import calculate_hyperparams, print_configs_table
 
 SCRIPT_DIR = Path(__file__).parent
@@ -107,8 +108,9 @@ def compute_configs(deep_data: dict) -> dict:
             # Top-level train_iters is the finished 36-sweep's record (the
             # predictivity launchers ignore it) — preserve, don't recompute.
             "train_iters": config.get("train_iters", train_iters),
-            # Learning rate
-            "lr": round(lr, 8),
+            # Learning rate: 6ND law at the run's OWN predictivity budget
+            # D = 100 x N, i.e. C = 600 x N^2 — not the legacy fixed 100B.
+            "lr": round(get_learning_rate(6 * n_non_emb * (100 * n_non_emb)), 8),
             "predictivity": {
                 "train_tokens": int(100 * n_non_emb),
                 "train_iters": p_iters,

@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-from calculate_params_lr_bs import parameter_count, set_lr_and_bs
+from calculate_params_lr_bs import get_learning_rate, parameter_count, set_lr_and_bs
 
 
 def suggest_mbs(num_non_emb_parameters, gbs, verbose=True):
@@ -335,8 +335,9 @@ def calculate_hyperparams_for_model_configs(
             "global_batch_size": gbs,
             "seq_len": seq_len,
             "train_iters": prev.get("train_iters", train_iters),
-            # Learning rate
-            "lr": round(lr, 8),
+            # Learning rate: 6ND law at the run's OWN predictivity budget
+            # D = 100 x N, i.e. C = 600 x N^2 — not the legacy fixed 100B.
+            "lr": round(get_learning_rate(6 * n_non_emb * (100 * n_non_emb)), 8),
             "predictivity": {
                 "train_tokens": int(100 * n_non_emb),
                 "train_iters": p_iters,
@@ -369,7 +370,8 @@ def calculate_hyperparams_for_model_configs(
                         "D = 100 x n_non_emb_params tokens (5x Chinchilla) at "
                         "global_batch_size x seq_len tokens/iter; "
                         "lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of "
-                        "train_iters, all rounded to 100"
+                        "train_iters, all rounded to 100; lr from the 6ND law "
+                        "at the run's own budget (C = 6 x N x 100N = 600 N^2)"
                     ),
                 },
                 "configs": json_configs,

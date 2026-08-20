@@ -5,7 +5,7 @@
     "desired_tokens": 100000000000,
     "global_batch_size": 504,
     "head_dim": 64,
-    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, all rounded to 100"
+    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, all rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
   },
   "configs": {
     "90M": {
@@ -19,7 +19,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 128000,
-      "lr": 0.00106163,
+      "lr": 0.00143,
       "predictivity": {
         "train_tokens": 9227468800,
         "train_iters": 4500,
@@ -38,7 +38,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 88000,
-      "lr": 0.00097988,
+      "lr": 0.00121825,
       "predictivity": {
         "train_tokens": 17517772800,
         "train_iters": 8500,
@@ -57,7 +57,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 78000,
-      "lr": 0.0009063,
+      "lr": 0.00104216,
       "predictivity": {
         "train_tokens": 32710656000,
         "train_iters": 15800,
@@ -76,7 +76,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 68000,
-      "lr": 0.00084191,
+      "lr": 0.00089935,
       "predictivity": {
         "train_tokens": 58982400000,
         "train_iters": 28600,
@@ -95,7 +95,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 56000,
-      "lr": 0.00079084,
+      "lr": 0.00079354,
       "predictivity": {
         "train_tokens": 97307852800,
         "train_iters": 47100,
@@ -114,7 +114,7 @@
       "global_batch_size": 504,
       "seq_len": 4096,
       "train_iters": 48000,
-      "lr": 0.00073926,
+      "lr": 0.00069341,
       "predictivity": {
         "train_tokens": 166905446400,
         "train_iters": 80800,
