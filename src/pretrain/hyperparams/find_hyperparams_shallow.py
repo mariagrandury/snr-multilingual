@@ -434,22 +434,41 @@ if __name__ == "__main__":
     )
 
     print(
-        "\n\nDECISION: width_depth_ratio = 128 with ffw_multiplier and "
-        "gqa_ratio free per size (best |n_non_emb - target| against the deep "
-        "ladder's sizes).\n\n"
+        "\n\nDECISION: pin ffw_multiplier = 4 and gqa_ratio = 4, matching the "
+        "deep baseline layer-for-layer, so the depth intervention varies ONLY "
+        "the aspect ratio (see the 2026-08-21 methodology review, finding 7). "
+        "d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth "
+        "in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-77). "
+        "Per target: among candidates within 4% of N, the ratio closest to "
+        "128 wins; if none is that close, the closest-N candidate does.\n\n"
     )
 
-    # Final model configs: per deep-ladder target, the ratio-128 config
-    # closest in non-embedding parameters.
-    pool = [c for c in possible_configs if c["width_depth_ratio"] == 128]
+    # Final model configs: pinned per-layer structure, aspect ratio the only
+    # free knob (d_model and n_layers set both N and the ratio).
     model_configs = {}
     for size, target in targets.items():
-        best = min(pool, key=lambda c: abs(c["n_non_emb"] - target))
+        cands = []
+        for n_layers in range(4, 41):
+            for d_model in range(256, 4097, 256):
+                ratio = d_model / n_layers
+                if not 96 <= ratio <= 160:
+                    continue
+                _, n = parameter_count(
+                    vocab_size=vocab_size, n_layers=n_layers, d_model=d_model,
+                    num_heads=d_model // head_dim,
+                    num_kv_heads=d_model // head_dim // 4,
+                    ffw_size=4 * d_model, verbose=False,
+                )
+                cands.append({"n_layers": n_layers, "d_model": d_model,
+                              "ratio": ratio, "err": abs(n - target) / target})
+        close = [c for c in cands if c["err"] <= 0.04]
+        best = (min(close, key=lambda c: abs(c["ratio"] - 128)) if close
+                else min(cands, key=lambda c: c["err"]))
         model_configs[size] = {
             "n_layers": best["n_layers"],
             "d_model": best["d_model"],
-            "gqa_ratio": best["num_heads"] // best["num_kv_heads"],
-            "ffw_multiplier": best["ffw_multiplier"],
+            "gqa_ratio": 4,
+            "ffw_multiplier": 4,
         }
 
     # Hand-tuned fields in the reviewed file survive regeneration.

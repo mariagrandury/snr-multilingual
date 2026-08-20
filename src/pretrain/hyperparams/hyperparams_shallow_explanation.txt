@@ -53,7 +53,7 @@ Architecture search for target model sizes
 
 
 
-DECISION: width_depth_ratio = 128 with ffw_multiplier and gqa_ratio free per size (best |n_non_emb - target| against the deep ladder's sizes).
+DECISION: pin ffw_multiplier = 4 and gqa_ratio = 4, matching the deep baseline layer-for-layer, so the depth intervention varies ONLY the aspect ratio (see the 2026-08-21 methodology review, finding 7). d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-77). Per target: among candidates within 4% of N, the ratio closest to 128 wins; if none is that close, the closest-N candidate does.
 
 
 ============================================================
@@ -61,11 +61,11 @@ Model configs
 ============================================================
   label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
   --------------------------------------------------------------------------------------------------------------------------------
-  90M      8         1024     128       64        16       2          8           4         0.092       24    0.001062     128000 
-  175M     9         1152     128       64        18       3          6           6         0.175       14    0.000980     88000  
-  350M     11        1408     128       64        22       2          11          6         0.327       8     0.000906     78000  
-  600M     15        1920     128       64        30       3          10          4         0.590       4     0.000842     68000  
-  1B       16        2048     128       64        32       4          8           6         0.973       3     0.000791     56000  
-  1.7B     21        2688     128       64        42       2          21          4         1.669       2     0.000739     48000  
+  90M      8         1024     128       64        16       4          4           4         0.088       28    0.001068     110000 
+  175M     10        1280     128       64        20       4          5           4         0.172       14    0.000982     110000 
+  350M     14        1536     110       64        24       4          6           4         0.347       8     0.000900     78000  
+  600M     14        2048     146       64        32       4          8           4         0.617       4     0.000837     64000  
+  1B       17        2304     136       64        36       4          9           4         0.948       3     0.000793     56000  
+  1.7B     20        2816     141       64        44       4          11          4         1.665       2     0.000739     48000  
 
 Config saved to /Users/mariagrandury/Projects/epfl/snr-multilingual/src/pretrain/hyperparams/hyperparams_shallow.json
