@@ -232,7 +232,6 @@ manually), `--test`.
   cp patches/dist_checkpointing_strategies_torch.py \
      /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
   ```
-
 - **Train off the iopsstor copy of the data, not the capstor master.** Megatron
   memmaps the `.bin` files and reads them shuffled (random access): capstor is
   ~28× slower per read and up to 200× on the tail, which stalls training
@@ -242,6 +241,17 @@ manually), `--test`.
   ```bash
   cp /capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/{english_dclm,fineweb_L*}.{bin,idx} \
      /iopsstor/scratch/cscs/$USER/data/
+  ```
+- **Pre-build the eval datasets into the iopsstor HF cache.** Compute nodes have
+  no internet and the harness runs all tasks in one batched call, so a single
+  uncached dataset aborts the whole eval. They live in `$HF_HOME/datasets` on
+  iopsstor: the sweep touches them on every eval, and the cleaning policy is
+  last-access based, so an active sweep keeps them alive. (After a long idle
+  gap they can still be purged — the symptom is an empty directory tree and
+  `FileNotFoundError: .../dataset_info.json`.) Re-run any time; it only
+  fetches what's missing:
+  ```bash
+  python3.11 ../evals/scripts/download_eval_datasets.py
   ```
 
 **Idempotency** (why re-running is always safe): per cell the launcher
