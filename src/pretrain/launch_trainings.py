@@ -312,18 +312,37 @@ def cscs_mbs(nodes: int, mbs: int) -> int:
 # from the 36-sweep training logs (same architectures/node counts); 90M and
 # 1.7B are estimates — tighten them from the first real runs.
 # Steady-state ms/iter with flash attention (--attention-backend flash in
-# megatron_args.sh). Measured: 90M=1230, 350M=550; others param-scaled with
-# margin. Unfused attention (the Megatron `auto` default) was ~2.5x these and
-# is what walled the first round of jobs — do not revert to auto.
-ITER_MS = {"90M": 1300, "175M": 1000, "350M": 700, "600M": 950, "1B": 1200, "1.7B": 1750}
+# megatron_args.sh), keyed by arch then size: deep and shallow differ by up to
+# 3x at the SAME size, so one number per size cannot cover both.
+#
+# [m] = measured from real runs (2026-08-20), the rest estimated with margin.
+# Deep 90M=1230, 175M=2176; shallow 90M=4072, 175M=757, 350M=1487. The two
+# slow outliers (deep 175M, shallow 90M) are exactly the configs whose
+# hidden/ffn are pure powers of two (1024/4096) and they run ~100 TFLOP/s vs
+# ~250 for their siblings — consistent with power-of-2 GEMM cache aliasing,
+# unconfirmed. Shallow 1B (hidden 2048) is the only other pure-pow2 config, so
+# its estimate is deliberately pessimistic.
+#
+# Values here are ~20% above measurement: under-estimating walls a job and
+# costs a whole queue cycle, over-estimating only lengthens the request.
+# (At 600M and above the 11:59:59 cap dominates anyway — those runs resume.)
+ITER_MS = {
+    "deep":    {"90M": 1400,  # [m] 1230
+                "175M": 2400,  # [m] 2176
+                "350M": 2000, "600M": 1900, "1B": 2400, "1.7B": 3200},
+    "shallow": {"90M": 4400,  # [m] 4072
+                "175M": 900,   # [m] 757
+                "350M": 1700,  # [m] 1487
+                "600M": 1900, "1B": 2600, "1.7B": 3200},
+}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
 
 
-def auto_time(size: str, remaining_iters: int) -> str:
+def auto_time(size: str, remaining_iters: int, arch: str = "deep") -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
-    total = remaining_iters * ITER_MS.get(size, 1200) // 1000 + TIME_MARGIN_SEC
+    total = remaining_iters * ITER_MS[arch].get(size, 2400) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
     total = min(max(total, TIME_MIN_SEC), TIME_MAX_SEC)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
@@ -600,7 +619,7 @@ def main() -> None:
                          training_steps=args.training_steps or tgt,
                          mbs=cscs_mbs(nodes, cfg["micro_batch_size"])),
                 dry_run=args.dry_run, nodes=nodes,
-                time=args.time or auto_time(c["size"], tgt - load_iter),
+                time=args.time or auto_time(c["size"], tgt - load_iter, args.arch),
                 account=args.account, dependency=args.dependency,
             )
         else:
