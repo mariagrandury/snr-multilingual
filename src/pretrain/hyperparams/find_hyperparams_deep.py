@@ -86,9 +86,15 @@ def compute_configs(deep_data: dict) -> dict:
         )
 
         # Predictivity-sweep schedule (D = 100 x N, ~4% warmup, ~20% WSD
-        # decay, rounded to 100) mirrored per size so this file alone gives
-        # the full training config; the predictivity launchers read it.
-        p_iters = round(100 * n_non_emb / (gbs * seq_len) / 100) * 100
+        # decay) mirrored per size so this file alone gives the full training
+        # config; the predictivity launchers read it. train_iters is rounded
+        # to the checkpoint grid — 20 evenly spaced checkpoints per run, 40
+        # for the 1.7B rung (launch_trainings.save_interval divides exactly),
+        # so every size shares the same relative k/20 operating points and
+        # the 1xC point (train_iters/5) is always on-grid.
+        raw_iters = 100 * n_non_emb / (gbs * seq_len)
+        n_ckpts = 20 if raw_iters <= 48000 else 40
+        p_iters = round(raw_iters / n_ckpts) * n_ckpts
         json_configs[size_label] = {
             # Architecture
             "n_layers": nl,

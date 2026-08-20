@@ -5,7 +5,7 @@
     "desired_tokens": 100000000000,
     "global_batch_size": 504,
     "head_dim": 64,
-    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, all rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
+    "predictivity_schedule": "D = 100 x n_non_emb_params tokens (5x Chinchilla) at global_batch_size x seq_len tokens/iter; train_iters rounded to the checkpoint grid (20 evenly spaced checkpoints per run, 40 for 1.7B \u2014 save_interval = train_iters/n divides exactly, 1xC = train_iters/5 on-grid); lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of train_iters, rounded to 100; lr from the 6ND law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
   },
   "configs": {
     "175M": {
@@ -23,7 +23,7 @@
       "lr": 0.00121655,
       "predictivity": {
         "train_tokens": 17616076800,
-        "train_iters": 8500,
+        "train_iters": 8540,
         "lr_warmup_iters": 300,
         "lr_wsd_decay_iters": 1700
       }
@@ -43,7 +43,7 @@
       "lr": 0.00102908,
       "predictivity": {
         "train_tokens": 34406400000,
-        "train_iters": 16700,
+        "train_iters": 16660,
         "lr_warmup_iters": 700,
         "lr_wsd_decay_iters": 3300
       }
@@ -83,7 +83,7 @@
       "lr": 0.00079956,
       "predictivity": {
         "train_tokens": 94411161600,
-        "train_iters": 45700,
+        "train_iters": 45740,
         "lr_warmup_iters": 1800,
         "lr_wsd_decay_iters": 9100
       }

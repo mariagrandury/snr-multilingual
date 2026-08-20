@@ -204,14 +204,17 @@ def schedule_for(cfg: dict) -> tuple[int, int, int]:
 
 
 def save_interval(train_iters: int) -> int:
-    """Per-size checkpoint interval: 20 evenly spaced checkpoints per run,
-    capped at 2000 iters (the 1B/1.7B keep the old grid — they already have
-    plenty of checkpoints, and a longer interval would raise the loss per
-    Azure-spot eviction). Because D = 5x Chinchilla, train_iters/20 divides
-    the schedule exactly for every size, so the 1xC operating point
-    (train_iters/5) lands on-grid at checkpoint #4 for the capped-free sizes
-    — the plan's "checkpointing at defined token counts" requirement."""
-    return min(2000, train_iters // 20)
+    """Per-size checkpoint interval: exactly 20 evenly spaced checkpoints
+    per run — 40 for the 1.7B rung, which keeps its interval ~2000 iters
+    (the Azure-spot eviction loss window) while its EVEN checkpoints land on
+    the same k/20 grid as every other size. The generators round each
+    schedule to this grid (the 48000 threshold sits in the wide gap between
+    the 1B and 1.7B schedules), so the division is exact, the final
+    checkpoint is on-grid, checkpoint k is at k/20 (k/40) of training at
+    every size, and the 1xC operating point (train_iters/5) is always
+    checkpoint 4 (8 of 40) — the plan's "checkpointing at defined token
+    counts" requirement, index-aligned across sizes for the SNR analysis."""
+    return train_iters // (20 if train_iters <= 48000 else 40)
 
 
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:

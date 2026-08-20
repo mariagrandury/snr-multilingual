@@ -317,9 +317,15 @@ def calculate_hyperparams_for_model_configs(
         )
 
         # Predictivity-sweep schedule (D = 100 x N, ~4% warmup, ~20% WSD
-        # decay, rounded to 100) mirrored per size so this file alone gives
-        # the full training config; the predictivity launchers read it.
-        p_iters = round(100 * n_non_emb / (gbs * seq_len) / 100) * 100
+        # decay) mirrored per size so this file alone gives the full training
+        # config; the predictivity launchers read it. train_iters is rounded
+        # to the checkpoint grid — 20 evenly spaced checkpoints per run, 40
+        # for the 1.7B rung (launch_trainings.save_interval divides exactly),
+        # so every size shares the same relative k/20 operating points and
+        # the 1xC point (train_iters/5) is always on-grid.
+        raw_iters = 100 * n_non_emb / (gbs * seq_len)
+        n_ckpts = 20 if raw_iters <= 48000 else 40
+        p_iters = round(raw_iters / n_ckpts) * n_ckpts
         prev = preserve.get(size_label, {})
         json_configs[size_label] = {
             # Architecture
@@ -368,10 +374,13 @@ def calculate_hyperparams_for_model_configs(
                     "head_dim": head_dim,
                     "predictivity_schedule": (
                         "D = 100 x n_non_emb_params tokens (5x Chinchilla) at "
-                        "global_batch_size x seq_len tokens/iter; "
-                        "lr_warmup_iters ~4% and lr_wsd_decay_iters ~20% of "
-                        "train_iters, all rounded to 100; lr from the 6ND law "
-                        "at the run's own budget (C = 6 x N x 100N = 600 N^2)"
+                        "global_batch_size x seq_len tokens/iter; train_iters "
+                        "rounded to the checkpoint grid (20 evenly spaced "
+                        "checkpoints per run, 40 for 1.7B — save_interval = "
+                        "train_iters/n divides exactly, 1xC = train_iters/5 "
+                        "on-grid); lr_warmup_iters ~4% and lr_wsd_decay_iters "
+                        "~20% of train_iters, rounded to 100; lr from the 6ND "
+                        "law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
                     ),
                 },
                 "configs": json_configs,
