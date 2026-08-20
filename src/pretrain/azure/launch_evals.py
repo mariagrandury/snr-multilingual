@@ -63,13 +63,15 @@ def resolve_iters(name: str, subset: str) -> list[int]:
 
 
 def submit(name: str, it: int, tasks: str, dry_run: bool,
-           compute: str | None = None) -> None:
+           compute: str | None = None,
+           env: dict | None = None) -> None:
     eval_name = f"{name}-iter{it}"
     overrides = {
         "display_name": f"eval-{eval_name}",
         "inputs.hf_model.path": f"{DATASTORE}/models/{name}/iter_{it:07d}",
         "environment_variables.NAME": eval_name,
         "environment_variables.TASKS": tasks,
+        **{f"environment_variables.{k}": v for k, v in (env or {}).items()},
     }
     if compute:  # the yml default only exists in the Spain workspace
         overrides["compute"] = compute

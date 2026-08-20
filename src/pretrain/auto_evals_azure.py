@@ -39,7 +39,7 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
-from launch_trainings import UK_SIZES, cell_languages  # noqa: E402
+from launch_trainings import TOKENIZER_MODEL, UK_SIZES, cell_languages  # noqa: E402
 from sync_models_json import sync  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
@@ -128,6 +128,9 @@ def submit_convert(name: str, it: int, dry_run: bool,
         "display_name": f"convert-{name}-iter{it}",
         "inputs.checkpoints.path": f"{DATASTORE}/{RUNS_PREFIX}/{name}/checkpoints",
         "environment_variables.CKPT_STEP": it,
+        # Predictivity cells train with the Apertus V1 tokenizer, not
+        # convert.sh's alehc/swissai-tokenizer default (the 36-sweep's).
+        "environment_variables.HF_TOKENIZER": TOKENIZER_MODEL,
         "outputs.hf_model.path": f"{DATASTORE}/models/{name}/iter_{it:07d}",
     }
     if compute:
@@ -193,7 +196,10 @@ def one_pass(names: list[str], auth: list[str], every: int,
             if (f"iter_{it:07d}" in converted
                     and f"convert-{name}-iter{it}" not in running
                     and f"eval-{name}-iter{it}" not in running):
-                submit_eval(name, it, cell_tasks, dry_run, compute)
+                # Same tokenizer note as submit_convert: override eval.sh's
+                # 36-sweep default with the tokenizer this sweep trains with.
+                submit_eval(name, it, cell_tasks, dry_run, compute,
+                            env={"TOKENIZER": TOKENIZER_MODEL})
 
 
 def main() -> None:
