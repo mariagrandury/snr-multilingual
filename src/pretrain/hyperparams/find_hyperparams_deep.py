@@ -96,11 +96,17 @@ def compute_configs(deep_data: dict) -> dict:
             "num_attention_heads": nh,
             "num_query_groups": nkv,
             "n_non_emb_params": n_non_emb,
+            # Cluster layout and micro-batch are hand-tuned in the JSON
+            # (audited nodes x MBS pairs, memory caps like the 90M MBS=7);
+            # carry them over instead of resetting to the suggest_mbs value.
+            **({"nodes": config["nodes"]} if "nodes" in config else {}),
             # Training
-            "micro_batch_size": mbs,
+            "micro_batch_size": config.get("micro_batch_size", mbs),
             "global_batch_size": gbs,
             "seq_len": seq_len,
-            "train_iters": train_iters,
+            # Top-level train_iters is the finished 36-sweep's record (the
+            # predictivity launchers ignore it) — preserve, don't recompute.
+            "train_iters": config.get("train_iters", train_iters),
             # Learning rate
             "lr": round(lr, 8),
             "predictivity": {

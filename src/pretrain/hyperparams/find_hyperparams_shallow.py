@@ -1,5 +1,4 @@
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -146,8 +145,7 @@ def find_hyperparams_for_model_size(
     For each target non-embedding parameter count, sweep all valid architectures to find the one that comes closest, then compute its hyperparameters.
 
     Constraints:
-    - d_model is a multiple of head_dim
-    - n_layers is a multiple of 2
+    - d_model = width_depth_ratio x n_layers exactly, and a multiple of head_dim
     - width_depth_ratio = d_model / n_layers = [64, 128]
     - num_heads = d_model // head_dim
     - gqa_ratio = num_heads // num_kv_heads = [2, 3, 4]
@@ -158,23 +156,21 @@ def find_hyperparams_for_model_size(
     print("=" * 60)
 
     print("\n  Constraints:")
-    print(f"   - d_model is a multiple of 512 (head_dim: {head_dim})")
-    print(f"   - n_layers is a multiple of 2")
+    print(f"   - d_model = width_depth_ratio x n_layers, a multiple of head_dim {head_dim}")
     print(f"   - width_depth_ratio = d_model / n_layers = {width_depth_ratios}")
     print(f"   - num_heads = d_model // head_dim")
     print(f"   - gqa_ratio = num_heads // num_kv_heads = {gqa_ratios}")
     print(f"   - ffw_multiplier = {ffw_multipliers}")
     print()
 
-    d_model_options = range(512, 4097, 512)
-    # d_model_options = [2**n for n in range(int(math.log2(head_dim)), 13)]  # up to 4096
-    n_layers_options = range(2, 33, 2)
+    n_layers_options = range(4, 41)
 
     # First pass: collect every structurally valid (n_layers, d_model, gqa, ffw) combination
     possible_configs = []
     for n_layers in n_layers_options:
-        for d_model in d_model_options:
-            if d_model / n_layers not in width_depth_ratios:
+        for ratio in width_depth_ratios:
+            d_model = ratio * n_layers
+            if d_model % head_dim:
                 continue
             num_heads = d_model // head_dim
             for gqa_ratio in gqa_ratios:
@@ -269,13 +265,18 @@ def calculate_hyperparams_for_model_configs(
     desired_tokens,
     gbs,
     head_dim,
+    preserve=None,
 ):
     """
     Compute and display hyperparameters for a named dict of model configs.
 
     model_configs: dict mapping size label (e.g. "1B") to a config dict with keys:
         n_layers, d_model, gqa_ratio, ffw_multiplier
+    preserve: optional {label: existing json config} — hand-tuned
+        micro_batch_size (e.g. the 90M memory cap) and the historical
+        top-level train_iters are carried over instead of recomputed.
     """
+    preserve = preserve or {}
     print("=" * 60)
     print("Model configs")
     print("=" * 60)
@@ -319,6 +320,7 @@ def calculate_hyperparams_for_model_configs(
         # decay, rounded to 100) mirrored per size so this file alone gives
         # the full training config; the predictivity launchers read it.
         p_iters = round(100 * n_non_emb / (gbs * seq_len) / 100) * 100
+        prev = preserve.get(size_label, {})
         json_configs[size_label] = {
             # Architecture
             "n_layers": nl,
@@ -327,11 +329,12 @@ def calculate_hyperparams_for_model_configs(
             "num_attention_heads": nh,
             "num_query_groups": nkv,
             "n_non_emb_params": n_non_emb,
-            # Training
-            "micro_batch_size": mbs,
+            # Training (hand-tuned MBS and the historical train_iters are
+            # preserved from the existing file — see the docstring)
+            "micro_batch_size": prev.get("micro_batch_size", mbs),
             "global_batch_size": gbs,
             "seq_len": seq_len,
-            "train_iters": train_iters,
+            "train_iters": prev.get("train_iters", train_iters),
             # Learning rate
             "lr": round(lr, 8),
             "predictivity": {
@@ -408,46 +411,16 @@ if __name__ == "__main__":
     gqa_ratios = [2, 3, 4]  # grouped query attention ratio
     width_depth_ratios = [64, 128]  # d_model // n_layers
 
-    # Validate calculations for 1B model config
+    # The shallow ladder is the model-depth intervention level of the
+    # predictivity sweep: same six non-embedding target sizes as the deep
+    # baseline (hyperparams_deep.json), retargeted to width/depth = 128.
+    deep_path = Path(__file__).parent / "hyperparams_deep.json"
+    deep_configs = json.loads(deep_path.read_text())["configs"]
+    size_order = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
+    targets = {s: deep_configs[s]["n_non_emb_params"] for s in size_order}
 
-    model_config_1b = {
-        "n_layers": 16,
-        "d_model": 2048,
-        "gqa_ratio": 4,
-        "ffw_multiplier": 6,
-    }
-
-    calculate_hyperparams(
-        model_size="1B",
-        vocab_size=vocab_size,
-        seq_len=seq_len,
-        desired_tokens=desired_tokens,
-        gbs=gbs,
-        n_layers=model_config_1b["n_layers"],
-        d_model=model_config_1b["d_model"],
-        num_heads=model_config_1b["d_model"] // head_dim,
-        num_kv_heads=model_config_1b["d_model"]
-        // head_dim
-        // model_config_1b["gqa_ratio"],
-        ffw_size=model_config_1b["d_model"] * model_config_1b["ffw_multiplier"],
-    )
-
-    # Find hyperparameters for other model sizes
-
-    print("\n")
-    print(
-        "label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  "
-    )
-    print(
-        "--------------------------------------------------------------------------------------------------------------------------------"
-    )
-    print(
-        "1B       16        2048     128       64        32       4          8           6         0.973       3     0.000791     56000 "
-    )
-    print("\n\n")
-
-    find_hyperparams_for_model_size(
-        target_non_emb_params=[100e6, 300e6, 500e6, 1e9],
+    possible_configs = find_hyperparams_for_model_size(
+        target_non_emb_params=list(targets.values()),
         vocab_size=vocab_size,
         seq_len=seq_len,
         desired_tokens=desired_tokens,
@@ -459,37 +432,28 @@ if __name__ == "__main__":
     )
 
     print(
-        "\n\nDECISION: We will use the configuration from the first table (width_depth_ratio=128, ffw_multiplier=free), keeping for the 1B model the original configuration.\n\n"
+        "\n\nDECISION: width_depth_ratio = 128 with ffw_multiplier and "
+        "gqa_ratio free per size (best |n_non_emb - target| against the deep "
+        "ladder's sizes).\n\n"
     )
 
-    # Final model configs
+    # Final model configs: per deep-ladder target, the ratio-128 config
+    # closest in non-embedding parameters.
+    pool = [c for c in possible_configs if c["width_depth_ratio"] == 128]
+    model_configs = {}
+    for size, target in targets.items():
+        best = min(pool, key=lambda c: abs(c["n_non_emb"] - target))
+        model_configs[size] = {
+            "n_layers": best["n_layers"],
+            "d_model": best["d_model"],
+            "gqa_ratio": best["num_heads"] // best["num_kv_heads"],
+            "ffw_multiplier": best["ffw_multiplier"],
+        }
 
-    model_configs = {
-        "100M": {
-            "n_layers": 8,
-            "d_model": 1024,
-            "gqa_ratio": 2,
-            "ffw_multiplier": 4,
-        },
-        "300M": {
-            "n_layers": 12,
-            "d_model": 1536,
-            "gqa_ratio": 3,
-            "ffw_multiplier": 4,
-        },
-        "500M": {
-            "n_layers": 16,
-            "d_model": 2048,
-            "gqa_ratio": 4,
-            "ffw_multiplier": 3,
-        },
-        "1B": {
-            "n_layers": 16,
-            "d_model": 2048,
-            "gqa_ratio": 4,
-            "ffw_multiplier": 6,
-        },
-    }
+    # Hand-tuned fields in the reviewed file survive regeneration.
+    shallow_path = Path(__file__).parent / "hyperparams_shallow.json"
+    preserve = (json.loads(shallow_path.read_text())["configs"]
+                if shallow_path.exists() else {})
 
     calculate_hyperparams_for_model_configs(
         model_configs=model_configs,
@@ -498,6 +462,7 @@ if __name__ == "__main__":
         desired_tokens=desired_tokens,
         gbs=gbs,
         head_dim=head_dim,
+        preserve=preserve,
     )
 
     sys.stdout = sys.__stdout__
