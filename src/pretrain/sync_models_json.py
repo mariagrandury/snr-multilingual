@@ -16,7 +16,7 @@ automatically. The CLI exists for explicit use after editing the grid
 variants (e.g. an earlier --arch shallow run) are left untouched.
 
 Usage:
-    python sync_models_json.py                 # the 52 baseline cells
+    python sync_models_json.py                 # the 56 baseline cells
     python sync_models_json.py --arch shallow  # + the shallow variant's cells
     python sync_models_json.py --dry-run       # show what would change
 """
@@ -32,14 +32,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     HYPERPARAMS, SCHEME_B_LANGS, exp_name, mix_label, predictivity_cells,
-    schedule_for)
+    save_interval, schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
 
 SOURCE = "snr-pretraining-predictivity"
 TOKENS_PER_ITER = 504 * 4096
 VOCAB_SIZE = 131072
-SAVE_INTERVAL = 2000
 
 # Where the CSCS artifacts live (Azure cells keep the same entry shape; their
 # checkpoints are watched in blob storage by auto_evals_azure.py instead).
@@ -48,9 +47,11 @@ HF_LOCAL_BASE = "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
 
 
 def save_points(target: int) -> list[int]:
-    """Every iter Megatron writes on the way to `target` (SAVE_INTERVAL grid
-    plus the final step, which ends off-grid for every predictivity size)."""
-    pts = list(range(SAVE_INTERVAL, target + 1, SAVE_INTERVAL))
+    """Every iter Megatron writes on the way to `target` (the cell's per-size
+    save-interval grid — launch_trainings.save_interval — plus the final
+    step, which ends off-grid for the 2000-capped sizes)."""
+    step = save_interval(target)
+    pts = list(range(step, target + 1, step))
     if not pts or pts[-1] != target:
         pts.append(target)
     return pts

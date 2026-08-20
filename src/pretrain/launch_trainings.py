@@ -9,9 +9,9 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
            baseline) or shallow (hyperparams/hyperparams_shallow.json, the
            model-depth intervention level).
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
-           FineWeb-2 languages. 1.7B trains only at L in {1, 8, 30, 100}.
+           FineWeb-2 languages. 1.7B trains only at L in {1, 2, 8, 30, 100}.
   * seed — 1904 by default; three seeds (28, 1797, 1904) on the cells the
-           plan marks x3 (the 175M and 1B columns at L in {1, 30, 100}).
+           plan marks x3 (the 175M and 1B columns at L in {1, 2, 30, 100}).
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 mix (L=1 is 100% English), blended at
@@ -47,7 +47,7 @@ Filters (both platforms): --arch {deep,shallow}, --scheme {A,B},
 --size 350M[,175M,...], --langs L, --seed N, --dry-run.
 
 Examples:
-    python launch_trainings.py cscs --dry-run              # whole sweep (52 jobs)
+    python launch_trainings.py cscs --dry-run              # whole sweep (56 jobs)
     python launch_trainings.py cscs --size 350M,175M       # two sizes, all L
     python launch_trainings.py azure --size 1.7B --langs 30
     python launch_trainings.py azure --langs 1             # monolingual anchors
@@ -112,7 +112,7 @@ LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100]
 EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
 # Which language settings each size trains at. Every size covers all settings
-# except 1.7B, the top rung, which the plan trains at L in {1, 2, 8, 30, 100}.
+# except 1.7B, the top rung, which trains at L in {1, 2, 8, 30, 100}.
 SIZE_LANG_SETTINGS = {
     "90M": LANG_SETTINGS,
     "175M": LANG_SETTINGS,
@@ -122,8 +122,8 @@ SIZE_LANG_SETTINGS = {
     "1.7B": [1, 2, 8, 30, 100],
 }
 
-# Cells trained with three seeds (else one). The plan marks the 175M and 1B
-# columns x3 at L in {1, 30, 100}.
+# Cells trained with three seeds (else one): the 175M and 1B columns at
+# L in {1, 2, 30, 100}.
 SEED_SINGLE = [1904]
 SEED_TRIPLE = [28, 1797, 1904]
 TRIPLE_SIZES = {"175M", "1B"}
@@ -203,6 +203,17 @@ def schedule_for(cfg: dict) -> tuple[int, int, int]:
     return p["train_iters"], p["lr_warmup_iters"], p["lr_wsd_decay_iters"]
 
 
+def save_interval(train_iters: int) -> int:
+    """Per-size checkpoint interval: 20 evenly spaced checkpoints per run,
+    capped at 2000 iters (the 1B/1.7B keep the old grid — they already have
+    plenty of checkpoints, and a longer interval would raise the loss per
+    Azure-spot eviction). Because D = 5x Chinchilla, train_iters/20 divides
+    the schedule exactly for every size, so the 1xC operating point
+    (train_iters/5) lands on-grid at checkpoint #4 for the capped-free sizes
+    — the plan's "checkpointing at defined token counts" requirement."""
+    return min(2000, train_iters // 20)
+
+
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
     """Short label for EXP_NAME: `L8` (50/50), `L1` (100% English). Non-default
     variants are marked with suffixes, e.g. `L8-schemeB`, `L8-shallow`,
@@ -275,6 +286,7 @@ def cell_env(
         # the target iters, never a capped resume's --training-steps, so every
         # (re)submission runs the identical optimizer schedule.
         "ADEMAMIX_WARMUP": iters,
+        "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
         "EXP_NAME": exp,

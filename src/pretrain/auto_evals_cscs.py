@@ -51,7 +51,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, cell_languages,
-    exp_name, predictivity_cells, schedule_for)
+    exp_name, predictivity_cells, save_interval, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -71,7 +71,6 @@ PROJECT_NAME = json.loads(
 DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
-SAVE_INTERVAL = 2000
 CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
 # The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime
 # can't fit both — and the whole batched run executes on 1 of the node's 4
@@ -212,10 +211,10 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         saved = saved_valid_iters(cell, root)
         if not saved:
             continue
-        # Every Nth saved checkpoint plus the run's final one (predictivity
-        # targets end off the 2000-iter save grid) — same rule as Azure.
+        # Every Nth saved checkpoint on the cell's per-size save grid, plus
+        # the run's final one whatever its number — same rule as Azure.
         due = [i for i in saved
-               if i % (args.every * SAVE_INTERVAL) == 0 or i == target]
+               if i % (args.every * save_interval(target)) == 0 or i == target]
         # The cell's task list: every auto benchmark, in the languages
         # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
         tasks = ",".join(tasks_for_benchmarks(
