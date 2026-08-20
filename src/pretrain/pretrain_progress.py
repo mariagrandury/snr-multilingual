@@ -59,8 +59,8 @@ CKPT_ROOT = Path(
 ITER_RE = re.compile(r"^iter_(\d+)$")
 # The canonical cell name (see launch_trainings.exp_name).
 NAME_RE = re.compile(
-    r"^apertus-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
-    r"(?P<scheme>-schemeB)?(?P<arch>-shallow)?-seed(?P<seed>\d+)$"
+    r"^lm-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
+    r"(?P<scheme>-schemeB)?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
@@ -191,7 +191,7 @@ def scan_runs(root: Path) -> list[dict]:
         m = NAME_RE.match(entry.name)
         if not m:
             continue
-        arch = "shallow" if m["arch"] else "deep"
+        arch = m["arch"]
         target = targets[(arch, m["size"])]
         _, max_valid = model_progress(entry)
         runs.append({

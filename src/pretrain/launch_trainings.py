@@ -215,19 +215,29 @@ def save_interval(train_iters: int) -> int:
 
 
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
-    """Short label for EXP_NAME: `L8` (50/50), `L1` (100% English). Non-default
-    variants are marked with suffixes, e.g. `L8-schemeB`, `L8-shallow`,
-    `L8-schemeB-shallow` (scheme A / deep are the unmarked baselines)."""
+    """Variant label for EXP_NAME: language setting, data scheme (marked only
+    for the non-default B, and only where B differs), and the arch — always
+    explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L8-shallow`."""
     return (f"L{L}"
             + ("-schemeB" if scheme == "B" else "")
-            + ("-shallow" if arch == "shallow" else ""))
+            + f"-{arch}")
 
 
 def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
-    """Canonical run name — also the Slurm job name, the Azure display name,
-    the checkpoint dir under Meg-Runs/<project>/, and the W&B run prefix.
-    pretrain_progress.py parses this format."""
-    return f"apertus-{size}-{mix_label(L, arch, scheme)}-seed{seed}"
+    """Canonical model/cell name (e.g. `lm-90M-L8-deep-seed1904`) — the
+    checkpoint dir under Meg-Runs/<project>/, the W&B run id/name, and the
+    prefix of eval result ids. `lm` not `apertus`: the architecture has
+    diverged from Apertus. pretrain_progress.py parses this format; job
+    names derive from it via job_name()."""
+    return f"lm-{size}-{mix_label(L, arch, scheme)}-seed{seed}"
+
+
+def job_name(kind: str, exp: str) -> str:
+    """Slurm/Azure job display name: `<kind>-<cell sans the lm- prefix>`,
+    e.g. `pretrain-90M-L8-deep-seed1904`, `eval-90M-L8-deep-seed1904-iter425`.
+    The model name keeps its `lm-` prefix everywhere else (dirs, W&B,
+    models.json); jobs drop it for the kind prefix instead."""
+    return f"{kind}-{exp.removeprefix('lm-')}"
 
 
 def data_blend(english: str, fineweb: str, L: int) -> str:
@@ -401,7 +411,7 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
     # from $0 — pass the real checkout dir here.
-    cmd = ["sbatch", f"--job-name={env['EXP_NAME']}",
+    cmd = ["sbatch", f"--job-name={job_name('pretrain', env['EXP_NAME'])}",
            f"--export=ALL,PRETRAIN_DIR={SCRIPT_DIR},{export_vars}"]
     if nodes is not None:
         cmd.append(f"--nodes={nodes}")
@@ -413,7 +423,8 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
         cmd.append(f"--dependency={dependency}")
     cmd.append(str(CSCS_SUBMIT_SCRIPT))
 
-    print(f"  job:    {env['EXP_NAME']}" + (f"  (nodes: {nodes})" if nodes else ""))
+    print(f"  job:    {job_name('pretrain', env['EXP_NAME'])}"
+          + (f"  (nodes: {nodes})" if nodes else ""))
     print(f"  export: {export_vars}")
     if dry_run:
         print("  - skipped (dry-run)\n")
@@ -460,7 +471,7 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
     ws_var, ws_args = az_args(size)
     data_root = data_root or f"{DATASTORE}/data"
     overrides = {
-        "display_name": exp,
+        "display_name": job_name("pretrain", exp),
         "compute": ("azureml:gpu-nd96-spot" if size in UK_SIZES
                     else "azureml:gpu-nc80-lp"),
         "inputs.fineweb.path":
@@ -476,7 +487,8 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
     for k, v in overrides.items():
         cmd += ["--set", f"{k}={v}"]
 
-    print(f"  job: {exp}  [{ws_var}]  ({env['TRAINING_STEPS']} iters)")
+    print(f"  job: {job_name('pretrain', exp)}  [{ws_var}]  "
+          f"({env['TRAINING_STEPS']} iters)")
     if dry_run:
         print("  " + " ".join(c if "WANDB_API_KEY" not in c else
                               "environment_variables.WANDB_API_KEY=***" for c in cmd) + "\n")
@@ -488,7 +500,7 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
 
 def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
     cfg = data["configs"][TEST_SIZE]
-    exp = f"apertus-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, arch)}"
+    exp = f"lm-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, arch)}"
     blend = data_blend(f"{data_dir}/english_dclm",
                        f"{data_dir}/fineweb_L{TEST_LANGS}", TEST_LANGS)
     print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, arch)} | "
@@ -604,7 +616,7 @@ def main() -> None:
         exp = exp_name(c["size"], c["L"], args.arch, c["seed"], scheme)
         target = schedule_for(cfg)[0]
 
-        if exp in active:
+        if job_name("pretrain", exp) in active:
             print(f"  skip [active]: {exp} already queued/running")
             continue
 

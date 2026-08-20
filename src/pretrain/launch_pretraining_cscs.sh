@@ -2,7 +2,7 @@
 
 #SBATCH --account=infra01
 #SBATCH --time=11:59:59
-#SBATCH --job-name=apertus-pretrain
+#SBATCH --job-name=pretrain-manual
 #SBATCH --output=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.out
 #SBATCH --error=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.err
 #SBATCH --ntasks-per-node=4
@@ -28,7 +28,7 @@ SCRIPT_DIR="${PRETRAIN_DIR:-$(dirname "$SCRIPT_PATH")}"
 
 ################ Configs ################
 SEED=${SEED:-1904}
-EXP_NAME=${EXP_NAME:-apertus-${MODEL_SIZE:-175M}-manual-seed${SEED}}
+EXP_NAME=${EXP_NAME:-lm-${MODEL_SIZE:-175M}-manual-seed${SEED}}
 PROJECT_NAME=${PROJECT_NAME:-msnr}
 MOCK_DATA=${MOCK_DATA:-false}
 

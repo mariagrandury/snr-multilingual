@@ -63,7 +63,7 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
     return name, {
         "source": SOURCE,
         # Cross-size identity (the size token is what varies along the ladder).
-        "family": f"apertus-{mix_label(c['L'], arch, scheme)}-seed{c['seed']}",
+        "family": f"lm-{mix_label(c['L'], arch, scheme)}-seed{c['seed']}",
         "size": c["size"],
         # Total parameters = non-embedding + the tied embedding matrix.
         "params": int(cfg["n_non_emb_params"] + VOCAB_SIZE * cfg["hidden_size"]),

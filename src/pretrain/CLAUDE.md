@@ -34,15 +34,19 @@ reintroduces the drift this design removed.
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
 | `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
-| `launch_trainings.py` | grid (52 cells) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
+| `launch_trainings.py` | grid (56 cells) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the two progress heatmaps (`--plot`) |
 | `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd + final) submits convert-snr then evaluate.sbatch; needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
-Cell name everywhere (job name, checkpoint dir, W&B prefix, parsed by
-`pretrain_progress.py`):
-`apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`. CSCS checkpoints:
+Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
+parsed by `pretrain_progress.py`):
+`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+the architecture has diverged from Apertus (renamed 2026-08-21). Job display
+names drop the `lm-` for a kind prefix instead
+(`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
+`eval-90M-L8-deep-seed1904-iter425`, `convert-...`. CSCS checkpoints:
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
 Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 

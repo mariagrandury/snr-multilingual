@@ -39,7 +39,8 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
-from launch_trainings import TOKENIZER_MODEL, UK_SIZES, cell_languages  # noqa: E402
+from launch_trainings import (  # noqa: E402
+    TOKENIZER_MODEL, UK_SIZES, cell_languages, job_name)
 from sync_models_json import sync  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
@@ -125,7 +126,7 @@ def active_jobs() -> set[str]:
 def submit_convert(name: str, it: int, dry_run: bool,
                    compute: str | None = None) -> None:
     overrides = {
-        "display_name": f"convert-{name}-iter{it}",
+        "display_name": job_name("convert", f"{name}-iter{it}"),
         "inputs.checkpoints.path": f"{DATASTORE}/{RUNS_PREFIX}/{name}/checkpoints",
         "environment_variables.CKPT_STEP": it,
         # Predictivity cells train with the Apertus V1 tokenizer, not
@@ -139,7 +140,7 @@ def submit_convert(name: str, it: int, dry_run: bool,
            "--file", str(SCRIPT_DIR / "azure" / "jobs" / "convert.yml"), *az_args()]
     for k, v in overrides.items():
         cmd += ["--set", f"{k}={v}"]
-    print(f"  submit: convert-{name}-iter{it}")
+    print(f"  submit: {job_name('convert', f'{name}-iter{it}')}")
     if dry_run:
         print("  " + " ".join(cmd))
     else:
@@ -188,14 +189,14 @@ def one_pass(names: list[str], auth: list[str], every: int,
         # Convert EVERY saved checkpoint (persist all HF snapshots to blob) — the
         # converted models are the durable copy; eval only samples 1/N of them.
         for it in to_convert:
-            if f"convert-{name}-iter{it}" not in running:
+            if job_name("convert", f"{name}-iter{it}") not in running:
                 submit_convert(name, it, dry_run, compute)
         for it in due:
             if f"{name}-iter{it}" in evaluated:
                 continue
             if (f"iter_{it:07d}" in converted
-                    and f"convert-{name}-iter{it}" not in running
-                    and f"eval-{name}-iter{it}" not in running):
+                    and job_name("convert", f"{name}-iter{it}") not in running
+                    and job_name("eval", f"{name}-iter{it}") not in running):
                 # Same tokenizer note as submit_convert: override eval.sh's
                 # 36-sweep default with the tokenizer this sweep trains with.
                 submit_eval(name, it, cell_tasks, dry_run, compute,

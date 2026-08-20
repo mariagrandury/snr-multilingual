@@ -435,7 +435,7 @@ python launch_trainings.py azure --arch shallow         # the depth-intervention
 `hyperparams/hyperparams_deep.json`) or `shallow`
 (`hyperparams/hyperparams_shallow.json`, same non-embedding sizes at
 width/depth 128); the D(N) = 100 × N schedule comes from each config's
-`predictivity` block. Runs are named `apertus-<size>-L<L>[-shallow]-seed<seed>`
+`predictivity` block. Runs are named `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`
 and log to `mariagrandury-epflnlp/msnr`. Micro-batch sizes tuned for the
 cluster are auto-shrunk per node (`launch_pretraining_azure.sh`) so the
 global batch of 504 always divides; the 1.7B resolves to MBS 1 on the 8-GPU

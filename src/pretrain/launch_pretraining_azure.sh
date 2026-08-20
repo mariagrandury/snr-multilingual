@@ -16,7 +16,7 @@ source azure/get_megatron.sh
 
 ################ Configs ################
 SEED=${SEED:-1904}
-EXP_NAME=${EXP_NAME:-apertus-${MODEL_SIZE:-175M}-manual-seed${SEED}}
+EXP_NAME=${EXP_NAME:-lm-${MODEL_SIZE:-175M}-manual-seed${SEED}}
 PROJECT_NAME=${PROJECT_NAME:-msnr}
 MOCK_DATA=${MOCK_DATA:-false}
 #########################################

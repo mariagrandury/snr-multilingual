@@ -15,8 +15,8 @@ branch per iter, main mirrors the latest iter.
 
 Examples:
   python push-snr.py                                    # push every cell in staging
-  python push-snr.py --name apertus-90M-L2-seed1904     # one cell
-  python push-snr.py --name apertus-90M-L2-seed1904 --iters 2000 4500
+  python push-snr.py --name lm-90M-L2-deep-seed1904     # one cell
+  python push-snr.py --name lm-90M-L2-deep-seed1904 --iters 225 4500
   python push-snr.py --dry-run
 """
 from __future__ import annotations
@@ -41,7 +41,7 @@ DEFAULT_STAGING = Path("/capstor/store/cscs/swissai/infra01/msnr-hf-models")
 # by the next convert job over the cell.
 WEIGHT_FILES = ("model.safetensors", "model.safetensors.index.json")  # main_is_empty_stub
 ITER_RE = re.compile(r"^iter_(\d+)$")
-CELL_PREFIX = "apertus-"
+CELL_PREFIX = "lm-"
 
 
 def iter_dirs(staging: Path, cell: str, requested: list[int] | None) -> list[tuple[int, Path]]:

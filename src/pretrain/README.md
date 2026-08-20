@@ -79,7 +79,7 @@ idempotency check). Each size trains D(N) = 100 × N tokens (5×C); the
 per-size schedule lives in the `predictivity` block of the hyperparams files.
 
 Run name = Slurm job name = Azure display name = checkpoint dir = W&B run
-name: `apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`. Runs log to
+name: `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`. Runs log to
 W&B under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant
 (`megatron_args.sh`) and the project comes from
 [`configs/hf_wandb.json`](../../configs/hf_wandb.json) (`wandb.project`).

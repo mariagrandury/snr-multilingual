@@ -51,7 +51,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, cell_languages,
-    exp_name, predictivity_cells, save_interval, schedule_for)
+    exp_name, job_name, predictivity_cells, save_interval, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -160,10 +160,10 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
            "WANDB_PROJECT": PROJECT_NAME,
            "LOGS_ROOT": str(logs_root),
            "TASKS": tasks}
-    cmd = ["sbatch", f"--job-name=eval-{name}",
+    cmd = ["sbatch", f"--job-name={job_name('eval', name)}",
            f"--time={eval_walltime(size, n_tasks)}",
            "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
-    print(f"  submit: eval-{name}")
+    print(f"  submit: {job_name('eval', name)}")
     if dry_run:
         print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
@@ -234,7 +234,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             name = f"{cell}-iter{it}"
             if evaluated(name, logs_root):
                 continue
-            if hf_staged(cell, it, staging) and f"eval-{name}" not in running:
+            if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
                 submit_eval(cell, it, staging, logs_root, tasks, c["size"],
                             args.dry_run)
 

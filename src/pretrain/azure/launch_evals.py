@@ -67,7 +67,9 @@ def submit(name: str, it: int, tasks: str, dry_run: bool,
            env: dict | None = None) -> None:
     eval_name = f"{name}-iter{it}"
     overrides = {
-        "display_name": f"eval-{eval_name}",
+        # Job names drop the model's lm- prefix for the kind prefix
+        # (launch_trainings.job_name convention); no-op for legacy cells.
+        "display_name": f"eval-{eval_name.removeprefix('lm-')}",
         "inputs.hf_model.path": f"{DATASTORE}/models/{name}/iter_{it:07d}",
         "environment_variables.NAME": eval_name,
         "environment_variables.TASKS": tasks,
@@ -83,7 +85,7 @@ def submit(name: str, it: int, tasks: str, dry_run: bool,
     for k, v in overrides.items():
         cmd += ["--set", f"{k}={v}"]
 
-    print(f"  job: eval-{eval_name}  tasks={tasks}")
+    print(f"  job: eval-{eval_name.removeprefix('lm-')}  tasks={tasks}")
     if dry_run:
         print("  " + " ".join(c if "WANDB_API_KEY" not in c else
                               "environment_variables.WANDB_API_KEY=***" for c in cmd) + "\n")

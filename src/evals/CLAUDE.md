@@ -749,7 +749,7 @@ The 36-sweep checkpoint dirs live at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
 (EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
 predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
-`apertus-<size>-L<L>[-schemeB][-shallow]-seed<seed>`.
+`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`.
 
 ---
 
