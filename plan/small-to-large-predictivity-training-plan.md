@@ -30,9 +30,10 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 | 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
 | 100       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
 
-About 52 runs (at one intervention level). (The 200-language setting was
-dropped on 2026-08-13 to fit the compute budget and deadline; the ×3-seed
-rows are 1, 30 and 100.)
+56 runs (at one intervention level). (The 200-language setting was
+dropped on 2026-08-13 to fit the compute budget and deadline. The ×3-seed
+rows were 1, 30 and 100; L=2 was added to them, and the 1.7B row gained
+L=2, taking the grid from 52 to 56.)
 
 ## Intervention axis (the design choice under test)
 
@@ -209,6 +210,10 @@ Set the trainer's total token count to D(N) for each size. The largest model at 
 Before the largest run at a setting, check the realized FineWeb2 build size that the script reports. At high language counts lower-resource languages can run out, so the realized size can fall below the build target; if it is below the largest model's FineWeb2 half (85B at the 1.7B settings), reduce that model's token count to avoid repeating data, and record it.
 
 Log the final checkpoints (for example the last 30, spaced about 1000 steps), so that per-language BPB and the checkpoint-to-checkpoint noise estimate can be computed over the final window, matching the Signal-and-Noise noise definition.
+
+**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced (40 at 1.7B, whose interval stays near the ~2000-iter Azure-spot eviction window). The interval is per size, `train_iters / 20`, so checkpoint *k* sits at *k*/20 of training at **every** size — the grids are index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint 4 (8 of 40), on-grid at every size. Evaluation covers every 2nd checkpoint **plus the last 5**, so the late-training window that checkpoint-noise is computed over is sampled densely.
+
+Note the deviation from "the last 30": with 20 checkpoints per run the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
 
 ## Checkpointing at defined token counts
 

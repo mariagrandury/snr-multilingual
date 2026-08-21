@@ -67,9 +67,9 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M and 1B columns at L ∈ {1, 30, 100} |
+| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M and 1B columns at L ∈ {1, 2, 30, 100} |
 
-52 runs at one intervention level (the plan grid). Variants multiply the
+56 runs at one intervention level. Variants multiply the
 grid and are suffix-marked in the run name: `--arch shallow` (width/depth
 128, the model-depth intervention)
 and `--scheme B` (diversity-first language sets — B differs from A only at
@@ -329,23 +329,33 @@ nothing duplicates.
 
 ## Per-size cluster cost (steady state)
 
-175M–1B sampled from 1.26M iter log lines of the completed 36-model sweep
-(same architectures and node counts); 90M and 1.7B are estimates:
+350M–1B sampled from 1.26M iter log lines of the completed 36-model sweep
+(same architectures and node counts); 90M and 175M measured on this sweep
+(2026-08-21, flash attention, data on iopsstor); 1.7B is still an estimate:
 
 | Size  | Nodes | MBS | Median ms/iter | Predictivity iters (5×C) | h (steady) |
 | ----- | ----: | --: | -------------: | -----------------------: | ---------: |
-| 90M   |     3 |  21 |     ~800 (est) |                    4 500 |     ~1.0 h |
-| 175M  |     6 |   7 |        **800** |                    8 500 |     ~1.9 h |
-| 350M  |    14 |   3 |        **565** |                   16 700 |     ~2.6 h |
+| 90M   |     3 |   7 |       **1240** |                    4 500 |     ~1.6 h |
+| 175M  |     6 |   7 |        **800** |                    8 540 |     ~1.9 h |
+| 350M  |    14 |   3 |        **565** |                   16 660 |     ~2.6 h |
 | 600M  |    21 |   6 |        **520** |                   28 800 |     ~4.2 h |
-| 1B    |    21 |   6 |        **715** |                   45 700 |     ~9.1 h |
+| 1B    |    21 |   6 |        **715** |                   45 740 |     ~9.1 h |
 | 1.7B  |    21 |   2 |    ~1200 (est) |                   81 000 |      ~27 h |
+
+deep and shallow cost the same per iteration at equal size (175M: 800 vs 807),
+as expected once both ladders pin ffw = 4 and gqa = 4 — one table covers both.
 
 The medians feed `launch_trainings.py::ITER_MS` and `auto_time()` (walltime =
 remaining iters × rate + 2h30m margin for the 1h SIGUSR2 grace + cold-start).
-Runs longer than the 12h wall (1B, 1.7B) chain through resumes: each job
+For the small sizes that margin, not the rate, dominates the request. Runs
+longer than the 12h wall (1B, 1.7B) chain through resumes: each job
 checkpoints out at the SIGUSR2 signal and the next `launch_trainings.py cscs`
 invocation resumes it.
+
+**Always read ms/iter as a median with its p10/p90 band.** A wide spread means
+the job was I/O-bound and the number is not a cost estimate (CLAUDE.md #8);
+a tight band (e.g. 90M 1234/1240/1247) means it is compute-bound and usable.
+
 
 ## Possible future improvements
 

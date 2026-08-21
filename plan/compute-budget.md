@@ -132,26 +132,58 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 
 | Size  | Tokens (D=100·N) | Iters  | Nodes | ms/iter | Time/run | 12h segments | Runs | Node-hours |
 | ----- | ---------------: | -----: | ----: | ------: | -------: | :----------: | ---: | ---------: |
-| 90M   |            9.3 B |  4,500 |     3 |    740* |   ~0.9 h |      1       |    7 |         19 |
-| 175M  |           17.6 B |  8,500 |     6 |     800 |   ~1.9 h |      1       |   13 |        147 |
-| 350M  |           34.4 B | 16,700 |    14 |     565 |   ~2.6 h |      1       |    7 |        257 |
+| 90M   |            9.3 B |  4,500 |     3 |   1,240 |   ~1.6 h |      1       |    7 |         33 |
+| 175M  |           17.6 B |  8,540 |     6 |     800 |   ~1.9 h |      1       |   15 |        171 |
+| 350M  |           34.4 B | 16,660 |    14 |     565 |   ~2.6 h |      1       |    7 |        256 |
 | 600M  |           59.5 B | 28,800 |    21 |     520 |   ~4.2 h |      1       |    7 |        612 |
-| 1B    |           94.4 B | 45,700 |    21 |     715 |   ~9.1 h |      1       |   13 |      2,478 |
-| 1.7B  |          167.2 B | 81,000 |    21 |  1,450* |  ~32.6 h |      3       |    5 |      3,426 |
-| **Σ** |                  |        |       |         |          |              |   52 |    ~6,940  |
+| 1B    |           94.4 B | 45,740 |    21 |     715 |   ~9.1 h |      1       |   15 |      2,862 |
+| 1.7B  |          167.2 B | 81,000 |    21 |  1,200* |  ~27.0 h |      3       |    5 |      2,835 |
+| **Σ** |                  |        |       |         |          |              |   56 |    ~6,770  |
 
 - **Runs execute in parallel** (each cell on its own node allocation), so the
-  ~360 serial run-hours are not calendar time — **node-hours (~6,940)** is the
-  compute cost. 1B + 1.7B are ~85% of it.
-- ms/iter for **175M–1B are measured** (medians over 1.26 M iter log lines from
-  the CSCS `data-mix-small` runs — same architecture, node counts, and batch,
-  so they transfer by iteration count). **\* 90M and 1.7B are extrapolated**
-  (not yet run on CSCS); 1.7B is the least certain (MBS = 2, memory-bound) —
-  likely 30–40 h/run, worth a short calibration run.
+  serial run-hours are not calendar time — **node-hours (~6,770)** is the
+  compute cost. 1B + 1.7B are ~84% of it.
+- ms/iter for **350M–1B are measured** (medians over 1.26 M iter log lines from
+  the CSCS `data-mix-small` runs — same architectures, node counts, and batch,
+  so they transfer by iteration count). **90M (1,240) and 175M (800/807) are
+  now measured on this sweep** (2026-08-21, flash attention, data on iopsstor);
+  90M came in well above the old 740 extrapolation. **\* 1.7B is still
+  extrapolated** (MBS = 2, memory-bound) — worth a calibration run.
+- Measure ms/iter as a **median with a tight p10/p90 band**. A wide spread means
+  the run was I/O-bound, not compute-bound, and the number is not a cost
+  estimate — that is how the capstor dataloader stall hid for a day
+  (`src/pretrain/CLAUDE.md` #8). Training must read from iopsstor.
+- deep and shallow cost the same per iteration at equal size (175M: 800 vs 807),
+  as expected once both ladders pin ffw = 4 and gqa = 4.
 - 1.7B exceeds the 12 h queue wall → ~3 resume segments/run, handled by the
-  standard `--use-checkpoint-opt_param-scheduler` + `launch_resumes.sh` path.
+  standard `--use-checkpoint-opt_param-scheduler` path (there is no separate
+  resume script: re-running `launch_trainings.py` is the resume).
 - Steady-state compute only; excludes cold-start, save-iter overhead, and queue
-  wait. Counts include the 1.7B@L2 cell (1.7B = 5 runs).
+  wait. 56 runs: the grid gained the 1.7B@L2 cell and ×3 seeds at L2 on the
+  175M and 1B columns.
+
+## Checkpointing, conversion and eval cost
+
+Each run writes **20 checkpoints** (40 at 1.7B, whose interval stays near the
+~2000-iter Azure-spot eviction window); checkpoint *k* is at *k*/20 of training
+at every size, and the 1×C operating point is always checkpoint 4 (8 of 40).
+
+| Stage | Volume | Unit cost | Node-hours |
+| ----- | -----: | --------: | ---------: |
+| Convert (Megatron → HF, every checkpoint) | 1,220 ckpts | ~3 min | ~60 |
+| Eval (every 2nd checkpoint, `auto` group)  |   610 jobs | ~14 min | ~142 |
+
+- Eval unit cost is measured: a 90M cell over the 18 `auto` tasks for L2 takes
+  **~14 min** end to end (container + vLLM cold start + 18 tasks + W&B push);
+  `--limit 1` finishes in ~4 min. `eval_walltime()` still assumes a fixed 60 min
+  overhead, so its requests are ~5× the real cost — safe, but it makes eval jobs
+  look expensive to the scheduler.
+- Eval is ~2% of the sweep's compute but is **latency-bound, not
+  throughput-bound**: jobs are 1 node and the `debug` partition takes them
+  (1:30 cap, 1 running + 1 queued), so `scripts/debug_drain.sh` moves them off
+  the busy `normal` queue.
+- Conversion gates evaluation — a cell cannot be evaluated until its HF
+  snapshot exists — so it is on the critical path despite being cheap.
 
 ---
 
