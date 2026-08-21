@@ -223,17 +223,21 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         # evaluate only the due ones — conversion is the durability step, eval
         # is the expensive one we sample at 1/N.
         to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
-        print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | eval due {due}")
+        # Report what's still OUTSTANDING, not what's due: a due checkpoint
+        # whose results are already on disk needs no action, and printing it
+        # every pass reads as work the watcher is failing to submit.
+        pending = [it for it in due
+                   if not evaluated(f"{cell}-iter{it}", logs_root)]
+        print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | "
+              f"eval {pending or f'DONE ({len(due)}/{len(due)})'}")
 
         if to_convert and not convert_busy:
             submit_convert(cell, to_convert, staging, args.dry_run)
             # One conversion sbatch at a time (they share a Slurm name, so
             # dedupe is coarse); the next pass converts the remaining cells.
             convert_busy = True
-        for it in due:
+        for it in pending:
             name = f"{cell}-iter{it}"
-            if evaluated(name, logs_root):
-                continue
             if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
                 submit_eval(cell, it, staging, logs_root, tasks, c["size"],
                             args.dry_run)
