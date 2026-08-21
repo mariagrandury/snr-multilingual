@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
+name: apertus-nemo
+description: >
+  NGC NeMo framework container — the x86_64 build of the same 25.11 image the
+  CSCS cluster uses (ngc_25-11-nemo-alps3). Ships PyTorch, Transformer Engine
+  and Apex prebuilt for A100 (sm80) and H100 (sm90). Used for data prep,
+  training and checkpoint conversion.
+image: nvcr.io/nvidia/nemo:25.11.01

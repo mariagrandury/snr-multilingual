@@ -24,7 +24,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CONFIGS = REPO / "configs"
 EVALS_CONFIGS = REPO / "src" / "evals" / "configs" / "signal_to_ratio"
-HYPERPARAMS_DEEP = REPO / "src" / "pretrain" / "hyperparams_deep.json"
+HYPERPARAMS_DEEP = REPO / "src" / "pretrain" / "hyperparams" / "hyperparams_deep.json"
 
 
 # --- Stage helpers ----------------------------------------------------------

@@ -1,5 +1,5 @@
 #!/bin/bash
-# debug_drain.sh — feed PENDING normal-partition eval jobs through the idle
+# debug_drain.sh — feed PENDING normal-partition eval/convert jobs through the idle
 # `debug` partition, shortest-walltime first, keeping it at the debug-qos cap
 # of **1 running + 1 queued**. Each moved job is capped at debug's **1:30**
 # wall via `scontrol update partition=debug timelimit=01:30:00`.
@@ -10,7 +10,10 @@
 # their leftover tasks are picked up by a later launcher re-run.
 #
 # It does NOT submit new jobs — it only MOVES already-pending jobs, so there's
-# no risk of duplicates. Stops when no pending normal eval jobs remain.
+# no risk of duplicates. Stops when no pending normal eval/convert jobs remain.
+#
+# Conversions are drained too: they are short (~3 min) and are the gate on
+# evaluating a cell, so a stuck normal queue blocks the whole eval pipeline.
 #
 # Usage:
 #   bash scripts/debug_drain.sh --dry-run        # show what it would move
@@ -30,7 +33,7 @@ done
 
 drain_once() {
     local npend ndebug slots cand jid jn secs
-    npend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null | grep -c '^eval-')
+    npend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null | grep -cE '^(eval|convert)-')
     ndebug=$(squeue --me -h -p debug -t PD,R,CG -o "%i" 2>/dev/null | wc -l)
     echo "[$(date +%H:%M:%S)] pending(normal,eval)=$npend  debug=$ndebug/2"
     (( npend == 0 )) && return 1          # nothing left to drain → caller exits
@@ -38,7 +41,7 @@ drain_once() {
     (( slots <= 0 )) && return 0          # debug full (1 run + 1 queued)
     for (( s=0; s<slots; s++ )); do
         # shortest-walltime pending NORMAL eval job (HH:MM:SS or MM:SS → seconds)
-        cand=$(squeue --me -h -p normal -t PD -o "%l|%i|%j" 2>/dev/null | grep '|eval-' | \
+        cand=$(squeue --me -h -p normal -t PD -o "%l|%i|%j" 2>/dev/null | grep -E '\|(eval|convert)-' | \
             awk -F'|' '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]); print sec"|"$2"|"$3}' | \
             sort -n -t'|' -k1 | head -1)
         [ -z "$cand" ] && return 0

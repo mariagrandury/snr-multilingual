@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+experiment_name: msnr
+display_name: push-hub
+description: >
+  Mirror the converted HF checkpoints in blob (models/<cell>/iter_<N>) to the
+  public `msnr` HF org — one repo per cell, one branch per iter (step-<N>),
+  main = latest. Reuses conversion/push-snr.py (the same script the CSCS side
+  runs against capstor), pointed at the mounted blob. Push every cell (default)
+  or one via `--set command="python conversion/push-snr.py --staging
+  ${{inputs.hf_models}} --name <cell>"`. Needs HF_TOKEN (set below).
+code: ../..
+command: >
+  pip install -q -U huggingface_hub &&
+  python conversion/push-snr.py --staging ${{inputs.hf_models}}
+environment: azureml:apertus-eval@latest
+compute: azureml:gpu-nc80-lp
+inputs:
+  hf_models:
+    type: uri_folder
+    # the whole models/ tree; push-snr.py iterates its <cell>/iter_<N> dirs
+    path: azureml://datastores/workspaceblobstore/paths/models
+    mode: ro_mount
+environment_variables:
+  HF_TOKEN: ""   # set via: --set environment_variables.HF_TOKEN=$HF_TOKEN

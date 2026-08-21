@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: gpu-nc80-lp
+type: amlcompute
+size: Standard_NC80adis_H100_v5   # 2x H100 NVL 94GB
+min_instances: 0
+max_instances: 6                  # 12 H100 — the economy pool (Spain Central)
+idle_time_before_scale_down: 600
+tier: low_priority                # bills the fixed Low Priority meter (~80% off)

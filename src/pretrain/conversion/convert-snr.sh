@@ -84,6 +84,60 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
     ITER_DIR_NAME=$(printf "iter_%07d" "$CKPT_STEP")
     SRC_ITER_DIR="$CKPT_PATH/$ITER_DIR_NAME"
 
+    SAVE_DIR="$STAGING_BASE/$EXP_NAME/$ITER_DIR_NAME"
+
+    # Completed output short-circuits everything below: a finished snapshot
+    # needs no source, and the Megatron iter may legitimately be gone by now
+    # (iopsstor scratch is auto-purged) — a manual Mode-1 run over such an
+    # iter is the marker-backfill recovery path.
+    if [[ -f "$SAVE_DIR/.hf_complete" ]]; then
+        echo "[convert-snr] SKIP $EXP_NAME iter $CKPT_STEP: already converted (.hf_complete)"
+        exit 0
+    fi
+    if [[ -f "$SAVE_DIR/config.json" ]] && \
+       ( [[ -f "$SAVE_DIR/model.safetensors.index.json" ]] || [[ -f "$SAVE_DIR/model.safetensors" ]] ); then
+        # Backfill the completion marker for snapshots converted before it
+        # existed — but only after validating the weights: a job killed
+        # mid-save_pretrained leaves config.json + a truncated (in-place,
+        # unsharded at these sizes) model.safetensors, and stamping that
+        # would poison the snapshot forever. safe_open rejects a truncated
+        # file (header/offset checks). Invalid (rc=1) -> fall through and
+        # re-convert (save_pretrained overwrites in place); rc>=2 = the
+        # validator couldn't run — don't guess either way.
+        rc=0
+        python3 - "$SAVE_DIR" <<'VEOF' || rc=$?
+import json, sys
+from pathlib import Path
+try:
+    from safetensors import safe_open
+except ImportError as e:
+    print(f"safetensors unavailable: {e}", file=sys.stderr)
+    sys.exit(3)
+d = Path(sys.argv[1])
+idx = d / "model.safetensors.index.json"
+files = ({d / f for f in json.loads(idx.read_text())["weight_map"].values()}
+         if idx.is_file() else {d / "model.safetensors"})
+try:
+    for f in files:
+        with safe_open(f, framework="pt"):
+            pass
+except ImportError as e:
+    print(f"cannot validate ({e})", file=sys.stderr)
+    sys.exit(3)
+except Exception as e:
+    sys.exit(f"invalid weights: {e}")
+VEOF
+        if (( rc == 0 )); then
+            touch "$SAVE_DIR/.hf_complete"
+            echo "[convert-snr] SKIP $EXP_NAME iter $CKPT_STEP: SAVE_DIR already populated"
+            exit 0
+        elif (( rc >= 2 )); then
+            echo "[convert-snr] ERROR: weight validation could not run (rc=$rc)" >&2
+            exit "$rc"
+        fi
+        echo "[convert-snr] $EXP_NAME iter $CKPT_STEP: SAVE_DIR populated but weights invalid — re-converting"
+    fi
+
     if [[ ! -d "$SRC_ITER_DIR" ]]; then
         echo "[convert-snr] ERROR: source iter dir not found: $SRC_ITER_DIR" >&2
         exit 2
@@ -99,20 +153,21 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
     PROGRESS_PY="${PROGRESS_PY:-$(dirname "$SCRIPT_PATH")/../pretrain_progress.py}"
     [[ -f "$PROGRESS_PY" ]] || \
         PROGRESS_PY="/iopsstor/scratch/cscs/$USER/snr-multilingual/src/pretrain/pretrain_progress.py"
-    if ! python3 "$PROGRESS_PY" --is-valid "$SRC_ITER_DIR"; then
+    rc=0
+    python3 "$PROGRESS_PY" --is-valid "$SRC_ITER_DIR" || rc=$?
+    if (( rc >= 2 )); then
+        # rc=1 means "invalid checkpoint"; rc>=2 means the helper itself
+        # didn't run (path doesn't resolve, python can't open it) — treating
+        # that as SKIP would silently no-op the whole sweep.
+        echo "[convert-snr] ERROR: --is-valid helper failed (rc=$rc, PROGRESS_PY=$PROGRESS_PY)" >&2
+        exit "$rc"
+    elif (( rc != 0 )); then
         echo "[convert-snr] SKIP: $SRC_ITER_DIR is not a valid checkpoint"
         exit 0
     fi
 
     TORCH_CKPT_SAVE_PATH="$TMP_TORCH_BASE/$EXP_NAME/$ITER_DIR_NAME"
-    SAVE_DIR="$STAGING_BASE/$EXP_NAME/$ITER_DIR_NAME"
     mkdir -p "$TORCH_CKPT_SAVE_PATH" "$(dirname "$SAVE_DIR")"
-
-    if [[ -f "$SAVE_DIR/config.json" ]] && \
-       ( [[ -f "$SAVE_DIR/model.safetensors.index.json" ]] || [[ -f "$SAVE_DIR/model.safetensors" ]] ); then
-        echo "[convert-snr] SKIP $EXP_NAME iter $CKPT_STEP: SAVE_DIR already populated"
-        exit 0
-    fi
 
     echo "[convert-snr] $EXP_NAME iter $CKPT_STEP -> $SAVE_DIR"
     [[ "${SKIP_PIP:-0}" == "1" ]] || pip install --quiet transformers==4.57.6
@@ -141,6 +196,9 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
         "${extra[@]}"
 
     [[ "${KEEP_TMP_TORCH:-0}" == "1" ]] || rm -rf "$TORCH_CKPT_SAVE_PATH"
+    # Written LAST: the watchers treat a snapshot as staged only once this
+    # exists, so a half-written save_pretrained is never evaluated.
+    touch "$SAVE_DIR/.hf_complete"
     echo "[convert-snr] DONE $SAVE_DIR"
     exit 0
 fi
@@ -162,9 +220,21 @@ if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
 
     # Forward HF cache vars + force offline so per-iter tokenizer loads hit local
     # cache (the saver and Megatron's HuggingFaceTokenizer both fetch the
-    # `alehc/swissai-tokenizer` repo, and the `/api/models/` freshness check
-    # will burn the team-plan rate-limit on a 9-cell × ~13-iter sweep).
+    # tokenizer repo, and the `/api/models/` freshness check will burn the
+    # team-plan rate-limit on a 9-cell × ~13-iter sweep). HF_TOKENIZER is
+    # forwarded so predictivity conversions embed the sweep's tokenizer
+    # (swiss-ai/Apertus-70B-2509) instead of the old-sweep default —
+    # pre-warm it into the cache first (offline mode can't download it).
+    # PROGRESS_PY and TMP_TORCH_BASE must cross the pyxis boundary too:
+    # without them the per-iter mode falls back to a hardcoded checkout path
+    # for --is-valid (silently SKIPping every iter when it doesn't resolve)
+    # and to $STAGING_BASE/_tmp_torch for the multi-GB torch intermediate
+    # (churning capstor now that STAGING_BASE points at the store).
     INNER_EXPORTS="export MEGATRON_LM_DIR='$MEGATRON_LM_DIR' PLAN_FILE='$PLAN_FILE' \
+HF_TOKENIZER='${HF_TOKENIZER:-alehc/swissai-tokenizer}' \
+STAGING_BASE='${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}' \
+TMP_TORCH_BASE='${TMP_TORCH_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints/_tmp_torch}' \
+PROGRESS_PY='${PROGRESS_PY:-}' \
 HF_HOME='${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}' \
 HF_HUB_CACHE='${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}' \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1"
@@ -274,6 +344,13 @@ done
 [[ ${#SIZES[@]} -eq 0 ]] && SIZES=("${DEFAULT_SIZES[@]}")
 mkdir -p "$PLAN_DIR"
 TS=$(date +%Y%m%d-%H%M%S)
+
+# Resolve the --is-valid helper from THIS checkout while $0 is still the
+# real script path (inside sbatch it's the /var/spool/slurmd copy);
+# --export=ALL carries it into the job env, INNER_EXPORTS into the
+# container. Common to BOTH launcher branches — without it every iter of a
+# submitted job silently SKIPs when the hardcoded fallback doesn't resolve.
+export PROGRESS_PY="${PROGRESS_PY:-$(dirname "$SCRIPT_PATH")/../pretrain_progress.py}"
 
 # --models <name,name,...>: models.json-driven plan. Resolve each model's
 # megatron checkpoint dir from configs/models.json `backends.megatron`, keep

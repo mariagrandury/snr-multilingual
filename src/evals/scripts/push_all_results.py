@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -57,9 +58,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
 from configs import get_model, load_models, metric_for, tokens_for  # noqa: E402
 from results_io import aggregate_parents, collect, flatten  # noqa: E402
 
-LOGS_BASE = Path(
-    "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
-)
+# Overridable so results produced off-cluster (e.g. downloaded from Azure,
+# see src/pretrain/azure/) can be pushed with the same script.
+LOGS_BASE = Path(os.environ.get(
+    "LOGS_ROOT",
+    "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs",
+))
 ENTITY = "mariagrandury-epflnlp"
 PROJECT = "snr-experiments"
 

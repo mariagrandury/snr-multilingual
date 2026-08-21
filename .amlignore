@@ -1,0 +1,14 @@
+# Kept out of Azure ML job code snapshots (jobs/eval.yml uploads the repo root
+# so in-job W&B pushes can use src/evals/scripts + configs/). Mirrors the
+# heavyweight, job-irrelevant trees.
+.git
+documents
+preliminary-analysis
+site
+results
+src/signal-and-noise/results
+*.pdf
+venv
+.venv
+outputs
+__pycache__

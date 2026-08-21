@@ -1,150 +1,86 @@
 #!/usr/bin/env python3
-"""Pretraining progress: per-cell machine-readable actions + plots.
+"""Predictivity-sweep pretraining progress on CSCS: per-cell status + plots.
 
-Every invocation does two things:
-  1. Prints one tab-separated action line per cell to stdout (consumed by
-     `launch_resumes.sh`). Targets every 2000-step iter; "done" means every
-     `iter_NNNNNNN` from 2000..50000 is valid on disk. Output format:
-         <model>\tdone
-         <model>\tfresh\t<target>
-         <model>\tcorrupt\t<n_iters>
-         <model>\tresume\t<load_iter>\t<target>
-  2. Regenerates `pretrain_progress.png` + `pretrain_progress_all.png` next
-     to this script. The "pushed to hub" (green) status is persisted in the
-     PNG's own metadata (PNG tEXt chunk, key `pushed_state`) and is
-     monotonic — once green, never demoted. `push-snr.py` calls
-     `record_pushed(cell, iters)` to extend this state; `--hub` queries the
-     hub and merges any new branches into the same state.
+Prints one tab-separated status line per cell of the selected variant
+(`--arch`/`--scheme`). Each cell's target is its size's own 5xC budget (the
+"predictivity" block in hyperparams/hyperparams_{deep,shallow}.json):
+
+    <model>\tdone
+    <model>\tfresh\t<target>
+    <model>\tcorrupt\t<n_iters>
+    <model>\tresume\t<load_iter>\t<target>
+
+A cell is as far along as its latest valid checkpoint: `done` when that
+checkpoint has reached the target, `resume` from it otherwise. The same
+decision function (`cell_action`) drives launch_trainings.py's idempotent
+submission (which also refreshes the plots below on every CSCS launch), so
+this output is exactly what a (re-)launch would do.
+
+With --plot, renders two heatmaps over the sweep grid (x = model size,
+y = number of languages), aggregated over EVERY run found on disk regardless
+of variant:
+
+  pretrain_progress_simple.png    cell value = how many finished models exist
+                                  at (size, L) across all variants (seeds,
+                                  deep/shallow, scheme A/B, tokenizers).
+  pretrain_progress_detailed.png  one row of binary heatmaps per
+                                  transformation — SEED (28/1797/1904),
+                                  ARCH (deep/shallow), SCHEME (A/B),
+                                  TOKENIZER (v1) — yellow 0 / blue 1.
+
+Azure cells are not visible here (their checkpoints live in blob storage —
+auto_evals.py watches those); this tool covers the CSCS half of the sweep.
 
 Examples:
     python3.11 pretrain_progress.py
-    python3.11 pretrain_progress.py --filter seed1797
-    python3.11 pretrain_progress.py --hub       # also query the HF Hub
+    python3.11 pretrain_progress.py --filter seed1904
+    python3.11 pretrain_progress.py --arch shallow --plot
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
-import time
 from pathlib import Path
 
-CKPT_ROOT = Path(
-    "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small"
-)
-HF_STAGING_ROOT = Path("/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints")
-# Per-seed org (storage quota is per-account, so we shard the 36 cells across
-# three accounts: snr-models-1904, snr-models-1797, snr-models-28).
-def hf_org_for_seed(seed: int) -> str:
-    return f"snr-models-{seed}"
-ITER_RE = re.compile(r"^iter_(\d+)$")
-
-# Per-seed iter policy (single source of truth for the whole pipeline:
-# pretraining, conversion, eval). Mirrors evals/scripts/snr_progress.py's
-# ITERS_SEED1904 / ITERS_OTHER — keep both files in sync when this changes.
-ITERS_SEED1904 = [6000, 12000, 22000, 28000, 42000, 44000, 46000, 48000, 50000]
-ITERS_OTHER    = [6000, 10000, 20000, 30000, 42000, 44000, 46000, 48000, 50000]
-
-def canonical_iters_for_seed(seed: int) -> list[int]:
-    return ITERS_SEED1904 if seed == 1904 else ITERS_OTHER
-
-# All training save points: Megatron writes every 2000 iters (CHECKPOINT_STEPS).
-CHECKPOINT_INTERVAL = 2000
-TARGET_ITER = 50000
-ALL_ITERS = list(range(CHECKPOINT_INTERVAL, TARGET_ITER + 1, CHECKPOINT_INTERVAL))
-SIZES = ["175M", "350M", "600M", "1B"]
-MIXES = [(30, 70), (60, 40), (90, 10)]
-SEEDS = [1904, 1797, 28]
-
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_PLOT_PATH = SCRIPT_DIR / "pretrain_progress.png"
-# Key under which the pushed-to-hub set is stashed inside the PNG's tEXt chunks.
-PUSHED_STATE_KEY = "pushed_state"
-BRANCH_RE = re.compile(r"^stage1-step-(\d+)$")
+sys.path.insert(0, str(SCRIPT_DIR))
+from launch_trainings import (  # noqa: E402
+    HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SIZE_LANG_SETTINGS, exp_name,
+    predictivity_cells, schedule_for)
 
+# Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
+# (launch_pretraining_cscs.sh); PROJECT_NAME for the predictivity sweep is
+# msnr (configs/hf_wandb.json).
+CKPT_ROOT = Path(
+    "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr"
+)
+ITER_RE = re.compile(r"^iter_(\d+)$")
+# The canonical cell name (see launch_trainings.exp_name).
+NAME_RE = re.compile(
+    r"^lm-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
+    r"(?P<scheme>-schemeB)?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+)
 
-def _load_pushed_state(plot_path: Path) -> "dict[str, set[int]]":
-    """Read the embedded pushed-to-hub state from the PNG's tEXt metadata.
-
-    Empty dict if the plot doesn't exist yet or the chunk is absent/corrupt.
-    """
-    if not plot_path.is_file():
-        return {}
-    try:
-        from PIL import Image  # Pillow ships with matplotlib.
-    except ImportError:
-        return {}
-    try:
-        with Image.open(plot_path) as img:
-            raw = img.info.get(PUSHED_STATE_KEY)
-    except Exception:
-        return {}
-    if not raw:
-        return {}
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return {}
-    return {cell: {int(i) for i in iters} for cell, iters in data.items()}
-
-
-def _pushed_state_json(state: "dict[str, set[int]]") -> str:
-    serializable = {cell: sorted(iters) for cell, iters in state.items() if iters}
-    return json.dumps(serializable, separators=(",", ":"), sort_keys=True)
-
-
-def record_pushed(cell: str, iters, plot_path: Path = DEFAULT_PLOT_PATH) -> None:
-    """Append (cell, iters) to the embedded pushed-state of the plot PNG.
-
-    Updates only the PNG's tEXt metadata in place — does NOT re-render the
-    heatmap. Callers (e.g. push-snr.py) batch many pushes and then call
-    `update_plot()` once at the end to refresh the rendered colors.
-
-    No-op if the plot doesn't exist yet — run `update_plot()` first.
-    """
-    if not plot_path.is_file():
-        return
-    state = _load_pushed_state(plot_path)
-    state.setdefault(cell, set()).update(int(i) for i in iters)
-    try:
-        from PIL import Image, PngImagePlugin
-    except ImportError:
-        return
-    with Image.open(plot_path) as img:
-        pnginfo = PngImagePlugin.PngInfo()
-        for k, v in img.info.items():
-            if k == PUSHED_STATE_KEY:
-                continue
-            if isinstance(v, bytes):
-                v = v.decode("utf-8", errors="replace")
-            if isinstance(v, str):
-                pnginfo.add_text(k, v)
-        pnginfo.add_text(PUSHED_STATE_KEY, _pushed_state_json(state))
-        img.save(plot_path, pnginfo=pnginfo)
+SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
     """The single source of truth for "is this iter dir loadable?".
 
-    Shell call sites (launch_resumes.sh, convert-snr.sh) invoke this via
-    the ``--is-valid <iter_dir>`` CLI at the bottom of this file; Python
-    callers import it directly. Centralising the check means future
-    tightening (e.g. byte-level shard-name parsing of .metadata) only
+    Shell call sites (conversion/convert-snr.sh) invoke this via the
+    ``--is-valid <iter_dir>`` CLI at the bottom of this file; Python callers
+    (launch_trainings.py) import it directly. Centralising the check means
+    future tightening (e.g. byte-level shard-name parsing of .metadata) only
     needs to land here.
 
     KNOWN LIMITATION (tracked, do-not-fix-here): the loose ".metadata +
     ≥1 .distcp" check passes some dirs that Megatron's load_checkpoint
-    can't actually load — we hit this on iter_0002000 of
-    apertus-175M-fwEdu30-fw270-seed1904 (2026-05-14): 41 shards on disk,
-    same set as the known-good iter_0050000, yet the resume crashed in
-    dist_checkpointing.load. Attempts at a tighter byte-level
-    .metadata parse over-rejected good iters because Megatron's loader
-    is more lenient than the on-disk metadata suggests. Until we
-    reverse-engineer Megatron's exact load semantics, this stays loose
-    and the marker-stuck-on-failed-resume issue (C2 in the May review)
-    is documented as a known bug.
+    can't actually load — hit on iter_0002000 of a seed1904 cell
+    (2026-05-14): 41 shards on disk, same set as a known-good iter, yet
+    the resume crashed in dist_checkpointing.load. Tighter byte-level
+    .metadata parses over-rejected good iters, so this stays loose.
     """
     if not iter_dir.is_dir():
         return False
@@ -156,398 +92,246 @@ def is_valid_iter_dir(iter_dir: Path) -> bool:
     return False
 
 
-def model_progress(
-    model_dir: Path,
-) -> tuple[int | None, int, int | None, int | None, set[int]]:
-    """Return (marker, n_iter_dirs, max_iter_dir, max_valid_iter_dir, valid_iters).
+def model_progress(model_dir: Path) -> tuple[int, int | None]:
+    """Return (n_iter_dirs, max_valid_iter) for a cell.
 
-    `max_valid_iter_dir` is the largest iter_X dir whose contents pass
+    `max_valid_iter` is the largest iter_X dir whose contents pass
     `is_valid_iter_dir` — i.e. the latest checkpoint that can actually be
-    resumed. If `marker > max_valid_iter_dir`, the marker file points at a
-    corrupt/incomplete dir and the model is not resumable from `marker`.
-    `valid_iters` is the set of all iter numbers on disk that are valid.
+    resumed (None when no iter dir on disk is loadable).
     """
     ckpt_dir = model_dir / "checkpoints"
     if not ckpt_dir.is_dir():
-        return None, 0, None, None, set()
+        return 0, None
 
-    iters: list[int] = []
-    valid_iters: set[int] = set()
+    n_iters = 0
+    max_valid = None
     for entry in ckpt_dir.iterdir():
         m = ITER_RE.match(entry.name)
         if m and entry.is_dir():
+            n_iters += 1
             n = int(m.group(1))
-            iters.append(n)
-            if is_valid_iter_dir(entry):
-                valid_iters.add(n)
-
-    marker_file = ckpt_dir / "latest_checkpointed_iteration.txt"
-    marker = None
-    if marker_file.is_file():
-        try:
-            marker = int(marker_file.read_text().strip())
-        except ValueError:
-            marker = None
-
-    max_iter = max(iters) if iters else None
-    max_valid = max(valid_iters) if valid_iters else None
-    return marker, len(iters), max_iter, max_valid, valid_iters
+            if (max_valid is None or n > max_valid) and is_valid_iter_dir(entry):
+                max_valid = n
+    return n_iters, max_valid
 
 
 # ---------------------------------------------------------------------------
-# Plot: 3-panel heatmap over (size×mix) × canonical_iter, one panel per seed.
-# Color encodes the highest pipeline stage reached:
-#   0 (red)         missing in local megatron
-#   1 (orange)      megatron ckpt valid on disk
-#   2 (yellow)      converted HF ckpt staged at snr-hf-checkpoints/
-#   3 (light green) pushed as a stage1-step-N branch under snr-models/
+# The per-cell decision — shared by this tool's status output and by
+# launch_trainings.py's idempotent submission. A cell is simply as far along
+# as its latest valid checkpoint:
 #
-# A second plot covers ALL 2000-step iters (megatron presence only) — this is
-# the operational view the resume launcher uses to spot gaps.
+#   • latest valid checkpoint >= target     → ("done", 0, 0)
+#   • no iter dirs on disk                  → ("fresh", target, 0)
+#   • iter dirs exist but none loadable     → ("corrupt", n_iters, 0) — we
+#     never wipe; corrupt cells are left for manual review
+#   • otherwise                             → ("resume", max_valid, target)
 # ---------------------------------------------------------------------------
 
-def _has_hf_staged(cell: str, step: int, hf_root: Path = HF_STAGING_ROOT) -> bool:
-    d = hf_root / cell / f"iter_{step:07d}"
-    return (d / "config.json").is_file() and any(d.glob("model.safetensors*"))
+def cell_action(model_dir: Path, target: int) -> tuple[str, int, int]:
+    n_iters, max_valid = model_progress(model_dir)
+    if max_valid is None:
+        return ("corrupt", n_iters, 0) if n_iters else ("fresh", target, 0)
+    if max_valid >= target:
+        return ("done", 0, 0)
+    return ("resume", max_valid, target)
 
 
-def _hub_pushed_iters_for_cell(api, cell: str, seed: int,
-                               max_attempts: int = 6) -> "set[int]":
-    """Return the set of iter ints with a `stage1-step-N` branch on
-    snr-models-<seed>/<cell>. Empty set on repo-not-found or unrecoverable
-    errors. 429-aware retry."""
-    from huggingface_hub.utils import HfHubHTTPError, RepositoryNotFoundError
-
-    repo_id = f"{hf_org_for_seed(seed)}/{cell}"
-    delay = 10.0
-    for attempt in range(max_attempts):
-        try:
-            refs = api.list_repo_refs(repo_id, repo_type="model")
-            return {int(m.group(1)) for b in refs.branches
-                    if (m := BRANCH_RE.match(b.name))}
-        except RepositoryNotFoundError:
-            return set()
-        except HfHubHTTPError as e:
-            status = getattr(e.response, "status_code", None) if e.response else None
-            if status == 404:
-                return set()
-            if status == 429:
-                wait = None
-                if e.response is not None:
-                    ra = e.response.headers.get("Retry-After")
-                    if ra:
-                        try:
-                            wait = float(ra)
-                        except ValueError:
-                            pass
-                if wait is None:
-                    wait = delay
-                    delay *= 2
-                wait += 5
-                print(f"[plot] 429 on {repo_id}; sleeping {wait:.0f}s", file=sys.stderr)
-                time.sleep(wait)
-                continue
-            print(f"[plot] giving up on {repo_id}: {e}", file=sys.stderr)
-            return set()
-    return set()
-
-
-def _build_status_matrix(seed: int, pushed_state: "dict[str, set[int]]",
-                        iters: list[int],
-                        ckpt_root: Path = CKPT_ROOT) -> "list[list[int]]":
-    """Return a 12 × len(iters) matrix of status codes for one seed."""
-    matrix: list[list[int]] = []
-    for size in SIZES:
-        for fw_edu, fw2 in MIXES:
-            cell = f"apertus-{size}-fwEdu{fw_edu}-fw2{fw2}-seed{seed}"
-            row: list[int] = []
-            cell_pushed = pushed_state.get(cell, set())
-            for step in iters:
-                meg_ok = is_valid_iter_dir(
-                    ckpt_root / cell / "checkpoints" / f"iter_{step:07d}"
-                )
-                if not meg_ok:
-                    row.append(0)
-                    continue
-                hf_ok = _has_hf_staged(cell, step)
-                if not hf_ok:
-                    row.append(1)
-                    continue
-                if step in cell_pushed:
-                    row.append(3)
-                else:
-                    row.append(2)
-            matrix.append(row)
-    return matrix
-
-
-def _build_all_iters_matrix(seed: int, ckpt_root: Path = CKPT_ROOT) -> "list[list[int]]":
-    """Return a 12 × len(ALL_ITERS) matrix of megatron presence (0 missing, 1 valid)."""
-    matrix: list[list[int]] = []
-    for size in SIZES:
-        for fw_edu, fw2 in MIXES:
-            cell = f"apertus-{size}-fwEdu{fw_edu}-fw2{fw2}-seed{seed}"
-            row: list[int] = []
-            for step in ALL_ITERS:
-                meg_ok = is_valid_iter_dir(
-                    ckpt_root / cell / "checkpoints" / f"iter_{step:07d}"
-                )
-                row.append(1 if meg_ok else 0)
-            matrix.append(row)
-    return matrix
-
-
-def update_plot(query_hub: bool = False, plot_path: Path = DEFAULT_PLOT_PATH,
-                ckpt_root: Path = CKPT_ROOT) -> None:
-    """Refresh `pretrain_progress.png` + `pretrain_progress_all.png` at
-    `plot_path`'s directory.
-
-    The pushed-to-hub set is loaded from the existing PNG's tEXt metadata
-    (monotonic — only ever extended). With `query_hub=True`, the hub is
-    queried and any newly-discovered `stage1-step-N` branches are merged in.
-    The new PNG is written with the updated set embedded back in its metadata.
-    """
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import BoundaryNorm, ListedColormap
-    from matplotlib.patches import Patch
-
-    pushed_state = _load_pushed_state(plot_path)
-
-    if query_hub:
-        from huggingface_hub import HfApi
-
-        api = HfApi(token=os.environ.get("HF_TOKEN"))
-        cells = [
-            (f"apertus-{size}-fwEdu{e}-fw2{w}-seed{seed}", seed)
-            for size in SIZES
-            for e, w in MIXES
-            for seed in SEEDS
-        ]
-        orgs = sorted({hf_org_for_seed(s) for _, s in cells})
-        print(f"[plot] querying {len(cells)} repos across {orgs}...", file=sys.stderr)
-        for cell, seed in cells:
-            iters = _hub_pushed_iters_for_cell(api, cell, seed)
-            if iters:
-                pushed_state.setdefault(cell, set()).update(iters)
-
-    cmap = ListedColormap(["#cc4040", "#ff9933", "#f4d03f", "#90ee90"])
-    norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], cmap.N)
-
-    row_labels = [f"{s}-fwEdu{e}/{w}" for s in SIZES for e, w in MIXES]
-
-    fig, axes = plt.subplots(
-        1, len(SEEDS),
-        figsize=(5 * len(SEEDS) + 1, 5.5),
-        sharey=True,
-    )
-    if len(SEEDS) == 1:
-        axes = [axes]
-
-    for ax, seed in zip(axes, SEEDS):
-        seed_iters = canonical_iters_for_seed(seed)
-        col_labels = [f"{i // 1000}k" for i in seed_iters]
-        matrix = _build_status_matrix(seed, pushed_state, seed_iters, ckpt_root)
-        ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
-        ax.set_xticks(range(len(seed_iters)))
-        ax.set_xticklabels(col_labels, rotation=45, ha="right", fontsize=8)
-        ax.set_yticks(range(len(row_labels)))
-        ax.set_yticklabels(row_labels, fontsize=8)
-        ax.set_title(f"seed {seed}")
-        ax.set_xlabel("canonical iter")
-        # Light grid between cells.
-        ax.set_xticks([x - 0.5 for x in range(1, len(seed_iters))], minor=True)
-        ax.set_yticks([y - 0.5 for y in range(1, len(row_labels))], minor=True)
-        ax.grid(which="minor", color="white", linewidth=0.5)
-        ax.tick_params(which="minor", length=0)
-
-    legend_handles = [
-        Patch(color="#cc4040", label="missing"),
-        Patch(color="#ff9933", label="megatron (local)"),
-        Patch(color="#f4d03f", label="HF format (local)"),
-        Patch(color="#90ee90", label="pushed to hub"),
+def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
+    """(exp_name, target_iters) for every cell of one variant, in grid order.
+    Scheme B only exists at SCHEME_B_LANGS — other settings are always the
+    scheme-A cell (same normalization as the launcher)."""
+    configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
+    return [
+        (exp_name(c["size"], c["L"], arch, c["seed"],
+                  scheme if c["L"] in SCHEME_B_LANGS else "A"),
+         schedule_for(configs[c["size"]])[0])
+        for c in predictivity_cells()
     ]
-    fig.legend(handles=legend_handles, loc="lower center", ncol=4,
-               bbox_to_anchor=(0.5, -0.02), frameon=False)
-    fig.suptitle("Pretraining progress: megatron → HF → snr-models hub", y=1.02)
-    fig.tight_layout()
-    fig.savefig(
-        plot_path, dpi=150, bbox_inches="tight",
-        metadata={PUSHED_STATE_KEY: _pushed_state_json(pushed_state)},
-    )
-    plt.close(fig)
-    print(f"[plot] saved {plot_path}", file=sys.stderr)
-
-    # Companion plot covering every 2000-step ckpt — the operational view.
-    all_path = plot_path.with_name(plot_path.stem + "_all" + plot_path.suffix)
-    _make_all_iters_plot(all_path, ckpt_root)
 
 
-def _make_all_iters_plot(out_path: Path, ckpt_root: Path = CKPT_ROOT) -> None:
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import BoundaryNorm, ListedColormap
-    from matplotlib.patches import Patch
-
-    cmap = ListedColormap(["#cc4040", "#ff9933"])
-    norm = BoundaryNorm([-0.5, 0.5, 1.5], cmap.N)
-
-    row_labels = [f"{s}-fwEdu{e}/{w}" for s in SIZES for e, w in MIXES]
-    col_labels = [f"{i // 1000}k" for i in ALL_ITERS]
-
-    fig, axes = plt.subplots(
-        1, len(SEEDS),
-        figsize=(7 * len(SEEDS) + 1, 5.5),
-        sharey=True,
-    )
-    if len(SEEDS) == 1:
-        axes = [axes]
-
-    for ax, seed in zip(axes, SEEDS):
-        canonical_set = set(canonical_iters_for_seed(seed))
-        matrix = _build_all_iters_matrix(seed, ckpt_root)
-        ax.imshow(matrix, cmap=cmap, norm=norm, aspect="auto")
-        ax.set_xticks(range(len(ALL_ITERS)))
-        ax.set_xticklabels(col_labels, rotation=90, fontsize=6)
-        # Bold + slightly larger font for this seed's canonical iter labels.
-        for lbl, it in zip(ax.get_xticklabels(), ALL_ITERS):
-            if it in canonical_set:
-                lbl.set_fontweight("bold")
-                lbl.set_fontsize(7)
-        ax.set_yticks(range(len(row_labels)))
-        ax.set_yticklabels(row_labels, fontsize=8)
-        ax.set_title(f"seed {seed}")
-        ax.set_xlabel("iter (every 2000; canonical iters in bold)")
-        ax.set_xticks([x - 0.5 for x in range(1, len(ALL_ITERS))], minor=True)
-        ax.set_yticks([y - 0.5 for y in range(1, len(row_labels))], minor=True)
-        ax.grid(which="minor", color="white", linewidth=0.4)
-        ax.tick_params(which="minor", length=0)
-
-    legend_handles = [
-        Patch(color="#cc4040", label="missing"),
-        Patch(color="#ff9933", label="megatron (local)"),
-    ]
-    fig.legend(handles=legend_handles, loc="lower center", ncol=2,
-               bbox_to_anchor=(0.5, -0.02), frameon=False)
-    fig.suptitle("Pretraining progress: every 2000-step checkpoint", y=1.02)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"[plot] saved {out_path}", file=sys.stderr)
+def emit_actions(arch: str, scheme: str, root: Path = CKPT_ROOT,
+                 filter_substr: str | None = None) -> None:
+    for name, target in sweep_cells(arch, scheme):
+        if filter_substr and filter_substr not in name:
+            continue
+        action, a, b = cell_action(root / name, target)
+        if action == "done":
+            print(f"{name}\tdone")
+        elif action == "fresh":
+            print(f"{name}\tfresh\t{a}")
+        elif action == "corrupt":
+            print(f"{name}\tcorrupt\t{a}")
+        else:
+            print(f"{name}\tresume\t{a}\t{b}")
 
 
 # ---------------------------------------------------------------------------
-# Machine-readable per-model action output (consumed by launch_resumes.sh).
-#
-# Output (one line per model, tab-separated):
-#   <model>\tdone
-#   <model>\tfresh\t<target>                  # no iter dirs on disk → fresh start
-#   <model>\tcorrupt\t<n_iters>               # iter dirs exist but none valid → skip + warn
-#   <model>\tresume\t<load_iter>\t<target>    # resume from <load_iter>, train until <target>
-#
-# Target set: EVERY 2000-step iter ≤ --target (the full set Megatron writes
-# during training). "done" therefore means every iter_NNNNNNN from
-# CHECKPOINT_INTERVAL..target is a valid checkpoint on disk.
-#
-# We never emit a "wipe" action — the launcher must not auto-delete checkpoint
-# directories. A corrupt model is reported and left alone for manual review.
-#
-# Decision logic per model:
-#   • All target iters valid                → done
-#   • No iter dirs on disk                  → fresh
-#   • Iter dirs exist but no valid ones     → corrupt (skip)
-#   • Any target iter > max_existing missing (end-gap)
-#       → resume from max_valid until <target>
-#   • Otherwise (mid-gap only): earliest missing target iter
-#       → resume from max valid iter strictly less than that, until that iter
-#     If a model has both end- and mid-gaps, end wins (per spec).
-#     Re-running picks up the next mid-gap after the previous job finishes.
+# Plots: the sweep grid (x = size, y = number of languages), aggregated over
+# every run found on disk — any seed, arch, scheme, tokenizer.
 # ---------------------------------------------------------------------------
 
-def _canonical_models(root: Path) -> list[Path]:
-    """Return sorted canonical model dirs under root (those that match
-    apertus-{175M,350M,600M,1B}-fwEdu*-fw2*-seed*) — even if the dir is missing
-    on disk (we still want to emit a `fresh` action for those)."""
-    out: list[Path] = []
-    for size in SIZES:
-        for fw_edu, fw2 in MIXES:
-            for seed in SEEDS:
-                out.append(root / f"apertus-{size}-fwEdu{fw_edu}-fw2{fw2}-seed{seed}")
+def _targets() -> dict[tuple[str, str], int]:
+    """(arch, size) -> target iters, from both reviewed hyperparams files."""
+    out = {}
+    for arch, path in HYPERPARAMS.items():
+        configs = json.loads(path.read_text())["configs"]
+        for size, cfg in configs.items():
+            out[(arch, size)] = schedule_for(cfg)[0]
     return out
 
 
-def emit_actions(target: int, root: Path = CKPT_ROOT,
-                 filter_substr: str | None = None) -> None:
-    """Print per-model action lines for the resume launcher (see above).
-
-    Targets every 2000-step iter ≤ target (ALL_ITERS), so "done" means every
-    iter_NNNNNNN in that range is a valid checkpoint on disk.
-    """
-    target_iters = [i for i in ALL_ITERS if i <= target]
-    for d in _canonical_models(root):
-        if filter_substr and filter_substr not in d.name:
+def scan_runs(root: Path) -> list[dict]:
+    """Every canonical run dir on disk, parsed into its variant coordinates,
+    with `done` = its latest valid checkpoint reached its size's target."""
+    if not root.is_dir():
+        return []
+    targets = _targets()
+    runs = []
+    for entry in sorted(root.iterdir()):
+        m = NAME_RE.match(entry.name)
+        if not m:
             continue
-        marker, n_iters, max_iter, max_valid, valid_iters = model_progress(d)
+        arch = m["arch"]
+        target = targets[(arch, m["size"])]
+        _, max_valid = model_progress(entry)
+        runs.append({
+            "name": entry.name,
+            "size": m["size"],
+            "L": int(m["L"]),
+            "seed": int(m["seed"]),
+            "arch": arch,
+            "scheme": "B" if m["scheme"] else "A",
+            "tokenizer": "v1",
+            "done": (max_valid or 0) >= target,
+        })
+    return runs
 
-        existing = [c for c in target_iters if c in valid_iters]
-        missing = [c for c in target_iters if c not in valid_iters]
 
-        if not missing:
-            print(f"{d.name}\tdone")
-            continue
-
-        max_existing = max(existing) if existing else 0
-        end_missing = [c for c in missing if c > max_existing]
-        mid_missing = [c for c in missing if c < max_existing]
-
-        if end_missing:
-            # Drive to the final target. Spec: end wins over mid.
-            if max_valid is None:
-                if n_iters > 0:
-                    # Iter dirs exist but none valid — manual review required.
-                    print(f"{d.name}\tcorrupt\t{n_iters}")
-                else:
-                    print(f"{d.name}\tfresh\t{target}")
+def _grid_matrix(runs: list[dict], predicate) -> "list[list[float]]":
+    """len(LANG_SETTINGS) x len(SIZES) matrix: count of runs matching
+    `predicate` at each (L, size); NaN where (size, L) is not in the grid."""
+    matrix = []
+    for L in LANG_SETTINGS:
+        row = []
+        for size in SIZES:
+            if L not in SIZE_LANG_SETTINGS[size]:
+                row.append(float("nan"))
             else:
-                print(f"{d.name}\tresume\t{max_valid}\t{target}")
-        else:
-            # Mid-only: target the earliest missing iter.
-            target_iter = mid_missing[0]
-            valid_before = [v for v in valid_iters if v < target_iter]
-            load_iter = max(valid_before) if valid_before else 0
-            if load_iter == 0:
-                # Edge case: no valid iter strictly before this mid target
-                # (e.g. only later iters are valid). Skip and let the user look.
-                if n_iters > 0:
-                    print(f"{d.name}\tcorrupt\t{n_iters}")
-                else:
-                    print(f"{d.name}\tfresh\t{target_iter}")
-            else:
-                print(f"{d.name}\tresume\t{load_iter}\t{target_iter}")
+                row.append(sum(1 for r in runs
+                               if r["size"] == size and r["L"] == L
+                               and predicate(r)))
+        matrix.append(row)
+    return matrix
+
+
+def _draw_grid(ax, matrix, cmap, vmax, annotate=True):
+    import numpy as np
+    arr = np.array(matrix, dtype=float)
+    masked = np.ma.masked_invalid(arr)
+    cmap.set_bad("#d9d9d9")  # (size, L) not in the sweep grid
+    ax.imshow(masked, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
+    ax.set_xticks(range(len(SIZES)))
+    ax.set_xticklabels(SIZES, fontsize=8)
+    ax.set_yticks(range(len(LANG_SETTINGS)))
+    ax.set_yticklabels(LANG_SETTINGS, fontsize=8)
+    ax.set_xticks([x - 0.5 for x in range(1, len(SIZES))], minor=True)
+    ax.set_yticks([y - 0.5 for y in range(1, len(LANG_SETTINGS))], minor=True)
+    ax.grid(which="minor", color="white", linewidth=0.8)
+    ax.tick_params(which="minor", length=0)
+    if annotate:
+        for i in range(len(LANG_SETTINGS)):
+            for j in range(len(SIZES)):
+                if arr[i][j] == arr[i][j]:  # not NaN
+                    ax.text(j, i, int(arr[i][j]), ha="center", va="center",
+                            fontsize=8,
+                            color="white" if arr[i][j] > vmax / 2 else "black")
+
+
+def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+
+    runs = scan_runs(root)
+    done = [r for r in runs if r["done"]]
+
+    # --- simple: count of finished models per (size, L), all variants -------
+    matrix = _grid_matrix(done, lambda r: True)
+    vmax = max(3, max((v for row in matrix for v in row if v == v), default=0))
+    fig, ax = plt.subplots(figsize=(6, 5))
+    _draw_grid(ax, matrix, plt.get_cmap("Blues").copy(), vmax)
+    ax.set_xlabel("model size (non-embedding)")
+    ax.set_ylabel("number of languages")
+    ax.set_title(f"Finished models per grid cell — all variants "
+                 f"({len(done)}/{len(runs)} runs done)")
+    fig.tight_layout()
+    simple_path = out_dir / "pretrain_progress_simple.png"
+    fig.savefig(simple_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[plot] saved {simple_path}", file=sys.stderr)
+
+    # --- detailed: one row of binary heatmaps per transformation ------------
+    rows = [
+        ("SEED", "seed", [28, 1797, 1904]),
+        ("ARCH", "arch", ["deep", "shallow"]),
+        ("SCHEME", "scheme", ["A", "B"]),
+        ("TOKENIZER", "tokenizer", ["v1"]),
+    ]
+    ncols = max(len(values) for _, _, values in rows)
+    binary_cmap = ListedColormap(["#f4d03f", "#3b6fb6"])  # 0 yellow, 1 blue
+
+    fig, axes = plt.subplots(len(rows), ncols,
+                             figsize=(4.2 * ncols, 3.6 * len(rows)))
+    for i, (label, key, values) in enumerate(rows):
+        for j in range(ncols):
+            ax = axes[i][j]
+            if j >= len(values):
+                ax.axis("off")
+                continue
+            value = values[j]
+            matrix = _grid_matrix(done, lambda r, k=key, v=value: r[k] == v)
+            # Binary: 1 if any finished run with this factor value.
+            matrix = [[min(v, 1) if v == v else v for v in row] for row in matrix]
+            if key == "scheme" and value == "B":
+                # Scheme B only exists where its language sets differ from A
+                # ({8, 15, 30}) — grey the rest out like off-grid cells.
+                matrix = [[v if L in SCHEME_B_LANGS else float("nan")
+                           for v in row]
+                          for L, row in zip(LANG_SETTINGS, matrix)]
+            _draw_grid(ax, matrix, binary_cmap.copy(), 1, annotate=False)
+            ax.set_title(f"{label} = {value}", fontsize=10)
+            if j == 0:
+                ax.set_ylabel("number of languages", fontsize=8)
+            ax.set_xlabel("model size", fontsize=8)
+    fig.suptitle("Finished models by transformation (yellow 0 / blue 1; "
+                 "grey = not in grid)", y=1.0)
+    fig.tight_layout()
+    detailed_path = out_dir / "pretrain_progress_detailed.png"
+    fig.savefig(detailed_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[plot] saved {detailed_path}", file=sys.stderr)
 
 
 def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument(
-        "--root",
-        default=str(CKPT_ROOT),
-        help=f"Megatron run root (default: {CKPT_ROOT})",
-    )
-    p.add_argument("--filter", default=None, help="Substring filter on model dir name.")
-    p.add_argument("--target", type=int, default=TARGET_ITER,
-                   help="Target iteration (default: 50000).")
-    p.add_argument(
-        "--hub",
-        action="store_true",
-        help="Also query the HF Hub for branches (slow: ~10s for 36 repos). "
-             "Newly-discovered branches are merged into the PNG's embedded "
-             "pushed-state. Without this flag, pushed status comes only from "
-             "what `push-snr.py` has recorded.",
-    )
+    p.add_argument("--root", default=str(CKPT_ROOT),
+                   help=f"Megatron run root (default: {CKPT_ROOT})")
+    p.add_argument("--arch", choices=["deep", "shallow"], default="deep",
+                   help="Which architecture family's cells to report")
+    p.add_argument("--scheme", choices=["A", "B"], default="A",
+                   help="Which language-scheme variant's cells to report")
+    p.add_argument("--filter", default=None, help="Substring filter on cell name.")
+    p.add_argument("--plot", action="store_true",
+                   help="Also render pretrain_progress_{simple,detailed}.png "
+                        "(these aggregate over ALL variants, not just "
+                        "--arch/--scheme)")
     args = p.parse_args()
 
-    emit_actions(args.target, root=Path(args.root), filter_substr=args.filter)
-    update_plot(query_hub=args.hub, ckpt_root=Path(args.root))
+    emit_actions(args.arch, args.scheme, root=Path(args.root),
+                 filter_substr=args.filter)
+    if args.plot:
+        update_plots(root=Path(args.root))
 
 
 if __name__ == "__main__":

@@ -159,7 +159,7 @@ else `exact_match`, computed at build time).
 build time by `build_hf_dataset.py`:
 
 - Megatron iter → tokens: `iter × global_batch_size × seq_len`, read from
-  `src/pretrain/hyperparams_deep.json` via `configs.tokens_for`.
+  `src/pretrain/hyperparams/hyperparams_deep.json` via `configs.tokens_for`.
 - HF branch → tokens: the explicit `tokens` value on each branch entry in
   `configs/models.json`.
 - FLOPs ≈ `6 × params × tokens`, with `params` from `configs/models.json`.

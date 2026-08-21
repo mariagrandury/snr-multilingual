@@ -462,7 +462,16 @@ else
     WANDB_CMD="cd $PWD && python scripts/push_all_results.py --entity $WANDB_ENTITY --project $WANDB_PROJECT --name $NAME --eval-duration $DURATION"
     echo "Running command to upload results to wandb:"
     echo "$WANDB_CMD"
+    # pyxis doesn't forward host env into the container (same as the eval
+    # sruns above) — thread LOGS_ROOT + the W&B key in explicitly, or
+    # push_all_results.py silently falls back to its hardcoded eval_logs path.
+    # Key export is conditional: an exported-but-EMPTY WANDB_API_KEY would
+    # break the ~/.netrc fallback the push used before.
+    PUSH_CREDS=""
+    [[ -n "${WANDB_API_KEY:-}" ]] && PUSH_CREDS="export WANDB_API_KEY='$WANDB_API_KEY'"
     srun -ul --mpi=pmix --environment=./containers/env.toml bash -c " \
+        $INNER_EXPORTS
+        $PUSH_CREDS
         $WANDB_CMD
     "
 fi

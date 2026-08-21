@@ -276,7 +276,8 @@ def add_family_column(df, path: str | Path = DEFAULT_MODELS_JSON):
 # lists below (ints for megatron_iter models, branch-name strings for
 # hf_branch models).
 
-_VALID_CKPT_SUBSETS = ("all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval")
+_VALID_CKPT_SUBSETS = ("all", "dense_tail", "10_ckpts", "da_ckpts", "full_eval",
+                       "auto")
 
 # step number embedded in an HF branch name (`stepN`, `step-N`,
 # `stageK-step-N`, `stepN-tokensXXX`); `-tokensXXX(B|T)` explicit count.
@@ -395,3 +396,34 @@ def metric_for(task: str,
     None when the task doesn't pin a metric — callers fall back to the
     historical `acc` → `exact_match` heuristic."""
     return load_tasks(path).get(task, {}).get("metric")
+
+
+# Task `language` values are canonical iso2 codes plus a few legacy aliases
+# kept by manual annotation (see build_configs.py's LANG_MAP note).
+_TASK_LANG_ALIASES = {"jp": "ja", "cn": "zh"}
+
+
+def tasks_for_benchmarks(benchmarks: list[str], languages: set[str],
+                         stage: str = "pretraining",
+                         path: str | Path = DEFAULT_TASKS_JSON) -> list[str]:
+    """Task names of `benchmarks` that are available in `languages` at `stage`.
+
+    A task matches a benchmark by exact name or a `<benchmark>_…` extension
+    (so "global_mmlu" also selects benchmark "global_mmlu_full"). Language
+    tags are canonicalized ("jp" → "ja", "cn" → "zh"); tasks tagged "multi"
+    (cross-language aggregates) or "??" (unresolved) are never auto-selected.
+    Used by the auto-eval watchers: the `auto` group in tasks.json lists
+    benchmark names, and each model is evaluated on every listed benchmark's
+    tasks in the languages it was trained on.
+    """
+    out = []
+    for name, e in load_tasks(path).items():
+        b = e.get("benchmark", "")
+        if not any(b == g or b.startswith(g + "_") for g in benchmarks):
+            continue
+        if stage not in e.get("stages", []):
+            continue
+        lang = e.get("language")
+        if _TASK_LANG_ALIASES.get(lang, lang) in languages:
+            out.append(name)
+    return out
