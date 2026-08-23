@@ -320,11 +320,13 @@ def calculate_hyperparams_for_model_configs(
         # decay) mirrored per size so this file alone gives the full training
         # config; the predictivity launchers read it. train_iters is rounded
         # to the checkpoint grid — 20 evenly spaced checkpoints per run, 40
-        # for the 1.7B rung (launch_trainings.save_interval divides exactly),
-        # so every size shares the same relative k/20 operating points and
-        # the 1xC point (train_iters/5) is always on-grid.
+        # at the 1B rung and 60 at the 1.7B rung (the reference models get
+        # denser sampling; launch_trainings.n_checkpoints has the same rule
+        # and save_interval divides exactly), so every size shares the same
+        # relative k/20 operating points and the 1xC point (train_iters/5)
+        # is always on-grid.
         raw_iters = 100 * n_non_emb / (gbs * seq_len)
-        n_ckpts = 20 if raw_iters <= 48000 else 40
+        n_ckpts = 20 if raw_iters < 30000 else 40 if raw_iters < 60000 else 60
         p_iters = round(raw_iters / n_ckpts) * n_ckpts
         prev = preserve.get(size_label, {})
         json_configs[size_label] = {

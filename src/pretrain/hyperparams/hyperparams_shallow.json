@@ -98,7 +98,7 @@
       "lr": 0.00079883,
       "predictivity": {
         "train_tokens": 94755225600,
-        "train_iters": 45900,
+        "train_iters": 45920,
         "lr_warmup_iters": 1800,
         "lr_wsd_decay_iters": 9200
       }
@@ -117,7 +117,7 @@
       "lr": 0.0006938,
       "predictivity": {
         "train_tokens": 166526976000,
-        "train_iters": 80680,
+        "train_iters": 80640,
         "lr_warmup_iters": 3200,
         "lr_wsd_decay_iters": 16100
       }

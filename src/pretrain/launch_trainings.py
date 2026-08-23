@@ -210,18 +210,24 @@ def schedule_for(cfg: dict) -> tuple[int, int, int]:
     return p["train_iters"], p["lr_warmup_iters"], p["lr_wsd_decay_iters"]
 
 
+def n_checkpoints(train_iters: int) -> int:
+    """Evenly spaced checkpoints per run: 20, but 40 at the 1B rung and 60 at
+    the 1.7B rung — the reference models get denser sampling (every 2.5 % /
+    1.7 % of training) while 40 and 60, being multiples of 20, keep every
+    size on the shared k/20 grid (1B: every 2nd checkpoint, 1.7B: every 3rd).
+    The thresholds sit in the wide gaps between the ~29k, ~46k and ~81k
+    schedules. The generators round each schedule to this grid."""
+    return 20 if train_iters < 30000 else 40 if train_iters < 60000 else 60
+
+
 def save_interval(train_iters: int) -> int:
-    """Per-size checkpoint interval: exactly 20 evenly spaced checkpoints
-    per run — 40 for the 1.7B rung, which keeps its interval ~2000 iters
-    (the Azure-spot eviction loss window) while its EVEN checkpoints land on
-    the same k/20 grid as every other size. The generators round each
-    schedule to this grid (the 48000 threshold sits in the wide gap between
-    the 1B and 1.7B schedules), so the division is exact, the final
-    checkpoint is on-grid, checkpoint k is at k/20 (k/40) of training at
-    every size, and the 1xC operating point (train_iters/5) is always
-    checkpoint 4 (8 of 40) — the plan's "checkpointing at defined token
-    counts" requirement, index-aligned across sizes for the SNR analysis."""
-    return train_iters // (20 if train_iters <= 48000 else 40)
+    """Per-size checkpoint interval = train_iters / n_checkpoints — exact
+    division by construction, so the final checkpoint is on-grid, checkpoint
+    k sits at k/n of training at every size, and the 1xC operating point
+    (train_iters/5) is always checkpoint n/5 (4, 8 or 12) — the plan's
+    "checkpointing at defined token counts" requirement, index-aligned across
+    sizes for the SNR analysis."""
+    return train_iters // n_checkpoints(train_iters)
 
 
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
