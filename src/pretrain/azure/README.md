@@ -131,11 +131,33 @@ compute-budget sheet):
 
 File absent families via Help + Support → _Service and subscription limits
 (quotas)_; H100-class requests open a support ticket (days, not minutes),
-so file early. Verify what the region offers with:
+so file early.
+
+**Check status with `quota_status.sh` — never the portal.** Quota here is
+split across three systems that each hold a third of the answer, and the
+obvious CLI commands return empty rather than erroring (`Microsoft.Compute`
+and `Microsoft.Quota` are both unregistered on this subscription, so
+`az vm list-usage` yields `[]` and every `az quota` call fails silently).
+Granted cores land in the **Azure ML** counters, because every ticket here
+is filed as subType `BatchAml`.
 
 ```bash
-az ml compute list-sizes --location $AZ_LOCATION --output table | grep NC80adis
+./quota_status.sh board       # terminal report + shareable quota_status.png
+./quota_status.sh limits      # granted cores per family, per region
+./quota_status.sh tickets     # what was filed + the reply emails
 ```
+
+`board` is the one to run: it joins granted cores × filed tickets × where
+the SKU is actually deployable, and prints which tickets can **never**
+approve (`NotAvailableForSubscription` is an allow-list denial, not a
+capacity shortage — refiling it forever will not help) and which regions
+are still worth filing in. It refreshes from Azure each run (~2 min);
+`--offline` re-renders from the last fetch.
+
+Before filing anywhere new, confirm two things hold for that region: the
+SKU is not allow-list blocked, **and** Azure ML exists there (several
+H100 regions, e.g. `southeastus` and `centraluseuap`, have no Azure ML at
+all, so quota there would be unusable). `board` checks both.
 
 Both clusters already use the discounted tiers (`tier: low_priority` in
 `compute-nc80-lowpri.yml` / `compute-nd96-spot.yml` — 77–81% below
