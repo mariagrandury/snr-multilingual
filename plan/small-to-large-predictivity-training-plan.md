@@ -30,10 +30,26 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 | 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
 | 100       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
 
-56 runs (at one intervention level). (The 200-language setting was
-dropped on 2026-08-13 to fit the compute budget and deadline. The ×3-seed
-rows were 1, 30 and 100; L=2 was added to them, and the 1.7B row gained
-L=2, taking the grid from 52 to 56.)
+<!-- BEGIN generated: pretrain_progress.py --plot -->
+| Axis | Values |
+| ---- | ------ |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
+| Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
+| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M, 1B columns at L ∈ {1, 2, 30, 100} |
+| Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
+| Architecture | deep (baseline) and shallow (the model-depth intervention) |
+
+**56 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting both architectures and scheme B where it differs: **154 runs**.
+
+![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
+
+![Finished models per grid cell](../src/pretrain/pretrain_progress_simple.png)
+<!-- END generated -->
+
+(The 200-language setting was dropped on 2026-08-13 to fit the compute budget
+and deadline. The ×3-seed rows were 1, 30 and 100; L=2 was added to them, and
+the 1.7B row gained L=2, taking the grid from 52 to 56.)
 
 ## Intervention axis (the design choice under test)
 

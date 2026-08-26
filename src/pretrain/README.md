@@ -63,13 +63,24 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 
 ## The sweep
 
+<!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M and 1B columns at L ∈ {1, 2, 30, 100} |
+| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M, 1B columns at L ∈ {1, 2, 30, 100} |
+| Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
+| Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-56 runs at one intervention level. Variants multiply the
+**56 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting both architectures and scheme B where it differs: **154 runs**.
+
+![Planned runs per grid cell](./pretrain_progress_plan.png)
+
+![Finished models per grid cell](./pretrain_progress_simple.png)
+<!-- END generated -->
+
+Variants multiply the
 grid and are suffix-marked in the run name: `--arch shallow` (width/depth
 128, the model-depth intervention)
 and `--scheme B` (diversity-first language sets — B differs from A only at
@@ -205,6 +216,14 @@ python launch_trainings.py cscs --scheme B --langs 8   # scheme-B data variant
 python launch_trainings.py cscs --size 600M --langs 8 --seed 1904
 python launch_trainings.py azure --langs 1             # monolingual anchors
 python launch_trainings.py cscs --test --dry-run       # smoke: 90M, L8, 50 steps
+```
+
+The training plan:
+
+```bash
+python launch_trainings.py cscs --size 175M --langs 1 --arch deep --seed 313
+python launch_trainings.py cscs --size 90M,175M,350M,600M --langs 30 --arch deep --seed 1904
+python launch_trainings.py cscs --size 90M,175M,350M,600M --langs 15 --seed 1904
 ```
 
 CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),

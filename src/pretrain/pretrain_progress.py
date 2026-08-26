@@ -16,10 +16,13 @@ decision function (`cell_action`) drives launch_trainings.py's idempotent
 submission (which also refreshes the plots below on every CSCS launch), so
 this output is exactly what a (re-)launch would do.
 
-With --plot, renders two heatmaps over the sweep grid (x = model size,
+With --plot, renders a plan table plus two heatmaps over the sweep grid (x = model size,
 y = number of languages), aggregated over EVERY run found on disk regardless
 of variant:
 
+  pretrain_progress_plan.png      what the grid PLANS per (size, L): the
+                                  scheme / architecture / seed(s) of every
+                                  run, not just a count.
   pretrain_progress_simple.png    cell value = how many finished models exist
                                   at (size, L) across all variants (seeds,
                                   deep/shallow, scheme A/B, tokenizers).
@@ -47,8 +50,10 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SIZE_LANG_SETTINGS, exp_name,
-    predictivity_cells, schedule_for)
+    HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SEED_SINGLE, SEED_TRIPLE,
+    SIZE_LANG_SETTINGS,
+    TRIPLE_LANGS, TRIPLE_SIZES, exp_name, predictivity_cells, schedule_for,
+    seeds_for)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
 # (launch_pretraining_cscs.sh); PROJECT_NAME for the predictivity sweep is
@@ -311,6 +316,145 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     print(f"[plot] saved {detailed_path}", file=sys.stderr)
 
 
+def planned_variants(size: str, L: int) -> list[str]:
+    """Every run the grid plans for one (size, L) cell, as display lines.
+
+    A cell is not one run: it multiplies out over seed (1 or 3, per
+    seeds_for), architecture (deep/shallow), and data scheme (A always, plus B
+    only where B's language set actually differs — elsewhere a scheme-B sweep
+    resolves to the scheme-A cell and would be a duplicate).
+
+    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell stays
+    readable; the characteristics, not just the count, are what the table is
+    for.
+    """
+    if L not in SIZE_LANG_SETTINGS[size]:
+        return []
+    seeds = seeds_for(size, L)
+    schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
+    lines = []
+    for scheme in schemes:
+        for arch in ("deep", "shallow"):
+            lines.append(f"{scheme} {arch} " + "/".join(str(x) for x in seeds))
+    return lines
+
+
+def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
+    """pretrain_progress_plan.png — what the grid PLANS (not what is done).
+
+    Rows are language settings, columns model sizes, and each cell spells out
+    the planned variants. Blank cells are settings a size does not train at
+    (only the 1.7B row is sparse).
+    """
+    import matplotlib.pyplot as plt
+
+    rows, cols = LANG_SETTINGS, SIZES
+    cells = [[planned_variants(size, L) for size in cols] for L in rows]
+    total = sum(len(v.split("/")) for row in cells for c in row for v in c)
+
+    fig, ax = plt.subplots(figsize=(1.9 * len(cols) + 2, 1.15 * len(rows) + 1.6))
+    ax.set_xlim(0, len(cols))
+    ax.set_ylim(0, len(rows))
+    ax.invert_yaxis()
+    ax.set_xticks([i + 0.5 for i in range(len(cols))])
+    ax.set_xticklabels(cols, fontsize=10)
+    ax.set_yticks([i + 0.5 for i in range(len(rows))])
+    ax.set_yticklabels([f"L{L}" for L in rows], fontsize=10)
+    ax.xaxis.set_ticks_position("top")
+    ax.tick_params(length=0)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+
+    for i, L in enumerate(rows):
+        for j, size in enumerate(cols):
+            lines = cells[i][j]
+            face = "#f4f7fb" if lines else "#e8e8e8"
+            ax.add_patch(plt.Rectangle((j, i), 1, 1, facecolor=face,
+                                       edgecolor="white", linewidth=1.5))
+            if not lines:
+                continue
+            ax.text(j + 0.5, i + 0.5, "\n".join(lines), ha="center",
+                    va="center", fontsize=6.5, linespacing=1.5)
+
+    ax.set_title(f"Planned runs per grid cell — scheme, architecture, seed(s)\n"
+                 f"{total} runs; grey = size not trained at that setting",
+                 fontsize=11, pad=26)
+    fig.tight_layout()
+    path = out_dir / "pretrain_progress_plan.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[plot] saved {path}", file=sys.stderr)
+
+
+# Docs that describe the grid. Everything between the markers is generated
+# from the constants in launch_trainings, so editing the grid there (a size, a
+# language setting, the seeded columns) and re-running --plot keeps every doc
+# in step instead of leaving stale numbers behind.
+DOC_BEGIN = "<!-- BEGIN generated: pretrain_progress.py --plot -->"
+DOC_END = "<!-- END generated -->"
+SYNC_DOCS = {
+    SCRIPT_DIR / "README.md": ".",
+    SCRIPT_DIR.parent.parent / "plan" / "small-to-large-predictivity-training-plan.md":
+        "../src/pretrain",
+}
+
+
+def _fmt(xs) -> str:
+    return ", ".join(str(x) for x in xs)
+
+
+def grid_markdown(png_dir: str) -> str:
+    """The sweep's axes, run counts and figures — derived, never hand-written."""
+    sparse = {size: ls for size, ls in SIZE_LANG_SETTINGS.items()
+              if set(ls) != set(LANG_SETTINGS)}
+    size_note = "; ".join(f"{s} at L ∈ {{{_fmt(ls)}}}" for s, ls in sparse.items())
+    baseline = len(predictivity_cells())
+    # Every run the grid plans: seeds x architectures x schemes, per cell.
+    full = sum(len(seeds_for(size, L)) * 2 * (2 if L in SCHEME_B_LANGS else 1)
+               for L in LANG_SETTINGS for size in SIZES
+               if L in SIZE_LANG_SETTINGS[size])
+
+    return f"""{DOC_BEGIN}
+| Axis | Values |
+| ---- | ------ |
+| Size (non-embedding) | {_fmt(SIZES)} ({size_note}) |
+| Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
+| Seed | {_fmt(SEED_SINGLE)}; ×{len(SEED_TRIPLE)} seeds ({_fmt(SEED_TRIPLE)}) on the {_fmt(sorted(TRIPLE_SIZES))} columns at L ∈ {{{_fmt(sorted(TRIPLE_LANGS))}}} |
+| Data scheme | A everywhere; B only where its language set differs — L ∈ {{{_fmt(sorted(SCHEME_B_LANGS))}}} |
+| Architecture | deep (baseline) and shallow (the model-depth intervention) |
+
+**{baseline} runs** at one intervention level (scheme A, deep — the plan grid).
+Counting both architectures and scheme B where it differs: **{full} runs**.
+
+![Planned runs per grid cell]({png_dir}/pretrain_progress_plan.png)
+
+![Finished models per grid cell]({png_dir}/pretrain_progress_simple.png)
+{DOC_END}"""
+
+
+def sync_docs() -> None:
+    """Rewrite the generated block in every doc that describes the grid."""
+    for path, png_dir in SYNC_DOCS.items():
+        if not path.is_file():
+            print(f"[docs] missing {path}", file=sys.stderr)
+            continue
+        text = path.read_text()
+        block = grid_markdown(png_dir)
+        if DOC_BEGIN in text and DOC_END in text:
+            head, rest = text.split(DOC_BEGIN, 1)
+            _, tail = rest.split(DOC_END, 1)
+            new = head + block + tail
+        else:
+            print(f"[docs] no markers in {path.name} — add {DOC_BEGIN} / "
+                  f"{DOC_END} where the grid should go", file=sys.stderr)
+            continue
+        if new != text:
+            path.write_text(new)
+            print(f"[docs] updated {path}", file=sys.stderr)
+        else:
+            print(f"[docs] {path.name} already in sync", file=sys.stderr)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -332,6 +476,8 @@ def main() -> None:
                  filter_substr=args.filter)
     if args.plot:
         update_plots(root=Path(args.root))
+        plan_table()
+        sync_docs()
 
 
 if __name__ == "__main__":
