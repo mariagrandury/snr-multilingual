@@ -516,12 +516,18 @@ def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
     )
 
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("platform", choices=["cscs", "azure"],
                         help="Where to submit: cscs (sbatch) or azure (az ml)")
+    parser.add_argument("--no-auto-evals", action="store_true",
+                        help="CSCS only: do NOT start the auto-eval watcher. "
+                             "By default a launch also starts it for the arch "
+                             "being submitted, so trained cells get converted "
+                             "and evaluated without a separate step.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print submit commands without running them")
     parser.add_argument("--arch", choices=["deep", "shallow"], default="deep",
@@ -661,6 +667,18 @@ def main() -> None:
     # Refresh the progress heatmaps on every CSCS launch so
     # pretrain_progress_{simple,detailed}.png are always up to date.
     # Best-effort: a plotting problem must never fail a submission.
+    
+    if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:
+        watcher = f"auto_evals_cscs.py --arch {args.arch}"
+        if subprocess.run(["pgrep", "-f", watcher], capture_output=True).returncode:
+            log = open(SCRIPT_DIR / f"auto_evals_{args.arch}.log", "a")
+            subprocess.Popen([sys.executable, "auto_evals_cscs.py", "--arch",
+                              args.arch, "--watch", "1800"], cwd=str(SCRIPT_DIR),
+                             stdout=log, stderr=log, start_new_session=True)
+            print(f"started auto-evals ({args.arch}); opt out with --no-auto-evals")
+        else:
+            print(f"(auto-evals already watching {args.arch})")
+
     if args.platform == "cscs" and not args.dry_run:
         try:
             from pretrain_progress import update_plots
