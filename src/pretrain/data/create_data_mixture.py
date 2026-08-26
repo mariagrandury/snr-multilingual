@@ -537,6 +537,30 @@ def build_plan(
     return sources
 
 
+def write_plan(output_prefix: str, sources: List[dict], target_tokens: int):
+    """Dump the per-source token plan to <output_prefix>.plan.json.
+
+    Durable companion to print_plan's stdout. `files` is a count, not the
+    list — the paths are long, reconstructible, and not what the analysis
+    wants.
+    """
+    plan = {
+        "target_tokens": target_tokens,
+        "sources": {
+            s["name"]: {
+                "target_tokens": s["target_tokens"],
+                "estimated_tokens": s["estimated_tokens"],
+                "n_files": len(s["files"]),
+            }
+            for s in sources
+        },
+    }
+    path = f"{output_prefix}.plan.json"
+    with open(path, "w") as f:
+        json.dump(plan, f, indent=2)
+    print(f"Plan written: {path}")
+
+
 def print_plan(sources: List[dict], target_tokens: int):
     print("\n--- Plan ---")
     print(f"Total target: {target_tokens / 1e9:.2f}B tokens")
@@ -982,6 +1006,15 @@ def main():
     # Ensure output directory exists
     out_dir = os.path.dirname(os.path.abspath(args.output_prefix))
     os.makedirs(out_dir, exist_ok=True)
+
+    # Persist the plan next to the mixture. Until this existed the per-source
+    # token allocation survived only in the job's stdout: the checkpoint is
+    # deleted on success (remove_checkpoint) and the only manifest written is
+    # the validation one. Those numbers are the language composition of the
+    # dataset, so the analysis needs them long after the log is swept — and
+    # reconstructing them from corpus byte shares is off by -50%..+45% per
+    # language, because bytes-per-token varies by script.
+    write_plan(args.output_prefix, sources, args.target_tokens)
 
     # Initialize writer
     if ckpt is not None:

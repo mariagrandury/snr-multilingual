@@ -10,7 +10,7 @@ DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/
 ONE=$DIR/submit_build_one.sh
 OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data  # persistent capstor store
 OUT_B=$OUT/schemeB
-LOGS=/iopsstor/scratch/cscs/mariagrandury/data/logs   # build job logs stay on scratch (transient); matches submit_build_one.sh's #SBATCH --output
+LOGS=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs   # logs live with the data on capstor (they carry the per-language plan); matches submit_build_one.sh's #SBATCH --output
 DRY=${1:-}
 
 mkdir -p "$OUT" "$OUT_B" "$LOGS"

@@ -9,8 +9,8 @@
 # sequence_lengths in memory, plus one streamed parquet batch), without reducing
 # packing (9 x 48 < 460).
 #SBATCH --mem=48000
-#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data/logs/%x-%j.out
-#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data/logs/%x-%j.out
+#SBATCH --output=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs/%x-%j.out
+#SBATCH --error=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs/%x-%j.out
 #SBATCH --no-requeue
 
 # Build ONE data mixture (english, or one FineWeb-2 setting of one scheme), then
@@ -40,7 +40,11 @@ export TOKENIZERS_PARALLELISM=true
 export PYTHONUNBUFFERED=1
 
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_one.sh
-LOGDIR=/iopsstor/scratch/cscs/mariagrandury/data/logs
+# Logs live on capstor beside the data. They are the only place print_plan's
+# per-source token allocation was recorded before <prefix>.plan.json existed,
+# and the analysis wants it long after iopsstor scratch is swept. Measured
+# build output is ~4 lines/min (~3 bytes/s), so this costs nothing.
+LOGDIR=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs
 : "${BUILD_SCHEME:?set via --export}"; : "${BUILD_STAGE:?set via --export}"; : "${BUILD_OUT:?set via --export}"
 
 if [ "$BUILD_STAGE" = english ]; then
