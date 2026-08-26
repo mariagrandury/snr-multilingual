@@ -56,6 +56,9 @@ fi
 # this ends the singleton chain and prevents rebuilding a finished dataset.
 if [ -f "$PREFIX.idx" ] && [ ! -f "$PREFIX.checkpoint.json" ]; then
   echo "[$(date)] $PREFIX already built — nothing to do."
+  # Still make sure it is staged: a mixture built before staging existed (or
+  # staged onto a since-swept iopsstor) would otherwise never reach training.
+  bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$BUILD_OUT/}"
   exit 0
 fi
 
@@ -70,3 +73,11 @@ fi
 
 python build_data_mixtures.py --scheme "$BUILD_SCHEME" --output_dir "$BUILD_OUT" "${STAGE_ARGS[@]}"
 echo "[$(date)] $PREFIX build complete"
+
+# Builds write to the capstor master, but training reads from the iopsstor
+# stage (Megatron memmaps the .bin and reads it shuffled; capstor is ~28x
+# slower per random read — ../CLAUDE.md #8). Without this copy the new mixture
+# exists but every cell at that setting dies on "One or both of the .idx and
+# .bin files cannot be found". Copy, never move: capstor is what survives the
+# scratch sweep. No-ops when the build did not finish, or is already staged.
+bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$BUILD_OUT/}"
