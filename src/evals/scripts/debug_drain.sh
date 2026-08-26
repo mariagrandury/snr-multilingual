@@ -1,5 +1,5 @@
 #!/bin/bash
-# debug_drain.sh — feed PENDING normal-partition eval/convert jobs through the idle
+# debug_drain.sh — feed PENDING normal-partition convert/eval jobs through the idle
 # `debug` partition, shortest-walltime first, keeping it at the debug-qos cap
 # of **1 running + 1 queued**. Each moved job is capped at debug's **1:30**
 # wall via `scontrol update partition=debug timelimit=01:30:00`.
@@ -40,10 +40,15 @@ drain_once() {
     slots=$(( 2 - ndebug ))
     (( slots <= 0 )) && return 0          # debug full (1 run + 1 queued)
     for (( s=0; s<slots; s++ )); do
-        # shortest-walltime pending NORMAL eval job (HH:MM:SS or MM:SS → seconds)
+        # Conversions first, then evals; within a class, shortest walltime.
+        # A cell cannot be evaluated until its HF snapshot exists, so a convert
+        # stuck behind a queue of evals blocks everything downstream of it —
+        # that is exactly how the pipeline stalled before. Rank 0 = convert,
+        # 1 = eval, then seconds (HH:MM:SS or MM:SS).
         cand=$(squeue --me -h -p normal -t PD -o "%l|%i|%j" 2>/dev/null | grep -E '\|(eval|convert)-' | \
-            awk -F'|' '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]); print sec"|"$2"|"$3}' | \
-            sort -n -t'|' -k1 | head -1)
+            awk -F'|' '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
+                        rank=($3 ~ /^convert-/) ? 0 : 1; print rank"|"sec"|"$2"|"$3}' | \
+            sort -t'|' -k1,1n -k2,2n | head -1 | cut -d'|' -f2-)
         [ -z "$cand" ] && return 0
         secs=${cand%%|*}; jid=$(echo "$cand"|cut -d'|' -f2); jn=$(echo "$cand"|cut -d'|' -f3)
         if (( DRY )); then
