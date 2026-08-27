@@ -460,12 +460,22 @@ For partial-result rescue:
 - per-task mode (`BATCH_TASKS=0`, default) — each completed task's
   `eval_*/per_task/<task>/results.json` survives walltime kills; only the
   in-flight task is lost. `push_all_results.py` aggregates these.
-- batched mode (`BATCH_TASKS=1`) — `samples_*.jsonl` per task lands as each
-  task finishes (because of `--log_samples`), but the unifying
-  `results_*.json` is only written at the very end. Walltime mid-batch
-  ⇒ the samples files exist but no aggregated metrics; you'd need a custom
-  script to compute scores from samples (none in repo today). For
-  long-running sweeps where walltime is tight, prefer `BATCH_TASKS=0`.
+- batched mode (`BATCH_TASKS=1`) — **nothing survives a walltime kill. Not
+  even the samples.** This entry used to claim `samples_*.jsonl` lands as each
+  task finishes; that is WRONG, and it cost a wrong analysis on 2026-08-27.
+  lm_eval buffers everything and writes in one burst at the end. Checked on a
+  completed 45-minute 350M/L8 job: all **538** samples files *and* the results
+  file carry the SAME filename timestamp (`2026-08-27T10-11-00.153183`), their
+  mtimes span **11 seconds**, and `per_task/` is empty. If you want to verify
+  it again, compare the filename timestamp against the job's START TIME.
+
+  Consequences: a timed-out batched job is 100% loss and gets resubmitted to
+  be killed again, so eval walltimes must be sized generously or the task list
+  SPLIT across jobs (`NUM_SPLITS`/`SPLIT_INDEX` in `evaluate.sbatch`, merged by
+  `aggregate_splits.sbatch`). `scripts/recover_results_from_samples.py` only
+  helps where samples actually exist on disk — i.e. per-task mode, or a crash
+  that is not a walltime kill. For long sweeps where walltime is tight, prefer
+  `BATCH_TASKS=0` or split.
 
 ---
 
