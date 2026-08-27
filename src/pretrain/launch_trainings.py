@@ -102,6 +102,13 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 # copy is staged here for training.
 CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
 
+# The auto-eval watcher's stdout/stderr. Under the cluster log tree with every
+# other generated log, NOT next to the source: it is an append-only file the
+# launcher opens on every run, and in the repo it just shows up as untracked
+# noise (or, worse, gets committed).
+AUTO_EVAL_LOGS = Path(
+    "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/auto_evals")
+
 AZURE_JOB_YML = SCRIPT_DIR / "azure" / "jobs" / "pretrain.yml"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths/predictivity"
 UK_SIZES = {"1B", "1.7B"}  # everything else runs on the Spain economy pool
@@ -664,14 +671,11 @@ def main() -> None:
                 data_root=az_data if scheme == "B" else None,
             )
 
-    # Refresh the progress heatmaps on every CSCS launch so
-    # pretrain_progress_{simple,detailed}.png are always up to date.
-    # Best-effort: a plotting problem must never fail a submission.
-    
     if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:
         watcher = f"auto_evals_cscs.py --arch {args.arch}"
         if subprocess.run(["pgrep", "-f", watcher], capture_output=True).returncode:
-            log = open(SCRIPT_DIR / f"auto_evals_{args.arch}.log", "a")
+            AUTO_EVAL_LOGS.mkdir(parents=True, exist_ok=True)
+            log = open(AUTO_EVAL_LOGS / f"auto_evals_{args.arch}.log", "a")
             subprocess.Popen([sys.executable, "auto_evals_cscs.py", "--arch",
                               args.arch, "--watch", "1800"], cwd=str(SCRIPT_DIR),
                              stdout=log, stderr=log, start_new_session=True)
@@ -679,10 +683,18 @@ def main() -> None:
         else:
             print(f"(auto-evals already watching {args.arch})")
 
+    # Refresh everything pretrain_progress.py --plot produces, so the three
+    # PNGs and the generated grid block in README.md / the plan doc are always
+    # up to date. plan_table and sync_docs are derived from the constants in
+    # THIS file, so a grid edit reaches the docs on the next launch instead of
+    # leaving stale numbers behind.
+    # Best-effort: a plotting problem must never fail a submission.
     if args.platform == "cscs" and not args.dry_run:
         try:
-            from pretrain_progress import update_plots
+            from pretrain_progress import plan_table, sync_docs, update_plots
             update_plots()
+            plan_table()
+            sync_docs()
         except Exception as e:  # e.g. matplotlib missing off-cluster
             print(f"(progress plots not refreshed: {e})", file=sys.stderr)
 
