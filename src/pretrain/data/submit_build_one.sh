@@ -56,13 +56,18 @@ else
   STAGE_ARGS=(--stage fineweb --settings "$BUILD_SETTING")
 fi
 
+# Scheme B builds into <root>/schemeB, so a prefix taken relative to BUILD_OUT
+# would lose the schemeB/ component and the stager would act on the scheme-A
+# mixture instead. Strip against the data ROOT, keeping schemeB/fineweb_LN.
+DATA_ROOT=${BUILD_OUT%/schemeB}
+
 # Complete already? (.idx present, checkpoint gone.) Skip and DON'T requeue —
 # this ends the singleton chain and prevents rebuilding a finished dataset.
 if [ -f "$PREFIX.idx" ] && [ ! -f "$PREFIX.checkpoint.json" ]; then
   echo "[$(date)] $PREFIX already built — nothing to do."
   # Still make sure it is staged: a mixture built before staging existed (or
   # staged onto a since-swept iopsstor) would otherwise never reach training.
-  bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$BUILD_OUT/}"
+  bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$DATA_ROOT/}"
   exit 0
 fi
 
@@ -84,4 +89,4 @@ echo "[$(date)] $PREFIX build complete"
 # exists but every cell at that setting dies on "One or both of the .idx and
 # .bin files cannot be found". Copy, never move: capstor is what survives the
 # scratch sweep. No-ops when the build did not finish, or is already staged.
-bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$BUILD_OUT/}"
+bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$DATA_ROOT/}"
