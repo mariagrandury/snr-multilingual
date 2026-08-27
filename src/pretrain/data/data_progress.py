@@ -86,6 +86,78 @@ BUILD_LOG_DIRS = [
     Path(f"/iopsstor/scratch/cscs/{os.environ.get('USER','')}/data/logs"),
 ]
 PLAN_RE = re.compile(r"^\s*fineweb_(\S+)\s+target=([0-9.]+)B", re.M)
+# Every field create_data_mixture.write_plan() stores, as print_plan logs it.
+PLAN_FULL_RE = re.compile(
+    r"^\s+(\S+)\s+target=([0-9.]+)B\s+estimated=([0-9.]+)B\s+files=(\d+)", re.M)
+TOTAL_RE = re.compile(r"^Total target: ([0-9.]+)B tokens", re.M)
+
+
+def build_logs(L: int, scheme: str) -> list[Path]:
+    """This mixture's build logs, newest first."""
+    try:
+        return sorted((f for d in BUILD_LOG_DIRS if d.is_dir()
+                       for f in d.glob(f"build-{scheme.lower()}-L{L}-*.out")),
+                      key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return []
+
+
+def read_log(path: Path) -> str | None:
+    """None (with a warning) if capstor faults the read — see the note in
+    plan_from_build_log."""
+    try:
+        return path.read_text(errors="ignore")
+    except OSError as e:
+        print(f"  warn: unreadable build log {path.name} ({e.strerror})",
+              file=sys.stderr)
+        return None
+
+
+def backfill_plans(data_dir: Path, force: bool = False) -> None:
+    """Recreate <prefix>.plan.json from the build log.
+
+    write_plan() postdates the first builds, so the mixtures built before it
+    have their per-language allocation recorded only in their job's stdout.
+    print_plan logs every field write_plan stores — per-source target,
+    estimate and file count, plus the total — so the reconstruction is
+    lossless bar print_plan's 4-decimal rounding of the B figures (1e5 tokens
+    on a 27.5B source, 4e-6 relative).
+
+    Worth doing once: with the file present data_progress never has to read
+    the capstor logs again (they are slow and fault intermittently), and the
+    numbers outlive a log sweep.
+    """
+    for scheme in ("A", "B"):
+        for L in SETTINGS:
+            if scheme == "B" and L not in SCHEME_B_SETTINGS:
+                continue
+            dest = mixture_paths(data_dir, L, scheme)["plan"]
+            tag = f"L{L}{' scheme B' if scheme == 'B' else ''}"
+            if dest.is_file() and not force:
+                print(f"  {tag}: plan.json already there")
+                continue
+            for log in build_logs(L, scheme):
+                text = read_log(log)
+                if text is None:
+                    continue
+                sources, total = PLAN_FULL_RE.findall(text), TOTAL_RE.search(text)
+                if not (sources and total):
+                    continue        # e.g. an "already built — nothing to do" log
+                # A log may hold several attempts; the later plan supersedes,
+                # which is what the dict comprehension keeps.
+                dest.write_text(json.dumps({
+                    "target_tokens": int(float(total.group(1)) * 1e9),
+                    "sources": {n: {"target_tokens": int(float(t) * 1e9),
+                                    "estimated_tokens": int(float(e) * 1e9),
+                                    "n_files": int(f)}
+                                for n, t, e, f in sources},
+                    "reconstructed_from": log.name,
+                }, indent=2) + "\n")
+                print(f"  {tag}: wrote {dest.name} — {len(sources)} sources "
+                      f"from {log.name}")
+                break
+            else:
+                print(f"  {tag}: no build log carries a plan — leaving alone")
 
 
 def plan_from_build_log(L: int, scheme: str) -> dict[str, int] | None:
@@ -104,19 +176,11 @@ def plan_from_build_log(L: int, scheme: str) -> dict[str, int] | None:
     losing the whole plot to one blip: the remaining logs, and failing those
     the byte-share fallback, still produce a column.
     """
-    try:
-        logs = sorted((f for d in BUILD_LOG_DIRS if d.is_dir()
-                       for f in d.glob(f"build-{scheme.lower()}-L{L}-*.out")),
-                      key=lambda p: p.stat().st_mtime, reverse=True)
-    except OSError:
-        return None
-    for log in logs:
-        try:
-            hits = PLAN_RE.findall(log.read_text(errors="ignore"))
-        except OSError as e:
-            print(f"  warn: unreadable build log {log.name} ({e.strerror})",
-                  file=sys.stderr)
+    for log in build_logs(L, scheme):
+        text = read_log(log)
+        if text is None:
             continue
+        hits = PLAN_RE.findall(text)
         if hits:
             # print_plan runs once per build attempt; later lines supersede.
             return {lang: int(float(tok) * 1e9) for lang, tok in hits}
@@ -156,15 +220,19 @@ def column(data_dir: Path, L: int, scheme: str, langs: list[str],
     paths = mixture_paths(data_dir, L, scheme)
     built = paths["bin"].is_file()
     size_b = paths["bin"].stat().st_size if built else 0
-    target = fineweb_target_tokens(L)
+    # L1 is 100% English: no FineWeb mixture, hence no target — reporting one
+    # would read as "0% built" for a setting that has nothing to build.
+    target = fineweb_target_tokens(L) if langs else 0
     have = size_b // BYTES_PER_TOKEN
 
     # Only fall back to the logs when the builder's own records are missing:
     # scanning every build log for every column is minutes of capstor I/O that
     # a present plan.json makes pointless.
-    got = exact_tokens(paths)
-    plan = None if got else plan_from_build_log(L, scheme)
-    if got:
+    got = exact_tokens(paths) if langs else None
+    plan = None if got or not langs else plan_from_build_log(L, scheme)
+    if not langs:
+        tokens, source = {}, "—"
+    elif got:
         tokens, source = got
         tokens = {l: tokens.get(l, 0) for l in langs}
     elif plan:
@@ -191,9 +259,7 @@ def column(data_dir: Path, L: int, scheme: str, langs: list[str],
     # target. That is "source-limited", not "incomplete", and the plan calls
     # for recording it rather than chasing the target.
     if not langs:
-        # L1 is 100% English (english_dclm); there is no FineWeb mixture to
-        # build, so it is neither "built" nor "missing".
-        state = "English-only"
+        state = "English-only"      # neither "built" nor "missing" (see above)
     elif not built:
         state = "not built"
     elif paths["ckpt"].is_file():
@@ -289,7 +355,16 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=SCRIPT_DIR / "data_progress.png")
     ap.add_argument("--print", dest="show", action="store_true",
                     help="also print the per-mixture status table")
+    ap.add_argument("--backfill-plans", action="store_true",
+                    help="rebuild missing <prefix>.plan.json from the build "
+                         "logs, then exit (idempotent; --force to overwrite)")
+    ap.add_argument("--force", action="store_true",
+                    help="with --backfill-plans: overwrite existing plan.json")
     args = ap.parse_args()
+
+    if args.backfill_plans:
+        backfill_plans(args.data_dir, args.force)
+        return
 
     cols, rows = collect(args.data_dir)
     print(f"{'mixture':8} {'state':>14} {'tokens':>10} {'target':>8} {'done':>6}  source")
