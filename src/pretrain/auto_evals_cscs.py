@@ -18,8 +18,15 @@ src/evals/scripts/wandb_api_key.txt — nothing to export here.
 Each pass, per cell of the selected variant (--arch/--scheme, same flags as
 the launcher), for each due checkpoint on disk:
 
-  1. results already under LOGS_ROOT/<entity>/msnr/<cell>-iter<N>/  -> skip
+  1. every task of the cell's list already has a result under
+     LOGS_ROOT/<entity>/msnr/<cell>-iter<N>/                        -> skip
+     (task-level, so adding a benchmark reaches evaluated checkpoints)
   2. eval job for it already in squeue (any user)                    -> skip
+  2b. --max-attempts eval runs already wrote nothing at all -> diagnose
+     rather than resubmit. A dataset missing from the offline cache is
+     downloaded and the checkpoint retried immediately; every other cause
+     is held back and recorded in <logs-root>/auto_eval_errors.json, so a
+     checkpoint that cannot succeed stops costing a job per pass.
   3. HF snapshot staged at <staging>/<cell>/iter_<N>  -> submit ONE eval job
        (src/evals/scripts/evaluate.sbatch, vLLM, BOS, no chat template,
         TP=1 — the ladder's KV-head counts only divide 1 — BATCH_TASKS=1)
@@ -44,6 +51,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -60,6 +68,10 @@ from evals.scripts._eval_status import completed_tasks  # noqa: E402
 EVALS_DIR = SCRIPT_DIR.parent / "evals"
 CONVERT_SNR = SCRIPT_DIR / "conversion" / "convert-snr.sh"
 TASKS_JSON = SCRIPT_DIR.parent.parent / "configs" / "tasks.json"
+EVAL_JOB_LOGS = EVALS_DIR / "logs"          # evaluate.sbatch: --output=logs/%x_%j
+DATASET_MANIFEST = EVALS_DIR / "configs" / "eval_datasets.txt"
+DOWNLOAD_DATASETS = EVALS_DIR / "scripts" / "download_eval_datasets.py"
+ERRORS_JSON = "auto_eval_errors.json"       # written under --logs-root each pass
 
 WANDB_ENTITY = "mariagrandury-epflnlp"
 PROJECT_NAME = json.loads(
@@ -156,6 +168,93 @@ def evaluated(name: str, logs_root: Path, tasks: list[str]) -> bool:
         name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
 
 
+def barren_attempts(name: str, logs_root: Path) -> int:
+    """Eval runs for NAME that produced nothing at all.
+
+    The task gate asks "is this done?", never "can this ever finish?", so a
+    checkpoint whose eval fails outright is resubmitted once per pass forever
+    — 196 such jobs on the L50 cells before this existed (one uncached dataset
+    aborts the whole BATCH_TASKS=1 call, so not one result lands). An
+    `eval_*/` with neither a results file nor a non-empty per_task/ is a total
+    loss; a run that saved anything counts as progress and doesn't.
+    """
+    base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
+    return sum(1 for d in sorted(base.glob("eval_*")) if d.is_dir()
+               and not any(d.glob("results_*.json"))
+               and not any(f for t in d.glob("per_task/*") for f in t.iterdir()))
+
+
+# lm_eval instantiates every task in the batch up front, so ONE dataset that
+# isn't in the offline cache aborts the entire call — the compute nodes have
+# no internet. The watcher runs on the login node, which does, so this is the
+# one failure it can repair itself.
+MISSING_DATASET_RE = re.compile(
+    r"Couldn't reach '([^']+)' on the Hub \(OfflineModeIsEnabled\)")
+ERROR_LINE_RE = re.compile(r"^(?:\d+: )?(\w*(?:Error|Exception)): (.+)$", re.M)
+_LOG_TAIL = 400_000     # bytes; the traceback is at the end of a ~14 MB log
+
+
+def eval_error(name: str) -> tuple[str, str]:
+    """Why NAME's most recent eval job wrote nothing.
+
+    ("dataset", <hf repo>) — fixable here, see fix_missing_dataset.
+    ("other", <last Error line>) / ("unknown", ...) — needs a human; recorded
+    in the errors file rather than retried into the ground.
+    """
+    logs = sorted(EVAL_JOB_LOGS.glob(f"{job_name('eval', name)}_*.err"),
+                  key=lambda p: p.stat().st_mtime, reverse=True)
+    for log in logs[:2]:                     # the two most recent attempts
+        for path in (log, log.with_suffix(".out")):   # srun splits the two
+            try:
+                with open(path, errors="ignore") as f:
+                    f.seek(max(0, path.stat().st_size - _LOG_TAIL))
+                    text = f.read()
+            except OSError:
+                continue
+            hit = MISSING_DATASET_RE.search(text)
+            if hit:
+                return "dataset", hit.group(1)
+            lines = ERROR_LINE_RE.findall(text)
+            if lines:
+                return "other", f"{lines[-1][0]}: {lines[-1][1][:160]}"
+    return "unknown", "no eval job log found"
+
+
+_DATASET_TRIED: set[str] = set()
+
+
+def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
+    """Add REPO to the eval-dataset manifest and build it into the offline
+    cache, so the next submission gets past it. Once per repo per process:
+    if the build fails, the checkpoint lands in the errors file instead of
+    re-downloading every pass."""
+    if repo in _DATASET_TRIED:
+        return False
+    _DATASET_TRIED.add(repo)
+    listed = repo in DATASET_MANIFEST.read_text().split()
+    print(f"  missing offline dataset {repo}"
+          f"{'' if listed else ' (also absent from eval_datasets.txt)'}"
+          f" — building it into the cache")
+    if dry_run:
+        print(f"    (would append to {DATASET_MANIFEST.name} and run "
+              f"{DOWNLOAD_DATASETS.name})")
+        return False
+    if not listed:
+        with open(DATASET_MANIFEST, "a") as f:
+            f.write(f"{repo}\n")
+        print(f"  ({DATASET_MANIFEST.name} updated — commit the diff)")
+    with tempfile.NamedTemporaryFile("w", suffix=".txt") as manifest:
+        manifest.write(f"{repo}\n")
+        manifest.flush()
+        out = subprocess.run([sys.executable, str(DOWNLOAD_DATASETS),
+                              manifest.name], capture_output=True, text=True)
+    ok = out.returncode == 0 and "0 failed" in out.stdout
+    print(f"  {'built ' + repo + ' — retrying' if ok else 'could NOT build ' + repo}")
+    if not ok:
+        print("   ", (out.stdout or out.stderr).strip().splitlines()[-1:])
+    return ok
+
+
 def hf_staged(cell: str, it: int, staging: Path) -> bool:
     """Converted AND complete: convert-snr.sh touches .hf_complete as its
     last step (config.json + a weights glob alone can match a half-written
@@ -227,46 +326,104 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     configs = json.loads(HYPERPARAMS[args.arch].read_text())["configs"]
     running = active_jobs() if not args.dry_run else set()
     convert_busy = CONVERT_JOB_NAME in running
+    errors: dict[str, dict] = {}   # checkpoints held back, written out below
 
     for c in predictivity_cells():
         scheme = args.scheme if c["L"] in SCHEME_B_LANGS else "A"
         cell = exp_name(c["size"], c["L"], args.arch, c["seed"], scheme)
         if args.name and cell != args.name:
             continue
-        target = schedule_for(configs[c["size"]])[0]
-        saved = saved_valid_iters(cell, root)
-        if not saved:
-            continue
-        # Every Nth saved checkpoint on the cell's per-size save grid, plus
-        # the run's final one whatever its number — same rule as Azure.
-        due = [i for i in saved
-               if i % (args.every * save_interval(target)) == 0 or i == target]
-        # The cell's task list: every auto benchmark, in the languages
-        # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
-        task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
-        tasks = ",".join(task_list)
-        # Convert EVERY saved checkpoint (persist all of them to capstor), but
-        # evaluate only the due ones — conversion is the durability step, eval
-        # is the expensive one we sample at 1/N.
-        to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
-        # Report what's still OUTSTANDING, not what's due: a due checkpoint
-        # whose results are already on disk needs no action, and printing it
-        # every pass reads as work the watcher is failing to submit.
-        pending = [it for it in due
-                   if not evaluated(f"{cell}-iter{it}", logs_root, task_list)]
-        print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | "
-              f"eval {pending or f'DONE ({len(due)}/{len(due)})'}")
+        # capstor intermittently faults a read outright (Errno 5 / 108 — the
+        # same blips data_progress.py works around, hit here on a .hf_complete
+        # probe). The watcher now runs unattended behind every launch, so one
+        # blip must cost one cell for one pass, not kill the whole loop.
+        try:
+            convert_busy = one_cell(args, c, cell, scheme, configs, root,
+                                    staging, logs_root, benchmarks, running,
+                                    convert_busy, errors)
+        except OSError as e:
+            print(f"{cell}: skipped this pass — {e.strerror or e}",
+                  file=sys.stderr)
 
-        if to_convert and not convert_busy:
-            submit_convert(cell, to_convert, staging, args.dry_run)
-            # One conversion sbatch at a time (they share a Slurm name, so
-            # dedupe is coarse); the next pass converts the remaining cells.
-            convert_busy = True
-        for it in pending:
-            name = f"{cell}-iter{it}"
-            if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
-                submit_eval(cell, it, staging, logs_root, tasks, c["size"],
-                            args.dry_run)
+    # One place to look for what is stuck and why. A snapshot, not a log: a
+    # checkpoint drops out of it as soon as an eval writes results, so an
+    # empty file means nothing is held back.
+    path = logs_root / ERRORS_JSON
+    if not args.dry_run:
+        path.write_text(json.dumps(errors, indent=2, sort_keys=True) + "\n")
+    if errors:
+        print(f"\n{len(errors)} checkpoint(s) held back after "
+              f"{args.max_attempts} failed evals — details in {path}")
+
+
+def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
+             staging: Path, logs_root: Path, benchmarks: list[str],
+             running: set[str], convert_busy: bool, errors: dict) -> bool:
+    """One cell of a pass: convert what is missing, evaluate what is due.
+
+    Returns convert_busy — only one conversion sbatch may be in flight at a
+    time (they share a Slurm name), so the flag carries across cells.
+    """
+    target = schedule_for(configs[c["size"]])[0]
+    saved = saved_valid_iters(cell, root)
+    if not saved:
+        return convert_busy
+    # Every Nth saved checkpoint on the cell's per-size save grid, plus
+    # the run's final one whatever its number — same rule as Azure.
+    due = [i for i in saved
+           if i % (args.every * save_interval(target)) == 0 or i == target]
+    # The cell's task list: every auto benchmark, in the languages
+    # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
+    task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
+    tasks = ",".join(task_list)
+    # Convert EVERY saved checkpoint (persist all of them to capstor), but
+    # evaluate only the due ones — conversion is the durability step, eval
+    # is the expensive one we sample at 1/N.
+    to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
+    # Report what's still OUTSTANDING, not what's due: a due checkpoint
+    # whose results are already on disk needs no action, and printing it
+    # every pass reads as work the watcher is failing to submit.
+    pending = [it for it in due
+               if not evaluated(f"{cell}-iter{it}", logs_root, task_list)]
+    # Checkpoints whose evals have only ever failed. A missing offline
+    # dataset is repaired in place and the checkpoint goes straight back
+    # into pending; anything else is recorded for a human and held back,
+    # so the watcher stops burning a job per pass on it.
+    broken: dict[int, str] = {}
+    for it in list(pending):
+        name = f"{cell}-iter{it}"
+        if not args.max_attempts:
+            continue
+        if barren_attempts(name, logs_root) < args.max_attempts:
+            continue
+        kind, detail = eval_error(name)
+        if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
+            continue                     # cache repaired — retry this pass
+        broken[it] = f"{kind}: {detail}"
+        pending.remove(it)
+        errors[name] = {"attempts": barren_attempts(name, logs_root),
+                        "kind": kind, "detail": detail}
+    # "DONE" only when nothing is outstanding for any reason — a cell whose
+    # whole eval column is erroring has not finished, it has stopped.
+    status = pending or ("-" if broken else f"DONE ({len(due)}/{len(due)})")
+    print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | "
+          f"eval {status}"
+          + (f" | ERRORS on {sorted(broken)}" if broken else ""))
+    for reason in sorted(set(broken.values())):
+        print(f"    {reason}")
+
+    if to_convert and not convert_busy:
+        submit_convert(cell, to_convert, staging, args.dry_run)
+        # One conversion sbatch at a time (they share a Slurm name, so
+        # dedupe is coarse); the next pass converts the remaining cells.
+        convert_busy = True
+    for it in pending:
+        name = f"{cell}-iter{it}"
+        if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
+            submit_eval(cell, it, staging, logs_root, tasks, c["size"],
+                        args.dry_run)
+
+    return convert_busy
 
 
 def main() -> None:
@@ -279,6 +436,13 @@ def main() -> None:
     p.add_argument("--every", type=int, default=2,
                    help="evaluate every N saved checkpoints (the final "
                         "checkpoint is always evaluated on top)")
+    p.add_argument("--max-attempts", type=int, default=3,
+                   help="after N eval runs that wrote no results at all, "
+                        "diagnose instead of resubmitting: a dataset missing "
+                        "from the offline cache is downloaded and retried "
+                        "automatically, anything else is held back and "
+                        "recorded in <logs-root>/" + ERRORS_JSON +
+                        " (0 = always resubmit, never diagnose)")
     p.add_argument("--watch", type=int, metavar="SECONDS",
                    help="keep running, one pass every SECONDS")
     p.add_argument("--dry-run", action="store_true")

@@ -74,6 +74,7 @@ openai/gsm8k
 openai/openai_humaneval
 oskarvanderwal/bbq
 paws-x
+projecte-aina/xnli-ca
 Rowan/hellaswag
 SaylorTwift/bbh
 skg/toxigen-data

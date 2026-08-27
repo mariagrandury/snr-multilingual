@@ -8,8 +8,10 @@ runs on Azure.
 Idempotent, like the cluster's eval launchers: each pass lists the blob
 storage, finds due checkpoints (saved iters at multiples of N x save-interval),
 and per due iter submits at most one missing step — jobs/convert.yml when
-the HF snapshot doesn't exist yet, else jobs/eval.yml (TASKS=auto) when
-results don't exist yet. Anything already done or in flight is skipped, so the
+the HF snapshot doesn't exist yet, else jobs/eval.yml (TASKS=auto) while any
+of the cell's tasks is still missing a result (task-level, so adding a
+benchmark reaches already-evaluated checkpoints instead of leaving two task
+sets in the sweep). Anything already done or in flight is skipped, so the
 convert -> eval sequencing simply resolves across successive passes. Run it
 alongside training:
 
@@ -241,6 +243,10 @@ def one_pass(names: list[str], auth: list[str], every: int,
         for it in to_convert:
             if job_name("convert", f"{name}-iter{it}") not in running:
                 submit_convert(name, it, dry_run, compute)
+        # No twin of the CSCS watcher's --max-attempts guard here: a totally
+        # failed eval leaves an EMPTY HARNESS_EVAL_DIR (azure/eval.sh), and an
+        # empty directory uploads no blob at all, so the listing cannot count
+        # attempts. Watch the AML job list for a run of failures instead.
         want = set(cell_tasks.split(","))
         for it in due:
             if not want - evaluated_tasks(f"{name}-iter{it}"):
