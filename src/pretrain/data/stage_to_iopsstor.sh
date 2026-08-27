@@ -24,8 +24,10 @@
 #SBATCH --partition=normal
 #SBATCH --nodes=1
 #SBATCH --time=04:00:00
-#SBATCH --output=/iopsstor/scratch/cscs/%u/data/logs/%x-%j.out
-#SBATCH --error=/iopsstor/scratch/cscs/%u/data/logs/%x-%j.err
+# Logs live with the data on capstor, like the build logs: Slurm opens these
+# before the script runs, so a swept scratch dir would mean no log at all.
+#SBATCH --output=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs/%x-%j.out
+#SBATCH --error=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs/%x-%j.err
 set -uo pipefail
 
 SRC=${SRC:-/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data}
@@ -43,10 +45,22 @@ stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
   for ext in bin idx; do
     local s="$SRC/$rel.$ext" d="$DST/$rel.$ext"
     [ -f "$s" ] || { echo "  skip $rel — no $ext on capstor"; return 0; }
-    if [ -f "$d" ] && [ "$(stat -c%s "$s")" = "$(stat -c%s "$d")" ]; then
+    # launch_builds.sh keeps schemeB/english_dclm.* as symlinks into the
+    # scheme-A build. Mirror the link instead of copying: the target is a
+    # 736 GB file already staged under its own name, so a copy would duplicate
+    # it per scheme AND overwrite the stage's own symlink. -L everywhere else,
+    # so sizes always compare the target, never the link.
+    if [ -L "$s" ]; then
+      local tgt; tgt=$(readlink -f "$s")
+      case "$tgt" in
+        "$SRC"/*) ln -sfn "$DST/${tgt#"$SRC"/}" "$d"; continue;;
+      esac
+    fi
+    if [ -f "$d" ] && [ ! -L "$d" ] && \
+       [ "$(stat -Lc%s "$s")" = "$(stat -c%s "$d")" ]; then
       continue                       # already staged, same size
     fi
-    echo "  copy $rel.$ext ($(numfmt --to=iec "$(stat -c%s "$s")"))"
+    echo "  copy $rel.$ext ($(numfmt --to=iec "$(stat -Lc%s "$s")"))"
     # Copy to a temp name and rename: a killed copy must never leave a
     # short .bin behind, because Megatron would mmap it without complaint.
     if cp -f "$s" "$d.tmp" && mv -f "$d.tmp" "$d"; then :; else
@@ -56,7 +70,7 @@ stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
   [ "$ok" = 1 ] && echo "  staged $rel"
 }
 
-mkdir -p "$DST" "$DST/schemeB" "/iopsstor/scratch/cscs/$USER/data/logs"
+mkdir -p "$DST" "$DST/schemeB"
 echo "[$(date)] staging $SRC -> $DST"
 
 if [ $# -gt 0 ]; then
