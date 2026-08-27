@@ -340,32 +340,42 @@ def cscs_mbs(nodes: int, mbs: int) -> int:
     return mbs
 
 
-# Per-size steady-state iter time (ms), for walltime sizing. 175M..1B sampled
-# from the 36-sweep training logs (same architectures/node counts); 90M and
-# 1.7B are estimates — tighten them from the first real runs.
-# Steady-state ms/iter with flash attention (--attention-backend flash in
-# megatron_args.sh), keyed by arch then size: deep and shallow differ by up to
-# 3x at the SAME size, so one number per size cannot cover both.
+# Per-size steady-state iter time (ms), for walltime sizing, keyed by arch
+# then size. Values carry ~20% over the measurement: under-estimating walls a
+# job and costs a whole queue cycle, over-estimating only lengthens the
+# request. (At 600M and above the 11:59:59 cap dominates anyway.)
 #
-# [m] = measured from real runs (2026-08-20), the rest estimated with margin.
-# Deep 90M=1230, 175M=2176; shallow 90M=4072, 175M=757, 350M=1487. The two
-# slow outliers (deep 175M, shallow 90M) are exactly the configs whose
-# hidden/ffn are pure powers of two (1024/4096) and they run ~100 TFLOP/s vs
-# ~250 for their siblings — consistent with power-of-2 GEMM cache aliasing,
-# unconfirmed. Shallow 1B (hidden 2048) is the only other pure-pow2 config, so
-# its estimate is deliberately pessimistic.
+# [m] = median over 500k+ logged iterations from the 2026-08-21..27 runs, the
+# window AFTER the training data moved to iopsstor. Sampled mid-run (first 20
+# and last 10 iterations dropped) so neither the cold start nor the end-of-run
+# async-checkpoint flush is in the number, and pooled across L: iteration cost
+# is the same to within 4% at every language setting, because tokens per
+# iteration and sequence length do not change with L. Only the batch content
+# does. p10..p90 sits within 1-3% of the median at every measured rung, which
+# is the band that says compute-bound rather than I/O-bound.
 #
-# Values here are ~20% above measurement: under-estimating walls a job and
-# costs a whole queue cycle, over-estimating only lengthens the request.
-# (At 600M and above the 11:59:59 cap dominates anyway — those runs resume.)
+# The values these replaced were fitted during the capstor period and were
+# inflated by dataloader stalls (CLAUDE.md #8): deep 175M read 2176 against
+# 844 now, shallow 90M 4072 against 1154. The power-of-2 GEMM aliasing
+# hypothesis attached to them was refuted by a standalone benchmark (flat
+# 553-633 TFLOP/s at every ladder shape) — do not reinstate it.
+#
+# 1B and 1.7B have NO run on this sweep yet, so they are left at their older
+# estimates rather than given a fabricated precision. Both need >11h at any
+# plausible rate, so auto_time clamps them to the cap either way and the
+# walltime is insensitive to the value; the BUDGET is not (they are ~84% of
+# the sweep's node-hours), so measure them on the first real run.
 ITER_MS = {
-    "deep":    {"90M": 1400,  # [m] 1230
-                "175M": 2400,  # [m] 2176
-                "350M": 2000, "600M": 1900, "1B": 2400, "1.7B": 3200},
-    "shallow": {"90M": 4400,  # [m] 4072
-                "175M": 900,   # [m] 757
-                "350M": 1700,  # [m] 1487
-                "600M": 1900, "1B": 2600, "1.7B": 3200},
+    "deep":    {"90M": 1500,   # [m] 1248
+                "175M": 1000,  # [m]  844
+                "350M": 750,   # [m]  604
+                "600M": 660,   # [m]  548
+                "1B": 2400, "1.7B": 3200},        # not measured
+    "shallow": {"90M": 1400,   # [m] 1154
+                "175M": 1000,  # [m]  810
+                "350M": 700,   # [m]  567
+                "600M": 650,   # [m]  539
+                "1B": 2600, "1.7B": 3200},        # not measured
 }
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
@@ -521,7 +531,6 @@ def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
                  lr_warmup_iters=TEST_WARMUP, lr_wsd_decay_iters=TEST_DECAY),
         dry_run=dry_run,
     )
-
 
 
 def main() -> None:

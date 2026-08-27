@@ -102,15 +102,17 @@ CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
 #
 # Model size barely moves the per-task cost at this scale — these are small
 # models and the run is dominated by dataset load and tokenization, not by the
-# forward pass. 600M+ have no eval runs yet and are extrapolated from 350M as
-# params^0.25, which will start to matter as the forward pass grows.
+# forward pass. That will stop holding as the forward pass grows, and 600M+
+# have no eval run yet, so those keep their older conservative estimates
+# rather than an extrapolation dressed up as a measurement. The step from
+# 350M's measured 0.75 to 600M's 1.6 is that ignorance, not a cliff.
 #
 # A walltime kill mid-batch writes NO results_*.json (BATCH_TASKS=1 is a single
 # lm_eval call), so an undersized job is pure loss: hence SAFETY below, and the
 # generous fixed overhead relative to the ~2.5 min measured — container pull and
 # vLLM cold start are both much slower on a loaded node.
 MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75,   # measured
-                "600M": 0.86, "1B": 0.98, "1.7B": 1.12}    # extrapolated
+                "600M": 1.6, "1B": 2.0, "1.7B": 2.8}       # not measured
 OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
 
@@ -119,7 +121,7 @@ def eval_walltime(size: str, n_tasks: int) -> str:
     """Fixed overhead + per-task budget x SAFETY, rounded up to 15 min, capped
     at the normal queue's 11:59:59 limit (launch_trainings.TIME_MAX_SEC) — an
     over-cap request is rejected at submission and would crash the watch loop."""
-    minutes = OVERHEAD_MIN + n_tasks * MIN_PER_TASK.get(size, 1.12) * SAFETY
+    minutes = OVERHEAD_MIN + n_tasks * MIN_PER_TASK.get(size, 2.8) * SAFETY
     minutes = min(math.ceil(minutes / 15) * 15, 719)
     return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 

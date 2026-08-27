@@ -34,7 +34,7 @@ python3.11 auto_evals_cscs.py --watch 600
 
 # 4. Monitor
 python3.11 pretrain_progress.py                    # per-cell status lines
-python3.11 pretrain_progress.py --plot             # + the two heatmaps
+python3.11 pretrain_progress.py --plot             # + the plan table and heatmaps
 ```
 
 **On Azure** (one-time setup in [`azure/README.md`](azure/README.md) §1–§4,
@@ -123,7 +123,7 @@ launcher — the core design):
 | [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. |
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
-| [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the two progress heatmaps (`--plot`). |
+| [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
 | [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. |
 | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
@@ -133,7 +133,7 @@ launcher — the core design):
 | Dir | Contents |
 | --- | -------- |
 | [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
-| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B}.json`](data/language_sets_schemeA.json) (the nested language lists), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per mixture — L2 goes through the same path, sized for its 1.7B run). |
+| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B}.json`](data/language_sets_schemeA.json) (the nested language lists), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per mixture — L2 goes through the same path, sized for its 1.7B run), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap). |
 | [`hyperparams/`](hyperparams/) | The reviewed architecture ladders: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
 
@@ -256,11 +256,14 @@ manually), `--test`.
   ~28× slower per read and up to 200× on the tail, which stalls training
   unpredictably (CLAUDE.md #8). `launch_builds.sh` writes the durable master to
   capstor; `--data_dir` defaults to the iopsstor stage. iopsstor is purged
-  ~30 days, so after a purge re-stage before launching:
+  ~30 days, so after a purge re-stage before launching — idempotent, skips
+  what is already there, and gets `schemeB/` right (its english build is a
+  symlink, not a second copy):
   ```bash
-  cp /capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/{english_dclm,fineweb_L*}.{bin,idx} \
-     /iopsstor/scratch/cscs/$USER/data/
+  sbatch --account=infra01 data/stage_to_iopsstor.sh   # ~2 TB: not on the login node
   ```
+  Every build job also calls it for its own mixture when it finishes, so this
+  is only needed after a purge or for a mixture built before staging existed.
 - **Pre-build the eval datasets into the iopsstor HF cache.** Compute nodes have
   no internet and the harness runs all tasks in one batched call, so a single
   uncached dataset aborts the whole eval. They live in `$HF_HOME/datasets` on
@@ -294,11 +297,21 @@ loads the final checkpoint and exits immediately.
 python3.11 pretrain_progress.py                 # what a re-launch would do, per cell
 python3.11 pretrain_progress.py --filter 1.7B   # subset by name substring
 python3.11 pretrain_progress.py --arch shallow --scheme B   # a variant's cells
-python3.11 pretrain_progress.py --plot          # + the two heatmaps
+python3.11 pretrain_progress.py --plot          # + the plan table and heatmaps
 ```
 
-`--plot` writes two grid heatmaps (x = model size, y = number of languages),
-aggregated over **every** run found on disk regardless of variant:
+`--plot` writes three figures over the sweep grid (x = model size,
+y = number of languages) and rewrites the generated grid block in this
+README and in [`plan/small-to-large-predictivity-training-plan.md`](../../plan/small-to-large-predictivity-training-plan.md)
+from the constants in `launch_trainings.py`, so a grid edit reaches the docs
+instead of leaving stale numbers behind.
+
+- **`pretrain_progress_plan.png`** — the plan, read off those constants:
+  cell = the scheme / architecture / seed(s) of every run it calls for,
+  not just a count.
+
+The other two are read off disk, aggregated over **every** run found there
+regardless of variant:
 
 - **`pretrain_progress_simple.png`** — cell = how many finished models exist
   at (size, L), across seeds, deep/shallow, scheme A/B, tokenizers.
@@ -306,8 +319,9 @@ aggregated over **every** run found on disk regardless of variant:
   blue 1) heatmaps per transformation: SEED (28 / 1797 / 1904),
   ARCH (deep / shallow), SCHEME (A / B), TOKENIZER (v1 for now).
 
-Both PNGs are also refreshed automatically at the end of every
-`launch_trainings.py cscs` invocation, so they're always up to date.
+All three PNGs and the generated doc blocks are refreshed automatically at
+the end of every `launch_trainings.py cscs` invocation, so they're always up
+to date.
 
 **Benchmark evals while pretraining** — automated on both platforms with
 the same rule (**every 2nd saved checkpoint plus each run's final one**,
@@ -339,6 +353,12 @@ nothing duplicates.
   python3.11 auto_evals_cscs.py --watch 600     # tmux: a pass every 10 min
   ```
 
+  Every `launch_trainings.py cscs` run **starts this watcher in the
+  background** for the arch it submits (a pass every 30 min, log under
+  `.../Megatron-LM/logs/auto_evals/`) unless one is already running, so
+  trained cells reach W&B without a separate step. `--no-auto-evals` opts
+  out; `--dry-run` never starts it.
+
 - **Azure** — [`auto_evals_azure.py`](auto_evals_azure.py) does the same
   against blob storage, one watcher per workspace (each has its own blob
   store and compute; the UK one overrides the job YAMLs' Spain-only
@@ -348,21 +368,30 @@ nothing duplicates.
 
 ## Per-size cluster cost (steady state)
 
-350M–1B sampled from 1.26M iter log lines of the completed 36-model sweep
-(same architectures and node counts); 90M and 175M measured on this sweep
-(2026-08-21, flash attention, data on iopsstor); 1.7B is still an estimate:
+90M–600M are measured on **this** sweep: medians over 500k+ logged iterations
+from the 2026-08-21…27 runs (flash attention, data on iopsstor), sampled
+mid-run so neither cold start nor the end-of-run checkpoint flush is included,
+and pooled across L. 1B and 1.7B have no run here yet.
 
-| Size  | Nodes | MBS | Median ms/iter | Predictivity iters (5×C) | h (steady) |
-| ----- | ----: | --: | -------------: | -----------------------: | ---------: |
-| 90M   |     3 |   7 |       **1240** |                    4 500 |     ~1.6 h |
-| 175M  |     6 |   7 |        **800** |                    8 540 |     ~1.9 h |
-| 350M  |    14 |   3 |        **565** |                   16 660 |     ~2.6 h |
-| 600M  |    21 |   6 |        **520** |                   28 800 |     ~4.2 h |
-| 1B    |    21 |   6 |        **715** |                   45 740 |     ~9.1 h |
-| 1.7B  |    21 |   2 |    ~1200 (est) |                   81 000 |      ~27 h |
+| Size  | Nodes | MBS | ms/iter deep | ms/iter shallow | Predictivity iters (5×C) | h (steady) |
+| ----- | ----: | --: | -----------: | --------------: | -----------------------: | ---------: |
+| 90M   |     3 |   7 |     **1248** |        **1154** |                    4 500 |     ~1.6 h |
+| 175M  |     6 |   7 |      **844** |         **810** |                    8 540 |     ~2.0 h |
+| 350M  |    14 |   3 |      **604** |         **567** |                   16 660 |     ~2.8 h |
+| 600M  |    21 |   6 |      **548** |         **539** |                   28 800 |     ~4.4 h |
+| 1B    |    21 |   6 |    715 (est) |       715 (est) |                   45 740 |     ~9.1 h |
+| 1.7B  |    21 |   2 |   1200 (est) |      1200 (est) |                   81 000 |      ~27 h |
 
-deep and shallow cost the same per iteration at equal size (175M: 800 vs 807),
-as expected once both ladders pin ffw = 4 and gqa = 4 — one table covers both.
+**Training cost does not depend on L.** Across all seven language settings at
+a fixed size the medians vary by ≤4% (350M deep: 589–614 ms) — tokens per
+iteration and sequence length are identical at every L, only the batch content
+differs. The language setting costs *eval* time, not training time; the
+per-(size, L) eval table is in
+[plan/compute-budget.md](../../plan/compute-budget.md).
+
+deep and shallow cost **nearly** the same per iteration, with shallow
+consistently 2–8% faster (90M 1154 vs 1248; 600M 539 vs 548), as expected once
+both ladders pin ffw = 4 and gqa = 4.
 
 The medians feed `launch_trainings.py::ITER_MS` and `auto_time()` (walltime =
 remaining iters × rate + 2h30m margin for the 1h SIGUSR2 grace + cold-start).
@@ -373,7 +402,10 @@ invocation resumes it.
 
 **Always read ms/iter as a median with its p10/p90 band.** A wide spread means
 the job was I/O-bound and the number is not a cost estimate (CLAUDE.md #8);
-a tight band (e.g. 90M 1234/1240/1247) means it is compute-bound and usable.
+a tight band means it is compute-bound and usable — every measured rung above
+sits within 1–3% of its median. The values this table replaced were fitted
+during the capstor period and were inflated by dataloader stalls: deep 175M
+read 2176 against 844 now, shallow 90M 4072 against 1154.
 
 
 ## Possible future improvements

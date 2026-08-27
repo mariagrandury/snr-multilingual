@@ -130,31 +130,46 @@ actually runs on — distinct from the Azure budget above. Nodes are 4× GH200
 each; global batch 504 × 4096. **Time/run is one complete model** (one
 size × language-setting × seed, scratch → full D = 100·N budget).
 
-| Size  | Tokens (D=100·N) | Iters  | Nodes | ms/iter | Time/run | 12h segments | Runs | Node-hours |
-| ----- | ---------------: | -----: | ----: | ------: | -------: | :----------: | ---: | ---------: |
-| 90M   |            9.3 B |  4,500 |     3 |   1,240 |   ~1.6 h |      1       |    7 |         33 |
-| 175M  |           17.6 B |  8,540 |     6 |     800 |   ~1.9 h |      1       |   15 |        171 |
-| 350M  |           34.4 B | 16,660 |    14 |     565 |   ~2.6 h |      1       |    7 |        256 |
-| 600M  |           59.5 B | 28,800 |    21 |     520 |   ~4.2 h |      1       |    7 |        612 |
-| 1B    |           94.4 B | 45,740 |    21 |     715 |   ~9.1 h |      1       |   15 |      2,862 |
-| 1.7B  |          167.2 B | 81,000 |    21 |  1,200* |  ~27.0 h |      3       |    5 |      2,835 |
-| **Σ** |                  |        |       |         |          |              |   56 |    ~6,770  |
+| Size  | Tokens (D=100·N) | Iters  | Nodes | ms/iter deep · shallow | Time/run | 12h segments | Runs | Node-hours |
+| ----- | ---------------: | -----: | ----: | ---------------------: | -------: | :----------: | ---: | ---------: |
+| 90M   |            9.3 B |  4,500 |     3 |    **1,248 · 1,154**   |   ~1.6 h |      1       |    7 |         19 |
+| 175M  |           17.6 B |  8,540 |     6 |      **844 · 810**     |   ~2.0 h |      1       |   15 |         48 |
+| 350M  |           34.4 B | 16,660 |    14 |      **604 · 567**     |   ~2.8 h |      1       |    7 |        157 |
+| 600M  |           59.5 B | 28,800 |    21 |      **548 · 539**     |   ~4.4 h |      1       |    7 |        368 |
+| 1B    |           94.4 B | 45,740 |    21 |                  715\* |   ~9.1 h |      1       |   15 |      2,862 |
+| 1.7B  |          167.2 B | 81,000 |    21 |                1,200\* |  ~27.0 h |      3       |    5 |      2,835 |
+| **Σ** |                  |        |       |                        |          |              |   56 |    ~6,290  |
 
 - **Runs execute in parallel** (each cell on its own node allocation), so the
-  serial run-hours are not calendar time — **node-hours (~6,770)** is the
-  compute cost. 1B + 1.7B are ~84% of it.
-- ms/iter for **350M–1B are measured** (medians over 1.26 M iter log lines from
-  the CSCS `data-mix-small` runs — same architectures, node counts, and batch,
-  so they transfer by iteration count). **90M (1,240) and 175M (800/807) are
-  now measured on this sweep** (2026-08-21, flash attention, data on iopsstor);
-  90M came in well above the old 740 extrapolation. **\* 1.7B is still
-  extrapolated** (MBS = 2, memory-bound) — worth a calibration run.
+  serial run-hours are not calendar time — **node-hours** is the compute cost.
+  1B + 1.7B are ~90% of it.
+- **90M–600M are measured on this sweep**, in bold: medians over **500 k+
+  logged iterations** from the 2026-08-21…27 runs, i.e. entirely after the
+  training data moved to iopsstor. Sampled mid-run (first 20 and last 10
+  iterations dropped, so neither cold start nor the end-of-run
+  async-checkpoint flush is included). p10…p90 sits within **1–3%** of the
+  median at every one of those rungs.
+- **Iteration cost does not depend on L.** Across all seven language settings
+  at a fixed size the medians vary by ≤4% (350M deep: 589–614 ms). Tokens per
+  iteration and sequence length are identical at every L — only the *content*
+  of the batch differs. Training time is therefore a function of (size, arch)
+  alone; the language setting costs **eval** time, not training time.
+- **\* 1B and 1.7B are NOT measured on this sweep** and are left at the older
+  36-sweep figure (1B) and extrapolation (1.7B) rather than given a fabricated
+  precision. They are ~90% of the node-hours, so this is the single largest
+  budget uncertainty — one calibration run at each would close it.
 - Measure ms/iter as a **median with a tight p10/p90 band**. A wide spread means
   the run was I/O-bound, not compute-bound, and the number is not a cost
   estimate — that is how the capstor dataloader stall hid for a day
   (`src/pretrain/CLAUDE.md` #8). Training must read from iopsstor.
-- deep and shallow cost the same per iteration at equal size (175M: 800 vs 807),
-  as expected once both ladders pin ffw = 4 and gqa = 4.
+- deep and shallow cost **nearly** the same per iteration at equal size, with
+  shallow consistently 2–8% faster (90M 1,154 vs 1,248; 600M 539 vs 548) — as
+  expected once both ladders pin ffw = 4 and gqa = 4.
+- `launch_trainings.py::ITER_MS` previously held values fitted during the
+  capstor period, inflated by dataloader stalls: deep 175M read 2,176 against
+  844 now, shallow 90M 4,072 against 1,154. The power-of-2 GEMM aliasing
+  hypothesis attached to them was refuted by a standalone benchmark (flat
+  553–633 TFLOP/s at every ladder shape).
 - 1.7B exceeds the 12 h queue wall → ~3 resume segments/run, handled by the
   standard `--use-checkpoint-opt_param-scheduler` path (there is no separate
   resume script: re-running `launch_trainings.py` is the resume).
@@ -171,13 +186,37 @@ at every size, and the 1×C operating point is always checkpoint 4 (8 of 40).
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
 | Convert (Megatron → HF, every checkpoint) | 1,220 ckpts | ~3 min | ~60 |
-| Eval (every 2nd checkpoint, `auto` group)  |   610 jobs | ~14 min | ~142 |
+| Eval (every 2nd checkpoint, `auto` group)  |   560 jobs | 8–47 min measured (see below) | **~820–1,500** |
 
-- Eval unit cost is measured: a 90M cell over the 18 `auto` tasks for L2 takes
-  **~14 min** end to end (container + vLLM cold start + 18 tasks + W&B push);
-  `--limit 1` finishes in ~4 min. `eval_walltime()` still assumes a fixed 60 min
-  overhead, so its requests are ~5× the real cost — safe, but it makes eval jobs
-  look expensive to the scheduler.
+Eval is **~12–19% of the sweep's compute, not the ~2% previously stated here.**
+The old ~142 node-hours applied L2's ~14 min to every cell, but cost scales
+with the task count and the high-L cells dominate: the `auto` group expands to
+one task per benchmark per language the cell trains on, from **9 tasks at L1
+to 290 at L100**. The range above is the honest spread — its low end assumes
+600M+ evaluate like 350M, its high end uses the conservative per-task numbers
+`eval_walltime()` actually requests for them.
+
+Elapsed time is very close to linear in the task count. Fitted on 69 completed
+eval jobs (2026-08-21…27), median elapsed per (size, n_tasks):
+
+| Size | 9 tasks | 18 tasks | 60 tasks | overhead | per task |
+| ---- | ------: | -------: | -------: | -------: | -------: |
+| 90M  | 7.9 min | 13.9 min |     —    | 1.95 min | 0.667 min |
+| 175M | 8.3 min | 13.9 min |     —    | 2.70 min | 0.622 min |
+| 350M | 9.1 min | 15.3 min | 47.4 min | 2.34 min | 0.751 min |
+
+The 350M fit, taken on 9 → 60 tasks, predicts **47.4 min at 60 tasks against
+47.4 measured**, so extending it across language settings is sound. Extending
+it across *sizes* is not: 600M and above have no eval run yet and keep
+conservative estimates in `MIN_PER_TASK`.
+
+- `eval_walltime()` previously assumed a fixed **60 min** overhead against the
+  ~2.5 min measured, and put 90M at 0.6 min/task — *below* the 0.667 measured.
+  Both are now fitted; overhead is 15 min for cold-start headroom.
+- At the unmeasured sizes the L100 request already clamps to the 11:59 queue
+  cap, which means no margin at all. A walltime kill writes **nothing** under
+  `BATCH_TASKS=1`, so those cells need the eval split across jobs rather than a
+  bigger request.
 - Eval is ~2% of the sweep's compute but is **latency-bound, not
   throughput-bound**: jobs are 1 node and the `debug` partition takes them
   (1:30 cap, 1 running + 1 queued), so `scripts/debug_drain.sh` moves them off
