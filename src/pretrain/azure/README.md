@@ -225,7 +225,29 @@ each dataset is built exactly once.
 
 `azcopy` is a single static binary — no root or install on the login node.
 Upload once to the Spain workspace; the UK copy is server-side inside Azure
-(nothing flows through CSCS twice):
+(nothing flows through CSCS twice).
+
+**Copy from the capstor master, not the iopsstor stage.** capstor is the
+durable copy every build writes to; iopsstor holds only what
+`data/stage_to_iopsstor.sh` has staged so far, and is swept every ~30 days.
+
+**What ships, and how much.** Scheme A is the full ladder; scheme B differs
+from A only at L ∈ {8, 15, 30} (`SCHEME_B_LANGS` in `launch_trainings.py` —
+every other setting reuses the scheme-A build, so there is nothing else to
+upload). **~3.3 TB in total**, apparent size:
+
+| scheme | builds | size |
+| ------ | ------ | ---: |
+| A | `english_dclm` 686G, `fineweb_L2` 272G, `L8` 343G, `L15` 194G, `L30` 343G, `L50` 194G, `L100` 343G | 2.4 TB |
+| A | `validation.*` (one pair per language + manifest) | 2 GB |
+| B | `fineweb_L8` 343G, `L15` 194G, `L30` 343G | 0.9 TB |
+
+Scheme B's `english_dclm.*` and `validation.manifest.json` are **symlinks**
+into the scheme-A directory, and azcopy skips symlinks unless you pass
+`--follow-symlinks`. Leave them skipped: `azure/jobs/pretrain.yml` pins
+`inputs.english` at the scheme-A `predictivity/data/english_dclm` folder for
+every cell, and only `inputs.fineweb` is repointed at `data/schemeB/` — so
+uploading a second 686 GB copy of English would buy nothing.
 
 **On your laptop** (has `az` + `azure/env.sh`)
 
@@ -263,33 +285,78 @@ az storage container generate-sas \
 #  generate-sas against those.)
 ```
 
-**On the CSCS login node** — install azcopy, set the target + token once, then
-copy every build into its own folder (`$OUT` = the §5a build dir):
+**On the CSCS login node** — install azcopy once, set the target + token, then
+copy every build into its own folder.
+
+3. Install azcopy and point it at Spain. `$OUT` is the capstor master (§5a):
 
 ```bash
-# azcopy is a single static binary — no root/install:
+cd /iopsstor/scratch/cscs/mariagrandury
 wget -qO- https://aka.ms/downloadazcopy-v10-linux | tar xz
 export PATH="$PWD/azcopy_linux_amd64"*:$PATH
 
-# Spain target + the SAS token you just printed on your laptop:
+export OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data
 export ES="https://snreswsstorage217e4ec3bb.blob.core.windows.net/azureml-blobstore-2ed07b42-5369-425f-b7f2-df29b3684e32"
-export ES_SAS='PASTE_THE_TOKEN_HERE'
+export ES_SAS='PASTE_THE_TOKEN_HERE'   # from step 2 — a secret, never commit it
+```
 
-# English + L2 first (unblocks §8), then the rest — one build per folder:
-azcopy copy "$OUT/english_dclm*" "$ES/predictivity/data/english_dclm/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L2*"   "$ES/predictivity/data/fineweb_L2/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L8*"   "$ES/predictivity/data/fineweb_L8/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L15*"  "$ES/predictivity/data/fineweb_L15/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L30*"  "$ES/predictivity/data/fineweb_L30/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L50*"  "$ES/predictivity/data/fineweb_L50/?$ES_SAS"
-azcopy copy "$OUT/fineweb_L100*" "$ES/predictivity/data/fineweb_L100/?$ES_SAS"
-azcopy copy "$OUT/validation*"   "$ES/predictivity/data/validation/?$ES_SAS"
+4. **Scheme A.** One build per destination folder. English + L2 first: those
+   two unblock the first real cells (§8), and the rest can upload while those
+   models already train.
 
-# --- LATER (only after the UK workspace exists — §9) ----------------------
-# The UK account/container don't exist until you run azure/setup.sh for the UK
-# workspace, so `datastore show $AZ_ML_ARGS_UK` fails until then. Once it's up,
-# get its account/container, mint a UK SAS the same way, and duplicate Spain ->
-# UK entirely server-side (fast, no egress from CSCS):
+```bash
+azcopy copy "$OUT/english_dclm.*" "$ES/predictivity/data/english_dclm/?$ES_SAS"
+azcopy copy "$OUT/fineweb_L2.*"   "$ES/predictivity/data/fineweb_L2/?$ES_SAS"
+azcopy copy "$OUT/validation.*"   "$ES/predictivity/data/validation/?$ES_SAS"
+
+for L in 8 15 30 50 100; do
+  azcopy copy "$OUT/fineweb_L$L.*" "$ES/predictivity/data/fineweb_L$L/?$ES_SAS"
+done
+```
+
+5. **Scheme B** — only the three settings where it differs from A, into a
+   `schemeB/` subfolder that mirrors the CSCS layout (this is exactly what
+   `launch_trainings.py azure --scheme B` points `inputs.fineweb` at):
+
+```bash
+for L in 8 15 30; do
+  azcopy copy "$OUT/schemeB/fineweb_L$L.*" "$ES/predictivity/data/schemeB/fineweb_L$L/?$ES_SAS"
+done
+```
+
+6. **Run it detached.** At ~3.3 TB this is hours of wall-clock and the login
+   node will drop the session first. There is **no `tmux` or `screen` on
+   Clariden** (not installed, not a module) — use `nohup`, which is:
+
+```bash
+nohup bash -c '<the loops above>' > azcopy.log 2>&1 &
+tail -f azcopy.log      # progress; safe to Ctrl-C, the copy keeps running
+```
+
+azcopy keeps a resumable job plan, so a dropped connection is not a lost
+upload: `azcopy jobs list`, then `azcopy jobs resume <job-id> --source-sas
+"$ES_SAS"`. Re-running a `copy` is also safe — it re-uploads, it does not
+corrupt. If the 7-day SAS expires mid-transfer, mint a new one (step 2) and
+resume.
+
+7. **Verify** in Azure ML Studio → Data → Datastores → workspaceblobstore →
+   Browse. `predictivity/data/` should hold one folder per build:
+
+```
+predictivity/data/english_dclm/english_dclm.{bin,idx}
+predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
+...                fineweb_L100/...
+predictivity/data/validation/validation*.{bin,idx} + validation.manifest.json
+predictivity/data/schemeB/fineweb_L{8,15,30}/fineweb_L*.{bin,idx}
+```
+
+**LATER — the UK copy** (only after the UK workspace exists, §9). Its
+account/container don't exist until `azure/setup.sh` has run for UK, so
+`datastore show $AZ_ML_ARGS_UK` fails before that. Once it's up, get its
+account/container, mint a UK SAS the same way, and duplicate Spain → UK
+entirely server-side — fast, and no second egress from CSCS:
+
+```bash
 export UK="https://<uk-account>.blob.core.windows.net/<uk-container>"
 export UK_SAS='PASTE_THE_UK_TOKEN_HERE'
 azcopy copy "$ES/predictivity/data/?$ES_SAS" "$UK/predictivity/?$UK_SAS" --recursive
@@ -298,19 +365,6 @@ azcopy copy "$ES/predictivity/data/?$ES_SAS" "$UK/predictivity/?$UK_SAS" --recur
 (If `--auth-mode login --as-user` is rejected on your account, generate the
 SAS from the portal instead: storage account → Containers → … → Generate SAS,
 permissions Read+Add+Create+Write+List.)
-
-Final blob layout, one folder per build — what the predictivity jobs (§8–§9)
-mount directly:
-
-```
-predictivity/data/english_dclm/english_dclm.{bin,idx}
-predictivity/data/fineweb_L2/fineweb_L2.{bin,idx}
-...                fineweb_L100/...
-predictivity/data/validation/validation*.{bin,idx} + validation.manifest.json
-```
-
-Verify in **Azure ML Studio → Data → Datastores → workspaceblobstore →
-Browse**: `predictivity/data/` holds the per-build folders.
 
 ## 6. Convert and evaluate a checkpoint
 
