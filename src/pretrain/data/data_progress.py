@@ -11,13 +11,18 @@ A column is left UNCOLOURED when its .bin does not exist yet — "not built"
 is visually distinct from "built but this language contributes nothing".
 
 Per-language token counts come from the best source available, per mixture:
-  * <prefix>.checkpoint.json  — the builder's own plan + per-source progress.
-    Exact. Present while a build is running or after it was interrupted.
-  * <prefix>.manifest.json    — written when a build completes. Exact.
-  * otherwise                 — estimated from the FineWeb-2 corpus byte
-    shares in fineweb2-language-distribution.csv. The builder allocates
-    proportionally to *sampled token* estimates, and bytes-per-token varies by
-    script, so these are approximate; the plot marks them.
+  * <prefix>.plan.json        — written by create_data_mixture.write_plan.
+    Exact, and the durable record.
+  * <prefix>.manifest.json    — exact, if one exists.
+  * <prefix>.checkpoint.json  — the builder's per-source progress. Exact, and
+    present only while a build is running or after it was interrupted.
+  * the build log             — print_plan's `target=<N>B` lines. Exact; this
+    is how mixtures built before plan.json existed are still readable.
+  * otherwise                 — a byte-share estimate from
+    fineweb2-language-distribution.csv, marked ESTIMATED (rough) and NOT fit
+    for analysis: the builder allocates by *sampled token* counts, and
+    bytes-per-token varies by script, so validated against the builder's own
+    plan this lands between -50% and +45% per language.
 
     python3.11 data_progress.py                  # writes data_progress.png
     python3.11 data_progress.py --out /tmp/x.png --print
@@ -39,6 +44,10 @@ from build_data_mixtures import fineweb_target_tokens  # noqa: E402
 DEFAULT_DATA_DIR = Path(
     "/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data")
 BYTES_PER_TOKEN = 4          # Megatron .bin element size for a 131k vocab
+# The one byte-share fallback label. A constant, not a literal in two places:
+# the title below filters on it, and a typo there silently stops the plot from
+# marking estimated columns at all.
+ESTIMATED = "ESTIMATED (rough)"
 SETTINGS = [1, 2, 8, 15, 30, 50, 100]
 SCHEME_B_SETTINGS = {8, 15, 30}   # the only settings where B differs from A
 
@@ -88,12 +97,26 @@ def plan_from_build_log(L: int, scheme: str) -> dict[str, int] | None:
     write no manifest (the only manifest is the validation one) and
     remove_checkpoint() deletes the checkpoint on success. So the log is the
     only durable copy of these numbers, and the numbers the analysis needs.
+
+    The logs live on capstor, which intermittently fails a read outright
+    (`OSError 108, Cannot send after transport endpoint shutdown` — seen on a
+    log that read fine seconds later). Skip the file that faulted rather than
+    losing the whole plot to one blip: the remaining logs, and failing those
+    the byte-share fallback, still produce a column.
     """
-    logs = sorted((f for d in BUILD_LOG_DIRS if d.is_dir()
-                   for f in d.glob(f"build-{scheme.lower()}-L{L}-*.out")),
-                  key=lambda p: p.stat().st_mtime, reverse=True)
+    try:
+        logs = sorted((f for d in BUILD_LOG_DIRS if d.is_dir()
+                       for f in d.glob(f"build-{scheme.lower()}-L{L}-*.out")),
+                      key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return None
     for log in logs:
-        hits = PLAN_RE.findall(log.read_text(errors="ignore"))
+        try:
+            hits = PLAN_RE.findall(log.read_text(errors="ignore"))
+        except OSError as e:
+            print(f"  warn: unreadable build log {log.name} ({e.strerror})",
+                  file=sys.stderr)
+            continue
         if hits:
             # print_plan runs once per build attempt; later lines supersede.
             return {lang: int(float(tok) * 1e9) for lang, tok in hits}
@@ -136,21 +159,30 @@ def column(data_dir: Path, L: int, scheme: str, langs: list[str],
     target = fineweb_target_tokens(L)
     have = size_b // BYTES_PER_TOKEN
 
+    # Only fall back to the logs when the builder's own records are missing:
+    # scanning every build log for every column is minutes of capstor I/O that
+    # a present plan.json makes pointless.
     got = exact_tokens(paths)
-    plan = plan_from_build_log(L, scheme)
+    plan = None if got else plan_from_build_log(L, scheme)
     if got:
         tokens, source = got
         tokens = {l: tokens.get(l, 0) for l in langs}
     elif plan:
         tokens = {l: plan.get(l, 0) for l in langs}
         source = "build log"
+    elif len(langs) == 1:
+        # One FineWeb language means the whole .bin IS that language — no
+        # split to estimate. This is the only reason L2 (rus_Cyrl alone) is
+        # exact despite predating print_plan's per-source target= lines.
+        tokens = {langs[0]: have}
+        source = "bin size"
     else:
         # Last resort. Byte share is NOT token share — tokenizer efficiency
         # varies by script, and against the builder's true plan this lands
         # between -50% and +45% per language. Never use for analysis.
         tot = sum(shares.get(l, 0) for l in langs) or 1
         tokens = {l: int(have * shares.get(l, 0) / tot) for l in langs}
-        source = "ESTIMATED (rough)"
+        source = ESTIMATED
 
     # create_data_mixture.remove_checkpoint() runs only after a build finishes,
     # so a surviving checkpoint means the build is still going (or was killed).
@@ -240,9 +272,10 @@ def render(cols: list[dict], rows: list[str], out: Path) -> None:
                         color="white" if t < finite.max() / 8 else "black")
 
     fig.colorbar(im, ax=ax, label="tokens in mixture (log scale)", fraction=0.02)
-    est = ", ".join(label(c) for c in cols if c["built"] and c["source"] == "estimated")
+    est = ", ".join(label(c) for c in cols if c["built"] and c["source"] == ESTIMATED)
     ax.set_title("Data-mixture coverage — tokens per language per setting\n"
-                 f"exact where the builder left a manifest/checkpoint; estimated for: {est or 'none'}",
+                 "exact from the builder's own plan/manifest/checkpoint or build log; "
+                 f"byte-share ESTIMATE (-50%..+45%) for: {est or 'none'}",
                  fontsize=10)
     fig.tight_layout()
     fig.savefig(out, dpi=160)
