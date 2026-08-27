@@ -45,6 +45,8 @@ Counting both architectures and scheme B where it differs: **154 runs**.
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
 ![Finished models per grid cell](../src/pretrain/pretrain_progress_simple.png)
+
+![Eval work outstanding per grid cell](../src/pretrain/eval_progress.png)
 <!-- END generated -->
 
 (The 200-language setting was dropped on 2026-08-13 to fit the compute budget

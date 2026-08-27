@@ -316,6 +316,201 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     print(f"[plot] saved {detailed_path}", file=sys.stderr)
 
 
+def eval_counts(root: Path, logs_root: Path | None = None
+                ) -> dict[tuple[str, int], dict]:
+    """Per (size, L) cell: benchmark results banked, and the two totals.
+
+    The unit is one (checkpoint, benchmark-result) pair, because that is what
+    the watcher submits against: a cell is finished not when its last eval job
+    succeeded but when every DUE checkpoint has a result for every entry in
+    its benchmark list. Counting jobs would hide exactly the case this grid is
+    for — a cell whose evals all ran but covered an older, shorter list.
+
+    Returns per cell:
+      done      results actually on disk
+      models    runs of this cell trained so far
+      planned   runs the grid plans for it (seeds x arch x scheme)
+      ckpts     due checkpoints per run (every 2nd save, plus the final one)
+      benches   benchmark entries per checkpoint at this L
+
+    `benches` grows with L: the auto group expands to one entry per benchmark
+    per language the cell trains on, 9 at L=1 and 290 at L=100. That is why
+    the eval cost of a cell is a property of L, not of the model size.
+
+    Due checkpoints and the benchmark list come from auto_evals_cscs itself
+    (imported lazily: it imports this module, so a top-level import would
+    cycle), so the picture cannot drift from what the watcher will do.
+    """
+    import auto_evals_cscs as ae
+    from evals.scripts._eval_status import completed_tasks
+    from evals.scripts.utils.configs import tasks_for_benchmarks
+    from launch_trainings import cell_languages, save_interval
+
+    logs_root = Path(logs_root or ae.DEFAULT_LOGS_ROOT)
+    benchmarks = ae.auto_benchmarks()
+    targets = _targets()
+
+    def benches(L: int, scheme: str) -> int:
+        return len(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+
+    cells: dict[tuple[str, int], dict] = {}
+    for size in SIZES:
+        for L in SIZE_LANG_SETTINGS[size]:
+            # Due checkpoints are a property of the schedule, not of what is on
+            # disk, so every cell gets a planned budget — including the ones
+            # with no run yet, which is most of the grid.
+            target = targets[("deep", size)]
+            si = save_interval(target)
+            n_due = len({i for i in range(si, target + 1, si)
+                         if i % (2 * si) == 0} | {target})
+            schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
+            # Per scheme the grid plans seeds x {deep, shallow}.
+            runs_per_scheme = len(seeds_for(size, L)) * 2
+            cells[(size, L)] = {
+                "done": 0, "models": 0, "ckpts": n_due,
+                # Scheme B evaluates a different language set, so its benchmark
+                # count differs (L=8: A 60, B 47). Keep them separate rather
+                # than pretending the cell is uniform.
+                "benches": {s: benches(L, s) for s in schemes},
+                "planned_runs": runs_per_scheme * len(schemes),
+                "planned": sum(runs_per_scheme * n_due * benches(L, s)
+                               for s in schemes),
+                # `seen*` describe what is on disk NOW, which for a
+                # mid-training run is fewer checkpoints than the schedule.
+                "avail": 0, "seen": {}, "seen_ckpts": set(),
+            }
+
+    for entry in sorted(root.iterdir()) if root.is_dir() else []:
+        m = NAME_RE.match(entry.name)
+        if not m:
+            continue
+        size, L = m["size"], int(m["L"])
+        c = cells.get((size, L))
+        if c is None:
+            continue
+        saved = ae.saved_valid_iters(entry.name, root)
+        if not saved:
+            continue
+        scheme = "B" if m["scheme"] else "A"
+        target = targets[(m["arch"], size)]
+        due = [i for i in saved
+               if i % (2 * save_interval(target)) == 0 or i == target]
+        want = set(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+        c["models"] += 1
+        c["seen"][scheme] = len(want)
+        c["seen_ckpts"].add(len(due))
+        # What is evaluable TODAY: only the checkpoints this run has actually
+        # written, which for a mid-training cell is fewer than the schedule.
+        c["avail"] += len(due) * len(want)
+        for it in due:
+            c["done"] += len(want & completed_tasks(
+                f"{entry.name}-iter{it}", ae.WANDB_ENTITY,
+                ae.PROJECT_NAME, str(logs_root)))
+    return cells
+
+
+def _bench_str(counts) -> str:
+    """`60`, or `60|47` when scheme A and B disagree — never a single number
+    standing in for two different ones."""
+    vals = sorted({v for v in (counts.values() if isinstance(counts, dict)
+                               else counts)}, reverse=True)
+    return "|".join(str(v) for v in vals) if vals else "?"
+
+
+def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
+                  out_dir: Path = SCRIPT_DIR) -> None:
+    """Heatmap of eval progress per grid cell, three numbers deep.
+
+    Each cell reads:
+
+        847                      benchmark results banked
+        1 x 10 x 100 = 1000      what the models trained SO FAR need
+        4 x 10 x 100 = 4000      what the grid PLANS for this cell
+
+    Two denominators because they answer different questions: the middle row
+    is the work the watcher can do today, the bottom row is the work the cell
+    will eventually cost once every planned run exists. A cell can be at 100%
+    of the middle row and still be a small fraction of the bottom one.
+
+    Colour is the FRACTION of the middle row complete, not the absolute count
+    missing, so a finished cell reads the same whether it is 180/180 or
+    1080/1080 — yellow at 0%, blue at 100%. Absolute counts already vary
+    ~30x across the grid (9 benchmarks at L=1, 290 at L=100), so colouring by
+    them would say little more than "this row has many languages". Cells with
+    no trained run are grey like the off-grid ones: there is no fraction to
+    show because there is nothing to evaluate yet.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+
+    cells = eval_counts(root, logs_root)
+    matrix, labels = [], []
+    done_total = now_total = plan_total = 0
+    for L in LANG_SETTINGS:
+        m_row, l_row = [], []
+        for size in SIZES:
+            c = cells.get((size, L))
+            if c is None:                      # (size, L) not in the grid
+                m_row.append(float("nan")); l_row.append(None); continue
+            plan_b = _bench_str(c["benches"])
+            plan_s = (f"{c['planned_runs']} x {c['ckpts']} x {plan_b}"
+                      f" = {c['planned']:,}")
+            if not c["models"]:
+                # Nothing trained yet: no actionable work, so no colour, but
+                # the planned cost still shows — the grid doubles as a budget.
+                m_row.append(float("nan"))
+                l_row.append(("0", "", plan_s))
+                plan_total += c["planned"]
+                continue
+            m_row.append(c["done"] / c["avail"] if c["avail"] else 1.0)
+            l_row.append((
+                f"{c['done']:,}",
+                f"{c['models']} x {_bench_str(c['seen_ckpts'])}"
+                f" x {_bench_str(c['seen'])} = {c['avail']:,}",
+                plan_s,
+            ))
+            done_total += c["done"]
+            now_total += c["avail"]
+            plan_total += c["planned"]
+        matrix.append(m_row); labels.append(l_row)
+
+    # Yellow 0% -> blue 100%, the same two anchors the detailed plot uses for
+    # its binary cells, so the three figures read as one family.
+    cmap = LinearSegmentedColormap.from_list(
+        "progress", ["#f4d03f", "#7fb3d5", "#3b6fb6"])
+    fig, ax = plt.subplots(figsize=(9, 7))
+    _draw_grid(ax, matrix, cmap, 1.0, annotate=False)
+    for i, l_row in enumerate(labels):
+        for j, lab in enumerate(l_row):
+            if lab is None:
+                continue
+            big, now_s, plan_s = lab
+            frac = matrix[i][j]
+            colour = "white" if frac == frac and frac > 0.55 else "black"
+            ax.text(j, i - 0.22, big, ha="center", va="center",
+                    fontsize=11, fontweight="bold", color=colour)
+            ax.text(j, i + 0.08, now_s, ha="center", va="center",
+                    fontsize=6, color=colour)
+            ax.text(j, i + 0.28, plan_s, ha="center", va="center",
+                    fontsize=6, color=colour, alpha=0.75)
+    ax.set_xlabel("model size (non-embedding)")
+    ax.set_ylabel("number of languages")
+    ax.set_title(
+        "Eval progress per grid cell — benchmark results banked (bold)\n"
+        "models x checkpoints x benchmarks: trained so far (middle), "
+        "planned (bottom)\n"
+        f"{done_total:,} done of {now_total:,} available "
+        f"({100 * done_total / now_total if now_total else 100:.0f}%), "
+        f"{plan_total:,} at full grid   ·   "
+        "colour = % of available done (yellow 0 → blue 100)",
+        fontsize=9)
+    fig.tight_layout()
+    path = out_dir / "eval_progress.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[plot] saved {path}", file=sys.stderr)
+
+
 def planned_variants(size: str, L: int) -> list[str]:
     """Every run the grid plans for one (size, L) cell, as display lines.
 
@@ -429,6 +624,8 @@ Counting both architectures and scheme B where it differs: **{full} runs**.
 ![Planned runs per grid cell]({png_dir}/pretrain_progress_plan.png)
 
 ![Finished models per grid cell]({png_dir}/pretrain_progress_simple.png)
+
+![Eval work outstanding per grid cell]({png_dir}/eval_progress.png)
 {DOC_END}"""
 
 
@@ -477,6 +674,13 @@ def main() -> None:
     if args.plot:
         update_plots(root=Path(args.root))
         plan_table()
+        # Scanning eval_logs is the slow part (one glob per due checkpoint) and
+        # needs nothing from the training side, so a failure here must not cost
+        # the training plots that already succeeded.
+        try:
+            eval_progress(root=Path(args.root))
+        except Exception as e:
+            print(f"[plot] eval progress skipped: {e}", file=sys.stderr)
         sync_docs()
 
 

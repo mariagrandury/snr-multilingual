@@ -78,6 +78,8 @@ Counting both architectures and scheme B where it differs: **154 runs**.
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
 ![Finished models per grid cell](./pretrain_progress_simple.png)
+
+![Eval work outstanding per grid cell](./eval_progress.png)
 <!-- END generated -->
 
 Variants multiply the
