@@ -55,6 +55,7 @@ from launch_trainings import (  # noqa: E402
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
+from evals.scripts._eval_status import completed_tasks  # noqa: E402
 
 EVALS_DIR = SCRIPT_DIR.parent / "evals"
 CONVERT_SNR = SCRIPT_DIR / "conversion" / "convert-snr.sh"
@@ -72,25 +73,42 @@ DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
 CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
-# The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime
-# can't fit both — and the whole batched run executes on 1 of the node's 4
-# GPUs (the ladder's KV-head counts force TP=1 and vLLM clamps dense DP to
-# 1). Per-task minutes extrapolated from the 36-sweep's per-task-mode
-# timings (launch_ckpts_in_progress.sh: 4-10 min/task on the full node),
-# ~/10 for batched mode, ~x2 for the single GPU. A walltime kill mid-batch
-# writes NO results_*.json, so an undersized job would just be resubmitted
-# and re-killed forever — err generous.
-MIN_PER_TASK = {"90M": 0.6, "175M": 0.8, "350M": 1.2, "600M": 1.6,
-                "1B": 2.0, "1.7B": 2.8}
+# The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime can't
+# fit both — and the whole batched run executes on 1 of the node's 4 GPUs (the
+# ladder's KV-head counts force TP=1 and vLLM clamps dense DP to 1).
+#
+# Elapsed time is very close to linear in the task count. Fitted on 69
+# completed eval jobs (2026-08-21..27), median elapsed per (size, n_tasks):
+#
+#     size   9 tasks  18 tasks  60 tasks    overhead   per task
+#     90M      7.9       13.9         -      1.95 min   0.667 min
+#     175M     8.3       13.9         -      2.70 min   0.622 min
+#     350M     9.1       15.3      47.4      2.34 min   0.751 min
+#
+# The 350M fit (taken on 9 -> 60) predicts 47.4 min at 60 tasks against 47.4
+# measured, so extrapolating it to the larger language settings is sound.
+#
+# Model size barely moves the per-task cost at this scale — these are small
+# models and the run is dominated by dataset load and tokenization, not by the
+# forward pass. 600M+ have no eval runs yet and are extrapolated from 350M as
+# params^0.25, which will start to matter as the forward pass grows.
+#
+# A walltime kill mid-batch writes NO results_*.json (BATCH_TASKS=1 is a single
+# lm_eval call), so an undersized job is pure loss: hence SAFETY below, and the
+# generous fixed overhead relative to the ~2.5 min measured — container pull and
+# vLLM cold start are both much slower on a loaded node.
+MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75,   # measured
+                "600M": 0.86, "1B": 0.98, "1.7B": 1.12}    # extrapolated
+OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
+SAFETY = 1.5        # on the per-task term only
 
 
 def eval_walltime(size: str, n_tasks: int) -> str:
-    """~1h overhead (container + vLLM cold start + W&B push) + per-task
-    budget, rounded up to 15 min, capped at the normal queue's 11:59:59
-    limit (launch_trainings.TIME_MAX_SEC) — an over-cap request is rejected
-    at submission and would crash the watch loop."""
-    minutes = math.ceil((60 + n_tasks * MIN_PER_TASK.get(size, 2.8)) / 15) * 15
-    minutes = min(minutes, 719)
+    """Fixed overhead + per-task budget x SAFETY, rounded up to 15 min, capped
+    at the normal queue's 11:59:59 limit (launch_trainings.TIME_MAX_SEC) — an
+    over-cap request is rejected at submission and would crash the watch loop."""
+    minutes = OVERHEAD_MIN + n_tasks * MIN_PER_TASK.get(size, 1.12) * SAFETY
+    minutes = min(math.ceil(minutes / 15) * 15, 719)
     return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 
 
@@ -124,10 +142,18 @@ def active_jobs() -> set[str]:
         return set()
 
 
-def evaluated(name: str, logs_root: Path) -> bool:
-    """Results on disk for NAME (the same layout every eval path writes)."""
-    base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
-    return base.is_dir() and any(base.glob("eval_*/results_*.json"))
+def evaluated(name: str, logs_root: Path, tasks: list[str]) -> bool:
+    """True when every task in TASKS already has a result for NAME.
+
+    Task-level, not checkpoint-level: `any results_*.json` would mean that
+    adding a benchmark to the `auto` group never reaches checkpoints already
+    evaluated on the old list — the sweep would silently carry two different
+    task sets. The inner runner is already per-task idempotent
+    (_run_per_task.sh filters through the same _eval_status.completed_tasks),
+    so a resubmitted job runs ONLY the new tasks and merges them in.
+    """
+    return not set(tasks) - completed_tasks(
+        name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
 
 
 def hf_staged(cell: str, it: int, staging: Path) -> bool:
@@ -217,8 +243,8 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
                if i % (args.every * save_interval(target)) == 0 or i == target]
         # The cell's task list: every auto benchmark, in the languages
         # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
-        tasks = ",".join(tasks_for_benchmarks(
-            benchmarks, cell_languages(c["L"], scheme)))
+        task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
+        tasks = ",".join(task_list)
         # Convert EVERY saved checkpoint (persist all of them to capstor), but
         # evaluate only the due ones — conversion is the durability step, eval
         # is the expensive one we sample at 1/N.
@@ -227,7 +253,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         # whose results are already on disk needs no action, and printing it
         # every pass reads as work the watcher is failing to submit.
         pending = [it for it in due
-                   if not evaluated(f"{cell}-iter{it}", logs_root)]
+                   if not evaluated(f"{cell}-iter{it}", logs_root, task_list)]
         print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | "
               f"eval {pending or f'DONE ({len(due)}/{len(due)})'}")
 
