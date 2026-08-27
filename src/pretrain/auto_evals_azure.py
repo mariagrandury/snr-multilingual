@@ -30,6 +30,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -95,6 +96,38 @@ def list_blobs(auth: list[str], prefix: str) -> list[str]:
         marker = page[-1].get("nextMarker") if page else None
         if not marker:
             return names
+
+
+_BLOB_JSON: dict[str, dict] = {}
+
+
+def blob_json(auth: list[str], name: str) -> dict:
+    """One blob parsed as JSON. `az storage blob download` writes the content
+    to --file and its own property dict to stdout, so a temp file is the only
+    unambiguous way to get just the content. Returns {} if the blob is
+    unreadable or not JSON — a half-uploaded results file must not kill the
+    watch loop.
+
+    Memoised for the life of the watcher: a results blob's name carries the
+    eval's timestamp, so its content never changes once written, and without
+    this every pass would re-download every finished checkpoint's results.
+    """
+    if name in _BLOB_JSON:
+        return _BLOB_JSON[name]
+    with tempfile.TemporaryDirectory() as d:
+        dest = Path(d) / "blob.json"
+        try:
+            subprocess.run(["az", "storage", "blob", "download", *auth,
+                            "--name", name, "--file", str(dest),
+                            "--only-show-errors"],
+                           check=True, capture_output=True, text=True)
+            # Cache only on success: a transient download failure must be
+            # retried next pass, not remembered as "no tasks evaluated".
+            _BLOB_JSON[name] = json.loads(dest.read_text())
+            return _BLOB_JSON[name]
+        except (subprocess.CalledProcessError, json.JSONDecodeError, OSError):
+            print(f"  warn: could not read {name}", file=sys.stderr)
+            return {}
 
 
 def saved_iters(auth: list[str], name: str) -> list[int]:
@@ -178,12 +211,29 @@ def one_pass(names: list[str], auth: list[str], every: int,
         # marker existed are simply re-converted (idempotent, same bytes).
         converted = {b.split("/")[2] for b in list_blobs(auth, f"models/{name}/")
                      if b.endswith("/.hf_complete")}
-        evaluated = {m.group(1)
-                     for b in list_blobs(
-                         auth,
-                         f"eval_logs/{WANDB['entity']}/{WANDB['project']}/{name}-iter")
-                     if "results_" in b
-                     for m in [re.search(rf"/({re.escape(name)}-iter\d+)/harness/", b)] if m}
+        # Results blobs per checkpoint. Gate on TASKS, not on "any results
+        # exist": adding a benchmark to the auto group has to reach
+        # checkpoints already evaluated on the old list, or the sweep
+        # silently carries two different task sets. The CSCS watcher gets
+        # this from _eval_status.completed_tasks against local disk; here
+        # list_blobs returns names only, so the results files must be read.
+        # Only for checkpoints that HAVE results, and only when due (below),
+        # so a pass costs one download per completed eval rather than per
+        # checkpoint.
+        results_blobs: dict[str, list[str]] = {}
+        for b in list_blobs(
+                auth,
+                f"eval_logs/{WANDB['entity']}/{WANDB['project']}/{name}-iter"):
+            hit = re.search(rf"/({re.escape(name)}-iter\d+)/harness/", b)
+            if hit and "/results_" in b and b.endswith(".json"):
+                results_blobs.setdefault(hit.group(1), []).append(b)
+
+        def evaluated_tasks(ckpt: str) -> set[str]:
+            done: set[str] = set()
+            for b in results_blobs.get(ckpt, ()):
+                done |= set((blob_json(auth, b).get("results") or {}).keys())
+            return done
+
         to_convert = [it for it in iters if f"iter_{it:07d}" not in converted]
         print(f"{name}: {len(iters)} saved | convert {to_convert or '-'} | eval due {due}")
         # Convert EVERY saved checkpoint (persist all HF snapshots to blob) — the
@@ -191,8 +241,9 @@ def one_pass(names: list[str], auth: list[str], every: int,
         for it in to_convert:
             if job_name("convert", f"{name}-iter{it}") not in running:
                 submit_convert(name, it, dry_run, compute)
+        want = set(cell_tasks.split(","))
         for it in due:
-            if f"{name}-iter{it}" in evaluated:
+            if not want - evaluated_tasks(f"{name}-iter{it}"):
                 continue
             if (f"iter_{it:07d}" in converted
                     and job_name("convert", f"{name}-iter{it}") not in running
