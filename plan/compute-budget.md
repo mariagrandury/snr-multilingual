@@ -217,8 +217,8 @@ conservative estimates in `MIN_PER_TASK`.
   cap, which means no margin at all. A walltime kill writes **nothing** under
   `BATCH_TASKS=1`, so those cells need the eval split across jobs rather than a
   bigger request.
-- Eval is ~2% of the sweep's compute but is **latency-bound, not
-  throughput-bound**: jobs are 1 node and the `debug` partition takes them
+- Eval is also **latency-bound, not throughput-bound**: jobs are 1 node and
+  the `debug` partition takes them
   (1:30 cap, 1 running + 1 queued), so `scripts/debug_drain.sh` moves them off
   the busy `normal` queue.
 - Conversion gates evaluation — a cell cannot be evaluated until its HF
