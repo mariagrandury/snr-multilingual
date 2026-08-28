@@ -42,12 +42,31 @@ def collect(name_dir: Path) -> dict[str, dict]:
     return scores
 
 
+_TASKS_JSON = Path(__file__).resolve().parents[4] / "configs" / "tasks.json"
+_registered_tasks: frozenset[str] | None = None
+
+
+def registered_tasks() -> frozenset[str]:
+    """Task names registered in configs/tasks.json — standalone benchmarks
+    in their own right, never subtopics of another task."""
+    global _registered_tasks
+    if _registered_tasks is None:
+        _registered_tasks = frozenset(
+            json.loads(_TASKS_JSON.read_text())["tasks"])
+    return _registered_tasks
+
+
 def aggregate_parents(scores: dict[str, dict]) -> dict[str, dict]:
     """Drop subtopic tasks if their parent aggregate is also in `scores`.
 
     A task `T` is a subtopic of `P` iff `P` is an underscore-prefix of `T`
     AND `P` is itself in `scores`. So if both `mmlu` (aggregate from `groups`)
     and `mmlu_anatomy` are present, only `mmlu` survives.
+
+    A task registered in configs/tasks.json is never dropped: registered
+    prefix-siblings are separate benchmarks, not subtopics — `hellaswag_ru`
+    is the Russian HellaSwag, not a subtopic of the English `hellaswag`
+    (true lm_eval subtopics like `mmlu_anatomy` are not registered).
     """
     keys = set(scores)
 
@@ -58,7 +77,8 @@ def aggregate_parents(scores: dict[str, dict]) -> dict[str, dict]:
                 return True
         return False
 
-    return {t: v for t, v in scores.items() if not has_parent(t)}
+    return {t: v for t, v in scores.items()
+            if t in registered_tasks() or not has_parent(t)}
 
 
 def flatten(scores: dict[str, dict],

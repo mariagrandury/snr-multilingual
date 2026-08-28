@@ -1,203 +1,224 @@
-# Context for Claude — `data-mix-small` pretraining
+# Context for Claude — predictivity-sweep pretraining
 
-This directory submits the small-multilingual Apertus pretraining sweep.
-Companion to [README.md](README.md) (user-facing) — this file is the back-of-
-house memo: what's wired to what, and the failure modes worth remembering.
+This directory trains the small-to-large predictivity sweep on **two
+platforms at once** — the CSCS cluster (SLURM) and Azure ML — from one code
+path. Companion to [README.md](README.md) (user-facing) and
+[azure/README.md](azure/README.md) (Azure walkthrough) — this file is the
+back-of-house memo: what's wired to what, and the failure modes worth
+remembering.
 
-The eval side lives in `/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals/`,
-with its own [`CLAUDE.md`](../evals/CLAUDE.md). Both
-sides share the same checkpoint tree (this side writes, that side reads).
-
----
-
-## What we're building
-
-The canonical sweep is **4 sizes × 3 mixes × 3 seeds = 36 models**, each
-trained to **iter 50000** (≈ 100B tokens at 504 × 4096 tokens/iter).
-
-| Axis | Values |
-|---|---|
-| Size | 175M, 350M, 600M, 1B |
-| Mix (FW-Edu / FW2-HQ) | 30/70, 60/40, 90/10 |
-| Seed | 28, 1797, 1904 |
-
-EXP_NAME: `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`
-→ checkpoint dir at
-`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`.
-
-Slurm job name (used by `launch_resumes.sh` for dedup): same skeleton but
-size lowercased and dashed, e.g. `apertus-175m-edu60-fw240-seed28`.
+The eval side lives in `../evals/` (cluster) with its own CLAUDE.md. Both
+platforms auto-evaluate during pretraining: `auto_evals_cscs.py` (cluster)
+and `auto_evals_azure.py` (blob storage), same due rule, same W&B project.
 
 ---
 
-## The four scripts and how they fit
+## The architecture invariant (don't break it)
+
+**Every Megatron training argument lives in `megatron_args.sh` and nowhere
+else.** The two wrappers — `launch_pretraining_cscs.sh` (sbatch/srun/pyxis)
+and `launch_pretraining_azure.sh` (torchrun) — only add platform machinery
+and call `build_megatron_cmd`. The single intentional platform delta is the
+SLURM graceful-exit pair (`--exit-signal-handler --trigger-path`), appended
+iff `TRIGGER_PATH` is set. If you ever need a new training flag, add it to
+`megatron_args.sh` so both platforms get it; adding it to one wrapper
+reintroduces the drift this design removed.
+
+`launch_trainings.py` is the single submitter for both platforms
+(`cscs`/`azure` positional arg). It builds one env-var dict per cell
+(`cell_env`) — that dict IS the run definition; sbatch `--export` and
+`az ml job create --set environment_variables.*` are just transports.
 
 | File | Role |
 |---|---|
-| [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh) | The sbatch template. Reads env vars (MODEL_SIZE, NUM_LAYERS, …, FW_EDU_RATIO, FW2_RATIO, SEED, TRAINING_STEPS, LR, MBS) injected by the launcher. `--save` and `--load` both point at the experiment's checkpoint dir, so the same script handles fresh and resume runs. Pinned to `--use-checkpoint-opt_param-scheduler` (see failure mode #6). |
-| [`launch_trainings.py`](launch_trainings.py) | Wraps `sbatch --export=…` from [`hyperparams_deep.json`](hyperparams_deep.json). One sbatch per (size, mix, seed). Default `SEEDS = [28, 1797, 1904]`. Supports `--size`, `--mix_en`, `--seed` filters, `--dry-run`, `--test`, `--training-steps N` (cap an early exit), and pass-throughs (`--time`, `--account`, `--dependency`). |
-| [`pretrain_progress.py`](pretrain_progress.py) | Status. Three modes: text dashboard (default); `--plot PATH` writes `PATH` (canonical-stage 3-panel heatmap with HF/Hub stages, queries the Hub) plus a companion `PATH_all` (every 2000-step iter, megatron-presence only); `--actions` emits one machine-readable line per cell — `done` / `fresh\t<target>` / `corrupt\t<n_iters>` / `resume\t<load_iter>\t<target>` — consumed by `launch_resumes.sh`. |
-| [`launch_resumes.sh`](launch_resumes.sh) | **The right entry point for "fill every canonical iter ≤ target"**. Reads `pretrain_progress.py --actions`, dispatches per cell: `done` → skip · in `squeue` → skip · `fresh` → submit a from-scratch run · `resume <load_iter> <target>` → if `<load_iter>` is below the current `latest_checkpointed_iteration.txt` marker (mid-gap backfill), rewind the marker first, then submit with `--training-steps <target>` · `corrupt` → **skip with a warning** (we never auto-rm). Re-runnable. |
+| `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log |
+| `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
+| `launch_trainings.py` | grid (56 cells) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
+| `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd + final) submits convert-snr then evaluate.sbatch; needs models.json entries (`sync_models_json.py`) |
+| `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
+|  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
-`pretrain_progress.py` validates each `iter_NNNNNNN/` has both `.metadata`
-and ≥ 1 `.distcp` shard before counting it as valid. Mid-gap canonicals
-(missing iter X with X+ canonicals present) are filled one-at-a-time — the
-launcher targets the *earliest* missing canonical per cell per call, and
-re-running picks up the next gap once the previous job finishes (jobs on
-the same cell would race the checkpoint dir, so chaining is left to the
-operator).
+Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
+parsed by `pretrain_progress.py`):
+`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+the architecture has diverged from Apertus (renamed 2026-08-21). Job display
+names drop the `lm-` for a kind prefix instead
+(`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
+`eval-90M-L8-deep-seed1904-iter425`, `convert-...`. CSCS checkpoints:
+`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
+Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 
-The standard one-liner to drive everything to 50000:
+Per-size schedule (iters/warmup/decay for D(N) = 100 × N) comes from the
+`predictivity` block in `hyperparams/hyperparams_{deep,shallow}.json` — the
+top-level `train_iters: 50000` in those files belongs to the finished
+36-model sweep, not this one. Two more knobs are launcher-derived per cell
+(not in the JSONs): `ADEMAMIX_WARMUP` = the cell's target iters (alpha/beta3
+warm up over the full run — always the target, even on capped resumes, so
+every submission runs the same optimizer schedule) and `INIT_STD` =
+0.008944 × √(1792/hidden) (width-scaled init anchored at the 1B).
 
-```bash
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain && \
-  bash launch_resumes.sh                # add --dry-run first when in doubt
-```
+W&B: one continuous run per cell across resumes — `megatron_args.sh` sets a
+deterministic `WANDB_RUN_ID` (the cell name, dots sanitized) +
+`WANDB_RESUME=allow`, so resubmissions append instead of fragmenting into
+one run per job. This replaced the old post-hoc merge tool
+(`merge_wandb_experiment.py`, deleted — its companion script never existed
+in this repo). Corollary of fixed ids: **never delete a run in msnr** — W&B
+blacklists deleted run ids forever (evals CLAUDE bug 9) and the cell could
+then never log again without a code-side id suffix.
 
 ---
 
 ## Hard rules
 
-- **Never delete checkpoints, eval results, or force-push.** The previous
-  `launch_resumes.sh` had a `wipe_checkpoints()` step for `[corrupt]` models
-  that ran `rm -rf checkpoints/`. That path is gone (removed 2026-05-09).
-  When the disk state for a model is unrecoverable (iter dirs exist but none
-  is a valid `.metadata + .distcp` checkpoint), the launcher now **skips the
-  model with a warning** so the user can inspect and decide manually. The
-  cost of a corrupt dir sitting on disk is near-zero compared to losing
-  recoverable training time.
+- **Never delete checkpoints, eval results, or force-push.** When a cell's
+  disk state is unrecoverable (iter dirs exist but none valid), the tooling
+  skips with a warning — cleanup is always a human decision.
+- **W&B**: entity is the constant `mariagrandury-epflnlp`
+  (`megatron_args.sh`); the project comes from `configs/hf_wandb.json`
+  (`msnr`) for BOTH training runs and the predictivity eval pushes
+  (`azure/eval.sh` reads it from the repo snapshot; `auto_evals_azure.py`
+  keys its done-check on the same config), so loss and benchmark curves
+  live in one project. Only the legacy 36-sweep eval infra in `../evals/`
+  still points at `snr-experiments`.
 
 ---
 
-## Hard-won failure modes
+## Hard-won failure modes (inherited from the 36-model sweep — same stack)
 
 ### 1. Megatron `_extra_state` strictness on resumes
-Older checkpoints don't carry the TE bookkeeping fields current Megatron-LM
-expects. The default `--dist-ckpt-strictness=assume_ok_unexpected` raises
-`Missing key in checkpoint state_dict: decoder.layers.self_attention.q_layernorm._extra_state`.
-The script pins `--dist-ckpt-strictness log_unexpected` so weights load and
-only the TE quantization metadata is skipped (irrelevant for bf16 training).
-**Don't revert** without solving the underlying TE/Megatron version skew —
-the eval-side container has the same fix; see the eval CLAUDE.md bug 3.
+Default `--dist-ckpt-strictness=assume_ok_unexpected` fatally raises on
+checkpoints saved with a different TE version. `megatron_args.sh` pins
+`--dist-ckpt-strictness log_unexpected`: weights load, only TE bookkeeping
+is skipped (irrelevant for bf16). **Don't revert.**
 
 ### 2. Async-save shell directories (the "corrupt" case)
-With `--async-save`, Megatron creates `iter_NNNNNNN/` and writes
-`.metadata` + `common.pt` + `metadata.json` quickly, then streams in the
-`.distcp` weight shards in the background. If the process is killed
-between the metadata write and the shard write, the dir survives as a
-**3-file shell** with no shards — and `latest_checkpointed_iteration.txt`
-may already point at it. Symptom on the next resume:
-
-```
-FileNotFoundError: ... /checkpoints/iter_NNNNNNN/__35_0.distcp
-```
-
-`pretrain_progress.py` flags any iter that fails the `.metadata + .distcp`
-check as not valid. The launcher behaves differently depending on whether
-*any* valid iter remains:
-
-- **Some valid iter remains** (most cases): the launcher resumes from the
-  latest valid iter — by rewinding `latest_checkpointed_iteration.txt`
-  before sbatch if needed — leaving the corrupt iter dirs in place. They
-  get overwritten when training next traverses that step, or are otherwise
-  harmless.
-- **No valid iter at all** (e.g. `175M-fwEdu60-fw240-seed28` on 2026-05-04,
-  iter dirs `0002000`–`0014000` all shell): the launcher **skips with a
-  warning** and waits for manual cleanup. We do not auto-`rm -rf` the
-  checkpoints/ tree.
+With `--async-save`, a killed job can leave `iter_N/` holding `.metadata` +
+`common.pt` but **no `.distcp` shards** — and the
+`latest_checkpointed_iteration.txt` marker may point at it. Next resume dies
+with `FileNotFoundError: ...__35_0.distcp`. `pretrain_progress.py` counts an
+iter valid only with `.metadata` + ≥1 `.distcp` (the `--is-valid` CLI is the
+single source of truth; `conversion/convert-snr.sh` uses it too), and
+`launch_trainings.py` rewinds the marker to the latest valid iter before
+resubmitting. Note the check is deliberately loose — a tighter byte-level
+parse over-rejected good iters (2026-05-14).
 
 ### 3. Slurm reports `COMPLETED` even when the inner step crashed
-The wrapper `submit-apertus-data-mix.sh` exits cleanly after `srun` returns,
-so `sacct -j <id> --format=State` shows `COMPLETED 0:0` for the parent job
-even when the inner training step was killed. Always check the **`.0` step**
-state too:
-
-```bash
-sacct -j <id> --format=JobID,State,ExitCode
-# Look for "<id>.0  CANCELLED  0:15" — that's training, killed by SIGTERM.
-```
-
-The training log (`logs/slurm/training/<jobname>-<id>.err`) has the real
-story.
+The wrapper exits cleanly after `srun` returns. Check the `.0` step:
+`sacct -j <id> --format=JobID,State,ExitCode` — and read the training log
+under `.../logs/slurm/training/<jobname>-<id>.err`.
 
 ### 4. The 1h SIGUSR2 grace window
-`#SBATCH --signal=SIGUSR2@3600` is what triggers the in-Megatron
-`--exit-signal-handler` to checkpoint and exit cleanly before walltime.
-That's why `launch_resumes.sh`'s `auto_time()` adds a 2h30m margin on top
-of the iter-rate estimate (1h grace + cold-start + buffer) and rounds up to
-the nearest 15 min, capped at 11:59:59 (the normal queue ceiling).
+`#SBATCH --signal=SIGUSR2@3600` + `--exit-signal-handler` checkpoint-and-exit
+before walltime. `launch_trainings.py::auto_time()` adds a 2h30m margin
+(grace + cold-start + buffer), rounds up to 15 min, caps at 11:59:59.
 
-### 5. seed 1904 used to be the odd one out
-Pre-2026-05-04, `launch_trainings.py` had `SEEDS = [28, 64, 1797]` — the SNR
-canonical seed `1904` had to be passed explicitly with `--seed 1904`, and
-`64` was never actually run. The default is now the canonical
-`[28, 1797, 1904]`. If you see seed `64` referenced anywhere, it's stale.
+### 5. `OptimizerParamScheduler` train_iters mismatch on capped resumes
+Megatron asserts the CLI schedule total equals the checkpoint's. When a
+resume is submitted with a reduced `--train-iters` (mid-gap backfill), the
+assertion fires. `megatron_args.sh` pins
+`--use-checkpoint-opt_param-scheduler`: the saved schedule wins, the loop
+still exits at the CLI iters, and the LR trajectory stays exactly on the
+original curve. **Don't switch to `--override-opt_param-scheduler`** — that
+recomputes the schedule against the reduced iters and puts the run deep into
+WSD decay at the wrong step. Verified end-to-end 2026-05-10.
 
-### 6. `OptimizerParamScheduler` train_iters mismatch on mid-gap fills
-Megatron's `OptimizerParamScheduler.load_state_dict` runs an exact-match
-assertion on the schedule total (`train_iters × GBS` = `train_samples`)
-between the CLI args and the checkpoint. For the canonical sweep the saved
-value is **25_200_000** samples (50000 iters × 504 GBS). When `launch_resumes.sh`
-fills a mid-gap (e.g. canonical 22000 missing → submit with `--train-iters
-22000`), the CLI value becomes 11_088_000 samples and the load aborts with:
+### 6. Platform parity beyond the arguments
+- Azure checks out Megatron at the pinned `MEGATRON_COMMIT`
+  (`azure/get_megatron.sh`); the CSCS wrapper uses the on-disk checkout at
+  `/iopsstor/.../data-mix-small/Megatron-LM`. Identical args don't guarantee
+  identical code — verify the cluster checkout is at the same commit before
+  cross-platform comparisons.
+- CSCS compute nodes have no internet: the tokenizer
+  (`swiss-ai/Apertus-70B-2509`) must be pre-downloaded into the HF cache on
+  the login node (the old sweep's `alehc/swissai-tokenizer` was already
+  cached; the new one is not).
+- The shallow ladder has no `nodes`/cluster-valid MBS in its hyperparams
+  file — `launch_trainings.py` resolves both at submit time
+  (`NODES_BY_SIZE` fallback + `cscs_mbs`, the largest memory-safe
+  micro-batch that divides the layout). Don't submit shallow cells by hand
+  with the raw JSON values: 4 of 6 would fail Megatron's
+  GBS % (DP x MBS) == 0 assertion.
 
-```
-AssertionError: OptimizerParamScheduler: class input value 11088000 and
-checkpointvalue 25200000 for total number of iterations do not match
-```
+### 7. Azure-specific
+- Data inputs must stay `mode: download` — `.bin` memmaps over a blob mount
+  are pathologically slow.
+- Each cell's outputs are pinned to `predictivity/runs/<cell>/`; reusing
+  another cell's checkpoint dir makes `TRAINING_STEPS` and the saved
+  schedule disagree (see #5).
+- `azure/jobs/convert.yml` pins `transformers==4.57.6` inside its own
+  container; don't "fix" the version elsewhere.
+- The MBS auto-shrink in `launch_pretraining_azure.sh` keeps
+  `GBS % (NPROC × MBS) == 0`; the training math (GBS 504 × seq 4096) is
+  identical to the cluster — only gradient accumulation differs.
 
-Fix (pinned in [`submit-apertus-data-mix.sh`](submit-apertus-data-mix.sh)
-on 2026-05-10): add `--use-checkpoint-opt_param-scheduler`. Megatron then
-keeps the schedule values **from the saved checkpoint** (peak LR 9.79e-4 for
-175M, the original 50000-iter WSD curve, etc.) and the assertion is
-bypassed. The training loop still exits at `--train-iters`, so the
-mid-gap window stays in the saved schedule's correct phase (peak constant
-through canonical 22000 since WSD decay only starts at 40000) and the LR
-that lands on the recovered canonical is identical to the original
-trajectory's LR at that step.
+### 8. The capstor dataloader stall (2026-08-20)
+**Train off `/iopsstor`, never off the `/capstor` master copy.** Megatron
+memmaps the `.bin` token files and, because samples are shuffled, reads
+effectively *random* windows out of them — capstor's worst case. It is
+bandwidth-optimised shared storage, not IOPS. This is the same failure the
+Azure note in #7 describes; the cluster is not exempt.
 
-**Don't reach for `--override-opt_param-scheduler` instead** — that would
-recompute the scheduler from CLI args (warmup/decay-iters relative to the
-new `train_iters`) and put the model deep in WSD decay at iter 22000,
-which is exactly what we do *not* want.
+Measured on byte-identical copies of the same file, 112 KB random reads
+(= MBS 7 × seq 4096 tokens), both stores probed alternately with the same
+offsets so cluster load hits both arms equally:
 
-Verified end-to-end on 2026-05-10 against three canonicals (175M-edu90-seed28
-→ 22000, 600M-edu30-seed1797 → 34000, 175M-edu60-seed1797 → 18000): LR /
-loss / sample-count / token-count all continuous across the resume
-boundary, no spike on the recovered canonical.
+| store | median | p99 | max | MB/s |
+| ----- | -----: | --: | --: | ---: |
+| capstor  | 13.5 ms | 166 ms | 433 ms | 8 |
+| iopsstor | 0.5 ms  | 5 ms   | 13 ms  | 235 |
+
+~28× on the median, up to 200× on the tail — **single process**, before the
+contention of 12–84 ranks × 4 dataloader workers all seeking at once.
+
+**How it presented (and why it fooled us for a day):** iterations swung
+wildly — deep-175M ran `14890 → 976 → 4424 → 832 ms` inside one job. Averaging
+the last 20 iterations made some configs look uniformly slow, and the two
+worst offenders (deep-175M, shallow-90M) happened to share `hidden=1024,
+ffn=4096`, so it read as a power-of-2 GEMM-aliasing effect. It was not:
+
+- A standalone GEMM benchmark at every ladder shape came out **flat**
+  (553–633 TFLOP/s); the pow2 shapes were fine and *padded* controls
+  (ffn 4224) were slightly **slower**. Hypothesis dead.
+- The giveaway was the **distribution, not the mean**: the "slow" configs hit
+  **838 ms at p10** — as fast as the healthy ones — then blew out to 3000–6000.
+  A fixed geometry cannot do that. Wide spread ⇒ stall, not arithmetic.
+
+**Rules that follow.** Diagnose ms/iter with median + p10/p90 over a
+*mid-run* window; never a trailing average (the tail catches async-checkpoint
+saves and end-of-run flushes — it inflated shallow-350M from 507 to 1487 ms).
+A tight distribution means compute-bound and the number is trustworthy; a wide
+one means you are measuring the filesystem. `ITER_MS` fitted during the
+capstor period is contaminated — re-measure from a clean iopsstor run.
+
+**The layout:** capstor is the durable master (iopsstor scratch is purged
+~30 days) and `data/launch_builds.sh` writes there; the training copy is
+staged on iopsstor and `CSCS_DEFAULT_DATA_DIR` points at it. After a purge,
+re-stage from capstor before launching (README "Before the first CSCS run").
+Checkpoints were always on iopsstor and stay there — same reasoning.
 
 ---
 
-## Per-size cluster cost
-
-Sampled from 1.26M iter lines across all training logs (2026-05-10):
-
-| size | nodes | MBS | median ms/iter | hours to 50000 (steady) |
-|---|---|---|---|---|
-| 175M | 6 | 7 | **800** | ~11.1 h |
-| 350M | 14 | 3 | **565** | ~7.8 h |
-| 600M | 21 | 6 | **520** | ~7.2 h |
-| 1B | 21 | 6 | **715** | ~9.9 h |
-
-These match the `ITER_MS` table in `launch_resumes.sh` and feed `auto_time()`,
-which adds a 2h30m margin for SIGUSR2 grace + cold-start + buffer. p20–p80
-spread is ~2 ms for 600M/1B; for 175M and 350M, p80 is inflated by save-iter
-overhead (less amortized at smaller node counts) — true per-iter is right
-at the median.
-
----
-
-## Live state (read, don't trust this file's snapshots)
+## Live state (read, don't trust snapshots)
 
 ```bash
-# Per-model progress + corrupt detection
-python3.11 /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/pretrain_progress.py --target 50000
+# CSCS: per-cell status + idempotent (re-)launch
+python3.11 pretrain_progress.py            # what a re-launch would do; --plot for heatmaps
+python launch_trainings.py cscs --dry-run  # first
+python launch_trainings.py cscs            # then for real (skips done/active, resumes partial)
 
-# Drive the gap to zero (idempotent)
-cd /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain && \
-  bash launch_resumes.sh --dry-run        # first
-  bash launch_resumes.sh                  # then for real
+# Azure: watcher submits convert+eval as checkpoints land (one per workspace)
+source azure/env.sh && python auto_evals_azure.py --watch 600
+python auto_evals_azure.py --workspace uk --watch 600   # 1B/1.7B cells
 ```
 
-`launch_resumes.sh --filter <SUBSTR>` scopes by model name substring (e.g.
-`--filter seed28`, `--filter 175M`).
+---
+
+## The finished 36-model sweep
+
+4 sizes × 3 mixes × 3 seeds to iter 50000, checkpoints under
+`.../Meg-Runs/data-mix-small/`, evaluated via `../evals/`. Its tooling
+evolved in place into the predictivity scripts (see git history for the
+sweep-era versions). The per-size cost table in README.md and failure modes
+above come from that sweep's 1.26M logged iterations.

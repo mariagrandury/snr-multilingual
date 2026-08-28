@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: gpu-nd96-spot
+type: amlcompute
+size: Standard_ND96isr_H100_v5    # 8x H100 SXM + InfiniBand
+min_instances: 0
+max_instances: 16                 # 128 H100 — the 1B/1.4B deadline fleet (UK South)
+idle_time_before_scale_down: 600
+tier: low_priority                # allocated as Spot; evicted jobs resume from the last checkpoint

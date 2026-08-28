@@ -40,6 +40,7 @@ nav:
   - Pretraining:
       - Overview: pretraining.md
       - Conversion: pretraining/conversion.md
+      - Azure: pretraining/azure.md
   - Evaluation:
       - Overview: evaluation/index.md
       - Signal-to-Ratio Configs: evaluation/configs.md
