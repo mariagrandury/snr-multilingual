@@ -129,6 +129,7 @@ launcher — the core design):
 | [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. |
 | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
+| [`sweep_health.py`](sweep_health.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. No W&B, no network. |
 
 **Subfolders:**
 

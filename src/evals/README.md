@@ -93,6 +93,63 @@ python3.11 scripts/snr_progress.py --details --filter <NAME-substr>   # per-task
 
 System Python on login nodes is 3.6; use `python3.11` for the dashboard.
 
+When `normal` is backed up, [`scripts/debug_drain.sh`](scripts/debug_drain.sh)
+feeds already-pending convert/eval jobs through the idle `debug` partition
+(capped at debug-qos' 1 running + 1 queued, each capped to debug's 1:30 wall).
+It never submits anything new, so it cannot duplicate work; conversions go
+first, since a cell cannot be evaluated before its HF snapshot exists.
+
+```bash
+bash scripts/debug_drain.sh --dry-run   # what it would move
+bash scripts/debug_drain.sh             # loop until nothing is pending
+```
+
+## Bits-per-byte: the second way to evaluate a model
+
+Benchmarks are not the study's outcome metric. The predictivity plan's outcome
+is **per-language bits-per-byte on the fixed held-out validation set**, and it
+is measured by a different path from everything above — no lm-eval, no vLLM,
+no benchmark tasks:
+
+```bash
+sbatch --job-name=bpb-<cell> scripts/score_bpb.sbatch <cell> [iters...]
+```
+
+One job per cell scores every converted checkpoint it finds and writes
+`<LOGS_ROOT>/<entity>/msnr/<cell>-iter<N>/bpb/bpb.json` — per language, the
+NLL, the byte count, `bpb` and `ppl`.
+
+How it differs from the harness path, and why:
+
+* **The data is the validation build, not a benchmark.** `build_data_mixtures.py
+  --stage validation` wrote one `.bin` per language plus
+  `validation.manifest.json`, and every training build skipped exactly those
+  rows, so train and validation are disjoint by construction.
+* **Nothing is generated.** It is a single teacher-forced forward pass per
+  block, summing `-log p` over targets. Blocks overlap by one token so every
+  token except the corpus's first is scored with a predecessor.
+* **The denominator is measured, not assumed.** BPB divides by UTF-8 bytes, and
+  the bytes are obtained by decoding the scored tokens — verified to reproduce
+  the manifest byte count exactly on Latin, Cyrillic and CJK. Scaling the
+  manifest total by a token fraction would be wrong for a prefix, because
+  bytes-per-token varies per document.
+* **Documents are concatenated without EOD**, so the numerator and denominator
+  describe the same text. An inserted EOD would add likelihood cost that no
+  byte in the denominator pays for.
+* **It is comparable across tokenizers**, which accuracy is not — the
+  denominator is bytes. That is why the plan chose it for the tokenizer
+  intervention.
+
+`--max-tokens` (default 1M/language) takes a deterministic leading-document
+prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses
+the full ~5M. The offline flags in the sbatch are not optional: without
+`HF_HUB_OFFLINE=1`, `from_pretrained` on a **local** path still calls the Hub
+and blocks for ~25 min per checkpoint on a compute node.
+
+Read the results with
+[`../pretrain/sweep_health.py`](../pretrain/sweep_health.py), which also
+cross-checks them against the loss curves and the benchmark scores.
+
 ## Outputs in detail
 
 ### SLURM logs (per job)
@@ -160,6 +217,9 @@ evals/
 │   ├── aggregate_splits.sbatch          # split-aggregation job
 │   ├── generate_snr_runner.sh           # runner generator
 │   ├── list_checkpoints.sh              # ckpt enumerator
+│   ├── score_bpb.py                     # per-language BPB + perplexity
+│   ├── score_bpb.sbatch                 # BPB job, one per cell
+│   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor master
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan
 │   ├── _run_per_task.sh                 # inner per-task loop
