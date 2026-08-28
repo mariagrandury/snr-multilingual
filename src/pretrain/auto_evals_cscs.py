@@ -461,6 +461,16 @@ def main() -> None:
     while True:
         one_pass(args, Path(args.root), Path(args.staging),
                  Path(args.logs_root), benchmarks)
+        # eval_progress.png is a view of exactly the state this pass just
+        # changed, so refresh it here rather than on launch (the launcher only
+        # redraws the training-side figures). Best-effort: a plotting problem
+        # must never stop the watch loop.
+        if not args.dry_run:
+            try:
+                from pretrain_progress import eval_progress
+                eval_progress(root=Path(args.root), logs_root=Path(args.logs_root))
+            except Exception as e:
+                print(f"(eval progress plot not refreshed: {e})", file=sys.stderr)
         if not args.watch:
             break
         time.sleep(args.watch)

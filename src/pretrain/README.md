@@ -322,8 +322,9 @@ regardless of variant:
   ARCH (deep / shallow), SCHEME (A / B), TOKENIZER (v1 for now).
 
 All three PNGs and the generated doc blocks are refreshed automatically at
-the end of every `launch_trainings.py cscs` invocation, so they're always up
-to date.
+the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
+(embedded above) is refreshed by the auto-eval watcher after every pass,
+since that is what changes the state it shows.
 
 **Benchmark evals while pretraining** — automated on both platforms with
 the same rule (**every 2nd saved checkpoint plus each run's final one**,

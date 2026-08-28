@@ -692,11 +692,12 @@ def main() -> None:
         else:
             print(f"(auto-evals already watching {args.arch})")
 
-    # Refresh everything pretrain_progress.py --plot produces, so the three
-    # PNGs and the generated grid block in README.md / the plan doc are always
-    # up to date. plan_table and sync_docs are derived from the constants in
-    # THIS file, so a grid edit reaches the docs on the next launch instead of
-    # leaving stale numbers behind.
+    # Refresh the training-side figures (plan, simple, detailed) and the
+    # generated grid block in README.md / the plan doc. plan_table and
+    # sync_docs are derived from the constants in THIS file, so a grid edit
+    # reaches the docs on the next launch instead of leaving stale numbers
+    # behind. eval_progress.png is NOT redrawn here: it tracks the eval state
+    # the auto-eval watcher changes, so the watcher refreshes it each pass.
     # Best-effort: a plotting problem must never fail a submission.
     if args.platform == "cscs" and not args.dry_run:
         try:
