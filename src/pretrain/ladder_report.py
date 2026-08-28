@@ -1072,14 +1072,19 @@ def publish(out_dir: Path, push_hf: bool) -> None:
     """
     import shutil
 
-    src = out_dir / "ladder_report.csv"
-    if not src.is_file():
+    # The curve is not a duplicate of the wide table — it is the one thing
+    # that table cannot hold (per iteration, not per checkpoint) — and the
+    # markdown carries the schema, so the three together are what makes the
+    # published copy self-describing.
+    names = ["ladder_report.csv", "ladder_report_curve.csv", "ladder_report.md"]
+    files = [out_dir / n for n in names if (out_dir / n).is_file()]
+    if not files:
         print("[publish] nothing to publish", file=sys.stderr)
         return
     CAPSTOR_REPORTS.mkdir(parents=True, exist_ok=True)
-    dst = CAPSTOR_REPORTS / src.name
-    shutil.copy2(src, dst)
-    print(f"[publish] {dst}", file=sys.stderr)
+    for src in files:
+        shutil.copy2(src, CAPSTOR_REPORTS / src.name)
+        print(f"[publish] {CAPSTOR_REPORTS / src.name}", file=sys.stderr)
 
     if not push_hf:
         return
@@ -1088,8 +1093,9 @@ def publish(out_dir: Path, push_hf: bool) -> None:
         api = HfApi()
         api.create_repo(HF_DATASET_REPO, repo_type="dataset", private=True,
                         exist_ok=True)
-        api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
-                        repo_id=HF_DATASET_REPO, repo_type="dataset")
+        for src in files:
+            api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
+                            repo_id=HF_DATASET_REPO, repo_type="dataset")
         print(f"[publish] https://huggingface.co/datasets/{HF_DATASET_REPO}",
               file=sys.stderr)
     except Exception as e:

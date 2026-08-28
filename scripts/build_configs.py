@@ -1118,6 +1118,12 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
     # (preserves "multi", and language tags the auto-derivation
     # doesn't infer, e.g. "cn"/"jp" instead of the canonical "zh"/"ja").
     existing_lang: dict[str, str] = {}
+    # n_options (the answer-option count, hence the chance level) is DERIVED
+    # from evaluated samples by src/evals/scripts/derive_task_options.py, not
+    # inferrable from a task name — so it must survive a rebuild the same way
+    # hand-fixed language tags do, or every regeneration would silently drop
+    # the chance levels the benchmark analysis keys off.
+    existing_opts: dict[str, int] = {}
     existing_path = CONFIGS / "tasks.json"
     if merge_existing and existing_path.exists():
         try:
@@ -1125,6 +1131,8 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
             for t, e in prev.get("tasks", {}).items():
                 if isinstance(e, dict) and "language" in e:
                     existing_lang[t] = e["language"]
+                if isinstance(e, dict) and isinstance(e.get("n_options"), int):
+                    existing_opts[t] = e["n_options"]
         except Exception:
             pass
 
@@ -1144,6 +1152,8 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
             "benchmark": _benchmark_of(t),
             "stages": stages,
         }
+        if t in existing_opts:
+            tasks_section[t]["n_options"] = existing_opts[t]
     # Synthetic launch group: union of the three stage groups, so ONE job per
     # checkpoint covers pretraining + midtraining + posttraining in a single
     # BATCH_TASKS=1 lm_eval call (avoids the same-NAME collision of launching

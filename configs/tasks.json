@@ -124,28 +124,32 @@
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_challenge": {
       "language": "en",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_easy": {
       "language": "en",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_es": {
       "language": "es",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_eu": {
       "language": "eu",
@@ -159,28 +163,32 @@
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_ru": {
       "language": "ru",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_vi": {
       "language": "vi",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_zh": {
       "language": "zh",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "aya_redteaming_arabic": {
       "language": "ar",
@@ -243,14 +251,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_eng_Latn": {
       "language": "en",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_eus_Latn": {
       "language": "eu",
@@ -264,28 +274,32 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_jpn_Jpan": {
       "language": "ja",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_rus_Cyrl": {
       "language": "ru",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_spa_Latn": {
       "language": "es",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_swh_Latn": {
       "language": "sw",
@@ -306,28 +320,32 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_tur_Latn": {
       "language": "tr",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_vie_Latn": {
       "language": "vi",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_zho_Hans": {
       "language": "zh",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "blend_algeria_sample": {
       "language": "ar",
@@ -691,42 +709,48 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_en": {
       "language": "en",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_es": {
       "language": "es",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_hi": {
       "language": "hi",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ja": {
       "language": "ja",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ru": {
       "language": "ru",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_sw": {
       "language": "sw",
@@ -740,21 +764,24 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_vi": {
       "language": "vi",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_zh": {
       "language": "zh",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_hi_gen_0shot": {
       "language": "hi",
@@ -888,7 +915,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ar": {
       "language": "ar",
@@ -896,7 +924,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_es": {
       "language": "es",
@@ -904,7 +933,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_eu": {
       "language": "eu",
@@ -920,7 +950,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ru": {
       "language": "ru",
@@ -928,7 +959,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_vi": {
       "language": "vi",
@@ -936,7 +968,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hendrycks_math": {
       "language": "en",
@@ -978,7 +1011,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_armenian": {
       "language": "??",
@@ -1027,7 +1061,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_croatian": {
       "language": "??",
@@ -1055,7 +1090,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_georgian": {
       "language": "??",
@@ -1069,7 +1105,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_greek": {
       "language": "??",
@@ -1090,7 +1127,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_hungarian": {
       "language": "??",
@@ -1111,14 +1149,16 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_japanese": {
       "language": "jp",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_kazakh": {
       "language": "??",
@@ -1132,7 +1172,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_lithuanian": {
       "language": "??",
@@ -1188,14 +1229,16 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_russian": {
       "language": "ru",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_serbian": {
       "language": "??",
@@ -1209,7 +1252,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_tagalog": {
       "language": "??",
@@ -1237,14 +1281,16 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_ukrainian": {
       "language": "uk",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_uzbek": {
       "language": "??",
@@ -1258,7 +1304,8 @@
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "lambada": {
       "language": "en",
@@ -1524,14 +1571,16 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_eng": {
       "language": "en",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_eus": {
       "language": "eu",
@@ -1545,28 +1594,32 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_rus": {
       "language": "ru",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_spa": {
       "language": "es",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_tur": {
       "language": "tr",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "openbookqa": {
       "language": "en",
@@ -1867,28 +1920,32 @@
       "benchmark": "xcopa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xcopa_tr": {
       "language": "tr",
       "benchmark": "xcopa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xcopa_vi": {
       "language": "vi",
       "benchmark": "xcopa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xcopa_zh": {
       "language": "zh",
       "benchmark": "xcopa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xnli": {
       "language": "multi",
@@ -1902,21 +1959,24 @@
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_en": {
       "language": "en",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_es": {
       "language": "es",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_eu": {
       "language": "eu",
@@ -1930,14 +1990,16 @@
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_ru": {
       "language": "ru",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_sw": {
       "language": "sw",
@@ -1951,49 +2013,56 @@
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_tr": {
       "language": "tr",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_vi": {
       "language": "vi",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_zh": {
       "language": "zh",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xstorycloze_ar": {
       "language": "ar",
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xstorycloze_en": {
       "language": "en",
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xstorycloze_es": {
       "language": "es",
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xstorycloze_eu": {
       "language": "eu",
@@ -2007,14 +2076,16 @@
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xstorycloze_ru": {
       "language": "ru",
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xstorycloze_sw": {
       "language": "sw",
@@ -2035,7 +2106,8 @@
       "benchmark": "xstorycloze",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xwinograd": {
       "language": "multi",
@@ -2049,28 +2121,32 @@
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xwinograd_jp": {
       "language": "ja",
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xwinograd_ru": {
       "language": "ru",
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xwinograd_zh": {
       "language": "zh",
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "hellaswag_da": {
       "language": "da",
@@ -2078,7 +2154,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_sk": {
       "language": "sk",
@@ -2086,7 +2163,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_fr": {
       "language": "fr",
@@ -2094,7 +2172,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_kn": {
       "language": "kn",
@@ -2110,7 +2189,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ro": {
       "language": "ro",
@@ -2118,7 +2198,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_bn": {
       "language": "bn",
@@ -2126,7 +2207,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_sv": {
       "language": "sv",
@@ -2134,7 +2216,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_gu": {
       "language": "gu",
@@ -2150,7 +2233,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_hy": {
       "language": "hy",
@@ -2166,7 +2250,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_sr": {
       "language": "sr",
@@ -2174,7 +2259,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_hu": {
       "language": "hu",
@@ -2182,7 +2268,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ca": {
       "language": "ca",
@@ -2190,7 +2277,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ne": {
       "language": "ne",
@@ -2198,7 +2286,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_it": {
       "language": "it",
@@ -2206,7 +2295,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ta": {
       "language": "ta",
@@ -2214,7 +2304,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_hr": {
       "language": "hr",
@@ -2222,7 +2313,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_de": {
       "language": "de",
@@ -2230,7 +2322,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_nl": {
       "language": "nl",
@@ -2238,7 +2331,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_ml": {
       "language": "ml",
@@ -2246,7 +2340,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_id": {
       "language": "id",
@@ -2254,7 +2349,8 @@
       "stages": [
         "posttraining",
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "hellaswag_te": {
       "language": "te",
@@ -2269,49 +2365,56 @@
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_fr": {
       "language": "fr",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_hu": {
       "language": "hu",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_hr": {
       "language": "hr",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_it": {
       "language": "it",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_ca": {
       "language": "ca",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_de": {
       "language": "de",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_te": {
       "language": "te",
@@ -2339,91 +2442,104 @@
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_ne": {
       "language": "ne",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_ta": {
       "language": "ta",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_id": {
       "language": "id",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_sk": {
       "language": "sk",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_sr": {
       "language": "sr",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_bn": {
       "language": "bn",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_sv": {
       "language": "sv",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_uk": {
       "language": "uk",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_pt": {
       "language": "pt",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_da": {
       "language": "da",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_ro": {
       "language": "ro",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_mr": {
       "language": "mr",
       "benchmark": "arc",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "arc_kn": {
       "language": "kn",
@@ -2437,35 +2553,40 @@
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_de": {
       "language": "de",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_bg": {
       "language": "bg",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_ur": {
       "language": "ur",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_ca": {
       "language": "ca",
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "xnli_gl": {
       "language": "gl",
@@ -2479,7 +2600,8 @@
       "benchmark": "xnli",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "mgsm_direct_fr": {
       "language": "fr",
@@ -2598,35 +2720,40 @@
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xwinograd_pt": {
       "language": "pt",
       "benchmark": "xwinograd",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_heb": {
       "language": "he",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_ars_Arab": {
       "language": "ar",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_ita_Latn": {
       "language": "it",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_mkd": {
       "language": "mk",
@@ -2640,28 +2767,32 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_bul": {
       "language": "bg",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_ron": {
       "language": "ro",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_fin": {
       "language": "fi",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_uzn_Latn": {
       "language": "uz",
@@ -2689,7 +2820,8 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_lat": {
       "language": "la",
@@ -2703,14 +2835,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_ben_Latn": {
       "language": "bn",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_pan_Guru": {
       "language": "pa",
@@ -2724,21 +2858,24 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_kat": {
       "language": "ka",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_slv_Latn": {
       "language": "sl",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_asm_Beng": {
       "language": "as",
@@ -2752,35 +2889,40 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_deu_Latn": {
       "language": "de",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_ukr_Cyrl": {
       "language": "uk",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_heb_Hebr": {
       "language": "he",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_npi_Deva": {
       "language": "ne",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_amh_Ethi": {
       "language": "am",
@@ -2801,21 +2943,24 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_slk": {
       "language": "sk",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_tam": {
       "language": "ta",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_som_Latn": {
       "language": "so",
@@ -2829,14 +2974,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_fin_Latn": {
       "language": "fi",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_glg": {
       "language": "gl",
@@ -2850,7 +2997,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_plt_Latn": {
       "language": "mg",
@@ -2864,7 +3012,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_hye": {
       "language": "hy",
@@ -2878,7 +3027,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_afr_Latn": {
       "language": "af",
@@ -2899,7 +3049,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_khm_Khmr": {
       "language": "km",
@@ -2913,21 +3064,24 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_lit": {
       "language": "lt",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_pol_Latn": {
       "language": "pl",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_ckb_Arab": {
       "language": "ckb",
@@ -2941,35 +3095,40 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_nld": {
       "language": "nl",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_ary_Arab": {
       "language": "ar",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_swe": {
       "language": "sv",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_ukr": {
       "language": "uk",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_bod_Tibt": {
       "language": "bo",
@@ -2983,14 +3142,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_ben_Beng": {
       "language": "bn",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_guj_Gujr": {
       "language": "gu",
@@ -3004,7 +3165,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_guj": {
       "language": "gu",
@@ -3032,49 +3194,56 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_hun": {
       "language": "hu",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_dan": {
       "language": "da",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_ces": {
       "language": "cs",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_slv": {
       "language": "sl",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_kaz": {
       "language": "kk",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_urd_Arab": {
       "language": "ur",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_snd_Arab": {
       "language": "sd",
@@ -3088,35 +3257,40 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_lit_Latn": {
       "language": "lt",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_deu": {
       "language": "de",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_ron_Latn": {
       "language": "ro",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_srp_Cyrl": {
       "language": "sr",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_mya_Mymr": {
       "language": "my",
@@ -3130,7 +3304,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_pbt_Arab": {
       "language": "ps",
@@ -3158,14 +3333,16 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_kaz_Cyrl": {
       "language": "kk",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_cym": {
       "language": "cy",
@@ -3186,7 +3363,8 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_kir": {
       "language": "ky",
@@ -3200,21 +3378,24 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_cat": {
       "language": "ca",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_mar": {
       "language": "mr",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_kan_Knda": {
       "language": "kn",
@@ -3235,14 +3416,16 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_dan_Latn": {
       "language": "da",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_sin_Sinh": {
       "language": "si",
@@ -3256,14 +3439,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_azj_Latn": {
       "language": "az",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_isl": {
       "language": "is",
@@ -3284,14 +3469,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_als_Latn": {
       "language": "sq",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_khk_Cyrl": {
       "language": "mn",
@@ -3305,42 +3492,48 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_mar_Deva": {
       "language": "mr",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_ben": {
       "language": "bn",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_zsm_Latn": {
       "language": "ms",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_ita": {
       "language": "it",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "multiblimp_por": {
       "language": "pt",
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_mlt_Latn": {
       "language": "mt",
@@ -3354,14 +3547,16 @@
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_zho_Hant": {
       "language": "zh",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "belebele_hye_Armn": {
       "language": "hy",
@@ -3375,14 +3570,16 @@
       "benchmark": "multiblimp",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "belebele_arz_Arab": {
       "language": "ar",
       "benchmark": "belebele",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "multiblimp_uig": {
       "language": "ug",
@@ -3410,49 +3607,56 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_estonian": {
       "language": "et",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ne": {
       "language": "ne",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_pl": {
       "language": "pl",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_cs": {
       "language": "cs",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "include_base_44_urdu": {
       "language": "ur",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_fa": {
       "language": "fa",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_si": {
       "language": "si",
@@ -3466,14 +3670,16 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_nl": {
       "language": "nl",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_mg": {
       "language": "mg",
@@ -3487,28 +3693,32 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ko": {
       "language": "ko",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_bn": {
       "language": "bn",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_fr": {
       "language": "fr",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_te": {
       "language": "te",
@@ -3522,21 +3732,24 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ms": {
       "language": "ms",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_uk": {
       "language": "uk",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_ha": {
       "language": "ha",
@@ -3550,35 +3763,40 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_el": {
       "language": "el",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_it": {
       "language": "it",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_sr": {
       "language": "sr",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_id": {
       "language": "id",
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_am": {
       "language": "am",
@@ -3592,7 +3810,8 @@
       "benchmark": "global_mmlu_full",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "global_mmlu_full_so": {
       "language": "so",
