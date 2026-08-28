@@ -22,12 +22,21 @@
   over a chain of pass-through helpers.
 
 - **Review before every commit.** When asked to commit — or to review
-  pending work — run the `snr-review` skill first
-  (`.claude-shared/skills/snr-review/SKILL.md`), report, then print the
+  pending work — run the `review-snr` skill first (`/review-snr`,
+  `.claude-shared/skills/review-snr/SKILL.md`), report, then print the
   proposed commit message and wait for approval. Never `git commit` or
-  `git push` unprompted. The skill is tracked in `.claude-shared/` because
-  `.claude/` is gitignored; a fresh clone needs the discovery symlink once:
-  `mkdir -p .claude/skills && ln -sfn ../../.claude-shared/skills/snr-review .claude/skills/snr-review`
+  `git push` unprompted. This is enforced, not just asked:
+  `.claude-shared/hooks/review-snr-gate.sh` runs as a PreToolUse hook on
+  Bash (user settings, `~/.claude/settings.json`) and refuses any
+  `git commit` aimed at this repo unless the pending tree matches the
+  fingerprint the skill wrote with `--mark` at the end of its last run.
+  If it refuses, run the review — do not look for a way around it.
+  Everything lives in `.claude-shared/` because `.claude/` is gitignored;
+  a fresh clone or machine needs the discovery symlinks once:
+  `mkdir -p .claude/skills ~/.claude/skills && ln -sfn ../../.claude-shared/skills/review-snr .claude/skills/review-snr && ln -sfn "$PWD/.claude-shared/skills/review-snr" ~/.claude/skills/review-snr`
+  (the user-level link is what makes `/review-snr` work from the parent
+  directory sessions are usually started in), plus the hook block in
+  `~/.claude/settings.json`.
 
 ## Project Overview
 
