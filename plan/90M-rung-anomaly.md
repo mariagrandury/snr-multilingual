@@ -16,7 +16,7 @@ Recorded 2026-08-21 from the first complete L1/L2 ladder; cause added
 
 ## The divergence (2026-08-28)
 
-`sweep_health.py --check loss` compares each run's final loss against its own
+`ladder_report.py --check loss` compares each run's final loss against its own
 best. **9 of the 10 completed 90M runs diverge; no other size does.**
 
 | cell | best loss | at iter | final | delta |

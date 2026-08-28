@@ -147,7 +147,7 @@ the full ~5M. The offline flags in the sbatch are not optional: without
 and blocks for ~25 min per checkpoint on a compute node.
 
 Read the results with
-[`../pretrain/sweep_health.py`](../pretrain/sweep_health.py), which also
+[`../pretrain/ladder_report.py`](../pretrain/ladder_report.py), which also
 cross-checks them against the loss curves and the benchmark scores.
 
 ## Outputs in detail
