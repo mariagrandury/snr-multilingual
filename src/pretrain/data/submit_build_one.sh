@@ -70,7 +70,7 @@ if [ -f "$PREFIX.idx" ] && [ ! -f "$PREFIX.checkpoint.json" ]; then
   # Still make sure it is staged: a mixture built before staging existed (or
   # staged onto a since-swept iopsstor) would otherwise never reach training.
   SRC="$DATA_ROOT" bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$DATA_ROOT/}"
-  exit 0
+  exit $?   # FAILED if the staging did — --no-requeue, so this only sets the job state
 fi
 
 # Survive the 12h wall: queue a singleton successor UP FRONT (same job name, so

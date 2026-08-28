@@ -355,7 +355,8 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         path.write_text(json.dumps(errors, indent=2, sort_keys=True) + "\n")
     if errors:
         print(f"\n{len(errors)} checkpoint(s) held back after "
-              f"{args.max_attempts} failed evals — details in {path}")
+              f"{args.max_attempts} failed evals — "
+              + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
 def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,

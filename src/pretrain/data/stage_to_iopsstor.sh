@@ -12,7 +12,9 @@
 # Copies, never moves — the capstor copy is the one that survives a sweep.
 #
 # Idempotent: a mixture already staged at the right size is skipped, so this is
-# safe to re-run and safe to call at the end of every build.
+# safe to re-run and safe to call at the end of every build. Exits non-zero if
+# any copy failed, so a build job whose staging failed shows FAILED instead of
+# COMPLETED — re-running the job (or this script) retries just the missing part.
 #
 #   bash stage_to_iopsstor.sh                    # every completed mixture
 #   bash stage_to_iopsstor.sh fineweb_L50        # one, scheme A
@@ -67,9 +69,10 @@ stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
       echo "  FAILED $rel.$ext"; rm -f "$d.tmp"; ok=0
     fi
   done
-  [ "$ok" = 1 ] && echo "  staged $rel"
+  if [ "$ok" = 1 ]; then echo "  staged $rel"; else FAILED=1; fi
 }
 
+FAILED=0
 mkdir -p "$DST" "$DST/schemeB"
 echo "[$(date)] staging $SRC -> $DST"
 
@@ -85,3 +88,4 @@ else
   done
 fi
 echo "[$(date)] done"
+exit $FAILED
