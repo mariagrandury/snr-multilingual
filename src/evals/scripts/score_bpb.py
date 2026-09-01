@@ -27,14 +27,19 @@ a 1.7B one — scoring a fixed 500M tokens scales with N while training scales
 with N x D(N), so it is roughly constant per checkpoint across the ladder.
 
     python3.11 score_bpb.py --model <hf_dir> --out results.json
+    # Quick correctness check. The small --batch-size/--seq-len are required
+    # off-GPU: scoring materialises batch x seq x 131072 float32 logits, which
+    # is 17 GB at the defaults and OOMs a login node instantly.
     python3.11 score_bpb.py --model <hf_dir> --languages dclm,fineweb_rus_Cyrl \
-        --limit-docs 20 --device cpu          # quick correctness check
+        --limit-docs 5 --max-tokens 4096 --seq-len 512 --batch-size 1 \
+        --device cpu --out /tmp/bpb.json
 """
 from __future__ import annotations
 
 import argparse
 import json
 import math
+import os
 import struct
 import sys
 from pathlib import Path
@@ -219,7 +224,15 @@ def main() -> None:
         "macro_bpb": sum(bpbs) / len(bpbs) if bpbs else None,
         "languages": out,
     }
-    Path(args.out).write_text(json.dumps(result, indent=2) + "\n")
+    # Write through a temp name: score_bpb.sbatch and launch_bpb.sh both treat
+    # a NON-EMPTY bpb.json as "already scored", and these jobs are deliberately
+    # drained through debug's hard 1:30 wall (debug_drain.sh), so a kill
+    # mid-write would leave a short file that is skipped forever — the
+    # checkpoint would drop out of the BPB analysis silently. Same rule as the
+    # .bin staging in pretrain/data/stage_to_iopsstor.sh.
+    tmp = Path(f"{args.out}.tmp")
+    tmp.write_text(json.dumps(result, indent=2) + "\n")
+    os.replace(tmp, args.out)
     print(f"\nmacro BPB over {len(out)} languages: {result['macro_bpb']:.4f}")
     print(f"wrote {args.out}")
 
