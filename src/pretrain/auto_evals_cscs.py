@@ -117,12 +117,22 @@ OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
 
 
-def eval_walltime(size: str, n_tasks: int) -> str:
-    """Fixed overhead + per-task budget x SAFETY, rounded up to 15 min, capped
-    at the normal queue's 11:59:59 limit (launch_trainings.TIME_MAX_SEC) — an
-    over-cap request is rejected at submission and would crash the watch loop."""
+WALLTIME_CAP_MIN = 719   # the normal queue's 11:59:59 (launch_trainings.TIME_MAX_SEC)
+
+
+def eval_minutes(size: str, n_tasks: int) -> int:
+    """Fixed overhead + per-task budget x SAFETY, rounded up to 15 min."""
     minutes = OVERHEAD_MIN + n_tasks * MIN_PER_TASK.get(size, 2.8) * SAFETY
-    minutes = min(math.ceil(minutes / 15) * 15, 719)
+    return math.ceil(minutes / 15) * 15
+
+
+def eval_walltime(size: str, n_tasks: int) -> str:
+    """Slurm walltime for a job that FITS the cap; callers must check
+    eval_minutes() <= WALLTIME_CAP_MIN first (submit_eval does). An over-cap
+    request is rejected at submission and would crash the watch loop; a
+    silently clamped one is worse — BATCH_TASKS=1 writes nothing on a
+    walltime kill, so the job would be resubmitted and killed forever."""
+    minutes = min(eval_minutes(size, n_tasks), WALLTIME_CAP_MIN)
     return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 
 
@@ -270,6 +280,13 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     name = f"{cell}-iter{it}"
     hf_dir = staging / cell / f"iter_{it:07d}"
     n_tasks = tasks.count(",") + 1
+    # Today this holds back 600M/1B/1.7B at L100 and 1.7B at L50 (711-1233
+    # min against the 719 cap). Until the task list is split across jobs
+    # (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch), submitting is pure loss.
+    if (need := eval_minutes(size, n_tasks)) > WALLTIME_CAP_MIN:
+        print(f"  SKIP {job_name('eval', name)}: {n_tasks} tasks need ~{need} min, "
+              f"over the {WALLTIME_CAP_MIN}-min queue cap — needs a split eval")
+        return
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
     # comma-joined TASKS list would be truncated at its first comma and the
