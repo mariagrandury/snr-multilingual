@@ -126,10 +126,12 @@ WSD decay at the wrong step. Verified end-to-end 2026-05-10.
 
 ### 6. Platform parity beyond the arguments
 - Azure checks out Megatron at the pinned `MEGATRON_COMMIT`
-  (`azure/get_megatron.sh`); the CSCS wrapper uses the on-disk checkout at
+  (`azure/get_megatron.sh`) and copies `patches/` over it — the same
+  dist-checkpointing patch the CSCS checkout carries (README "Before the
+  first CSCS run"); the CSCS wrapper uses the on-disk checkout at
   `/iopsstor/.../data-mix-small/Megatron-LM`. Identical args don't guarantee
-  identical code — verify the cluster checkout is at the same commit before
-  cross-platform comparisons.
+  identical code — verify the cluster checkout is at the same commit
+  (`c92402e`) before cross-platform comparisons.
 - CSCS compute nodes have no internet: the tokenizer
   (`swiss-ai/Apertus-70B-2509`) must be pre-downloaded into the HF cache on
   the login node (the old sweep's `alehc/swissai-tokenizer` was already

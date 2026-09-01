@@ -12,5 +12,11 @@ if [ ! -f "$MEGATRON_LM_DIR/pretrain_gpt.py" ]; then
   git -C "$MEGATRON_LM_DIR" checkout -q FETCH_HEAD
 fi
 
+# Same patch the CSCS checkout carries (README "Before the first CSCS run"):
+# without it any resume that needs the legacy-metadata fallback dies in
+# get_reformulation_metadata, and "both platforms run the same training code"
+# is false by construction. BASH_SOURCE, not $0: this file is `source`d.
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/dist_checkpointing_strategies_torch.py" \
+   "$MEGATRON_LM_DIR/megatron/core/dist_checkpointing/strategies/torch.py"
 export MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR${PYTHONPATH:+:$PYTHONPATH}
