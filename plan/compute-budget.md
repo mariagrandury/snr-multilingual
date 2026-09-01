@@ -9,6 +9,13 @@ computed from the 90M–1.7B deep ladder in `src/pretrain/hyperparams/hyperparam
 A rendered version lives at the "Predictivity Sweep Compute Budget" artifact
 (claude.ai/code/artifact/3d1f4011-c824-4899-b045-a5dc1d66bb17).
 
+> **Stale by ~10% (2026-08-28):** the Azure tables below price the earlier
+> **51-run** grid; the grid is now **56 runs** per level (L=2 gained ×3 seeds
+> at 175M/1B and the 1.7B row gained L=2 — see the cluster table further
+> down, which already uses 56). Scaling the per-size rows: ≈ 2.32e22 FLOPs
+> per level, fast mix ≈ **$130k** (headroom ≈ $70k), all-Spot ≈ $137k.
+> A full re-derivation is on the todo list (low priority).
+
 ## Verdict
 
 | | |
@@ -446,10 +453,13 @@ EOF
   (shallow depth-intervention variant, retargeted to the same six sizes) —
   selected by `--arch` in both launchers; D = 100·N schedules are stored in
   each config's `predictivity` block (added 2026-08-14, generators emit). Peak
-  LRs dropped to the reviewed generators' 6ND law (e.g. 175M 1.217e-3 →
-  0.979e-3, 90M 1.428e-3 → 1.061e-3, 1.7B 6.93e-4 → 7.39e-4). FLOPs and cost
+  LRs come from the 6ND law evaluated at each run's OWN budget
+  (C = 6·N·100N — commit 8be0eac, replacing a fixed-100B-token fit): 90M
+  1.428e-3, 175M 1.217e-3, 350M 1.029e-3, 600M 8.98e-4, 1B 8.00e-4, 1.7B
+  6.93e-4 (deep; shallow within 2%). Whether this law is too hot at the
+  small end is the open question in `90M-rung-anomaly.md`. FLOPs and cost
   totals are unchanged (same N, same D); a shallow level differs by ±5% FLOPs
-  at most (its N deviates ≤4.9% from the deep targets).
+  at most (its N deviates ≤5.2% from the deep targets).
 - Cluster-side caveat (resolved with the deletion): the unreviewed file's
   `nodes`×`micro_batch_size` pairs mostly didn't divide GBS 504 on the
   4-GPU-per-node cluster. Every pair in `hyperparams_deep.json` now does
