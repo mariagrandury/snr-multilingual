@@ -8,7 +8,8 @@ that capstor tree to the Hub.
 
 Layout:
   capstor  <STAGING_BASE>/<cell>/iter_<NNNNNNN>/          (cell = the run name)
-  hub      msnr/<cell>:branch=step-<N>   (and 'main' = the highest iter)
+  hub      msnr/<cell>:branch=step-<NNNNNN>   (zero-padded to 6 digits so
+           branches sort: step-000225 < step-081000; 'main' = the highest iter)
 
 `msnr` repos are PUBLIC (no private-storage quota), one repo per cell, one
 branch per iter, main mirrors the latest iter.

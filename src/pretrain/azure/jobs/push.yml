@@ -4,7 +4,8 @@ experiment_name: msnr
 display_name: push-hub
 description: >
   Mirror the converted HF checkpoints in blob (models/<cell>/iter_<N>) to the
-  public `msnr` HF org — one repo per cell, one branch per iter (step-<N>),
+  public `msnr` HF org — one repo per cell, one branch per iter (step-<NNNNNN>,
+  zero-padded so branches sort),
   main = latest. Reuses conversion/push-snr.py (the same script the CSCS side
   runs against capstor), pointed at the mounted blob. Push every cell (default)
   or one via `--set command="python conversion/push-snr.py --staging
