@@ -496,8 +496,12 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
         "display_name": job_name("pretrain", exp),
         "compute": ("azureml:gpu-nd96-spot" if size in UK_SIZES
                     else "azureml:gpu-nc80-lp"),
+        # L=1 has no FineWeb blend (data_blend uses inputs.english alone), but
+        # the job spec still declares the input and downloads it — pointing it
+        # at english_dclm again fetched the 686 GB build twice per monolingual
+        # cell. validation/ (2 GB) is the smallest folder every workspace has.
         "inputs.fineweb.path":
-            f"{data_root}/{'english_dclm' if L == 1 else f'fineweb_L{L}'}",
+            f"{data_root}/{'validation' if L == 1 else f'fineweb_L{L}'}",
         **{f"outputs.{o}.path": f"{DATASTORE}/runs/{exp}/{o}"
            for o in ("checkpoints", "logs", "cache")},
         **{f"environment_variables.{k}": v for k, v in env.items()},

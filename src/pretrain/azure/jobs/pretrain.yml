@@ -21,7 +21,7 @@ inputs:
     type: uri_folder
     path: azureml://datastores/workspaceblobstore/paths/predictivity/data/english_dclm
     mode: download
-  fineweb:  # the launcher points this at fineweb_L<L>; for L=1 it mirrors `english`
+  fineweb:  # the launcher points this at fineweb_L<L>; for L=1 (unused) at the small validation/ folder
     type: uri_folder
     path: azureml://datastores/workspaceblobstore/paths/predictivity/data/english_dclm
     mode: download
