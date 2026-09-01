@@ -43,7 +43,10 @@ VOCAB_SIZE = 131072
 # Where the CSCS artifacts live (Azure cells keep the same entry shape; their
 # checkpoints are watched in blob storage by auto_evals_azure.py instead).
 MEG_BASE = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr"
-HF_LOCAL_BASE = "/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints"
+# Where convert-snr.sh actually lands the HF snapshots (<cell>/iter_<NNNNNNN>/):
+# auto_evals_cscs.DEFAULT_STAGING. snr-hf-checkpoints on iopsstor was the
+# 36-sweep's root and is never written for lm-* cells.
+HF_LOCAL_BASE = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
 
 
 def save_points(target: int) -> list[int]:
