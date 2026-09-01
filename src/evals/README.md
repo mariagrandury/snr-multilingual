@@ -94,15 +94,25 @@ python3.11 scripts/snr_progress.py --details --filter <NAME-substr>   # per-task
 System Python on login nodes is 3.6; use `python3.11` for the dashboard.
 
 When `normal` is backed up, [`scripts/debug_drain.sh`](scripts/debug_drain.sh)
-feeds already-pending convert/eval jobs through the idle `debug` partition
+feeds already-pending convert/eval/bpb jobs through the idle `debug` partition
 (capped at debug-qos' 1 running + 1 queued, each capped to debug's 1:30 wall).
 It never submits anything new, so it cannot duplicate work; conversions go
 first, since a cell cannot be evaluated before its HF snapshot exists.
 
+Whether a job may be truncated to 1:30 depends on whether that loses work.
+Conversions and BPB are **resumable** — both write a per-checkpoint marker and
+skip what already carries it — so they are moved regardless of the walltime
+they asked for. Evals are not (`BATCH_TASKS=1` writes nothing until the end,
+CLAUDE.md bug 13), so an eval is moved only if its own walltime already fits.
+
 ```bash
 bash scripts/debug_drain.sh --dry-run   # what it would move
-bash scripts/debug_drain.sh             # loop until nothing is pending
+bash scripts/debug_drain.sh             # loop until nothing is movable
 ```
+
+It **exits** once nothing movable is left — it drains a batch, it does not
+stand guard, so a job submitted afterwards stays on `normal` until it is
+started again.
 
 ## Bits-per-byte: the second way to evaluate a model
 
@@ -112,8 +122,16 @@ is measured by a different path from everything above — no lm-eval, no vLLM,
 no benchmark tasks:
 
 ```bash
-sbatch --job-name=bpb-<cell> scripts/score_bpb.sbatch <cell> [iters...]
+bash scripts/launch_bpb.sh --dry-run    # every cell with unscored checkpoints
+bash scripts/launch_bpb.sh              # submit them
+sbatch --job-name=bpb-<cell> scripts/score_bpb.sbatch <cell> [iters...]   # one cell
 ```
+
+[`scripts/launch_bpb.sh`](scripts/launch_bpb.sh) is the normal entry point and
+is safe to re-run: it skips cells that are fully scored and cells that already
+have a job in flight. That second check is not optional — `score_bpb.sbatch`
+queues its own successor (below), so a cell mid-chain always has a PENDING job
+that a naive loop would duplicate.
 
 One job per cell scores every converted checkpoint it finds and writes
 `<LOGS_ROOT>/<entity>/msnr/<cell>-iter<N>/bpb/bpb.json` — per language, the
@@ -139,6 +157,17 @@ How it differs from the harness path, and why:
 * **It is comparable across tokenizers**, which accuracy is not — the
   denominator is bytes. That is why the plan chose it for the tokenizer
   intervention.
+
+**A cell does not fit one debug slot**, so the job carries itself across
+several. Scoring costs a flat ~448 s/checkpoint at 90M and ~816 s at 350M
+(<2% spread), against 20 checkpoints per cell — so a 1:30 debug slot gets
+through 11 or 6 of them. `score_bpb.sbatch` therefore queues a
+`--dependency=singleton` successor **before** it starts scoring (at the wall
+Slurm kills the batch script, so anything submitted afterwards would never
+run), and refuses to start a checkpoint it cannot finish in the time left,
+using the previous checkpoint's measured cost. The successor re-derives what
+is still due and exits without chaining when nothing is, so the chain ends
+itself; `MAX_CHAIN` (default 12) bounds it against a failure loop.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses
@@ -218,7 +247,8 @@ evals/
 │   ├── generate_snr_runner.sh           # runner generator
 │   ├── list_checkpoints.sh              # ckpt enumerator
 │   ├── score_bpb.py                     # per-language BPB + perplexity
-│   ├── score_bpb.sbatch                 # BPB job, one per cell
+│   ├── score_bpb.sbatch                 # BPB job, one per cell (self-chaining)
+│   ├── launch_bpb.sh                    # submit BPB for every cell still due
 │   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor master
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan
