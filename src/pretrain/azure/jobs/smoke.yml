@@ -7,7 +7,17 @@ description: >
   swiss-ai Megatron fork (xielu/qknorm/ademamix kernels) and torch_dist
   checkpoint saving before any real money is spent. <30 min, <$2.
 code: ../..
-command: bash launch_pretraining_azure.sh
+# NOTE: ${{inputs.*}} / ${{outputs.*}} are ONLY substituted inside `command`.
+# In `environment_variables` they are passed through VERBATIM — the job then
+# writes to a local dir literally named "${{outputs.checkpoints}}" and every
+# artifact is lost when the node is released, with no error anywhere.
+# Verified the hard way 2026-08-26 (job dynamic_pepper_g3j1j3hhmp: mounts were
+# created, 0 bytes written). So bind them here and export into the wrapper.
+command: >-
+  CKPT_DIR=${{outputs.checkpoints}}
+  LOG_DIR=${{outputs.logs}}
+  CACHE_DIR=${{outputs.cache}}
+  bash launch_pretraining_azure.sh
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-nc80-lp
 resources:
@@ -27,10 +37,7 @@ outputs:
     mode: rw_mount
 environment_variables:
   MOCK_DATA: "true"
-  TRAINING_STEPS: "20"
-  LR_WARMUP_ITERS: "10"
-  LR_WSD_DECAY_ITERS: "5"
+  TRAINING_STEPS: "10"
+  LR_WARMUP_ITERS: "5"
+  LR_WSD_DECAY_ITERS: "2"
   SAVE_INTERVAL: "10"
-  CKPT_DIR: ${{outputs.checkpoints}}
-  LOG_DIR: ${{outputs.logs}}
-  CACHE_DIR: ${{outputs.cache}}

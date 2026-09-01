@@ -11,7 +11,19 @@ description: >
   the input dataset paths, the blend, and the compute (Spain NC80adis
   low-priority for <=600M, UK ND96isr Spot for 1B/1.7B).
 code: ../..
-command: bash launch_pretraining_azure.sh
+# NOTE: ${{inputs.*}} / ${{outputs.*}} are ONLY substituted inside `command`.
+# In `environment_variables` they are passed through VERBATIM — the job then
+# writes to a local dir literally named "${{outputs.checkpoints}}" and every
+# artifact is lost when the node is released, with no error anywhere.
+# Verified the hard way 2026-08-26 (job dynamic_pepper_g3j1j3hhmp: mounts were
+# created, 0 bytes written). So bind them here and export into the wrapper.
+command: >-
+  CKPT_DIR=${{outputs.checkpoints}}
+  LOG_DIR=${{outputs.logs}}
+  CACHE_DIR=${{outputs.cache}}
+  ENGLISH_DIR=${{inputs.english}}
+  FINEWEB_DIR=${{inputs.fineweb}}
+  bash launch_pretraining_azure.sh
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-nc80-lp
 resources:
@@ -45,6 +57,3 @@ environment_variables:
   PROJECT_NAME: msnr
   TOKENIZER_MODEL: swiss-ai/Apertus-70B-2509
   SAVE_INTERVAL: "2000"
-  CKPT_DIR: ${{outputs.checkpoints}}
-  LOG_DIR: ${{outputs.logs}}
-  CACHE_DIR: ${{outputs.cache}}

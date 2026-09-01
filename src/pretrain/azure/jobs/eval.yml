@@ -10,7 +10,12 @@ description: >
 # Snapshot the repo root (filtered by the root .amlignore) so the job can run
 # src/evals/scripts/push_all_results.py against configs/ after the eval.
 code: ../../../..
-command: bash src/pretrain/azure/eval.sh
+# Binding expressions expand ONLY in `command` — never in
+# environment_variables. See pretrain.yml for what that cost us.
+command: >-
+  MODEL=${{inputs.hf_model}}
+  RESULTS_DIR=${{outputs.results}}
+  bash src/pretrain/azure/eval.sh
 environment: azureml:apertus-eval@latest
 compute: azureml:gpu-nc80-lp
 resources:
@@ -30,5 +35,3 @@ environment_variables:
   # can resolve tokens/FLOPs for the W&B push.
   NAME: apertus-175M-fwEdu30-fw270-seed28-iter50000
   TASKS: hellaswag
-  MODEL: ${{inputs.hf_model}}
-  RESULTS_DIR: ${{outputs.results}}

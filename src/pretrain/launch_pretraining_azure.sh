@@ -34,6 +34,26 @@ export HF_HOME=${HF_HOME:-/tmp/hf_home}   # tokenizer download cache
 # JIT extensions (xielu) must compile for the local GPU (A100=8.0, H100=9.0)
 export TORCH_CUDA_ARCH_LIST=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1)
 
+# DATA_BLEND arrives holding literal $ENGLISH_DIR / $FINEWEB_DIR (the launcher
+# cannot use ${{inputs.*}} there — AML expands binding expressions only inside
+# the yml's `command`). Expand them once here; megatron_args.sh then word-splits
+# the result into --data-path. Bash does not re-expand variables found inside a
+# variable's value, so without this Megatron receives the literal string.
+if [ -n "${DATA_BLEND:-}" ]; then
+  DATA_BLEND=$(eval echo "$DATA_BLEND")
+  echo "[$(date)] data blend: $DATA_BLEND"
+fi
+
+# Megatron touches "$trigger_path/exit" when training finishes, and its default
+# trigger_path is /dev/null -> NotADirectoryError: '/dev/null/exit' AFTER the
+# run has trained and checkpointed successfully, turning a good run into a
+# Failed job (seen 2026-08-26). Point it at a real writable dir. Setting
+# TRIGGER_PATH also enables --exit-signal-handler in megatron_args.sh, which is
+# harmless here (nothing sends SIGUSR2 on Azure) and gives Azure the same
+# manual `touch $TRIGGER_PATH/{save,exit}` controls the cluster has.
+export TRIGGER_PATH=${TRIGGER_PATH:-$CACHE_DIR/trigger}
+mkdir -p "$TRIGGER_PATH"
+
 # Build the (platform-identical) training command; then launch with torchrun.
 source megatron_args.sh
 

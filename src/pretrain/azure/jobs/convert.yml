@@ -7,7 +7,12 @@ description: >
   (ApertusForCausalLM). ~few minutes on 1 GPU. For other cells/iters override
   inputs.checkpoints.path, outputs.hf_model.path and CKPT_STEP with --set.
 code: ../..
-command: bash azure/convert.sh
+# Binding expressions expand ONLY in `command` — never in
+# environment_variables. See pretrain.yml for what that cost us.
+command: >-
+  CKPT_ROOT=${{inputs.checkpoints}}
+  HF_OUT=${{outputs.hf_model}}
+  bash azure/convert.sh
 environment: azureml:apertus-nemo@latest
 compute: azureml:gpu-nc80-lp
 resources:
@@ -24,5 +29,3 @@ outputs:
     mode: rw_mount
 environment_variables:
   CKPT_STEP: "50000"
-  CKPT_ROOT: ${{inputs.checkpoints}}
-  HF_OUT: ${{outputs.hf_model}}
