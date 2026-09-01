@@ -284,10 +284,24 @@ def cell_env(
     lr_warmup_iters: Optional[int] = None,
     lr_wsd_decay_iters: Optional[int] = None,
     mbs: Optional[int] = None,
+    lr: Optional[float] = None,
+    beta3_factor: Optional[float] = None,
 ) -> dict:
     """The env-var dict megatron_args.sh consumes — the platform-independent
-    description of one run. Identical on CSCS and Azure by construction."""
+    description of one run. Identical on CSCS and Azure by construction.
+
+    `lr` and `beta3_factor` are DIAGNOSTIC overrides and default to None, in
+    which case this returns exactly what the already-pretrained cells used —
+    the ladder's comparability rests on that. Callers that pass either get a
+    `diag-` run name forced on them (see main())."""
     iters, warmup, decay = schedule_for(cfg)
+    # Out-of-range factors do not fail loudly, they train garbage for hours:
+    # F * iters <= 1 gives beta3 <= 0, and a negative F gives beta3 > 1.
+    beta3 = None if beta3_factor is None else 1 - 1 / (beta3_factor * iters)
+    if beta3 is not None and not 0 < beta3 < 1:
+        raise ValueError(
+            f"--ademamix-beta3-factor {beta3_factor} gives beta3={beta3:.6g} "
+            f"over {iters} iters; need 0 < beta3 < 1, i.e. factor > {1/iters:.3g}")
     return {
         "MODEL_SIZE": size,
         "NUM_LAYERS": cfg["n_layers"],
@@ -297,7 +311,7 @@ def cell_env(
         "NUM_QUERY_GROUPS": cfg["num_query_groups"],
         "MBS": mbs if mbs is not None else cfg["micro_batch_size"],
         "TRAINING_STEPS": training_steps if training_steps is not None else iters,
-        "LR": cfg["lr"],
+        "LR": lr if lr is not None else cfg["lr"],
         "LR_WARMUP_ITERS": lr_warmup_iters if lr_warmup_iters is not None else warmup,
         "LR_WSD_DECAY_ITERS": (
             lr_wsd_decay_iters if lr_wsd_decay_iters is not None else decay
@@ -306,6 +320,14 @@ def cell_env(
         # the target iters, never a capped resume's --training-steps, so every
         # (re)submission runs the identical optimizer schedule.
         "ADEMAMIX_WARMUP": iters,
+        # beta3's ENDPOINT is fixed at 0.9999 for every grid cell; only the
+        # warmup above scales with run length. Emitted ONLY for diagnostic
+        # runs, so a normal launch's dict stays byte-identical to what the
+        # trained cells used and megatron_args.sh keeps its own default —
+        # which is what makes "unchanged by default" checkable with a diff.
+        # 8 dp, not 6: at the long rungs 1-beta3 is ~6e-5, and 6 dp would
+        # round the timescale off by ~0.5%.
+        **({"ADEMAMIX_BETA3": f"{beta3:.8f}"} if beta3 is not None else {}),
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -593,12 +615,42 @@ def main() -> None:
     parser.add_argument("--test", action="store_true",
                         help=f"CSCS only: smoke test ({TEST_SIZE}, L{TEST_LANGS}, "
                              f"{TEST_STEPS} steps)")
+    # Diagnostic overrides. Every grid cell must keep the config the trained
+    # cells used, so these are opt-in, never defaults, and any run that sets
+    # one is renamed diag-* below — it can then never land in a grid cell's
+    # checkpoint dir or W&B run id. See plan/90M-rung-anomaly.md.
+    parser.add_argument("--lr", metavar="LR", type=float,
+                        help="CSCS only, DIAGNOSTIC: override the per-size peak "
+                             "LR. Forces a diag- run name — never a grid cell.")
+    parser.add_argument("--ademamix-beta3-factor", metavar="F", type=float,
+                        help="CSCS only, DIAGNOSTIC: set beta3 = 1 - 1/(F * iters) "
+                             "instead of the ladder's fixed 0.9999, i.e. put the "
+                             "slow-EMA timescale at F of the run. Forces a diag- "
+                             "run name — never a grid cell.")
     args = parser.parse_args()
 
     if args.platform != "cscs":
-        for flag in ("time", "account", "dependency", "training_steps", "test"):
-            if getattr(args, flag):
+        # not-in-(None, False), not truthiness: --lr 0 is a mistake worth
+        # reporting, not a value to silently drop.
+        for flag in ("time", "account", "dependency", "training_steps", "test",
+                     "lr", "ademamix_beta3_factor"):
+            if getattr(args, flag) not in (None, False):
                 parser.error(f"--{flag.replace('_', '-')} is CSCS-only")
+
+    diag = {k: v for k, v in (("lr", args.lr),
+                              ("beta3f", args.ademamix_beta3_factor))
+            if v is not None}
+    if diag:
+        if any(v <= 0 for v in diag.values()):
+            parser.error("--lr / --ademamix-beta3-factor must be positive")
+        # Without a filter one diagnostic flag would fan a non-standard
+        # config across every fresh cell in the grid.
+        if not (args.size or args.langs or args.seed):
+            parser.error("a diagnostic run must be narrowed with "
+                         "--size/--langs/--seed")
+        # A diag- cell has no models.json entry, so the watcher could not
+        # evaluate it anyway.
+        args.no_auto_evals = True
 
     size_filter = args.size.split(",") if args.size else None
     valid_sizes = list(SIZE_LANG_SETTINGS)
@@ -655,6 +707,14 @@ def main() -> None:
         # idempotency check dedupes against an earlier scheme-A sweep).
         scheme = args.scheme if c["L"] in SCHEME_B_LANGS else "A"
         exp = exp_name(c["size"], c["L"], args.arch, c["seed"], scheme)
+        if diag:
+            # Rename BEFORE anything keys off it. `diag-...` matches neither
+            # pretrain_progress.NAME_RE nor ladder_report.LOG_RE, and
+            # sync_models_json builds its keys from exp_name(), so a run with
+            # a non-standard config is structurally unable to be mistaken for
+            # a ladder rung. Not optional, for that reason.
+            tag = "".join(f"-{k}{v:g}" for k, v in diag.items())
+            exp = f"diag-{exp.removeprefix('lm-')}{tag}"
         target = schedule_for(cfg)[0]
 
         if job_name("pretrain", exp) in active:
@@ -682,7 +742,8 @@ def main() -> None:
             submit_cscs(
                 cell_env(cfg, c["size"], c["seed"], exp, blend,
                          training_steps=args.training_steps or tgt,
-                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"])),
+                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"]),
+                         lr=args.lr, beta3_factor=args.ademamix_beta3_factor),
                 dry_run=args.dry_run, nodes=nodes,
                 time=args.time or auto_time(c["size"], tgt - load_iter, args.arch),
                 account=args.account, dependency=args.dependency,

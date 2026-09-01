@@ -76,8 +76,16 @@ build_megatron_cmd() {
 		--adam-beta1 0.9
 		--adam-beta2 0.999
 		--ademamix-alpha 8
-		--ademamix-beta3 0.9999
-		# AdEMAMix alpha/beta3 warm up over the FULL run (the launcher sets
+		# beta3's ENDPOINT is 0.9999 for every ladder cell and the default
+		# here is what makes that true — a run that does not set the env var
+		# (every grid cell, every resume, both platforms) is unchanged.
+		# ADEMAMIX_BETA3 is set ONLY by launch_trainings.py's diagnostic
+		# --ademamix-beta3-factor, which also forces a diag- run name; see
+		# plan/90M-rung-anomaly.md for why the endpoint is under suspicion
+		# (1/(1-0.9999) = 10000 steps of slow-EMA memory against a 4500-iter
+		# 90M run) and why fixing it would mean re-running the ladder.
+		--ademamix-beta3 ${ADEMAMIX_BETA3:-0.9999}
+		# AdEMAMix alpha/beta3 WARMUP spans the FULL run (the launcher sets
 		# ADEMAMIX_WARMUP to the cell's target iters), so the optimizer
 		# behaves the same at every ladder size — a fixed 100000 would leave
 		# the short runs (4500..81000 iters) with wildly different warmed-up
