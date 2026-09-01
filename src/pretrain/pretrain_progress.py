@@ -302,6 +302,13 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
                 matrix = [[v if L in SCHEME_B_LANGS else float("nan")
                            for v in row]
                           for L, row in zip(LANG_SETTINGS, matrix)]
+            if key == "seed":
+                # Seeds 28/1797 exist only on the x3 cells (seeds_for); the
+                # single-seed cells would otherwise read as permanently
+                # missing runs.
+                matrix = [[v if value in seeds_for(size, L) else float("nan")
+                           for size, v in zip(SIZES, row)]
+                          for L, row in zip(LANG_SETTINGS, matrix)]
             _draw_grid(ax, matrix, binary_cmap.copy(), 1, annotate=False)
             ax.set_title(f"{label} = {value}", fontsize=10)
             if j == 0:
