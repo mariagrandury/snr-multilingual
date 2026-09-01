@@ -220,14 +220,17 @@ conservative estimates in `MIN_PER_TASK`.
 - `eval_walltime()` previously assumed a fixed **60 min** overhead against the
   ~2.5 min measured, and put 90M at 0.6 min/task — *below* the 0.667 measured.
   Both are now fitted; overhead is 15 min for cold-start headroom.
-- At the unmeasured sizes the L100 request already clamps to the 11:59 queue
-  cap, which means no margin at all. A walltime kill writes **nothing** under
-  `BATCH_TASKS=1`, so those cells need the eval split across jobs rather than a
-  bigger request.
-- Eval is also **latency-bound, not throughput-bound**: jobs are 1 node and
-  the `debug` partition takes them
-  (1:30 cap, 1 running + 1 queued), so `scripts/debug_drain.sh` moves them off
-  the busy `normal` queue.
+- At the unmeasured sizes the L100 request exceeds the 11:59 queue cap
+  outright. A walltime kill writes **nothing** under `BATCH_TASKS=1`, so a
+  clamped request would be resubmitted and killed forever; `submit_eval` now
+  refuses those instead (600M/1B/1.7B at L100 and 1.7B at L50). They need the
+  eval split across jobs — `evaluate.sbatch` already has
+  `NUM_SPLITS`/`SPLIT_INDEX` — before they can run at all.
+- Eval is also **latency-bound, not throughput-bound**: jobs are 1 node, and
+  `scripts/debug_drain.sh` moves pending work off the busy `normal` queue into
+  `debug` (1:30 cap, 1 running + 1 queued). Only *conversions* and *BPB* jobs
+  are moved regardless of length, because both resume per checkpoint; an eval
+  is moved only if it already fits 1:30, i.e. L1/L2/L8.
 - Conversion gates evaluation — a cell cannot be evaluated until its HF
   snapshot exists — so it is on the critical path despite being cheap.
 

@@ -58,6 +58,8 @@ for cell in $(ls "$STAGING" 2>/dev/null | grep '^lm-' | grep -E "$FILTER"); do
 done
 
 echo "--- $n_sub cell(s), $n_due checkpoint(s) due$( (( DRY )) && echo ' (dry-run)')"
-# Reminder rather than an auto-start: the drainer is a long-lived background
-# process, and starting one per launch would leave several racing each other.
-(( DRY )) || echo "if the debug queue is idle: nohup bash $(dirname "${BASH_SOURCE[0]}")/debug_drain.sh > logs/debug_drain_\$(date +%Y%m%d_%H%M%S).log 2>&1 &"
+# bpb jobs are the drainer's best case: resumable per checkpoint, so a debug
+# slot is pure gain. --ensure starts one only if none is running, so calling it
+# on every launch cannot stack up racing drainers (the reason this used to be a
+# printed reminder that nobody ran).
+(( DRY )) || bash "$(dirname "${BASH_SOURCE[0]}")/debug_drain.sh" --ensure

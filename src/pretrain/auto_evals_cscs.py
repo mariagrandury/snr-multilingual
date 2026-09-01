@@ -367,6 +367,14 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # One place to look for what is stuck and why. A snapshot, not a log: a
     # checkpoint drops out of it as soon as an eval writes results, so an
     # empty file means nothing is held back.
+    # The `normal` queue is the bottleneck, and the convert jobs this pass just
+    # submitted are the gate on every eval downstream of them. --ensure starts a
+    # drainer only if none is running, so this is safe to call every pass; the
+    # drainer exits on its own once nothing movable is left.
+    if not args.dry_run:
+        subprocess.run(["bash", str(EVALS_DIR / "scripts" / "debug_drain.sh"),
+                        "--ensure"], check=False)
+
     path = logs_root / ERRORS_JSON
     if not args.dry_run:
         path.write_text(json.dumps(errors, indent=2, sort_keys=True) + "\n")

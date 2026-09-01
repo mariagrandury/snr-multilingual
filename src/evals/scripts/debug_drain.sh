@@ -57,17 +57,43 @@
 #   bash scripts/debug_drain.sh                  # loop (default 45s interval)
 #   bash scripts/debug_drain.sh --once           # single pass
 #   bash scripts/debug_drain.sh --interval 60
+#   bash scripts/debug_drain.sh --ensure         # start one in the background
+#                                                # if none is running; else no-op
 set -uo pipefail
-INTERVAL=45; ONCE=0; DRY=0
+INTERVAL=45; ONCE=0; DRY=0; ENSURE=0
 DEBUG_CAP_SEC=5400        # the debug partition's 1:30 wall (scontrol show partition debug)
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --interval) INTERVAL="$2"; shift 2 ;;
     --once)     ONCE=1; shift ;;
     --dry-run)  DRY=1; shift ;;
+    --ensure)   ENSURE=1; shift ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+SELF=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")
+
+# --ensure: what job submitters call. The drainer's loop EXITS once nothing
+# movable is left, so it has to be (re)started whenever new jobs are queued —
+# but starting one per launch would leave several racing for the same two
+# debug slots. So: start one only if none is running. "Running" = any
+# debug_drain.sh process that is not itself an --ensure call, which covers
+# both the form spawned below and one started by hand. A concurrent --dry-run
+# also reads as running and skips the start; the next submitter's call picks
+# it up, and erring towards "don't start a second one" is the safe direction.
+if (( ENSURE )); then
+    if pgrep -af "debug_drain\.sh" | grep -qv -- "--ensure"; then
+        echo "[debug-drain] already running"
+        exit 0
+    fi
+    LOGDIR=$(dirname "$(dirname "$SELF")")/logs   # src/evals/logs (gitignored)
+    mkdir -p "$LOGDIR"
+    LOG="$LOGDIR/debug_drain_$(date +%Y%m%d_%H%M%S).log"
+    setsid bash "$SELF" --interval "$INTERVAL" >"$LOG" 2>&1 < /dev/null &
+    echo "[debug-drain] started (pid $!) -> $LOG"
+    exit 0
+fi
 
 drain_once() {
     local npend nlong ndebug slots cand jid jn secs

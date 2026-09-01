@@ -108,11 +108,15 @@ CLAUDE.md bug 13), so an eval is moved only if its own walltime already fits.
 ```bash
 bash scripts/debug_drain.sh --dry-run   # what it would move
 bash scripts/debug_drain.sh             # loop until nothing is movable
+bash scripts/debug_drain.sh --ensure    # start one in the background if none runs
 ```
 
 It **exits** once nothing movable is left — it drains a batch, it does not
-stand guard, so a job submitted afterwards stays on `normal` until it is
-started again.
+stand guard. That is why the submitters call `--ensure`:
+[`launch_bpb.sh`](scripts/launch_bpb.sh) after queueing BPB jobs, and
+`auto_evals_cscs.py` at the end of every watch pass. `--ensure` starts a
+detached drainer only when none is running (log in `logs/`), so calling it on
+every submission cannot stack up drainers racing for the same two debug slots.
 
 ## Bits-per-byte: the second way to evaluate a model
 
