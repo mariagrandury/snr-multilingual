@@ -70,7 +70,7 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M, 1B columns at L ∈ {1, 2, 30, 100} |
+| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 30, 100} |
 | Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 

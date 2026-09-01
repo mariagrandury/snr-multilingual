@@ -16,7 +16,7 @@ sheet carried the fixed-100B-token LRs and the 51-run grid).
 
 L ∈ {1, 2, 8, 15, 30, 50, 100} languages (English + L−1 FineWeb-2 languages,
 lists per scheme in `src/pretrain/data/language_sets_scheme{A,B}.json`).
-✓ = one seed (1904) · **×3** = seeds 28, 1797, 1904. The generated block in
+✓ = one seed (1904) · **×3** = seeds 64, 313, 1904. The generated block in
 [`src/pretrain/README.md`](../src/pretrain/README.md) is the live version of
 this table.
 
