@@ -200,6 +200,51 @@ staged on iopsstor and `CSCS_DEFAULT_DATA_DIR` points at it. After a purge,
 re-stage from capstor before launching (README "Before the first CSCS run").
 Checkpoints were always on iopsstor and stay there — same reasoning.
 
+### 9. AML expands `${{...}}` only in `command` (2026-08-26)
+`${{inputs.*}}` / `${{outputs.*}}` are substituted **only** inside a job
+yml's `command`. In `environment_variables` — and in any
+`--set environment_variables.X=...` the launcher writes — they pass through
+verbatim. The job then mounts its outputs correctly and writes every
+artifact to a local directory literally named `${{outputs.checkpoints}}`,
+which vanishes with the node. **Nothing errors**: the job succeeds, the
+mount exists, and blob storage holds 0 bytes.
+
+Bind the paths in `command` and export them into the wrapper
+(`CKPT_DIR=${{outputs.checkpoints}} ... bash launch_pretraining_azure.sh`).
+`DATA_BLEND` has the same constraint, which is why `launch_trainings.py`
+emits `$ENGLISH_DIR/$FINEWEB_DIR` and the wrapper eval-expands it — bash
+does not re-expand variables found inside a variable's value.
+
+The check that catches it: after any job that should write, `az storage blob
+list --prefix <outputs path> --query "sum([].properties.contentLength)"`.
+A 0 there is the bug; the job status will not tell you.
+
+### 10. Megatron touches `$trigger_path/exit` when training finishes
+Its default `trigger_path` is `/dev/null`, so the final touch raises
+`NotADirectoryError: '/dev/null/exit'` **after** the run has trained and
+checkpointed successfully — turning a good run into a `Failed` job. CSCS
+never sees it because `TRIGGER_PATH` is a real directory there;
+`launch_pretraining_azure.sh` now sets one on Azure too (which also enables
+`--exit-signal-handler`, harmless where nothing sends SIGUSR2, and gives
+Azure the same manual `touch $TRIGGER_PATH/{save,exit}` controls).
+
+### 11. Azure GPU access has four gates, and three signals lie
+Full table in [azure/README.md](azure/README.md) ("The four gates"). The
+short version: allow-list → tier policy → quota → capacity, each with a
+different remedy. **H100 cannot use low-priority on this subscription at
+all** (`UnsupportedVMSizeForLowPriority`); A100 can. A *dedicated* cluster
+is quota-checked at create; a *low-priority* one is not, and creates as
+`Succeeded` regardless — so a cluster existing proves nothing. Never trust
+`LowPriorityCapable`, the retail meter list, or the AML quota counters; the
+only reliable test is creating the cluster at `min_instances: 0` (costs $0)
+and reading `properties.errors` via `az rest`.
+
+Corollary for planning: Azure jobs are **single-node**
+(`torchrun --standalone`), so nodes buy concurrency, not per-run speed, and
+GPUs-per-node is the binding constraint. A 1.7B run is 7.2 d on one 8×H100
+node but 29 d on a 2×H100 node — and since a run cannot span nodes, no
+quantity of small nodes fixes that.
+
 ---
 
 ## Live state (read, don't trust snapshots)

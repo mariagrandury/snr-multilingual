@@ -314,7 +314,7 @@ def main() -> None:
     names = resolve_names()
     if not names:
         sys.exit(f"no cells in the {args.workspace} workspace match the "
-                 f"filters (1B/1.7B live in uk, the rest in es)")
+                 f"filters (1B/1.7B live in ca, the rest in es)")
     # "auto" resolves per cell (benchmarks x trained languages); anything
     # else is a fixed task list/group as before.
     tasks = None if args.tasks == "auto" else resolve_tasks(args.tasks)

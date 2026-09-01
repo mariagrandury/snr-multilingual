@@ -78,6 +78,44 @@ The 1B + 1.7B rows are **84%** of all compute.
 | Dedicated economy (all Spain PAYG) | $375k | ✗ |
 | Dedicated fast mix (big rungs UK PAYG) | $592k | ✗ (fallback pricing only) |
 
+## Reduced target and what to ask Azure for (2026-08-28)
+
+The grid the sponsor ask is built on is now **21 × 1B + 7 × 1.7B** (28 runs),
+not the full 45/15. Azure jobs are single-node (`torchrun --standalone`), so
+nodes buy **concurrency, not per-run speed** — which makes GPUs-per-node the
+binding constraint, and makes a single run's length a hard floor on the
+schedule no matter how many nodes are granted.
+
+Per run at 40 % MFU: **1B** = 2.4 d on 8×H100 / 9.8 d on 2×H100;
+**1.7B** = 7.2 d / 29.0 d.
+
+`ND96isr_H100_v5` (8×H100, 96 cores/node), assuming a 29 Aug start — every
+date shifts 1:1 with the grant date:
+
+| Nodes | Cores | 1B only | 1B + 1.7B |
+|---|---|---|---|
+| 1 | 96 | 19 Oct | 9 Dec |
+| 4 | 384 | 13 Sep | 25 Sep |
+| **6** | **576** | **10 Sep** | 16 Sep |
+| **9** | **864** | 3 Sep | **12 Sep** |
+| 11 | 1056 | — | 10 Sep |
+
+`NC80adis_H100_v5` (2×H100) cannot carry the 1.7B rung **at any node count**:
+one run is 29 d and cannot span nodes, so the earliest finish is ~27 Sep with
+21 nodes or 28 or 100. It *can* carry the 1B rung — ~21 nodes (1,680 cores)
+reaches 8 Sep — which makes it a usable fallback for that half only.
+
+**The ask, in order of what unblocks most per core granted:** 6 ND nodes for
+the 1B rung by 10 Sep, 9 for both rungs by 12 Sep; a single node still starts
+the critical path. Two non-capacity blockers are worth raising separately
+because they are not gated on the global GPU shortage: the SKU allow-list
+(`NotAvailableForSubscription`, an enablement decision) and the low-priority
+tier being disabled for H100.
+
+Two prerequisites on our side, not Azure's: the ~2.5 TB tokenized dataset is
+**not yet uploaded** to either workspace, and the binding fix in the job specs
+is still awaiting a passing smoke run.
+
 ## A100 fallback — how long the big rungs would take (2026-08-26)
 
 Added because H100 quota has not landed: after 13 days and 20 tickets the

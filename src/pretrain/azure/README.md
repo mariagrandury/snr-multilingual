@@ -84,14 +84,9 @@ bash azure/setup.sh
     **0 dedicated H100 cores anywhere**, so the choice is now driven by what
     can run *today*:
 
-    - **300 regional low-priority vCPUs are already granted** in every
-      region (`TotalLowPriorityCores`, per-family limit `-1`) = 3 × ND96isr
-      = **24 H100 with no ticket at all**.
     - Canada Central has the cheapest meters of any allow-list-clear ND
-      region: Spot **$21.80**/node-h ($2.73/GPU-h), Low Priority $23.60.
-      UK South's Low Priority meter is **$50.93** — 2.2× its own Spot meter —
-      and `tier: low_priority` is the only non-dedicated tier AmlCompute
-      exposes, so UK South risks billing the expensive one.
+      region: dedicated **$122.40**/node-h against UK South's $122.90, and
+      Spot $21.80 vs $23.53 if the tier ever becomes reachable.
     - Italy North and Norway East look clear in the SKU API but have **no
       retail meters at all** for `ND96isr_H100_v5`, so quota there could
       never be billed. Those are the 768/768/1536-core tickets.
@@ -146,14 +141,65 @@ compute-budget sheet):
    Quota — check it once the workspace exists (it often has a non-zero
    default).
 2. **`standardNDv5H100Family`** in **Canada Central** — 96 cores per
-   ND96isr node; the predictivity plan scales to 16 (1536). File this one
-   against the **low-priority** counter, not dedicated: all 23 requests so
-   far were `Type: Dedicated` and none has been granted, while low-priority
-   already allows 3 nodes with no ticket (§9).
+   ND96isr node (1 node = 8×H100); 6 nodes = 576 cores covers the 1B rung,
+   9 nodes = 864 covers 1B + 1.7B. File it as **`Type: Dedicated`** — that
+   is the only tier H100 can use here, see "The four gates" below.
+
+   If a region answers `NotAvailableForSubscription`, raise that as a
+   **separate, explicit ask**: it is an allow-list decision, not a capacity
+   shortage, so it is not gated on the global GPU crunch and a different
+   team can act on it. Do not cancel those tickets — the ticket *is* the
+   channel for lifting the restriction; reframe them from "more cores" to
+   "please enable this VM family for the subscription".
 
 File absent families via Help + Support → _Service and subscription limits
 (quotas)_; H100-class requests open a support ticket (days, not minutes),
 so file early.
+
+### The four gates, and which signals lie
+
+A GPU request passes four independent gates. They fail in this order, with
+different remedies, and conflating them wastes days:
+
+| # | Gate | Failure | Fixed by a quota ticket? |
+| - | ---- | ------- | ------------------------ |
+| 1 | **SKU allow-list** | `NotAvailableForSubscription` on `az vm list-skus` | **Yes** — but ask for *enablement*, not cores |
+| 2 | **Tier policy** | `UnsupportedVMSizeForLowPriority` at cluster create | **No, never** — H100 is dedicated-only here |
+| 3 | **Quota** | `ClusterMinNodesExceedCoreQuota` (dedicated) / job queues forever (low-priority) | **Yes** |
+| 4 | **Capacity** | `OutOfCapacity` at scale-up | **No** — retry, or change region/SKU |
+
+Gate 2 is family-level: **H100 cannot use low-priority at all** (verified on
+`ND96isr_H100_v5` and `NC80adis_H100_v5`), while **A100 can**. Gate 3 is
+asymmetric: a *dedicated* cluster is quota-checked at **create** and fails
+loudly; a *low-priority* cluster is not checked at all and creates as
+`provisioning_state: Succeeded` no matter the quota, so "the cluster exists"
+proves nothing.
+
+**Three signals that lied to us** (2026-08-26) — do not plan around any of
+them:
+
+- `az vm list-skus` → `LowPriorityCapable`: **True** for the refused
+  `ND96isr_H100_v5`, **False** for the accepted `NC96ads_A100_v4`. Wrong in
+  both directions.
+- A "Low Priority" **retail meter exists** for `ND96isr_H100_v5`
+  ($23.60/node-h) even though the tier is refused.
+- The AML **quota counters** read `lowPriority: -1` (no per-family cap) and
+  `TotalLowPriorityCores: 300`, which looks like 3 free ND nodes. Those
+  cores are real but spendable only on A100.
+
+**The only reliable test is the $0 probe.** `min_instances: 0` allocates
+nothing, so creating a cluster costs nothing; the verdict is in
+`properties.errors`, which the CLI does not surface:
+
+```bash
+az ml compute create --file azure/compute-nd96-spot.yml $AZ_ML_ARGS
+az rest --method get --url \
+  "https://management.azure.com/subscriptions/$AZ_SUBSCRIPTION/resourceGroups/$AZ_RG/providers/Microsoft.MachineLearningServices/workspaces/$AZ_WS/computes/gpu-nd96-spot?api-version=2024-10-01" \
+  --query "properties.properties.errors"
+```
+
+Run that against any new SKU/region/tier **before** planning around it. A
+non-empty result at gate 2 means no amount of waiting or refiling will help.
 
 **Check status with `quota_status.sh` — never the portal.** Quota here is
 split across three systems that each hold a third of the answer, and the
@@ -268,7 +314,7 @@ each dataset is built exactly once.
 ### 5b. Ship to Azure with azcopy
 
 `azcopy` is a single static binary — no root or install on the login node.
-Upload once to the Spain workspace; the UK copy is server-side inside Azure
+Upload once to the Spain workspace; the Canada Central copy is server-side inside Azure
 (nothing flows through CSCS twice).
 
 **Copy from the capstor master, not the iopsstor stage.** capstor is the
@@ -300,7 +346,7 @@ uploading a second 686 GB copy of English would buy nothing.
 ```bash
 az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_ES \
  --query '{account:account_name, container:container_name}'
-az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK \
+az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_CA \
  --query '{account:account_name, container:container_name}'
 ```
 
@@ -324,7 +370,7 @@ az storage container generate-sas \
   --expiry "$(date -u -v+7d '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -d '+7 days' '+%Y-%m-%dT%H:%MZ')" \
   --auth-mode login --as-user -o tsv
 
-# (For UK later: az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_UK
+# (For Canada Central later: az ml datastore show --name workspaceblobstore $AZ_ML_ARGS_CA
 #  --query '{account:account_name, container:container_name}', then the same
 #  generate-sas against those.)
 ```
@@ -394,10 +440,10 @@ predictivity/data/validation/validation*.{bin,idx} + validation.manifest.json
 predictivity/data/schemeB/fineweb_L{8,15,30}/fineweb_L*.{bin,idx}
 ```
 
-**LATER — the UK copy** (only after the UK workspace exists, §9). Its
-account/container don't exist until `azure/setup.sh` has run for UK, so
-`datastore show $AZ_ML_ARGS_UK` fails before that. Once it's up, get its
-account/container, mint a UK SAS the same way, and duplicate Spain → UK
+**LATER — the Canada Central copy** (only after that workspace exists,
+§9). Its account/container don't exist until `azure/setup.sh` has run for
+it, so `datastore show $AZ_ML_ARGS_CA` fails before that. Once it's up, get
+its account/container, mint a SAS the same way, and duplicate Spain → Canada
 entirely server-side — fast, and no second egress from CSCS:
 
 ```bash
@@ -497,9 +543,12 @@ python auto_evals_azure.py --workspace ca --watch 600  # Canada ND workspace (1B
 
 The two workspaces have separate blob stores and compute, so run one
 watcher per workspace; `--workspace ca` switches the az CLI to the
-`AZ_UK_*` names and overrides the job YAMLs' Spain-only compute with
+`AZ_CA_*` names and overrides the job YAMLs' Spain-only compute with
 `gpu-nd96-spot` (do the same with `--set compute=azureml:gpu-nd96-spot`
-when submitting `jobs/push.yml` in the UK workspace).
+when submitting `jobs/push.yml` in the Canada Central workspace). Note
+`gpu-nd96-spot` cannot currently allocate — H100 has no reachable tier
+here — so point evals at an A100 cluster if they must run before H100
+quota lands.
 
 Each pass lists the checkpoints in blob storage and, for every due iteration,
 submits the one step that's missing: first a `azure/jobs/convert.yml` job
