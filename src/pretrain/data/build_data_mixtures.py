@@ -3,7 +3,7 @@
 Drive create_data_mixture.py over the full small-to-large predictivity sweep.
 
 The experiment builds, once each:
-  - one fixed validation set (all 199 FineWeb-2 languages + English),
+  - one fixed validation set (the FW_L100 languages + English),
   - one English (DCLM) training dataset,
   - one FineWeb-2 training dataset per multilingual language setting,
 and then blends English + FineWeb-2 50/50 at *training* time with the Megatron
@@ -155,8 +155,17 @@ def build_validation(out: Path, all_langs: str, args) -> None:
     (English is added automatically by create_data_mixture.py)."""
     manifest = out / f"{VALIDATION_PREFIX}.manifest.json"
     if manifest.exists():
-        print(f"\n[validation] manifest present ({manifest}) — skipping.")
-        return
+        # The language lists are generated (generate_language_sets.py) and can
+        # gain languages; a manifest that lacks any of them must be rebuilt —
+        # the per-language carve-out is deterministic (first file, leading
+        # rows), so existing languages' val_doc_count and the training builds
+        # that skip them are unchanged by the rebuild.
+        have = set(json.loads(manifest.read_text()))
+        missing = [l for l in all_langs.split(",") if f"fineweb_{l}" not in have]
+        if not missing:
+            print(f"\n[validation] manifest present ({manifest}) — skipping.")
+            return
+        print(f"\n[validation] manifest lacks {missing} — rebuilding over the full list.")
     run([
         sys.executable, str(CREATE_SCRIPT),
         "--build_validation",
@@ -189,18 +198,31 @@ def build_fineweb(out: Path, manifest: Path, sets: dict, setting: int, args) -> 
         print("\n[L=1] English-only setting — no FineWeb-2 build; trains on the English dataset alone.")
         return
     prefix = FINEWEB_PREFIX_FMT.format(L=setting)
+    langs = fineweb_languages(sets, setting)
+    # The language lists are generated and can change (e.g. the 2026-08-21
+    # L100 swap); a finished build records its list in a sidecar so a build
+    # made from an older list is refused instead of silently reused.
+    sidecar = out / f"{prefix}.languages"
     if already_built(out / prefix):
+        if sidecar.exists() and sidecar.read_text().strip() != langs:
+            sys.exit(f"[{prefix}] built from a DIFFERENT language list ({sidecar}); "
+                     f"move the old build aside before rebuilding.")
+        if not sidecar.exists():
+            print(f"\n[{prefix}] WARNING: no language record next to the build — "
+                  f"cannot verify it matches the current list.")
         print(f"\n[{prefix}] already built ({out / prefix}.idx present) — skipping.")
         return
     run([
         sys.executable, str(CREATE_SCRIPT),
         "--target_tokens", str(fineweb_target_tokens(setting)),
         "--fineweb_pct", "100", "--dclm_pct", "0",
-        "--languages", fineweb_languages(sets, setting),
+        "--languages", langs,
         "--temperature", str(args.temperature),
         "--validation_manifest", str(manifest),
         "--output_prefix", str(out / prefix),
     ], args.dry_run)
+    if not args.dry_run:
+        sidecar.write_text(langs + "\n")
 
 
 def print_build_plan(settings: list) -> None:
