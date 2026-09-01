@@ -16,8 +16,14 @@ entries are left untouched; the `benchmarks` section records the paper/venue
 per family (see plan/benchmark_selection.md); every pretraining-stage family
 is listed in the `auto` group. Idempotent.
 
+`--report` needs no harness: it reads the wired state back and regenerates the
+per-language coverage table in plan/benchmark_selection.md (what every trained
+language is actually evaluated on, and where each language enters the ladder),
+so the doc cannot drift from configs/tasks.json.
+
 Usage:
     python scripts/wire_harness_tasks.py [--harness DIR] [--top N] [--dry-run]
+    python scripts/wire_harness_tasks.py --report [--dry-run]
 """
 from __future__ import annotations
 
@@ -26,6 +32,7 @@ import csv
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,12 +132,82 @@ def language_pool(top: int) -> list[str]:
     return sorted(rows, key=lambda k: -rows[k])[:top]
 
 
+DOC = ROOT / "plan" / "benchmark_selection.md"
+DOC_BEGIN = "<!-- BEGIN generated: scripts/wire_harness_tasks.py --report -->"
+DOC_END = "<!-- END generated -->"
+
+
+def coverage_table() -> str:
+    """The auto set per trained language: what `tasks_for_benchmarks` x
+    `cell_languages` actually selects, which is what the watchers run."""
+    sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "pretrain")]
+    from launch_trainings import LANG_SETTINGS, cell_languages
+    from evals.scripts.utils.configs import tasks_for_benchmarks
+
+    data = json.loads(TASKS_JSON.read_text())
+    auto, tasks = data["groups"]["auto"], data["tasks"]
+    names = {}                      # language tag -> FineWeb display name
+    with open(FINEWEB_CSV) as f:
+        iso2 = json.loads(LANGUAGES_JSON.read_text())["fineweb_iso2"]
+        for r in csv.DictReader(f):
+            tag = iso2.get(r["subset"].split("_")[0])
+            if r["split"] == "train" and tag:
+                names.setdefault(tag, r["name"])
+    names["en"] = "English"
+
+    enters, per_setting = {}, {}
+    for L in LANG_SETTINGS:
+        langs = cell_languages(L)
+        per_setting[L] = len(tasks_for_benchmarks(auto, langs))
+        for lang in sorted(langs):
+            enters.setdefault(lang, L)
+
+    fams: dict[str, dict[str, int]] = {}
+    for name in tasks_for_benchmarks(auto, set(enters)):
+        e = tasks[name]
+        fams.setdefault(e["language"], {}).setdefault(e["benchmark"], 0)
+        fams[e["language"]][e["benchmark"]] += 1
+
+    out = [DOC_BEGIN, "",
+           "Tasks per cell (auto group x trained languages): "
+           + " · ".join(f"L{L} {n}" for L, n in per_setting.items()) + ".", "",
+           "| Enters at | Language | Families | Tasks | Benchmark families |",
+           "|---|---|---|---:|---|"]
+    for lang, L in sorted(enters.items(), key=lambda kv: (kv[1], -len(fams.get(kv[0], {})), kv[0])):
+        f = fams.get(lang, {})
+        out.append(f"| L{L} | `{lang}` {names.get(lang, '')} | {len(f)} | "
+                   f"{sum(f.values())} | {', '.join(sorted(f)) or '**none**'} |")
+    counts = sorted(Counter(len(fams.get(l, {})) for l in enters).items())
+    out += ["", "Languages by number of families: "
+            + " · ".join(f"{n}→{k}" for n, k in counts) + ".", "", DOC_END]
+    return "\n".join(out)
+
+
+def write_report(dry_run: bool) -> None:
+    table = coverage_table()
+    print(table if dry_run else
+          f"{sum(l.startswith('| L') for l in table.splitlines())} languages tabulated")
+    if dry_run:
+        return
+    text = DOC.read_text()
+    if DOC_BEGIN not in text or DOC_END not in text:
+        sys.exit(f"no {DOC_BEGIN} / {DOC_END} markers in {DOC.name}")
+    head, rest = text.split(DOC_BEGIN, 1)
+    DOC.write_text(head + table + rest.split(DOC_END, 1)[1])
+    print(f"wrote {DOC}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--harness", type=Path, default=None, help="lm_eval/tasks dir (default: the installed lm_eval)")
     p.add_argument("--top", type=int, default=150, help="FineWeb-2 pool: top-N subsets by bytes (default 150)")
+    p.add_argument("--report", action="store_true",
+                   help="regenerate the coverage table in plan/benchmark_selection.md and exit")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
+
+    if args.report:
+        return write_report(args.dry_run)
 
     harness = args.harness
     if harness is None:
