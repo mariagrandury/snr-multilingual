@@ -1015,6 +1015,26 @@ LANG_MAP = {
     "uk": "uk", "ukr": "uk", "ukrainian": "uk",
     "vi": "vi", "vie": "vi", "vietnamese": "vi",
     "zh": "zh", "zho": "zh", "cmn": "zh", "chinese": "zh", "mandarin": "zh",
+    # Languages of the include_base_44 / global_piqa per-language tasks that
+    # the map above couldn't resolve (they were stuck at "??" and therefore
+    # never auto-selected by tasks_for_benchmarks — fixed 2026-08-21).
+    "sq": "sq", "albanian": "sq", "hy": "hy", "armenian": "hy",
+    "az": "az", "azerbaijani": "az", "be": "be", "belarusian": "be",
+    "bn": "bn", "ben": "bn", "bengali": "bn", "bg": "bg", "bulgarian": "bg",
+    "hr": "hr", "croatian": "hr", "nl": "nl", "nld": "nl", "dutch": "nl",
+    "fi": "fi", "fin": "fi", "finnish": "fi", "ka": "ka", "kat": "ka",
+    "georgian": "ka", "el": "el", "ell": "el", "greek": "el",
+    "he": "he", "heb": "he", "hebrew": "he", "hu": "hu", "hun": "hu",
+    "hungarian": "hu", "id": "id", "ind": "id", "indonesian": "id",
+    "kk": "kk", "kaz": "kk", "kazakh": "kk", "lt": "lt", "lit": "lt",
+    "lithuanian": "lt", "ms": "ms", "zsm": "ms", "malay": "ms",
+    "ml": "ml", "mal": "ml", "malayalam": "ml", "ne": "ne", "npi": "ne",
+    "nepali": "ne", "mk": "mk", "macedonian": "mk", "fa": "fa", "fas": "fa",
+    "persian": "fa", "pl": "pl", "pol": "pl", "polish": "pl",
+    "sr": "sr", "srp": "sr", "serbian": "sr", "tl": "tl", "fil": "tl",
+    "tagalog": "tl", "ta": "ta", "tam": "ta", "tamil": "ta",
+    "uz": "uz", "uzn": "uz", "uzbek": "uz", "bs": "bs", "bos": "bs",
+    "nn": "nn", "nno": "nn",
 }
 
 
@@ -1124,6 +1144,7 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
     # hand-fixed language tags do, or every regeneration would silently drop
     # the chance levels the benchmark analysis keys off.
     existing_opts: dict[str, int] = {}
+    existing_benchmarks: dict = {}
     existing_path = CONFIGS / "tasks.json"
     if merge_existing and existing_path.exists():
         try:
@@ -1133,6 +1154,9 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
                     existing_lang[t] = e["language"]
                 if isinstance(e, dict) and isinstance(e.get("n_options"), int):
                     existing_opts[t] = e["n_options"]
+            # Paper/venue metadata per benchmark family — maintained by
+            # scripts/wire_harness_tasks.py, never derived here.
+            existing_benchmarks = prev.get("benchmarks", {})
         except Exception:
             pass
 
@@ -1163,7 +1187,7 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
         + groups.get("midtraining", [])
         + groups.get("posttraining", [])))
 
-    return {"tasks": tasks_section, "groups": groups}
+    return {"tasks": tasks_section, "groups": groups, "benchmarks": existing_benchmarks}
 
 
 # --- Driver -----------------------------------------------------------------

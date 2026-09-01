@@ -383,7 +383,7 @@
       ]
     },
     "ceval-valid": {
-      "language": "??",
+      "language": "zh",
       "benchmark": "ceval-valid",
       "stages": [
         "pretraining"
@@ -993,14 +993,14 @@
       ]
     },
     "include_base_44": {
-      "language": "??",
+      "language": "multi",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_albanian": {
-      "language": "??",
+      "language": "sq",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1015,14 +1015,14 @@
       "n_options": 4
     },
     "include_base_44_armenian": {
-      "language": "??",
+      "language": "hy",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_azerbaijani": {
-      "language": "??",
+      "language": "az",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1036,21 +1036,21 @@
       ]
     },
     "include_base_44_belarusian": {
-      "language": "??",
+      "language": "be",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_bengali": {
-      "language": "??",
+      "language": "bn",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_bulgarian": {
-      "language": "??",
+      "language": "bg",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1065,21 +1065,21 @@
       "n_options": 4
     },
     "include_base_44_croatian": {
-      "language": "??",
+      "language": "hr",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_dutch": {
-      "language": "??",
+      "language": "nl",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_finnish": {
-      "language": "??",
+      "language": "fi",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1094,7 +1094,7 @@
       "n_options": 4
     },
     "include_base_44_georgian": {
-      "language": "??",
+      "language": "ka",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1109,14 +1109,14 @@
       "n_options": 4
     },
     "include_base_44_greek": {
-      "language": "??",
+      "language": "el",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_hebrew": {
-      "language": "??",
+      "language": "he",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1131,14 +1131,14 @@
       "n_options": 4
     },
     "include_base_44_hungarian": {
-      "language": "??",
+      "language": "hu",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_indonesian": {
-      "language": "??",
+      "language": "id",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1161,7 +1161,7 @@
       "n_options": 4
     },
     "include_base_44_kazakh": {
-      "language": "??",
+      "language": "kk",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1176,49 +1176,49 @@
       "n_options": 4
     },
     "include_base_44_lithuanian": {
-      "language": "??",
+      "language": "lt",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_malay": {
-      "language": "??",
+      "language": "ms",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_malayalam": {
-      "language": "??",
+      "language": "ml",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_nepali": {
-      "language": "??",
+      "language": "ne",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_north_macedonian": {
-      "language": "??",
+      "language": "mk",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_persian": {
-      "language": "??",
+      "language": "fa",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_polish": {
-      "language": "??",
+      "language": "pl",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1241,7 +1241,7 @@
       "n_options": 4
     },
     "include_base_44_serbian": {
-      "language": "??",
+      "language": "sr",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1256,14 +1256,14 @@
       "n_options": 4
     },
     "include_base_44_tagalog": {
-      "language": "??",
+      "language": "tl",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
       ]
     },
     "include_base_44_tamil": {
-      "language": "??",
+      "language": "ta",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -1293,7 +1293,7 @@
       "n_options": 4
     },
     "include_base_44_uzbek": {
-      "language": "??",
+      "language": "uz",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -4260,6 +4260,608 @@
       "stages": [
         "pretraining"
       ]
+    },
+    "belebele_apc_Arab": {
+      "language": "ar",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_ceb_Latn": {
+      "language": "ceb",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_est_Latn": {
+      "language": "et",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_hat_Latn": {
+      "language": "ht",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_ibo_Latn": {
+      "language": "ig",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_jav_Latn": {
+      "language": "jv",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_kin_Latn": {
+      "language": "rw",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_mri_Latn": {
+      "language": "mi",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_nya_Latn": {
+      "language": "ny",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_pes_Arab": {
+      "language": "fa",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_sna_Latn": {
+      "language": "sn",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_sot_Latn": {
+      "language": "st",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_sun_Latn": {
+      "language": "su",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_tgl_Latn": {
+      "language": "tl",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_tir_Ethi": {
+      "language": "ti",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_xho_Latn": {
+      "language": "xh",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_yor_Latn": {
+      "language": "yo",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "belebele_zul_Latn": {
+      "language": "zu",
+      "benchmark": "belebele",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_apc_arab_jord": {
+      "language": "ar",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_apc_arab_leba": {
+      "language": "ar",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_apc_arab_pale": {
+      "language": "ar",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_apc_arab_syri": {
+      "language": "ar",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_fao_latn": {
+      "language": "fo",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_fra_latn_cana": {
+      "language": "fr",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_fra_latn_fran": {
+      "language": "fr",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_haw_latn": {
+      "language": "haw",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_ibo_latn": {
+      "language": "ig",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_jav_latn": {
+      "language": "jv",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_kin_latn": {
+      "language": "rw",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_pes_arab": {
+      "language": "fa",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_por_latn_braz": {
+      "language": "pt",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_por_latn_port": {
+      "language": "pt",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_slk_latn_sari": {
+      "language": "sk",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_slv_latn_cerk": {
+      "language": "sl",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_spa_latn_mexi": {
+      "language": "es",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_spa_latn_peru": {
+      "language": "es",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_tgl_latn": {
+      "language": "tl",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_yor_latn": {
+      "language": "yo",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_yue_hant": {
+      "language": "yue",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "global_piqa_completions_zul_latn": {
+      "language": "zu",
+      "benchmark": "global_piqa_completions",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_est": {
+      "language": "et",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_fao": {
+      "language": "fo",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_gla": {
+      "language": "gd",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_grc": {
+      "language": "grc",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_hbo": {
+      "language": "hbo",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_hyw": {
+      "language": "hyw",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_nds": {
+      "language": "nds",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_sah": {
+      "language": "sah",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_san": {
+      "language": "sa",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "multiblimp_sme": {
+      "language": "se",
+      "benchmark": "multiblimp",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_ca": {
+      "language": "ca",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_gl": {
+      "language": "gl",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_id": {
+      "language": "id",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xstorycloze_my": {
+      "language": "my",
+      "benchmark": "xstorycloze",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_et": {
+      "language": "et",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_ht": {
+      "language": "ht",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_id": {
+      "language": "id",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_it": {
+      "language": "it",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "xcopa_ta": {
+      "language": "ta",
+      "benchmark": "xcopa",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai_mt_de": {
+      "language": "de",
+      "benchmark": "lambada_openai_mt",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai_mt_en": {
+      "language": "en",
+      "benchmark": "lambada_openai_mt",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai_mt_es": {
+      "language": "es",
+      "benchmark": "lambada_openai_mt",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai_mt_fr": {
+      "language": "fr",
+      "benchmark": "lambada_openai_mt",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "lambada_openai_mt_it": {
+      "language": "it",
+      "benchmark": "lambada_openai_mt",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_amh_prompt_1": {
+      "language": "am",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_eng_prompt_1": {
+      "language": "en",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_fra_prompt_1": {
+      "language": "fr",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_hau_prompt_1": {
+      "language": "ha",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_ibo_prompt_1": {
+      "language": "ig",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_kin_prompt_1": {
+      "language": "rw",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_sna_prompt_1": {
+      "language": "sn",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_sot_prompt_1": {
+      "language": "st",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_xho_prompt_1": {
+      "language": "xh",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_yor_prompt_1": {
+      "language": "yo",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrixnli_zul_prompt_1": {
+      "language": "zu",
+      "benchmark": "afrixnli",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_amh_prompt_1": {
+      "language": "am",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_eng_prompt_1": {
+      "language": "en",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_fra_prompt_1": {
+      "language": "fr",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_hau_prompt_1": {
+      "language": "ha",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_ibo_prompt_1": {
+      "language": "ig",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_kin_prompt_1": {
+      "language": "rw",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_sna_prompt_1": {
+      "language": "sn",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_sot_prompt_1": {
+      "language": "st",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_xho_prompt_1": {
+      "language": "xh",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_yor_prompt_1": {
+      "language": "yo",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
+    },
+    "afrimmlu_direct_zul_prompt_1": {
+      "language": "zu",
+      "benchmark": "afrimmlu",
+      "stages": [
+        "pretraining"
+      ]
     }
   },
   "groups": {
@@ -4877,16 +5479,150 @@
       "truthfulqa_zh_mc2"
     ],
     "auto": [
+      "afrimmlu",
+      "afrixnli",
       "arc",
       "belebele",
       "global_mmlu",
+      "global_piqa",
       "hellaswag",
       "include_base_44",
+      "lambada_openai_mt",
       "multiblimp",
+      "paws",
+      "truthfulqa-multi_mc1",
       "xcopa",
       "xnli",
       "xstorycloze",
       "xwinograd"
     ]
+  },
+  "benchmarks": {
+    "belebele": {
+      "paper": "https://aclanthology.org/2024.acl-long.44/",
+      "venue": "ACL 2024",
+      "name": "Belebele (Bandarkar et al.)",
+      "languages": 122,
+      "format": "MC reading comprehension, 900 items/lang, human-translated"
+    },
+    "global_piqa_completions": {
+      "paper": "https://arxiv.org/abs/2510.24081",
+      "venue": "MRL workshop @ EMNLP 2025 shared task",
+      "name": "Global PIQA (Chang et al.)",
+      "languages": 116,
+      "format": "2-way physical-commonsense completion, hand-written per language by native speakers"
+    },
+    "global_mmlu_full": {
+      "paper": "https://aclanthology.org/2025.acl-long.919/",
+      "venue": "ACL 2025",
+      "name": "Global-MMLU (Singh et al.)",
+      "languages": 42,
+      "format": "MC knowledge QA (MMLU), professional + community translations"
+    },
+    "include_base_44": {
+      "paper": "https://openreview.net/forum?id=k3gCieTXeY",
+      "venue": "ICLR 2025",
+      "name": "INCLUDE (Romanou et al.)",
+      "languages": 44,
+      "format": "MC regional exam questions, natively sourced"
+    },
+    "multiblimp": {
+      "paper": "https://aclanthology.org/2026.tacl-1.10/",
+      "venue": "TACL 2026",
+      "name": "MultiBLiMP 1.0 (Jumelet et al.)",
+      "languages": 101,
+      "format": "grammatical minimal pairs (subject-verb agreement), auto-generated from UD/UniMorph"
+    },
+    "hellaswag": {
+      "paper": "https://aclanthology.org/2023.emnlp-demo.28/",
+      "venue": "EMNLP 2023 (demo); English original Zellers et al. ACL 2019",
+      "name": "Okapi m_hellaswag (Lai et al.)",
+      "languages": 31,
+      "format": "4-way sentence completion, machine-translated (ChatGPT)"
+    },
+    "arc": {
+      "paper": "https://aclanthology.org/2023.emnlp-demo.28/",
+      "venue": "EMNLP 2023 (demo); English original Clark et al. 2018",
+      "name": "Okapi m_arc (Lai et al.)",
+      "languages": 31,
+      "format": "MC science QA, machine-translated (ChatGPT)"
+    },
+    "xnli": {
+      "paper": "https://aclanthology.org/D18-1269/",
+      "venue": "EMNLP 2018",
+      "name": "XNLI (Conneau et al.)",
+      "languages": 15,
+      "format": "3-way NLI, professionally translated"
+    },
+    "xstorycloze": {
+      "paper": "https://aclanthology.org/2022.emnlp-main.616/",
+      "venue": "EMNLP 2022 (XGLM)",
+      "name": "XStoryCloze (Lin et al.)",
+      "languages": 11,
+      "format": "2-way story ending, professionally translated"
+    },
+    "xcopa": {
+      "paper": "https://aclanthology.org/2020.emnlp-main.185/",
+      "venue": "EMNLP 2020",
+      "name": "XCOPA (Ponti et al.)",
+      "languages": 11,
+      "format": "2-way causal commonsense, professionally translated"
+    },
+    "xwinograd": {
+      "paper": "https://aclanthology.org/2021.findings-acl.310/",
+      "venue": "Findings of ACL 2021",
+      "name": "XWinograd (Tikhonov & Ryabinin)",
+      "languages": 6,
+      "format": "Winograd schema coreference"
+    },
+    "paws": {
+      "paper": "https://aclanthology.org/D19-1382/",
+      "venue": "EMNLP 2019",
+      "name": "PAWS-X (Yang et al.)",
+      "languages": 7,
+      "format": "paraphrase identification, professionally translated"
+    },
+    "lambada_openai_mt": {
+      "paper": "https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks/lambada_multilingual",
+      "venue": "no paper (EleutherAI machine translation of LAMBADA, Paperno et al. ACL 2016)",
+      "name": "LAMBADA multilingual",
+      "languages": 5,
+      "format": "last-word prediction, machine-translated"
+    },
+    "afrixnli": {
+      "paper": "https://aclanthology.org/2025.naacl-long.139/",
+      "venue": "NAACL 2025",
+      "name": "IrokoBench AfriXNLI (Adelani et al.)",
+      "languages": 17,
+      "format": "3-way NLI, human-translated (XNLI subset)"
+    },
+    "afrimmlu": {
+      "paper": "https://aclanthology.org/2025.naacl-long.139/",
+      "venue": "NAACL 2025",
+      "name": "IrokoBench AfriMMLU (Adelani et al.)",
+      "languages": 17,
+      "format": "MC knowledge QA, human-translated (MMLU subset, 5 subjects)"
+    },
+    "afrimgsm": {
+      "paper": "https://aclanthology.org/2025.naacl-long.139/",
+      "venue": "NAACL 2025",
+      "name": "IrokoBench AfriMGSM (Adelani et al.)",
+      "languages": 17,
+      "format": "grade-school math generation, human-translated (MGSM)"
+    },
+    "mgsm_direct": {
+      "paper": "https://openreview.net/forum?id=fR3wGCk-IXp",
+      "venue": "ICLR 2023",
+      "name": "MGSM (Shi et al.)",
+      "languages": 10,
+      "format": "grade-school math generation, human-translated"
+    },
+    "truthfulqa-multi_mc1": {
+      "paper": "https://arxiv.org/abs/2502.09387",
+      "venue": "arXiv 2025",
+      "name": "TruthfulQA-Multi (Calvo Figueras et al.)",
+      "languages": 5,
+      "format": "MC truthfulness, professionally translated"
+    }
   }
 }
