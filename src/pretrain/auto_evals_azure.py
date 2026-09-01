@@ -39,6 +39,7 @@ from pathlib import Path
 _SRC = Path(__file__).resolve().parents[1]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
+import evals.scripts.utils.configs as configs  # noqa: E402
 from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
@@ -68,8 +69,11 @@ WANDB = load_hf_wandb_config()["wandb"]
 
 
 def az_json(*cmd: str):
-    out = subprocess.run(["az", *cmd, "--output", "json"],
-                         check=True, capture_output=True, text=True).stdout
+    # timeout: a throttled or hung az call must fail the pass, not the
+    # multi-day watcher (main() retries the pass); launch_trainings.active_jobs
+    # takes the same precaution.
+    out = subprocess.run(["az", *cmd, "--output", "json"], check=True,
+                         capture_output=True, text=True, timeout=120).stdout
     return json.loads(out)
 
 
@@ -186,11 +190,8 @@ def one_pass(names: list[str], auth: list[str], every: int,
              tasks: str | None, dry_run: bool,
              compute: str | None = None) -> None:
     """`tasks` None = the auto group: per cell, every auto benchmark in
-    the languages that cell trains on (models.json carries L/scheme)."""
-    # Keep configs/models.json following the grid (see sync_models_json).
-    added, updated = sync()
-    if added or updated:
-        print(f"(models.json synced: +{len(added)} ~{len(updated)} cells — commit the diff)")
+    the languages that cell trains on (models.json carries L/scheme).
+    `names` comes from resolve_names(), which re-syncs models.json first."""
     running = active_jobs() if not dry_run else set()
     for name in names:
         iters = saved_iters(auth, name)
@@ -289,14 +290,24 @@ def main() -> None:
                 f"AZ_UK_{var[3:]} not set — run `source azure/env.sh` first.")
     compute = UK_COMPUTE if uk else None
 
-    # Sync models.json before resolving names: a freshly-launched grid cell
-    # passed via --name may not be registered yet (one_pass re-syncs each
-    # pass for cells appearing while watching).
-    sync()
-    names = [args.name] if args.name else filter_models(
-        source=SOURCES, size=args.size,
-        seeds=[args.seed] if args.seed is not None else None)
-    names = [n for n in names if (get_model(n)["size"] in UK_SIZES) == uk]
+    def resolve_names() -> list[str]:
+        """The cells this watcher covers, re-read EVERY pass: sync() upserts
+        cells launched since the last pass into models.json, but the configs
+        loaders are lru_cached, so without clearing them the running process
+        would keep the list it read at startup forever."""
+        added, updated = sync()
+        if added or updated:
+            print(f"(models.json synced: +{len(added)} ~{len(updated)} cells "
+                  f"— commit the diff)")
+            for f in (configs.load_models, configs.load_pools,
+                      configs.load_sources, configs._bucket_map):
+                f.cache_clear()
+        names = [args.name] if args.name else filter_models(
+            source=SOURCES, size=args.size,
+            seeds=[args.seed] if args.seed is not None else None)
+        return [n for n in names if (get_model(n)["size"] in UK_SIZES) == uk]
+
+    names = resolve_names()
     if not names:
         sys.exit(f"no cells in the {args.workspace} workspace match the "
                  f"filters (1B/1.7B live in uk, the rest in es)")
@@ -305,9 +316,18 @@ def main() -> None:
     tasks = None if args.tasks == "auto" else resolve_tasks(args.tasks)
     auth = storage_auth()
     while True:
-        one_pass(names, auth, args.every, tasks, args.dry_run, compute)
+        # A watcher meant to run for days must outlive one throttled az call
+        # or one half-written blob: log the pass and try again next time.
+        try:
+            one_pass(names, auth, args.every, tasks, args.dry_run, compute)
+        except Exception as e:
+            if not args.watch:
+                raise
+            print(f"pass failed ({e!r}) — retrying in {args.watch}s",
+                  file=sys.stderr)
         if not args.watch:
             break
+        names = resolve_names() or names
         time.sleep(args.watch)
 
 
