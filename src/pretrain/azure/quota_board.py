@@ -94,22 +94,40 @@ def fetch_aml(region):
 
 
 def fetch_tickets():
+    """One row per quota CHANGE REQUEST, not per ticket.
+
+    A single ticket can carry several quotaChangeRequests (the 2026-08-25 batch
+    filed ND and NC in the same ticket), and the description names only one of
+    them — reading the description alone silently under-reports what was filed
+    and invents "not yet filed" gaps. quotaTicketDetails is the real payload,
+    and it is also the only place the Dedicated/LowPriority type appears.
+    """
     data = az("rest", "--method", "get", "--url",
               f"https://management.azure.com/subscriptions/{SUB}/providers/"
               "Microsoft.Support/supportTickets?api-version=2020-04-01", "-o", "json")
     rows = []
     for t in (data or {}).get("value", []):
         p = t["properties"]
-        # Region/family/cores live in the description; the title is boilerplate.
-        m = re.search(r"Requesting (\d+) cores for VM Family - (\S+) in (\S+) region",
-                      p.get("description") or "")
-        if not m:
-            continue
-        rows.append(dict(created=p.get("createdDate", "")[:10],
-                         updated=p.get("modifiedDate", "")[:10],
-                         status=p.get("status", ""), region=m.group(3).lower(),
-                         family=m.group(2), cores=int(m.group(1)), id=t["name"]))
-    return sorted(rows, key=lambda r: (r["region"], r["created"]))
+        common = dict(created=p.get("createdDate", "")[:10],
+                      updated=p.get("modifiedDate", "")[:10],
+                      status=p.get("status", ""), id=t["name"])
+        reqs = (p.get("quotaTicketDetails") or {}).get("quotaChangeRequests") or []
+        for q in reqs:
+            try:
+                pl = json.loads(q.get("payload") or "{}")
+            except json.JSONDecodeError:
+                continue
+            rows.append(dict(region=(q.get("region") or "").lower(),
+                             family=pl.get("VMFamily", ""),
+                             cores=int(pl.get("NewLimit") or 0),
+                             type=pl.get("Type", "Dedicated"), **common))
+        if not reqs:   # older tickets without the structured payload
+            m = re.search(r"Requesting (\d+) cores for VM Family - (\S+) in (\S+) region",
+                          p.get("description") or "")
+            if m:
+                rows.append(dict(region=m.group(3).lower(), family=m.group(2),
+                                 cores=int(m.group(1)), type="Dedicated", **common))
+    return sorted(rows, key=lambda r: (r["region"], r["created"], r["family"]))
 
 
 def group_state(skus_in_region, group):
@@ -187,9 +205,9 @@ def verdict(row, group):
 # ----------------------------------------------------------------- text report
 def report(rows, tickets):
     by_region = {r["region"]: r for r in rows}
-    print(f"\n=== Open quota tickets ({len(tickets)}) ===")
-    print(f"  {'region':<19}{'group':<10}{'cores':>6}  {'created':<11}"
-          f"{'granted':>8}  verdict")
+    print(f"\n=== Open quota requests ({len(tickets)}) ===")
+    print(f"  {'ticket':<10}{'region':<19}{'group':<10}{'cores':>6}  {'type':<12}"
+          f"{'created':<11}{'granted':>8}  verdict")
     futile = []
     for t in tickets:
         g = FAMILY_TO_GROUP.get(t["family"].lower(), "?")
@@ -198,8 +216,12 @@ def report(rows, tickets):
         got = granted(row, g) if row and g in GROUPS else None
         if v != "viable":
             futile.append((t, g, v))
-        print(f"  {t['region']:<19}{g:<10}{t['cores']:>6}  {t['created']:<11}"
-              f"{'-' if got is None else got:>8}  {v}")
+        print(f"  {t['id'][:8]:<10}{t['region']:<19}{g:<10}{t['cores']:>6}  "
+              f"{t['type']:<12}{t['created']:<11}{'-' if got is None else got:>8}  {v}")
+    kinds = sorted({t["type"] for t in tickets})
+    print(f"  request types filed: {', '.join(kinds)}"
+          + ("   <- no Spot/low-priority request has ever been filed"
+             if kinds == ["Dedicated"] else ""))
 
     print("\n=== Where these SKUs can be deployed (allow-list x Azure ML) ===")
     print(f"  {'region':<19}" + "".join(f"{g:<11}" for g in GROUPS)
@@ -216,7 +238,11 @@ def report(rows, tickets):
     print(f"\n=== Deployable but NOT yet filed ({len(gaps)}) ===")
     for loc, g in gaps:
         print(f"  {loc:<19}{g}")
-    print(f"\n=== Filed but unapprovable ({len(futile)}) ===")
+    # NOT "cancel these": NotAvailableForSubscription is an allow-list state
+    # support CAN lift, and the quota ticket is the channel for asking. They
+    # just will not approve while framed as a capacity ask.
+    print(f"\n=== Filed against a blocked SKU ({len(futile)}) — "
+          f"needs SKU ENABLEMENT, not more cores ===")
     for t, g, v in futile:
         print(f"  {t['region']:<19}{g:<10}{t['cores']:>6} cores  {v}  [{t['id'][:8]}]")
     return gaps, futile
@@ -296,7 +322,9 @@ def render(rows, tickets, gaps, futile, out):
             v = verdict(row, g)
         got = granted(row, g) if row and g in GROUPS else None
         state = OK if v == "viable" else BLOCKED
-        trows.append([t["region"], g, str(t["cores"]), t["created"],
+        # Short ticket id: enough to quote back to Azure support / match the
+        # portal, without spending a third of the row on a full GUID.
+        trows.append([t["id"][:8], t["region"], g, str(t["cores"]), t["type"], t["created"],
                       "-" if got is None else str(got),
                       (v, *CLR[state])])
 
@@ -321,8 +349,9 @@ def render(rows, tickets, gaps, futile, out):
         cells.append(str(env) if env is not None else "no Azure ML")
         mrows.append(cells)
 
-    arows = [[(f"FILE   {loc:<20}{g}", *CLR[OK])] for loc, g in gaps]
-    arows += [[(f"DROP   {t['region']:<20}{g}   {t['cores']} cores - {v}", *CLR[BLOCKED])]
+    arows = [[(f"FILE     {loc:<20}{g}", *CLR[OK])] for loc, g in gaps]
+    arows += [[(f"ENABLE   {t['region']:<20}{g}   {t['cores']} cores - "
+                f"ask to enable the SKU, not for capacity", *CLR[BLOCKED])]
               for t, g, v in futile]
     if not arows:
         arows = [["nothing to change"]]
@@ -336,10 +365,17 @@ def render(rows, tickets, gaps, futile, out):
            f"{len(tickets)} open tickets   |   {total} cores granted so far",
            size=9.5, color="#666666", advance=2.0)
 
-    p.text(f"Open quota tickets ({len(tickets)})", size=13, weight="bold", advance=1.3)
-    p.table(["region", "SKU group", "cores", "filed", "granted", "verdict"],
-            trows, [0.16, 0.11, 0.07, 0.10, 0.09, 0.30])
-    p.y += 1.8
+    kinds = sorted({t["type"] for t in tickets})
+    p.text(f"Open quota requests ({len(tickets)})", size=13, weight="bold", advance=1.3)
+    p.table(["ticket", "region", "SKU group", "cores", "type", "filed",
+             "granted", "verdict"],
+            trows, [0.09, 0.14, 0.10, 0.06, 0.09, 0.09, 0.07, 0.26])
+    if kinds == ["Dedicated"]:
+        p.text("Every request filed is type Dedicated - no Spot / low-priority "
+               "request has ever been submitted.", size=8.5, color="#e65100",
+               advance=1.6)
+    else:
+        p.y += 1.8
 
     p.text("Where these SKUs can be deployed   (subscription allow-list  x  Azure ML presence)",
            size=13, weight="bold", advance=1.3)
@@ -350,7 +386,7 @@ def render(rows, tickets, gaps, futile, out):
            f"and no ticket filed.", size=8, color="#888888", advance=1.6)
 
     p.text(f"Actions:  {len(gaps)} region(s) still worth filing,  "
-           f"{len(futile)} ticket(s) that can never approve",
+           f"{len(futile)} request(s) blocked on SKU enablement",
            size=13, weight="bold", advance=1.3)
     p.table(["action"], arows, [0.9])
 

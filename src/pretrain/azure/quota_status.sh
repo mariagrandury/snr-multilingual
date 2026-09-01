@@ -43,7 +43,7 @@ SUB="${AZ_SUBSCRIPTION:-ef1ff20e-1168-4846-a78e-47d102dd35f6}"
 
 # Every region where you have filed, or might file. Edit freely.
 REGIONS=(italynorth norwayeast polandcentral uksouth canadacentral
-         switzerlandnorth spaincentral japaneast australiaeast)
+         switzerlandnorth spaincentral japaneast australiaeast canadaeast) 
 
 # Scope string used by every Microsoft.Quota call.
 scope() { echo "/subscriptions/$SUB/providers/Microsoft.Compute/locations/$1"; }
@@ -355,8 +355,11 @@ for u in json.loads(raw).get("value", []):
 cmd_spot() {
   local size="${1:-Standard_ND96isr_H100_v5}" count="${2:-8}"
   hr "Spot placement score for $count x $size"
+  # NOTE (2026-08-26): this needs Microsoft.Compute REGISTERED. Unregistered it
+  # fails with SubscriptionMetadataNotFound, which reads like a bad request but
+  # is really "the Compute RP has no record of this subscription".
   az rest --method post --url \
-    "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.Compute/locations/westeurope/placementScores/spot/generate?api-version=2024-03-01" \
+    "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.Compute/locations/westeurope/placementScores/spot/generate?api-version=2025-06-05" \
     --body "{\"desiredSizes\":[{\"sku\":\"$size\"}],\"desiredCount\":$count,
              \"desiredLocations\":[\"italynorth\",\"norwayeast\",\"polandcentral\",
                                    \"uksouth\",\"swedencentral\",\"westeurope\"],
