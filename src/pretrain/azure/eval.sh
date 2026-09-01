@@ -77,7 +77,10 @@ lm_eval --model vllm --model_args="$COMMON_MODEL_ARGS" "${COMMON_EVAL_ARGS[@]}" 
 # layout matches megatron-backend runs (same move _run_per_task.sh does).
 for sub in "$HARNESS_EVAL_DIR"/*/; do
   if compgen -G "${sub}results_*.json" > /dev/null; then
-    mv "$sub"* "$HARNESS_EVAL_DIR/" && rmdir "$sub"
+    # `|| true`: under set -e a non-empty leftover (a dotfile the glob skips)
+    # would kill the job here — after the results landed but before the W&B
+    # push below, and the watcher would then count the iter as done.
+    mv "$sub"* "$HARNESS_EVAL_DIR/" && rmdir "$sub" || true
   fi
 done
 
