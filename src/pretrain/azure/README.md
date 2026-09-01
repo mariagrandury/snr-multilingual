@@ -28,8 +28,8 @@ Per-size cost anchors, measured at 103.2B tokens on `gpu-nc80-lp`
 350M ≈ 5 days / ~$400; 600M ≈ 7 days / ~$620. Predictivity budgets are
 D(N) = 100 × N tokens — scale those anchors by (100 N / 103.2B), e.g. the
 175M predictivity cell (17.6B tokens) is ~$45. The 1B and 1.7B rungs belong
-on the UK South `gpu-nd96-spot` pool (8× H100 + InfiniBand) — see the
-compute-budget sheet next to the plan for the full budget.
+on the Canada Central `gpu-nd96-spot` pool (8× H100 + InfiniBand, §9) — see
+the compute-budget sheet next to the plan for the full budget.
 
 **Prerequisites**
 
@@ -68,15 +68,35 @@ Edit `azure/env.sh`: set `AZ_SUBSCRIPTION` to your subscription id. The
 regions are already decided for this project (quota, storage and compute are
 all per-region — see the compute-budget sheet): the **primary workspace is
 Spain Central** (`snr-es-rg`/`snr-es-ws`, NC80adis H100 low-priority — every
-size ≤600M plus evals) with a second workspace in **UK South**
-(`snr-uk-rg`/`snr-uk-ws`, ND96isr 8×H100 Spot — the 1B/1.7B pool); §9 sets
-up the UK one. If you're adapting this guide to another subscription, pick a
-region where _your_ subscription can deploy the SKUs and stick to it. Then:
+size ≤600M plus evals), and the ND (8×H100) pool lives in **Canada Central**
+(`snr-ca-rg`/`snr-ca-ws`) — see §9. If you're adapting this guide to another
+subscription, pick a region where _your_ subscription can deploy the SKUs and
+stick to it. Then:
 
 ```bash
 source azure/env.sh
 bash azure/setup.sh
 ```
+
+!!! note "Why Canada Central for ND, not UK South (2026-08-26)"
+    UK South was the original ND region, and its SKU is still allow-list
+    clear — but after 13 days and 23 quota requests the subscription holds
+    **0 dedicated H100 cores anywhere**, so the choice is now driven by what
+    can run *today*:
+
+    - **300 regional low-priority vCPUs are already granted** in every
+      region (`TotalLowPriorityCores`, per-family limit `-1`) = 3 × ND96isr
+      = **24 H100 with no ticket at all**.
+    - Canada Central has the cheapest meters of any allow-list-clear ND
+      region: Spot **$21.80**/node-h ($2.73/GPU-h), Low Priority $23.60.
+      UK South's Low Priority meter is **$50.93** — 2.2× its own Spot meter —
+      and `tier: low_priority` is the only non-dedicated tier AmlCompute
+      exposes, so UK South risks billing the expensive one.
+    - Italy North and Norway East look clear in the SKU API but have **no
+      retail meters at all** for `ND96isr_H100_v5`, so quota there could
+      never be billed. Those are the 768/768/1536-core tickets.
+
+    Check any of this with `./quota_status.sh board`.
 
 **Credentials & W&B config.** `source azure/env.sh` loads the Azure names.
 The W&B **entity** is the constant `mariagrandury-epflnlp` (hardcoded in
@@ -105,7 +125,7 @@ delete in one command):
 - **Compute clusters** — every `compute-*.yml` whose SKU the region offers
   (the rest are skipped with a warning). In Spain Central that's
   `gpu-nc80-lp` (`Standard_NC80adis_H100_v5`: 2× H100 94GB at the fixed
-  low-priority meter, ~$3.63/h); the UK South workspace instead gets
+  low-priority meter, ~$3.63/h); the Canada Central workspace instead gets
   `gpu-nd96-spot` (§9). Clusters have `min_instances: 0`: nodes exist only
   while a job runs, so an idle setup costs ~$0.
 
@@ -125,9 +145,11 @@ compute-budget sheet):
    meter, whose quota is a **separate counter** in Azure ML Studio →
    Quota — check it once the workspace exists (it often has a non-zero
    default).
-2. **`Standard NDSH100v5 Family vCPUs`** in **UK South** — 96–192 cores
-   (1–2 ND96isr nodes to start; the predictivity plan scales to 16) plus
-   its Spot counter.
+2. **`standardNDv5H100Family`** in **Canada Central** — 96 cores per
+   ND96isr node; the predictivity plan scales to 16 (1536). File this one
+   against the **low-priority** counter, not dedicated: all 23 requests so
+   far were `Type: Dedicated` and none has been granted, while low-priority
+   already allows 3 nodes with no ticket (§9).
 
 File absent families via Help + Support → _Service and subscription limits
 (quotas)_; H100-class requests open a support ticket (days, not minutes),
@@ -470,11 +492,11 @@ Start the watcher in a terminal alongside your training run:
 source azure/env.sh   # Azure names; W&B key stays in your saved shell env
 [ -n "$WANDB_API_KEY" ] && echo "✓ WANDB_API_KEY present" || echo "✗ set WANDB_API_KEY in your shell profile (~/.zshrc)"
 python auto_evals_azure.py --watch 600                 # Spain workspace (<=600M)
-python auto_evals_azure.py --workspace uk --watch 600  # UK workspace (1B/1.7B)
+python auto_evals_azure.py --workspace ca --watch 600  # Canada ND workspace (1B/1.7B)
 ```
 
 The two workspaces have separate blob stores and compute, so run one
-watcher per workspace; `--workspace uk` switches the az CLI to the
+watcher per workspace; `--workspace ca` switches the az CLI to the
 `AZ_UK_*` names and overrides the job YAMLs' Spain-only compute with
 `gpu-nd96-spot` (do the same with `--set compute=azureml:gpu-nd96-spot`
 when submitting `jobs/push.yml` in the UK workspace).
@@ -527,13 +549,133 @@ Two behaviours worth knowing:
   (`mode: download`, a few minutes) — don't change it to `ro_mount`;
   memory-mapped `.bin` reads over a blob mount are pathologically slow.
 
-## 9. The UK South workspace (1B and 1.7B)
+## 9. The ND workspace — Canada Central (1B and 1.7B)
 
-The launcher places 1B/1.7B cells on **UK South** (`gpu-nd96-spot`, 8×H100
-Spot) automatically — it reads `AZ_ML_ARGS_UK` from `azure/env.sh`. To bring
-that workspace up: re-export `AZ_LOCATION/AZ_RG/AZ_WS` to the `AZ_UK_*`
-values, run `azure/setup.sh` once (computes whose SKU the region lacks are
-skipped), then server-side-copy the data (§5b's LATER block).
+The launcher places 1B/1.7B cells on the ND pool (`gpu-nd96-spot`, 8×H100)
+automatically. Bring the workspace up with the `use_ca` helper from
+`azure/env.sh` (it re-exports `AZ_LOCATION/AZ_RG/AZ_WS` **and**
+`AZ_ML_ARGS` — setting only the first three leaves `az ml` pointed at Spain):
+
+```bash
+source azure/env.sh && use_ca
+bash azure/setup.sh          # idempotent; skips SKUs the region lacks
+```
+
+Then server-side-copy the data (§5b's LATER block).
+
+### Low-priority is NOT available for H100 (settled 2026-08-26)
+
+The 300 regional low-priority vCPUs (`TotalLowPriorityCores`) are genuinely
+granted, but **cannot be spent on any H100 SKU**. AML rejects them outright:
+
+```
+UnsupportedVMSizeForLowPriority: The VM size STANDARD_ND96ISR_H100_v5 is not
+allowed for LowPriority. Please convert to Dedicated or use a different VM size.
+```
+
+Confirmed for both `Standard_ND96isr_H100_v5` and `Standard_NC80adis_H100_v5`.
+**Dedicated quota is therefore the only path to H100** — the pending dedicated
+tickets are the right ask after all.
+
+The policy is **family-level, not SKU-level**: A100 *is* allowed on
+low-priority (both `NC24ads_A100_v4` and `NC96ads_A100_v4` create clean), it
+just returned `OutOfCapacity` in Canada Central when asked to allocate. That
+failure is transient and needs no quota, so it is worth re-probing. Do not
+use `az vm list-skus`'s `LowPriorityCapable` to predict any of this — it is
+wrong in both directions (`True` for the rejected ND96isr_H100_v5, `False`
+for the accepted NC96ads_A100_v4).
+
+| What you see | Which gate failed | Fixable by a quota ticket? |
+| --- | --- | --- |
+| `UnsupportedVMSizeForLowPriority` at create | tier/SKU policy | **No** — never |
+| `OutOfCapacity` on scale-up | physical capacity | No — retry, or change region/SKU |
+| Job queues, counters stay 0 | quota | **Yes** |
+
+!!! danger "This failure is invisible until a job hits it"
+    The cluster **creates as `provisioning_state: Succeeded`** and looks
+    healthy in `az ml compute list`. The rejection lives only in
+    `properties.errors`, and reaches the job as the uninformative
+    _"cluster has encountered unknown issue"_. Two other signals lie too:
+    `az vm list-skus` reports `LowPriorityCapable=True` for ND96isr_H100_v5,
+    and a "Low Priority" retail meter exists for it. Both are wrong.
+
+    The only reliable probe — and it costs **$0**, since `min_instances: 0`
+    allocates nothing:
+
+    ```bash
+    az ml compute create --file azure/compute-nd96-spot.yml $AZ_ML_ARGS
+    az rest --method get --url \
+      "https://management.azure.com/subscriptions/$AZ_SUBSCRIPTION/resourceGroups/$AZ_RG/providers/Microsoft.MachineLearningServices/workspaces/$AZ_WS/computes/gpu-nd96-spot?api-version=2024-10-01" \
+      --query "properties.properties.errors"
+    ```
+
+    Run that after creating **any** new cluster, before submitting work to it.
+
+### The A100 fallback (`--compute`)
+
+Since no H100 is obtainable, `launch_trainings.py azure` takes `--compute` to
+retarget any cell at another cluster. Two A100 clusters are defined:
+
+| File | Cluster | Tier | State |
+| --- | --- | --- | --- |
+| `compute-nc96-a100-lp.yml` | `gpu-nc96-a100-lp` | low-priority | created; `OutOfCapacity` on scale-up |
+| `compute-nc96-a100-ded.yml` | `gpu-nc96-a100-ded` | dedicated | **cannot be created** — 0 family quota |
+
+```bash
+source azure/env.sh && use_ca
+python launch_trainings.py azure --size 1B --langs 1 --seed 1904 \
+  --compute gpu-nc96-a100-lp --dry-run      # inspect, then drop --dry-run
+```
+
+Jobs are single-node on Azure regardless (`torchrun --standalone`), so
+switching cluster only changes the per-node GPU count; the wrapper
+re-resolves MBS against it (1B: MBS 6 on 4×A100 → grad accum 21).
+
+### Smoke-test a cluster
+
+`smoke.yml` runs on **mock data**, so it needs no dataset — the fastest way to
+prove a new cluster end to end:
+
+```bash
+az ml job create --file azure/jobs/smoke.yml $AZ_ML_ARGS \
+  --set compute=azureml:gpu-nc96-a100-lp --set display_name=smoke-a100-nc96 --web
+```
+
+!!! warning "Azure has no training data yet"
+    `predictivity/data` is **empty in both workspaces** — the tokenized
+    mixtures still live only on CSCS. Real cells cannot run until §5's
+    ~2.5 TB upload completes; only mock-data smoke tests can.
+
+```bash
+source azure/env.sh && use_ca
+az ml compute show --name gpu-nd96-spot $AZ_ML_ARGS \
+  --query "{state:provisioning_state, tier:tier, size:size, max:max_instances}" -o yaml
+
+# 20 iterations on mock data, one node (smoke.yml defaults to the Spain NC
+# cluster, so point it at the ND one)
+az ml job create --file azure/jobs/smoke.yml $AZ_ML_ARGS \
+  --set compute=azureml:gpu-nd96-spot \
+  --set environment_variables.WANDB_API_KEY=$WANDB_API_KEY --web
+```
+
+Quota and capacity fail at **different stages** — which one you hit matters:
+
+| Symptom | Meaning |
+| --- | --- |
+| _"cluster has encountered unknown issue"_ | read `properties.errors` (above) — the cluster is misconfigured, e.g. an H100 SKU on `low_priority` |
+| Job stuck in Queued, `list-nodes` empty, `TotalDedicatedCores` still `0` | no dedicated quota yet — this is the current state |
+| Job stuck in Queued with quota granted | **no capacity** — a quota ticket will not fix this |
+| `TotalDedicatedCores` moves and the job runs | working |
+
+Watch all three with:
+
+```bash
+az ml compute list-nodes --name gpu-nd96-spot $AZ_ML_ARGS -o table
+./quota_status.sh aml | grep -A3 -i canadacentral
+```
+
+Cost: ~$23.60/node-h, so the <30 min smoke test is **~$12** (not the "<$2" of
+§4, which is a NC80adis node). `min_instances: 0` means an idle cluster is $0.
 
 ## 10. Where everything is stored (and getting it out)
 

@@ -3,6 +3,29 @@ name: gpu-nd96-spot
 type: amlcompute
 size: Standard_ND96isr_H100_v5    # 8x H100 SXM + InfiniBand
 min_instances: 0
-max_instances: 16                 # 128 H100 — the 1B/1.4B deadline fleet (UK South)
+# 16 nodes = 1536 vCPU = 128 H100, the 1B/1.7B deadline fleet. AML does not
+# check max_instances against quota at create time (verified 2026-08-26), so
+# this is aspirational until dedicated quota lands; jobs simply queue.
+max_instances: 16
 idle_time_before_scale_down: 600
-tier: low_priority                # allocated as Spot; evicted jobs resume from the last checkpoint
+
+# tier: DEDICATED, and it cannot be anything else.
+#
+# H100 SKUs are rejected outright for low-priority on this subscription. A
+# low_priority cluster still CREATES fine — provisioning_state Succeeded — and
+# only reveals the truth in properties.errors, surfacing to the job as the
+# useless "cluster has encountered unknown issue":
+#   UnsupportedVMSizeForLowPriority: The VM size STANDARD_ND96ISR_H100_v5 is
+#   not allowed for LowPriority. Please convert to Dedicated or use a
+#   different VM size.
+# Confirmed for BOTH Standard_ND96isr_H100_v5 and Standard_NC80adis_H100_v5
+# (2026-08-26). So the 300 regional TotalLowPriorityCores, though genuinely
+# granted, cannot be spent on any H100 — dedicated quota is the only path.
+#
+# Do not trust `az vm list-skus` here: it reports LowPriorityCapable=True for
+# ND96isr_H100_v5, and a "Low Priority" retail meter exists for it too. Both
+# are wrong. The only reliable probe is to create the cluster (min_instances:
+# 0, costs nothing) and read properties.errors:
+#   az rest --method get --url ".../computes/<name>?api-version=2024-10-01" \
+#     --query "properties.properties.errors"
+tier: dedicated

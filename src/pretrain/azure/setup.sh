@@ -7,10 +7,11 @@ cd "$(dirname "$0")"
 
 : "${AZ_SUBSCRIPTION:?source azure/env.sh first}"
 
-# env.sh expands AZ_ML_ARGS once at source time from the Spain defaults; the
-# UK bring-up re-exports only AZ_LOCATION/AZ_RG/AZ_WS, so recompute here or
-# the environment/compute registrations below silently land in Spain while
-# the UK workspace stays empty.
+# env.sh expands AZ_ML_ARGS once at source time from the Spain defaults; a
+# hand-rolled bring-up may re-export only AZ_LOCATION/AZ_RG/AZ_WS, so
+# recompute here or the environment/compute registrations below silently land
+# in Spain while the target workspace stays empty. (env.sh's `use_ca` sets
+# AZ_ML_ARGS too, so it is safe either way.)
 AZ_ML_ARGS="--resource-group $AZ_RG --workspace-name $AZ_WS"
 
 az account set --subscription "$AZ_SUBSCRIPTION"
@@ -36,8 +37,9 @@ echo "Environments ready"
 
 # Each compute needs its SKU offered in the workspace's region plus quota —
 # create whatever this region supports and skip the rest with a warning
-# (the NC80adis cluster exists in Spain Central, the ND96isr cluster only
-# in UK South).
+# (the NC80adis cluster exists in Spain Central, the ND96isr cluster in
+# Canada Central). NC80adis is NOT LowPriorityCapable, so its low_priority
+# cluster is expected to fail outside Spain Central.
 for c in compute-*.yml; do
   az ml compute create --file "$c" $AZ_ML_ARGS --output none \
     && echo "Compute $c ready" \

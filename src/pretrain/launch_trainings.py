@@ -111,7 +111,10 @@ AUTO_EVAL_LOGS = Path(
 
 AZURE_JOB_YML = SCRIPT_DIR / "azure" / "jobs" / "pretrain.yml"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths/predictivity"
-UK_SIZES = {"1B", "1.7B"}  # everything else runs on the Spain economy pool
+ND_SIZES = {"1B", "1.7B"}  # the 8xH100 pool; everything else runs on the
+                          # Spain economy pool. Moved UK South -> Canada
+                          # Central 2026-08-26 (meters + the already-granted
+                          # low-priority allowance; see azure/env.sh).
 
 # --- Grid definition (edit these to change the sweep) ------------------------
 
@@ -467,7 +470,7 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
 # --- Azure ML (az ml job create) ---------------------------------------------
 
 def az_args(size: str) -> tuple[str, list[str]]:
-    var = "AZ_ML_ARGS_UK" if size in UK_SIZES else "AZ_ML_ARGS_ES"
+    var = "AZ_ML_ARGS_CA" if size in ND_SIZES else "AZ_ML_ARGS_ES"
     try:
         return var, os.environ[var].split()
     except KeyError:
@@ -494,14 +497,22 @@ def active_azure_jobs(ws_args: list[str]) -> set[str]:
 
 
 def submit_azure(env: dict, cell: dict, dry_run: bool,
-                 data_root: Optional[str] = None) -> None:
+                 data_root: Optional[str] = None,
+                 compute: Optional[str] = None) -> None:
     size, L, exp = cell["size"], cell["L"], env["EXP_NAME"]
     ws_var, ws_args = az_args(size)
     data_root = data_root or f"{DATASTORE}/data"
+    # --compute overrides the size->cluster default. Needed whenever the
+    # planned SKU is unavailable: H100 cannot use low-priority at all and has
+    # 0 dedicated quota, so the A100 clusters (gpu-nc96-a100-lp /
+    # gpu-nc96-a100-ded) are the fallback. Jobs are single-node either way
+    # (torchrun --standalone), so only the per-node GPU count changes; the
+    # wrapper re-resolves MBS against it.
     overrides = {
         "display_name": job_name("pretrain", exp),
-        "compute": ("azureml:gpu-nd96-spot" if size in UK_SIZES
-                    else "azureml:gpu-nc80-lp"),
+        "compute": compute if compute else (
+            "azureml:gpu-nd96-spot" if size in ND_SIZES
+            else "azureml:gpu-nc80-lp"),
         # L=1 has no FineWeb blend (data_blend uses inputs.english alone), but
         # the job spec still declares the input and downloads it — pointing it
         # at english_dclm again fetched the 686 GB build twice per monolingual
@@ -592,12 +603,19 @@ def main() -> None:
     parser.add_argument("--test", action="store_true",
                         help=f"CSCS only: smoke test ({TEST_SIZE}, L{TEST_LANGS}, "
                              f"{TEST_STEPS} steps)")
+    parser.add_argument("--compute", metavar="CLUSTER",
+                        help="Azure only: override the size->cluster default, "
+                             "e.g. gpu-nc96-a100-lp or gpu-nc96-a100-ded when "
+                             "no H100 is obtainable (accepts a bare name or "
+                             "azureml:<name>)")
     args = parser.parse_args()
 
     if args.platform != "cscs":
         for flag in ("time", "account", "dependency", "training_steps", "test"):
             if getattr(args, flag):
                 parser.error(f"--{flag.replace('_', '-')} is CSCS-only")
+    elif args.compute:
+        parser.error("--compute is Azure-only")
 
     size_filter = args.size.split(",") if args.size else None
     valid_sizes = list(SIZE_LANG_SETTINGS)
@@ -606,6 +624,11 @@ def main() -> None:
         parser.error(f"--size {bad_sizes} not valid. Choose from: {valid_sizes}")
     if args.langs and args.langs not in LANG_SETTINGS:
         parser.error(f"--langs '{args.langs}' not valid. Choose from: {LANG_SETTINGS}")
+
+    # Accept "gpu-x" or "azureml:gpu-x"; the job yml wants the azureml: form.
+    az_compute = (args.compute if args.compute is None
+                  or args.compute.startswith("azureml:")
+                  else f"azureml:{args.compute}")
 
     config = HYPERPARAMS[args.arch]
     data = json.loads(config.read_text())
@@ -687,12 +710,17 @@ def main() -> None:
                 account=args.account, dependency=args.dependency,
             )
         else:
-            blend = data_blend("${{inputs.english}}/english_dclm",
-                               f"${{{{inputs.fineweb}}}}/fineweb_L{c['L']}", c["L"])
+            # $ENGLISH_DIR/$FINEWEB_DIR, not ${{inputs.*}}: binding expressions
+            # are substituted only inside the job yml's `command`, never in an
+            # environment_variables value (which is what --set writes). The yml
+            # exports the mounts under these names and the wrapper expands them.
+            blend = data_blend("$ENGLISH_DIR/english_dclm",
+                               f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
                 cell_env(cfg, c["size"], c["seed"], exp, blend),
                 cell=c, dry_run=args.dry_run,
                 data_root=az_data if scheme == "B" else None,
+                compute=az_compute,
             )
 
     if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:

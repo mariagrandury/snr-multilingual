@@ -212,7 +212,7 @@ python launch_trainings.py cscs            # then for real (skips done/active, r
 
 # Azure: watcher submits convert+eval as checkpoints land (one per workspace)
 source azure/env.sh && python auto_evals_azure.py --watch 600
-python auto_evals_azure.py --workspace uk --watch 600   # 1B/1.7B cells
+python auto_evals_azure.py --workspace ca --watch 600   # 1B/1.7B cells
 ```
 
 ---

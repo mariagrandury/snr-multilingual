@@ -54,7 +54,7 @@ python launch_trainings.py azure --langs 2 --size 90M     # first real cell
 python launch_trainings.py azure                   # the rest
 
 python auto_evals_azure.py --watch 600                   # ES watcher (<=600M cells)
-python auto_evals_azure.py --workspace uk --watch 600    # UK watcher (1B/1.7B cells)
+python auto_evals_azure.py --workspace ca --watch 600    # Canada ND watcher (1B/1.7B cells)
 ```
 
 There is **no separate resume script**: `--save`/`--load` point at the same
@@ -370,7 +370,7 @@ nothing duplicates.
   store and compute; the UK one overrides the job YAMLs' Spain-only
   compute):
   `source azure/env.sh && python auto_evals_azure.py --watch 600` and
-  `python auto_evals_azure.py --workspace uk --watch 600`.
+  `python auto_evals_azure.py --workspace ca --watch 600`.
 
 ## Per-size cluster cost (steady state)
 

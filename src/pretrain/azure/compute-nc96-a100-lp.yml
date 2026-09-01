@@ -1,0 +1,22 @@
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: gpu-nc96-a100-lp
+type: amlcompute
+size: Standard_NC96ads_A100_v4    # 4x A100 80GB, 96 vCPU, no InfiniBand
+min_instances: 0
+# 3 nodes = 288 vCPU, the most that fits the 300 regional TotalLowPriorityCores
+# already granted. Azure jobs are single-node anyway (launch_pretraining_azure.sh
+# runs `torchrun --standalone`), so extra nodes buy concurrent CELLS, not a
+# bigger fleet per run.
+max_instances: 3
+idle_time_before_scale_down: 600
+
+# low_priority IS accepted for A100 — unlike every H100 SKU, which Azure
+# rejects with UnsupportedVMSizeForLowPriority (see compute-nd96-spot.yml).
+# Verified 2026-08-26 by creating the cluster and reading properties.errors.
+#
+# CAVEAT: accepted != allocatable. Both NC24ads and NC96ads returned
+#   OutOfCapacity: The specified Virtual Machine size in low priority is
+#   currently out of capacity...
+# on scale-up in Canada Central. That is a capacity shortage, not quota — it
+# needs no ticket and may clear on its own, so re-probe before assuming.
+tier: low_priority

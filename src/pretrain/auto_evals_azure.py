@@ -17,7 +17,7 @@ alongside training:
 
     source azure/env.sh          # + WANDB_API_KEY in your shell profile (laptop)
     python auto_evals_azure.py --watch 600                 # Spain: sizes <= 600M
-    python auto_evals_azure.py --workspace uk --watch 600  # UK: 1B and 1.7B
+    python auto_evals_azure.py --workspace ca --watch 600  # Canada: 1B and 1.7B
 
 Same filters as the other launchers (--size/--seed/--name); default = every
 cell with checkpoints in the workspace's blob storage. --dry-run prints
@@ -44,7 +44,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
 from launch_trainings import (  # noqa: E402
-    TOKENIZER_MODEL, UK_SIZES, cell_languages, job_name)
+    TOKENIZER_MODEL, ND_SIZES, cell_languages, job_name)
 from sync_models_json import sync  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
@@ -56,9 +56,12 @@ DATASTORE = "azureml://datastores/workspaceblobstore/paths"
 # Training outputs are pinned under predictivity/ (launch_trainings.DATASTORE);
 # converted models and eval logs live at the blob root (convert/eval.yml).
 RUNS_PREFIX = "predictivity/runs"
-# jobs/{convert,eval}.yml default to the Spain compute; the UK workspace only
-# has the ND96 spot pool, so UK submissions override it.
-UK_COMPUTE = "azureml:gpu-nd96-spot"
+# jobs/{convert,eval}.yml default to the Spain compute; the Canada Central
+# workspace only has the ND96 pool, so its submissions override it.
+# NOTE 2026-08-26: gpu-nd96-spot cannot currently allocate (H100 is refused
+# for low-priority and dedicated H100 quota is 0). Point this at an A100
+# cluster (gpu-nc96-a100-lp) if evals need to run before H100 quota lands.
+ND_COMPUTE = "azureml:gpu-nd96-spot"
 AUTO_BENCHMARKS = json.loads(
     (Path(__file__).resolve().parents[2] / "configs" /
      "tasks.json").read_text())["groups"]["auto"]
@@ -274,21 +277,22 @@ def main() -> None:
     p.add_argument("--tasks", default="auto")
     p.add_argument("--watch", type=int, metavar="SECONDS",
                    help="keep running, one pass every SECONDS")
-    p.add_argument("--workspace", choices=["es", "uk"], default="es",
+    p.add_argument("--workspace", choices=["es", "ca"], default="es",
                    help="which workspace to watch: es (sizes up to 600M) or "
-                        "uk (1B/1.7B) — run one watcher per workspace")
+                        "ca (1B/1.7B, Canada Central ND pool) — run one "
+                        "watcher per workspace")
     args = p.parse_args()
 
-    # The launcher splits the grid across two workspaces (UK_SIZES train in
-    # UK South, the rest in Spain Central); each workspace has its own blob
-    # store and compute, so point az at the right one and keep only the
-    # cells that live there.
-    uk = args.workspace == "uk"
-    if uk:
+    # The launcher splits the grid across two workspaces (ND_SIZES train on
+    # the Canada Central ND pool, the rest in Spain Central); each workspace
+    # has its own blob store and compute, so point az at the right one and
+    # keep only the cells that live there.
+    nd = args.workspace == "ca"
+    if nd:
         for var in ("AZ_RG", "AZ_WS"):
-            os.environ[var] = os.environ.get(f"AZ_UK_{var[3:]}") or sys.exit(
-                f"AZ_UK_{var[3:]} not set — run `source azure/env.sh` first.")
-    compute = UK_COMPUTE if uk else None
+            os.environ[var] = os.environ.get(f"AZ_CA_{var[3:]}") or sys.exit(
+                f"AZ_CA_{var[3:]} not set — run `source azure/env.sh` first.")
+    compute = ND_COMPUTE if nd else None
 
     def resolve_names() -> list[str]:
         """The cells this watcher covers, re-read EVERY pass: sync() upserts
@@ -305,7 +309,7 @@ def main() -> None:
         names = [args.name] if args.name else filter_models(
             source=SOURCES, size=args.size,
             seeds=[args.seed] if args.seed is not None else None)
-        return [n for n in names if (get_model(n)["size"] in UK_SIZES) == uk]
+        return [n for n in names if (get_model(n)["size"] in ND_SIZES) == nd]
 
     names = resolve_names()
     if not names:

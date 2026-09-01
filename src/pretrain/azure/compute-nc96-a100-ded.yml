@@ -1,0 +1,27 @@
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: gpu-nc96-a100-ded
+type: amlcompute
+size: Standard_NC96ads_A100_v4    # 4x A100 80GB, 96 vCPU, no InfiniBand
+min_instances: 0
+max_instances: 3                  # 288 vCPU; raise with the quota grant
+idle_time_before_scale_down: 600
+
+# The dedicated twin of gpu-nc96-a100-lp: same SKU, ~2x the price, but it is
+# not subject to the low-priority capacity pool that is currently empty, and
+# Azure's own OutOfCapacity message recommends dedicated "to improve chances
+# of capacity allocations".
+#
+# BLOCKED ON QUOTA — this file CANNOT be applied yet. Unlike low-priority,
+# a dedicated cluster is quota-checked at CREATE time and is refused outright
+# (2026-08-26), even with min_instances: 0:
+#   ClusterMinNodesExceedCoreQuota: The specified subscription has a Standard
+#   NCADSA100v4 family vCPU quota of 0 and cannot accomodate for at least 1
+#   requested managed compute nodes which maps to 96 vCPUs.
+# So dedicated fails loudly and early, while low-priority fails late and
+# silently — do not generalise one to the other.
+#
+# Unblock by filing:
+#   family standardNCADSA100v4Family, region canadacentral,
+#   Type Dedicated, 288 cores (3 nodes)
+# then re-run: az ml compute create --file azure/compute-nc96-a100-ded.yml $AZ_ML_ARGS
+tier: dedicated

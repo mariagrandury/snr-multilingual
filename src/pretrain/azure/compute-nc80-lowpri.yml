@@ -5,4 +5,11 @@ size: Standard_NC80adis_H100_v5   # 2x H100 NVL 94GB
 min_instances: 0
 max_instances: 6                  # 12 H100 — the economy pool (Spain Central)
 idle_time_before_scale_down: 600
-tier: low_priority                # bills the fixed Low Priority meter (~80% off)
+# NOT low_priority, despite the cluster name and the ~80%-off Low Priority
+# meter that exists for this SKU. Azure rejects it (2026-08-26):
+#   UnsupportedVMSizeForLowPriority: The VM size STANDARD_NC80ADIS_H100_V5 is
+#   not allowed for LowPriority. Please convert to Dedicated or use a
+#   different VM size.
+# The cluster creates as Succeeded anyway and the failure only appears in
+# properties.errors — see compute-nd96-spot.yml for the full note.
+tier: dedicated
