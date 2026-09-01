@@ -78,6 +78,167 @@ The 1B + 1.7B rows are **84%** of all compute.
 | Dedicated economy (all Spain PAYG) | $375k | ✗ |
 | Dedicated fast mix (big rungs UK PAYG) | $592k | ✗ (fallback pricing only) |
 
+## A100 fallback — how long the big rungs would take (2026-08-26)
+
+Added because H100 quota has not landed: after 13 days and 20 tickets the
+subscription still holds **0 H100/H200 cores** (see the `quota_status.sh board`
+report). A100 is the one GPU class this subscription is *not* allow-list
+blocked from — `NC24/48/96ads_A100_v4` in 15 Azure ML regions, and
+`ND96amsr_A100_v4` (8×A100 80 GB **+ InfiniBand**, the only A100 SKU worth
+using for these rungs) in **canadaeast** and **swedencentral**.
+
+Same convention as the tables above: FLOPs/run unchanged, 40 % MFU, bf16.
+A100 SXM peak is 312 TFLOP/s vs H100's 989 → **A100 is 3.17× slower per GPU**.
+
+| Rung | FLOPs/run | A100-days/run | 1 node (8×A100) | 4×A100 (NC96ads) | _vs 8×H100_ |
+|---|---|---|---|---|---|
+| 1B | 6.68e20 | 62.0 | **7.7 d** | 15.5 d | _2.44 d_ |
+| 1.7B | 1.98e21 | 183.6 | **23.0 d** | 45.9 d | _7.24 d_ |
+
+Whole-sweep totals (45 × 1B and 15 × 1.7B — 15 and 5 per level × 3 levels,
+per `launch_trainings.py`):
+
+| Set | Runs | A100-days |
+|---|---|---|
+| all 1B | 45 | **2,788** |
+| all 1.7B | 15 | **2,754** |
+| all 1B + 1.7B | 60 | **5,542** |
+
+Wall-clock against fleet size (runs are independent jobs, so they parallelize
+freely; ignores eviction overhead):
+
+| Fleet | all 1B | all 1B + 1.7B |
+|---|---|---|
+| 3 × ND96amsr (24 A100) — _today's low-priority allowance_ | 116 d | **231 d** |
+| 4 × ND96amsr (32 A100) | 87 d | 173 d |
+| 8 × ND96amsr (64 A100) | 44 d | 87 d |
+| 16 × ND96amsr (128 A100) | 22 d | 43 d |
+| 32 × ND96amsr (256 A100) | 11 d | 22 d |
+
+**A100 is a schedule fallback, not a cost saving.** At canadaeast low-priority
+($7.865/node-h = $0.98/GPU-h) the 1B+1.7B set alone is **$131k** (Spot:
+$189k) — ≈ $2,190 per 1e21 FLOPs, ~11 % dearer than UK ND H100 Spot ($1,972)
+and 3.2× slower. It only makes sense if H100 quota never lands.
+
+The binding constraint is fleet size, not price: the low-priority allowance
+that already exists (300 vCPU regional = 3 ND nodes, see below) gives **231
+days** for 1B+1.7B. A100 only becomes viable with a real dedicated grant
+(≥ 8 nodes), and at 16 nodes it roughly matches the original H100 schedule.
+
+## CORRECTION (2026-08-26, later the same day): low-priority is impossible for H100
+
+The section below was written from the quota counters and is **wrong in its
+conclusion**. Tested empirically by creating the clusters: AML rejects every
+H100 SKU for low-priority outright.
+
+```
+UnsupportedVMSizeForLowPriority: The VM size STANDARD_ND96ISR_H100_v5 is not
+allowed for LowPriority. Please convert to Dedicated or use a different VM size.
+```
+
+Confirmed for `Standard_ND96isr_H100_v5` **and** `Standard_NC80adis_H100_v5`.
+So the 300 granted `TotalLowPriorityCores` are unspendable on H100, and
+**dedicated quota is the only path** — the 23 pending dedicated tickets are
+the correct ask after all.
+
+Three independent signals pointed the wrong way and should not be trusted
+again: the quota counters (`lowPriority` limit `-1`, `TotalLowPriorityCores`
+300), `az vm list-skus` (`LowPriorityCapable=True` for ND96isr_H100_v5), and
+the retail price list (a "Low Priority" meter exists for it, $23.60/node-h).
+The cluster also creates as `provisioning_state: Succeeded` regardless; the
+rejection appears only in `properties.errors` and reaches jobs as _"cluster
+has encountered unknown issue"_.
+
+**The cheap probe** — costs $0, since `min_instances: 0` allocates nothing —
+should be run against any new SKU/region/tier before planning around it:
+
+```bash
+az ml compute create --file <compute>.yml $AZ_ML_ARGS
+az rest --method get --url ".../workspaces/$AZ_WS/computes/<name>?api-version=2024-10-01" \
+  --query "properties.properties.errors"
+```
+
+### A100 low-priority: allowed, but out of capacity (probed 2026-08-26)
+
+Probed all four combinations in the Canada Central workspace. The two failure
+modes are completely different and must not be conflated:
+
+| SKU | tier accepted? | node allocates? |
+|---|---|---|
+| `ND96isr_H100_v5` | ✗ `UnsupportedVMSizeForLowPriority` | never — config rejected |
+| `NC80adis_H100_v5` | ✗ `UnsupportedVMSizeForLowPriority` | never — config rejected |
+| `NC24ads_A100_v4` (1×A100) | ✓ no error | ✗ `OutOfCapacity` |
+| `NC96ads_A100_v4` (4×A100) | ✓ no error | ✗ `OutOfCapacity` |
+
+So the policy is **family-level: A100 may use low-priority, H100 may not.**
+The H100 rejection is permanent and no ticket changes it. The A100
+`OutOfCapacity` is *transient* — worth re-probing periodically and in other
+regions, since it needs no quota at all. `OutOfCapacity` also explicitly
+suggests dedicated VMs "to improve chances of capacity allocations".
+
+`LowPriorityCapable` from `az vm list-skus` is wrong in **both** directions —
+`True` for the rejected ND96isr_H100_v5, `False` for the accepted
+NC96ads_A100_v4. Ignore it entirely; probe instead.
+
+Untested, and the one worth testing next: `ND96amsr_A100_v4` (8×A100 + IB,
+the only A100 shape worth using for the 1B/1.7B rungs) in **canadaeast** or
+**swedencentral**. It needs a workspace in one of those regions.
+
+### Dedicated vs low-priority fail at opposite ends (2026-08-26)
+
+A *dedicated* cluster is quota-checked at **create** time and refused
+outright, even with `min_instances: 0`:
+
+```
+ClusterMinNodesExceedCoreQuota: The specified subscription has a Standard
+NCADSA100v4 family vCPU quota of 0 and cannot accomodate for at least 1
+requested managed compute nodes which maps to 96 vCPUs.
+```
+
+A *low-priority* cluster is not, and creates happily whatever the quota.
+So "the cluster created" means nothing for low-priority and everything for
+dedicated — do not generalise either way.
+
+### Cost per 1B run on A100 (D = 94.4B tokens, 6.68e20 FLOPs, 40 % MFU)
+
+AmlCompute exposes only `dedicated` and `low_priority`; the Spot meter is
+unreachable, which is what makes dedicated H100 so expensive here.
+
+| Cluster | GPUs/node | wall-clock | $/h | **$/run** |
+|---|---|---|---|---|
+| `ND96amsr_A100_v4` low-pri (canadaeast) | 8 + IB | 7.7 d | 7.87 | **$1,461** |
+| `NC96ads_A100_v4` low-pri (canadacentral) | 4 | 15.5 d | 8.82 | **$3,278** |
+| `NC96ads_A100_v4` dedicated | 4 | 15.5 d | 17.63 | $6,553 |
+| `ND96isr_H100_v5` dedicated (canadacentral) | 8 + IB | 2.4 d | 122.40 | $7,172 |
+
+**A100 low-priority is ~5× cheaper per run than dedicated H100** — the only
+H100 tier reachable through AML. If low-priority capacity ever appears,
+canadaeast ND96amsr is the cheapest way to train these rungs on Azure, at
+3.2× the wall-clock of H100.
+
+## Low-priority / Spot was never actually requested (2026-08-26) — superseded, see above
+
+All **23 quota-change payloads across the 20 open tickets are `Type:
+Dedicated`** — verified from each ticket's `quotaTicketDetails`. No Spot or
+low-priority request has ever been filed, so the "Spot/LP vCPUs" column in
+_Quota requested_ below never reached Azure. This matters because the
+low-priority counters tell a different story from the dedicated ones:
+
+| Counter (any candidate region) | Value |
+|---|---|
+| `standardNDv5H100Family` dedicated | 0 |
+| `standardNDv5H100Family` **low-priority** | **-1 (no per-family cap)** |
+| `TotalLowPriorityCores` (regional) | **0 / 300 — already granted** |
+
+300 regional low-priority vCPUs = **3 × ND96isr = 24 H100**, apparently
+available now in any region where the SKU is not allow-list blocked
+(italynorth, norwayeast, uksouth, canadacentral). Quota is not capacity,
+so this must be confirmed by actually creating a low-priority cluster —
+but it needs no new ticket. Note `az vm list-skus` reports
+`LowPriorityCapable=False` for the NC H100 SKUs (Spain/Switzerland economy
+pool) and `True` for every ND SKU, so the low-priority path runs through the
+**ND nodes, not the NC ones** the economy plan above is built on.
+
 ## Deadline schedule (finish Aug 31, hard stop Sep 4)
 
 1,722 H100-days of work; runs are independent AML jobs that parallelize freely
