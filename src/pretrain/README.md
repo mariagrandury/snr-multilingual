@@ -109,6 +109,19 @@ the old fixed 100 000 that short runs never finished), and the init std is
 width-scaled (`INIT_STD` = 0.008944 × √(1792/hidden), anchored so the 1B
 keeps the reviewed value exactly).
 
+**A new training run must reproduce the config the already-pretrained cells
+used.** Two dozen cells are on disk; a rung trained with different
+hyperparameters is not on the same ladder as the rest, and the scaling fit
+cannot absorb that. So there is no way to perturb a *grid* cell's config from
+the command line. The two experimental knobs that exist —
+`--lr` and `--ademamix-beta3-factor` — are opt-in, never defaults, require a
+`--size/--langs/--seed` filter, and **force a `diag-` run name** that the grid
+tooling (`NAME_RE`, `LOG_RE`, `sync_models_json`) ignores by construction. If
+an experiment needs a different config, it is a diagnostic or a new axis of
+its own, not an edit to an existing rung. See
+[`plan/90M-rung-anomaly.md`](../../plan/90M-rung-anomaly.md) for the case that
+prompted this and why the fix it proposes was *not* adopted.
+
 ## What's in this folder
 
 **Layout rule:** the top level holds shared code and platform *pairs*
@@ -234,6 +247,25 @@ python launch_trainings.py cscs --size 90M,175M,350M,600M --langs 15 --seed 1904
 CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
 `--account`, `--dependency`, `--training-steps` (cap `--train-iters`
 manually), `--test`.
+
+Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
+each forces a `diag-` name, so neither can touch a grid cell):
+
+```bash
+# beta3 = 1 - 1/(F x iters): put the AdEMAMix slow-EMA timescale at F of the
+# run instead of the ladder's fixed 0.9999 (= 10 000 steps at every size)
+python launch_trainings.py cscs --size 90M --langs 2 --seed 1904 \
+    --ademamix-beta3-factor 0.2      # -> diag-90M-L2-deep-seed1904-beta3f0.2
+
+# override the per-size peak LR from the 6ND law
+python launch_trainings.py cscs --size 175M --langs 2 --seed 1904 \
+    --lr 6e-4                        # -> diag-175M-L2-deep-seed1904-lr0.0006
+```
+
+`diag-` cells have no `models.json` entry, so the auto-eval watcher cannot
+evaluate them and is not started; read their curves in W&B (project `msnr`)
+or `logs/slurm/training/pretrain-diag-*.out`. `ladder_report.py` ignores them
+by design.
 
 **Before the first CSCS run** (once):
 

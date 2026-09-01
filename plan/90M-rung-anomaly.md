@@ -1,5 +1,100 @@
 # The 90M rung does not sit on the scaling curve
 
+<!-- ------------------------------------------------------------------ -->
+<!-- APPENDIX DRAFT — self-contained, paper-ready. Everything below the  -->
+<!-- "Working record" divider is the internal investigation log.         -->
+<!-- ------------------------------------------------------------------ -->
+
+## Appendix: the smallest rung of the ladder
+
+Our predictivity study trains a ladder of models at six parameter counts,
+each on its own compute-optimal-multiple budget, and asks how benchmark
+rankings evolve with compute. A ladder of this kind is only as good as its
+span: the bottom rung sets the left-hand anchor of every scaling fit, and a
+displaced anchor tilts the fitted slope across the whole range. We therefore
+examined the smallest rung, at 90M non-embedding parameters, before using it.
+
+The 90M rung does not lie on the curve traced by the larger rungs, and the
+reason is not that the models are too small. Nine of the ten completed 90M
+runs *diverge*: each reaches its best training loss between 15% and 19% of
+the way through training and then degrades monotonically for the remaining
+four fifths, ending between 1.2 and 1.9 nats worse than its own best. No
+larger rung shows this. The 175M runs take at most a single loss spike and
+recover; the 350M and 600M runs reach their best loss after more than 90% of
+training, as expected under a warmup-stable-decay schedule.
+
+Two observations rule out the obvious explanations. First, this is not
+overfitting: every run is single-epoch, so no example is seen twice. Second,
+it is not a capacity floor. A capacity-limited model converges to a poor
+loss and stays there; these models reach roughly 4.4 — against a value near
+3.5 implied by extrapolating the larger rungs — and then get worse. Held-out
+evidence confirms the degradation is real rather than an artefact of the
+training objective: bits-per-byte measured on a disjoint validation set rises
+with training on every language we checked (English 1.68 to 1.95, Russian
+1.17 to 1.45 between 10% and 100% of training), and per-language perplexity
+on the rarest languages diverges outright. The output distribution
+deteriorates; it does not merely stop improving.
+
+Nor is it the learning rate. Our peak learning rates come from a compute-based
+scaling law evaluated at each run's own budget, which is hottest at the small
+end. We trained the 90M rung at three learning rates spanning a factor of
+nearly five, down to a value well below the law's prescription. All three
+diverge, with the same signature and at the same point in training.
+
+The explanation consistent with all of the evidence is an interaction between
+the optimizer's memory and the length of the run. We train with AdEMAMix,
+which augments the usual momentum with a second, much slower exponential
+moving average of past gradients, governed by a decay coefficient beta3. That
+coefficient sets a timescale, of order 1/(1 - beta3) steps, over which the
+slow average accumulates. We held beta3 fixed across the ladder — the natural
+choice for keeping rungs comparable — at a value whose timescale is 10,000
+optimizer steps. But the rungs differ enormously in length, because each
+trains on a budget proportional to its own parameter count:
+
+| rung | training steps | steps / optimizer timescale |
+| ---- | -------------: | --------------------------: |
+| 90M   |  4,500 | 0.45 |
+| 175M  |  8,540 | 0.85 |
+| 350M  | 16,660 | 1.7 |
+| 600M  | 28,800 | 2.9 |
+| 1B    | 45,740 | 4.6 |
+| 1.7B  | 81,000 | 8.1 |
+
+The 90M run is less than half the optimizer's own averaging window. It never
+reaches the regime the optimizer was configured for; the slow average remains
+dominated by gradients from early training, and is applied with a large
+multiplier throughout. The ordering of this ratio matches the ordering of the
+observed severity exactly: 90M diverges badly, 175M shows a single recovered
+spike, and everything at 1.7 and above is clean. A fixed beta3 across a ladder
+whose rungs differ 18-fold in length is thus not the neutral choice it appears
+to be — it silently gives each rung a qualitatively different optimizer.
+
+<!-- The paragraph below is a placeholder until the diagnostics land; the
+     revisit step (2026-09-08) replaces it with the measured outcome. -->
+**[TO BE COMPLETED once the confirming runs land — 2026-09-08.]** We tested
+this directly with a control run at 90M in which beta3 was set so that the
+optimizer's timescale is a fixed fraction of the run rather than a fixed
+number of steps, leaving everything else identical. *State here whether the
+divergence disappeared.* We also retrained the 175M rung at a reduced
+learning rate to check whether the second-shortest rung is affected. *State
+the outcome.*
+
+**Treatment in the reported analysis.** *[Completed at revisit.]* Where the
+90M rung is excluded, it is excluded as a rung whose optimizer configuration
+is known to be mismatched to its run length — a documented and reproducible
+training defect — and not as an unexplained outlier. We report the ladder both
+with and without it so the effect on the fitted slope is visible. Correcting
+it for the whole ladder would require retraining every rung, since the
+correction changes the optimizer at all of them; that was outside the compute
+budget of this study, and we note it as a recommendation for future ladders:
+**scale the optimizer's memory with the length of the run, not with nothing.**
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Working record — internal. Not for the paper.                      -->
+<!-- ------------------------------------------------------------------ -->
+
+## Working record
+
 **Status: cause identified 2026-08-28 — the 90M runs DIVERGE.** They are not
 converging to a poor loss; they reach ~4.5 about a fifth of the way in and
 then get steadily worse for the remaining 80% of training. The final
@@ -217,13 +312,69 @@ Pick a single smaller beta3 (e.g. 0.999, timescale 1000 steps) for every rung.
 * **Con** — breaks the definition of the ladder (every rung at 5x Chinchilla).
   It would trade a training bug for a confound in the headline axis. Rejected.
 
-### Recommendation
+### Recommendation (superseded — see the decision below)
 
 **A, staged.** (1) One 90M-L2-deep run with beta3 tied to the run length — it
 confirms or kills the hypothesis for ~2 node-hours. (2) If confirmed, adopt
 the formula, re-run the 90M and 175M rows, and run one 350M control to justify
 keeping 350M+ as they are. (3) Hold the queued 90M jobs until (1) reports;
 they will diverge exactly like the ten already on disk.
+
+## Decision (2026-09-01): defer, do not retrain
+
+Step (1) is being done. Steps (2) and (3) are **not**.
+
+The schedule is tight and the priority is finishing the planned grid for
+90M..600M. Adopting option A would change the optimizer at every rung, which
+means retraining everything already on disk — 24 cells — to keep the ladder
+internally comparable. That is not affordable now, and it is not what the
+paper needs: the ladder can be reported with the 90M rung's behaviour
+*explained* rather than *fixed*.
+
+Concretely:
+
+* **The grid keeps its current config.** `lm-90M-L100-deep-seed1904` will be
+  trained with beta3 = 0.9999 like the other ten 90M cells, and will diverge
+  like them. That is deliberate — a rung trained differently from its own row
+  would be worse than a rung that is uniformly wrong.
+* **90M stays in the grid.** Whether it enters the scaling fit is an
+  analysis-time decision made from the trained curves, not a training-time
+  one. Excluding it early would throw away the evidence that justifies the
+  exclusion.
+* **Two diagnostics settle the cause** (below), so the appendix can say the
+  divergence is understood and attributable rather than unexplained. That
+  distinction is the entire return on the ~11 node-hours.
+* **Revisit 2026-09-08.** If the 90M..600M grid finishes early and the 175M
+  diagnostic shows the second-shortest rung is also affected, retraining the
+  175M row becomes worth discussing. Otherwise the appendix stands.
+
+## The config invariant
+
+Options A and B both violate a rule this repo now enforces mechanically:
+**a training run must reproduce the config the already-pretrained cells
+used.** The comparability argument at the top of this section is why, and 24
+trained cells are what is at stake.
+
+So the experimental knobs added for the diagnostics —
+`launch_trainings.py --lr` and `--ademamix-beta3-factor` — are opt-in and
+never defaults. `megatron_args.sh` keeps `--ademamix-beta3 ${ADEMAMIX_BETA3:-0.9999}`,
+so a run that does not set the variable is unchanged; the launcher emits the
+variable only when the flag is passed. Any run that passes either flag is
+**renamed `diag-*`**, which is not optional: `diag-` matches neither
+`pretrain_progress.NAME_RE` nor `ladder_report.LOG_RE`, and
+`sync_models_json` builds its keys from `exp_name()`, so a non-standard run
+is structurally unable to be mistaken for a ladder rung, occupy a grid cell's
+checkpoint directory, or reuse its W&B run id. The flags also require a
+`--size/--langs/--seed` filter, so one of them cannot fan a non-standard
+config across the whole grid by accident.
+
+Verified by diffing `launch_trainings.py cscs --dry-run` output across the
+change: byte-identical for a normal launch.
+
+The `diag-` prefix hides these runs from the grid tooling but **not** from
+durable storage — `mirror_eval_logs.sbatch` globs `Meg-Runs/msnr/*/logging`,
+deliberately not `lm-*`, so the diagnostics reach capstor with everything
+else. They are the evidence this appendix rests on.
 
 ## Jobs proposed to close this out
 
@@ -241,6 +392,26 @@ never collide with grid checkpoints or W&B run ids.
 Run (1) and (2) first: they are the cheapest and (2) is the one that could
 change the plan for every remaining rung. (3) and (4) are only worth running
 if the gap survives the corrected LR.
+
+### Launched 2026-09-01
+
+Per the decision above, only the two cheapest run, and the beta3 control
+replaces job (1)'s LR bracket as the first question — the LR sweep already
+showed all three rates diverge, so beta3 is the live hypothesis:
+
+| run | command | tests |
+| --- | ------- | ----- |
+| `diag-90M-L2-deep-seed1904-beta3f0.2` | `launch_trainings.py cscs --size 90M --langs 2 --seed 1904 --ademamix-beta3-factor 0.2` | beta3 = 0.998889 (timescale 900 steps vs the 4,500-iter run). Does the divergence disappear? |
+| `diag-175M-L2-deep-seed1904-lr0.0006` | `launch_trainings.py cscs --size 175M --langs 2 --seed 1904 --lr 6e-4` | job (2): is the 175M — a rung we are keeping, at 0.85x — also mistuned? |
+
+Compare against `lm-90M-L2-deep-seed1904` / `lm-175M-L2-deep-seed1904` in
+W&B (project `msnr`, run name = the cell name) or the raw
+`logs/slurm/training/pretrain-diag-*.out`. **`ladder_report.py --check loss`
+will not show them** — its `LOG_RE` requires the `lm-` grid shape, which is
+the same exclusion that keeps them out of the ladder.
+
+Findings go in the appendix at the top of this file, replacing its two
+placeholder paragraphs.
 
 **Decision to make once these land:** if the 90M cannot be brought near the
 curve, drop it from the ladder rather than let it anchor the predictivity fit,

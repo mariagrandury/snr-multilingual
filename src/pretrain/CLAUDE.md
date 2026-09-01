@@ -75,6 +75,21 @@ then never log again without a code-side id suffix.
 - **Never delete checkpoints, eval results, or force-push.** When a cell's
   disk state is unrecoverable (iter dirs exist but none valid), the tooling
   skips with a warning — cleanup is always a human decision.
+- **Never change a grid cell's training config.** #5 covers not changing the
+  optimizer *schedule* on a resume; this is the wider rule, across cells: 24
+  cells are trained, and a rung that ran different hyperparameters is not on
+  the same ladder as the rest — the scaling fit cannot absorb it, so "fixing"
+  one rung means re-running every rung. `launch_trainings.py` has exactly two
+  config-perturbing flags, `--lr` and `--ademamix-beta3-factor`; both are
+  opt-in, both require a `--size/--langs/--seed` filter, and both **force a
+  `diag-` EXP_NAME**. That rename is the enforcement, not a convention:
+  `diag-` matches neither `pretrain_progress.NAME_RE` nor
+  `ladder_report.LOG_RE`, and `sync_models_json` derives its keys from
+  `exp_name()`, so a perturbed run cannot occupy a cell's checkpoint dir,
+  models.json entry or W&B run id. Keep it that way — if you add a knob, add
+  it to the same mechanism. `megatron_args.sh` must keep every such knob as
+  `${VAR:-<the ladder value>}` so an unset variable reproduces the trained
+  cells exactly. Background: `plan/90M-rung-anomaly.md`.
 - **W&B**: entity is the constant `mariagrandury-epflnlp`
   (`megatron_args.sh`); the project comes from `configs/hf_wandb.json`
   (`msnr`) for BOTH training runs and the predictivity eval pushes

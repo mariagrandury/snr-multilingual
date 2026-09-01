@@ -133,7 +133,7 @@ column in its file — the deep ladder's per-size node counts apply):
 | Positional | RoPE, base 500,000, rope-scaling factor 32 |
 | Norm / activation | RMSNorm · xIELU · QK-layernorm (apex impl) · no biases |
 | Dropout | 0.0 (attention and hidden) |
-| Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume) |
+| Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume). β3's **endpoint** is 0.9999 for every grid cell — only the warmup scales with run length, which is the subject of [`90M-rung-anomaly.md`](90M-rung-anomaly.md); overriding it is diagnostic-only and forces a `diag-` run name |
 | Regularization | weight decay 0.1 · grad clip 0.1 |
 | LR schedule | WSD (warmup → constant → 1-sqrt decay), min-lr 0; `--use-checkpoint-opt_param-scheduler` so capped resumes stay on the saved curve |
 | Init | normal, std = 0.008944 × √(1792 / d_model) (width-scaled, anchored at the 1B) |
