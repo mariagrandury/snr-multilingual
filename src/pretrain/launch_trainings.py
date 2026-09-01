@@ -11,7 +11,7 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
            FineWeb-2 languages. 1.7B trains only at L in {1, 2, 8, 30, 100}.
   * seed — 1904 by default; three seeds (64, 313, 1904) on the cells the
-           plan marks x3 (the 175M and 600M columns at L in {1, 2, 30, 100}).
+           plan marks x3 (the 175M and 600M columns at L in {1, 2, 50, 100}).
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 mix (L=1 is 100% English), blended at
@@ -130,11 +130,11 @@ SIZE_LANG_SETTINGS = {
 }
 
 # Cells trained with three seeds (else one): the 175M and 600M columns at
-# L in {1, 2, 30, 100}.
+# L in {1, 2, 50, 100}.
 SEED_SINGLE = [1904]
 SEED_TRIPLE = [64, 313, 1904]
 TRIPLE_SIZES = {"175M", "600M"}
-TRIPLE_LANGS = {1, 2, 30, 100}
+TRIPLE_LANGS = {1, 2, 50, 100}
 
 
 def _scheme_b_langs() -> set[int]:
