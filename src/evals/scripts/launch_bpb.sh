@@ -5,6 +5,7 @@
 #   bash scripts/launch_bpb.sh --dry-run           # show the plan
 #   bash scripts/launch_bpb.sh                     # submit
 #   bash scripts/launch_bpb.sh --filter '600M'     # only matching cells
+#   bash scripts/launch_bpb.sh --filter '600M-L50' # only matching cells
 #
 # Idempotent at two layers, so re-running it is always safe:
 #   * here — a cell whose converted checkpoints all have bpb.json is skipped,

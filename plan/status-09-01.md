@@ -112,6 +112,9 @@ python3.11 src/pretrain/launch_trainings.py cscs --size 175M --seed 28   --dry-r
 python3.11 src/pretrain/launch_trainings.py cscs --size 175M --seed 1797 --dry-run
 Expect 4 cells each — L1, L2, L30, L100. Drop --dry-run to submit.
 
+
+
+
 ## Step 5 — the remaining 4 cells (all L100, seed1904)
 
 Steps 4 + 5 together are the 12. After step 4, what's left is:
@@ -144,15 +147,19 @@ The uncommitted auto_evals_cscs.py over-cap guard will silently skip 600M-L100 (
 
 # Real updated plan
 
-1. Let the 40 running 600M evals land (today, no action). Closes benchmarks for 4 sizes × 6 language settings.
-2. Launch the creation of the L100 data mixture with the new list of languages (1 day). Blocks pretraining of all L100 models.
-3. (With #2) The 90M β₃ confirming run (~2 node-hours). Tiny, and it decides whether the ladder has 3 or 4 rungs — which changes what you can claim. Do this before writing any scaling section.
-4. (Deps on #1) Update the SNR module to new naming. Start writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × 6 language settings.
+1. ✅ Let the 40 running 600M evals land (today, no action). Closes benchmarks for 4 sizes × 6 language settings.
+1. ✅ (Deps on #1) Launched job to mirror eval logs to capstor.
+1. ✅ Launched 3 jobs to finish pretraining the 175M scheme B models.
+1. ✅ Launched 2 jobs to finish BPB calculation of L2 and L50 models.
+2. [Discuss] Update the list of available high-quality benchmarks for low resource languages.
+2. 🛑 Launch the creation of the L100 data mixture with the new list of languages (1 day). Blocks pretraining of all L100 models. Blocked by update of available benchmarks for low resource languages.
+3. The 90M β₃ confirming run (~2 node-hours). Tiny, and it decides whether the ladder has 3 or 4 rungs — which changes what you can claim. Do this before writing any scaling section.
+4. Update the SNR module to new naming. Start writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × 6 language settings.
 5. [Delegate] BPB on the remaining trained cells — ~330 checkpoints, ~66 node-hours, 1–2 days. Cheapest item on the board and it's the plan's stated outcome metric. Unlocks the loss/BPB scaling fits immediately.
 6. [Discuss] Update the model grid plan so each size-languages cell has at least 3 models (we need 3 to calculate DA).
-7. [Delegate] (Deps on #5) The 8× 175M seed replicates (~26 node-hours). This is what makes SNR computable rather than just signal. Highest analysis-value per node-hour in the whole sweep.
-8. [Delegate] (Deps on #5) The X remaining ≤600M cells (~107 nh) → convert → eval → BPB (~400 nh). X is currently 12 but might change when updating the model grid plan.
-9. (Deps on #2) The 4 small sizes of L100 models (classic: deep, A).
-10. Further writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × all 7 language settings.
-11. [Blocked] 1B/1.7B in parallel on Azure.
-11. Selected 1B models in parallel on CSCS.
+7. 🛑 [Delegate] (Deps on #5) The 8× 175M seed replicates (~26 node-hours). This is what makes SNR computable rather than just signal. Highest analysis-value per node-hour in the whole sweep.
+8. 🛑 [Delegate] (Deps on #6) The X remaining ≤600M cells (~107 nh) → convert → eval → BPB (~400 nh). X is currently 12 but might change when updating the model grid plan.
+9. 🛑 (Deps on #2) The 4 small sizes of L100 models (classic: deep, A).
+10. 🛑 Further writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × all 7 language settings.
+11. 🛑 (Deps on Azure capacity) 1B/1.7B in parallel on Azure.
+11. 🛑 (Deps on #6) Selected 1B models in parallel on CSCS.
