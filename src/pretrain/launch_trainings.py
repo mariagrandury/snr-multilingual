@@ -412,14 +412,16 @@ def rewind_marker(ckpt_dir: Path, want: int, dry_run: bool) -> bool:
         return True  # no marker (fresh) or unreadable — Megatron will complain
     if current <= want:
         return True
-    if dry_run:
-        print(f"    (dry-run) would rewind marker: {current} -> {want}")
-        return True
+    # Validity first, dry-run second: the preview must refuse exactly what
+    # the real run refuses, or it claims a resume that will not happen.
     from pretrain_progress import is_valid_iter_dir  # lazy: avoids import cycle
     if not is_valid_iter_dir(ckpt_dir / f"iter_{want:07d}"):
         print(f"    !! refusing to rewind marker: iter_{want:07d} is not a "
               f"valid checkpoint", file=sys.stderr)
         return False
+    if dry_run:
+        print(f"    (dry-run) would rewind marker: {current} -> {want}")
+        return True
     marker_file.write_text(f"{want}\n")
     print(f"    rewound marker: {current} -> {want}")
     return True
@@ -525,12 +527,15 @@ def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
                        f"{data_dir}/fineweb_L{TEST_LANGS}", TEST_LANGS)
     print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, arch)} | "
           f"seed {TEST_SEED} | {TEST_STEPS} steps ===\n")
-    submit_cscs(
-        cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend,
-                 training_steps=TEST_STEPS,
-                 lr_warmup_iters=TEST_WARMUP, lr_wsd_decay_iters=TEST_DECAY),
-        dry_run=dry_run,
-    )
+    env = cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend,
+                   training_steps=TEST_STEPS,
+                   lr_warmup_iters=TEST_WARMUP, lr_wsd_decay_iters=TEST_DECAY)
+    # Save twice inside the short run. cell_env sizes SAVE_INTERVAL for the
+    # full schedule (225 at 90M), which TEST_STEPS never reaches — so the
+    # async torch_dist save, CLAUDE.md failure mode #2, went unexercised by
+    # the very run meant to smoke it out.
+    env["SAVE_INTERVAL"] = TEST_STEPS // 2
+    submit_cscs(env, dry_run=dry_run)
 
 
 def main() -> None:
