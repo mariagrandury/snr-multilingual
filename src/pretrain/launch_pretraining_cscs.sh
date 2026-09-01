@@ -3,8 +3,8 @@
 #SBATCH --account=infra01
 #SBATCH --time=11:59:59
 #SBATCH --job-name=pretrain-manual
-#SBATCH --output=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.out
-#SBATCH --error=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.err
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.out
+#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training/%x-%j.err
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
 #SBATCH --cpus-per-task=72
@@ -32,9 +32,13 @@ EXP_NAME=${EXP_NAME:-lm-${MODEL_SIZE:-175M}-manual-seed${SEED}}
 PROJECT_NAME=${PROJECT_NAME:-msnr}
 MOCK_DATA=${MOCK_DATA:-false}
 
-# Megatron source and dataset cache
-MEGATRON_LM_DIR=/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM
-DATA_CACHE_DIR=/iopsstor/scratch/cscs/$USER/datasets/cache
+# Megatron source and dataset cache. One shared checkout for the whole sweep,
+# not per-$USER: identical args don't guarantee identical code (see #6), and a
+# collaborator's own scratch is an empty tree — the job then dies at
+# `python3 $MEGATRON_LM_DIR/pretrain_gpt.py` with exit 2 having trained nothing.
+# The SBATCH log paths above are pinned to the same tree for the same reason.
+MEGATRON_LM_DIR=${MEGATRON_LM_DIR:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM}
+DATA_CACHE_DIR=${DATA_CACHE_DIR:-/iopsstor/scratch/cscs/mariagrandury/datasets/cache}
 
 #### Debugging ####
 LOG_NCCL=false # Log NCCL_DEBUG=info into per-process files under $DEBUG_DIR

@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --account=infra01
 #SBATCH --job-name=convert-snr
-#SBATCH --output=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/conversion/%x-%j.out
-#SBATCH --error=/iopsstor/scratch/cscs/%u/data-mix-small/Megatron-LM/logs/slurm/conversion/%x-%j.err
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/conversion/%x-%j.out
+#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/conversion/%x-%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1
@@ -43,7 +43,7 @@
 #   SIZE=175M FW_EDU_RATIO=30 FW2_RATIO=70 SEED=1904 CKPT_STEP=50000 bash convert-snr.sh
 #
 # Per-iter env (optional):
-#   MEGATRON_LM_DIR     defaults /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM
+#   MEGATRON_LM_DIR     defaults /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM
 #   PRETRAIN_LOGS_DIR   defaults $MEGATRON_LM_DIR/logs/Meg-Runs/data-mix-small
 #   STAGING_BASE        defaults /iopsstor/scratch/cscs/$USER/snr-hf-checkpoints
 #   HF_TOKENIZER        defaults alehc/swissai-tokenizer
@@ -66,7 +66,7 @@ if [[ -n "${CKPT_STEP:-}" && -z "${PLAN_FILE:-}" ]] && \
      { [[ -n "${SIZE:-}" && -n "${FW_EDU_RATIO:-}" \
           && -n "${FW2_RATIO:-}" && -n "${SEED:-}" ]]; }; }; then
 
-    MEGATRON_LM_DIR="${MEGATRON_LM_DIR:-/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM}"
+    MEGATRON_LM_DIR="${MEGATRON_LM_DIR:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM}"
     PRETRAIN_LOGS_DIR="${PRETRAIN_LOGS_DIR:-$MEGATRON_LM_DIR/logs/Meg-Runs/data-mix-small}"
     STAGING_BASE="${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}"
     TMP_TORCH_BASE="${TMP_TORCH_BASE:-$STAGING_BASE/_tmp_torch}"
@@ -152,7 +152,7 @@ VEOF
     # (works for standalone direct invocations), with an absolute fallback.
     PROGRESS_PY="${PROGRESS_PY:-$(dirname "$SCRIPT_PATH")/../pretrain_progress.py}"
     [[ -f "$PROGRESS_PY" ]] || \
-        PROGRESS_PY="/iopsstor/scratch/cscs/$USER/snr-multilingual/src/pretrain/pretrain_progress.py"
+        PROGRESS_PY="/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/pretrain_progress.py"
     rc=0
     python3 "$PROGRESS_PY" --is-valid "$SRC_ITER_DIR" || rc=$?
     if (( rc >= 2 )); then
@@ -210,9 +210,9 @@ fi
 if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
     [[ -f "$PLAN_FILE" ]] || { echo "[convert-snr/sbatch] PLAN_FILE not found: $PLAN_FILE" >&2; exit 2; }
 
-    MEGATRON_LM_DIR="${MEGATRON_LM_DIR:-/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM}"
+    MEGATRON_LM_DIR="${MEGATRON_LM_DIR:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM}"
     CONTAINER_TOML="${CONTAINER_TOML:-/capstor/store/cscs/swissai/a139/containers/ngc_25-11-nemo-alps3.toml}"
-    mkdir -p /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/logs/slurm/conversion
+    mkdir -p /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/conversion
 
     echo "[$(date)] convert-snr/sbatch starting, plan=$PLAN_FILE"
     cat "$PLAN_FILE"
@@ -230,13 +230,17 @@ if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
     # for --is-valid (silently SKIPping every iter when it doesn't resolve)
     # and to $STAGING_BASE/_tmp_torch for the multi-GB torch intermediate
     # (churning capstor now that STAGING_BASE points at the store).
+    # The two HF paths are hard-set, not ${VAR:-...}: --export=ALL plus the
+    # ~/.bashrc HF_HOME=.../$USER/hf_home means a default loses to whichever
+    # user submitted, and everything here runs HF_HUB_OFFLINE (bug 12) against
+    # the tokenizer pre-cached in mariagrandury's hf_models.
     INNER_EXPORTS="export MEGATRON_LM_DIR='$MEGATRON_LM_DIR' PLAN_FILE='$PLAN_FILE' \
 HF_TOKENIZER='${HF_TOKENIZER:-alehc/swissai-tokenizer}' \
 STAGING_BASE='${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}' \
 TMP_TORCH_BASE='${TMP_TORCH_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints/_tmp_torch}' \
 PROGRESS_PY='${PROGRESS_PY:-}' \
-HF_HOME='${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}' \
-HF_HUB_CACHE='${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}' \
+HF_HOME='/iopsstor/scratch/cscs/mariagrandury/hf_home' \
+HF_HUB_CACHE='/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models' \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1"
 
     srun --mpi=pmix \
@@ -292,7 +296,7 @@ fi
     # SCRIPT_PATH inside sbatch is the slurm_script copy; same fallback as Mode 1.
     PRETRAIN_PROGRESS="$(dirname "$SCRIPT_PATH")/../pretrain_progress.py"
     [[ -f "$PRETRAIN_PROGRESS" ]] || \
-        PRETRAIN_PROGRESS="/iopsstor/scratch/cscs/$USER/snr-multilingual/src/pretrain/pretrain_progress.py"
+        PRETRAIN_PROGRESS="/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/pretrain_progress.py"
     SNR_PY="$HOME/miniconda3/envs/snr/bin/python"
     if [[ -f "$PRETRAIN_PROGRESS" && -x "$SNR_PY" ]]; then
         "$SNR_PY" "$PRETRAIN_PROGRESS" >/dev/null \
@@ -304,8 +308,8 @@ fi
 # ============================================================================
 # Mode 3: launcher — walk cells, write plan files, optionally sbatch
 # ============================================================================
-ROOT="/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small"
-PLAN_DIR="/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/logs/conversion-plans"
+ROOT="/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small"
+PLAN_DIR="/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/conversion-plans"
 # Per-seed iter policy mirrors snr_progress.py (ITERS_SEED1904 / ITERS_OTHER).
 # Update both lists together when the policy changes.
 #   seed1904       → 9 picks from the canonical 13-iter set

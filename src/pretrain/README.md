@@ -241,11 +241,16 @@ manually), `--test`.
   internet: `hf download swiss-ai/Apertus-70B-2509` on the login node.
 - Use the **`swiss-ai/Megatron-LM` fork** — it carries the Apertus kernels
   (xIELU, apex qk-norm); a vanilla `nvidia/Megatron-LM` clone will not run.
-  Keep it at `/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM` and check
-  its checkout matches the commit Azure pins
+  Keep it at `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM` and
+  check its checkout matches the commit Azure pins
   (`azure/get_megatron.sh::MEGATRON_COMMIT`), so both platforms run the same
   training code, not just the same arguments:
-  `git -C /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM rev-parse HEAD`.
+  `git -C /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM rev-parse HEAD`.
+  This is **one shared checkout for the whole sweep**, not a per-user one —
+  every cell must train off the same code for the ladder to be comparable, so
+  collaborators run against this path rather than cloning their own (it is the
+  `MEGATRON_LM_DIR` default in `launch_pretraining_cscs.sh`; override the
+  variable only for a deliberate one-off).
 - **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
   cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
   **every resume** dies in `get_reformulation_metadata` with `AttributeError:
@@ -254,7 +259,7 @@ manually), `--test`.
   tensor sizes). Copy the tracked, patched file over the fork's:
   ```bash
   cp patches/dist_checkpointing_strategies_torch.py \
-     /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
+     /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
   ```
 - **Train off the iopsstor copy of the data, not the capstor master.** Megatron
   memmaps the `.bin` files and reads them shuffled (random access): capstor is

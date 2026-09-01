@@ -391,9 +391,16 @@ def auto_time(size: str, remaining_iters: int, arch: str = "deep") -> str:
 
 
 def active_slurm_jobs() -> set[str]:
-    """Names of this user's queued/running jobs (empty off-cluster)."""
+    """All queued/running Slurm job names, ANY user (empty off-cluster).
+
+    Deliberately not `--me`, matching auto_evals_cscs.active_jobs(): cells are
+    trained into one shared tree, so a collaborator's in-flight pretrain job
+    owns that cell's checkpoint dir just as much as ours would. With `--me` we
+    could not see it, would read the cell as `resume`, and would submit a
+    second Megatron job writing the same --save dir.
+    """
     try:
-        out = subprocess.run(["squeue", "--me", "-h", "--format=%j"],
+        out = subprocess.run(["squeue", "-h", "--format=%j"],
                              capture_output=True, text=True, timeout=30)
         return set(out.stdout.split()) if out.returncode == 0 else set()
     except (FileNotFoundError, subprocess.TimeoutExpired):

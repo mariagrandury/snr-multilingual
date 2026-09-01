@@ -1,9 +1,15 @@
 image = "/capstor/store/cscs/swissai/infra01/container-images/eval-vllm-26-02-17.sqsh"
 
+# /iopsstor/ whole, not /iopsstor/scratch/cscs/${USER}: HF_HOME and LOGS_ROOT
+# both live under mariagrandury's scratch, so a per-user mount makes them
+# invisible inside the container for every other user -- the datasets are
+# unreachable and results have nowhere to land. The training container
+# (ngc_25-11-nemo-alps3.toml) already mounts /iopsstor/ for the same reason.
+# Visibility is not access: POSIX/ACLs still decide what can be read.
 mounts = [
     "/users/${USER}",
     "/capstor/scratch/cscs/${USER}",
-    "/iopsstor/scratch/cscs/${USER}",
+    "/iopsstor/",
     "/capstor/store/cscs/swissai/infra01",
 ]
 
