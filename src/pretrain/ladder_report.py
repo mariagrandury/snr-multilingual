@@ -1059,7 +1059,11 @@ def write_artifacts(curves, tgts, out_dir: Path, tol: float) -> None:
 
 
 CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr-ladder-report")
-HF_DATASET_REPO = "multilingual-snr/msnr-ladder-report"
+# Org policy (plan/storage-map.md): msnr = model repos only; msnr-data = every
+# published data artifact (this report, CSVs, future eval-results datasets).
+# The earlier pushes live at multilingual-snr/msnr-ladder-report — left in
+# place, superseded by this repo.
+HF_DATASET_REPO = "msnr-data/ladder-report"
 
 
 def publish(out_dir: Path, push_hf: bool) -> None:

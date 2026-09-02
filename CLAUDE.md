@@ -73,7 +73,10 @@ src/
 
 Eval results are NOT in the repo: they live on the cluster at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/`
-(and checkpoints under `.../Meg-Runs/msnr/`).
+(and checkpoints under `.../Meg-Runs/msnr/`). The full what-lives-where table
+— iopsstor working copies, capstor masters, Azure blob, the HF org policy
+(`msnr` = models, `msnr-data` = published data) — is
+[`plan/storage-map.md`](plan/storage-map.md).
 
 ## Key Concepts
 
