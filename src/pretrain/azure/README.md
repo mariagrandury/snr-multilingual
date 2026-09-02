@@ -447,9 +447,9 @@ its account/container, mint a SAS the same way, and duplicate Spain → Canada
 entirely server-side — fast, and no second egress from CSCS:
 
 ```bash
-export UK="https://<uk-account>.blob.core.windows.net/<uk-container>"
-export UK_SAS='PASTE_THE_UK_TOKEN_HERE'
-azcopy copy "$ES/predictivity/data/?$ES_SAS" "$UK/predictivity/?$UK_SAS" --recursive
+export CA="https://<ca-account>.blob.core.windows.net/<ca-container>"
+export CA_SAS='PASTE_THE_CA_TOKEN_HERE'
+azcopy copy "$ES/predictivity/data/?$ES_SAS" "$CA/predictivity/?$CA_SAS" --recursive
 ```
 
 (If `--auth-mode login --as-user` is rejected on your account, generate the

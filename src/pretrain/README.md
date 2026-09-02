@@ -199,7 +199,8 @@ launching).
 python launch_trainings.py cscs --dry-run
 python launch_trainings.py cscs
 
-# Azure: same grid, same flags (placement by size — Spain <=600M, UK 1B/1.7B):
+# Azure: same grid, same flags (placement by size — Spain <=600M,
+# Canada Central 1B/1.7B; --compute overrides the default cluster):
 python launch_trainings.py azure --dry-run
 ```
 
@@ -330,12 +331,16 @@ the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
 since that is what changes the state it shows.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd saved checkpoint plus each run's final one**,
-whatever its iter) and the same destination (W&B
+the same rule (**every 2nd saved checkpoint, each run's final one**
+whatever its iter, **and the checkpoint nearest each shared FLOPs
+milestone** — `src/evals/scripts/utils/configs.milestone_iters`, ~1 extra
+checkpoint per run, so cross-size reads at equal compute land on evaluated
+points rather than interpolated ones) and the same destination (W&B
 **`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
 so loss and benchmark curves live side by side). The `auto` group in
 [`configs/tasks.json`](../../configs/tasks.json) lists **benchmark names**
-(arc, belebele, global_mmlu, hellaswag, include_base_44, multiblimp,
+(afrimmlu, afrixnli, arc, belebele, global_mmlu, global_piqa, hellaswag,
+include_base_44, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1,
 xcopa, xnli, xstorycloze, xwinograd); each cell is evaluated on every
 listed benchmark's tasks **in the languages it trains on** (English + its
 setting's FineWeb-2 languages, mapped via
@@ -367,8 +372,8 @@ nothing duplicates.
 
 - **Azure** — [`auto_evals_azure.py`](auto_evals_azure.py) does the same
   against blob storage, one watcher per workspace (each has its own blob
-  store and compute; the UK one overrides the job YAMLs' Spain-only
-  compute):
+  store and compute; the Canada Central one overrides the job YAMLs'
+  Spain-only compute):
   `source azure/env.sh && python auto_evals_azure.py --watch 600` and
   `python auto_evals_azure.py --workspace ca --watch 600`.
 

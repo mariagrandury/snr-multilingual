@@ -166,10 +166,10 @@ nested across settings — `src/pretrain/data/language_sets_scheme{A,B}.json`.
 
 ## Evaluation
 
-Auto-evals during training on **every 2nd checkpoint plus each run's final
-one** (`auto_evals_cscs.py` / `auto_evals_azure.py`): the `auto` benchmark
+Auto-evals during training on **every 2nd checkpoint, each run's final
+one, and the checkpoint nearest each half-decade FLOPs milestone** (`auto_evals_cscs.py` / `auto_evals_azure.py`): the `auto` benchmark
 group of `configs/tasks.json`, expanded to one task per benchmark per
-language the cell trains on (9 tasks at L1, 290 at L100), pushed to W&B
+language the cell trains on (15 tasks at L1, 463 at L100), pushed to W&B
 `msnr`. Per-language bits-per-byte on the fixed validation set (byte counts
 from the validation manifest) on the languages each model trained on.
 Reference at each L = the largest model trained there (1.7B or 1B).

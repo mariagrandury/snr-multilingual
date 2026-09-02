@@ -37,9 +37,10 @@ echo "Environments ready"
 
 # Each compute needs its SKU offered in the workspace's region plus quota —
 # create whatever this region supports and skip the rest with a warning
-# (the NC80adis cluster exists in Spain Central, the ND96isr cluster in
-# Canada Central). NC80adis is NOT LowPriorityCapable, so its low_priority
-# cluster is expected to fail outside Spain Central.
+# (the NC80adis cluster exists in Spain Central, the ND96isr and A100
+# clusters in Canada Central). Every H100 SKU here is rejected for
+# low_priority subscription-wide, so both H100 clusters are tier: dedicated
+# despite gpu-nc80-lp's name — see compute-nd96-spot.yml.
 for c in compute-*.yml; do
   az ml compute create --file "$c" $AZ_ML_ARGS --output none \
     && echo "Compute $c ready" \

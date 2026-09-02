@@ -1,7 +1,17 @@
 # Predictivity sweep — Azure compute budget
 
 Status 2026-08-14: **quota requests filed** (Spain Central NCadsH100v5, UK South
-NDSH100v5, dedicated + Spot/low-priority counters). This sheet is the budget of
+NDSH100v5, dedicated + Spot/low-priority counters).
+
+> **Superseded on the ND region (2026-08-26).** The ND pool moved **UK South →
+> Canada Central**: no H100 SKU on this subscription can use low-priority at
+> all, so the UK Spot plan below is unreachable, and Canada Central is the
+> cheapest allow-list-clear region (see `src/pretrain/azure/README.md`, "The
+> four gates"). The prices, quota tables and terminal evidence below are kept
+> as the record of what was measured on 2026-08-13/14 — read them as history,
+> not as the current plan.
+
+This sheet is the budget of
 record for the small-to-large predictivity training plan
 ([small-to-large-predictivity-training-plan.md](small-to-large-predictivity-training-plan.md)),
 computed from the 90M–1.7B deep ladder in `src/pretrain/hyperparams/hyperparams_deep.json`
@@ -21,7 +31,7 @@ A rendered version lives at the "Predictivity Sweep Compute Budget" artifact
 | | |
 |---|---|
 | Total compute | **5.95e22 FLOPs** · 153 runs (51/level × 3 intervention levels) · **1,722 H100-days** |
-| Recommended plan | ≤600M on Spain Central low-priority + 1B/1.7B on UK South ND Spot → **≈ $110k** |
+| Recommended plan | ≤600M on Spain Central low-priority + 1B/1.7B on ND96isr (UK South Spot as costed here; **now Canada Central dedicated** — see the note above) → **≈ $110k** |
 | Grant | $200k → **≈ $90k headroom** (evictions, storage, dedicated tail, retries) |
 | Deadline | Aug 31 (hard stop Sep 4) → needs **~141 concurrent H100s** for ~14 training days |
 
@@ -385,22 +395,41 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 
 ## Checkpointing, conversion and eval cost
 
-Each run writes **20 checkpoints** (40 at 1.7B, whose interval stays near the
-~2000-iter Azure-spot eviction window); checkpoint *k* is at *k*/20 of training
-at every size, and the 1×C operating point is always checkpoint 4 (8 of 40).
+Each run writes **20 checkpoints — 40 at the 1B and 60 at the 1.7B rung**
+(2026-08-23; the reference rungs get denser sampling, and 40/60 are multiples
+of 20 so every size stays on the shared *k*/20 grid). Checkpoint *k* is at
+*k*/*n* of training at every size, and the 1×C operating point is always
+checkpoint *n*/5 — 4, 8 or 12.
 
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
-| Convert (Megatron → HF, every checkpoint) | 1,220 ckpts | ~3 min | ~60 |
-| Eval (every 2nd checkpoint, `auto` group)  |   560 jobs | 8–47 min measured (see below) | **~820–1,500** |
+| Convert (Megatron → HF, every checkpoint) | 1,620 ckpts | ~3 min | ~80 |
+| Eval (every 2nd checkpoint + 1 FLOPs milestone, `auto` group) | 866 due, **635 submittable** | 30–720 min requested | **~1,550–2,100** |
 
-Eval is **~12–19% of the sweep's compute, not the ~2% previously stated here.**
-The old ~142 node-hours applied L2's ~14 min to every cell, but cost scales
-with the task count and the high-L cells dominate: the `auto` group expands to
-one task per benchmark per language the cell trains on, from **9 tasks at L1
-to 290 at L100**. The range above is the honest spread — its low end assumes
-600M+ evaluate like 350M, its high end uses the conservative per-task numbers
-`eval_walltime()` actually requests for them.
+The densification is **+33% on both rows** (1,220 → 1,620 checkpoints,
+610 → 810 every-2nd evals) and lands entirely on 1B/1.7B, the two most
+expensive rungs; the FLOPs milestones add one more eval per run on top (see
+the training plan's "The compute axis"). Recomputed 2026-09-02 directly from
+`auto_evals_cscs.eval_minutes()` over the deep grid — the low end lets 600M+
+evaluate at the measured 350M rate, the high end uses the conservative
+unmeasured `MIN_PER_TASK`; both include `SAFETY`, the 15-min overhead and the
+15-min rounding, so they are what the watcher *requests*, not what it burns.
+
+**231 of the 866 due jobs (27%) are refused at submission**, up from 130 —
+they exceed the 11:59 queue cap (600M/1B/1.7B at L100, 1.7B at L50) and are
+excluded from the node-hours above. They need `NUM_SPLITS`/`SPLIT_INDEX`
+before they can run at all, so that column is a backlog, not a saving.
+
+Eval is **~20–25% of a level's compute** (1,550–2,100 against the ~6,290
+training node-hours above), not the ~2% originally stated here and not the
+~12–19% that held before the checkpoint grid was densified. The old ~142
+node-hours applied L2's ~14 min to every cell, but cost scales with the task
+count and the high-L cells dominate: the `auto` group expands to one task per
+benchmark per language the cell trains on, from **15 tasks at L1 to 463 at
+L100** (2026-08-21 wiring; it was 9 to 290 before). The range above is the
+honest spread — its low end assumes 600M+ evaluate like 350M, its high end
+uses the conservative per-task numbers `eval_walltime()` actually requests for
+them.
 
 Elapsed time is very close to linear in the task count. Fitted on 69 completed
 eval jobs (2026-08-21…27), median elapsed per (size, n_tasks):
@@ -639,7 +668,11 @@ EOF
   region in Europe for this subscription, and its low-priority meter
   ($1.82/GPU-h) even undercuts its own Spot price.
 - **UK South chosen** for the 8×H100 ND nodes (Norway/Italy list the SKU but
-  return no price meters; Poland's H200 "Spot" equals PAYG).
+  return no price meters; Poland's H200 "Spot" equals PAYG). *Reversed
+  2026-08-26 → Canada Central: the Spot/low-priority meter this choice rested
+  on is unreachable for any H100 SKU on this subscription, and Canada Central
+  is both allow-list clear and marginally cheaper dedicated ($122.40 vs
+  $122.90/node-h).*
 - **EA offer confirmed** → the entire plan runs on discounted meters; dedicated
   is only the eviction-thrash fallback.
 - **200-language setting dropped, ×3 seeds moved to L=100** (2026-08-13);

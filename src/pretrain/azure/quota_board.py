@@ -396,7 +396,12 @@ def render(rows, tickets, gaps, futile, out):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--out", default="quota_status.png", help="PNG output path")
+    # Absolute, so `board` writes the same file wherever it is invoked from
+    # (it is gitignored at the repo root — pure regenerated output).
+    ap.add_argument("--out", help="PNG output path",
+                    default=os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        *[".."] * 3, "quota_status.png"))
     ap.add_argument("--no-png", action="store_true", help="terminal report only")
     ap.add_argument("--cache", default=os.path.join(os.path.dirname(__file__),
                                                     ".quota_cache.json"))

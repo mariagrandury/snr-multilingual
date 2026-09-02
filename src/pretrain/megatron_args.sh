@@ -6,9 +6,11 @@
 #
 # After calling `build_megatron_cmd`, $TRAINING_CMD holds pretrain_gpt.py plus
 # every training argument. Both platforms produce an IDENTICAL command except
-# for one intentional delta: when TRIGGER_PATH is set (CSCS only), the SLURM
-# graceful-exit flags (--exit-signal-handler --trigger-path) are appended so
-# SIGUSR2 checkpoints before walltime. Everything else — architecture,
+# for one intentional delta: when TRIGGER_PATH is set, the graceful-exit flags
+# (--exit-signal-handler --trigger-path) are appended so SIGUSR2 checkpoints
+# before walltime. Both platforms set it — CSCS for the SLURM signal, Azure
+# because Megatron touches "$trigger_path/exit" at the end of training and its
+# /dev/null default fails a finished run (CLAUDE.md #10). Everything else — architecture,
 # optimizer, LR schedule, checkpointing, data blend — is byte-identical, so a
 # cell trained on CSCS and a cell trained on Azure follow the same math.
 #
@@ -20,7 +22,7 @@
 #   Data           DATA_BLEND ("w1 prefix1 [w2 prefix2]") or MOCK_DATA=true
 #   Paths          MEGATRON_LM_DIR CKPT_DIR TENSORBOARD_DIR DATA_CACHE_DIR
 #   W&B (optional) WANDB_API_KEY PROJECT_NAME RUN_NAME WANDB_SAVE_DIR
-#   CSCS only      TRIGGER_PATH (enables the graceful-exit flags)
+#   Both          TRIGGER_PATH (enables the graceful-exit flags; a real dir)
 #
 # Defaults below are the 175M walkthrough cell so a bare smoke run works; real
 # runs always get explicit values from the launcher.

@@ -229,9 +229,9 @@ Before the largest run at a setting, check the realized FineWeb2 build size that
 
 Log the final checkpoints (for example the last 30, spaced about 1000 steps), so that per-language BPB and the checkpoint-to-checkpoint noise estimate can be computed over the final window, matching the Signal-and-Noise noise definition.
 
-**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced (40 at 1.7B, whose interval stays near the ~2000-iter Azure-spot eviction window). The interval is per size, `train_iters / 20`, so checkpoint *k* sits at *k*/20 of training at **every** size — the grids are index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint 4 (8 of 40), on-grid at every size. Evaluation covers every 2nd checkpoint **plus the run's final one** (`auto_evals_*.py --every 2`; the odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining).
+**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint, **the run's final one**, and **the checkpoint nearest each half-decade FLOPs milestone** (`auto_evals_*.py --every 2` + `configs.milestone_iters`, ~1 extra per run — see "The compute axis" below); the odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
 
-Note the deviation from "the last 30": with 20 checkpoints per run the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
+Note the deviation from "the last 30": with 20 checkpoints per run (40/60 at the reference rungs) the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
 
 ## Checkpointing at defined token counts
 
@@ -257,7 +257,61 @@ ATLAS compute-optimal tokens, N × r(K), in billions:
 | 1B   | 20.0 | 28.1 | 55.7 | 75.9 | 107  | 137  | 193  |
 | 1.7B | 34.0 | 47.8 | 94.7 | 129  | 182  | 234  | 328  |
 
-The K = 1 column is the single-language Chinchilla point. Cells at K ≥ 30 exceed the 5×C training budget (r(K) > 100 tokens per parameter), so training to 5×C does not reach the ATLAS compute-optimal point there: to capture that checkpoint at 30 languages and above, extend those runs to N × r(K), otherwise the final checkpoint is the 5×C budget. At 15 languages and below the ATLAS point is within the budget and is an intermediate checkpoint. Logging a few additional counts per run (for example 1×C and 2×C) gives several token points for the fit.
+The K = 1 column is the single-language Chinchilla point. Cells at K ≥ 30 exceed the 5×C training budget (r(K) > 100 tokens per parameter), so training to 5×C does not reach the ATLAS compute-optimal point there: to capture that checkpoint at 30 languages and above, extend those runs to N × r(K), otherwise the final checkpoint is the 5×C budget. At 15 languages and below the ATLAS point is within the budget and is an intermediate checkpoint. Logging a few additional counts per run (for example 1×C and 2×C) gives several token points for the fit. Whether the ATLAS ratio actually holds for our mixtures is testable without new full runs — see "Is 5 × C the right budget at L ≥ 30?" below.
+
+## The compute axis (2026-09-02)
+
+Every checkpoint has a known (N, D), so the S&N-style "metric vs compute" plot
+needs no dedicated save grid — each size's curve is plotted at its own x. Two
+things had to be fixed for that axis to be trustworthy across models.
+
+### One FLOPs convention, applied to external models too
+
+    FLOPs = 6 × (N_non_emb + d_model × vocab_size) × D
+
+The embedding *lookup* is free, the output projection is not: with a 131,072
+vocab, including it nearly doubles the small rungs' compute, so omitting it
+bends the ladder. Our cells tie embeddings, so the `params` already recorded in
+`configs/models.json` is exactly that sum (90M: 193,560,576 = 92,897,280 +
+768 × 131,072) — the numbers were right. What was missing was the ability to
+tell that apart from an external model, which declares a nominal total
+(`Qwen3-1.7B-Base: 1.7e9`) that is the same quantity only if its embeddings are
+tied too.
+
+Implemented as `src/evals/scripts/utils/configs.flops_params()` — one
+definition replacing the formula that was duplicated across four call sites —
+returning both N and a **basis**: `non_emb+dV` when the shape is recorded,
+`declared_total` when it fell back to `params`. `sync_models_json.py` now writes
+`n_non_emb`, `d_model` and `vocab_size` per cell, so our models are explicitly
+on the convention; the basis is logged to the W&B run config and published as a
+`flops_basis` column, so a point on a different footing is visible on the plot
+rather than silently mixed in. Moving an external model onto the convention is
+a data edit (add the three shape fields to its entry), not a code change.
+
+### Milestone evals: measured IsoFLOP slices, ~1 extra eval per run
+
+Curves need nothing extra; the *vertical* read does — "at 1e20 FLOPs, which
+size/shape wins", and decision accuracy between two sizes at matched compute.
+Those were interpolated between evaluated points. The eval due-rule now also
+marks the saved checkpoint nearest each half-decade FLOPs milestone
+(`configs.milestone_iters`, 1e18…1e21, skipping anything still inside LR
+warmup, where a large model is not a decision-relevant comparison).
+
+Against the real 20/40/60 save grid, **exactly one milestone per run is not
+already due** (ck19 / ck7 / ck3 depending on size) and the worst
+nearest-checkpoint error is 2.3 % of a run, usually under 1 %:
+
+| Milestone | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| 1e19 | ck19 **new** | ck6 | ck2 | — | — | — |
+| 3.2e19 | — | ck19 **new** | ck6 | ck2 | ck2 | — |
+| 1e20 | — | — | ck19 **new** | ck7 **new** | ck6 | ck3 **new** |
+| 3.2e20 | — | — | — | — | ck19 **new** | ck10 |
+
+1e19, 3.2e19 and 1e20 each carry 3–4 sizes: those are the IsoFLOP slices, now
+made of evaluated points. Cost is ~10 % more evaluated checkpoints, and
+**nothing needs retraining** — the checkpoints already exist on the save grid;
+the rule only marks one more of them as due, and both watchers are idempotent.
 
 ## Evaluation
 
@@ -287,9 +341,103 @@ Caveats:
 - It assumes a functional form, which the multilingual bend and the small number of size points can break.
 - Absolute per-language BPB spans a wide range across languages, so an aggregate is dominated by the high-BPB low-resource tail unless normalized.
 
+## Sampling temperature: what T = 1 actually allocates (2026-09-02)
+
+Allocation within the FineWeb-2 half is `p_i ∝ (bytes_i / Σ bytes)^(1/T)`
+(`create_data_mixture.py --temperature`, default 1.0). The FineWeb-2 byte
+distribution is extreme enough that this choice decides whether the tail
+languages are trained at all.
+
+At L100 the head/tail share ratio is **16,581 : 1** at T = 1 — Russian takes
+28 % of the multilingual half, Sesotho 0.0017 %. Per-language tokens in the
+FineWeb-2 half, by top rung (`min` = smallest language; `ep` = maximum epochs
+any language's data is repeated, so >1 means duplication):
+
+| Top rung | FW half | T = 1 | T = 2 | T = 3.33 (α = 0.3) |
+|---|---:|---|---|---|
+| 90M | 4.6 B | min 0.1 M · 66 langs <10 M · ep 0.0 | min 3.2 M · 27 <10 M · ep 0.0 | min 11 M · 0 <10 M · ep 0.1 |
+| 350M | 17.2 B | min 0.3 M · 46 <10 M · ep 0.0 | min 12 M · 0 <10 M · ep 0.1 | min 41 M · ep 0.4 |
+| **1B** | 47.2 B | **min 0.8 M · 32 <10 M · 66 <100 M** | **min 33 M · 0 <10 M · 27 <100 M · ep 0.3** | min 112 M · 0 <100 M · ep 1.2 |
+| 1.7B | 83.6 B | min 1.4 M · 24 <10 M · 57 <100 M | min 58 M · 0 <10 M · 10 <100 M · ep 0.6 | min 198 M · ep 2.1 |
+
+Read the 90M row: **at L100 with T = 1, 66 of 99 languages receive under 10 M
+tokens and the smallest receives 80 K.** The small rungs are not training on
+100 languages; they are training on ~35 plus noise. This lands directly on the
+2026-08-21 L100 decision — `kin`, `jav`, `xho`, `hat`, `fao`, `zul`, `ibo`,
+`sot` were swapped in *because they have benchmarks*, and at T = 1 they get
+1.4–2.2 M tokens at the top rung and ~100 K at 90M. Benchmark coverage without
+data share buys nothing: a per-language SNR of ~0 there is an artefact of the
+mixture, not a property of the benchmark, which is the opposite of what this
+study is trying to measure.
+
+### Recommendation, given that 1.7B may not be trained
+
+Dropping the 1.7B rung removes 40 % of the sweep's node-hours (15,086 of
+37,860) and makes **1B the reference at every L**. The 1B row above is then the
+best case, not the middle one — 66 of 99 languages under 100 M tokens in the
+model every decision-accuracy comparison is anchored on.
+
+**Adopt T = 2 sweep-wide.** It is the only setting that fixes the floor without
+introducing a second problem:
+
+- It lifts the smallest language from 0.8 M to **33 M tokens** at the 1B rung,
+  a 40× change, and empties the "<10 M" column at every rung from 350M up.
+- **It repeats nothing.** Max epochs 0.3 at 1B, 0.6 even at 1.7B — every
+  language is still trained on unseen data. T = 3.33 crosses into duplication
+  (1.2 epochs at 1B, 2.1 at 1.7B), which confounds the language-count axis
+  with a data-repetition axis.
+- One value for every cell. **T must not vary with L** — the intervention is
+  the language *count* at fixed English share; a T that moves with L confounds
+  the two and makes the L-ladder uninterpretable.
+
+Cost: the FineWeb-2 builds are per-setting, so this is a rebuild of L8…L100.
+The L100 build is already owed (the 8-language swap), so its share is free;
+L8/L15/L30/L50 are the added cost. L1 is unaffected (100 % English) and L2 is
+nearly so.
+
+**If that rebuild cannot be afforded**, the fallback is to keep T = 1 and
+report the constraint honestly: define a per-language token floor (100 M is the
+natural line) and restrict per-language benchmark claims to languages above it,
+treating the rest as BPB-only. That is a smaller result — it silently reduces
+L100 from 99 languages to ~33 for the benchmark analysis — but it is at least
+not a wrong one.
+
+Either way, record the choice with the data: the mixture manifest already
+stores per-language target tokens, so the analysis can filter on them.
+
+## Is 5 × C the right budget at L ≥ 30? How to check it (2026-09-02)
+
+Open question 3 (below) asks whether D = 100·N is enough once the language
+count grows, since ATLAS-style multilingual scaling puts the compute-optimal
+token/parameter ratio well above Chinchilla's ~20 for large K. The check does
+**not** need new full runs.
+
+1. **Intermediate checkpoints cannot answer it.** Under the WSD schedule the LR
+   has not decayed at checkpoint k, so its loss is biased upward; treating it as
+   "a run trained to D_k" inflates the fitted optimum. Chinchilla-style fits
+   need *annealed* endpoints, and the sweep as designed has exactly one per
+   (size, L) — six points, too few for a 5-parameter fit.
+2. **WSD makes annealed endpoints cheap.** Branch a run at fraction f, decay
+   over the standard 20 % window, and the result is a properly annealed model
+   at D = f·100·N for ≈ 20 % of f·D extra compute. Two sizes (350M, 600M) ×
+   L ∈ {1, 30, 100} × f ∈ {0.25, 0.5} = 12 branches ≈ 6 % of one level's
+   node-hours — affordable even after dropping 1.7B.
+3. **Fit and read off.** With 3 annealed points per (size, L), fit
+   L(N, D) = E + A/N^α + B/D^β per language setting and compare the implied
+   D_opt/N against 20 (Chinchilla) and 100 (ours). The question is whether that
+   ratio *moves with L*; the absolute value matters less than the trend.
+4. **Do the cheap falsification first.** The temperature table above suggests
+   the L100 problem may not be a compute-budget problem at all: at T = 1 the
+   tail languages are data-starved, not under-trained. Before spending anything
+   on cooldown branches, check whether the languages driving the multilingual
+   loss bend are the ones with negligible token allocations. That is a
+   spreadsheet over the mixture manifest, not a sweep, and it may answer the
+   question outright — and if T changes per the section above, this check must
+   be redone against the new allocation.
+
 ## Open questions
 
-1. Sampling temperature is set to T = 1 (proportional to estimated tokens) by default. Should the FineWeb2 proportion instead be tempered toward uniform (for example alpha = 0.3, i.e. T ≈ 3.3) to give lower-resource languages more weight? Similarly, the datasets are all fixed to 50% English. Is this sound or should it change as languages are added (for example, scaling down with the number of languages)?
+1. Sampling temperature is set to T = 1 (proportional to estimated tokens) by default. Should the FineWeb2 proportion instead be tempered toward uniform (for example alpha = 0.3, i.e. T ≈ 3.3) to give lower-resource languages more weight? Similarly, the datasets are all fixed to 50% English. Is this sound or should it change as languages are added (for example, scaling down with the number of languages)? — **quantified above; recommendation: T = 2 sweep-wide, and never varying with L.**
 2. Still need to make sure we can create Megatron configs for the specific parameter counts we had in mind (maybe Maria already has these, just not 100% sure).
-3. 5 × C tokens does not give the ATLAS compute-optimal point for ≥ 30 languages. Should we instead base full dataset sizes on ATLAS numbers for K = 200? This would be a ridiculous number of tokens (462B for the 1.7B model).
+3. 5 × C tokens does not give the ATLAS compute-optimal point for ≥ 30 languages. Should we instead base full dataset sizes on ATLAS numbers for K = 200? This would be a ridiculous number of tokens (462B for the 1.7B model). — **method to settle it above ("Is 5 × C the right budget"): 12 WSD cooldown branches, ≈ 6 % of a level.**
 4. Which design choice to use as the intervention: tokenizer, model depth, or sampling temperature. If the tokenizer, all data and the validation sets are built once per tokenizer.

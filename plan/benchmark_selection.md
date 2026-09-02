@@ -210,6 +210,7 @@ of work.
 
 | Benchmark | Paper · venue | Languages | Why it matters here |
 |---|---|---|---|
+| **INCLUDE v2** | EPFL, in-house (`~/Projects/epfl/include-private`; data at [`epfl-nlp/include-89`](https://huggingface.co/datasets/epfl-nlp/include-89) / [`include-results/include-128`](https://huggingface.co/datasets/include-results/include-128)) | **113 language–country pairs, 89 languages** — v1's 44 plus a large African set (amharic, dagbani, dangme, ekpeye, embu, esan, ewe, fante, fula, ga, hausa, ibibio, idoma, igala, igbo, jju, kinyarwanda, luo, makhuwa, nyanja, obolo, oromo, sena, somali, swahili, tangale, tigrinya, twi, tyap, yoruba, darija) and more South Asian (assamese, dogri, maithili, oriya, punjabi, sindhi, sinhala) | **The best single addition available to us.** 19 of our trained languages gain a family, and it is the one that fixes the worst gaps: **`or` Odia 1 → 2** (its only benchmark today is Belebele), and `as`, `pa`, `sd`, `so` all 2 → 3. Natively sourced exam questions, same construction as v1 — the highest-provenance family in our set. See the caveat below. |
 | **SIB-200** | [Adelani et al., EACL 2024](https://aclanthology.org/2024.eacl-long.14/) | **205** | The single biggest coverage win: 7-way topic classification would give a second family to *every* one-family language (af, bo, km, lo, mn, mt, or, ps, tg, cy, ga, la, kmr, lv, …). Caveat: built on FLORES-200, the same source text as Belebele → domain-correlated, not an independent second opinion; short inputs make it measurable at 90M. |
 | **Taxi1500** | [Ma et al., NAACL 2025 (short)](https://aclanthology.org/2025.naacl-short.36/) | 1502 | 6-way classification covering literally every language we train. Bible domain — a strong register mismatch with FineWeb-2 web text; treat as a floor-level probe. |
 | **MILU** | [Verma et al., NAACL 2025](https://aclanthology.org/2025.naacl-long.507/) · [AI4Bharat](https://github.com/AI4Bharat/MILU) | 11 Indic incl. **or, pa** | Natively sourced MC knowledge; closes the Odia/Panjabi single-family gap. Already in upstream harness form ([PR #2482](https://github.com/EleutherAI/lm-evaluation-harness/pull/2482)). Knowledge-heavy → 1B+ signal. |
@@ -219,17 +220,34 @@ of work.
 | IndicMMLU-Pro | [arXiv 2501.15747](https://arxiv.org/abs/2501.15747) | 9 Indic | Machine-translated (IndicTrans2) — MT caveat as for Okapi. |
 | SeaExam / SEA-HELM | AI Singapore / DAMO | id, vi, th, ms, fil | Strengthens languages that are already well covered; khm, lao, bod stay Belebele-only. |
 
+**INCLUDE v2 caveat — the shipped tasks are the wrong format for us.**
+`include-private/include-tasks/include_cot_reasoning/` generates
+`output_type: generate_until` tasks: a CoT system prompt, `max_gen_toks` 4096,
+and an `<answer>A/B/C/D</answer>` extraction filter, scored by exact match.
+That measures instruction-following, which 90M–1.7B *base* models do not have —
+every cell would score at or near zero, and 113 pairs × 4096 generated tokens
+per item is also far outside the eval walltime cap. The underlying data is
+plain 4-option MC (`question`, `choices[0..3]`, `answer`, `country`), so the
+fix is a loglikelihood variant: the same `_base_og.yaml` with
+`output_type: multiple_choice` and `doc_to_choice`, exactly the shape
+`include_base_44` already has in the harness. That is a small change to
+`generate_include_tasks.py`, and it is a prerequisite — do not wire the CoT
+tasks into the `auto` group.
+
 ### 3. Still nothing anywhere
 
 No second *parallel* family exists for khm, lao, bod, tgk, pbt, ory, lvs, afr,
 mlt short of SIB-200/Taxi1500. Belebele (or, for cy/ga/la/kmr/ug, MultiBLiMP
 alone) is their floor.
 
-Recommendation, in order: (1) switch LAMBADA to the stablelm variant or drop it;
-(2) port **SIB-200** — one task family, 205 languages, fixes all 16 one-family
-languages at once, and its FLORES provenance is a known quantity; (3) **MILU**
-for or/pa; (4) **Uhura** for the African set. Skip MT-based and MMLU-Pro-class
-suites: at 90M–1.7B they measure nothing.
+Recommendation, in order: (1) generate the **INCLUDE v2** MC variant and wire
+it — natively sourced, ours to change, 19 trained languages gain a family and
+Odia stops being a single-benchmark language; (2) switch LAMBADA to the
+stablelm variant or drop it; (3) port **SIB-200** — one task family, 205
+languages, fixes the remaining one-family languages at once, and its FLORES
+provenance is a known quantity; (4) **Uhura** for the African set. MILU becomes
+optional once INCLUDE v2 covers or/pa. Skip MT-based and MMLU-Pro-class suites:
+at 90M–1.7B they measure nothing.
 
 ## Caveats to carry into the analysis
 

@@ -684,12 +684,28 @@ fold into `global_mmlu_full_zh`. The merge step strips the `groups` field
 that holds aggregates like `mmlu`, so `collect()` reads both `results`
 and `groups` from per-task fragments to recover them.
 
-**Tokens/FLOPs** — computed at push time; FLOPs ≈ `6 × params × tokens`:
+**Tokens/FLOPs** — computed at push time. The FLOPs convention is fixed in
+one place, `utils/configs.flops_params`:
+
+    FLOPs = 6 × (n_non_emb + d_model × vocab_size) × D
+
+The embedding lookup is free, the output projection is not — with a 131k
+vocab that nearly doubles the small rungs' compute. Our cells tie embeddings,
+so `sync_models_json.py` records `n_non_emb`/`d_model`/`vocab_size` alongside
+`params` (which is already the same sum for them). An external model that
+declares only a nominal total falls back to it and is tagged
+`flops_basis="declared_total"` in the W&B run config and in the published
+dataset's `flops_basis` column — so a point on a different footing is
+visible rather than silently plotted alongside the ladder. To move one onto
+the convention, add the three shape fields to its models.json entry.
+
+D (cumulative tokens) comes from:
+
 - Megatron iter→tokens: `iter × 504 × 4096` (`MEG_TOKENS_PER_ITER`)
 - HF stage→cumulative tokens: `HF_STAGE_TOKENS` lookup table at the top of the script
   (Olmo-3 stages 1/2/3, SmolLM3-3B-checkpoints stages 1/2/3)
 - HF main→tokens: `HF_MAIN_TOKENS` (Apertus-8B/70B-2509 → 15 T)
-- Params: parsed from the model name (`apertus-NB-…`, `<repo>-NB-…`)
+- Params: `configs.flops_params` (models.json), never parsed from the name
 - If we don't know params for some new model, FLOPs is skipped — the iter and
   tokens charts still work. Add it to the lookup before pushing.
 
