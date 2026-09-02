@@ -264,3 +264,53 @@ at 90M–1.7B they measure nothing.
   urd_Latn, …) are excluded from the language lists precisely because they would
   inherit the native-script benchmarks.
 - **Prompt variants**: IrokoBench ships 5 prompt templates; we run template 1.
+
+
+## TODO: Review failures in dataset download
+
+Failures from the logs of the downloading script:
+
+[6/84] FAIL allenai/social_i_qa (configs): Dataset scripts are no longer supported, but found social_i_qa.py
+[14/84] FAIL CohereForAI/include-base-44:Dutch - Flemish: [{'expected': SplitInfo(name='test', num_bytes=238005, num_examples=551, shard_lengths=None, original_shard_le
+[19/84] FAIL epfl-nlp/include-89:chinese_singapore: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:galician_espa_a: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:greek_cyprus: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:guaran__paraguay: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:malay_singapore: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_belice: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_bolivia: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_jamaica: An error occurred while generating the dataset
+[19/84] ok   epfl-nlp/include-89:spanish_m_xico
+[19/84] FAIL epfl-nlp/include-89:spanish_nicaragua: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_panam_: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_paraguay: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_per_: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_puerto_rico: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_rep_blica_dominicana: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_uruguay: An error occurred while generating the dataset
+[19/84] FAIL epfl-nlp/include-89:spanish_venezuela: An error occurred while generating the dataset
+[21/84] FAIL facebook/mlqa (configs): Dataset scripts are no longer supported, but found mlqa.py
+[47/84] FAIL haonan-li/cmmlu (configs): Dataset scripts are no longer supported, but found cmmlu.py
+
+done: 1298 configs built, 21 failed
+  allenai/social_i_qa: Dataset scripts are no longer supported, but found social_i_qa.py
+  CohereForAI/include-base-44:Dutch - Flemish: [{'expected': SplitInfo(name='test', num_bytes=238005, num_examples=551, shard_lengths=None, original_shard_le
+  CohereForAI/include-base-44:Dutch-Flemish: [{'expected': SplitInfo(name='test', num_bytes=238005, num_examples=551, shard_lengths=None, original_shard_le
+  epfl-nlp/include-89:chinese_singapore: An error occurred while generating the dataset
+  epfl-nlp/include-89:galician_espa_a: An error occurred while generating the dataset
+  epfl-nlp/include-89:greek_cyprus: An error occurred while generating the dataset
+  epfl-nlp/include-89:guaran__paraguay: An error occurred while generating the dataset
+  epfl-nlp/include-89:malay_singapore: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_belice: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_bolivia: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_jamaica: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_nicaragua: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_panam_: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_paraguay: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_per_: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_puerto_rico: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_rep_blica_dominicana: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_uruguay: An error occurred while generating the dataset
+  epfl-nlp/include-89:spanish_venezuela: An error occurred while generating the dataset
+  facebook/mlqa: Dataset scripts are no longer supported, but found mlqa.py
+  haonan-li/cmmlu: Dataset scripts are no longer supported, but found cmmlu.py
