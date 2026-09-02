@@ -37,7 +37,9 @@ def observed_options() -> dict[str, Counter]:
 
     A Counter rather than a single value so a task whose format is not
     constant shows up instead of being silently reduced to whichever file was
-    read last.
+    read last. One SAMPLE per file is enough (a file's records share one
+    format), but every file per task must be read or the Counter can never
+    hold a second value and the non-constant case it exists for is invisible.
     """
     seen: dict[str, Counter] = {}
     for f in EVAL_LOGS.glob("*/harness/eval_*/samples_*.jsonl"):
@@ -45,8 +47,6 @@ def observed_options() -> dict[str, Counter]:
         if not m:
             continue
         task = m.group(1)
-        if task in seen:
-            continue                      # one file per task is enough
         try:
             with open(f) as fh:
                 rec = json.loads(fh.readline())

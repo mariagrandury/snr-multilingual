@@ -140,13 +140,15 @@ def backfill_plans(data_dir: Path, force: bool = False) -> None:
                 text = read_log(log)
                 if text is None:
                     continue
-                sources, total = PLAN_FULL_RE.findall(text), TOTAL_RE.search(text)
-                if not (sources and total):
+                sources, totals = PLAN_FULL_RE.findall(text), TOTAL_RE.findall(text)
+                if not (sources and totals):
                     continue        # e.g. an "already built — nothing to do" log
-                # A log may hold several attempts; the later plan supersedes,
-                # which is what the dict comprehension keeps.
+                # A log may hold several attempts; the later plan supersedes —
+                # the dict comprehension keeps the last per-source rows, and
+                # the total must come from that same last attempt, not the
+                # first (re.search would pair attempt 1's total with them).
                 dest.write_text(json.dumps({
-                    "target_tokens": int(float(total.group(1)) * 1e9),
+                    "target_tokens": int(float(totals[-1]) * 1e9),
                     "sources": {n: {"target_tokens": int(float(t) * 1e9),
                                     "estimated_tokens": int(float(e) * 1e9),
                                     "n_files": int(f)}

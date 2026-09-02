@@ -440,6 +440,17 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
             "best_loss": best, "best_iter": best_it,
             "diverged": int(final > best + 0.25 and best_it < last_it * 0.9),
         }
+        # The wide table's per-checkpoint `loss` column needs the exact value
+        # AT each save-grid iteration — the subsampled curve rows below keep
+        # only each window's min/max and only land on a checkpoint iteration
+        # by coincidence.
+        from launch_trainings import save_interval
+        loss_by_iter = dict(pts)
+        si = save_interval(target)
+        for it in range(si, target + 1, si):
+            if it in loss_by_iter:
+                add(cell, parts, it, round(it / target, 5), "loss_at_ckpt", "",
+                    round(loss_by_iter[it], 4))
         # Subsample for plotting, denser over the last 10%: that window is
         # where the architecture and scheme differences live (hundredths of a
         # nat), and a uniform stride would smear them. Each window contributes
@@ -571,7 +582,7 @@ def write_wide_csv(rows: list[dict], out_dir: Path) -> Path:
     for r in rows:
         if r["kind"] == "summary":
             summary.setdefault(r["cell"], {})[r["key"]] = r["value"]
-        elif r["kind"] != "loss":
+        elif r["kind"] not in ("loss", "loss_at_ckpt"):
             key = (r["cell"], r["iter"])
             row = wide.setdefault(key, {c: r.get(c) for c in meta_cols})
             prefix = {"bpb": "bpb__", "ppl": "ppl__", "benchmark": "bench__",
@@ -579,8 +590,11 @@ def write_wide_csv(rows: list[dict], out_dir: Path) -> Path:
             row[prefix + str(r["key"])] = r["value"]
     # The training loss AT each checkpoint iteration — the per-iteration curve
     # belongs to the long file, but the value at the checkpoint is a property
-    # of the checkpoint and belongs here.
+    # of the checkpoint and belongs here. loss_at_ckpt rows carry the exact
+    # save-grid values; the subsampled curve rows only fill the gaps.
     loss_at = {(r["cell"], r["iter"]): r["value"] for r in rows if r["kind"] == "loss"}
+    loss_at.update({(r["cell"], r["iter"]): r["value"]
+                    for r in rows if r["kind"] == "loss_at_ckpt"})
     # A run with no eval results yet still has a loss curve and a scaling
     # residual, and the table and the ladder need it. Give every such run one
     # row at its final iteration with the metric columns simply empty.

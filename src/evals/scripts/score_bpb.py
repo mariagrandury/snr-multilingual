@@ -230,6 +230,11 @@ def main() -> None:
     # mid-write would leave a short file that is skipped forever — the
     # checkpoint would drop out of the BPB analysis silently. Same rule as the
     # .bin staging in pretrain/data/stage_to_iopsstor.sh.
+    # A run that scored zero languages must NOT commit a bpb.json: the
+    # non-empty file would count as "already scored" forever while carrying
+    # macro_bpb null, which the report formats with :.4f and crashes on.
+    if not bpbs:
+        sys.exit(f"no language yielded enough tokens to score — not writing {args.out}")
     tmp = Path(f"{args.out}.tmp")
     tmp.write_text(json.dumps(result, indent=2) + "\n")
     os.replace(tmp, args.out)

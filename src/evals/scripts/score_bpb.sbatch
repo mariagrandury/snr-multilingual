@@ -82,11 +82,16 @@ echo "due=${#DUE[@]}: ${DUE[*]:-none}"
 # Queue the successor NOW, before any scoring: at the wall Slurm kills the
 # batch script outright, so anything submitted after the srun would never run.
 # --dependency=singleton + the shared job name keep exactly one alive.
-n_attempts=$(find "$REPO_DIR/logs" -maxdepth 1 -name "${SLURM_JOB_NAME:-bpb-$CELL}_*.out" 2>/dev/null | wc -l)
-if [ "$n_attempts" -lt "$MAX_CHAIN" ]; then
-    echo "queuing singleton successor (attempt $n_attempts/$MAX_CHAIN)"
+# The depth is threaded through the successor's env, NOT counted from the
+# logs/ dir: log files accumulate forever, so a lifetime tally would let a
+# cell that ever used MAX_CHAIN slots never chain again — a re-launch weeks
+# later (new checkpoints, new --max-tokens) must start a fresh chain at 0.
+CHAIN_DEPTH=${CHAIN_DEPTH:-0}
+if [ "$CHAIN_DEPTH" -lt "$MAX_CHAIN" ]; then
+    echo "queuing singleton successor (chain depth $CHAIN_DEPTH/$MAX_CHAIN)"
     sbatch --dependency=singleton --job-name="${SLURM_JOB_NAME:-bpb-$CELL}" \
-           --chdir="$REPO_DIR" --export=ALL "$SCRIPT" "${ORIG_ARGS[@]}"
+           --chdir="$REPO_DIR" --export=ALL,CHAIN_DEPTH=$((CHAIN_DEPTH + 1)) \
+           "$SCRIPT" "${ORIG_ARGS[@]}"
 else
     echo "WARN: chain cap $MAX_CHAIN reached for $CELL — not queuing a successor"
 fi
