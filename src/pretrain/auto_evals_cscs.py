@@ -180,19 +180,28 @@ def evaluated(name: str, logs_root: Path, tasks: list[str]) -> bool:
 
 
 def barren_attempts(name: str, logs_root: Path) -> int:
-    """Eval runs for NAME that produced nothing at all.
+    """Consecutive eval runs for NAME (newest first) that produced nothing.
 
     The task gate asks "is this done?", never "can this ever finish?", so a
     checkpoint whose eval fails outright is resubmitted once per pass forever
     — 196 such jobs on the L50 cells before this existed (one uncached dataset
     aborts the whole BATCH_TASKS=1 call, so not one result lands). An
     `eval_*/` with neither a results file nor a non-empty per_task/ is a total
-    loss; a run that saved anything counts as progress and doesn't.
+    loss; a run that saved anything counts as progress — and RESETS the
+    count: a lifetime tally would hold back a checkpoint that failed, was
+    repaired, and has been making progress since.
     """
     base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
-    return sum(1 for d in sorted(base.glob("eval_*")) if d.is_dir()
-               and not any(d.glob("results_*.json"))
-               and not any(f for t in d.glob("per_task/*") for f in t.iterdir()))
+    streak = 0
+    for d in sorted(base.glob("eval_*"), reverse=True):
+        if not d.is_dir():
+            continue
+        if (any(d.glob("results_*.json"))
+                or any(f for t in d.glob("per_task/*") if t.is_dir()
+                       for f in t.iterdir())):
+            break
+        streak += 1
+    return streak
 
 
 # lm_eval instantiates every task in the batch up front, so ONE dataset that
@@ -231,17 +240,18 @@ def eval_error(name: str) -> tuple[str, str]:
     return "unknown", "no eval job log found"
 
 
-_DATASET_TRIED: set[str] = set()
+_DATASET_FIXED: dict[str, bool] = {}
 
 
 def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
     """Add REPO to the eval-dataset manifest and build it into the offline
-    cache, so the next submission gets past it. Once per repo per process:
-    if the build fails, the checkpoint lands in the errors file instead of
-    re-downloading every pass."""
-    if repo in _DATASET_TRIED:
-        return False
-    _DATASET_TRIED.add(repo)
+    cache, so the next submission gets past it. Built once per repo per
+    process, memoising the RESULT: many checkpoints block on the same repo,
+    and after the first one repairs the cache the rest must be retried too,
+    not held back because the repo was "already tried". Only a failed build
+    parks its checkpoints in the errors file."""
+    if repo in _DATASET_FIXED:
+        return _DATASET_FIXED[repo]
     listed = repo in DATASET_MANIFEST.read_text().split()
     print(f"  missing offline dataset {repo}"
           f"{'' if listed else ' (also absent from eval_datasets.txt)'}"
@@ -259,7 +269,7 @@ def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
         manifest.flush()
         out = subprocess.run([sys.executable, str(DOWNLOAD_DATASETS),
                               manifest.name], capture_output=True, text=True)
-    ok = out.returncode == 0 and "0 failed" in out.stdout
+    ok = _DATASET_FIXED[repo] = (out.returncode == 0 and "0 failed" in out.stdout)
     print(f"  {'built ' + repo + ' — retrying' if ok else 'could NOT build ' + repo}")
     if not ok:
         print("   ", (out.stdout or out.stderr).strip().splitlines()[-1:])
@@ -275,13 +285,22 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
-                tasks: str, size: str, dry_run: bool) -> None:
+                task_list: list[str], size: str, dry_run: bool) -> None:
     name = f"{cell}-iter{it}"
     hf_dir = staging / cell / f"iter_{it:07d}"
-    n_tasks = tasks.count(",") + 1
+    # Size the request on what is LEFT to run, not the full list — the inner
+    # runner skips completed tasks anyway (debug_loop.sh's narrowing trick),
+    # and pricing a 3-tasks-missing checkpoint at the full 463 would both
+    # oversize the walltime and trip the over-cap skip below, parking an
+    # almost-done checkpoint forever.
+    done = completed_tasks(name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
+    remaining = [t for t in task_list if t not in done]
+    tasks = ",".join(remaining)
+    n_tasks = len(remaining)
     # Today this holds back 600M/1B/1.7B at L100 and 1.7B at L50 (711-1233
-    # min against the 719 cap). Until the task list is split across jobs
-    # (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch), submitting is pure loss.
+    # min against the 719 cap) on their FIRST eval. Until the task list is
+    # split across jobs (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch),
+    # submitting is pure loss.
     if (need := eval_minutes(size, n_tasks)) > WALLTIME_CAP_MIN:
         print(f"  SKIP {job_name('eval', name)}: {n_tasks} tasks need ~{need} min, "
               f"over the {WALLTIME_CAP_MIN}-min queue cap — needs a split eval")
@@ -402,7 +421,6 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # The cell's task list: every auto benchmark, in the languages
     # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
     task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
-    tasks = ",".join(task_list)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
     # is the expensive one we sample at 1/N.
@@ -420,6 +438,11 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     for it in list(pending):
         name = f"{cell}-iter{it}"
         if not args.max_attempts:
+            continue
+        # An in-flight job's freshly-mkdir'd eval_* dir looks barren until it
+        # writes something — don't let the running attempt itself push the
+        # checkpoint over the threshold.
+        if job_name("eval", name) in running:
             continue
         if barren_attempts(name, logs_root) < args.max_attempts:
             continue
@@ -447,7 +470,7 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     for it in pending:
         name = f"{cell}-iter{it}"
         if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
-            submit_eval(cell, it, staging, logs_root, tasks, c["size"],
+            submit_eval(cell, it, staging, logs_root, task_list, c["size"],
                         args.dry_run)
 
     return convert_busy
