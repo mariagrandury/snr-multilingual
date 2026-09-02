@@ -162,11 +162,17 @@ def coverage_table() -> str:
         for lang in sorted(langs):
             enters.setdefault(lang, L)
 
+    # Key on the canonical code, not the raw tag: tasks_for_benchmarks
+    # canonicalizes ("jp" -> "ja", "cn" -> "zh"), so an alias-tagged task
+    # (include_base_44_japanese is tagged "jp") is selected but would
+    # otherwise land under a key no `enters` row reads — dropped rows.
+    from evals.scripts.utils.configs import _TASK_LANG_ALIASES
     fams: dict[str, dict[str, int]] = {}
     for name in tasks_for_benchmarks(auto, set(enters)):
         e = tasks[name]
-        fams.setdefault(e["language"], {}).setdefault(e["benchmark"], 0)
-        fams[e["language"]][e["benchmark"]] += 1
+        lang = _TASK_LANG_ALIASES.get(e["language"], e["language"])
+        fams.setdefault(lang, {}).setdefault(e["benchmark"], 0)
+        fams[lang][e["benchmark"]] += 1
 
     out = [DOC_BEGIN, "",
            "Tasks per cell (auto group x trained languages): "

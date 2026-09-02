@@ -203,9 +203,17 @@ def verdict(row, group):
 
 
 # ----------------------------------------------------------------- text report
+def _n_open(tickets) -> int:
+    """The supportTickets listing returns EVERY ticket ever filed; only the
+    open ones are outstanding asks — counting them all as "open" overstates
+    what is pending with Azure."""
+    return sum(1 for t in tickets if t["status"].lower() == "open")
+
+
 def report(rows, tickets):
     by_region = {r["region"]: r for r in rows}
-    print(f"\n=== Open quota requests ({len(tickets)}) ===")
+    print(f"\n=== Quota requests ({len(tickets)} filed, "
+          f"{_n_open(tickets)} open) ===")
     print(f"  {'ticket':<10}{'region':<19}{'group':<10}{'cores':>6}  {'type':<12}"
           f"{'created':<11}{'granted':>8}  verdict")
     futile = []
@@ -216,8 +224,9 @@ def report(rows, tickets):
         got = granted(row, g) if row and g in GROUPS else None
         if v != "viable":
             futile.append((t, g, v))
+        closed = "" if t["status"].lower() == "open" else f" [{t['status'].lower()}]"
         print(f"  {t['id'][:8]:<10}{t['region']:<19}{g:<10}{t['cores']:>6}  "
-              f"{t['type']:<12}{t['created']:<11}{'-' if got is None else got:>8}  {v}")
+              f"{t['type']:<12}{t['created']:<11}{'-' if got is None else got:>8}  {v}{closed}")
     kinds = sorted({t["type"] for t in tickets})
     print(f"  request types filed: {', '.join(kinds)}"
           + ("   <- no Spot/low-priority request has ever been filed"
@@ -324,9 +333,10 @@ def render(rows, tickets, gaps, futile, out):
         state = OK if v == "viable" else BLOCKED
         # Short ticket id: enough to quote back to Azure support / match the
         # portal, without spending a third of the row on a full GUID.
+        closed = "" if t["status"].lower() == "open" else f" [{t['status'].lower()}]"
         trows.append([t["id"][:8], t["region"], g, str(t["cores"]), t["type"], t["created"],
                       "-" if got is None else str(got),
-                      (v, *CLR[state])])
+                      (v + closed, *CLR[state])])
 
     # Only regions that are actionable: something deployable, or a ticket on
     # them. The all-blocked majority is a footnote, not 25 rows of noise.
@@ -362,11 +372,13 @@ def render(rows, tickets, gaps, futile, out):
     p.text("Azure H100 / H200 quota status", size=19, weight="bold", advance=1.5)
     total = sum(granted(r, g) or 0 for r in rows for g in GROUPS)
     p.text(f"subscription MSNR ({SUB})   |   {stamp}   |   "
-           f"{len(tickets)} open tickets   |   {total} cores granted so far",
+           f"{len(tickets)} tickets filed ({_n_open(tickets)} open)   |   "
+           f"{total} cores granted so far",
            size=9.5, color="#666666", advance=2.0)
 
     kinds = sorted({t["type"] for t in tickets})
-    p.text(f"Open quota requests ({len(tickets)})", size=13, weight="bold", advance=1.3)
+    p.text(f"Quota requests ({len(tickets)} filed, {_n_open(tickets)} open)",
+           size=13, weight="bold", advance=1.3)
     p.table(["ticket", "region", "SKU group", "cores", "type", "filed",
              "granted", "verdict"],
             trows, [0.09, 0.14, 0.10, 0.06, 0.09, 0.09, 0.07, 0.26])

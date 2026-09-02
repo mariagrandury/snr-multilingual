@@ -74,10 +74,16 @@ def benchmark_families() -> dict[str, int]:
     """project language code -> number of distinct pretraining-stage benchmark
     families in tasks.json."""
     tasks = json.loads(TASKS_JSON.read_text())["tasks"]
+    # Canonicalize alias tags ("jp" -> "ja", "cn" -> "zh") the way
+    # tasks_for_benchmarks does — the caller looks families up under the
+    # canonical code, so an alias-only language would count 0 families and
+    # be dropped from FW_L100 by the MIN_KEEP filter.
+    aliases = {"jp": "ja", "cn": "zh"}
     fams: dict[str, set] = {}
     for t in tasks.values():
         if "pretraining" in t.get("stages", []):
-            fams.setdefault(t["language"], set()).add(t["benchmark"])
+            lang = aliases.get(t["language"], t["language"])
+            fams.setdefault(lang, set()).add(t["benchmark"])
     return {k: len(v) for k, v in fams.items()}
 
 

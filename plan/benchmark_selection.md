@@ -96,7 +96,7 @@ Tasks per cell (auto group x trained languages): L1 15 · L2 25 · L8 90 · L15 
 | L8 | `de` German | 10 | 10 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, xnli |
 | L8 | `zh` Mandarin Chinese | 10 | 12 | arc, belebele, global_mmlu_full, global_piqa_completions, include_base_44, paws, xcopa, xnli, xstorycloze, xwinograd |
 | L8 | `it` Italian | 9 | 9 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, xcopa |
-| L8 | `ja` Japanese | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, paws, xwinograd |
+| L8 | `ja` Japanese | 6 | 6 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, paws, xwinograd |
 | L15 | `ar` Levantine Arabic | 9 | 21 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xnli, xstorycloze |
 | L15 | `id` Indonesian | 8 | 8 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, xcopa, xstorycloze |
 | L15 | `pt` Portuguese | 8 | 9 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xwinograd |
@@ -185,7 +185,7 @@ Tasks per cell (auto group x trained languages): L1 15 · L2 25 · L8 90 · L15 
 | L100 | `ps` Southern Pashto | 1 | 1 | belebele |
 | L100 | `tg` Tajik | 1 | 1 | belebele |
 
-Languages by number of families: 1→16 · 2→12 · 3→10 · 4→13 · 5→14 · 6→10 · 7→6 · 8→4 · 9→3 · 10→4 · 12→1 · 13→1 · 14→1.
+Languages by number of families: 1→16 · 2→12 · 3→10 · 4→13 · 5→13 · 6→11 · 7→6 · 8→4 · 9→3 · 10→4 · 12→1 · 13→1 · 14→1.
 
 <!-- END generated -->
 

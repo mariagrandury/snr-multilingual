@@ -62,6 +62,8 @@ jumelet/multiblimp
 kellycyy/CulturalBench
 lighteval/squad_v2
 mandarjoshi/trivia_qa
+masakhane/afrimmlu
+masakhane/afrixnli
 mrlbenchmarks/global-piqa-nonparallel
 Muennighoff/xwinograd
 multilingual-snr/multilingual-snr-eval-results
