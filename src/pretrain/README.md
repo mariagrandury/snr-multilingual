@@ -70,12 +70,12 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (28, 1797, 1904) on the 175M, 1B columns at L ∈ {1, 2, 30, 100} |
+| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 50, 100} |
 | Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **154 runs**.
+Counting both architectures and scheme B where it differs: **146 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -108,6 +108,19 @@ spans the cell's full schedule (`ADEMAMIX_WARMUP` = target iters, replacing
 the old fixed 100 000 that short runs never finished), and the init std is
 width-scaled (`INIT_STD` = 0.008944 × √(1792/hidden), anchored so the 1B
 keeps the reviewed value exactly).
+
+**A new training run must reproduce the config the already-pretrained cells
+used.** Two dozen cells are on disk; a rung trained with different
+hyperparameters is not on the same ladder as the rest, and the scaling fit
+cannot absorb that. So there is no way to perturb a *grid* cell's config from
+the command line. The two experimental knobs that exist —
+`--lr` and `--ademamix-beta3-factor` — are opt-in, never defaults, require a
+`--size/--langs/--seed` filter, and **force a `diag-` run name** that the grid
+tooling (`NAME_RE`, `LOG_RE`, `sync_models_json`) ignores by construction. If
+an experiment needs a different config, it is a diagnostic or a new axis of
+its own, not an edit to an existing rung. See
+[`plan/90M-rung-anomaly.md`](../../plan/90M-rung-anomaly.md) for the case that
+prompted this and why the fix it proposes was *not* adopted.
 
 ## What's in this folder
 
@@ -236,17 +249,41 @@ CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
 `--account`, `--dependency`, `--training-steps` (cap `--train-iters`
 manually), `--test`.
 
+Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
+each forces a `diag-` name, so neither can touch a grid cell):
+
+```bash
+# beta3 = 1 - 1/(F x iters): put the AdEMAMix slow-EMA timescale at F of the
+# run instead of the ladder's fixed 0.9999 (= 10 000 steps at every size)
+python launch_trainings.py cscs --size 90M --langs 2 --seed 1904 \
+    --ademamix-beta3-factor 0.2      # -> diag-90M-L2-deep-seed1904-beta3f0.2
+
+# override the per-size peak LR from the 6ND law
+python launch_trainings.py cscs --size 175M --langs 2 --seed 1904 \
+    --lr 6e-4                        # -> diag-175M-L2-deep-seed1904-lr0.0006
+```
+
+`diag-` cells have no `models.json` entry, so the auto-eval watcher cannot
+evaluate them and is not started; read their curves in W&B (project `msnr`)
+or `logs/slurm/training/pretrain-diag-*.out`. `ladder_report.py` ignores them
+by design.
+
 **Before the first CSCS run** (once):
 
 - Pre-warm the tokenizer into the HF cache — compute nodes have no
   internet: `hf download swiss-ai/Apertus-70B-2509` on the login node.
 - Use the **`swiss-ai/Megatron-LM` fork** — it carries the Apertus kernels
   (xIELU, apex qk-norm); a vanilla `nvidia/Megatron-LM` clone will not run.
-  Keep it at `/iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM` and check
-  its checkout matches the commit Azure pins
+  Keep it at `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM` and
+  check its checkout matches the commit Azure pins
   (`azure/get_megatron.sh::MEGATRON_COMMIT`), so both platforms run the same
   training code, not just the same arguments:
-  `git -C /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM rev-parse HEAD`.
+  `git -C /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM rev-parse HEAD`.
+  This is **one shared checkout for the whole sweep**, not a per-user one —
+  every cell must train off the same code for the ladder to be comparable, so
+  collaborators run against this path rather than cloning their own (it is the
+  `MEGATRON_LM_DIR` default in `launch_pretraining_cscs.sh`; override the
+  variable only for a deliberate one-off).
 - **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
   cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
   **every resume** dies in `get_reformulation_metadata` with `AttributeError:
@@ -255,7 +292,7 @@ manually), `--test`.
   tensor sizes). Copy the tracked, patched file over the fork's:
   ```bash
   cp patches/dist_checkpointing_strategies_torch.py \
-     /iopsstor/scratch/cscs/$USER/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
+     /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
   ```
 - **Train off the iopsstor copy of the data, not the capstor master.** Megatron
   memmaps the `.bin` files and reads them shuffled (random access): capstor is

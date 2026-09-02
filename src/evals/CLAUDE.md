@@ -208,24 +208,48 @@ mix shifts again.
 
 ## Collaborators with shared access
 
-Both `aromanou` and `cmeister747` have POSIX ACLs granting `rwx` on this repo
-and `eval_logs` (recursive + default), plus `r-x` traverse on the parent dirs.
-Their jobs write to the **same** `eval_logs` tree, so the idempotency check
-sees their results too. They share `--account=infra01`.
+Both `aromanou` and `cmeister747` have named-user POSIX ACLs: `rwx` on the
+shared output dirs (`eval_logs`, `Meg-Runs/msnr`, `auto_evals`,
+`conversion-plans`, `slurm/*`, `datasets/cache`, `hf_home/datasets`) with a
+matching default ACL so new content inherits, and `r-x` on `data/`. Their jobs
+write to the **same** `eval_logs` tree, so the idempotency check sees their
+results too. They share `--account=infra01`. They do NOT get write access to
+this repo — each clones their own (`evaluate.sbatch` writes `src/evals/logs/`
+relative to cwd).
 
-To grant more colleagues:
+To grant more colleagues, use
+[`scripts/grant_collaborator.sh`](../../scripts/grant_collaborator.sh):
 
 ```bash
-USER_TO_ADD=...
-setfacl -m u:$USER_TO_ADD:rx /iopsstor/scratch/cscs/mariagrandury \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs
-setfacl -R -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals
-setfacl -R -d -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals
-setfacl -R -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
-setfacl -R -d -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
+scripts/grant_collaborator.sh <user> plan     # then apply / verify / revoke
 ```
+
+Read it before hand-rolling `setfacl` — two things bite:
+
+- **Never `setfacl -R` on `eval_logs` (217k entries) or `Meg-Runs/msnr` (98k).**
+  It is slow on Lustre and hands out write access to already-trained
+  checkpoints. Grant `rwx` at the container dir plus a `-d` default so new
+  content inherits, and add `chmod +t` — POSIX has no "write but never delete"
+  bit, so the sticky bit is the only thing stopping a collaborator from
+  deleting your results.
+- **A directory ACL is not enough for files the pipeline rewrites in place.**
+  `auto_evals_cscs.py` does `write_text()` on `eval_logs/auto_eval_errors.json`,
+  which opens the existing inode `'w'` — without a file-level ACL the watcher
+  dies with `PermissionError` after submitting its jobs. Same for the
+  `.lock` files in `hf_home/datasets/`.
+
+- **The container must mount the shared tree, not just `${USER}`'s.** Both
+  eval tomls used to mount `/iopsstor/scratch/cscs/${USER}`, so for anyone but
+  mariagrandury `HF_HOME` and `LOGS_ROOT` simply did not exist inside the
+  container — datasets unreachable, results with nowhere to land. They now
+  mount `/iopsstor/` like the training container. Mounting is not granting:
+  POSIX and the ACLs still decide what is readable.
+
+Colleagues do **not** need their own Megatron checkout, HF cache or data copy —
+`launch_pretraining_cscs.sh`, `evaluate.sbatch` and `convert-snr.sh` all point
+at the shared `mariagrandury` paths (see bug 16). Note the HF cache vars are
+**hard-set, not defaulted**, precisely so a collaborator's `~/.bashrc` cannot
+win; don't "restore" them to `${VAR:-...}`.
 
 Each colleague needs their **own** `HF_TOKEN` and `WANDB_API_KEY` exported
 (`evaluate.sbatch` reads env first, files in `scripts/` as fallback). Their
@@ -558,16 +582,32 @@ conda env init) are NOT visible inside `srun --environment=...` (per bug
 (bug 12).
 
 The populated cache lives at
-`/capstor/store/cscs/swissai/infra01/users/$USER/hf_models` (~258 GB,
+`/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models` (~3.6 TB,
 already mounted in both `containers/env.toml` and
-`containers/env_vllm.toml`). `evaluate.sbatch` now defaults to it and
-forwards both vars via `INNER_EXPORTS`:
+`containers/env_vllm.toml`). `evaluate.sbatch` sets both and forwards them via
+`INNER_EXPORTS`:
 
 ```bash
-export HF_HOME=${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}
-export HF_HUB_CACHE=${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}
+export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home
+export HF_HUB_CACHE=/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models
 INNER_EXPORTS="export ... HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE'"
 ```
+
+**Hard-set to `mariagrandury`, and deliberately not `${VAR:-...}`**
+(changed 2026-09-01). Two separate traps, and the fix has to close both:
+
+- The old `$USER` form points every collaborator at their own paths, which
+  hold a near-empty `hf_models` and no `hf_home/datasets` at all.
+- A `${VAR:-...}` *default* does not fix that, because `sbatch --export=ALL`
+  carries the submitter's login shell into the job and `~/.bashrc` here
+  exports `HF_HOME=/iopsstor/scratch/cscs/$USER/hf_home`. The default is
+  never reached; the collaborator's own value wins every time.
+
+Either way `HF_DATASETS_OFFLINE=1` leaves no hub fallback, so all tasks die
+inside `load_dataset()` before generating a token — the job fails in ~2:30
+with an empty `harness/` dir. This is what killed aromanou's first 10 eval
+jobs (3255016-3255025). `aggregate_splits.sbatch` and
+`conversion/convert-snr.sh` hard-set the same paths; keep the three in sync.
 
 Without these two lines, expect a 429 cascade the next time you launch
 >10 concurrent eval jobs. To pre-warm a missing model/dataset, run from

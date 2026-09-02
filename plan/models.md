@@ -16,7 +16,7 @@ sheet carried the fixed-100B-token LRs and the 51-run grid).
 
 L ∈ {1, 2, 8, 15, 30, 50, 100} languages (English + L−1 FineWeb-2 languages,
 lists per scheme in `src/pretrain/data/language_sets_scheme{A,B}.json`).
-✓ = one seed (1904) · **×3** = seeds 28, 1797, 1904. The generated block in
+✓ = one seed (1904) · **×3** = seeds 64, 313, 1904. The generated block in
 [`src/pretrain/README.md`](../src/pretrain/README.md) is the live version of
 this table.
 
@@ -35,7 +35,7 @@ this table.
 architectures and scheme B where its language set differs (L ∈ {8, 15, 30}):
 154 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
 `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` (e.g.
-`lm-1B-L30-deep-seed28`, `lm-1B-L8-schemeB-shallow-seed1904`). W&B project **`msnr`**
+`lm-1B-L30-deep-seed1904`, `lm-350M-L8-schemeB-shallow-seed1904`). W&B project **`msnr`**
 (entity `mariagrandury-epflnlp`).
 
 ## Transformations (the intervention axis)
@@ -133,7 +133,7 @@ column in its file — the deep ladder's per-size node counts apply):
 | Positional | RoPE, base 500,000, rope-scaling factor 32 |
 | Norm / activation | RMSNorm · xIELU · QK-layernorm (apex impl) · no biases |
 | Dropout | 0.0 (attention and hidden) |
-| Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume) |
+| Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume). β3's **endpoint** is 0.9999 for every grid cell — only the warmup scales with run length, which is the subject of [`90M-rung-anomaly.md`](90M-rung-anomaly.md); overriding it is diagnostic-only and forces a `diag-` run name |
 | Regularization | weight decay 0.1 · grad clip 0.1 |
 | LR schedule | WSD (warmup → constant → 1-sqrt decay), min-lr 0; `--use-checkpoint-opt_param-scheduler` so capped resumes stay on the saved curve |
 | Init | normal, std = 0.008944 × √(1792 / d_model) (width-scaled, anchored at the 1B) |

@@ -64,7 +64,7 @@ they carry the failure modes, and they are more current than this file.
 configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
-scripts/          # build_configs.py, lint_models_json.py
+scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -73,7 +73,10 @@ src/
 
 Eval results are NOT in the repo: they live on the cluster at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/`
-(and checkpoints under `.../Meg-Runs/msnr/`).
+(and checkpoints under `.../Meg-Runs/msnr/`). The full what-lives-where table
+— iopsstor working copies, capstor masters, Azure blob, the HF org policy
+(`msnr` = models, `msnr-data` = published data) — is
+[`plan/storage-map.md`](plan/storage-map.md).
 
 ## Key Concepts
 

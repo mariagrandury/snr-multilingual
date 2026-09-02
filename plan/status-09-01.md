@@ -147,19 +147,86 @@ The uncommitted auto_evals_cscs.py over-cap guard will silently skip 600M-L100 (
 
 # Real updated plan
 
+Today:
 1. ✅ Let the 40 running 600M evals land (today, no action). Closes benchmarks for 4 sizes × 6 language settings.
 1. ✅ (Deps on #1) Launched job to mirror eval logs to capstor.
 1. ✅ Launched 3 jobs to finish pretraining the 175M scheme B models.
 1. ✅ Launched 2 jobs to finish BPB calculation of L2 and L50 models.
+3. ✅ The 90M β₃ confirming run (~2 node-hours). Tiny, and it decides whether the ladder has 3 or 4 rungs — which changes what you can claim. Do this before writing any scaling section.
+5. ✅ BPB on the remaining trained cells — ~330 checkpoints, ~66 node-hours, 1–2 days. Cheapest item on the board and it's the plan's stated outcome metric. Unlocks the loss/BPB scaling fits immediately.
+7. ✅ The 8× seed replicates: sizes 175M,600M x langs 1,50 x seeds 64,313
+
+ToDo:
 2. [Discuss] Update the list of available high-quality benchmarks for low resource languages.
 2. 🛑 Launch the creation of the L100 data mixture with the new list of languages (1 day). Blocks pretraining of all L100 models. Blocked by update of available benchmarks for low resource languages.
-3. The 90M β₃ confirming run (~2 node-hours). Tiny, and it decides whether the ladder has 3 or 4 rungs — which changes what you can claim. Do this before writing any scaling section.
 4. Update the SNR module to new naming. Start writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × 6 language settings.
-5. [Delegate] BPB on the remaining trained cells — ~330 checkpoints, ~66 node-hours, 1–2 days. Cheapest item on the board and it's the plan's stated outcome metric. Unlocks the loss/BPB scaling fits immediately.
 6. [Discuss] Update the model grid plan so each size-languages cell has at least 3 models (we need 3 to calculate DA).
-7. 🛑 [Delegate] (Deps on #5) The 8× 175M seed replicates (~26 node-hours). This is what makes SNR computable rather than just signal. Highest analysis-value per node-hour in the whole sweep.
-8. 🛑 [Delegate] (Deps on #6) The X remaining ≤600M cells (~107 nh) → convert → eval → BPB (~400 nh). X is currently 12 but might change when updating the model grid plan.
 9. 🛑 (Deps on #2) The 4 small sizes of L100 models (classic: deep, A).
+5. ✅ BPB on the remaining trained cells — ~330 checkpoints, ~66 node-hours, 1–2 days. Cheapest item on the board and it's the plan's stated outcome metric. Unlocks the loss/BPB scaling fits immediately.
 10. 🛑 Further writing on the ≤600M ladder. Signal, noise, decision accuracy and scaling-law error are all computable on 90M–600M × all 7 language settings.
 11. 🛑 (Deps on Azure capacity) 1B/1.7B in parallel on Azure.
-11. 🛑 (Deps on #6) Selected 1B models in parallel on CSCS.
+11. 🛑 (Deps on #6) Selected 1B models in parallel on CSCS. Fit pretraining and eval estimates.
+
+Ideas:
+- schedule that periodically checks the squeue, reviews the logs of previous runs, and submits new jobs following a priority list, sends a message on failure or when decision is required
+- evals idempotent and write eval results -> review how I implemented it for INCLUDE v2
+- wire recover_results_from_samples.py. Verified: the only reference is its own docstring. Under BATCH_TASKS=1 a walltime kill writes nothing, and this is the tool that rescues those samples. Your own todo.md raised it; still open.
+- evals: split over-cap eval jobs across Slurm jobs (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch + aggregate_splits.sbatch) and teach auto_evals_cscs.py to submit/dedupe the parts. Until then the watcher SKIPs 600M/1B/1.7B at L100 and 1.7B at L50 (need 711–1233 min vs the 719 cap) — see the SKIP lines in its output.
+- HF model push is manual on CSCS: push-snr.py is invoked only from azure/jobs/push.yml. Nothing on the cluster side pushes converted checkpoints to the Hub — so it happens only when you remember. Your todo.md asked for somewhere to wire it that doesn't interfere.
+- build_hf_dataset.py doesn't understand lm-* cells: Hence the project_legacy change now sitting uncommitted. Predictivity results can't be published to the HF dataset until the name regex, iter grid and project are taught the new sweep.
+- ladder_report.check_bpb() does an unguarded json.loads while bpb_results() guards the same files — one bad file kills the whole report.
+- score_bpb materialises 17 GB of fp32 logits per batch, capping batch size and making off-GPU runs impossible.
+- azure/jobs/pretrain.yml's inputs.fineweb default still points at english_dclm — a hand-submitted L=1 job still pulls 686 GB.
+- mirror_eval_logs.sbatch's #SBATCH --output dir is created by the script itself, after Slurm has already opened the file.
+- compute-budget.md:52 still says L ∈ {1, 30, 100} (now L50), and the Azure tables still need the 56-run re-derivation — both under the existing staleness banner.
+- periodically re-estimate with real values the eval and training job times for each language-size pair (and add them to the relevant docs, readme and plans) -> only update the estimates for which we have real significant results
+- if there are no <2h jobs, the debug drainer could divide a >2h eval job into 2 debug jobs -> your answer to this does not correlate with you saying that the results are written per task are persistent i f a job times out, double check what really happens. Also, is the debug limit 1h30 or 2h?
+- check whether it would be possible to use just one eval job to evaluate all the remaining eval ckpts of a model (i.e. instead of having 10 short eval jobs for 10 ckpts, queue just 1 eval job to eval the 10 ckpts). besides the feasability, check whether it would make sense taking into account the eval time
+
+# Results report
+
+## 1. Freshness: local artifacts are current; the capstor/HF copies of the ladder report are stale
+
+Artifact	Location	State
+Eval scores (eval_logs/.../msnr)	iopsstor	Up to date and live — 363 checkpoint dirs, 87 new results since Aug 30; the auto_evals_cscs.py --watch 1800 watcher is running, and right now there are 1 eval job (90M-L50 iter3600) and BPB jobs for 600M-L2/L50 in flight
+Ladder report (csv/md/pngs)	iopsstor, src/pretrain/	Regenerated today 14:10 — current, though the 600M BPB runs finishing today will make it slightly behind again
+Pretrain progress plots	iopsstor, src/pretrain/	Regenerated today 16:07 — current
+Eval logs on capstor	/capstor/.../msnr-eval-logs	Fine — last full mirror Aug 30, and a fresh mirror-eval-logs job (3252060) is mirroring the 380 GB tree right now
+Ladder report on capstor	/capstor/.../msnr-ladder-report	Stale: Aug 29 (3.0 MB CSV vs today's 4.4 MB)
+Ladder report on HF	multilingual-snr/msnr-ladder-report (private)	Staler: Aug 28 14:12
+Fix is one login-node command (no cluster job): python3.11 ladder_report.py --plot --publish --push-hf — ideally after today's 600M BPB jobs land so you publish once. Note also that multilingual-snr/multilingual-snr-eval-results (the parquet the signal-and-noise pipeline reads) was last built June 4 and only covers the legacy 36-sweep — the predictivity evals exist only in eval_logs/W&B/ladder-CSV form so far.
+
+## 2. BPB evolution across languages and sizes
+
+BPB coverage is still narrow: only L2 and L50 cells (plus a sliver of 90M-L15) at 90M–350M; the 600M runs are executing right now, L1/L8/L15/L30 have none.
+
+Scaling behaves (except 90M): non-English macro BPB falls monotonically with size — L50: 7.03 → 1.61 → 1.38 across 90M/175M/350M — and falls over training within each healthy run.
+90M is inverted: BPB rises during training (L2 macro 4.1 → 12.5 first→last checkpoint), the BPB-side signature of the known diverged 90M rung (all 90M cells flagged "diverged" in the report; your two diag- runs probing lr/beta3 are running now).
+More languages is free English, cheaper everything else: English (dclm) BPB is identical between L2 and L50 at every size (0.947 vs 0.946 at 350M), while L50 beats L2 on 81–89 of 99 non-English languages, by ~0.4–0.5 bits/byte on average — enormous against a checkpoint noise of ~0.002.
+Per-language spread at 350M-L50: best are non-Latin-script languages (tam/tha/ben/kat/mal ≈ 0.55–0.57), worst are low-resource Latin-script ones (som/mlt/kmr/uzn/cym ≈ 2.7).
+
+## 3. Benchmark evolution across languages and sizes
+
+Mean final score and first→last-checkpoint gain, per family (deep/seed1904 ladder):
+
+Real signal already: multiblimp (0.65 → 0.92 going 90M → 600M, well above 0.5 chance), and clear size-monotonic growth on hellaswag (0.25 → 0.30), xnli (0.33 → 0.42), xstorycloze (0.48 → 0.57), xwinograd (0.51 → 0.64), xcopa.
+Still at chance even at 600M: belebele, global_mmlu, include, and arc-multilingual all sit ≈ 0.24–0.26 (chance = 0.25) — these knowledge-heavy MC benchmarks haven't emerged at this compute scale.
+90M shows ~zero within-run benchmark growth (deltas ≈ 0 or negative), consistent with the divergence.
+
+## 4. Decision accuracy per benchmark
+
+Setup: for each benchmark (language variants separate), rank the 6 language-count recipes (L1…L50, deep/seed1904) by final score at a small size vs at 600M; DA = pairwise agreement (decision_acc_fast). Non-English tasks are only evaluated on cells trained on that language, so they use each task's common recipe subset (≥4 recipes); 60 of 219 parent-level benchmarks qualify. Full table: decision_accuracy.csv in my scratchpad (columns per small size + mean).
+
+Best: hellaswag_de (0.94), xwinograd_jp (0.78), arc_it (0.78), hellaswag_ru (0.77), global_mmlu_full_en (0.73). The hellaswag family is the most decision-reliable overall (mean 0.72, and 0.91 when deciding from 350M).
+Worst (≤ coin flip): global_mmlu family (0.48), several include/belebele/xnli variants, multiblimp_spa (0.22). Unsurprising — a benchmark at chance has nothing to rank (their 600M across-recipe ranges are ~0.01).
+DA generally improves with the deciding size for the emerged families (hellaswag 0.52 → 0.91 from 90M → 350M; arc 0.52 → 0.64), but not for chance-level families.
+English benchmarks average 0.63 vs 0.55 for non-English, but the gap is mostly the chance-level knowledge tasks dragging the non-English pool.
+Caveat: with 4–6 recipes DA is quantized to 6–15 pairs, so individual values carry ±0.1–0.17 granularity; family-level averages are the trustworthy read.
+
+## 5. Do arch and language distribution count as "different" models?
+
+No seed pairs exist yet (the ladder report's seed row is empty), so I used checkpoint noise — the std of each benchmark score over the last 3 evaluated checkpoints, median 0.004 — as the noise yardstick, which is the more conservative of the SNR paper's two noise definitions available here.
+
+Language distribution: yes, clearly. At 600M the across-L range of final scores has median 0.022 ≈ 4.4× checkpoint noise, and 56/60 benchmarks separate by > 2× noise (top: xwinograd_en 17×, hellaswag_ru 13×). On BPB the separation is one to two orders of magnitude above noise. The L axis gives genuinely distinct models for SNR.
+Arch (deep vs shallow): yes, but from thin evidence. The only clean matched pair with benchmarks on both sides is 175M-L2: median |Δ| 0.013 ≈ 5.7× noise, above 2× noise on 14/17 tasks; on BPB, median |Δ| 0.074 vs noise 0.002 (~35×), with deep slightly better on average (−0.084 bits/byte). The 90M pairs are contaminated by the divergence (the L2 BPB "arch effect" of +8.2 there is the anomaly, not architecture).
+Honest caveat: without a seed reroll you can't strictly prove these deltas exceed seed variance — checkpoint noise underestimates seed noise (the SNR paper finds seed noise a few times larger). The L effect at 4–17× noise would survive that comfortably; the 175M-L2 arch effect at ~2–6× on benchmarks is likely real but is the one conclusion a single seed pair could still overturn. The seed-28/1797 cells now marked fresh in the launcher are exactly what closes this.

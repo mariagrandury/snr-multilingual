@@ -21,7 +21,7 @@ A rendered version lives at the "Predictivity Sweep Compute Budget" artifact
 
 > **Stale by ~10% (2026-08-28):** the Azure tables below price the earlier
 > **51-run** grid; the grid is now **56 runs** per level (L=2 gained ×3 seeds
-> at 175M/1B and the 1.7B row gained L=2 — see the cluster table further
+> at 175M/600M and the 1.7B row gained L=2 — see the cluster table further
 > down, which already uses 56). Scaling the per-size rows: ≈ 2.32e22 FLOPs
 > per level, fast mix ≈ **$130k** (headroom ≈ $70k), all-Spot ≈ $137k.
 > A full re-derivation is on the todo list (low priority).
@@ -58,7 +58,7 @@ the only usable ND H100 region with real meters; France's MI300X is unusable
 
 ## The workload (implemented ladder, trimmed grid)
 
-Grid: L ∈ {1, 2, 8, 15, 30, 50, 100}, ×3 seeds (28/1797/1904) at 175M and 1B in
+Grid: L ∈ {1, 2, 8, 15, 30, 50, 100}, ×3 seeds (64/313/1904) at 175M and 600M in
 the L ∈ {1, 30, 100} rows, 1.7B at L ∈ {1, 8, 30, 100} — 51 runs per
 intervention level. FLOPs = 6 · N_eff · D with N_eff = non-embedding + d·V
 output projection (V = 131,072 — it nearly doubles the smallest sizes'
@@ -391,7 +391,7 @@ size × language-setting × seed, scratch → full D = 100·N budget).
   resume script: re-running `launch_trainings.py` is the resume).
 - Steady-state compute only; excludes cold-start, save-iter overhead, and queue
   wait. 56 runs: the grid gained the 1.7B@L2 cell and ×3 seeds at L2 on the
-  175M and 1B columns.
+  175M and 600M columns.
 
 ## Checkpointing, conversion and eval cost
 
@@ -403,24 +403,26 @@ checkpoint *n*/5 — 4, 8 or 12.
 
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
-| Convert (Megatron → HF, every checkpoint) | 1,620 ckpts | ~3 min | ~80 |
-| Eval (every 2nd checkpoint + 1 FLOPs milestone, `auto` group) | 866 due, **635 submittable** | 30–720 min requested | **~1,550–2,100** |
+| Convert (Megatron → HF, every checkpoint) | 1,460 ckpts | ~3 min | ~73 |
+| Eval (every 2nd checkpoint + 1 FLOPs milestone, `auto` group) | 786 due, **661 submittable** | 30–720 min requested | **~2,200–2,550** |
 
-The densification is **+33% on both rows** (1,220 → 1,620 checkpoints,
-610 → 810 every-2nd evals) and lands entirely on 1B/1.7B, the two most
-expensive rungs; the FLOPs milestones add one more eval per run on top (see
-the training plan's "The compute axis"). Recomputed 2026-09-02 directly from
-`auto_evals_cscs.eval_minutes()` over the deep grid — the low end lets 600M+
-evaluate at the measured 350M rate, the high end uses the conservative
-unmeasured `MIN_PER_TASK`; both include `SAFETY`, the 15-min overhead and the
+The densification costs **+20%** on the current 56-run grid (1,220 → 1,460
+checkpoints, 610 → 730 every-2nd evals) and lands entirely on 1B/1.7B, the
+two most expensive rungs; the FLOPs milestones add one more eval per run on
+top (see the training plan's "The compute axis"). Recomputed 2026-09-02
+directly from `auto_evals_cscs.eval_minutes()` over the deep grid — 90M–600M
+are measured, so the range is only about the two unmeasured rungs: the low
+end evaluates 1B/1.7B at 600M's measured 0.85 min/task, the high end at the
+conservative 2.0/2.8. Both include `SAFETY`, the 15-min overhead and the
 15-min rounding, so they are what the watcher *requests*, not what it burns.
 
-**231 of the 866 due jobs (27%) are refused at submission**, up from 130 —
-they exceed the 11:59 queue cap (600M/1B/1.7B at L100, 1.7B at L50) and are
-excluded from the node-hours above. They need `NUM_SPLITS`/`SPLIT_INDEX`
-before they can run at all, so that column is a backlog, not a saving.
+**125 of the 786 due jobs (16%) are refused at submission** — they exceed
+the 11:59 queue cap (1B/1.7B at L100 and L50) and are excluded from the
+node-hours above. They need `NUM_SPLITS`/`SPLIT_INDEX` before they can run
+at all, so that column is a backlog, not a saving. The 600M re-estimate
+(1.6 → 0.85 min/task measured) took 600M back under the cap.
 
-Eval is **~20–25% of a level's compute** (1,550–2,100 against the ~6,290
+Eval is **~26–29% of a level's compute** (2,200–2,550 against the ~6,290
 training node-hours above), not the ~2% originally stated here and not the
 ~12–19% that held before the checkpoint grid was densified. The old ~142
 node-hours applied L2's ~14 min to every cell, but cost scales with the task

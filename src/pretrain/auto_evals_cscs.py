@@ -92,27 +92,26 @@ CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
 # Elapsed time is very close to linear in the task count. Fitted on 69
 # completed eval jobs (2026-08-21..27), median elapsed per (size, n_tasks):
 #
-#     size   9 tasks  18 tasks  60 tasks    overhead   per task
-#     90M      7.9       13.9         -      1.95 min   0.667 min
-#     175M     8.3       13.9         -      2.70 min   0.622 min
-#     350M     9.1       15.3      47.4      2.34 min   0.751 min
+#     size   9 tasks  18 tasks  60 tasks  100  164  219    per task
+#     90M      7.9       13.9         -    -    -    -     0.667 min
+#     175M     8.3       13.9         -    -    -    -     0.622 min
+#     350M     9.1       15.3      47.4    -    -    -     0.751 min
+#     600M     9.2       16.1      48.7  89.8  145  187    0.846 min
 #
-# The 350M fit (taken on 9 -> 60) predicts 47.4 min at 60 tasks against 47.4
-# measured, so extrapolating it to the larger language settings is sound.
-#
-# Model size barely moves the per-task cost at this scale — these are small
-# models and the run is dominated by dataset load and tokenization, not by the
-# forward pass. That will stop holding as the forward pass grows, and 600M+
-# have no eval run yet, so those keep their older conservative estimates
-# rather than an extrapolation dressed up as a measurement. The step from
-# 350M's measured 0.75 to 600M's 1.6 is that ignorance, not a cliff.
+# 600M is measured on 60 jobs out to 219 tasks (2026-09-02) and lands at 0.846,
+# in the same 0.62-0.85 band as every smaller rung: over a 6.7x size range the
+# per-task cost barely moves, because the run is dominated by dataset load and
+# tokenization rather than the forward pass. 1B and 1.7B still have no eval
+# run, so they keep conservative estimates rather than an extrapolation dressed
+# up as a measurement — but on this evidence they are likely 2-3x too high too,
+# which is what currently pushes them over the queue cap at L100.
 #
 # A walltime kill mid-batch writes NO results_*.json (BATCH_TASKS=1 is a single
 # lm_eval call), so an undersized job is pure loss: hence SAFETY below, and the
 # generous fixed overhead relative to the ~2.5 min measured — container pull and
 # vLLM cold start are both much slower on a loaded node.
-MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75,   # measured
-                "600M": 1.6, "1B": 2.0, "1.7B": 2.8}       # not measured
+MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75, "600M": 0.85,  # measured
+                "1B": 2.0, "1.7B": 2.8}                                # not measured
 OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
 

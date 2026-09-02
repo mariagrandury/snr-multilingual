@@ -27,7 +27,7 @@ of variant:
                                   at (size, L) across all variants (seeds,
                                   deep/shallow, scheme A/B, tokenizers).
   pretrain_progress_detailed.png  one row of binary heatmaps per
-                                  transformation — SEED (28/1797/1904),
+                                  transformation — SEED (the SEED_TRIPLE set),
                                   ARCH (deep/shallow), SCHEME (A/B),
                                   TOKENIZER (v1) — yellow 0 / blue 1.
 
@@ -276,7 +276,7 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
 
     # --- detailed: one row of binary heatmaps per transformation ------------
     rows = [
-        ("SEED", "seed", [28, 1797, 1904]),
+        ("SEED", "seed", SEED_TRIPLE),
         ("ARCH", "arch", ["deep", "shallow"]),
         ("SCHEME", "scheme", ["A", "B"]),
         ("TOKENIZER", "tokenizer", ["v1"]),
@@ -303,7 +303,7 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
                            for v in row]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             if key == "seed":
-                # Seeds 28/1797 exist only on the x3 cells (seeds_for); the
+                # The extra seeds exist only on the x3 cells (seeds_for); the
                 # single-seed cells would otherwise read as permanently
                 # missing runs.
                 matrix = [[v if value in seeds_for(size, L) else float("nan")

@@ -36,30 +36,54 @@
 #SBATCH --error=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
 set -uo pipefail
 
-SRC=${SRC:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs}
-DST=${DST:-/capstor/store/cscs/swissai/infra01/msnr-eval-logs}
+LOGS=${LOGS:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs}
+CAP=${CAP:-/capstor/store/cscs/swissai/infra01}
 DRY=${DRY:-0}
 
-mkdir -p "$DST/logs"
-echo "[$(date)] mirroring $SRC -> $DST"
-du -sh "$SRC" 2>/dev/null
+# The whole durable record of the sweep, not just the evals. The two training
+# trees are ~2.6 GB against the eval tree's 336 GB, so they are effectively
+# free — and until 2026-09-01 NOTHING about training reached capstor at all.
+#
+# The per-run glob is deliberately `*/logging`, not `lm-*/logging`: diagnostic
+# cells are named `diag-*` precisely so the grid tooling ignores them, but
+# they are the evidence behind plan/90M-rung-anomaly.md and must be kept. This
+# is the one place the diag- prefix must NOT filter anything.
+#
+# checkpoints/, triggers/ and debug/ are excluded: checkpoints are terabytes
+# and their durable form is already <CAP>/msnr-hf-models.
+PAIRS=(
+    "$LOGS/eval_logs|$CAP/msnr-eval-logs"
+    "$LOGS/slurm/training|$CAP/msnr-train-logs"
+    "$LOGS/Meg-Runs/msnr|$CAP/msnr-run-logging"
+)
 
 # --partial: a 2 MB samples file interrupted mid-write resumes rather than
 #   restarting. --inplace is NOT used: a torn file would look complete.
 # --no-perms/--no-group: capstor enforces its own ACLs; preserving the source
 #   modes fails noisily on every file without changing anything.
-ARGS=(-a --partial --no-perms --no-group --human-readable --stats)
+ARGS=(-a --partial --no-perms --no-group --human-readable --stats
+      --exclude=checkpoints/ --exclude=triggers/ --exclude=debug/)
 (( DRY )) && ARGS+=(--dry-run --itemize-changes)
 
-rsync "${ARGS[@]}" "$SRC/" "$DST/"
-rc=$?
-
-if (( rc == 0 )); then
-    echo "[$(date)] mirror complete"
-    du -sh "$DST" 2>/dev/null
-else
+mkdir -p "$CAP/msnr-eval-logs/logs"
+rc=0
+for pair in "${PAIRS[@]}"; do
+    src=${pair%%|*}; dst=${pair##*|}
+    [ -d "$src" ] || { echo "[$(date)] SKIP $src (absent)"; continue; }
+    mkdir -p "$dst"
+    echo "[$(date)] mirroring $src -> $dst"
+    du -sh "$src" 2>/dev/null
+    rsync "${ARGS[@]}" "$src/" "$dst/"
+    prc=$?
     # 23/24 = some files vanished or were unreadable mid-run, which is normal
-    # while evals are writing; the next run picks them up.
-    echo "[$(date)] rsync exited $rc (23/24 = files changed under us; re-run)" >&2
-fi
+    # while evals are writing; the next run picks them up. Keep going: one
+    # busy tree must not stop the other two from being mirrored.
+    if (( prc == 0 )); then
+        echo "[$(date)] done $dst"; du -sh "$dst" 2>/dev/null
+    else
+        echo "[$(date)] rsync exited $prc on $src (23/24 = files changed" \
+             "under us; re-run)" >&2
+        rc=$prc
+    fi
+done
 exit $rc

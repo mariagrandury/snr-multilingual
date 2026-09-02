@@ -6,10 +6,19 @@ with one row per (model, model_revision, task), aggregate metrics only — no
 per-instance predictions.
 
 Splits emitted (one per `source` in configs/models.json):
+  - pretraining_predictivity: the lm-* ladder (size × L × arch × scheme ×
+                        seed), the current sweep — carries L/scheme/arch
+                        columns the other splits leave null
   - pretraining_custom: 36 apertus megatron pretrains (4 sizes × 3 mixes × 3 seeds)
   - pretraining_a06:    a06 main runs (apertus3-{1b,3b}-*-nodes)
   - reference_hf:       swiss-ai-reference + huggingface-reference (Qwen3,
                         gemma-3, SmolLM3, Olmo-3, Apertus-8B/70B-2509)
+
+Which splits actually appear depends on --project: each W&B project has its
+own eval_logs tree. msnr (the default) is the predictivity sweep — the
+superseded apertus-*-L*-seed* bilingual runs share that tree but are gated
+out (`sources` split None). The 36-sweep splits come from --project
+snr-experiments, whose tree no longer exists on this cluster.
 
 Usage:
   # Local eval_logs only — writes parquet to --out-dir, no upload (default)
@@ -46,8 +55,13 @@ from push_all_results import LOGS_BASE, model_params, parse_name  # noqa: E402
 # W&B coordinates + published-dataset config from configs/hf_wandb.json.
 _HF_WANDB_CFG = load_hf_wandb_config()
 ENTITY = _HF_WANDB_CFG["wandb"]["entity"]
+# msnr — the predictivity sweep, and the only project with an eval_logs tree
+# on this cluster (the 36-sweep's snr-experiments dir is long gone; pass
+# --project/--repo-id to rebuild that dataset from a machine that still has
+# it). Publishing target follows plan/storage-map.md: data artifacts live in
+# the msnr-data org, models in msnr.
 PROJECT = _HF_WANDB_CFG["wandb"]["project"]
-REPO_ID = _HF_WANDB_CFG["repo_id"]
+REPO_ID = _HF_WANDB_CFG["repo_id_predictivity"]
 
 # Tasks for which the result file uses these as the "primary" metric (in order).
 PRIMARY_METRIC_PRIORITY = ["acc", "exact_match", "pass@1", "f1"]
@@ -134,7 +148,15 @@ def name_to_metadata(name: str) -> dict | None:
     # mix / seed depend on source. Custom Apertus encodes both in the
     # NAME; a06 has neither; HF reference derives mix from the branch
     # (stage<K> or main).
-    if src == "snr-pretraining-custom":
+    if src == "snr-pretraining-predictivity":
+        # The predictivity cell's axes are declared fields on its models.json
+        # entry (sync_models_json writes them), so nothing is parsed out of
+        # the name here. `mix` keeps the one-string-per-data-condition meaning
+        # the other splits give it; L/scheme/arch also ride as own columns.
+        mix = f"L{entry['L']}-scheme{entry['scheme']}"
+        seed = entry.get("seed")
+        revision = f"iter{step}"
+    elif src == "snr-pretraining-custom":
         m = _CUSTOM_RE.match(name)
         mix = m.group("mix") if m else None
         seed = int(m.group("seed")) if m else entry.get("seed")
@@ -164,6 +186,11 @@ def name_to_metadata(name: str) -> dict | None:
         "family": entry.get("family"),
         "mix": mix,
         "seed": seed,
+        # Predictivity axes: null on every other split, so the analysis can
+        # group by them without parsing run names.
+        "L": entry.get("L"),
+        "scheme": entry.get("scheme"),
+        "arch": entry.get("arch"),
         "split": split,
     }
 
@@ -269,6 +296,9 @@ def build_rows(project_dir: Path) -> list[dict]:
                 "size": meta["size"],
                 "mix": meta["mix"],
                 "seed": meta["seed"],
+                "L": meta["L"],
+                "scheme": meta["scheme"],
+                "arch": meta["arch"],
                 "primary_score": primary_score,
                 "primary_metric": primary_metric,
                 "metrics": metrics,
@@ -539,6 +569,11 @@ def fetch_multilingual_evals_rows(
                 "model_params": float(params) if params else None,
                 "model_tokens": float(tokens) if tokens else None,
                 "flops": float(flops) if flops else None,
+                # Predictivity-only axes; reference models have none, but the
+                # column must exist on every row or the parquet schema splits.
+                "L": entry.get("L"),
+                "scheme": entry.get("scheme"),
+                "arch": entry.get("arch"),
                 "step": ckpt_meta["step"],
                 "size": entry.get("size"),
                 "mix": ckpt_meta["mix"],
@@ -769,6 +804,12 @@ def _arrow_schema():
         ("size", pa.large_string()),
         ("mix", pa.large_string()),
         ("seed", pa.int64()),
+        # Predictivity axes — null on the other splits. The schema is the
+        # gate: a column absent from it is dropped from every parquet, however
+        # faithfully the row dicts carry it.
+        ("L", pa.int64()),
+        ("scheme", pa.large_string()),
+        ("arch", pa.large_string()),
         ("primary_score", pa.float64()),
         ("primary_metric", pa.large_string()),
         ("metrics", metric_struct),
@@ -862,6 +903,7 @@ per-instance predictions.
 
 | Split | Models | Description |
 |---|---|---|
+| `pretraining_predictivity` | lm-{{90M…1.7B}}-L{{1,2,8,15,30,50,100}}[-schemeB]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
 | `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
 | `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
 | `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
@@ -885,8 +927,11 @@ per-instance predictions.
 | `flops` | float | ≈ 6 × params × tokens |
 | `step` | int | Training iteration / step |
 | `size` | str | Parameter-count tag (e.g. `175M`, `8B`) |
-| `mix` | str | Data-mix tag (e.g. `fwEdu30-fw270`, `stage2`, `main`) |
+| `mix` | str | Data-mix tag (e.g. `fwEdu30-fw270`, `L8-schemeA`, `stage2`, `main`) |
 | `seed` | int | Pretraining seed (custom only) |
+| `L` | int | Language count of the training mixture — `pretraining_predictivity` only, null elsewhere |
+| `scheme` | str | Language-set scheme `A` (resource-ranked) or `B` (diversity-first) — predictivity only |
+| `arch` | str | `deep` (baseline) or `shallow` (the model-depth intervention) — predictivity only |
 | `primary_score` | float | Headline metric — `acc` if available else `exact_match` |
 | `primary_metric` | str | Name of the primary metric |
 | `metrics` | dict | All numeric metric variants reported for the task |

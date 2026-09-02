@@ -949,6 +949,9 @@ SOURCES = {
     "distillation":           {"split": "distillation"},
     "daslab-testing":         {"split": None},
     "tokenizer-lm":           {"split": None},
+    # Superseded bilingual runs: kept on disk, deliberately NOT published.
+    "snr-pretraining-bilingual":   {"split": None},
+    "snr-pretraining-predictivity": {"split": "pretraining_predictivity"},
 }
 
 
@@ -969,11 +972,15 @@ SNR = {
 # --- HF / W&B infra config (configs/hf_wandb.json) --------------------------
 
 HF_WANDB = {
+    # Legacy 36-sweep dataset; the current sweep publishes to the msnr-data
+    # org instead (plan/storage-map.md: msnr = models, msnr-data = data).
     "repo_id": "multilingual-snr/multilingual-snr-eval-results",
+    "repo_id_predictivity": "msnr-data/eval-results",
     "parquet_pattern": "{split}-00000-of-00001.parquet",
     "wandb": {
         "entity": "mariagrandury-epflnlp",
-        "project": "snr-experiments",
+        "project": "msnr",
+        "project_legacy": "snr-experiments",
     },
     "multilingual_evals": {
         # raw/<bench>/<model_dir>/.../results_*.json sources to merge from.
