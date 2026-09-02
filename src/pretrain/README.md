@@ -359,7 +359,7 @@ regardless of variant:
 - **`pretrain_progress_simple.png`** — cell = how many finished models exist
   at (size, L), across seeds, deep/shallow, scheme A/B, tokenizers.
 - **`pretrain_progress_detailed.png`** — one row of binary (yellow 0 /
-  blue 1) heatmaps per transformation: SEED (28 / 1797 / 1904),
+  blue 1) heatmaps per transformation: SEED (64 / 313 / 1904),
   ARCH (deep / shallow), SCHEME (A / B), TOKENIZER (v1 for now).
 
 All three PNGs and the generated doc blocks are refreshed automatically at
@@ -368,11 +368,12 @@ the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
 since that is what changes the state it shows.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd saved checkpoint, each run's final one**
-whatever its iter, **and the checkpoint nearest each shared FLOPs
-milestone** — `src/evals/scripts/utils/configs.milestone_iters`, ~1 extra
-checkpoint per run, so cross-size reads at equal compute land on evaluated
-points rather than interpolated ones) and the same destination (W&B
+the same rule (**every 2nd saved checkpoint and each run's final one**
+whatever its iter; the planned third piece — the checkpoint nearest each
+shared FLOPs milestone, so cross-size reads at equal compute land on
+evaluated points rather than interpolated ones — is a 09-02 decision NOT
+yet implemented: no `milestone_iters` helper exists yet) and the same
+destination (W&B
 **`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
 so loss and benchmark curves live side by side). The `auto` group in
 [`configs/tasks.json`](../../configs/tasks.json) lists **benchmark names**

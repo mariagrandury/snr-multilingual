@@ -229,7 +229,7 @@ Before the largest run at a setting, check the realized FineWeb2 build size that
 
 Log the final checkpoints (for example the last 30, spaced about 1000 steps), so that per-language BPB and the checkpoint-to-checkpoint noise estimate can be computed over the final window, matching the Signal-and-Noise noise definition.
 
-**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint, **the run's final one**, and **the checkpoint nearest each half-decade FLOPs milestone** (`auto_evals_*.py --every 2` + `configs.milestone_iters`, ~1 extra per run — see "The compute axis" below); the odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
+**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint and **the run's final one** (`auto_evals_*.py --every 2`); the third piece decided 09-02 — **the checkpoint nearest each half-decade FLOPs milestone** (~1 extra per run, see "The compute axis" below) — is **not implemented yet**: the `configs.milestone_iters` helper it needs does not exist, so the watchers today run only the every-2nd+final rule. The odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
 
 Note the deviation from "the last 30": with 20 checkpoints per run (40/60 at the reference rungs) the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
 
@@ -292,10 +292,12 @@ a data edit (add the three shape fields to its entry), not a code change.
 
 Curves need nothing extra; the *vertical* read does — "at 1e20 FLOPs, which
 size/shape wins", and decision accuracy between two sizes at matched compute.
-Those were interpolated between evaluated points. The eval due-rule now also
-marks the saved checkpoint nearest each half-decade FLOPs milestone
-(`configs.milestone_iters`, 1e18…1e21, skipping anything still inside LR
-warmup, where a large model is not a decision-relevant comparison).
+Those were interpolated between evaluated points. The plan (09-02, not yet
+implemented — the watchers still run only every-2nd+final) is for the eval
+due-rule to also mark the saved checkpoint nearest each half-decade FLOPs
+milestone (a `configs.milestone_iters` helper, 1e18…1e21, skipping anything
+still inside LR warmup, where a large model is not a decision-relevant
+comparison).
 
 Against the real 20/40/60 save grid, **exactly one milestone per run is not
 already due** (ck19 / ck7 / ck3 depending on size) and the worst

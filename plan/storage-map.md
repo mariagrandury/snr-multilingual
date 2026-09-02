@@ -40,7 +40,7 @@ map says it lives only on iopsstor, that is a gap, not a design.
 | `msnr-train-logs/` · `msnr-run-logging/` | mirror targets for training logs / Meg-Runs metadata (same sbatch) |
 | `msnr-ladder-report/` | ladder_report.csv / _curve.csv / .md (written by `ladder_report.py`) |
 
-## Azure blob (one store per workspace, ES + UK)
+## Azure blob (one store per workspace, ES + CA)
 
 | Path | Holds |
 | ---- | ----- |

@@ -143,25 +143,25 @@ A100 SXM peak is 312 TFLOP/s vs H100's 989 → **A100 is 3.17× slower per GPU**
 | 1B | 6.68e20 | 62.0 | **7.7 d** | 15.5 d | _2.44 d_ |
 | 1.7B | 1.98e21 | 183.6 | **23.0 d** | 45.9 d | _7.24 d_ |
 
-Whole-sweep totals (45 × 1B and 15 × 1.7B — 15 and 5 per level × 3 levels,
-per `launch_trainings.py`):
+Whole-sweep totals (21 × 1B and 15 × 1.7B — 7 and 5 per level × 3 levels,
+per `launch_trainings.py`; the ×3 seeds sit at 175M/600M, not 1B):
 
 | Set | Runs | A100-days |
 |---|---|---|
-| all 1B | 45 | **2,788** |
+| all 1B | 21 | **1,302** |
 | all 1.7B | 15 | **2,754** |
-| all 1B + 1.7B | 60 | **5,542** |
+| all 1B + 1.7B | 36 | **4,056** |
 
 Wall-clock against fleet size (runs are independent jobs, so they parallelize
 freely; ignores eviction overhead):
 
 | Fleet | all 1B | all 1B + 1.7B |
 |---|---|---|
-| 3 × ND96amsr (24 A100) — _today's low-priority allowance_ | 116 d | **231 d** |
-| 4 × ND96amsr (32 A100) | 87 d | 173 d |
-| 8 × ND96amsr (64 A100) | 44 d | 87 d |
-| 16 × ND96amsr (128 A100) | 22 d | 43 d |
-| 32 × ND96amsr (256 A100) | 11 d | 22 d |
+| 3 × ND96amsr (24 A100) — _today's low-priority allowance_ | 54 d | **169 d** |
+| 4 × ND96amsr (32 A100) | 41 d | 127 d |
+| 8 × ND96amsr (64 A100) | 20 d | 63 d |
+| 16 × ND96amsr (128 A100) | 10 d | 32 d |
+| 32 × ND96amsr (256 A100) | 5 d | 16 d |
 
 **A100 is a schedule fallback, not a cost saving.** At canadaeast low-priority
 ($7.865/node-h = $0.98/GPU-h) the 1B+1.7B set alone is **$131k** (Spot:
@@ -348,17 +348,17 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 
 | Size  | Tokens (D=100·N) | Iters  | Nodes | ms/iter deep · shallow | Time/run | 12h segments | Runs | Node-hours |
 | ----- | ---------------: | -----: | ----: | ---------------------: | -------: | :----------: | ---: | ---------: |
-| 90M   |            9.3 B |  4,500 |     3 |    **1,248 · 1,154**   |   ~1.6 h |      1       |    7 |         19 |
-| 175M  |           17.6 B |  8,540 |     6 |      **844 · 810**     |   ~2.0 h |      1       |   15 |         48 |
-| 350M  |           34.4 B | 16,660 |    14 |      **604 · 567**     |   ~2.8 h |      1       |    7 |        157 |
-| 600M  |           59.5 B | 28,800 |    21 |      **548 · 539**     |   ~4.4 h |      1       |    7 |        368 |
-| 1B    |           94.4 B | 45,740 |    21 |                  715\* |   ~9.1 h |      1       |   15 |      2,862 |
+| 90M   |            9.3 B |  4,500 |     3 |    **1,248 · 1,154**   |   ~1.6 h |      1       |    7 |         33 |
+| 175M  |           17.6 B |  8,540 |     6 |      **844 · 810**     |   ~2.0 h |      1       |   15 |        180 |
+| 350M  |           34.4 B | 16,660 |    14 |      **604 · 567**     |   ~2.8 h |      1       |    7 |        274 |
+| 600M  |           59.5 B | 28,800 |    21 |      **548 · 539**     |   ~4.4 h |      1       |   15 |      1,381 |
+| 1B    |           94.4 B | 45,720 |    21 |                  715\* |   ~9.1 h |      1       |    7 |      1,336 |
 | 1.7B  |          167.2 B | 81,000 |    21 |                1,200\* |  ~27.0 h |      3       |    5 |      2,835 |
-| **Σ** |                  |        |       |                        |          |              |   56 |    ~6,290  |
+| **Σ** |                  |        |       |                        |          |              |   56 |    ~6,040  |
 
 - **Runs execute in parallel** (each cell on its own node allocation), so the
   serial run-hours are not calendar time — **node-hours** is the compute cost.
-  1B + 1.7B are ~90% of it.
+  1B + 1.7B are ~69% of it (the ×3 seeds sit at 175M and 600M, not 1B).
 - **90M–600M are measured on this sweep**, in bold: medians over **500 k+
   logged iterations** from the 2026-08-21…27 runs, i.e. entirely after the
   training data moved to iopsstor. Sampled mid-run (first 20 and last 10
@@ -404,20 +404,22 @@ checkpoint *n*/5 — 4, 8 or 12.
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
 | Convert (Megatron → HF, every checkpoint) | 1,460 ckpts | ~3 min | ~73 |
-| Eval (every 2nd checkpoint + 1 FLOPs milestone, `auto` group) | 786 due, **661 submittable** | 30–720 min requested | **~2,200–2,550** |
+| Eval (every 2nd checkpoint + final, `auto` group; the planned +1 FLOPs milestone per run is **not implemented yet**) | 730 due today (786 with milestones), **610 submittable** | 30–720 min requested | **~2,200–2,550** |
 
 The densification costs **+20%** on the current 56-run grid (1,220 → 1,460
 checkpoints, 610 → 730 every-2nd evals) and lands entirely on 1B/1.7B, the
-two most expensive rungs; the FLOPs milestones add one more eval per run on
-top (see the training plan's "The compute axis"). Recomputed 2026-09-02
+two most expensive rungs; the FLOPs milestones would add one more eval per
+run on top once implemented (see the training plan's "The compute axis" —
+no `milestone_iters` helper exists yet). Recomputed 2026-09-02
 directly from `auto_evals_cscs.eval_minutes()` over the deep grid — 90M–600M
 are measured, so the range is only about the two unmeasured rungs: the low
 end evaluates 1B/1.7B at 600M's measured 0.85 min/task, the high end at the
 conservative 2.0/2.8. Both include `SAFETY`, the 15-min overhead and the
 15-min rounding, so they are what the watcher *requests*, not what it burns.
 
-**125 of the 786 due jobs (16%) are refused at submission** — they exceed
-the 11:59 queue cap (1B/1.7B at L100 and L50) and are excluded from the
+**120 of the 730 due jobs (16%) are refused at submission** — they exceed
+the 11:59 queue cap (1B at L30/L50/L100 and 1.7B at L30/L100 — there is no
+1.7B×L50 cell) and are excluded from the
 node-hours above. They need `NUM_SPLITS`/`SPLIT_INDEX` before they can run
 at all, so that column is a backlog, not a saving. The 600M re-estimate
 (1.6 → 0.85 min/task measured) took 600M back under the cap.

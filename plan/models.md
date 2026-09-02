@@ -22,18 +22,18 @@ this table.
 
 | Languages | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| 1 | ✓ | **×3** | ✓ | ✓ | **×3** | ✓ |
-| 2 | ✓ | **×3** | ✓ | ✓ | **×3** | ✓ |
+| 1 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
+| 2 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
 | 8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | 15 | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| 30 | ✓ | **×3** | ✓ | ✓ | **×3** | ✓ |
-| 50 | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| 100 | ✓ | **×3** | ✓ | ✓ | **×3** | ✓ |
-| **Runs/level** | 7 | 15 | 7 | 7 | 15 | 5 |
+| 30 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 50 | ✓ | **×3** | ✓ | **×3** | ✓ | — |
+| 100 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
+| **Runs/level** | 7 | 15 | 7 | 15 | 7 | 5 |
 
 **56 runs per intervention level** (scheme A, deep). Counting both
 architectures and scheme B where its language set differs (L ∈ {8, 15, 30}):
-154 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
+146 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
 `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` (e.g.
 `lm-1B-L30-deep-seed1904`, `lm-350M-L8-schemeB-shallow-seed1904`). W&B project **`msnr`**
 (entity `mariagrandury-epflnlp`).
@@ -89,9 +89,9 @@ only). Launched with `--arch shallow`.
 D = 100 × N_non-emb exactly (5× Chinchilla), stored per size in each
 config's `predictivity` block; one iteration = 504 × 4096 =
 2,064,384 tokens. Iterations are rounded to the checkpoint grid (20 evenly
-spaced checkpoints per run, 40 at 1.7B) so `save_interval = train_iters / 20`
-divides exactly and the 1×C point (`train_iters / 5`) is checkpoint 4 (8 at
-1.7B) at every size. Peak LR from the 6ND law at each run's own budget
+spaced checkpoints per run — 40 at 1B, 60 at 1.7B) so
+`save_interval = train_iters / n` divides exactly and the 1×C point
+(`train_iters / 5`) is checkpoint n/5 at every size. Peak LR from the 6ND law at each run's own budget
 (C = 6·N·100N); warmup ≈ 4% and WSD decay ≈ 20% of iterations (rounded to
 100). Micro-batch and nodes are the cluster values (4× GH200 per node);
 `launch_trainings.cscs_mbs` shrinks MBS where the layout needs it.
@@ -100,28 +100,28 @@ Deep baseline:
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| Train tokens | 9.29B | 17.62B | 34.41B | 59.45B | 94.41B | 167.22B |
-| Iterations | 4,500 | 8,540 | 16,660 | 28,800 | 45,740 | 81,000 |
+| Train tokens | 9.29B | 17.63B | 34.39B | 59.45B | 94.38B | 167.22B |
+| Iterations | 4,500 | 8,540 | 16,660 | 28,800 | 45,720 | 81,000 |
 | Peak LR | 1.428e-3 | 1.217e-3 | 1.029e-3 | 8.976e-4 | 7.996e-4 | 6.931e-4 |
 | LR warmup iters | 200 | 300 | 700 | 1,200 | 1,800 | 3,200 |
 | WSD decay iters | 900 | 1,700 | 3,300 | 5,800 | 9,100 | 16,200 |
 | Micro-batch · nodes | 7 · 3 | 7 · 6 | 3 · 14 | 6 · 21 | 6 · 21 | 2 · 21 |
-| Checkpoint interval (iters) | 225 | 427 | 833 | 1,440 | 2,287 | 2,025 (×40) |
-| 1×C checkpoint (20N tokens) | iter 900 | 1,708 | 3,332 | 5,760 | 9,148 | 16,200 |
+| Checkpoint interval (iters) | 225 | 427 | 833 | 1,440 | 1,143 (×40) | 1,350 (×60) |
+| 1×C checkpoint (20N tokens) | iter 900 | 1,708 | 3,332 | 5,760 | 9,144 | 16,200 |
 
 Shallow variant (its own N → slightly different schedules; no `nodes`
 column in its file — the deep ladder's per-size node counts apply):
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| Train tokens | 8.81B | 17.20B | 34.68B | 61.66B | 94.76B | 166.53B |
-| Iterations | 4,260 | 8,340 | 16,800 | 29,860 | 45,900 | 80,680 |
+| Train tokens | 8.79B | 17.22B | 34.68B | 61.64B | 94.80B | 166.47B |
+| Iterations | 4,260 | 8,340 | 16,800 | 29,860 | 45,920 | 80,640 |
 | Peak LR | 1.447e-3 | 1.224e-3 | 1.027e-3 | 8.894e-4 | 7.988e-4 | 6.938e-4 |
 | LR warmup iters | 200 | 300 | 700 | 1,200 | 1,800 | 3,200 |
 | WSD decay iters | 900 | 1,700 | 3,400 | 6,000 | 9,200 | 16,100 |
 | Micro-batch (config) | 7 | 14 | 8 | 4 | 3 | 2 |
-| Checkpoint interval (iters) | 213 | 417 | 840 | 1,493 | 2,295 | 2,017 (×40) |
-| 1×C checkpoint (20N tokens) | iter 852 | 1,668 | 3,360 | 5,972 | 9,180 | 16,136 |
+| Checkpoint interval (iters) | 213 | 417 | 840 | 1,493 | 1,148 (×40) | 1,344 (×60) |
+| 1×C checkpoint (20N tokens) | iter 852 | 1,668 | 3,360 | 5,972 | 9,184 | 16,128 |
 
 ## Shared training configuration (every run)
 
@@ -138,8 +138,8 @@ column in its file — the deep ladder's per-size node counts apply):
 | LR schedule | WSD (warmup → constant → 1-sqrt decay), min-lr 0; `--use-checkpoint-opt_param-scheduler` so capped resumes stay on the saved curve |
 | Init | normal, std = 0.008944 × √(1792 / d_model) (width-scaled, anchored at the 1B) |
 | Parallelism | TP 1 · PP 1 · pure DP + distributed optimizer, overlap grad-reduce/param-gather |
-| Checkpointing | torch_dist, async save, every `train_iters / 20` iters (/ 40 at 1.7B) — see the interval rows above |
-| Seeds | 1904 baseline; 28 / 1797 / 1904 on ×3 cells (seed sets init AND data order) |
+| Checkpointing | torch_dist, async save, every `train_iters / 20` iters (/ 40 at 1B, / 60 at 1.7B) — see the interval rows above |
+| Seeds | 1904 baseline; 64 / 313 / 1904 on ×3 cells (seed sets init AND data order) |
 
 ## Data per language setting
 
@@ -166,8 +166,10 @@ nested across settings — `src/pretrain/data/language_sets_scheme{A,B}.json`.
 
 ## Evaluation
 
-Auto-evals during training on **every 2nd checkpoint, each run's final
-one, and the checkpoint nearest each half-decade FLOPs milestone** (`auto_evals_cscs.py` / `auto_evals_azure.py`): the `auto` benchmark
+Auto-evals during training on **every 2nd checkpoint and each run's final
+one** (`auto_evals_cscs.py` / `auto_evals_azure.py`; the planned third
+piece — the checkpoint nearest each half-decade FLOPs milestone — is not
+implemented yet): the `auto` benchmark
 group of `configs/tasks.json`, expanded to one task per benchmark per
 language the cell trains on (15 tasks at L1, 463 at L100), pushed to W&B
 `msnr`. Per-language bits-per-byte on the fixed validation set (byte counts
