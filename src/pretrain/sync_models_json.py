@@ -19,6 +19,15 @@ Usage:
     python sync_models_json.py                 # the 56 baseline cells
     python sync_models_json.py --arch shallow  # + the shallow variant's cells
     python sync_models_json.py --dry-run       # show what would change
+    python sync_models_json.py --prune         # drop entries the grid lost
+
+sync() only upserts, so a grid edit (seeds, x3 placement) leaves the old
+cells' entries behind — and the Azure watcher enumerates cells FROM
+models.json (filter_models), so stale entries are scanned and reported as
+real cells every pass. --prune removes predictivity entries no variant of
+the current grid defines; it is a manual step because an entry may belong
+to a run that already produced checkpoints or eval results under the old
+grid — check before pruning, and keep such entries by reverting the diff.
 """
 
 from __future__ import annotations
@@ -91,6 +100,33 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
     }
 
 
+def grid_names() -> set[str]:
+    """Every cell name any variant of the current grid can produce (both
+    archs, both schemes) — the keep-set for --prune."""
+    names = set()
+    for arch in HYPERPARAMS:
+        for scheme in ("A", "B"):
+            for c in predictivity_cells():
+                s = scheme if c["L"] in SCHEME_B_LANGS else "A"
+                names.add(exp_name(c["size"], c["L"], arch, c["seed"], s))
+    return names
+
+
+def prune(write: bool = True) -> list[str]:
+    """Remove predictivity entries no variant of the grid defines; returns
+    the removed names. Manual (CLI --prune), not part of sync() — see the
+    module docstring."""
+    data = json.loads(MODELS_JSON.read_text())
+    keep = grid_names()
+    stale = [n for n, e in data["models"].items()
+             if e.get("source") == SOURCE and n not in keep]
+    for n in stale:
+        del data["models"][n]
+    if write and stale:
+        MODELS_JSON.write_text(json.dumps(data, indent=2) + "\n")
+    return stale
+
+
 def sync(arch: str = "deep", scheme: str = "A",
          write: bool = True) -> tuple[list[str], list[str]]:
     """Upsert the variant's cell entries; returns (added, updated) names.
@@ -126,8 +162,15 @@ def main() -> None:
     p.add_argument("--arch", choices=["deep", "shallow"], default="deep")
     p.add_argument("--scheme", choices=["A", "B"], default="A")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--prune", action="store_true",
+                   help="also remove predictivity entries the grid no longer "
+                        "defines (any arch/scheme) — check they have no "
+                        "artifacts first")
     args = p.parse_args()
 
+    if args.prune:
+        for n in prune(write=not args.dry_run):
+            print(f"  - {n} (not in the current grid)")
     added, updated = sync(args.arch, args.scheme, write=not args.dry_run)
     print(f"added {len(added)}, updated {len(updated)} "
           f"(of {len(predictivity_cells())} cells, arch={args.arch} "
