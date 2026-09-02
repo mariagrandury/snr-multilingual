@@ -37,8 +37,8 @@
 #SBATCH --cpus-per-task=64
 #SBATCH --mem=200000
 #SBATCH --time=03:00:00
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/logs/%x_%j.out
+#SBATCH --error=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/logs/%x_%j.err
 set -uo pipefail
 
 CELL=${1:?usage: sbatch score_bpb.sbatch <cell> [iters...]}
@@ -52,7 +52,7 @@ ITERS=("$@")
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/scripts/score_bpb.sbatch
 MAX_CHAIN=${MAX_CHAIN:-12}
 
-REPO_DIR=$PWD
+REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
 STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
 # Results live beside the harness results, under the same cell-iter name, so
 # the eval tooling and the analysis find them in one place.
