@@ -12228,10 +12228,10 @@
       "split": null
     },
     "snr-pretraining-bilingual": {
-      "split": "pretraining_bilingual"
+      "split": null
     },
     "snr-pretraining-predictivity": {
-      "split": null
+      "split": "pretraining_predictivity"
     }
   },
   "snr": {
