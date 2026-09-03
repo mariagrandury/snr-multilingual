@@ -792,16 +792,21 @@ def main() -> None:
             )
 
     if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:
-        watcher = f"auto_evals_cscs.py --arch {args.arch}"
+        # ONE watcher for the whole grid, not one per --arch. The watcher
+        # covers every arch and scheme in a pass, so a launch of the deep
+        # ladder no longer leaves the shallow and scheme-B cells waiting for
+        # a watcher nobody remembered to start.
+        watcher = "auto_evals_cscs.py --watch"
         if subprocess.run(["pgrep", "-f", watcher], capture_output=True).returncode:
             AUTO_EVAL_LOGS.mkdir(parents=True, exist_ok=True)
-            log = open(AUTO_EVAL_LOGS / f"auto_evals_{args.arch}.log", "a")
-            subprocess.Popen([sys.executable, "auto_evals_cscs.py", "--arch",
-                              args.arch, "--watch", "1800"], cwd=str(SCRIPT_DIR),
+            log = open(AUTO_EVAL_LOGS / "auto_evals.log", "a")
+            subprocess.Popen([sys.executable, "auto_evals_cscs.py",
+                              "--watch", "1800"], cwd=str(SCRIPT_DIR),
                              stdout=log, stderr=log, start_new_session=True)
-            print(f"started auto-evals ({args.arch}); opt out with --no-auto-evals")
+            print("started auto-evals (all archs/schemes); opt out with "
+                  "--no-auto-evals")
         else:
-            print(f"(auto-evals already watching {args.arch})")
+            print("(auto-evals already watching)")
 
     # Refresh the training-side figures (plan, simple, detailed) and the
     # generated grid block in README.md / the plan doc. plan_table and
