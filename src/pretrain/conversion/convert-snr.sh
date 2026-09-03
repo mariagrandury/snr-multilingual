@@ -406,9 +406,33 @@ PYEOF
     fi
 
     part="${PARTITION:-normal}"
-    walltime="${TIME:-02:00:00}"
+    # ONE JOB PER CELL, sized to the work. Every --models submission used to be
+    # called convert-snr-models with a flat 2 h, and the watcher gated on that
+    # single name, so at most one conversion ran cluster-wide while conversion
+    # is what every eval waits for. A plan naming exactly one model — which is
+    # what auto_evals_cscs submits, always — gets that model's own job name, so
+    # the cells convert in parallel and each dedupes against itself.
+    #
+    # Walltime from the checkpoint count: measured over 25 jobs (2026-08/09),
+    # elapsed is linear at ~45 s fixed + 38-49 s per checkpoint and barely
+    # moves with size (20 iters: 12:42 at 175M, 13:12-16:17 at 600M). 10 min
+    # of overhead plus 1.5 min/ckpt is ~2x the measured rate, rounded up to a
+    # quarter hour, floored at 30 min and capped at the queue's 11:59.
+    n_models=$(grep -c '^MODEL ' "$plan" || true)
+    n_iters=$(awk '/^MODEL /{n += NF - 3} END {print n+0}' "$plan")
+    if [[ $n_models -eq 1 ]]; then
+        job_name="convert-snr-$(awk '/^MODEL /{print $2; exit}' "$plan")"
+    else
+        job_name="convert-snr-models"
+    fi
+    mins=$(( 10 + (n_iters * 3 + 1) / 2 ))
+    mins=$(( (mins + 14) / 15 * 15 ))
+    (( mins < 30 )) && mins=30
+    (( mins > 719 )) && mins=719
+    walltime="${TIME:-$(printf '%02d:%02d:00' $((mins / 60)) $((mins % 60)))}"
+    echo "[convert-snr/launcher] $job_name: $n_iters ckpt(s) in $n_models model(s) -> --time $walltime"
     sbatch_args=(--partition="$part" --time="$walltime"
-                 --job-name="convert-snr-models"
+                 --job-name="$job_name"
                  --export=ALL,PLAN_FILE="$plan")
     [[ -n "$RESERVATION" ]] && sbatch_args+=(--reservation="$RESERVATION")
 

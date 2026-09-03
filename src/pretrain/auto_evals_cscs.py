@@ -17,8 +17,10 @@ The eval job pushes to W&B with the key from your environment or, as
 everywhere else in the cluster pipeline, from the fallback file
 src/evals/scripts/wandb_api_key.txt — nothing to export here.
 
-Each pass, per cell of the selected variant (--arch/--scheme, same flags as
-the launcher), for each due checkpoint on disk:
+Each pass covers EVERY variant — both architectures and both data schemes,
+so the shallow ladder and the scheme-B cells cannot fall behind a watcher
+someone forgot to start. --arch/--scheme narrow it. For each due checkpoint
+of each cell:
 
   1. every task of the cell's list already has a result under
      LOGS_ROOT/<entity>/msnr/<cell>-iter<N>/                        -> skip
@@ -33,9 +35,9 @@ the launcher), for each due checkpoint on disk:
        (src/evals/scripts/evaluate.sbatch, vLLM, BOS, no chat template,
         TP=1 — the ladder's KV-head counts only divide 1 — BATCH_TASKS=1)
   4. otherwise -> convert first: one conversion/convert-snr.sh --models job
-       per cell with the missing iters (models.json-driven). Conversion jobs
-       share one Slurm name, so while any is running no new ones are
-       submitted; the next pass picks up whatever is still missing.
+       per cell with the missing iters (models.json-driven). Each job is
+       named convert-snr-<cell> and sized to its checkpoint count, so cells
+       convert in PARALLEL and each dedupes only against itself.
 
 The convert -> eval sequencing resolves across passes, exactly like the
 Azure watcher. configs/models.json is kept in sync with the grid
@@ -86,7 +88,11 @@ PROJECT_NAME = json.loads(
 DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
-CONVERT_JOB_NAME = "convert-snr-models"  # fixed by convert-snr.sh's launcher
+def convert_job_name(cell: str) -> str:
+    """The Slurm name convert-snr.sh gives a single-cell --models submission.
+    Keep the two in step: this string is the only dedupe against submitting a
+    second conversion for a cell that already has one in flight."""
+    return f"convert-snr-{cell}"
 # The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime can't
 # fit both — and the whole batched run executes on 1 of the node's 4 GPUs (the
 # ladder's KV-head counts force TP=1 and vLLM clamps dense DP to 1).
@@ -357,32 +363,50 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # Keep configs/models.json following the grid — conversion and the W&B
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync
-    added, updated = sync(args.arch, args.scheme)
+    added, updated = [], []
+    for arch in args.archs:
+        for scheme in args.schemes:
+            a, u = sync(arch, scheme)
+            added += a
+            updated += u
     if added or updated:
         print(f"(models.json synced: +{len(added)} ~{len(updated)} cells "
               f"— commit the diff)")
 
-    configs = json.loads(HYPERPARAMS[args.arch].read_text())["configs"]
     running = active_jobs() if not args.dry_run else set()
-    convert_busy = CONVERT_JOB_NAME in running
     errors: dict[str, dict] = {}   # checkpoints held back, written out below
+    submitted = {"evals": 0}       # against --max-submit, across all cells
 
-    for c in predictivity_cells():
-        scheme = args.scheme if c["L"] in SCHEME_B_LANGS else "A"
-        cell = exp_name(c["size"], c["L"], args.arch, c["seed"], scheme)
-        if args.name and cell != args.name:
-            continue
-        # capstor intermittently faults a read outright (Errno 5 / 108 — the
-        # same blips data_progress.py works around, hit here on a .hf_complete
-        # probe). The watcher now runs unattended behind every launch, so one
-        # blip must cost one cell for one pass, not kill the whole loop.
-        try:
-            convert_busy = one_cell(args, c, cell, scheme, configs, root,
-                                    staging, logs_root, benchmarks, running,
-                                    convert_busy, errors)
-        except OSError as e:
-            print(f"{cell}: skipped this pass — {e.strerror or e}",
-                  file=sys.stderr)
+    # EVERY variant in one pass, not one watcher per arch. A watcher covering
+    # a single --arch/--scheme means the shallow ladder and the scheme-B cells
+    # only progress while someone remembers to run their own watcher, and they
+    # fall behind silently — the checkpoints pile up, nothing complains.
+    # Cells are deduped by name because scheme B collapses onto A wherever the
+    # two language sets agree (SCHEME_B_LANGS), so both schemes name the same
+    # cell at those settings.
+    seen: set[str] = set()
+    for arch in args.archs:
+        configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
+        for scheme_arg in args.schemes:
+            for c in predictivity_cells():
+                scheme = scheme_arg if c["L"] in SCHEME_B_LANGS else "A"
+                cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
+                if args.name and cell != args.name:
+                    continue
+                if cell in seen:
+                    continue
+                seen.add(cell)
+                # capstor intermittently faults a read outright (Errno 5 /
+                # 108 — the same blips data_progress.py works around, hit
+                # here on a .hf_complete probe). The watcher runs unattended
+                # behind every launch, so one blip must cost one cell for one
+                # pass, not kill the whole loop.
+                try:
+                    one_cell(args, c, cell, scheme, configs, root, staging,
+                             logs_root, benchmarks, running, errors, submitted)
+                except OSError as e:
+                    print(f"{cell}: skipped this pass — {e.strerror or e}",
+                          file=sys.stderr)
 
     # One place to look for what is stuck and why. A snapshot, not a log: a
     # checkpoint drops out of it as soon as an eval writes results, so an
@@ -406,16 +430,12 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
 
 def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
              staging: Path, logs_root: Path, benchmarks: list[str],
-             running: set[str], convert_busy: bool, errors: dict) -> bool:
-    """One cell of a pass: convert what is missing, evaluate what is due.
-
-    Returns convert_busy — only one conversion sbatch may be in flight at a
-    time (they share a Slurm name), so the flag carries across cells.
-    """
+             running: set[str], errors: dict, submitted: dict) -> None:
+    """One cell of a pass: convert what is missing, evaluate what is due."""
     target = schedule_for(configs[c["size"]])[0]
     saved = saved_valid_iters(cell, root)
     if not saved:
-        return convert_busy
+        return
     # Every Nth saved checkpoint on the cell's per-size save grid, plus
     # the run's final one whatever its number — same rule as Azure.
     due = [i for i in saved
@@ -464,30 +484,49 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     for reason in sorted(set(broken.values())):
         print(f"    {reason}")
 
-    if to_convert and not convert_busy:
+    # Conversions run one per cell, in parallel across cells: they gate every
+    # eval downstream, so serializing them cluster-wide (one shared job name,
+    # which is what this used to do) throttled the whole pipeline to a single
+    # cell at a time. The per-cell name is the dedupe.
+    if to_convert and convert_job_name(cell) not in running:
         submit_convert(cell, to_convert, staging, args.dry_run)
-        # One conversion sbatch at a time (they share a Slurm name, so
-        # dedupe is coarse); the next pass converts the remaining cells.
-        convert_busy = True
+    if args.convert_only:
+        return
     for it in pending:
+        if args.max_submit is not None and submitted["evals"] >= args.max_submit:
+            return
         name = f"{cell}-iter{it}"
         if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
             submit_eval(cell, it, staging, logs_root, task_list, c["size"],
                         args.dry_run)
-
-    return convert_busy
+            submitted["evals"] += 1
 
 
 def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--arch", choices=["deep", "shallow"], default="deep")
-    p.add_argument("--scheme", choices=["A", "B"], default="A")
+    # Default: EVERY variant. One watcher covers the whole grid, so the
+    # shallow ladder and the scheme-B cells cannot quietly fall behind while
+    # a deep/A-only watcher runs. The flags narrow it for a targeted pass.
+    p.add_argument("--arch", choices=["deep", "shallow"], default=None,
+                   help="only this architecture (default: both)")
+    p.add_argument("--scheme", choices=["A", "B"], default=None,
+                   help="only this data scheme (default: both)")
+    p.add_argument("--max-submit", type=int, metavar="N",
+                   help="submit at most N eval jobs this pass — a throttle for "
+                        "the burst an expanded task list creates, and what "
+                        "makes a single-job integration test possible")
     p.add_argument("--name", help="watch a single cell (its full name)")
     p.add_argument("--every", type=int, default=2,
                    help="evaluate every N saved checkpoints (the final "
                         "checkpoint is always evaluated on top)")
+    p.add_argument("--convert-only", action="store_true",
+                   help="submit conversions but no eval jobs — for driving the "
+                        "convert half forward while the eval half is blocked "
+                        "(a broken task list, a missing dataset). Conversion "
+                        "is what every eval waits on, so it is always worth "
+                        "keeping ahead.")
     p.add_argument("--max-attempts", type=int, default=3,
                    help="after N eval runs that wrote no results at all, "
                         "diagnose instead of resubmitting: a dataset missing "
@@ -505,6 +544,9 @@ def main() -> None:
     p.add_argument("--logs-root", default=DEFAULT_LOGS_ROOT,
                    help=f"Eval results root (default: {DEFAULT_LOGS_ROOT})")
     args = p.parse_args()
+    # The pass iterates over these; a flag narrows the default "everything".
+    args.archs = [args.arch] if args.arch else list(HYPERPARAMS)
+    args.schemes = [args.scheme] if args.scheme else ["A", "B"]
 
     benchmarks = auto_benchmarks()
     while True:
