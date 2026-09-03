@@ -10,6 +10,8 @@ Idempotent, safe to run alongside the trainings (login node, tmux):
 
     cd src/pretrain
     python3.11 auto_evals_cscs.py --watch 600     # one pass every 10 min
+    python3.11 auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
+    python3.11 auto_evals_cscs.py --convert-only
 
 The eval job pushes to W&B with the key from your environment or, as
 everywhere else in the cluster pipeline, from the fallback file
