@@ -314,3 +314,109 @@ done: 1298 configs built, 21 failed
   epfl-nlp/include-89:spanish_venezuela: An error occurred while generating the dataset
   facebook/mlqa: Dataset scripts are no longer supported, but found mlqa.py
   haonan-li/cmmlu: Dataset scripts are no longer supported, but found cmmlu.py
+
+---
+
+# Triage of the 2026-09-02 download failures (and what they hid)
+
+The 21 failures above are three unrelated problems, and only one of them ever
+touched the `auto` group. Chasing them turned up a *second*, larger fault that
+the download log could not show: task names in `configs/tasks.json` that the
+harness does not define.
+
+## 1. The one failure that mattered: include_base_44 Dutch
+
+`include_base_44` is in `auto`, so its Dutch task ran for every cell training
+Dutch (L15 and up) — and under `BATCH_TASKS=1` one unbuildable dataset aborts
+the whole `lm_eval` call, taking the other 150+ tasks with it.
+
+Not a metadata mismatch, despite the `SplitInfo` error: the repo stores the
+data under `Dutch/`, while the config is named `Dutch - Flemish`, so the split
+resolves to **zero files** and generation fails. `verification_mode="no_checks"`
+does not help — checked, it then fails with `Instruction "test" corresponds to
+no data!`.
+
+**Action taken:** `include_base_44_dutch` removed from `tasks.json` and from
+`tasks_pretraining_full.txt`. `include_base_44` itself stays. **TODO: revisit
+Dutch** — either load it from the `Dutch` config name, or take it from a
+successor dataset (below).
+
+## 2. Failures outside `auto` — harmless today
+
+| Repo | Cause | Where used |
+|---|---|---|
+| `allenai/social_i_qa` | script-based loader, dropped in `datasets` >= 3 | `pretraining_extra` |
+| `haonan-li/cmmlu` | same | `pretraining_extra` |
+| `facebook/mlqa` | same | no group at all |
+| `epfl-nlp/include-89` (16 configs) | `TypeError: Couldn't cast array of type string to null` — a column that is all-null in one shard and string in another | **no task references it** |
+
+None blocks the sweep. Proposed: drop the three script-based repos from
+`eval_datasets.txt` (unfixable in place — `datasets` >= 3 removed script
+support), which also makes the manifest build exit 0 again. DONE.
+
+## 3. Which INCLUDE dataset can actually be used
+
+A dataset is only usable if the harness defines tasks for it. Scanning the
+pinned checkout (`swiss-ai/lm-evaluation-harness` @ `51d6f4b6`):
+
+| Harness task dir | `dataset_path` | Tasks |
+|---|---|---|
+| `include/` | `CohereForAI/include-base-44` (+2 `CohereLabs/`) | 132 |
+| `include_new/` | `swiss-ai/include-base-new-45` | 3 |
+| — | `epfl-nlp/include-89` | **none** |
+
+So **include-89 cannot be wired today** regardless of its build errors: no
+harness task points at it. Adding it means writing task YAMLs into the
+swiss-ai fork and repinning the shared checkout.
+
+For the record, `include-results/include-128` **does** build cleanly — 128/128
+configs, 0 failed, including every config that fails under include-89 — but it
+has no harness tasks either. The harness's own "newer INCLUDE" is
+`include_base_new_45` (`swiss-ai/include-base-new-45`), which is not in
+`eval_datasets.txt` yet and has not been build-tested.
+
+## 4. The bigger fault: 91 auto tasks the harness does not define
+
+The first eval job after the harness-install fix died on:
+
+```
+ValueError: Tasks not found: global_piqa_completions_eng_latn
+```
+
+Cross-checking every task the `auto` group generates against the harness:
+**91 of 463 did not exist**, all of them `global_piqa_completions_*`. The
+harness has no `completions` variant; it defines four:
+
+| Variant | Languages |
+|---|---|
+| `global_piqa_parallel_cloze_<lang>` | 132 |
+| `global_piqa_nonparallel_cloze_<lang>` | 137 |
+| `global_piqa_parallel_generation_<lang>` | 132 |
+| `global_piqa_nonparallel_generation_<lang>` | 137 |
+
+Since one bad name aborts the whole batched call, this blocked **every eval
+job for every cell** — not just the ones training the affected languages.
+
+**Action taken:** all 95 `global_piqa_completions_*` entries renamed to the
+cloze variants — `parallel_cloze` where the language has one (91), falling
+back to `nonparallel_cloze` for the four that do not (`bos_latn`, `kaz_cyrl`,
+`ckb_arab`, `asm_beng`). Mixing the two is deliberate and safe here: the
+parallel/nonparallel distinction only matters for comparing a benchmark
+*across* languages, which this study never does — per-language coverage is
+worth more. Verified afterwards: **462 auto tasks, 0 missing from the
+harness** (15 at L1, 25 at L2, 90 at L8, 152 at L15, 237 at L30, 333 at L50,
+462 at L100).
+
+## 5. Two lessons worth keeping
+
+- **The manifest build is not a sufficient pre-flight.** It proves a dataset
+  can be *built*; it says nothing about whether the harness has a task that
+  uses it. The task-name check above (task/group/tag names in the harness's
+  YAMLs vs what `tasks_for_benchmarks` generates) catches a class of failure
+  the download log cannot, and is cheap enough to run before every sweep.
+- **Expanding `auto` re-opens every evaluated checkpoint.** The eval gate is
+  task-level, so 10 -> 16 benchmarks made every previously-complete checkpoint
+  incomplete and one watcher pass submitted 96 jobs at once. That burst is
+  what exposed the per-job GitHub clone in `evaluate.sbatch` (now installed
+  from a pinned local checkout). Plan a benchmark change as a top-up of the
+  whole grid, and throttle it with `auto_evals_cscs.py --max-submit N`.

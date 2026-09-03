@@ -7,7 +7,6 @@ alexandrainst/m_hellaswag
 alexandrainst/m_truthfulqa
 allenai/ai2_arc
 allenai/openbookqa
-allenai/social_i_qa
 allenai/winogrande
 baber/piqa
 cais/mmlu
@@ -22,7 +21,6 @@ EleutherAI/lambada_openai
 EleutherAI/wikitext_document_level
 epfl-nlp/include-89
 facebook/belebele
-facebook/mlqa
 facebook/Multi-IF
 facebook/xnli
 google-research-datasets/mbpp
@@ -48,7 +46,6 @@ hails/agieval-math
 hails/agieval-sat-en
 hails/agieval-sat-en-without-passage
 hails/agieval-sat-math
-haonan-li/cmmlu
 HiTZ/mgsm-eu
 HiTZ/paws-eu
 HiTZ/truthfulqa-multi
@@ -86,3 +83,6 @@ swiss-ai/polyglotoxicityprompts
 tau/commonsense_qa
 truthfulqa/truthful_qa
 cambridgeltl/xcopa
+mrlbenchmarks/global-piqa-parallel
+projecte-aina/PAWS-ca
+projecte-aina/xstorycloze_ca

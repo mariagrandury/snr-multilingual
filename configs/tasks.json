@@ -811,79 +811,79 @@
         "posttraining"
       ]
     },
-    "global_piqa_completions_arb_arab": {
+    "global_piqa_parallel_cloze_arb_arab": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_cmn_hans": {
+    "global_piqa_parallel_cloze_cmn_hans": {
       "language": "zh",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_eng_latn": {
+    "global_piqa_parallel_cloze_eng_latn": {
       "language": "en",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_hin_deva": {
+    "global_piqa_parallel_cloze_hin_deva": {
       "language": "hi",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_jpn_jpan": {
+    "global_piqa_parallel_cloze_jpn_jpan": {
       "language": "ja",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_rus_cyrl": {
+    "global_piqa_parallel_cloze_rus_cyrl": {
       "language": "ru",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_spa_latn_spai": {
+    "global_piqa_parallel_cloze_spa_latn_spai": {
       "language": "es",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_swh_latn": {
+    "global_piqa_parallel_cloze_swh_latn": {
       "language": "sw",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_tha_thai": {
+    "global_piqa_parallel_cloze_tha_thai": {
       "language": "th",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_tur_latn": {
+    "global_piqa_parallel_cloze_tur_latn": {
       "language": "tr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_vie_latn": {
+    "global_piqa_parallel_cloze_vie_latn": {
       "language": "vi",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
@@ -1066,13 +1066,6 @@
     },
     "include_base_44_croatian": {
       "language": "hr",
-      "benchmark": "include_base_44",
-      "stages": [
-        "pretraining"
-      ]
-    },
-    "include_base_44_dutch": {
-      "language": "nl",
       "benchmark": "include_base_44",
       "stages": [
         "pretraining"
@@ -3827,436 +3820,436 @@
         "pretraining"
       ]
     },
-    "global_piqa_completions_hrv_latn": {
+    "global_piqa_parallel_cloze_hrv_latn": {
       "language": "hr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_bel_cyrl": {
+    "global_piqa_parallel_cloze_bel_cyrl": {
       "language": "be",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_bul_cyrl": {
+    "global_piqa_parallel_cloze_bul_cyrl": {
       "language": "bg",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ell_grek": {
+    "global_piqa_parallel_cloze_ell_grek": {
       "language": "el",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_amh_ethi": {
+    "global_piqa_parallel_cloze_amh_ethi": {
       "language": "am",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_hye_armn": {
+    "global_piqa_parallel_cloze_hye_armn": {
       "language": "hy",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_zsm_latn": {
+    "global_piqa_parallel_cloze_zsm_latn": {
       "language": "ms",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_slv_latn": {
+    "global_piqa_parallel_cloze_slv_latn": {
       "language": "sl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ron_latn": {
+    "global_piqa_parallel_cloze_ron_latn": {
       "language": "ro",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_mal_mlym": {
+    "global_piqa_parallel_cloze_mal_mlym": {
       "language": "ml",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_mar_deva": {
+    "global_piqa_parallel_cloze_mar_deva": {
       "language": "mr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_srp_cyrl": {
+    "global_piqa_parallel_cloze_srp_cyrl": {
       "language": "sr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_glg_latn": {
+    "global_piqa_parallel_cloze_glg_latn": {
       "language": "gl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_swe_latn": {
+    "global_piqa_parallel_cloze_swe_latn": {
       "language": "sv",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ukr_cyrl": {
+    "global_piqa_parallel_cloze_ukr_cyrl": {
       "language": "uk",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ekk_latn": {
+    "global_piqa_parallel_cloze_ekk_latn": {
       "language": "et",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_tam_taml": {
+    "global_piqa_parallel_cloze_tam_taml": {
       "language": "ta",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_snd_deva": {
+    "global_piqa_parallel_cloze_snd_deva": {
       "language": "sd",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_bos_latn": {
+    "global_piqa_nonparallel_cloze_bos_latn": {
       "language": "bs",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_nonparallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_nld_latn": {
+    "global_piqa_parallel_cloze_nld_latn": {
       "language": "nl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_srp_latn": {
+    "global_piqa_parallel_cloze_srp_latn": {
       "language": "sr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_fin_latn": {
+    "global_piqa_parallel_cloze_fin_latn": {
       "language": "fi",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kat_geor": {
+    "global_piqa_parallel_cloze_kat_geor": {
       "language": "ka",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_isl_latn": {
+    "global_piqa_parallel_cloze_isl_latn": {
       "language": "is",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_guj_gujr": {
+    "global_piqa_parallel_cloze_guj_gujr": {
       "language": "gu",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_snd_arab": {
+    "global_piqa_parallel_cloze_snd_arab": {
       "language": "sd",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_urd_arab": {
+    "global_piqa_parallel_cloze_urd_arab": {
       "language": "ur",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_pan_guru": {
+    "global_piqa_parallel_cloze_pan_guru": {
       "language": "pa",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_tel_telu": {
+    "global_piqa_parallel_cloze_tel_telu": {
       "language": "te",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_hau_latn": {
+    "global_piqa_parallel_cloze_hau_latn": {
       "language": "ha",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ars_arab": {
+    "global_piqa_parallel_cloze_ars_arab": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_npi_deva": {
+    "global_piqa_parallel_cloze_npi_deva": {
       "language": "ne",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_sin_sinh": {
+    "global_piqa_parallel_cloze_sin_sinh": {
       "language": "si",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kaz_cyrl": {
+    "global_piqa_nonparallel_cloze_kaz_cyrl": {
       "language": "kk",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_nonparallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ben_latn": {
+    "global_piqa_parallel_cloze_ben_latn": {
       "language": "bn",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_arz_arab": {
+    "global_piqa_parallel_cloze_arz_arab": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ita_latn": {
+    "global_piqa_parallel_cloze_ita_latn": {
       "language": "it",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kor_hang": {
+    "global_piqa_parallel_cloze_kor_hang": {
       "language": "ko",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ind_latn": {
+    "global_piqa_parallel_cloze_ind_latn": {
       "language": "id",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_mkd_cyrl": {
+    "global_piqa_parallel_cloze_mkd_cyrl": {
       "language": "mk",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_hun_latn": {
+    "global_piqa_parallel_cloze_hun_latn": {
       "language": "hu",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kan_knda": {
+    "global_piqa_parallel_cloze_kan_knda": {
       "language": "kn",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_heb_hebr": {
+    "global_piqa_parallel_cloze_heb_hebr": {
       "language": "he",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_als_latn": {
+    "global_piqa_parallel_cloze_als_latn": {
       "language": "sq",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ckb_arab": {
+    "global_piqa_nonparallel_cloze_ckb_arab": {
       "language": "ckb",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_nonparallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_lit_latn": {
+    "global_piqa_parallel_cloze_lit_latn": {
       "language": "lt",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_nno_latn": {
+    "global_piqa_parallel_cloze_nno_latn": {
       "language": "nn",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_urd_latn": {
+    "global_piqa_parallel_cloze_urd_latn": {
       "language": "ur",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_cmn_hant": {
+    "global_piqa_parallel_cloze_cmn_hant": {
       "language": "zh",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_slk_latn": {
+    "global_piqa_parallel_cloze_slk_latn": {
       "language": "sk",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_asm_beng": {
+    "global_piqa_nonparallel_cloze_asm_beng": {
       "language": "as",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_nonparallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_uig_arab": {
+    "global_piqa_parallel_cloze_uig_arab": {
       "language": "ug",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ben_beng": {
+    "global_piqa_parallel_cloze_ben_beng": {
       "language": "bn",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ary_arab": {
+    "global_piqa_parallel_cloze_ary_arab": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_pol_latn": {
+    "global_piqa_parallel_cloze_pol_latn": {
       "language": "pl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_azj_latn": {
+    "global_piqa_parallel_cloze_azj_latn": {
       "language": "az",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_nob_latn": {
+    "global_piqa_parallel_cloze_nob_latn": {
       "language": "no",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_cat_latn": {
+    "global_piqa_parallel_cloze_cat_latn": {
       "language": "ca",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_deu_latn": {
+    "global_piqa_parallel_cloze_deu_latn": {
       "language": "de",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ces_latn": {
+    "global_piqa_parallel_cloze_ces_latn": {
       "language": "cs",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_uzn_latn": {
+    "global_piqa_parallel_cloze_uzn_latn": {
       "language": "uz",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kir_cyrl": {
+    "global_piqa_parallel_cloze_kir_cyrl": {
       "language": "ky",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
@@ -4387,156 +4380,156 @@
         "pretraining"
       ]
     },
-    "global_piqa_completions_apc_arab_jord": {
+    "global_piqa_parallel_cloze_apc_arab_jord": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_apc_arab_leba": {
+    "global_piqa_parallel_cloze_apc_arab_leba": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_apc_arab_pale": {
+    "global_piqa_parallel_cloze_apc_arab_pale": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_apc_arab_syri": {
+    "global_piqa_parallel_cloze_apc_arab_syri": {
       "language": "ar",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_fao_latn": {
+    "global_piqa_parallel_cloze_fao_latn": {
       "language": "fo",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_fra_latn_cana": {
+    "global_piqa_parallel_cloze_fra_latn_cana": {
       "language": "fr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_fra_latn_fran": {
+    "global_piqa_parallel_cloze_fra_latn_fran": {
       "language": "fr",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_haw_latn": {
+    "global_piqa_parallel_cloze_haw_latn": {
       "language": "haw",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_ibo_latn": {
+    "global_piqa_parallel_cloze_ibo_latn": {
       "language": "ig",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_jav_latn": {
+    "global_piqa_parallel_cloze_jav_latn": {
       "language": "jv",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_kin_latn": {
+    "global_piqa_parallel_cloze_kin_latn": {
       "language": "rw",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_pes_arab": {
+    "global_piqa_parallel_cloze_pes_arab": {
       "language": "fa",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_por_latn_braz": {
+    "global_piqa_parallel_cloze_por_latn_braz": {
       "language": "pt",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_por_latn_port": {
+    "global_piqa_parallel_cloze_por_latn_port": {
       "language": "pt",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_slk_latn_sari": {
+    "global_piqa_parallel_cloze_slk_latn_sari": {
       "language": "sk",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_slv_latn_cerk": {
+    "global_piqa_parallel_cloze_slv_latn_cerk": {
       "language": "sl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_spa_latn_mexi": {
+    "global_piqa_parallel_cloze_spa_latn_mexi": {
       "language": "es",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_spa_latn_peru": {
+    "global_piqa_parallel_cloze_spa_latn_peru": {
       "language": "es",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_tgl_latn": {
+    "global_piqa_parallel_cloze_tgl_latn": {
       "language": "tl",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_yor_latn": {
+    "global_piqa_parallel_cloze_yor_latn": {
       "language": "yo",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_yue_hant": {
+    "global_piqa_parallel_cloze_yue_hant": {
       "language": "yue",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
     },
-    "global_piqa_completions_zul_latn": {
+    "global_piqa_parallel_cloze_zul_latn": {
       "language": "zu",
-      "benchmark": "global_piqa_completions",
+      "benchmark": "global_piqa_parallel_cloze",
       "stages": [
         "pretraining"
       ]
@@ -4897,17 +4890,17 @@
       "global_mmlu_full_tr",
       "global_mmlu_full_vi",
       "global_mmlu_full_zh",
-      "global_piqa_completions_arb_arab",
-      "global_piqa_completions_cmn_hans",
-      "global_piqa_completions_eng_latn",
-      "global_piqa_completions_hin_deva",
-      "global_piqa_completions_jpn_jpan",
-      "global_piqa_completions_rus_cyrl",
-      "global_piqa_completions_spa_latn_spai",
-      "global_piqa_completions_swh_latn",
-      "global_piqa_completions_tha_thai",
-      "global_piqa_completions_tur_latn",
-      "global_piqa_completions_vie_latn",
+      "global_piqa_parallel_cloze_arb_arab",
+      "global_piqa_parallel_cloze_cmn_hans",
+      "global_piqa_parallel_cloze_eng_latn",
+      "global_piqa_parallel_cloze_hin_deva",
+      "global_piqa_parallel_cloze_jpn_jpan",
+      "global_piqa_parallel_cloze_rus_cyrl",
+      "global_piqa_parallel_cloze_spa_latn_spai",
+      "global_piqa_parallel_cloze_swh_latn",
+      "global_piqa_parallel_cloze_tha_thai",
+      "global_piqa_parallel_cloze_tur_latn",
+      "global_piqa_parallel_cloze_vie_latn",
       "hellaswag",
       "hellaswag_ar",
       "hellaswag_es",
@@ -5227,7 +5220,6 @@
       "include_base_44_bulgarian",
       "include_base_44_chinese",
       "include_base_44_croatian",
-      "include_base_44_dutch",
       "include_base_44_finnish",
       "include_base_44_french",
       "include_base_44_georgian",
@@ -5295,17 +5287,17 @@
       "global_mmlu_full_tr",
       "global_mmlu_full_vi",
       "global_mmlu_full_zh",
-      "global_piqa_completions_arb_arab",
-      "global_piqa_completions_cmn_hans",
-      "global_piqa_completions_eng_latn",
-      "global_piqa_completions_hin_deva",
-      "global_piqa_completions_jpn_jpan",
-      "global_piqa_completions_rus_cyrl",
-      "global_piqa_completions_spa_latn_spai",
-      "global_piqa_completions_swh_latn",
-      "global_piqa_completions_tha_thai",
-      "global_piqa_completions_tur_latn",
-      "global_piqa_completions_vie_latn",
+      "global_piqa_parallel_cloze_arb_arab",
+      "global_piqa_parallel_cloze_cmn_hans",
+      "global_piqa_parallel_cloze_eng_latn",
+      "global_piqa_parallel_cloze_hin_deva",
+      "global_piqa_parallel_cloze_jpn_jpan",
+      "global_piqa_parallel_cloze_rus_cyrl",
+      "global_piqa_parallel_cloze_spa_latn_spai",
+      "global_piqa_parallel_cloze_swh_latn",
+      "global_piqa_parallel_cloze_tha_thai",
+      "global_piqa_parallel_cloze_tur_latn",
+      "global_piqa_parallel_cloze_vie_latn",
       "hellaswag",
       "hellaswag_ar",
       "hellaswag_es",
