@@ -34,7 +34,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
-    expand_pool,
+    bucket_order,
     load_pools,
     load_snr_params,
     pool_include_external,
@@ -52,7 +52,7 @@ from tqdm import tqdm  # noqa: E402
 
 from analysis.utils import (  # noqa: E402
     _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
-    assign_language, benchmark_family,
+    assign_language, benchmark_family, build_snr_pool, pool_models,
 )
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, fmt, md_table, replace_block)
@@ -73,7 +73,10 @@ TARGET_SIZE = _SNR["target_size"]
 PLOTTED_MIXES = _SNR["plotted_mixes"]
 ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
 
-COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c"]
+# One colour per plotted mix — tab10 for the 36-sweep's three mixtures, a
+# viridis ramp once the mixes are the seven language settings of the ladder.
+COLORS = (["#1f77b4", "#ff7f0e", "#2ca02c"] if len(PLOTTED_MIXES) <= 3
+          else [plt.cm.viridis(x) for x in np.linspace(0, 0.95, len(PLOTTED_MIXES))])
 OUT_ROOT = ACC_VS_FLOPS
 
 # Only render curve grids for the top-N benchmark families by Signal (relative
@@ -85,11 +88,11 @@ TOP_N = 3
 # _is_parent_task now lives in analysis/utils.py (imported above).
 
 
-def _task_signal(df, task, seed):
+def _task_signal(df, task, seed, target=TARGET_SIZE):
     """Signal = (max-min)/mean of the per-mix final-ckpt scores at the target
     size for ``seed`` (relative dispersion across data mixtures). NaN if <2
     mixes have data."""
-    sub = df[(df["size"] == TARGET_SIZE) & (df["task"] == task)
+    sub = df[(df["size"] == target) & (df["task"] == task)
              & (df["mix"].isin(PLOTTED_MIXES))]
     if "seed" in sub.columns:
         sub = sub[sub["seed"] == seed]
@@ -164,12 +167,14 @@ def _seed_of(pool: str) -> int:
 
 
 def _draw_task(ax, df, df_ext, task, task_idx, seed):
+    sizes = [x for x in ALL_SIZES if x in set(df["size"])]
+    target = TARGET_SIZE if TARGET_SIZE in sizes else sizes[-1]
     plot_task_curves(
-        ax, task, signal_label=f"signal ({TARGET_SIZE})",
-        plotted_sizes=ALL_SIZES, plotted_mixes=PLOTTED_MIXES,
+        ax, task, signal_label=f"signal ({target})",
+        plotted_sizes=sizes, plotted_mixes=PLOTTED_MIXES,
         metric="primary_score", df=df, colors=COLORS, SEED=seed, task_idx=task_idx,
         n_mixes_label=f"{len(PLOTTED_MIXES)} data mixtures",
-        xc_label="", signal_size=TARGET_SIZE,
+        xc_label="", signal_size=target,
     )
     _overlay_externals(ax, df_ext, task)
 
@@ -244,26 +249,30 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
 def run(pool: str, out_dir: Path, seed: int | None = None, top_n: int = TOP_N):
     if seed is None:
         seed = _seed_of(pool)
-    pool_models = set(expand_pool(pool))
-    df = load_apertus_eval_results()
-    df = df[df["model"].isin(pool_models)]
+    df = build_snr_pool(pool)
+    own = pool_models(pool, df)
+    df = df[df["model"].isin(own)]
     df_ext = _load_externals(pool)  # overlay (scaling past 1B), or None
     # Aggregate subject-subtasks into parents (point 4); languages stay distinct.
     tasks = [t for t in sorted(df["task"].unique()) if _is_parent_task(t)]
     n_ext = df_ext["model"].nunique() if df_ext is not None else 0
-    print(f"Pool '{pool}': {len(pool_models)} custom model(s), seed={seed}, "
-          f"{len(df):,} rows, {len(tasks)} parent tasks; "
+    # Signal is read at the target size, or at the largest size with data
+    # while the reference rungs are still training.
+    sizes = [x for x in ALL_SIZES if x in set(df["size"])]
+    target = TARGET_SIZE if TARGET_SIZE in sizes else sizes[-1]
+    print(f"Pool '{pool}': {len(own)} custom model(s), seed={seed}, "
+          f"{len(df):,} rows, {len(tasks)} parent tasks; signal @ {target}; "
           f"+{n_ext} external scaling model(s) overlaid")
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Save the full per-task Signal table; rank families by mean Signal.
     rows = [{"task": t, "family": benchmark_family(t), "language": assign_language(t),
-             "signal": _task_signal(df, t, seed)} for t in tasks]
+             "signal": _task_signal(df, t, seed, target)} for t in tasks]
     sig_df = pd.DataFrame(rows)
     sig_df.to_csv(out_dir / "acc_vs_flops_signal.csv", index=False)
-    fam_rank = (sig_df.groupby("family")["signal"].mean()
-                .sort_values(ascending=False))
+    fam_rank = (sig_df[~sig_df["family"].isin(("bpb", "loss"))]
+                .groupby("family")["signal"].mean().sort_values(ascending=False))
     top_families = list(fam_rank.head(top_n).index)
     print(f"  Wrote signal CSV ({len(sig_df)} tasks). Top-{top_n} families by "
           f"Signal: {top_families}")
@@ -281,36 +290,39 @@ def run(pool: str, out_dir: Path, seed: int | None = None, top_n: int = TOP_N):
 # --- auto-generated README (acc-vs-FLOPs Signal + above-random gate) --------
 
 def generate_readme(pool: str, out_dir: Path) -> None:
-    """Rewrite the auto blocks of results/acc_vs_flops/README.md (canonical pool
-    only): top mixture-Signal families + the above-random gate breakdown. The
-    gate numbers come from the `custom` above-random report (custom pretrains,
-    the SNR gate's domain)."""
+    """Rewrite the auto blocks of the rq00 README (canonical pool only): top
+    mixture-Signal families + the above-random gate breakdown, both from the
+    pool's own report."""
     if pool != CANONICAL_POOL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     sig = pd.read_csv(out_dir / "acc_vs_flops_signal.csv")
+    sig = sig[~sig["family"].isin(("bpb", "loss"))]
     fam_rank = (sig.groupby("family")["signal"].mean()
                 .sort_values(ascending=False))
     top3 = list(fam_rank.head(3).index)
     top_sig = sig.sort_values("signal", ascending=False).head(5)
 
-    # above-random gate from the pure-custom report (buckets 175M…1B)
-    mask = pd.read_csv(ACC_VS_FLOPS / stage / "seeds_28_1797_1904"
-                       / "above_random_mask.csv")
-    buckets = [c for c in ("175M", "350M", "600M", "1B") if c in mask.columns]
+    # above-random gate from the pool's own report; benchmarks only (BPB and
+    # the training loss have no chance level).
+    mask = pd.read_csv(ACC_VS_FLOPS / stage / pool / "above_random_mask.csv")
+    mask = mask[mask["n_options"].notna()]
+    buckets = [c for c in bucket_order() if c in mask.columns]
+    ref = TARGET_SIZE if TARGET_SIZE in buckets else buckets[-1]
     above_any = (mask[buckets] == 1).any(axis=1)
-    above_1b = (mask["1B"] == 1) if "1B" in mask.columns else above_any
+    above_ref = mask[ref] == 1
     n_total, n_above = len(mask), int(above_any.sum())
+    n_ref = int(above_ref.sum())
 
     highlight = "\n".join([
-        f"- **The benchmarks that separate data mixtures most: "
-        f"`{'`, `'.join(top3)}`** — top-3 families by mixture-Signal "
-        f"((max−min)/mean of per-mix final scores) at {TARGET_SIZE}.",
-        f"- **Mixture-Signal ≠ reliability.** These top-Signal families are exactly "
-        f"the ones the above-random gate **removes** — they sit at chance, so they "
-        f"never enter the SNR analysis. Of **{n_total} benchmarks, {n_above} clear "
-        f"chance at ≥1 size** ({n_total - n_above} are random everywhere) — almost "
-        f"entirely an answer-count effect.",
+        f"- **The benchmarks that separate the language settings most: "
+        f"`{'`, `'.join(top3)}`** — top-3 families by Signal "
+        f"((max−min)/mean of per-setting final scores) at {ref}.",
+        f"- **Above-random gate.** Of **{n_total} benchmarks, {n_above} clear "
+        f"chance at ≥1 size** and {n_ref} at {ref} ({n_total - n_above} are random "
+        f"everywhere). The at-chance cells are removed before any SNR is computed; "
+        f"the breakdown by answer count below shows how much of the gate is an "
+        f"option-count effect.",
     ])
 
     sig_rows = [[f"`{r.task}`", r.family, r.language, fmt(r.signal, 3)]
@@ -318,25 +330,23 @@ def generate_readme(pool: str, out_dir: Path) -> None:
     t_signal = md_table(["task", "family", "lang", "Signal"], sig_rows)
 
     gate_rows = []
-    for n_opt, g in mask.assign(_any=above_any, _1b=above_1b).groupby("n_options"):
+    for n_opt, g in mask.assign(_any=above_any, _ref=above_ref).groupby("n_options"):
         gate_rows.append([int(n_opt), fmt(1.0 / int(n_opt), 2),
                           f"{int(g['_any'].sum())} / {len(g)}",
-                          f"{int(g['_1b'].sum())} / {len(g)}"])
-    t_gate = md_table(["options", "chance", "above ≥1 size", "above @1B"], gate_rows)
+                          f"{int(g['_ref'].sum())} / {len(g)}"])
+    t_gate = md_table(["options", "chance", "above ≥1 size", f"above @{ref}"], gate_rows)
 
     results = "\n\n".join([
-        f"Headline numbers from the `{pool}` pool (Signal) and the `custom` "
-        f"above-random report. Regenerate: "
-        f"`python analysis/rq00_acc_vs_flops/run_apertus.py --pool {pool}` and "
-        f"`python analysis/rq00_acc_vs_flops/above_random.py`.",
-        f"**Top benchmarks by mixture-Signal** (full ranking in "
-        f"`pretraining/{pool}/acc_vs_flops_signal.csv`):",
+        f"Headline numbers from the `{pool}` pool. Regenerate: "
+        f"`python analysis/rq00_acc_vs_flops/above_random.py --only {pool}` and "
+        f"`python analysis/rq00_acc_vs_flops/run_apertus.py --pool {pool}`.",
+        f"**Top benchmarks by Signal across language settings** (full ranking in "
+        f"`{stage}/{pool}/acc_vs_flops_signal.csv`):",
         t_signal,
-        f"![top-Signal family accuracy vs FLOPs](pretraining/{pool}/per_benchmark/{top3[0]}.png)",
+        f"![top-Signal family accuracy vs FLOPs]({stage}/{pool}/per_benchmark/{top3[0]}.png)",
         f"**Above-random gate** — a benchmark must beat chance (`1/n_options`) by "
-        f"+0.05; `run_apertus_snr_variants.py` NaN-s every random `(benchmark, size)` "
-        f"SNR cell, so the gate propagates to all RQs. Almost entirely an "
-        f"answer-count effect:",
+        f"+0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` "
+        f"SNR cell, so the gate propagates to all RQs:",
         t_gate,
     ])
 
@@ -350,10 +360,10 @@ def generate_readme(pool: str, out_dir: Path) -> None:
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
-        "--pool", default="3seeds",
-        help="Pool name from configs/models.json. Tiers: 1seed, 2seeds, "
-             "3seeds, 3seeds_swissai_hf (the last overlays external scaling "
-             "models past 1B). Default: 3seeds.",
+        "--pool", default=CANONICAL_POOL,
+        help=f"Pool name from configs/models.json (default: {CANONICAL_POOL}; "
+             "the 36-sweep pools custom_swissai_hf / seeds_* still work and "
+             "overlay the external scaling models past 1B).",
     )
     p.add_argument(
         "--seed", type=int, default=None,
