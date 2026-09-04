@@ -77,8 +77,14 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         # Cross-size identity (the size token is what varies along the ladder).
         "family": f"lm-{mix_label(c['L'], arch, scheme)}-seed{c['seed']}",
         "size": c["size"],
-        # Total parameters = non-embedding + the tied embedding matrix.
+        # Total parameters = non-embedding + the tied embedding matrix — which
+        # is exactly the count the FLOPs convention wants
+        # (configs.flops_params: 6 x (N_non_emb + d_model x V) x D). The three
+        # shape fields put the cell explicitly on that basis.
         "params": int(cfg["n_non_emb_params"] + VOCAB_SIZE * cfg["hidden_size"]),
+        "n_non_emb": int(cfg["n_non_emb_params"]),
+        "d_model": int(cfg["hidden_size"]),
+        "vocab_size": VOCAB_SIZE,
         "hyperparams_key": c["size"],
         "L": c["L"],
         "arch": arch,
