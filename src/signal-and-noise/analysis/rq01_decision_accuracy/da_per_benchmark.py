@@ -55,9 +55,11 @@ if str(_SRC) not in sys.path:
 
 import pandas as pd  # noqa: E402
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
+from evals.scripts.utils.configs import (  # noqa: E402
+    bucket_order, load_languages, load_pools)
 from analysis.rq00_acc_vs_flops.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
+from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.utils import (  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -144,12 +146,8 @@ _DA_BOLD = 0.75         # bold decision-accuracy cells at/above this
 _BEGIN = "<!-- BEGIN generated signal slides (analysis/rq01_decision_accuracy/da_per_benchmark.py) -->"
 _END = "<!-- END generated signal slides -->"
 
-_LANG_NAME = {
-    "en": "English", "es": "Spanish", "ar": "Arabic", "zh": "Chinese",
-    "ru": "Russian", "hi": "Hindi", "vi": "Vietnamese", "eu": "Basque",
-    "sw": "Swahili", "th": "Thai", "tr": "Turkish", "ja": "Japanese",
-    "de": "German", "fr": "French",
-}
+# Display names from configs/languages.json where curated; the tag otherwise.
+_LANG_NAME = {code: e["language"] for code, e in load_languages()["languages"].items()}
 
 
 def _comparison_key(comp: str) -> tuple[int, int]:
@@ -202,8 +200,11 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
 
 def generate_slides(long: pd.DataFrame, pool: str) -> None:
     """Rewrite the deck's appendix (between BEGIN/END markers) from `long`:
-    2 above-random slides (custom / all models) + 1 DA-size slide per language.
-    Idempotent — replaces an existing block, else appends to slides.md."""
+    the above-random slides + 1 DA-size slide per language. Canonical pool
+    only, like every other generator; idempotent — replaces an existing
+    block, else appends to slides.md."""
+    if pool != CANONICAL_POOL:
+        return
     stage = load_pools()[pool].get("stage", "pretraining")
     block = "\n".join([
         _BEGIN,
@@ -230,8 +231,8 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--pool", default="custom_swissai_hf",
-                   help="Pool name from configs/models.json (default: custom_swissai_hf).")
+    p.add_argument("--pool", default=CANONICAL_POOL,
+                   help=f"Pool name from configs/models.json (default: {CANONICAL_POOL}).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")
