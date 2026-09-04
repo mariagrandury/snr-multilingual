@@ -308,8 +308,8 @@ by design.
   Every build job also calls it for its own mixture when it finishes, so this
   is only needed after a purge or for a mixture built before staging existed.
 - **Pre-build the eval datasets into the iopsstor HF cache.** Compute nodes have
-  no internet and the harness runs all tasks in one batched call, so a single
-  uncached dataset aborts the whole eval. They live in `$HF_HOME/datasets` on
+  no internet, so an uncached dataset fails its task (the watcher downloads it
+  and retries, but that costs a job per pass). They live in `$HF_HOME/datasets` on
   iopsstor: the sweep touches them on every eval, and the cleaning policy is
   last-access based, so an active sweep keeps them alive. (After a long idle
   gap they can still be purged — the symptom is an empty directory tree and
@@ -395,7 +395,10 @@ nothing duplicates.
   sync with the grid automatically via
   [`sync_models_json.py`](sync_models_json.py); commit the diff it makes),
   then on a later pass an [`../evals/`](../evals/) `evaluate.sbatch` job
-  (vLLM, TP=1, `BATCH_TASKS=1`), which pushes to W&B from inside the job.
+  (vLLM, TP=1, one `eval_worker.py` per GPU; every finished task is on disk
+  before the next starts, so a walltime kill costs only the tasks in flight
+  and the next pass resubmits the rest), which pushes to W&B from inside
+  the job.
 
   ```bash
   python3.11 auto_evals_cscs.py --dry-run       # preview one pass

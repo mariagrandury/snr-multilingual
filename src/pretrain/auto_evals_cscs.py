@@ -26,14 +26,17 @@ of each cell:
      LOGS_ROOT/<entity>/msnr/<cell>-iter<N>/                        -> skip
      (task-level, so adding a benchmark reaches evaluated checkpoints)
   2. eval job for it already in squeue (any user)                    -> skip
-  2b. --max-attempts eval runs already wrote nothing at all -> diagnose
-     rather than resubmit. A dataset missing from the offline cache is
-     downloaded and the checkpoint retried immediately; every other cause
-     is held back and recorded in <logs-root>/auto_eval_errors.json, so a
-     checkpoint that cannot succeed stops costing a job per pass.
+  2b. a task that failed in --max-attempts consecutive eval runs (or runs
+     that wrote nothing at all) is diagnosed rather than resubmitted. A
+     dataset missing from the offline cache is downloaded and the task
+     retried immediately; every other cause is held back and recorded in
+     <logs-root>/auto_eval_errors.json, so a task that cannot succeed stops
+     costing a job per pass while the checkpoint's other tasks still run.
   3. HF snapshot staged at <staging>/<cell>/iter_<N>  -> submit ONE eval job
        (src/evals/scripts/evaluate.sbatch, vLLM, BOS, no chat template,
-        TP=1 — the ladder's KV-head counts only divide 1 — BATCH_TASKS=1)
+        TP=1 — the ladder's KV-head counts only divide 1 — so one worker per
+        GPU, each task's results written the moment it finishes; a walltime
+        kill keeps them and the next pass resubmits only what is missing)
   4. otherwise -> convert first: one conversion/convert-snr.sh --models job
        per cell with the missing iters (models.json-driven). Each job is
        named convert-snr-<cell> and sized to its checkpoint count, so cells
@@ -94,11 +97,14 @@ def convert_job_name(cell: str) -> str:
     second conversion for a cell that already has one in flight."""
     return f"convert-snr-{cell}"
 # The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime can't
-# fit both — and the whole batched run executes on 1 of the node's 4 GPUs (the
-# ladder's KV-head counts force TP=1 and vLLM clamps dense DP to 1).
+# fit both. The ladder's KV-head counts force TP=1, so evaluate.sbatch runs
+# EVAL_WORKERS independent workers per job — one per GPU of the node, each
+# with its own model copy — sharing the task queue (../evals/scripts/
+# _run_per_task.sh); the estimate below divides the per-task term by that.
 #
 # Elapsed time is very close to linear in the task count. Fitted on 69
-# completed eval jobs (2026-08-21..27), median elapsed per (size, n_tasks):
+# completed eval jobs (2026-08-21..27) of the previous single-process
+# pipeline, median elapsed per (size, n_tasks):
 #
 #     size   9 tasks  18 tasks  60 tasks  100  164  219    per task
 #     90M      7.9       13.9         -    -    -    -     0.667 min
@@ -111,34 +117,37 @@ def convert_job_name(cell: str) -> str:
 # per-task cost barely moves, because the run is dominated by dataset load and
 # tokenization rather than the forward pass. 1B and 1.7B still have no eval
 # run, so they keep conservative estimates rather than an extrapolation dressed
-# up as a measurement — but on this evidence they are likely 2-3x too high too,
-# which is what currently pushes them over the queue cap at L100.
+# up as a measurement. The per-task figures are per WORKER; re-fit them on the
+# first jobs of the worker-pool pipeline (job.json in each eval dir has the
+# elapsed time and the task counts).
 #
-# A walltime kill mid-batch writes NO results_*.json (BATCH_TASKS=1 is a single
-# lm_eval call), so an undersized job is pure loss: hence SAFETY below, and the
-# generous fixed overhead relative to the ~2.5 min measured — container pull and
-# vLLM cold start are both much slower on a loaded node.
+# Every finished task is on disk before the next starts, so a walltime kill
+# costs only the tasks in flight and the next pass resubmits the rest: the
+# cap is a resume point, not a loss. SAFETY and the generous fixed overhead
+# (container pull and vLLM cold start are much slower on a loaded node) only
+# buy fewer resubmissions.
 MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75, "600M": 0.85,  # measured
                 "1B": 2.0, "1.7B": 2.8}                                # not measured
 OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
+EVAL_WORKERS = 4    # one per GPU at TP=PP=1; passed to evaluate.sbatch
 
 
 WALLTIME_CAP_MIN = 719   # the normal queue's 11:59:59 (launch_trainings.TIME_MAX_SEC)
 
 
 def eval_minutes(size: str, n_tasks: int) -> int:
-    """Fixed overhead + per-task budget x SAFETY, rounded up to 15 min."""
-    minutes = OVERHEAD_MIN + n_tasks * MIN_PER_TASK.get(size, 2.8) * SAFETY
+    """Fixed overhead + per-task budget x SAFETY over EVAL_WORKERS, rounded
+    up to 15 min."""
+    per_worker = math.ceil(n_tasks / EVAL_WORKERS)
+    minutes = OVERHEAD_MIN + per_worker * MIN_PER_TASK.get(size, 2.8) * SAFETY
     return math.ceil(minutes / 15) * 15
 
 
 def eval_walltime(size: str, n_tasks: int) -> str:
-    """Slurm walltime for a job that FITS the cap; callers must check
-    eval_minutes() <= WALLTIME_CAP_MIN first (submit_eval does). An over-cap
-    request is rejected at submission and would crash the watch loop; a
-    silently clamped one is worse — BATCH_TASKS=1 writes nothing on a
-    walltime kill, so the job would be resubmitted and killed forever."""
+    """Slurm walltime, capped at the queue limit: an over-cap request would be
+    rejected at submission and crash the watch loop, while a capped job
+    simply resumes on the next pass with the tasks it did not reach."""
     minutes = min(eval_minutes(size, n_tasks), WALLTIME_CAP_MIN)
     return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 
@@ -173,8 +182,8 @@ def active_jobs() -> set[str]:
         return set()
 
 
-def evaluated(name: str, logs_root: Path, tasks: list[str]) -> bool:
-    """True when every task in TASKS already has a result for NAME.
+def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
+    """The tasks in TASKS without a result for NAME yet (empty = evaluated).
 
     Task-level, not checkpoint-level: `any results_*.json` would mean that
     adding a benchmark to the `auto` group never reaches checkpoints already
@@ -183,33 +192,72 @@ def evaluated(name: str, logs_root: Path, tasks: list[str]) -> bool:
     (_run_per_task.sh filters through the same _eval_status.completed_tasks),
     so a resubmitted job runs ONLY the new tasks and merges them in.
     """
-    return not set(tasks) - completed_tasks(
-        name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
+    done = completed_tasks(name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
+    return [t for t in tasks if t not in done]
 
 
-def barren_attempts(name: str, logs_root: Path) -> int:
-    """Consecutive eval runs for NAME (newest first) that produced nothing.
+def eval_runs(name: str, logs_root: Path) -> list[Path]:
+    """NAME's eval_*/ dirs, newest first."""
+    base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
+    return [d for d in sorted(base.glob("eval_*"), reverse=True) if d.is_dir()]
+
+
+def wrote_results(run: Path) -> bool:
+    """A run that saved anything: a results file, or a published per-task dir."""
+    return (any(run.glob("results_*.json"))
+            or any(f for t in run.glob("per_task/*") if t.is_dir()
+                   for f in t.iterdir()))
+
+
+def failed_in(run: Path) -> dict[str, str]:
+    """task -> reason from the run's failed_tasks.log (eval_worker.py writes
+    one `<task>\\t<Error>: <message>` line per failure)."""
+    try:
+        lines = (run / "failed_tasks.log").read_text().splitlines()
+    except OSError:
+        return {}
+    out = {}
+    for line in lines:
+        if line.strip():
+            task, _, reason = line.partition("\t")
+            out[task] = reason
+    return out
+
+
+def task_attempts(name: str, logs_root: Path,
+                  tasks: list[str]) -> dict[str, tuple[int, str]]:
+    """Per task, how many of NAME's most recent eval runs IN A ROW failed it,
+    with the first reason recorded: task -> (attempts, reason).
 
     The task gate asks "is this done?", never "can this ever finish?", so a
-    checkpoint whose eval fails outright is resubmitted once per pass forever
-    — 196 such jobs on the L50 cells before this existed (one uncached dataset
-    aborts the whole BATCH_TASKS=1 call, so not one result lands). An
-    `eval_*/` with neither a results file nor a non-empty per_task/ is a total
-    loss; a run that saved anything counts as progress — and RESETS the
-    count: a lifetime tally would hold back a checkpoint that failed, was
-    repaired, and has been making progress since.
+    task whose eval fails outright would be resubmitted once per pass forever
+    — 196 such jobs on the L50 cells before this existed. Per task rather
+    than per run because the workers isolate failures: one task with a
+    broken dataset no longer takes the others down with it.
+
+    Walking newest-first, a run counts against a task when it lists it in
+    failed_tasks.log, or when it wrote nothing at all (a crash before any
+    task could land, reason unknown — eval_error() reads the job log for
+    those). A run that made progress without failing the task is no evidence
+    either way and ends its streak, so a task that failed, was repaired, and
+    has been running since is not held back by its past.
     """
-    base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
-    streak = 0
-    for d in sorted(base.glob("eval_*"), reverse=True):
-        if not d.is_dir():
-            continue
-        if (any(d.glob("results_*.json"))
-                or any(f for t in d.glob("per_task/*") if t.is_dir()
-                       for f in t.iterdir())):
+    streak = {t: 0 for t in tasks}
+    reason: dict[str, str] = {}
+    open_ = set(tasks)
+    for run in eval_runs(name, logs_root):
+        failed, barren = failed_in(run), not wrote_results(run)
+        for t in list(open_):
+            if t in failed:
+                streak[t] += 1
+                reason.setdefault(t, failed[t])
+            elif barren:
+                streak[t] += 1
+            else:
+                open_.discard(t)
+        if not open_:
             break
-        streak += 1
-    return streak
+    return {t: (n, reason.get(t, "")) for t, n in streak.items() if n}
 
 
 # lm_eval instantiates every task in the batch up front, so ONE dataset that
@@ -222,8 +270,15 @@ ERROR_LINE_RE = re.compile(r"^(?:\d+: )?(\w*(?:Error|Exception)): (.+)$", re.M)
 _LOG_TAIL = 400_000     # bytes; the traceback is at the end of a ~14 MB log
 
 
+def classify(reason: str) -> tuple[str, str]:
+    """A failed_tasks.log reason -> (kind, detail), the kinds of eval_error()."""
+    hit = MISSING_DATASET_RE.search(reason)
+    return ("dataset", hit.group(1)) if hit else ("other", reason[:200])
+
+
 def eval_error(name: str) -> tuple[str, str]:
-    """Why NAME's most recent eval job wrote nothing.
+    """Why NAME's most recent eval job wrote nothing — for runs that died
+    before any task could be recorded in failed_tasks.log.
 
     ("dataset", <hf repo>) — fixable here, see fix_missing_dataset.
     ("other", <last Error line>) / ("unknown", ...) — needs a human; recorded
@@ -293,26 +348,18 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
-                task_list: list[str], size: str, dry_run: bool) -> None:
+                task_list: list[str], size: str, dry_run: bool,
+                exclude: set[str] = frozenset()) -> None:
     name = f"{cell}-iter{it}"
     hf_dir = staging / cell / f"iter_{it:07d}"
     # Size the request on what is LEFT to run, not the full list — the inner
     # runner skips completed tasks anyway (debug_loop.sh's narrowing trick),
-    # and pricing a 3-tasks-missing checkpoint at the full 463 would both
-    # oversize the walltime and trip the over-cap skip below, parking an
-    # almost-done checkpoint forever.
-    done = completed_tasks(name, WANDB_ENTITY, PROJECT_NAME, str(logs_root))
-    remaining = [t for t in task_list if t not in done]
+    # and pricing a 3-tasks-missing checkpoint at the full 463 would oversize
+    # the walltime. Held-back tasks (`exclude`) leave the list entirely.
+    remaining = [t for t in remaining_tasks(name, logs_root, task_list)
+                 if t not in exclude]
     tasks = ",".join(remaining)
     n_tasks = len(remaining)
-    # Today this holds back 600M/1B/1.7B at L100 and 1.7B at L50 (711-1233
-    # min against the 719 cap) on their FIRST eval. Until the task list is
-    # split across jobs (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch),
-    # submitting is pure loss.
-    if (need := eval_minutes(size, n_tasks)) > WALLTIME_CAP_MIN:
-        print(f"  SKIP {job_name('eval', name)}: {n_tasks} tasks need ~{need} min, "
-              f"over the {WALLTIME_CAP_MIN}-min queue cap — needs a split eval")
-        return
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
     # comma-joined TASKS list would be truncated at its first comma and the
@@ -324,7 +371,7 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
            "TOKENIZER": TOKENIZER_MODEL,
            "BOS": "true",
            "APPLY_CHAT_TEMPLATE": "false",
-           "BATCH_TASKS": "1",
+           "EVAL_WORKERS": str(EVAL_WORKERS),
            "TP": "1", "PP": "1",
            "WANDB_ENTITY": WANDB_ENTITY,
            "WANDB_PROJECT": PROJECT_NAME,
@@ -423,7 +470,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     if not args.dry_run:
         path.write_text(json.dumps(errors, indent=2, sort_keys=True) + "\n")
     if errors:
-        print(f"\n{len(errors)} checkpoint(s) held back after "
+        print(f"\n{len(errors)} checkpoint(s) with tasks held back after "
               f"{args.max_attempts} failed evals — "
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
@@ -451,38 +498,43 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # whose results are already on disk needs no action, and printing it
     # every pass reads as work the watcher is failing to submit.
     pending = [it for it in due
-               if not evaluated(f"{cell}-iter{it}", logs_root, task_list)]
-    # Checkpoints whose evals have only ever failed. A missing offline
-    # dataset is repaired in place and the checkpoint goes straight back
-    # into pending; anything else is recorded for a human and held back,
-    # so the watcher stops burning a job per pass on it.
-    broken: dict[int, str] = {}
+               if remaining_tasks(f"{cell}-iter{it}", logs_root, task_list)]
+    # Tasks whose evals have only ever failed. A missing offline dataset is
+    # repaired in place and the task retried this pass; anything else is
+    # recorded for a human and held back, so the watcher stops burning a job
+    # per pass on it — while the checkpoint's other tasks still run.
+    held: dict[int, dict[str, dict]] = {}   # iter -> task -> attempts/kind/detail
     for it in list(pending):
         name = f"{cell}-iter{it}"
-        if not args.max_attempts:
-            continue
         # An in-flight job's freshly-mkdir'd eval_* dir looks barren until it
         # writes something — don't let the running attempt itself push the
         # checkpoint over the threshold.
-        if job_name("eval", name) in running:
+        if not args.max_attempts or job_name("eval", name) in running:
             continue
-        if barren_attempts(name, logs_root) < args.max_attempts:
-            continue
-        kind, detail = eval_error(name)
-        if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
-            continue                     # cache repaired — retry this pass
-        broken[it] = f"{kind}: {detail}"
-        pending.remove(it)
-        errors[name] = {"attempts": barren_attempts(name, logs_root),
-                        "kind": kind, "detail": detail}
+        remaining = remaining_tasks(name, logs_root, task_list)
+        for t, (n, why) in task_attempts(name, logs_root, remaining).items():
+            if n < args.max_attempts:
+                continue
+            kind, detail = classify(why) if why else eval_error(name)
+            if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
+                continue                 # cache repaired — retry this pass
+            held.setdefault(it, {})[t] = {"attempts": n, "kind": kind,
+                                          "detail": detail}
+        if it in held:
+            errors[name] = held[it]
+            if len(held[it]) == len(remaining):
+                pending.remove(it)       # nothing submittable is left
     # "DONE" only when nothing is outstanding for any reason — a cell whose
     # whole eval column is erroring has not finished, it has stopped.
-    status = pending or ("-" if broken else f"DONE ({len(due)}/{len(due)})")
+    status = pending or ("-" if held else f"DONE ({len(due)}/{len(due)})")
     print(f"{cell}: {len(saved)} saved | convert {to_convert or '-'} | "
           f"eval {status}"
-          + (f" | ERRORS on {sorted(broken)}" if broken else ""))
-    for reason in sorted(set(broken.values())):
-        print(f"    {reason}")
+          + (f" | HELD BACK on {sorted(held)}" if held else ""))
+    for it, tasks in sorted(held.items()):
+        reasons = sorted({f"{v['kind']}: {v['detail']}" for v in tasks.values()})
+        print(f"    iter {it}: {len(tasks)} task(s) held back — "
+              + "; ".join(reasons[:3])
+              + (f" (+{len(reasons) - 3} more)" if len(reasons) > 3 else ""))
 
     # Conversions run one per cell, in parallel across cells: they gate every
     # eval downstream, so serializing them cluster-wide (one shared job name,
@@ -498,7 +550,7 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         name = f"{cell}-iter{it}"
         if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
             submit_eval(cell, it, staging, logs_root, task_list, c["size"],
-                        args.dry_run)
+                        args.dry_run, exclude=set(held.get(it, {})))
             submitted["evals"] += 1
 
 
@@ -528,9 +580,10 @@ def main() -> None:
                         "is what every eval waits on, so it is always worth "
                         "keeping ahead.")
     p.add_argument("--max-attempts", type=int, default=3,
-                   help="after N eval runs that wrote no results at all, "
-                        "diagnose instead of resubmitting: a dataset missing "
-                        "from the offline cache is downloaded and retried "
+                   help="after N eval runs in a row that failed a task (or "
+                        "wrote nothing at all), diagnose it instead of "
+                        "resubmitting: a dataset missing from the offline "
+                        "cache is downloaded and the task retried "
                         "automatically, anything else is held back and "
                         "recorded in <logs-root>/" + ERRORS_JSON +
                         " (0 = always resubmit, never diagnose)")
