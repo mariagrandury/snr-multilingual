@@ -61,11 +61,22 @@ def sacct(job_ids: list[str]) -> dict[str, tuple[str, int]]:
     return jobs
 
 
-def tasks_in(eval_dir: Path) -> int:
-    """Tasks this run finished: published per_task/ dirs plus any task listed
-    in a results file (a merged run has both, and the union is what the next
-    job's idempotency gate would skip)."""
+def tasks_in(eval_dir: Path, meta: dict) -> int:
+    """Tasks this run finished, as QUEUED tasks — one per name the job was
+    given, which is what the walltime is priced in.
+
+    job.json's count first, then the published per_task/ dirs. The results
+    file is the last resort (a batched run has nothing else) and it OVERCOUNTS:
+    lm_eval lists a group's subtasks individually, so one queued
+    `global_mmlu_full_es` becomes dozens of rows. That inflates the old
+    pipeline's task count and so understates its minutes per task, which
+    makes the batched-vs-worker comparison conservative rather than flattering.
+    """
+    if isinstance(meta.get("tasks_done"), int):
+        return meta["tasks_done"]
     done = {d.name for d in eval_dir.glob("per_task/*") if d.is_dir()}
+    if done:
+        return len(done)
     for f in eval_dir.glob("results_*.json"):
         try:
             done |= set((json.loads(f.read_text()).get("results") or {}))
@@ -98,7 +109,7 @@ def scan(project_dir: Path, name_filter: str | None) -> list[dict]:
                 "job_id": eval_dir.name.rsplit("_", 1)[-1],
                 "pipeline": "worker" if job.is_file() else "batched",
                 "workers": meta.get("workers"),
-                "tasks": tasks_in(eval_dir),
+                "tasks": tasks_in(eval_dir, meta),
                 "dir": eval_dir,
             })
     return runs
