@@ -41,16 +41,18 @@ from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     ALLENAI_POOL, CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from analysis.rq02_snr_definition.run_apertus_snr_variants import variant_key
+from analysis.utils import TARGET_SIZE
 
 ROOT_OUT = ALLENAI_COMPARISON
 SNR_DEFINITION_ROOT = SNR_DEFINITION
 ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 
-APERTUS_SIZE = "1B"   # largest size in Apertus
-ALLENAI_SIZE = "1B"   # matched: AllenAI also has 1B in DataDecide
+APERTUS_SIZE = TARGET_SIZE   # the ladder's reference size (1B)
+ALLENAI_SIZE = "1B"          # matched: AllenAI also has 1B in DataDecide
 
-# Approximate matched-size pairs for the size-sweep (Apertus → AllenAI).
+# Approximate matched-size pairs for the size-sweep (ours → AllenAI DataDecide).
 SIZE_PAIRS = [
+    ("90M",  "90M"),
     ("175M", "150M"),
     ("350M", "300M"),
     ("600M", "750M"),
@@ -293,10 +295,8 @@ def _agreement_at_k(top_a: pd.Index, top_b: pd.Index, k: int) -> dict:
 # RQ / setup / TODO prose lives outside the markers.
 
 _POOL_TIERS = [
-    ("seeds_1904", "1 seed"),
-    ("seeds_28_1797", "2 seeds"),
-    ("seeds_28_1797_1904", "3 seeds"),
-    ("custom_swissai_hf", "+ externals"),
+    ("predictivity", "grid, seed 1904"),
+    ("predictivity_seeds", "all seeds"),
 ]
 
 
@@ -307,39 +307,23 @@ def _read_agreement(stage: str, pool: str):
 
 def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     rows = {p: _read_agreement(stage, p) for p, _ in _POOL_TIERS}
-    g = rows[ALLENAI_POOL]                       # canonical (pure 3-seed)
-    ext = rows["custom_swissai_hf"]              # gated externals pool
-    pure_r = " → ".join(
-        fmt(rows[p]["pearson_log_snr"], 2)
-        for p in ("seeds_1904", "seeds_28_1797", "seeds_28_1797_1904"))
+    rows = {p: r for p, r in rows.items() if r is not None}
+    g = rows[ALLENAI_POOL]                       # canonical pool
 
-    n_pure = int(g.n_shared)
-    weak = n_pure <= 5   # too few shared tasks for the correlation to be robust
-    agree_bullet = (
-        f"- **On the pure 3-seed pool (`{ALLENAI_POOL}`) SNR values and rank order agree "
-        f"across corpora** — best variant `{g.variant}`, Pearson r of log₁₀(SNR) "
-        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ **{fmt(g.spearman_rank)}**"
-        + (f", but over only **{n_pure}** shared English tasks after the above-random gate "
-           f"— near-saturated, so indicative rather than robust."
-           if weak else f" over the {n_pure} shared English tasks."))
-    trend_bullet = (
-        f"- **Seed-count trend is not robust** — Pearson r {pure_r} (1 → 2 → 3 seeds) is "
-        f"over only ~{n_pure} shared tasks; with so few points the values saturate near "
-        f"1.0 and don't form a reliable monotone trend."
-        if weak else
-        f"- **The value correlation rises with seeds** — Pearson r {pure_r} "
-        f"(1 → 2 → 3 seeds): more seeds tighten the cross-corpus SNR fit.")
+    n_shared = int(g.n_shared)
+    weak = n_shared <= 5   # too few shared tasks for the correlation to be robust
     highlight = "\n".join([
-        agree_bullet,
-        trend_bullet,
-        f"- **Dispersion + discrepancy families transfer; relative-spread does not** — "
-        f"the cross-corpus winners are discrepancy/dispersion variants "
-        f"(`{rows['seeds_1904'].variant}`, `{rows['seeds_28_1797'].variant}`, `{g.variant}`), "
-        f"not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).",
-        f"- **Only 7 English tasks overlap the two corpora, and the above-random gate "
-        f"leaves just {n_pure} of them** — so the evidence is the SNR *correlation* over "
-        f"that handful, not top-K Jaccard (trivially 1.0 on so small a universe). "
-        f"`custom_swissai_hf` keeps n_shared = **{int(ext.n_shared)}**.",
+        f"- **On the `{ALLENAI_POOL}` pool SNR values and rank order "
+        f"{'agree' if g.pearson_log_snr > 0.5 else 'do not clearly agree'} across corpora** — "
+        f"best variant `{g.variant}`, Pearson r of log₁₀(SNR) **{fmt(g.pearson_log_snr)}**, "
+        f"Spearman ρ **{fmt(g.spearman_rank)}**"
+        + (f", but over only **{n_shared}** shared English tasks after the above-random gate "
+           f"— indicative rather than robust."
+           if weak else f" over the {n_shared} shared English tasks."),
+        f"- **The shared universe is the English tasks both corpora evaluate** "
+        f"(ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA "
+        f"where run), so the evidence is the SNR *correlation* over that handful, not "
+        f"top-K Jaccard (trivially 1.0 on so small a universe).",
     ])
 
     rs = []
@@ -353,19 +337,18 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         ["pool", "best variant", "Pearson r", "Spearman ρ", "n_shared"], rs)
 
     results = "\n\n".join([
-        f"Cross-corpus agreement by pool (headline = the pure 3-seed pool "
-        f"`{ALLENAI_POOL}`). Regenerate with "
+        f"Cross-corpus agreement by pool (headline = `{ALLENAI_POOL}`). Regenerate with "
         f"`python analysis/rq03_allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
         "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
         "log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus "
-        "variant. The English overlap universe is 7 tasks; the above-random gate leaves "
-        "the `n_shared` shown per pool. Where `n_shared` is small (≤5) the correlations "
-        "are over a handful of points and should be read as indicative, not robust:",
+        "variant. The above-random gate leaves the `n_shared` shown per pool; where it "
+        "is small (≤5) the correlations are over a handful of points and should be read "
+        "as indicative, not robust:",
         t_pools,
-        f"![Apertus vs AllenAI SNR — 3-seed pool, best variant]"
-        f"(pretraining/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",
-        f"![Apertus vs AllenAI SNR across variants]"
-        f"(pretraining/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_grid.png)",
+        f"![Ladder vs AllenAI SNR — best variant]"
+        f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",
+        f"![Ladder vs AllenAI SNR across variants]"
+        f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_grid.png)",
     ])
     return highlight, results
 
@@ -405,8 +388,8 @@ def generate_slides(stage: str, pool: str) -> None:
         "subtitle: \"Results (auto) — cross-corpus agreement with AllenAI by pool\"\n"
         "---\n\n"
         f"{md_table(['pool', 'best variant', 'Pearson r', 'Spearman ρ', 'n_shared'], rows)}\n\n"
-        "Pure pools share all 7 English tasks; `custom_swissai_hf` shares fewer "
-        "after the above-random gate — the pure 3-seed pool is the like-for-like fit.\n\n"
+        "The shared universe is the English tasks both corpora evaluate, after the "
+        "above-random gate.\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq2-results", slide, "allenai_comparison/analyze.py")
