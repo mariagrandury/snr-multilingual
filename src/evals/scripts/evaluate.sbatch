@@ -238,6 +238,12 @@ elif (( EVAL_WORKERS < 1 )); then
     # about the layout if it is genuinely impossible.
     echo "WARNING: TP=$MP x PP=$PP exceeds $GPUS_PER_NODE GPUs; running 1 worker"
     EVAL_WORKERS=1
+elif (( EVAL_WORKERS * MP * PP > GPUS_PER_NODE )); then
+    # A hand-set EVAL_WORKERS the node cannot host: _run_per_task.sh would
+    # hand the last workers CUDA_VISIBLE_DEVICES indices that do not exist.
+    echo "WARNING: EVAL_WORKERS=$EVAL_WORKERS x $((MP * PP)) GPU(s) exceeds" \
+         "$GPUS_PER_NODE; capping at $(( GPUS_PER_NODE / (MP * PP) ))"
+    EVAL_WORKERS=$(( GPUS_PER_NODE / (MP * PP) ))
 fi
 echo "Eval workers: $EVAL_WORKERS x (TP=$MP PP=$PP) GPU(s)"
 COMMON_MODEL_ARGS="dtype=bfloat16"
