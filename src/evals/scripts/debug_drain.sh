@@ -1,54 +1,41 @@
 #!/bin/bash
-# debug_drain.sh — feed PENDING normal-partition convert/eval jobs through the idle
-# `debug` partition, shortest-walltime first, keeping it at the debug-qos cap
-# of **1 running + 1 queued**. Each moved job is capped at debug's **1:30**
-# wall via `scontrol update partition=debug timelimit=01:30:00`.
+# debug_drain.sh — feed PENDING normal-partition convert/eval/bpb jobs through
+# the idle `debug` partition, keeping it at the debug-qos cap of **1 running +
+# 1 queued**. Each moved job is capped at debug's **1:30** wall via
+# `scontrol update partition=debug timelimit=01:30:00`.
 #
-# Whether an over-cap job may be moved depends on whether truncating it LOSES
-# work, which differs per job kind:
+# Truncating a job to 1:30 is only safe when it does not LOSE work, and all
+# three kinds resume:
 #
-#   convert-*  RESUMABLE — convert-snr.sh touches .hf_complete per iter and
-#              skips what already carries it, so a 1:30 kill costs at most the
-#              in-flight iter. Moved regardless of walltime: the launcher asks
-#              for 2h but the job actually runs 12-15 min, so filtering on the
-#              REQUESTED limit left conversions stranded on `normal` forever
-#              while this script reported "nothing movable" — the exact stall
-#              it exists to prevent.
-#   bpb-*      RESUMABLE — score_bpb.py writes each checkpoint's bpb.json
-#              before starting the next, and skips what is already written on
-#              re-run. A 1:30 chunk therefore advances a cell by however many
-#              checkpoints it got through, and the next chunk continues. These
-#              are moved regardless of their requested walltime; that is the
-#              whole point of draining them.
-#   eval-*     NOT resumable under BATCH_TASKS=1 (see below), so only moved
-#              when its own walltime already fits the cap.
+#   convert-*  convert-snr.sh touches .hf_complete per iter and skips what
+#              already carries it, so a 1:30 kill costs at most the in-flight
+#              iter. The launcher asks for 2h but the job actually runs 12-15
+#              min, so filtering on the REQUESTED limit once left conversions
+#              stranded on `normal` forever while this script reported
+#              "nothing movable" — the exact stall it exists to prevent.
+#   bpb-*      score_bpb.py writes each checkpoint's bpb.json before starting
+#              the next, and skips what is already written on re-run.
+#   eval-*     scripts/eval_worker.py writes each task's results the moment it
+#              finishes (per_task/<task>/ in the eval dir), and the auto-eval
+#              watcher resubmits a killed job with only the tasks still
+#              missing. Until 2026-09-04 evals ran BATCH_TASKS=1 — one lm_eval
+#              call writing everything in a single burst at the end, so a 1:30
+#              kill of a 4h L100 job discarded 100% of it (../CLAUDE.md bug
+#              13) — and were only moved when their own walltime already fit.
 #
-# This used to move anything, assuming a truncated job leaves partial progress
-# on disk. It does not, for the auto-eval path: that runs BATCH_TASKS=1, one
-# lm_eval call for every task, and lm_eval writes in a single burst at the end
-# — on a completed 45-minute job all 538 samples files AND the results file
-# share one filename timestamp, with mtimes spanning 11 seconds, and per_task/
-# is empty (../CLAUDE.md bug 13). So a 1:30 kill of a 4h L100 job discarded
-# 100% of the work, and because nothing was written the next watcher pass
-# resubmitted it to be killed again. Per-task idempotency is real, but it only
-# helps ACROSS jobs that each finished something.
-#
-# With measured eval times (plan/compute-budget.md) only L1 (~8-13 min), L2
-# (~14-23) and L8 (~40-70) fit 1:30; L15 upward cannot finish in a debug slot.
-# Using debug for those needs the job SPLIT rather than truncated —
-# evaluate.sbatch already has NUM_SPLITS/SPLIT_INDEX and aggregate_splits.sbatch
-# — which belongs at submission time in auto_evals_cscs.py, not here: splitting
-# a pending job means cancelling it and submitting N new ones, exactly the
-# duplicate risk this script exists to avoid.
+# Every kind is therefore moved regardless of its requested walltime. A
+# truncated job costs one more cold start and one watcher pass to be
+# resubmitted, against hours of queue wait on `normal`.
 #
 # It does NOT submit new jobs — it only MOVES already-pending jobs, so there's
-# no risk of duplicates. Stops when nothing MOVABLE is left; over-cap jobs are
-# reported as "too-long" each tick and stay on normal.
+# no risk of duplicates. Stops when nothing pending is left.
 #
 # Conversions are drained first: they run 12-15 min and are the gate on
 # evaluating a cell, so a stuck normal queue blocks the whole eval pipeline.
+# Evals next, BPB last — there are hundreds of BPB jobs and they must not
+# starve the convert -> eval pipeline.
 #
-# The loop EXITS once nothing movable is left — it drains a batch, it does not
+# The loop EXITS once nothing pending is left — it drains a batch, it does not
 # stand guard. A job submitted after it exits will sit on `normal` until the
 # drainer is started again.
 #
@@ -61,7 +48,6 @@
 #                                                # if none is running; else no-op
 set -uo pipefail
 INTERVAL=45; ONCE=0; DRY=0; ENSURE=0
-DEBUG_CAP_SEC=5400        # the debug partition's 1:30 wall (scontrol show partition debug)
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --interval) INTERVAL="$2"; shift 2 ;;
@@ -96,36 +82,19 @@ if (( ENSURE )); then
 fi
 
 drain_once() {
-    local npend nlong ndebug slots cand jid jn secs
-    # Count only what is MOVABLE (walltime <= the cap). Counting every pending
-    # job would keep the loop spinning forever once the only ones left are the
-    # long-L evals it must not touch.
-    npend=$(squeue --me -h -p normal -t PD -o "%l|%j" 2>/dev/null | grep -E '\|(eval|convert|bpb)-' | \
-        awk -F'|' -v cap="$DEBUG_CAP_SEC" '{n=split($1,a,":");
-            sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
-            if (sec <= cap || $2 ~ /^(bpb|convert)-/) c++} END {print c+0}')
-    nlong=$(squeue --me -h -p normal -t PD -o "%l|%j" 2>/dev/null | grep -E '\|(eval|convert|bpb)-' | \
-        awk -F'|' -v cap="$DEBUG_CAP_SEC" '{n=split($1,a,":");
-            sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
-            if (sec > cap && $2 !~ /^(bpb|convert)-/) c++} END {print c+0}')
+    local npend ndebug slots cand jid jn secs
+    npend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null | grep -cE '^(eval|convert|bpb)-')
     ndebug=$(squeue --me -h -p debug -t PD,R,CG -o "%i" 2>/dev/null | wc -l)
-    echo "[$(date +%H:%M:%S)] movable=$npend  too-long(eval)=$nlong  debug=$ndebug/2"
-    (( npend == 0 )) && return 1          # nothing movable left → caller exits
+    echo "[$(date +%H:%M:%S)] pending=$npend  debug=$ndebug/2"
+    (( npend == 0 )) && return 1          # nothing pending left → caller exits
     slots=$(( 2 - ndebug ))
     (( slots <= 0 )) && return 0          # debug full (1 run + 1 queued)
     for (( s=0; s<slots; s++ )); do
-        # Rank 0 convert, 1 eval, 2 bpb; within a class, shortest walltime.
-        # Converts first because a cell cannot be evaluated until its HF
-        # snapshot exists, so one stuck behind a queue blocks everything
-        # downstream — that is exactly how the pipeline stalled before. bpb
-        # last because there are hundreds of them and they must not starve the
-        # convert -> eval pipeline. Over-cap jobs are skipped unless resumable
-        # (see the header).
+        # Rank 0 convert, 1 eval, 2 bpb (see the header); within a class,
+        # shortest walltime first.
         cand=$(squeue --me -h -p normal -t PD -o "%l|%i|%j" 2>/dev/null | grep -E '\|(eval|convert|bpb)-' | \
-            awk -F'|' -v cap="$DEBUG_CAP_SEC" '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
-                        resumable=($3 ~ /^(bpb|convert)-/);
-                        if (sec > cap && !resumable) next;
-                        rank=($3 ~ /^convert-/) ? 0 : (resumable ? 2 : 1);
+            awk -F'|' '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
+                        rank=($3 ~ /^convert-/) ? 0 : (($3 ~ /^eval-/) ? 1 : 2);
                         print rank"|"sec"|"$2"|"$3}' | \
             sort -t'|' -k1,1n -k2,2n | head -1 | cut -d'|' -f2-)
         [ -z "$cand" ] && return 0
@@ -150,6 +119,6 @@ if (( ONCE || DRY )); then drain_once; exit 0; fi
 
 echo "[debug-drain] loop start (interval ${INTERVAL}s); stop with TaskStop / kill."
 while true; do
-    drain_once || { echo "[debug-drain] nothing movable left (over-cap evals stay on normal) — done."; break; }
+    drain_once || { echo "[debug-drain] nothing pending left — done."; break; }
     sleep "$INTERVAL"
 done

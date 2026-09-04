@@ -76,7 +76,7 @@ Re-running is safe at two layers:
 | Layer | Where | When |
 |---|---|---|
 | Per-checkpoint | [`runners/hf_base_runner.sh`](runners/hf_base_runner.sh) (calls `scripts/_eval_status.py`) | Before each `sbatch` — skips submission entirely if every task already has results for that ckpt |
-| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `scripts/_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits cleanly with no work |
+| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `scripts/_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits cleanly with no work. One [`scripts/eval_worker.py`](scripts/eval_worker.py) per GPU then runs the rest, each task's results landing in `per_task/<task>/` as it finishes |
 
 Both use the same disk-scan in
 [`scripts/_eval_status.py`](scripts/_eval_status.py): a task is "done" iff
@@ -99,15 +99,16 @@ feeds already-pending convert/eval/bpb jobs through the idle `debug` partition
 It never submits anything new, so it cannot duplicate work; conversions go
 first, since a cell cannot be evaluated before its HF snapshot exists.
 
-Whether a job may be truncated to 1:30 depends on whether that loses work.
-Conversions and BPB are **resumable** — both write a per-checkpoint marker and
-skip what already carries it — so they are moved regardless of the walltime
-they asked for. Evals are not (`BATCH_TASKS=1` writes nothing until the end,
-CLAUDE.md bug 13), so an eval is moved only if its own walltime already fits.
+Truncating a job to 1:30 is safe because all three kinds **resume**:
+conversions and BPB write a per-checkpoint marker and skip what already
+carries it, and evals write every task's results as it finishes (CLAUDE.md
+bug 13) — the auto-eval watcher then resubmits a killed eval with only the
+tasks still missing. So every pending job is moved regardless of the walltime
+it asked for, conversions first, evals next, BPB last.
 
 ```bash
 bash scripts/debug_drain.sh --dry-run   # what it would move
-bash scripts/debug_drain.sh             # loop until nothing is movable
+bash scripts/debug_drain.sh             # loop until nothing is pending
 bash scripts/debug_drain.sh --ensure    # start one in the background if none runs
 ```
 
@@ -204,10 +205,19 @@ with SNR defaults:
 - `WANDB_ENTITY=mariagrandury-epflnlp`
 - `WANDB_PROJECT=snr-experiments`
 
-Each `eval_*/` contains one `results_<timestamp>.json` per task plus
-per-task `samples_<task>_<timestamp>.jsonl` files. The per-task
-sub-dirs `eval_*/per_task/<task>/` are written *as each task completes*,
-so walltime kills lose only the in-progress task.
+Each `eval_*/` holds the merged `results_<timestamp>.json` (every task the
+job finished) plus one `samples_<task>_<timestamp>.jsonl` per task, and
+beside them:
+
+- `per_task/<task>/<model>/results_*.json` — each task's own results file,
+  written *the moment the task completes* (`scripts/eval_worker.py`), so a
+  walltime kill loses only the tasks in flight; kept after the merge for its
+  per-task timing and config.
+- `job.json` — Slurm ids, node, walltime, backend, TP/PP/workers, repo
+  commit, container, start/end and the done/failed/skipped/unfinished counts.
+- `worker_<i>.log` per worker, `failed_tasks.log` (`<task>\t<reason>`),
+  `skipped_tasks.log` (already evaluated elsewhere), and `inflight/<task>/`
+  only if the job died with that task running.
 
 ### W&B per-model curves
 
@@ -256,7 +266,8 @@ evals/
 │   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor master
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan
-│   ├── _run_per_task.sh                 # inner per-task loop
+│   ├── _run_per_task.sh                 # inner runner: one eval_worker.py per GPU, merge at the end
+│   ├── eval_worker.py                   # model loaded once, tasks one at a time, results per task
 │   ├── push_all_results.py              # W&B per-model push
 │   ├── build_hf_dataset.py              # HF dataset builder
 │   └── utils/configs.py                 # shared config loader
@@ -276,7 +287,7 @@ evals/
 
 | Backend | When | Notes |
 |---|---|---|
-| `vllm` | **Recommended.** Faster + dramatically more memory-efficient than the Megatron eval path. Used by `runners/snr_pretraining_local_hf.sh` (vLLM on converted Megatron ckpts) and the HF runners. | Generation tasks (gsm8k, squadv2) may differ slightly between backends — only compare results across models using the same backend. |
+| `vllm` | **Recommended.** Faster + dramatically more memory-efficient than the Megatron eval path. Used by `runners/snr_pretraining_local_hf.sh` (vLLM on converted Megatron ckpts) and the HF runners. Runs `EVAL_WORKERS` workers per job (default: one per GPU the TP × PP layout leaves free), each with its own model copy. | Generation tasks (gsm8k, squadv2) may differ slightly between backends — only compare results across models using the same backend. |
 | `hf` (accelerate) | Default in `evaluate.sbatch`. | Slower; used when vLLM doesn't fit a particular task. |
 | `megatron_lm` | Direct evaluation of Megatron ckpts (no HF conversion). | Has known memory pressure issues; prefer the local-HF (vLLM) runner instead. |
 
