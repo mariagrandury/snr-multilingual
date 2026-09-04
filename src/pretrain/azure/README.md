@@ -469,12 +469,16 @@ az ml job create --file azure/jobs/convert.yml $AZ_ML_ARGS \
         outputs.hf_model.path=azureml://datastores/workspaceblobstore/paths/models/<cell>/iter_<0-padded-iter>
 ```
 
-**Evaluate.** `azure/eval.sh` reproduces the cluster's lm-eval invocation
-exactly (vLLM backend, swiss-ai lm-evaluation-harness fork for the task
-definitions, `add_bos_token=True`, no chat template, `--batch_size auto:20
---max_batch_size 32 --log_samples --write_out --trust_remote_code
---confirm_run_unsafe_code --gen_kwargs max_gen_toks=2048`, TP=PP=DP=1) and
-writes results in the cluster's directory layout:
+**Evaluate.** `azure/eval.sh` runs the cluster's own inner runner
+(`src/evals/scripts/_run_per_task.sh`: one `eval_worker.py` per GPU, the
+model loaded once, each task's results written as it finishes — so a
+preempted Spot job keeps what it did and the watcher's next submission runs
+only the rest) with the cluster's lm-eval arguments (vLLM backend, swiss-ai
+lm-evaluation-harness fork for the task definitions, `add_bos_token=True`,
+no chat template, `--batch_size auto:20 --max_batch_size 32 --log_samples
+--write_out --trust_remote_code --confirm_run_unsafe_code --gen_kwargs
+max_gen_toks=2048`, TP=PP=DP=1) and writes results in the cluster's
+directory layout:
 
 ```bash
 az ml job create --file azure/jobs/eval.yml $AZ_ML_ARGS \

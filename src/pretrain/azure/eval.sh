@@ -1,11 +1,11 @@
 #!/bin/bash
-# Azure ML lm-eval entrypoint — ports the vLLM branch of
-# src/evals/scripts/evaluate.sbatch + scripts/_run_per_task.sh with the SNR
-# pretraining runner defaults (BOS=true, APPLY_CHAT_TEMPLATE=false,
-# TOKENIZER=alehc/swissai-tokenizer, see runners/snr_pretraining_local_hf.sh).
-# Same knobs, same argument surface, same results layout, so the repo's
-# downstream tooling (push_all_results.py, _eval_status.py) reads the output
-# unchanged.
+# Azure ML lm-eval entrypoint — the vLLM branch of
+# src/evals/scripts/evaluate.sbatch with the SNR pretraining runner defaults
+# (BOS=true, APPLY_CHAT_TEMPLATE=false, TOKENIZER=alehc/swissai-tokenizer, see
+# runners/snr_pretraining_local_hf.sh), running the cluster's own
+# scripts/_run_per_task.sh worker pool. Same knobs, same argument surface,
+# same results layout, so the repo's downstream tooling (push_all_results.py,
+# _eval_status.py) reads the output unchanged.
 #
 # Required env: MODEL (HF snapshot dir or hub repo id), NAME (results id —
 # must be "<configs/models.json key>-iter<N>" for the W&B push to resolve),
@@ -70,19 +70,19 @@ COMMON_EVAL_ARGS=(
 HARNESS_EVAL_DIR="$RESULTS_DIR/$WANDB_ENTITY/$WANDB_PROJECT/$NAME/harness/eval_$(date +%Y%m%d_%H%M%S)_${AZUREML_RUN_ID:-azure}"
 mkdir -p "$HARNESS_EVAL_DIR"
 
-lm_eval --model vllm --model_args="$COMMON_MODEL_ARGS" "${COMMON_EVAL_ARGS[@]}" \
-    --tasks "$TASKS" --output_path "$HARNESS_EVAL_DIR"
-
-# lm-eval nests results under a sanitized model-path subdir; flatten it so the
-# layout matches megatron-backend runs (same move _run_per_task.sh does).
-for sub in "$HARNESS_EVAL_DIR"/*/; do
-  if compgen -G "${sub}results_*.json" > /dev/null; then
-    # `|| true`: under set -e a non-empty leftover (a dotfile the glob skips)
-    # would kill the job here — after the results landed but before the W&B
-    # push below, and the watcher would then count the iter as done.
-    mv "$sub"* "$HARNESS_EVAL_DIR/" && rmdir "$sub" || true
-  fi
-done
+# Same inner runner as the cluster: scripts/_run_per_task.sh starts one
+# eval_worker.py per GPU group (each loads the model once and writes every
+# task's results the moment it finishes, then merges them into the eval dir),
+# so a preempted Spot job keeps what it finished and the watcher's next
+# submission runs only the rest — the results blobs it gates on include the
+# per-task files.
+GPUS=$(nvidia-smi -L 2>/dev/null | grep -c . || true)
+EVAL_WORKERS=${EVAL_WORKERS:-$(( ${GPUS:-1} / (TP * PP) ))}
+(( EVAL_WORKERS > 0 )) || EVAL_WORKERS=1
+CMD_BASE="python scripts/eval_worker.py --model vllm --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[*]}"
+export CMD_BASE TASKS HARNESS_EVAL_DIR NAME WANDB_ENTITY WANDB_PROJECT EVAL_WORKERS
+export GPUS_PER_WORKER=$(( TP * PP )) LOGS_ROOT="$RESULTS_DIR"
+(cd "$REPO_ROOT/src/evals" && bash scripts/_run_per_task.sh)
 
 echo "Results in $HARNESS_EVAL_DIR:"
 ls "$HARNESS_EVAL_DIR"
