@@ -25,14 +25,15 @@ for _p in (_SND, _SRC):
 
 from evals.scripts.utils.configs import (  # noqa: E402
     _TASK_LANG_ALIASES, bucket_order, expand_pool, fineweb_language,
-    load_pools, load_snr_params, load_tasks, pool_include_external,
-    stage_external_models,
+    load_pools, load_snr_params, load_tasks, loader_for_source,
+    pool_include_external, stage_external_models,
 )
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results, load_apertus_eval_results,
     load_distillation_eval_results, load_posttraining_eval_results,
     load_reference_hf_eval_results,
 )
+from snr.download.ladder import load_predictivity_eval_results  # noqa: E402
 
 # --- size params (single source of truth: configs/models.json) --------------
 _SNR = load_snr_params()
@@ -166,6 +167,25 @@ def _is_parent_task(task: str) -> bool:
     return _is_language_aggregate(task, benchmark_family(task))
 
 
+# Ladder pools filter the loaded frame on its own columns (the scheme-B cells
+# and the adopted off-grid seeds are real runs whether or not models.json
+# lists them), so a member spec may carry any of these column filters.
+_LADDER_FILTERS = {"seeds": "seed", "sizes": "size", "L": "L",
+                   "arch": "arch", "scheme": "scheme"}
+
+
+def _is_ladder_pool(pool: str) -> bool:
+    members = load_pools()[pool].get("members", [])
+    return bool(members) and all(
+        loader_for_source(m["source"]) == "ladder" for m in members)
+
+
+def pool_models(pool: str, df: pd.DataFrame) -> set[str]:
+    """The pool's own (non-external) model names: every model of a ladder
+    pool's frame, else the models.json expansion."""
+    return set(df["model"]) if _is_ladder_pool(pool) else set(expand_pool(pool))
+
+
 def build_snr_pool(pool: str) -> pd.DataFrame:
     """SNR signal-pool dataframe for the named pool. Apertus rows are filtered
     to the pool's `members` (via expand_pool); when the pool sets
@@ -194,9 +214,22 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
                 continue
         return pd.concat(frames, ignore_index=True)
 
-    pool_models = set(expand_pool(pool))
+    spec = load_pools()[pool]
+    if _is_ladder_pool(pool):
+        df = load_predictivity_eval_results(
+            include_diverged=spec.get("include_diverged", False))
+        frames = []
+        for m in spec["members"]:
+            sub = df
+            for key, col in _LADDER_FILTERS.items():
+                if key in m:
+                    sub = sub[sub[col].isin(m[key])]
+            frames.append(sub)
+        return pd.concat(frames).drop_duplicates().reset_index(drop=True)
+
+    members = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
-    df_a = df_a[df_a["model"].isin(pool_models)].copy()
+    df_a = df_a[df_a["model"].isin(members)].copy()
     frames = [df_a]
     if pool_include_external(pool):
         stage = load_pools()[pool].get("stage", "pretraining")
