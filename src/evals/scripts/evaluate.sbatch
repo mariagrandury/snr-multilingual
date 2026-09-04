@@ -513,8 +513,10 @@ job_json "${JOB_FACTS[@]}" status=$([[ $EVAL_RC -eq 0 ]] && echo finished || ech
     exit_code="$EVAL_RC" finished="$(date -Iseconds)" duration_s="$DURATION" \
     tasks_done="$(find "$HARNESS_EVAL_DIR/per_task" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')" \
     tasks_failed="$(count_lines "$HARNESS_EVAL_DIR/failed_tasks.log")" \
-    tasks_skipped="$(count_lines "$HARNESS_EVAL_DIR/skipped_tasks.log")" \
-    tasks_unfinished="$(find "$HARNESS_EVAL_DIR/inflight" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+    tasks_skipped="$(count_lines "$HARNESS_EVAL_DIR/skipped_tasks.log")"
+# No tasks_unfinished: _run_per_task.sh appends a task whose worker died to
+# failed_tasks.log, so counting the inflight/ dirs too would report each one
+# twice.
 # A failed eval step means NO task finished (_run_per_task.sh exits 1 only
 # then); whatever did land is on disk and the next submission picks it up.
 (( EVAL_RC == 0 )) || die "Evaluation step failed (rc=$EVAL_RC) — nothing to upload; see $HARNESS_EVAL_DIR"
