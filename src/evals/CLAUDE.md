@@ -521,6 +521,11 @@ re-run that skipped everything, then a top-up run that ran only the new
 task); the vLLM path itself is untested until the smoke tests below run on
 the cluster.
 
+`scripts/eval_timing.py` measures both claims off disk + sacct — median
+min/task per (pipeline, size) and, for killed jobs, how many tasks each
+generation kept. It is also how `MIN_PER_TASK` gets re-fitted: those figures
+were fitted on the batched pipeline and are per WORKER now.
+
 ---
 
 ### 14. vLLM `tensor_parallel_size` must divide `num_key_value_heads`
