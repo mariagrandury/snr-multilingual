@@ -33,10 +33,13 @@ i.e. what makes the next job skip it. Whatever directory is left in inflight/
 after a kill is the partial output of a task that was running.
 
 Failure isolation: an exception inside one task is logged and the worker
-moves on. Under torchrun/accelerate (WORLD_SIZE > 1, the hf and megatron_lm
-backends) it is re-raised instead — the ranks must stay in lockstep through
-lm_eval's collectives, and a rank that skipped a task would deadlock the rest;
-what finished before the crash is on disk regardless.
+moves on. Under torchrun/accelerate (the hf and megatron_lm backends run one
+process per GPU, so the model reports world_size > 1) it is re-raised instead
+— the ranks must stay in lockstep through lm_eval's collectives, and a rank
+that skipped a task would leave the others waiting; what finished before the
+crash is on disk regardless. A failure in rank 0's write-and-publish step is
+the one case where only that rank raises, and it relies on the launcher
+tearing the group down.
 
 The arguments mirror the lm_eval CLI's so evaluate.sbatch composes the command
 the way it always did; --worker/--num_workers are the only additions.
@@ -54,9 +57,12 @@ from pathlib import Path
 
 
 def parse_limit(s: str | None):
+    """lm_eval's --limit: an int is a document count, a float below 1 is a
+    fraction. int(float(s)), not int(s) — "2.0" is a count, and int("2.0")
+    raises, which would kill every worker at argparse time."""
     if s is None:
         return None
-    return int(s) if float(s) >= 1 and float(s).is_integer() else float(s)
+    return int(float(s)) if float(s) >= 1 else float(s)
 
 
 def parse_args() -> argparse.Namespace:
@@ -121,14 +127,8 @@ def main() -> int:
     inflight, per_task = out / "inflight", out / "per_task"
     failed_log = out / "failed_tasks.log"
     tasks = [t for t in args.tasks.split(",") if t]
-    world_size = int(os.environ.get("WORLD_SIZE", "1"))
-    rank = int(os.environ.get("RANK", os.environ.get("LOCAL_RANK", "0")))
-    if world_size > 1 and args.num_workers > 1:
-        sys.exit("--num_workers > 1 is one process per worker; under "
-                 "torchrun/accelerate use --num_workers 1")
-    if rank == 0:
-        inflight.mkdir(parents=True, exist_ok=True)
-        per_task.mkdir(parents=True, exist_ok=True)
+    inflight.mkdir(parents=True, exist_ok=True)
+    per_task.mkdir(parents=True, exist_ok=True)
 
     def log(msg: str) -> None:
         print(f"[eval_worker {args.worker}] {msg}", flush=True)
@@ -154,7 +154,12 @@ def main() -> int:
     lm = get_model(args.model).create_from_arg_obj(
         model_args, {"batch_size": args.batch_size,
                      "max_batch_size": args.max_batch_size, "device": args.device})
-    log(f"model ready in {time.time() - t0:.0f}s; {len(tasks)} task(s) in the queue")
+    # The model's own view, NOT $WORLD_SIZE: evaluate.sbatch exports
+    # WORLD_SIZE=<GPUs on the node> for every backend, so reading the env here
+    # made a plain vLLM worker believe it was rank 0 of a 4-rank job.
+    rank, world_size = lm.rank, lm.world_size
+    log(f"model ready in {time.time() - t0:.0f}s; {len(tasks)} task(s) in the "
+        f"queue; rank {rank}/{world_size}")
     # One TaskManager for the whole run: building it indexes every task YAML
     # in the harness, which simple_evaluate would otherwise redo per call.
     task_manager = TaskManager(include_path=args.include_path,
@@ -164,8 +169,7 @@ def main() -> int:
     for task in tasks:
         if args.num_workers > 1 and not claim(inflight / f"{task}.claim"):
             continue                      # another worker has it
-        if rank == 0:
-            (inflight / task).mkdir(exist_ok=True)
+        (inflight / task).mkdir(exist_ok=True)
         attempted += 1
         tracker = EvaluationTracker(output_path=str(inflight / task))
         t0 = time.time()

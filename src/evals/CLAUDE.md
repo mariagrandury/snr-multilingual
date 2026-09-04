@@ -501,7 +501,25 @@ done. Two things bit while building it:
   per-task tally would hold back tasks that were repaired. So
   `auto_evals_cscs.task_attempts` counts, per task, the most recent runs in
   a row that listed it in `failed_tasks.log` or wrote nothing at all, and a
-  run that progressed without failing the task ends the streak.
+  run that progressed without failing the task ends the streak. It skips runs
+  that attempted nothing: `evaluate.sbatch` creates the eval dir before the
+  idempotency filter runs, so a duplicate submission whose sibling already did
+  the work leaves a directory indistinguishable from a crash, and counting
+  those would park a task after two of them plus one real failure.
+- **`$WORLD_SIZE` is not the rank signal.** `evaluate.sbatch` exports
+  `WORLD_SIZE=<GPUs on the node>` for *every* backend (it predates all of
+  this), so a worker reading the env believed it was one rank of a 4-rank job
+  and refused to run. Caught in review before it ever reached the cluster; it
+  would have failed every eval job in about three minutes with zero tasks
+  done, and three such passes park the checkpoint. The model object's own
+  `lm.rank` / `lm.world_size` is the authority — it is 0/1 for vLLM and the
+  real values under torchrun.
+- **A worker can die without raising** (CUDA abort, the OOM killer, a vLLM
+  engine crash). Its claim marker outlives it, so the other workers skip the
+  task, and nothing lands in `failed_tasks.log` — the run looks like progress
+  and the watcher never counts a strike, which is the resubmit-forever loop
+  again. `_run_per_task.sh` therefore records any task still in `inflight/`
+  once every worker has exited.
 
 Consequences: a walltime kill costs only the tasks in flight, and the next
 watcher pass resubmits what is missing with the walltime sized to it; the
