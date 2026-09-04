@@ -12488,6 +12488,76 @@
       "eval_groups": [
         "pretraining_full"
       ]
+    },
+    "predictivity": {
+      "description": "The predictivity ladder as planned: one run per (size, L, arch, scheme), seed 1904. Deep + shallow and scheme A/B are the intervention levels; seeds are noise, not signal (see rq06).",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-predictivity",
+          "seeds": [
+            1904
+          ]
+        }
+      ],
+      "include_external": false
+    },
+    "predictivity_seeds": {
+      "description": "Every trained predictivity cell, all seeds (seed replicates at 175M/600M for L in {1,2,50,100} and the 1B x3 row). Seed replicates enter the signal pool as separate models, so use it for seed-noise estimates (rq06), not as the headline pool.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-predictivity"
+        }
+      ],
+      "include_external": false
+    },
+    "predictivity_seeds_train": {
+      "description": "Seed holdout, train split: the replicate seeds (64, 313) at the x3 cells (175M/600M, L in {1,2,50,100}).",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-predictivity",
+          "seeds": [
+            64,
+            313
+          ],
+          "sizes": [
+            "175M",
+            "600M"
+          ],
+          "L": [
+            1,
+            2,
+            50,
+            100
+          ]
+        }
+      ],
+      "include_external": false
+    },
+    "predictivity_seeds_test": {
+      "description": "Seed holdout, test split: seed 1904 on the same x3 cells as predictivity_seeds_train.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-predictivity",
+          "seeds": [
+            1904
+          ],
+          "sizes": [
+            "175M",
+            "600M"
+          ],
+          "L": [
+            1,
+            2,
+            50,
+            100
+          ]
+        }
+      ],
+      "include_external": false
     }
   },
   "sources": {
@@ -12519,26 +12589,127 @@
       "split": null
     },
     "snr-pretraining-predictivity": {
-      "split": "pretraining_predictivity"
+      "split": "pretraining_predictivity",
+      "loader": "ladder"
     }
   },
   "snr": {
     "small_sizes": [
+      "90M",
       "175M",
       "350M",
       "600M"
     ],
     "target_size": "1B",
     "plotted_mixes": [
-      "fwEdu30",
-      "fwEdu60",
-      "fwEdu90"
+      "L1-deep",
+      "L2-deep",
+      "L8-deep",
+      "L15-deep",
+      "L30-deep",
+      "L50-deep",
+      "L100-deep"
     ],
-    "da_early_steps": [
-      6000,
-      18000,
-      28000
+    "da_early_fracs": [
+      0.2,
+      0.4,
+      0.6,
+      0.8
     ],
-    "last_n": 5
+    "last_n": 5,
+    "size_buckets": [
+      {
+        "label": "90M",
+        "sizes": [
+          "90M"
+        ]
+      },
+      {
+        "label": "175M",
+        "sizes": [
+          "175M"
+        ]
+      },
+      {
+        "label": "270M",
+        "sizes": [
+          "270M"
+        ]
+      },
+      {
+        "label": "350M",
+        "sizes": [
+          "350M"
+        ]
+      },
+      {
+        "label": "600M",
+        "sizes": [
+          "600M",
+          "0.6B"
+        ]
+      },
+      {
+        "label": "1B",
+        "sizes": [
+          "1B"
+        ]
+      },
+      {
+        "label": "1.7B",
+        "sizes": [
+          "1.7B"
+        ]
+      },
+      {
+        "label": "3B",
+        "sizes": [
+          "3B"
+        ]
+      },
+      {
+        "label": "4B",
+        "sizes": [
+          "4B"
+        ]
+      },
+      {
+        "label": "7-9B",
+        "sizes": [
+          "7B",
+          "8B",
+          "9B"
+        ]
+      },
+      {
+        "label": "12-14B",
+        "sizes": [
+          "12B",
+          "13B",
+          "14B"
+        ]
+      },
+      {
+        "label": "23-24B",
+        "sizes": [
+          "23B",
+          "24B"
+        ]
+      },
+      {
+        "label": "27-32B",
+        "sizes": [
+          "27B",
+          "30B-A3B",
+          "32B"
+        ]
+      },
+      {
+        "label": "70B",
+        "sizes": [
+          "70B"
+        ]
+      }
+    ]
   }
 }
