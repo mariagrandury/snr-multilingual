@@ -24,8 +24,9 @@ for _p in (_SND, _SRC):
         sys.path.insert(0, str(_p))
 
 from evals.scripts.utils.configs import (  # noqa: E402
-    bucket_order, expand_pool, load_pools, load_snr_params,
-    pool_include_external, stage_external_models,
+    _TASK_LANG_ALIASES, bucket_order, expand_pool, fineweb_language,
+    load_pools, load_snr_params, load_tasks, pool_include_external,
+    stage_external_models,
 )
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results, load_apertus_eval_results,
@@ -44,6 +45,13 @@ _BUCKETS = bucket_order()
 _BUCKET_RE = "|".join(sorted((re.escape(b) for b in _BUCKETS), key=len, reverse=True))
 
 # --- task-name helpers ------------------------------------------------------
+# configs/tasks.json tags every registered task with its language and
+# benchmark family (116 languages for the predictivity ladder); it is the first
+# stop for every helper below. The token-parsing fallbacks cover the names the
+# 36-sweep parquet carries that were never registered (subject facets, the
+# standalone English tasks) and stay byte-identical to the old behaviour.
+_TASKS = load_tasks()
+
 _LANG_MAP = {
     "ar": "ar", "arb": "ar",
     "de": "de",
@@ -83,8 +91,18 @@ _TRAILING_OK = {
 
 
 def assign_language(task: str) -> str:
+    """Project language tag of a task: ``multi`` for cross-language
+    aggregates (`bpb_macro`, `train_loss`, `include_base_44`), ``??`` when
+    unresolved."""
+    if task in ("bpb_macro", "train_loss"):
+        return "multi"
+    if task.startswith("bpb_"):
+        return fineweb_language(task[len("bpb_"):])
     if task in _ENGLISH_ONLY_TASKS:
         return "en"
+    lang = _TASKS.get(task, {}).get("language")
+    if lang:
+        return _TASK_LANG_ALIASES.get(lang, lang)
     for tok in task.split("_"):
         if tok in _LANG_MAP:
             return _LANG_MAP[tok]
@@ -96,10 +114,18 @@ def benchmark_family(task: str) -> str:
 
     ``arc_challenge`` / ``arc_easy`` collapse to ``arc``; English
     ``truthfulqa_mc1`` is left alone so it doesn't collapse with the
-    multilingual ``truthfulqa_<lang>_mc1`` variants.
+    multilingual ``truthfulqa_<lang>_mc1`` variants. Per-language BPB tasks
+    form the ``bpb`` family, the training loss the ``loss`` family.
     """
+    if task == "train_loss":
+        return "loss"
+    if task.startswith("bpb_"):
+        return "bpb"
     if task in _BENCHMARK_FAMILY_OVERRIDES:
         return _BENCHMARK_FAMILY_OVERRIDES[task]
+    fam = _TASKS.get(task, {}).get("benchmark")
+    if fam:
+        return fam
     parts = task.split("_")
     out = []
     for p in parts:
@@ -117,6 +143,11 @@ def _is_language_aggregate(task: str, family: str) -> bool:
     """
     if task in _BENCHMARK_FAMILY_OVERRIDES:
         return True
+    if task in _TASKS:
+        # Registered tasks are per-language evaluations by construction
+        # (subtopics are never registered); the cross-language aggregates
+        # (`include_base_44`, tagged multi) are not one language's task.
+        return assign_language(task) not in ("multi", "??")
     if not task.startswith(family + "_"):
         return False
     rest = task[len(family) + 1:].split("_")
@@ -130,7 +161,7 @@ def _is_parent_task(task: str) -> bool:
     evaluation, dropping the per-(lang, subject) facets. English standalone
     tasks (``_ENGLISH_ONLY_TASKS``) plus multilingual per-language aggregates.
     """
-    if task in _ENGLISH_ONLY_TASKS:
+    if task in _ENGLISH_ONLY_TASKS or task.startswith("bpb_") or task == "train_loss":
         return True
     return _is_language_aggregate(task, benchmark_family(task))
 
