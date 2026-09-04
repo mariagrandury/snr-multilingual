@@ -61,7 +61,11 @@ def merge_split_results(split_dirs: list[Path], output_dir: Path,
 
     # Write merged results with a consistent timestamp
     # Use the timestamp from the base results file name
-    base_result_files = list(split_dirs[0].glob("**/results_*.json"))
+    # Same shallowest-first rule as above: an unsorted glob would name the
+    # output after whichever per-task file the filesystem happened to list.
+    base_result_files = sorted(
+        split_dirs[0].glob("**/results_*.json"),
+        key=lambda p: (len(p.relative_to(split_dirs[0]).parts), p.name))
     timestamp = base_result_files[0].stem.replace("results_", "") if base_result_files else "merged"
 
     output_file = output_dir / f"results_{timestamp}.json"
