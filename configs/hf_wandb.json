@@ -1,6 +1,7 @@
 {
   "repo_id": "multilingual-snr/multilingual-snr-eval-results",
   "repo_id_predictivity": "msnr-data/eval-results",
+  "repo_id_ladder_report": "msnr-data/ladder-report",
   "parquet_pattern": "{split}-00000-of-00001.parquet",
   "wandb": {
     "entity": "mariagrandury-epflnlp",

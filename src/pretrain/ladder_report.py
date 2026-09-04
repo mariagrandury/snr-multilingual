@@ -178,30 +178,10 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
     return problems
 
 
-def _scores(path: Path) -> dict[str, float]:
-    out = {}
-    for f in path.glob("harness/eval_*/results_*.json"):
-        try:
-            res = json.loads(f.read_text()).get("results", {})
-        except Exception:
-            continue
-        for task, metrics in res.items():
-            for key, val in metrics.items():
-                if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
-                    out[task] = val
-                    break
-    return out
-
-
 def check_benchmarks() -> list[str]:
     problems = []
     print("\n== benchmarks ==")
-    cells: dict[str, dict[int, dict]] = {}
-    for d in sorted(EVAL_LOGS.glob("lm-*-iter*")):
-        m = re.match(r"(.+)-iter(\d+)$", d.name)
-        if m:
-            cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
-    for cell, iters in sorted(cells.items()):
+    for cell, iters in sorted(benchmark_results().items()):
         pts = sorted(iters)
         if len(pts) < 2:
             continue
@@ -221,20 +201,20 @@ def check_benchmarks() -> list[str]:
 
 def check_bpb() -> list[str]:
     print("\n== bits-per-byte (score_bpb.py) ==")
-    found = sorted(EVAL_LOGS.glob("lm-*-iter*/bpb/bpb.json"))
+    found = bpb_results()
     if not found:
         print("  none yet — run scripts/score_bpb.sbatch")
         return []
-    for f in found:
-        d = json.loads(f.read_text())
-        name = f.parent.parent.name
-        langs = d["languages"]
-        worst = max(langs, key=lambda k: langs[k]["bpb"])
-        best = min(langs, key=lambda k: langs[k]["bpb"])
-        print(f"  {name:<34} macro BPB {d['macro_bpb']:.4f} over "
-              f"{d['n_languages']} langs  (best {best.replace('fineweb_','')} "
-              f"{langs[best]['bpb']:.3f}, worst {worst.replace('fineweb_','')} "
-              f"{langs[worst]['bpb']:.3f})")
+    for cell, iters in found.items():
+        for it, d in sorted(iters.items()):
+            name = f"{cell}-iter{it}"
+            langs = d["languages"]
+            worst = max(langs, key=lambda k: langs[k]["bpb"])
+            best = min(langs, key=lambda k: langs[k]["bpb"])
+            print(f"  {name:<34} macro BPB {d['macro_bpb']:.4f} over "
+                  f"{d['n_languages']} langs  (best {best.replace('fineweb_','')} "
+                  f"{langs[best]['bpb']:.3f}, worst {worst.replace('fineweb_','')} "
+                  f"{langs[worst]['bpb']:.3f})")
     return []
 
 
@@ -494,19 +474,19 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
                     round(s[name], 6) if isinstance(s[name], float) else s[name])
 
     # --- BPB / perplexity ---------------------------------------------------
+    from launch_trainings import cell_fineweb_subsets
     for cell, iters in sorted(bpb_results().items()):
         parts = _cell_parts(cell)
         if not parts:
             continue
-        try:
-            from launch_trainings import cell_languages
-            trained = {t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
-        except Exception:
-            trained = set()
+        # score_bpb keys languages by FineWeb subset (`fineweb_rus_Cyrl`) and
+        # the data blend is defined by the same subset codes, so "trained" is
+        # exact set membership — no code mapping in between.
+        trained = set(cell_fineweb_subsets(parts["L"], parts["scheme"]))
         for it, d in sorted(iters.items()):
             for lang, v in d["languages"].items():
                 short = lang.replace("fineweb_", "")
-                tr = int(lang == "dclm" or short.split("_")[0][:2] in trained)
+                tr = int(lang == "dclm" or short in trained)
                 for kind, val in (("bpb", v["bpb"]), ("ppl", v["ppl"])):
                     add(cell, parts, it, "", kind, short, round(val, 6),
                         language=short, trained=tr)
@@ -825,16 +805,16 @@ def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     import matplotlib.pyplot as plt
 
     import pandas as pd
-    from launch_trainings import cell_languages
+    from launch_trainings import cell_fineweb_subsets
     df = _melt(csv_path, "bpb__", "key")
     if df.empty:
         return None
     trained_by_cell = {}
     for cell in df["cell"].unique():
         parts = _cell_parts(cell)
-        trained_by_cell[cell] = ({t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
+        trained_by_cell[cell] = (set(cell_fineweb_subsets(parts["L"], parts["scheme"]))
                                  if parts else set())
-    df["trained"] = [int(k == "dclm" or k.split("_")[0][:2] in trained_by_cell[c])
+    df["trained"] = [int(k == "dclm" or k in trained_by_cell[c])
                      for c, k in zip(df["cell"], df["key"])]
     # macro_bpb is a per-CHECKPOINT column (it used to be run-level, which
     # flattened this curve); read it under that name or the macro line
@@ -1012,7 +992,8 @@ def transform_effects(csv_path: Path) -> str:
         for fixedvals, cells in groups.items():
             if len(cells) < 2:
                 continue
-            cells = sorted(cells, key=lambda c: str(keys[c][axis]))
+            cells = sorted(cells, key=lambda c: (0, int(keys[c][axis]))
+                           if str(keys[c][axis]).isdigit() else (1, str(keys[c][axis])))
             a, b = cells[0], cells[-1]
             npairs += 1
             for name, src in (("loss", loss), ("bpb", bpb), ("bench", bench)):
@@ -1076,8 +1057,11 @@ CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr-ladder-report")
 # Org policy (plan/storage-map.md): msnr = model repos only; msnr-data = every
 # published data artifact (this report, CSVs, future eval-results datasets).
 # The earlier pushes live at multilingual-snr/msnr-ladder-report — left in
-# place, superseded by this repo.
-HF_DATASET_REPO = "msnr-data/ladder-report"
+# place, superseded by this repo. The id lives in configs/hf_wandb.json so the
+# analysis side (snr/download/ladder.py) downloads from the same place.
+HF_DATASET_REPO = json.loads(
+    (SCRIPT_DIR.parent.parent / "configs" / "hf_wandb.json").read_text()
+)["repo_id_ladder_report"]
 
 
 def publish(out_dir: Path, push_hf: bool) -> None:

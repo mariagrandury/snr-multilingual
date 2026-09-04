@@ -138,6 +138,13 @@ SEED_SINGLE = [1904]
 SEED_TRIPLE = [64, 313, 1904]
 TRIPLE_SIZES = {"175M", "600M"}
 TRIPLE_LANGS = {1, 2, 50, 100}
+# The 1B row was launched from a clone predating the seed change and trained
+# its x3 cells with the 36-sweep seeds at L in {1, 2, 30}; those runs are
+# adopted into the grid as they are (plan/1b-models.md: retraining buys a
+# 0.044 % token alignment). A 1B-specific row, deliberately not a widened
+# SEED_TRIPLE, which would demand five seeds per existing x3 cell.
+SEED_TRIPLE_1B = [28, 1797, 1904]
+TRIPLE_LANGS_1B = {1, 2, 30}
 
 
 def _scheme_b_langs() -> set[int]:
@@ -158,6 +165,18 @@ def _scheme_b_langs() -> set[int]:
 SCHEME_B_LANGS = _scheme_b_langs()
 
 
+def cell_fineweb_subsets(L: int, scheme: str = "A") -> list[str]:
+    """The FineWeb-2 subsets (``rus_Cyrl``, ...) a cell's data blend draws
+    from — the setting's list in data/language_sets_scheme{A,B}.json; empty
+    at L = 1 (100 % English). These are the keys score_bpb.py writes, so a
+    BPB language is "trained" iff its subset is in this list."""
+    if L == 1:
+        return []
+    sets_ = json.loads((SCRIPT_DIR / "data" /
+                        f"language_sets_scheme{scheme}.json").read_text())["sets"]
+    return list(sets_[f"FW_L{L}"])
+
+
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
     """Canonical language codes a cell trains on: English plus its setting's
     FineWeb-2 languages, mapped through the `fineweb_iso2` table in
@@ -166,14 +185,10 @@ def cell_languages(L: int, scheme: str = "A") -> set[str]:
     tasks.json tags its tasks with the same codes, so the auto-eval watchers
     intersect the two to pick each cell's benchmark tasks."""
     langs = {"en"}
-    if L == 1:
-        return langs
     iso3_to_code = json.loads(
         (SCRIPT_DIR.parent.parent / "configs" / "languages.json").read_text()
     )["fineweb_iso2"]
-    sets_ = json.loads((SCRIPT_DIR / "data" /
-                        f"language_sets_scheme{scheme}.json").read_text())["sets"]
-    for code in sets_[f"FW_L{L}"]:
+    for code in cell_fineweb_subsets(L, scheme):
         mapped = iso3_to_code.get(code.split("_")[0])
         if mapped:
             langs.add(mapped)
@@ -189,7 +204,10 @@ TEST_DECAY = 20
 
 
 def seeds_for(size: str, L: int) -> list[int]:
-    """Three seeds on the x3 cells, one otherwise."""
+    """Three seeds on the x3 cells (the 1B row carries its own seed set),
+    one otherwise."""
+    if size == "1B" and L in TRIPLE_LANGS_1B:
+        return SEED_TRIPLE_1B
     return SEED_TRIPLE if (size in TRIPLE_SIZES and L in TRIPLE_LANGS) else SEED_SINGLE
 
 

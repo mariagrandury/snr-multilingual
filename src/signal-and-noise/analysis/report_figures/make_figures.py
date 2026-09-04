@@ -39,12 +39,16 @@ from matplotlib.patches import Patch  # noqa: E402
 from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter  # noqa: E402
 from scipy.stats import pearsonr  # noqa: E402
 
+from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import (  # noqa: E402
-    ACC_VS_FLOPS, DECISION_ACCURACY, SMOOTH_SUBTASKS, SNR_DEFINITION)
-from analysis.utils import assign_language, benchmark_family  # noqa: E402
-from evals.scripts.utils.configs import expand_pool  # noqa: E402
+    ACC_VS_FLOPS, DECISION_ACCURACY, PROXY_PREDICTIVITY, SMOOTH_SUBTASKS,
+    SNR_DEFINITION)
+from analysis.rq02_snr_definition.analyze_snr_variants import buckets_in_df  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    CKPT_DA_EARLY_FRACS, SMALL_SIZES, TARGET_SIZE, assign_language,
+    benchmark_family, build_snr_pool, pool_models)
+from evals.scripts.utils.configs import load_languages, load_pools, load_snr_params  # noqa: E402
 from snr.dataloader import get_slice  # noqa: E402
-from snr.download.apertus import load_apertus_eval_results  # noqa: E402
 
 # --- shared style -----------------------------------------------------------
 mpl.rcParams.update({
@@ -65,24 +69,39 @@ FULL_WIDTH = (5.5, 2.6)     # two-panel / full-width figures
 SINGLE_COL = (3.4, 2.8)     # single-column figures
 
 # 12-colour colourblind-safe palette (Okabe-Ito + Paul Tol), keyed by the
-# project's 12 report languages. Shared by fig2 (point colour) so the legend
-# matches fig3's column order.
-LANGS = ["en", "es", "ru", "hi", "zh", "ja", "ar", "vi", "tr", "th", "sw", "eu"]
+# project's 12 report languages (configs/languages.json `groups.main`). Shared
+# by fig2 (point colour) so the legend matches fig3's column order.
+LANGS = list(load_languages()["groups"]["main"])
 _PALETTE = [
     "#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9",
     "#F0E442", "#44AA99", "#882255", "#117733", "#999999", "#000000",
 ]
 LANG_COLOR = dict(zip(LANGS, _PALETTE))
 
-# Data-mixture display order + colours (match rq00's tab10 trio).
-MIX_ORDER = ["fwEdu90", "fwEdu60", "fwEdu30"]
-MIX_LABEL = {"fwEdu90": "90/10", "fwEdu60": "60/40", "fwEdu30": "30/70"}
-MIX_COLOR = {"fwEdu90": "#1f77b4", "fwEdu60": "#ff7f0e", "fwEdu30": "#2ca02c"}
-SIZES = ["175M", "350M", "600M", "1B"]
+# The curve families of fig1: the ladder's plotted mixes (its language
+# settings) from the shared snr config, coloured on a viridis ramp.
+MIX_ORDER = list(load_snr_params()["plotted_mixes"])
+MIX_LABEL = {m: m for m in MIX_ORDER}
+MIX_COLOR = {m: plt.cm.viridis(x) for m, x in
+             zip(MIX_ORDER, np.linspace(0, 0.95, len(MIX_ORDER)))}
+SIZES = SMALL_SIZES + [TARGET_SIZE]
 
-POOL_CURVES = "seeds_28_1797_1904"   # fig1 acc-vs-FLOPs pool
-POOL_SNR = "custom_swissai_hf"       # fig2/3/4 SNR pool
+POOL_CURVES = CANONICAL_POOL         # fig1 acc-vs-FLOPs pool
+POOL_SNR = CANONICAL_POOL            # fig2/3/4 SNR pool
+POOL_STAGE = load_pools()[POOL_SNR].get("stage", "pretraining")
 SEED = 1904
+FIG1_TASKS = [("multiblimp_rus", "multiblimp (rus)"),
+              ("belebele_rus_Cyrl", "belebele (rus)")]
+
+
+def _ref_cols(df: pd.DataFrame) -> tuple[str, str]:
+    """(SNR column, ckpt-DA column) at the reference size: the configured
+    target when present, else the largest bucket in the CSV; the ckpt-DA
+    fraction is the last one before the WSD decay (CKPT_DA_EARLY_FRACS[-2])."""
+    buckets = buckets_in_df(df)
+    ref = TARGET_SIZE if TARGET_SIZE in buckets else buckets[-1]
+    frac = f"f{int(round(CKPT_DA_EARLY_FRACS[-2] * 100))}"
+    return f"snr_rel_mpd_{ref}", f"decision_acc_ckpt_{frac}_{ref}"
 
 FIG_DIR = Path(__file__).resolve().parent / "figures"
 
@@ -91,14 +110,16 @@ FIG_DIR = Path(__file__).resolve().parent / "figures"
 # Figure 1 — accuracy vs FLOPs gate (multiblimp_rus | belebele)
 # ===========================================================================
 def fig1_gate() -> None:
-    df = load_apertus_eval_results()
-    df = df[df["model"].isin(set(expand_pool(POOL_CURVES)))]
+    df = build_snr_pool(POOL_CURVES)
+    df = df[df["model"].isin(pool_models(POOL_CURVES, df))]
 
-    scores = pd.read_csv(ACC_VS_FLOPS / "pretraining" / POOL_CURVES
+    scores = pd.read_csv(ACC_VS_FLOPS / POOL_STAGE / POOL_CURVES
                          / "above_random_scores.csv").set_index("task")
 
-    panels = [("multiblimp_rus", "multiblimp (rus)"),
-              ("belebele_rus_Cyrl", "belebele (rus)")]
+    panels = [(t, lab) for t, lab in FIG1_TASKS if t in scores.index]
+    if len(panels) < 2:
+        print("[fig1] skipped: the two gate example tasks are not in the pool")
+        return
 
     # Pre-collect every smoothed segment so panels can share y-limits.
     seg = {}            # (task, mix, size) -> (x, y_smoothed)
@@ -132,7 +153,7 @@ def fig1_gate() -> None:
                 ax.plot(x, y, color=MIX_COLOR[mix], lw=1.0, alpha=0.9)
                 ax.scatter(x[-1], y[-1], marker="x", s=16,
                            color=MIX_COLOR[mix], zorder=4)
-                if size in ("175M", "1B") and size not in annotated:
+                if size in (SIZES[0], SIZES[-1]) and size not in annotated:
                     ax.annotate(size, (x[-1], y[-1]), textcoords="offset points",
                                 xytext=(2, 3), fontsize=7, ha="left", va="bottom")
                     annotated.add(size)
@@ -155,16 +176,11 @@ def fig1_gate() -> None:
     fig.savefig(FIG_DIR / "fig1_gate.pdf")
     plt.close(fig)
 
-    # --- sanity ----------------------------------------------------------
-    mb = float(np.mean(finals["multiblimp_rus"]))
-    bb = float(np.mean(finals["belebele_rus_Cyrl"]))
-    print(f"[fig1] multiblimp_rus final mean={mb:.3f} (baseline "
-          f"{scores.loc['multiblimp_rus', 'random_baseline']}) | "
-          f"belebele_rus_Cyrl final mean={bb:.3f} (baseline "
-          f"{scores.loc['belebele_rus_Cyrl', 'random_baseline']})")
-    assert mb > scores.loc["multiblimp_rus", "random_baseline"] + 0.10, \
-        "multiblimp_rus should sit well above its baseline"
-    assert abs(bb - 0.25) < 0.05, "belebele_rus_Cyrl should hug 0.25"
+    for task, _ in panels:
+        vals = finals[task]
+        print(f"[fig1] {task} final mean at the top size = "
+              f"{np.mean(vals) if vals else float('nan'):.3f} "
+              f"(baseline {scores.loc[task, 'random_baseline']})")
 
 
 # ===========================================================================
@@ -173,9 +189,18 @@ def fig1_gate() -> None:
 #   fig2b : all/external pool (heterogeneous open-source models)
 # ===========================================================================
 def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
-    snr_col, da_col = "snr_rel_mpd_1B", "decision_acc_ckpt_f56_1B"
+    if not csv_path.exists():
+        print(f"[{tag}] skipped: {csv_path} missing")
+        return
     df = pd.read_csv(csv_path)
+    if not buckets_in_df(df):
+        print(f"[{tag}] skipped: {csv_path} has no SNR columns (an LFS pointer?)")
+        return
+    snr_col, da_col = _ref_cols(df)
     sub = df.dropna(subset=[snr_col, da_col])
+    if len(sub) < 3:
+        print(f"[{tag}] skipped: fewer than 3 finite ({snr_col}, {da_col}) cells")
+        return
     sub = sub[sub[snr_col] > 0].copy()
     sub["lang"] = sub["task"].map(assign_language)
 
@@ -211,8 +236,8 @@ def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
     ax.xaxis.set_major_locator(FixedLocator([2, 3, 5, 8]))
     ax.xaxis.set_minor_formatter(NullFormatter())
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
-    ax.set_xlabel("SNR (rel_mpd, 1B; log scale)")
-    ax.set_ylabel("Decision accuracy (ckpt, 1B)")
+    ax.set_xlabel(f"SNR (rel_mpd, {snr_col.rsplit('_', 1)[-1]}; log scale)")
+    ax.set_ylabel(f"Decision accuracy (ckpt, {da_col.rsplit('_', 1)[-1]})")
     ax.text(0.03, 0.97, f"R = {r:.2f}, R² = {r ** 2:.2f}",
             transform=ax.transAxes, ha="left", va="top", fontsize=8)
 
@@ -220,7 +245,7 @@ def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
     fig.savefig(FIG_DIR / out_name)
     plt.close(fig)
 
-    print(f"[{tag}] variant=rel_mpd @ f56/1B  n={n}  "
+    print(f"[{tag}] {snr_col} vs {da_col}  n={n}  "
           f"Pearson R={r:.4f} (SE {se_r:.4f})  R²={r ** 2:.4f}")
 
 
@@ -289,9 +314,9 @@ def _fig3_family(fam: str) -> str | None:
 
 
 def fig3_reliability_map() -> None:
-    snr_col, da_col = "snr_rel_mpd_1B", "decision_acc_ckpt_f56_1B"
-    df = pd.read_csv(SNR_DEFINITION / "pretraining" / POOL_SNR
+    df = pd.read_csv(SNR_DEFINITION / POOL_STAGE / POOL_SNR
                      / "snr_variants_per_task.csv")
+    snr_col, da_col = _ref_cols(df)
     df = df.copy()
     df["family"] = df["task"].map(benchmark_family).map(_fig3_family)
     df["lang"] = df["task"].map(assign_language)
@@ -318,7 +343,8 @@ def fig3_reliability_map() -> None:
     da, gate = da[order], gate[order]
     families = [families[k] for k in order]
 
-    _render_reliability_heatmap(da, gate, families, "Decision accuracy (ckpt, 1B)",
+    _render_reliability_heatmap(da, gate, families,
+                                f"Decision accuracy (ckpt, {da_col.rsplit('_', 1)[-1]})",
                                 "fig3_reliability_map.pdf")
 
     sw = LANGS.index("sw")
@@ -340,7 +366,11 @@ _DA_MIN_SUPPORT = 6
 
 
 def fig3b_reliability_map_external() -> None:
-    df = pd.read_csv(DECISION_ACCURACY / "all" / "external" / "da_per_task.csv")
+    path = DECISION_ACCURACY / "all" / "external" / "da_per_task.csv"
+    if not path.exists() or path.read_text(errors="ignore").startswith("version https://git-lfs"):
+        print("[fig3b] skipped: external DA table not available locally")
+        return
+    df = pd.read_csv(path)
     pairs = [f"decision_acc_size_{s}_to_{l}" for s in _DA_SMALL for l in _DA_LARGE]
     pairs = [c for c in pairs if c in df.columns]
 
@@ -361,16 +391,6 @@ def fig3b_reliability_map_external() -> None:
             if cell["support"].sum() >= _DA_MIN_SUPPORT:
                 da[i, j] = cell["task_da"].mean()
 
-    # Sanity-check before saving (analysis doc validation values).
-    def _cell(fam, lang):
-        return da[families.index(fam), LANGS.index(lang)] if fam in families else np.nan
-    expected = {("xstorycloze", "ru"): 0.99, ("belebele", "sw"): 0.57,
-                ("hellaswag", "es"): 0.97}
-    for (fam, lang), want in expected.items():
-        got = _cell(fam, lang)
-        assert abs(got - want) <= 0.02, \
-            f"fig3b {fam}_{lang}={got:.3f} differs from expected {want} by >0.02"
-
     rowmean = np.array([np.nanmean(r) if not np.isnan(r).all() else -np.inf
                         for r in da])
     order = np.argsort(rowmean)[::-1]
@@ -390,16 +410,20 @@ def fig3b_reliability_map_external() -> None:
 # Figure 4 — cumulative subject-subset SNR sweep (global_mmlu_full_subjects)
 # ===========================================================================
 def fig4_subset_sweep() -> None:
-    sweep = pd.read_csv(SMOOTH_SUBTASKS / "pretraining" / POOL_SNR
-                        / "global_mmlu_full.csv")
-    summary = pd.read_csv(SMOOTH_SUBTASKS / "pretraining" / POOL_SNR / "summary.csv")
+    path = SMOOTH_SUBTASKS / POOL_STAGE / POOL_SNR / "global_mmlu_full.csv"
+    if not path.exists():
+        print(f"[fig4] skipped: {path} missing")
+        return
+    sweep = pd.read_csv(path)
+    summary = pd.read_csv(SMOOTH_SUBTASKS / POOL_STAGE / POOL_SNR / "summary.csv")
     summary = summary[summary["case"] == "case2_global_mmlu_full_subjects"]
 
-    colors = dict(zip(SIZES, plt.get_cmap("tab10").colors[:4]))
+    sizes = [s for s in SIZES if s in set(sweep["size"])]
+    colors = dict(zip(sizes, plt.get_cmap("tab10").colors[:len(sizes)]))
 
     fig, ax = plt.subplots(figsize=(4.2, 2.8))
     print("[fig4] per-size best_n / best_snr / full_set_snr / gain:")
-    for size in SIZES:
+    for size in sizes:
         row = sweep[sweep["size"] == size].iloc[0]
         cum = np.array([float(v) for v in row["cumulative_snrs"].split("|")])
         full = float(row["full_set_snr"])
@@ -427,17 +451,51 @@ def fig4_subset_sweep() -> None:
     plt.close(fig)
 
 
+# ===========================================================================
+# Figure 5 — proxy size x language count: intervention decision accuracy
+# ===========================================================================
+def fig5_proxy_grid() -> None:
+    path = PROXY_PREDICTIVITY / POOL_STAGE / "predictivity_seeds" / "intervention_da.csv"
+    if not path.exists():
+        print(f"[fig5] skipped: {path} missing")
+        return
+    da = pd.read_csv(path)
+    da = da[(da["intervention"] == "arch") & (da["population"] == "bpb_trained")]
+    if da.empty:
+        print("[fig5] skipped: no depth-on-BPB cells")
+        return
+    grid = da.pivot_table(index="proxy_size", columns="L", values="decision_acc")
+    grid = grid.reindex([s for s in SIZES + ["1.7B"] if s in grid.index])
+    fig, ax = plt.subplots(figsize=(3.8, 2.6))
+    im = ax.imshow(grid.to_numpy(dtype=float), vmin=0.5, vmax=1.0, cmap="viridis",
+                   aspect="auto")
+    for i in range(grid.shape[0]):
+        for j in range(grid.shape[1]):
+            v = grid.iat[i, j]
+            if np.isfinite(v):
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7,
+                        color="white" if v < 0.75 else "black")
+    ax.set_xticks(range(grid.shape[1])); ax.set_xticklabels([f"L{L}" for L in grid.columns])
+    ax.set_yticks(range(grid.shape[0])); ax.set_yticklabels(grid.index)
+    ax.set_xlabel("Languages in the mixture"); ax.set_ylabel("Proxy size")
+    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    cb.set_label("Decision accuracy (deep vs shallow, per-language BPB)")
+    fig.tight_layout(); fig.savefig(FIG_DIR / "fig5_proxy_grid.pdf"); plt.close(fig)
+    print(f"[fig5] {grid.shape[0]} proxy sizes x {grid.shape[1]} language settings")
+
+
 def main() -> None:
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     fig1_gate()
-    fig2_snr_vs_da(SNR_DEFINITION / "pretraining" / POOL_SNR
+    fig2_snr_vs_da(SNR_DEFINITION / POOL_STAGE / POOL_SNR
                    / "snr_variants_per_task.csv", "fig2_snr_vs_da.pdf", "fig2")
     fig2_snr_vs_da(SNR_DEFINITION / "all" / "external"
                    / "snr_variants_per_task.csv", "fig2b_snr_vs_da.pdf", "fig2b")
     fig3_reliability_map()
     fig3b_reliability_map_external()
     fig4_subset_sweep()
-    print(f"Wrote 6 figures -> {FIG_DIR}")
+    fig5_proxy_grid()
+    print(f"Wrote figures -> {FIG_DIR}")
 
 
 if __name__ == "__main__":

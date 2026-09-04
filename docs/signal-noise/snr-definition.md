@@ -1,1 +1,1 @@
---8<-- "src/signal-and-noise/results/snr_definition/README.md"
+--8<-- "src/signal-and-noise/analysis/rq02_snr_definition/README.md"

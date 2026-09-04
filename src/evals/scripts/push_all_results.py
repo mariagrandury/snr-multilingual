@@ -55,7 +55,7 @@ from pathlib import Path
 
 # Shared loader + lifted I/O helpers.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
-from configs import get_model, load_models, metric_for, tokens_for  # noqa: E402
+from configs import flops_params, load_models, metric_for, tokens_for  # noqa: E402
 from results_io import aggregate_parents, collect, flatten  # noqa: E402
 
 # Overridable so results produced off-cluster (e.g. downloaded from Azure,
@@ -128,12 +128,11 @@ def parse_name(name: str) -> dict | None:
 
 
 def model_params(model: str) -> int | None:
-    """Read `params` straight from configs/models.json. None if model isn't
-    declared (FLOPs chart will be empty for that model)."""
-    try:
-        return get_model(model).get("params")
-    except KeyError:
-        return None
+    """Parameter count on the FLOPs convention (configs.flops_params:
+    N_non_emb + d_model x V, or the declared total for external models
+    without shape fields). None if the model isn't declared (FLOPs chart
+    will be empty for that model)."""
+    return flops_params(model)[0]
 
 
 def _flatten_with_overrides(scores: dict[str, dict]) -> dict[str, float]:
@@ -164,7 +163,8 @@ def push_one(model: str, params: int | None,
         id=wb_id,
         resume="allow",
         reinit=True,
-        config={"model": model, "params": params},
+        config={"model": model, "params": params,
+                "flops_basis": flops_params(model)[1]},
         settings=wandb.Settings(init_timeout=300),
     )
 

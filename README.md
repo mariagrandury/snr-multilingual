@@ -1,129 +1,168 @@
 # Signal-Aware Framework for Multilingual LM Evaluation
 
 > Which (subsets of) benchmarks provide reliable signal at each stage of
-> multilingual model training?
+> multilingual model training — and which model sizes can stand in for the
+> large one when a design decision depends on the number of languages?
 
-This project extends the Signal-and-Noise framework (Heineman et al.,
-2025) from the original English DataDecide / OLMo ladder to a
-controlled multilingual sweep: 4 sizes × 3 data mixtures × 3 seeds = 36
-small Apertus pretrains, evaluated on 80+ multilingual tasks, then run
-through the full SNR / decision-accuracy stack.
+This project extends the Signal-and-Noise framework (Heineman et al., 2025)
+from the English DataDecide / OLMo ladder to controlled multilingual ladders.
+Two generations of models have gone through it:
 
-## Answer to the research question
+| grid | models | languages | status |
+|---|---|---|---|
+| **36-model sweep** (2026-04…06) | 4 sizes (175M–1B) × 3 FineWeb-Edu/FineWeb2 mixtures × 3 seeds, 86 tasks, plus a06 / HF references to 70B | 12 | complete; results kept as history in the RQ READMEs |
+| **Predictivity ladder** (current) | 6 sizes (90M–1.7B non-embedding) × 7 language settings (L = 1 … 100) × deep/shallow × data scheme A/B × seeds, each size at 5× Chinchilla, per-language BPB + 463 harness tasks | 100 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
 
-**Two-level recommendation:**
+## The question, in the ladder's terms
 
-1. **Use a dispersion-family variant as the global default.** `dist_std`
-   leads on DA-size (mean Pearson r between log10(SNR) and decision
-   accuracy ≈ **+0.32**, far ahead of the field), while the
-   mean-pairwise-distance / relative-spread cluster (`rel_mpd` / `mpd` /
-   `mpsd`) leads on DA-ckpt (≈ **+0.51**) — all dispersion-family, so
-   recommend the *family*, not an exact variant. Never `tukey` /
-   `projection` (anti-correlated, r ≤ 0).
-2. **Use `multiblimp_<lang>` as the per-language reliability anchor**,
-   with `xwinograd` / `xcopa` recurring. Under the chosen definition
-   (`dist_std` @ 1B) `multiblimp` is the highest-SNR above-random
-   benchmark in **6 of 11 languages**, with checkpoint-DA ≈ 0.85 — it
-   ranks model variants the way a larger-model evaluation would.
+The ladder varies two *axes* — model size and the number of languages L —
+and one *intervention* with two levels each — model depth (deep vs shallow at
+equal non-embedding size) and the language-set scheme (A resource-ranked vs B
+diversity-first). Per-language bits-per-byte on a fixed validation set is the
+outcome metric; the harness benchmarks are the secondary signal. The analysis
+asks, per benchmark and per language, how much *signal* (dispersion across
+design variants) a measurement carries against its *noise* (variability over
+late checkpoints or seeds), whether the resulting SNR predicts *decision
+accuracy* (does a small model or an early checkpoint rank the variants like
+the reference?), and — new with the ladder — which proxy size is reliable at
+each L ([`rq06`](src/signal-and-noise/analysis/rq06_proxy_predictivity/)).
 
-**The framework generalizes at the global-ranking level.** Spearman rank
-correlation between the train and test pools' global variant orderings
-is **+0.80 (DA-size)** and **+0.93 (DA-ckpt)** — *which* variants are
-good is stable across seed pools. But the *exact* per-language argmax
-changes (0–1/14 languages keep the same pick), so per-language tuning
-that beats the dispersion baseline should be treated as overfitting
-until validated on at least one more seed.
+**Source of truth.** Every analysis reads one file: the wide per-checkpoint
+table `ladder_report.csv` that
+[`src/pretrain/ladder_report.py`](src/pretrain/ladder_report.py) builds from
+the training logs, harness results and `score_bpb.py` output, and publishes
+to the HF dataset **`msnr-data/ladder-report`**. The analysis downloads it on
+first use:
 
-**Cross-corpus check.** On the seven English benchmarks shared with the
-AllenAI DataDecide ladder, the pure 3-seed Apertus SNR correlates with
-AllenAI SNR at **Pearson r = 0.92** (Spearman ρ = 0.93) for the
-discrepancy / dispersion family — the dispersion + discrepancy variants
-transfer, the relative-spread family does not. With only 7 shared tasks,
-top-K set overlap is uninformative (Jaccard ≡ 1.0 for K ≥ 7); the
-correlation is the result. (Folding in the >1B external models is *not*
-the right comparison: the above-random gate drops the at-chance MCQA,
-shrinking the shared set to 4.)
+```bash
+cd src/signal-and-noise && bash run_all_predictivity.sh
+```
 
-**What predicts SNR.** The **answer-count penalty is enforced upstream by
-the above-random gate** — every 4-option translated knowledge MCQA
-(`belebele`, `global_mmlu_full`, `truthfulqa`) sits at chance and is
-dropped before SNR is computed, leaving 9 mostly-2-option survivors.
-Among those survivors no single design feature is individually
-significant (family-level Kruskal-Wallis on n_options H = 1.8, p = 0.18;
-format H = 0, p = 1.0 — too little variation left), and **curation method
-(MT / human / template) does not predict SNR** (H = 0.5, p = 0.78). The
-mechanism still holds qualitatively (fewer options → sharper per-item
-log-likelihood), but the within-survivor test is underpowered at n = 9.
+## Where the answers live
 
-**What subsets elevate SNR.** Best subsets substantially beat full sets
-on multilingual benchmarks: Belebele 350M `+1.16` SNR with a 3-language
-subset; Global-MMLU 175M `+1.52` with `medical_genetics` alone;
-per-language Global-MMLU-tr 1B `+1.56`. Subject picks are highly stable
-across seed pools; language picks are partially stable; per-(language,
-subject) picks are pool-sensitive.
+One directory per research question under
+[`src/signal-and-noise/analysis/`](src/signal-and-noise/analysis/), read
+results-first; each README states the question, the setup on the ladder, the
+method, the preliminary numbers already established on the cluster snapshots,
+and — regenerated by the script, currently placeholders until the ladder
+report is published — the results.
 
-**Benchmarks to de-prioritise.** `xnli_<lang>` rows often have high SNR
-but DA-size = 0 — perfect rank disagreement with the 1B target. High
-SNR there is misleading. `mgsm_direct` is currently broken in the
-parquet (NaN scores).
+| RQ | directory | question |
+|---|---|---|
+| RQ0 | [`rq00_acc_vs_flops/`](src/signal-and-noise/analysis/rq00_acc_vs_flops/) | Score vs compute across language settings and sizes; which benchmarks clear chance (the gate every RQ depends on) |
+| RQ1 | [`rq01_decision_accuracy/`](src/signal-and-noise/analysis/rq01_decision_accuracy/) | Does a benchmark rank the design variants at a small size / early checkpoint like the reference? |
+| RQ2 | [`rq02_snr_definition/`](src/signal-and-noise/analysis/rq02_snr_definition/) | Which of 22 SNR definitions predicts decision accuracy, per language; does it survive a seed swap? |
+| RQ3 | [`rq03_allenai_comparison/`](src/signal-and-noise/analysis/rq03_allenai_comparison/) | Does our SNR agree with AllenAI DataDecide on the shared English tasks? |
+| RQ4 | [`rq04_smooth_subtasks/`](src/signal-and-noise/analysis/rq04_smooth_subtasks/) | Can a language or subject subset beat the full benchmark's SNR? |
+| RQ5 | [`rq05_benchmark_creation/`](src/signal-and-noise/analysis/rq05_benchmark_creation/) | Which design features (curation, format, option count, length) predict SNR? |
+| RQ6 | [`rq06_proxy_predictivity/`](src/signal-and-noise/analysis/rq06_proxy_predictivity/) | Which proxy sizes rank an intervention like the reference, and how does that depend on L? |
 
-The full per-language tables and seed-split summaries live in
-[`src/signal-and-noise/analysis/`](src/signal-and-noise/analysis/) — one
-subdir per research question.
+The report [`documents/snr_predictivity_report.pdf`](documents/snr_predictivity_report.pdf)
+(source: [`documents/report/`](documents/report/)) collects the design, the
+methodology per RQ and the preliminary findings in the format of the
+research proposal.
 
-## The pipeline in three sections
+## What is already known (cluster snapshots, 2026-09-01/03)
 
-### 1. [Pretraining](src/pretrain/) — build the model pool
+Computed on the ≤ 600M ladder before this pipeline existed
+([`plan/status-09-01.md`](plan/status-09-01.md),
+[`src/pretrain/ladder_report.md`](src/pretrain/ladder_report.md)):
 
-- **36 small multilingual Apertus models**: 4 sizes (175M, 350M, 600M,
-  1B) × 3 data mixtures of FineWeb-Edu + FineWeb2-HQ (30/70, 60/40,
-  90/10) × 3 seeds (28, 1797, 1904). All trained to iter 50 000
-  (~100 B tokens at GBS 504 × seq 4096).
-- Per-size cluster cost: 175M ~11 h, 350M ~7.8 h, 600M ~7.2 h, 1B ~9.9 h.
-- The canonical entry point is the idempotent
-  [`launch_resumes.sh`](src/pretrain/launch_resumes.sh) — drives the
-  full sweep to 100% canonical coverage.
+- **The 90M rung diverges** (9 of 10 runs peak at 15–19 % of training and
+  degrade; BPB rises with training) — an optimizer-timescale mismatch
+  (AdEMAMix β₃ fixed in steps on runs that differ 18× in length), documented
+  in [`plan/90M-rung-anomaly.md`](plan/90M-rung-anomaly.md). The loader drops
+  diverged runs; the ladder is reported with and without the rung.
+- **Scaling behaves above 90M**: final loss and per-language BPB fall
+  monotonically with size at every L, and the per-L power-law residuals are
+  within ±0.08 nats for 175M–600M.
+- **More languages is free for English and cheaper for everything else**:
+  English BPB is identical between L2 and L50 at every size, while L50 beats
+  L2 on 81–89 of 99 non-English languages by ~0.4–0.5 bits/byte against a
+  checkpoint noise of ~0.002.
+- **Benchmarks split into emerged and at-chance**: MultiBLiMP, HellaSwag,
+  XNLI, XStoryCloze, XWinograd and XCOPA grow with size; Belebele,
+  Global-MMLU, INCLUDE and ARC-multilingual sit at chance up to 600M.
+- **The language-count axis gives distinct models** (across-L range at 600M ≈
+  4.4× checkpoint noise, on BPB one to two orders of magnitude); the depth
+  intervention's benchmark effect is of the order of the seed effect
+  (|Δ mean benchmark| ≈ 0.013 for both in the transformation table), which
+  is why rq06 puts every decision against the seed noise.
+- **Decision accuracy from the recipe ranking**: HellaSwag is the most
+  decision-reliable family (mean 0.72, 0.91 deciding from 350M);
+  chance-level knowledge benchmarks are coin flips.
 
-### 2. [Evaluation](src/evals/) — measure them
+Everything else — the SNR-variant ranking, the per-language anchors, the
+proxy-size grid — is produced by the pipeline from the published ladder
+report.
 
-- Cluster-side SLURM pipeline built on
+## Findings from the 36-model sweep (2026-06, superseded)
+
+The dispersion family of SNR definitions (`dist_std`, `rel_mpd`, `mpd`) best
+predicted decision accuracy (Pearson r ≈ 0.3–0.5), the family — not the
+exact variant — transferred across seeds (Spearman ρ 0.8–0.9 on the global
+ranking), `multiblimp_<lang>` was the highest-SNR above-random benchmark in
+6 of 11 languages, the above-random gate removed every 4-option translated
+knowledge MCQA at these sizes (a capability artefact, not a benchmark
+property: the external 270M–70B models cleared 122/124), and subject or
+language subsets beat full benchmarks by +1.1…+1.5 SNR. The per-RQ READMEs
+keep these numbers in their "36-model sweep" sections.
+
+## The pipeline
+
+### 1. [Pretraining](src/pretrain/) — build the ladder
+
+- Grid, schedules and launch: [`launch_trainings.py`](src/pretrain/launch_trainings.py)
+  (idempotent, CSCS + Azure), the reviewed hyperparams in
+  [`hyperparams/`](src/pretrain/hyperparams/), D = 100·N tokens per size on a
+  WSD schedule, 20 evenly spaced checkpoints per run (40 at 1B, 60 at 1.7B).
+- During training the watchers convert every checkpoint and evaluate every
+  2nd saved one plus the final; `score_bpb.py` scores every checkpoint on the
+  fixed validation set.
+- [`ladder_report.py`](src/pretrain/ladder_report.py) is the health check
+  (loss, scaling fit, benchmark movement, BPB) and the publisher of the wide
+  CSV the analysis reads.
+
+### 2. [Evaluation](src/evals/) — measure the checkpoints
+
+- SLURM pipeline on the swiss-ai
   [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
-  with W&B integration.
-- 86 tasks per checkpoint (per-language multilingual + standalone
-  English benchmarks); 10 evenly-spaced + 4 dense-tail canonical iters
-  per model.
-- Results saved locally to `eval_logs/`, pushed to the
-  [`mariagrandury-epflnlp/snr-experiments`](https://wandb.ai/mariagrandury-epflnlp/snr-experiments)
-  W&B project, and packaged into the public HF dataset
-  [`multilingual-snr/multilingual-snr-eval-results`](https://huggingface.co/datasets/multilingual-snr/multilingual-snr-eval-results).
-- The SNR experiments are organised into three stages
-  ([pretraining](src/evals/configs/signal_to_ratio/), midtraining,
-  posttraining) with separate runners + idempotent re-launch.
+  fork; the `auto` benchmark group of [`configs/tasks.json`](configs/tasks.json)
+  intersected with each cell's trained languages (15 tasks at L1, 463 at
+  L100), provenance in [`plan/benchmark_selection.md`](plan/benchmark_selection.md).
+- W&B project `mariagrandury-epflnlp/msnr`; the FLOPs axis is
+  6 × (N_non-emb + d·V) × D everywhere (`configs.flops_params`).
 
 ### 3. [Signal & Noise](src/signal-and-noise/) — analyse them
 
-Four self-contained reports, one per research question. Each is read
-results-first; the per-pool subdirs hold the CSVs and PNGs.
-
-| Report | Question |
-|---|---|
-| [`analysis/rq02_snr_definition/`](src/signal-and-noise/analysis/rq02_snr_definition/) | Which SNR variant best correlates with decision accuracy across languages? Does the choice generalize across seeds? |
-| [`analysis/rq05_benchmark_creation/`](src/signal-and-noise/analysis/rq05_benchmark_creation/) | What benchmark design features (curation, format, option count, item length) predict SNR? |
-| [`analysis/rq03_allenai_comparison/`](src/signal-and-noise/analysis/rq03_allenai_comparison/) | Do our SNR rankings agree with AllenAI DataDecide on shared English tasks? |
-| [`analysis/rq04_smooth_subtasks/`](src/signal-and-noise/analysis/rq04_smooth_subtasks/) | Per benchmark, can a language or MMLU-subject subset elevate SNR and DA? |
-
-Each analysis is partitioned by Apertus seed pool: **`seeds_1904`**
-(single-seed test), **`seeds_28_1797`** (held-out train), and
-**`seeds_28_1797_1904`** (pooled all seeds, recommended for downstream
-work). The `seeds_28_1797__vs__seeds_1904/` subdir under `snr_definition/`
-holds the train/test framework-generalization summary.
+- `snr/download/ladder.py` melts the ladder report into the long
+  (model, step, task) frame; `analysis/utils.build_snr_pool` routes each pool
+  to its loader; the RQ scripts compute DA (rq01), the 22 SNR variants (rq02)
+  and everything downstream. `run_all_predictivity.sh` runs it all.
 
 ## Project structure
 
-- [`configs/`](configs/) — `tasks.json` and `models.json` define what to evaluate
-- [`documents/`](documents/) — reports and slides
-- [`src/`](src/) — core logic (pretrain, evaluate, analyse)
-- [`scripts/`](scripts/) — thin runner wrappers (local + SLURM)
-- [`results/`](results/) — local output (gitignored)
-- [`preliminary-analysis/`](preliminary-analysis/) — early-version code +
-  report, kept for reference
+- [`configs/`](configs/) — `models.json` (every cell, pools, the `snr`
+  parameters), `tasks.json` (tasks, groups, benchmark provenance),
+  `languages.json`, `hf_wandb.json` (dataset repos, W&B)
+- [`plan/`](plan/) — the training plan, the grid sheet, budget, decisions
+  and status notes
+- [`src/`](src/) — `pretrain/`, `evals/`, `signal-and-noise/`
+- [`documents/`](documents/) — report, proposals, slides
+- [`docs/`](docs/) — the MkDocs site (`bash build.sh`), which includes the RQ
+  READMEs
+
+## Legacy code
+
+The fork carries the upstream DataDecide / OLMo path that nothing here runs:
+`allenai_analysis/` (notebooks, LFS pointers), `snr/ladder_wrapper.py`
+(needs `olmo-ladder`), `snr/metaanalysis.py`, `snr/mask_analysis.py`,
+`snr/stats.py`, `snr/snr_simple.py`, `snr/autobencher/`, `snr/scripts/`,
+most of `snr/constants/`; the pre-refactor `INSTRUCTIONS.md` /
+`PARALLEL_SESSIONS.md` / `ANALYSIS_new_vs_previous.md` notes; the 36-sweep
+per-sample outputs (`rq04_smooth_subtasks/per_sample/`), `posttraining.ipynb`
+and `notebook_guidelines.md`; the 36-sweep eval runners under
+`src/evals/configs/signal_to_ratio/` and `src/evals/runners/`; and
+`src/Maria_Grandury_408094.ipynb`. `src/signal-and-noise/CLAUDE.md` lists
+what is imported and what is not; removal is proposed there and in the
+report, and is the owner's call.

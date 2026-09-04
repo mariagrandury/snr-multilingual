@@ -2,39 +2,37 @@
 
 ## Research question
 
-> Do the SNR variants and the "reliable benchmark" set we find on the Apertus
-> corpus also hold on AllenAI's DataDecide / OLMo corpus, on the English
-> benchmarks both share?
+> Do the SNR variants and the "reliable benchmark" set we find on our ladder
+> also hold on AllenAI's DataDecide / OLMo corpus, on the English benchmarks
+> both share?
 
-> ⚠️ **Only 7 English benchmarks overlap** (arc_challenge, arc_easy, csqa,
-> hellaswag, mmlu, openbookqa, piqa). With a 7-task universe, *set*-overlap
-> metrics (top-K Jaccard) are uninformative — any K ≥ 7 spans the whole universe
-> and is trivially 1.0. The real evidence is the **correlation of SNR over those
-> 7 tasks** (values: Pearson r; ranking: Spearman ρ), not the overlap.
+> ⚠️ **Only a handful of English benchmarks overlap.** On the ladder's auto
+> task set they are `arc_easy`, `arc_challenge`, `hellaswag` and MMLU (via the
+> Global-MMLU English split); the 36-sweep also shared `csqa`, `openbookqa`
+> and `piqa`. With so small a universe, *set*-overlap metrics (top-K Jaccard)
+> are uninformative — any K ≥ N spans the whole universe and is trivially 1.0.
+> The real evidence is the **correlation of SNR over the shared tasks**
+> (values: Pearson r; ranking: Spearman ρ), not the overlap.
 
-<!-- BEGIN auto:highlight (analyze.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the pure 3-seed pool (`seeds_28_1797_1904`) SNR values and rank order agree across corpora** — best variant `dispersion_shifted`, Pearson r of log₁₀(SNR) **0.98**, Spearman ρ **1.00**, but over only **4** shared English tasks after the above-random gate — near-saturated, so indicative rather than robust.
-- **Seed-count trend is not robust** — Pearson r 0.90 → 1.00 → 0.98 (1 → 2 → 3 seeds) is over only ~4 shared tasks; with so few points the values saturate near 1.0 and don't form a reliable monotone trend.
-- **Dispersion + discrepancy families transfer; relative-spread does not** — the cross-corpus winners are discrepancy/dispersion variants (`projection`, `dispersion_shifted`, `dispersion_shifted`), not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).
-- **Only 7 English tasks overlap the two corpora, and the above-random gate leaves just 4 of them** — so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe). `custom_swissai_hf` keeps n_shared = **4**.
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:highlight -->
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/` for the four custom-pretraining tiers:
-`seeds_1904` (1 seed) · `seeds_28_1797` (2 seeds) · `seeds_28_1797_1904`
-(3 seeds) · `custom_swissai_hf` (3 seeds + externals) — plus the `external`
-model-set tier under `all/external/` (see the dedicated section below). For each
-pool we compute,
-over the shared English tasks, the cross-corpus Pearson r of log₁₀(SNR@1B)
-(values) and Spearman ρ (rank order), reporting the best-correlating variant.
-The pure 3-seed pool `seeds_28_1797_1904` is the canonical, like-for-like
-comparison: adding external models shifts the shared-task SNR and the
-above-random gate drops the at-chance translated MCQA, so the comprehensive
-`custom_swissai_hf` pool ends up with a smaller shared universe (use it for
-scaling/power in RQ1, not for the AllenAI comparison).
+Outputs live under `pretraining/<pool>/` for the ladder pools (`predictivity`,
+`predictivity_seeds`) and, as history, the 36-sweep tiers. For each pool we
+compute, over the shared English tasks, the cross-corpus Pearson r of
+log₁₀(SNR@1B) (values) and Spearman ρ (rank order), reporting the
+best-correlating variant, plus the same at every matched size pair
+(90M↔90M, 175M↔150M, 350M↔300M, 600M↔750M, 1B↔1B). The AllenAI side is the
+DataDecide ladder (25 data recipes at each size), so both corpora's "signal"
+is a data-recipe dispersion at fixed size; on our ladder the recipes are the
+language settings (and the scheme), which is a narrower axis — read a low
+correlation as a difference in what the model population varies before
+reading it as a failure of the SNR definition.
 
 > ⚠️ **Methodological caveat — MMLU aliasing.** Apertus's
 > `global_mmlu_full_en[_<subject>]` rows are aliased to AllenAI's
@@ -109,26 +107,13 @@ comparison surface:
 Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
-<!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
-Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1904`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool custom_swissai_hf`.
-
-**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The English overlap universe is 7 tasks; the above-random gate leaves the `n_shared` shown per pool. Where `n_shared` is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
-
-| pool | best variant | Pearson r | Spearman ρ | n_shared |
-|---|---|---|---|---|
-| `seeds_1904` (1 seed) | `projection` | 0.90 | 0.80 | 4 |
-| `seeds_28_1797` (2 seeds) | `dispersion_shifted` | 1.00 | 1.00 | 4 |
-| `seeds_28_1797_1904` (3 seeds) | `dispersion_shifted` | 0.98 | 1.00 | 4 |
-| `custom_swissai_hf` (+ externals) | `mpsd` | 1.00 | 1.00 | 4 |
-
-![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_dispersion_shifted.png)
-
-![Apertus vs AllenAI SNR across variants](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:results -->
 
-## External model-set tier (`all/external`)
+## External model-set tier (`all/external`, 36-sweep)
 
 The `external` tier (cross-model dispersion over the 270M…70B external ladder, no
 mixture axis) compares its per-task SNR against the same AllenAI DataDecide SNR
@@ -163,6 +148,34 @@ at n_shared = 6 this is indicative, not robust; and 1 shared task is the aliased
 `global_mmlu_full_en → mmlu` (different MMLU content; `commonsense_qa → csqa` is
 the other alias). See `all/external/agreement.md`.
 
+
+## Results from the 36-model sweep (2026-06, superseded)
+
+The numbers below were generated on the 36-model sweep (4 sizes × 3 data mixtures × 3 seeds, 12 languages, pool `custom_swissai_hf` unless stated) and are kept as history; the predictivity ladder regenerates the blocks above.
+
+### Highlighted result
+
+- **On the pure 3-seed pool (`seeds_28_1797_1904`) SNR values and rank order agree across corpora** — best variant `dispersion_shifted`, Pearson r of log₁₀(SNR) **0.98**, Spearman ρ **1.00**, but over only **4** shared English tasks after the above-random gate — near-saturated, so indicative rather than robust.
+- **Seed-count trend is not robust** — Pearson r 0.90 → 1.00 → 0.98 (1 → 2 → 3 seeds) is over only ~4 shared tasks; with so few points the values saturate near 1.0 and don't form a reliable monotone trend.
+- **Dispersion + discrepancy families transfer; relative-spread does not** — the cross-corpus winners are discrepancy/dispersion variants (`projection`, `dispersion_shifted`, `dispersion_shifted`), not the mean-normalised relative-spread family (incl. AllenAI's own `rel_std`).
+- **Only 7 English tasks overlap the two corpora, and the above-random gate leaves just 4 of them** — so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe). `custom_swissai_hf` keeps n_shared = **4**.
+
+### Results
+
+Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1904`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool custom_swissai_hf`.
+
+**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The English overlap universe is 7 tasks; the above-random gate leaves the `n_shared` shown per pool. Where `n_shared` is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
+
+| pool | best variant | Pearson r | Spearman ρ | n_shared |
+|---|---|---|---|---|
+| `seeds_1904` (1 seed) | `projection` | 0.90 | 0.80 | 4 |
+| `seeds_28_1797` (2 seeds) | `dispersion_shifted` | 1.00 | 1.00 | 4 |
+| `seeds_28_1797_1904` (3 seeds) | `dispersion_shifted` | 0.98 | 1.00 | 4 |
+| `custom_swissai_hf` (+ externals) | `mpsd` | 1.00 | 1.00 | 4 |
+
+![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_dispersion_shifted.png)
+
+![Apertus vs AllenAI SNR across variants](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
 ## TODO
 
 - [ ] Add `mmlu_pro` / BBH to widen the 7-task shared universe.

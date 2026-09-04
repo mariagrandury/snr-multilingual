@@ -51,9 +51,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SEED_SINGLE, SEED_TRIPLE,
-    SIZE_LANG_SETTINGS,
-    TRIPLE_LANGS, TRIPLE_SIZES, exp_name, predictivity_cells, schedule_for,
-    seeds_for)
+    SEED_TRIPLE_1B, SIZE_LANG_SETTINGS, TRIPLE_LANGS, TRIPLE_LANGS_1B,
+    TRIPLE_SIZES, exp_name, predictivity_cells, schedule_for, seeds_for)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
 # (launch_pretraining_cscs.sh); PROJECT_NAME for the predictivity sweep is
@@ -621,7 +620,7 @@ def grid_markdown(png_dir: str) -> str:
 | ---- | ------ |
 | Size (non-embedding) | {_fmt(SIZES)} ({size_note}) |
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | {_fmt(SEED_SINGLE)}; ×{len(SEED_TRIPLE)} seeds ({_fmt(SEED_TRIPLE)}) on the {_fmt(sorted(TRIPLE_SIZES))} columns at L ∈ {{{_fmt(sorted(TRIPLE_LANGS))}}} |
+| Seed | {_fmt(SEED_SINGLE)}; ×{len(SEED_TRIPLE)} seeds ({_fmt(SEED_TRIPLE)}) on the {_fmt(sorted(TRIPLE_SIZES))} columns at L ∈ {{{_fmt(sorted(TRIPLE_LANGS))}}}; ×{len(SEED_TRIPLE_1B)} seeds ({_fmt(SEED_TRIPLE_1B)}) on the 1B column at L ∈ {{{_fmt(sorted(TRIPLE_LANGS_1B))}}} |
 | Data scheme | A everywhere; B only where its language set differs — L ∈ {{{_fmt(sorted(SCHEME_B_LANGS))}}} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 

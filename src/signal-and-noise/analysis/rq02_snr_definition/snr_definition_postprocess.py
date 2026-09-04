@@ -34,10 +34,10 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
 from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, assign_language, benchmark_family,
-    da_ckpt_pairs, da_size_pairs, list_variants,
+    buckets_in_df, da_ckpt_pairs, da_size_pairs, list_variants,
 )
 from analysis.autodoc import (  # noqa: E402
-    CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
+    CANONICAL_POOL, HOLDOUT, SLIDES, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import SNR_DEFINITION
 
@@ -273,9 +273,18 @@ def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path):
 
 # --- Q4: top benchmarks per language under the global-best variant ----------
 
+def reference_bucket(df: pd.DataFrame) -> str:
+    """The size the per-language benchmark ranking is read at: the configured
+    target when its SNR columns exist, else the largest bucket in the CSV
+    (the ladder is analysed while the reference rungs are still training)."""
+    buckets = buckets_in_df(df)
+    return TARGET_SIZE if TARGET_SIZE in buckets else buckets[-1]
+
+
 def top_benchmarks_per_language(df: pd.DataFrame, variant: str,
-                                size: str = TARGET_SIZE,
+                                size: str | None = None,
                                 top_k: int = TOP_K) -> pd.DataFrame:
+    size = size or reference_bucket(df)
     snr_col = f"snr_{variant}_{size}"
     if snr_col not in df.columns:
         raise KeyError(snr_col)
@@ -303,7 +312,8 @@ def top_benchmarks_per_language(df: pd.DataFrame, variant: str,
                 "task": task,
                 "snr": float(row[snr_col]),
                 "da_size": float(row.get(da_size_col, np.nan)),
-                "da_ckpt_1B_mean": float(row.get("da_ckpt_mean", np.nan)),
+                "da_ckpt_mean": float(row.get("da_ckpt_mean", np.nan)),
+                "size": size,
             })
     return pd.DataFrame(rows)
 
@@ -325,15 +335,15 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
         ax.set_yticklabels(sub["task"], fontsize=8)
         for j, (_, row) in enumerate(sub.iterrows()):
             ax.text(row["snr"] + 0.02, j,
-                    f"DA-s={row['da_size']:.2f} DA-c={row['da_ckpt_1B_mean']:.2f}",
+                    f"DA-s={row['da_size']:.2f} DA-c={row['da_ckpt_mean']:.2f}",
                     fontsize=6, va="center")
-        ax.set_xlabel(f"SNR ({variant} @ {TARGET_SIZE})", fontsize=8)
+        ax.set_xlabel(f"SNR ({variant} @ {top_df['size'].iloc[0]})", fontsize=8)
         ax.set_title(f"{lang}  (top {len(sub)})", fontsize=10)
         ax.grid(True, axis="x", alpha=0.3)
     for j in range(n, nrows * ncols):
         axes[j // ncols][j % ncols].set_visible(False)
     fig.suptitle(f"Top-{TOP_K} benchmarks per language by SNR — variant "
-                 f"`{variant}` @ {TARGET_SIZE}  (annotations: DA-size, DA-ckpt mean)",
+                 f"`{variant}` @ {top_df['size'].iloc[0]}  (annotations: DA-size, DA-ckpt mean)",
                  fontsize=12)
     fig.tight_layout(rect=(0, 0, 1, 0.97))
     save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -349,10 +359,10 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
 # statistical-power table). RQ / setup / TODO prose lives outside the markers.
 
 _POOL_TIERS = [
-    ("seeds_1904", "1 seed"),
-    ("seeds_28_1797", "2 seeds"),
-    ("seeds_28_1797_1904", "3 seeds"),
-    ("custom_swissai_hf", "3 seeds + externals"),
+    ("predictivity", "grid, seed 1904"),
+    ("predictivity_seeds", "all seeds"),
+    ("predictivity_seeds_train", "holdout train (seeds 64/313)"),
+    ("predictivity_seeds_test", "holdout test (seed 1904)"),
 ]
 
 
@@ -371,9 +381,11 @@ def _anchor_rank1(stage: str, pool: str) -> pd.DataFrame:
     return df[df["rank"] == 1].sort_values("language").reset_index(drop=True)
 
 
-def _holdout_metrics(stage: str) -> dict:
-    hm = pd.read_csv(_snr_dir(stage, "seeds_28_1797__vs__seeds_1904")
-                     / "headline_metrics.csv")
+def _holdout_metrics(stage: str) -> dict | None:
+    p = _snr_dir(stage, f"{HOLDOUT[0]}__vs__{HOLDOUT[1]}") / "headline_metrics.csv"
+    if not p.exists():
+        return None
+    hm = pd.read_csv(p)
     return {(r.metric, r.da_kind): float(r.value) for r in hm.itertuples()}
 
 
@@ -383,29 +395,35 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     ckpt_sorted = tv.sort_values("mean_r_da_ckpt", ascending=False)
     ckpt_leaders = ckpt_sorted.head(3)["variant"].tolist()
     ckpt_r = ckpt_sorted.iloc[0]["mean_r_da_ckpt"]
+    families = {_VARIANT_FAMILY.get(v, "??") for v in ckpt_leaders}
+    worst = tv.sort_values("mean_r_overall").head(2)["variant"].tolist()
     anchor = _anchor_rank1(stage, pool)
     fam_counts = anchor["task"].map(benchmark_family).value_counts()
     fam_name, fam_n = fam_counts.index[0], int(fam_counts.iloc[0])
     n_langs = anchor["language"].nunique()
+    ref = anchor["size"].iloc[0]
     hm = _holdout_metrics(stage)
 
-    highlight = "\n".join([
+    bullets = [
         f"- **Global-best SNR definition (`{pool}`): `{g.variant}`** — mean Pearson r of "
         f"log₁₀(SNR) vs decision accuracy **{fmt(g.mean_r_da_size)}** (DA-size), "
         f"**{fmt(g.mean_r_da_ckpt)}** (DA-ckpt), {fmt(g.mean_r_overall)} overall. "
-        f"DA-ckpt is led by the mean-pairwise-distance / relative-spread cluster "
-        f"(`{'`/`'.join(ckpt_leaders)}` ≈ {fmt(ckpt_r)}) — all dispersion-family, so "
+        f"DA-ckpt is led by `{'`/`'.join(ckpt_leaders)}` (≈ {fmt(ckpt_r)}; "
+        f"{'one family: ' + next(iter(families)) if len(families) == 1 else 'families: ' + ', '.join(sorted(families))}) — "
         f"recommend the *family*, not an exact variant.",
         f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
-        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {TARGET_SIZE}).",
-        f"- **Variant ranking generalizes across seeds under DA-ckpt** (holdout "
-        f"Spearman ρ **{fmt(hm[('spearman_rank_global','ckpt')])}**) **but not under "
-        f"DA-size** (ρ **{fmt(hm[('spearman_rank_global','size')])}**): the DA-size "
-        f"per-variant correlations are small and near-tied, so their ranking is "
-        f"noise-dominated and does not survive a seed swap — treat DA-size variant "
-        f"ranking as unreliable. The exact per-language argmax never transfers. "
-        f"**Never `tukey` / `projection`** (r ≤ 0).",
-    ])
+        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}). "
+        f"Weakest variants overall: `{'`, `'.join(worst)}`.",
+    ]
+    if hm is not None:
+        bullets.append(
+            f"- **Seed holdout ({HOLDOUT[0]} → {HOLDOUT[1]})**: Spearman ρ of the global "
+            f"variant ranking **{fmt(hm[('spearman_rank_global','ckpt')])}** (DA-ckpt), "
+            f"**{fmt(hm[('spearman_rank_global','size')])}** (DA-size); family-level "
+            f"per-language agreement {hm[('family_agreement','ckpt')]:.0%} / "
+            f"{hm[('family_agreement','size')]:.0%}. A ranking that does not survive the "
+            f"seed swap is noise-dominated — only the *family* recommendation transfers.")
+    highlight = "\n".join(bullets)
 
     # 1) variant ranking — top 7 + bottom 2
     vr = []
@@ -430,47 +448,47 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     t_power = md_table(["pool", "best variant (DA-size)", "DA-size r", "DA-ckpt r"], pw)
 
     # 3) per-language anchor
-    an = [[r.language, f"`{r.task}`", fmt(r.snr), fmt(r.da_ckpt_1B_mean)]
+    an = [[r.language, f"`{r.task}`", fmt(r.snr), fmt(r.da_ckpt_mean)]
           for _, r in anchor.iterrows()]
-    t_anchor = md_table(["lang", "top benchmark", "SNR", "DA-ckpt@1B"], an)
+    t_anchor = md_table(["lang", "top benchmark", "SNR", f"DA-ckpt@{ref}"], an)
 
-    # 4) seed holdout
-    pct = lambda m, k: f"{hm[(m, k)]:.0%}"
-    ho = [
-        ["Spearman ρ on global variant ranking",
-         fmt(hm[("spearman_rank_global", "size")]), fmt(hm[("spearman_rank_global", "ckpt")])],
-        ["Pearson r between splits (all cells)",
-         fmt(hm[("pearson_r_cells", "size")]), fmt(hm[("pearson_r_cells", "ckpt")])],
-        ["Exact-variant agreement (per lang)",
-         pct("exact_variant_agreement", "size"), pct("exact_variant_agreement", "ckpt")],
-        ["Family-level agreement (per lang)",
-         pct("family_agreement", "size"), pct("family_agreement", "ckpt")],
-        ["Retention of train-best r on test",
-         pct("retention", "size"), pct("retention", "ckpt")],
-    ]
-    t_holdout = md_table(["metric", "DA-size", "DA-ckpt"], ho)
-
-    results = "\n\n".join([
+    results = [
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool {pool}`.",
-        "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages "
-        "(top of a tight dispersion block; depth metrics collapse):",
+        "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages:",
         t_variants,
-        f"![SNR variants ranked by correlation with DA](pretraining/{pool}/top_variants_overall.png)",
+        f"![SNR variants ranked by correlation with DA]({stage}/{pool}/top_variants_overall.png)",
         "**Statistical power by pool** — each pool's best DA-size variant:",
         t_power,
-        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {TARGET_SIZE} over "
-        "above-random tasks (DA-size is NaN at the 1B target, so DA-ckpt@1B is shown):",
+        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {ref} over "
+        f"above-random tasks (DA-size is undefined at the reference size itself, so "
+        f"DA-ckpt@{ref} is shown):",
         t_anchor,
-        f"![Top-5 benchmarks per language by SNR](pretraining/{pool}/top_benchmarks_per_language.png)",
-        "**Seed generalization** — holdout `seeds_28_1797` → `seeds_1904`. "
-        "DA-ckpt ranking transfers; **DA-size does not** — its per-variant correlations "
-        "are small and clustered (top variants within ~0.1), so the global ranking is "
-        "noise-dominated and its Spearman ρ is unstable run-to-run (don't read it as a "
-        "real effect):",
-        t_holdout,
-    ])
-    return highlight, results
+        f"![Top-5 benchmarks per language by SNR]({stage}/{pool}/top_benchmarks_per_language.png)",
+    ]
+
+    # 4) seed holdout (only once compare_seed_splits.py has run)
+    if hm is not None:
+        pct = lambda m, k: f"{hm[(m, k)]:.0%}"
+        ho = [
+            ["Spearman ρ on global variant ranking",
+             fmt(hm[("spearman_rank_global", "size")]), fmt(hm[("spearman_rank_global", "ckpt")])],
+            ["Pearson r between splits (all cells)",
+             fmt(hm[("pearson_r_cells", "size")]), fmt(hm[("pearson_r_cells", "ckpt")])],
+            ["Exact-variant agreement (per lang)",
+             pct("exact_variant_agreement", "size"), pct("exact_variant_agreement", "ckpt")],
+            ["Family-level agreement (per lang)",
+             pct("family_agreement", "size"), pct("family_agreement", "ckpt")],
+            ["Retention of train-best r on test",
+             pct("retention", "size"), pct("retention", "ckpt")],
+        ]
+        results += [
+            f"**Seed generalization** — holdout `{HOLDOUT[0]}` → `{HOLDOUT[1]}` "
+            f"(the ×3 cells only). A variant ranking whose Spearman ρ is low here is "
+            f"noise-dominated; recommend the family that transfers, not the argmax:",
+            md_table(["metric", "DA-size", "DA-ckpt"], ho),
+        ]
+    return highlight, "\n\n".join(results)
 
 
 def generate_readme(stage: str, pool: str) -> None:
@@ -492,15 +510,16 @@ def generate_slides(stage: str, pool: str) -> None:
         return
     anchor = _anchor_rank1(stage, pool)
     g_variant = _read_tv(stage, pool).iloc[0]["variant"]
-    rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_1B_mean)]
+    ref = anchor["size"].iloc[0]
+    rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_mean)]
             for _, r in anchor.iterrows()]
     slide = (
         "---\n"
         "title: RQ1 — SNR Definition\n"
         f"subtitle: \"Results (auto) — most reliable benchmark per language "
-        f"(`{g_variant}` @ {TARGET_SIZE})\"\n"
+        f"(`{g_variant}` @ {ref})\"\n"
         "---\n\n"
-        f"{md_table(['lang', 'top benchmark', 'SNR', 'DA-ckpt@1B'], rows)}\n\n"
+        f"{md_table(['lang', 'top benchmark', 'SNR', f'DA-ckpt@{ref}'], rows)}\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq1-results", slide,
