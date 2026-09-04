@@ -22,25 +22,29 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 
 | Languages | 90M | 175M | 350M | 600M | 1B  | 1.7B |
 | --------- | --- | ---- | ---- | ---- | --- | ---- |
-| 1         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
-| 2         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 1         | ✓   | ×3   | ✓    | ×3   | ×3† | ✓    |
+| 2         | ✓   | ×3   | ✓    | ×3   | ×3† | ✓    |
 | 8         | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
 | 15        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
-| 30        | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
-| 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
-| 100       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 30        | ✓   | ✓    | ✓    | ✓    | ×3† | ✓    |
+| 50        | ✓   | ×3   | ✓    | ×3   | ✓   | —    |
+| 100       | ✓   | ×3   | ✓    | ×3   | ✓   | ✓    |
+
+† seeds 28, 1797, 1904 (the 1B runs launched 2026-09-02 from a clone
+predating the seed change, adopted as they are — see
+[1b-models.md](1b-models.md)); every other ×3 cell uses 64, 313, 1904.
 
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 50, 100} |
+| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 50, 100}; ×3 seeds (28, 1797, 1904) on the 1B column at L ∈ {1, 2, 30} |
 | Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **146 runs**.
+**62 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting both architectures and scheme B where it differs: **162 runs**.
 
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
@@ -51,7 +55,9 @@ Counting both architectures and scheme B where it differs: **146 runs**.
 
 (The 200-language setting was dropped on 2026-08-13 to fit the compute budget
 and deadline. The ×3-seed rows were 1, 30 and 100; L=2 was added to them, and
-the 1.7B row gained L=2, taking the grid from 52 to 56.)
+the 1.7B row gained L=2, taking the grid from 52 to 56. On 2026-09-02 the ×3
+column moved to 175M/600M and its rows to {1, 2, 50, 100}; the 1B row's own
+×3 cells at {1, 2, 30} were adopted on 2026-09-03, taking the grid to 62.)
 
 ## Intervention axis (the design choice under test)
 
