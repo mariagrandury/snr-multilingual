@@ -66,12 +66,15 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import (  # noqa: E402
-    bucket_order, expand_pool, load_pools, load_snr_params,
+    bucket_order, expand_pool, load_pools, load_snr_params, load_tasks,
     pool_include_external, size_bucket, stage_external_models,
 )
 
-# 2-letter language codes used by global_mmlu_full subject keys.
-_GMF_LANGS = ("ar", "en", "es", "hi", "ja", "ru", "sw", "tr", "vi", "zh")
+# Language codes of the registered global_mmlu_full_<lang> tasks (the 37
+# languages wired for the ladder); subject facets carry the same token.
+_GMF_LANGS = tuple(sorted(
+    t[len("global_mmlu_full_"):] for t in load_tasks()
+    if t.startswith("global_mmlu_full_") and "_" not in t[len("global_mmlu_full_"):]))
 
 LAST_N = load_snr_params()["last_n"]
 OUT_ROOT = SMOOTH_SUBTASKS
@@ -283,7 +286,7 @@ def collect_multilingual_families(df: pd.DataFrame) -> dict[str, list[str]]:
     in each family by language for stable output."""
     families: dict[str, list[str]] = defaultdict(list)
     for t in df["task"].unique():
-        if assign_language(t) == "??":
+        if assign_language(t) in ("??", "multi"):
             continue
         fam = benchmark_family(t)
         if not _is_language_aggregate(t, fam):
@@ -565,16 +568,12 @@ def generate_readme(stage: str, pool: str) -> None:
             f"the full set: SNR **{fmt(r.full_set_snr)} → {fmt(r.best_snr)}** "
             f"(**+{fmt(r.snr_gain)}**) with `{r.best_subset_short}`."
         )
+    by_case = (summary.groupby("case")["snr_gain"].median().sort_values(ascending=False))
     bullets.append(
-        "- **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject "
-        "subset matches or beats the full ~48-subject set across sizes "
-        "(`medical_genetics`, `human_aging`, `international_law`, world-history recur)."
-    )
-    bullets.append(
-        "- **Per-item (per-sample) ranking is mostly noise / overfits across scale** "
-        "— per-sample subsets give even larger gains but their best picks barely "
-        "overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer "
-        "subtask-level selection."
+        "- **Median gain by case** — "
+        + "; ".join(f"{_short_case(c)} {fmt(v)}" for c, v in by_case.items())
+        + " (SNR units; a subset only helps where the gain clears the seed noise "
+        "reported in rq06)."
     )
     highlight = "## Highlighted result\n\n" + "\n".join(bullets)
 
@@ -674,9 +673,8 @@ def main(stage: str, pool: str, out_dir: Path):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--pool", required=True,
-                   help="Pool name from configs/models.json (tiers: 1seed, "
-                        "2seeds, 3seeds, 3seeds_swissai_hf).")
+    p.add_argument("--pool", default=CANONICAL_POOL,
+                   help=f"Pool name from configs/models.json (default: {CANONICAL_POOL}).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; "
