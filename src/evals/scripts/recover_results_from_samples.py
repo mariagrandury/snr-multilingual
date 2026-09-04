@@ -1,6 +1,9 @@
 #!/usr/bin/env python3.11
 """Recover a results_*.json from per-doc samples_*.jsonl for eval runs that
-died mid-batch (BATCH_TASKS=1 timeout) and never wrote their aggregate.
+died mid-batch and never wrote their aggregate — runs of the batched pipeline
+that preceded eval_worker.py (one lm_eval call for every task, results in a
+single burst at the end; retired 2026-09-04). New runs write each task's
+results as it finishes and never need this.
 
 lm_eval --log_samples writes one samples_<task>_<ts>.jsonl per finished task,
 each record carrying its `metrics` list and the per-doc value as a top-level
