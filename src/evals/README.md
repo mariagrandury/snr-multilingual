@@ -91,6 +91,15 @@ python3.11 scripts/snr_progress.py --status not_submitted             # gaps
 python3.11 scripts/snr_progress.py --details --filter <NAME-substr>   # per-task
 ```
 
+What the jobs cost, and how much a killed one kept — the numbers behind
+`auto_evals_cscs.MIN_PER_TASK`, split by pipeline generation (a run is
+`worker` if its eval dir has a `job.json`, `batched` otherwise):
+
+```bash
+python3.11 scripts/eval_timing.py             # median min/task + kill survival
+python3.11 scripts/eval_timing.py --detail    # one row per job
+```
+
 System Python on login nodes is 3.6; use `python3.11` for the dashboard.
 
 When `normal` is backed up, [`scripts/debug_drain.sh`](scripts/debug_drain.sh)
@@ -268,6 +277,7 @@ evals/
 │   ├── _eval_status.py                  # idempotency disk scan
 │   ├── _run_per_task.sh                 # inner runner: one eval_worker.py per GPU, merge at the end
 │   ├── eval_worker.py                   # model loaded once, tasks one at a time, results per task
+│   ├── eval_timing.py                   # min/task and kill-survival, batched vs worker pipeline
 │   ├── push_all_results.py              # W&B per-model push
 │   ├── build_hf_dataset.py              # HF dataset builder
 │   └── utils/configs.py                 # shared config loader
