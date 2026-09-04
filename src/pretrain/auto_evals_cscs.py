@@ -130,7 +130,10 @@ MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75, "600M": 0.85,  # measur
                 "1B": 2.0, "1.7B": 2.8}                                # not measured
 OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
-EVAL_WORKERS = 4    # one per GPU at TP=PP=1; passed to evaluate.sbatch
+# Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
+# to 1 off the vLLM backend). They agree only because submit_eval below pins
+# TP=PP=1 and vllm; change either and this estimate is silently 4x too small.
+EVAL_WORKERS = 4
 
 
 WALLTIME_CAP_MIN = 719   # the normal queue's 11:59:59 (launch_trainings.TIME_MAX_SEC)
@@ -138,7 +141,14 @@ WALLTIME_CAP_MIN = 719   # the normal queue's 11:59:59 (launch_trainings.TIME_MA
 
 def eval_minutes(size: str, n_tasks: int) -> int:
     """Fixed overhead + per-task budget x SAFETY over EVAL_WORKERS, rounded
-    up to 15 min."""
+    up to 15 min.
+
+    Dividing by the worker count assumes the per-task cost parallelises, and
+    the note above says the run is dominated by dataset load and tokenization
+    — CPU and IO the workers share. Expect the true speedup to be under 4x,
+    and OVERHEAD_MIN to cover four concurrent vLLM cold starts rather than
+    one. Both are why the estimate keeps SAFETY; re-fit from real jobs with
+    ../evals/scripts/eval_timing.py before trusting the totals."""
     per_worker = math.ceil(n_tasks / EVAL_WORKERS)
     minutes = OVERHEAD_MIN + per_worker * MIN_PER_TASK.get(size, 2.8) * SAFETY
     return math.ceil(minutes / 15) * 15
@@ -196,6 +206,30 @@ def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
     return [t for t in tasks if t not in done]
 
 
+def job_facts(run: Path) -> dict:
+    """evaluate.sbatch's job.json for one run, {} when absent or unreadable.
+
+    It carries the final counts only if the wrapper got to rewrite it, so a
+    walltime-killed run has the header (status "started") and no counts —
+    which is why every caller falls back to the filesystem rather than
+    reading absence as zero.
+    """
+    try:
+        return json.loads((run / "job.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def attempted_nothing(run: Path) -> bool:
+    """True when this run finished and ran no task at all — every task it was
+    given was already done elsewhere. Only job.json can tell that apart from a
+    crash, since both leave an empty directory; a run without the final counts
+    (killed, or from before job.json existed) is not claimed to be either."""
+    j = job_facts(run)
+    return (j.get("status") == "finished"
+            and not j.get("tasks_done") and not j.get("tasks_failed"))
+
+
 def eval_runs(name: str, logs_root: Path) -> list[Path]:
     """NAME's eval_*/ dirs, newest first."""
     base = logs_root / WANDB_ENTITY / PROJECT_NAME / name / "harness"
@@ -203,7 +237,15 @@ def eval_runs(name: str, logs_root: Path) -> list[Path]:
 
 
 def wrote_results(run: Path) -> bool:
-    """A run that saved anything: a results file, or a published per-task dir."""
+    """A run that saved anything: a results file, or a published per-task dir.
+
+    job.json's own count wins when the wrapper recorded it — it is the run's
+    own report, and it stays right even after the eval tree is mirrored or
+    tidied. Without it (a killed run), the files are the only evidence.
+    """
+    j = job_facts(run)
+    if "tasks_done" in j:
+        return bool(j["tasks_done"])
     return (any(run.glob("results_*.json"))
             or any(f for t in run.glob("per_task/*") if t.is_dir()
                    for f in t.iterdir()))
@@ -241,11 +283,20 @@ def task_attempts(name: str, logs_root: Path,
     those). A run that made progress without failing the task is no evidence
     either way and ends its streak, so a task that failed, was repaired, and
     has been running since is not held back by its past.
+
+    A run that attempted NOTHING is skipped entirely — neither a strike nor a
+    reset. evaluate.sbatch creates the eval dir (for job.json) before the
+    idempotency filter runs, so a duplicate submission whose sibling already
+    did the work leaves a directory that looks identical to a crash. Counting
+    those would let two of them plus one real failure park a task at the
+    default --max-attempts 3.
     """
     streak = {t: 0 for t in tasks}
     reason: dict[str, str] = {}
     open_ = set(tasks)
     for run in eval_runs(name, logs_root):
+        if attempted_nothing(run):
+            continue
         failed, barren = failed_in(run), not wrote_results(run)
         for t in list(open_):
             if t in failed:
@@ -276,14 +327,29 @@ def classify(reason: str) -> tuple[str, str]:
     return ("dataset", hit.group(1)) if hit else ("other", reason[:200])
 
 
+_EVAL_ERROR: dict[str, tuple[str, str]] = {}
+
+
 def eval_error(name: str) -> tuple[str, str]:
     """Why NAME's most recent eval job wrote nothing — for runs that died
-    before any task could be recorded in failed_tasks.log.
+    before any task could be recorded in failed_tasks.log, and as the second
+    opinion when a per-task reason is not self-explanatory.
 
     ("dataset", <hf repo>) — fixable here, see fix_missing_dataset.
     ("other", <last Error line>) / ("unknown", ...) — needs a human; recorded
     in the errors file rather than retried into the ground.
+
+    Memoised for the pass: the answer is a property of NAME's job logs, and
+    an L100 checkpoint asks it once per held-back task — up to ~290 scans of
+    the same 400 KB log tails.
     """
+    if name in _EVAL_ERROR:
+        return _EVAL_ERROR[name]
+    _EVAL_ERROR[name] = _eval_error_uncached(name)
+    return _EVAL_ERROR[name]
+
+
+def _eval_error_uncached(name: str) -> tuple[str, str]:
     logs = sorted(EVAL_JOB_LOGS.glob(f"{job_name('eval', name)}_*.err"),
                   key=lambda p: p.stat().st_mtime, reverse=True)
     for log in logs[:2]:                     # the two most recent attempts
@@ -516,6 +582,14 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
             if n < args.max_attempts:
                 continue
             kind, detail = classify(why) if why else eval_error(name)
+            if kind == "other":
+                # The per-task reason is one truncated line; the job log may
+                # still name a missing dataset, and that is the one cause
+                # this watcher can repair itself. Memoised, so at most one
+                # log scan per checkpoint per pass.
+                log_kind, log_detail = eval_error(name)
+                if log_kind == "dataset":
+                    kind, detail = log_kind, log_detail
             if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
                 continue                 # cache repaired — retry this pass
             held.setdefault(it, {})[t] = {"attempts": n, "kind": kind,
