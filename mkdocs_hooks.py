@@ -9,24 +9,26 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 # location. Map each source dir to the URL prefix of the page that includes
 # its README so those relative paths resolve in the rendered site.
 INCLUDES = [
-    ("src/signal-and-noise/results/snr_definition", "signal-noise"),
-    ("src/signal-and-noise/results/allenai_comparison", "signal-noise"),
-    ("src/signal-and-noise/results/benchmark_creation", "signal-noise"),
-    ("src/signal-and-noise/results/smooth_subtasks", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq00_acc_vs_flops", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq01_decision_accuracy", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq02_snr_definition", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq03_allenai_comparison", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq04_smooth_subtasks", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq05_benchmark_creation", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq06_proxy_predictivity", "signal-noise"),
 ]
 
 _PLACEHOLDER = (
     "!!! note\n"
-    "    These results are generated on the cluster and are not checked into\n"
-    "    the repository, so they are unavailable in this build.\n"
+    "    This README is not present in this checkout, so it is unavailable in\n"
+    "    this build.\n"
 )
 
 
 def on_pre_build(config):
-    """The included READMEs live under gitignored results/ dirs (generated on
-    the cluster). With `snippets.check_paths: true`, a fresh clone (e.g. the
-    Netlify deploy preview) would fail the build — write a placeholder where
-    the real file is absent. No-op wherever the results actually exist."""
+    """With `snippets.check_paths: true`, a missing included README fails the
+    build — write a placeholder where the file is absent (an RQ directory
+    that a shallow checkout lacks). No-op wherever the READMEs exist."""
     for src_rel, _ in INCLUDES:
         readme = REPO_ROOT / src_rel / "README.md"
         if not readme.is_file():
