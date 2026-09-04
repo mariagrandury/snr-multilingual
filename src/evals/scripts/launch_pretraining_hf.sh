@@ -6,8 +6,8 @@
 # matrix from snr_progress.csv (auto-refreshed at script start, written by
 # scripts/snr_progress.py — committed alongside the script). For every row
 # that is NOT `completed` and has NO active_jobids, submits one
-# `evaluate.sbatch` with TASKS=<remaining> so lm_eval (BATCH_TASKS=1) loads
-# only what's missing. Walltime is sized to remaining_tasks × per-size cost.
+# `evaluate.sbatch` with TASKS=<remaining> so the job runs only what's
+# missing. Walltime is sized to remaining_tasks × per-size cost.
 #
 # Idempotency layers:
 #   1. snr_progress.csv `status=completed`            → SKIP
@@ -21,9 +21,10 @@
 #   1B    TP=1 PP=4   (kv=7 → only TP=1; PP=4 fills the node)
 #
 # Walltime sizing (re-fit on 2026-05-09 from 4 size-test jobs after fixing
-# the cache/offline cascade — see notes in evaluate.sbatch). With BATCH_TASKS=1
-# + HF_DATASETS_OFFLINE=1 + populated cache, ALL sizes finished 67 tasks in
-# ~23-25 min. Cold start (pip install + vLLM init + dataset load) dominates;
+# the cache/offline cascade — see notes in evaluate.sbatch). With one lm_eval
+# call for every task (the pipeline of the time) + HF_DATASETS_OFFLINE=1 +
+# populated cache, ALL sizes finished 67 tasks in ~23-25 min. Cold start (pip
+# install + vLLM init + dataset load) dominates;
 # per-task generation is fast and roughly size-independent because vLLM batches
 # efficiently. Old estimates (cold=25, per_task=2-8 min/size) over-allocated by
 # 2-9x and hurt queue priority. New shape:
@@ -281,7 +282,7 @@ while IFS=$'\x1f' read -r name status done total remaining active_jobids model s
     # swissai tokenizer + BOS; hub models use their OWN tokenizer (NEVER the
     # swissai one — wrong vocab) and pin REVISION (+ tokenizer_revision in
     # evaluate.sbatch, CLAUDE bug 1).
-    ENVV=(LM_EVAL_BACKEND=vllm BATCH_TASKS=1 TP=$tp PP=$pp
+    ENVV=(LM_EVAL_BACKEND=vllm TP=$tp PP=$pp
           APPLY_CHAT_TEMPLATE=$APPLY_CHAT
           WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=snr-experiments
           TASKS="$remaining")

@@ -12,9 +12,9 @@
 #   * _eval_status.completed_tasks scans LOGS_ROOT to decide what is already
 #     evaluated. Point that at an empty iopsstor tree and every watcher pass
 #     re-submits every checkpoint — thousands of jobs.
-#   * eval jobs would then WRITE results to capstor at the end of a run. A
-#     capstor blip (errno 108, seen twice this week) would lose a finished
-#     45-minute job, because BATCH_TASKS=1 writes nothing until the very end.
+#   * eval jobs would then WRITE results to capstor. A capstor blip (errno
+#     108, seen twice this week) would fail the task being written, or the
+#     job's final merge and W&B push.
 # Keeping iopsstor as the working copy costs one rsync and no new failure mode.
 #
 # Idempotent and resumable: rsync skips files already there with the same size
