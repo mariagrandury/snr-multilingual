@@ -37,15 +37,28 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from analysis.utils import assign_language, benchmark_family  # noqa: E402
+from analysis.utils import TARGET_SIZE, assign_language, benchmark_family  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from analysis.utils import _is_language_aggregate  # noqa: E402
 from analysis.paths import SNR_DEFINITION  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import buckets_in_df  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SNR_DEFINITION_ROOT = SNR_DEFINITION
-SNR_COL = "snr_mpd_1B"
+# Q1's headline family pick is mean pairwise distance (dispersion cluster);
+# read at the configured target size, or at the largest size with data while
+# the reference rungs are still training (snr_col()).
+SNR_VARIANT = "mpd"
+SNR_COL = f"snr_{SNR_VARIANT}_{TARGET_SIZE}"
+
+
+def snr_col(csv_path: Path) -> str:
+    cols = pd.read_csv(csv_path, nrows=0).columns
+    if SNR_COL in cols:
+        return SNR_COL
+    buckets = buckets_in_df(pd.DataFrame(columns=cols))
+    return f"snr_{SNR_VARIANT}_{buckets[-1]}"
 
 # --- Categorical labels for grouping -----------------------------------------
 # Keep these in sync with the per-family paragraphs in data_info.md. Two
@@ -146,6 +159,42 @@ FAMILY_META: dict[str, dict] = {
         "source_origin": "originally_multilingual",
         "format": "completion", "n_options": 2, "passage": False,
     },
+    # --- families wired for the predictivity ladder (plan/benchmark_selection.md)
+    "global_piqa_parallel_cloze": {
+        "data_source": "Global PIQA parallel split (Chang et al. 2025)",
+        "curation_process": "participatory native-speaker authoring (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "completion", "n_options": 2, "passage": False,
+    },
+    "include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exam questions (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
+    "afrimmlu": {
+        "data_source": "IrokoBench AfriMMLU (Adelani et al. 2025), 5 MMLU subjects",
+        "curation_process": "human translation by native speakers",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
+    "afrixnli": {
+        "data_source": "IrokoBench AfriXNLI (Adelani et al. 2025), XNLI subset",
+        "curation_process": "human translation by native speakers",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "classification", "n_options": 3, "passage": False,
+    },
+    "truthfulqa-multi_mc1": {
+        "data_source": "TruthfulQA-Multi (Calvo Figueras et al. 2025)",
+        "curation_process": "professional human translation",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
 }
 # Derived: random baseline = 1 / n_options
 for _f, _meta in FAMILY_META.items():
@@ -171,6 +220,8 @@ ORIGIN_ORDER = ["originally_multilingual", "english_translated"]
 
 
 def load_per_task_snr(snr_csv: Path) -> pd.DataFrame:
+    global SNR_COL
+    SNR_COL = snr_col(snr_csv)
     df = pd.read_csv(snr_csv, usecols=["task", SNR_COL])
     df["family"] = df["task"].map(benchmark_family)
     df["language"] = df["task"].map(assign_language)
