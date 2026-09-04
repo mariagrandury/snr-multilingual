@@ -1,24 +1,37 @@
 #!/bin/bash
-# Run lm_eval once per task with fault tolerance: a failure in one task is
-# logged and the loop continues so survivor metrics still reach W&B.
-# Idempotent: tasks whose results already exist on disk (in any sibling
-# eval_*/ run for this checkpoint) are skipped, so re-launching the same
-# command after a partial run / timeout doesn't redo finished work.
+# Run the remaining tasks of one checkpoint on every GPU of the node, each
+# task's results landing on disk the moment it finishes.
+#
+# Starts EVAL_WORKERS copies of scripts/eval_worker.py, one per group of
+# GPUS_PER_WORKER devices (pinned with CUDA_VISIBLE_DEVICES), all drawing from
+# the same task queue: a worker claims a task, runs it against its once-loaded
+# model and publishes per_task/<task>/ atomically (the protocol is in
+# eval_worker.py). When all workers are done the per-task results are merged
+# into one results_<ts>.json at the top of the eval dir and the samples files
+# moved up beside it — the layout every reader (push_all_results.py,
+# build_hf_dataset.py, _eval_status.py) already expects. The per-task results
+# files stay in per_task/ (they carry each task's own timing and config).
+#
+# Idempotent across jobs: tasks with results in any earlier eval_*/ of this
+# checkpoint (_eval_status.py) are skipped up front, so resubmitting after a
+# walltime kill runs only what is missing.
 #
 # Reads from env (exported by evaluate.sbatch):
-#   CMD_BASE          lm_eval invocation without --tasks / --output_path
+#   CMD_BASE          eval_worker.py invocation without --tasks / --output_path
 #   TASKS             comma-separated task names
-#   HARNESS_EVAL_DIR  base output dir; per-task subdirs are merged into here
-#   NAME              checkpoint name (model-ckpt) — used for status lookup
-#   WANDB_ENTITY      W&B entity
-#   WANDB_PROJECT     W&B project
-#   LOGS_ROOT         eval_logs root (optional, has a sane default)
+#   HARNESS_EVAL_DIR  this job's eval dir
+#   NAME              checkpoint name (model-ckpt) — used for the status lookup
+#   WANDB_ENTITY, WANDB_PROJECT, LOGS_ROOT   where the status lookup scans
+#   EVAL_WORKERS      worker processes (default 1); GPUS_PER_WORKER each (default 1)
 set -uo pipefail
 
 PER_TASK_DIR="$HARNESS_EVAL_DIR/per_task"
+INFLIGHT_DIR="$HARNESS_EVAL_DIR/inflight"
 FAILED_LOG="$HARNESS_EVAL_DIR/failed_tasks.log"
 SKIPPED_LOG="$HARNESS_EVAL_DIR/skipped_tasks.log"
-mkdir -p "$PER_TASK_DIR"
+EVAL_WORKERS=${EVAL_WORKERS:-1}
+GPUS_PER_WORKER=${GPUS_PER_WORKER:-1}
+mkdir -p "$PER_TASK_DIR" "$INFLIGHT_DIR"
 : > "$FAILED_LOG"
 : > "$SKIPPED_LOG"
 
@@ -62,70 +75,48 @@ if [[ -s "$SKIPPED_LOG" ]]; then
     sed 's/^/  - /' "$SKIPPED_LOG"
 fi
 
-SUCCESS_DIRS=()
 mapfile -t TASKS_TO_RUN <<< "$REMAINING"
+TASKS_CSV=$(IFS=,; echo "${TASKS_TO_RUN[*]}")
+echo "=== ${#TASKS_TO_RUN[@]} task(s) on $EVAL_WORKERS worker(s) x $GPUS_PER_WORKER GPU(s), results per task in $PER_TASK_DIR ==="
 
-# BATCH_TASKS=1 (set by the vLLM/HF SNR runner): run ALL remaining tasks in
-# ONE lm_eval invocation. vLLM model load is the dominant per-task cost
-# (~30-90s) and dwarfs actual inference on small models, so a single call
-# ~10x's per-ckpt throughput. lm_eval handles per-task errors internally
-# (logs and moves on within the run). The single results_*.json is recognized
-# by _eval_status.py's `.results` listing, so per-task idempotency on re-runs
-# still works. Trade-off: a mid-run crash loses all unwritten results in
-# that call (vs the per-task loop's "lose only the in-progress task").
-if [[ "${BATCH_TASKS:-0}" == "1" ]]; then
-    TASKS_CSV=$(IFS=,; echo "${TASKS_TO_RUN[*]}")
-    echo "=== Running ${#TASKS_TO_RUN[@]} tasks in a single lm_eval call (BATCH_TASKS=1) ==="
-    if $CMD_BASE --tasks "$TASKS_CSV" --output_path "$HARNESS_EVAL_DIR"; then
-        SUCCESS_DIRS+=("$HARNESS_EVAL_DIR")
-        echo "=== OK: batch of ${#TASKS_TO_RUN[@]} tasks ==="
+# One process per worker, its stream prefixed and mirrored to worker_<i>.log.
+# A single worker gets no CUDA_VISIBLE_DEVICES: under torchrun/accelerate
+# (hf, megatron_lm) the launcher itself spans the node's GPUs.
+for (( w=0; w<EVAL_WORKERS; w++ )); do
+    if (( EVAL_WORKERS > 1 )); then
+        gpus=$(seq -s, $(( w * GPUS_PER_WORKER )) $(( (w + 1) * GPUS_PER_WORKER - 1 )))
+        CUDA_VISIBLE_DEVICES=$gpus $CMD_BASE --tasks "$TASKS_CSV" --output_path "$HARNESS_EVAL_DIR" \
+            --worker "$w" --num_workers "$EVAL_WORKERS" 2>&1 \
+            | sed -u "s/^/[w$w] /" | tee "$HARNESS_EVAL_DIR/worker_$w.log" &
     else
-        rc=$?
-        printf '%s\n' "${TASKS_TO_RUN[@]}" >> "$FAILED_LOG"
-        echo "=== FAILED (rc=$rc): batch lm_eval call — see $FAILED_LOG ===" >&2
+        $CMD_BASE --tasks "$TASKS_CSV" --output_path "$HARNESS_EVAL_DIR" \
+            --worker 0 --num_workers 1 2>&1 | tee "$HARNESS_EVAL_DIR/worker_0.log" &
     fi
-else
-    for t in "${TASKS_TO_RUN[@]}"; do
-        [[ -z "$t" ]] && continue
-        out="$PER_TASK_DIR/$t"
-        echo "=== Running task: $t ==="
-        if $CMD_BASE --tasks "$t" --output_path "$out"; then
-            SUCCESS_DIRS+=("$out")
-            echo "=== OK: $t ==="
-        else
-            rc=$?
-            echo "$t" >> "$FAILED_LOG"
-            echo "=== FAILED (rc=$rc): $t — logged and continuing ===" >&2
-        fi
-    done
-fi
+done
+wait
 
+# What landed is the truth, not the exit codes: every published task is a
+# directory under per_task/, every failure a line in failed_tasks.log.
+mapfile -t SUCCESS_DIRS < <(find "$PER_TASK_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
 if (( ${#SUCCESS_DIRS[@]} == 0 )); then
-    echo "ERROR: every attempted task failed; nothing to merge or upload." >&2
+    echo "ERROR: no task finished; nothing to merge or upload." >&2
     exit 1
 fi
 
-# In BATCH_TASKS mode the single lm_eval call already wrote results_*.json
-# directly into $HARNESS_EVAL_DIR, so the per-task merge step is unnecessary
-# (and would be a no-op anyway since SUCCESS_DIRS == [$HARNESS_EVAL_DIR]).
-if [[ "${BATCH_TASKS:-0}" != "1" ]]; then
-    echo "Merging ${#SUCCESS_DIRS[@]} successful task dirs into $HARNESS_EVAL_DIR"
-    python -m scripts.alignment.merge_split_results \
-        --split_dirs "${SUCCESS_DIRS[@]}" \
-        --output_dir "$HARNESS_EVAL_DIR"
-    rm -rf "$PER_TASK_DIR"
-fi
+echo "Merging ${#SUCCESS_DIRS[@]} finished task dir(s) into $HARNESS_EVAL_DIR"
+python -m scripts.alignment.merge_split_results \
+    --split_dirs "${SUCCESS_DIRS[@]}" \
+    --output_dir "$HARNESS_EVAL_DIR" --move-samples \
+    || echo "WARNING: merge failed (rc=$?) — the per-task results stay in $PER_TASK_DIR, where every reader also looks" >&2
 
-# Flatten any sanitized-model subdir that lm_eval's vLLM backend creates.
-# vLLM writes results to <output_path>/<sanitized_model_path>/, while the
-# megatron_lm backend writes them directly to <output_path>/. Flattening
-# here unifies the two layouts so downstream tooling (push_all_results.py,
-# build_hf_dataset.py, _eval_status.py) can rely on a single shape.
+# Flatten any sanitized-model subdir a CLI-style lm_eval run leaves at the top
+# level (vLLM writes results to <output_path>/<sanitized_model_path>/), so
+# downstream tooling can rely on a single shape. per_task/ and inflight/ are
+# this script's own directories.
 shopt -s nullglob
 for inner in "$HARNESS_EVAL_DIR"/*/; do
     base=$(basename "$inner")
-    [[ "$base" == "per_task" ]] && continue
-    # Only flatten if it actually contains a results_*.json (defensive guard).
+    [[ "$base" == "per_task" || "$base" == "inflight" ]] && continue
     if compgen -G "$inner"/results_*.json > /dev/null; then
         echo "Flattening lm_eval subdir: $base/"
         mv "$inner"/* "$HARNESS_EVAL_DIR"/ 2>/dev/null
@@ -133,6 +124,13 @@ for inner in "$HARNESS_EVAL_DIR"/*/; do
     fi
 done
 shopt -u nullglob
+
+# Only claim markers are left when every claimed task was published; a
+# directory that remains is the partial output of a task that was running
+# when the job died — kept as evidence.
+rm -f "$INFLIGHT_DIR"/*.claim
+rmdir "$INFLIGHT_DIR" 2>/dev/null \
+    || echo "inflight/ kept: partial output of $(ls -1 "$INFLIGHT_DIR" | wc -l | tr -d ' ') unfinished task(s)"
 
 if [[ -s "$FAILED_LOG" ]]; then
     echo "WARNING: $(wc -l < "$FAILED_LOG") task(s) failed (see $FAILED_LOG):"

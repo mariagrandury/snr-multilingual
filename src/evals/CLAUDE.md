@@ -17,7 +17,9 @@ Two parallel tracks at any given time:
 1. **Eval submissions on the cluster** (this repo). Slurm jobs invoke
    [`scripts/evaluate.sbatch`](scripts/evaluate.sbatch) which calls
    [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) inside an enroot/pyxis
-   container, runs `lm_eval` once per task, merges results, and pushes to W&B
+   container, runs one [`scripts/eval_worker.py`](scripts/eval_worker.py) per
+   GPU (model loaded once, tasks one at a time, each task's results on disk
+   the moment it finishes — bug 13), merges results, and pushes to W&B
    via [`scripts/push_all_results.py --name $NAME --eval-duration $DURATION`](scripts/push_all_results.py)
    (per-model curve, one step per ckpt — see "W&B layout" below).
 
@@ -128,8 +130,9 @@ then sources `hf_base_runner.sh`. Why prefer this over the megatron path:
   May-3 / May-4 megatron sweep (per `sacct` audit).
 - Local paths skip the HF Hub round-trip — no 429 risk during eval (see
   bug history #12), no GB-scale model downloads.
-- Sets `BATCH_TASKS=1` (see bug history #13) and lets `TP` default to
-  `GPUS_PER_NODE` (see bug history #11 — DO NOT override `TP=1`).
+- Its `BATCH_TASKS=1` export is a no-op since 2026-09-04 (bug history #13);
+  it lets `TP` default to `GPUS_PER_NODE` (see bug history #11 — DO NOT
+  override `TP=1`).
 - `SEEDS_FILTER` env var (default `"1904 1797 28"`) restricts which seeds
   to evaluate. Set `SEEDS_FILTER="1797 28"` to skip seed1904 (most of which
   already has megatron eval results from the May-3 megatron sweep).
@@ -155,7 +158,9 @@ submissions when re-launching after a partial run.
 this. **Always launch with `snr-pretraining-full`** unless the user explicitly
 wants a subset.
 
-If a task fails, the per-task fault-tolerance in `_run_per_task.sh` logs them and moves on.
+If a task fails, `eval_worker.py` records it in `failed_tasks.log` with the
+reason and moves on (bug 13); the watcher holds a task back after
+`--max-attempts` such failures in a row.
 
 ---
 
@@ -181,7 +186,7 @@ Re-running these is **safe and idempotent at two layers**:
 | Layer | Where | When it fires |
 |---|---|---|
 | Per-checkpoint | [`runners/hf_base_runner.sh`](runners/hf_base_runner.sh) (calls `_eval_status.py`) | At launch, before each `sbatch` — `continue`s if every task in `$TASKS` already has results for that ckpt. Saves the cold-start of a redundant job. |
-| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits 0 cleanly if nothing left. |
+| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits 0 cleanly if nothing left. One `eval_worker.py` per GPU then works through the rest, each task landing in `per_task/<task>/` as it finishes. |
 
 Both use the same disk-scan in [`scripts/_eval_status.py`](scripts/_eval_status.py): a
 task is "done" iff a non-empty `eval_*/per_task/<task>/` exists (killed runs)
@@ -450,56 +455,71 @@ For a long push sweep, expect ~6-10 cells per 5-min window — wait for the
 window to clear before retrying. Or split the push across two rate-limit
 windows by sleeping 5 min between batches.
 
-### 13. `_run_per_task.sh` reloads vLLM 86 times per ckpt (BATCH_TASKS toggle)
-The default per-task loop calls `lm_eval --tasks "$t"` once per task. vLLM
-model load is the dominant cost (~30-90s per load on small models),
-dwarfing actual inference time. For a 86-task `snr-pretraining-full` sweep,
-this is ~2 hours of pure model-load overhead per ckpt.
+### 13. The `lm_eval` CLI cannot both load once and write as it goes (the `BATCH_TASKS` era, retired 2026-09-04)
+`_run_per_task.sh` used to call the `lm_eval` CLI either once per task
+(`BATCH_TASKS=0`) or once for every remaining task (`BATCH_TASKS=1`). Per
+task, vLLM model load (~30-90 s on small models) dwarfed inference — ~2 h of
+pure load overhead per 86-task ckpt. Batched, the model loaded once but
+**nothing survived a walltime kill. Not even the samples.** lm_eval buffers
+everything and writes in one burst at the end: on a completed 45-minute
+350M/L8 job all **538** samples files *and* the results file carried the SAME
+filename timestamp (`2026-08-27T10-11-00.153183`), their mtimes spanned
+**11 seconds**, and `per_task/` was empty. And lm_eval instantiates EVERY
+task in `--tasks` up front, so one dataset missing from the offline cache
+aborted the whole call with zero tasks evaluated (2026-05-04: 36 jobs spent 22
+minutes loading 109 datasets, then `mlqa` crashed the call → 0 generations
+across all 36, bug 15). A timed-out batched job was 100% loss and got
+resubmitted to be killed again; the watcher therefore refused over-cap jobs
+outright (600M/1B/1.7B at L100) and the debug drainer could not truncate
+evals.
 
-Set `BATCH_TASKS=1` (env var threaded through `evaluate.sbatch` →
-`_run_per_task.sh`) to run ALL remaining tasks in ONE `lm_eval` call. Model
-loads once, all tasks share it. ~10x per-ckpt speedup. Trade-off: a mid-
-run crash loses unwritten task results in that call (vs the per-task
-loop's "lose only the in-progress task"); the per-task idempotency on re-
-run still works because the single `results_*.json` lists all tasks under
-`.results`.
+**Now** [`scripts/eval_worker.py`](scripts/eval_worker.py) loads the model
+once and runs the tasks one `simple_evaluate()` call at a time, writing each
+task's `results_*.json` + `samples_*.jsonl` (through lm_eval's own
+`EvaluationTracker`, so the files are the CLI's format: config, env and
+tokenizer info, task hashes, per-task timing) into `per_task/<task>/` the
+moment it finishes; a failed task is one `<task>\t<reason>` line in
+`failed_tasks.log` and the worker moves on. `_run_per_task.sh` starts
+`EVAL_WORKERS` of them — default one per GPU the TP × PP layout leaves free,
+i.e. 4 on the ladder (KV-head counts force TP=1, and vLLM refuses offline DP
+for dense models, bug 11) — all drawing from one task queue, then merges
+`per_task/` into the top-level `results_<ts>.json` and moves the samples up.
+Both CLI modes are gone; `BATCH_TASKS` no longer exists.
 
-The vLLM/HF SNR runner ([`runners/snr_pretraining_local_hf.sh`](runners/snr_pretraining_local_hf.sh))
-sets `BATCH_TASKS=1` by default. Megatron path keeps the per-task loop
-(safer given megatron eval's known cgroup/memory fragility — see bug 11
-context).
+The protocol (details in the worker's docstring): claim = create
+`inflight/<task>.claim` with O_EXCL; output lands in `inflight/<task>/`;
+publish = atomic rename to `per_task/<task>/`, so `per_task/<task>/` exists
+only when complete — exactly what `_eval_status.completed_tasks` counts as
+done. Two things bit while building it:
 
-**`BATCH_TASKS=1` rescue gotcha (2026-05-04):** in batched mode, lm_eval
-instantiates EVERY task in `--tasks` upfront — calling `download()` for each
-dataset — BEFORE any token is generated. If any one of those `download()`
-calls fails, the whole call dies with zero tasks evaluated and zero
-`samples_*.jsonl` written, even though many tasks "loaded successfully"
-beforehand. So "the loop got past task X" is not a signal that any task
-ran — it's only a signal that those datasets exist and parse. We hit
-exactly this on 2026-05-04 with the `mlqa.py` dataset-script removal (bug
-15 below); 36 jobs spent 22 minutes loading 109 datasets, then `mlqa`
-crashed the call → 0 generations across all 36.
+- **The claim must outlive the task.** The first version claimed by creating
+  `inflight/<task>/` itself; once that dir was renamed to `per_task/`, a
+  worker arriving later found no claim and ran the task again (its rename
+  then failed on the non-empty target). Hence the separate marker file.
+- **The watcher's failure gate had to become per task.** A per-run "wrote
+  nothing" count never triggers once some task always lands, and a lifetime
+  per-task tally would hold back tasks that were repaired. So
+  `auto_evals_cscs.task_attempts` counts, per task, the most recent runs in
+  a row that listed it in `failed_tasks.log` or wrote nothing at all, and a
+  run that progressed without failing the task ends the streak.
 
-For partial-result rescue:
-- per-task mode (`BATCH_TASKS=0`, default) — each completed task's
-  `eval_*/per_task/<task>/results.json` survives walltime kills; only the
-  in-flight task is lost. `push_all_results.py` aggregates these.
-- batched mode (`BATCH_TASKS=1`) — **nothing survives a walltime kill. Not
-  even the samples.** This entry used to claim `samples_*.jsonl` lands as each
-  task finishes; that is WRONG, and it cost a wrong analysis on 2026-08-27.
-  lm_eval buffers everything and writes in one burst at the end. Checked on a
-  completed 45-minute 350M/L8 job: all **538** samples files *and* the results
-  file carry the SAME filename timestamp (`2026-08-27T10-11-00.153183`), their
-  mtimes span **11 seconds**, and `per_task/` is empty. If you want to verify
-  it again, compare the filename timestamp against the job's START TIME.
+Consequences: a walltime kill costs only the tasks in flight, and the next
+watcher pass resubmits what is missing with the walltime sized to it; the
+debug drainer truncates evals like converts and BPB; the over-cap refusal is
+gone. `scripts/recover_results_from_samples.py` only concerns eval dirs of
+the old batched pipeline. After the merge the per-task `results_*.json` files
+stay under `per_task/` (each carries its task's own timing, which
+`build_hf_dataset.py` reads) — only the samples are moved up. `job.json` in
+every eval dir records the Slurm side (ids, node, walltime, backend,
+parallelism, repo commit, container, outcome counts) and `worker_<i>.log`
+each worker's stream. Not ported from include-private: its `max_model_len`
+cap — the ladder's config already says 4096, and a lower cap would truncate
+prompts differently from past results.
 
-  Consequences: a timed-out batched job is 100% loss and gets resubmitted to
-  be killed again, so eval walltimes must be sized generously or the task list
-  SPLIT across jobs (`NUM_SPLITS`/`SPLIT_INDEX` in `evaluate.sbatch`, merged by
-  `aggregate_splits.sbatch`). `scripts/recover_results_from_samples.py` only
-  helps where samples actually exist on disk — i.e. per-task mode, or a crash
-  that is not a walltime kill. For long sweeps where walltime is tight, prefer
-  `BATCH_TASKS=0` or split.
+Verified locally with the `dummy` backend (two workers, four tasks, then a
+re-run that skipped everything, then a top-up run that ran only the new
+task); the vLLM path itself is untested until the smoke tests below run on
+the cluster.
 
 ---
 
@@ -761,10 +781,12 @@ colleagues at the named view instead.
 
 ## Rescue procedure (when a job hits Slurm wall before merging)
 
-`_run_per_task.sh` writes per-task results to `eval_*/per_task/<task>/` **as
-each task finishes**. If Slurm kills the job mid-loop, only the in-progress
-task is lost; everything already finished survives on disk. The next bulk
-push picks them up automatically (idempotent), so the simplest "rescue" is:
+`eval_worker.py` writes per-task results to `eval_*/per_task/<task>/` **as
+each task finishes**. If Slurm kills the job, only the tasks in flight (one
+per worker) are lost; everything already finished survives on disk, and the
+auto-eval watcher's next pass resubmits only what is missing. The next bulk
+push picks the finished tasks up automatically (idempotent), so the simplest
+"rescue" is:
 
 ```bash
 /users/mariagrandury/miniconda3/envs/snr/bin/python scripts/push_all_results.py
@@ -772,9 +794,9 @@ push picks them up automatically (idempotent), so the simplest "rescue" is:
 
 That walks every NAME on disk (incl. unfinished `eval_*/per_task/` dirs) and
 appends any new ckpts to their model's W&B run. Same effect as resubmitting
-the eval job, without the cluster cost. The Megatron-side merge of partial
-results still happens inside `_run_per_task.sh` for any future job — no
-manual `merge_split_results` step required.
+the eval job, without the cluster cost. The merge of `per_task/` into a
+top-level results file happens inside `_run_per_task.sh` at the end of every
+job — no manual `merge_split_results` step required.
 
 ---
 

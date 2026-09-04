@@ -43,6 +43,7 @@ usage() {
     echo " CKPT_ITER: Megatron checkpoint iteration (integer). Required when LM_EVAL_BACKEND=megatron_lm."
     echo " HARNESS_LIMIT: Optional argument to pass as --limit to the lm-evaluation-harness, to limit the number of samples per task (default: no limit)."
     echo " LM_EVAL_HARNESS_BRANCH: Branch/ref to install from swiss-ai/lm-evaluation-harness (default: repository default branch)."
+    echo " EVAL_WORKERS: vllm only. Worker processes per job, each with its own model copy on its own GPU group, sharing one task queue (default: GPUs / (TP x PP), i.e. every GPU busy)."
 	echo "For more information see the README: https://github.com/swiss-ai/evals?tab=readme-ov-file."
 }
 die() {
@@ -221,15 +222,24 @@ HF_CHECKPOINT_PATH=$MODEL
 PP=${PP:-1}
 # vLLM rejects offline data_parallel_size>1 for dense models with
 # "Offline data parallel mode is not supported/useful for dense models."
-# (CLAUDE.md bug 11). When TP*PP < GPUS_PER_NODE the leftover GPUs are idle —
-# DP would have absorbed them historically, but since vLLM dropped offline DP
-# we clamp it to 1. To use all 4 GPUs, pick TP and PP per-size at submit time.
-DP=$(( GPUS_PER_NODE / (MP * PP) ))
-if [[ "$LM_EVAL_BACKEND" == "vllm" && "$DP" -gt 1 ]]; then
-    leftover=$(( GPUS_PER_NODE - MP * PP ))
-    echo "vLLM dense models reject offline DP>1; clamping data_parallel_size=1 (TP=$MP PP=$PP, $leftover GPU(s) idle)"
-    DP=1
+# (CLAUDE.md bug 11), so data_parallel_size stays 1 and the GPUs that TP x PP
+# leave over are used the other way round: that many independent
+# scripts/eval_worker.py processes, each with its own model copy on its own
+# GPU group, all drawing from one task queue (scripts/_run_per_task.sh). The
+# ladder's KV-head counts force TP=1, so on a 4-GPU node that is 4 workers.
+DP=1
+EVAL_WORKERS=${EVAL_WORKERS:-$(( GPUS_PER_NODE / (MP * PP) ))}
+if [[ "$LM_EVAL_BACKEND" != "vllm" ]]; then
+    EVAL_WORKERS=1    # accelerate / torchrun already span the node's GPUs
+elif (( EVAL_WORKERS < 1 )); then
+    # TP x PP claims more GPUs than the node has: the division floors to 0,
+    # which would start no workers at all and burn the allocation on a job
+    # that reports "no task finished". One worker, and let vLLM complain
+    # about the layout if it is genuinely impossible.
+    echo "WARNING: TP=$MP x PP=$PP exceeds $GPUS_PER_NODE GPUs; running 1 worker"
+    EVAL_WORKERS=1
 fi
+echo "Eval workers: $EVAL_WORKERS x (TP=$MP PP=$PP) GPU(s)"
 COMMON_MODEL_ARGS="dtype=bfloat16"
 if [[ $BOS = true ]]; then
 	echo "Adding BOS token."
@@ -253,7 +263,17 @@ VLLM_MEMORY_FRACTION=0.75
 # export VLLM_DISABLE_CUSTOM_ALL_REDUCE=1
 
 if [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_thinking=False"
+    # enable_prefix_caching: the choices of a multiple-choice doc share the
+    # whole context, so its KV blocks are computed once and reused per choice.
+    # Ported from include-private's run_include_eval.sbatch. vLLM's V1 engine
+    # turns this on by default, so on the current container it should be a
+    # no-op that only pins the behaviour — NOT verified against this image's
+    # swiss-ai fork. Verify before trusting a cross-time comparison: re-run an
+    # already-evaluated checkpoint and diff the scores. Drop the flag if they
+    # move. The include-private max_model_len cap is deliberately NOT ported —
+    # the ladder's config already says 4096 (megatron_args.sh), and a lower
+    # cap would truncate prompts differently from every past result.
+    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_prefix_caching=True,enable_thinking=False"
 elif [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
     # `--dist-ckpt-strictness=log_unexpected` tells Megatron's distributed
     # checkpoint loader to log (instead of raise) on missing keys like
@@ -290,7 +310,7 @@ COMMON_EVAL_ARGS=(
     # --cache_requests true - causes problems for long model names due to file name length limits
     --gen_kwargs max_gen_toks=$MAX_NEW_TOKENS
 )
-# --tasks and --output_path are appended per task by scripts/_run_per_task.sh.
+# --tasks and --output_path are appended by scripts/_run_per_task.sh.
 
 if [[ -n "${HARNESS_LIMIT}" ]]; then
     COMMON_EVAL_ARGS+=(--limit $HARNESS_LIMIT)
@@ -377,18 +397,23 @@ echo \"Patched \$LM_EVAL_DIR/models/megatron_lm.py: load_checkpoint strict=True 
   INSTALL_CMD="$INSTALL_CMD && pip install megatron-core --no-deps && $PATCH_HARNESS_CMD && export MEGATRON_PATH=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM"
 fi
 
+# scripts/eval_worker.py takes the lm_eval CLI's flags and runs the tasks one
+# simple_evaluate() call at a time against a model it loads once, writing each
+# task's results as it finishes; only the launcher in front of it differs per
+# backend (vLLM manages its own GPUs, hf/megatron span the node via
+# accelerate/torchrun with a single worker).
 if [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-    CMD_BASE="lm_eval --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="python scripts/eval_worker.py --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 elif [[ $LM_EVAL_BACKEND == "hf" ]]; then
-    CMD_BASE="accelerate launch --num_processes=4  -m lm_eval --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="accelerate launch --num_processes=4 scripts/eval_worker.py --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 elif [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
-    CMD_BASE="torchrun --nproc-per-node=4 -m lm_eval --model megatron_lm --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="torchrun --nproc-per-node=4 scripts/eval_worker.py --model megatron_lm --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 fi
 # scripts/_run_per_task.sh reads CMD_BASE/TASKS/HARNESS_EVAL_DIR from env.
 export CMD_BASE TASKS HARNESS_EVAL_DIR NAME WANDB_ENTITY WANDB_PROJECT LOGS_ROOT
 
 echo "Installation command: $INSTALL_CMD"
-echo "Per-task command base: $CMD_BASE"
+echo "Worker command base: $CMD_BASE"
 
 # Start timing for lines 182-189
 echo "Starting timing for installation and evaluation..."
@@ -403,8 +428,39 @@ REPO_DIR="$PWD"
 # container, so re-export the ones _run_per_task.sh needs by host-side
 # interpolation into the bash -lc heredoc. Single-quote the values so
 # arbitrary characters in TASKS/CMD_BASE survive intact.
-INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' BATCH_TASKS='${BATCH_TASKS:-0}' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE'"
+INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' EVAL_WORKERS='$EVAL_WORKERS' GPUS_PER_WORKER='$(( MP * PP ))' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE'"
 
+# job.json — what only the job knows, beside the harness's own files: Slurm
+# ids, node, walltime, backend/model/parallelism, repo commit, container, and
+# at the end the outcome. Written before the eval (a walltime kill still
+# leaves the header) and rewritten after it with the counts.
+job_json() {
+    command -v python3 >/dev/null || return 0
+    python3 - "$HARNESS_EVAL_DIR/job.json" "$@" <<'PY'
+import json, sys
+d = {}
+for kv in sys.argv[2:]:
+    k, v = kv.split("=", 1)
+    d[k] = int(v) if v.lstrip("-").isdigit() else v
+json.dump(d, open(sys.argv[1], "w"), indent=1, sort_keys=True)
+PY
+}
+count_lines() { if [ -f "$1" ]; then grep -c . "$1" || true; else echo 0; fi; }
+CONTAINER_TOML=./containers/env_vllm.toml
+[[ $LM_EVAL_BACKEND == "hf" ]] && CONTAINER_TOML=./containers/env.toml
+JOB_FACTS=(job_id="$SLURM_JOBID" job_name="${SLURM_JOB_NAME:-}" node="$SLURM_JOB_NODELIST"
+    partition="${SLURM_JOB_PARTITION:-}"
+    time_limit="$(squeue -h -j "$SLURM_JOBID" -o %l 2>/dev/null || true)"
+    name="$NAME" model="$MODEL" tokenizer="$TOKENIZER" backend="$LM_EVAL_BACKEND"
+    tp="$MP" pp="$PP" workers="$EVAL_WORKERS"
+    tasks_requested="$(tr ',' '\n' <<<"$TASKS" | grep -c . || true)"
+    repo_commit="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || true)"
+    container="$(sed -n 's/^image = "\(.*\)"/\1/p' "$CONTAINER_TOML" || true)"
+    eval_dir="$HARNESS_EVAL_DIR" started="$(date -Iseconds)")
+mkdir -p "$HARNESS_EVAL_DIR"
+job_json "${JOB_FACTS[@]}" status=started
+
+EVAL_RC=0
 if [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
   srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml bash -lc "
     cd '$REPO_DIR'
@@ -416,9 +472,10 @@ if [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
     # Make torch CUDA libs discoverable for vllm._C import
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 elif [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-  # vLLM needs to run with a single process that manages all GPUs, so we run the install and eval in the same command to avoid issues with environment persistence across srun calls
+  # The install and the eval run in the same srun so the pip-installed harness
+  # is there for the workers; _run_per_task.sh starts one worker per GPU group.
   srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml bash -lc "
     cd '$REPO_DIR'
     $INNER_EXPORTS
@@ -429,7 +486,7 @@ elif [[ $LM_EVAL_BACKEND == "vllm" ]]; then
     # Make torch CUDA libs discoverable for vllm._C import
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 else
   # hf (via accelerate)
   srun -n 1 --mpi=pmix -ul --environment=./containers/env.toml --export=ALL,HF_TOKEN,HF_HOME,WANDB_API_KEY bash -lc "
@@ -444,13 +501,23 @@ else
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
 
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 fi
 
 # End timing and calculate duration
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 echo "Time taken for installation and evaluation: ${DURATION} seconds ($(($DURATION / 60)) minutes and $(($DURATION % 60)) seconds)"
+
+job_json "${JOB_FACTS[@]}" status=$([[ $EVAL_RC -eq 0 ]] && echo finished || echo failed) \
+    exit_code="$EVAL_RC" finished="$(date -Iseconds)" duration_s="$DURATION" \
+    tasks_done="$(find "$HARNESS_EVAL_DIR/per_task" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')" \
+    tasks_failed="$(count_lines "$HARNESS_EVAL_DIR/failed_tasks.log")" \
+    tasks_skipped="$(count_lines "$HARNESS_EVAL_DIR/skipped_tasks.log")" \
+    tasks_unfinished="$(find "$HARNESS_EVAL_DIR/inflight" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+# A failed eval step means NO task finished (_run_per_task.sh exits 1 only
+# then); whatever did land is on disk and the next submission picks it up.
+(( EVAL_RC == 0 )) || die "Evaluation step failed (rc=$EVAL_RC) — nothing to upload; see $HARNESS_EVAL_DIR"
 
 # Goodbye.
 echo "Evaluation finished"
