@@ -125,12 +125,22 @@ for inner in "$HARNESS_EVAL_DIR"/*/; do
 done
 shopt -u nullglob
 
-# Only claim markers are left when every claimed task was published; a
-# directory that remains is the partial output of a task that was running
-# when the job died — kept as evidence.
+# Any claimed task still sitting in inflight/ once every worker has exited was
+# NOT published and NOT logged as failed: its worker died without raising —
+# a CUDA abort, the OOM killer, a vLLM engine crash. Record it, or the watcher
+# sees a run that made progress, never counts a failure against that task, and
+# resubmits the checkpoint every pass forever (the 196-job pathology the
+# --max-attempts gate exists to stop). The directory stays as evidence.
+shopt -s nullglob
+for d in "$INFLIGHT_DIR"/*/; do
+    t=$(basename "$d")
+    grep -q "^$t	" "$FAILED_LOG" 2>/dev/null \
+        || printf '%s\tworker died without an exception (no results written)\n' "$t" >> "$FAILED_LOG"
+done
+shopt -u nullglob
 rm -f "$INFLIGHT_DIR"/*.claim
 rmdir "$INFLIGHT_DIR" 2>/dev/null \
-    || echo "inflight/ kept: partial output of $(ls -1 "$INFLIGHT_DIR" | wc -l | tr -d ' ') unfinished task(s)"
+    || echo "inflight/ kept: partial output of $(ls -1 "$INFLIGHT_DIR" | wc -l | tr -d ' ') task(s) whose worker died"
 
 if [[ -s "$FAILED_LOG" ]]; then
     echo "WARNING: $(wc -l < "$FAILED_LOG") task(s) failed (see $FAILED_LOG):"
