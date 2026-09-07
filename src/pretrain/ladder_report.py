@@ -1080,13 +1080,71 @@ CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr-ladder-report")
 HF_DATASET_REPO = "msnr-data/ladder-report"
 
 
-def publish(out_dir: Path, push_hf: bool) -> None:
-    """Copy the shared CSV to capstor, and optionally to a private HF dataset.
+GIT_DATA_BRANCH = "data/ladder-report"
 
-    The CSV is gitignored: it is 1-2 MB that changes on every regeneration, so
-    committing it would churn the history for a file that is pure output.
-    capstor is the durable home (iopsstor is swept ~30 days) and the Hub is
-    what a collaborator without cluster access can actually reach.
+
+def _git_publish(files: list[Path], repo_root: Path) -> None:
+    """Push the report to an orphan branch, without touching the working tree.
+
+    Plumbing (hash-object / mktree / commit-tree / update-ref) rather than
+    `git checkout --orphan`: this runs on the cluster while someone usually
+    has edits in flight, and a checkout would move their HEAD and index.
+
+    The branch is deliberately NEVER merged into main, and that is the whole
+    point of it. main keeps the .gitignore rule and stays free of a 13 MB
+    artifact regenerated several times a week, while the branch gives a
+    collaborator with neither cluster nor Hub access a plain `git fetch` of
+    the same three files.
+
+    Plain git, not LFS. Successive snapshots delta-compress to roughly 1 MB
+    each (measured on four real revisions: 29 MB raw, 4 MB packed), whereas
+    LFS stores every version whole — ~13x more — and its quota cannot be
+    reclaimed afterwards without rewriting history and a support ticket.
+    """
+    import subprocess
+
+    def git(*args: str, stdin: str | None = None) -> str:
+        return subprocess.run(("git", "-C", str(repo_root)) + args, check=True,
+                              text=True, input=stdin,
+                              capture_output=True).stdout.strip()
+
+    # hash-object ignores .gitignore, which is what lets the ignored CSVs be
+    # written to the object store without ever being added to the index.
+    # resolve() because `git -C` runs from the repo root: a relative --out-dir
+    # would otherwise be looked up there and not found.
+    entries = "".join(
+        f"100644 blob {git('hash-object', '-w', '--', str(f.resolve()))}\t{f.name}\n"
+        for f in files)
+    tree = git("mktree", stdin=entries)
+
+    ref = f"refs/heads/{GIT_DATA_BRANCH}"
+    try:
+        # Append to whatever the remote already holds, so a re-push stays a
+        # fast-forward instead of forking the branch.
+        git("fetch", "--quiet", "origin", f"{GIT_DATA_BRANCH}:{ref}")
+    except subprocess.CalledProcessError:
+        pass                       # first publish: the branch does not exist
+    try:
+        parent = ["-p", git("rev-parse", "--verify", "--quiet", ref)]
+    except subprocess.CalledProcessError:
+        parent = []                # orphan root commit
+
+    commit = git("commit-tree", tree, *parent, "-m",
+                 f"ladder report snapshot ({git('rev-parse', '--short', 'HEAD')})")
+    git("update-ref", ref, commit)
+    git("push", "--quiet", "origin", f"{ref}:{ref}")
+    print(f"[publish] pushed {GIT_DATA_BRANCH} ({commit[:8]})", file=sys.stderr)
+
+
+def publish(out_dir: Path, push_hf: bool, push_git: bool = False) -> None:
+    """Copy the shared CSV to capstor, and optionally to the Hub and to git.
+
+    The CSV is gitignored: it is ~13 MB across the two tables and changes on
+    every regeneration, so committing it to main would churn the history of
+    every clone for a file that is pure output. capstor is the durable home
+    (iopsstor is swept ~30 days), the Hub is what a collaborator without
+    cluster access can reach, and `--push-git` adds an orphan branch for one
+    who has neither (see `_git_publish`).
     """
     import shutil
 
@@ -1104,22 +1162,30 @@ def publish(out_dir: Path, push_hf: bool) -> None:
         shutil.copy2(src, CAPSTOR_REPORTS / src.name)
         print(f"[publish] {CAPSTOR_REPORTS / src.name}", file=sys.stderr)
 
-    if not push_hf:
-        return
-    try:
-        from huggingface_hub import HfApi
-        api = HfApi()
-        api.create_repo(HF_DATASET_REPO, repo_type="dataset", private=True,
-                        exist_ok=True)
-        for src in files:
-            api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
-                            repo_id=HF_DATASET_REPO, repo_type="dataset")
-        print(f"[publish] https://huggingface.co/datasets/{HF_DATASET_REPO}",
-              file=sys.stderr)
-    except Exception as e:
-        # Compute nodes have no internet and the token may be absent; a failed
-        # upload must not lose the figures that already succeeded.
-        print(f"[publish] HF upload skipped: {e}", file=sys.stderr)
+    if push_hf:
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi()
+            api.create_repo(HF_DATASET_REPO, repo_type="dataset", private=True,
+                            exist_ok=True)
+            for src in files:
+                api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
+                                repo_id=HF_DATASET_REPO, repo_type="dataset")
+            print(f"[publish] https://huggingface.co/datasets/{HF_DATASET_REPO}",
+                  file=sys.stderr)
+        except Exception as e:
+            # Compute nodes have no internet and the token may be absent; a
+            # failed upload must not lose the figures that already succeeded.
+            print(f"[publish] HF upload skipped: {e}", file=sys.stderr)
+
+    if push_git:
+        try:
+            _git_publish(files, SCRIPT_DIR.parent.parent)
+        except Exception as e:
+            # Same reasoning as the Hub push, plus: no SSH agent on a compute
+            # node. Never let a failed push lose the copies that succeeded.
+            err = getattr(e, "stderr", "") or e
+            print(f"[publish] git push skipped: {err}", file=sys.stderr)
 
 
 def main() -> None:
@@ -1134,8 +1200,12 @@ def main() -> None:
     p.add_argument("--out-dir", type=Path, default=SCRIPT_DIR)
     p.add_argument("--publish", action="store_true",
                    help="copy the shared CSV to capstor (add --push-hf for "
-                        "the private HF dataset repo)")
+                        "the private HF dataset repo, --push-git for the "
+                        f"{GIT_DATA_BRANCH} orphan branch)")
     p.add_argument("--push-hf", action="store_true")
+    p.add_argument("--push-git", action="store_true",
+                   help=f"also push the report to the {GIT_DATA_BRANCH} "
+                        "orphan branch (never merge it into main)")
     args = p.parse_args()
     want = args.check or ["loss", "scaling", "benchmarks", "bpb"]
 
@@ -1155,8 +1225,8 @@ def main() -> None:
 
     if args.plot:
         write_artifacts(curves, tgts, args.out_dir, args.tol)
-    if args.publish or args.push_hf:
-        publish(args.out_dir, args.push_hf)
+    if args.publish or args.push_hf or args.push_git:
+        publish(args.out_dir, args.push_hf, args.push_git)
 
     print("\n== summary ==")
     if not problems:

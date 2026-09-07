@@ -37,6 +37,12 @@ python3.11 pretrain_progress.py                    # per-cell status lines
 python3.11 pretrain_progress.py --plot             # + the plan table and heatmaps
 python3.11 ladder_report.py                         # loss/scaling/benchmarks/BPB checks
 python3.11 ladder_report.py --plot                  # + figures and ladder_report.md
+
+# Regenerate AND publish all three copies (capstor, HF, the data/ladder-report
+# orphan branch). Needs the snr env: git-lfs lives there, and this repo's
+# pre-push hook aborts every push when it is missing from PATH.
+conda activate snr
+python ladder_report.py --plot --publish --push-hf --push-git
 ```
 
 **On Azure** (one-time setup in [`azure/README.md`](azure/README.md) §1–§4,
