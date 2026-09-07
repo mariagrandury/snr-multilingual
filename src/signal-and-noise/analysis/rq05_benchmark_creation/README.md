@@ -9,7 +9,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every at-chance 4-option *translated knowledge* MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is computed, leaving **7 families** that clear the gate — most of them 2-option.
+- **Among survivors, no single design feature is individually significant.** Family-level Kruskal–Wallis on option count is **H = 1.93, p = 0.16**, and on task format cannot be tested — only one task format survives the gate. Too little variation is left among the survivors (mostly 2-option) to resolve either.
+- **Curation method explains nothing** — family-level Kruskal–Wallis on curation is **H = 3.00, p = 0.08**. Once the gate fixes the answer space, how a benchmark was built does not predict its reliability.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -66,7 +68,31 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool predictivity`.
+
+**Per-family SNR ranking** — median `snr_mpd_1B` over each family's per-language tasks, above-random survivors only:
+
+| family | median SNR | n | format | n_opts |
+|---|---|---|---|---|
+| `arc` | 1.03 | 2 | mcq_question_only | 4 |
+| `multiblimp` | 0.71 | 6 | minimal_pair | 2 |
+| `hellaswag` | 0.65 | 6 | completion | 4 |
+| `xcopa` | 0.63 | 1 | completion | 2 |
+| `xstorycloze` | 0.61 | 4 | completion | 2 |
+| `xnli` | 0.37 | 5 | classification | 3 |
+| `xwinograd` | 0.32 | 5 | completion | 2 |
+
+![Per-family SNR ranking](pretraining/predictivity/snr_per_family_ranked.png)
+
+**Significance of each design axis** — family-level Kruskal–Wallis over the survivors (high-option families already removed by the gate):
+
+| axis | H | p |
+|---|---|---|
+| n_options | 1.93 | 0.16 |
+| format |  |  |
+| data source | 0.15 | 0.70 |
+| curation method | 3.00 | 0.08 |
+| reading passage | 0.00 | 1.00 |
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

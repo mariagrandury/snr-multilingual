@@ -162,8 +162,13 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
     """One DA-size slide per language: benchmark rows × every computable size
     pair, cell = decision accuracy (bold ≥ _DA_BOLD), most-predictive first."""
     size = long[long["da_def"] == "DA-size"]
+    # The ladder resolves 96 languages; a slide each would be a 96-slide appendix.
+    # The deck reports the project's headline group (configs/languages.json
+    # `groups.main`); the CSVs and the README keep every language.
+    report_langs = [l for l in load_languages()["groups"]["main"]
+                    if l in set(size["language"])]
     slides = []
-    for lang in sorted(size["language"].unique(), key=lambda l: (l != "en", l)):
+    for lang in sorted(report_langs, key=lambda l: (l != "en", l)):
         sub = size[size["language"] == lang]
         comps = sorted(sub["comparison"].unique(), key=_comparison_key)
         wide = sub.pivot_table(index=["benchmark", "task"], columns="comparison",
@@ -206,14 +211,15 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
     if pool != CANONICAL_POOL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
+    ar, lang_slides = above_random_slides(stage), _da_language_slides(long)
     block = "\n".join([
         _BEGIN,
         "",
         "---\nlayout: section\n---\n\n"
         "# Appendix — Signal & Predictability across Sizes\n",
         "",
-        *above_random_slides(stage),
-        *_da_language_slides(long),
+        *ar,
+        *lang_slides,
         _END,
     ]) + "\n"
 
@@ -224,9 +230,8 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
     else:
         text = text.rstrip() + "\n\n" + block
     _SLIDES.write_text(text)
-    n_lang = long.loc[long.da_def == "DA-size", "language"].nunique()
     print(f"Wrote appendix slides → {_SLIDES} "
-          f"(2 above-random + {n_lang} per-language DA)")
+          f"({len(ar)} above-random + {len(lang_slides)} per-language DA)")
 
 
 def main():

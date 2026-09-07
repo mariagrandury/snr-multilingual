@@ -10,7 +10,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+- **The benchmarks that separate the language settings most: `belebele`, `arc`, `include_base_44`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
+- **Above-random gate.** Of **324 benchmarks, 85 clear chance at ≥1 size** and 82 at 1B (239 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -82,7 +83,27 @@ mechanisms make that work:
 <!-- BEGIN auto:results (run_apertus.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00_acc_vs_flops/above_random.py --only predictivity` and `python analysis/rq00_acc_vs_flops/run_apertus.py --pool predictivity`.
+
+**Top benchmarks by Signal across language settings** (full ranking in `pretraining/predictivity/acc_vs_flops_signal.csv`):
+
+| task | family | lang | Signal |
+|---|---|---|---|
+| `belebele_zho_Hans` | belebele | zh | 0.198 |
+| `include_base_44_german` | include_base_44 | de | 0.162 |
+| `belebele_jpn_Jpan` | belebele | ja | 0.146 |
+| `arc_fr` | arc | fr | 0.123 |
+| `include_base_44_french` | include_base_44 | fr | 0.123 |
+
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/belebele.png)
+
+**Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
+
+| options | chance | above ≥1 size | above @1B |
+|---|---|---|---|
+| 2 | 0.50 | 50 / 129 | 48 / 129 |
+| 3 | 0.33 | 12 / 15 | 11 / 15 |
+| 4 | 0.25 | 23 / 180 | 23 / 180 |
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact

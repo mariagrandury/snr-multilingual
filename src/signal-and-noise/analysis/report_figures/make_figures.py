@@ -419,7 +419,10 @@ def fig4_subset_sweep() -> None:
     summary = pd.read_csv(SMOOTH_SUBTASKS / POOL_STAGE / POOL_SNR / "summary.csv")
     summary = summary[summary["case"] == "case2_global_mmlu_full_subjects"]
 
-    sizes = [s for s in SIZES if s in set(sweep["size"])]
+    # A size with no above-random subject at all carries an all-NaN row; it has
+    # nothing to plot, and NaN != NaN would fail the cross-check below.
+    sizes = [s for s in SIZES if s in set(sweep["size"])
+             and np.isfinite(sweep.loc[sweep["size"] == s, "full_set_snr"]).any()]
     colors = dict(zip(sizes, plt.get_cmap("tab10").colors[:len(sizes)]))
 
     fig, ax = plt.subplots(figsize=(4.2, 2.8))

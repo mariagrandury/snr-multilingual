@@ -476,8 +476,16 @@ def generate_readme(stage: str, pool: str) -> None:
         row = gs.loc[view]
         return fmt(row["H"]), fmt(row["p"])
 
+    def clause(view: str, label: str) -> str:
+        """`on <label> H = …, p = …`, or why the test has no value: with one
+        surviving group Kruskal-Wallis is undefined and fmt() renders empty."""
+        row = gs.loc[view]
+        if row["n_groups"] < 2:
+            return (f"on {label} cannot be tested — only one {label} survives "
+                    f"the gate")
+        return f"on {label} is **H = {fmt(row['H'])}, p = {fmt(row['p'])}**"
+
     nopt_H, nopt_p = hp("family/n_options")
-    fmt_H, fmt_p = hp("family/format")
     cur_H, cur_p = hp("family/curation")
 
     highlight = "\n".join([
@@ -488,9 +496,9 @@ def generate_readme(stage: str, pool: str) -> None:
         "of them 2-option.",
         "- **Among survivors, no single design feature is individually "
         f"significant.** Family-level Kruskal–Wallis on option count is "
-        f"**H = {nopt_H}, p = {nopt_p}** and on task format **H = {fmt_H}, "
-        f"p = {fmt_p}** — too little variation left (mostly 2-option) to resolve "
-        "them.",
+        f"**H = {nopt_H}, p = {nopt_p}**, and {clause('family/format', 'task format')}. "
+        "Too little variation is left among the survivors (mostly 2-option) to "
+        "resolve either.",
         f"- **Curation method explains nothing** — family-level Kruskal–Wallis "
         f"on curation is **H = {cur_H}, p = {cur_p}**. Once the gate fixes the "
         "answer space, how a benchmark was built does not predict its "
@@ -535,7 +543,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
 
 def generate_slides(stage: str, pool: str) -> None:
-    """Rewrite the RQ4 auto results slide (canonical pool only)."""
+    """Rewrite the RQ5 auto results slide (canonical pool only)."""
     if pool != CANONICAL_POOL:
         return
     per_family = pd.read_csv(HERE / stage / pool / "per_family_snr.csv").sort_values(
@@ -544,14 +552,14 @@ def generate_slides(stage: str, pool: str) -> None:
             for _, r in per_family.iterrows()]
     slide = (
         "---\n"
-        "title: RQ4 — Benchmark Creation\n"
+        "title: RQ5 — Benchmark design\n"
         "subtitle: \"Results (auto) — per-family SNR, above-random survivors\"\n"
         "---\n\n"
         f"{md_table(['family', 'median SNR', 'n_opts', 'format'], rows)}\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq4-results", slide, "benchmark_creation/analyze.py")
-    print(f"Wrote RQ4 results slide → {SLIDES}")
+    print(f"Wrote RQ5 results slide → {SLIDES}")
 
 
 def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:

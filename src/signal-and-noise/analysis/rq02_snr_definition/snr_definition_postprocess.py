@@ -31,7 +31,8 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools, load_snr_params  # noqa: E402
+from evals.scripts.utils.configs import (  # noqa: E402
+    load_languages, load_pools, load_snr_params)
 from analysis.rq02_snr_definition.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, assign_language, benchmark_family,
     buckets_in_df, da_ckpt_pairs, da_size_pairs, list_variants,
@@ -351,10 +352,10 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
     plt.close(fig)
 
 
-# --- auto-generated README + slides (RQ1) ----------------------------------
+# --- auto-generated README + slides (RQ2) ----------------------------------
 # These rewrite the marker-delimited "Highlighted result" / "Results" blocks of
-# results/snr_definition/README.md and the RQ1 results slide. They fire only for
-# the canonical pool (so the per-tier pipeline loop writes the docs once, from
+# the rq02 README and the RQ2 results slide. They fire only for the canonical
+# pool (so the per-tier pipeline loop writes the docs once, from
 # the comprehensive pool, after the pure-pool CSVs already exist for the
 # statistical-power table). RQ / setup / TODO prose lives outside the markers.
 
@@ -505,17 +506,21 @@ def generate_readme(stage: str, pool: str) -> None:
 
 
 def generate_slides(stage: str, pool: str) -> None:
-    """Rewrite the RQ1 auto results slide in the deck (canonical pool only)."""
+    """Rewrite the RQ2 auto results slide in the deck (canonical pool only)."""
     if pool != CANONICAL_POOL:
         return
     anchor = _anchor_rank1(stage, pool)
     g_variant = _read_tv(stage, pool).iloc[0]["variant"]
     ref = anchor["size"].iloc[0]
+    # One slide, so the deck shows the headline language group; the README table
+    # and top_benchmarks_per_language.csv carry all 96.
+    main = load_languages()["groups"]["main"]
+    shown = anchor[anchor["language"].isin(main)]
     rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_mean)]
-            for _, r in anchor.iterrows()]
+            for _, r in shown.iterrows()]
     slide = (
         "---\n"
-        "title: RQ1 — SNR Definition\n"
+        "title: RQ2 — SNR definition\n"
         f"subtitle: \"Results (auto) — most reliable benchmark per language "
         f"(`{g_variant}` @ {ref})\"\n"
         "---\n\n"
@@ -524,7 +529,7 @@ def generate_slides(stage: str, pool: str) -> None:
     )
     replace_block(SLIDES, "rq1-results", slide,
                   "snr_definition_postprocess.py")
-    print(f"Wrote RQ1 results slide → {SLIDES}")
+    print(f"Wrote RQ2 results slide → {SLIDES}")
 
 
 # --- driver ----------------------------------------------------------------
@@ -587,7 +592,7 @@ def main(stage: str, pool: str, out_dir: Path):
     print(f"Wrote → {out_dir / 'top_benchmarks_per_language.png'}")
 
     # Auto-refresh the README "Highlighted result" / "Results" blocks and the
-    # RQ1 results slide (canonical pool only — no-op otherwise).
+    # RQ2 results slide (canonical pool only — no-op otherwise).
     generate_readme(stage, pool)
     generate_slides(stage, pool)
 

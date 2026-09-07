@@ -12,11 +12,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_seeds) -->
 ## Highlighted result
 
-_Not generated yet — the ladder report (`msnr-data/ladder-report`) was not
-reachable from the environment this README was written in. Run
-`bash run_all_predictivity.sh` (or
-`python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds`)
-to fill this block._
+- **Scaling-law error** — median |relative error| of the reference's per-language BPB predicted from the proxy ladder: L8 0.058, L50 0.046 (largest proxy ladder at that L).
+- **Seed noise vs detrended checkpoint noise** — median ratio 2.54 over 752 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.64; 42% of 408 cells above 2× (a distinct model for SNR, not a re-roll).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -68,7 +66,31 @@ per-language one).
 <!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
 
-_Not generated yet — see the highlight block above._
+Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds`.
+
+![Intervention DA grid](pretraining/predictivity_seeds/intervention_da.png)
+
+**Scaling-law error on trained-language BPB** (median |relative error|; columns: largest proxy rung in the fit):
+
+| L | 600M |
+|---|---|
+| L8 | 0.058 |
+| L50 | 0.046 |
+
+![Scaling-law error](pretraining/predictivity_seeds/scaling_law_error.png)
+
+**Intervention effect against noise** (median over cells):
+
+| population | effect / noise | median | n |
+|---|---|---|---|
+| benchmark | arch / seed | 0.87 | 4 |
+| benchmark | arch / ckpt | 4.72 | 156 |
+| benchmark | scheme / ckpt | 1.26 | 9 |
+| bpb | arch / seed | 1.65 | 404 |
+| bpb | arch / ckpt | 3.53 | 909 |
+| bpb | scheme / ckpt | 8.69 | 909 |
+
+![Effect vs noise](pretraining/predictivity_seeds/effect_vs_noise.png)
 <!-- END auto:results -->
 
 ## Caveats to carry into the paper

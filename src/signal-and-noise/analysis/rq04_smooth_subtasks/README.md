@@ -10,7 +10,10 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+- **`global_mmlu_full_id` 600M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.35 → 2.21** (**+1.86**) with `college_chemistry|conceptual_physics|sociology|high_school_mathematics`.
+- **`global_mmlu_full_uk` 350M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.15 → 1.95** (**+1.80**) with `international_law|medical_genetics|professional_law|humanities|… (+10)`.
+- **`global_mmlu_full_ro` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.21 → 1.94** (**+1.74**) with `moral_disputes`.
+- **Median gain by case** — global_mmlu_full_subjects 0.98; global_mmlu_full_per_language 0.89; per_benchmark 0.20 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -49,7 +52,26 @@ cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity`.
+
+**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
+
+| case | task | size | full → best SNR | +gain | best subset |
+|---|---|---|---|---|---|
+| global_mmlu_full_per_language | `global_mmlu_full_id` | 600M | 0.35 → 2.21 | +1.86 | `college_chemistry` \| `conceptual_physics` \| `sociology` \| `high_school_mathematics` |
+| global_mmlu_full_per_language | `global_mmlu_full_uk` | 350M | 0.15 → 1.95 | +1.80 | `international_law` \| `medical_genetics` \| `professional_law` \| `humanities` \| `… (+10)` |
+| global_mmlu_full_per_language | `global_mmlu_full_ro` | 175M | 0.21 → 1.94 | +1.74 | `moral_disputes` |
+| global_mmlu_full_per_language | `global_mmlu_full_ar` | 350M | 0.54 → 2.26 | +1.72 | `business_ethics` |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 350M | 0.25 → 1.95 | +1.70 | `global_facts` |
+| global_mmlu_full_per_language | `global_mmlu_full_en` | 1B | 0.03 → 1.64 | +1.61 | `human_sexuality` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 0.01 → 1.62 | +1.61 | `professional_accounting` |
+| global_mmlu_full_per_language | `global_mmlu_full_cs` | 600M | 0.18 → 1.77 | +1.59 | `professional_psychology` |
+| global_mmlu_full_per_language | `global_mmlu_full_nl` | 175M | 0.82 → 2.33 | +1.52 | `high_school_physics` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 600M | 0.55 → 2.01 | +1.46 | `computer_security` |
+| global_mmlu_full_per_language | `global_mmlu_full_nl` | 350M | 0.85 → 2.28 | +1.43 | `formal_logic` \| `business_ethics` \| `global_facts` \| `medical_genetics` \| `… (+2)` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 1B | 0.44 → 1.86 | +1.42 | `international_law` |
+
+![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

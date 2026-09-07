@@ -10,7 +10,9 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+- **Global-best SNR definition (`predictivity`): `iqr`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **-0.10** (DA-size), **0.20** (DA-ckpt), 0.05 overall. DA-ckpt is led by `mad`/`rel_mpsd`/`rel_mpd` (≈ 0.25; families: rel_spread, robust) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `bpb`** — the highest-SNR above-random benchmark in **89 of 96** languages (`iqr` SNR @ 1B). Weakest variants overall: `tukey`, `dispersion_shifted`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.70** (DA-ckpt), **0.01** (DA-size); family-level per-language agreement 4% / 0%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -36,7 +38,144 @@ seed, while English and the BPB tasks cover all four.
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq02_snr_definition/snr_definition_postprocess.py --pool predictivity`.
+
+**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages:
+
+| variant | DA-size r | DA-ckpt r | overall |
+|---|---|---|---|
+| `iqr` | -0.10 | 0.20 | 0.05 |
+| `quartile_deviation` | -0.10 | 0.14 | 0.02 |
+| `rel_mpsd` | -0.10 | 0.24 | 0.07 |
+| `mpsd` | -0.11 | 0.17 | 0.03 |
+| `rel_dispersion` | -0.11 | -0.05 | -0.08 |
+| `rel_std` | -0.12 | 0.05 | -0.03 |
+| `range` | -0.12 | -0.08 | -0.10 |
+| … |  |  |  |
+| `gini` | -0.35 | -0.03 | -0.19 |
+| `tukey` | -0.42 | -0.23 | -0.33 |
+
+![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
+
+**Statistical power by pool** — each pool's best DA-size variant:
+
+| pool | best variant (DA-size) | DA-size r | DA-ckpt r |
+|---|---|---|---|
+| `predictivity` (grid, seed 1904) | `iqr` | -0.10 | 0.20 |
+| `predictivity_seeds` (all seeds) | `iqr` | -0.07 | 0.16 |
+
+**Most reliable benchmark per language** — `iqr` SNR @ 1B over above-random tasks (DA-size is undefined at the reference size itself, so DA-ckpt@1B is shown):
+
+| lang | top benchmark | SNR | DA-ckpt@1B |
+|---|---|---|---|
+| af | `bpb_afr_Latn` | 3.06 | 1.00 |
+| am | `bpb_amh_Ethi` | 0.02 | 0.25 |
+| ar | `bpb_arb_Arab` | 15.13 | 1.00 |
+| as | `bpb_asm_Beng` | 6.52 | 1.00 |
+| az | `bpb_azj_Latn` | 22.89 | 1.00 |
+| be | `bpb_bel_Cyrl` | 1.49 | 1.00 |
+| bew | `bpb_bew_Latn` | 9.83 | 1.00 |
+| bg | `bpb_bul_Cyrl` | 21.03 | 1.00 |
+| bn | `bpb_ben_Beng` | 15.39 | 1.00 |
+| bo | `bpb_bod_Tibt` | 0.05 | 0.50 |
+| bs | `bpb_bos_Latn` | 21.46 | 1.00 |
+| ca | `bpb_cat_Latn` | 17.66 | 1.00 |
+| ckb | `bpb_ckb_Arab` | 3.36 | 1.00 |
+| cs | `bpb_ces_Latn` | 22.15 | 1.00 |
+| cy | `bpb_cym_Latn` | 0.07 | 0.75 |
+| da | `bpb_dan_Latn` | 20.32 | 1.00 |
+| de | `hellaswag_de` | 0.89 | 1.00 |
+| dv | `bpb_div_Thaa` | 2.54 | 1.00 |
+| el | `bpb_ell_Grek` | 16.52 | 1.00 |
+| en | `arc_challenge` | 2.58 | 1.00 |
+| eo | `bpb_epo_Latn` | 1.78 | 1.00 |
+| es | `hellaswag_es` | 0.99 | 1.00 |
+| et | `bpb_ekk_Latn` | 29.06 | 1.00 |
+| eu | `bpb_eus_Latn` | 1.44 | 0.75 |
+| fa | `bpb_fas_Arab` | 17.82 | 1.00 |
+| fi | `bpb_fin_Latn` | 21.83 | 1.00 |
+| fr | `xnli_fr` | 1.62 | 0.75 |
+| ga | `bpb_gle_Latn` | 0.01 | 1.00 |
+| gl | `bpb_glg_Latn` | 1.42 | 1.00 |
+| gmh | `bpb_gmh_Latn` | 1.15 | 1.00 |
+| gu | `bpb_guj_Gujr` | 0.08 | 1.00 |
+| he | `bpb_heb_Hebr` | 18.86 | 1.00 |
+| hi | `bpb_hin_Deva` | 12.84 | 1.00 |
+| hif | `bpb_hif_Latn` | 1.32 | 1.00 |
+| hr | `bpb_hrv_Latn` | 21.74 | 1.00 |
+| hu | `bpb_hun_Latn` | 27.18 | 1.00 |
+| hy | `bpb_hye_Armn` | 1.17 | 1.00 |
+| id | `bpb_ind_Latn` | 14.52 | 1.00 |
+| is | `bpb_isl_Latn` | 0.51 | 1.00 |
+| it | `hellaswag_it` | 0.80 | 1.00 |
+| ja | `bpb_jpn_Jpan` | 0.74 | 1.00 |
+| ka | `bpb_kat_Geor` | 8.91 | 1.00 |
+| kk | `bpb_kaz_Cyrl` | 16.69 | 1.00 |
+| km | `bpb_khm_Khmr` | 0.30 | 0.75 |
+| kmr | `bpb_kmr_Latn` | 1.14 | 1.00 |
+| kn | `bpb_kan_Knda` | 0.38 | 0.75 |
+| ko | `bpb_kor_Hang` | 13.38 | 1.00 |
+| ky | `bpb_kir_Cyrl` | 2.41 | 1.00 |
+| la | `bpb_lat_Latn` | 0.01 | 0.25 |
+| lb | `bpb_ltz_Latn` | 0.49 | 0.50 |
+| lo | `bpb_lao_Laoo` | 0.39 | 0.50 |
+| lt | `bpb_lit_Latn` | 28.55 | 1.00 |
+| lv | `bpb_lvs_Latn` | 23.19 | 1.00 |
+| mg | `bpb_plt_Latn` | 0.44 | 0.75 |
+| mk | `bpb_mkd_Cyrl` | 8.96 | 1.00 |
+| ml | `bpb_mal_Mlym` | 17.76 | 1.00 |
+| mn | `bpb_khk_Cyrl` | 0.30 | 0.25 |
+| mr | `bpb_mar_Deva` | 20.52 | 1.00 |
+| ms | `bpb_zsm_Latn` | 12.11 | 1.00 |
+| mt | `bpb_mlt_Latn` | 0.48 | 1.00 |
+| multi | `bpb_macro` | 10.53 | 1.00 |
+| my | `bpb_mya_Mymr` | 0.23 | 1.00 |
+| ne | `bpb_npi_Deva` | 13.81 | 1.00 |
+| nl | `bpb_nld_Latn` | 15.05 | 1.00 |
+| nn | `bpb_nno_Latn` | 19.09 | 1.00 |
+| no | `bpb_nob_Latn` | 19.89 | 1.00 |
+| nrm | `bpb_nrm_Latn` | 4.47 | 1.00 |
+| or | `bpb_ory_Orya` | 0.35 | 0.75 |
+| pa | `bpb_pan_Guru` | 1.14 | 0.50 |
+| pl | `bpb_pol_Latn` | 18.62 | 1.00 |
+| ps | `bpb_pbt_Arab` | 0.64 | 1.00 |
+| pt | `bpb_por_Latn` | 10.95 | 1.00 |
+| ro | `bpb_ron_Latn` | 20.59 | 1.00 |
+| ru | `multiblimp_rus` | 1.50 | 0.75 |
+| sd | `bpb_snd_Arab` | 3.50 | 0.75 |
+| si | `bpb_sin_Sinh` | 0.14 | 0.75 |
+| sk | `bpb_slk_Latn` | 26.75 | 1.00 |
+| sl | `bpb_slv_Latn` | 19.11 | 1.00 |
+| so | `bpb_som_Latn` | 0.52 | 1.00 |
+| sq | `bpb_als_Latn` | 30.19 | 1.00 |
+| sr | `bpb_srp_Cyrl` | 23.19 | 1.00 |
+| sv | `bpb_swe_Latn` | 17.93 | 1.00 |
+| sw | `bpb_swh_Latn` | 0.43 | 0.75 |
+| ta | `bpb_tam_Taml` | 11.59 | 1.00 |
+| te | `bpb_tel_Telu` | 0.17 | 1.00 |
+| tg | `bpb_tgk_Cyrl` | 0.39 | 0.00 |
+| th | `bpb_tha_Thai` | 15.13 | 1.00 |
+| tl | `bpb_fil_Latn` | 0.01 | 0.75 |
+| tr | `bpb_tur_Latn` | 22.12 | 1.00 |
+| tt | `bpb_tat_Cyrl` | 0.47 | 1.00 |
+| ug | `bpb_uig_Arab` | 0.24 | 1.00 |
+| uk | `bpb_ukr_Cyrl` | 12.44 | 1.00 |
+| ur | `bpb_urd_Arab` | 12.54 | 1.00 |
+| uz | `bpb_uzn_Latn` | 1.84 | 1.00 |
+| vi | `bpb_vie_Latn` | 15.46 | 1.00 |
+| zh | `xstorycloze_zh` | 0.80 | 0.50 |
+
+![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
+
+**Seed generalization** — holdout `predictivity_seeds_train` → `predictivity_seeds_test` (the ×3 cells only). A variant ranking whose Spearman ρ is low here is noise-dominated; recommend the family that transfers, not the argmax:
+
+| metric | DA-size | DA-ckpt |
+|---|---|---|
+| Spearman ρ on global variant ranking | 0.01 | 0.70 |
+| Pearson r between splits (all cells) | 0.44 | 0.73 |
+| Exact-variant agreement (per lang) | 0% | 2% |
+| Family-level agreement (per lang) | 0% | 4% |
+| Retention of train-best r on test | 8% | 61% |
 <!-- END auto:results -->
 
 ## Preliminary findings (ladder snapshot, 2026-09-01)

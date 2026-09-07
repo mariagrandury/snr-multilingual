@@ -609,7 +609,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
 
 def generate_slides(stage: str, pool: str) -> None:
-    """Rewrite the RQ3 auto results slide (canonical pool only)."""
+    """Rewrite the RQ4 auto results slide (canonical pool only)."""
     if pool != CANONICAL_POOL:
         return
     summary = pd.read_csv(OUT_ROOT / stage / pool / "summary.csv")
@@ -618,14 +618,14 @@ def generate_slides(stage: str, pool: str) -> None:
             for _, r in summary.head(8).iterrows()]
     slide = (
         "---\n"
-        "title: RQ3 — Subsampling\n"
+        "title: RQ4 — Subtask subsets\n"
         "subtitle: \"Results (auto) — top subset gains (SNR: full → best subset)\"\n"
         "---\n\n"
         f"{md_table(['case', 'task', 'size', 'full → best SNR', '+gain'], rows)}\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq3-results", slide, "smooth_subtasks.py")
-    print(f"Wrote RQ3 results slide → {SLIDES}")
+    print(f"Wrote RQ4 results slide → {SLIDES}")
 
 
 def build_pool(pool: str) -> pd.DataFrame:
