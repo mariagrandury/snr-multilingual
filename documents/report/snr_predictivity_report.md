@@ -4,7 +4,7 @@
 
 ## Abstract
 
-Training multilingual language models requires repeated design decisions — data mixtures, architectures, tokenizers — that are made on small proxy models and evaluated on benchmark suites whose reliability degrades outside English. We extend the Signal-and-Noise framework of Heineman et al. (2025) to a controlled multilingual ladder: six model sizes (90M–1.7B non-embedding parameters), seven language settings (1 to 100 languages at a fixed 50 % English share), two intervention axes (model depth and language-set scheme) and seed replicates, each rung trained to five times its Chinchilla-optimal budget and scored on per-language bits-per-byte (BPB) on a fixed validation set and on up to 463 harness tasks. This report records the analysis pipeline built for that ladder, the research questions it answers, and the findings already established on the ≤ 600M rungs. The analysis reads one published artefact, the per-checkpoint ladder report, so every number regenerates from the same file; the results blocks of the per-question reports fill in as the reference rungs land.
+Training multilingual language models requires repeated design decisions — data mixtures, architectures, tokenizers — that are made on small proxy models and evaluated on benchmark suites whose reliability degrades outside English. We extend the Signal-and-Noise framework of Heineman et al. (2025) to a controlled multilingual ladder: six model sizes (90M–1.7B non-embedding parameters), seven language settings (1 to 100 languages at a fixed 50 % English share), two intervention axes (model depth and language-set scheme) and seed replicates, each rung trained to five times its Chinchilla-optimal budget and scored on per-language bits-per-byte (BPB) on a fixed validation set and on up to 463 harness tasks. This report records the analysis pipeline built for that ladder, the research questions it answers, and the findings established so far: the ≤ 600M rungs in full, plus the first two 1B cells from the published ladder report. The analysis reads one published artefact, the per-checkpoint ladder report, so every number regenerates from the same file; the results blocks of the per-question reports fill in as the reference rungs land.
 
 ## 1. Introduction
 
@@ -110,7 +110,7 @@ The 36-sweep pipeline read a per-(model, checkpoint, task) parquet built from th
 
 ## 6. Preliminary findings
 
-All numbers in this section come from the cluster snapshots of 1–3 September 2026 (`plan/status-09-01.md`, `src/pretrain/ladder_report.md`), i.e. from the ≤ 600M rungs; the pipeline of Section 5 regenerates and extends them once the ladder report is published.
+Numbers in this section come from two places, both named per claim: the cluster snapshots of 1–3 September 2026 (`plan/status-09-01.md`, `src/pretrain/ladder_report.md`), which cover the ≤ 600M rungs, and the ladder report published to `msnr-data/ladder-report`, read on 7 September 2026. The published report adds the first two 1B cells and is otherwise identical to the committed snapshot, transformation table included. The per-question results of Section 5 need the per-checkpoint table of that same artefact and are still to be run.
 
 ![Scaling fit per language setting](../../src/pretrain/ladder_report_scaling.png)
 
@@ -118,7 +118,7 @@ All numbers in this section come from the cluster snapshots of 1–3 September 2
 
 **The 90M rung is not on the ladder.** Nine of ten 90M runs reach their best loss at 15–19 % of training and degrade to +1.2…+1.9 nats above it; held-out BPB rises with training (English 1.68 → 1.95, Russian 1.17 → 1.45 between 10 % and 100 % of the run). The cause is an optimizer timescale fixed in steps (AdEMAMix β<sub>3</sub>, 10,000 steps) on runs whose length spans 18× across the ladder: the 90M run is shorter than the optimizer's memory. A control with β<sub>3</sub> tied to the run length removes the divergence (final loss 5.762 → 2.778 at 90M-L2) and even beats the uncorrected 175M, which suggests the 175M rung is depressed too. The decision is not to retrain: the loader drops diverged runs and the ladder is reported with and without the rung.
 
-**Above 90M, scaling behaves.** Final loss falls monotonically with size at every L (175M → 350M → 600M: 3.16 → 2.73 → 2.59 at L1; 3.16 → 2.71 → 2.53 at L50), the per-L power-law residuals of the healthy rungs sit within ±0.08 nats, and macro BPB over the 100 validation languages falls with size and with L (600M: 1.68 at L1, 1.60 at L15, 1.45 at L30, 1.30 at L50).
+**Above 90M, scaling behaves, and it now extends to 1B.** Final loss falls monotonically with size at every L (175M → 350M → 600M: 3.16 → 2.73 → 2.59 at L1; 3.16 → 2.71 → 2.53 at L50), the per-L power-law residuals of the healthy rungs sit within ±0.08 nats, and macro BPB over the 100 validation languages falls with size and with L (600M: 1.68 at L1, 1.60 at L15, 1.45 at L30, 1.30 at L50). The published report adds the 1B rung at two language settings and it stays on the line: at L8 the chain is 3.102 → 2.659 → 2.432 → 2.346 with residual +0.06, at L50 3.156 → 2.708 → 2.532 → 2.402 with residual +0.04. Macro BPB keeps falling with size at both (L8: 2.060 → 1.744 → 1.643 → 1.586; L50: 1.601 → 1.371 → 1.302 → 1.209), and L50 keeps its macro-BPB advantage over L8 at every size, though the margin shrinks with scale: 0.459 bits/byte at 175M, then 0.373, 0.341 and 0.377 at 350M, 600M and 1B. More languages still pays at the top of the ladder built so far, by less than it did at the bottom.
 
 **Adding languages is free for English and cheap for the rest.** English BPB is identical between L2 and L50 at every size (0.947 vs 0.946 at 350M) while L50 beats L2 on 81–89 of the 99 non-English languages by ~0.4–0.5 bits/byte, against a checkpoint noise of ~0.002. Per-language spread at 350M-L50 runs from ≈ 0.55 (Tamil, Thai, Bengali, Georgian, Malayalam) to ≈ 2.7 (Somali, Maltese, Kurmanji, Uzbek, Welsh).
 
@@ -135,7 +135,7 @@ All numbers in this section come from the cluster snapshots of 1–3 September 2
 ## 7. Threats to validity
 
 - **Noise window under WSD.** The late-checkpoint noise is measured over the last five saved checkpoints, i.e. the final 25 % of a 20-checkpoint run, inside the decay phase where the loss is still falling; the raw std therefore contains trend. RQ6 reports a detrended std and, on the ×3 cells, the seed std; the shared checkpoint grid keeps the window the same fraction of training at every size (the 1B row is read on the k/20 subset).
-- **Reference rungs.** Until 1.7B trains, 1B is the reference at every L; 1.7B is absent at L ∈ {15, 50} by design. Every RQ6 cell names its reference.
+- **Reference rungs.** The published report has 1B at L ∈ {8, 50} only, so those two settings compare against 1B and every other setting still compares against 600M. Mixing the two in one table would compare decisions taken against different references; every RQ6 cell therefore names its own `reference_size`. 1.7B is absent at L ∈ {15, 50} by design.
 - **Sampling temperature.** At T = 1 the FineWeb-2 half of L100 gives 66 of 99 languages under 10M tokens at 90M and the smallest language 0.8M tokens even at 1B; a per-language SNR near zero there is a property of the mixture, not of the benchmark. The plan's recommendation is T = 2 sweep-wide (which repeats no data); until then per-language claims at L100 are restricted to languages above a token floor.
 - **Coverage.** Every trained language has at least one benchmark family, but 16 have exactly one and for five of them it is a grammaticality probe (MultiBLiMP); INCLUDE v2 in multiple-choice form is the best single addition.
 - **Few points per fit.** Per-language scaling fits use three to five rungs; they are reported as prediction error at a stated ladder top, never as scaling laws.
@@ -144,7 +144,7 @@ All numbers in this section come from the cluster snapshots of 1–3 September 2
 ## 8. Plan
 
 1. Publish the ladder report (`ladder_report.py --plot --publish --push-hf`) as the ≤ 600M evals land; run `run_all_predictivity.sh`; commit the regenerated READMEs and figures (git-lfs).
-2. Decide T (2 vs 1 plus a token floor), rebuild the L100 mixture, resume the stalled 1B cells and start 1.7B; the watchers now pick up the adopted 1B cells.
+2. Decide T (2 vs 1 plus a token floor), rebuild the L100 mixture, finish the 1B row (L8 and L50 have landed) and start 1.7B; the watchers now pick up the adopted 1B cells.
 3. Test whether 5×C is the right budget at L ≥ 30 with 12 WSD cooldown branches (350M/600M × L ∈ {1, 30, 100} × f ∈ {0.25, 0.5}), after the cheap check that the multilingual loss bend is not driven by data-starved tail languages.
 4. Wire INCLUDE v2 (multiple-choice form) and switch or drop LAMBADA-MT; derive option counts for the newly wired tasks.
 5. Write the paper on the ≤ 600M ladder while 1B/1.7B serve as the extrapolation check.
