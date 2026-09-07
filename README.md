@@ -11,7 +11,7 @@ Two generations of models have gone through it:
 | grid | models | languages | status |
 |---|---|---|---|
 | **36-model sweep** (2026-04…06) | 4 sizes (175M–1B) × 3 FineWeb-Edu/FineWeb2 mixtures × 3 seeds, 86 tasks, plus a06 / HF references to 70B | 12 | complete; results kept as history in the RQ READMEs |
-| **Predictivity ladder** (current) | 6 sizes (90M–1.7B non-embedding) × 7 language settings (L = 1 … 100) × deep/shallow × data scheme A/B × seeds, each size at 5× Chinchilla, per-language BPB + 463 harness tasks | 100 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
+| **Predictivity ladder** (current) | 6 sizes (90M–1.7B non-embedding) × 7 language settings (L = 1 … 100) × deep/shallow × data scheme A/B × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 100 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
 
 ## The question, in the ladder's terms
 
@@ -86,8 +86,9 @@ Computed on the ≤ 600M ladder before this pipeline existed
 - **The language-count axis gives distinct models** (across-L range at 600M ≈
   4.4× checkpoint noise, on BPB one to two orders of magnitude); the depth
   intervention's benchmark effect is of the order of the seed effect
-  (|Δ mean benchmark| ≈ 0.013 for both in the transformation table), which
-  is why rq06 puts every decision against the seed noise.
+  (`ladder_report.md`'s transformation table: arch |Δ mean benchmark|
+  −0.005…+0.003 against seed −0.014…−0.012), which is why rq06 puts every
+  decision against the seed noise.
 - **Decision accuracy from the recipe ranking**: HellaSwag is the most
   decision-reliable family (mean 0.72, 0.91 deciding from 350M);
   chance-level knowledge benchmarks are coin flips.

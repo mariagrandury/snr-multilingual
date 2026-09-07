@@ -18,12 +18,13 @@ dir `acc_vs_flops/<stage>/<pool>/` (pool-named, matching every other RQ):
 Each report writes:
 - `above_random_scores.csv` — row per benchmark, column per size bucket, value =
   mean score across all models in that bucket.
-- `above_random_mask.csv`   — same shape, value = 1 (above random) / 0 (random)
-  / blank (no models in that bucket).
+- `above_random_mask.csv`   — same shape, value = 1 (above random) / 0 (at
+  chance) / blank (no models in that bucket, or no chance level for the task).
 
-The mask is the gate: SNR and all downstream analyses only keep `(benchmark,
-size)` cells with mask == 1 (`run_apertus_snr_variants.py` imports
-`scores_and_mask` and applies it at the custom `SIZES`). This is a
+The mask is the gate: SNR and all downstream analyses drop the `(benchmark,
+size)` cells whose mask is 0 (`run_apertus_snr_variants.py` imports
+`scores_and_mask` and NaN-s those cells). A blank is not a drop — per-language
+BPB and the generative tasks have no chance level. This is a
 *foundational* step — it depends ONLY on raw eval scores and the intrinsic
 per-family answer-option counts (`N_OPTIONS` below, `random_baseline =
 1 / n_options`); it never reads any RQ output, so every RQ depends on this
@@ -49,7 +50,7 @@ if str(_SRC) not in sys.path:
 import pandas as pd  # noqa: E402
 
 from evals.scripts.utils.configs import (  # noqa: E402
-    bucket_order, load_pools, load_snr_params, load_tasks, size_bucket)
+    bucket_order, load_pools, load_tasks, size_bucket)
 from analysis.utils import (  # noqa: E402
     assign_language, benchmark_family)
 from analysis.utils import _is_parent_task  # noqa: E402
@@ -58,9 +59,6 @@ from analysis.paths import ACC_VS_FLOPS
 
 # A benchmark must beat chance by more than this to count as "above random".
 MARGIN = 0.05
-_SNR = load_snr_params()
-SIZES = _SNR["small_sizes"] + [_SNR["target_size"]]   # 90M, 175M, 350M, 600M, 1B
-
 # Answer-option count per task. configs/tasks.json carries `n_options` where
 # it was derived from the evaluated samples (derive_task_options.py); the
 # per-family table below fills in the rest — intrinsic benchmark metadata (the

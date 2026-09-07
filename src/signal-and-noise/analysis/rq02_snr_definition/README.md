@@ -10,7 +10,7 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -36,7 +36,7 @@ seed, while English and the BPB tasks cover all four.
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:results -->
 
 ## Preliminary findings (ladder snapshot, 2026-09-01)

@@ -17,12 +17,16 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-python3}
+# Steps that exited non-zero. Without this every stage failed silently and
+# the script still printed ALL DONE, so a README could keep stale numbers.
+FAILED=()
 # `predictivity` is the plan grid (seed 1904): the headline pool. The
 # all-seeds pool feeds the seed-noise estimates (rq06); the two holdout pools are
 # the ×3 cells split by seed.
 POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predictivity)
 
-run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18; }
+run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
+       [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*"); }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
 
 echo "############################## PASS A — gate, DA, SNR compute ##############################"
@@ -71,4 +75,9 @@ run $PY analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq00_acc_vs_flops/run_apertus.py --pool predictivity
 run $PY analysis/report_figures/make_figures.py
 
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "############################## FAILED ##############################"
+  printf "  %s\n" "${FAILED[@]}"
+  exit 1
+fi
 echo "############################## ALL DONE ##############################"

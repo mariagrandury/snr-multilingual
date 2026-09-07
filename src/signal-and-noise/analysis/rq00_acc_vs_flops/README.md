@@ -10,7 +10,7 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -82,7 +82,7 @@ mechanisms make that work:
 <!-- BEGIN auto:results (run_apertus.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact

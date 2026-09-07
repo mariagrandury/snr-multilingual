@@ -17,7 +17,7 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -110,7 +110,7 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not published when this README was written. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

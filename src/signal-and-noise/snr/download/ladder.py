@@ -108,9 +108,12 @@ def load_predictivity_eval_results(
     """
     wide = load_ladder_wide(path)
     wide = wide.dropna(subset=["cell"])
-    for c in ("run__diverged", "run__complete", "run__target_iters"):
+    # A report predating one of these columns is treated as complete and
+    # healthy: filling NaN instead would silently drop every row below.
+    for c, absent in (("run__diverged", 0), ("run__complete", 1),
+                      ("run__target_iters", float("nan"))):
         if c not in wide.columns:
-            wide[c] = float("nan")
+            wide[c] = absent
     families = {
         "benchmark": [c for c in wide.columns if c.startswith("bench__")],
         "bpb": [c for c in wide.columns if c.startswith("bpb__")]

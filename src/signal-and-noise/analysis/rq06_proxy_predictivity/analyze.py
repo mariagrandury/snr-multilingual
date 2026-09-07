@@ -71,7 +71,8 @@ BASELINE = {"arch": ("scheme", "A"), "scheme": ("arch", "deep")}
 
 def _size_order(sizes) -> list[str]:
     order = bucket_order()
-    return sorted(set(sizes), key=lambda s: order.index(s) if s in order else 99)
+    return sorted(set(sizes),
+                  key=lambda s: (order.index(s) if s in order else 99, s))
 
 
 def _finals(df: pd.DataFrame) -> pd.DataFrame:

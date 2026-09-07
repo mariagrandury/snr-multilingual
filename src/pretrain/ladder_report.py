@@ -294,8 +294,9 @@ def bpb_results() -> dict[str, dict[int, dict]]:
 
 
 def _fit(points):
-    """(alpha, intercept) of log L = log A - alpha log N, fitted on `points`
-    (n, loss) — or None if it is underdetermined."""
+    """(slope, intercept) of log L = log A + slope log N, fitted on `points`
+    (n, loss) — or None if it is underdetermined. The scaling exponent is
+    -slope: callers record `alpha = -slope`."""
     if len(points) < 2:
         return None
     xs = [math.log(n) for n, _ in points]

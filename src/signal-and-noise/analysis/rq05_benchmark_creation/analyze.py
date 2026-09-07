@@ -17,7 +17,8 @@ Writes (this dir):
   - group_stats.csv                per-group n, mean, median, kruskal H, p
 
 Q1's headline pick is `mpd` (mean pairwise distance, dispersion cluster);
-SNR signal here is `snr_mpd_1B`.
+SNR signal here is `snr_mpd_<reference size>` (snr_col(): the configured
+target size, or the largest bucket the CSV has while the big rungs train).
 """
 from __future__ import annotations
 
@@ -350,7 +351,7 @@ def _scatter_baseline(per_family: pd.DataFrame, out_path: Path) -> None:
             label=f"OLS log10(SNR) = {intercept:.2f} + {slope:.2f}·baseline\nPearson r = {r:.2f}, p = {p_lin:.3f}")
     ax.set_yscale("log")
     ax.set_xlabel("random baseline (1 / n_options)")
-    ax.set_ylabel("median snr_mpd_1B (log scale)")
+    ax.set_ylabel(f"median {SNR_COL} (log scale)")
     ax.set_title(f"SNR vs random baseline. Spearman ρ = {rho:.2f} (p={p_rho:.3f})")
     ax.grid(True, alpha=0.3)
     ax.legend(loc="lower right", fontsize=9)
@@ -388,7 +389,7 @@ def _scatter_length(
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(f"{x_col} (log scale)")
-    ax.set_ylabel("median snr_mpd_1B (log scale)")
+    ax.set_ylabel(f"median {SNR_COL} (log scale)")
     ax.set_title(f"{title}.  Spearman ρ = {rho:.2f} (p={p_rho:.3f})")
     ax.grid(True, alpha=0.3, which="both")
     ax.legend(loc="best", fontsize=9)
@@ -422,7 +423,7 @@ def _length_grid(per_family: pd.DataFrame, out_path: Path) -> None:
         ax.set_xlabel(label)
         ax.set_title(f"{col}\nρ = {rho:.2f} (p={p:.3f})")
         ax.grid(True, alpha=0.3, which="both")
-    axes[0].set_ylabel("median snr_mpd_1B (log scale)")
+    axes[0].set_ylabel(f"median {SNR_COL} (log scale)")
     fig.suptitle("Phase B: SNR vs length features (color = curation category)")
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -441,7 +442,7 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     ax.set_yticks(y)
     ax.set_yticklabels(df["family"])
     ax.set_xscale("log")
-    ax.set_xlabel("median snr_mpd_1B across the family's per-language tasks (log scale)")
+    ax.set_xlabel(f"median {SNR_COL} across the family's per-language tasks (log scale)")
     ax.set_title("Per-family SNR ranking (color = curation_category)")
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=col, ec="black", lw=0.6, label=cat)
@@ -517,10 +518,10 @@ def generate_readme(stage: str, pool: str) -> None:
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq05_benchmark_creation/analyze.py --pool {pool}`.",
-        "**Per-family SNR ranking** — median `snr_mpd_1B` over each family's "
+        f"**Per-family SNR ranking** — median `{SNR_COL}` over each family's "
         "per-language tasks, above-random survivors only:",
         t_rank,
-        f"![Per-family SNR ranking](pretraining/{pool}/snr_per_family_ranked.png)",
+        f"![Per-family SNR ranking]({stage}/{pool}/snr_per_family_ranked.png)",
         "**Significance of each design axis** — family-level Kruskal–Wallis "
         "over the survivors (high-option families already removed by the gate):",
         t_sig,

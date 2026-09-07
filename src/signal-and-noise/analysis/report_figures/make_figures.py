@@ -43,6 +43,7 @@ from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import (  # noqa: E402
     ACC_VS_FLOPS, DECISION_ACCURACY, PROXY_PREDICTIVITY, SMOOTH_SUBTASKS,
     SNR_DEFINITION)
+from analysis.rq01_decision_accuracy.compute_da import _frac_label  # noqa: E402
 from analysis.rq02_snr_definition.analyze_snr_variants import buckets_in_df  # noqa: E402
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, SMALL_SIZES, TARGET_SIZE, assign_language,
@@ -100,7 +101,7 @@ def _ref_cols(df: pd.DataFrame) -> tuple[str, str]:
     fraction is the last one before the WSD decay (CKPT_DA_EARLY_FRACS[-2])."""
     buckets = buckets_in_df(df)
     ref = TARGET_SIZE if TARGET_SIZE in buckets else buckets[-1]
-    frac = f"f{int(round(CKPT_DA_EARLY_FRACS[-2] * 100))}"
+    frac = _frac_label(CKPT_DA_EARLY_FRACS[-2])
     return f"snr_rel_mpd_{ref}", f"decision_acc_ckpt_{frac}_{ref}"
 
 FIG_DIR = Path(__file__).resolve().parent / "figures"
@@ -134,7 +135,7 @@ def fig1_gate() -> None:
                     continue
                 y = cd["primary_score"].rolling(3, center=True, min_periods=1).mean()
                 seg[(task, mix, size)] = (cd["compute"].to_numpy(), y.to_numpy())
-                if size == "1B":
+                if size == SIZES[-1]:
                     finals[task].append(y.iloc[-1])
 
     all_y = np.concatenate([y for _, y in seg.values()])

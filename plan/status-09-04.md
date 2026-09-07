@@ -25,9 +25,10 @@ happens to the ladder report once it is published.
 
 ## Blocked on
 
-- `msnr-data/ladder-report` is not on the Hub yet, so every README's results
-  block is a placeholder. Once `ladder_report.py --plot --publish --push-hf`
-  has run: `cd src/signal-and-noise && bash run_all_predictivity.sh` (or
+- `msnr-data/ladder-report` is published (public since 09-07) but was not
+  reachable from the environment this branch was built in, so every README's
+  results block is still a placeholder. To fill them:
+  `cd src/signal-and-noise && bash run_all_predictivity.sh` (or
   `SNR_LADDER_DIR=<capstor copy> bash run_all_predictivity.sh`), then commit
   the regenerated READMEs.
 - Seed noise needs the ×3 replicate cells (unstarted on 09-01); rq06's

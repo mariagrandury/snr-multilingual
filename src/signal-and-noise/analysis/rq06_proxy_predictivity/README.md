@@ -13,7 +13,7 @@
 ## Highlighted result
 
 _Not generated yet — the ladder report (`msnr-data/ladder-report`) was not
-published when this README was written. Run
+reachable from the environment this README was written in. Run
 `bash run_all_predictivity.sh` (or
 `python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds`)
 to fill this block._
