@@ -1,0 +1,486 @@
+RE-EVALUATE THE PRE-WORKER-POOL BACKLOG                          2026-09-08
+
+WHY
+  The 2026-09-04 worker pool changed scores. Measured on
+  lm-175M-L50-deep-seed1904-iter3416 — three full 329-task runs, 4776
+  accuracy metrics each:
+
+      same settings twice (the floor)       0.5 % of metrics move, max 0.0020
+      caching on vs off                     0.7 %,                 max 0.0080
+      old batched vs new worker + caching    3.5 %,                max 0.0200
+      old batched vs new worker, no caching  3.4 %,                max 0.0200
+
+  The shift is the WORKER POOL, not enable_prefix_caching: turning the flag
+  off does not close the gap (3.5 % vs 3.4 %). It is systematic and
+  time-correlated — every checkpoint evaluated before 2026-09-04 sits on a
+  slightly different scale from everything after. The SNR noise estimate is
+  taken over 5 late checkpoints, which is exactly where an early-vs-late
+  offset is read as noise. Re-run before the fit, not after.
+
+WHAT COUNTS AS STALE
+  An eval dir carries job.json iff the worker pool produced it. A task is
+  stale when its only result comes from a dir without one. `apertus-*` cells
+  are excluded: that sweep is finished and frozen.
+
+  This set only SHRINKS — every eval from 2026-09-04 on uses the worker pool,
+  so nothing new becomes stale. When the list below is empty, delete this file.
+
+COST
+  353 checkpoints, 29209 stale tasks.
+
+    cold start   353 jobs x 212 s     = 20.8 node-h   (one per checkpoint)
+    the tasks    29209 x 6.63 s       = 53.8 node-h
+                                      ~= 75 node-hours
+
+  6.63 s/task is the marginal cost measured on the only three FULL 329-task
+  worker runs (2303 / 2405 / 2468 s, cold start removed). Do NOT price this
+  off `eval_minutes()` (292 node-h — that is the walltime requested, not
+  burned) and do NOT apply the 0.05 actual/requested ratio seen on top-ups:
+  that ratio is an artefact of the 15-min OVERHEAD_MIN floor on small jobs
+  and understates a full re-run by ~5x.
+
+OPEN QUESTION — HOW TO RE-RUN  (decide this first)
+  The per-task gate skips anything with a result on disk, so resubmitting
+  into `msnr` evaluates NOTHING. Three options:
+
+    a) fresh WANDB_PROJECT (msnr-v2). Reversible, deletes nothing, and
+       progress is just `ls <logs>/msnr-v2 | wc -l` against 353. Cost: the
+       results tree splits and every reader needs repointing.
+    b) move the stale eval_*/ dirs aside. Needs an explicit decision — this
+       repo never relocates eval results without one.
+    c) add --force to scripts/_eval_status.py. Least disruptive long-term,
+       but the gate is what stops runaway resubmission, so tread carefully.
+
+  (a) is the recommended start.
+
+EXACT COMMANDS
+
+  cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+  conda activate snr
+
+  # 1. Validate on ONE checkpoint before committing to 353. A different
+  #    WANDB_PROJECT is a different eval_logs subtree, so the gate sees no
+  #    prior results and runs the full list.
+  cd src/evals
+  NAME=lm-175M-L50-deep-seed1904-iter3416
+  CKPT=/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L50-deep-seed1904/iter_0003416
+  TASKS="$(python3.11 -c "import sys;sys.path.insert(0,'../..');from src.evals.scripts.utils.configs import tasks_for_benchmarks;sys.path.insert(0,'../pretrain');from launch_trainings import cell_languages;import json;print(','.join(tasks_for_benchmarks(json.load(open('../../configs/tasks.json'))['groups']['auto'], cell_languages(50,'A'))))")"
+  [ "$(tr ',' '\n' <<<"$TASKS" | grep -c .)" -eq 329 ] || echo "WRONG TASK COUNT — stop"
+  LM_EVAL_BACKEND=vllm TOKENIZER=swiss-ai/Apertus-70B-2509 BOS=true \
+  APPLY_CHAT_TEMPLATE=false TP=1 PP=1 EVAL_WORKERS=4 \
+  WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=msnr-v2 TASKS="$TASKS" \
+  sbatch --job-name=eval-$NAME --account=infra01 --time=01:30:00 --export=ALL \
+    scripts/evaluate.sbatch $CKPT $NAME
+
+  # 2. Compare. Expect ~3.5 % of metrics to move, max ~0.02 — the numbers at
+  #    the top of this file. A much larger delta means something else changed.
+  python3.11 scripts/diff_scores.py $NAME msnr msnr-v2
+
+  # 3. The whole backlog: point the watcher at the new project by editing
+  #    wandb.project in configs/hf_wandb.json, then --dry-run and read the
+  #    submit count before dropping the flag.
+  cd ../pretrain && python3.11 auto_evals_cscs.py --dry-run
+
+  # 4. Regenerate the list below (it shrinks as the re-run drains).
+  python3.11 - <<'EOF'
+  import json, re, sys, collections
+  from pathlib import Path
+  sys.path.insert(0, "src/pretrain")
+  import auto_evals_cscs as A
+  L = Path(A.DEFAULT_LOGS_ROOT) / A.WANDB_ENTITY / A.PROJECT_NAME
+  rows = []
+  for nd in sorted(L.iterdir()):
+      h = nd / "harness"
+      if not nd.is_dir() or not h.is_dir() or not nd.name.startswith("lm-"):
+          continue
+      old = new = 0; ot, nt = set(), set()
+      for d in sorted(h.glob("eval_*")):
+          if not d.is_dir():
+              continue
+          tasks = {p.name for p in d.glob("per_task/*") if p.is_dir()}
+          for f in d.glob("results_*.json"):
+              try: r = json.loads(f.read_text())
+              except (OSError, json.JSONDecodeError): continue
+              sub = set().union(*[set(v) for v in (r.get("group_subtasks") or {}).values()]) \
+                    if r.get("group_subtasks") else set()
+              tasks |= set(r.get("results") or {}) - sub
+          if (d / "job.json").is_file(): new += 1; nt |= tasks
+          else:                          old += 1; ot |= tasks
+      if ot - nt:
+          m = re.match(r"lm-([0-9.]+[MB])-", nd.name)
+          rows.append((nd.name, m.group(1) if m else "?", len(ot - nt), old, new))
+  rows.sort(key=lambda r: (r[1], r[0]))
+  by = collections.Counter()
+  for r in rows: by[r[1]] += r[2]
+  print(f"{len(rows)} checkpoints, {sum(r[2] for r in rows)} stale tasks")
+  print("by size: " + "  ".join(f"{k} {v}" for k, v in sorted(by.items())))
+  print(f"\n{'checkpoint':<45}{'size':>6}{'stale':>7}{'old':>5}{'new':>5}")
+  for n, s, t, o, w in rows:
+      print(f"{n:<45}{s:>6}{t:>7}{o:>5}{w:>5}")
+  EOF
+
+TODO
+  [ ] pick the mechanism above
+  [ ] re-fit SAFETY / OVERHEAD_MIN — median actual/requested walltime is 0.05
+      over 103 completed jobs; over-requesting 20x suppresses backfill, which
+      is what costs you concurrent nodes
+  [ ] re-fit MIN_PER_TASK from worker jobs once ~5 have run a FULL task list
+      (resumed jobs get the cheap leftovers and bias it low — only three full
+      runs exist so far, all of the same checkpoint)
+  [ ] after any future pipeline change: measure the floor first, and compare
+      against it rather than against bit-identity
+
+checkpoint                                     size  stale  old  new
+lm-1.7B-L1-deep-seed1904-iter12150             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter16200             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter20250             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter24300             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter28350             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter32400             1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter4050              1.7B      9    1    0
+lm-1.7B-L1-deep-seed1904-iter8100              1.7B      9    1    0
+lm-1.7B-L30-deep-seed1904-iter12150            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter16200            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter20250            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter24300            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter28350            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter32400            1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter4050             1.7B    164    1    0
+lm-1.7B-L30-deep-seed1904-iter8100             1.7B    164    1    0
+lm-1.7B-L8-deep-seed1904-iter12150             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter16200             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter20250             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter24300             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter28350             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter32400             1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter4050              1.7B     60    1    0
+lm-1.7B-L8-deep-seed1904-iter8100              1.7B     60    1    0
+lm-175M-L1-deep-seed1904-iter1708              175M      9    3    0
+lm-175M-L1-deep-seed1904-iter2562              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter3416              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter4270              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter5124              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter5978              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter6832              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter7686              175M      9    2    0
+lm-175M-L1-deep-seed1904-iter854               175M      9    3    0
+lm-175M-L1-deep-seed1904-iter8540              175M      9    2    0
+lm-175M-L1-deep-seed313-iter1708               175M      9    2    1
+lm-175M-L1-deep-seed313-iter2562               175M      9    2    1
+lm-175M-L1-deep-seed313-iter3416               175M      9    2    1
+lm-175M-L1-deep-seed313-iter4270               175M      9    2    1
+lm-175M-L1-deep-seed313-iter5124               175M      9    2    1
+lm-175M-L1-deep-seed313-iter5978               175M      9    2    1
+lm-175M-L1-deep-seed313-iter6832               175M      9    2    1
+lm-175M-L1-deep-seed313-iter7686               175M      9    2    1
+lm-175M-L1-deep-seed313-iter854                175M      9    2    1
+lm-175M-L1-deep-seed313-iter8540               175M      9    2    1
+lm-175M-L1-deep-seed64-iter1708                175M      9    2    1
+lm-175M-L1-deep-seed64-iter2562                175M      9    2    1
+lm-175M-L1-deep-seed64-iter3416                175M      9    2    1
+lm-175M-L1-deep-seed64-iter4270                175M      9    2    1
+lm-175M-L1-deep-seed64-iter5124                175M      9    2    1
+lm-175M-L1-deep-seed64-iter5978                175M      9    2    1
+lm-175M-L1-deep-seed64-iter6832                175M      9    2    1
+lm-175M-L1-deep-seed64-iter7686                175M      9    2    1
+lm-175M-L1-deep-seed64-iter854                 175M      9    4    1
+lm-175M-L1-deep-seed64-iter8540                175M      9    2    1
+lm-175M-L15-deep-seed1904-iter1708             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter2562             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter3416             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter4270             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter5124             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter5978             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter6832             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter7686             175M    100    1    1
+lm-175M-L15-deep-seed1904-iter854              175M    100    1    1
+lm-175M-L15-deep-seed1904-iter8540             175M    100    1    1
+lm-175M-L2-deep-seed1904-iter1708              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter2562              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter3416              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter4270              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter5124              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter5978              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter6832              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter7686              175M     18    2    0
+lm-175M-L2-deep-seed1904-iter854               175M     18    2    0
+lm-175M-L2-deep-seed1904-iter8540              175M     18    2    0
+lm-175M-L2-shallow-seed1904-iter1668           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter2502           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter3336           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter4170           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter5004           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter5838           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter6672           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter7506           175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter834            175M     18    1    0
+lm-175M-L2-shallow-seed1904-iter8340           175M     18    1    0
+lm-175M-L30-deep-seed1904-iter1708             175M    164    1    1
+lm-175M-L30-deep-seed1904-iter2562             175M    164    1    1
+lm-175M-L30-deep-seed1904-iter3416             175M    164    1    1
+lm-175M-L30-deep-seed1904-iter4270             175M    164    1    1
+lm-175M-L30-deep-seed1904-iter5124             175M    164    1    1
+lm-175M-L30-deep-seed1904-iter5978             175M    164    1    0
+lm-175M-L30-deep-seed1904-iter6832             175M    164    1    0
+lm-175M-L30-deep-seed1904-iter7686             175M    164    1    0
+lm-175M-L30-deep-seed1904-iter854              175M    164    1    1
+lm-175M-L30-deep-seed1904-iter8540             175M    164    1    0
+lm-175M-L50-deep-seed1904-iter1708             175M    219   11    0
+lm-175M-L50-deep-seed1904-iter2562             175M    403   10    0
+lm-175M-L50-deep-seed1904-iter3416             175M    329    9    0
+lm-175M-L50-deep-seed1904-iter4270             175M    329    8    0
+lm-175M-L50-deep-seed1904-iter5124             175M    329    8    0
+lm-175M-L50-deep-seed1904-iter5978             175M    329    8    0
+lm-175M-L50-deep-seed1904-iter6832             175M    329    7    0
+lm-175M-L50-deep-seed1904-iter7686             175M    329    7    0
+lm-175M-L50-deep-seed1904-iter854              175M    219   11    0
+lm-175M-L50-deep-seed1904-iter8540             175M    329    7    0
+lm-175M-L8-deep-seed1904-iter1708              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter2562              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter3416              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter4270              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter5124              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter5978              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter6832              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter7686              175M     60    1    1
+lm-175M-L8-deep-seed1904-iter854               175M     60    1    1
+lm-175M-L8-deep-seed1904-iter8540              175M     60    1    1
+lm-1B-L50-deep-seed1904-iter13716                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter18288                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter22860                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter27432                1B    219    1    0
+lm-1B-L50-deep-seed1904-iter32004                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter36576                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter41148                1B    219    2    0
+lm-1B-L50-deep-seed1904-iter4572                 1B    219    2    1
+lm-1B-L50-deep-seed1904-iter45720                1B    219    1    0
+lm-1B-L50-deep-seed1904-iter9144                 1B    219    2    0
+lm-1B-L8-deep-seed1904-iter13716                 1B     60    1    0
+lm-1B-L8-deep-seed1904-iter18288                 1B     60    1    0
+lm-1B-L8-deep-seed1904-iter22860                 1B     60    3    0
+lm-1B-L8-deep-seed1904-iter27432                 1B     60    2    0
+lm-1B-L8-deep-seed1904-iter32004                 1B     60    1    0
+lm-1B-L8-deep-seed1904-iter36576                 1B     60    3    0
+lm-1B-L8-deep-seed1904-iter41148                 1B     60    2    0
+lm-1B-L8-deep-seed1904-iter4572                  1B     60    1    0
+lm-1B-L8-deep-seed1904-iter45720                 1B     60    1    0
+lm-1B-L8-deep-seed1904-iter9144                  1B     60    3    0
+lm-350M-L1-deep-seed1904-iter11662             350M      9    1    0
+lm-350M-L1-deep-seed1904-iter13328             350M      9    1    0
+lm-350M-L1-deep-seed1904-iter14994             350M      9    1    0
+lm-350M-L1-deep-seed1904-iter1666              350M      9    2    0
+lm-350M-L1-deep-seed1904-iter16660             350M      9    1    0
+lm-350M-L1-deep-seed1904-iter3332              350M      9    2    0
+lm-350M-L1-deep-seed1904-iter4998              350M      9    2    0
+lm-350M-L1-deep-seed1904-iter6664              350M      9    2    0
+lm-350M-L1-deep-seed1904-iter8330              350M      9    2    0
+lm-350M-L1-deep-seed1904-iter9996              350M      9    1    0
+lm-350M-L15-deep-seed1904-iter11662            350M    100    1    0
+lm-350M-L15-deep-seed1904-iter13328            350M    100    2    0
+lm-350M-L15-deep-seed1904-iter14994            350M    100    1    0
+lm-350M-L15-deep-seed1904-iter1666             350M    100    2    0
+lm-350M-L15-deep-seed1904-iter16660            350M    100    1    0
+lm-350M-L15-deep-seed1904-iter3332             350M    100    1    0
+lm-350M-L15-deep-seed1904-iter4998             350M    100    1    0
+lm-350M-L15-deep-seed1904-iter6664             350M    100    1    0
+lm-350M-L15-deep-seed1904-iter8330             350M    100    2    0
+lm-350M-L15-deep-seed1904-iter9996             350M    100    1    0
+lm-350M-L2-deep-seed1904-iter11662             350M     18    1    1
+lm-350M-L2-deep-seed1904-iter13328             350M     18    1    1
+lm-350M-L2-deep-seed1904-iter14994             350M     18    1    1
+lm-350M-L2-deep-seed1904-iter1666              350M     18    1    1
+lm-350M-L2-deep-seed1904-iter16660             350M     18    1    1
+lm-350M-L2-deep-seed1904-iter3332              350M     18    1    1
+lm-350M-L2-deep-seed1904-iter4998              350M     18    1    1
+lm-350M-L2-deep-seed1904-iter6664              350M     18    1    1
+lm-350M-L2-deep-seed1904-iter8330              350M     18    1    1
+lm-350M-L2-deep-seed1904-iter9996              350M     18    1    1
+lm-350M-L30-deep-seed1904-iter11662            350M    164    1    0
+lm-350M-L30-deep-seed1904-iter13328            350M    164    1    0
+lm-350M-L30-deep-seed1904-iter14994            350M    164    1    0
+lm-350M-L30-deep-seed1904-iter1666             350M    164    1    0
+lm-350M-L30-deep-seed1904-iter16660            350M    164    1    0
+lm-350M-L30-deep-seed1904-iter3332             350M    164    1    0
+lm-350M-L30-deep-seed1904-iter4998             350M    164    1    0
+lm-350M-L30-deep-seed1904-iter6664             350M    164    1    0
+lm-350M-L30-deep-seed1904-iter8330             350M    164    1    0
+lm-350M-L30-deep-seed1904-iter9996             350M    164    1    0
+lm-350M-L50-deep-seed1904-iter11662            350M    219    1    0
+lm-350M-L50-deep-seed1904-iter13328            350M    219    1    0
+lm-350M-L50-deep-seed1904-iter14994            350M    219    1    0
+lm-350M-L50-deep-seed1904-iter1666             350M    219    1    1
+lm-350M-L50-deep-seed1904-iter16660            350M    219    1    0
+lm-350M-L50-deep-seed1904-iter3332             350M    219    1    0
+lm-350M-L50-deep-seed1904-iter4998             350M    219    1    0
+lm-350M-L50-deep-seed1904-iter6664             350M    219    1    0
+lm-350M-L50-deep-seed1904-iter8330             350M    219    1    0
+lm-350M-L50-deep-seed1904-iter9996             350M    219    1    0
+lm-350M-L8-deep-seed1904-iter11662             350M     60    1    1
+lm-350M-L8-deep-seed1904-iter13328             350M     60    1    1
+lm-350M-L8-deep-seed1904-iter14994             350M     60    1    1
+lm-350M-L8-deep-seed1904-iter1666              350M     60    1    1
+lm-350M-L8-deep-seed1904-iter16660             350M     60    1    1
+lm-350M-L8-deep-seed1904-iter3332              350M     60    1    1
+lm-350M-L8-deep-seed1904-iter4998              350M     60    1    1
+lm-350M-L8-deep-seed1904-iter6664              350M     60    1    1
+lm-350M-L8-deep-seed1904-iter8330              350M     60    1    1
+lm-350M-L8-deep-seed1904-iter9996              350M     60    1    1
+lm-600M-L1-deep-seed1904-iter11520             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter14400             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter17280             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter20160             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter23040             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter25920             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter2880              600M      9    1    1
+lm-600M-L1-deep-seed1904-iter28800             600M      9    1    1
+lm-600M-L1-deep-seed1904-iter5760              600M      9    1    1
+lm-600M-L1-deep-seed1904-iter8640              600M      9    1    1
+lm-600M-L1-deep-seed313-iter11520              600M      9    2    1
+lm-600M-L1-deep-seed313-iter14400              600M      9    2    1
+lm-600M-L1-deep-seed313-iter17280              600M      9    2    1
+lm-600M-L1-deep-seed313-iter20160              600M      9    2    1
+lm-600M-L1-deep-seed313-iter23040              600M      9    2    1
+lm-600M-L1-deep-seed313-iter25920              600M      9    2    1
+lm-600M-L1-deep-seed313-iter2880               600M      9    2    1
+lm-600M-L1-deep-seed313-iter28800              600M      9    1    1
+lm-600M-L1-deep-seed313-iter5760               600M      9    2    1
+lm-600M-L1-deep-seed313-iter8640               600M      9    2    1
+lm-600M-L1-deep-seed64-iter11520               600M      9    1    1
+lm-600M-L1-deep-seed64-iter14400               600M      9    1    1
+lm-600M-L1-deep-seed64-iter17280               600M      9    1    1
+lm-600M-L1-deep-seed64-iter23040               600M      9    1    1
+lm-600M-L1-deep-seed64-iter25920               600M      9    1    1
+lm-600M-L1-deep-seed64-iter2880                600M      9    1    1
+lm-600M-L1-deep-seed64-iter28800               600M      9    1    1
+lm-600M-L1-deep-seed64-iter5760                600M      9    1    1
+lm-600M-L1-deep-seed64-iter8640                600M      9    1    1
+lm-600M-L15-deep-seed1904-iter11520            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter14400            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter17280            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter20160            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter23040            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter25920            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter2880             600M    100    1    0
+lm-600M-L15-deep-seed1904-iter28800            600M    100    1    0
+lm-600M-L15-deep-seed1904-iter5760             600M    100    1    0
+lm-600M-L15-deep-seed1904-iter8640             600M    100    1    0
+lm-600M-L2-deep-seed1904-iter11520             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter14400             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter17280             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter20160             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter23040             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter25920             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter2880              600M     18    1    0
+lm-600M-L2-deep-seed1904-iter28800             600M     18    1    0
+lm-600M-L2-deep-seed1904-iter5760              600M     18    1    0
+lm-600M-L2-deep-seed1904-iter8640              600M     18    1    0
+lm-600M-L30-deep-seed1904-iter11520            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter14400            600M    164    1    4
+lm-600M-L30-deep-seed1904-iter17280            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter20160            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter23040            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter25920            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter2880             600M    164    1    0
+lm-600M-L30-deep-seed1904-iter28800            600M    164    1    0
+lm-600M-L30-deep-seed1904-iter5760             600M    164    1    0
+lm-600M-L30-deep-seed1904-iter8640             600M    164    1    0
+lm-600M-L50-deep-seed1904-iter11520            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter14400            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter17280            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter20160            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter23040            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter25920            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter2880             600M    219    1    1
+lm-600M-L50-deep-seed1904-iter28800            600M    219    1    0
+lm-600M-L50-deep-seed1904-iter5760             600M    219    1    0
+lm-600M-L50-deep-seed1904-iter8640             600M    219    1    0
+lm-600M-L8-deep-seed1904-iter11520             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter14400             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter17280             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter20160             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter23040             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter25920             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter2880              600M     60    1    0
+lm-600M-L8-deep-seed1904-iter28800             600M     60    1    0
+lm-600M-L8-deep-seed1904-iter5760              600M     60    1    0
+lm-600M-L8-deep-seed1904-iter8640              600M     60    1    0
+lm-90M-L1-deep-seed1904-iter1350                90M      9    3    0
+lm-90M-L1-deep-seed1904-iter1800                90M      9    3    0
+lm-90M-L1-deep-seed1904-iter2250                90M      9    3    0
+lm-90M-L1-deep-seed1904-iter2700                90M      9    3    0
+lm-90M-L1-deep-seed1904-iter3150                90M      9    2    0
+lm-90M-L1-deep-seed1904-iter3600                90M      9    2    0
+lm-90M-L1-deep-seed1904-iter4050                90M      9    2    0
+lm-90M-L1-deep-seed1904-iter450                 90M      9    3    0
+lm-90M-L1-deep-seed1904-iter4500                90M      9    2    0
+lm-90M-L1-deep-seed1904-iter900                 90M      9    3    0
+lm-90M-L1-shallow-seed1904-iter1278             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter1704             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter2130             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter2556             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter2982             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter3408             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter3834             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter426              90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter4260             90M      9    1    0
+lm-90M-L1-shallow-seed1904-iter852              90M      9    1    0
+lm-90M-L15-deep-seed1904-iter1350               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter1800               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter2250               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter2700               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter3150               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter3600               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter4050               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter450                90M    100    1    0
+lm-90M-L15-deep-seed1904-iter4500               90M    100    1    0
+lm-90M-L15-deep-seed1904-iter900                90M    100    1    0
+lm-90M-L2-deep-seed1904-iter1350                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter1800                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter2250                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter2700                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter3150                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter3600                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter4050                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter450                 90M     18    2    0
+lm-90M-L2-deep-seed1904-iter4500                90M     18    2    0
+lm-90M-L2-deep-seed1904-iter900                 90M     18    2    0
+lm-90M-L2-shallow-seed1904-iter1278             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter1704             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter2130             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter2556             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter2982             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter3408             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter3834             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter426              90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter4260             90M     18    1    0
+lm-90M-L2-shallow-seed1904-iter852              90M     18    1    0
+lm-90M-L30-deep-seed1904-iter1350               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter1800               90M    164    2    0
+lm-90M-L30-deep-seed1904-iter2250               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter2700               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter3150               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter3600               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter4050               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter450                90M    164    2    0
+lm-90M-L30-deep-seed1904-iter4500               90M    164    1    0
+lm-90M-L30-deep-seed1904-iter900                90M    164    2    0
+lm-90M-L50-deep-seed1904-iter1350               90M    219   17    0
+lm-90M-L50-deep-seed1904-iter1800               90M    219   17    0
+lm-90M-L50-deep-seed1904-iter2250               90M    219   16    0
+lm-90M-L50-deep-seed1904-iter2700               90M    219   16    0
+lm-90M-L50-deep-seed1904-iter3150               90M    219   17    0
+lm-90M-L50-deep-seed1904-iter3600               90M    219   16    0
+lm-90M-L50-deep-seed1904-iter4050               90M    219   14    0
+lm-90M-L50-deep-seed1904-iter450                90M    219   17    0
+lm-90M-L50-deep-seed1904-iter4500               90M    219   14    0
+lm-90M-L50-deep-seed1904-iter900                90M    219   17    0
+lm-90M-L8-deep-seed1904-iter1350                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter1800                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter2250                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter2700                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter3150                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter3600                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter4050                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter450                 90M     60    1    1
+lm-90M-L8-deep-seed1904-iter4500                90M     60    1    0
+lm-90M-L8-deep-seed1904-iter900                 90M     60    1    0

@@ -160,7 +160,12 @@ wants a subset.
 
 If a task fails, `eval_worker.py` records it in `failed_tasks.log` with the
 reason and moves on (bug 13); the watcher holds a task back after
-`--max-attempts` such failures in a row.
+`--max-attempts` such failures in a row. A *partial* hold heals itself — the
+next run that progresses without failing a held task ends its streak — but a
+checkpoint whose remaining tasks are **all** held leaves `pending` entirely,
+so no job is ever submitted for it again and nothing can reset it. After you
+fix a root cause, `auto_evals_cscs.py --retry-held` gives every held task one
+more chance (first pass only, even under `--watch`).
 
 ---
 

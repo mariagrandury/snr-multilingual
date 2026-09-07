@@ -409,7 +409,16 @@ nothing duplicates.
   ```bash
   python3.11 auto_evals_cscs.py --dry-run       # preview one pass
   python3.11 auto_evals_cscs.py --watch 600     # tmux: a pass every 10 min
+  python3.11 auto_evals_cscs.py --retry-held    # after fixing a root cause
   ```
+
+  `--retry-held` exists because the failure gate has no other way out. A task
+  that fails `--max-attempts` runs in a row is held back, and if *every*
+  remaining task of a checkpoint is held, the checkpoint leaves `pending`
+  altogether — so no job is submitted for it again and the streak can never
+  reset, even once the cause is fixed. Run it once after dropping a broken
+  task from the group, rebuilding the harness wheel, or repairing a dataset;
+  it frees the held tasks for one pass only.
 
   Every `launch_trainings.py cscs` run **starts this watcher in the
   background** for the arch it submits (a pass every 30 min, log under

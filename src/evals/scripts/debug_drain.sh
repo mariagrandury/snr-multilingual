@@ -28,7 +28,9 @@
 # resubmitted, against hours of queue wait on `normal`.
 #
 # It does NOT submit new jobs — it only MOVES already-pending jobs, so there's
-# no risk of duplicates. Stops when nothing pending is left.
+# no risk of duplicates. Stops when nothing pending is left — and only then: a
+# squeue that fails is not an empty queue, though the two looked identical
+# until 2026-09-07 (see drain_once).
 #
 # Conversions are drained first: they run 12-15 min and are the gate on
 # evaluating a cell, so a stuck normal queue blocks the whole eval pipeline.
@@ -82,8 +84,18 @@ if (( ENSURE )); then
 fi
 
 drain_once() {
-    local npend ndebug slots cand jid jn secs
-    npend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null | grep -cE '^(eval|convert|bpb)-')
+    local npend ndebug slots cand jid jn secs pend
+    # squeue's EXIT STATUS, not its output: a transient failure prints nothing,
+    # `grep -c` dutifully answers 0, and the loop below reads that as "the queue
+    # is empty, my work here is done" and exits — with hundreds of jobs still
+    # pending and a log line claiming success. Watched exactly that happen on
+    # 2026-09-07 at 21:02 with 417 evals queued. An empty queue and an
+    # unreachable controller must not look the same.
+    if ! pend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null); then
+        echo "[$(date +%H:%M:%S)] squeue failed — retrying next tick"
+        return 0
+    fi
+    npend=$(grep -cE '^(eval|convert|bpb)-' <<<"$pend")
     ndebug=$(squeue --me -h -p debug -t PD,R,CG -o "%i" 2>/dev/null | wc -l)
     echo "[$(date +%H:%M:%S)] pending=$npend  debug=$ndebug/2"
     (( npend == 0 )) && return 1          # nothing pending left → caller exits

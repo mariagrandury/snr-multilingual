@@ -29,8 +29,9 @@ marker outlives the task, or a worker arriving later would claim it again)
 and publishes it by renaming `inflight/<task>` to `per_task/<task>` once the
 results file exists. The rename is atomic, so `per_task/<task>/` exists only
 when complete — which is the "done" test in _eval_status.completed_tasks,
-i.e. what makes the next job skip it. Whatever directory is left in inflight/
-after a kill is the partial output of a task that was running.
+i.e. what makes the next job skip it. A task that raises is logged and its
+(usually empty) inflight dir removed, so a directory left in inflight/ is the
+partial output of a task still running when its worker died.
 
 Failure isolation: an exception inside one task is logged and the worker
 moves on. Under torchrun/accelerate (the hf and megatron_lm backends run one
@@ -114,6 +115,18 @@ def memoise_env_info() -> None:
 
 
 def claim(marker: Path) -> bool:
+    """True when this worker now owns the task, False when another has it.
+
+    Only FileExistsError means "taken". Every other OSError is left to the
+    caller's per-task handler: this runs before the model has been asked for
+    anything, so an error here used to escape main() and kill the worker
+    outright — after its ~85 s model load, and taking every task still in its
+    queue with it. Job 3312838 did exactly that on all four workers at once,
+    because an empty $TASKS fell back to evaluate.sbatch's legacy
+    `./configs/apertus/tasks_default.txt` default and a task name containing
+    `/` puts the marker in a directory that does not exist. A full or
+    over-quota logs filesystem reaches it the same way.
+    """
     try:
         os.close(os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
         return True
@@ -167,13 +180,16 @@ def main() -> int:
 
     done = failed = attempted = 0
     for task in tasks:
-        if args.num_workers > 1 and not claim(inflight / f"{task}.claim"):
-            continue                      # another worker has it
-        (inflight / task).mkdir(exist_ok=True)
-        attempted += 1
-        tracker = EvaluationTracker(output_path=str(inflight / task))
         t0 = time.time()
         try:
+            # Claiming and mkdir are inside the try on purpose: a task this
+            # worker cannot even claim must fail like any other task, not end
+            # the worker (see claim()).
+            if args.num_workers > 1 and not claim(inflight / f"{task}.claim"):
+                continue                  # another worker has it
+            (inflight / task).mkdir(exist_ok=True)
+            attempted += 1
+            tracker = EvaluationTracker(output_path=str(inflight / task))
             results = lm_eval.simple_evaluate(
                 model=lm, model_args=model_args, tasks=[task],
                 num_fewshot=args.num_fewshot, batch_size=args.batch_size,
@@ -209,6 +225,13 @@ def main() -> int:
             reason = f"{type(e).__name__}: {' '.join(str(e).split())[:300]}"
             with open(failed_log, "a") as f:
                 f.write(f"{task}\t{reason}\n")
+            # This task is accounted for; drop its inflight dir if it holds
+            # nothing, so what stays there is only what _run_per_task.sh
+            # reports it as — output of a task whose worker died mid-run.
+            try:
+                os.rmdir(inflight / task)
+            except OSError:               # partial output: keep it as evidence
+                pass
             failed += 1
             log(f"FAILED {task} after {time.time() - t0:.0f}s — {reason}")
             continue

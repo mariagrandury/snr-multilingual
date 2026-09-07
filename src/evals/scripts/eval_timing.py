@@ -43,16 +43,29 @@ KILLED = {"TIMEOUT", "CANCELLED", "NODE_FAIL", "PREEMPTED", "OUT_OF_MEMORY"}
 
 def sacct(job_ids: list[str]) -> dict[str, tuple[str, int]]:
     """job id -> (state, elapsed seconds). Empty when sacct is unavailable
-    (a laptop) or the jobs have aged out of the accounting DB."""
+    (a laptop) or the jobs have aged out of the accounting DB.
+
+    One call for ~750 ids against a busy controller is slow but not
+    pathological; the timeout is generous because timing out here empties the
+    whole report and the caller can only say "sacct unavailable", which reads
+    as "your data is gone". Failures are named rather than swallowed for the
+    same reason."""
     if not job_ids:
         return {}
     try:
-        out = subprocess.run(
+        p = subprocess.run(
             ["sacct", "-X", "-n", "-P", "-o", "JobID,State,ElapsedRaw",
              "--jobs", ",".join(job_ids)],
-            capture_output=True, text=True, timeout=120).stdout
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+            capture_output=True, text=True, timeout=600)
+    except FileNotFoundError:
         return {}
+    except subprocess.TimeoutExpired:
+        print("sacct timed out; re-run when the controller is less busy")
+        return {}
+    if p.returncode != 0:
+        print(f"sacct failed (rc={p.returncode}): {p.stderr.strip()[:200]}")
+        return {}
+    out = p.stdout
     jobs = {}
     for line in out.splitlines():
         parts = line.split("|")
@@ -66,23 +79,32 @@ def tasks_in(eval_dir: Path, meta: dict) -> int:
     given, which is what the walltime is priced in.
 
     job.json's count first, then the published per_task/ dirs. The results
-    file is the last resort (a batched run has nothing else) and it OVERCOUNTS:
-    lm_eval lists a group's subtasks individually, so one queued
-    `global_mmlu_full_es` becomes dozens of rows. That inflates the old
-    pipeline's task count and so understates its minutes per task, which
-    makes the batched-vs-worker comparison conservative rather than flattering.
+    file is the last resort (a batched run has nothing else), and reading its
+    `.results` keys directly would OVERCOUNT: lm_eval lists a group's subtasks
+    individually there, so one queued `global_mmlu_full_es` becomes dozens of
+    rows. `.group_subtasks` names exactly those expansions, so subtracting them
+    leaves the top-level names the job was actually given — on the 350M/L15
+    run of job 3199185 that is 100 rather than 1067, i.e. 0.90 min/task instead
+    of 0.08, next to the 0.84 that `auto_evals_cscs.MIN_PER_TASK` now carries
+    for 350M. Without the subtraction the two pipelines are measured in
+    different units and the comparison below is meaningless — and the bias
+    points at undersizing every walltime re-fitted from it.
     """
     if isinstance(meta.get("tasks_done"), int):
         return meta["tasks_done"]
     done = {d.name for d in eval_dir.glob("per_task/*") if d.is_dir()}
     if done:
         return len(done)
+    expanded: set[str] = set()
     for f in eval_dir.glob("results_*.json"):
         try:
-            done |= set((json.loads(f.read_text()).get("results") or {}))
+            r = json.loads(f.read_text())
         except (OSError, json.JSONDecodeError):
-            pass
-    return len(done)
+            continue
+        done |= set(r.get("results") or {})
+        for subtasks in (r.get("group_subtasks") or {}).values():
+            expanded |= set(subtasks)
+    return len(done - expanded)
 
 
 def scan(project_dir: Path, name_filter: str | None) -> list[dict]:
@@ -146,24 +168,34 @@ def main() -> None:
 
     print("== minutes per task (wall-clock / tasks finished, sacct elapsed) ==")
     print(f"{'pipeline':<9} {'size':<5} {'jobs':>5} {'tasks':>7} "
-          f"{'median':>8} {'p10':>7} {'p90':>7}")
+          f"{'median':>8} {'p10':>7} {'p90':>7}   (p10/p90 are min/max under 10 jobs)")
     cells: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for r in runs:
         if r["min_per_task"] and r["state"] == "COMPLETED":
             cells[(r["pipeline"], r["size"])].append(r)
     for (pipeline, size), rs in sorted(cells.items()):
         vals = sorted(r["min_per_task"] for r in rs)
-        q = st.quantiles(vals, n=10) if len(vals) > 1 else None
+        # Deciles only with enough jobs to have them: st.quantiles interpolates
+        # BEYOND the data on a short sample, and printed p10 = -0.45 min/task
+        # for a two-job cell. Below 10, show the observed range instead — the
+        # columns then read as min/max, which is the honest summary of 2 points.
+        lo, hi = ((st.quantiles(vals, n=10)[0], st.quantiles(vals, n=10)[-1])
+                  if len(vals) >= 10 else (vals[0], vals[-1]))
         print(f"{pipeline:<9} {size:<5} {len(rs):>5} {sum(r['tasks'] for r in rs):>7} "
-              f"{st.median(vals):>8.2f} "
-              f"{q[0] if q else vals[0]:>7.2f} {q[-1] if q else vals[0]:>7.2f}")
+              f"{st.median(vals):>8.2f} {lo:>7.2f} {hi:>7.2f}")
     if len(cells) and len({p for p, _ in cells}) == 2:
         for size in sorted({s for _, s in cells}):
             b, w = cells.get(("batched", size)), cells.get(("worker", size))
             if b and w:
                 mb = st.median([r["min_per_task"] for r in b])
                 mw = st.median([r["min_per_task"] for r in w])
-                print(f"  {size}: {mb:.2f} -> {mw:.2f} min/task  ({mb / mw:.1f}x)")
+                # A ratio from one or two jobs is not a speedup, it is the
+                # task mix of those jobs. A resumed run gets whatever the
+                # earlier ones did not finish, which skews cheap: the first
+                # worker job here read 13.1x on 69 leftover tasks, against a
+                # ceiling of 4 workers. Say so rather than print it bare.
+                warn = "" if len(w) >= 5 else f"  [only {len(w)} worker job(s) — not a sample]"
+                print(f"  {size}: {mb:.2f} -> {mw:.2f} min/task  ({mb / mw:.1f}x){warn}")
     print("Only COMPLETED jobs; a killed one's elapsed is its walltime, not its cost.")
 
     print("\n== what a killed job kept ==")
@@ -175,8 +207,11 @@ def main() -> None:
         saved = [r["tasks"] for r in rs]
         print(f"{pipeline:<9} {len(rs):>5} {sum(1 for s in saved if not s):>7} "
               f"{sum(1 for s in saved if s):>8} {sum(saved):>12}")
-    print("A batched job wrote everything at the end, so every kill kept 0 "
-          "(evals CLAUDE.md bug 13).")
+    print("A batched job wrote everything in one burst at the end (evals "
+          "CLAUDE.md bug 13), so a kill during the eval kept 0; the rare "
+          "batched row with tasks saved was killed AFTER that burst, during "
+          "the merge or the W&B push. A worker job's kill keeps whatever it "
+          "had published.")
 
 
 if __name__ == "__main__":

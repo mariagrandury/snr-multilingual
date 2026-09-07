@@ -140,7 +140,7 @@ done
 shopt -u nullglob
 rm -f "$INFLIGHT_DIR"/*.claim
 rmdir "$INFLIGHT_DIR" 2>/dev/null \
-    || echo "inflight/ kept: partial output of $(ls -1 "$INFLIGHT_DIR" | wc -l | tr -d ' ') task(s) whose worker died"
+    || echo "inflight/ kept: partial output of $(ls -1 "$INFLIGHT_DIR" | wc -l | tr -d ' ') task(s) that never published (see $FAILED_LOG for why)"
 
 if [[ -s "$FAILED_LOG" ]]; then
     echo "WARNING: $(wc -l < "$FAILED_LOG") task(s) failed (see $FAILED_LOG):"

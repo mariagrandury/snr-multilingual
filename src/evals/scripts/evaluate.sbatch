@@ -44,6 +44,7 @@ usage() {
     echo " HARNESS_LIMIT: Optional argument to pass as --limit to the lm-evaluation-harness, to limit the number of samples per task (default: no limit)."
     echo " LM_EVAL_HARNESS_BRANCH: Branch/ref to install from swiss-ai/lm-evaluation-harness (default: repository default branch)."
     echo " EVAL_WORKERS: vllm only. Worker processes per job, each with its own model copy on its own GPU group, sharing one task queue (default: GPUs / (TP x PP), i.e. every GPU busy)."
+    echo " PREFIX_CACHING: vllm only. vLLM enable_prefix_caching (default: True; measured 2026-09-07 to move 0.7% of metrics against a 0.5% same-settings floor). Set False to re-run that A/B."
 	echo "For more information see the README: https://github.com/swiss-ai/evals?tab=readme-ov-file."
 }
 die() {
@@ -68,6 +69,19 @@ BS=${BS:-"auto:20"}
 SIZE=${SIZE:-1}
 BOS=${BOS:-false}
 LOGS_ROOT=${LOGS_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs}
+# TASKS set but EMPTY is a caller bug, never a request for the default below.
+# Callers build it with `TASKS="$(python3.11 -c ...)"`, and a command
+# substitution that dies leaves the variable set-and-empty with sbatch none the
+# wiser. `${TASKS:-...}` substitutes on empty as well as unset, so without this
+# the job silently adopts the legacy default -- a path this repo no longer
+# ships, which therefore survives the `[ -f ]` test below as a literal TASK
+# NAME and burns a whole node (container pull, pip install, one vLLM load per
+# worker) to fail on it. Jobs 3312838, 3312890 and 3313509 all died that way on
+# 2026-09-07. Test `+set`, not the value: an intentionally unset TASKS still
+# gets the default.
+if [[ -n "${TASKS+set}" && -z "$TASKS" ]]; then
+    die "TASKS is set but empty — a failed command substitution? Unset it to use the default."
+fi
 TASKS=${TASKS:-./configs/apertus/tasks_default.txt}
 TABLE_METRICS=${TABLE_METRICS:-./configs/apertus/tasks_default_main_table.txt}
 WANDB_ENTITY=${WANDB_ENTITY:-apertus}
@@ -269,17 +283,30 @@ VLLM_MEMORY_FRACTION=0.75
 # export VLLM_DISABLE_CUSTOM_ALL_REDUCE=1
 
 if [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-    # enable_prefix_caching: the choices of a multiple-choice doc share the
-    # whole context, so its KV blocks are computed once and reused per choice.
-    # Ported from include-private's run_include_eval.sbatch. vLLM's V1 engine
-    # turns this on by default, so on the current container it should be a
-    # no-op that only pins the behaviour — NOT verified against this image's
-    # swiss-ai fork. Verify before trusting a cross-time comparison: re-run an
-    # already-evaluated checkpoint and diff the scores. Drop the flag if they
-    # move. The include-private max_model_len cap is deliberately NOT ported —
-    # the ladder's config already says 4096 (megatron_args.sh), and a lower
-    # cap would truncate prompts differently from every past result.
-    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_prefix_caching=True,enable_thinking=False"
+    # PREFIX_CACHING: the choices of a multiple-choice doc share the whole
+    # context, so its KV blocks are computed once and reused per choice.
+    # Ported from include-private's run_include_eval.sbatch. MEASURED on
+    # 2026-09-07, three full 329-task runs of lm-175M-L50-deep-seed1904-iter3416
+    # (4776 accuracy metrics each), because "vLLM's V1 engine enables it anyway"
+    # is a claim about a container, not a result:
+    #
+    #   same settings twice (the floor)   0.5 % of metrics move, max 0.0020
+    #   caching on vs off                 0.7 %,                 max 0.0080
+    #   old batched vs new worker + cache 3.5 %,                 max 0.0200
+    #   old batched vs new worker, no cache 3.4 %,               max 0.0200
+    #
+    # So it is not quite a no-op — it sits just above the floor — but the last
+    # two rows are why it stays: turning it OFF does not bring the worker pool
+    # any closer to the pre-2026-09-04 results. The worker pool moves scores;
+    # this flag is a rounding error on top, and it buys real throughput.
+    # Reproduce with `PREFIX_CACHING=False WANDB_PROJECT=<throwaway>` and
+    # `scripts/diff_scores.py <NAME> msnr <throwaway>` — always against a floor
+    # measured the same way, never against an assumption of bit-identity.
+    # The include-private max_model_len cap is deliberately NOT ported — the
+    # ladder's config already says 4096 (megatron_args.sh), and a lower cap
+    # would truncate prompts differently from every past result.
+    PREFIX_CACHING=${PREFIX_CACHING:-True}
+    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_prefix_caching=$PREFIX_CACHING,enable_thinking=False"
 elif [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
     # `--dist-ckpt-strictness=log_unexpected` tells Megatron's distributed
     # checkpoint loader to log (instead of raise) on missing keys like
@@ -359,9 +386,57 @@ if echo "$TASKS" | grep -q "ruler"; then
     fi
 fi
 
-LM_EVAL_HARNESS_PIP_SPEC="git+https://github.com/swiss-ai/lm-evaluation-harness.git"
-if [[ -n "$LM_EVAL_HARNESS_BRANCH" ]]; then
-    LM_EVAL_HARNESS_PIP_SPEC="${LM_EVAL_HARNESS_PIP_SPEC}@${LM_EVAL_HARNESS_BRANCH}"
+# Install the harness from a SHARED CHECKOUT, not from GitHub.
+#
+# Every job used to run `pip install git+https://github.com/swiss-ai/...`,
+# i.e. one fresh clone per job. That is fine for a handful of jobs and fails
+# as a fleet: with ~120 evals queued on 2026-09-02 the partial clone's
+# promisor fetch started coming back `HTTP 401`, pip aborted, and the job died
+# in 35 s on `lm_eval: command not found` — 90 failures in a row, none of
+# which reached a single dataset. One watcher pass now submits ~700 evals, so
+# that ceiling is further below us than it was. The clone is also the slowest
+# part of a short eval (a 110-task top-up runs in ~5 min total), and it
+# silently tracked whatever HEAD was at submission time, so two checkpoints of
+# the same cell could be scored by different harness versions — which makes
+# harness drift indistinguishable from checkpoint noise in the SNR fit, the
+# one thing this sweep measures. A pinned local checkout fixes all three.
+#
+# Refresh it deliberately (login node, then note the commit in the eval log):
+#   git -C $HARNESS_SRC pull
+HARNESS_SRC=${HARNESS_SRC:-/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness}
+# A PREBUILT WHEEL is the first choice, because `pip install <dir>` builds
+# in-tree: setuptools writes build/ INSIDE the source directory, so every
+# concurrent job shares one build tree and they delete each other's files
+# mid-copy — `error: [Errno 2] No such file or directory`, then
+# `lm_eval: command not found`. Two of six jobs died that way on 2026-09-03;
+# the ones that ran alone were fine, which is exactly the signature of a race.
+# Installing an artifact writes nothing shared and skips the ~15 min build.
+#
+# Rebuild it after refreshing the checkout (login node, minutes):
+#   git -C $HARNESS_SRC pull
+#   rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
+#         $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
+#   pip wheel --no-deps --no-build-isolation \
+#         -w $(dirname $HARNESS_SRC)/wheels /iopsstor/.../tmp-harness-build/src
+# Nothing checks that the newest wheel was built from the current checkout —
+# skip the rebuild and jobs keep silently installing the old code. job.json
+# records the resolved spec so a past run can at least be identified.
+HARNESS_WHEEL=$(ls -t "$(dirname "$HARNESS_SRC")"/wheels/lm_eval-*.whl 2>/dev/null | head -1)
+if [[ -z "$LM_EVAL_HARNESS_BRANCH" && -n "$HARNESS_WHEEL" ]]; then
+    LM_EVAL_HARNESS_PIP_SPEC="$HARNESS_WHEEL"
+    echo "Harness: $(basename "$HARNESS_WHEEL") (prebuilt wheel)"
+elif [[ -z "$LM_EVAL_HARNESS_BRANCH" && -d "$HARNESS_SRC" ]]; then
+    # No wheel yet: build from the checkout. Correct, but serialize the jobs —
+    # see the race above.
+    LM_EVAL_HARNESS_PIP_SPEC="$HARNESS_SRC"
+    echo "Harness: $HARNESS_SRC @ $(git -C "$HARNESS_SRC" rev-parse --short HEAD 2>/dev/null || echo '?') (in-tree build — no wheel found)"
+else
+    # Explicit branch, or the shared checkout is missing: fall back to GitHub.
+    LM_EVAL_HARNESS_PIP_SPEC="git+https://github.com/swiss-ai/lm-evaluation-harness.git"
+    if [[ -n "$LM_EVAL_HARNESS_BRANCH" ]]; then
+        LM_EVAL_HARNESS_PIP_SPEC="${LM_EVAL_HARNESS_PIP_SPEC}@${LM_EVAL_HARNESS_BRANCH}"
+    fi
+    echo "Harness: cloning $LM_EVAL_HARNESS_PIP_SPEC (no shared checkout at $HARNESS_SRC)"
 fi
 
 INSTALL_CMD="pip install --no-cache-dir sentencepiece tiktoken protobuf && \
@@ -452,6 +527,11 @@ json.dump(d, open(sys.argv[1], "w"), indent=1, sort_keys=True)
 PY
 }
 count_lines() { if [ -f "$1" ]; then grep -c . "$1" || true; else echo 0; fi; }
+# failed_tasks.log is "<task>\t<reason>", one line per worker that hit it, so
+# count DISTINCT tasks. A task no worker can claim is owned by nobody and
+# therefore attempted by all of them: job 3313509 logged one task four times
+# and job.json read "tasks_failed: 4, tasks_requested: 1".
+count_failed() { if [ -f "$1" ]; then cut -f1 "$1" | sort -u | grep -c . || true; else echo 0; fi; }
 CONTAINER_TOML=./containers/env_vllm.toml
 [[ $LM_EVAL_BACKEND == "hf" ]] && CONTAINER_TOML=./containers/env.toml
 JOB_FACTS=(job_id="$SLURM_JOBID" job_name="${SLURM_JOB_NAME:-}" node="$SLURM_JOB_NODELIST"
@@ -461,6 +541,13 @@ JOB_FACTS=(job_id="$SLURM_JOBID" job_name="${SLURM_JOB_NAME:-}" node="$SLURM_JOB
     tp="$MP" pp="$PP" workers="$EVAL_WORKERS"
     tasks_requested="$(tr ',' '\n' <<<"$TASKS" | grep -c . || true)"
     repo_commit="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || true)"
+    # Which lm_eval this run installed. The whole spec, not its basename: a
+    # checkout and a GitHub clone both end in "lm-evaluation-harness" and the
+    # point of recording it is telling them apart. A wheel filename carries no
+    # commit and nothing verifies it was built from HARNESS_SRC, so store the
+    # checkout's commit beside it — together they identify a past run's harness.
+    harness="$LM_EVAL_HARNESS_PIP_SPEC"
+    harness_src_commit="$(git -C "$HARNESS_SRC" rev-parse --short HEAD 2>/dev/null || true)"
     container="$(sed -n 's/^image = "\(.*\)"/\1/p' "$CONTAINER_TOML" || true)"
     eval_dir="$HARNESS_EVAL_DIR" started="$(date -Iseconds)")
 mkdir -p "$HARNESS_EVAL_DIR"
@@ -518,7 +605,7 @@ echo "Time taken for installation and evaluation: ${DURATION} seconds ($(($DURAT
 job_json "${JOB_FACTS[@]}" status=$([[ $EVAL_RC -eq 0 ]] && echo finished || echo failed) \
     exit_code="$EVAL_RC" finished="$(date -Iseconds)" duration_s="$DURATION" \
     tasks_done="$(find "$HARNESS_EVAL_DIR/per_task" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')" \
-    tasks_failed="$(count_lines "$HARNESS_EVAL_DIR/failed_tasks.log")" \
+    tasks_failed="$(count_failed "$HARNESS_EVAL_DIR/failed_tasks.log")" \
     tasks_skipped="$(count_lines "$HARNESS_EVAL_DIR/skipped_tasks.log")"
 # No tasks_unfinished: _run_per_task.sh appends a task whose worker died to
 # failed_tasks.log, so counting the inflight/ dirs too would report each one

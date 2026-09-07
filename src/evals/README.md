@@ -5,6 +5,28 @@
 > [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
 > with W&B integration; runs on the CSCS Alps SLURM cluster.
 
+Jobs install the harness from a **pinned shared checkout**, not from GitHub —
+one clone per job broke at fleet scale (HTTP 401 at ~120 queued evals; a pass
+now submits ~700) and silently tracked whatever HEAD was current, which makes
+harness drift indistinguishable from checkpoint noise. Order of preference:
+prebuilt wheel → in-tree build from the checkout → GitHub (only with an
+explicit `LM_EVAL_HARNESS_BRANCH`, or if the shared tree is missing). Each
+job logs and records in `job.json` which one it used.
+
+```bash
+HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+git -C $HARNESS_SRC pull                       # refresh deliberately, then rebuild:
+rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
+      $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
+pip wheel --no-deps --no-build-isolation \
+      -w $(dirname $HARNESS_SRC)/wheels /iopsstor/scratch/cscs/$USER/tmp-harness-build/src
+```
+
+Build out-of-tree: `pip install <dir>` writes `build/` **inside** the source,
+so concurrent jobs delete each other's files mid-copy. Nothing checks that the
+newest wheel matches the checkout — skip the rebuild and jobs keep installing
+the old code, which is what `harness_src_commit` in `job.json` is for.
+
 ## What this produces
 
 A single source of truth for every (model, checkpoint, task, metric)
@@ -98,6 +120,15 @@ What the jobs cost, and how much a killed one kept — the numbers behind
 ```bash
 python3.11 scripts/eval_timing.py             # median min/task + kill survival
 python3.11 scripts/eval_timing.py --detail    # one row per job
+```
+
+To prove a pipeline change did not move any score, re-evaluate one checkpoint
+into a throwaway `WANDB_PROJECT` (a different project is a different
+`eval_logs` subtree, so the per-task gate sees no prior results and runs
+everything) and diff the two:
+
+```bash
+python3.11 scripts/diff_scores.py <NAME> msnr <the throwaway project>
 ```
 
 System Python on login nodes is 3.6; use `python3.11` for the dashboard.
@@ -223,7 +254,10 @@ beside them:
   walltime kill loses only the tasks in flight; kept after the merge for its
   per-task timing and config.
 - `job.json` — Slurm ids, node, walltime, backend, TP/PP/workers, repo
-  commit, container, start/end and the done/failed/skipped/unfinished counts.
+  commit, container, the harness spec it installed (`harness` +
+  `harness_src_commit`), start/end and the done/failed/skipped counts. Written
+  before the eval too, so a killed job still leaves the header (and
+  `status: started` is how a reader tells a kill from a clean failure).
 - `worker_<i>.log` per worker, `failed_tasks.log` (`<task>\t<reason>`),
   `skipped_tasks.log` (already evaluated elsewhere), and `inflight/<task>/`
   only if the job died with that task running.
@@ -278,6 +312,7 @@ evals/
 │   ├── _run_per_task.sh                 # inner runner: one eval_worker.py per GPU, merge at the end
 │   ├── eval_worker.py                   # model loaded once, tasks one at a time, results per task
 │   ├── eval_timing.py                   # min/task and kill-survival, batched vs worker pipeline
+│   ├── diff_scores.py                   # same ckpt, two projects: did a change move any score?
 │   ├── push_all_results.py              # W&B per-model push
 │   ├── build_hf_dataset.py              # HF dataset builder
 │   └── utils/configs.py                 # shared config loader

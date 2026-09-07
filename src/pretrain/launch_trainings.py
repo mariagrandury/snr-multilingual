@@ -65,7 +65,12 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-SCRIPT_DIR = Path(__file__).parent
+# .resolve() before .parent: imported through a relative sys.path entry
+# (`sys.path.insert(0, '../pretrain')` from src/evals, the documented way to
+# build a TASKS list) __file__ keeps the '..', so SCRIPT_DIR.parent.parent
+# below lands on src/evals instead of the repo root and every config read
+# fails with a path that looks nothing like the mistake.
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 # The two reviewed architecture families cover the same six non-embedding
 # sizes; "shallow vs deep" (width/depth 128 vs 64) is the model-depth level of

@@ -32,6 +32,10 @@ of each cell:
      retried immediately; every other cause is held back and recorded in
      <logs-root>/auto_eval_errors.json, so a task that cannot succeed stops
      costing a job per pass while the checkpoint's other tasks still run.
+     A partial hold heals itself — the next run that progresses without
+     failing a held task ends its streak — but a checkpoint whose tasks are
+     ALL held is never submitted again, so nothing can ever reset it.
+     `--retry-held` is the way back after fixing the cause.
   3. HF snapshot staged at <staging>/<cell>/iter_<N>  -> submit ONE eval job
        (src/evals/scripts/evaluate.sbatch, vLLM, BOS, no chat template,
         TP=1 — the ladder's KV-head counts only divide 1 — so one worker per
@@ -102,33 +106,39 @@ def convert_job_name(cell: str) -> str:
 # with its own model copy — sharing the task queue (../evals/scripts/
 # _run_per_task.sh); the estimate below divides the per-task term by that.
 #
-# Elapsed time is very close to linear in the task count. Fitted on 69
-# completed eval jobs (2026-08-21..27) of the previous single-process
-# pipeline, median elapsed per (size, n_tasks):
+# Elapsed time is very close to linear in the task count. Re-fitted 2026-09-07
+# by least squares (elapsed = a + b x tasks) over all 364 COMPLETED
+# single-process eval jobs on disk, 9 to 219 tasks per job
+# (../evals/scripts/eval_timing.py is where the per-job rows come from):
 #
-#     size   9 tasks  18 tasks  60 tasks  100  164  219    per task
-#     90M      7.9       13.9         -    -    -    -     0.667 min
-#     175M     8.3       13.9         -    -    -    -     0.622 min
-#     350M     9.1       15.3      47.4    -    -    -     0.751 min
-#     600M     9.2       16.1      48.7  89.8  145  187    0.846 min
+#     size    jobs   task range   overhead a   per task b   R^2    was
+#     90M       82       9-219        0.1 min    0.747 min  0.99   0.67
+#     175M     100       9-219       -2.5        0.717      0.88   0.62
+#     350M      59       9-219        0.4        0.835      0.99   0.75
+#     600M      79       9-219        1.1        0.868      1.00   0.85
+#     1B        20      60-219        1.3        0.902      0.99   2.0
+#     1.7B      24       9-164       -2.0        0.968      1.00   2.8
 #
-# 600M is measured on 60 jobs out to 219 tasks (2026-09-02) and lands at 0.846,
-# in the same 0.62-0.85 band as every smaller rung: over a 6.7x size range the
-# per-task cost barely moves, because the run is dominated by dataset load and
-# tokenization rather than the forward pass. 1B and 1.7B still have no eval
-# run, so they keep conservative estimates rather than an extrapolation dressed
-# up as a measurement. The per-task figures are per WORKER; re-fit them on the
-# first jobs of the worker-pool pipeline (job.json in each eval dir has the
-# elapsed time and the task counts).
+# Two things this settles. The per-task cost is nearly FLAT across the ladder
+# — 0.72 to 0.97 over a 19x parameter range — because a run is dominated by
+# dataset load and tokenization, not the forward pass; the old 90M-600M
+# numbers were fitted on medians and came out ~10% low. And 1B/1.7B, which
+# had no eval run when this table was written and carried deliberately
+# conservative guesses, measure 0.90 and 0.97: the guesses were 2.2x and 2.9x
+# too high, which is what pushed those rungs over the queue cap at L100.
 #
-# Every finished task is on disk before the next starts, so a walltime kill
-# costs only the tasks in flight and the next pass resubmits the rest: the
-# cap is a resume point, not a loss. SAFETY and the generous fixed overhead
-# (container pull and vLLM cold start are much slower on a loaded node) only
-# buy fewer resubmissions.
-MIN_PER_TASK = {"90M": 0.67, "175M": 0.62, "350M": 0.75, "600M": 0.85,  # measured
-                "1B": 2.0, "1.7B": 2.8}                                # not measured
-OVERHEAD_MIN = 15   # measured 2-2.7; the rest is cold-start headroom
+# The fitted intercept is ~0, not OVERHEAD_MIN: every job here ran with a warm
+# container and a populated dataset cache. Keep the 15 min — it is headroom
+# for a cold start on a loaded node, not a measurement.
+#
+# These are SINGLE-PROCESS costs, which is the unit eval_minutes() needs: it
+# divides by EVAL_WORKERS. Every finished task is on disk before the next
+# starts, so a walltime kill costs only the tasks in flight and the next pass
+# resubmits the rest: the cap is a resume point, not a loss. SAFETY and the
+# generous fixed overhead only buy fewer resubmissions.
+MIN_PER_TASK = {"90M": 0.75, "175M": 0.72, "350M": 0.84,   # all measured, 364 jobs
+                "600M": 0.87, "1B": 0.90, "1.7B": 0.97}
+OVERHEAD_MIN = 15   # fitted intercept ~0 on warm jobs; this is cold-start headroom
 SAFETY = 1.5        # on the per-task term only
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
 # to 1 off the vLLM backend). They agree only because submit_eval below pins
@@ -575,7 +585,8 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         # An in-flight job's freshly-mkdir'd eval_* dir looks barren until it
         # writes something — don't let the running attempt itself push the
         # checkpoint over the threshold.
-        if not args.max_attempts or job_name("eval", name) in running:
+        if not args.max_attempts or args.retry_held \
+                or job_name("eval", name) in running:
             continue
         remaining = remaining_tasks(name, logs_root, task_list)
         for t, (n, why) in task_attempts(name, logs_root, remaining).items():
@@ -661,6 +672,17 @@ def main() -> None:
                         "automatically, anything else is held back and "
                         "recorded in <logs-root>/" + ERRORS_JSON +
                         " (0 = always resubmit, never diagnose)")
+    p.add_argument("--retry-held", action="store_true",
+                   help="give every held-back task ONE more chance, then go "
+                        "back to normal. Run this after fixing a root cause "
+                        "(a task dropped from the group, a rebuilt wheel, a "
+                        "repaired dataset): a checkpoint whose tasks are ALL "
+                        "held is dropped from `pending`, so no job is ever "
+                        "submitted for it again and its streak can never "
+                        "reset — it stays parked long after the cause is "
+                        "gone. Only the FIRST pass skips the gate, so under "
+                        "--watch the watcher protects itself again from the "
+                        "second pass on.")
     p.add_argument("--watch", type=int, metavar="SECONDS",
                    help="keep running, one pass every SECONDS")
     p.add_argument("--dry-run", action="store_true")
@@ -676,9 +698,14 @@ def main() -> None:
     args.schemes = [args.scheme] if args.scheme else ["A", "B"]
 
     benchmarks = auto_benchmarks()
+    if args.retry_held:
+        print("--retry-held: the failure gate is off for this pass only\n")
     while True:
         one_pass(args, Path(args.root), Path(args.staging),
                  Path(args.logs_root), benchmarks)
+        # One shot, whatever --watch says: the point is to let a fixed root
+        # cause prove itself once, not to disable the gate for the session.
+        args.retry_held = False
         # eval_progress.png is a view of exactly the state this pass just
         # changed, so refresh it here rather than on launch (the launcher only
         # redraws the training-side figures). Best-effort: a plotting problem
