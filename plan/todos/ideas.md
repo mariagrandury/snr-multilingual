@@ -1,0 +1,14 @@
+- schedule that periodically checks the squeue, reviews the logs of previous runs, and submits new jobs following a priority list, sends a message on failure or when decision is required
+- evals idempotent and write eval results -> review how I implemented it for INCLUDE v2
+- wire recover_results_from_samples.py. Verified: the only reference is its own docstring. Under BATCH_TASKS=1 a walltime kill writes nothing, and this is the tool that rescues those samples. Your own todo.md raised it; still open.
+- evals: split over-cap eval jobs across Slurm jobs (NUM_SPLITS/SPLIT_INDEX in evaluate.sbatch + aggregate_splits.sbatch) and teach auto_evals_cscs.py to submit/dedupe the parts. Until then the watcher SKIPs 600M/1B/1.7B at L100 and 1.7B at L50 (need 711–1233 min vs the 719 cap) — see the SKIP lines in its output.
+- HF model push is manual on CSCS: push-snr.py is invoked only from azure/jobs/push.yml. Nothing on the cluster side pushes converted checkpoints to the Hub — so it happens only when you remember. Your todo.md asked for somewhere to wire it that doesn't interfere.
+- build_hf_dataset.py doesn't understand lm-* cells: Hence the project_legacy change now sitting uncommitted. Predictivity results can't be published to the HF dataset until the name regex, iter grid and project are taught the new sweep.
+- ladder_report.check_bpb() does an unguarded json.loads while bpb_results() guards the same files — one bad file kills the whole report.
+- score_bpb materialises 17 GB of fp32 logits per batch, capping batch size and making off-GPU runs impossible.
+- azure/jobs/pretrain.yml's inputs.fineweb default still points at english_dclm — a hand-submitted L=1 job still pulls 686 GB.
+- mirror_eval_logs.sbatch's #SBATCH --output dir is created by the script itself, after Slurm has already opened the file.
+- compute-budget.md:52 still says L ∈ {1, 30, 100} (now L50), and the Azure tables still need the 56-run re-derivation — both under the existing staleness banner.
+- periodically re-estimate with real values the eval and training job times for each language-size pair (and add them to the relevant docs, readme and plans) -> only update the estimates for which we have real significant results
+- if there are no <2h jobs, the debug drainer could divide a >2h eval job into 2 debug jobs -> your answer to this does not correlate with you saying that the results are written per task are persistent i f a job times out, double check what really happens. Also, is the debug limit 1h30 or 2h?
+- check whether it would be possible to use just one eval job to evaluate all the remaining eval ckpts of a model (i.e. instead of having 10 short eval jobs for 10 ckpts, queue just 1 eval job to eval the 10 ckpts). besides the feasability, check whether it would make sense taking into account the eval time
