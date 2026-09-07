@@ -22,7 +22,7 @@ map says it lives only on iopsstor, that is a gap, not a design.
 | Path | Holds | Durable copy |
 | ---- | ----- | ------------ |
 | `data/` | training-stage data mixtures Megatron reads (`stage_to_iopsstor.sh` restages after a purge) | capstor `multilingual_data_mixtures/predictivity-data/` |
-| `data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/` | live Megatron torch_dist checkpoints | HF snapshots on capstor (every saved iter is converted) |
+| `data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/` | live Megatron torch_dist checkpoints | **partial** — HF snapshots on capstor (every saved iter is converted) let you EVALUATE a cell but not RESUME it. Too big to mirror, so `mirror_eval_logs.sbatch` instead touches every checkpoint tree to push back the purge clock. The purge has already emptied three cells (`lm-90M-L1-deep-seed1904`, `lm-90M-L2-deep-seed1904`, `lm-175M-L2-shallow-seed1904`), leaving the iter dirs behind so `pretrain_progress` reads them as `corrupt`. |
 | `data-mix-small/Megatron-LM/logs/eval_logs/<entity>/msnr/` | eval results tree (harness JSONs, per_task) — the watcher's gate | capstor `msnr-eval-logs/` via **manual** `mirror_eval_logs.sbatch` |
 | `data-mix-small/Megatron-LM/logs/slurm/training/` | training job stdout/stderr | capstor `msnr-train-logs/` (same manual mirror) |
 | `data-mix-small/Megatron-LM/logs/auto_evals/` | auto-eval watcher logs | none (disposable) |

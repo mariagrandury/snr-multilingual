@@ -17,6 +17,10 @@
 #     45-minute job, because BATCH_TASKS=1 writes nothing until the very end.
 # Keeping iopsstor as the working copy costs one rsync and no new failure mode.
 #
+# It also TOUCHES every checkpoint tree on scratch, which it deliberately does
+# not copy, so the purge does not age out a cell we may still want to resume.
+# It has already taken three (see below), so this is not hypothetical.
+#
 # Idempotent and resumable: rsync skips files already there with the same size
 # and mtime, so re-running after a wall-clock kill continues where it stopped.
 #
@@ -50,7 +54,8 @@ DRY=${DRY:-0}
 # is the one place the diag- prefix must NOT filter anything.
 #
 # checkpoints/, triggers/ and debug/ are excluded: checkpoints are terabytes
-# and their durable form is already <CAP>/msnr-hf-models.
+# and their durable form is already <CAP>/msnr-hf-models. Excluded but NOT
+# unprotected — see the touch pass below.
 PAIRS=(
     "$LOGS/eval_logs|$CAP/msnr-eval-logs"
     "$LOGS/slurm/training|$CAP/msnr-train-logs"
@@ -66,6 +71,46 @@ ARGS=(-a --partial --no-perms --no-group --human-readable --stats
 (( DRY )) && ARGS+=(--dry-run --itemize-changes)
 
 mkdir -p "$CAP/msnr-eval-logs/logs"
+
+# Keep the checkpoints resumable. They are the one tree this script does not
+# copy, and <CAP>/msnr-hf-models is only half a backup: HF weights are enough
+# to EVALUATE a cell, not to RESUME training it. The scratch purge deletes by
+# age, and it has already emptied every iter dir of lm-90M-L1-deep-seed1904,
+# lm-90M-L2-deep-seed1904 and lm-175M-L2-shallow-seed1904 — the directories are
+# left behind, so pretrain_progress reads them as "corrupt" (.metadata and
+# .distcp gone) rather than as missing. Touching resets that clock.
+#
+# EVERY cell, not just the grid: shallow and diag- cells were the ones actually
+# lost, and the legacy apertus-* cells sit in the same tree. Discovered with
+# find rather than a glob so that a checkpoint tree the grid tooling does not
+# know about still gets protected — the sweep's real checkpoints all live under
+# Megatron-LM/logs/Meg-Runs/msnr, but nothing enforces that, and a hardcoded
+# path fails silently rather than loudly when it stops being true.
+#
+# First, because it is seconds against the rsync's hours: a walltime kill after
+# this point still leaves the tree protected.
+#
+# Confined to checkpoints/ deliberately — rsync selects files by size+mtime, so
+# touching a mirrored tree would re-send all 429 GB of it on every run.
+CKPT_ROOT=${CKPT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small}
+# -prune: stop at each match instead of walking all 200k+ entries underneath it
+# just to discover the ~100 directories we already found.
+mapfile -t CKPT_DIRS < <(find "$CKPT_ROOT" -type d -name checkpoints -prune -print 2>/dev/null)
+if (( ${#CKPT_DIRS[@]} )); then
+    n=$(find "${CKPT_DIRS[@]}" -print 2>/dev/null | wc -l)
+    where="$n paths in ${#CKPT_DIRS[@]} checkpoint dirs under $CKPT_ROOT"
+    if (( DRY )); then
+        echo "[$(date)] DRY: would touch $where"
+    else
+        echo "[$(date)] touching $where"
+        # -c: a checkpoint being written can vanish between find and touch.
+        find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>/dev/null
+        echo "[$(date)] touched"
+    fi
+else
+    echo "[$(date)] SKIP touch: no checkpoints dir under $CKPT_ROOT"
+fi
+
 rc=0
 for pair in "${PAIRS[@]}"; do
     src=${pair%%|*}; dst=${pair##*|}

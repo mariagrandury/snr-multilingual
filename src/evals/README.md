@@ -253,7 +253,7 @@ evals/
 │   ├── score_bpb.py                     # per-language BPB + perplexity
 │   ├── score_bpb.sbatch                 # BPB job, one per cell (self-chaining)
 │   ├── launch_bpb.sh                    # submit BPB for every cell still due
-│   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor master
+│   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor; touch ckpts vs purge
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan
 │   ├── _run_per_task.sh                 # inner per-task loop
