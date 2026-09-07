@@ -104,7 +104,16 @@ if (( ${#CKPT_DIRS[@]} )); then
     else
         echo "[$(date)] touching $where"
         # -c: a checkpoint being written can vanish between find and touch.
-        find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>/dev/null
+        # stderr is COUNTED, not discarded: a file owned by a collaborator is
+        # `group::r-x` under the shared ACLs, so touch fails with EPERM and only
+        # its owner can refresh it. Swallowing that would report success while
+        # leaving whole cells exposed — on 2026-09-07, 57952 of 200884 files
+        # (28%, every aromanou-owned cell) failed exactly this way.
+        fails=$(find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>&1 >/dev/null | wc -l)
+        if (( fails )); then
+            echo "[$(date)] WARNING: $fails paths NOT touched (not owner) —" \
+                 "those cells stay exposed; their owner must run this too" >&2
+        fi
         echo "[$(date)] touched"
     fi
 else
