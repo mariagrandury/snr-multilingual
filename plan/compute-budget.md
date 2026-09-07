@@ -417,12 +417,18 @@ end evaluates 1B/1.7B at 600M's measured 0.85 min/task, the high end at the
 conservative 2.0/2.8. Both include `SAFETY`, the 15-min overhead and the
 15-min rounding, so they are what the watcher *requests*, not what it burns.
 
-**120 of the 730 due jobs (16%) are refused at submission** — they exceed
-the 11:59 queue cap (1B at L30/L50/L100 and 1.7B at L30/L100 — there is no
-1.7B×L50 cell) and are excluded from the
-node-hours above. They need `NUM_SPLITS`/`SPLIT_INDEX` before they can run
-at all, so that column is a backlog, not a saving. The 600M re-estimate
-(1.6 → 0.85 min/task measured) took 600M back under the cap.
+**Since 2026-09-04 no job is refused at submission.** Each eval runs one
+`eval_worker.py` per GPU (4 at TP=1) and writes every task's results as it
+finishes, so the request is `15 + ⌈tasks/4⌉ × per-task × 1.5` min, capped at
+11:59 — a capped job resumes on the next watcher pass with the tasks it did
+not reach. Per job that is 2.5–3.7× below the single-process requests the
+table above was built from (1.7B/L100: 1,965 → 510 min; 600M/L100:
+615 → 165; 350M/L30: 285 → 90), so the node-hours above are an upper bound
+until the per-task cost is re-measured on the worker-pool pipeline (the
+per-task figures were fitted with one process per node). Before that, 120 of
+the 730 due jobs (1B at L30/L50/L100 and 1.7B at L30/L100) exceeded the cap
+and were refused; the 600M re-estimate (1.6 → 0.85 min/task measured) had
+taken 600M back under it.
 
 Eval is **~26–29% of a level's compute** (2,200–2,550 against the ~6,290
 training node-hours above), not the ~2% originally stated here and not the
@@ -452,17 +458,16 @@ conservative estimates in `MIN_PER_TASK`.
 - `eval_walltime()` previously assumed a fixed **60 min** overhead against the
   ~2.5 min measured, and put 90M at 0.6 min/task — *below* the 0.667 measured.
   Both are now fitted; overhead is 15 min for cold-start headroom.
-- At the unmeasured sizes the L100 request exceeds the 11:59 queue cap
-  outright. A walltime kill writes **nothing** under `BATCH_TASKS=1`, so a
-  clamped request would be resubmitted and killed forever; `submit_eval` now
-  refuses those instead (600M/1B/1.7B at L100 and 1.7B at L50). They need the
-  eval split across jobs — `evaluate.sbatch` already has
-  `NUM_SPLITS`/`SPLIT_INDEX` — before they can run at all.
+- Until 2026-09-04 a walltime kill wrote **nothing** (`BATCH_TASKS=1`: one
+  `lm_eval` call for every task), so `submit_eval` refused the over-cap
+  requests (600M/1B/1.7B at L100, 1.7B at L50) rather than have them
+  resubmitted and killed forever. The worker pool made evals resumable per
+  task, so the cap is a resume point now and the refusal is gone.
 - Eval is also **latency-bound, not throughput-bound**: jobs are 1 node, and
   `scripts/debug_drain.sh` moves pending work off the busy `normal` queue into
-  `debug` (1:30 cap, 1 running + 1 queued). Only *conversions* and *BPB* jobs
-  are moved regardless of length, because both resume per checkpoint; an eval
-  is moved only if it already fits 1:30, i.e. L1/L2/L8.
+  `debug` (1:30 cap, 1 running + 1 queued). Conversions and BPB resume per
+  checkpoint and evals per task, so every kind is moved regardless of its
+  requested length.
 - Conversion gates evaluation — a cell cannot be evaluated until its HF
   snapshot exists — so it is on the critical path despite being cheap.
 

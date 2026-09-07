@@ -11,10 +11,11 @@ created + `git pull`'d each run); verification is a pure string lookup over
 the ~15k YAML files, no dataset I/O — finishes in a few seconds.
 
 After verification, we submit ONE sbatch through evaluate.sbatch with:
-  - LM_EVAL_BACKEND=vllm, BATCH_TASKS=0   per-task isolation (a bad task
-                                          only kills itself; lm_eval's
-                                          per-task error handler logs and
-                                          continues)
+  - LM_EVAL_BACKEND=vllm, EVAL_WORKERS=1  one worker, so the tasks run one
+                                          at a time (a bad task only fails
+                                          itself — eval_worker.py isolates
+                                          them — and datasets download one
+                                          at a time, see below)
   - HARNESS_LIMIT=2                       2 examples per task (enough to
                                           flush dataset cache + verify
                                           generation works)
@@ -119,7 +120,7 @@ def submit_sbatch(tasks_csv: str, cell: str, iter_dir: Path,
         "TOKENIZER": "alehc/swissai-tokenizer",
         "BOS": "true",
         "APPLY_CHAT_TEMPLATE": "false",
-        "BATCH_TASKS": "0",
+        "EVAL_WORKERS": "1",
         "TP": str(tp),
         "PP": str(pp),
         "HARNESS_LIMIT": str(limit),
@@ -128,10 +129,9 @@ def submit_sbatch(tasks_csv: str, cell: str, iter_dir: Path,
         "TASKS": tasks_csv,
         # Override the production default (HF_DATASETS_OFFLINE=1 in
         # evaluate.sbatch) so the tasktest can DOWNLOAD any dataset that
-        # isn't cached yet. With BATCH_TASKS=0 the per-task loop runs one
-        # lm_eval call at a time → exactly one concurrent download → no
-        # rate-limit risk. Side effect: this run populates the cache for
-        # future production jobs.
+        # isn't cached yet. With EVAL_WORKERS=1 the tasks run one at a time
+        # → exactly one concurrent download → no rate-limit risk. Side
+        # effect: this run populates the cache for future production jobs.
         "HF_DATASETS_OFFLINE": "0",
     }
     cmd = [

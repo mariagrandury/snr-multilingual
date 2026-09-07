@@ -122,7 +122,7 @@ from doing duplicate work:
 | Layer | Where | Behavior |
 | ----- | ----- | -------- |
 | Per-checkpoint | [`runners/hf_base_runner.sh`](../../runners/hf_base_runner.sh) | Before each `sbatch`, calls `scripts/_eval_status.py` and **skips submission entirely** if every task in `$TASKS` already has results on disk for that ckpt. |
-| Per-task | [`scripts/_run_per_task.sh`](../../scripts/_run_per_task.sh) | Inside a running job, filters `$TASKS` down to remaining and exits cleanly with no work if everything is already done. Logs skipped tasks to `skipped_tasks.log`. |
+| Per-task | [`scripts/_run_per_task.sh`](../../scripts/_run_per_task.sh) | Inside a running job, filters `$TASKS` down to remaining and exits cleanly with no work if everything is already done. Logs skipped tasks to `skipped_tasks.log`. One `eval_worker.py` per GPU then runs the rest, each task's results written as it finishes. |
 
 A task counts as "done" if a non-empty `eval_*/per_task/<task>/` exists
 (saved by killed-mid-run jobs) or if some `eval_*/results_*.json` lists
@@ -303,12 +303,12 @@ bash scripts/launch_evaluations.sh snr-pretraining \
 
 ### Rescue an eval that timed out mid-run
 
-[scripts/_run_per_task.sh](../../scripts/_run_per_task.sh) writes one
+[scripts/eval_worker.py](../../scripts/eval_worker.py) writes one
 sub-directory per finished task to
 `$EVAL_DIR/per_task/<task_name>/` *as each task completes* — they live on
 persistent storage, not scratch. If Slurm kills the job before the final
-merge + W&B upload, only the in-progress task is lost; everything already
-finished can be merged and pushed afterwards.
+merge + W&B upload, only the tasks in flight (one per worker) are lost;
+everything already finished can be merged and pushed afterwards.
 
 Locate the eval directory (timestamp + jobid):
 
@@ -337,6 +337,6 @@ python -m scripts.alignment.update_wandb_alignment \
     --main_metrics "" --eval_duration 0
 ```
 
-To finish the missing tasks too, re-launch the same checkpoint with
-`launch_evaluations.sh` and a `TASKS=...` override that lists only the
-missing ones (skip what's already in `$EVAL_DIR/per_task/`).
+To finish the missing tasks too, just re-launch the same checkpoint: the
+per-task gate in `_run_per_task.sh` sees what is already in
+`$EVAL_DIR/per_task/` and runs only the rest.
