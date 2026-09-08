@@ -20,21 +20,29 @@ def bpb_gain_per_language(m, out):
     g = g[order]
     lim = float(np.nanmax(np.abs(g.to_numpy())))
 
-    fig, ax = plt.subplots(figsize=(13.4, 2.5))
-    im = ax.imshow(np.ma.masked_invalid(g.to_numpy()), cmap=S.DIV, vmin=-lim, vmax=lim,
-                   aspect="auto")
-    ax.set_yticks(range(len(g.index))); ax.set_yticklabels(g.index, fontsize=9, color=S.INK)
-    ax.set_xticks(range(len(order)))
-    ax.set_xticklabels([data.subset_label(c) for c in order], fontsize=4.4, rotation=90,
-                       color=S.MUTED)
-    ax.set_xlabel("validation language, ordered by how much it gains", fontsize=9, color=S.MUTED)
-    S.clean(ax, spines=())
-    cb = fig.colorbar(im, ax=ax, fraction=0.014, pad=0.008)
+    # 100 languages in one strip forces a 4pt label that no projector resolves,
+    # so the ordering is cut in half and stacked. Best helped on the top row.
+    half = (len(order) + 1) // 2
+    blocks = [order[:half], order[half:]]
+    fig, axes = plt.subplots(len(blocks), 1, figsize=(13.4, 2.35 * len(blocks)))
+    for ax, cols in zip(axes, blocks):
+        sub = g[cols]
+        im = ax.imshow(np.ma.masked_invalid(sub.to_numpy()), cmap=S.DIV,
+                       vmin=-lim, vmax=lim, aspect="auto")
+        ax.set_yticks(range(len(sub.index)))
+        ax.set_yticklabels(sub.index, fontsize=9, color=S.INK)
+        ax.set_xticks(range(len(cols)))
+        ax.set_xticklabels([data.subset_label(c) for c in cols], fontsize=7.6,
+                           rotation=90, color=S.MUTED)
+        S.clean(ax, spines=())
+    axes[-1].set_xlabel("validation language, ordered by how much it gains",
+                        fontsize=9, color=S.MUTED)
+    cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.008)
     cb.set_label("bits per byte saved", fontsize=8.5, color=S.MUTED)
     cb.ax.tick_params(labelsize=7.5, colors=S.MUTED)
     n_worse = int((g.mean() < 0).sum())
     S.title(fig, f"Going from 2 to 50 languages: every language, every size "
-                 f"({len(order) - n_worse} of {len(order)} improve)", y=1.10, size=12)
+                 f"({len(order) - n_worse} of {len(order)} improve)", y=1.03, size=12)
     S.save(fig, out / "bpb_gain_per_language.png")
 
 

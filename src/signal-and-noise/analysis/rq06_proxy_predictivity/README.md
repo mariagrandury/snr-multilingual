@@ -13,8 +13,8 @@
 ## Highlighted result
 
 - **Scaling-law error** — median |relative error| of the reference's per-language BPB predicted from the proxy ladder: L8 0.058, L50 0.046 (largest proxy ladder at that L).
-- **Seed noise vs detrended checkpoint noise** — median ratio 2.54 over 752 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.64; 42% of 408 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Seed noise vs detrended checkpoint noise** — median ratio 2.04 over 5546 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.55; 39% of 556 cells above 2× (a distinct model for SNR, not a re-roll).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -83,9 +83,9 @@ Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq0
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 0.87 | 4 |
+| benchmark | arch / seed | 1.33 | 152 |
 | benchmark | arch / ckpt | 4.72 | 156 |
-| benchmark | scheme / ckpt | 1.26 | 9 |
+| benchmark | scheme / ckpt | 2.05 | 4840 |
 | bpb | arch / seed | 1.65 | 404 |
 | bpb | arch / ckpt | 3.53 | 909 |
 | bpb | scheme / ckpt | 8.69 | 909 |

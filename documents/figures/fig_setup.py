@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np, pandas as pd, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import data, style as S
@@ -65,18 +66,19 @@ def optimizer_timescale(out):
     bars = ax.bar(names, [ratio[n] for n in names],
                   color=[S.SERIES[1] if n == "90M" else S.RAMP[1] for n in names], width=.62)
     ax.axhline(1, color=S.MUTED, ls="--", lw=1.2)
-    ax.annotate("the optimizer's memory", (5.45, 1.0), textcoords="offset points",
-                xytext=(0, 5), fontsize=8.5, color=S.MUTED, ha="right")
     for n, b in zip(names, bars):
         ax.annotate(f"{ratio[n]:.2f}×", (b.get_x() + b.get_width() / 2, b.get_height()),
                     textcoords="offset points", xytext=(0, 3), ha="center",
                     fontsize=8.5, color=S.INK)
-    ax.annotate("9 of 10 runs\ndiverge", (0, ratio["90M"]), textcoords="offset points",
-                xytext=(0, 26), ha="center", fontsize=8.5, color=S.SERIES[1])
     ax.set_ylabel("run length ÷ 10,000 steps", fontsize=9, color=S.MUTED)
     ax.set_ylim(0, 9.4)
     ax.grid(axis="y", color=S.GRID, lw=.8); ax.set_axisbelow(True)
     S.clean(ax); ax.tick_params(length=0, labelsize=9.5)
+    ax.legend(handles=[Patch(facecolor=S.SERIES[1], label="90M, 9 of 10 runs diverged"),
+                       Patch(facecolor=S.RAMP[1], label="trains cleanly"),
+                       Line2D([], [], color=S.MUTED, ls="--", lw=1.2,
+                              label="the optimizer's memory, 10,000 steps")],
+              frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="upper left")
     S.title(fig, "The 90M run is shorter than the optimizer it was given")
     S.save(fig, out / "optimizer_timescale.png")
 

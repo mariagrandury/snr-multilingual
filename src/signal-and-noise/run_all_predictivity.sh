@@ -7,7 +7,8 @@
 # ladder_report.csv to use a local copy (the cluster's capstor copy, a fixture).
 #
 # Idempotent: the per-task DA and SNR tables are computed once per pool and
-# reused. Output layout: analysis/<rqNN_name>/pretraining/<pool>/
+# reused, until the ladder report is newer than them. Output layout:
+# analysis/<rqNN_name>/pretraining/<pool>/
 #
 #   A. The above-random gate (its report feeds the rq01 slides), then DA and SNR
 #      per pool (DA is the truth rq02's variants are scored against).
@@ -28,20 +29,25 @@ POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predi
 run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
        [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*"); }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
+# The ladder report is the only input, so a cached table older than it was built
+# from data we no longer have. Reusing it lets a whole run finish on last
+# night's numbers while every log line claims success.
+LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_dir() / 'ladder_report.csv')")
+fresh() { [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
 
 echo "############################## PASS A — gate, DA, SNR compute ##############################"
 run $PY analysis/rq00_acc_vs_flops/above_random.py --only predictivity
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
-  if [ ! -f "analysis/rq01_decision_accuracy/$st/$t/da_per_task.csv" ]; then
-    run $PY analysis/rq01_decision_accuracy/compute_da.py --pool "$t"
-  else
+  if fresh "analysis/rq01_decision_accuracy/$st/$t/da_per_task.csv"; then
     echo "  (DA cached: analysis/rq01_decision_accuracy/$st/$t/da_per_task.csv)"
-  fi
-  if [ ! -f "analysis/rq02_snr_definition/$st/$t/snr_variants_per_task.csv" ]; then
-    run $PY analysis/rq02_snr_definition/run_apertus_snr_variants.py --pool "$t"
   else
+    run $PY analysis/rq01_decision_accuracy/compute_da.py --pool "$t"
+  fi
+  if fresh "analysis/rq02_snr_definition/$st/$t/snr_variants_per_task.csv"; then
     echo "  (SNR cached: analysis/rq02_snr_definition/$st/$t/snr_variants_per_task.csv)"
+  else
+    run $PY analysis/rq02_snr_definition/run_apertus_snr_variants.py --pool "$t"
   fi
 done
 

@@ -10,8 +10,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `belebele`, `arc`, `include_base_44`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
-- **Above-random gate.** Of **324 benchmarks, 85 clear chance at ≥1 size** and 82 at 1B (239 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `paws`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
+- **Above-random gate.** Of **324 benchmarks, 94 clear chance at ≥1 size** and 87 at 1B (230 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -89,21 +89,21 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `belebele_zho_Hans` | belebele | zh | 0.198 |
-| `include_base_44_german` | include_base_44 | de | 0.162 |
-| `belebele_jpn_Jpan` | belebele | ja | 0.146 |
-| `arc_fr` | arc | fr | 0.123 |
-| `include_base_44_french` | include_base_44 | fr | 0.123 |
+| `lambada_openai_mt_fr` | lambada_openai_mt | fr | 0.479 |
+| `lambada_openai_mt_it` | lambada_openai_mt | it | 0.432 |
+| `lambada_openai_mt_en` | lambada_openai_mt | en | 0.431 |
+| `lambada_openai_mt_es` | lambada_openai_mt | es | 0.424 |
+| `global_piqa_parallel_cloze_spa_latn_spai` | global_piqa_parallel_cloze | es | 0.400 |
 
-![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/belebele.png)
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/lambada_openai_mt.png)
 
 **Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
 | options | chance | above ≥1 size | above @1B |
 |---|---|---|---|
-| 2 | 0.50 | 50 / 129 | 48 / 129 |
+| 2 | 0.50 | 58 / 129 | 53 / 129 |
 | 3 | 0.33 | 12 / 15 | 11 / 15 |
-| 4 | 0.25 | 23 / 180 | 23 / 180 |
+| 4 | 0.25 | 24 / 180 | 23 / 180 |
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact

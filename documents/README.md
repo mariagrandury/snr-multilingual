@@ -20,7 +20,8 @@ share, and `predictivity.py` holds the RQ6 measurements.
 
 ```bash
 cd documents/figures
-for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch; do
+for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch \
+         fig_benchmark_predictivity fig_appendix; do
   python3 $f.py
 done
 python3 fig_from_analysis.py    # after src/signal-and-noise/analysis/report_figures/make_figures.py
@@ -34,6 +35,12 @@ python3 fig_from_analysis.py    # after src/signal-and-noise/analysis/report_fig
 - `fig_predictivity.py`: smallest predictive proxy size, overall and per language.
 - `fig_rq6_sketch.py`: RQ6 in the shape the team sketched, plus the measurement
   behind it.
+- `fig_benchmark_predictivity.py`: the benchmark suite against per-language bits
+  per byte on the proxy question, once both have shared tasks to score.
+- `fig_appendix.py`: the appendix heatmaps under `public/ladder/appendix/` — two
+  overviews (benchmark by size pair, language by size pair) plus one per
+  language. `da_per_benchmark.py` writes the slides that reference them, so run
+  this whenever that appendix is regenerated.
 - `fig_from_analysis.py`: rasterises the report figures the deck reuses
   (`fig1_gate`, `fig3_reliability_map`, `fig4_subset_sweep`), which
   `make_figures.py` writes as PDFs.

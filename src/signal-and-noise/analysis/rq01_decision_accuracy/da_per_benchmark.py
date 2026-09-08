@@ -34,7 +34,10 @@ Outputs (under `snr_definition/<stage>/<pool>/`):
 
 `generate_slides()` additionally rewrites the data-driven appendix of the
 Slidev deck (`documents/slides.md`, between BEGIN/END markers — idempotent):
-2 above-random slides (custom / all models) + 1 DA-size slide per language.
+the above-random slides, 2 overview heatmap slides, then per language a DA-size
+table slide followed by the same numbers as a heatmap. The heatmap PNGs are
+rendered by `documents/figures/fig_appendix.py` from the CSV this script writes,
+so run that too after regenerating the appendix.
 
     python analysis/rq01_decision_accuracy/da_per_benchmark.py --pool custom_swissai_hf
 """
@@ -201,7 +204,38 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
             f"{md_table(header, rows)}\n\n"
             f"{TABLE_STYLE}\n"
         )
+        # The same table as a picture, for reading a language at a glance.
+        # documents/figures/fig_appendix.py renders these from the same CSV.
+        slides.append(_figure_slide(
+            f"/ladder/appendix/da_{lang}.png",
+            "Appendix — Decision accuracy across sizes",
+            f"{name} ({lang}) · the table before, as a heatmap"))
     return slides
+
+
+def _figure_slide(image: str, title: str, subtitle: str, height: str = "72vh") -> str:
+    return (f"---\n"
+            f"layout: figure\n"
+            f"image: {image}\n"
+            f"fit: contain\n"
+            f"height: {height}\n"
+            f"title: {title}\n"
+            f"subtitle: \"{subtitle}\"\n"
+            f"---\n")
+
+
+def _overview_slides() -> list[str]:
+    """The two aggregate views that open the appendix: the grid collapsed over
+    languages, then over benchmarks."""
+    return [
+        _figure_slide("/ladder/appendix/da_by_benchmark.png",
+                      "Appendix — Decision accuracy, all languages at once",
+                      "Benchmark × size pair, averaged over every language it covers"),
+        _figure_slide("/ladder/appendix/da_by_language.png",
+                      "Appendix — Decision accuracy, all benchmarks at once",
+                      "Language × size pair, averaged over every benchmark it has",
+                      height="78vh"),
+    ]
 
 
 def generate_slides(long: pd.DataFrame, pool: str) -> None:
@@ -213,6 +247,7 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     ar, lang_slides = above_random_slides(stage), _da_language_slides(long)
+    overview = _overview_slides()
     block = "\n".join([
         _BEGIN,
         "",
@@ -220,6 +255,7 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         "# Appendix — Signal & Predictability across Sizes\n",
         "",
         *ar,
+        *overview,
         *lang_slides,
         _END,
     ]) + "\n"
@@ -232,7 +268,8 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         text = text.rstrip() + "\n\n" + block
     _SLIDES.write_text(text)
     print(f"Wrote appendix slides → {_SLIDES} "
-          f"({len(ar)} above-random + {len(lang_slides)} per-language DA)")
+          f"({len(ar)} above-random + {len(overview)} overview + "
+          f"{len(lang_slides)} per-language DA)")
 
 
 def main():

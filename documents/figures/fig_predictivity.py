@@ -43,6 +43,15 @@ def line_plot(d, out):
         g = d[d["kind"] == name].set_index("L")["slot"]
         ax.plot([g.get(L, np.nan) for L in Ls], [ypos[L] for L in Ls], marker=marker,
                 ms=7, lw=1.8, color=colour, zorder=4, label=name)
+    # The benchmark tasks are a whole population with one answer, so they get a
+    # neutral mark rather than a fourth categorical hue: none of them is ever
+    # predictive, at any size or language count.
+    bench = d[d["kind"] == "a benchmark task"]
+    if len(bench):
+        seen = bench.groupby("L")["slot"].max()
+        ax.plot([seen.get(L, np.nan) for L in Ls], [ypos[L] for L in Ls], marker="x",
+                ms=8, mew=2, lw=1.8, ls="--", color=S.MUTED, zorder=4,
+                label=f"any benchmark task, none predictive ({len(bench):,} tried)")
 
     ax.set_xticks(range(NEVER + 1)); ax.set_xticklabels(PROXIES + ["no size\nworks"], fontsize=9)
     ax.set_yticks(list(ypos.values()))

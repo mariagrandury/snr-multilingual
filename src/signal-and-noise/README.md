@@ -56,6 +56,11 @@ the last 5 checkpoints.
 pip install -e .                      # or the deps in pyproject.toml
 bash run_all_predictivity.sh          # downloads the ladder report, runs rq00–rq06, writes the READMEs' auto blocks
 SNR_LADDER_DIR=/path/with/ladder_report.csv bash run_all_predictivity.sh   # a local copy (capstor, a fixture)
+
+The per-task DA and SNR tables are cached per pool and reused, but only while
+they are newer than `ladder_report.csv`. A refreshed report invalidates them, so
+re-running after new evals land recomputes everything downstream instead of
+quietly reporting last night's numbers.
 ```
 
 `run_all_pretraining.sh` is the 36-sweep driver (parquet pools).
