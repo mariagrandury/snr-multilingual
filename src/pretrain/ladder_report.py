@@ -25,9 +25,10 @@ has not decayed yet and its loss is not comparable to a finished one.
 generated ladder_report.md summary table next to them. Some of this evidence is only obvious as a shape:
 the 90M divergence is two numbers in a table and unmistakable as a curve.
 
-    python3.11 ladder_report.py                 # everything
-    python3.11 ladder_report.py --check scaling
-    python3.11 ladder_report.py --plot          # + figures and ladder_report.md
+    python3.11 pretrain/ladder_report.py                 # everything
+    python3.11 pretrain/ladder_report.py --check scaling
+    python3.11 pretrain/ladder_report.py --plot          # + figures and ladder_report.md
+    python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
 """
 from __future__ import annotations
 

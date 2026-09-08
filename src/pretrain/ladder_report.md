@@ -71,9 +71,9 @@
 
 | transformation | pairs | Δ final loss | Δ macro BPB | Δ mean benchmark |
 | -------------- | ----: | -----------: | ----------: | ---------------: |
-| seed | 6 | -0.043 .. +0.037 | -0.024 .. +0.024 | -0.014 .. -0.012 |
-| arch | 13 | -1.074 .. +0.259 | -8.159 .. +0.084 | -0.005 .. +0.003 |
-| scheme | 9 | -0.077 .. +0.025 | -0.014 .. +0.103 | — |
+| seed | 6 | -0.043 .. +0.037 | -0.024 .. +0.024 | -0.013 .. +0.010 |
+| arch | 13 | -1.074 .. +0.259 | -8.159 .. +0.084 | -0.006 .. +0.003 |
+| scheme | 9 | -0.077 .. +0.025 | -0.014 .. +0.103 | -0.013 .. +0.001 |
 
 **Read this against the `seed` row.** A transformation whose effect is no larger than re-rolling the seed is not a distinct model for SNR — it is the same model measured twice. An em dash means no matched pair exists yet.
 
