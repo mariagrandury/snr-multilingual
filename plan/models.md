@@ -16,24 +16,28 @@ sheet carried the fixed-100B-token LRs and the 51-run grid).
 
 L ∈ {1, 2, 8, 15, 30, 50, 100} languages (English + L−1 FineWeb-2 languages,
 lists per scheme in `src/pretrain/data/language_sets_scheme{A,B}.json`).
-✓ = one seed (1904) · **×3** = seeds 64, 313, 1904. The generated block in
+✓ = one seed (1904) · **×3** = seeds 64, 313, 1904 (1B: 28, 1797, 1904). The generated block in
 [`src/pretrain/README.md`](../src/pretrain/README.md) is the live version of
 this table.
 
 | Languages | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| 1 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
-| 2 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
+| 1 | ✓ | **×3** | ✓ | **×3** | **×3†** | ✓ |
+| 2 | ✓ | **×3** | ✓ | **×3** | **×3†** | ✓ |
 | 8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | 15 | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| 30 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 30 | ✓ | ✓ | ✓ | ✓ | **×3†** | ✓ |
 | 50 | ✓ | **×3** | ✓ | **×3** | ✓ | — |
 | 100 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
-| **Runs/level** | 7 | 15 | 7 | 15 | 7 | 5 |
+| **Runs/level** | 7 | 15 | 7 | 15 | 13 | 5 |
 
-**56 runs per intervention level** (scheme A, deep). Counting both
+† the 1B row's ×3 cells carry seeds 28, 1797, 1904 — the runs launched on
+2026-09-02 from a clone predating the seed change, adopted as they are
+([1b-models.md](1b-models.md)); `launch_trainings.SEED_TRIPLE_1B`.
+
+**62 runs per intervention level** (scheme A, deep). Counting both
 architectures and scheme B where its language set differs (L ∈ {8, 15, 30}):
-146 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
+162 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
 `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` (e.g.
 `lm-1B-L30-deep-seed1904`, `lm-350M-L8-schemeB-shallow-seed1904`). W&B project **`msnr`**
 (entity `mariagrandury-epflnlp`).

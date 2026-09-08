@@ -2,38 +2,60 @@
 
 ## Research question
 
-> How does benchmark accuracy move with compute across the three data mixtures
-> and across model scale, which benchmarks separate the mixtures most, and which
-> benchmarks even clear chance? (The above-random gate is foundational — every
-> RQ depends on it.)
+> How does benchmark accuracy move with compute across the language settings
+> and across model scale, which benchmarks separate the settings most, and
+> which benchmarks even clear chance? (The above-random gate is foundational —
+> every RQ depends on it.)
 
-<!-- BEGIN auto:highlight (run_apertus.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate data mixtures most: `agieval_sat`, `belebele`, `arabic_leaderboard_alghafa_mcq_exams_test`** — top-3 families by mixture-Signal ((max−min)/mean of per-mix final scores) at 1B.
-- **Mixture-Signal ≠ reliability.** These top-Signal families are exactly the ones the above-random gate **removes** — they sit at chance, so they never enter the SNR analysis. Of **118 benchmarks, 44 clear chance at ≥1 size** (74 are random everywhere) — almost entirely an answer-count effect.
+- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `paws`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
+- **Above-random gate.** Of **324 benchmarks, 94 clear chance at ≥1 size** and 87 at 1B (230 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
 
 Curves under `pretraining/<pool>/{per_benchmark,per_language}/`: accuracy vs
-FLOPs (log-x), custom models as per-mixture curves (seed 1904); on
-`custom_swissai_hf` the external pretraining models (a06, distillation,
-swiss-ai/HF base) overlay as final-checkpoint markers out to 70B. Tasks are
-parent-aggregated (subjects collapse into the parent; languages stay distinct);
-each task's **Signal** = (max−min)/mean of per-mix final scores at 1B; only the
-top-3 families by Signal get curve grids.
+FLOPs (log-x, `6 × (N_non_emb + d·V) × D`), one curve per language setting
+(`plotted_mixes` in the `snr` config: L1 … L100, deep, scheme A, seed 1904)
+and per size 90M–1.7B. Tasks are parent-aggregated (subjects collapse into the
+parent; languages stay distinct); each task's **Signal** = (max−min)/mean of
+the per-setting final scores at the target size (1B, or the largest size with
+data); only the top-3 families by Signal get curve grids. The 36-sweep pools
+still draw their three data mixtures and overlay the external models to 70B.
 
-The **above-random gate** ([`above_random.py`](../../analysis/rq00_acc_vs_flops/above_random.py))
-is foundational and depends **only** on raw eval scores and the intrinsic
-per-family answer-option counts (`N_OPTIONS` in that file) — it reads no RQ
-output, so every RQ depends on the gate, never the reverse. A `(benchmark, size)`
-cell is above random iff `mean score > 1/n_options + 0.05`;
-`run_apertus_snr_variants.py` NaN-s every random cell so the gate propagates to
-all downstream RQs. Numbers below are the `custom` report (custom pretrains,
-buckets 175M…1B — the SNR gate's domain).
+The **above-random gate** ([`above_random.py`](above_random.py)) is
+foundational and depends **only** on raw eval scores and the answer-option
+counts — `n_options` in `configs/tasks.json` where it was derived from the
+evaluated samples, the per-family table in that file otherwise — it reads no
+RQ output, so every RQ depends on the gate, never the reverse. A
+`(benchmark, size)` cell is above random iff `mean score > 1/n_options + 0.05`;
+`run_apertus_snr_variants.py` NaN-s every at-chance cell so the gate propagates
+to all downstream RQs. Per-language BPB and generative tasks have no chance
+level and are never gated.
 
-## Methodology — scaling beyond 1B
+## Preliminary findings (ladder snapshot, 2026-09-01)
+
+From the ≤ 600M ladder's eval results (`plan/status-09-01.md`, §3; 90M
+excluded as diverged):
+
+- Real signal already at these sizes: MultiBLiMP (0.65 → 0.92 from 90M →
+  600M, chance 0.5) and clear size-monotone growth on HellaSwag (0.25 → 0.30),
+  XNLI (0.33 → 0.42), XStoryCloze (0.48 → 0.57), XWinograd (0.51 → 0.64),
+  XCOPA.
+- Still at chance even at 600M: Belebele, Global-MMLU, INCLUDE and
+  ARC-multilingual all sit at 0.24–0.26 (chance 0.25) — the knowledge-heavy
+  4-option benchmarks have not emerged at this compute, which is the gate's
+  domain.
+- BPB (the plan's outcome metric): non-English macro BPB falls monotonically
+  with size (L50: 7.03 → 1.61 → 1.38 across 90M/175M/350M) and over training
+  within each healthy run; English BPB is identical between L2 and L50 at every
+  size (0.947 vs 0.946 at 350M) while L50 beats L2 on 81–89 of 99 non-English
+  languages by ~0.4–0.5 bits/byte — enormous against a checkpoint noise of
+  ~0.002.
+
+## Methodology — scaling beyond 1B (36-sweep pools)
 
 The `custom_swissai_hf` pool extends the compute axis past the custom 1B ceiling
 by folding in the apertus3 a06, distilled, and reference-HF trajectories. Three
@@ -58,31 +80,30 @@ mechanisms make that work:
   shared tasks: directionally useful, not yet statistically strong. acc-vs-FLOPs
   curves and the signal pool carry the >1B scaling story for now.
 
-<!-- BEGIN auto:results (run_apertus.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:results (run_apertus.py --pool predictivity) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` above-random report. Regenerate: `python analysis/rq00_acc_vs_flops/run_apertus.py --pool custom_swissai_hf` and `python analysis/rq00_acc_vs_flops/above_random.py`.
+Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00_acc_vs_flops/above_random.py --only predictivity` and `python analysis/rq00_acc_vs_flops/run_apertus.py --pool predictivity`.
 
-**Top benchmarks by mixture-Signal** (full ranking in `pretraining/custom_swissai_hf/acc_vs_flops_signal.csv`):
+**Top benchmarks by Signal across language settings** (full ranking in `pretraining/predictivity/acc_vs_flops_signal.csv`):
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `agieval_sat_en` | agieval_sat | en | 0.268 |
-| `belebele_hin_Deva` | belebele | hi | 0.245 |
-| `belebele_zho_Hans` | belebele | zh | 0.236 |
-| `global_piqa_completions_arb_arab` | global_piqa_completions | ar | 0.229 |
-| `belebele_eng_Latn` | belebele | en | 0.222 |
+| `lambada_openai_mt_fr` | lambada_openai_mt | fr | 0.479 |
+| `lambada_openai_mt_it` | lambada_openai_mt | it | 0.432 |
+| `lambada_openai_mt_en` | lambada_openai_mt | en | 0.431 |
+| `lambada_openai_mt_es` | lambada_openai_mt | es | 0.424 |
+| `global_piqa_parallel_cloze_spa_latn_spai` | global_piqa_parallel_cloze | es | 0.400 |
 
-![top-Signal family accuracy vs FLOPs](pretraining/custom_swissai_hf/per_benchmark/agieval_sat.png)
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/lambada_openai_mt.png)
 
-**Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every random `(benchmark, size)` SNR cell, so the gate propagates to all RQs. Almost entirely an answer-count effect:
+**Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
 | options | chance | above ≥1 size | above @1B |
 |---|---|---|---|
-| 2 | 0.50 | 28 / 42 | 28 / 42 |
-| 3 | 0.33 | 7 / 11 | 7 / 11 |
-| 4 | 0.25 | 9 / 63 | 7 / 63 |
-| 5 | 0.20 | 0 / 2 | 0 / 2 |
+| 2 | 0.50 | 58 / 129 | 53 / 129 |
+| 3 | 0.33 | 12 / 15 | 11 / 15 |
+| 4 | 0.25 | 24 / 180 | 23 / 180 |
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact
@@ -125,6 +146,40 @@ two. This single distinction drives the external-tier findings downstream: optio
 count stops predicting SNR (RQ2), and 4-option HellaSwag becomes the
 *highest*-SNR family once it clears the gate (RQ5).
 
+
+## Results from the 36-model sweep (2026-06, superseded)
+
+The numbers below were generated on the 36-model sweep (4 sizes × 3 data mixtures × 3 seeds, 12 languages, pool `custom_swissai_hf` unless stated) and are kept as history; the predictivity ladder regenerates the blocks above.
+
+### Highlighted result
+
+- **The benchmarks that separate data mixtures most: `agieval_sat`, `belebele`, `arabic_leaderboard_alghafa_mcq_exams_test`** — top-3 families by mixture-Signal ((max−min)/mean of per-mix final scores) at 1B.
+- **Mixture-Signal ≠ reliability.** These top-Signal families are exactly the ones the above-random gate **removes** — they sit at chance, so they never enter the SNR analysis. Of **118 benchmarks, 44 clear chance at ≥1 size** (74 are random everywhere) — almost entirely an answer-count effect.
+
+### Results
+
+Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` above-random report. Regenerate: `python analysis/rq00_acc_vs_flops/run_apertus.py --pool custom_swissai_hf` and `python analysis/rq00_acc_vs_flops/above_random.py`.
+
+**Top benchmarks by mixture-Signal** (full ranking in `pretraining/custom_swissai_hf/acc_vs_flops_signal.csv`):
+
+| task | family | lang | Signal |
+|---|---|---|---|
+| `agieval_sat_en` | agieval_sat | en | 0.268 |
+| `belebele_hin_Deva` | belebele | hi | 0.245 |
+| `belebele_zho_Hans` | belebele | zh | 0.236 |
+| `global_piqa_completions_arb_arab` | global_piqa_completions | ar | 0.229 |
+| `belebele_eng_Latn` | belebele | en | 0.222 |
+
+![top-Signal family accuracy vs FLOPs](pretraining/custom_swissai_hf/per_benchmark/agieval_sat.png)
+
+**Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every random `(benchmark, size)` SNR cell, so the gate propagates to all RQs. Almost entirely an answer-count effect:
+
+| options | chance | above ≥1 size | above @1B |
+|---|---|---|---|
+| 2 | 0.50 | 28 / 42 | 28 / 42 |
+| 3 | 0.33 | 7 / 11 | 7 / 11 |
+| 4 | 0.25 | 9 / 63 | 7 / 63 |
+| 5 | 0.20 | 0 / 2 | 0 / 2 |
 ## TODO
 
 - [ ] Per-language curve panels for the gated-out families to visualise *how far*

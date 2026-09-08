@@ -63,7 +63,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, cell_languages,
-    exp_name, job_name, predictivity_cells, save_interval, schedule_for)
+    exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -436,10 +436,14 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     saved = saved_valid_iters(cell, root)
     if not saved:
         return
-    # Every Nth saved checkpoint on the cell's per-size save grid, plus
-    # the run's final one whatever its number — same rule as Azure.
-    due = [i for i in saved
-           if i % (args.every * save_interval(target)) == 0 or i == target]
+    # Every Nth saved checkpoint counted from the run's first save, plus the
+    # run's final one whatever its number — same rule as Azure. Counting saves
+    # rather than testing `iter % (N x save_interval)` keeps the rule right for
+    # cells whose on-disk grid predates the current schedule: the 1B row
+    # trained at 45,740 / 2,287 (plan/1b-models.md) has every 2nd save on the
+    # shared k/20 grid, but none is a multiple of the code's 1,143 interval,
+    # so the modulo rule found nothing due there and never evaluated them.
+    due = [i for k, i in enumerate(saved) if (k + 1) % args.every == 0 or i == target]
     # The cell's task list: every auto benchmark, in the languages
     # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
     task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))

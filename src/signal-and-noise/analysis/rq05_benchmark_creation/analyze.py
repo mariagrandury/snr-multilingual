@@ -17,7 +17,8 @@ Writes (this dir):
   - group_stats.csv                per-group n, mean, median, kruskal H, p
 
 Q1's headline pick is `mpd` (mean pairwise distance, dispersion cluster);
-SNR signal here is `snr_mpd_1B`.
+SNR signal here is `snr_mpd_<reference size>` (snr_col(): the configured
+target size, or the largest bucket the CSV has while the big rungs train).
 """
 from __future__ import annotations
 
@@ -37,15 +38,28 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from analysis.utils import assign_language, benchmark_family  # noqa: E402
+from analysis.utils import TARGET_SIZE, assign_language, benchmark_family  # noqa: E402
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
 from analysis.utils import _is_language_aggregate  # noqa: E402
 from analysis.paths import SNR_DEFINITION  # noqa: E402
+from analysis.rq02_snr_definition.analyze_snr_variants import buckets_in_df  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SNR_DEFINITION_ROOT = SNR_DEFINITION
-SNR_COL = "snr_mpd_1B"
+# Q1's headline family pick is mean pairwise distance (dispersion cluster);
+# read at the configured target size, or at the largest size with data while
+# the reference rungs are still training (snr_col()).
+SNR_VARIANT = "mpd"
+SNR_COL = f"snr_{SNR_VARIANT}_{TARGET_SIZE}"
+
+
+def snr_col(csv_path: Path) -> str:
+    cols = pd.read_csv(csv_path, nrows=0).columns
+    if SNR_COL in cols:
+        return SNR_COL
+    buckets = buckets_in_df(pd.DataFrame(columns=cols))
+    return f"snr_{SNR_VARIANT}_{buckets[-1]}"
 
 # --- Categorical labels for grouping -----------------------------------------
 # Keep these in sync with the per-family paragraphs in data_info.md. Two
@@ -146,6 +160,42 @@ FAMILY_META: dict[str, dict] = {
         "source_origin": "originally_multilingual",
         "format": "completion", "n_options": 2, "passage": False,
     },
+    # --- families wired for the predictivity ladder (plan/benchmark_selection.md)
+    "global_piqa_parallel_cloze": {
+        "data_source": "Global PIQA parallel split (Chang et al. 2025)",
+        "curation_process": "participatory native-speaker authoring (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "completion", "n_options": 2, "passage": False,
+    },
+    "include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exam questions (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
+    "afrimmlu": {
+        "data_source": "IrokoBench AfriMMLU (Adelani et al. 2025), 5 MMLU subjects",
+        "curation_process": "human translation by native speakers",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
+    "afrixnli": {
+        "data_source": "IrokoBench AfriXNLI (Adelani et al. 2025), XNLI subset",
+        "curation_process": "human translation by native speakers",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "classification", "n_options": 3, "passage": False,
+    },
+    "truthfulqa-multi_mc1": {
+        "data_source": "TruthfulQA-Multi (Calvo Figueras et al. 2025)",
+        "curation_process": "professional human translation",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "mcq_question_only", "n_options": 4, "passage": False,
+    },
 }
 # Derived: random baseline = 1 / n_options
 for _f, _meta in FAMILY_META.items():
@@ -171,6 +221,8 @@ ORIGIN_ORDER = ["originally_multilingual", "english_translated"]
 
 
 def load_per_task_snr(snr_csv: Path) -> pd.DataFrame:
+    global SNR_COL
+    SNR_COL = snr_col(snr_csv)
     df = pd.read_csv(snr_csv, usecols=["task", SNR_COL])
     df["family"] = df["task"].map(benchmark_family)
     df["language"] = df["task"].map(assign_language)
@@ -299,7 +351,7 @@ def _scatter_baseline(per_family: pd.DataFrame, out_path: Path) -> None:
             label=f"OLS log10(SNR) = {intercept:.2f} + {slope:.2f}·baseline\nPearson r = {r:.2f}, p = {p_lin:.3f}")
     ax.set_yscale("log")
     ax.set_xlabel("random baseline (1 / n_options)")
-    ax.set_ylabel("median snr_mpd_1B (log scale)")
+    ax.set_ylabel(f"median {SNR_COL} (log scale)")
     ax.set_title(f"SNR vs random baseline. Spearman ρ = {rho:.2f} (p={p_rho:.3f})")
     ax.grid(True, alpha=0.3)
     ax.legend(loc="lower right", fontsize=9)
@@ -337,7 +389,7 @@ def _scatter_length(
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(f"{x_col} (log scale)")
-    ax.set_ylabel("median snr_mpd_1B (log scale)")
+    ax.set_ylabel(f"median {SNR_COL} (log scale)")
     ax.set_title(f"{title}.  Spearman ρ = {rho:.2f} (p={p_rho:.3f})")
     ax.grid(True, alpha=0.3, which="both")
     ax.legend(loc="best", fontsize=9)
@@ -371,7 +423,7 @@ def _length_grid(per_family: pd.DataFrame, out_path: Path) -> None:
         ax.set_xlabel(label)
         ax.set_title(f"{col}\nρ = {rho:.2f} (p={p:.3f})")
         ax.grid(True, alpha=0.3, which="both")
-    axes[0].set_ylabel("median snr_mpd_1B (log scale)")
+    axes[0].set_ylabel(f"median {SNR_COL} (log scale)")
     fig.suptitle("Phase B: SNR vs length features (color = curation category)")
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -390,7 +442,7 @@ def _ranked_bar(per_family: pd.DataFrame, out_path: Path) -> None:
     ax.set_yticks(y)
     ax.set_yticklabels(df["family"])
     ax.set_xscale("log")
-    ax.set_xlabel("median snr_mpd_1B across the family's per-language tasks (log scale)")
+    ax.set_xlabel(f"median {SNR_COL} across the family's per-language tasks (log scale)")
     ax.set_title("Per-family SNR ranking (color = curation_category)")
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=col, ec="black", lw=0.6, label=cat)
@@ -424,8 +476,16 @@ def generate_readme(stage: str, pool: str) -> None:
         row = gs.loc[view]
         return fmt(row["H"]), fmt(row["p"])
 
+    def clause(view: str, label: str) -> str:
+        """`on <label> H = …, p = …`, or why the test has no value: with one
+        surviving group Kruskal-Wallis is undefined and fmt() renders empty."""
+        row = gs.loc[view]
+        if row["n_groups"] < 2:
+            return (f"on {label} cannot be tested — only one {label} survives "
+                    f"the gate")
+        return f"on {label} is **H = {fmt(row['H'])}, p = {fmt(row['p'])}**"
+
     nopt_H, nopt_p = hp("family/n_options")
-    fmt_H, fmt_p = hp("family/format")
     cur_H, cur_p = hp("family/curation")
 
     highlight = "\n".join([
@@ -436,9 +496,9 @@ def generate_readme(stage: str, pool: str) -> None:
         "of them 2-option.",
         "- **Among survivors, no single design feature is individually "
         f"significant.** Family-level Kruskal–Wallis on option count is "
-        f"**H = {nopt_H}, p = {nopt_p}** and on task format **H = {fmt_H}, "
-        f"p = {fmt_p}** — too little variation left (mostly 2-option) to resolve "
-        "them.",
+        f"**H = {nopt_H}, p = {nopt_p}**, and {clause('family/format', 'task format')}. "
+        "Too little variation is left among the survivors (mostly 2-option) to "
+        "resolve either.",
         f"- **Curation method explains nothing** — family-level Kruskal–Wallis "
         f"on curation is **H = {cur_H}, p = {cur_p}**. Once the gate fixes the "
         "answer space, how a benchmark was built does not predict its "
@@ -466,10 +526,10 @@ def generate_readme(stage: str, pool: str) -> None:
     results = "\n\n".join([
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq05_benchmark_creation/analyze.py --pool {pool}`.",
-        "**Per-family SNR ranking** — median `snr_mpd_1B` over each family's "
+        f"**Per-family SNR ranking** — median `{SNR_COL}` over each family's "
         "per-language tasks, above-random survivors only:",
         t_rank,
-        f"![Per-family SNR ranking](pretraining/{pool}/snr_per_family_ranked.png)",
+        f"![Per-family SNR ranking]({stage}/{pool}/snr_per_family_ranked.png)",
         "**Significance of each design axis** — family-level Kruskal–Wallis "
         "over the survivors (high-option families already removed by the gate):",
         t_sig,
@@ -483,7 +543,7 @@ def generate_readme(stage: str, pool: str) -> None:
 
 
 def generate_slides(stage: str, pool: str) -> None:
-    """Rewrite the RQ4 auto results slide (canonical pool only)."""
+    """Rewrite the RQ5 auto results slide (canonical pool only)."""
     if pool != CANONICAL_POOL:
         return
     per_family = pd.read_csv(HERE / stage / pool / "per_family_snr.csv").sort_values(
@@ -492,14 +552,14 @@ def generate_slides(stage: str, pool: str) -> None:
             for _, r in per_family.iterrows()]
     slide = (
         "---\n"
-        "title: RQ4 — Benchmark Creation\n"
+        "title: RQ5 — Benchmark design\n"
         "subtitle: \"Results (auto) — per-family SNR, above-random survivors\"\n"
         "---\n\n"
         f"{md_table(['family', 'median SNR', 'n_opts', 'format'], rows)}\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq4-results", slide, "benchmark_creation/analyze.py")
-    print(f"Wrote RQ4 results slide → {SLIDES}")
+    print(f"Wrote RQ5 results slide → {SLIDES}")
 
 
 def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:

@@ -200,12 +200,13 @@ def one_pass(names: list[str], auth: list[str], every: int,
         iters = saved_iters(auth, name)
         if not iters:
             continue
-        # Every Nth saved checkpoint (default every 2nd: iters on the
-        # every*save-interval grid), PLUS the run's final checkpoint whatever
-        # its number — predictivity targets end off-grid (e.g. 4500, 81000).
+        # Every Nth saved checkpoint counted from the run's first save, PLUS
+        # the run's final checkpoint whatever its number — the CSCS rule
+        # (auto_evals_cscs.one_cell): counting saves keeps cells on an older
+        # save grid due, where `iter % (N x interval)` would find nothing.
         ck = stages_of(name)["pretraining"]["checkpoints"]
-        step = ck["all"][1] - ck["all"][0] if len(ck["all"]) > 1 else 2000
-        due = [i for i in iters if i % (every * step) == 0 or i == ck["final"]]
+        due = [i for k, i in enumerate(sorted(iters))
+               if (k + 1) % every == 0 or i == ck["final"]]
         m = get_model(name)
         cell_tasks = tasks or ",".join(tasks_for_benchmarks(
             AUTO_BENCHMARKS, cell_languages(m["L"], m["scheme"])))

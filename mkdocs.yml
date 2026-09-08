@@ -46,10 +46,13 @@ nav:
       - Signal-to-Ratio Configs: evaluation/configs.md
   - Signal & Noise:
       - Overview: signal-noise/index.md
-      - SNR Definition: signal-noise/snr-definition.md
-      - Benchmark Creation: signal-noise/benchmark_creation.md
-      - AllenAI Comparison: signal-noise/allenai_comparison.md
-      - Smooth Subtasks: signal-noise/smooth_subtasks.md
+      - "RQ0 · Curves & above-random gate": signal-noise/acc_vs_flops.md
+      - "RQ1 · Decision accuracy": signal-noise/decision_accuracy.md
+      - "RQ2 · SNR definition": signal-noise/snr-definition.md
+      - "RQ3 · AllenAI comparison": signal-noise/allenai_comparison.md
+      - "RQ4 · Subtask subsets": signal-noise/smooth_subtasks.md
+      - "RQ5 · Benchmark creation": signal-noise/benchmark_creation.md
+      - "RQ6 · Proxy predictivity": signal-noise/proxy_predictivity.md
   - Documents: documents.md
   - Slides: /slides/
 

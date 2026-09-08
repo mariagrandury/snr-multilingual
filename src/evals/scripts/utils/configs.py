@@ -39,7 +39,7 @@ DEFAULT_HF_WANDB_JSON = _REPO_ROOT / "configs" / "hf_wandb.json"
 # this list when a new model size appears (extending here is cheaper than
 # hand-curating a family in models.json for every dynamically-loaded row).
 _SIZE_TOKENS = (
-    "175M", "350M", "600M", "1B",                          # Apertus custom
+    "90M", "175M", "350M", "600M", "1B",                   # Apertus custom + ladder
     "150M", "300M", "750M", "190M",                        # AllenAI ladder
     "0.6B", "1.7B", "3B", "4B", "7B", "8B", "12B", "13B", "14B", "27B",
     "32B", "70B",
@@ -138,6 +138,78 @@ def split_for_source(source: str,
     published to the dataset (build_hf_dataset.py skips its rows).
     KeyError if the source isn't declared."""
     return load_sources(path)[source]["split"]
+
+
+def loader_for_source(source: str,
+                      path: str | Path = DEFAULT_MODELS_JSON) -> str:
+    """Which eval-results loader serves a `source`: ``parquet`` (the
+    published multilingual-snr splits, the default) or ``ladder`` (the
+    predictivity ladder read from ladder_report.csv). Declared per source in
+    models.json so the analysis never guesses from the model name."""
+    return load_sources(path)[source].get("loader", "parquet")
+
+
+# --- FLOPs convention --------------------------------------------------------
+#
+#     FLOPs = 6 x (N_non_emb + d_model x vocab_size) x D
+#
+# The embedding lookup is free, the output projection is not: with a 131k
+# vocabulary it nearly doubles the small rungs' compute, so leaving it out
+# bends the ladder. Our cells tie embeddings, so `params` in models.json is
+# already exactly that sum; an external model declares a nominal total that
+# equals it only if its embeddings are tied too. `flops_params` returns the
+# count AND which footing it stands on, so a point on a different basis can
+# be tagged (W&B run config, the dataset's `flops_basis` column) instead of
+# silently plotted alongside the ladder.
+
+def flops_params(model: str,
+                 path: str | Path = DEFAULT_MODELS_JSON) -> tuple[int | None, str]:
+    """(parameter count for the FLOPs convention, basis). Basis is
+    ``non_emb+dV`` when the entry records `n_non_emb`, `d_model` and
+    `vocab_size`, ``declared_total`` when it falls back to `params`, and
+    ``unknown`` (count None) when the model is undeclared or has neither."""
+    try:
+        e = get_model(model, path)
+    except KeyError:
+        return None, "unknown"
+    shape = [e.get(k) for k in ("n_non_emb", "d_model", "vocab_size")]
+    if all(v is not None for v in shape):
+        n_non_emb, d_model, vocab = shape
+        return int(n_non_emb + d_model * vocab), "non_emb+dV"
+    if e.get("params") is not None:
+        return int(e["params"]), "declared_total"
+    return None, "unknown"
+
+
+def flops_for(model: str, tokens: float | None,
+              path: str | Path = DEFAULT_MODELS_JSON) -> float | None:
+    """6 x flops_params x tokens, or None when either side is unknown."""
+    n, _ = flops_params(model, path)
+    return 6.0 * n * tokens if (n and tokens) else None
+
+
+# --- Languages (configs/languages.json) --------------------------------------
+
+DEFAULT_LANGUAGES_JSON = _REPO_ROOT / "configs" / "languages.json"
+
+
+@lru_cache(maxsize=4)
+def load_languages(path: str | Path = DEFAULT_LANGUAGES_JSON) -> dict[str, Any]:
+    """The whole languages.json: `languages` (per-code metadata), `groups`
+    and `fineweb_iso2` (FineWeb-2 iso639-3 subset code -> the project's
+    language tag; tasks.json tags its tasks with the same codes)."""
+    return json.loads(Path(path).read_text())
+
+
+def fineweb_language(subset: str,
+                     path: str | Path = DEFAULT_LANGUAGES_JSON) -> str:
+    """Project language tag of a FineWeb-2 subset (``rus_Cyrl`` -> ``ru``,
+    ``arb_Arab`` -> ``ar``); English's DCLM source (``dclm``) -> ``en``.
+    Unknown iso3 codes pass through unchanged."""
+    if subset == "dclm":
+        return "en"
+    iso3 = subset.split("_")[0]
+    return load_languages(path)["fineweb_iso2"].get(iso3, iso3)
 
 
 # --- SNR analysis params ----------------------------------------------------

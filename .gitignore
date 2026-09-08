@@ -34,6 +34,10 @@ src/signal-and-noise/results/
 # every run. The shared copy lives on capstor and the HF dataset repo.
 src/pretrain/ladder_report*.csv
 
+# A local copy of the published ladder report, pulled to run the analyses.
+# It lives on the data/ladder-report branch and on the HF dataset, not here.
+/data/ladder-report/
+
 # Azure fetch cache
 src/pretrain/azure/.quota_cache.json
 

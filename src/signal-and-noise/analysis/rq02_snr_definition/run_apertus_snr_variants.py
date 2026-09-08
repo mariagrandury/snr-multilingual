@@ -68,9 +68,9 @@ from evals.scripts.utils.configs import (  # noqa: E402
 )
 from analysis.utils import (
     _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
-    assign_language, benchmark_family, build_snr_pool,
+    assign_language, benchmark_family, build_snr_pool, pool_models,
 )
-from analysis.rq00_acc_vs_flops.above_random import SIZES as AR_SIZES, scores_and_mask
+from analysis.rq00_acc_vs_flops.above_random import scores_and_mask
 from snr.constants import PLOT_DIR
 from analysis.paths import SNR_DEFINITION, DECISION_ACCURACY
 from snr.dataloader import get_slice
@@ -214,22 +214,22 @@ def run(pool: str, out_dir: Path):
 
     pool_buckets = [b for b in bucket_order() if b in set(df_pool["bucket"].dropna())]
 
-    pool_models = set(expand_pool(pool))
+    own_models = pool_models(pool, df_pool)
     all_models = set(df_pool["model"])
-    is_external = ~df_pool["model"].isin(pool_models)
+    is_external = ~df_pool["model"].isin(own_models)
 
-    # Above-random gate (raw-metric competence check): keep a (task, custom-size)
-    # SNR cell only if its mean score beats chance by the margin. Random cells
-    # carry no usable signal, so their signal/noise/snr are NaN'd here — the gate
-    # propagates to every analysis that reads this CSV. External-size buckets
-    # (3B, 7-9B, …) aren't gated (no custom random baseline at those sizes).
-    _, _ar_mask, _ = scores_and_mask(df_pool[df_pool["model"].isin(pool_models)])
-    above_random = {(t, s) for s in AR_SIZES if s in _ar_mask.columns
-                    for t in _ar_mask.index[_ar_mask[s] == 1]}
+    # Above-random gate (raw-metric competence check): a (task, bucket) SNR
+    # cell whose mean score sits at chance (within the margin) carries no
+    # usable signal, so its signal/noise/snr are NaN'd here — the gate
+    # propagates to every analysis that reads this CSV. Cells with no chance
+    # level (per-language BPB, generative tasks) or no scores are left alone.
+    _, _ar_mask, _ = scores_and_mask(df_pool[df_pool["model"].isin(own_models)])
+    at_chance = {(t, s) for s in _ar_mask.columns
+                 for t in _ar_mask.index[(_ar_mask[s] == 0).fillna(False).to_numpy(bool)]}
     pool_n_models = df_pool.groupby("bucket")["model"].nunique().to_dict()
     print(
-        f"Pool '{pool}': {len(all_models & pool_models)} custom + "
-        f"{len(all_models - pool_models)} external model(s); "
+        f"Pool '{pool}': {len(all_models & own_models)} custom + "
+        f"{len(all_models - own_models)} external model(s); "
         f"include_external={pool_include_external(pool)}"
     )
     print(
@@ -253,8 +253,8 @@ def run(pool: str, out_dir: Path):
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for b in pool_buckets:
-                # Gate custom-size cells: random benchmarks carry no signal.
-                if b in AR_SIZES and (task, b) not in above_random:
+                # Gate at-chance cells: random benchmarks carry no signal.
+                if (task, b) in at_chance:
                     sig = noi = snr = np.nan
                 else:
                     sig, noi, snr = variant_signal_noise_snr(size_inputs[b], fd["func"])
