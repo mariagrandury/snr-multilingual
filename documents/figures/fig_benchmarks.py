@@ -25,7 +25,7 @@ def first_clearing_size(out):
     # 90M is excluded: one cell survives the divergence filter and it is off
     # trend, so "clears chance at 90M" would rest on a single broken run.
     sizes = [s for s in S.SIZES if s in m.columns and s != "90M"]
-    langs = [l for l in data.MAIN_LANGS if l in set(m["lang"])]
+    langs = [l for l in data.TRAINED_LANGS if l in set(m["lang"])]
 
     grid = np.full((0, len(langs)), np.nan)
     fams, rows = [], []
@@ -46,7 +46,11 @@ def first_clearing_size(out):
     order = np.argsort([np.nansum(r >= 0) for r in grid])[::-1]
     grid, fams = grid[order], [fams[i] for i in order]
 
-    fig, ax = plt.subplots(figsize=(9.2, 0.42 * len(fams) + 1.8))
+    # Past ~20 columns the size no longer fits inside a cell, so the legend
+    # carries it alone and the figure grows with the column count instead.
+    ncols = grid.shape[1]
+    annotate = ncols <= 20
+    fig, ax = plt.subplots(figsize=(max(9.2, 0.26 * ncols + 2.6), 0.42 * len(fams) + 1.8))
     colors = [S.SIZE_COLOR[s] for s in sizes]
     for i in range(grid.shape[0]):
         for j in range(grid.shape[1]):
@@ -55,7 +59,7 @@ def first_clearing_size(out):
                 continue
             face = S.NODATA if v < 0 else colors[int(v)]
             ax.add_patch(plt.Rectangle((j, i), 1, 1, facecolor=face, edgecolor="white", lw=1.2))
-            if v >= 0:
+            if annotate and v >= 0:
                 ax.text(j + .5, i + .5, sizes[int(v)], ha="center", va="center",
                         fontsize=7.2, color="white" if v >= 2 else S.INK)
     ax.set_xlim(0, grid.shape[1]); ax.set_ylim(grid.shape[0], 0)

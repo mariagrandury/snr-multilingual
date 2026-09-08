@@ -512,10 +512,10 @@ def generate_slides(stage: str, pool: str) -> None:
     anchor = _anchor_rank1(stage, pool)
     g_variant = _read_tv(stage, pool).iloc[0]["variant"]
     ref = anchor["size"].iloc[0]
-    # One slide, so the deck shows the headline language group; the README table
-    # and top_benchmarks_per_language.csv carry all 96.
-    main = load_languages()["groups"]["main"]
-    shown = anchor[anchor["language"].isin(main)]
+    # The deck shows every language the ladder trains on, up to L50; the README
+    # table and top_benchmarks_per_language.csv carry all 96.
+    trained = load_languages()["groups"]["trained"]
+    shown = anchor[anchor["language"].isin(trained)]
     rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_mean)]
             for _, r in shown.iterrows()]
     slide = (

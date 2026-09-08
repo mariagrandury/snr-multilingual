@@ -162,10 +162,11 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
     """One DA-size slide per language: benchmark rows × every computable size
     pair, cell = decision accuracy (bold ≥ _DA_BOLD), most-predictive first."""
     size = long[long["da_def"] == "DA-size"]
-    # The ladder resolves 96 languages; a slide each would be a 96-slide appendix.
-    # The deck reports the project's headline group (configs/languages.json
-    # `groups.main`); the CSVs and the README keep every language.
-    report_langs = [l for l in load_languages()["groups"]["main"]
+    # The ladder resolves 96 languages, but only the ones it actually pretrains
+    # on carry a claim. `groups.trained` is that set, capped at the 50-language
+    # setting because the 100-language distribution is not settled. The CSVs keep
+    # every language.
+    report_langs = [l for l in load_languages()["groups"]["trained"]
                     if l in set(size["language"])]
     slides = []
     for lang in sorted(report_langs, key=lambda l: (l != "en", l)):

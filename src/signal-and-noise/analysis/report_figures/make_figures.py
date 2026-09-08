@@ -69,15 +69,11 @@ mpl.rcParams.update({
 FULL_WIDTH = (5.5, 2.6)     # two-panel / full-width figures
 SINGLE_COL = (3.4, 2.8)     # single-column figures
 
-# 12-colour colourblind-safe palette (Okabe-Ito + Paul Tol), keyed by the
-# project's 12 report languages (configs/languages.json `groups.main`). Shared
-# by fig2 (point colour) so the legend matches fig3's column order.
-LANGS = list(load_languages()["groups"]["main"])
-_PALETTE = [
-    "#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9",
-    "#F0E442", "#44AA99", "#882255", "#117733", "#999999", "#000000",
-]
-LANG_COLOR = dict(zip(LANGS, _PALETTE))
+# fig3's column order: every language the ladder pretrains on, up to the
+# 50-language setting (configs/languages.json `groups.trained`). The
+# 100-language distribution is not settled, so the list stops at 50.
+LANGS = list(load_languages()["groups"]["trained"])
+POINT = "#3987e5"           # fig2's scatter; 50 languages is past what hues separate
 
 # The curve families of fig1: the ladder's plotted mixes (its language
 # settings) from the shared snr config, coloured on a viridis ramp.
@@ -203,7 +199,6 @@ def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
         print(f"[{tag}] skipped: fewer than 3 finite ({snr_col}, {da_col}) cells")
         return
     sub = sub[sub[snr_col] > 0].copy()
-    sub["lang"] = sub["task"].map(assign_language)
 
     x = sub[snr_col].to_numpy()
     y = sub[da_col].to_numpy()
@@ -229,9 +224,8 @@ def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
     gx = 10 ** grid
     ax.fill_between(gx, lo, hi, color="0.8", alpha=0.6, lw=0, zorder=1)
     ax.plot(gx, slope * grid + intercept, color="0.25", lw=1.2, zorder=2)
-    for lang, g in sub.groupby("lang"):
-        ax.scatter(g[snr_col], g[da_col], s=18, color=LANG_COLOR.get(lang, "0.5"),
-                   edgecolor="white", linewidth=0.3, label=lang, zorder=3)
+    ax.scatter(sub[snr_col], sub[da_col], s=18, color=POINT,
+               edgecolor="white", linewidth=0.3, zorder=3)
 
     ax.set_xscale("log")
     ax.xaxis.set_major_locator(FixedLocator([2, 3, 5, 8]))
@@ -257,8 +251,12 @@ def _render_reliability_heatmap(da, gate, families, cbar_label, out_name) -> Non
     """Shared imshow renderer for the reliability maps (fig3 / fig3b). ``gate``
     is the gate-failed mask (grey ×) or None when there is no gate concept;
     NaN cells with no gate flag are left white (missing)."""
-    nrows = len(families)
-    fig, ax = plt.subplots(figsize=(5.5, 0.18 * nrows + 1.1))
+    nrows, ncols = len(families), len(LANGS)
+    # The map used to be 12 languages wide. With every trained language on it the
+    # per-cell numbers no longer fit, so they are dropped past ~20 columns and the
+    # figure grows with the column count instead.
+    annotate = ncols <= 20
+    fig, ax = plt.subplots(figsize=(max(5.5, 0.26 * ncols + 2.0), 0.20 * nrows + 1.3))
     im = ax.imshow(np.clip(da, 0.5, 1.0), aspect="auto", cmap="viridis",
                    vmin=0.5, vmax=1.0)
     for i in range(nrows):
@@ -266,19 +264,21 @@ def _render_reliability_heatmap(da, gate, families, cbar_label, out_name) -> Non
             if gate is not None and gate[i, j]:
                 ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1,
                                            color="0.85", zorder=2))
-                ax.text(j, i, "×", ha="center", va="center", fontsize=6,
-                        color="0.45", zorder=3)
-            elif not np.isnan(da[i, j]):
+                if annotate:
+                    ax.text(j, i, "×", ha="center", va="center", fontsize=6,
+                            color="0.45", zorder=3)
+            elif annotate and not np.isnan(da[i, j]):
                 v = (np.clip(da[i, j], 0.5, 1.0) - 0.5) / 0.5
                 txt = "white" if v < 0.5 else "black"   # viridis: dark at low end
                 ax.text(j, i, f"{da[i, j]:.2f}", ha="center", va="center",
                         fontsize=7, color=txt, zorder=3)
 
-    ax.set_xticks(range(len(LANGS)))
-    ax.set_xticklabels(LANGS)
+    ax.set_xticks(range(ncols))
+    ax.set_xticklabels(LANGS, fontsize=7 if ncols > 20 else None,
+                       rotation=90 if ncols > 20 else 0)
     ax.set_yticks(range(nrows))
     ax.set_yticklabels(families)
-    ax.set_xticks(np.arange(-0.5, len(LANGS), 1), minor=True)
+    ax.set_xticks(np.arange(-0.5, ncols, 1), minor=True)
     ax.set_yticks(np.arange(-0.5, nrows, 1), minor=True)
     ax.tick_params(which="minor", length=0)
     ax.tick_params(which="major", length=0)
@@ -348,12 +348,10 @@ def fig3_reliability_map() -> None:
                                 f"Decision accuracy (ckpt, {da_col.rsplit('_', 1)[-1]})",
                                 "fig3_reliability_map.pdf")
 
-    sw = LANGS.index("sw")
     print(f"[fig3] {len(families)} families x {len(LANGS)} langs; top-3 rows: "
           f"{families[:3]}")
-    print(f"[fig3] sw column coloured cells: "
-          f"{int(np.sum(~np.isnan(da[:, sw])))} (expect few; custom-only "
-          f"families grey/white)")
+    print(f"[fig3] languages with at least one family past the gate: "
+          f"{int(np.sum(~np.isnan(da).all(axis=0)))}/{len(LANGS)}")
 
 
 # ===========================================================================

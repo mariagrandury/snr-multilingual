@@ -104,7 +104,9 @@ Eval results are NOT in the repo: they live on the cluster at
   `src/pretrain/sync_models_json.py`, not hand-edited
 - `configs/hf_wandb.json`: HF org + W&B project
 - `configs/languages.json`: the FineWeb→ISO code table the task/language
-  matching keys off
+  matching keys off, plus the `groups` the report and deck slice by —
+  `trained` is the 50 languages of the L50 mixture and is what every
+  per-language figure covers, `main` the older 12-language set
 - Architectures live in `src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`
 
 ## Development

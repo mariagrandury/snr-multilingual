@@ -1,18 +1,20 @@
 """Shared loading for the deck figures: the ladder report, one place."""
-import os, sys, json
+import sys
 from pathlib import Path
 import numpy as np, pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 from evals.scripts.utils.configs import fineweb_language, load_languages  # noqa: E402
+from snr.download.ladder import ladder_dir  # noqa: E402
 
-LADDER = Path(os.environ.get("SNR_LADDER_DIR", REPO / "data" / "ladder-report"))
-MAIN_LANGS = load_languages()["groups"]["main"]
+# Every language the ladder pretrains on, up to the 50-language setting.
+TRAINED_LANGS = load_languages()["groups"]["trained"]
 
 
 def wide():
-    return pd.read_csv(LADDER / "ladder_report.csv", low_memory=False).dropna(subset=["cell"])
+    return pd.read_csv(ladder_dir() / "ladder_report.csv", low_memory=False).dropna(subset=["cell"])
 
 
 def cells(w):

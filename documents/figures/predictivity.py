@@ -71,6 +71,34 @@ def kind(task):
     return "a benchmark task"
 
 
+def agreement_by_size(seed=1904):
+    """DA(L, size): the share of languages whose bits per byte picks the same
+    winner at `size` as it does at the reference size."""
+    fin = finals(load_predictivity_eval_results())
+    fin = fin[(fin["seed"] == seed) & fin["task"].str.startswith("bpb_")
+              & (fin["task"] != "bpb_macro")]
+    rows = []
+    for axis, (a, b) in INTERVENTION.items():
+        hold_col, hold_val = HOLD[axis]
+        sub = fin[fin[hold_col] == hold_val]
+        for L, g in sub.groupby("L"):
+            piv = g.pivot_table(index=["task", "size"], columns=axis, values="primary_score")
+            if not {a, b} <= set(piv.columns):
+                continue
+            delta = (piv[a] - piv[b]).dropna().unstack("size")
+            order = [s for s in S.SIZES if s in delta.columns]
+            if len(order) < 2:
+                continue
+            ref = order[-1]
+            want = np.sign(delta[ref])
+            for s in order:
+                ok = np.sign(delta[s]) == want
+                rows.append({"L": int(L), "intervention": axis, "size": s,
+                             "reference_size": ref, "n": int(want.notna().sum()),
+                             "agree": float(ok[want.notna()].mean())})
+    return pd.DataFrame(rows)
+
+
 if __name__ == "__main__":
     d = min_predictive_size()
     d["kind"] = d["task"].map(kind)

@@ -433,6 +433,24 @@ The reference rung the whole predictivity question needs is the one we do not ha
 -->
 
 ---
+layout: bullets
+title: Which languages we report on
+subtitle: "All 50 the ladder trains on, not the 12 we started with"
+icon: "🌐"
+---
+
+- The deck used to show 12 hand-picked languages. Every per-language figure now covers **all 50 languages of the L50 mixture**
+- Validation is wider than training: **100 subsets across 95 languages**. All 50 trained languages are in it, and the other **45 are zero-shot**
+- We stop at 50 because the 100-language distribution is not decided. `configs/languages.json` has the list as `groups.trained`
+- Widening the view changed one reading: with only 12 languages the benchmark coverage looked thin. Across 50 it is worse
+
+<!--
+groups.main is kept for the historical decks. groups.trained is the 49 FineWeb-2
+tags of FW_L50 in src/pretrain/data/language_sets_schemeA.json, plus English,
+which comes from DCLM rather than FineWeb-2. Add the L100 list the same way once
+the distribution is decided.
+-->
+---
 layout: figure
 image: /ladder/grid_status.png
 fit: contain
@@ -786,35 +804,41 @@ and in the positive for BPB. It is also why the plan made per-language BPB the o
 metric rather than the benchmarks.
 -->
 
-<!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
 ---
 layout: figure
 image: /ladder/snr_bpb_vs_benchmark.png
 fit: contain
-height: 50vh
-title: Correction to the slide before
-subtitle: "Bits per byte wins almost everywhere because almost nothing else is left"
+height: 60vh
+title: Finding 7, read again
+subtitle: "Bits per byte wins on coverage, not on sharpness"
 ---
 
+<!--
+Improved version of the two slides before. Left bar: of the 95 validation
+languages, 87 have no benchmark left once the above-random gate has run, so bits
+per byte wins there with nothing to beat. Right: the 8 languages where a
+benchmark does survive, best benchmark against best bits per byte at 1B.
+-->
 ---
 layout: bullets
-title: Correction to the slide before
-subtitle: "The 89 of 96 number is true and it means something different"
+title: The 89 of 96 headline needs a caveat
+subtitle: "What that number is really counting"
 icon: "🔁"
 ---
 
-- After the gate, **87 of the 95 validation languages have no benchmark left at all**. In those languages bits per byte wins by default
-- Only **8 languages** still have a benchmark to compare against
-- In **7 of those 8** the benchmark beats bits per byte. English is the widest gap, ARC at 2.58 against 0.19
-- Japanese is the one language where bits per byte wins a fair fight
-- So the honest claim is about coverage, not quality. The suite has nothing to say in 87 languages, and where it does speak it speaks better than bits per byte
+- In **87 of the 95** validation languages the gate removes every benchmark. Bits per byte is the only thing left, so it wins by walkover
+- **8 languages** still have a benchmark after the gate, and the benchmark beats bits per byte in **7** of them
+- Japanese is the only contested language bits per byte wins, `xwinograd_jp` at 0.25 against 0.74 for bits per byte
+- The finding is about **coverage**, not sharpness. Where a benchmark survives it is the better instrument
 
 <!--
-This corrects the previous slide, which read as "bits per byte is a better
-measurement". It is not what the data says. Do not present both. The gate result
-and this one are the same fact seen twice: the benchmarks that survive are the
-ones in high resource languages, and those are the ones that beat BPB.
+Numbers from top_benchmarks_per_language.csv on the canonical pool. The 96 in the
+original headline counts the `multi` pseudo language (train_loss) alongside the 95
+real ones. This is the slide to say out loud: our benchmark suite is silent in most
+languages, which is a coverage problem to fix, not a reason to drop benchmarks.
 -->
+
+<!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
 ---
 title: RQ2 — SNR definition
 subtitle: "Results (auto) — most reliable benchmark per language (`iqr` @ 1B)"
@@ -823,15 +847,53 @@ subtitle: "Results (auto) — most reliable benchmark per language (`iqr` @ 1B)"
 | lang | top benchmark | SNR | DA-ckpt@1B |
 |---|---|---|---|
 | ar | `bpb_arb_Arab` | 15.1 | 1.00 |
+| az | `bpb_azj_Latn` | 22.9 | 1.00 |
+| bg | `bpb_bul_Cyrl` | 21.0 | 1.00 |
+| bn | `bpb_ben_Beng` | 15.4 | 1.00 |
+| bs | `bpb_bos_Latn` | 21.5 | 1.00 |
+| ca | `bpb_cat_Latn` | 17.7 | 1.00 |
+| cs | `bpb_ces_Latn` | 22.2 | 1.00 |
+| da | `bpb_dan_Latn` | 20.3 | 1.00 |
+| de | `hellaswag_de` | 0.9 | 1.00 |
+| el | `bpb_ell_Grek` | 16.5 | 1.00 |
 | en | `arc_challenge` | 2.6 | 1.00 |
 | es | `hellaswag_es` | 1.0 | 1.00 |
-| eu | `bpb_eus_Latn` | 1.4 | 0.75 |
+| et | `bpb_ekk_Latn` | 29.1 | 1.00 |
+| fa | `bpb_fas_Arab` | 17.8 | 1.00 |
+| fi | `bpb_fin_Latn` | 21.8 | 1.00 |
+| fr | `xnli_fr` | 1.6 | 0.75 |
+| he | `bpb_heb_Hebr` | 18.9 | 1.00 |
 | hi | `bpb_hin_Deva` | 12.8 | 1.00 |
+| hr | `bpb_hrv_Latn` | 21.7 | 1.00 |
+| hu | `bpb_hun_Latn` | 27.2 | 1.00 |
+| id | `bpb_ind_Latn` | 14.5 | 1.00 |
+| it | `hellaswag_it` | 0.8 | 1.00 |
 | ja | `bpb_jpn_Jpan` | 0.7 | 1.00 |
+| ka | `bpb_kat_Geor` | 8.9 | 1.00 |
+| kk | `bpb_kaz_Cyrl` | 16.7 | 1.00 |
+| ko | `bpb_kor_Hang` | 13.4 | 1.00 |
+| lt | `bpb_lit_Latn` | 28.5 | 1.00 |
+| lv | `bpb_lvs_Latn` | 23.2 | 1.00 |
+| ml | `bpb_mal_Mlym` | 17.8 | 1.00 |
+| mr | `bpb_mar_Deva` | 20.5 | 1.00 |
+| ms | `bpb_zsm_Latn` | 12.1 | 1.00 |
+| ne | `bpb_npi_Deva` | 13.8 | 1.00 |
+| nl | `bpb_nld_Latn` | 15.1 | 1.00 |
+| no | `bpb_nob_Latn` | 19.9 | 1.00 |
+| pl | `bpb_pol_Latn` | 18.6 | 1.00 |
+| pt | `bpb_por_Latn` | 10.9 | 1.00 |
+| ro | `bpb_ron_Latn` | 20.6 | 1.00 |
 | ru | `multiblimp_rus` | 1.5 | 0.75 |
-| sw | `bpb_swh_Latn` | 0.4 | 0.75 |
+| sk | `bpb_slk_Latn` | 26.7 | 1.00 |
+| sl | `bpb_slv_Latn` | 19.1 | 1.00 |
+| sq | `bpb_als_Latn` | 30.2 | 1.00 |
+| sr | `bpb_srp_Cyrl` | 23.2 | 1.00 |
+| sv | `bpb_swe_Latn` | 17.9 | 1.00 |
+| ta | `bpb_tam_Taml` | 11.6 | 1.00 |
 | th | `bpb_tha_Thai` | 15.1 | 1.00 |
 | tr | `bpb_tur_Latn` | 22.1 | 1.00 |
+| uk | `bpb_ukr_Cyrl` | 12.4 | 1.00 |
+| ur | `bpb_urd_Arab` | 12.5 | 1.00 |
 | vi | `bpb_vie_Latn` | 15.5 | 1.00 |
 | zh | `xstorycloze_zh` | 0.8 | 0.50 |
 
@@ -992,7 +1054,7 @@ subtitle: "What the two plots say"
 icon: "🪜"
 ---
 
-- At **1 language** the depth decision is the hardest. 43 of 100 languages have no proxy that gets it right
+- At **1 language** the depth decision is the hardest. 43 of the 100 validation subsets have no proxy size that gets it right
 - At **8 and 15 languages** a 175M model is enough for most languages. The scheme decision is easier to predict than the depth one
 - **Macro bits per byte is not a shortcut.** It fails outright at 8 languages, where the per language answers are mostly fine
 - Training loss agrees with 600M at every language count except 1
@@ -1004,6 +1066,36 @@ cell. So this is a small to 600M read, not a small to large one. The message for
 the meeting is the third bullet: the aggregate metric we planned to decide on is
 worse than the per language ones it averages.
 -->
+---
+layout: figure
+image: /ladder/rq6_whiteboard.png
+fit: contain
+height: 58vh
+title: The figure we actually want
+subtitle: "Smallest model reaching each decision accuracy, against the number of languages"
+---
+
+---
+layout: figure
+image: /ladder/rq6_da_vs_size.png
+fit: contain
+height: 54vh
+title: All the measurement behind it
+subtitle: "Two proxy sizes, one reference. That is the whole thing."
+---
+
+---
+layout: bullets
+title: Why the curve is not there yet
+subtitle: "Three things have to change before that figure can be drawn"
+icon: "🧱"
+---
+
+- We have **two** usable proxy sizes, 175M and 350M. 90M diverged and 600M is the reference, so it scores 1.0 by construction
+- The expected shape needs a size axis with four or five rungs and a reference above them. Today the whole plot is two columns wide
+- At **1 language** the decision accuracy falls from 0.84 to 0.57 as the model grows. That is not a trend, it is the depth effect sitting inside the noise
+- The scheme decision behaves as expected. At 8, 15 and 30 languages accuracy rises with size, and 350M clears 0.75 at all three
+- Nothing reaches 0.9 anywhere. **Finish 1B with matched pairs and the picture becomes drawable**
 ---
 layout: bullets
 title: Not run — RQ3, agreement with DataDecide
@@ -1365,6 +1457,159 @@ subtitle: "Modern Std. Arabic (ar) · small→large size pair (bold ≥ 0.75)"
 
 ---
 title: Appendix — Decision accuracy across sizes
+subtitle: "az (az) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.91** | **1.00** | **0.93** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "bg (bg) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `xnli` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.95** | **0.95** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "bn (bn) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `multiblimp` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.85** | **0.89** | **1.00** | **0.96** | **1.00** | **1.00** |
+| `arc` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `belebele_ben_Latn` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `belebele_ben_Beng` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `global_mmlu_full` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `hellaswag` | 0.00 | 0.00 |  | **1.00** |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "bs (bs) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | 0.75 | **1.00** | **0.89** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ca (ca) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.84** | **1.00** | **0.91** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "cs (cs) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `belebele` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | 0.75 | 0.75 | **1.00** | **0.96** | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "da (da) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.80** | **1.00** | **0.85** | **1.00** | **1.00** |
+| `arc` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `hellaswag` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `multiblimp` | 0.00 | **1.00** |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "German (de) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `hellaswag` | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb` | **0.82** | **0.80** | **1.00** | **0.98** | **1.00** | **1.00** |
+| `multiblimp` | **1.00** | 0.67 | **1.00** | 0.67 | **1.00** | **1.00** |
+| `arc` | 0.33 | 0.67 | **1.00** | 0.67 | **1.00** | **1.00** |
+| `xnli` | 0.67 | 0.17 | **1.00** | 0.50 | 0.00 | 0.00 |
+| `belebele` | 0.67 | 0.17 | 0.00 | 0.50 | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.50 | 0.33 | 0.00 | 0.17 | **1.00** | 0.00 |
+| `include_base_44` | 0.33 | **0.83** | 0.00 | 0.50 | 0.00 | 0.00 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "el (el) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `multiblimp` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.89** | **0.87** | **1.00** | **0.98** | **1.00** | **1.00** |
+| `belebele` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `global_mmlu_full` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `xnli` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
 subtitle: "Spanish (es) · small→large size pair (bold ≥ 0.75)"
 ---
 
@@ -1387,12 +1632,80 @@ subtitle: "Spanish (es) · small→large size pair (bold ≥ 0.75)"
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Basque (eu) · small→large size pair (bold ≥ 0.75)"
+subtitle: "et (et) · small→large size pair (bold ≥ 0.75)"
 ---
 
 | benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
 |---|---|---|---|---|---|---|
-| `bpb` | **0.78** | **0.80** | **1.00** | **0.87** | **1.00** | **1.00** |
+| `bpb` | 0.60 | 0.60 | **1.00** | **0.96** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "fa (fa) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.89** | **1.00** | **0.98** | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.67 | 0.67 |  | 0.33 |  |  |
+| `multiblimp` | 0.00 | 0.00 |  | **1.00** |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "fi (fi) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.76** | **0.76** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `belebele` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `multiblimp` | 0.00 | **1.00** |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "French (fr) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.87** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `hellaswag` | 0.67 | **0.83** | **1.00** | **0.83** | **1.00** | **1.00** |
+| `xnli` | 0.33 | **1.00** | **1.00** | 0.33 | **1.00** | **1.00** |
+| `arc` | **0.83** | 0.17 | **1.00** | 0.33 | **1.00** | **1.00** |
+| `multiblimp` | 0.33 | 0.50 | **1.00** | 0.50 | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.33 | 0.50 | **1.00** | 0.50 | 0.00 | **1.00** |
+| `belebele` | **1.00** | 0.33 | 0.00 | 0.33 | 0.00 | **1.00** |
+| `xwinograd` | 0.33 | 0.67 | 0.00 | 0.67 | **1.00** | 0.00 |
+| `include_base_44` | 0.67 | 0.50 | 0.00 | 0.50 | 0.00 | 0.00 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "he (he) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.80** | **0.76** | **1.00** | **0.89** | **1.00** | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1424,6 +1737,76 @@ subtitle: "Hindi (hi) · small→large size pair (bold ≥ 0.75)"
 
 ---
 title: Appendix — Decision accuracy across sizes
+subtitle: "hr (hr) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | 0.73 | **1.00** | **0.91** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "hu (hu) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `multiblimp` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `hellaswag` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.78** | 0.73 | **1.00** | **0.91** | **1.00** | **1.00** |
+| `arc` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "id (id) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.85** | **1.00** | **0.89** | **1.00** | **1.00** |
+| `belebele` | **1.00** | 0.67 |  | 0.67 |  |  |
+| `arc` | 0.67 | 0.33 |  | 0.67 |  |  |
+| `hellaswag` | 0.33 | 0.67 |  | 0.67 |  |  |
+| `global_mmlu_full` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "it (it) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.87** | **1.00** | **0.91** | **1.00** | **1.00** |
+| `arc` | 0.67 | 0.67 | **1.00** | 0.67 | **1.00** | **1.00** |
+| `belebele` | **0.83** | 0.67 | **1.00** | 0.50 | **1.00** | **1.00** |
+| `hellaswag` | 0.67 | 0.50 | **1.00** | **0.83** | **1.00** | **1.00** |
+| `include_base_44` | 0.33 | 0.67 | **1.00** | 0.33 | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.50 | 0.17 | **1.00** | 0.33 | 0.00 | **1.00** |
+| `multiblimp` | 0.17 | 0.50 | 0.00 | 0.67 | 0.00 | 0.00 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
 subtitle: "Japanese (ja) · small→large size pair (bold ≥ 0.75)"
 ---
 
@@ -1434,6 +1817,226 @@ subtitle: "Japanese (ja) · small→large size pair (bold ≥ 0.75)"
 | `global_mmlu_full` | 0.50 | 0.67 | **1.00** | 0.50 | 0.00 | **1.00** |
 | `include_base_44` | 0.33 | 0.50 | **1.00** | 0.17 | 0.00 | 0.00 |
 | `belebele` | 0.50 | 0.17 | 0.00 | 0.67 | 0.00 | 0.00 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ka (ka) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | **0.80** | **1.00** | **0.95** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "kk (kk) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.84** | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Korean (ko) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `belebele` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.85** | **0.78** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `include_base_44` | **1.00** | 0.00 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "lt (lt) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | 0.62 | 0.64 | **1.00** | **0.95** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "lv (lv) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | 0.56 | 0.60 | **1.00** | **0.96** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ml (ml) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.91** | **1.00** | **0.87** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "mr (mr) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.78** | **1.00** | **0.85** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ms (ms) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.87** | **1.00** | **0.91** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ne (ne) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.78** | **1.00** | **0.78** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "nl (nl) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.84** | **1.00** | **0.91** | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.67 | **1.00** |  | 0.67 |  |  |
+| `multiblimp` | 0.67 | **1.00** |  | 0.67 |  |  |
+| `belebele` | 0.33 | 0.67 |  | 0.67 |  |  |
+| `hellaswag` | 0.33 | 0.33 |  | **1.00** |  |  |
+| `arc` | 0.67 | 0.33 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "no (no) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.93** | **0.89** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "pl (pl) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | 0.75 | **0.78** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `multiblimp` | 0.67 | **1.00** |  | 0.67 |  |  |
+| `belebele` | 0.67 | 0.33 |  | 0.00 |  |  |
+| `global_mmlu_full` | 0.33 | 0.67 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Portuguese (pt) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.91** | **1.00** | **0.93** | **1.00** | **1.00** |
+| `multiblimp` | **1.00** | 0.67 |  | 0.67 |  |  |
+| `hellaswag` | 0.33 | 0.67 |  | 0.67 |  |  |
+| `global_mmlu_full` | 0.33 | 0.67 |  | 0.67 |  |  |
+| `arc` | 0.67 | 0.33 |  | 0.00 |  |  |
+| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `include_base_44` | 0.67 | 0.33 |  | 0.00 |  |  |
+| `xwinograd` | 0.33 | 0.67 |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ro (ro) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `global_mmlu_full` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.78** | **0.78** | **1.00** | **0.89** | **1.00** | **1.00** |
+| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `arc` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `hellaswag` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1465,12 +2068,88 @@ subtitle: "Russian (ru) · small→large size pair (bold ≥ 0.75)"
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Swahili (sw) · small→large size pair (bold ≥ 0.75)"
+subtitle: "sk (sk) · small→large size pair (bold ≥ 0.75)"
 ---
 
 | benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
 |---|---|---|---|---|---|---|
-| `bpb` | 0.49 | 0.45 | 0.00 | **0.93** | **1.00** | **1.00** |
+| `bpb` | **0.76** | 0.71 | **1.00** | **0.91** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "sl (sl) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.73 | **1.00** | **0.95** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "sq (sq) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | 0.60 | 0.65 | **1.00** | **0.76** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "sr (sr) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb_srp_Cyrl` | **0.80** | **0.76** | **1.00** | **0.96** | **1.00** | **1.00** |
+| `bpb_srp_Latn` | 0.73 | **0.76** | **1.00** | **0.93** | **1.00** | **1.00** |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "sv (sv) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `hellaswag` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `multiblimp` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | 0.75 | **0.87** | **1.00** | **0.80** | **1.00** | **1.00** |
+| `arc` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ta (ta) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.85** | **1.00** | **0.89** | **1.00** | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1508,6 +2187,40 @@ subtitle: "Turkish (tr) · small→large size pair (bold ≥ 0.75)"
 | `include_base_44` | 0.00 | **1.00** |  | 0.00 |  |  |
 | `multiblimp` | 0.00 | 0.00 |  | **1.00** |  |  |
 | `xcopa` | 0.00 | 0.00 |  | **1.00** |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Ukrainian (uk) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `hellaswag` | **1.00** | **1.00** |  | **1.00** |  |  |
+| `bpb` | **0.91** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `arc` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
+| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `include_base_44` | 0.00 | **1.00** |  | 0.00 |  |  |
+| `multiblimp` | 0.00 | **1.00** |  | 0.00 |  |  |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ur (ur) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
+|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.80** | **1.00** | **0.85** | **1.00** | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
