@@ -658,7 +658,22 @@ jobs (3255016-3255025). `aggregate_splits.sbatch` and
 `conversion/convert-snr.sh` hard-set the same paths; keep the three in sync.
 
 Without these two lines, expect a 429 cascade the next time you launch
->10 concurrent eval jobs. To pre-warm a missing model/dataset, run from
+>10 concurrent eval jobs.
+
+`HF_HUB_OFFLINE=1` joined `HF_DATASETS_OFFLINE=1` on 2026-09-08, for the
+models/tokenizers half of the same problem. Every `eval_worker` builds its own
+vLLM engine, so a job probes `huggingface.co/api/models/<tokenizer>` once **per
+worker** — 4x the pre-worker-pool rate. The overnight burst returned 429, the
+vocabulary load failed, all four engines died and the job saved nothing:
+**94 of 112 failures that night**. It is a `${VAR:-1}` default, not a hard
+export, because the legacy `alehc/swissai-tokenizer` genuinely cannot be
+resolved offline — but the sweep's `swiss-ai/Apertus-70B-2509` can, and loads
+byte-identically either way (vocab 131072, same vocab hash, same ids), so this
+changes no score. Set `HF_HUB_OFFLINE=0` for the legacy runners and for hub
+models pinned by `REVISION`. Offline is also the more reproducible setting: an
+online probe would happily pick up a newer hub revision mid-sweep.
+
+To pre-warm a missing model/dataset, run from
 the `snr` conda env on the login node:
 ```bash
 hf download <repo>          # respects $HF_HUB_CACHE from the env

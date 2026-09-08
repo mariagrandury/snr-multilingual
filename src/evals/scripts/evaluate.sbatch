@@ -171,11 +171,28 @@ export HF_HUB_CACHE=/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_m
 # probe the hub for the latest revision of m_truthfulqa / m_hellaswag /
 # multiblimp ⇒ 429 ⇒ "FileNotFoundError: hf://datasets/.../val.jsonl". The
 # datasets are pre-staged at HF_HOME/datasets/<repo>/<lang>/0.0.0/<rev>/, so
-# skipping the hub probe here is the right thing. We deliberately do NOT set
-# HF_HUB_OFFLINE — that broke `AutoTokenizer.from_pretrained("alehc/swissai-
-# tokenizer")` because transformers' cache layout doesn't satisfy strict
-# offline lookups.
+# skipping the hub probe here is the right thing.
 export HF_DATASETS_OFFLINE=${HF_DATASETS_OFFLINE:-1}
+# Models/tokenizers too, since 2026-09-08. The same 429 came back in a new
+# place: every eval_worker builds its own vLLM engine, so a job probes
+# huggingface.co/api/models/<tokenizer> once PER WORKER — 4x the old rate —
+# and the overnight burst returned 429, failed the vocabulary load, killed all
+# four engines and lost the job before a single task ran. 94 of 112 failures
+# that night were exactly this.
+#
+# This was previously left unset because it broke
+# `AutoTokenizer.from_pretrained("alehc/swissai-tokenizer")`, whose cache does
+# not satisfy a strict offline lookup. That is still true, and it is why this
+# is a default rather than a hard export — but it is the LEGACY 36-sweep
+# tokenizer. Checked against this cache: swiss-ai/Apertus-70B-2509 loads
+# offline and is byte-identical either way (vocab 131072, same vocab hash,
+# same ids), while alehc/swissai-tokenizer still fails. Offline is in fact the
+# more reproducible setting — an online probe would happily pick up a newer
+# hub revision mid-sweep.
+#
+# Set HF_HUB_OFFLINE=0 for the legacy runners and for hub models pinned by
+# REVISION, which must reach the hub to resolve.
+export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
 GPUS_PER_NODE=4
 
 # Print configuration.
@@ -223,7 +240,6 @@ HARNESS_DIR=$RUN_ROOT/harness
 export WANDB_DIR=$RUN_ROOT
 mkdir -p $HARNESS_DIR
 
-# export HF_HUB_OFFLINE=1
 export HF_ALLOW_CODE_EVAL=1
 # export PERSPECTIVE_API_KEY="" # Uncomment if you want to use perspective API, needed for realtoxicityprompts task
 
@@ -509,7 +525,7 @@ REPO_DIR="$PWD"
 # container, so re-export the ones _run_per_task.sh needs by host-side
 # interpolation into the bash -lc heredoc. Single-quote the values so
 # arbitrary characters in TASKS/CMD_BASE survive intact.
-INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' EVAL_WORKERS='$EVAL_WORKERS' GPUS_PER_WORKER='$(( MP * PP ))' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE'"
+INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' EVAL_WORKERS='$EVAL_WORKERS' GPUS_PER_WORKER='$(( MP * PP ))' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE' HF_HUB_OFFLINE='$HF_HUB_OFFLINE'"
 
 # job.json — what only the job knows, beside the harness's own files: Slurm
 # ids, node, walltime, backend/model/parallelism, repo commit, container, and
