@@ -470,6 +470,144 @@ divergence test by 0.016 nats, which is the next slide but one.
 ---
 layout: section
 ---
+layout: section
+---
+
+# How good are our instruments?
+
+Four questions about the benchmarks themselves, before any result
+
+---
+layout: figure
+image: /ladder/rq_a1_scaling.png
+fit: contain
+height: 70vh
+title: "1. Which benchmarks scale predictably?"
+subtitle: "Completion tasks do. Knowledge tasks do not move with size at all."
+---
+
+<!--
+Each task's score is fitted against log parameters from 175M to 1B. R² says how much
+of the movement a straight line explains, Spearman ρ says whether it moves the right
+way. hellaswag 0.98, xwinograd 0.98, xstorycloze 0.97, bits per byte 0.96. At the
+bottom global_mmlu_full and global_piqa sit near 0.07, which means their scores are
+essentially unrelated to model size. truthfulqa is the odd one: a tight fit with
+ρ = −0.9, so it reliably gets worse as models grow.
+Read bits per byte and loss with the sign in mind. They fall as models improve, so
+ρ = −1 is the ideal for them, not a failure.
+-->
+---
+layout: figure
+image: /ladder/rq_a2_stability.png
+fit: contain
+height: 70vh
+title: "2. Which benchmarks are stable?"
+subtitle: "Noise over a run's late checkpoints, relative to the score itself"
+---
+
+<!--
+This is the denominator of every SNR we quote. Small means you get the same number if
+you evaluate a slightly different checkpoint of the same run. multiblimp and bits per
+byte are the steadiest. The four-option knowledge benchmarks are the noisiest, which
+compounds the previous slide: they neither move with size nor sit still.
+-->
+---
+layout: figure
+image: /ladder/rq_a3_languages.png
+fit: contain
+height: 68vh
+title: "3. Which languages benefit most from a bigger model?"
+subtitle: "All 100 gain. The ones that start hardest gain the most, ρ = 0.63."
+---
+
+<!--
+Baseline is bits per byte at 175M, gain is what a 1B model saves, both on the
+50-language mixture. Every one of the 100 validation languages improves, median 0.39
+bits per byte. The three patterns the team asked about are all present but the split
+is by the median, not by an absolute floor: nothing gets worse. The correlation is
+the headline. Scale helps hardest where the model is currently worst, which is the
+opposite of what a rich-get-richer story would predict.
+-->
+---
+layout: figure
+image: /ladder/rq_a4_signal.png
+fit: contain
+height: 68vh
+title: "4. Does the benchmark separate the things we compare?"
+subtitle: "Only bits per byte clears its own noise. Every benchmark family but two does not."
+---
+
+<!--
+Signal is the spread across the models we want to tell apart, noise is the spread
+within one run. The ratio is the number on the right. Bits per byte 7.1×, arc 1.6×,
+training loss 1.3×, and then everything else is under 1×, meaning the benchmark
+varies more between checkpoints of one model than between the models themselves.
+arc rests on 2 tasks and loss on 1, so bits per byte is the only well-powered row
+above the line.
+-->
+---
+layout: section
+---
+
+# Can a cheap measurement stand in for the real one?
+
+Three questions about decision accuracy and its surrogates
+
+---
+layout: figure
+image: /ladder/rq_b1_early.png
+fit: contain
+height: 68vh
+title: "5. How early can we predict final multilingual performance?"
+subtitle: "Bits per byte calls it at 20 % of training. Benchmarks never settle."
+---
+
+<!--
+Decision accuracy of an early checkpoint against the same run's final ranking, at 1B.
+Bits per byte is at 0.91 by 20 percent of the run and stays there, so four fifths of
+each run adds nothing to the ranking. The benchmark families sit between 0.53 and
+0.76 and jump around, because each family has 5 to 8 comparable tasks and the metric
+is quantised at that count. The practical read: we could evaluate at 20 percent and
+free most of the eval budget.
+-->
+---
+layout: figure
+image: /ladder/rq_b2_suite_size.png
+fit: contain
+height: 68vh
+title: "6. What is the smallest suite that predicts full model quality?"
+subtitle: "Three tasks. Adding the other 150 makes the answer worse, not better."
+---
+
+<!--
+Tasks are added best first, by how well each alone tracks the ranking that
+per-language bits per byte gives. Three tasks reach ρ = 0.78. The whole suite of 153
+reaches 0.31. Every suite size but the last beats the whole suite, because the tail
+is at-chance tasks whose scores are noise and dilute the average.
+This is the strongest practical result in the deck: a small curated suite is not a
+compromise, it is better than running everything.
+-->
+---
+layout: figure
+image: /ladder/rq_b3_surrogate.png
+fit: contain
+height: 58vh
+title: "7. Which is the most informative surrogate?"
+subtitle: "Per-language bits per byte, on 500 comparisons. Benchmarks, on 2,116, never work."
+---
+
+<!--
+This is the min-model-size question in aggregate. A surrogate counts as working when
+some proxy size picks the same winner as the reference and every larger size keeps
+picking it. Per-language bits per byte 74 percent of 500, and 175M alone is enough
+for half of those. Benchmarks 0 of 2,116.
+Read the top two rows with care: training loss and macro bits per byte are single
+measurements, so they rest on 5 comparisons each. The two well-powered rows are
+per-language bits per byte and the benchmarks, and they are the two that matter.
+The next slides break this out by language count, which is the shape the team drew.
+-->
+
+---
 
 # Findings
 

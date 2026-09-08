@@ -21,7 +21,7 @@ share, and `predictivity.py` holds the RQ6 measurements.
 ```bash
 cd documents/figures
 for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch \
-         fig_benchmark_predictivity fig_appendix; do
+         fig_benchmark_predictivity fig_rqs fig_appendix; do
   python3 $f.py
 done
 python3 fig_from_analysis.py    # after src/signal-and-noise/analysis/report_figures/make_figures.py
@@ -37,6 +37,10 @@ python3 fig_from_analysis.py    # after src/signal-and-noise/analysis/report_fig
   behind it.
 - `fig_benchmark_predictivity.py`: the benchmark suite against per-language bits
   per byte on the proxy question, once both have shared tasks to score.
+- `fig_rqs.py`: the seven instrument questions, `rq_a1`…`rq_b3` — which
+  benchmarks scale, which are stable, which languages gain from scale, which
+  separate the models, how early the ranking settles, how small a suite can be,
+  and which surrogate carries the decision.
 - `fig_appendix.py`: the appendix heatmaps under `public/ladder/appendix/` — two
   overviews (benchmark by size pair, language by size pair) plus one per
   language. `da_per_benchmark.py` writes the slides that reference them, so run
