@@ -433,6 +433,23 @@ The reference rung the whole predictivity question needs is the one we do not ha
 -->
 
 ---
+layout: figure
+image: /ladder/grid_status.png
+fit: contain
+height: 66vh
+title: What exists today
+subtitle: "Same numbers as the table before, as a picture"
+---
+
+<!--
+Improved version of the previous slide. Blue is a finished cell, grey is the 90M
+rung that diverged, pale blue is started but not done, near white is not started.
+Two things to point at: the bottom row (100 languages) is empty at every size,
+and the two right columns are nearly empty. 1B is finished only at 8 and 50
+languages. The 90M square at L2 is blue because one shallow cell there missed the
+divergence test by 0.016 nats, which is the next slide but one.
+-->
+---
 layout: section
 ---
 
@@ -468,6 +485,17 @@ Fits are per (L, arch, scheme) on the larger rungs — ladder_report.check_scali
 -->
 
 ---
+layout: bullets
+title: Above 90M the ladder behaves
+subtitle: "Plain version of the slide before"
+icon: "📐"
+---
+
+- Loss falls with size at every language count, with no exceptions
+- The slope of that fall is the same everywhere. It sits between 0.16 and 0.20 whether the model sees 1 language or 50
+- So adding languages shifts the whole curve up. It does not change how the model scales
+- Each fit leaves out the smallest rung, then tries to predict it. The healthy rungs land within 0.07 nats
+---
 layout: figure
 image: /ladder/ladder_report_loss.png
 fit: contain
@@ -479,6 +507,34 @@ subtitle: "Nine of ten 90M runs peak early and then get worse"
 ---
 title: Finding 2 — The 90M rung is not on the ladder
 subtitle: "An optimizer timescale fixed in steps, on runs that differ 18×"
+---
+layout: figure
+image: /ladder/optimizer_timescale.png
+fit: contain
+height: 52vh
+title: Why the 90M rung broke
+subtitle: "The optimizer averages over 10,000 steps. The 90M run is 4,500 steps long."
+---
+
+---
+layout: bullets
+title: Why the 90M rung broke
+subtitle: "One number explains it"
+icon: "🔧"
+---
+
+- We train with AdEMAMix, which keeps a slow average of past gradients over 10,000 steps
+- Each rung trains on its own budget, so run length spans 18 times across the ladder
+- The 90M run finishes at 4,500 steps. It never reaches the regime the optimizer was set up for
+- Retraining 90M with the averaging window tied to run length fixes it completely. Final loss goes from 5.762 to 2.778 and the drift falls from 1.365 to 0.011
+- The corrected 90M then beats the uncomplete 175M, which suggests 175M is held back too
+
+<!--
+Improved version of the two tables. Same numbers, one picture and five sentences.
+The lesson for future ladders is in the last two points: write every optimizer
+timescale as a fraction of the run, never as a step count. plan/90M-rung-anomaly.md
+carries the three learning rates we ruled out and the held out BPB evidence.
+-->
 ---
 
 Nine of ten 90M runs reach their **best loss at 15–19 % of training** and degrade for the rest.
@@ -523,6 +579,19 @@ changes what enters every pool, so it is a call for the team, not a patch.
 -->
 
 ---
+layout: bullets
+title: One 90M cell got through
+subtitle: "Plain version of the slide before"
+icon: "⚠️"
+---
+
+- A run counts as diverged if it ends more than 0.25 nats above its own best
+- `90M-L2-shallow` ends 0.234 above its best. It misses the line by 0.016
+- So it is the only 90M model in any of our tables, and it sits 1.29 nats off its own scaling fit
+- Every number we report for 90M is that single run
+- It also anchors 101 of the 303 scaling fits in the last research question
+- The ladder report already publishes an `off_trend` flag. Our loader does not read it. One line fixes this, but it changes every number, so it is a decision for the team
+---
 layout: figure
 image: /ladder/bpb_vs_languages.png
 fit: contain
@@ -536,6 +605,37 @@ layout: bullets
 title: Finding 4 — More languages is nearly free for English
 subtitle: "The multilingual tax is paid once, at the first extra language"
 icon: "🌍"
+---
+layout: figure
+image: /ladder/bpb_gain_per_language.png
+fit: contain
+height: 46vh
+title: What more languages buys, language by language
+subtitle: "Bits per byte saved by training on 50 languages instead of 2"
+---
+
+<!--
+Improved version: no aggregate, every validation language is a column. Blue means
+the language gained, red means it lost. 84 of the 100 gain on average across
+sizes. The gain shrinks as the model grows, which is the top row being darker
+than the bottom one. The losers on the right are Belarusian, Dhivehi and
+Armenian, all of which sit in the 2 language mixture already.
+-->
+
+---
+layout: figure
+image: /ladder/english_vs_rest.png
+fit: contain
+height: 56vh
+title: English pays once, everyone else keeps gaining
+subtitle: "Dotted is English, solid is the median of the other 99 languages"
+---
+
+<!--
+English costs 0.038 bits per byte going from 1 to 2 languages at 600M, then
+0.007 for the next 48. The solid lines never flatten. This is the strongest
+result the ladder has so far, and it holds at every size we have finished.
+-->
 ---
 
 - **English**: 600M pays **+0.038 bits/byte** going 1 → 2 languages, then **+0.007** for the next 48
@@ -579,6 +679,19 @@ ladder_report.md, resolved against a proper seed standard deviation.
 -->
 
 ---
+layout: bullets
+title: Two of our three axes are inside the noise
+subtitle: "Plain version of the slide before"
+icon: "📉"
+---
+
+- Train the same cell with three different seeds and the final loss moves by 0.021 nats. That is our noise floor
+- Changing the number of languages moves it by 12 times that. This axis is real
+- Changing the data scheme moves it by 2.2 times. This axis is marginal
+- Changing the depth moves it by 1.0 times. On the headline metric, deep and shallow are the same model measured twice
+- Task by task the depth effect is bigger, 1.6 times the noise, and above 2 times on 42 percent of cells. So depth does something, just not to the number we optimise
+- Depth is half of the grid
+---
 layout: figure
 image: /ladder/fig1_gate.png
 fit: contain
@@ -611,6 +724,23 @@ The other 107 are per-language BPB and generative tasks, which have none and are
 gated. Per bucket: 90M 3/18, 175M 41/324, 350M 56/219, 600M 75/219, 1B 82/219.
 -->
 
+---
+layout: figure
+image: /ladder/first_clearing_size.png
+fit: contain
+height: 74vh
+title: Which benchmark works, in which language
+subtitle: "The smallest model that beats chance. Grey means it never does."
+---
+
+<!--
+Improved version of the option count table, resolved per language. Read it row by
+row. MultiBLiMP works earliest and in the most languages. XNLI, XStoryCloze,
+HellaSwag, XWinograd and XCOPA need 350M or 600M and only work in some languages.
+The bottom five families are grey everywhere, so they carry no signal at any size
+we have trained. Blank means there is no task in that language at all. 90M is
+excluded because its one surviving cell is off trend.
+-->
 ---
 layout: focus
 color: blue
@@ -658,6 +788,34 @@ metric rather than the benchmarks.
 
 <!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
 ---
+layout: figure
+image: /ladder/snr_bpb_vs_benchmark.png
+fit: contain
+height: 50vh
+title: Correction to the slide before
+subtitle: "Bits per byte wins almost everywhere because almost nothing else is left"
+---
+
+---
+layout: bullets
+title: Correction to the slide before
+subtitle: "The 89 of 96 number is true and it means something different"
+icon: "🔁"
+---
+
+- After the gate, **87 of the 95 validation languages have no benchmark left at all**. In those languages bits per byte wins by default
+- Only **8 languages** still have a benchmark to compare against
+- In **7 of those 8** the benchmark beats bits per byte. English is the widest gap, ARC at 2.58 against 0.19
+- Japanese is the one language where bits per byte wins a fair fight
+- So the honest claim is about coverage, not quality. The suite has nothing to say in 87 languages, and where it does speak it speaks better than bits per byte
+
+<!--
+This corrects the previous slide, which read as "bits per byte is a better
+measurement". It is not what the data says. Do not present both. The gate result
+and this one are the same fact seen twice: the benchmarks that survive are the
+ones in high resource languages, and those are the ones that beat BPB.
+-->
+---
 title: RQ2 — SNR definition
 subtitle: "Results (auto) — most reliable benchmark per language (`iqr` @ 1B)"
 ---
@@ -703,6 +861,18 @@ per size — RQ2 cannot yet tell those apart.
 -->
 
 ---
+layout: bullets
+title: SNR predicts much less here than in English
+subtitle: "Plain version of the slide before"
+icon: "❓"
+---
+
+- Heineman et al. report a correlation of 0.79 between SNR and decision accuracy on the English ladder
+- Our best of 22 definitions reaches 0.20, and only when decisions are read across checkpoints
+- Read across sizes it is slightly negative, at -0.10
+- The definitions that do best are the robust and relative spread families, around 0.25
+- We cannot yet tell whether the framework transfers badly to many languages or whether 39 models per pool is simply too few
+---
 title: Finding 9 — Only the checkpoint-based ranking survives a seed swap
 subtitle: "Train on seeds 64/313, test on seed 1904"
 ---
@@ -725,6 +895,21 @@ Same qualitative conclusion as the 36-sweep, which is itself reassuring.
 -->
 
 ---
+layout: figure
+image: /ladder/seed_holdout.png
+fit: contain
+height: 52vh
+title: Does the SNR ranking survive a seed swap
+subtitle: "Pick the best variant on seeds 64 and 313, test it on seed 1904"
+---
+
+<!--
+Improved version of the table. Blue is the checkpoint based ranking, orange is
+the size based one. Only the checkpoint bars are usable. The last row is the one
+that matters for the paper: the per language argmax agrees on 4 percent of
+languages, so we recommend a family of SNR definitions and never a single one.
+-->
+---
 layout: bullets
 title: Finding 10 — Late-checkpoint noise understates the real noise 2.5×
 subtitle: "The standard S&N noise definition is optimistic on this ladder"
@@ -743,6 +928,18 @@ is still descending, so the raw std would be smaller still. A methodological res
 the framework rather than about our models; worth reporting in the paper.
 -->
 
+---
+layout: bullets
+title: Our noise estimate is too small
+subtitle: "Plain version of the slide before"
+icon: "🔬"
+---
+
+- The framework measures noise as the wobble over a run's last few checkpoints
+- On the cells with three seeds we can measure it the honest way instead, across seeds
+- Seed noise is 2.54 times the checkpoint noise, taken over 752 cells
+- So every SNR we quote is about 2.5 times too flattering
+- An effect that looks like twice the checkpoint noise is really about 0.8 of a seed re-roll
 ---
 title: Finding 11 — The predictivity question is not yet answerable
 subtitle: "RQ6 runs, but every comparison resolves against 600M"
@@ -770,6 +967,43 @@ rq06 on predictivity_seeds: 26 intervention-DA cells, 303 scaling fits, referenc
 "not enough matched pairs" looks like. This slide is the argument for finishing 1B first.
 -->
 
+---
+layout: figure
+image: /ladder/min_predictive_size.png
+fit: contain
+height: 58vh
+title: How small a proxy can we get away with
+subtitle: "Every dot is one language. Lines are the aggregate measures."
+---
+
+---
+layout: figure
+image: /ladder/min_predictive_per_language.png
+fit: contain
+height: 46vh
+title: The same question, language by language
+subtitle: "Smallest proxy that picks the same winner as 600M"
+---
+
+---
+layout: bullets
+title: How small a proxy can we get away with
+subtitle: "What the two plots say"
+icon: "🪜"
+---
+
+- At **1 language** the depth decision is the hardest. 43 of 100 languages have no proxy that gets it right
+- At **8 and 15 languages** a 175M model is enough for most languages. The scheme decision is easier to predict than the depth one
+- **Macro bits per byte is not a shortcut.** It fails outright at 8 languages, where the per language answers are mostly fine
+- Training loss agrees with 600M at every language count except 1
+- No benchmark appears at all. Not one has both sides of an intervention on the same tasks, so benchmarks cannot be scored on this question yet
+
+<!--
+The reference here is 600M, not 1B, because 1B has no matched shallow or scheme B
+cell. So this is a small to 600M read, not a small to large one. The message for
+the meeting is the third bullet: the aggregate metric we planned to decide on is
+worse than the per language ones it averages.
+-->
 ---
 layout: bullets
 title: Not run — RQ3, agreement with DataDecide
@@ -1014,6 +1248,16 @@ icon: "✅"
 - **Not yet answerable**: the predictivity question itself. It needs a reference rung, and 1B is finished at two language settings while 1.7B and L = 100 have none
 - **Uncomfortable**: two of our three axes — depth and data scheme — are at or near the seed-noise floor
 
+---
+layout: bullets
+title: Where this leaves us
+subtitle: "Plain version of the slide before"
+icon: "✅"
+---
+
+- **Solid.** Scaling works above 90M. More languages costs English once and keeps paying everyone else. Three quarters of the benchmark suite sits at chance
+- **Awkward.** The benchmark suite is silent in 87 of 95 languages, and where it speaks it beats bits per byte. Our noise estimate is 2.5 times too small. Depth and scheme are at or near the noise floor
+- **Open.** The question the ladder was built for. Every proxy comparison we can make today lands on 600M, because 1B has no matched pair and 1.7B has none at all
 ---
 layout: bullets
 title: Next
