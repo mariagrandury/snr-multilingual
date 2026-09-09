@@ -159,6 +159,26 @@ stand guard. That is why the submitters call `--ensure`:
 detached drainer only when none is running (log in `logs/`), so calling it on
 every submission cannot stack up drainers racing for the same two debug slots.
 
+The same idea for a reservation:
+`/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh`
+moves any of my pending `normal` jobs (pretrain, eval, convert, BPB) into the
+reservation named at its top, holding at most `--max-nodes` of it (default
+63) and always leaving `MIN_FREE` nodes for others (constant at the top).
+Everything it moves must be able to finish within `--hours` (integer, default
+12) of the start: a job whose walltime no longer fits in the time left stays
+on `normal`, and the loop exits when the window is over. Jobs go in
+by most node-hours first, then job name; `--priority eval` (or `shallow`,
+`L30`, any substring) puts the matching jobs ahead of that order. A job that
+does not fit the remaining room is passed over and smaller jobs behind it
+backfill; when a big job finishes, the freed room goes to the next big job
+first, since it is earlier in the order. Jobs it has placed in the
+reservation are left alone by the debug drainer.
+
+```bash
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh --dry-run
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh --priority eval
+```
+
 ## Bits-per-byte: the second way to evaluate a model
 
 Benchmarks are not the study's outcome metric. The predictivity plan's outcome

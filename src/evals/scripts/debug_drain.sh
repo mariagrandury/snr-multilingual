@@ -91,11 +91,13 @@ drain_once() {
     # pending and a log line claiming success. Watched exactly that happen on
     # 2026-09-07 at 21:02 with 417 evals queued. An empty queue and an
     # unreachable controller must not look the same.
-    if ! pend=$(squeue --me -h -p normal -t PD -o "%j" 2>/dev/null); then
+    # Jobs already placed in a reservation (%v) by scripts/reservation_drain.sh
+    # stay there — pulling them onto `debug` would undo that placement.
+    if ! pend=$(squeue --me -h -p normal -t PD -o "%v|%j" 2>/dev/null); then
         echo "[$(date +%H:%M:%S)] squeue failed — retrying next tick"
         return 0
     fi
-    npend=$(grep -cE '^(eval|convert|bpb)-' <<<"$pend")
+    npend=$(grep -cE '^\(null\)\|(eval|convert|bpb)-' <<<"$pend")
     ndebug=$(squeue --me -h -p debug -t PD,R,CG -o "%i" 2>/dev/null | wc -l)
     echo "[$(date +%H:%M:%S)] pending=$npend  debug=$ndebug/2"
     (( npend == 0 )) && return 1          # nothing pending left → caller exits
@@ -104,7 +106,7 @@ drain_once() {
     for (( s=0; s<slots; s++ )); do
         # Rank 0 convert, 1 eval, 2 bpb (see the header); within a class,
         # shortest walltime first.
-        cand=$(squeue --me -h -p normal -t PD -o "%l|%i|%j" 2>/dev/null | grep -E '\|(eval|convert|bpb)-' | \
+        cand=$(squeue --me -h -p normal -t PD -o "%v|%l|%i|%j" 2>/dev/null | grep -E '^\(null\)\|' | cut -d'|' -f2- | grep -E '\|(eval|convert|bpb)-' | \
             awk -F'|' '{n=split($1,a,":"); sec=(n==3?a[1]*3600+a[2]*60+a[3]:a[1]*60+a[2]);
                         rank=($3 ~ /^convert-/) ? 0 : (($3 ~ /^eval-/) ? 1 : 2);
                         print rank"|"sec"|"$2"|"$3}' | \
