@@ -79,9 +79,9 @@ then never log again without a code-side id suffix.
   optimizer *schedule* on a resume; this is the wider rule, across cells: 24
   cells are trained, and a rung that ran different hyperparameters is not on
   the same ladder as the rest — the scaling fit cannot absorb it, so "fixing"
-  one rung means re-running every rung. `launch_trainings.py` has exactly two
-  config-perturbing flags, `--lr` and `--ademamix-beta3-factor`; both are
-  opt-in, both require a `--size/--langs/--seed` filter, and both **force a
+  one rung means re-running every rung. `launch_trainings.py` has exactly three
+  config-perturbing flags, `--lr`, `--ademamix-beta3-factor` and `--gbs`; all
+  are opt-in, all require a `--size/--langs/--seed` filter, and all **force a
   `diag-` EXP_NAME**. That rename is the enforcement, not a convention:
   `diag-` matches neither `pretrain_progress.NAME_RE` nor
   `ladder_report.LOG_RE`, and `sync_models_json` derives its keys from

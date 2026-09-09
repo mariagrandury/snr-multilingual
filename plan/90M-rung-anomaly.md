@@ -564,6 +564,57 @@ elapsed. That is ~3.5x the two diagnostics already spent, which is why it is
 gated on the 175M result rather than launched alongside it — a negligible 175M
 gap would confine the effect to the bottom rung and make this unnecessary.
 
+### The batch-size diagnostic (2026-09-09)
+
+The audit below files `--global-batch-size` under "dimensionless, correctly
+fixed", and as a *step-count* timescale that is right — GBS is not measured in
+steps. But dimensionless is not the same as size-appropriate. The ladder runs
+a fixed **GBS 504 x 4096 = 2.06M tokens per step at every rung**, from 90M to
+1.7B, a 19x parameter range. Critical batch size grows with model scale, so a
+batch tuned to be efficient at the top of the ladder is, at the bottom, larger
+than the gradient noise justifies: the extra examples per step buy less and
+less signal, and the run spends its budget in fewer, less informative updates.
+That is a mechanism that would depress the smallest rung specifically, which
+is the shape of the anomaly.
+
+It is also the one remaining knob in the "same everywhere, means something
+different at each size" family that had never been probed — the LR sweep and
+the beta3 factor covered the other two.
+
+`--gbs` (this commit) runs it. Like `--lr` and `--ademamix-beta3-factor` it is
+opt-in, requires a `--size/--langs/--seed` filter, and forces a `diag-` name,
+so it can never occupy a grid cell:
+
+```bash
+python3.11 src/pretrain/launch_trainings.py cscs --size 90M --langs 2 --gbs 252 --dry-run
+python3.11 src/pretrain/launch_trainings.py cscs --size 90M --langs 2 --gbs 84  --dry-run
+```
+
+Two points, halving and then thirding again against the grid cell's 504:
+
+| run | GBS | tokens/step | grad-accum (MBS 7, DP 12) |
+| --- | --: | ----------: | ------------------------: |
+| grid baseline `lm-90M-L2-deep-seed1904` | 504 | 2.06M | 6 |
+| `diag-90M-L2-deep-seed1904-gbs252` | 252 | 1.03M | 3 |
+| `diag-90M-L2-deep-seed1904-gbs84` | 84 | 0.34M | 1 |
+
+**Read it as loss at equal TOKENS, not at equal steps.** A smaller batch takes
+more steps to reach the same token budget, so a per-step comparison is
+guaranteed to favour the large batch and says nothing. `TRAINING_STEPS` is
+unchanged here (4,500), so these two runs consume 1/2 and 1/6 of the baseline's
+tokens — they answer "is the small rung under-served per step at this batch?",
+not "does a smaller batch reach a better final loss at the same budget". The
+second question needs the step count scaled up to hold D = 100 x N, which is a
+separate, more expensive pair of runs and is only worth launching if these two
+show a gap.
+
+Submitted as jobs 3338418 / 3338419.
+
+The one thing `--gbs` deliberately does NOT do is change a grid cell. GBS stays
+`${GBS:-504}` in `megatron_args.sh`, emitted into the env only when overridden,
+so an unset GBS reproduces every trained cell byte-for-byte — checkable with a
+diff of the launcher's `--dry-run` export line.
+
 ## Audit: which hyperparameters are fixed in STEPS rather than fractions
 
 Prompted by the beta3 result. Because D = 100 x N at a fixed batch and
@@ -579,7 +630,7 @@ valued argument in `megatron_args.sh` was classified.
 | `--lr-warmup-iters` | per cell | 3.5-4.4% of the run |
 | `--lr-wsd-decay-iters` | per cell | 19.8-20.1% |
 | `--ademamix-beta3-warmup`, `--ademamix-alpha-warmup` | `ADEMAMIX_WARMUP` = iters | 100% |
-| `--save-interval` | iters / 20 | 5% |
+| `--save-interval` | iters / n, n = 20 (40 at 1B, 60 at 1.7B) | 5% (2.5% / 1.67%) |
 | `--lr` | 6ND law at each run's own budget | per size |
 
 **Dimensionless, correctly fixed:** `--ademamix-alpha 8`, `--clip-grad 0.1`,

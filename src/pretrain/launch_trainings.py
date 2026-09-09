@@ -300,11 +300,12 @@ def cell_env(
     mbs: Optional[int] = None,
     lr: Optional[float] = None,
     beta3_factor: Optional[float] = None,
+    gbs: Optional[int] = None,
 ) -> dict:
     """The env-var dict megatron_args.sh consumes — the platform-independent
     description of one run. Identical on CSCS and Azure by construction.
 
-    `lr` and `beta3_factor` are DIAGNOSTIC overrides and default to None, in
+    `lr`, `beta3_factor` and `gbs` are DIAGNOSTIC overrides and default to None, in
     which case this returns exactly what the already-pretrained cells used —
     the ladder's comparability rests on that. Callers that pass either get a
     `diag-` run name forced on them (see main())."""
@@ -342,6 +343,10 @@ def cell_env(
         # 8 dp, not 6: at the long rungs 1-beta3 is ~6e-5, and 6 dp would
         # round the timescale off by ~0.5%.
         **({"ADEMAMIX_BETA3": f"{beta3:.8f}"} if beta3 is not None else {}),
+        # Same rule as ADEMAMIX_BETA3: emitted ONLY when overridden, so a
+        # normal launch's dict stays byte-identical to what the trained
+        # cells used and megatron_args.sh keeps its own GBS=504.
+        **({"GBS": gbs} if gbs is not None else {}),
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -364,15 +369,19 @@ NODES_BY_SIZE = {
 }
 
 
-def cscs_mbs(nodes: int, mbs: int) -> int:
+def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
     """Largest micro-batch <= the memory-tuned value that divides the cluster
     layout (DP = 4 GPUs x nodes; Megatron requires GBS % (DP x MBS) == 0) —
     the same resolution launch_pretraining_azure.sh does against its GPU
     count. A no-op for the deep ladder (its values are already valid); the
     shallow ladder's generator-suggested MBS (24/14/8/4/...) needs it."""
     dp = 4 * nodes
-    while GBS % (dp * mbs) != 0:
+    while gbs % (dp * mbs) != 0:
         mbs -= 1
+        if mbs < 1:
+            raise ValueError(
+                f"no micro-batch divides GBS={gbs} over DP={dp}; "
+                f"pick a --gbs that is a multiple of {dp}")
     return mbs
 
 
@@ -654,24 +663,30 @@ def main() -> None:
                              "instead of the ladder's fixed 0.9999, i.e. put the "
                              "slow-EMA timescale at F of the run. Forces a diag- "
                              "run name — never a grid cell.")
+    parser.add_argument("--gbs", metavar="N", type=int,
+                        help="CSCS only, DIAGNOSTIC: override the global batch "
+                             "size (ladder value 504). Must be a multiple of "
+                             "DP = 4 x nodes. Forces a diag- run name — never a "
+                             "grid cell.")
     args = parser.parse_args()
 
     if args.platform != "cscs":
         # not-in-(None, False), not truthiness: --lr 0 is a mistake worth
         # reporting, not a value to silently drop.
         for flag in ("time", "account", "dependency", "training_steps", "test",
-                     "lr", "ademamix_beta3_factor"):
+                     "lr", "ademamix_beta3_factor", "gbs"):
             if getattr(args, flag) not in (None, False):
                 parser.error(f"--{flag.replace('_', '-')} is CSCS-only")
     elif args.compute:
         parser.error("--compute is Azure-only")
 
     diag = {k: v for k, v in (("lr", args.lr),
-                              ("beta3f", args.ademamix_beta3_factor))
+                              ("beta3f", args.ademamix_beta3_factor),
+                              ("gbs", args.gbs))
             if v is not None}
     if diag:
         if any(v <= 0 for v in diag.values()):
-            parser.error("--lr / --ademamix-beta3-factor must be positive")
+            parser.error("--lr / --ademamix-beta3-factor / --gbs must be positive")
         # Without a filter one diagnostic flag would fan a non-standard
         # config across every fresh cell in the grid.
         if not (args.size or args.langs or args.seed):
@@ -686,6 +701,17 @@ def main() -> None:
     bad_sizes = [s for s in (size_filter or []) if s not in valid_sizes]
     if bad_sizes:
         parser.error(f"--size {bad_sizes} not valid. Choose from: {valid_sizes}")
+    if args.gbs:
+        # Fail here, not 200 lines later inside cscs_mbs: Megatron needs
+        # GBS % (DP x MBS) == 0, and MBS >= 1 makes GBS % DP == 0 the real
+        # constraint. DP = 4 GPUs x the size's node count.
+        for sz in (size_filter or valid_sizes):
+            dp = 4 * NODES_BY_SIZE[sz]
+            if args.gbs % dp:
+                parser.error(f"--gbs {args.gbs} is not a multiple of DP={dp} "
+                             f"({sz} runs on {NODES_BY_SIZE[sz]} nodes); "
+                             f"nearest valid: {args.gbs // dp * dp} or "
+                             f"{(args.gbs // dp + 1) * dp}")
     if args.langs and args.langs not in LANG_SETTINGS:
         parser.error(f"--langs '{args.langs}' not valid. Choose from: {LANG_SETTINGS}")
 
@@ -776,8 +802,10 @@ def main() -> None:
             submit_cscs(
                 cell_env(cfg, c["size"], c["seed"], exp, blend,
                          training_steps=args.training_steps or tgt,
-                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"]),
-                         lr=args.lr, beta3_factor=args.ademamix_beta3_factor),
+                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"],
+                                      args.gbs or GBS),
+                         lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
+                         gbs=args.gbs),
                 dry_run=args.dry_run, nodes=nodes,
                 time=args.time or auto_time(c["size"], tgt - load_iter, args.arch),
                 account=args.account, dependency=args.dependency,

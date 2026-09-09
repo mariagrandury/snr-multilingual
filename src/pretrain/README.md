@@ -119,11 +119,11 @@ keeps the reviewed value exactly).
 used.** Two dozen cells are on disk; a rung trained with different
 hyperparameters is not on the same ladder as the rest, and the scaling fit
 cannot absorb that. So there is no way to perturb a *grid* cell's config from
-the command line. The two experimental knobs that exist —
-`--lr` and `--ademamix-beta3-factor` — are opt-in, never defaults, require a
-`--size/--langs/--seed` filter, and **force a `diag-` run name** that the grid
-tooling (`NAME_RE`, `LOG_RE`, `sync_models_json`) ignores by construction. If
-an experiment needs a different config, it is a diagnostic or a new axis of
+the command line. The three experimental knobs that exist —
+`--lr`, `--ademamix-beta3-factor` and `--gbs` — are opt-in, never defaults,
+require a `--size/--langs/--seed` filter, and **force a `diag-` run name** that
+the grid tooling (`NAME_RE`, `LOG_RE`, `sync_models_json`) ignores by
+construction. If an experiment needs a different config, it is a diagnostic or a new axis of
 its own, not an edit to an existing rung. See
 [`plan/90M-rung-anomaly.md`](../../plan/90M-rung-anomaly.md) for the case that
 prompted this and why the fix it proposes was *not* adopted.

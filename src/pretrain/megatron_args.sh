@@ -27,7 +27,11 @@
 # Defaults below are the 175M walkthrough cell so a bare smoke run works; real
 # runs always get explicit values from the launcher.
 
-GBS=504          # Global batch size (504 x 4096 = 2_064_384 tokens per step)
+# Global batch size (504 x 4096 = 2_064_384 tokens per step). Overridable
+# ONLY so launch_trainings.py --gbs can run a batch-size diagnostic; that
+# flag forces a diag- run name, so an unset GBS still reproduces every
+# trained grid cell exactly.
+GBS=${GBS:-504}
 SEQ_LEN=4096     # Sequence length
 SAVE_INTERVAL=${SAVE_INTERVAL:-2000}
 WANDB_ENTITY=mariagrandury-epflnlp   # constant — every run logs to this entity
