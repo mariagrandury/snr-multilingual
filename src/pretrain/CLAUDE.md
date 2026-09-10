@@ -34,21 +34,72 @@ reintroduces the drift this design removed.
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
 | `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
-| `launch_trainings.py` | grid (56 cells) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
+| `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause); needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
 `eval-90M-L8-deep-seed1904-iter425`, `convert-...`. CSCS checkpoints:
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
 Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
+
+**The data axis is `DATA_SCHEMES`** (2026-09-10, five entries, `--scheme` on
+`launch_trainings.py`, `pretrain_progress.py`, `sync_models_json.py`,
+`auto_evals_cscs.py` and `data/build_data_mixtures.py`): **A** resource-ranked
+at T=1 — the baseline, and the only one with no name label; **AT3** the same
+language lists at T=3; **B** diversity-first at L ∈ {8, 15, 30}; **ZH**/**ES**
+L2 with Chinese / Spanish instead of Russian, deep only. Each entry owns its
+label, its data subdir, the settings it defines and its per-setting size cap,
+so a cell's scheme *is* its data and two schemes can never collide in a
+checkpoint dir, a W&B run id or a models.json key (which keeps the key
+`scheme`, now holding the scheme name, plus a `temperature` field).
+
+**L=100 exists ONLY flattened (AT3)**: at T=1, measured on the filtered
+subset the builds read, the median of the 99 languages gets 90M tokens and
+the smallest 3.5M, so most per-language BPB would measure a language the
+model never saw; flattening lifts the median to 373M (floor 14.5M —
+data-limited, identical at T=2 and T=3). The plan's re-measured table
+recommends T=2: at T=3 the L100 build realizes 75.4B, under the 83.6B a 1.7B
+draws. The registry still codes T=3 and the name label / subdir spell it, so
+a switch renames the scheme — free only while nothing is built or trained as
+AT3. L50 is built both ways so the temperature change is calibrated against
+the T=1 curve. AT3 runs the whole ladder at both settings: a 92B L50 build at
+T=3 realizes 87.1B on the filtered subset, enough for the 83.6B a 1.7B draws
+(0.96 epochs). ZH/ES stop at the 1B rung — no L2 source can feed a 1.7B — so
+their reference is 1B.
+
+Seed triples are **per size** (`SEED_TRIPLES`): 175M and 600M run
+(64, 313, 1904) at L ∈ {1, 2, 50}, 1B runs (28, 1797, 1904) at
+L ∈ {1, 2, 30, 50} — the 1B column is aromanou's already-trained runs (L50
+added 2026-09-10 to match the other ×3 columns; those two cells are new), and
+naming the wrong triple would submit two more runs per cell while the watcher
+ignored the ones on disk. **Her 1B runs follow the old 20-checkpoint regime**
+(every 2287 iters to 45740, a 45,740-iter schedule — L1, L2, L15, L30 and
+schemeB L8/L15/L30 at seed 1904, plus 28/1797 at L1, L2, L30 and schemeB L30;
+15 cells), while `n_checkpoints` gives the 1B rung 40 saves
+every 1143 iters to 45720 (60 at 1.7B, unchanged). None of their saves lands
+on that grid, so until 2026-09-10 the watcher reported `eval DONE (0/0)` for
+all of them — nothing ever fell due — and the launcher counts them done
+(45740 ≥ 45720). **Due checkpoints are now read on the run's own grid**
+(`launch_trainings.due_iters`, used by both watchers, `eval_counts` and the
+ladder report): `run_interval()` takes the modal gap between saves, and every
+Nth point of the SIZE's grid is mapped onto it, so a 20-save 1B run yields
+every save and a 40-save one every 2nd — the same k/20 fractions, comparable
+checkpoint for checkpoint; the final save is due whatever its iter. models.json
+still lists the size grid under `checkpoints.all`, which is wrong for her
+2287-spaced cells: the watcher is unaffected (it passes `--iters`), but
+`convert-snr.sh --models` without `--iters`, `snr_progress.py` and
+`azure/launch_evals.py --ckpts final` plan iters those runs never saved — pass
+the iters explicitly for them. The 1.7B row now trains at every setting, so no (size, L) cell of scheme A is
+empty. Terminology: **scheme** is this data axis; **variant** keeps its older,
+looser sense (any run configuration — seed × arch × scheme).
 
 Per-size schedule (iters/warmup/decay for D(N) = 100 × N) comes from the
 `predictivity` block in `hyperparams/hyperparams_{deep,shallow}.json` — the
@@ -75,6 +126,18 @@ then never log again without a code-side id suffix.
 - **Never delete checkpoints, eval results, or force-push.** When a cell's
   disk state is unrecoverable (iter dirs exist but none valid), the tooling
   skips with a warning — cleanup is always a human decision.
+- **Never rebuild a data mixture in place.** Build token targets are derived
+  from the grid (`data/build_data_mixtures.py` imports `DATA_SCHEMES` /
+  `scheme_sizes`): 92B where a 1.7B trains, 52B where the largest rung is 1B.
+  When the 1.7B row gained L15 and L50, the finished 52B builds for A L15/L50
+  and B L15 became undersized — but cells have already trained on them, so
+  they are rebuilt at 92B into a **parallel root** (`data/launch_builds.sh`,
+  the `REBUILD` array), never overwritten. Swapping the 92B copies into the
+  training stage is a human decision, and waits until every cell partial at
+  L15/L50 has finished on the 52B copy it started on. Until the swap the
+  launcher refuses the 1.7B cells there (`skip [data undersized]`); it also
+  refuses to resume a run saved on another checkpoint grid
+  (`skip [foreign schedule]`).
 - **Never change a grid cell's training config.** #5 covers not changing the
   optimizer *schedule* on a resume; this is the wider rule, across cells: 24
   cells are trained, and a rung that ran different hyperparameters is not on
@@ -213,6 +276,13 @@ capstor period is contaminated — re-measure from a clean iopsstor run.
 ~30 days) and `data/launch_builds.sh` writes there; the training copy is
 staged on iopsstor and `CSCS_DEFAULT_DATA_DIR` points at it. After a purge,
 re-stage from capstor before launching (README "Before the first CSCS run").
+A scheme subdir on the stage also needs its `english_dclm.*` symlinks —
+`submit_build_one.sh` stages them with the mixture, and the launcher skips a
+cell whose blend files are missing (2026-09-11: six ZH/ES trainings died at
+dataset build because neither existed). Also: Slurm runs the script copy
+taken at SUBMIT time, so a job queued before a rename in
+`launch_trainings.py` fails on the old name (the ZH/ES builds died on
+`DATA_VARIANTS`); resubmit rather than wait for it.
 Checkpoints were always on iopsstor and stay there — same reasoning.
 
 ### 9. AML expands `${{...}}` only in `command` (2026-08-26)

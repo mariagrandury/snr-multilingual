@@ -2,7 +2,10 @@
 """
 CSCS auto-eval watcher — the cluster twin of auto_evals_azure.py.
 
-Every N saved checkpoints (default 2) plus each run's final checkpoint,
+Every N checkpoints of the size's save grid (default 2) plus each run's final
+checkpoint — read on the grid the run actually saved at, so a run saved at
+half the density (aromanou's 1B cells, 20 saves) yields every save and lands
+on the same fractions of training (launch_trainings.due_iters) —
 evaluate on the "auto" benchmark group (configs/tasks.json) and push to W&B
 `mariagrandury-epflnlp/msnr` — the same project the training loss logs to.
 
@@ -17,9 +20,10 @@ The eval job pushes to W&B with the key from your environment or, as
 everywhere else in the cluster pipeline, from the fallback file
 src/evals/scripts/wandb_api_key.txt — nothing to export here.
 
-Each pass covers EVERY variant — both architectures and both data schemes,
-so the shallow ladder and the scheme-B cells cannot fall behind a watcher
-someone forgot to start. --arch/--scheme narrow it. For each due checkpoint
+Each pass covers EVERY variant — both architectures and every data scheme,
+so the shallow ladder and the non-baseline mixtures cannot fall behind a
+watcher someone forgot to start. --arch/--scheme narrow it. For each due
+checkpoint
 of each cell:
 
   1. every task of the cell's list already has a result under
@@ -69,8 +73,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, SCHEME_B_LANGS, TOKENIZER_MODEL, cell_languages,
-    exp_name, job_name, predictivity_cells, save_interval, schedule_for)
+    DATA_SCHEMES, HYPERPARAMS, TOKENIZER_MODEL, cell_languages, due_iters,
+    exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -501,35 +505,31 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     submitted = {"evals": 0}       # against --max-submit, across all cells
 
     # EVERY variant in one pass, not one watcher per arch. A watcher covering
-    # a single --arch/--scheme means the shallow ladder and the scheme-B cells
-    # only progress while someone remembers to run their own watcher, and they
-    # fall behind silently — the checkpoints pile up, nothing complains.
-    # Cells are deduped by name because scheme B collapses onto A wherever the
-    # two language sets agree (SCHEME_B_LANGS), so both schemes name the same
-    # cell at those settings.
-    seen: set[str] = set()
+    # a single --arch/--scheme means the shallow ladder and the non-baseline
+    # data schemes only progress while someone remembers to run their own
+    # watcher, and they fall behind silently — the checkpoints pile up and
+    # nothing complains. Each scheme now names a distinct cell, so unlike the
+    # old two-scheme loop there are no duplicates to dedupe.
     for arch in args.archs:
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
-        for scheme_arg in args.schemes:
-            for c in predictivity_cells():
-                scheme = scheme_arg if c["L"] in SCHEME_B_LANGS else "A"
-                cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
-                if args.name and cell != args.name:
-                    continue
-                if cell in seen:
-                    continue
-                seen.add(cell)
-                # capstor intermittently faults a read outright (Errno 5 /
-                # 108 — the same blips data_progress.py works around, hit
-                # here on a .hf_complete probe). The watcher runs unattended
-                # behind every launch, so one blip must cost one cell for one
-                # pass, not kill the whole loop.
-                try:
-                    one_cell(args, c, cell, scheme, configs, root, staging,
-                             logs_root, benchmarks, running, errors, submitted)
-                except OSError as e:
-                    print(f"{cell}: skipped this pass — {e.strerror or e}",
-                          file=sys.stderr)
+        for c in predictivity_cells(args.schemes):
+            scheme = c["scheme"]
+            if arch not in DATA_SCHEMES[scheme]["arches"]:
+                continue
+            cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
+            if args.name and cell != args.name:
+                continue
+            # capstor intermittently faults a read outright (Errno 5 / 108 —
+            # the same blips data_progress.py works around, hit here on a
+            # .hf_complete probe). The watcher runs unattended behind every
+            # launch, so one blip must cost one cell for one pass, not kill
+            # the whole loop.
+            try:
+                one_cell(args, c, cell, scheme, configs, root, staging,
+                         logs_root, benchmarks, running, errors, submitted)
+            except OSError as e:
+                print(f"{cell}: skipped this pass — {e.strerror or e}",
+                      file=sys.stderr)
 
     # One place to look for what is stuck and why. A snapshot, not a log: a
     # checkpoint drops out of it as soon as an eval writes results, so an
@@ -559,10 +559,10 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     saved = saved_valid_iters(cell, root)
     if not saved:
         return
-    # Every Nth saved checkpoint on the cell's per-size save grid, plus
-    # the run's final one whatever its number — same rule as Azure.
-    due = [i for i in saved
-           if i % (args.every * save_interval(target)) == 0 or i == target]
+    # Every Nth checkpoint of the size's grid, read on the grid the run
+    # actually saved at (a 20-save 1B run yields every save, a 40-save one
+    # every 2nd — the same points), plus its final one — same rule as Azure.
+    due = due_iters(saved, target, args.every)
     # The cell's task list: every auto benchmark, in the languages
     # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
     task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
@@ -643,13 +643,13 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    # Default: EVERY variant. One watcher covers the whole grid, so the
+    # Default: EVERY scheme. One watcher covers the whole grid, so the
     # shallow ladder and the scheme-B cells cannot quietly fall behind while
     # a deep/A-only watcher runs. The flags narrow it for a targeted pass.
     p.add_argument("--arch", choices=["deep", "shallow"], default=None,
                    help="only this architecture (default: both)")
-    p.add_argument("--scheme", choices=["A", "B"], default=None,
-                   help="only this data scheme (default: both)")
+    p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
+                   help="only this data scheme (default: all of them)")
     p.add_argument("--max-submit", type=int, metavar="N",
                    help="submit at most N eval jobs this pass — a throttle for "
                         "the burst an expanded task list creates, and what "
@@ -695,7 +695,7 @@ def main() -> None:
     args = p.parse_args()
     # The pass iterates over these; a flag narrows the default "everything".
     args.archs = [args.arch] if args.arch else list(HYPERPARAMS)
-    args.schemes = [args.scheme] if args.scheme else ["A", "B"]
+    args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
 
     benchmarks = auto_benchmarks()
     if args.retry_held:

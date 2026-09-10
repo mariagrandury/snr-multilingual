@@ -880,7 +880,12 @@ The 36-sweep checkpoint dirs live at
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
 (EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
 predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
-`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`.
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — the
+optional label is the cell's data scheme (`DATA_SCHEMES` in
+`launch_trainings.py`; A is the unlabelled baseline, and L=100 exists only
+as AT3). The eval side never needs to parse it: which tasks a cell is
+evaluated on comes from its scheme's language list via
+`launch_trainings.cell_languages()`.
 
 ---
 

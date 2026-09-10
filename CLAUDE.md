@@ -50,8 +50,10 @@ Two sweeps, in this order:
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
 2. **The predictivity sweep** (current work): a 6-rung ladder
-   90M–1.7B × 7 language settings × deep/shallow × data schemes A/B, run
-   across CSCS and Azure. Cells are named `lm-*` and log to W&B project
+   90M–1.7B × 7 language settings × deep/shallow × five data schemes
+   (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
+   `src/pretrain/launch_trainings.py`, the single source of truth for the
+   grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
 
 Read [`src/pretrain/CLAUDE.md`](src/pretrain/CLAUDE.md) and
@@ -147,10 +149,16 @@ System Python on the login nodes is 3.6 — use `python3.11`.
 Predictivity-sweep specifics (the 36-sweep's sizes and 30/70-style mixtures
 are retired — do not carry them into new work):
 
-- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding
+- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding — every size trains at
+  every language setting
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50,
   100} languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
+- Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
+  unlabelled baseline), AT3 (A's lists at T=3 — L50 and L100, which exists
+  ONLY at T=3), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
+  / Spanish instead of Russian). "Variant" is the older, looser word for any
+  run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

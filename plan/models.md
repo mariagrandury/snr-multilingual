@@ -1,5 +1,11 @@
 # Predictivity sweep — model card sheet
 
+> **Stale since 2026-09-10.** The grid now has 1.7B at every L, the AT3/ZH/ES
+> data schemes, per-size seed triples and 92B builds at L15/L50 — see
+> [the training plan](small-to-large-predictivity-training-plan.md) and
+> `src/pretrain/launch_trainings.py`. The counts, cells and data sizes below
+> predate it.
+
 All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
 [compute budget](compute-budget.md)). Source of truth: the two **reviewed**

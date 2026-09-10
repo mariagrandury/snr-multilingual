@@ -307,8 +307,8 @@ python build_data_mixtures.py --scheme A --output_dir /iopsstor/scratch/cscs/mar
 ```
 
 Targets (printed by `--dry_run` first): 184.0B English; 92.0B FineWeb-2 where
-the 1.7B trains (L2/L8/L30/L100) and
-52B elsewhere (L15/L50); ~2.5TB of int32 `.bin`/`.idx` total. Blending happens at _training_ time via Megatron blend weights, so
+the 1.7B trains — every scheme-A, B and AT3 setting since 2026-09-10 — and
+52B for ZH/ES at L2; ~2.5TB of int32 `.bin`/`.idx` total. Blending happens at _training_ time via Megatron blend weights, so
 each dataset is built exactly once.
 
 ### 5b. Ship to Azure with azcopy
@@ -321,10 +321,12 @@ Upload once to the Spain workspace; the Canada Central copy is server-side insid
 durable copy every build writes to; iopsstor holds only what
 `data/stage_to_iopsstor.sh` has staged so far, and is swept every ~30 days.
 
-**What ships, and how much.** Scheme A is the full ladder; scheme B differs
-from A only at L ∈ {8, 15, 30} (`SCHEME_B_LANGS` in `launch_trainings.py` —
-every other setting reuses the scheme-A build, so there is nothing else to
-upload). **~3.3 TB in total**, apparent size:
+**What ships, and how much.** One directory per data scheme, as on CSCS: the
+scheme-A root plus `schemeB/`, `AT3/`, `ZH/`, `ES/` (`DATA_SCHEMES` in
+`launch_trainings.py` lists each scheme's settings). The table below predates
+the 2026-09-10 grid: it lacks the AT3/ZH/ES builds, and A L15/L50 and B L15
+must ship as their 92B rebuilds (`rebuild-92B/`), not the 52B copies — a 1.7B
+draws 83.6B there. **~3.3 TB in total** at that time, apparent size:
 
 | scheme | builds | size |
 | ------ | ------ | ---: |

@@ -9,9 +9,16 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
            baseline) or shallow (hyperparams/hyperparams_shallow.json, the
            model-depth intervention level).
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
-           FineWeb-2 languages. 1.7B trains only at L in {1, 2, 8, 30, 100}.
-  * seed — 1904 by default; three seeds (64, 313, 1904) on the cells the
-           plan marks x3 (the 175M and 600M columns at L in {1, 2, 50, 100}).
+           FineWeb-2 languages. Every size trains at every setting.
+  * scheme — the data build (DATA_SCHEMES, selected with --scheme): A is the
+           resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
+           supplies both the L50 temperature intervention and L100, which
+           exists ONLY at T=3; B is diversity-first at L in {8, 15, 30}; ZH
+           and ES swap L2's Russian for Chinese / Spanish.
+  * seed — 1904 by default; three seeds on the columns the plan marks x3, and
+           the triple differs by size — (64, 313, 1904) at 175M and 600M for
+           L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30, 50}
+           (see SEED_TRIPLES).
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 mix (L=1 is 100% English), blended at
@@ -43,16 +50,18 @@ Usage:
                                      [--training-steps N] [--test] [filters]
     python launch_trainings.py azure [filters]        # `source azure/env.sh` first
 
-Filters (both platforms): --arch {deep,shallow}, --scheme {A,B},
+Filters (both platforms): --arch {deep,shallow}, --scheme {A,AT3,B,ZH,ES},
 --size 350M[,175M,...], --langs L, --seed N, --dry-run.
 
 Examples:
-    python launch_trainings.py cscs --dry-run              # whole sweep (56 jobs)
+    python launch_trainings.py cscs --dry-run              # the scheme-A ladder
     python launch_trainings.py cscs --size 350M,175M       # two sizes, all L
     python launch_trainings.py azure --size 1.7B --langs 30
     python launch_trainings.py azure --langs 1             # monolingual anchors
-    python launch_trainings.py cscs --arch shallow --dry-run  # depth variant
-    python launch_trainings.py cscs --scheme B --langs 8   # scheme-B data variant
+    python launch_trainings.py cscs --arch shallow --dry-run  # depth intervention
+    python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
+    python launch_trainings.py cscs --scheme AT3           # T=3: L50 and L100
+    python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
 """
 
 from __future__ import annotations
@@ -126,41 +135,100 @@ ND_SIZES = {"1B", "1.7B"}  # the 8xH100 pool; everything else runs on the
 LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100]
 EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
-# Which language settings each size trains at. Every size covers all settings
-# except 1.7B, the top rung, which trains at L in {1, 2, 8, 30, 100}.
-SIZE_LANG_SETTINGS = {
-    "90M": LANG_SETTINGS,
-    "175M": LANG_SETTINGS,
-    "350M": LANG_SETTINGS,
-    "600M": LANG_SETTINGS,
-    "1B": LANG_SETTINGS,
-    "1.7B": [1, 2, 8, 30, 100],
+# The ladder, small -> large. The order is load-bearing: a scheme's
+# per-setting size cap below means "this rung and every rung under it".
+LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
+
+# Which language settings each size trains at. Every size now covers every
+# setting — the 1.7B row gained L=15 and L=50 on 2026-09-10, so the top rung
+# exists at every language count.
+SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
+
+# --- Data schemes -----------------------------------------------------------
+#
+# A data scheme is one build of the FineWeb-2 half: a language list plus a
+# per-language sampling temperature. Scheme A (resource-ranked, T=1) is the
+# baseline and carries no name label; every other scheme gets its own build
+# directory and its own label, so two schemes can never collide in a
+# checkpoint dir, a W&B run id or a models.json entry.
+#
+#   label     appended to the cell name (empty for the baseline)
+#   subdir    directory under --data_dir holding this scheme's fineweb_L*
+#   langs     the L settings where the scheme defines data at all
+#   max_size  per-setting cap on the ladder; absent = the full ladder
+#   temp      sampling temperature for the per-language allocation (T = 1/alpha)
+#   sets      which language_sets_scheme<X>.json supplies its language lists
+#   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
+#   arches    architecture families the scheme is trained in
+#
+# L=100 exists ONLY as AT3, deliberately. At T=1 the 99-language allocation is
+# so skewed that the median language gets 90M tokens and the smallest 3.5M
+# (measured on the filtered subset the builds read — plan, "Re-measured") —
+# most per-language BPB numbers would be measuring a model that never saw the
+# language. Flattening lifts the median to 373M and the floor to 14.5M, but
+# the tail is data-limited: T=2 and T=3 reach the same floor, and at T=3 the
+# L100 build realizes 75.4B, short of the 83.6B a 1.7B draws, where T=2 still
+# realizes 85.9B. The plan therefore recommends T=2; `temp` here is still 3
+# (open decision), and the label and subdir spell the temperature, so a
+# switch renames the scheme — free only while nothing is built or trained as
+# AT3. L=50 is then built BOTH ways: that pair calibrates the temperature
+# change against the T=1 curve running L2..L50, without which L100 could not
+# be compared with any other setting.
+DATA_SCHEMES = {
+    "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
+              max_size={}, temp=1.0, sets="A", seeds="grid",
+              arches=("deep", "shallow")),
+    # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
+    # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
+    # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
+    "AT3": dict(label="-AT3", subdir="AT3", langs={50, 100},
+                max_size={}, temp=3.0, sets="A", seeds="single",
+                arches=("deep", "shallow")),
+    "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
+              max_size={}, temp=1.0, sets="B", seeds="grid",
+              arches=("deep", "shallow")),
+    # ZH and ES are the second-language intervention at L=2. Their ceiling is
+    # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
+    # tokens of Russian (scheme A's L2), 59.9B of Chinese and 23.4B of Spanish,
+    # against the 83.6B a 1.7B draws and the 47.2B a 1B draws. So no L2 build
+    # can feed a 1.7B at all — scheme A's own L2 build is 72.8B, not 92B, for
+    # this reason. Chinese is clean through the 1B rung (0.79 epochs).
+    # Spanish is clean only through 350M and repeats 2.0x at 1B; capped at 1B
+    # anyway (decided 2026-09-10) — record that repetition wherever L2-ES is
+    # compared against the other L2 schemes.
+    "ZH": dict(label="-ZH", subdir="ZH", langs={2},
+               max_size={2: "1B"}, temp=1.0, sets="ZH", seeds="single",
+               arches=("deep",)),
+    "ES": dict(label="-ES", subdir="ES", langs={2},
+               max_size={2: "1B"}, temp=1.0, sets="ES", seeds="single",
+               arches=("deep",)),
 }
 
-# Cells trained with three seeds (else one): the 175M and 600M columns at
-# L in {1, 2, 50, 100}.
+# Seeds. Every cell runs 1904; the columns below run three. The triple is
+# per SIZE because two people are filling it: 175M and 600M are this project's
+# (64, 313, 1904), and the 1B column is aromanou's, already on disk with
+# (28, 1797, 1904) at L in {1, 2, 30}. The grid has to name the seeds that
+# EXIST — under the wrong triple the launcher submits two more runs per cell
+# and the watcher never evaluates the ones already trained. L50 was added to
+# the 1B triple on 2026-09-10 to match the other x3 columns; those two cells
+# are new and train under the 40-checkpoint regime, unlike aromanou's runs
+# (20 saves, every 2287 iters to 45740 — see pretrain/CLAUDE.md).
 SEED_SINGLE = [1904]
-SEED_TRIPLE = [64, 313, 1904]
-TRIPLE_SIZES = {"175M", "600M"}
-TRIPLE_LANGS = {1, 2, 50, 100}
+SEED_TRIPLES = {
+    "175M": ([64, 313, 1904], {1, 2, 50}),
+    "600M": ([64, 313, 1904], {1, 2, 50}),
+    "1B": ([28, 1797, 1904], {1, 2, 30, 50}),
+}
 
 
-def _scheme_b_langs() -> set[int]:
-    """The language settings where scheme B actually differs from scheme A,
-    derived from the language-set JSONs so it can't drift: {8, 15, 30}.
-    Everywhere else the two schemes define identical data, so those cells
-    always run (and are named) as the scheme-A baseline."""
-    sets = {
-        s: json.loads((SCRIPT_DIR / "data" /
-                       f"language_sets_scheme{s}.json").read_text())["sets"]
-        for s in ("A", "B")
-    }
-    return {L for L in LANG_SETTINGS
-            if f"FW_L{L}" in sets["A"]
-            and sets["A"][f"FW_L{L}"] != sets["B"][f"FW_L{L}"]}
-
-
-SCHEME_B_LANGS = _scheme_b_langs()
+def scheme_sizes(scheme: str, L: int) -> list[str]:
+    """Ladder rungs a scheme trains at one setting — everything up to its
+    per-setting cap. ZH/ES stop at 1B: no L2 source can feed a 1.7B (see
+    DATA_SCHEMES), so their reference is the 1B rung, which still leaves a
+    five-rung ladder under it."""
+    sizes = [s for s in LADDER if L in SIZE_LANG_SETTINGS[s]]
+    cap = DATA_SCHEMES[scheme]["max_size"].get(L)
+    return sizes[: sizes.index(cap) + 1] if cap else sizes
 
 
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
@@ -177,7 +245,8 @@ def cell_languages(L: int, scheme: str = "A") -> set[str]:
         (SCRIPT_DIR.parent.parent / "configs" / "languages.json").read_text()
     )["fineweb_iso2"]
     sets_ = json.loads((SCRIPT_DIR / "data" /
-                        f"language_sets_scheme{scheme}.json").read_text())["sets"]
+                        f"language_sets_scheme{DATA_SCHEMES[scheme]['sets']}"
+                        ".json").read_text())["sets"]
     for code in sets_[f"FW_L{L}"]:
         mapped = iso3_to_code.get(code.split("_")[0])
         if mapped:
@@ -193,18 +262,30 @@ TEST_WARMUP = 10
 TEST_DECAY = 20
 
 
-def seeds_for(size: str, L: int) -> list[int]:
-    """Three seeds on the x3 cells, one otherwise."""
-    return SEED_TRIPLE if (size in TRIPLE_SIZES and L in TRIPLE_LANGS) else SEED_SINGLE
+def seeds_for(size: str, L: int, scheme: str = "A") -> list[int]:
+    """Seeds for one cell: three on the columns the plan marks x3, one
+    everywhere else. The extra data schemes run a single seed — they are
+    intervention levels, not part of the seed-noise estimate."""
+    if DATA_SCHEMES[scheme]["seeds"] == "single":
+        return SEED_SINGLE
+    triple, langs = SEED_TRIPLES.get(size, (SEED_SINGLE, set()))
+    return triple if L in langs else SEED_SINGLE
 
 
-def predictivity_cells() -> list[dict]:
-    """Every (size, L, seed) run in size -> L -> seed order."""
+def predictivity_cells(schemes: Optional[list] = None) -> list[dict]:
+    """Every run in the grid as {size, L, seed, scheme}, in
+    scheme -> size -> L -> seed order. Defaults to EVERY scheme so the
+    progress, models.json and auto-eval tools see the whole sweep; the
+    launcher narrows it with --scheme."""
     cells = []
-    for size, settings in SIZE_LANG_SETTINGS.items():
-        for L in settings:
-            for seed in seeds_for(size, L):
-                cells.append({"size": size, "L": L, "seed": seed})
+    for scheme in (schemes or list(DATA_SCHEMES)):
+        for size in LADDER:
+            for L in sorted(DATA_SCHEMES[scheme]["langs"]):
+                if size not in scheme_sizes(scheme, L):
+                    continue
+                for seed in seeds_for(size, L, scheme):
+                    cells.append({"size": size, "L": L, "seed": seed,
+                                  "scheme": scheme})
     return cells
 
 
@@ -238,13 +319,48 @@ def save_interval(train_iters: int) -> int:
     return train_iters // n_checkpoints(train_iters)
 
 
+def run_interval(saved: list[int]) -> int:
+    """The save interval a run ACTUALLY used, read off its sorted saved iters:
+    the most common gap between consecutive saves (the first save alone when
+    there is only one; ties go to the larger gap, since off-grid saves from a
+    SIGUSR2 exit only ever shorten a gap). Runs trained before the per-size
+    40/60 rule — aromanou's 1B cells, 20 saves every 2287 iters — keep their
+    own grid, and this is how every consumer learns it."""
+    gaps = [b - a for a, b in zip(saved, saved[1:])]
+    return max(set(gaps), key=lambda g: (gaps.count(g), g)) if gaps else saved[0]
+
+
+def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
+    """The saved iters to evaluate: every `every`-th checkpoint of the SIZE's
+    grid, expressed on the run's OWN grid so the evaluated fractions of
+    training are the same whatever density the run saved at, plus its final
+    save. A 40-save 1B run yields every 2nd save and a 20-save 1B run every
+    save — the same k/20 points, comparable checkpoint for checkpoint. Saves
+    off the run's grid (a SIGUSR2 exit) are never due; the final save is,
+    whatever its iter (aromanou's runs end at 45740, the grid at 45720)."""
+    if not saved:
+        return []
+    step = run_interval(saved)
+    n_run = max(1, round(target / step))    # saves the run makes over the budget
+    n_size = n_checkpoints(target)          # saves the size's grid makes
+    # Save j of the run sits at fraction j/n_run; it is due when that is a
+    # multiple of every/n_size, i.e. when j*n_size is divisible by n_run*every.
+    # Exact for any `every` (no rounding, no division by zero), and identical
+    # to the old i % (every*save_interval) rule whenever n_run == n_size.
+    # The final save: the target itself when the run saved it; otherwise the
+    # first save past it (a run on the old 45740 schedule never writes 45720),
+    # and nothing while the run is still short of the target.
+    final = target if target in saved else saved[-1] if saved[-1] > target else target
+    return [i for i in saved
+            if (i % step == 0 and (i // step) * n_size % (n_run * every) == 0)
+            or i == final]
+
+
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
-    """Variant label for EXP_NAME: language setting, data scheme (marked only
-    for the non-default B, and only where B differs), and the arch — always
-    explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L8-shallow`."""
-    return (f"L{L}"
-            + ("-schemeB" if scheme == "B" else "")
-            + f"-{arch}")
+    """Scheme label for EXP_NAME: language setting, data scheme (empty for
+    the scheme-A baseline) and the arch — always explicit, e.g. `L8-deep`,
+    `L8-schemeB-deep`, `L50-AT3-shallow`, `L2-ZH-deep`."""
+    return f"L{L}{DATA_SCHEMES[scheme]['label']}-{arch}"
 
 
 def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
@@ -275,6 +391,64 @@ def data_blend(english: str, fineweb: str, L: int) -> str:
     if L == 1:
         return f"1.0 {english}"
     return f"{EN_SHARE / 100:.2f} {english} {(100 - EN_SHARE) / 100:.2f} {fineweb}"
+
+
+SEQ_LEN = 4096          # megatron_args.sh; tokens per sample
+BYTES_PER_TOKEN = 4     # Megatron .bin element size for the 131k vocab
+# The durable master every build writes, with a <prefix>.plan.json per build:
+# the per-language token estimates the builder allocated from.
+DATA_MASTER = Path("/capstor/store/cscs/swissai/infra01/"
+                   "multilingual_data_mixtures/predictivity-data")
+
+
+def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optional[str]:
+    """Why the FineWeb-2 build at `prefix` must not feed a run of `run_tokens`
+    total tokens, or None when it may.
+
+    A run drawing no more than the build holds is always fine. One drawing
+    more repeats data, which is accepted only when the SOURCE is the limit —
+    the build already realizes what its current target can (scheme A's L2
+    Russian, ES's Spanish, AT3 L100 at T=3). A build smaller than that is a
+    stale one the grid has since outgrown (the 52B A-L15/A-L50/B-L15 copies,
+    once the 1.7B row gained those settings), and training on it would repeat
+    data only because nobody swapped the full build in."""
+    have = Path(f"{prefix}.bin").stat().st_size // BYTES_PER_TOKEN
+    draw = run_tokens * (100 - EN_SHARE) // 100
+    if draw <= have:
+        return None
+    # Per-language token estimates, from ANY build plan on the master: the
+    # builder measures a language the same way whatever build it is in, and the
+    # oldest builds (scheme A's L2) predate plan files altogether.
+    langs = json.loads((SCRIPT_DIR / "data" / f"language_sets_scheme"
+                        f"{DATA_SCHEMES[scheme]['sets']}.json").read_text())["sets"][f"FW_L{L}"]
+    est: dict[str, int] = {}
+    for p in sorted(DATA_MASTER.glob("fineweb_L*.plan.json")) + sorted(
+            DATA_MASTER.glob("*/fineweb_L*.plan.json")):
+        try:
+            sources = json.loads(p.read_text())["sources"]
+        except (OSError, ValueError, KeyError):
+            continue
+        for lang in langs:
+            if f"fineweb_{lang}" in sources:
+                est.setdefault(lang, sources[f"fineweb_{lang}"]["estimated_tokens"])
+    unknown = [lang for lang in langs if lang not in est]
+    if unknown:
+        return (f"draws {draw / 1e9:.1f}B from a {have / 1e9:.1f}B build, and no "
+                f"build plan under {DATA_MASTER} estimates {unknown}, so a source "
+                f"limit cannot be told apart from a stale build")
+    # What the builder can realize at the CURRENT target: temperature
+    # allocation p^(1/T), each language capped at its estimate (it never repeats).
+    sys.path.insert(0, str(SCRIPT_DIR / "data"))
+    from build_data_mixtures import fineweb_target_tokens  # lazy: it imports this module
+    temp, total = DATA_SCHEMES[scheme]["temp"], sum(est.values())
+    w = {k: (v / total) ** (1 / temp) for k, v in est.items()}
+    z, target = sum(w.values()), fineweb_target_tokens(L, scheme)
+    can = sum(min(target * w[k] / z, est[k]) for k in est)
+    if have >= 0.98 * can:
+        return None
+    return (f"draws {draw / 1e9:.1f}B ({draw / have:.2f} epochs) from a "
+            f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B — "
+            f"stage the full build first")
 
 
 # Width-scaled init anchor: 1/sqrt(hidden_size) scaling that keeps the
@@ -618,12 +792,15 @@ def main() -> None:
     parser.add_argument("--arch", choices=["deep", "shallow"], default="deep",
                         help="Architecture family: deep (baseline) or shallow "
                              "(the model-depth intervention level)")
-    parser.add_argument("--scheme", choices=["A", "B"], default="A",
-                        help="Language-set scheme: A (resource-ranked, "
-                             "baseline) or B (diversity-first; data under "
-                             "<data_dir>/schemeB). B differs from A only at "
-                             "L in {8, 15, 30} — other settings always run "
-                             "as scheme A")
+    parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
+                        help="Data scheme to submit: A (resource-ranked, "
+                             "T=1 — the baseline), AT3 (same lists at T=3; "
+                             "L50 as the temperature intervention and L100, "
+                             "which exists only at T=3), B (diversity-first "
+                             "lists at L in {8, 15, 30}), ZH / ES (L2 with "
+                             "Chinese / Spanish instead of Russian). Each "
+                             "reads its own <data_dir>/<subdir> and carries "
+                             "its own name label, so schemes never collide.")
     parser.add_argument("--size", metavar="SIZES",
                         help="Filter by size — one or a comma-separated list "
                              "(e.g. '600M' or '350M,175M'). Default: all sizes.")
@@ -731,8 +908,12 @@ def main() -> None:
         run_test(data, args.arch, args.data_dir, args.dry_run)
         return
 
+    if args.arch not in DATA_SCHEMES[args.scheme]["arches"]:
+        print(f"Scheme {args.scheme} is not trained in the {args.arch} "
+              f"architecture (only {', '.join(DATA_SCHEMES[args.scheme]['arches'])}).")
+        return
     cells = [
-        c for c in predictivity_cells()
+        c for c in predictivity_cells([args.scheme])
         if (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
         and (args.seed is None or c["seed"] == args.seed)
@@ -751,22 +932,17 @@ def main() -> None:
             *(active_azure_jobs(az_args(s)[1])
               for s in {c["size"] for c in cells}))
 
-    # Scheme B data lives in its own subdir of the same layout (the english
-    # build and validation manifest are symlinked in — see data/launch_builds.sh).
-    cscs_dir = args.data_dir + ("/schemeB" if args.scheme == "B" else "")
-    az_data = f"{DATASTORE}/data" + ("/schemeB" if args.scheme == "B" else "")
-
     for c in cells:
         cfg = data["configs"][c["size"]]
-        # Scheme B only defines different data at SCHEME_B_LANGS ({8, 15, 30});
-        # everywhere else (L=1 English-only, and the settings whose language
-        # lists are identical across schemes) the cell is the scheme-A one — no
-        # duplicate runs of identical data, and no pointing at schemeB data
-        # paths that only hold the differing builds. A `--scheme B` sweep thus
-        # submits B-cells where B differs and A-cells elsewhere (which the
-        # idempotency check dedupes against an earlier scheme-A sweep).
-        scheme = args.scheme if c["L"] in SCHEME_B_LANGS else "A"
-        exp = exp_name(c["size"], c["L"], args.arch, c["seed"], scheme)
+        # Every non-baseline scheme keeps its FineWeb-2 build in its own
+        # subdir of the same layout (the english build and the validation
+        # manifest are symlinked in — see data/launch_builds.sh).
+        # predictivity_cells() only emits a scheme at the settings it actually
+        # defines, so unlike the old two-scheme code there is no "fall back to
+        # A" case to guess at here: a cell's scheme IS its data.
+        subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
+        cell_dir = args.data_dir + (f"/{subdir}" if subdir else "")
+        exp = exp_name(c["size"], c["L"], args.arch, c["seed"], c["scheme"])
         if diag:
             # Rename BEFORE anything keys off it. `diag-...` matches neither
             # pretrain_progress.NAME_RE nor ladder_report.LOG_RE, and
@@ -790,11 +966,47 @@ def main() -> None:
                 print(f"  *** corrupt: {exp} — {a} iter dir(s) on disk but none "
                       f"valid; SKIPPING (manual review)")
                 continue
+            # The data must be on the stage BEFORE nodes are allocated: a
+            # missing prefix fails every rank at dataset build, minutes into
+            # the job (2026-09-11: all six ZH/ES cells, whose builds had never
+            # reached the stage). is_file() follows symlinks, so a dangling
+            # english_dclm link counts as missing too.
+            prefixes = [f"{cell_dir}/english_dclm"] + (
+                [f"{cell_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
+            missing = [p for p in prefixes
+                       if not all(Path(f"{p}.{ext}").is_file() for ext in ("bin", "idx"))]
+            if missing:
+                print(f"  skip [no data]: {exp} — not staged: {', '.join(missing)}")
+                continue
+            # A build that exists but is smaller than the grid now sizes it
+            # (the 52B A-L15/A-L50/B-L15 copies, once the 1.7B row gained those
+            # settings) must not feed a cell that draws more than it holds:
+            # Megatron silently repeats it.
+            if c["L"] > 1:
+                short = undersized_build(f"{cell_dir}/fineweb_L{c['L']}", c["L"],
+                                         c["scheme"], target * (args.gbs or GBS) * SEQ_LEN)
+                if short:
+                    print(f"  skip [data undersized]: {exp} — {short}")
+                    continue
+            # A run started on another checkpoint grid (aromanou's 1B cells: every
+            # 2287 to 45740) must not be resumed from this checkout, which would
+            # save every save_interval(target) from here on: the run ends on no
+            # single grid, and due_iters() drops its early checkpoints.
+            if action == "resume":
+                from pretrain_progress import ITER_RE, is_valid_iter_dir  # lazy: cycle
+                ckdir = CKPT_ROOT / exp / "checkpoints"
+                saved = sorted(int(m.group(1)) for e in ckdir.iterdir()
+                               if (m := ITER_RE.match(e.name)) and is_valid_iter_dir(e))
+                if len(saved) >= 2 and run_interval(saved) != save_interval(target):
+                    print(f"  skip [foreign schedule]: {exp} saved every "
+                          f"{run_interval(saved)} iters; this checkout would continue "
+                          f"every {save_interval(target)} — resume it from the "
+                          f"checkout that started it")
+                    continue
             load_iter, tgt = (0, a) if action == "fresh" else (a, b)
             if action == "resume" and not rewind_marker(
                     CKPT_ROOT / exp / "checkpoints", load_iter, args.dry_run):
                 continue
-            cell_dir = args.data_dir if scheme == "A" else cscs_dir
             blend = data_blend(f"{cell_dir}/english_dclm",
                                f"{cell_dir}/fineweb_L{c['L']}", c["L"])
             print(f"  [{action}] {exp}: iters {load_iter} -> {tgt}")
@@ -820,7 +1032,7 @@ def main() -> None:
             submit_azure(
                 cell_env(cfg, c["size"], c["seed"], exp, blend),
                 cell=c, dry_run=args.dry_run,
-                data_root=az_data if scheme == "B" else None,
+                data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
                 compute=az_compute,
             )
 

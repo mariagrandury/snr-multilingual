@@ -28,7 +28,8 @@ python3.11 launch_trainings.py cscs                # whole sweep (or filter)
 python3.11 launch_trainings.py cscs --size 90M --langs 2   # one cell
 
 # 3. Auto-evals while training (tmux; converts + evals every 2nd checkpoint
-#    + each run's final one, pushes to W&B mariagrandury-epflnlp/msnr;
+#    of the size's grid, on the run's own save grid, + each run's final one,
+#    pushes to W&B mariagrandury-epflnlp/msnr;
 #    the W&B key comes from your env or src/evals/scripts/wandb_api_key.txt)
 python3.11 auto_evals_cscs.py --watch 600
 
@@ -74,14 +75,14 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, every size at every setting |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 50, 100} |
-| Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
+| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **146 runs**.
+Counting every scheme and the architectures each is trained in: **186 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -90,17 +91,28 @@ Counting both architectures and scheme B where it differs: **146 runs**.
 ![Eval work outstanding per grid cell](./eval_progress.png)
 <!-- END generated -->
 
-Variants multiply the
-grid and are suffix-marked in the run name: `--arch shallow` (width/depth
-128, the model-depth intervention)
-and `--scheme B` (diversity-first language sets — B differs from A only at
-L ∈ {8, 15, 30}, derived from `data/language_sets_scheme{A,B}.json`; at every
-other setting a `--scheme B` sweep runs the scheme-A cell, deduped by the
-idempotency check). Each size trains D(N) = 100 × N tokens (5×C); the
-per-size schedule lives in the `predictivity` block of the hyperparams files.
+The intervention levels are suffix-marked in the run name: `--arch shallow`
+(width/depth 128, the model-depth intervention) and `--scheme` — the data
+axis, one of the five entries of `DATA_SCHEMES` in
+[`launch_trainings.py`](launch_trainings.py):
+
+| `--scheme` | What it changes | Where it applies |
+| ---------- | --------------- | ---------------- |
+| `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
+| `AT3` | the same lists at T=3 — the temperature intervention, and the only scheme that has L=100 | L ∈ {50, 100}, the whole ladder; seed 1904 only |
+| `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
+| `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, up to the 1B rung, deep only, seed 1904 only |
+
+Every scheme defines only the settings it covers and reads its own data
+directory, so a `--scheme` sweep submits exactly its own cells — there is no
+fallback to A. **L=100 exists only as AT3**: at T=1 more than half of the 99
+languages get too few tokens for their BPB to mean anything, so L50 is built
+at both temperatures and calibrates the change. Each size trains
+D(N) = 100 × N tokens (5×C); the per-size schedule lives in the
+`predictivity` block of the hyperparams files.
 
 Run name = Slurm job name = Azure display name = checkpoint dir = W&B run
-name: `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`. Runs log to
+name: `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>`. Runs log to
 W&B under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant
 (`megatron_args.sh`) and the project comes from
 [`configs/hf_wandb.json`](../../configs/hf_wandb.json) (`wandb.project`).
@@ -157,7 +169,7 @@ launcher — the core design):
 | Dir | Contents |
 | --- | -------- |
 | [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
-| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B}.json`](data/language_sets_schemeA.json) (the nested language lists), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per mixture — L2 goes through the same path, sized for its 1.7B run), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap). |
+| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B,ZH,ES}.json`](data/language_sets_schemeA.json) (the nested language lists; AT3 reuses A's), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per (scheme, setting) mixture, fanned out from `DATA_SCHEMES`), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap). |
 | [`hyperparams/`](hyperparams/) | The reviewed architecture ladders: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
 
@@ -185,24 +197,37 @@ cd data
 
 [`data/launch_builds.sh`](data/launch_builds.sh) fans out to
 [`data/submit_build_one.sh`](data/submit_build_one.sh) (one mixture per job —
-english, scheme A {2,8,15,30,50,100}, scheme B {8,15,30}). Each job caps
-the tokenizer to ~32 cores — it peaks at ~16–32 threads, so ~9 builds pack per
+the English build plus one FineWeb-2 build per (scheme, setting), read off
+`DATA_SCHEMES` so a scheme added to the grid gets its build jobs for free).
+Each job caps the tokenizer to ~32 cores — it peaks at ~16–32 threads, so ~9 builds pack per
 node — and self-chains a `--dependency=singleton` successor to resume past the
 12h wall. Builds are idempotent: a finished mixture (`.idx` present) is skipped,
 a preempted one resumes from its checkpoint, so re-running is always safe.
-Scheme B lands in `<DATA_DIR>/schemeB/` (its own `--data_dir`, with the shared
-english build and validation manifest symlinked in).
+Scheme A builds into `<DATA_DIR>/` itself; every other scheme gets its own
+`--data_dir` under it (`AT3/`, `schemeB/`, `ZH/`, `ES/`), with the shared
+english build and validation manifest symlinked in. A finished build stages
+its mixture and, for a scheme subdir, that english link; `launch_trainings.py
+cscs` skips (`skip [no data]`) any cell whose blend files are not on the stage
+yet, instead of allocating nodes that fail at dataset build.
 
 Everything runs on the cluster's curated corpora (DCLM-edu + FineWeb-2-HQ on
 `/capstor`) — nothing is downloaded from the HF Hub. To train on Azure, ship
 the finished `.bin`/`.idx` builds with azcopy: see the Azure guide's §5
 ([`azure/README.md`](azure/README.md)).
 
-`--scheme {A,B}` picks the language lists
-(`data/language_sets_scheme{A,B}.json` — A is resource-ranked, B diversity-first).
-Targets: 184.0 B English, 92.0 B FineWeb-2 where the 1.7B trains
-(L ∈ {2, 8, 30, 100}) and 52 B
-elsewhere (half the largest run's budget + 10% headroom).
+`build_data_mixtures.py --scheme {A,AT3,B,ZH,ES}` is the one knob that
+matters: the scheme's registry entry supplies its language lists, its
+allocation temperature (T=3 for AT3, 1 elsewhere — there is no
+`--temperature` flag) and the settings it builds.
+Targets are derived from the grid too: 184.0 B English, 92.0 B FineWeb-2 where
+a 1.7B trains and 52.0 B where the largest rung is 1B (ZH and ES at L2) —
+half the largest run's budget + 10% headroom.
+
+The A L15/L50 and B L15 builds already on capstor are 52 B, from before the
+1.7B row gained L15 and L50. They are **not** overwritten: `launch_builds.sh`
+rebuilds them at 92 B into a parallel root (its `REBUILD` array), because
+cells have already trained on the 52 B copies. Swapping the finished 92 B
+builds into the training stage is a deliberate, human step.
 
 ## 2. Launch the trainings
 
@@ -233,11 +258,13 @@ python launch_trainings.py cscs --size 350M,175M
 python launch_trainings.py cscs --size 90M,175M,350M,600M,1B
 ```
 
-Variant axes and filters compose:
+Intervention axes and filters compose:
 
 ```bash
-python launch_trainings.py cscs --arch shallow         # depth-intervention variant
-python launch_trainings.py cscs --scheme B --langs 8   # scheme-B data variant
+python launch_trainings.py cscs --arch shallow         # the depth intervention
+python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
+python launch_trainings.py cscs --scheme AT3           # T=3: L50 and L100
+python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
 python launch_trainings.py cscs --size 600M --langs 8 --seed 1904
 python launch_trainings.py azure --langs 1             # monolingual anchors
 python launch_trainings.py cscs --test --dry-run       # smoke: 90M, L8, 50 steps
@@ -306,8 +333,8 @@ by design.
   unpredictably (CLAUDE.md #8). `launch_builds.sh` writes the durable master to
   capstor; `--data_dir` defaults to the iopsstor stage. iopsstor is purged
   ~30 days, so after a purge re-stage before launching — idempotent, skips
-  what is already there, and gets `schemeB/` right (its english build is a
-  symlink, not a second copy):
+  what is already there, and gets the scheme subdirs (`AT3/`, `schemeB/`,
+  `ZH/`, `ES/`) right (their english build is a symlink, not a second copy):
   ```bash
   sbatch --account=infra01 data/stage_to_iopsstor.sh   # ~2 TB: not on the login node
   ```
@@ -345,7 +372,7 @@ loads the final checkpoint and exits immediately.
 ```bash
 python3.11 pretrain_progress.py                 # what a re-launch would do, per cell
 python3.11 pretrain_progress.py --filter 1.7B   # subset by name substring
-python3.11 pretrain_progress.py --arch shallow --scheme B   # a variant's cells
+python3.11 pretrain_progress.py --arch shallow --scheme B   # one arch × scheme
 python3.11 pretrain_progress.py --plot          # + the plan table and heatmaps
 ```
 
@@ -363,19 +390,27 @@ The other two are read off disk, aggregated over **every** run found there
 regardless of variant:
 
 - **`pretrain_progress_simple.png`** — cell = how many finished models exist
-  at (size, L), across seeds, deep/shallow, scheme A/B, tokenizers.
+  at (size, L), across seeds, deep/shallow, every scheme, tokenizers.
 - **`pretrain_progress_detailed.png`** — one row of binary (yellow 0 /
-  blue 1) heatmaps per transformation: SEED (64 / 313 / 1904),
-  ARCH (deep / shallow), SCHEME (A / B), TOKENIZER (v1 for now).
+  blue 1) heatmaps per transformation: SEED (28 / 64 / 313 / 1797 / 1904),
+  ARCH (deep / shallow), DATA (A / AT3 / B / ZH / ES), TOKENIZER (v1 for
+  now). Cells a factor value was never planned at — a scheme's undefined
+  settings, a seed outside that size's triple — are greyed out rather than
+  drawn as permanently missing runs.
 
 All three PNGs and the generated doc blocks are refreshed automatically at
 the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
 (embedded above) is refreshed by the auto-eval watcher after every pass,
-since that is what changes the state it shows.
+since that is what changes the state it shows. Unlike the two model
+heatmaps it counts only runs the grid names — a run on disk outside the grid
+is work the watcher will never do, and is reported on stderr instead of
+painting its cell as permanently under-evaluated.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd saved checkpoint and each run's final one**
-whatever its iter; the planned third piece — the checkpoint nearest each
+the same rule (**every 2nd checkpoint of the size's save grid and each run's
+final one** whatever its iter — read on the grid the run actually saved at,
+`launch_trainings.due_iters`, so aromanou's 20-save 1B cells yield every save
+and land on the same k/20 points as the 40-save ones; the planned third piece — the checkpoint nearest each
 shared FLOPs milestone, so cross-size reads at equal compute land on
 evaluated points rather than interpolated ones — is a 09-02 decision NOT
 yet implemented: no `milestone_iters` helper exists yet) and the same

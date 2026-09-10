@@ -204,10 +204,13 @@ NLL, the byte count, `bpb` and `ppl`.
 
 How it differs from the harness path, and why:
 
-* **The data is the validation build, not a benchmark.** `build_data_mixtures.py
-  --stage validation` wrote one `.bin` per language plus
-  `validation.manifest.json`, and every training build skipped exactly those
-  rows, so train and validation are disjoint by construction.
+* **The data is the validation build, not a benchmark.**
+  `build_data_mixtures.py --scheme A --stage validation` wrote one `.bin` per
+  language plus `validation.manifest.json`, and every training build skipped
+  exactly those rows, so train and validation are disjoint by construction.
+  There is one validation build for the whole sweep — the other data schemes
+  symlink this manifest into their own data dirs — so BPB is comparable
+  across schemes, not just across sizes.
 * **Nothing is generated.** It is a single teacher-forced forward pass per
   block, summing `-log p` over targets. Blocks overlap by one token so every
   token except the corpus's first is scored with a predecessor.

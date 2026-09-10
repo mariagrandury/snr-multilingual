@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Predictivity-sweep pretraining progress on CSCS: per-cell status + plots.
 
-Prints one tab-separated status line per cell of the selected variant
+Prints one tab-separated status line per cell of the selected scheme
 (`--arch`/`--scheme`). Each cell's target is its size's own 5xC budget (the
 "predictivity" block in hyperparams/hyperparams_{deep,shallow}.json):
 
@@ -18,18 +18,19 @@ this output is exactly what a (re-)launch would do.
 
 With --plot, renders a plan table plus two heatmaps over the sweep grid (x = model size,
 y = number of languages), aggregated over EVERY run found on disk regardless
-of variant:
+of scheme:
 
-  pretrain_progress_plan.png      what the grid PLANS per (size, L): the
+  pretrain_progress_plan.png      what the grid PLANS per (size, L): the data
                                   scheme / architecture / seed(s) of every
                                   run, not just a count.
   pretrain_progress_simple.png    cell value = how many finished models exist
                                   at (size, L) across all variants (seeds,
-                                  deep/shallow, scheme A/B, tokenizers).
+                                  deep/shallow, every data scheme, tokenizers).
   pretrain_progress_detailed.png  one row of binary heatmaps per
-                                  transformation — SEED (the SEED_TRIPLE set),
-                                  ARCH (deep/shallow), SCHEME (A/B),
-                                  TOKENIZER (v1) — yellow 0 / blue 1.
+                                  transformation — SEED (every seed the sweep
+                                  uses), ARCH (deep/shallow), DATA (the
+                                  DATA_SCHEMES keys), TOKENIZER (v1) —
+                                  yellow 0 / blue 1.
 
 Azure cells are not visible here (their checkpoints live in blob storage —
 auto_evals.py watches those); this tool covers the CSCS half of the sweep.
@@ -50,10 +51,9 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SEED_SINGLE, SEED_TRIPLE,
-    SIZE_LANG_SETTINGS,
-    TRIPLE_LANGS, TRIPLE_SIZES, exp_name, predictivity_cells, schedule_for,
-    seeds_for)
+    DATA_SCHEMES, HYPERPARAMS, LANG_SETTINGS, SEED_SINGLE, SEED_TRIPLES,
+    SIZE_LANG_SETTINGS, exp_name, predictivity_cells, schedule_for,
+    seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
 # (launch_pretraining_cscs.sh); PROJECT_NAME for the predictivity sweep is
@@ -62,13 +62,40 @@ CKPT_ROOT = Path(
     "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr"
 )
 ITER_RE = re.compile(r"^iter_(\d+)$")
-# The canonical cell name (see launch_trainings.exp_name).
+# The canonical cell name (see launch_trainings.exp_name). The scheme
+# alternation is built from DATA_SCHEMES rather than spelled out, so a
+# scheme added to the grid cannot go unrecognised on disk — which would look
+# exactly like "that run was never trained". Longest label first: the
+# alternation is ordered, and a short label that prefixes a longer one would
+# otherwise win and leave the remainder unmatched.
+SCHEME_OF_LABEL = {v["label"]: name for name, v in DATA_SCHEMES.items()}
 NAME_RE = re.compile(
     r"^lm-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
-    r"(?P<scheme>-schemeB)?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    r"(?P<scheme>"
+    + "|".join(re.escape(lab) for lab in
+               sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
+    + r")?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
+
+# Every seed the sweep uses anywhere. Two people fill the x3 columns with
+# different triples (SEED_TRIPLES), so this is a union, not one triple.
+ALL_SEEDS = sorted(set(SEED_SINGLE)
+                   | {s for triple, _ in SEED_TRIPLES.values() for s in triple})
+
+
+def cell_in_scheme(scheme: str, size: str, L: int) -> bool:
+    """Does the grid plan this (size, L) under this data scheme? Both halves
+    matter: a scheme defines only some settings, and within a setting only
+    the rungs up to its cap."""
+    return L in DATA_SCHEMES[scheme]["langs"] and size in scheme_sizes(scheme, L)
+
+
+def planned_seeds(size: str, L: int) -> set[int]:
+    """Every seed the grid plans at this (size, L), across all schemes."""
+    return {s for v in DATA_SCHEMES if cell_in_scheme(v, size, L)
+            for s in seeds_for(size, L, v)}
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -142,15 +169,17 @@ def cell_action(model_dir: Path, target: int) -> tuple[str, int, int]:
 
 
 def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
-    """(exp_name, target_iters) for every cell of one variant, in grid order.
-    Scheme B only exists at SCHEME_B_LANGS — other settings are always the
-    scheme-A cell (same normalization as the launcher)."""
+    """(exp_name, target_iters) for every cell of one data scheme, in grid
+    order. predictivity_cells() already restricts a scheme to the settings and
+    rungs it defines, so unlike the old two-scheme version there is nothing to
+    normalise here — a scheme not trained in `arch` simply yields nothing."""
+    if arch not in DATA_SCHEMES[scheme]["arches"]:
+        return []
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
     return [
-        (exp_name(c["size"], c["L"], arch, c["seed"],
-                  scheme if c["L"] in SCHEME_B_LANGS else "A"),
+        (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
          schedule_for(configs[c["size"]])[0])
-        for c in predictivity_cells()
+        for c in predictivity_cells([scheme])
     ]
 
 
@@ -205,7 +234,7 @@ def scan_runs(root: Path) -> list[dict]:
             "L": int(m["L"]),
             "seed": int(m["seed"]),
             "arch": arch,
-            "scheme": "B" if m["scheme"] else "A",
+            "scheme": SCHEME_OF_LABEL[m["scheme"] or ""],
             "tokenizer": "v1",
             "done": (max_valid or 0) >= target,
         })
@@ -276,9 +305,9 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
 
     # --- detailed: one row of binary heatmaps per transformation ------------
     rows = [
-        ("SEED", "seed", SEED_TRIPLE),
+        ("SEED", "seed", ALL_SEEDS),
         ("ARCH", "arch", ["deep", "shallow"]),
-        ("SCHEME", "scheme", ["A", "B"]),
+        ("DATA", "scheme", list(DATA_SCHEMES)),
         ("TOKENIZER", "tokenizer", ["v1"]),
     ]
     ncols = max(len(values) for _, _, values in rows)
@@ -296,17 +325,20 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
             matrix = _grid_matrix(done, lambda r, k=key, v=value: r[k] == v)
             # Binary: 1 if any finished run with this factor value.
             matrix = [[min(v, 1) if v == v else v for v in row] for row in matrix]
-            if key == "scheme" and value == "B":
-                # Scheme B only exists where its language sets differ from A
-                # ({8, 15, 30}) — grey the rest out like off-grid cells.
-                matrix = [[v if L in SCHEME_B_LANGS else float("nan")
-                           for v in row]
+            if key == "scheme":
+                # A scheme covers only the settings and rungs it defines —
+                # AT3 is L50/L100, ZH/ES are L2 alone and stop at 1B — so grey
+                # the rest out like off-grid cells rather than drawing a run
+                # that was never planned as permanently missing.
+                matrix = [[v if cell_in_scheme(value, size, L) else float("nan")
+                           for size, v in zip(SIZES, row)]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             if key == "seed":
-                # The extra seeds exist only on the x3 cells (seeds_for); the
-                # single-seed cells would otherwise read as permanently
-                # missing runs.
-                matrix = [[v if value in seeds_for(size, L) else float("nan")
+                # The extra seeds exist only on the x3 cells, and the triple
+                # differs by size (SEED_TRIPLES: 64/313 at 175M and 600M,
+                # 28/1797 at 1B) — every other cell would otherwise read as a
+                # permanently missing run.
+                matrix = [[v if value in planned_seeds(size, L) else float("nan")
                            for size, v in zip(SIZES, row)]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             _draw_grid(ax, matrix, binary_cmap.copy(), 1, annotate=False)
@@ -351,7 +383,7 @@ def eval_counts(root: Path, logs_root: Path | None = None
     import auto_evals_cscs as ae
     from evals.scripts._eval_status import completed_tasks
     from evals.scripts.utils.configs import tasks_for_benchmarks
-    from launch_trainings import cell_languages, save_interval
+    from launch_trainings import cell_languages, due_iters, save_interval
 
     logs_root = Path(logs_root or ae.DEFAULT_LOGS_ROOT)
     benchmarks = ae.auto_benchmarks()
@@ -370,26 +402,37 @@ def eval_counts(root: Path, logs_root: Path | None = None
             si = save_interval(target)
             n_due = len({i for i in range(si, target + 1, si)
                          if i % (2 * si) == 0} | {target})
-            schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
-            # Per scheme the grid plans seeds x {deep, shallow}.
-            runs_per_scheme = len(seeds_for(size, L)) * 2
+            schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
+            # Per scheme the grid plans seeds x the architectures that scheme
+            # is trained in — not always both: ZH and ES are deep only.
+            runs = {v: len(seeds_for(size, L, v)) * len(DATA_SCHEMES[v]["arches"])
+                    for v in schemes}
             cells[(size, L)] = {
                 "done": 0, "models": 0, "ckpts": n_due,
-                # Scheme B evaluates a different language set, so its benchmark
-                # count differs (L=8: A 60, B 47). Keep them separate rather
-                # than pretending the cell is uniform.
-                "benches": {s: benches(L, s) for s in schemes},
-                "planned_runs": runs_per_scheme * len(schemes),
-                "planned": sum(runs_per_scheme * n_due * benches(L, s)
-                               for s in schemes),
+                # Schemes can evaluate different language sets, so their
+                # benchmark counts differ (L=8: A 60, B 47). Keep them separate
+                # rather than pretending the cell is uniform.
+                "benches": {v: benches(L, v) for v in schemes},
+                "planned_runs": sum(runs.values()),
+                "planned": sum(runs[v] * n_due * benches(L, v) for v in schemes),
                 # `seen*` describe what is on disk NOW, which for a
                 # mid-training run is fewer checkpoints than the schedule.
                 "avail": 0, "seen": {}, "seen_ckpts": set(),
             }
 
+    # Only runs the grid names: the watcher walks predictivity_cells(), so a
+    # run on disk outside the grid (lm-175M-L30-schemeB-deep-seed28, a
+    # combination no triple covers) is work it will never do — counting it
+    # here painted the cell as permanently under-evaluated.
+    grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
+            for c in predictivity_cells() for a in DATA_SCHEMES[c["scheme"]]["arches"]}
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:
+            continue
+        if entry.name not in grid:
+            print(f"[eval_counts] {entry.name}: on disk but not a grid cell — "
+                  "not counted (the watcher does not evaluate it)", file=sys.stderr)
             continue
         size, L = m["size"], int(m["L"])
         c = cells.get((size, L))
@@ -398,10 +441,9 @@ def eval_counts(root: Path, logs_root: Path | None = None
         saved = ae.saved_valid_iters(entry.name, root)
         if not saved:
             continue
-        scheme = "B" if m["scheme"] else "A"
+        scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
         target = targets[(m["arch"], size)]
-        due = [i for i in saved
-               if i % (2 * save_interval(target)) == 0 or i == target]
+        due = due_iters(saved, target)   # on the run's own grid, like the watcher
         want = set(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
         c["models"] += 1
         c["seen"][scheme] = len(want)
@@ -521,23 +563,22 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
 def planned_variants(size: str, L: int) -> list[str]:
     """Every run the grid plans for one (size, L) cell, as display lines.
 
-    A cell is not one run: it multiplies out over seed (1 or 3, per
-    seeds_for), architecture (deep/shallow), and data scheme (A always, plus B
-    only where B's language set actually differs — elsewhere a scheme-B sweep
-    resolves to the scheme-A cell and would be a duplicate).
+    A cell is not one run: it multiplies out over seed (1 or 3, per seeds_for,
+    and the triple differs by size), architecture, and data scheme — each
+    scheme covering only the settings and rungs it defines, and only the
+    architectures it is trained in.
 
-    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell stays
-    readable; the characteristics, not just the count, are what the table is
-    for.
+    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell
+    stays readable; the characteristics, not just the count, are what the
+    table is for.
     """
-    if L not in SIZE_LANG_SETTINGS[size]:
-        return []
-    seeds = seeds_for(size, L)
-    schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
     lines = []
-    for scheme in schemes:
-        for arch in ("deep", "shallow"):
-            lines.append(f"{scheme} {arch} " + "/".join(str(x) for x in seeds))
+    for scheme in DATA_SCHEMES:
+        if not cell_in_scheme(scheme, size, L):
+            continue
+        seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
+        for arch in DATA_SCHEMES[scheme]["arches"]:
+            lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
 
@@ -545,8 +586,9 @@ def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
     """pretrain_progress_plan.png — what the grid PLANS (not what is done).
 
     Rows are language settings, columns model sizes, and each cell spells out
-    the planned variants. Blank cells are settings a size does not train at
-    (only the 1.7B row is sparse).
+    the planned schemes. Blank cells are (size, L) pairs no scheme covers —
+    since the 1.7B row gained L15 and L50 there are none left in scheme A,
+    but ZH/ES stop at 1B.
     """
     import matplotlib.pyplot as plt
 
@@ -605,28 +647,41 @@ def _fmt(xs) -> str:
     return ", ".join(str(x) for x in xs)
 
 
+def _scheme_desc(name: str, d: dict) -> str:
+    """One data scheme as a phrase: where it applies and how it differs."""
+    bits = [f"L ∈ {{{_fmt(sorted(d['langs']))}}}"]
+    if d["temp"] != 1.0:
+        bits.append(f"T={d['temp']:g}")
+    if d["max_size"]:
+        bits.append(", ".join(f"L{L} stops at {s}"
+                              for L, s in sorted(d["max_size"].items())))
+    if tuple(d["arches"]) != ("deep", "shallow"):
+        bits.append(" + ".join(d["arches"]) + " only")
+    return f"**{name}** ({'; '.join(bits)})"
+
+
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
-    sparse = {size: ls for size, ls in SIZE_LANG_SETTINGS.items()
-              if set(ls) != set(LANG_SETTINGS)}
-    size_note = "; ".join(f"{s} at L ∈ {{{_fmt(ls)}}}" for s, ls in sparse.items())
-    baseline = len(predictivity_cells())
-    # Every run the grid plans: seeds x architectures x schemes, per cell.
-    full = sum(len(seeds_for(size, L)) * 2 * (2 if L in SCHEME_B_LANGS else 1)
-               for L in LANG_SETTINGS for size in SIZES
-               if L in SIZE_LANG_SETTINGS[size])
+    baseline = len(predictivity_cells(["A"]))
+    # Every run the grid plans: per scheme, its cells x the architectures that
+    # scheme is actually trained in (ZH and ES are deep only, so multiplying
+    # the whole grid by 2 would over-count them).
+    full = sum(len(predictivity_cells([v])) * len(DATA_SCHEMES[v]["arches"])
+               for v in DATA_SCHEMES)
+    seeds = " · ".join(f"{_fmt(triple)} at {size}, L ∈ {{{_fmt(sorted(langs))}}}"
+                       for size, (triple, langs) in SEED_TRIPLES.items())
 
     return f"""{DOC_BEGIN}
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | {_fmt(SIZES)} ({size_note}) |
+| Size (non-embedding) | {_fmt(SIZES)}, every size at every setting |
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | {_fmt(SEED_SINGLE)}; ×{len(SEED_TRIPLE)} seeds ({_fmt(SEED_TRIPLE)}) on the {_fmt(sorted(TRIPLE_SIZES))} columns at L ∈ {{{_fmt(sorted(TRIPLE_LANGS))}}} |
-| Data scheme | A everywhere; B only where its language set differs — L ∈ {{{_fmt(sorted(SCHEME_B_LANGS))}}} |
+| Seed | {_fmt(SEED_SINGLE)} everywhere; ×3 on the marked columns — {seeds} |
+| Data scheme | {" · ".join(_scheme_desc(v, d) for v, d in DATA_SCHEMES.items())} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **{baseline} runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **{full} runs**.
+Counting every scheme and the architectures each is trained in: **{full} runs**.
 
 ![Planned runs per grid cell]({png_dir}/pretrain_progress_plan.png)
 
@@ -667,12 +722,12 @@ def main() -> None:
                    help=f"Megatron run root (default: {CKPT_ROOT})")
     p.add_argument("--arch", choices=["deep", "shallow"], default="deep",
                    help="Which architecture family's cells to report")
-    p.add_argument("--scheme", choices=["A", "B"], default="A",
-                   help="Which language-scheme variant's cells to report")
+    p.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
+                   help="Which data scheme's cells to report")
     p.add_argument("--filter", default=None, help="Substring filter on cell name.")
     p.add_argument("--plot", action="store_true",
                    help="Also render pretrain_progress_{simple,detailed}.png "
-                        "(these aggregate over ALL variants, not just "
+                        "(these aggregate over ALL schemes, not just "
                         "--arch/--scheme)")
     args = p.parse_args()
 
