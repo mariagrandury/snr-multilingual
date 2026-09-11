@@ -39,7 +39,19 @@ Nor is it the learning rate. Our peak learning rates come from a compute-based
 scaling law evaluated at each run's own budget, which is hottest at the small
 end. We trained the 90M rung at three learning rates spanning a factor of
 nearly five, down to a value well below the law's prescription. All three
-diverge, with the same signature and at the same point in training.
+diverge, with the same signature, within the first quarter of training.
+
+Nor is it the batch size. The ladder uses the same global batch at every rung,
+so the smallest rung takes the largest batch relative to what its gradient
+noise warrants — a mechanism that would single out the bottom rung. We
+retrained the 90M rung at one half and one sixth of the batch, keeping the
+number of optimizer steps fixed. Both diverge like the original, after 16–17%
+of their steps against 21%, with the gradient norm above 1 on 90% of steps.
+By the point of divergence the three runs have seen 1.92B, 0.81B and 0.25B
+tokens, a 7.7-fold range: the failure follows optimizer steps, not tokens or
+gradient noise. Because the three share a seed and a data order, this also
+rules out a defect at some position in the data, which would strike at the
+same token count.
 
 The explanation consistent with all of the evidence is an interaction between
 the optimizer's memory and the length of the run. We train with AdEMAMix,
@@ -65,9 +77,12 @@ reaches the regime the optimizer was configured for; the slow average remains
 dominated by gradients from early training, and is applied with a large
 multiplier throughout. The ordering of this ratio matches the ordering of the
 observed severity exactly: 90M diverges badly, 175M shows a single recovered
-spike, and everything at 1.7 and above is clean. A fixed beta3 across a ladder
+spike, and everything at 1.7 and above reaches its best loss at the end of
+training. A fixed beta3 across a ladder
 whose rungs differ 18-fold in length is thus not the neutral choice it appears
-to be — it silently gives each rung a qualitatively different optimizer.
+to be — it silently gives each rung a qualitatively different optimizer. It
+also accounts for the batch-size result above: a timescale counted in steps
+does not care how many tokens each step carries.
 
 We tested this directly. In a control run at the 90M rung we set beta3 so
 that the optimizer's timescale is a fixed fraction of the run (one fifth)
@@ -76,28 +91,32 @@ disappears completely:
 
 | 90M, 2 languages | best loss | final loss | drift |
 | ---------------- | --------: | ---------: | ----: |
-| fixed timescale (10,000 steps) | 4.397 | 5.762 | +1.365 |
-| timescale = 0.2 x run (900 steps) | 2.767 | **2.778** | **+0.011** |
+| fixed timescale (10,000 steps) | 4.397 | 5.781 | +1.384 |
+| timescale = 0.2 x run (900 steps) | 2.767 | **2.796** | **+0.030** |
 
 The drift falls to that of a healthy rung, and the final loss improves by
-2.98 nats — **1.62 nats better than the uncorrected run's own best**, so the
+2.99 nats — **1.60 nats better than the uncorrected run's own best**, so the
 rung had been discarding not merely its last four fifths but most of the
 value of the entire run.
 
 We also checked the competing explanation, that our compute-based learning
 rate law is simply too hot at the small end, by retraining the 175M rung at
-roughly half its prescribed rate. That made it *worse* (2.904 to 3.015) and it
+roughly half its prescribed rate. That made it *worse* (2.912 to 3.023) and it
 had not been diverging in the first place, so the law is not the cause and we
 left it unchanged for the remaining rungs.
 
 One consequence of the correction deserves care. The corrected 90M reaches a
-lower loss (2.778) than the uncorrected 175M (2.904) despite training on half
+lower loss (2.796) than the uncorrected 175M (2.912) despite training on half
 as many tokens. A smaller model should not outperform a larger one on the same
-data, so this is evidence that the 175M rung — at 0.85 of the optimizer
-timescale, the second-shortest run — is also depressed, though not visibly
-diverging. A control at 175M with the same correction is running. Until it
-reports, the ladder's absolute losses below roughly 350M should be read as
-upper bounds on those architectures' loss rather than as measurements of it.
+data, and a control at 175M with the same correction confirms what that
+implies: the 175M rung — at 0.85 of the optimizer timescale, the
+second-shortest run — is also depressed, though it never visibly diverged.
+Corrected, it finishes at 2.599 against 2.912, 0.31 nats lower, its single
+loss spike gone, and the two corrected rungs fall back into the expected
+order. The effect therefore reaches beyond the bottom rung. Whether it reaches
+350M, at 1.7 timescales, is untested; until it is, the ladder's absolute
+losses at 350M and below should be read as upper bounds on those
+architectures' loss rather than as measurements of it.
 
 **Treatment in the reported analysis.** *[Completed at revisit.]* Where the
 90M rung is excluded, it is excluded as a rung whose optimizer configuration
@@ -732,3 +751,47 @@ we are trying to avoid. Deferred, not rejected.
 curve, drop it from the ladder rather than let it anchor the predictivity fit,
 and record the exclusion — the fit is the deliverable, and a degenerate bottom
 rung biases the slope everywhere.
+
+## Full list of experiments
+
+All ten runs of the investigation (L2, deep, seed 1904), computed from the
+training logs with the same rules for every row.
+
+| # | Run | Change vs grid | GBS | LR | beta3 (memory) | Tokens | Best loss (at) | Final | Drift | vs own grid | grad norm > 1 | First spike (peak) | Node-h | Verdict |
+| -: | --- | --- | --: | --: | --- | --: | --: | --: | --: | --: | --: | --- | --: | --- |
+| 1 | `lm-90M-L2` | grid | 504 | 1.43e-3 | 0.9999 (10k steps) | 9.29B | 4.397 (20%) | 5.781 | +1.384 | — | 90% | iter 931, 21% (205.0) | 4.8 | **diverges** |
+| 2 | `diag-90M-lr0.0003` | LR ÷4.8 | 504 | 3e-4 | 0.9999 | 9.29B | 4.504 (25%) | 5.848 | +1.344 | +0.067 | 99% | iter 496, 11% (12.4) | 5.0 | diverges, LR ruled out |
+| 3 | `diag-90M-lr0.0006` | LR ÷2.4 | 504 | 6e-4 | 0.9999 | 9.29B | 4.569 (11%) | 5.054 | +0.485 | −0.727 | 97% | iter 516, 11% (11.9) | 4.8 | diverges, LR ruled out |
+| 4 | `diag-90M-beta3f0.2` | beta3 memory = 20% of run | 504 | 1.43e-3 | 0.998889 (900) | 9.29B | 2.767 (97%) | **2.796** | +0.030 | **−2.985** | 2% | none | 5.6 | **clean, cause** |
+| 5 | `diag-90M-gbs252` | GBS ÷2 (same steps) | 252 | 1.43e-3 | 0.9999 | 4.64B | 4.516 (17%) | 5.685 | +1.169 | −0.096 | 90% | iter 784, 17% (52.3) | 5.6 | diverges, batch ruled out |
+| 6 | `diag-90M-gbs84` | GBS ÷6 (same steps) | 84 | 1.43e-3 | 0.9999 | 1.55B | 4.584 (16%) | 5.704 | +1.119 | −0.077 | 90% | iter 736, 16% (48.0) | 1.8 | diverges, batch ruled out |
+| 7 | `lm-175M-L2` | grid | 504 | 1.22e-3 | 0.9999 (10k) | 17.63B | 2.870 (85%) | 2.912 | +0.042 | — | 9% | iter 702, 8% (11.8) | 12.3 | one spike, recovers |
+| 8 | `diag-175M-lr0.0006` | LR ÷2 | 504 | 6e-4 | 0.9999 | 17.63B | 2.976 (85%) | 3.023 | +0.047 | +0.111 | 38% | iter 940, 11% (41.9) | 13.9 | worse, LR ruled out |
+| 9 | `diag-175M-beta3f0.2` | beta3 memory = 20% of run | 504 | 1.22e-3 | 0.99941452 (1,708) | 17.63B | 2.560 (97%) | **2.599** | +0.039 | **−0.313** | 2% | none | 21.4 | **clean, 175M also held back** |
+| 10 | `lm-350M-L2` | grid (reference) | 504 | 1.03e-3 | 0.9999 (10k) | 34.39B | 2.423 (96%) | 2.469 | +0.046 | — | 3% | iter 670, 4% (8.8) | 39.3 | one early spike, recovers |
+
+**How each column is computed.**
+
+- **Final:** median loss over the last 2% of logged iterations. The dated
+  sections above use a different window, so their figures differ slightly
+  (e.g. 5.762 vs 5.781); the appendix uses this table's.
+- **Drift:** final minus best.
+- **vs own grid:** final minus the final of the grid run at the same size.
+- **First spike:** first iteration where loss exceeds 1.5× the lowest loss so
+  far; the peak is the maximum within the next 200 iterations.
+- **Node-h:** Slurm elapsed time × nodes.
+
+**What the table says.**
+
+- **LR and batch size are ruled out (rows 2, 3, 5, 6).** All four still spike,
+  at 11–17% of steps, with grad norm above 1 on 90–99% of steps.
+- **Only the beta3 change fixes it (rows 4, 9).** Neither run spikes, and grad
+  norm stays above 1 on just 2% of steps.
+- **The GBS runs aren't budget-matched.** Rows 5–6 saw ½ and ⅙ of the tokens,
+  so their final loss isn't a like-for-like comparison.
+- **Row 9 settles the open 175M question.** The 175M run finished 0.31 nats
+  below its grid cell (the interim estimate above was ~0.26). That meets the
+  gate set above for the 350M run (~39 node-hours); launching it is still a
+  decision to make.
+- **Scope:** all rows are training loss on one cell (L2) and one seed. None of
+  the diagnostic runs has been BPB-scored.
