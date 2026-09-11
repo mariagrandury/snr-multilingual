@@ -11,10 +11,13 @@ evaluate on the "auto" benchmark group (configs/tasks.json) and push to W&B
 
 Idempotent, safe to run alongside the trainings (login node, tmux):
 
-    cd src/pretrain
-    python3.11 auto_evals_cscs.py --watch 600     # one pass every 10 min
-    python3.11 auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
-    python3.11 auto_evals_cscs.py --convert-only
+    cd src
+    python3.11 pretrain/auto_evals_cscs.py --dry-run
+    python3.11 pretrain/auto_evals_cscs.py --watch 600   # one pass every 10 min
+    python3.11 pretrain/auto_evals_cscs.py --retry-held
+    python3.11 pretrain/auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
+    python3.11 pretrain/auto_evals_cscs.py --convert-only
+    python3.11 pretrain/auto_evals_cscs.py --arch deep --scheme A --seed 1904 --all-languages
 
 The eval job pushes to W&B with the key from your environment or, as
 everywhere else in the cluster pipeline, from the fallback file
@@ -77,7 +80,7 @@ from launch_trainings import (  # noqa: E402
     exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
-from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
+from evals.scripts.utils.configs import load_tasks, tasks_for_benchmarks  # noqa: E402
 from evals.scripts._eval_status import completed_tasks  # noqa: E402
 
 EVALS_DIR = SCRIPT_DIR.parent / "evals"
@@ -110,40 +113,40 @@ def convert_job_name(cell: str) -> str:
 # with its own model copy — sharing the task queue (../evals/scripts/
 # _run_per_task.sh); the estimate below divides the per-task term by that.
 #
-# Elapsed time is very close to linear in the task count. Re-fitted 2026-09-07
-# by least squares (elapsed = a + b x tasks) over all 364 COMPLETED
-# single-process eval jobs on disk, 9 to 219 tasks per job
+# Elapsed time is very close to linear in the tasks each worker runs.
+# Re-fitted 2026-09-10 by least squares (elapsed = a + b x ceil(tasks /
+# EVAL_WORKERS)) over the 583 COMPLETED worker-pool jobs on disk (job.json
+# present, sacct elapsed), 4 to 329 tasks per job
 # (../evals/scripts/eval_timing.py is where the per-job rows come from):
 #
-#     size    jobs   task range   overhead a   per task b   R^2    was
-#     90M       82       9-219        0.1 min    0.747 min  0.99   0.67
-#     175M     100       9-219       -2.5        0.717      0.88   0.62
-#     350M      59       9-219        0.4        0.835      0.99   0.75
-#     600M      79       9-219        1.1        0.868      1.00   0.85
-#     1B        20      60-219        1.3        0.902      0.99   2.0
-#     1.7B      24       9-164       -2.0        0.968      1.00   2.8
+#     size    jobs   task range   overhead a   per worker-task b   R^2   1 process
+#     90M       66       4-233        0.3 min          0.387 min    0.77     0.747
+#     175M     146       4-329        1.6              0.479        0.97     0.717
+#     350M     108       5-239        0.3              0.537        0.82     0.835
+#     600M     163       4-329        1.4              0.554        0.94     0.868
+#     1B        40      14-329       -2.0              0.594        0.92     0.902
+#     1.7B      60       4-239        1.9              0.679        0.98     0.968
 #
-# Two things this settles. The per-task cost is nearly FLAT across the ladder
-# — 0.72 to 0.97 over a 19x parameter range — because a run is dominated by
-# dataset load and tokenization, not the forward pass; the old 90M-600M
-# numbers were fitted on medians and came out ~10% low. And 1B/1.7B, which
-# had no eval run when this table was written and carried deliberately
-# conservative guesses, measure 0.90 and 0.97: the guesses were 2.2x and 2.9x
-# too high, which is what pushed those rungs over the queue cap at L100.
+# The last column is the 2026-09-07 fit over 364 single-process jobs. Four
+# workers buy 1.4-1.9x, not 4x: a run is dominated by dataset load and
+# tokenization, CPU and IO the workers share. So MIN_PER_TASK is b itself —
+# the measured cost of one task in one worker's queue — not a single-process
+# cost divided by the worker count, which is what the constants used to be.
 #
-# The fitted intercept is ~0, not OVERHEAD_MIN: every job here ran with a warm
-# container and a populated dataset cache. Keep the 15 min — it is headroom
-# for a cold start on a loaded node, not a measurement.
+# OVERHEAD_MIN and SAFETY come from coverage. The largest fitted intercept is
+# 1.9 min, so 10 min is mostly cold-start headroom; at 10 min the worst of the
+# 583 jobs needed SAFETY 0.91, so 1.15 is a 26% margin. Replayed over 594
+# clean jobs, these constants with 5-min rounding request 269 node-hours
+# against 526 for the old ones (135 actually burned), and undersize none.
 #
-# These are SINGLE-PROCESS costs, which is the unit eval_minutes() needs: it
-# divides by EVAL_WORKERS. Every finished task is on disk before the next
-# starts, so a walltime kill costs only the tasks in flight and the next pass
-# resubmits the rest: the cap is a resume point, not a loss. SAFETY and the
-# generous fixed overhead only buy fewer resubmissions.
-MIN_PER_TASK = {"90M": 0.75, "175M": 0.72, "350M": 0.84,   # all measured, 364 jobs
-                "600M": 0.87, "1B": 0.90, "1.7B": 0.97}
-OVERHEAD_MIN = 15   # fitted intercept ~0 on warm jobs; this is cold-start headroom
-SAFETY = 1.5        # on the per-task term only
+# Every finished task is on disk before the next starts, so a walltime kill
+# costs only the tasks in flight and the next pass resubmits the rest: the cap
+# is a resume point, not a loss. SAFETY and the fixed overhead only buy fewer
+# resubmissions.
+MIN_PER_TASK = {"90M": 0.39, "175M": 0.48, "350M": 0.54,   # per worker-task, 583 jobs
+                "600M": 0.55, "1B": 0.59, "1.7B": 0.68}
+OVERHEAD_MIN = 10   # max fitted intercept 1.9; the rest is cold-start headroom
+SAFETY = 1.15       # worst observed requirement 0.91 -> 26% margin
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
 # to 1 off the vLLM backend). They agree only because submit_eval below pins
 # TP=PP=1 and vllm; change either and this estimate is silently 4x too small.
@@ -154,18 +157,16 @@ WALLTIME_CAP_MIN = 719   # the normal queue's 11:59:59 (launch_trainings.TIME_MA
 
 
 def eval_minutes(size: str, n_tasks: int) -> int:
-    """Fixed overhead + per-task budget x SAFETY over EVAL_WORKERS, rounded
-    up to 15 min.
+    """Fixed overhead + each worker's share of the tasks x MIN_PER_TASK x
+    SAFETY, rounded up to 5 min.
 
-    Dividing by the worker count assumes the per-task cost parallelises, and
-    the note above says the run is dominated by dataset load and tokenization
-    — CPU and IO the workers share. Expect the true speedup to be under 4x,
-    and OVERHEAD_MIN to cover four concurrent vLLM cold starts rather than
-    one. Both are why the estimate keeps SAFETY; re-fit from real jobs with
-    ../evals/scripts/eval_timing.py before trusting the totals."""
+    MIN_PER_TASK is fitted per worker-task, so the worker pool's sub-linear
+    speedup is already inside it. Re-fit when the worker count, the backend or
+    the task mix changes — the constants are only as good as the jobs they
+    were fitted on."""
     per_worker = math.ceil(n_tasks / EVAL_WORKERS)
     minutes = OVERHEAD_MIN + per_worker * MIN_PER_TASK.get(size, 2.8) * SAFETY
-    return math.ceil(minutes / 15) * 15
+    return math.ceil(minutes / 5) * 5
 
 
 def eval_walltime(size: str, n_tasks: int) -> str:
@@ -517,7 +518,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             if arch not in DATA_SCHEMES[scheme]["arches"]:
                 continue
             cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
-            if args.name and cell != args.name:
+            if (args.name and cell != args.name) or (args.seed and c["seed"] != args.seed):
                 continue
             # capstor intermittently faults a read outright (Errno 5 / 108 —
             # the same blips data_progress.py works around, hit here on a
@@ -565,7 +566,11 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     due = due_iters(saved, target, args.every)
     # The cell's task list: every auto benchmark, in the languages
     # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
-    task_list = tasks_for_benchmarks(benchmarks, cell_languages(c["L"], scheme))
+    # --all-languages: every language any task is tagged with, not only the
+    # cell's ("multi"/"??" stay out, as tasks_for_benchmarks promises).
+    langs = ({e.get("language") for e in load_tasks().values()} - {"multi", "??"}
+             if args.all_languages else cell_languages(c["L"], scheme))
+    task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
     # is the expensive one we sample at 1/N.
@@ -655,6 +660,10 @@ def main() -> None:
                         "the burst an expanded task list creates, and what "
                         "makes a single-job integration test possible")
     p.add_argument("--name", help="watch a single cell (its full name)")
+    p.add_argument("--seed", type=int, help="only cells with this seed")
+    p.add_argument("--all-languages", action="store_true",
+                   help="evaluate every auto benchmark in every language, not "
+                        "only the languages the cell trains on")
     p.add_argument("--every", type=int, default=2,
                    help="evaluate every N saved checkpoints (the final "
                         "checkpoint is always evaluated on top)")
