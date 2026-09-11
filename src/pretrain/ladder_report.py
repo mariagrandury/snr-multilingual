@@ -236,7 +236,12 @@ def check_benchmarks() -> list[str]:
         if m:
             cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
     for cell, iters in sorted(cells.items()):
-        pts = sorted(iters)
+        # Only iters that carry harness scores. score_bpb.py writes
+        # <cell>-iter<N>/bpb/ for every checkpoint while evals run on every
+        # 2nd, so the lowest iter dir of every cell is bpb-only: taking it as
+        # `first` left `common` empty, skipped all 87 cells, and still
+        # reported "nothing flagged".
+        pts = sorted(i for i, scores in iters.items() if scores)
         if len(pts) < 2:
             continue
         first, last = iters[pts[0]], iters[pts[-1]]

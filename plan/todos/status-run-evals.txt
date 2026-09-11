@@ -1,5 +1,18 @@
 RE-EVALUATE THE PRE-WORKER-POOL BACKLOG                          2026-09-08
 
+
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals && conda activate snr
+NAME=lm-175M-L50-deep-seed1904-iter3416
+CKPT=/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L50-deep-seed1904/iter_0003416
+LM_EVAL_BACKEND=vllm TOKENIZER=swiss-ai/Apertus-70B-2509 BOS=true \
+APPLY_CHAT_TEMPLATE=false TP=1 PP=1 EVAL_WORKERS=4 \
+WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=msnr-v2 TASKS="$TASKS" \
+sbatch --job-name=eval-$NAME --account=infra01 --time=01:30:00 --export=ALL \
+  scripts/evaluate.sbatch $CKPT $NAME
+
+
+
 WHY
   The 2026-09-04 worker pool changed scores. Measured on
   lm-175M-L50-deep-seed1904-iter3416 — three full 329-task runs, 4776

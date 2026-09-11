@@ -54,14 +54,21 @@ Filters (both platforms): --arch {deep,shallow}, --scheme {A,AT3,B,ZH,ES},
 --size 350M[,175M,...], --langs L, --seed N, --dry-run.
 
 Examples:
-    python launch_trainings.py cscs --dry-run              # the scheme-A ladder
-    python launch_trainings.py cscs --size 350M,175M       # two sizes, all L
-    python launch_trainings.py azure --size 1.7B --langs 30
-    python launch_trainings.py azure --langs 1             # monolingual anchors
-    python launch_trainings.py cscs --arch shallow --dry-run  # depth intervention
-    python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
-    python launch_trainings.py cscs --scheme AT3           # T=3: L50 and L100
-    python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
+    # the scheme-A ladder
+    python3.11 pretrain/launch_trainings.py cscs --dry-run
+    # three sizes, all L                
+    python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M    
+    python3.11 pretrain/launch_trainings.py azure --size 1.7B --langs 30
+    # monolingual anchors on Azure
+    python3.11 pretrain/launch_trainings.py azure --langs 1        
+    # depth intervention       
+    python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
+    # diversity-first lists 
+    python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8 
+    # T=3: L50 and L100    
+    python3.11 pretrain/launch_trainings.py cscs --scheme AT3       
+    # L2 with Chinese      
+    python3.11 pretrain/launch_trainings.py cscs --scheme ZH              
 """
 
 from __future__ import annotations

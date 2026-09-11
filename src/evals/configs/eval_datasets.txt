@@ -86,3 +86,7 @@ cambridgeltl/xcopa
 mrlbenchmarks/global-piqa-parallel
 projecte-aina/PAWS-ca
 projecte-aina/xstorycloze_ca
+proxectonos/xnli_gl
+proxectonos/PAWS-gl
+proxectonos/belebele_gl
+proxectonos/xstorycloze_gl

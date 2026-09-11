@@ -2,14 +2,68 @@
 
 - ✅ python3.11 pretrain/auto_evals_cscs.py --retry-held (all done exc 1B out of grid)
 - ✅ python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
+- ✅ python3.11 pretrain/auto_evals_cscs.py
+- ✅ bash evals/scripts/launch_bpb.sh
 
-- Review grid update implementation
-- [Discuss] T2 vs T3
+✅ cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --priority pretrain --max-nodes 65 --interval 43200 --hours 48
+✅ cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --priority eval --max-nodes 10
+
+eval los 1.7B según van entrenando:
+✅ python3.11 auto_evals_cscs.py --watch 1200
+
+eval en all langs (not only trained-on), ignorar 90M:
+✅ python3.11 auto_evals_cscs.py --arch deep --scheme A --seed 1904 --all-languages
+✅ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /90M/ {print $1}' | xargs -r scancel
+
+al terminar evals:
+✅ python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
+✅ sbatch scripts/mirror_eval_logs.sbatch 
+
+
+---
+
+✅ build data mix L50 T3
+
+```
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
+OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data
+
+# AT3 needs its own data dir with the shared English build and validation manifest linked in
+mkdir -p $OUT/AT3
+for f in english_dclm.bin english_dclm.idx validation.manifest.json; do ln -sfn $OUT/$f $OUT/AT3/$f; done
+
+for S in ZH ES; do
+  sbatch --account=infra01 --dependency=singleton --job-name=build-${S,,}-L2 \
+    --export=ALL,BUILD_SCHEME=$S,BUILD_STAGE=fineweb,BUILD_SETTING=2,BUILD_OUT=$OUT/$S \
+    submit_build_one.sh
+done
+
+sbatch --account=infra01 --dependency=singleton --job-name=build-at3-L50 \
+  --export=ALL,BUILD_SCHEME=AT3,BUILD_STAGE=fineweb,BUILD_SETTING=50,BUILD_OUT=$OUT/AT3 \
+  submit_build_one.sh
+```
+
+---
+
+- ✅ Review grid update implementation
+  - ✅ Add 1B seeds to grid -> allow auto evals to find it
+- ✅ [Discuss] T2 vs T3 -> T3
 - [Discuss] Reeval after worker implementation
 - Refit evals
 - Add language-specific tasks
 - Change eval QA format
-- [Discuss] Consider L2 RU & ZH & ES
+- ✅ [Discuss] Consider L2 RU & ZH & ES -> data mix generated
+- Generate the INCLUDE v2 MC-format tasks and wire them.
+- Switch or drop LAMBADA-MT.
+- Get the changes from pretrain-eval-azure in local branch (pull --rebase)
+- Implement flops params?
+
+- Launch new pretrain and evals
+
+bash scripts/reservation_drain.sh --priority diag --once --hours 6 --max-nodes 42
+bash scripts/reservation_drain.sh --priority diag --hours 9
+cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --priority pretrain --max-nodes 21 --interval 43200
+cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --priority eval --max-nodes 1
 
 ---
 
@@ -30,11 +84,14 @@ SNR:
 - If mask_analysis.py / metaanalysis.py are only ever run on the Allen AI curves, it's a non-issue; if they're pointed at our ladder, then last_n needs to become a fraction (int(0.25 * len(scores)) or similar) before any cross-rung SNR number is trustworthy, because at 20 checkpoints the "last 30" aggregation is just the whole run.
 
 
+## Build more data mix
+
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data
 ONE=$PWD/submit_build_one.sh
 
-# each variant needs its own dir sharing the english build + validation manifest
+each variant needs its own dir sharing the english build + validation manifest:
+
 for V in ZH ES AT3; do
   mkdir -p $OUT/$V
   ln -sfn $OUT/english_dclm.bin         $OUT/$V/english_dclm.bin
@@ -47,15 +104,15 @@ sbatch --job-name=build-es-L2   --export=ALL,BUILD_SCHEME=ES,BUILD_STAGE=fineweb
 sbatch --job-name=build-at3-L50 --export=ALL,BUILD_SCHEME=AT3,BUILD_STAGE=fineweb,BUILD_SETTING=50,BUILD_OUT=$OUT/AT3 $ONE
 
 
-T2 or T3
+## T2 or T3
 
 The builder never repeats data, it warns and moves on, so a temperature the source cannot support produces a short build rather than a flat one.
 
-L100, 92B target	T=1	T=2	T=3
-Build actually realizes	92.0B	85.9B	75.4B
-Covers the 83.6B a 1.7B draws	yes	yes	no, short by 8.2B
-Smallest language gets	3.5M	14.5M	14.5M
-Languages that run out of data	0	56	60
+L100, 92B target         	      T=1	    T=2	   T=3
+Build actually realizes	        92.0B	  85.9B	 75.4B
+Covers the 83.6B a 1.7B draws	  yes	    yes	   no, short by 8.2B
+Smallest language gets	        3.5M	  14.5M	 14.5M
+Languages that run out of data	0	      56	     60
 
 The tail at L100 is data-limited, not allocation-limited. The languages swapped in on 2026-08-21 for benchmark coverage are tiny, so raising the temperature cannot give them more tokens than exist. T=3 and T=2 reach the same 14.5M floor, but T=3 additionally starves the head enough that the 1.7B rung no longer has the data it needs.
 
@@ -64,7 +121,8 @@ T=2 is strictly better at L100: same tail floor, and it still covers the top run
 T=3 there produces a 75.4B build against the 83.6B a 1.7B model draws, because the builder never repeats data, it warns and moves on. T=3 and T=2 both bottom out at the same 14.5M tail floor, since those languages have no more data to give, but only T=2 still covers the top rung.
 
 
-L2 with other languages
+## L2 with other languages
+
 measured tokens available in the swiss-ai filtered FineWeb-2 subset:
   rus_Cyrl     71.8B
   cmn_Hani     59.9B
