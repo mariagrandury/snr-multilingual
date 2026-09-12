@@ -546,8 +546,8 @@ the cluster.
 
 `scripts/eval_timing.py` measures both claims off disk + sacct — median
 min/task per (pipeline, size) and, for killed jobs, how many tasks each
-generation kept. It is also how `MIN_PER_TASK` gets re-fitted: those figures
-were fitted on the batched pipeline and are per WORKER now.
+generation kept. Its per-job rows are what `MIN_PER_TASK` is re-fitted from;
+since 2026-09-10 the constants are fitted on worker-pool jobs, per worker-task.
 
 ---
 

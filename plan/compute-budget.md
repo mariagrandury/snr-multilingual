@@ -352,9 +352,9 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 | 175M  |           17.6 B |  8,540 |     6 |      **844 · 810**     |   ~2.0 h |      1       |   15 |        180 |
 | 350M  |           34.4 B | 16,660 |    14 |      **604 · 567**     |   ~2.8 h |      1       |    7 |        274 |
 | 600M  |           59.5 B | 28,800 |    21 |      **548 · 539**     |   ~4.4 h |      1       |   15 |      1,381 |
-| 1B    |           94.4 B | 45,720 |    21 |                  715\* |   ~9.1 h |      1       |    7 |      1,336 |
-| 1.7B  |          167.2 B | 81,000 |    21 |                1,200\* |  ~27.0 h |      3       |    5 |      2,835 |
-| **Σ** |                  |        |       |                        |          |              |   56 |    ~6,040  |
+| 1B    |           94.4 B | 45,720 |    21 |          **754** · —\* |   ~9.6 h |     1–2      |    7 |      1,408 |
+| 1.7B  |          167.2 B | 81,000 |    21 |    **1,138 · 1,079**   |  ~25.6 h |      3       |    5 |      2,689 |
+| **Σ** |                  |        |       |                        |          |              |   56 |    ~5,960  |
 
 - **Runs execute in parallel** (each cell on its own node allocation), so the
   serial run-hours are not calendar time — **node-hours** is the compute cost.
@@ -370,10 +370,14 @@ size × language-setting × seed, scratch → full D = 100·N budget).
   iteration and sequence length are identical at every L — only the *content*
   of the batch differs. Training time is therefore a function of (size, arch)
   alone; the language setting costs **eval** time, not training time.
-- **\* 1B and 1.7B are NOT measured on this sweep** and are left at the older
-  36-sweep figure (1B) and extrapolation (1.7B) rather than given a fabricated
-  precision. They are ~90% of the node-hours, so this is the single largest
-  budget uncertainty — one calibration run at each would close it.
+- **1B and 1.7B are measured since 2026-09-11**, from their first runs on this
+  sweep: 4 deep 1B jobs and 11 deep + 1 shallow 1.7B jobs, p10…p90 within ~1%
+  of the median. \* No shallow 1B job has run yet. By wall clock, which
+  includes their 40 and 60 checkpoint saves, they run at 849 and 1,155 ms (the
+  saves cost 13% at 1B); `launch_trainings.py::ITER_MS` sizes walltimes from
+  those ×1.10. They replace 715 / 1,200 here, which were close, and
+  2,400 / 3,200 in `ITER_MS`, which were 2.8× high. A 1B run fits one 12 h job
+  with ~10 min to spare before the SIGUSR2 hour, hence 1–2 segments.
 - Measure ms/iter as a **median with a tight p10/p90 band**. A wide spread means
   the run was I/O-bound, not compute-bound, and the number is not a cost
   estimate — that is how the capstor dataloader stall hid for a day
@@ -392,6 +396,11 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 - Steady-state compute only; excludes cold-start, save-iter overhead, and queue
   wait. 56 runs: the grid gained the 1.7B@L2 cell and ×3 seeds at L2 on the
   175M and 600M columns.
+- **The grid has since grown to 186 runs** (2026-09-10: both architectures,
+  five data schemes, per-size seed triples — `launch_trainings.py`). At the
+  rates above that is **~25,150 node-hours** steady-state and ~26,600 by wall
+  clock, 81% of it at 1B and 1.7B. The cost table below is computed on that
+  grid.
 
 ## Checkpointing, conversion and eval cost
 
@@ -401,79 +410,95 @@ of 20 so every size stays on the shared *k*/20 grid). Checkpoint *k* is at
 *k*/*n* of training at every size, and the 1×C operating point is always
 checkpoint *n*/5 — 4, 8 or 12.
 
+Recomputed 2026-09-11 over the current 186-run grid:
+
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
-| Convert (Megatron → HF, every checkpoint) | 1,460 ckpts | ~3 min | ~73 |
-| Eval (every 2nd checkpoint + final, `auto` group; the planned +1 FLOPs milestone per run is **not implemented yet**) | 730 due today (786 with milestones), **all submittable** since the worker pool | 30–180 min requested | **~990** |
+| Convert (Megatron → HF, every checkpoint) | 5,480 ckpts | ~3 min | ~275 |
+| Eval (every 2nd checkpoint + final, `auto` group; the planned +1 FLOPs milestone per run is **not implemented yet**) | 2,740 due, **all submittable** since the worker pool | 15–100 min requested | **~1,860** requested, ~930 burned |
+| BPB (`score_bpb.sbatch`, every converted checkpoint) | 5,480 ckpts | 444 s (90M) – 2,141 s (1.7B) | **~2,100** |
 
-The densification costs **+20%** on the current 56-run grid (1,220 → 1,460
-checkpoints, 610 → 730 every-2nd evals) and lands entirely on 1B/1.7B, the
-two most expensive rungs; the FLOPs milestones would add one more eval per
-run on top once implemented (see the training plan's "The compute axis" —
-no `milestone_iters` helper exists yet). Recomputed 2026-09-07 directly from
-`auto_evals_cscs.eval_minutes()` over the deep grid, which is now measured at
-**every** rung, so there is no range left to quote: the figure is one number,
-not a low/high bracket over guesses. It includes `SAFETY`, the 15-min
-overhead and the 15-min rounding, so it is what the watcher *requests*, not
-what it burns.
+Against the ~25,150 training node-hours above, eval requests are **~7%** of
+the level's compute and burn ~4%, BPB is ~8% and conversion ~1%.
 
-Two changes got it there, and they pull in opposite directions.
+The 2026-08-23 densification added **+20%** checkpoints and every-2nd evals on
+the 56-run grid of the time, all of it at 1B/1.7B, the two most expensive
+rungs; the FLOPs milestones would add one more eval per run on top once
+implemented (see the training plan's "The compute axis" — no
+`milestone_iters` helper exists yet). The eval figure comes directly from
+`auto_evals_cscs.eval_minutes()`, which is measured at **every** rung, so it
+is one number rather than a bracket over guesses. It includes `SAFETY`, the
+10-min overhead and the 5-min rounding, so it is what the watcher *requests*;
+replayed on 594 completed jobs the same constants requested twice what the
+jobs burned, which is where the ~930 comes from. The BPB and conversion
+figures are burned estimates.
+
+Three changes got the eval figure there.
 
 **The worker pool (2026-09-04).** Each eval runs one `eval_worker.py` per GPU
 (4 at TP=1) and writes every task's results as it finishes, so the request is
-`15 + ⌈tasks/4⌉ × per-task × 1.5` min, capped at 11:59 — a capped job resumes
-on the next watcher pass with the tasks it did not reach, so **no job is
-refused at submission any more**. Before this, 120 of the 730 due jobs (1B at
-L30/L50/L100 and 1.7B at L30/L100) exceeded the cap and were refused outright,
-because a walltime kill wrote nothing.
+`10 + ⌈tasks/4⌉ × per-worker-task × 1.15` min, rounded up to 5 min and capped
+at 11:59 — a capped job resumes on the next watcher pass with the tasks it did
+not reach, so **no job is refused at submission any more**. Before this, 120
+of the 730 jobs then due (1B at L30/L50/L100 and 1.7B at L30/L100) exceeded
+the cap and were refused outright, because a walltime kill wrote nothing.
 
-**The re-fit (2026-09-07).** `MIN_PER_TASK` was fitted by least squares over
-all 364 completed single-process jobs on disk (see the table in
-`auto_evals_cscs.py`). 90M–350M rose ~10% — the old medians were slightly
-low — while 1B and 1.7B, which had never been evaluated when their entries
-were written, came in at 0.90 and 0.97 min/task against guesses of 2.0 and
-2.8. Per job, at L100: 1.7B 495 → 180 min, 1B 360 → 180, 600M unchanged at
-165, 90M 135 → 150.
+**The single-process re-fit (2026-09-07).** `MIN_PER_TASK` was fitted by least
+squares over all 364 completed single-process jobs on disk. 90M–350M rose
+~10% — the old medians were slightly low — while 1B and 1.7B, which had never
+been evaluated when their entries were written, came in at 0.90 and
+0.97 min/task against guesses of 2.0 and 2.8.
 
-Net over all 730 due evals: **1,420 → 990 node-hours**. Eval is **~16% of a
-level's compute** (990 against the ~6,290 training node-hours above), not the
-~2% originally stated here, not the ~12–19% that held before the checkpoint
-grid was densified, and not the ~26–29% that the pre-worker-pool, pre-re-fit
-numbers implied. The old ~142
-node-hours applied L2's ~14 min to every cell, but cost scales with the task
-count and the high-L cells dominate: the `auto` group expands to one task per
-benchmark per language the cell trains on, from **13 tasks at L1 to 446 at
-L100** (after IrokoBench was disabled on 2026-09-07 — see
-[benchmark_selection.md](benchmark_selection.md); it was 15 → 463 before, and
-9 → 290 before the 2026-08-21 wiring).
+**The worker-pool re-fit (2026-09-10).** Those were still single-process costs
+divided by the worker count, i.e. they assumed four workers buy 4×. Re-fitted
+per *worker*-task on 583 completed worker-pool jobs (table below), the workers
+buy 1.4–1.9× — but the 15-min overhead and ×1.5 safety had been hiding far
+more than that: requests ran ~4× what the jobs burned. Per job at L100
+(446 tasks) the request fell from 150–180 min to 65–100; over the current
+grid, **3,615 → 1,860 node-hours**, with no replayed job undersized.
 
-Elapsed time is very close to linear in the task count. Fitted by least
-squares (`elapsed = a + b × tasks`) over **all 364 completed single-process
-eval jobs on disk**, 9 → 219 tasks each, using
-[`eval_timing.py`](../src/evals/scripts/eval_timing.py):
+Cost scales with the task count and the high-L cells dominate: the `auto`
+group expands to one task per benchmark per language the cell trains on, from
+**13 tasks at L1 to 446 at L100** (after IrokoBench was disabled on 2026-09-07
+— see [benchmark_selection.md](benchmark_selection.md); it was 15 → 463
+before, and 9 → 290 before the 2026-08-21 wiring). The ~142 node-hours
+originally quoted here applied L2's ~14 min to every cell.
 
-| Size | jobs | task range | overhead *a* | per task *b* | R² |
-| ---- | ---: | ---------: | -----------: | -----------: | -: |
-| 90M  |   82 |      9–219 |      0.1 min |    0.747 min | 0.99 |
-| 175M |  100 |      9–219 |     −2.5 min |    0.717 min | 0.88 |
-| 350M |   59 |      9–219 |      0.4 min |    0.835 min | 0.99 |
-| 600M |   79 |      9–219 |      1.1 min |    0.868 min | 1.00 |
-| 1B   |   20 |     60–219 |      1.3 min |    0.902 min | 0.99 |
-| 1.7B |   24 |      9–164 |     −2.0 min |    0.968 min | 1.00 |
+Elapsed time is very close to linear in the tasks each worker runs. Fitted by
+least squares (`elapsed = a + b × ⌈tasks/4⌉`) over **583 completed
+worker-pool eval jobs** (`job.json` present, sacct elapsed), 4 → 329 tasks
+each, with [`eval_timing.py`](../src/evals/scripts/eval_timing.py) supplying
+the per-job rows:
 
-Every rung is measured now, and the per-task cost is nearly **flat across a
-19× parameter range** (0.72 → 0.97 min): a run is dominated by dataset load
-and tokenization, not the forward pass, which is why the earlier practice of
-extrapolating a large rung to 2–3× the small ones was so far off. The fitted
-intercept is ~0 rather than `OVERHEAD_MIN`, because every job in the fit ran
-with a warm container and a populated dataset cache; the 15 min stays as
-cold-start headroom, not as a measurement.
+| Size | jobs | task range | overhead *a* | per worker-task *b* | R² | single-process (09-07) |
+| ---- | ---: | ---------: | -----------: | ------------------: | -: | ---------------------: |
+| 90M  |   66 |      4–233 |      0.3 min |           0.387 min | 0.77 |              0.747 min |
+| 175M |  146 |      4–329 |      1.6 min |           0.479 min | 0.97 |              0.717 min |
+| 350M |  108 |      5–239 |      0.3 min |           0.537 min | 0.82 |              0.835 min |
+| 600M |  163 |      4–329 |      1.4 min |           0.554 min | 0.94 |              0.868 min |
+| 1B   |   40 |     14–329 |     −2.0 min |           0.594 min | 0.92 |              0.902 min |
+| 1.7B |   60 |      4–239 |      1.9 min |           0.679 min | 0.98 |              0.968 min |
+
+`MIN_PER_TASK` is *b* to two decimals. The cost stays nearly **flat across a
+19× parameter range**: a run is dominated by dataset load and tokenization,
+not the forward pass — CPU and IO the four workers share, which is why they
+buy 1.4–1.9× rather than 4×. The largest fitted intercept is 1.9 min, so
+`OVERHEAD_MIN` = 10 is cold-start headroom rather than a measurement; with it
+the worst of the 583 jobs needed a `SAFETY` of 0.91, so 1.15 is a 26% margin.
 
 - `eval_walltime()` once assumed a fixed **60 min** overhead against the ~2.5
   min measured, and put 90M at 0.6 min/task. Both were then fitted on medians
   from 69 jobs at three sizes (2026-09-02), which still ran ~10% low and left
-  1B/1.7B as guesses; the 364-job least-squares fit above replaced them
-  (2026-09-07). Overhead stays 15 min as cold-start headroom.
+  1B/1.7B as guesses; the 364-job single-process fit replaced them
+  (2026-09-07), and the 583-job worker-pool fit replaced that (2026-09-10).
+- The "median actual/requested 0.05" once quoted for evals was mostly not the
+  formula: 190 of 593 jobs ran under a limit set elsewhere, chiefly
+  `debug_drain.sh`'s 1:30. On the jobs `eval_minutes()` sized, the ratio was
+  0.24 before the 2026-09-10 re-fit and 0.50 after.
+- BPB costs a flat amount per checkpoint — 444 s at 90M, 580 at 175M, 826 at
+  350M, 1,136 at 600M, 1,506 at 1B, 2,141 at 1.7B (medians over 1,023 jobs) —
+  plus ~40 s cold start per job, and it scores every converted checkpoint, not
+  only the due ones, so at 1B and 1.7B it costs more than the evals.
 - Until 2026-09-04 a walltime kill wrote **nothing** (`BATCH_TASKS=1`: one
   `lm_eval` call for every task), so `submit_eval` refused the over-cap
   requests (600M/1B/1.7B at L100, 1.7B at L50) rather than have them

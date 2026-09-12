@@ -599,22 +599,27 @@ def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
 # hypothesis attached to them was refuted by a standalone benchmark (flat
 # 553-633 TFLOP/s at every ladder shape) — do not reinstate it.
 #
-# 1B and 1.7B have NO run on this sweep yet, so they are left at their older
-# estimates rather than given a fabricated precision. Both need >11h at any
-# plausible rate, so auto_time clamps them to the cap either way and the
-# walltime is insensitive to the value; the BUDGET is not (they are ~84% of
-# the sweep's node-hours), so measure them on the first real run.
+# [w] = 1B and 1.7B, measured 2026-09-11: wall-clock between the first and last
+# logged iteration of every post-iopsstor job, over the iterations, x1.10.
+# Wall-clock rather than the logged per-iteration time because these rungs
+# save 40 and 60 checkpoints and the saves show at 1B (849 wall, 754 logged).
+# The guesses they replaced (2400 / 3200) were 2.8x high — harmless for full
+# 12h segments, which clamp to the cap anyway, but a run's final segment was
+# requested hours too long. Shallow 1B has no run yet and takes deep's value
+# (shallow is 2-8% faster at every measured rung).
 ITER_MS = {
     "deep":    {"90M": 1500,   # [m] 1248
                 "175M": 1000,  # [m]  844
                 "350M": 750,   # [m]  604
                 "600M": 660,   # [m]  548
-                "1B": 2400, "1.7B": 3200},        # not measured
+                "1B": 940,     # [w]  849, 4 jobs
+                "1.7B": 1280}, # [w] 1155, 11 jobs
     "shallow": {"90M": 1400,   # [m] 1154
                 "175M": 1000,  # [m]  810
                 "350M": 700,   # [m]  567
                 "600M": 650,   # [m]  539
-                "1B": 2600, "1.7B": 3200},        # not measured
+                "1B": 940,     # no shallow 1B run yet: deep's value
+                "1.7B": 1230}, # [w] 1113, 1 job
 }
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
