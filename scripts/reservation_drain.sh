@@ -6,7 +6,8 @@
 #                 reservation at once. Counted over my running AND pending jobs
 #                 already in it — a pending job starts the moment nodes free
 #                 up, so it is committed.
-#   MIN_FREE      nodes that must stay free for everyone else. "Free" is the
+#   --min-free N (default MIN_FREE below)  nodes that must stay free for
+#                 everyone else; 0 lets my jobs take every free node. "Free" is the
 #                 reservation's size minus nodes down/in maintenance minus the
 #                 nodes of every job (anyone's, running or pending) already in
 #                 it — sinfo reports every node of an active reservation as
@@ -34,6 +35,25 @@
 # keeps the job on `normal` (the reservation's partition) and untouched
 # otherwise: same walltime, same account.
 #
+# Check reservation status:
+#
+#   RES=SD-69241-apertus-1-5-0
+#   
+#   nodes held now, and nodes queued, per user
+#   squeue -R $RES -h -t R  -o "%u %D" | awk '{n[$1]+=$2} END {for (u in n) print n[u], u}' | sort -rn
+#
+#   running jobs, soonest end first: user, nodes, time left, expected end, name
+#   squeue -R $RES -h -t R -o "%.14u %.4D %.11L %.20e %j" -S e
+#
+#    nodes freeing up, per hour from now
+#   squeue -R $RES -h -t R -o "%D %e" | while read n e; do echo "$n $(( ($(date -d "$e" +%s) - $(date +%s)) / 3600 ))"; done | awk '{f[$2]+=$1} END {for (h in f) print "+" h "h", f[h]}' | sort -t+ -k2 -n
+#
+#   when Slurm expects the queued jobs to start
+#   squeue -R $RES -h -t PD -o "%.14u %.4D %.20S %j" -S S
+#
+# Manually move to reservation:
+#   scontrol update jobid=ID reservation=SD-69241-apertus-1-5-0 
+#
 # Usage:
 #   bash scripts/reservation_drain.sh --dry-run          # plan only
 #   bash scripts/reservation_drain.sh                    # loop (default 15 min)
@@ -41,6 +61,7 @@
 #   bash scripts/reservation_drain.sh --priority eval    # evals first
 #   bash scripts/reservation_drain.sh --interval 600 --priority L30
 #   bash scripts/reservation_drain.sh --hours 6 --max-nodes 42
+#   bash scripts/reservation_drain.sh --priority pretrain --min-free 0
 set -uo pipefail
 RES=SD-69241-apertus-1-5-0
 MAX_MY_NODES=63
@@ -53,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --priority)  PRIO="$2"; shift 2 ;;
     --hours)     HOURS="$2"; shift 2 ;;
     --max-nodes) MAX_MY_NODES="$2"; shift 2 ;;
+    --min-free)  MIN_FREE="$2"; shift 2 ;;
     --once)      ONCE=1; shift ;;
     --dry-run)   DRY=1; shift ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
@@ -127,7 +149,7 @@ drain_once() {
 
 if (( ONCE || DRY )); then drain_once; exit 0; fi
 
-echo "[reservation-drain] loop start (interval ${INTERVAL}s, priority='${PRIO}', window ${HOURS}h, max-nodes $MAX_MY_NODES); stop with kill."
+echo "[reservation-drain] loop start (interval ${INTERVAL}s, priority='${PRIO}', window ${HOURS}h, max-nodes $MAX_MY_NODES, min-free $MIN_FREE); stop with kill."
 while true; do
     drain_once || { echo "[reservation-drain] done."; break; }
     sleep "$INTERVAL"
