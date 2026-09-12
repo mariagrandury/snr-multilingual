@@ -76,25 +76,31 @@ def sacct(job_ids: list[str]) -> dict[str, tuple[str, int]]:
 
 def tasks_in(eval_dir: Path, meta: dict) -> int:
     """Tasks this run finished, as QUEUED tasks — one per name the job was
-    given, which is what the walltime is priced in.
-
-    job.json's count first, then the published per_task/ dirs. The results
-    file is the last resort (a batched run has nothing else), and reading its
-    `.results` keys directly would OVERCOUNT: lm_eval lists a group's subtasks
-    individually there, so one queued `global_mmlu_full_es` becomes dozens of
-    rows. `.group_subtasks` names exactly those expansions, so subtracting them
-    leaves the top-level names the job was actually given — on the 350M/L15
-    run of job 3199185 that is 100 rather than 1067, i.e. 0.90 min/task instead
-    of 0.08, next to the 0.84 that `auto_evals_cscs.MIN_PER_TASK` now carries
-    for 350M. Without the subtraction the two pipelines are measured in
-    different units and the comparison below is meaningless — and the bias
-    points at undersizing every walltime re-fitted from it.
-    """
+    given, which is what the walltime is priced in. job.json's count first,
+    then task_names()."""
     if isinstance(meta.get("tasks_done"), int):
         return meta["tasks_done"]
+    return len(task_names(eval_dir))
+
+
+def task_names(eval_dir: Path) -> set[str]:
+    """The queued task names one eval dir published.
+
+    The per_task/ dirs first. The results file is the last resort (a batched
+    run has nothing else), and reading its `.results` keys directly would
+    OVERCOUNT: lm_eval lists a group's subtasks individually there, so one
+    queued `global_mmlu_full_es` becomes dozens of rows. `.group_subtasks`
+    names exactly those expansions, so subtracting them leaves the top-level
+    names the job was actually given — on the 350M/L15 run of job 3199185 that
+    is 100 rather than 1067, i.e. 0.90 min/task instead of 0.08, next to the
+    0.835 min/task the 2026-09-07 single-process fit gave 350M. Without the
+    subtraction the two pipelines are measured in different units and the
+    comparison below is meaningless — and the bias points at undersizing every
+    walltime re-fitted from it.
+    """
     done = {d.name for d in eval_dir.glob("per_task/*") if d.is_dir()}
     if done:
-        return len(done)
+        return done
     expanded: set[str] = set()
     for f in eval_dir.glob("results_*.json"):
         try:
@@ -104,7 +110,7 @@ def tasks_in(eval_dir: Path, meta: dict) -> int:
         done |= set(r.get("results") or {})
         for subtasks in (r.get("group_subtasks") or {}).values():
             expanded |= set(subtasks)
-    return len(done - expanded)
+    return done - expanded
 
 
 def scan(project_dir: Path, name_filter: str | None) -> list[dict]:

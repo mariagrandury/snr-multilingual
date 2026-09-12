@@ -38,6 +38,7 @@ python3.11 pretrain_progress.py                    # per-cell status lines
 python3.11 pretrain_progress.py --plot             # + the plan table and heatmaps
 python3.11 ladder_report.py                         # loss/scaling/benchmarks/BPB checks
 python3.11 ladder_report.py --plot                  # + figures and ladder_report.md
+python3.11 compute_cost.py                          # node-hours spent vs kept -> plan/compute-costs.md
 
 # Regenerate AND publish all three copies (capstor, HF, the data/ladder-report
 # orphan branch). Needs the snr env: git-lfs lives there, and this repo's
@@ -163,6 +164,7 @@ launcher — the core design):
 | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
 | [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md). |
+| [`compute_cost.py`](compute_cost.py) | What the sweep actually spent, in node-hours by task (pretrain, eval, BPB, convert, data), size and user: every allocation from sacct, split into **kept** (grid cells, `auto` tasks, iterations that reached a checkpoint) and the reasons the rest was not (failed, not in grid, not auto, superseded, wasted, in flight, no record). Writes [plan/compute-costs.md](../../plan/compute-costs.md), the measured counterpart of [plan/compute-budget.md](../../plan/compute-budget.md). CSCS only — Azure runs are not in sacct. |
 
 **Subfolders:**
 
