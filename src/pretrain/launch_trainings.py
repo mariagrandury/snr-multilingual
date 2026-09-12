@@ -53,6 +53,19 @@ Usage:
 Filters (both platforms): --arch {deep,shallow}, --scheme {A,AT3,B,ZH,ES},
 --size 350M[,175M,...], --langs L, --seed N, --dry-run.
 
+Diagnostic overrides (CSCS only). Each needs a --size/--langs/--seed filter,
+turns the auto-eval watcher off and forces a diag- run name, so no grid cell
+is ever touched (see plan/90M-rung-anomaly.md):
+  --lr LR                    peak LR instead of the per-size 6ND value
+  --ademamix-beta3-factor F  beta3 = 1 - 1/(F x iters): the slow-EMA memory
+                             at F of the run instead of a fixed 0.9999
+  --gbs N                    global batch size at the SAME token budget —
+                             iters, warmup and decay scale by 504/N (N must
+                             divide 504), and the name gains its token count
+                             (e.g. -gbs84-tok9.29B) so it can never resume the
+                             step-matched gbs252/gbs84 runs of 2026-09-09,
+                             which saw 1/2 and 1/6 of the tokens
+
 Examples:
     # the scheme-A ladder
     python3.11 pretrain/launch_trainings.py cscs --dry-run
@@ -849,9 +862,10 @@ def main() -> None:
                              "run name — never a grid cell.")
     parser.add_argument("--gbs", metavar="N", type=int,
                         help="CSCS only, DIAGNOSTIC: override the global batch "
-                             "size (ladder value 504). Must be a multiple of "
-                             "DP = 4 x nodes. Forces a diag- run name — never a "
-                             "grid cell.")
+                             "size (ladder value 504) at the SAME token budget: "
+                             "iters, warmup and decay scale by 504/N. Must divide "
+                             "504 and be a multiple of DP = 4 x nodes. Forces a "
+                             "diag- run name — never a grid cell.")
     args = parser.parse_args()
 
     if args.platform != "cscs":
@@ -886,6 +900,11 @@ def main() -> None:
     if bad_sizes:
         parser.error(f"--size {bad_sizes} not valid. Choose from: {valid_sizes}")
     if args.gbs:
+        # The schedule scales by GBS / --gbs to hold the token budget, so the
+        # ratio must be whole or warmup/decay/save_interval stop being integers.
+        if GBS % args.gbs:
+            parser.error(f"--gbs {args.gbs} must divide {GBS} (the token budget "
+                         f"is held by scaling iters by {GBS}/N)")
         # Fail here, not 200 lines later inside cscs_mbs: Megatron needs
         # GBS % (DP x MBS) == 0, and MBS >= 1 makes GBS % DP == 0 the real
         # constraint. DP = 4 GPUs x the size's node count.
@@ -941,6 +960,18 @@ def main() -> None:
 
     for c in cells:
         cfg = data["configs"][c["size"]]
+        if args.gbs:
+            # Hold D = 100 x N: a smaller batch takes proportionally more steps.
+            # Scaling the predictivity block itself carries the change to
+            # everything derived from it — target/done-check, ADEMAMIX_WARMUP,
+            # save_interval (still 20 saves), a beta3 factor, the walltime and
+            # the undersized-data check. The first --gbs pair (2026-09-09) kept
+            # 4500 steps and so saw 1/2 and 1/6 of the tokens.
+            k = GBS // args.gbs
+            p = cfg["predictivity"]
+            cfg = {**cfg, "predictivity": {**p, **{
+                key: p[key] * k for key in
+                ("train_iters", "lr_warmup_iters", "lr_wsd_decay_iters")}}}
         # Every non-baseline scheme keeps its FineWeb-2 build in its own
         # subdir of the same layout (the english build and the validation
         # manifest are symlinked in — see data/launch_builds.sh).
@@ -957,6 +988,12 @@ def main() -> None:
             # a non-standard config is structurally unable to be mistaken for
             # a ladder rung. Not optional, for that reason.
             tag = "".join(f"-{k}{v:g}" for k, v in diag.items())
+            # `-gbs<N>` alone names the step-matched pair already on disk
+            # (4.64B / 1.55B tokens); the token count in the name keeps a
+            # token-matched run from resuming into those checkpoints and says
+            # what differs. `cfg` is already scaled, so this is the grid budget.
+            if args.gbs:
+                tag += f"-tok{schedule_for(cfg)[0] * args.gbs * SEQ_LEN / 1e9:.2f}B"
             exp = f"diag-{exp.removeprefix('lm-')}{tag}"
         target = schedule_for(cfg)[0]
 

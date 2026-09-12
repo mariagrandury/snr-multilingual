@@ -634,6 +634,69 @@ The one thing `--gbs` deliberately does NOT do is change a grid cell. GBS stays
 so an unset GBS reproduces every trained cell byte-for-byte — checkable with a
 diff of the launcher's `--dry-run` export line.
 
+### The batch-size diagnostic at equal tokens (2026-09-12)
+
+**Why the first pair is not comparable.** `--gbs` swapped the batch size and
+nothing else. The step count, warmup, decay, `ADEMAMIX_WARMUP` and save
+interval all still came from the 90M `predictivity` block, which is sized for
+GBS 504: 4,500 steps, 200 warmup, 900 decay, a save every 225. Tokens are
+steps x GBS x 4,096, so rows 5 and 6 of the table below trained on 4.64B and
+1.55B tokens against the grid's 9.29B. `--training-steps` could not have fixed
+it — it caps the step count only, leaving warmup, decay and saves sized for
+4,500 steps — and the old names were already `done` on disk.
+
+**The launcher change.** `--gbs` now holds the token budget: it scales the
+cell's `predictivity` block (iters, warmup, decay) by 504/GBS before anything
+reads it, so the done-check, `ADEMAMIX_WARMUP`, the save interval (still 20
+saves), a beta3 factor, the walltime and the undersized-data check all follow.
+GBS must divide 504. The name gains the run's token count (`-tok9.29B`), which
+states what differs from the step-matched `-gbs252` / `-gbs84` runs (4.64B /
+1.55B) and keeps these from ever resuming into their checkpoint dirs. A normal
+launch is unchanged: the dry-run output for every size, deep and shallow, is
+identical to the previous launcher's.
+
+**The confound, and why there are four runs.** beta3 = 0.9999 is a memory
+fixed in *steps* (10,000). Holding tokens gives the smaller batches 2x and 6x
+more steps, so it also moves the memory-to-run ratio — the very quantity that
+causes the divergence:
+
+| GBS | steps | grid beta3 memory / run | beta3 factor 0.2 |
+| --: | ----: | ----------------------: | ---------------: |
+| 504 | 4,500 | 2.2x | 0.2x |
+| 252 | 9,000 | 1.1x | 0.2x |
+| 84 | 27,000 | 0.37x | 0.2x |
+
+At grid beta3 the GBS-84 run's memory is 0.37x its run, the same regime as
+the 600M rung, which is clean. If it converges, the extra steps and the smaller
+batch cannot be told apart. So two pairs:
+
+- **B — batch size only.** beta3 factor 0.2, memory at 20% of every run.
+  Baseline: row 4 (`diag-90M-beta3f0.2`, GBS 504, final 2.796). Any gap is the
+  batch size.
+- **A — grid config except the batch.** beta3 0.9999. Baseline: row 1
+  (`lm-90M-L2`, final 5.781). Answers whether changing the batch alone would
+  rescue the rung without touching beta3 — but a clean result here is
+  attributable to steps and batch jointly, not to batch.
+
+First submitted 2026-09-12 16:19 under a `-D100N` suffix (jobs
+3367059/60/61/65), cancelled while still pending — nothing was written — and
+renamed so the name shows the token budget. Job ids below are the resubmission:
+
+| pair | run (`diag-90M-L2-deep-seed1904-...`) | job | GBS | steps | warmup | decay | save every | beta3 | tokens | walltime asked |
+| --- | --- | --: | --: | ----: | -----: | ----: | ---------: | ----: | -----: | -------------: |
+| B | `beta3f0.2-gbs252-tok9.29B` | 3367098 | 252 | 9,000 | 400 | 1,800 | 450 | 0.99944444 | 9.29B | 6:15 |
+| B | `beta3f0.2-gbs84-tok9.29B` | 3367100 | 84 | 27,000 | 1,200 | 5,400 | 1,350 | 0.99981481 | 9.29B | 12:00 |
+| A | `gbs252-tok9.29B` | 3367101 | 252 | 9,000 | 400 | 1,800 | 450 | 0.9999 | 9.29B | 6:15 |
+| A | `gbs84-tok9.29B` | 3367102 | 84 | 27,000 | 1,200 | 5,400 | 1,350 | 0.9999 | 9.29B | 12:00 |
+
+LR (1.4276e-3), architecture, init, seed and data are the grid's; the LR is
+not rescaled for the smaller batch. Expected cost ~11 node-hours each
+(~3.7 h on 3 nodes, extrapolated from the step-matched pair's 1:52 and 0:37);
+the walltime is auto-sized from GBS-504 speed, so the GBS-84 runs ask for the
+12 h cap. Compare at equal tokens: final loss is now like-for-like. Add the
+four rows to "Full list of experiments" once they finish; the final 90M
+config is chosen from them.
+
 ## Audit: which hyperparameters are fixed in STEPS rather than fractions
 
 Prompted by the beta3 result. Because D = 100 x N at a fixed batch and
@@ -788,7 +851,12 @@ training logs with the same rules for every row.
 - **Only the beta3 change fixes it (rows 4, 9).** Neither run spikes, and grad
   norm stays above 1 on just 2% of steps.
 - **The GBS runs aren't budget-matched.** Rows 5–6 saw ½ and ⅙ of the tokens,
-  so their final loss isn't a like-for-like comparison.
+  so their final loss isn't a like-for-like comparison. The token-matched
+  replacements (`-tok9.29B`) are described in "The batch-size
+  diagnostic at equal tokens". Rows 5–6 still rule batch size out as the
+  *cause* of the divergence — the first spike lands at 16–21% of steps at all
+  three batch sizes — but not as a lever on final loss at equal tokens, which
+  is what the replacements measure.
 - **Row 9 settles the open 175M question.** The 175M run finished 0.31 nats
   below its grid cell (the interim estimate above was ~0.26). That meets the
   gate set above for the 350M run (~39 node-hours); launching it is still a
