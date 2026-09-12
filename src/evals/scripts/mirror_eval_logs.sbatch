@@ -33,7 +33,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=06:00:00
+#SBATCH --time=12:00:00
 # Logs go to capstor beside the data they describe: Slurm opens them before the
 # script runs, so a swept scratch dir would mean no log at all.
 #SBATCH --output=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
