@@ -39,6 +39,9 @@ night:
 morning:
 python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
 sbatch scripts/mirror_eval_logs.sbatch 
+✅ bash evals/scripts/launch_bpb.sh
+✅ python3.11 pretrain/auto_evals_cscs.py --watch 1200
+✅ cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 86 --interval 1800
 
 - Refit evals
 - Reeval after worker implementation
