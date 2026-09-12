@@ -207,7 +207,11 @@ def main() -> None:
             "bytes": nbytes,
             "nll_nats": nll,
             "bpb": nll / math.log(2) / nbytes,
-            "ppl": math.exp(nll / n),
+            # A diverged checkpoint can average more than ~709.8 nats/token,
+            # past what a double can exponentiate: lm-90M-L8-deep-seed1904
+            # raised OverflowError here on every attempt (84 jobs), and its
+            # BPB — the metric that matters, and finite — was never written.
+            "ppl": math.exp(nll / n) if nll / n < 709 else float("inf"),
         }
         print(f"  {lang:24} bpb={out[lang]['bpb']:.4f}  ppl={out[lang]['ppl']:.2f}",
               flush=True)

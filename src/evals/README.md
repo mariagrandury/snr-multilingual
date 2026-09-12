@@ -200,7 +200,9 @@ that a naive loop would duplicate.
 
 One job per cell scores every converted checkpoint it finds and writes
 `<LOGS_ROOT>/<entity>/msnr/<cell>-iter<N>/bpb/bpb.json` — per language, the
-NLL, the byte count, `bpb` and `ppl`.
+NLL, the byte count, `bpb` and `ppl`. `ppl` is `Infinity` when a diverged
+checkpoint averages more than ~709.8 nats/token, past what a double can
+exponentiate; its `bpb` stays finite.
 
 How it differs from the harness path, and why:
 
@@ -227,15 +229,17 @@ How it differs from the harness path, and why:
   intervention.
 
 **A cell does not fit one debug slot**, so the job carries itself across
-several. Scoring costs a flat ~448 s/checkpoint at 90M and ~816 s at 350M
-(<2% spread), against 20 checkpoints per cell — so a 1:30 debug slot gets
-through 11 or 6 of them. `score_bpb.sbatch` therefore queues a
-`--dependency=singleton` successor **before** it starts scoring (at the wall
-Slurm kills the batch script, so anything submitted afterwards would never
-run), and refuses to start a checkpoint it cannot finish in the time left,
-using the previous checkpoint's measured cost. The successor re-derives what
-is still due and exits without chaining when nothing is, so the chain ends
-itself; `MAX_CHAIN` (default 12) bounds it against a failure loop.
+several. Scoring costs a flat amount per checkpoint — ~444 s at 90M, 826 s at
+350M, 1,506 s at 1B, 2,141 s at 1.7B (medians over 1,023 jobs, <6% spread on
+debug) — against 20 checkpoints per cell (40 at 1B, 60 at 1.7B), so a 1:30
+debug slot gets through 11 of them at 90M and 2 at 1.7B. `score_bpb.sbatch`
+therefore queues a `--dependency=singleton` successor **before** it starts
+scoring (at the wall Slurm kills the batch script, so anything submitted
+afterwards would never run), and refuses to start a checkpoint it cannot
+finish in the time left, using the previous checkpoint's measured cost. The
+successor re-derives what is still due and exits without chaining when
+nothing is, so the chain ends itself; `MAX_CHAIN` (default 16 — a 60-save
+1.7B cell needs ~15 three-hour links) bounds it against a failure loop.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses
