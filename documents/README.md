@@ -10,6 +10,21 @@ Slides (Work in progress):
 
 - slides.md: Source to generate slides using slidev with the scholarly theme.
 
+## Research-question compendium
+
+[research-questions.html](research-questions.html) is the single reference for
+every RQ: the seven of the original programme, the seven asked of the
+instruments, and five proposals. Each entry carries the question, a one-line
+answer, the setup and formulas with links to the script that produced them, the
+detailed numbers, and follow-ups. Figures are inlined as data URIs so the file
+opens standalone in a browser and needs nothing from `public/`.
+
+It is also published as an artifact:
+<https://claude.ai/code/artifact/b8dbd107-ef4f-4f57-852b-84ab7e011419>.
+Re-publishing the same file path updates that URL. The file has no
+`<html>`/`<body>` wrapper because the artifact host supplies one; browsers
+supply it too, so opening the file directly works.
+
 ## Deck figures
 
 `figures/` regenerates every PNG under `public/ladder/` from the published
