@@ -349,11 +349,9 @@ layout: section
 
 # Research questions
 
-Seven, one directory each
 
 ---
 title: Research questions
-subtitle: "RQ0–RQ5 ask which benchmarks are reliable; RQ6 asks which model sizes are"
 ---
 
 | | question | reads |
@@ -366,12 +364,29 @@ subtitle: "RQ0–RQ5 ask which benchmarks are reliable; RQ6 asks which model siz
 | **RQ5** | Which **design features** (curation, format, option count, length) predict SNR? | benchmark metadata |
 | **RQ6** | Which **proxy size** ranks an intervention like the reference, and how does that move with L? | *new — the plan's question* |
 
-One entry point: `cd src/signal-and-noise && bash run_all_predictivity.sh`
 
 <!--
+One entry point: `cd src/signal-and-noise && bash run_all_predictivity.sh`
+
 Source of truth is one file: the wide per-checkpoint ladder_report.csv published to
 msnr-data/ladder-report. Every number in this deck regenerates from it.
 -->
+
+---
+title: Research questions
+---
+
+RQs about statistics and general analysis as the first section:
+1. Which benchmarks scale predictably? (Simple fit of scaling laws formula and measure R^2 and Spearman rho)
+2. Which benchmarks are stable? (Noise is the metric for this)
+3. Which languages benefit most from increasing model scale? We have 3 potential patterns: (1) high baseline + strong scaling, (2) low baseline + strong scaling, (3) low baseline + weak scaling.
+4. Does the benchmark distinguish the things we want to compare? (Signal is the metric here)
+
+RQs about the decision accuracy and the surrogates of it:
+1. How early can we predict final multilingual performance?
+2. What is the smallest evaluation suite that reliably predicts full multilingual model quality?
+3. Which is the most informative surrogate? (this is the plot that we said we want ot have with the min model size and the number of languages).
+
 
 ---
 layout: section
@@ -407,7 +422,25 @@ generated from launch_trainings.py so the table cannot drift.
 layout: figure
 image: /ladder/pretrain_progress_plan.png
 fit: contain
-height: 74vh
+height: 56vh
+title: Experimental Setup
+subtitle: The planned grid
+---
+
+---
+layout: figure
+image: /ladder/pretrain_progress_simple.png
+fit: contain
+height: 56vh
+title: Experimental Setup
+subtitle: The planned grid
+---
+
+---
+layout: figure
+image: /ladder/pretrain_progress_detailed.png
+fit: contain
+height: 56vh
 title: Experimental Setup
 subtitle: The planned grid
 ---
@@ -445,28 +478,13 @@ icon: "🌐"
 - Widening the view changed one reading: with only 12 languages the benchmark coverage looked thin. Across 50 it is worse
 
 <!--
+todo: lists a b, l1-l50
 groups.main is kept for the historical decks. groups.trained is the 49 FineWeb-2
 tags of FW_L50 in src/pretrain/data/language_sets_schemeA.json, plus English,
 which comes from DCLM rather than FineWeb-2. Add the L100 list the same way once
 the distribution is decided.
 -->
----
-layout: figure
-image: /ladder/grid_status.png
-fit: contain
-height: 66vh
-title: What exists today
-subtitle: "Same numbers as the table before, as a picture"
----
 
-<!--
-Improved version of the previous slide. Blue is a finished cell, grey is the 90M
-rung that diverged, pale blue is started but not done, near white is not started.
-Two things to point at: the bottom row (100 languages) is empty at every size,
-and the two right columns are nearly empty. 1B is finished only at 8 and 50
-languages. The 90M square at L2 is blue because one shallow cell there missed the
-divergence test by 0.016 nats, which is the next slide but one.
--->
 ---
 layout: section
 ---
@@ -615,6 +633,14 @@ What the ladder says so far
 
 ---
 layout: figure
+image: /aromanou.png
+fit: contain
+height: 66vh
+title: Benchmark scaling predictability
+---
+
+---
+layout: figure
 image: /ladder/ladder_report_scaling.png
 fit: contain
 height: 66vh
@@ -641,17 +667,6 @@ Fits are per (L, arch, scheme) on the larger rungs — ladder_report.check_scali
 -->
 
 ---
-layout: bullets
-title: Above 90M the ladder behaves
-subtitle: "Plain version of the slide before"
-icon: "📐"
----
-
-- Loss falls with size at every language count, with no exceptions
-- The slope of that fall is the same everywhere. It sits between 0.16 and 0.20 whether the model sees 1 language or 50
-- So adding languages shifts the whole curve up. It does not change how the model scales
-- Each fit leaves out the smallest rung, then tries to predict it. The healthy rungs land within 0.07 nats
----
 layout: figure
 image: /ladder/ladder_report_loss.png
 fit: contain
@@ -663,13 +678,10 @@ subtitle: "Nine of ten 90M runs peak early and then get worse"
 ---
 title: Finding 2 — The 90M rung is not on the ladder
 subtitle: "An optimizer timescale fixed in steps, on runs that differ 18×"
----
 layout: figure
 image: /ladder/optimizer_timescale.png
 fit: contain
 height: 52vh
-title: Why the 90M rung broke
-subtitle: "The optimizer averages over 10,000 steps. The 90M run is 4,500 steps long."
 ---
 
 ---
@@ -735,19 +747,6 @@ changes what enters every pool, so it is a call for the team, not a patch.
 -->
 
 ---
-layout: bullets
-title: One 90M cell got through
-subtitle: "Plain version of the slide before"
-icon: "⚠️"
----
-
-- A run counts as diverged if it ends more than 0.25 nats above its own best
-- `90M-L2-shallow` ends 0.234 above its best. It misses the line by 0.016
-- So it is the only 90M model in any of our tables, and it sits 1.29 nats off its own scaling fit
-- Every number we report for 90M is that single run
-- It also anchors 101 of the 303 scaling fits in the last research question
-- The ladder report already publishes an `off_trend` flag. Our loader does not read it. One line fixes this, but it changes every number, so it is a decision for the team
----
 layout: figure
 image: /ladder/bpb_vs_languages.png
 fit: contain
@@ -756,11 +755,6 @@ title: Finding 4 — More languages is nearly free for English
 subtitle: "Held-out bits-per-byte, deep / scheme A / seed 1904"
 ---
 
----
-layout: bullets
-title: Finding 4 — More languages is nearly free for English
-subtitle: "The multilingual tax is paid once, at the first extra language"
-icon: "🌍"
 ---
 layout: figure
 image: /ladder/bpb_gain_per_language.png
@@ -834,19 +828,7 @@ across-L range at fixed size (n=18 cells). This is the transformation table of
 ladder_report.md, resolved against a proper seed standard deviation.
 -->
 
----
-layout: bullets
-title: Two of our three axes are inside the noise
-subtitle: "Plain version of the slide before"
-icon: "📉"
----
 
-- Train the same cell with three different seeds and the final loss moves by 0.021 nats. That is our noise floor
-- Changing the number of languages moves it by 12 times that. This axis is real
-- Changing the data scheme moves it by 2.2 times. This axis is marginal
-- Changing the depth moves it by 1.0 times. On the headline metric, deep and shallow are the same model measured twice
-- Task by task the depth effect is bigger, 1.55 times the noise, and above 2 times on 39 percent of cells. So depth does something, just not to the number we optimise
-- Depth is half of the grid
 ---
 layout: figure
 image: /ladder/fig1_gate.png
@@ -886,7 +868,7 @@ which is why the never-clearing list is four families rather than six.
 layout: figure
 image: /ladder/first_clearing_size.png
 fit: contain
-height: 74vh
+height: 54vh
 title: Which benchmark works, in which language
 subtitle: "The smallest model that beats chance. Grey means it never does."
 ---
@@ -1137,19 +1119,6 @@ the framework rather than about our models; worth reporting in the paper.
 -->
 
 ---
-layout: bullets
-title: Our noise estimate is too small
-subtitle: "Plain version of the slide before"
-icon: "🔬"
----
-
-- The framework measures noise as the wobble over a run's last few checkpoints
-- On the cells with three seeds we can measure it the honest way instead, across seeds
-- Seed noise is 2.04 times the checkpoint noise, taken over 5,546 cells
-- So every SNR we quote is about twice as flattering as it should be
-- An effect that looks like twice the checkpoint noise is really about one seed re-roll
-- Last night's evals grew this sample from 752 cells to 5,546, and the ratio settled from 2.54 to 2.04
----
 title: Finding 11 — Bits per byte answers the question, benchmarks do not
 subtitle: "RQ6 now scores both, and every comparison still resolves against 600M"
 ---
@@ -1181,7 +1150,7 @@ layout: figure
 image: /ladder/benchmark_predictivity.png
 fit: contain
 height: 56vh
-title: New tonight — the benchmark suite can be scored, and it fails
+title: The benchmark suite can be scored, and it fails
 subtitle: "Two schemes, 2,227 shared benchmark tasks, one clear answer"
 ---
 
@@ -1354,31 +1323,8 @@ layout: section
 
 # Open discussion
 
-Seven decisions, in the order they block each other
-
 ---
-layout: focus
-color: green
-icon: "📏"
----
-
-## 0. If the suite only covers the languages our choices do not move, what is it for?
-
-Do we recommend **BPB as the measurement** and use benchmarks only where they clear the gate — or is that
-conceding the question the project set out to answer?
-
-<!--
-Finding 7. Three readings, and they need different follow-ups:
-(a) benchmarks are genuinely unreliable at 90M-1B in most languages — then the contribution
-    is the negative result plus the gate, and BPB is the recommendation;
-(b) it is a selection artefact of the above-random gate, which never gates BPB — then we
-    need an SNR that is comparable across gated and ungated measurements;
-(c) it is a scale artefact and benchmarks separate above 1B — then the reference rungs
-    settle it, and we cannot answer until they land.
--->
-
----
-layout: focus
+layout: default
 color: amber
 icon: "🔧"
 ---
@@ -1397,7 +1343,7 @@ one 90M model in the pools.
 -->
 
 ---
-layout: focus
+layout: default
 color: red
 icon: "🌡️"
 ---
@@ -1416,27 +1362,7 @@ confounds the intervention. plan/small-to-large-predictivity-training-plan.md.
 -->
 
 ---
-layout: focus
-color: red
-icon: "⏱️"
----
-
-## 3. Eval walltime blocks everything above L = 30
-
-L100 = 463 tasks → **1,356 min at 1.7B against a 719-min queue cap**. Already over at 1.7B/L30 and 1B/L50.
-
-`BATCH_TASKS=1` writes nothing when a job is killed, so an over-cap job is resubmitted and killed forever.
-
-**This is why L = 100 has zero finished cells.**
-
-<!--
-status-09-02, still open. Options: split the task set across jobs, cap the during-training
-task list and backfill the rest offline, or raise the cap. Blocks the whole top-right of
-the grid, and the predictivity question needs exactly that corner.
--->
-
----
-layout: focus
+layout: default
 color: amber
 icon: "🪜"
 ---
@@ -1454,7 +1380,7 @@ temperature decision more urgent, not less.
 -->
 
 ---
-layout: focus
+layout: default
 color: blue
 icon: "📊"
 ---
@@ -1473,7 +1399,7 @@ under-trained — that check is a spreadsheet, not a sweep.
 -->
 
 ---
-layout: focus
+layout: default
 color: amber
 icon: "📐"
 ---
@@ -1491,7 +1417,7 @@ the one the plan calls "most likely to show a ranking that flips with scale".
 -->
 
 ---
-layout: focus
+layout: default
 color: blue
 icon: "🎯"
 ---
