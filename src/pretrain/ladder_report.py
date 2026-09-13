@@ -44,8 +44,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES  # noqa: E402
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, cell_languages, exp_name, mix_label, run_interval,
-    save_interval)
+    DATA_SCHEMES, exp_name, mix_label, run_interval, save_interval)
 from auto_evals_cscs import saved_valid_iters  # noqa: E402
 
 TRAIN_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
@@ -556,14 +555,11 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         parts = _cell_parts(cell)
         if not parts:
             continue
-        try:
-            trained = {t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
-        except Exception:
-            trained = set()
+        trained = _trained_fineweb(parts)
         for it, d in sorted(iters.items()):
             for lang, v in d["languages"].items():
                 short = lang.replace("fineweb_", "")
-                tr = int(lang == "dclm" or short.split("_")[0][:2] in trained)
+                tr = int(lang == "dclm" or short in trained)
                 for kind, val in (("bpb", v["bpb"]), ("ppl", v["ppl"])):
                     add(cell, parts, it, "", kind, short, round(val, 6),
                         language=short, trained=tr)
@@ -882,6 +878,23 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
     return path
 
 
+def _trained_fineweb(parts: dict | None) -> set[str]:
+    """The FineWeb-2 subsets a cell trains on, as exact codes (`cmn_Hani`).
+
+    Exact membership, not a language match: BPB is scored per subset, so
+    `arz_Arab` is untrained in a cell whose list holds only `arb_Arab`. The
+    old test compared the first two letters of these iso3 codes (`cm`, `jp`,
+    `sp`) with cell_languages()'s canonical codes (`zh`, `ja`, `es`) and got
+    175 of 1,386 (scheme, L, language) cases wrong — at L8 it called Chinese,
+    Japanese and Spanish untrained. L1 has no FW_L1 list, hence the empty set.
+    """
+    if not parts:
+        return set()
+    sets = json.loads((SCRIPT_DIR / "data" / f"language_sets_scheme"
+                       f"{DATA_SCHEMES[parts['scheme']]['sets']}.json").read_text())["sets"]
+    return set(sets.get(f"FW_L{parts['L']}", []))
+
+
 def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     """Per-language BPB vs checkpoint, one panel per scored cell."""
     import matplotlib.pyplot as plt
@@ -890,12 +903,8 @@ def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     df = _melt(csv_path, "bpb__", "key")
     if df.empty:
         return None
-    trained_by_cell = {}
-    for cell in df["cell"].unique():
-        parts = _cell_parts(cell)
-        trained_by_cell[cell] = ({t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
-                                 if parts else set())
-    df["trained"] = [int(k == "dclm" or k.split("_")[0][:2] in trained_by_cell[c])
+    trained_by_cell = {c: _trained_fineweb(_cell_parts(c)) for c in df["cell"].unique()}
+    df["trained"] = [int(k == "dclm" or k in trained_by_cell[c])
                      for c, k in zip(df["cell"], df["key"])]
     # macro_bpb is a per-CHECKPOINT column (it used to be run-level, which
     # flattened this curve); read it under that name or the macro line
