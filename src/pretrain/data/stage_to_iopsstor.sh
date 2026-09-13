@@ -83,8 +83,9 @@ else
   # One level of subdir covers every data variant (schemeB, AT3, ZH, ES, ...)
   # without naming them — the layout launch_builds.sh builds is exactly that.
   # The 92B rebuild root under SRC is NOT a variant: its builds stage to their
-  # own tree (launch_builds.sh REBUILD_DST) and are swapped in by hand, so the
-  # default pass must not copy them under the training stage.
+  # own tree (launch_builds.sh REBUILD_DST), which launch_trainings.py reads only
+  # for cells the 52B copies are too small for, so the default pass must not
+  # copy them under the training stage.
   for idx in "$SRC"/*.idx "$SRC"/*/*.idx; do
     [ -e "$idx" ] || continue
     case "$idx" in *validation*|"$SRC"/rebuild-92B/*) continue;; esac

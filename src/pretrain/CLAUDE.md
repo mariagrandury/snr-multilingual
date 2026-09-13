@@ -132,12 +132,17 @@ then never log again without a code-side id suffix.
   When the 1.7B row gained L15 and L50, the finished 52B builds for A L15/L50
   and B L15 became undersized — but cells have already trained on them, so
   they are rebuilt at 92B into a **parallel root** (`data/launch_builds.sh`,
-  the `REBUILD` array), never overwritten. Swapping the 92B copies into the
-  training stage is a human decision, and waits until every cell partial at
-  L15/L50 has finished on the 52B copy it started on. Until the swap the
-  launcher refuses the 1.7B cells there (`skip [data undersized]`); it also
-  refuses to resume a run saved on another checkpoint grid
-  (`skip [foreign schedule]`).
+  the `REBUILD` array), never overwritten, and staged to
+  `/iopsstor/scratch/cscs/mariagrandury/data-92B`. The launcher reads a cell's
+  FineWeb-2 half from there only when the stage copy is too small for it (the
+  six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. **Do not
+  swap the 92B files into the training stage.** Each language section is a
+  byte-exact extension of the 52B one, but Megatron shuffles over the whole
+  file (a different sample order) and the extra documents are newer crawls
+  (Russian 2021–24 share 4% → 14%, Chinese 0% → 32%), so a shallow or new-seed
+  cell moved onto it would stop seeing what its trained counterparts saw
+  (verified 2026-09-13). The launcher also refuses to resume a run saved on
+  another checkpoint grid (`skip [foreign schedule]`).
 - **Never change a grid cell's training config.** #5 covers not changing the
   optimizer *schedule* on a resume; this is the wider rule, across cells: dozens of
   cells are trained, and a rung that ran different hyperparameters is not on

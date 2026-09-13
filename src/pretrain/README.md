@@ -229,8 +229,12 @@ half the largest run's budget + 10% headroom.
 The A L15/L50 and B L15 builds already on capstor are 52 B, from before the
 1.7B row gained L15 and L50. They are **not** overwritten: `launch_builds.sh`
 rebuilds them at 92 B into a parallel root (its `REBUILD` array), because
-cells have already trained on the 52 B copies. Swapping the finished 92 B
-builds into the training stage is a deliberate, human step.
+cells have already trained on the 52 B copies. `launch_trainings.py` reads the
+92 B copy (staged to `/iopsstor/scratch/cscs/mariagrandury/data-92B`) only for
+cells the 52 B one is too small for — the 1.7B at those settings — and keeps
+every other rung on 52 B: the rebuild extends each language byte for byte, but
+it reorders Megatron's samples and adds newer crawls. Do not swap it into the
+training stage.
 
 ## 2. Launch the trainings
 

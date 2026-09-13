@@ -135,6 +135,9 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 # (iopsstor is purged ~30 days); data/launch_builds.sh writes there and the
 # copy is staged here for training.
 CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
+# Where data/launch_builds.sh stages the 92B rebuilds of the builds the grid
+# outgrew (A-L15, A-L50, B-L15): the same layout, FineWeb-2 prefixes only.
+CSCS_REBUILD_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data-92B"
 
 # The auto-eval watcher's stdout/stderr. Under the cluster log tree with every
 # other generated log, NOT next to the source: it is an append-only file the
@@ -431,7 +434,8 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     Russian, ES's Spanish, AT3 L100 at T=3). A build smaller than that is a
     stale one the grid has since outgrown (the 52B A-L15/A-L50/B-L15 copies,
     once the 1.7B row gained those settings), and training on it would repeat
-    data only because nobody swapped the full build in."""
+    data only because the full build was not used — main() falls back to the
+    92B rebuild stage for exactly those cells."""
     have = Path(f"{prefix}.bin").stat().st_size // BYTES_PER_TOKEN
     draw = run_tokens * (100 - EN_SHARE) // 100
     if draw <= have:
@@ -1033,9 +1037,26 @@ def main() -> None:
             # (the 52B A-L15/A-L50/B-L15 copies, once the 1.7B row gained those
             # settings) must not feed a cell that draws more than it holds:
             # Megatron silently repeats it.
+            fineweb_dir = cell_dir
             if c["L"] > 1:
+                run_tokens = target * (args.gbs or GBS) * SEQ_LEN
                 short = undersized_build(f"{cell_dir}/fineweb_L{c['L']}", c["L"],
-                                         c["scheme"], target * (args.gbs or GBS) * SEQ_LEN)
+                                         c["scheme"], run_tokens)
+                # Such a cell reads its FineWeb-2 half from the 92B rebuild
+                # instead; English stays on the stage. Every rung the stage copy
+                # fits keeps it: the rebuild extends each language byte for byte,
+                # but Megatron shuffles over the whole file and the extra
+                # documents are newer crawls, so a cell moved onto it would stop
+                # seeing what its already-trained counterparts saw (verified
+                # 2026-09-13). Only cells this check used to refuse get here, so
+                # none switches data mid-run.
+                rebuilt = CSCS_REBUILD_DATA_DIR + (f"/{subdir}" if subdir else "")
+                if (short and args.data_dir == CSCS_DEFAULT_DATA_DIR
+                        and all(Path(f"{rebuilt}/fineweb_L{c['L']}.{ext}").is_file()
+                                for ext in ("bin", "idx"))
+                        and not undersized_build(f"{rebuilt}/fineweb_L{c['L']}", c["L"],
+                                                 c["scheme"], run_tokens)):
+                    fineweb_dir, short = rebuilt, None
                 if short:
                     print(f"  skip [data undersized]: {exp} — {short}")
                     continue
@@ -1059,8 +1080,9 @@ def main() -> None:
                     CKPT_ROOT / exp / "checkpoints", load_iter, args.dry_run):
                 continue
             blend = data_blend(f"{cell_dir}/english_dclm",
-                               f"{cell_dir}/fineweb_L{c['L']}", c["L"])
-            print(f"  [{action}] {exp}: iters {load_iter} -> {tgt}")
+                               f"{fineweb_dir}/fineweb_L{c['L']}", c["L"])
+            print(f"  [{action}] {exp}: iters {load_iter} -> {tgt}"
+                  + (f"  (FineWeb-2 from {fineweb_dir})" if fineweb_dir != cell_dir else ""))
             nodes = cfg.get("nodes", NODES_BY_SIZE[c["size"]])
             submit_cscs(
                 cell_env(cfg, c["size"], c["seed"], exp, blend,

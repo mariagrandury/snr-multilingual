@@ -20,15 +20,16 @@ DRY=${1:-}
 # (and training) cells read is a hard no. So the cells listed here build into
 # REBUILD_ROOT instead — a parallel data root of the same shape (scheme subdirs
 # + the shared english/validation symlinks) — and stage to their own iopsstor
-# tree, so nothing under the 52B copies is touched. Swapping the finished 92B
-# builds into the training stage is then a human decision (the 52B ones are
-# what every already-trained L15/L50 cell read), after which REBUILD empties.
+# tree, so nothing under the 52B copies is touched. launch_trainings.py reads
+# that stage (its CSCS_REBUILD_DATA_DIR) only for cells the 52B copy is too
+# small for — the 1.7B at these settings — and every other rung keeps the 52B
+# copy its peers trained on, so nothing is ever swapped in.
 # B:15 is here for the same reason: schemeB's L15 is also a 52B build against a
 # 92B target, and the B ladder is meant to reach 1.7B at L15 too (decided
 # 2026-09-10). B's L8 and L30 are already 92B and need nothing.
 REBUILD=(A:15 A:50 B:15)
 REBUILD_ROOT=$OUT/rebuild-92B
-REBUILD_DST=/iopsstor/scratch/cscs/$USER/data-92B
+REBUILD_DST=/iopsstor/scratch/cscs/mariagrandury/data-92B   # = launch_trainings.CSCS_REBUILD_DATA_DIR
 
 mkdir -p "$OUT" "$LOGS"
 
