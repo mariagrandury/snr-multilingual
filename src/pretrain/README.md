@@ -347,6 +347,16 @@ by design.
   ```
   Every build job also calls it for its own mixture when it finishes, so this
   is only needed after a purge or for a mixture built before staging existed.
+  The default pass leaves the 92B rebuilds alone (they are not training-stage
+  copies), so after a purge restage those into their own stage too, **by
+  name** — a bare run with `SRC` at `rebuild-92B` would copy the 736 GB English
+  build its symlinks point to. Until this runs, the six 1.7B cells at A-L15,
+  A-L50 and B-L15 skip with `skip [data undersized]`:
+  ```bash
+  sbatch --account=infra01 \
+    --export=ALL,SRC=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/rebuild-92B,DST=/iopsstor/scratch/cscs/mariagrandury/data-92B \
+    data/stage_to_iopsstor.sh fineweb_L15 fineweb_L50 schemeB/fineweb_L15
+  ```
 - **Pre-build the eval datasets into the iopsstor HF cache.** Compute nodes have
   no internet, so an uncached dataset fails its task (the watcher downloads it
   and retries, but that costs a job per pass). They live in `$HF_HOME/datasets` on
