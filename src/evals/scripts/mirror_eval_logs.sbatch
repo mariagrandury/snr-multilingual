@@ -61,6 +61,19 @@ PAIRS=(
     "$LOGS/slurm/training|$CAP/msnr-train-logs"
     "$LOGS/Meg-Runs/msnr|$CAP/msnr-run-logging"
 )
+# Collaborators' trees. Every account's Slurm logs and Megatron run logging
+# land under its OWN scratch (`%u` in --output, and the checkpoint dir of a
+# cell it launched), while its eval results already go to the shared tree
+# above — so aromanou's training logs, all of her 1B cells among them, never
+# reached capstor. Each goes into a subdir named after the account, so two
+# users' run logging for the same cell cannot overwrite each other. Their
+# checkpoints are not touched below: only a file's owner can refresh its mtime.
+for u in ${OTHER_USERS:-aromanou}; do
+    ulogs=${LOGS/\/mariagrandury\//\/$u\/}
+    [ "$ulogs" = "$LOGS" ] && continue
+    PAIRS+=("$ulogs/slurm/training|$CAP/msnr-train-logs/$u"
+            "$ulogs/Meg-Runs/msnr|$CAP/msnr-run-logging/$u")
+done
 
 # --partial: a 2 MB samples file interrupted mid-write resumes rather than
 #   restarting. --inplace is NOT used: a torn file would look complete.

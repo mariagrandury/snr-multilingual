@@ -45,10 +45,18 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES  # noqa: E402
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, exp_name, mix_label, run_interval, save_interval)
-from auto_evals_cscs import saved_valid_iters  # noqa: E402
+from auto_evals_cscs import (  # noqa: E402
+    ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
+from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
 
 TRAIN_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
                   "Megatron-LM/logs/slurm/training")
+# Every account that trains sweep cells: each one's Slurm logs land under its
+# own scratch (`%u` in --output). Reading only the first dropped aromanou's 1B
+# cells from every loss curve and from the 1B point of the scaling fits. Eval
+# and BPB results need no such list: every account writes them to EVAL_LOGS.
+TRAIN_LOG_DIRS = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/"))
+                  for u in ("mariagrandury", "aromanou")]
 EVAL_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
                  "Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr")
 
@@ -88,32 +96,43 @@ def _key(m: re.Match) -> tuple:
             SCHEME_OF[m["scheme"] or ""], int(m["seed"]))
 
 
+def _train_logs() -> list[tuple[Path, str]]:
+    """(log, text) for every account's pretrain logs, OLDEST JOB FIRST. Ordered
+    by job id, not by path: a cell resumed from another account must let its
+    newest segment win, and a path sort would make that depend on which user
+    name sorts first."""
+    logs = sorted((f for d in TRAIN_LOG_DIRS for f in d.glob("pretrain-*.out")
+                   if LOG_RE.match(f.name)),
+                  key=lambda f: int(f.stem.rsplit("-", 1)[1]))
+    out = []
+    for f in logs:
+        try:
+            out.append((f, f.read_text(errors="ignore")))
+        except OSError:            # a log its owner has not shared: skip it
+            continue
+    return out
+
+
 def loss_curves() -> dict[tuple, list[tuple[int, float]]]:
     """(size, L, arch, scheme, seed) -> [(iter, loss), ...], newest log wins."""
     runs: dict[tuple, dict[int, float]] = {}
-    for f in sorted(TRAIN_LOGS.glob("pretrain-*.out")):
-        m = LOG_RE.match(f.name)
-        if not m:
-            continue
-        key = _key(m)
+    for f, text in _train_logs():
         # A resumed cell has several logs; later iterations supersede earlier
         # ones, so merging by iteration rebuilds the whole curve.
-        got = runs.setdefault(key, {})
-        for it, _tgt, loss in LOSS_RE.findall(f.read_text(errors="ignore")):
+        got = runs.setdefault(_key(LOG_RE.match(f.name)), {})
+        for it, _tgt, loss in LOSS_RE.findall(text):
             got[int(it)] = float(loss)
     return {k: sorted(d.items()) for k, d in runs.items()}
 
 
 def targets() -> dict[tuple, int]:
-    """(size, L, arch, scheme, seed) -> the run's own --train-iters."""
+    """(size, L, arch, scheme, seed) -> the run's own --train-iters, as its
+    newest job logged it."""
     out = {}
-    for f in sorted(TRAIN_LOGS.glob("pretrain-*.out")):
-        m = LOG_RE.match(f.name)
-        if not m:
-            continue
-        hits = LOSS_RE.findall(f.read_text(errors="ignore"))
+    for f, text in _train_logs():
+        hits = LOSS_RE.findall(text)
         if hits:
-            out[_key(m)] = int(hits[-1][1])
+            out[_key(LOG_RE.match(f.name))] = int(hits[-1][1])
     return out
 
 
@@ -211,18 +230,42 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
     return problems
 
 
-def _scores(path: Path) -> dict[str, float]:
+def _primary(results_file: Path) -> dict[str, float]:
+    """task -> `acc`, falling back to `exact_match` for the generative tasks —
+    the same rule push_all_results.py uses for W&B, so the CSV and the
+    dashboards cannot disagree about what a task's score is."""
+    try:
+        res = json.loads(results_file.read_text()).get("results", {})
+    except Exception:
+        return {}
     out = {}
-    for f in path.glob("harness/eval_*/results_*.json"):
-        try:
-            res = json.loads(f.read_text()).get("results", {})
-        except Exception:
-            continue
-        for task, metrics in res.items():
-            for key, val in metrics.items():
-                if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
-                    out[task] = val
-                    break
+    for task, metrics in res.items():
+        for key, val in metrics.items():
+            if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
+                out[task] = val
+                break
+    return out
+
+
+def _scores(ckpt_dir: Path) -> dict[str, float]:
+    """task -> score for one <cell>-iter<N> dir.
+
+    Every eval run of the checkpoint, OLDEST FIRST, so the newest result for a
+    task wins. Inside a run, the merged results file, plus the per_task/<task>/
+    files of any task it does not cover: a walltime-killed job never merges,
+    and its per-task results are exactly what the watcher counts as done, so a
+    reader that skipped them left those tasks blank forever. Only uncovered
+    tasks are opened — a merged run holds ~470 per-task files."""
+    out = {}
+    for run in sorted(p for p in ckpt_dir.glob("harness/eval_*") if p.is_dir()):
+        merged = {}
+        for f in sorted(run.glob("results_*.json")):
+            merged.update(_primary(f))
+        for d in run.glob("per_task/*"):
+            if d.name not in merged:
+                for f in sorted(d.glob("*/results_*.json")):
+                    out.update(_primary(f))
+        out.update(merged)
     return out
 
 
@@ -393,17 +436,7 @@ def benchmark_results() -> dict[str, dict[int, dict[str, float]]]:
         m = re.match(r"(.+)-iter(\d+)$", d.name)
         if not m:
             continue
-        scores: dict[str, float] = {}
-        for f in d.glob("harness/eval_*/results_*.json"):
-            try:
-                res = json.loads(f.read_text()).get("results", {})
-            except Exception:
-                continue
-            for task, metrics in res.items():
-                for key, val in metrics.items():
-                    if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
-                        scores[task] = val
-                        break
+        scores = _scores(d)
         if scores:
             out.setdefault(m.group(1), {})[int(m.group(2))] = scores
     return out
@@ -947,16 +980,45 @@ def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     return path
 
 
-def plot_benchmarks(csv_path: Path, out_dir: Path) -> Path | None:
+_TRAINED_TASKS: dict[tuple, frozenset] = {}
+
+
+def _trained_tasks(L, scheme: str) -> frozenset:
+    """The tasks a cell is evaluated on in the languages it TRAINS on — the
+    watcher's default list, whatever extra languages the cell also carries."""
+    key = (int(L), scheme)
+    if key not in _TRAINED_TASKS:
+        _TRAINED_TASKS[key] = frozenset(
+            tasks_for_benchmarks(auto_benchmarks(), eval_languages(*key)))
+    return _TRAINED_TASKS[key]
+
+
+def plot_benchmarks(csv_path: Path, out_dir: Path,
+                    all_languages: bool = False) -> Path | None:
     """Benchmark accuracy vs checkpoint, one panel per benchmark.
 
     Scores are averaged over the languages of a benchmark and drawn per size,
     with the chance line from tasks.json's n_options: a benchmark sitting on
     its chance line has told us nothing, however smooth the curve looks.
+
+    Two figures, because a mean over different task sets is not a comparison.
+    By default every cell counts only the tasks in the languages it trains
+    on, so all cells share one definition of a benchmark's score (the deep
+    scheme-A seed-1904 runs carry ~2,900 tasks, their siblings 74-155).
+    all_languages=True draws only ALL_LANGUAGES_RUNS, the runs evaluated in
+    every language, over every task they have, trained on or not.
     """
     import matplotlib.pyplot as plt
 
     df = _melt(csv_path, "bench__", "key")
+    if df.empty:
+        return None
+    if all_languages:
+        scheme, arch, seed = ALL_LANGUAGES_RUNS
+        df = df[(df["scheme"] == scheme) & (df["arch"] == arch) & (df["seed"] == seed)]
+    else:
+        df = df[[k in _trained_tasks(L, s)
+                 for k, L, s in zip(df["key"], df["L"], df["scheme"])]]
     if df.empty:
         return None
     # Per-task metadata comes from tasks.json rather than being repeated on
@@ -985,14 +1047,27 @@ def plot_benchmarks(csv_path: Path, out_dir: Path) -> Path | None:
         ax.set_ylabel("accuracy", fontsize=7)
         ax.tick_params(labelsize=6)
         ax.grid(alpha=0.25, lw=0.4)
-    fig.suptitle("Benchmark accuracy vs checkpoint, averaged over each "
+    fig.suptitle(("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages
+                  else "Trained languages only — each cell's own task list\n")
+                 + "Benchmark accuracy vs checkpoint, averaged over each "
                  "benchmark's languages\ncolour = size, dotted red = chance "
                  "(from tasks.json n_options)", y=1.0, fontsize=10)
     fig.tight_layout()
-    path = out_dir / "ladder_report_benchmarks.png"
+    path = out_dir / ("ladder_report_benchmarks_all_languages.png" if all_languages
+                      else "ladder_report_benchmarks.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return path
+
+
+def _final_rows(full):
+    """Each run's FINAL checkpoint row (the one at its target iter). Tables put
+    these values beside the final loss, so a cell whose final checkpoint is not
+    scored yet must show nothing rather than an earlier checkpoint's value."""
+    if "run__target_iters" not in full:
+        return full.iloc[0:0]
+    tgt = full.groupby("cell")["run__target_iters"].max()
+    return full[[it == tgt.get(c) for c, it in zip(full["cell"], full["iter"])]]
 
 
 def summary_table(csv_path: Path, tol: float) -> str:
@@ -1002,10 +1077,10 @@ def summary_table(csv_path: Path, tol: float) -> str:
     full = _read_wide(csv_path)
     if full is None:
         return "_no runs found_"
-    # macro_bpb is per CHECKPOINT; the table wants the latest scored one.
-    latest = (full[full["macro_bpb"].notna()].sort_values("iter")
-              .groupby("cell")["macro_bpb"].last().to_dict()
-              if "macro_bpb" in full else {})
+    # macro_bpb is per CHECKPOINT; the table wants the final checkpoint's.
+    fin = _final_rows(full)
+    latest = (dict(zip(fin["cell"], fin["macro_bpb"])) if "macro_bpb" in full else {})
+    latest = {c: v for c, v in latest.items() if v == v}
     w = (full[["cell", "size", "L", "arch", "scheme"]
               + [c for c in full.columns if c.startswith("run__")]]
          .drop_duplicates(subset="cell"))
@@ -1058,13 +1133,21 @@ def transform_effects(csv_path: Path) -> str:
     full = _read_wide(csv_path)
     if full is None:
         return "_no runs found_"
-    bcols = [c for c in full.columns if c.startswith("bench__")]
-    scored = full[full[bcols].notna().any(axis=1)]
-    bench = (scored.assign(v=scored[bcols].mean(axis=1))
-             .sort_values("iter").groupby("cell")["v"].last().to_dict())
-    bpb = (full[full["macro_bpb"].notna()].sort_values("iter")
-           .groupby("cell")["macro_bpb"].last().to_dict()
-           if "macro_bpb" in full else {})
+    # Both at each run's FINAL checkpoint, like the loss, and the benchmark
+    # mean over the tasks in the languages the cell trains on: a mean over
+    # whatever tasks a cell happens to carry compared the all-language runs
+    # (~2,900 tasks) with siblings holding 74-155, and flipped the sign of
+    # some arch and seed deltas.
+    fin = _final_rows(full)
+    bench, bpb = {}, {}
+    for _, r in fin.iterrows():
+        cols = [f"bench__{t}" for t in _trained_tasks(r["L"], r["scheme"])
+                if f"bench__{t}" in fin]
+        v = pd.to_numeric(r[cols], errors="coerce").mean() if cols else float("nan")
+        if v == v:
+            bench[r["cell"]] = v
+        if "macro_bpb" in fin and r["macro_bpb"] == r["macro_bpb"]:
+            bpb[r["cell"]] = r["macro_bpb"]
     runs = full.drop_duplicates("cell")
     runs = runs[runs.get("run__complete") == 1] if "run__complete" in runs else runs
     loss = dict(zip(runs["cell"], runs.get("run__final_loss", [])))
@@ -1124,7 +1207,8 @@ def write_artifacts(curves, tgts, out_dir: Path, tol: float) -> None:
     made = [p for p in (plot_loss(curve, out_dir),
                         plot_scaling(wide, out_dir),
                         plot_bpb(wide, out_dir),
-                        plot_benchmarks(wide, out_dir)) if p]
+                        plot_benchmarks(wide, out_dir),
+                        plot_benchmarks(wide, out_dir, all_languages=True)) if p]
     for p in made:
         print(f"[plot] saved {p}", file=sys.stderr)
 
