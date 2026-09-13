@@ -22,6 +22,10 @@ from pathlib import Path
 # access-based cleaning policy keeps them alive. Set before importing datasets.
 os.environ["HF_HOME"] = f"/iopsstor/scratch/cscs/{os.environ['USER']}/hf_home"
 os.environ["HF_DATASETS_CACHE"] = f"{os.environ['HF_HOME']}/datasets"
+# The login node caps each user at 1000 threads (cgroup pids.max). OpenBLAS
+# starts one per core when numpy is imported, and when pthread_create fails it
+# raises SIGINT: the script dies with a KeyboardInterrupt nobody typed.
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 from datasets import get_dataset_config_names, load_dataset  # noqa: E402
 from huggingface_hub.utils import disable_progress_bars  # noqa: E402

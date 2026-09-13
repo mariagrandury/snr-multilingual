@@ -50,9 +50,9 @@ ITERS=("$@")
 # successor cannot find this file by a path relative to it (../CLAUDE.md, the
 # SCRIPT_PATH gotcha). Absolute, like submit_build_one.sh.
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/scripts/score_bpb.sbatch
-# 16, not 12: a 60-save 1.7B cell gets ~4 checkpoints per 3h link (2,141 s
-# each), so it needs 15 links, and 12 would end the chain ~12 checkpoints short.
-MAX_CHAIN=${MAX_CHAIN:-16}
+# 32: debug_drain moves these jobs to 1:30 slots, where a 1.7B link scores
+# only 2 checkpoints (2,141 s each), so a 60-save cell needs ~30 links.
+MAX_CHAIN=${MAX_CHAIN:-32}
 
 REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
 STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}

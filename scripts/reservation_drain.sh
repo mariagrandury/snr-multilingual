@@ -38,8 +38,8 @@
 # Check reservation status:
 #
 #   RES=SD-69241-apertus-1-5-0
-#   
-#   nodes held now, and nodes queued, per user
+#
+#   nodes held now, per user (-t PD for the queued ones)
 #   squeue -R $RES -h -t R  -o "%u %D" | awk '{n[$1]+=$2} END {for (u in n) print n[u], u}' | sort -rn
 #
 #   running jobs, soonest end first: user, nodes, time left, expected end, name
@@ -100,9 +100,15 @@ drain_once() {
     res=$(scontrol show reservation "$RES" 2>/dev/null) || { echo "reservation $RES not found"; return 0; }
     size=$(grep -oP 'NodeCnt=\K\d+' <<<"$res")
     nodes=$(grep -oP 'Nodes=\K\S+' <<<"$res")
-    unavail=$(sinfo -h -n "$nodes" -o "%T %D" 2>/dev/null | awk '/maint|down|drain|fail|unk/{s+=$2} END{print s+0}')
-    all_res=$(squeue -h -R "$RES" -t PD,R,CG -o "%D" 2>/dev/null | sum)
-    my_res=$(squeue --me -h -R "$RES" -t PD,R,CG -o "%D" 2>/dev/null | sum)
+    # Node-oriented and deduplicated: the reservation's nodes sit in several
+    # partitions, and `%T %D` counts a drained node once per partition. Every
+    # count checked like the pending-queue read above — a failed squeue -R
+    # reads as an empty reservation and would fill it.
+    if ! unavail=$(sinfo -h -N -n "$nodes" -o "%N %T" 2>/dev/null | sort -u | awk '$2 ~ /maint|down|drain|fail|unk/{s++} END{print s+0}') ||
+       ! all_res=$(squeue -h -R "$RES" -t PD,R,CG -o "%D" 2>/dev/null | sum) ||
+       ! my_res=$(squeue --me -h -R "$RES" -t PD,R,CG -o "%D" 2>/dev/null | sum); then
+        echo "[$(date +%H:%M:%S)] sinfo/squeue on the reservation failed — retrying next tick"; return 0
+    fi
     free=$(( size - unavail - all_res ))
     room=$(( free - MIN_FREE ))
     (( MAX_MY_NODES - my_res < room )) && room=$(( MAX_MY_NODES - my_res ))
@@ -138,7 +144,9 @@ drain_once() {
         elif scontrol update jobid="$jid" reservation="$RES" 2>&1; then
             echo "  moved $jid $name ($n nodes x $wall = ${nh} node-h)"
         else
-            echo "  WARN: failed to move $jid $name (stopping this tick)"; break
+            # continue, not break: the same job sorts first every tick, so
+            # stopping here would let one unmovable job block all the others.
+            echo "  WARN: failed to move $jid $name (trying the next job)"; continue
         fi
         room=$(( room - n ))
     done

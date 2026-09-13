@@ -111,7 +111,7 @@ if (( ${#CKPT_DIRS[@]} )); then
         # (28%, every aromanou-owned cell) failed exactly this way.
         fails=$(find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>&1 >/dev/null | wc -l)
         if (( fails )); then
-            echo "[$(date)] WARNING: $fails paths NOT touched (not owner) —" \
+            echo "[$(date)] WARNING: $fails find/touch errors (mostly paths NOT touched: not owner) —" \
                  "those cells stay exposed; their owner must run this too" >&2
         fi
         echo "[$(date)] touched"

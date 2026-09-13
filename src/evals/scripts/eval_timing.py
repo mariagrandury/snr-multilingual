@@ -185,8 +185,8 @@ def main() -> None:
         # BEYOND the data on a short sample, and printed p10 = -0.45 min/task
         # for a two-job cell. Below 10, show the observed range instead — the
         # columns then read as min/max, which is the honest summary of 2 points.
-        lo, hi = ((st.quantiles(vals, n=10)[0], st.quantiles(vals, n=10)[-1])
-                  if len(vals) >= 10 else (vals[0], vals[-1]))
+        q = st.quantiles(vals, n=10) if len(vals) >= 10 else vals
+        lo, hi = q[0], q[-1]
         print(f"{pipeline:<9} {size:<5} {len(rs):>5} {sum(r['tasks'] for r in rs):>7} "
               f"{st.median(vals):>8.2f} {lo:>7.2f} {hi:>7.2f}")
     if len(cells) and len({p for p, _ in cells}) == 2:

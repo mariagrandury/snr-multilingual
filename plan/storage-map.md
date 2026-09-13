@@ -15,7 +15,7 @@ map says it lives only on iopsstor, that is a gap, not a design.
   any future CSVs / eval-results datasets. Nothing else goes in other orgs.
 - **GitHub `data/ladder-report`** — an *orphan* branch carrying the same three
   report files, for a collaborator with neither cluster nor Hub access.
-  **Never merge it into main**: that is what keeps a 13 MB artifact,
+  **Never merge it into main**: that is what keeps a ~33 MB artifact,
   regenerated several times a week, out of every clone. Plain git, not LFS —
   successive snapshots delta-compress to ~1 MB each (four real revisions:
   29 MB raw, 4 MB packed), while LFS stores each version whole and its quota
@@ -35,7 +35,7 @@ map says it lives only on iopsstor, that is a gap, not a design.
 | `data-mix-small/Megatron-LM/logs/auto_evals/` | auto-eval watcher logs | none (disposable) |
 | `hf_home/datasets/` | offline HF dataset cache for eval jobs | rebuildable: `download_eval_datasets.py` |
 | `Projects/snr-multilingual/` | the repo — the sweeper eats loose git objects, push often | GitHub `mariagrandury/snr-multilingual` |
-| `src/pretrain/ladder_report{,_curve}.csv` + `.md` | the generated report — gitignored on every normal branch | three copies: capstor `msnr-ladder-report/`, HF `msnr-data/ladder-report`, and the GitHub **orphan branch `data/ladder-report`** (`ladder_report.py --push-git`) |
+| `src/pretrain/ladder_report{,_curve}.csv` + `.md` | the generated report — the CSVs are gitignored on every normal branch; the `.md` is tracked | three copies: capstor `msnr-ladder-report/`, HF `msnr-data/ladder-report`, and the GitHub **orphan branch `data/ladder-report`** (`ladder_report.py --push-git`) |
 | `snr-hf-checkpoints/` | LEGACY 36-sweep HF conversions (apertus-*) — nothing writes here | none (one sweep from gone) |
 
 ## CSCS — capstor store (`/capstor/store/cscs/swissai/infra01/`)

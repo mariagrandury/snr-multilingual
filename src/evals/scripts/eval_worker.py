@@ -30,8 +30,9 @@ and publishes it by renaming `inflight/<task>` to `per_task/<task>` once the
 results file exists. The rename is atomic, so `per_task/<task>/` exists only
 when complete — which is the "done" test in _eval_status.completed_tasks,
 i.e. what makes the next job skip it. A task that raises is logged and its
-(usually empty) inflight dir removed, so a directory left in inflight/ is the
-partial output of a task still running when its worker died.
+inflight dir removed if empty, so a directory left in inflight/ is the partial
+output of a task that never published: its worker died mid-task, or it raised
+after writing.
 
 Failure isolation: an exception inside one task is logged and the worker
 moves on. Under torchrun/accelerate (the hf and megatron_lm backends run one

@@ -15,11 +15,13 @@ def load(project, name):
                               recursive=True)):
         for task, metrics in (json.load(open(f)).get("results") or {}).items():
             for k, v in metrics.items():
-                if isinstance(v, (int, float)) and not k.endswith("_stderr,none"):
+                if isinstance(v, (int, float)) and "_stderr" not in k:
                     out[f"{task}/{k}"] = v
     return out
 
-name, pa, pb = sys.argv[1], sys.argv[2], sys.argv[3]
+if len(sys.argv) != 4:
+    sys.exit(__doc__)
+name, pa, pb = sys.argv[1:]
 a, b = load(pa, name), load(pb, name)
 common = sorted(set(a) & set(b))
 print(f"{pa}: {len(a)} metrics | {pb}: {len(b)} metrics | comparable: {len(common)}")

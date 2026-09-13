@@ -163,7 +163,7 @@ The same idea for a reservation:
 `/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh`
 moves any of my pending `normal` jobs (pretrain, eval, convert, BPB) into the
 reservation named at its top, holding at most `--max-nodes` of it (default
-63) and always leaving `MIN_FREE` nodes for others (constant at the top).
+63) and always leaving `--min-free` nodes for others (default 50).
 Everything it moves must be able to finish within `--hours` (integer, default
 12) of the start: a job whose walltime no longer fits in the time left stays
 on `normal`, and the loop exits when the window is over. Jobs go in
@@ -238,8 +238,9 @@ scoring (at the wall Slurm kills the batch script, so anything submitted
 afterwards would never run), and refuses to start a checkpoint it cannot
 finish in the time left, using the previous checkpoint's measured cost. The
 successor re-derives what is still due and exits without chaining when
-nothing is, so the chain ends itself; `MAX_CHAIN` (default 16 — a 60-save
-1.7B cell needs ~15 three-hour links) bounds it against a failure loop.
+nothing is, so the chain ends itself; `MAX_CHAIN` (default 32 — a 60-save
+1.7B cell drained to 1:30 debug slots needs ~30 links) bounds it against a
+failure loop.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses
@@ -287,7 +288,8 @@ beside them:
   `status: started` is how a reader tells a kill from a clean failure).
 - `worker_<i>.log` per worker, `failed_tasks.log` (`<task>\t<reason>`),
   `skipped_tasks.log` (already evaluated elsewhere), and `inflight/<task>/`
-  only if the job died with that task running.
+  only for a task that never published (its worker died, or it raised after
+  writing partial output).
 
 ### W&B per-model curves
 

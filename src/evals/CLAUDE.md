@@ -420,8 +420,8 @@ by the `wandb-workspaces` script forces `LinePlot` with `range_y=(0,1)`
 regardless of point count, side-stepping the auto-pick.
 
 ### 11. vLLM rejects offline `data_parallel_size > 1` for dense models
-Setting `TP=1` so `DP=GPUS_PER_NODE/TP=4` (the comment in `evaluate.sbatch:177`
-recommends this for small models) fails on every dense Apertus model with:
+Setting `TP=1` so `DP=GPUS_PER_NODE/TP=4` (the comment above
+`MP=${TP:-$GPUS_PER_NODE}` in `evaluate.sbatch` recommends this for small models) fails on every dense Apertus model with:
 
 ```
 RuntimeError: Worker 0 failed during generation:
@@ -571,7 +571,7 @@ counts are:
 | 600M | 24 | 6 | 1, 2 |
 | 1B   | 28 | 7 | **1 only** |
 
-`evaluate.sbatch:177` defaults `MP=$GPUS_PER_NODE=4`, which **only works
+`evaluate.sbatch` defaults `MP=${TP:-$GPUS_PER_NODE}`, i.e. 4, which **only works
 for 175M**. We hit this on 2026-05-04 — 31 of 36 eval jobs (the 350M /
 600M-with-TP=4 / 1B cases) all failed at vLLM `WorkerProc` init.
 

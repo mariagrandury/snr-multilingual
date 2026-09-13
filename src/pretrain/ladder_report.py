@@ -1198,10 +1198,16 @@ def _git_publish(files: list[Path], repo_root: Path) -> None:
         parent = ["-p", git("rev-parse", "--verify", "--quiet", ref)]
     except subprocess.CalledProcessError:
         parent = []                # orphan root commit
+    if parent and git("rev-parse", f"{ref}^{{tree}}") == tree:
+        print(f"[publish] {GIT_DATA_BRANCH} already holds this report", file=sys.stderr)
+        return
 
     commit = git("commit-tree", tree, *parent, "-m",
                  f"ladder report snapshot ({git('rev-parse', '--short', 'HEAD')})")
     git("update-ref", ref, commit)
+    # Pack what hash-object wrote: the iopsstor sweeper deletes loose objects,
+    # and a swept blob would leave the local branch ref dangling.
+    git("repack", "-d", "-q")
     git("push", "--quiet", "origin", f"{ref}:{ref}")
     print(f"[publish] pushed {GIT_DATA_BRANCH} ({commit[:8]})", file=sys.stderr)
 
