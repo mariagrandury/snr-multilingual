@@ -5,6 +5,28 @@
 > [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
 > with W&B integration; runs on the CSCS Alps SLURM cluster.
 
+Jobs install the harness from a **pinned shared checkout**, not from GitHub —
+one clone per job broke at fleet scale (HTTP 401 at ~120 queued evals; a pass
+now submits ~700) and silently tracked whatever HEAD was current, which makes
+harness drift indistinguishable from checkpoint noise. Order of preference:
+prebuilt wheel → in-tree build from the checkout → GitHub (only with an
+explicit `LM_EVAL_HARNESS_BRANCH`, or if the shared tree is missing). Each
+job logs and records in `job.json` which one it used.
+
+```bash
+HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+git -C $HARNESS_SRC pull                       # refresh deliberately, then rebuild:
+rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
+      $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
+pip wheel --no-deps --no-build-isolation \
+      -w $(dirname $HARNESS_SRC)/wheels /iopsstor/scratch/cscs/$USER/tmp-harness-build/src
+```
+
+Build out-of-tree: `pip install <dir>` writes `build/` **inside** the source,
+so concurrent jobs delete each other's files mid-copy. Nothing checks that the
+newest wheel matches the checkout — skip the rebuild and jobs keep installing
+the old code, which is what `harness_src_commit` in `job.json` is for.
+
 ## What this produces
 
 A single source of truth for every (model, checkpoint, task, metric)
@@ -76,7 +98,7 @@ Re-running is safe at two layers:
 | Layer | Where | When |
 |---|---|---|
 | Per-checkpoint | [`runners/hf_base_runner.sh`](runners/hf_base_runner.sh) (calls `scripts/_eval_status.py`) | Before each `sbatch` — skips submission entirely if every task already has results for that ckpt |
-| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `scripts/_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits cleanly with no work |
+| Per-task | [`scripts/_run_per_task.sh`](scripts/_run_per_task.sh) (calls `scripts/_eval_status.py`) | Inside a running job — filters `$TASKS` down to remaining; logs skipped to `skipped_tasks.log`; exits cleanly with no work. One [`scripts/eval_worker.py`](scripts/eval_worker.py) per GPU then runs the rest, each task's results landing in `per_task/<task>/` as it finishes |
 
 Both use the same disk-scan in
 [`scripts/_eval_status.py`](scripts/_eval_status.py): a task is "done" iff
@@ -91,6 +113,24 @@ python3.11 scripts/snr_progress.py --status not_submitted             # gaps
 python3.11 scripts/snr_progress.py --details --filter <NAME-substr>   # per-task
 ```
 
+What the jobs cost, and how much a killed one kept — the numbers behind
+`auto_evals_cscs.MIN_PER_TASK`, split by pipeline generation (a run is
+`worker` if its eval dir has a `job.json`, `batched` otherwise):
+
+```bash
+python3.11 scripts/eval_timing.py             # median min/task + kill survival
+python3.11 scripts/eval_timing.py --detail    # one row per job
+```
+
+To prove a pipeline change did not move any score, re-evaluate one checkpoint
+into a throwaway `WANDB_PROJECT` (a different project is a different
+`eval_logs` subtree, so the per-task gate sees no prior results and runs
+everything) and diff the two:
+
+```bash
+python3.11 scripts/diff_scores.py <NAME> msnr <the throwaway project>
+```
+
 System Python on login nodes is 3.6; use `python3.11` for the dashboard.
 
 When `normal` is backed up, [`scripts/debug_drain.sh`](scripts/debug_drain.sh)
@@ -99,15 +139,16 @@ feeds already-pending convert/eval/bpb jobs through the idle `debug` partition
 It never submits anything new, so it cannot duplicate work; conversions go
 first, since a cell cannot be evaluated before its HF snapshot exists.
 
-Whether a job may be truncated to 1:30 depends on whether that loses work.
-Conversions and BPB are **resumable** — both write a per-checkpoint marker and
-skip what already carries it — so they are moved regardless of the walltime
-they asked for. Evals are not (`BATCH_TASKS=1` writes nothing until the end,
-CLAUDE.md bug 13), so an eval is moved only if its own walltime already fits.
+Truncating a job to 1:30 is safe because all three kinds **resume**:
+conversions and BPB write a per-checkpoint marker and skip what already
+carries it, and evals write every task's results as it finishes (CLAUDE.md
+bug 13) — the auto-eval watcher then resubmits a killed eval with only the
+tasks still missing. So every pending job is moved regardless of the walltime
+it asked for, conversions first, evals next, BPB last.
 
 ```bash
 bash scripts/debug_drain.sh --dry-run   # what it would move
-bash scripts/debug_drain.sh             # loop until nothing is movable
+bash scripts/debug_drain.sh             # loop until nothing is pending
 bash scripts/debug_drain.sh --ensure    # start one in the background if none runs
 ```
 
@@ -117,6 +158,26 @@ stand guard. That is why the submitters call `--ensure`:
 `auto_evals_cscs.py` at the end of every watch pass. `--ensure` starts a
 detached drainer only when none is running (log in `logs/`), so calling it on
 every submission cannot stack up drainers racing for the same two debug slots.
+
+The same idea for a reservation:
+`/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh`
+moves any of my pending `normal` jobs (pretrain, eval, convert, BPB) into the
+reservation named at its top, holding at most `--max-nodes` of it (default
+63) and always leaving `--min-free` nodes for others (default 50).
+Everything it moves must be able to finish within `--hours` (integer, default
+12) of the start: a job whose walltime no longer fits in the time left stays
+on `normal`, and the loop exits when the window is over. Jobs go in
+by most node-hours first, then job name; `--priority eval` (or `shallow`,
+`L30`, any substring) puts the matching jobs ahead of that order. A job that
+does not fit the remaining room is passed over and smaller jobs behind it
+backfill; when a big job finishes, the freed room goes to the next big job
+first, since it is earlier in the order. Jobs it has placed in the
+reservation are left alone by the debug drainer.
+
+```bash
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh --dry-run
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh --priority eval
+```
 
 ## Bits-per-byte: the second way to evaluate a model
 
@@ -139,14 +200,19 @@ that a naive loop would duplicate.
 
 One job per cell scores every converted checkpoint it finds and writes
 `<LOGS_ROOT>/<entity>/msnr/<cell>-iter<N>/bpb/bpb.json` — per language, the
-NLL, the byte count, `bpb` and `ppl`.
+NLL, the byte count, `bpb` and `ppl`. `ppl` is `Infinity` when a diverged
+checkpoint averages more than ~709.8 nats/token, past what a double can
+exponentiate; its `bpb` stays finite.
 
 How it differs from the harness path, and why:
 
-* **The data is the validation build, not a benchmark.** `build_data_mixtures.py
-  --stage validation` wrote one `.bin` per language plus
-  `validation.manifest.json`, and every training build skipped exactly those
-  rows, so train and validation are disjoint by construction.
+* **The data is the validation build, not a benchmark.**
+  `build_data_mixtures.py --scheme A --stage validation` wrote one `.bin` per
+  language plus `validation.manifest.json`, and every training build skipped
+  exactly those rows, so train and validation are disjoint by construction.
+  There is one validation build for the whole sweep — the other data schemes
+  symlink this manifest into their own data dirs — so BPB is comparable
+  across schemes, not just across sizes.
 * **Nothing is generated.** It is a single teacher-forced forward pass per
   block, summing `-log p` over targets. Blocks overlap by one token so every
   token except the corpus's first is scored with a predecessor.
@@ -163,15 +229,18 @@ How it differs from the harness path, and why:
   intervention.
 
 **A cell does not fit one debug slot**, so the job carries itself across
-several. Scoring costs a flat ~448 s/checkpoint at 90M and ~816 s at 350M
-(<2% spread), against 20 checkpoints per cell — so a 1:30 debug slot gets
-through 11 or 6 of them. `score_bpb.sbatch` therefore queues a
-`--dependency=singleton` successor **before** it starts scoring (at the wall
-Slurm kills the batch script, so anything submitted afterwards would never
-run), and refuses to start a checkpoint it cannot finish in the time left,
-using the previous checkpoint's measured cost. The successor re-derives what
-is still due and exits without chaining when nothing is, so the chain ends
-itself; `MAX_CHAIN` (default 12) bounds it against a failure loop.
+several. Scoring costs a flat amount per checkpoint — ~444 s at 90M, 826 s at
+350M, 1,506 s at 1B, 2,141 s at 1.7B (medians over 1,023 jobs, <6% spread on
+debug) — against 20 checkpoints per cell (40 at 1B, 60 at 1.7B), so a 1:30
+debug slot gets through 11 of them at 90M and 2 at 1.7B. `score_bpb.sbatch`
+therefore queues a `--dependency=singleton` successor **before** it starts
+scoring (at the wall Slurm kills the batch script, so anything submitted
+afterwards would never run), and refuses to start a checkpoint it cannot
+finish in the time left, using the previous checkpoint's measured cost. The
+successor re-derives what is still due and exits without chaining when
+nothing is, so the chain ends itself; `MAX_CHAIN` (default 32 — a 60-save
+1.7B cell drained to 1:30 debug slots needs ~30 links) bounds it against a
+failure loop.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses
@@ -204,10 +273,23 @@ with SNR defaults:
 - `WANDB_ENTITY=mariagrandury-epflnlp`
 - `WANDB_PROJECT=snr-experiments`
 
-Each `eval_*/` contains one `results_<timestamp>.json` per task plus
-per-task `samples_<task>_<timestamp>.jsonl` files. The per-task
-sub-dirs `eval_*/per_task/<task>/` are written *as each task completes*,
-so walltime kills lose only the in-progress task.
+Each `eval_*/` holds the merged `results_<timestamp>.json` (every task the
+job finished) plus one `samples_<task>_<timestamp>.jsonl` per task, and
+beside them:
+
+- `per_task/<task>/<model>/results_*.json` — each task's own results file,
+  written *the moment the task completes* (`scripts/eval_worker.py`), so a
+  walltime kill loses only the tasks in flight; kept after the merge for its
+  per-task timing and config.
+- `job.json` — Slurm ids, node, walltime, backend, TP/PP/workers, repo
+  commit, container, the harness spec it installed (`harness` +
+  `harness_src_commit`), start/end and the done/failed/skipped counts. Written
+  before the eval too, so a killed job still leaves the header (and
+  `status: started` is how a reader tells a kill from a clean failure).
+- `worker_<i>.log` per worker, `failed_tasks.log` (`<task>\t<reason>`),
+  `skipped_tasks.log` (already evaluated elsewhere), and `inflight/<task>/`
+  only for a task that never published (its worker died, or it raised after
+  writing partial output).
 
 ### W&B per-model curves
 
@@ -256,7 +338,10 @@ evals/
 │   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor; touch ckpts vs purge
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan
-│   ├── _run_per_task.sh                 # inner per-task loop
+│   ├── _run_per_task.sh                 # inner runner: one eval_worker.py per GPU, merge at the end
+│   ├── eval_worker.py                   # model loaded once, tasks one at a time, results per task
+│   ├── eval_timing.py                   # min/task and kill-survival, batched vs worker pipeline
+│   ├── diff_scores.py                   # same ckpt, two projects: did a change move any score?
 │   ├── push_all_results.py              # W&B per-model push
 │   ├── build_hf_dataset.py              # HF dataset builder
 │   └── utils/configs.py                 # shared config loader
@@ -276,7 +361,7 @@ evals/
 
 | Backend | When | Notes |
 |---|---|---|
-| `vllm` | **Recommended.** Faster + dramatically more memory-efficient than the Megatron eval path. Used by `runners/snr_pretraining_local_hf.sh` (vLLM on converted Megatron ckpts) and the HF runners. | Generation tasks (gsm8k, squadv2) may differ slightly between backends — only compare results across models using the same backend. |
+| `vllm` | **Recommended.** Faster + dramatically more memory-efficient than the Megatron eval path. Used by `runners/snr_pretraining_local_hf.sh` (vLLM on converted Megatron ckpts) and the HF runners. Runs `EVAL_WORKERS` workers per job (default: one per GPU the TP × PP layout leaves free), each with its own model copy. | Generation tasks (gsm8k, squadv2) may differ slightly between backends — only compare results across models using the same backend. |
 | `hf` (accelerate) | Default in `evaluate.sbatch`. | Slower; used when vLLM doesn't fit a particular task. |
 | `megatron_lm` | Direct evaluation of Megatron ckpts (no HF conversion). | Has known memory pressure issues; prefer the local-HF (vLLM) runner instead. |
 

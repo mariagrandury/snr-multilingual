@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Per-language token coverage of every data mixture, as a heatmap.
 
-Columns are the language settings (scheme B only where it differs from A:
-L8, L15, L30); rows are the FineWeb-2 languages in corpus-size order, which is
-the order the sets are built from, so the nested structure (L2 subset of L8
-subset of L15 ...) reads down the diagonal. A cell is the number of tokens that
-language contributes to that mixture.
+Columns are (data scheme, language setting) pairs — every build the registry
+in ../launch_trainings.py defines, so scheme A's L8 is `L8` and the other
+schemes carry their name (`L8B`, `L50AT3`, `L2ZH`); rows are the FineWeb-2
+languages in corpus-size order, which is the order the sets are built from, so
+the nested structure (L2 subset of L8 subset of L15 ...) reads down the
+diagonal. A cell is the number of tokens that language contributes to that
+mixture.
 
 A column is left UNCOLOURED when its .bin does not exist yet — "not built"
 is visually distinct from "built but this language contributes nothing".
@@ -40,6 +42,12 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from build_data_mixtures import fineweb_target_tokens  # noqa: E402
+# Same registry the builds themselves are driven from (build_data_mixtures.py):
+# which schemes exist, where each one writes, which settings it defines and
+# from which language lists. Reporting coverage off anything else would drift
+# from what launch_builds.sh actually submits.
+sys.path.insert(0, str(SCRIPT_DIR.parent))
+from launch_trainings import DATA_SCHEMES  # noqa: E402
 
 DEFAULT_DATA_DIR = Path(
     "/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data")
@@ -48,14 +56,28 @@ BYTES_PER_TOKEN = 4          # Megatron .bin element size for a 131k vocab
 # the title below filters on it, and a typo there silently stops the plot from
 # marking estimated columns at all.
 ESTIMATED = "ESTIMATED (rough)"
-SETTINGS = [1, 2, 8, 15, 30, 50, 100]
-SCHEME_B_SETTINGS = {8, 15, 30}   # the only settings where B differs from A
+SETTINGS = sorted({L for v in DATA_SCHEMES.values() for L in v["langs"]})
+# Every build there is: one column per (setting, scheme that defines it),
+# grouped by setting so a setting's schemes sit side by side.
+MIXTURES = [(L, v) for L in SETTINGS
+            for v in DATA_SCHEMES if L in DATA_SCHEMES[v]["langs"]]
+
+
+def label(L: int, scheme: str) -> str:
+    """Column name: the setting, plus the scheme for everything but the
+    baseline — L8, L8B, L50AT3, L2ZH. Same convention as the cell names, whose
+    baseline label is likewise empty (launch_trainings.DATA_SCHEMES)."""
+    return f"L{L}" + ("" if scheme == "A" else scheme)
 
 
 def language_sets(scheme: str) -> dict[int, list[str]]:
-    sets = json.loads(
-        (SCRIPT_DIR / f"language_sets_scheme{scheme}.json").read_text())["sets"]
-    return {L: sets[f"FW_L{L}"] for L in SETTINGS if f"FW_L{L}" in sets}
+    """The FW_Lx lists a scheme builds from — its own language-set file (AT3
+    shares scheme A's lists and differs only in temperature), restricted to the
+    settings it defines."""
+    sets = json.loads((SCRIPT_DIR / f"language_sets_scheme"
+                       f"{DATA_SCHEMES[scheme]['sets']}.json").read_text())["sets"]
+    return {L: sets[f"FW_L{L}"] for L in sorted(DATA_SCHEMES[scheme]["langs"])
+            if f"FW_L{L}" in sets}
 
 
 def corpus_bytes() -> dict[str, int]:
@@ -73,7 +95,9 @@ def corpus_bytes() -> dict[str, int]:
 
 
 def mixture_paths(data_dir: Path, L: int, scheme: str) -> dict[str, Path]:
-    base = (data_dir if scheme == "A" else data_dir / "schemeB") / f"fineweb_L{L}"
+    # Each scheme owns a subdir of the data root (scheme A's is "", i.e. the
+    # root itself) — the same layout launch_builds.sh creates.
+    base = data_dir / DATA_SCHEMES[scheme]["subdir"] / f"fineweb_L{L}"
     return {"bin": base.with_suffix(".bin"),
             "ckpt": Path(f"{base}.checkpoint.json"),
             "plan": Path(f"{base}.plan.json"),
@@ -93,10 +117,11 @@ TOTAL_RE = re.compile(r"^Total target: ([0-9.]+)B tokens", re.M)
 
 
 def build_logs(L: int, scheme: str) -> list[Path]:
-    """This mixture's build logs, newest first."""
+    """This mixture's build logs, newest first — launch_builds.sh names every
+    job build-<scheme>-L<setting>."""
     try:
         return sorted((f for d in BUILD_LOG_DIRS if d.is_dir()
-                       for f in d.glob(f"build-{scheme.lower()}-L{L}-*.out")),
+                       for f in d.glob(f"build-{scheme.lower()}-L{L}-[0-9]*.out")),
                       key=lambda p: p.stat().st_mtime, reverse=True)
     except OSError:
         return []
@@ -127,39 +152,36 @@ def backfill_plans(data_dir: Path, force: bool = False) -> None:
     the capstor logs again (they are slow and fault intermittently), and the
     numbers outlive a log sweep.
     """
-    for scheme in ("A", "B"):
-        for L in SETTINGS:
-            if scheme == "B" and L not in SCHEME_B_SETTINGS:
+    for L, scheme in MIXTURES:
+        dest = mixture_paths(data_dir, L, scheme)["plan"]
+        tag = label(L, scheme)
+        if dest.is_file() and not force:
+            print(f"  {tag}: plan.json already there")
+            continue
+        for log in build_logs(L, scheme):
+            text = read_log(log)
+            if text is None:
                 continue
-            dest = mixture_paths(data_dir, L, scheme)["plan"]
-            tag = f"L{L}{' scheme B' if scheme == 'B' else ''}"
-            if dest.is_file() and not force:
-                print(f"  {tag}: plan.json already there")
-                continue
-            for log in build_logs(L, scheme):
-                text = read_log(log)
-                if text is None:
-                    continue
-                sources, totals = PLAN_FULL_RE.findall(text), TOTAL_RE.findall(text)
-                if not (sources and totals):
-                    continue        # e.g. an "already built — nothing to do" log
-                # A log may hold several attempts; the later plan supersedes —
-                # the dict comprehension keeps the last per-source rows, and
-                # the total must come from that same last attempt, not the
-                # first (re.search would pair attempt 1's total with them).
-                dest.write_text(json.dumps({
-                    "target_tokens": int(float(totals[-1]) * 1e9),
-                    "sources": {n: {"target_tokens": int(float(t) * 1e9),
-                                    "estimated_tokens": int(float(e) * 1e9),
-                                    "n_files": int(f)}
-                                for n, t, e, f in sources},
-                    "reconstructed_from": log.name,
-                }, indent=2) + "\n")
-                print(f"  {tag}: wrote {dest.name} — {len(sources)} sources "
-                      f"from {log.name}")
-                break
-            else:
-                print(f"  {tag}: no build log carries a plan — leaving alone")
+            sources, totals = PLAN_FULL_RE.findall(text), TOTAL_RE.findall(text)
+            if not (sources and totals):
+                continue        # e.g. an "already built — nothing to do" log
+            # A log may hold several attempts; the later plan supersedes —
+            # the dict comprehension keeps the last per-source rows, and
+            # the total must come from that same last attempt, not the
+            # first (re.search would pair attempt 1's total with them).
+            dest.write_text(json.dumps({
+                "target_tokens": int(float(totals[-1]) * 1e9),
+                "sources": {n: {"target_tokens": int(float(t) * 1e9),
+                                "estimated_tokens": int(float(e) * 1e9),
+                                "n_files": int(f)}
+                            for n, t, e, f in sources},
+                "reconstructed_from": log.name,
+            }, indent=2) + "\n")
+            print(f"  {tag}: wrote {dest.name} — {len(sources)} sources "
+                  f"from {log.name}")
+            break
+        else:
+            print(f"  {tag}: no build log carries a plan — leaving alone")
 
 
 def plan_from_build_log(L: int, scheme: str) -> dict[str, int] | None:
@@ -223,8 +245,10 @@ def column(data_dir: Path, L: int, scheme: str, langs: list[str],
     built = paths["bin"].is_file()
     size_b = paths["bin"].stat().st_size if built else 0
     # L1 is 100% English: no FineWeb mixture, hence no target — reporting one
-    # would read as "0% built" for a setting that has nothing to build.
-    target = fineweb_target_tokens(L) if langs else 0
+    # would read as "0% built" for a setting that has nothing to build. The
+    # target is per SCHEME, not per setting: ZH/ES stop at the 1B rung and
+    # need 52B at L2 where scheme A's L2 (up to 1.7B) needs 92B.
+    target = fineweb_target_tokens(L, scheme) if langs else 0
     have = size_b // BYTES_PER_TOKEN
 
     # Only fall back to the logs when the builder's own records are missing:
@@ -278,21 +302,14 @@ def column(data_dir: Path, L: int, scheme: str, langs: list[str],
 def collect(data_dir: Path) -> tuple[list[dict], list[str]]:
     shares = corpus_bytes()
     cols, seen = [], []
-    for L in SETTINGS:
-        for scheme in ("A", "B"):
-            if scheme == "B" and L not in SCHEME_B_SETTINGS:
-                continue
-            langs = language_sets(scheme).get(L, [])
-            cols.append(column(data_dir, L, scheme, langs, shares))
-            seen += langs
+    for L, scheme in MIXTURES:
+        langs = language_sets(scheme).get(L, [])
+        cols.append(column(data_dir, L, scheme, langs, shares))
+        seen += langs
     # rows: every language any mixture uses, biggest corpus first — the order
     # the sets themselves are built from, so the nesting reads as a staircase.
     rows = sorted(set(seen), key=lambda l: -shares.get(l, 0))
     return cols, rows
-
-
-def label(c: dict) -> str:
-    return f"L{c['L']}" + ("B" if c["scheme"] == "B" else "")
 
 
 def render(cols: list[dict], rows: list[str], out: Path) -> None:
@@ -320,7 +337,7 @@ def render(cols: list[dict], rows: list[str], out: Path) -> None:
     xlabels = []
     for c in cols:
         pct = "—" if not c["built"] else "{:.0f}%".format(c["frac"] * 100)
-        xlabels.append("{}\n{}".format(label(c), pct))
+        xlabels.append("{}\n{}".format(label(c["L"], c["scheme"]), pct))
     ax.set_xticklabels(xlabels, fontsize=9)
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels(rows, fontsize=6)
@@ -340,7 +357,8 @@ def render(cols: list[dict], rows: list[str], out: Path) -> None:
                         color="white" if t < finite.max() / 8 else "black")
 
     fig.colorbar(im, ax=ax, label="tokens in mixture (log scale)", fraction=0.02)
-    est = ", ".join(label(c) for c in cols if c["built"] and c["source"] == ESTIMATED)
+    est = ", ".join(label(c["L"], c["scheme"]) for c in cols
+                    if c["built"] and c["source"] == ESTIMATED)
     ax.set_title("Data-mixture coverage — tokens per language per setting\n"
                  "exact from the builder's own plan/manifest/checkpoint or build log; "
                  f"byte-share ESTIMATE (-50%..+45%) for: {est or 'none'}",
@@ -371,14 +389,14 @@ def main() -> None:
     cols, rows = collect(args.data_dir)
     print(f"{'mixture':8} {'state':>14} {'tokens':>10} {'target':>8} {'done':>6}  source")
     for c in cols:
-        print(f"{label(c):8} {c['state']:>14} {c['have']/1e9:>9.1f}B "
+        print(f"{label(c['L'], c['scheme']):8} {c['state']:>14} {c['have']/1e9:>9.1f}B "
               f"{c['target']/1e9:>7.0f}B {c['frac']*100:>5.1f}%  {c['source']}")
     if args.show:
         for c in cols:
             if not c["built"]:
                 continue
             top = sorted(c["tokens"].items(), key=lambda kv: -kv[1])[:5]
-            print(f"\n{label(c)} top languages: " +
+            print(f"\n{label(c['L'], c['scheme'])} top languages: " +
                   ", ".join(f"{k} {v/1e9:.1f}B" for k, v in top))
     render(cols, rows, args.out)
 

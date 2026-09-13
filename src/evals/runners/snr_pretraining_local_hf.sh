@@ -33,11 +33,11 @@ export LM_EVAL_BACKEND=${LM_EVAL_BACKEND:-vllm}
 # models." (caused 599/810 splits to fail in the first sweep). Let evaluate.sbatch
 # default to TP=GPUS_PER_NODE=4 (DP=1). Per-node throughput is comparable —
 # 4 GPUs do tensor-parallel inference instead of 4 data-parallel replicas.
-# Run all remaining tasks in ONE lm_eval call per split (rather than one
-# call per task). vLLM model load is the dominant per-task cost on small
-# models, so this ~10x's per-ckpt throughput. _run_per_task.sh implements
-# the toggle; per-task idempotency on re-runs still works because the single
-# results_*.json lists all tasks under .results.
+# Inert since 2026-09-04 (CLAUDE.md bug 13): _run_per_task.sh no longer reads
+# BATCH_TASKS. It now always starts one eval_worker.py per GPU, each loading
+# the model once and writing every task's results as it finishes — which is
+# what this export used to ask for, minus the all-or-nothing failure mode.
+# Kept only because this runner is a frozen reference (see the header).
 export BATCH_TASKS=${BATCH_TASKS:-1}
 
 STAGING_BASE=${STAGING_BASE:-/iopsstor/scratch/cscs/mariagrandury/snr-hf-checkpoints}

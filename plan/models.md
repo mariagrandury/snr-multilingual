@@ -1,5 +1,11 @@
 # Predictivity sweep — model card sheet
 
+> **Stale since 2026-09-10.** The grid now has 1.7B at every L, the AT3/ZH/ES
+> data schemes, per-size seed triples and 92B builds at L15/L50 — see
+> [the training plan](small-to-large-predictivity-training-plan.md) and
+> `src/pretrain/launch_trainings.py`. The counts, cells and data sizes below
+> predate it.
+
 All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
 [compute budget](compute-budget.md)). Source of truth: the two **reviewed**
@@ -130,7 +136,7 @@ column in its file — the deep ladder's per-size node counts apply):
 | Framework | swiss-ai/Megatron-LM fork (`pretrain_gpt.py`, commit `c92402e` + `src/pretrain/patches/`), bf16 + fp32 main grads, flash attention |
 | Global batch · sequence | 504 × 4096 tokens (2,064,384 tokens/iter) |
 | Tokenizer · vocab | swiss-ai/Apertus-70B-2509 (V1) · 131,072 (divisible-by-128 padding) |
-| Positional | RoPE, base 500,000, rope-scaling factor 32 |
+| Positional | RoPE, base 500,000, llama3 scaling with factor 8 (original context 8,192). `--rope-scaling-factor` read 32 until 2026-09-13, but Megatron `c92402e` never forwards it, so every cell trained — and is evaluated — at the default 8 |
 | Norm / activation | RMSNorm · xIELU · QK-layernorm (apex impl) · no biases |
 | Dropout | 0.0 (attention and hidden) |
 | Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume). β3's **endpoint** is 0.9999 for every grid cell — only the warmup scales with run length, which is the subject of [`90M-rung-anomaly.md`](90M-rung-anomaly.md); overriding it is diagnostic-only and forces a `diag-` run name |

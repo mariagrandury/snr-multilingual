@@ -12,19 +12,20 @@ never disagree.
 Normally you never run this by hand: **both auto-eval watchers call sync()
 at the start of every pass**, so the registry follows the grid
 automatically. The CLI exists for explicit use after editing the grid
-(commit the resulting models.json diff). Idempotent; entries of other
-variants (e.g. an earlier --arch shallow run) are left untouched.
+(commit the resulting models.json diff). Idempotent; entries outside the
+--arch/--scheme filter (e.g. the shallow cells under --arch deep) are left
+untouched.
 
 Usage:
-    python sync_models_json.py                 # the 56 baseline cells
-    python sync_models_json.py --arch shallow  # + the shallow variant's cells
+    python sync_models_json.py                 # every deep cell, all schemes
+    python sync_models_json.py --arch shallow  # + the shallow ladder's cells
     python sync_models_json.py --dry-run       # show what would change
     python sync_models_json.py --prune         # drop entries the grid lost
 
 sync() only upserts, so a grid edit (seeds, x3 placement) leaves the old
 cells' entries behind — and the Azure watcher enumerates cells FROM
 models.json (filter_models), so stale entries are scanned and reported as
-real cells every pass. --prune removes predictivity entries no variant of
+real cells every pass. --prune removes predictivity entries no scheme of
 the current grid defines; it is a manual step because an entry may belong
 to a run that already produced checkpoints or eval results under the old
 grid — check before pruning, and keep such entries by reverting the diff.
@@ -40,7 +41,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, SCHEME_B_LANGS, exp_name, mix_label, predictivity_cells,
+    DATA_SCHEMES, HYPERPARAMS, exp_name, mix_label, predictivity_cells,
     save_interval, schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
@@ -82,7 +83,13 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         "hyperparams_key": c["size"],
         "L": c["L"],
         "arch": arch,
+        # Kept under the historical key `scheme`, which now holds the data
+        # SCHEME (A / AT3 / B / ZH / ES). `temperature` is broken out beside
+        # it because AT3 differs from A by allocation alone — its language list
+        # is byte-identical, so nothing else in the entry would reveal that two
+        # cells were trained on different distributions.
         "scheme": scheme,
+        "temperature": DATA_SCHEMES[scheme]["temp"],
         "seed": c["seed"],
         "checkpoint_kind": "megatron_iter",
         "backends": {
@@ -101,19 +108,17 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
 
 
 def grid_names() -> set[str]:
-    """Every cell name any variant of the current grid can produce (both
-    archs, both schemes) — the keep-set for --prune."""
-    names = set()
-    for arch in HYPERPARAMS:
-        for scheme in ("A", "B"):
-            for c in predictivity_cells():
-                s = scheme if c["L"] in SCHEME_B_LANGS else "A"
-                names.add(exp_name(c["size"], c["L"], arch, c["seed"], s))
-    return names
+    """Every cell name the current grid can produce, over every data scheme
+    and the architectures each is trained in — the keep-set for --prune. A
+    scheme absent from this set gets its models.json entries deleted, so it
+    must enumerate the whole grid, not one slice of it."""
+    return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
+            for c in predictivity_cells()
+            for arch in DATA_SCHEMES[c["scheme"]]["arches"]}
 
 
 def prune(write: bool = True) -> list[str]:
-    """Remove predictivity entries no variant of the grid defines; returns
+    """Remove predictivity entries no scheme of the grid defines; returns
     the removed names. Manual (CLI --prune), not part of sync() — see the
     module docstring."""
     data = json.loads(MODELS_JSON.read_text())
@@ -127,20 +132,21 @@ def prune(write: bool = True) -> list[str]:
     return stale
 
 
-def sync(arch: str = "deep", scheme: str = "A",
+def sync(arch: str = "deep", scheme: str | None = None,
          write: bool = True) -> tuple[list[str], list[str]]:
-    """Upsert the variant's cell entries; returns (added, updated) names.
-    A no-op (and no write) when models.json already matches the grid — the
-    watchers call this at the start of every pass."""
+    """Upsert cell entries for one architecture; returns (added, updated)
+    names. `scheme` narrows to a single data scheme, otherwise every scheme
+    trained in this arch is upserted — the watchers want all of them, and
+    entries that do not exist are cells the conversion and W&B push cannot
+    resolve. A no-op (and no write) when models.json already matches."""
     data = json.loads(MODELS_JSON.read_text())
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
 
     added, updated = [], []
-    for c in predictivity_cells():
-        # Scheme normalization mirrors the launcher: scheme B cells only exist
-        # where B differs from A.
-        cell_scheme = scheme if c["L"] in SCHEME_B_LANGS else "A"
-        name, entry = cell_entry(configs[c["size"]], c, arch, cell_scheme)
+    for c in predictivity_cells([scheme] if scheme else None):
+        if arch not in DATA_SCHEMES[c["scheme"]]["arches"]:
+            continue
+        name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
         old = data["models"].get(name)
         if old == entry:
             continue
@@ -160,7 +166,9 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     p.add_argument("--arch", choices=["deep", "shallow"], default="deep")
-    p.add_argument("--scheme", choices=["A", "B"], default="A")
+    p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
+                   help="Only this data scheme (default: every scheme "
+                        "trained in --arch)")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--prune", action="store_true",
                    help="also remove predictivity entries the grid no longer "

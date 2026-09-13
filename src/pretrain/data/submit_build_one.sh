@@ -13,13 +13,17 @@
 #SBATCH --error=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs/%x-%j.out
 #SBATCH --no-requeue
 
-# Build ONE data mixture (english, or one FineWeb-2 setting of one scheme), then
-# self-chain past the 12h wall. Driven by --export vars so a single script backs
-# every per-mix job launched by launch_builds.sh:
-#   BUILD_SCHEME  A|B
+# Build ONE data mixture (english, or one FineWeb-2 setting of one scheme),
+# then self-chain past the 12h wall. Driven by --export vars so a single script
+# backs every per-mix job launched by launch_builds.sh:
+#   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES (A|AT3|B|ZH|ES) —
+#                 it carries the language lists, the temperature and the subdir
 #   BUILD_STAGE   english|fineweb
 #   BUILD_SETTING L value (fineweb only)
-#   BUILD_OUT     output --data_dir
+#   BUILD_OUT     output --data_dir (the scheme's dir, i.e. <root>/<subdir>)
+#   BUILD_DST     optional iopsstor stage root; only the 92B rebuilds set it,
+#                 so a rebuilt mixture lands beside — never on top of — the
+#                 copy the running cells are memmapping
 set -euo pipefail
 source ~/.bashrc
 conda activate snr
@@ -56,12 +60,34 @@ else
   STAGE_ARGS=(--stage fineweb --settings "$BUILD_SETTING")
 fi
 
-# Scheme B builds into <root>/schemeB, so a prefix taken relative to BUILD_OUT
-# would lose the schemeB/ component and the stager would act on the scheme-A
-# mixture instead. Strip against the data ROOT, keeping schemeB/fineweb_LN —
-# and pass that root to the stager as SRC, so a build sent somewhere other
-# than the capstor master stages from where it actually wrote.
-DATA_ROOT=${BUILD_OUT%/schemeB}
+# Every scheme but A builds into <root>/<subdir>, so a prefix taken relative
+# to BUILD_OUT would lose the subdir component and the stager would act on the
+# scheme-A mixture instead. Strip the scheme's own subdir (empty for A, which
+# builds into the root), keeping e.g. schemeB/fineweb_LN — and pass that root
+# to the stager as SRC, so a build sent somewhere other than the capstor master
+# (a 92B rebuild root) stages from where it actually wrote.
+SUBDIR=$(python -c "import sys; sys.path.insert(0, '..'); from launch_trainings import DATA_SCHEMES; print(DATA_SCHEMES['$BUILD_SCHEME']['subdir'])")
+DATA_ROOT=${BUILD_OUT%${SUBDIR:+/$SUBDIR}}
+# That strip is a silent no-op when BUILD_OUT does not end in exactly /<subdir>
+# (a trailing slash, a typo): the stager would then run with SRC=<scheme dir>
+# and stage e.g. ZH/fineweb_L2 over the root's fineweb_L2. Refuse instead.
+if [ "$DATA_ROOT${SUBDIR:+/$SUBDIR}" != "$BUILD_OUT" ]; then
+  echo "BUILD_OUT=$BUILD_OUT does not end in /$SUBDIR (scheme $BUILD_SCHEME) — refusing" >&2
+  exit 1
+fi
+
+# Rebuilds stage into their own tree; everything else takes the stager's default.
+if [ -n "${BUILD_DST:-}" ]; then export DST="$BUILD_DST"; fi
+
+# What to stage: the mixture itself, plus — for a scheme subdir going to the
+# training stage — its english_dclm symlink. Training reads
+# <data_dir>/<subdir>/english_dclm, and the stager mirrors only the prefixes it
+# is given, so without this a new scheme's cells die on "... cannot be found
+# at .../ZH/english_dclm" (2026-09-11, all six ZH/ES trainings). Not for
+# rebuilds: their english link points outside SRC, where the stager would copy
+# the 736 GB target instead of linking it.
+TO_STAGE=("${PREFIX#$DATA_ROOT/}")
+if [ -n "$SUBDIR" ] && [ -z "${BUILD_DST:-}" ]; then TO_STAGE+=("$SUBDIR/english_dclm"); fi
 
 # Complete already? (.idx present, checkpoint gone.) Skip and DON'T requeue —
 # this ends the singleton chain and prevents rebuilding a finished dataset.
@@ -69,14 +95,14 @@ if [ -f "$PREFIX.idx" ] && [ ! -f "$PREFIX.checkpoint.json" ]; then
   echo "[$(date)] $PREFIX already built — nothing to do."
   # Still make sure it is staged: a mixture built before staging existed (or
   # staged onto a since-swept iopsstor) would otherwise never reach training.
-  SRC="$DATA_ROOT" bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$DATA_ROOT/}"
+  SRC="$DATA_ROOT" bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${TO_STAGE[@]}"
   exit $?   # FAILED if the staging did — --no-requeue, so this only sets the job state
 fi
 
 # Survive the 12h wall: queue a singleton successor UP FRONT (same job name, so
 # only one runs at a time). The idempotent build resumes from its checkpoint;
 # the guard above no-ops the successor once done. Capped against a failure loop.
-n_attempts=$(find "$LOGDIR" -name "${SLURM_JOB_NAME}-*.out" 2>/dev/null | wc -l)
+n_attempts=$(find "$LOGDIR" -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
 if [ "$n_attempts" -lt 25 ]; then
   echo "[$(date)] queuing singleton successor (attempt $n_attempts)"
   sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" --export=ALL "$SCRIPT"
@@ -91,4 +117,4 @@ echo "[$(date)] $PREFIX build complete"
 # exists but every cell at that setting dies on "One or both of the .idx and
 # .bin files cannot be found". Copy, never move: capstor is what survives the
 # scratch sweep. No-ops when the build did not finish, or is already staged.
-SRC="$DATA_ROOT" bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${PREFIX#$DATA_ROOT/}"
+SRC="$DATA_ROOT" bash "$(dirname "$SCRIPT")/stage_to_iopsstor.sh" "${TO_STAGE[@]}"

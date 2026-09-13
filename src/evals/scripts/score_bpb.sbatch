@@ -11,9 +11,9 @@
 #
 # With no iters it scores every checkpoint converted for the cell.
 #
-# A cell does not fit one debug slot. Scoring costs a flat ~448 s/ckpt at 90M
-# and ~816 s at 350M (measured off the bpb.json mtimes), so debug's 1:30 wall
-# gets through ~11 or ~6 of the 20 planned checkpoints. The first round of
+# A cell does not fit one debug slot. Scoring costs a flat ~444 s/ckpt at 90M
+# and ~2,141 s at 1.7B (medians over 1,023 jobs), so debug's 1:30 wall gets
+# through ~11 of a 90M cell's 20 checkpoints and 2 of a 1.7B cell's 60. The first round of
 # these therefore ended 8 TIMEOUTs with 81/780 scored and nothing left in the
 # queue: per-checkpoint idempotency kept the work, but nothing ever asked for
 # the rest. Two additions fix that, both borrowed from
@@ -50,7 +50,9 @@ ITERS=("$@")
 # successor cannot find this file by a path relative to it (../CLAUDE.md, the
 # SCRIPT_PATH gotcha). Absolute, like submit_build_one.sh.
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/scripts/score_bpb.sbatch
-MAX_CHAIN=${MAX_CHAIN:-12}
+# 32: debug_drain moves these jobs to 1:30 slots, where a 1.7B link scores
+# only 2 checkpoints (2,141 s each), so a 60-save cell needs ~30 links.
+MAX_CHAIN=${MAX_CHAIN:-32}
 
 REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
 STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
@@ -108,8 +110,10 @@ fi
 echo "deadline=$DEADLINE ($([ "$DEADLINE" -gt 0 ] && date -d "@$DEADLINE" || echo unknown))"
 
 # Same container as the harness: it already carries torch + transformers, and
-# reusing it keeps the numerics identical to what lm_eval sees.
-srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml \
+# reusing it keeps the numerics identical to what lm_eval sees. Absolute:
+# launch_bpb.sh submits from wherever it is run, so a relative toml path
+# failed in seconds whenever that was not src/evals (203 jobs).
+srun -n 1 --mpi=pmix -ul --environment="$REPO_DIR/containers/env_vllm.toml" \
      --export=ALL,HF_TOKEN,HF_HOME,HF_HUB_CACHE bash -lc "
     cd '$REPO_DIR'
     set -uo pipefail
@@ -134,8 +138,8 @@ srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml \
         if [ -s \"\$dest/bpb.json\" ]; then
             echo \"== \$padded already scored, skipping\"; continue
         fi
-        # Per-checkpoint cost is flat within a cell (448 s at 90M, 816 s at
-        # 350M, <2% spread), so the previous checkpoint is a good predictor.
+        # Per-checkpoint cost is flat within a cell (444 s at 90M to 2,141 s
+        # at 1.7B, <6% spread), so the previous checkpoint is a good predictor.
         # +20% margin. The first one always runs: no measurement yet, and even
         # the slowest size fits a fresh debug slot.
         left=\$(( $DEADLINE - \$(date +%s) ))
