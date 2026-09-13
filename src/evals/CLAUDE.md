@@ -24,10 +24,10 @@ Two parallel tracks at any given time:
 2. **Pretraining of half-finished custom models** (separate repo at
    `/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain`).
    The full sweep now spans **3 seeds** (28, 1797, 1904) — 36 models total.
-   Resume jobs are managed via
-   [`/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_resumes.sh`](/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_resumes.sh),
-   which is idempotent (skips cells that already have a queued/running job by
-   matching the canonical Slurm name). Live status comes from
+   (2026-08: pretraining moved on to the predictivity sweep — launches and
+   resumes now go through the idempotent
+   `/iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/pretrain/launch_trainings.py`;
+   the old `launch_resumes.sh` is retired.) Live status comes from
    [`scripts/pretrain_progress.py`](scripts/pretrain_progress.py) — see
    "Pretraining infrastructure" below.
 
@@ -208,24 +208,48 @@ mix shifts again.
 
 ## Collaborators with shared access
 
-Both `aromanou` and `cmeister747` have POSIX ACLs granting `rwx` on this repo
-and `eval_logs` (recursive + default), plus `r-x` traverse on the parent dirs.
-Their jobs write to the **same** `eval_logs` tree, so the idempotency check
-sees their results too. They share `--account=infra01`.
+Both `aromanou` and `cmeister747` have named-user POSIX ACLs: `rwx` on the
+shared output dirs (`eval_logs`, `Meg-Runs/msnr`, `auto_evals`,
+`conversion-plans`, `slurm/*`, `datasets/cache`, `hf_home/datasets`) with a
+matching default ACL so new content inherits, and `r-x` on `data/`. Their jobs
+write to the **same** `eval_logs` tree, so the idempotency check sees their
+results too. They share `--account=infra01`. They do NOT get write access to
+this repo — each clones their own (`evaluate.sbatch` writes `src/evals/logs/`
+relative to cwd).
 
-To grant more colleagues:
+To grant more colleagues, use
+[`scripts/grant_collaborator.sh`](../../scripts/grant_collaborator.sh):
 
 ```bash
-USER_TO_ADD=...
-setfacl -m u:$USER_TO_ADD:rx /iopsstor/scratch/cscs/mariagrandury \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM \
-    /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs
-setfacl -R -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals
-setfacl -R -d -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/snr-multilingual/src/evals
-setfacl -R -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
-setfacl -R -d -m u:$USER_TO_ADD:rwx /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs
+scripts/grant_collaborator.sh <user> plan     # then apply / verify / revoke
 ```
+
+Read it before hand-rolling `setfacl` — two things bite:
+
+- **Never `setfacl -R` on `eval_logs` (217k entries) or `Meg-Runs/msnr` (98k).**
+  It is slow on Lustre and hands out write access to already-trained
+  checkpoints. Grant `rwx` at the container dir plus a `-d` default so new
+  content inherits, and add `chmod +t` — POSIX has no "write but never delete"
+  bit, so the sticky bit is the only thing stopping a collaborator from
+  deleting your results.
+- **A directory ACL is not enough for files the pipeline rewrites in place.**
+  `auto_evals_cscs.py` does `write_text()` on `eval_logs/auto_eval_errors.json`,
+  which opens the existing inode `'w'` — without a file-level ACL the watcher
+  dies with `PermissionError` after submitting its jobs. Same for the
+  `.lock` files in `hf_home/datasets/`.
+
+- **The container must mount the shared tree, not just `${USER}`'s.** Both
+  eval tomls used to mount `/iopsstor/scratch/cscs/${USER}`, so for anyone but
+  mariagrandury `HF_HOME` and `LOGS_ROOT` simply did not exist inside the
+  container — datasets unreachable, results with nowhere to land. They now
+  mount `/iopsstor/` like the training container. Mounting is not granting:
+  POSIX and the ACLs still decide what is readable.
+
+Colleagues do **not** need their own Megatron checkout, HF cache or data copy —
+`launch_pretraining_cscs.sh`, `evaluate.sbatch` and `convert-snr.sh` all point
+at the shared `mariagrandury` paths (see bug 16). Note the HF cache vars are
+**hard-set, not defaulted**, precisely so a collaborator's `~/.bashrc` cannot
+win; don't "restore" them to `${VAR:-...}`.
 
 Each colleague needs their **own** `HF_TOKEN` and `WANDB_API_KEY` exported
 (`evaluate.sbatch` reads env first, files in `scripts/` as fallback). Their
@@ -460,12 +484,22 @@ For partial-result rescue:
 - per-task mode (`BATCH_TASKS=0`, default) — each completed task's
   `eval_*/per_task/<task>/results.json` survives walltime kills; only the
   in-flight task is lost. `push_all_results.py` aggregates these.
-- batched mode (`BATCH_TASKS=1`) — `samples_*.jsonl` per task lands as each
-  task finishes (because of `--log_samples`), but the unifying
-  `results_*.json` is only written at the very end. Walltime mid-batch
-  ⇒ the samples files exist but no aggregated metrics; you'd need a custom
-  script to compute scores from samples (none in repo today). For
-  long-running sweeps where walltime is tight, prefer `BATCH_TASKS=0`.
+- batched mode (`BATCH_TASKS=1`) — **nothing survives a walltime kill. Not
+  even the samples.** This entry used to claim `samples_*.jsonl` lands as each
+  task finishes; that is WRONG, and it cost a wrong analysis on 2026-08-27.
+  lm_eval buffers everything and writes in one burst at the end. Checked on a
+  completed 45-minute 350M/L8 job: all **538** samples files *and* the results
+  file carry the SAME filename timestamp (`2026-08-27T10-11-00.153183`), their
+  mtimes span **11 seconds**, and `per_task/` is empty. If you want to verify
+  it again, compare the filename timestamp against the job's START TIME.
+
+  Consequences: a timed-out batched job is 100% loss and gets resubmitted to
+  be killed again, so eval walltimes must be sized generously or the task list
+  SPLIT across jobs (`NUM_SPLITS`/`SPLIT_INDEX` in `evaluate.sbatch`, merged by
+  `aggregate_splits.sbatch`). `scripts/recover_results_from_samples.py` only
+  helps where samples actually exist on disk — i.e. per-task mode, or a crash
+  that is not a walltime kill. For long sweeps where walltime is tight, prefer
+  `BATCH_TASKS=0` or split.
 
 ---
 
@@ -548,16 +582,32 @@ conda env init) are NOT visible inside `srun --environment=...` (per bug
 (bug 12).
 
 The populated cache lives at
-`/capstor/store/cscs/swissai/infra01/users/$USER/hf_models` (~258 GB,
+`/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models` (~3.6 TB,
 already mounted in both `containers/env.toml` and
-`containers/env_vllm.toml`). `evaluate.sbatch` now defaults to it and
-forwards both vars via `INNER_EXPORTS`:
+`containers/env_vllm.toml`). `evaluate.sbatch` sets both and forwards them via
+`INNER_EXPORTS`:
 
 ```bash
-export HF_HOME=${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}
-export HF_HUB_CACHE=${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}
+export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home
+export HF_HUB_CACHE=/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models
 INNER_EXPORTS="export ... HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE'"
 ```
+
+**Hard-set to `mariagrandury`, and deliberately not `${VAR:-...}`**
+(changed 2026-09-01). Two separate traps, and the fix has to close both:
+
+- The old `$USER` form points every collaborator at their own paths, which
+  hold a near-empty `hf_models` and no `hf_home/datasets` at all.
+- A `${VAR:-...}` *default* does not fix that, because `sbatch --export=ALL`
+  carries the submitter's login shell into the job and `~/.bashrc` here
+  exports `HF_HOME=/iopsstor/scratch/cscs/$USER/hf_home`. The default is
+  never reached; the collaborator's own value wins every time.
+
+Either way `HF_DATASETS_OFFLINE=1` leaves no hub fallback, so all tasks die
+inside `load_dataset()` before generating a token — the job fails in ~2:30
+with an empty `harness/` dir. This is what killed aromanou's first 10 eval
+jobs (3255016-3255025). `aggregate_splits.sbatch` and
+`conversion/convert-snr.sh` hard-set the same paths; keep the three in sync.
 
 Without these two lines, expect a 429 cascade the next time you launch
 >10 concurrent eval jobs. To pre-warm a missing model/dataset, run from
@@ -674,12 +724,28 @@ fold into `global_mmlu_full_zh`. The merge step strips the `groups` field
 that holds aggregates like `mmlu`, so `collect()` reads both `results`
 and `groups` from per-task fragments to recover them.
 
-**Tokens/FLOPs** — computed at push time; FLOPs ≈ `6 × params × tokens`:
+**Tokens/FLOPs** — computed at push time. The FLOPs convention is fixed in
+one place, `utils/configs.flops_params`:
+
+    FLOPs = 6 × (n_non_emb + d_model × vocab_size) × D
+
+The embedding lookup is free, the output projection is not — with a 131k
+vocab that nearly doubles the small rungs' compute. Our cells tie embeddings,
+so `sync_models_json.py` records `n_non_emb`/`d_model`/`vocab_size` alongside
+`params` (which is already the same sum for them). An external model that
+declares only a nominal total falls back to it and is tagged
+`flops_basis="declared_total"` in the W&B run config and in the published
+dataset's `flops_basis` column — so a point on a different footing is
+visible rather than silently plotted alongside the ladder. To move one onto
+the convention, add the three shape fields to its models.json entry.
+
+D (cumulative tokens) comes from:
+
 - Megatron iter→tokens: `iter × 504 × 4096` (`MEG_TOKENS_PER_ITER`)
 - HF stage→cumulative tokens: `HF_STAGE_TOKENS` lookup table at the top of the script
   (Olmo-3 stages 1/2/3, SmolLM3-3B-checkpoints stages 1/2/3)
 - HF main→tokens: `HF_MAIN_TOKENS` (Apertus-8B/70B-2509 → 15 T)
-- Params: parsed from the model name (`apertus-NB-…`, `<repo>-NB-…`)
+- Params: `configs.flops_params` (models.json), never parsed from the name
 - If we don't know params for some new model, FLOPs is skipped — the iter and
   tokens charts still work. Add it to the lookup before pushing.
 
@@ -735,28 +801,21 @@ read it for the training-side gotchas. Quick orientation:
   **Don't revert** the strictness flag without solving the underlying
   TE/Megatron version skew; **do** drop the reservation line once the
   reservation expires (currently runs until 11 May 12:00).
-- `launch_trainings.py` — wraps `sbatch --export=…` from `hyperparams_deep.json`.
-  Default `SEEDS = [28, 1797, 1904]` (the canonical SNR set). One sbatch per
-  (size × mix × seed); supports `--dry-run`, `--test`, and the usual filters.
-- `launch_resumes.sh` — **the right entry point for filling gaps**. Reads
-  `pretrain_progress.py`, iterates the canonical 4×3×3 cells, and dispatches
-  per cell: `[done]` → skip · already in `squeue` → skip · `[in_progress]` →
-  resume with auto-computed walltime · `[corrupt]` → wipe `checkpoints/` and
-  submit fresh · `[no_ckpts]` / no exp dir → submit fresh. Idempotent —
-  re-running is safe.
-- `pretrain_progress.py` (this repo at [`scripts/pretrain_progress.py`](scripts/pretrain_progress.py))
-  — also the truth source for the training side. Validates that each
-  `iter_NNNNNNN/` actually contains a `.metadata` file *and* ≥ 1 `.distcp`
-  shard before counting it as resumable. A marker pointing at an iter dir
-  with only `common.pt`/`metadata.json`/`.metadata` (no shards) is flagged
-  `[corrupt] (latest valid: …)` so launchers skip it instead of submitting
-  a doomed resume. We hit this on `175M-fwEdu60-fw240-seed28` on 2026-05-04.
+- `launch_trainings.py` — the idempotent launcher for the **predictivity
+  sweep** (2026-08 refactor), one submit per (size × L × seed) on CSCS or
+  Azure; re-running skips done/active cells and resumes partial ones with
+  auto-sized walltime (the old `launch_resumes.sh` is retired).
+- `pretrain_progress.py` — the truth source for the training side. Validates
+  that each `iter_NNNNNNN/` actually contains a `.metadata` file *and* ≥ 1
+  `.distcp` shard before counting it as resumable (a marker pointing at a
+  shard-less shell dir is the classic async-save failure; hit on
+  `175M-fwEdu60-fw240-seed28` on 2026-05-04).
 
-The pretraining checkpoint dir lives at
-`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`.
-EXP_NAME format: `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`.
-Slurm job-name format (used by `launch_resumes.sh` for dedup):
-`apertus-${size_lc}-edu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`.
+The 36-sweep checkpoint dirs live at
+`/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/data-mix-small/<EXP_NAME>/checkpoints/`
+(EXP_NAME `apertus-${MODEL_SIZE}-fwEdu${FW_EDU_RATIO}-fw2${FW2_RATIO}-seed${SEED}`);
+predictivity-sweep runs land under `.../Meg-Runs/msnr/` with EXP_NAME
+`lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`.
 
 ---
 

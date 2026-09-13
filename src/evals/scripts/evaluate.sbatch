@@ -142,8 +142,15 @@ fi
 # Both are exported to the inner container via INNER_EXPORTS below — without
 # that, host env vars don't propagate through `srun --environment=...`
 # (CLAUDE.md eval bug 5).
-export HF_HOME=${HF_HOME:-/iopsstor/scratch/cscs/$USER/hf_home}
-export HF_HUB_CACHE=${HF_HUB_CACHE:-/capstor/store/cscs/swissai/infra01/users/$USER/hf_models}
+# Shared caches, set unconditionally — deliberately NOT ${VAR:-...}. sbatch
+# --export=ALL carries the submitter's login shell into the job, and ~/.bashrc
+# exports HF_HOME=/iopsstor/scratch/cscs/$USER/hf_home, so a default would
+# always lose to a collaborator's own empty paths (17 MB of models vs 3.6 TB,
+# and no datasets/ at all). HF_DATASETS_OFFLINE=1 below leaves no hub fallback,
+# so every task then dies in load_dataset() before generating a token — that is
+# what killed jobs 3255016-3255025. Move these by editing here, not via the env.
+export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home
+export HF_HUB_CACHE=/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models
 # Datasets-only offline mode. The 2026-05-09 SNR launch cascaded ~140 jobs to
 # FAILED inside `datasets.load_dataset()` because the burst made `datasets`
 # probe the hub for the latest revision of m_truthfulqa / m_hellaswag /
@@ -462,7 +469,16 @@ else
     WANDB_CMD="cd $PWD && python scripts/push_all_results.py --entity $WANDB_ENTITY --project $WANDB_PROJECT --name $NAME --eval-duration $DURATION"
     echo "Running command to upload results to wandb:"
     echo "$WANDB_CMD"
+    # pyxis doesn't forward host env into the container (same as the eval
+    # sruns above) — thread LOGS_ROOT + the W&B key in explicitly, or
+    # push_all_results.py silently falls back to its hardcoded eval_logs path.
+    # Key export is conditional: an exported-but-EMPTY WANDB_API_KEY would
+    # break the ~/.netrc fallback the push used before.
+    PUSH_CREDS=""
+    [[ -n "${WANDB_API_KEY:-}" ]] && PUSH_CREDS="export WANDB_API_KEY='$WANDB_API_KEY'"
     srun -ul --mpi=pmix --environment=./containers/env.toml bash -c " \
+        $INNER_EXPORTS
+        $PUSH_CREDS
         $WANDB_CMD
     "
 fi

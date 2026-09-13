@@ -24,7 +24,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CONFIGS = REPO / "configs"
 EVALS_CONFIGS = REPO / "src" / "evals" / "configs" / "signal_to_ratio"
-HYPERPARAMS_DEEP = REPO / "src" / "pretrain" / "hyperparams_deep.json"
+HYPERPARAMS_DEEP = REPO / "src" / "pretrain" / "hyperparams" / "hyperparams_deep.json"
 
 
 # --- Stage helpers ----------------------------------------------------------
@@ -949,6 +949,9 @@ SOURCES = {
     "distillation":           {"split": "distillation"},
     "daslab-testing":         {"split": None},
     "tokenizer-lm":           {"split": None},
+    # Superseded bilingual runs: kept on disk, deliberately NOT published.
+    "snr-pretraining-bilingual":   {"split": None},
+    "snr-pretraining-predictivity": {"split": "pretraining_predictivity"},
 }
 
 
@@ -969,11 +972,15 @@ SNR = {
 # --- HF / W&B infra config (configs/hf_wandb.json) --------------------------
 
 HF_WANDB = {
+    # Legacy 36-sweep dataset; the current sweep publishes to the msnr-data
+    # org instead (plan/storage-map.md: msnr = models, msnr-data = data).
     "repo_id": "multilingual-snr/multilingual-snr-eval-results",
+    "repo_id_predictivity": "msnr-data/eval-results",
     "parquet_pattern": "{split}-00000-of-00001.parquet",
     "wandb": {
         "entity": "mariagrandury-epflnlp",
-        "project": "snr-experiments",
+        "project": "msnr",
+        "project_legacy": "snr-experiments",
     },
     "multilingual_evals": {
         # raw/<bench>/<model_dir>/.../results_*.json sources to merge from.
@@ -1015,6 +1022,26 @@ LANG_MAP = {
     "uk": "uk", "ukr": "uk", "ukrainian": "uk",
     "vi": "vi", "vie": "vi", "vietnamese": "vi",
     "zh": "zh", "zho": "zh", "cmn": "zh", "chinese": "zh", "mandarin": "zh",
+    # Languages of the include_base_44 / global_piqa per-language tasks that
+    # the map above couldn't resolve (they were stuck at "??" and therefore
+    # never auto-selected by tasks_for_benchmarks — fixed 2026-08-21).
+    "sq": "sq", "albanian": "sq", "hy": "hy", "armenian": "hy",
+    "az": "az", "azerbaijani": "az", "be": "be", "belarusian": "be",
+    "bn": "bn", "ben": "bn", "bengali": "bn", "bg": "bg", "bulgarian": "bg",
+    "hr": "hr", "croatian": "hr", "nl": "nl", "nld": "nl", "dutch": "nl",
+    "fi": "fi", "fin": "fi", "finnish": "fi", "ka": "ka", "kat": "ka",
+    "georgian": "ka", "el": "el", "ell": "el", "greek": "el",
+    "he": "he", "heb": "he", "hebrew": "he", "hu": "hu", "hun": "hu",
+    "hungarian": "hu", "id": "id", "ind": "id", "indonesian": "id",
+    "kk": "kk", "kaz": "kk", "kazakh": "kk", "lt": "lt", "lit": "lt",
+    "lithuanian": "lt", "ms": "ms", "zsm": "ms", "malay": "ms",
+    "ml": "ml", "mal": "ml", "malayalam": "ml", "ne": "ne", "npi": "ne",
+    "nepali": "ne", "mk": "mk", "macedonian": "mk", "fa": "fa", "fas": "fa",
+    "persian": "fa", "pl": "pl", "pol": "pl", "polish": "pl",
+    "sr": "sr", "srp": "sr", "serbian": "sr", "tl": "tl", "fil": "tl",
+    "tagalog": "tl", "ta": "ta", "tam": "ta", "tamil": "ta",
+    "uz": "uz", "uzn": "uz", "uzbek": "uz", "bs": "bs", "bos": "bs",
+    "nn": "nn", "nno": "nn",
 }
 
 
@@ -1118,6 +1145,13 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
     # (preserves "multi", and language tags the auto-derivation
     # doesn't infer, e.g. "cn"/"jp" instead of the canonical "zh"/"ja").
     existing_lang: dict[str, str] = {}
+    # n_options (the answer-option count, hence the chance level) is DERIVED
+    # from evaluated samples by src/evals/scripts/derive_task_options.py, not
+    # inferrable from a task name — so it must survive a rebuild the same way
+    # hand-fixed language tags do, or every regeneration would silently drop
+    # the chance levels the benchmark analysis keys off.
+    existing_opts: dict[str, int] = {}
+    existing_benchmarks: dict = {}
     existing_path = CONFIGS / "tasks.json"
     if merge_existing and existing_path.exists():
         try:
@@ -1125,6 +1159,11 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
             for t, e in prev.get("tasks", {}).items():
                 if isinstance(e, dict) and "language" in e:
                     existing_lang[t] = e["language"]
+                if isinstance(e, dict) and isinstance(e.get("n_options"), int):
+                    existing_opts[t] = e["n_options"]
+            # Paper/venue metadata per benchmark family — maintained by
+            # scripts/wire_harness_tasks.py, never derived here.
+            existing_benchmarks = prev.get("benchmarks", {})
         except Exception:
             pass
 
@@ -1144,6 +1183,8 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
             "benchmark": _benchmark_of(t),
             "stages": stages,
         }
+        if t in existing_opts:
+            tasks_section[t]["n_options"] = existing_opts[t]
     # Synthetic launch group: union of the three stage groups, so ONE job per
     # checkpoint covers pretraining + midtraining + posttraining in a single
     # BATCH_TASKS=1 lm_eval call (avoids the same-NAME collision of launching
@@ -1153,7 +1194,7 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
         + groups.get("midtraining", [])
         + groups.get("posttraining", [])))
 
-    return {"tasks": tasks_section, "groups": groups}
+    return {"tasks": tasks_section, "groups": groups, "benchmarks": existing_benchmarks}
 
 
 # --- Driver -----------------------------------------------------------------

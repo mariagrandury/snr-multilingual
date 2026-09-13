@@ -1,0 +1,71 @@
+============================================================
+Architecture search for target model sizes
+============================================================
+
+  Constraints:
+   - d_model = width_depth_ratio x n_layers, a multiple of head_dim 64
+   - width_depth_ratio = d_model / n_layers = [64, 128]
+   - num_heads = d_model // head_dim
+   - gqa_ratio = num_heads // num_kv_heads = [2, 3, 4]
+   - ffw_multiplier = [3, 4, 6]
+
+  327 valid configurations found
+
+  width_depth_ratio=128, ffw_multiplier=free
+  label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
+  --------------------------------------------------------------------------------------------------------------------------------
+  93M      8         1024     128       64        16       2          8           4         0.092       24    0.001062     128000 
+  176M     9         1152     128       64        18       3          6           6         0.175       14    0.000980     88000  
+  344M     11        1408     128       64        22       2          11          6         0.327       8     0.000906     78000  
+  595M     15        1920     128       64        30       3          10          4         0.590       4     0.000842     68000  
+  944M     16        2048     128       64        32       4          8           6         0.973       3     0.000791     56000  
+  1672M    21        2688     128       64        42       2          21          4         1.669       2     0.000739     48000  
+
+  width_depth_ratio=128, ffw_multiplier=4 (consistent across all sizes)
+  label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
+  --------------------------------------------------------------------------------------------------------------------------------
+  93M      8         1024     128       64        16       2          8           4         0.092       24    0.001062     128000 
+  176M     10        1280     128       64        20       2          10          4         0.180       14    0.000976     88000  
+  344M     12        1536     128       64        24       2          12          4         0.311       9     0.000912     86000  
+  595M     15        1920     128       64        30       3          10          4         0.590       4     0.000842     68000  
+  944M     17        2176     128       64        34       2          17          4         0.885       3     0.000800     58000  
+  1672M    21        2688     128       64        42       2          21          4         1.669       2     0.000739     48000  
+
+  width_depth_ratio=64, ffw_multiplier=free
+  label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
+  --------------------------------------------------------------------------------------------------------------------------------
+  93M      14        896      64        64        14       2          7           3         0.101       24    0.001050     128000 
+  176M     16        1024     64        64        16       4          4           4         0.176       14    0.000979     88000  
+  344M     20        1280     64        64        20       4          5           4         0.344       8     0.000901     78000  
+  595M     24        1536     64        64        24       4          6           4         0.595       4     0.000841     64000  
+  944M     28        1792     64        64        28       4          7           4         0.944       3     0.000794     58000  
+  1672M    30        1920     64        64        30       2          15          6         1.659       2     0.000740     48000  
+
+  width_depth_ratio=64, ffw_multiplier=4 (consistent across all sizes)
+  label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
+  --------------------------------------------------------------------------------------------------------------------------------
+  93M      12        768      64        64        12       2          6           4         0.078       28    0.001084     110000 
+  176M     16        1024     64        64        16       4          4           4         0.176       14    0.000979     88000  
+  344M     20        1280     64        64        20       4          5           4         0.344       8     0.000901     78000  
+  595M     24        1536     64        64        24       4          6           4         0.595       4     0.000841     64000  
+  944M     28        1792     64        64        28       4          7           4         0.944       3     0.000794     58000  
+  1672M    34        2176     64        64        34       2          17          4         1.771       2     0.000734     46000  
+
+
+
+DECISION: pin ffw_multiplier = 4 and gqa_ratio = 4, matching the deep baseline layer-for-layer, so the depth intervention varies ONLY the aspect ratio (see the 2026-08-21 methodology review, finding 7). d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-77). Per target: among candidates within 4% of N, the ratio closest to 128 wins; if none is that close, the closest-N candidate does.
+
+
+============================================================
+Model configs
+============================================================
+  label    n_layers  d_model  wd_ratio  head_dim  n_heads  gqa_ratio  n_kv_heads  ffw_mult  n_non_emb   mbs   lr           iters  
+  --------------------------------------------------------------------------------------------------------------------------------
+  90M      8         1024     128       64        16       4          4           4         0.088       28    0.001068     110000 
+  175M     10        1280     128       64        20       4          5           4         0.172       14    0.000982     110000 
+  350M     14        1536     110       64        24       4          6           4         0.347       8     0.000900     78000  
+  600M     14        2048     146       64        32       4          8           4         0.617       4     0.000837     64000  
+  1B       17        2304     136       64        36       4          9           4         0.948       3     0.000793     56000  
+  1.7B     20        2816     141       64        44       4          11          4         1.665       2     0.000739     48000  
+
+Config saved to /Users/mariagrandury/Projects/epfl/snr-multilingual/src/pretrain/hyperparams/hyperparams_shallow.json

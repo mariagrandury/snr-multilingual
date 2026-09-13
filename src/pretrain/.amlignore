@@ -1,0 +1,5 @@
+# Keep the Azure ML code snapshot (azure/jobs/*.yml use `code: ../..`) small:
+# exclude local artifacts that no job needs.
+__pycache__/
+*.png
+outputs/

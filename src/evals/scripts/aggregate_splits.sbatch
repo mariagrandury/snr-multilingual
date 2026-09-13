@@ -33,7 +33,10 @@ TABLE_METRICS=${TABLE_METRICS:-""}
 NUM_SPLITS=${NUM_SPLITS:-1}
 
 export WANDB_API_KEY=${WANDB_API_KEY:-$(cat ./scripts/wandb_api_key.txt)}
-export HF_HOME=${HF_HOME:-/iopsstor/scratch/cscs/$USER/huggingface}
+# Must match evaluate.sbatch, and hard-set for the same reason: --export=ALL
+# carries the submitter's ~/.bashrc HF_HOME into the job. The old default also
+# named `huggingface`, a path holding none of the pre-staged datasets, for any user.
+export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home
 
 if [ -f "$TABLE_METRICS" ]; then
     echo "Reading table metrics from file: $TABLE_METRICS"

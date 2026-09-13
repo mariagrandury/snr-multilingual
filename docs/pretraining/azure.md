@@ -1,0 +1,1 @@
+--8<-- "src/pretrain/azure/README.md"
