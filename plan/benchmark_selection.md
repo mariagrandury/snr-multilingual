@@ -46,7 +46,7 @@ noise rather than signal. Venues checked 2026-08-21.
 | `xwinograd` | [Tikhonov & Ryabinin, Findings ACL 2021](https://aclanthology.org/2021.findings-acl.310/) | 6 | Winograd coreference | Human | Small; en, fr, jp, pt, ru, zh. |
 | `paws` (PAWS-X) | [Yang et al., EMNLP 2019](https://aclanthology.org/D19-1382/) | 7 | Paraphrase identification | Professional translation | Near chance for small base models. |
 | `lambada_openai_mt` | [EleutherAI task](https://github.com/EleutherAI/lm-evaluation-harness/tree/main/lm_eval/tasks/lambada_multilingual) (LAMBADA: Paperno et al., ACL 2016) | 5 | Last-word prediction | **Machine-translated, no paper** | Weakest provenance in the set; kept because completion-style tasks track pretraining well. |
-| `afrixnli`, `afrimmlu` (IrokoBench) | [Adelani et al., NAACL 2025](https://aclanthology.org/2025.naacl-long.139/) | 16 African + en/fr | 3-way NLI / 5-subject MC QA | **Human-translated by native speakers** (Masakhane, Lacuna Fund) | See below. Wired as the `_prompt_1` variant (the harness ships 5 prompt templates). |
+| `afrixnli`, `afrimmlu` (IrokoBench) | [Adelani et al., NAACL 2025](https://aclanthology.org/2025.naacl-long.139/) | 16 African + en/fr | 3-way NLI / 5-subject MC QA | **Human-translated by native speakers** (Masakhane, Lacuna Fund) | See below. Wired as the `_prompt_1` variant (the harness ships 5 prompt templates). **Currently OUT of the `auto` group** — a harness bug makes them unrunnable; see "IrokoBench is disabled" below. |
 | `afrimgsm` (IrokoBench) | same | 16 + en/fr | Grade-school math generation (MGSM) | Human-translated | Generation/maths → midtraining stage, like `mgsm_direct`. |
 | `mgsm_direct` | [Shi et al., ICLR 2023](https://openreview.net/forum?id=fR3wGCk-IXp) | 10 | Grade-school math generation | Human-translated | Midtraining stage. |
 | `truthfulqa-multi_mc1` | [Calvo Figueras et al., arXiv 2502.09387](https://arxiv.org/abs/2502.09387) | en, es, eu, ca, gl | MC truthfulness | Professional translation | Small-model signal is weak; kept for the Iberian languages. |
@@ -74,6 +74,67 @@ noise rather than signal. Venues checked 2026-08-21.
   their second/third human-made family from IrokoBench; without it they would
   rest on Belebele alone.
 
+### IrokoBench is disabled (2026-09-07)
+
+`afrixnli` and `afrimmlu` were removed from the `auto` group in
+`configs/tasks.json`. Their per-language entries under `tasks` are untouched
+(22 of them), so re-enabling is adding the two names back to the group — no
+re-wiring.
+
+**Why.** Every task in both families raises at load time:
+
+```
+AttributeError: Module '.../lm_eval/tasks/afrixnli/direct/prompt_1/utils.py'
+has no function 'weighted_f1_score' (from YAML in .../direct/prompt_1)
+```
+
+Both families' YAMLs declare `aggregation: !function utils.weighted_f1_score`
+(`afrixnli/direct/prompt_*/afrixnli_yaml`, `afrimmlu/direct/prompt_*/afrimmlu_direct`).
+`!function utils.X` resolves against the YAML's **own directory** module, and
+those `utils.py` files define only `doc_to_text`/`doc_to_target` (afrixnli) and
+`doc_to_text`/`doc_to_choice` (afrimmlu). The function does exist in the
+harness — `lm_eval/utils.py:631`, a plain sklearn `f1_score(average="weighted")`
+— just not where the YAML looks. It is an upstream defect in
+`swiss-ai/lm-evaluation-harness` at the pinned `51d6f4b6`, not local drift: the
+checkout is clean.
+
+This is fatal rather than cosmetic, and under `BATCH_TASKS=1` it is fatal to the
+*whole job*: lm_eval instantiates every task before generating, so these four
+tasks aborted all 219 in the call and no checkpoint produced a single result.
+A per-task run (`BATCH_TASKS=0`) on `lm-175M-L50-deep-seed1904-iter2562`
+isolated it exactly — **184 tasks succeeded, 4 failed**, and the 4 were
+`afrixnli_{eng,fra}_prompt_1` and `afrimmlu_direct_{eng,fra}_prompt_1`.
+
+**The fix, when we want them back.** Re-export the function into each prompt
+directory, then rebuild the shared wheel:
+
+```bash
+H=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+for d in $H/lm_eval/tasks/afri{xnli,mmlu}/direct/prompt_*/; do
+  grep -q weighted_f1_score $d/utils.py ||
+    echo 'from lm_eval.utils import weighted_f1_score  # noqa: F401' >> $d/utils.py
+done
+# then the wheel rebuild from evaluate.sbatch's HARNESS_SRC comment
+```
+
+Editing the checkout alone is not enough — jobs install from the prebuilt
+wheel in `msnr-harness/wheels/`, so it must be rebuilt or the change is
+invisible. Upstreaming the YAML fix is the cleaner long-term route.
+
+**What it costs while disabled.** Per-cell task counts drop (L50 334 -> 329,
+L100 463 -> 446), and the African languages lose their IrokoBench families:
+
+| Language | Families before | after | left with |
+|---|---:|---:|---|
+| `am` Amharic | 6 | 4 | belebele, global_mmlu_full, global_piqa, multiblimp |
+| `ig` Igbo, `rw` Kinyarwanda, `zu` Zulu | 4 | 2 | belebele, global_piqa |
+| `st` Southern Sotho, `xh` Xhosa | 3 | **1** | belebele only |
+
+So the "without it they would rest on Belebele alone" risk above is now real
+for `st` and `xh`. No language is left with zero families. Nothing already
+measured is affected: these tasks never produced a number for any model, so
+re-enabling them later adds coverage rather than invalidating results.
+
 ## Coverage of the trained languages
 
 What every trained language is actually evaluated on during training (the auto
@@ -85,91 +146,89 @@ Belebele / Global-PIQA variants run for every Arabic-training cell.
 
 <!-- BEGIN generated: scripts/wire_harness_tasks.py --report -->
 
-Tasks per cell (auto group x trained languages): L1 15 · L2 25 · L8 90 · L15 153 · L30 238 · L50 334 · L100 463.
+Tasks per cell (auto group x trained languages): L1 13 · L2 23 · L8 86 · L15 148 · L30 233 · L50 329 · L100 446.
 
 | Enters at | Language | Families | Tasks | Benchmark families |
 |---|---|---|---:|---|
-| L1 | `en` English | 14 | 15 | afrimmlu, afrixnli, arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xnli, xstorycloze, xwinograd |
-| L2 | `ru` Russian | 10 | 10 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xnli, xstorycloze, xwinograd |
-| L8 | `fr` French | 13 | 14 | afrimmlu, afrixnli, arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, xnli, xwinograd |
-| L8 | `es` Spanish | 12 | 14 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xnli, xstorycloze |
-| L8 | `de` German | 10 | 10 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, xnli |
-| L8 | `zh` Mandarin Chinese | 10 | 12 | arc, belebele, global_mmlu_full, global_piqa_completions, include_base_44, paws, xcopa, xnli, xstorycloze, xwinograd |
-| L8 | `it` Italian | 9 | 9 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, lambada_openai_mt, multiblimp, xcopa |
-| L8 | `ja` Japanese | 6 | 6 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, paws, xwinograd |
-| L15 | `ar` Levantine Arabic | 9 | 21 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xnli, xstorycloze |
-| L15 | `id` Indonesian | 8 | 8 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, xcopa, xstorycloze |
-| L15 | `pt` Portuguese | 8 | 9 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xwinograd |
-| L15 | `vi` Vietnamese | 8 | 8 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, xcopa, xnli |
-| L15 | `nl` Dutch | 7 | 7 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp |
-| L15 | `fa` Persian | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp |
-| L15 | `pl` Polish | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp |
-| L30 | `hi` Hindi | 9 | 10 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp, xnli, xstorycloze |
-| L30 | `bn` Bengali | 7 | 9 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp |
-| L30 | `tr` Turkish | 7 | 7 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp, xcopa, xnli |
-| L30 | `uk` Ukrainian | 7 | 7 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, multiblimp |
-| L30 | `el` Modern Greek (1453-) | 6 | 6 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp, xnli |
-| L30 | `hu` Hungarian | 6 | 6 | arc, belebele, global_piqa_completions, hellaswag, include_base_44, multiblimp |
-| L30 | `ro` Romanian | 6 | 6 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, multiblimp |
-| L30 | `sv` Swedish | 6 | 6 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, multiblimp |
-| L30 | `bg` Bulgarian | 5 | 5 | belebele, global_piqa_completions, include_base_44, multiblimp, xnli |
-| L30 | `ko` Korean | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, paws |
-| L30 | `cs` Czech | 4 | 4 | belebele, global_mmlu_full, global_piqa_completions, multiblimp |
+| L1 | `en` English | 12 | 13 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xnli, xstorycloze, xwinograd |
+| L2 | `ru` Russian | 10 | 10 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp, xnli, xstorycloze, xwinograd |
+| L8 | `es` Spanish | 12 | 14 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xnli, xstorycloze |
+| L8 | `fr` French | 11 | 12 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, xnli, xwinograd |
+| L8 | `de` German | 10 | 10 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, lambada_openai_mt, multiblimp, paws, xnli |
+| L8 | `zh` Mandarin Chinese | 10 | 12 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, paws, xcopa, xnli, xstorycloze, xwinograd |
+| L8 | `it` Italian | 9 | 9 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, lambada_openai_mt, multiblimp, xcopa |
+| L8 | `ja` Japanese | 6 | 6 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, paws, xwinograd |
+| L15 | `ar` Levantine Arabic | 9 | 21 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp, xnli, xstorycloze |
+| L15 | `id` Indonesian | 8 | 8 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, xcopa, xstorycloze |
+| L15 | `pt` Portuguese | 8 | 9 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp, xwinograd |
+| L15 | `vi` Vietnamese | 8 | 8 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, xcopa, xnli |
+| L15 | `nl` Dutch | 6 | 6 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L15 | `fa` Persian | 5 | 5 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L15 | `pl` Polish | 5 | 5 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L30 | `hi` Hindi | 9 | 10 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp, xnli, xstorycloze |
+| L30 | `bn` Bengali | 7 | 9 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp |
+| L30 | `tr` Turkish | 7 | 7 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp, xcopa, xnli |
+| L30 | `uk` Ukrainian | 7 | 7 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp |
+| L30 | `el` Modern Greek (1453-) | 6 | 6 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp, xnli |
+| L30 | `hu` Hungarian | 6 | 6 | arc, belebele, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp |
+| L30 | `ro` Romanian | 6 | 6 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L30 | `sv` Swedish | 6 | 6 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L30 | `bg` Bulgarian | 5 | 5 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp, xnli |
+| L30 | `ko` Korean | 5 | 5 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, paws |
+| L30 | `cs` Czech | 4 | 4 | belebele, global_mmlu_full, global_piqa_parallel_cloze, multiblimp |
 | L30 | `da` Danish | 4 | 4 | arc, belebele, hellaswag, multiblimp |
-| L30 | `fi` Finnish | 4 | 4 | belebele, global_piqa_completions, include_base_44, multiblimp |
-| L30 | `th` Thai | 4 | 4 | belebele, global_piqa_completions, xcopa, xnli |
-| L30 | `no` Norwegian Bokmål | 2 | 2 | belebele, global_piqa_completions |
-| L50 | `ca` Catalan | 8 | 8 | arc, belebele, global_piqa_completions, hellaswag, multiblimp, paws, xnli, xstorycloze |
-| L50 | `ta` Tamil | 7 | 7 | arc, belebele, global_piqa_completions, hellaswag, include_base_44, multiblimp, xcopa |
-| L50 | `ne` Nepali (individual language) | 6 | 7 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44 |
-| L50 | `sr` Serbian | 6 | 7 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44 |
-| L50 | `et` Standard Estonian | 5 | 5 | belebele, global_piqa_completions, include_base_44, multiblimp, xcopa |
-| L50 | `he` Hebrew | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp |
-| L50 | `hr` Croatian | 5 | 5 | arc, belebele, global_piqa_completions, hellaswag, include_base_44 |
-| L50 | `lt` Lithuanian | 5 | 5 | belebele, global_mmlu_full, global_piqa_completions, include_base_44, multiblimp |
-| L50 | `ml` Malayalam | 5 | 5 | arc, belebele, global_piqa_completions, hellaswag, include_base_44 |
-| L50 | `mr` Marathi | 5 | 5 | arc, belebele, global_piqa_completions, hellaswag, multiblimp |
-| L50 | `sk` Slovak | 5 | 6 | arc, belebele, global_piqa_completions, hellaswag, multiblimp |
-| L50 | `ur` Urdu | 5 | 7 | belebele, global_piqa_completions, include_base_44, multiblimp, xnli |
-| L50 | `ka` Georgian | 4 | 4 | belebele, global_piqa_completions, include_base_44, multiblimp |
-| L50 | `kk` Kazakh | 4 | 4 | belebele, global_piqa_completions, include_base_44, multiblimp |
-| L50 | `ms` Standard Malay | 4 | 4 | belebele, global_mmlu_full, global_piqa_completions, include_base_44 |
-| L50 | `az` North Azerbaijani | 3 | 3 | belebele, global_piqa_completions, include_base_44 |
-| L50 | `sl` Slovenian | 3 | 4 | belebele, global_piqa_completions, multiblimp |
-| L50 | `sq` Tosk Albanian | 3 | 3 | belebele, global_piqa_completions, include_base_44 |
-| L50 | `bs` Bosnian | 1 | 1 | global_piqa_completions |
+| L30 | `fi` Finnish | 4 | 4 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L30 | `th` Thai | 4 | 4 | belebele, global_piqa_parallel_cloze, xcopa, xnli |
+| L30 | `no` Norwegian Bokmål | 2 | 2 | belebele, global_piqa_parallel_cloze |
+| L50 | `ca` Catalan | 8 | 8 | arc, belebele, global_piqa_parallel_cloze, hellaswag, multiblimp, paws, xnli, xstorycloze |
+| L50 | `ta` Tamil | 7 | 7 | arc, belebele, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp, xcopa |
+| L50 | `ne` Nepali (individual language) | 6 | 7 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44 |
+| L50 | `sr` Serbian | 6 | 7 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44 |
+| L50 | `et` Standard Estonian | 5 | 5 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp, xcopa |
+| L50 | `he` Hebrew | 5 | 5 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L50 | `hr` Croatian | 5 | 5 | arc, belebele, global_piqa_parallel_cloze, hellaswag, include_base_44 |
+| L50 | `lt` Lithuanian | 5 | 5 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L50 | `ml` Malayalam | 5 | 5 | arc, belebele, global_piqa_parallel_cloze, hellaswag, include_base_44 |
+| L50 | `mr` Marathi | 5 | 5 | arc, belebele, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L50 | `sk` Slovak | 5 | 6 | arc, belebele, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L50 | `ur` Urdu | 5 | 7 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp, xnli |
+| L50 | `ka` Georgian | 4 | 4 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L50 | `kk` Kazakh | 4 | 4 | belebele, global_piqa_nonparallel_cloze, include_base_44, multiblimp |
+| L50 | `ms` Standard Malay | 4 | 4 | belebele, global_mmlu_full, global_piqa_parallel_cloze, include_base_44 |
+| L50 | `az` North Azerbaijani | 3 | 3 | belebele, global_piqa_parallel_cloze, include_base_44 |
+| L50 | `sl` Slovenian | 3 | 4 | belebele, global_piqa_parallel_cloze, multiblimp |
+| L50 | `sq` Tosk Albanian | 3 | 3 | belebele, global_piqa_parallel_cloze, include_base_44 |
+| L50 | `bs` Bosnian | 1 | 1 | global_piqa_nonparallel_cloze |
 | L50 | `lv` Standard Latvian | 1 | 1 | belebele |
 | L100 | `eu` Basque | 10 | 10 | arc, belebele, hellaswag, include_base_44, multiblimp, paws, truthfulqa-multi_mc1, xcopa, xnli, xstorycloze |
-| L100 | `te` Telugu | 7 | 7 | arc, belebele, global_mmlu_full, global_piqa_completions, hellaswag, include_base_44, xstorycloze |
-| L100 | `am` Amharic | 6 | 6 | afrimmlu, afrixnli, belebele, global_mmlu_full, global_piqa_completions, multiblimp |
-| L100 | `gl` Galician | 6 | 6 | belebele, global_piqa_completions, multiblimp, paws, xnli, xstorycloze |
-| L100 | `hy` Armenian | 6 | 6 | arc, belebele, global_piqa_completions, hellaswag, include_base_44, multiblimp |
-| L100 | `sw` Swahili (individual language) | 6 | 6 | belebele, global_mmlu_full, global_piqa_completions, xcopa, xnli, xstorycloze |
-| L100 | `gu` Gujarati | 5 | 5 | arc, belebele, global_piqa_completions, hellaswag, multiblimp |
-| L100 | `ig` Igbo | 4 | 4 | afrimmlu, afrixnli, belebele, global_piqa_completions |
-| L100 | `kn` Kannada | 4 | 4 | arc, belebele, global_piqa_completions, hellaswag |
-| L100 | `ky` Kirghiz | 4 | 4 | belebele, global_mmlu_full, global_piqa_completions, multiblimp |
-| L100 | `mk` Macedonian | 4 | 4 | belebele, global_piqa_completions, include_base_44, multiblimp |
-| L100 | `rw` Kinyarwanda | 4 | 4 | afrimmlu, afrixnli, belebele, global_piqa_completions |
-| L100 | `zu` Zulu | 4 | 4 | afrimmlu, afrixnli, belebele, global_piqa_completions |
-| L100 | `be` Belarusian | 3 | 3 | global_piqa_completions, include_base_44, multiblimp |
-| L100 | `is` Icelandic | 3 | 3 | belebele, global_piqa_completions, multiblimp |
-| L100 | `si` Sinhala | 3 | 4 | belebele, global_mmlu_full, global_piqa_completions |
-| L100 | `st` Southern Sotho | 3 | 3 | afrimmlu, afrixnli, belebele |
-| L100 | `tl` Filipino | 3 | 3 | belebele, global_piqa_completions, include_base_44 |
-| L100 | `uz` Northern Uzbek | 3 | 3 | belebele, global_piqa_completions, include_base_44 |
-| L100 | `xh` Xhosa | 3 | 3 | afrimmlu, afrixnli, belebele |
-| L100 | `as` Assamese | 2 | 2 | belebele, global_piqa_completions |
-| L100 | `ckb` Central Kurdish | 2 | 2 | belebele, global_piqa_completions |
-| L100 | `fo` Faroese | 2 | 2 | global_piqa_completions, multiblimp |
+| L100 | `te` Telugu | 7 | 7 | arc, belebele, global_mmlu_full, global_piqa_parallel_cloze, hellaswag, include_base_44, xstorycloze |
+| L100 | `gl` Galician | 6 | 6 | belebele, global_piqa_parallel_cloze, multiblimp, paws, xnli, xstorycloze |
+| L100 | `hy` Armenian | 6 | 6 | arc, belebele, global_piqa_parallel_cloze, hellaswag, include_base_44, multiblimp |
+| L100 | `sw` Swahili (individual language) | 6 | 6 | belebele, global_mmlu_full, global_piqa_parallel_cloze, xcopa, xnli, xstorycloze |
+| L100 | `gu` Gujarati | 5 | 5 | arc, belebele, global_piqa_parallel_cloze, hellaswag, multiblimp |
+| L100 | `am` Amharic | 4 | 4 | belebele, global_mmlu_full, global_piqa_parallel_cloze, multiblimp |
+| L100 | `kn` Kannada | 4 | 4 | arc, belebele, global_piqa_parallel_cloze, hellaswag |
+| L100 | `ky` Kirghiz | 4 | 4 | belebele, global_mmlu_full, global_piqa_parallel_cloze, multiblimp |
+| L100 | `mk` Macedonian | 4 | 4 | belebele, global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L100 | `be` Belarusian | 3 | 3 | global_piqa_parallel_cloze, include_base_44, multiblimp |
+| L100 | `is` Icelandic | 3 | 3 | belebele, global_piqa_parallel_cloze, multiblimp |
+| L100 | `si` Sinhala | 3 | 4 | belebele, global_mmlu_full, global_piqa_parallel_cloze |
+| L100 | `tl` Filipino | 3 | 3 | belebele, global_piqa_parallel_cloze, include_base_44 |
+| L100 | `uz` Northern Uzbek | 3 | 3 | belebele, global_piqa_parallel_cloze, include_base_44 |
+| L100 | `as` Assamese | 2 | 2 | belebele, global_piqa_nonparallel_cloze |
+| L100 | `ckb` Central Kurdish | 2 | 2 | belebele, global_piqa_nonparallel_cloze |
+| L100 | `fo` Faroese | 2 | 2 | global_piqa_parallel_cloze, multiblimp |
 | L100 | `ht` Haitian | 2 | 2 | belebele, xcopa |
-| L100 | `jv` Javanese | 2 | 2 | belebele, global_piqa_completions |
+| L100 | `ig` Igbo | 2 | 2 | belebele, global_piqa_parallel_cloze |
+| L100 | `jv` Javanese | 2 | 2 | belebele, global_piqa_parallel_cloze |
 | L100 | `mg` Plateau Malagasy | 2 | 2 | belebele, global_mmlu_full |
 | L100 | `my` Burmese | 2 | 2 | belebele, xstorycloze |
-| L100 | `pa` Panjabi | 2 | 2 | belebele, global_piqa_completions |
-| L100 | `sd` Sindhi | 2 | 3 | belebele, global_piqa_completions |
+| L100 | `pa` Panjabi | 2 | 2 | belebele, global_piqa_parallel_cloze |
+| L100 | `rw` Kinyarwanda | 2 | 2 | belebele, global_piqa_parallel_cloze |
+| L100 | `sd` Sindhi | 2 | 3 | belebele, global_piqa_parallel_cloze |
 | L100 | `so` Somali | 2 | 2 | belebele, global_mmlu_full |
-| L100 | `ug` Uighur | 2 | 2 | global_piqa_completions, multiblimp |
+| L100 | `ug` Uighur | 2 | 2 | global_piqa_parallel_cloze, multiblimp |
+| L100 | `zu` Zulu | 2 | 2 | belebele, global_piqa_parallel_cloze |
 | L100 | `af` Afrikaans | 1 | 1 | belebele |
 | L100 | `bo` Tibetan | 1 | 1 | belebele |
 | L100 | `cy` Welsh | 1 | 1 | multiblimp |
@@ -180,12 +239,14 @@ Tasks per cell (auto group x trained languages): L1 15 · L2 25 · L8 90 · L15 
 | L100 | `lo` Lao | 1 | 1 | belebele |
 | L100 | `mn` Halh Mongolian | 1 | 1 | belebele |
 | L100 | `mt` Maltese | 1 | 1 | belebele |
-| L100 | `nn` Norwegian Nynorsk | 1 | 1 | global_piqa_completions |
+| L100 | `nn` Norwegian Nynorsk | 1 | 1 | global_piqa_parallel_cloze |
 | L100 | `or` Odia | 1 | 1 | belebele |
 | L100 | `ps` Southern Pashto | 1 | 1 | belebele |
+| L100 | `st` Southern Sotho | 1 | 1 | belebele |
 | L100 | `tg` Tajik | 1 | 1 | belebele |
+| L100 | `xh` Xhosa | 1 | 1 | belebele |
 
-Languages by number of families: 1→16 · 2→12 · 3→10 · 4→13 · 5→13 · 6→11 · 7→6 · 8→4 · 9→3 · 10→4 · 12→1 · 13→1 · 14→1.
+Languages by number of families: 1→18 · 2→15 · 3→8 · 4→11 · 5→13 · 6→11 · 7→5 · 8→4 · 9→3 · 10→4 · 11→1 · 12→2.
 
 <!-- END generated -->
 

@@ -17,8 +17,8 @@
 # COMPLETED — re-running the job (or this script) retries just the missing part.
 #
 #   bash stage_to_iopsstor.sh                    # every completed mixture
-#   bash stage_to_iopsstor.sh fineweb_L50        # one, scheme A
-#   bash stage_to_iopsstor.sh schemeB/fineweb_L8 # one, scheme B
+#   bash stage_to_iopsstor.sh fineweb_L50        # one, scheme A (the root)
+#   bash stage_to_iopsstor.sh AT3/fineweb_L100   # one, from a variant subdir
 #   sbatch --time=04:00:00 --nodes=1 stage_to_iopsstor.sh   # ~2 TiB: not on the login node
 #
 #SBATCH --job-name=stage-data
@@ -35,7 +35,7 @@ set -uo pipefail
 SRC=${SRC:-/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data}
 DST=${DST:-/iopsstor/scratch/cscs/$USER/data}
 
-stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
+stage_one() { # <relative prefix, e.g. fineweb_L50 or AT3/fineweb_L100>
   local rel="$1" ok=1
   # A build in flight still has its checkpoint (create_data_mixture removes it
   # only on success) — staging a partial mixture would train on truncated data.
@@ -47,8 +47,8 @@ stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
   for ext in bin idx; do
     local s="$SRC/$rel.$ext" d="$DST/$rel.$ext"
     [ -f "$s" ] || { echo "  skip $rel — no $ext on capstor"; return 0; }
-    # launch_builds.sh keeps schemeB/english_dclm.* as symlinks into the
-    # scheme-A build. Mirror the link instead of copying: the target is a
+    # launch_builds.sh keeps every variant subdir's english_dclm.* as symlinks
+    # into the scheme-A build. Mirror the link instead of copying: the target is a
     # 736 GB file already staged under its own name, so a copy would duplicate
     # it per scheme AND overwrite the stage's own symlink. -L everywhere else,
     # so sizes always compare the target, never the link.
@@ -73,16 +73,22 @@ stage_one() { # <relative prefix, e.g. fineweb_L50 or schemeB/fineweb_L8>
 }
 
 FAILED=0
-mkdir -p "$DST" "$DST/schemeB"
+mkdir -p "$DST"          # stage_one mkdirs each variant subdir as it copies
 echo "[$(date)] staging $SRC -> $DST"
 
 if [ $# -gt 0 ]; then
   for rel in "$@"; do stage_one "$rel"; done
 else
   # Every completed mixture: an .idx exists and no checkpoint is left behind.
-  for idx in "$SRC"/*.idx "$SRC"/schemeB/*.idx; do
+  # One level of subdir covers every data variant (schemeB, AT3, ZH, ES, ...)
+  # without naming them — the layout launch_builds.sh builds is exactly that.
+  # The 92B rebuild root under SRC is NOT a variant: its builds stage to their
+  # own tree (launch_builds.sh REBUILD_DST), which launch_trainings.py reads only
+  # for cells the 52B copies are too small for, so the default pass must not
+  # copy them under the training stage.
+  for idx in "$SRC"/*.idx "$SRC"/*/*.idx; do
     [ -e "$idx" ] || continue
-    case "$idx" in *validation*) continue;; esac
+    case "$idx" in *validation*|"$SRC"/rebuild-92B/*) continue;; esac
     rel="${idx#$SRC/}"; rel="${rel%.idx}"
     stage_one "$rel"
   done

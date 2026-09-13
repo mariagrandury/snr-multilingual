@@ -12,10 +12,14 @@
 #   * _eval_status.completed_tasks scans LOGS_ROOT to decide what is already
 #     evaluated. Point that at an empty iopsstor tree and every watcher pass
 #     re-submits every checkpoint — thousands of jobs.
-#   * eval jobs would then WRITE results to capstor at the end of a run. A
-#     capstor blip (errno 108, seen twice this week) would lose a finished
-#     45-minute job, because BATCH_TASKS=1 writes nothing until the very end.
+#   * eval jobs would then WRITE results to capstor. A capstor blip (errno
+#     108, seen twice this week) would fail the task being written, or the
+#     job's final merge and W&B push.
 # Keeping iopsstor as the working copy costs one rsync and no new failure mode.
+#
+# It also TOUCHES every checkpoint tree on scratch, which it deliberately does
+# not copy, so the purge does not age out a cell we may still want to resume.
+# It has already taken three (see below), so this is not hypothetical.
 #
 # Idempotent and resumable: rsync skips files already there with the same size
 # and mtime, so re-running after a wall-clock kill continues where it stopped.
@@ -29,7 +33,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=06:00:00
+#SBATCH --time=12:00:00
 # Logs go to capstor beside the data they describe: Slurm opens them before the
 # script runs, so a swept scratch dir would mean no log at all.
 #SBATCH --output=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
@@ -50,12 +54,26 @@ DRY=${DRY:-0}
 # is the one place the diag- prefix must NOT filter anything.
 #
 # checkpoints/, triggers/ and debug/ are excluded: checkpoints are terabytes
-# and their durable form is already <CAP>/msnr-hf-models.
+# and their durable form is already <CAP>/msnr-hf-models. Excluded but NOT
+# unprotected — see the touch pass below.
 PAIRS=(
     "$LOGS/eval_logs|$CAP/msnr-eval-logs"
     "$LOGS/slurm/training|$CAP/msnr-train-logs"
     "$LOGS/Meg-Runs/msnr|$CAP/msnr-run-logging"
 )
+# Collaborators' trees. Every account's Slurm logs and Megatron run logging
+# land under its OWN scratch (`%u` in --output, and the checkpoint dir of a
+# cell it launched), while its eval results already go to the shared tree
+# above — so aromanou's training logs, all of her 1B cells among them, never
+# reached capstor. Each goes into a subdir named after the account, so two
+# users' run logging for the same cell cannot overwrite each other. Their
+# checkpoints are not touched below: only a file's owner can refresh its mtime.
+for u in ${OTHER_USERS:-aromanou}; do
+    ulogs=${LOGS/\/mariagrandury\//\/$u\/}
+    [ "$ulogs" = "$LOGS" ] && continue
+    PAIRS+=("$ulogs/slurm/training|$CAP/msnr-train-logs/$u"
+            "$ulogs/Meg-Runs/msnr|$CAP/msnr-run-logging/$u")
+done
 
 # --partial: a 2 MB samples file interrupted mid-write resumes rather than
 #   restarting. --inplace is NOT used: a torn file would look complete.
@@ -66,6 +84,55 @@ ARGS=(-a --partial --no-perms --no-group --human-readable --stats
 (( DRY )) && ARGS+=(--dry-run --itemize-changes)
 
 mkdir -p "$CAP/msnr-eval-logs/logs"
+
+# Keep the checkpoints resumable. They are the one tree this script does not
+# copy, and <CAP>/msnr-hf-models is only half a backup: HF weights are enough
+# to EVALUATE a cell, not to RESUME training it. The scratch purge deletes by
+# age, and it has already emptied every iter dir of lm-90M-L1-deep-seed1904,
+# lm-90M-L2-deep-seed1904 and lm-175M-L2-shallow-seed1904 — the directories are
+# left behind, so pretrain_progress reads them as "corrupt" (.metadata and
+# .distcp gone) rather than as missing. Touching resets that clock.
+#
+# EVERY cell, not just the grid: shallow and diag- cells were the ones actually
+# lost, and the legacy apertus-* cells sit in the same tree. Discovered with
+# find rather than a glob so that a checkpoint tree the grid tooling does not
+# know about still gets protected — the sweep's real checkpoints all live under
+# Megatron-LM/logs/Meg-Runs/msnr, but nothing enforces that, and a hardcoded
+# path fails silently rather than loudly when it stops being true.
+#
+# First, because it is seconds against the rsync's hours: a walltime kill after
+# this point still leaves the tree protected.
+#
+# Confined to checkpoints/ deliberately — rsync selects files by size+mtime, so
+# touching a mirrored tree would re-send all 429 GB of it on every run.
+CKPT_ROOT=${CKPT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small}
+# -prune: stop at each match instead of walking all 200k+ entries underneath it
+# just to discover the ~100 directories we already found.
+mapfile -t CKPT_DIRS < <(find "$CKPT_ROOT" -type d -name checkpoints -prune -print 2>/dev/null)
+if (( ${#CKPT_DIRS[@]} )); then
+    n=$(find "${CKPT_DIRS[@]}" -print 2>/dev/null | wc -l)
+    where="$n paths in ${#CKPT_DIRS[@]} checkpoint dirs under $CKPT_ROOT"
+    if (( DRY )); then
+        echo "[$(date)] DRY: would touch $where"
+    else
+        echo "[$(date)] touching $where"
+        # -c: a checkpoint being written can vanish between find and touch.
+        # stderr is COUNTED, not discarded: a file owned by a collaborator is
+        # `group::r-x` under the shared ACLs, so touch fails with EPERM and only
+        # its owner can refresh it. Swallowing that would report success while
+        # leaving whole cells exposed — on 2026-09-07, 57952 of 200884 files
+        # (28%, every aromanou-owned cell) failed exactly this way.
+        fails=$(find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>&1 >/dev/null | wc -l)
+        if (( fails )); then
+            echo "[$(date)] WARNING: $fails find/touch errors (mostly paths NOT touched: not owner) —" \
+                 "those cells stay exposed; their owner must run this too" >&2
+        fi
+        echo "[$(date)] touched"
+    fi
+else
+    echo "[$(date)] SKIP touch: no checkpoints dir under $CKPT_ROOT"
+fi
+
 rc=0
 for pair in "${PAIRS[@]}"; do
     src=${pair%%|*}; dst=${pair##*|}

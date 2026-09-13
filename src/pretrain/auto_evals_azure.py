@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Auto-eval watcher: every N saved checkpoints (default 2) plus the run's final
-checkpoint, evaluate on the "auto" benchmark group (configs/tasks.json) and
+Auto-eval watcher: every N checkpoints of the size's save grid (default 2),
+read on the grid the run actually saved at, plus the run's final checkpoint
+(launch_trainings.due_iters), evaluate on the "auto" benchmark group and
 push to W&B (msnr) — progress signal beyond the loss curve while a training
 runs on Azure.
 
 Idempotent, like the cluster's eval launchers: each pass lists the blob
-storage, finds due checkpoints (saved iters at multiples of N x save-interval),
+storage, finds due checkpoints (every Nth save on the run's own grid),
 and per due iter submits at most one missing step — jobs/convert.yml when
 the HF snapshot doesn't exist yet, else jobs/eval.yml (TASKS=auto) while any
 of the cell's tasks is still missing a result (task-level, so adding a
@@ -44,7 +45,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     filter_models, get_model, load_hf_wandb_config, stages_of,
     tasks_for_benchmarks)
 from launch_trainings import (  # noqa: E402
-    TOKENIZER_MODEL, ND_SIZES, cell_languages, job_name)
+    TOKENIZER_MODEL, ND_SIZES, cell_languages, due_iters, job_name)
 from sync_models_json import sync  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent / "azure"))
@@ -200,13 +201,11 @@ def one_pass(names: list[str], auth: list[str], every: int,
         iters = saved_iters(auth, name)
         if not iters:
             continue
-        # Every Nth saved checkpoint counted from the run's first save, PLUS
-        # the run's final checkpoint whatever its number — the CSCS rule
-        # (auto_evals_cscs.one_cell): counting saves keeps cells on an older
-        # save grid due, where `iter % (N x interval)` would find nothing.
+        # Every Nth checkpoint of the size's grid, read on the grid the run
+        # actually saved at, PLUS the run's final checkpoint whatever its
+        # number — the CSCS watcher's rule (launch_trainings.due_iters).
         ck = stages_of(name)["pretraining"]["checkpoints"]
-        due = [i for k, i in enumerate(sorted(iters))
-               if (k + 1) % every == 0 or i == ck["final"]]
+        due = due_iters(iters, ck["final"], every)
         m = get_model(name)
         cell_tasks = tasks or ",".join(tasks_for_benchmarks(
             AUTO_BENCHMARKS, cell_languages(m["L"], m["scheme"])))

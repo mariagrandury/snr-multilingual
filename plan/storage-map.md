@@ -13,6 +13,13 @@ map says it lives only on iopsstor, that is a gap, not a design.
 - **`msnr-data`** — every published *data* artifact: the ladder report
   (`msnr-data/ladder-report`, pushed by `ladder_report.py --push-hf`), and
   any future CSVs / eval-results datasets. Nothing else goes in other orgs.
+- **GitHub `data/ladder-report`** — an *orphan* branch carrying the same three
+  report files, for a collaborator with neither cluster nor Hub access.
+  **Never merge it into main**: that is what keeps a ~33 MB artifact,
+  regenerated several times a week, out of every clone. Plain git, not LFS —
+  successive snapshots delta-compress to ~1 MB each (four real revisions:
+  29 MB raw, 4 MB packed), while LFS stores each version whole and its quota
+  cannot be reclaimed afterwards.
 - Legacy, frozen: `multilingual-snr/multilingual-snr-eval-results` (36-sweep
   eval dataset), `multilingual-snr/msnr-ladder-report` (pre-policy report
   pushes, superseded), `snr-models-{28,1797,1904}` (36-sweep model repos).
@@ -22,12 +29,13 @@ map says it lives only on iopsstor, that is a gap, not a design.
 | Path | Holds | Durable copy |
 | ---- | ----- | ------------ |
 | `data/` | training-stage data mixtures Megatron reads (`stage_to_iopsstor.sh` restages after a purge) | capstor `multilingual_data_mixtures/predictivity-data/` |
-| `data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/` | live Megatron torch_dist checkpoints | HF snapshots on capstor (every saved iter is converted) |
+| `data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/` | live Megatron torch_dist checkpoints | **partial** — HF snapshots on capstor (every saved iter is converted) let you EVALUATE a cell but not RESUME it. Too big to mirror, so `mirror_eval_logs.sbatch` instead touches every checkpoint tree to push back the purge clock. The purge has already emptied three cells (`lm-90M-L1-deep-seed1904`, `lm-90M-L2-deep-seed1904`, `lm-175M-L2-shallow-seed1904`), leaving the iter dirs behind so `pretrain_progress` reads them as `corrupt`. |
 | `data-mix-small/Megatron-LM/logs/eval_logs/<entity>/msnr/` | eval results tree (harness JSONs, per_task) — the watcher's gate | capstor `msnr-eval-logs/` via **manual** `mirror_eval_logs.sbatch` |
-| `data-mix-small/Megatron-LM/logs/slurm/training/` | training job stdout/stderr | capstor `msnr-train-logs/` (same manual mirror) |
+| `data-mix-small/Megatron-LM/logs/slurm/training/` | training job stdout/stderr — each account's under its own scratch (aromanou's 1B cells in `/iopsstor/scratch/cscs/aromanou/…`) | capstor `msnr-train-logs/` (same manual mirror; other accounts' into `msnr-train-logs/<user>/`, their run logging into `msnr-run-logging/<user>/`) |
 | `data-mix-small/Megatron-LM/logs/auto_evals/` | auto-eval watcher logs | none (disposable) |
 | `hf_home/datasets/` | offline HF dataset cache for eval jobs | rebuildable: `download_eval_datasets.py` |
 | `Projects/snr-multilingual/` | the repo — the sweeper eats loose git objects, push often | GitHub `mariagrandury/snr-multilingual` |
+| `src/pretrain/ladder_report{,_curve}.csv` + `.md` | the generated report — the CSVs are gitignored on every normal branch; the `.md` is tracked | three copies: capstor `msnr-ladder-report/`, HF `msnr-data/ladder-report`, and the GitHub **orphan branch `data/ladder-report`** (`ladder_report.py --push-git`) |
 | `snr-hf-checkpoints/` | LEGACY 36-sweep HF conversions (apertus-*) — nothing writes here | none (one sweep from gone) |
 
 ## CSCS — capstor store (`/capstor/store/cscs/swissai/infra01/`)

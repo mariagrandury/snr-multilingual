@@ -5471,8 +5471,6 @@
       "truthfulqa_zh_mc2"
     ],
     "auto": [
-      "afrimmlu",
-      "afrixnli",
       "arc",
       "belebele",
       "global_mmlu",

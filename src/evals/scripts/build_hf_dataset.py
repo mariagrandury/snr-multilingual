@@ -912,7 +912,7 @@ per-instance predictions.
 
 | Split | Models | Description |
 |---|---|---|
-| `pretraining_predictivity` | lm-{{90M…1.7B}}-L{{1,2,8,15,30,50,100}}[-schemeB]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
+| `pretraining_predictivity` | lm-{{90M…1.7B}}-L{{1,2,8,15,30,50,100}}[{{-AT3,-schemeB,-ZH,-ES}}]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. A data scheme is one build of the FineWeb-2 half — its language list plus the per-language sampling temperature: unlabelled = resource-ranked at T=1 (the baseline), `AT3` = the same lists at T=3 (and the only source of L100), `schemeB` = diversity-first, `ZH`/`ES` = L2 with Chinese / Spanish in place of Russian. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
 | `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
 | `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
 | `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
@@ -940,7 +940,7 @@ per-instance predictions.
 | `mix` | str | Data-mix tag (e.g. `fwEdu30-fw270`, `L8-schemeA`, `stage2`, `main`) |
 | `seed` | int | Pretraining seed (custom only) |
 | `L` | int | Language count of the training mixture — `pretraining_predictivity` only, null elsewhere |
-| `scheme` | str | Language-set scheme `A` (resource-ranked) or `B` (diversity-first) — predictivity only |
+| `scheme` | str | Data scheme — the FineWeb-2 language list plus its sampling temperature: `A` (resource-ranked, T=1), `AT3` (the same lists at T=3), `B` (diversity-first, T=1), `ZH` / `ES` (L2 with Chinese / Spanish instead of Russian) — predictivity only |
 | `arch` | str | `deep` (baseline) or `shallow` (the model-depth intervention) — predictivity only |
 | `primary_score` | float | Headline metric — `acc` if available else `exact_match` |
 | `primary_metric` | str | Name of the primary metric |

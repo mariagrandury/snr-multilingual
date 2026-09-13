@@ -27,7 +27,11 @@
 # Defaults below are the 175M walkthrough cell so a bare smoke run works; real
 # runs always get explicit values from the launcher.
 
-GBS=504          # Global batch size (504 x 4096 = 2_064_384 tokens per step)
+# Global batch size (504 x 4096 = 2_064_384 tokens per step). Overridable
+# ONLY so launch_trainings.py --gbs can run a batch-size diagnostic; that
+# flag forces a diag- run name, so an unset GBS still reproduces every
+# trained grid cell exactly.
+GBS=${GBS:-504}
 SEQ_LEN=4096     # Sequence length
 SAVE_INTERVAL=${SAVE_INTERVAL:-2000}
 WANDB_ENTITY=mariagrandury-epflnlp   # constant — every run logs to this entity
@@ -53,7 +57,12 @@ build_megatron_cmd() {
 		--position-embedding-type rope
 		--rotary-base 500000
 		--use-rope-scaling
-		--rope-scaling-factor 32
+		# 8, not 32: Megatron c92402e never forwards this flag to the model
+		# (model_provider.py passes rope_scaling only), so every cell trained at
+		# the RotaryEmbedding default of 8 and the HF configs say 8. The flag read
+		# 32 until 2026-09-13 with no effect; setting it to the value actually used
+		# keeps a future Megatron that does forward it on the same ladder.
+		--rope-scaling-factor 8
 		--make-vocab-size-divisible-by 128
 		--normalization RMSNorm
 		--xielu

@@ -50,8 +50,10 @@ Two sweeps, in this order:
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
 2. **The predictivity sweep** (current work): a 6-rung ladder
-   90M–1.7B × 7 language settings × deep/shallow × data schemes A/B, run
-   across CSCS and Azure. Cells are named `lm-*` and log to W&B project
+   90M–1.7B × 7 language settings × deep/shallow × five data schemes
+   (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
+   `src/pretrain/launch_trainings.py`, the single source of truth for the
+   grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
 
 Read [`src/pretrain/CLAUDE.md`](src/pretrain/CLAUDE.md) and
@@ -64,7 +66,7 @@ they carry the failure modes, and they are more current than this file.
 configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
-scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh
+scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh, reservation_drain.sh
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -90,7 +92,11 @@ Eval results are NOT in the repo: they live on the cluster at
 
 ## External Dependencies
 
-- **lm_eval** (lm-evaluation-harness): the swiss-ai fork, installed per eval job
+- **lm_eval** (lm-evaluation-harness): the swiss-ai fork, installed per eval
+  job from a pinned shared checkout at
+  `/capstor/store/cscs/swissai/infra01/msnr-harness/` (prebuilt wheel first) —
+  never a per-job GitHub clone; see `src/evals/README.md` for why and how to
+  refresh it
 - **signal-and-noise** (Allen AI): reference implementation at `src/signal-and-noise/`
 - **wandb**: entity `mariagrandury-epflnlp` (constant in `megatron_args.sh`);
   project comes from `configs/hf_wandb.json` — **`msnr`** for the predictivity
@@ -145,10 +151,16 @@ System Python on the login nodes is 3.6 — use `python3.11`.
 Predictivity-sweep specifics (the 36-sweep's sizes and 30/70-style mixtures
 are retired — do not carry them into new work):
 
-- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding
+- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding — every size trains at
+  every language setting
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50,
   100} languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
+- Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
+  unlabelled baseline), AT3 (A's lists at T=3 — L50 and L100, which exists
+  ONLY at T=3), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
+  / Spanish instead of Russian). "Variant" is the older, looser word for any
+  run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)
