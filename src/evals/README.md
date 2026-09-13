@@ -240,7 +240,10 @@ finish in the time left, using the previous checkpoint's measured cost. The
 successor re-derives what is still due and exits without chaining when
 nothing is, so the chain ends itself; `MAX_CHAIN` (default 32 — a 60-save
 1.7B cell drained to 1:30 debug slots needs ~30 links) bounds it against a
-failure loop.
+failure loop. A link that finds none of its predecessor's due checkpoints
+scored exits non-zero without chaining, so a checkpoint that always fails
+stops the chain after one wasted link instead of at that cap, and every link
+exits with the scoring step's code, so a failed link shows as FAILED.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses

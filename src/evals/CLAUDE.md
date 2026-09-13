@@ -525,6 +525,22 @@ done. Two things bit while building it:
   and the watcher never counts a strike, which is the resubmit-forever loop
   again. `_run_per_task.sh` therefore records any task still in `inflight/`
   once every worker has exited.
+- **A worker whose vLLM engine dies does not die with it.** vLLM raises
+  `EngineDeadError`, an ordinary exception, so the task loop logged it and
+  claimed the next task, failing each in seconds and taking most of the queue
+  from the healthy workers (job 3355520: 145 strikes for tasks the next job
+  all passed). The worker stops claiming on `EngineDeadError`.
+- **The watcher's gate had four holes** (closed 2026-09-13). Its diagnosis
+  memos lived for the whole `--watch` process, so a task misread as a missing
+  dataset was retried forever: they are cleared every pass, and a dataset
+  "repair" is trusted for at most 2 × `--max-attempts` runs. A failed `squeue`
+  read as an empty queue and resubmitted everything running: the pass is now
+  skipped. A job cancelled before it saved anything counted as a failure: runs
+  sacct reports CANCELLED, PREEMPTED or NODE_FAIL are now neither strike nor
+  reset. And one failed `sbatch` ended the watcher: a cell's submission error
+  now costs that cell one pass, any other error one pass. A killed job's
+  `per_task/` results are also merged into a results file by the next pass,
+  the step the job itself never reached.
 
 Consequences: a walltime kill costs only the tasks in flight, and the next
 watcher pass resubmits what is missing with the walltime sized to it; the
@@ -839,7 +855,9 @@ That walks every NAME on disk (incl. unfinished `eval_*/per_task/` dirs) and
 appends any new ckpts to their model's W&B run. Same effect as resubmitting
 the eval job, without the cluster cost. The merge of `per_task/` into a
 top-level results file happens inside `_run_per_task.sh` at the end of every
-job — no manual `merge_split_results` step required.
+job, and for a job killed before that step by the watcher's next pass
+(`auto_evals_cscs.merge_unmerged`) — no manual `merge_split_results` step
+required.
 
 ---
 

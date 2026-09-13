@@ -638,8 +638,11 @@ def auto_time(size: str, remaining_iters: int, arch: str = "deep") -> str:
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
 
 
-def active_slurm_jobs() -> set[str]:
-    """All queued/running Slurm job names, ANY user (empty off-cluster).
+def active_slurm_jobs() -> set[str] | None:
+    """All queued/running Slurm job names, ANY user (empty off-cluster), or
+    None when squeue fails — an unreachable controller must not read as an
+    empty queue, or every running cell looks resumable and gets a second job
+    writing its --save dir.
 
     Deliberately not `--me`, matching auto_evals_cscs.active_jobs(): cells are
     trained into one shared tree, so a collaborator's in-flight pretrain job
@@ -650,9 +653,11 @@ def active_slurm_jobs() -> set[str]:
     try:
         out = subprocess.run(["squeue", "-h", "--format=%j"],
                              capture_output=True, text=True, timeout=30)
-        return set(out.stdout.split()) if out.returncode == 0 else set()
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except FileNotFoundError:
         return set()
+    except subprocess.TimeoutExpired:
+        return None
+    return set(out.stdout.split()) if out.returncode == 0 else None
 
 
 def rewind_marker(ckpt_dir: Path, want: int, dry_run: bool) -> bool:
@@ -962,6 +967,9 @@ def main() -> None:
     if args.platform == "cscs":
         from pretrain_progress import CKPT_ROOT, cell_action  # lazy: no cycle
         active = active_slurm_jobs()
+        if active is None:
+            sys.exit("squeue failed — not launching without knowing which cells "
+                     "already run: a second job would write the same checkpoint dir")
     else:
         active = set() if args.dry_run else set().union(
             *(active_azure_jobs(az_args(s)[1])

@@ -196,15 +196,17 @@ def saved_valid_iters(cell: str, root: Path) -> list[int]:
     )
 
 
-def active_jobs() -> set[str]:
-    """All queued/running Slurm job names, ANY user — collaborators share the
-    trees, so their in-flight converts/evals count as ours."""
+def active_jobs() -> set[str] | None:
+    """All queued/running Slurm job names and job ids, ANY user — collaborators
+    share the trees, so their in-flight converts/evals count as ours. None when
+    squeue fails: an unreachable controller must not read as an empty queue,
+    or the pass resubmits every eval and convert that is already running."""
     try:
-        out = subprocess.run(["squeue", "-h", "--format=%j"],
+        out = subprocess.run(["squeue", "-h", "--format=%j %i"],
                              capture_output=True, text=True, timeout=30)
-        return set(out.stdout.split()) if out.returncode == 0 else set()
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        return set()
+        return None
+    return set(out.stdout.split()) if out.returncode == 0 else None
 
 
 def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
@@ -243,6 +245,29 @@ def attempted_nothing(run: Path) -> bool:
     j = job_facts(run)
     return (j.get("status") == "finished"
             and not j.get("tasks_done") and not j.get("tasks_failed"))
+
+
+_JOB_STATE: dict[str, str] = {}
+
+
+def interrupted(run: Path) -> bool:
+    """True when this run's job was cancelled, preempted or lost its node before
+    it saved anything. Its job.json still says `started` and the directory is
+    empty, exactly what a crash leaves, but it says nothing about the tasks:
+    counted as failures, two quick scancels plus one real error held back a
+    whole checkpoint. sacct is asked only about such barren runs, once per job
+    per pass."""
+    if job_facts(run).get("status") != "started" or wrote_results(run):
+        return False
+    job = run.name.rsplit("_", 1)[-1]
+    if job not in _JOB_STATE:
+        try:
+            out = subprocess.run(["sacct", "-j", job, "-X", "-n", "-o", "State"],
+                                 capture_output=True, text=True, timeout=30)
+            _JOB_STATE[job] = out.stdout.strip() if out.returncode == 0 else ""
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            _JOB_STATE[job] = ""
+    return _JOB_STATE[job].startswith(("CANCELLED", "PREEMPTED", "NODE_FAIL"))
 
 
 def eval_runs(name: str, logs_root: Path) -> list[Path]:
@@ -310,7 +335,9 @@ def task_attempts(name: str, logs_root: Path,
     reason: dict[str, str] = {}
     open_ = set(tasks)
     for run in eval_runs(name, logs_root):
-        if attempted_nothing(run):
+        # Neither a strike nor a reset: a no-op duplicate (above), or a job
+        # someone cancelled before it saved anything (interrupted()).
+        if attempted_nothing(run) or interrupted(run):
             continue
         failed, barren = failed_in(run), not wrote_results(run)
         for t in list(open_):
@@ -486,8 +513,39 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
         subprocess.run(cmd, env=env, check=True)
 
 
+def merge_unmerged(name: str, logs_root: Path, running: set[str],
+                   dry_run: bool) -> None:
+    """Fold a run's per_task/<task>/ results into one results_*.json when the
+    run never did so itself: a walltime-killed job dies before
+    _run_per_task.sh reaches its merge step, leaving its results only under
+    per_task/. The done-test and every reader cope with that layout, but the
+    merged file is what downstream tools and people look for. Same call the
+    job makes; a run whose job is still in the queue is left to do it."""
+    for run in eval_runs(name, logs_root):
+        if run.name.rsplit("_", 1)[-1] in running or any(run.glob("results_*.json")):
+            continue
+        splits = sorted(d for d in run.glob("per_task/*") if d.is_dir())
+        if not splits:
+            continue
+        print(f"  merge: {len(splits)} per-task result(s) into {name}/{run.name}")
+        if dry_run:
+            continue
+        out = subprocess.run(
+            [sys.executable, "-m", "scripts.alignment.merge_split_results",
+             "--split_dirs", *map(str, splits), "--output_dir", str(run),
+             "--move-samples"], cwd=EVALS_DIR, capture_output=True, text=True)
+        if out.returncode:
+            print(f"    merge failed: {(out.stderr or out.stdout).strip()[-300:]}",
+                  file=sys.stderr)
+
+
 def one_pass(args, root: Path, staging: Path, logs_root: Path,
              benchmarks: list[str]) -> None:
+    # The memos live for ONE pass. Under --watch a single process runs every
+    # pass, and a diagnosis cached from an old job log kept answering for good:
+    # a task misread as a missing dataset was retried every pass, never held.
+    for memo in (_EVAL_ERROR, _DATASET_FIXED, _JOB_STATE):
+        memo.clear()
     # Keep configs/models.json following the grid — conversion and the W&B
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync
@@ -502,6 +560,12 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               f"— commit the diff)")
 
     running = active_jobs() if not args.dry_run else set()
+    if running is None:
+        # Without the queue there is no dedupe: every running eval and convert
+        # would be submitted again, and their fresh, empty eval dirs counted as
+        # strikes. Skip the pass; the errors file keeps its last snapshot.
+        print("squeue failed — skipping this pass, nothing submitted", file=sys.stderr)
+        return
     errors: dict[str, dict] = {}   # checkpoints held back, written out below
     submitted = {"evals": 0}       # against --max-submit, across all cells
 
@@ -522,14 +586,15 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
                 continue
             # capstor intermittently faults a read outright (Errno 5 / 108 —
             # the same blips data_progress.py works around, hit here on a
-            # .hf_complete probe). The watcher runs unattended behind every
+            # .hf_complete probe), and sbatch or convert-snr.sh can fail on a
+            # controller timeout. The watcher runs unattended behind every
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
             try:
                 one_cell(args, {**c, "arch": arch}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
-            except OSError as e:
-                print(f"{cell}: skipped this pass — {e.strerror or e}",
+            except (OSError, subprocess.SubprocessError) as e:
+                print(f"{cell}: skipped this pass — {getattr(e, 'strerror', None) or e}",
                       file=sys.stderr)
 
     # One place to look for what is stuck and why. A snapshot, not a log: a
@@ -589,6 +654,10 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # evaluate only the due ones — conversion is the durability step, eval
     # is the expensive one we sample at 1/N.
     to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
+    # A killed job's per-task results, merged the way its own last step would
+    # have. Nothing is re-run: the done-test already counts them.
+    for it in due:
+        merge_unmerged(f"{cell}-iter{it}", logs_root, running, args.dry_run)
     # Report what's still OUTSTANDING, not what's due: a due checkpoint
     # whose results are already on disk needs no action, and printing it
     # every pass reads as work the watcher is failing to submit.
@@ -620,7 +689,13 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
                 log_kind, log_detail = eval_error(name)
                 if log_kind == "dataset":
                     kind, detail = log_kind, log_detail
-            if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
+            # A repair is trusted for a bounded number of runs: a task whose
+            # "missing dataset" was built and that still fails is failing for
+            # another reason (the log can name ANOTHER task's dataset, or the
+            # build can land in a cache the job never reads), so past twice
+            # the threshold it is held like any other failure.
+            if (kind == "dataset" and n < 2 * args.max_attempts
+                    and fix_missing_dataset(detail, args.dry_run)):
                 continue                 # cache repaired — retry this pass
             held.setdefault(it, {})[t] = {"attempts": n, "kind": kind,
                                           "detail": detail}
@@ -725,8 +800,17 @@ def main() -> None:
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:
-        one_pass(args, Path(args.root), Path(args.staging),
-                 Path(args.logs_root), benchmarks)
+        try:
+            one_pass(args, Path(args.root), Path(args.staging),
+                     Path(args.logs_root), benchmarks)
+        except Exception:
+            # Nothing restarts the watcher, so under --watch an unexpected
+            # error must cost one pass, not stop the sweep's evals until
+            # someone notices. A one-shot run still fails loudly.
+            if not args.watch:
+                raise
+            import traceback
+            traceback.print_exc()
         # One shot, whatever --watch says: the point is to let a fixed root
         # cause prove itself once, not to disable the gate for the session.
         args.retry_held = False

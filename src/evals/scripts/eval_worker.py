@@ -235,6 +235,14 @@ def main() -> int:
                 pass
             failed += 1
             log(f"FAILED {task} after {time.time() - t0:.0f}s — {reason}")
+            if type(e).__name__ == "EngineDeadError":
+                # The vLLM engine is gone for good in this process: every later
+                # task would fail in seconds and take a strike it did not earn
+                # (job 3355520: one dead worker "failed" 145 tasks that the next
+                # job all passed). Stop claiming; the other workers take the
+                # rest of the queue, and the watcher resubmits what is left.
+                log("vLLM engine is dead: this worker stops claiming tasks")
+                break
             continue
         done += 1
         print(make_table(results), flush=True)
