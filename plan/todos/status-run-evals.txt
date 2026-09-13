@@ -1,499 +1,295 @@
-RE-EVALUATE THE PRE-WORKER-POOL BACKLOG                          2026-09-08
+RE-EVALUATE THE PRE-WORKER-POOL BACKLOG                     updated 2026-09-13
 
-
-
-cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals && conda activate snr
-NAME=lm-175M-L50-deep-seed1904-iter3416
-CKPT=/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L50-deep-seed1904/iter_0003416
-LM_EVAL_BACKEND=vllm TOKENIZER=swiss-ai/Apertus-70B-2509 BOS=true \
-APPLY_CHAT_TEMPLATE=false TP=1 PP=1 EVAL_WORKERS=4 \
-WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=msnr-v2 TASKS="$TASKS" \
-sbatch --job-name=eval-$NAME --account=infra01 --time=01:30:00 --export=ALL \
-  scripts/evaluate.sbatch $CKPT $NAME
-
+Every benchmark score in the sweep must come from ONE evaluation pipeline, or
+the SNR analysis reads a pipeline change as noise. Today two coexist in the
+results tree. This file is the plan to remove the old one, step by step.
 
 
 WHY
-  The 2026-09-04 worker pool changed scores. Measured on
-  lm-175M-L50-deep-seed1904-iter3416 — three full 329-task runs, 4776
-  accuracy metrics each:
+  Two changes landed together, and every result produced before them is on a
+  slightly different scale from everything after:
 
-      same settings twice (the floor)       0.5 % of metrics move, max 0.0020
-      caching on vs off                     0.7 %,                 max 0.0080
-      old batched vs new worker + caching    3.5 %,                max 0.0200
-      old batched vs new worker, no caching  3.4 %,                max 0.0200
+    * the WORKER POOL (2026-09-04): one eval_worker.py per GPU instead of one
+      batched lm_eval CLI call. Measured on lm-175M-L50-deep-seed1904-iter3416,
+      three full 329-task runs, 4776 accuracy metrics each:
 
-  The shift is the WORKER POOL, not enable_prefix_caching: turning the flag
-  off does not close the gap (3.5 % vs 3.4 %). It is systematic and
-  time-correlated — every checkpoint evaluated before 2026-09-04 sits on a
-  slightly different scale from everything after. The SNR noise estimate is
-  taken over 5 late checkpoints, which is exactly where an early-vs-late
-  offset is read as noise. Re-run before the fit, not after.
+        same settings twice (the floor)         0.5 % of metrics move, max 0.0020
+        caching on vs off                       0.7 %,                 max 0.0080
+        old batched vs new worker + caching     3.5 %,                 max 0.0200
+        old batched vs new worker, no caching   3.4 %,                 max 0.0200
+
+    * the HARNESS: jobs before 2026-09-02 cloned lm_eval main at 0.4.11
+      (f7f61199); everything since runs the pinned 0.4.13.dev0 wheel (51d6f4b6).
+      Between the two, evaluator.py, the vLLM wrapper, task.py and metrics.py
+      changed. Task hashes are identical, so documents and prompts did not
+      move, but the scoring code did. The 3.5 % above therefore mixes both
+      changes; it is not "the worker pool" alone.
+
+  The shift is systematic and time-correlated. The SNR noise estimate is taken
+  over 5 late checkpoints, which is exactly where an early-vs-late offset is
+  read as noise. Re-run before the fit, not after.
 
 WHAT COUNTS AS STALE
-  An eval dir carries job.json iff the worker pool produced it. A task is
-  stale when its only result comes from a dir without one. `apertus-*` cells
-  are excluded: that sweep is finished and frozen.
+  An eval dir is from the current pipeline iff its job.json names a harness
+  spec. Checked 2026-09-13: all 2310 such dirs name the same wheel
+  (0.4.13.dev0, 51d6f4b6) and the same container (eval-vllm-26-02-17). Every
+  other dir is pre-worker-pool: no job.json at all (711 dirs, 2026-08-21 to
+  09-07), or one of the 8 job.json files written on 09-07 before the harness
+  field existed. A task is stale when its only result sits in such a dir.
+  `apertus-*` cells are excluded: that sweep is finished and frozen.
 
-  This set only SHRINKS — every eval from 2026-09-04 on uses the worker pool,
-  so nothing new becomes stale. When the list below is empty, delete this file.
+WHY THE OLD DIRS MUST LEAVE msnr (not just be outnumbered)
+  Readers do not prefer the newest result. ladder_report.py keeps whichever
+  results_*.json an unsorted glob returns LAST, build_hf_dataset.py the FIRST.
+  While an old and a new result exist for the same task, the tables mix the
+  two scales at random, and that is already true today for every checkpoint
+  holding both kinds of dir. Re-evaluating next to the old dirs fixes nothing.
 
-COST
-  353 checkpoints, 29209 stale tasks.
+  The per-task gate skips any task with a result on disk, so there are three
+  ways to re-run:
 
-    cold start   353 jobs x 212 s     = 20.8 node-h   (one per checkpoint)
-    the tasks    29209 x 6.63 s       = 53.8 node-h
-                                      ~= 75 node-hours
+    a) fresh WANDB_PROJECT (msnr-v2). The gate then sees an EMPTY tree and
+       re-evaluates the whole sweep (~176k task results, not the ~28k stale
+       ones: ~6x the cost), every reader must be repointed, and the eval
+       curves leave the W&B project the training loss logs to.
+    b) move the old dirs out of msnr into a sibling archive, msnr-preworker.
+       Nothing is deleted. The running watcher then sees exactly the stale
+       tasks as missing and re-runs only those, into msnr. No reader changes,
+       no new project, and diff_scores.py can compare the two trees by name.
+    c) a --force flag in _eval_status.py. Leaves old and new side by side, so
+       the reader problem above remains, and it weakens the gate that stops
+       runaway resubmission.
+
+  (b) is the plan below.
+
+WHAT IT COSTS (measured 2026-09-13)
+  719 old eval dirs on 366 checkpoints, all owned by mariagrandury (the 190
+  harness dirs aromanou owns give you rwx through their ACL, so the move works
+  on her cells too).
+
+    294 checkpoints are still due      27,818 stale tasks to re-run
+                                       90M 5,726  175M 6,490  350M 5,720
+                                       600M 6,050  1B 2,900  1.7B 932
+     72 checkpoints are no longer due  archived, never re-run (they are off the
+                                       current eval schedule: an older due
+                                       rule or checkpoint grid)
+
+  Every one of those checkpoints already has at least one worker-pool dir, and
+  10,722 tasks on them are pending anyway (new tasks, the all-language top-ups
+  of the deep scheme-A seed-1904 runs), so most cold starts are paid regardless.
+
+    the tasks    27,818 x 6.63 s         = 51 node-h
+    cold start   294 jobs x 212 s        = 17 node-h
+                                        ~= 70 node-hours, a lower bound
 
   6.63 s/task is the marginal cost measured on the only three FULL 329-task
-  worker runs (2303 / 2405 / 2468 s, cold start removed). Do NOT price this
-  off `eval_minutes()` (292 node-h — that is the walltime requested, not
-  burned) and do NOT apply the 0.05 actual/requested ratio seen on top-ups:
-  that ratio is an artefact of the 15-min OVERHEAD_MIN floor on small jobs
-  and understates a full re-run by ~5x.
+  worker runs (175M). Per-task cost grows with model size, and 1B + 1.7B hold
+  3,832 of the stale tasks, so budget more than 70. Do NOT price this off
+  eval_minutes(): that is the walltime requested, not burned.
 
-OPEN QUESTION — HOW TO RE-RUN  (decide this first)
-  The per-task gate skips anything with a result on disk, so resubmitting
-  into `msnr` evaluates NOTHING. Three options:
-
-    a) fresh WANDB_PROJECT (msnr-v2). Reversible, deletes nothing, and
-       progress is just `ls <logs>/msnr-v2 | wc -l` against 353. Cost: the
-       results tree splits and every reader needs repointing.
-    b) move the stale eval_*/ dirs aside. Needs an explicit decision — this
-       repo never relocates eval results without one.
-    c) add --force to scripts/_eval_status.py. Least disruptive long-term,
-       but the gate is what stops runaway resubmission, so tread carefully.
-
-  (a) is the recommended start.
 
 EXACT COMMANDS
 
-  cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
-  conda activate snr
+  0. Set up (once per shell)
 
-  # 1. Validate on ONE checkpoint before committing to 353. A different
-  #    WANDB_PROJECT is a different eval_logs subtree, so the gate sees no
-  #    prior results and runs the full list.
-  cd src/evals
-  NAME=lm-175M-L50-deep-seed1904-iter3416
-  CKPT=/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L50-deep-seed1904/iter_0003416
-  TASKS="$(python3.11 -c "import sys;sys.path.insert(0,'../..');from src.evals.scripts.utils.configs import tasks_for_benchmarks;sys.path.insert(0,'../pretrain');from launch_trainings import cell_languages;import json;print(','.join(tasks_for_benchmarks(json.load(open('../../configs/tasks.json'))['groups']['auto'], cell_languages(50,'A'))))")"
-  [ "$(tr ',' '\n' <<<"$TASKS" | grep -c .)" -eq 329 ] || echo "WRONG TASK COUNT — stop"
-  LM_EVAL_BACKEND=vllm TOKENIZER=swiss-ai/Apertus-70B-2509 BOS=true \
-  APPLY_CHAT_TEMPLATE=false TP=1 PP=1 EVAL_WORKERS=4 \
-  WANDB_ENTITY=mariagrandury-epflnlp WANDB_PROJECT=msnr-v2 TASKS="$TASKS" \
-  sbatch --job-name=eval-$NAME --account=infra01 --time=01:30:00 --export=ALL \
-    scripts/evaluate.sbatch $CKPT $NAME
+     Why: every step below runs from src/pretrain with the snr env, and the
+     login node caps you at 1000 threads. OpenBLAS starts one thread per core
+     when numpy is imported, and raises SIGINT when it cannot, which shows up
+     as a KeyboardInterrupt nobody typed.
 
-  # 2. Compare. Expect ~3.5 % of metrics to move, max ~0.02 — the numbers at
-  #    the top of this file. A much larger delta means something else changed.
-  python3.11 scripts/diff_scores.py $NAME msnr msnr-v2
+     conda activate snr
+     export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+     R=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+     AP=/users/mariagrandury/archive_preworker.py
 
-  # 3. The whole backlog: point the watcher at the new project by editing
-  #    wandb.project in configs/hf_wandb.json, then --dry-run and read the
-  #    submit count before dropping the flag.
-  cd ../pretrain && python3.11 auto_evals_cscs.py --dry-run
+     Write the helper. It classifies every eval dir exactly as described
+     above, prints what it would move and how many stale tasks the watcher
+     will re-run, and only moves when APPLY=1. Moves are renames on the same
+     filesystem (atomic, nothing copied), each one logged to
+     msnr-preworker/MOVED.tsv, and it refuses to start if any destination
+     already exists. ONLY=<checkpoint> restricts it, DETAIL=1 prints one line
+     per checkpoint.
 
-  # 4. Regenerate the list below (it shrinks as the re-run drains).
-  python3.11 - <<'EOF'
-  import json, re, sys, collections
-  from pathlib import Path
-  sys.path.insert(0, "src/pretrain")
-  import auto_evals_cscs as A
-  L = Path(A.DEFAULT_LOGS_ROOT) / A.WANDB_ENTITY / A.PROJECT_NAME
-  rows = []
-  for nd in sorted(L.iterdir()):
-      h = nd / "harness"
-      if not nd.is_dir() or not h.is_dir() or not nd.name.startswith("lm-"):
-          continue
-      old = new = 0; ot, nt = set(), set()
-      for d in sorted(h.glob("eval_*")):
-          if not d.is_dir():
-              continue
-          tasks = {p.name for p in d.glob("per_task/*") if p.is_dir()}
-          for f in d.glob("results_*.json"):
-              try: r = json.loads(f.read_text())
-              except (OSError, json.JSONDecodeError): continue
-              sub = set().union(*[set(v) for v in (r.get("group_subtasks") or {}).values()]) \
-                    if r.get("group_subtasks") else set()
-              tasks |= set(r.get("results") or {}) - sub
-          if (d / "job.json").is_file(): new += 1; nt |= tasks
-          else:                          old += 1; ot |= tasks
-      if ot - nt:
-          m = re.match(r"lm-([0-9.]+[MB])-", nd.name)
-          rows.append((nd.name, m.group(1) if m else "?", len(ot - nt), old, new))
-  rows.sort(key=lambda r: (r[1], r[0]))
-  by = collections.Counter()
-  for r in rows: by[r[1]] += r[2]
-  print(f"{len(rows)} checkpoints, {sum(r[2] for r in rows)} stale tasks")
-  print("by size: " + "  ".join(f"{k} {v}" for k, v in sorted(by.items())))
-  print(f"\n{'checkpoint':<45}{'size':>6}{'stale':>7}{'old':>5}{'new':>5}")
-  for n, s, t, o, w in rows:
-      print(f"{n:<45}{s:>6}{t:>7}{o:>5}{w:>5}")
-  EOF
+     cat > $AP <<'EOF'
+import collections, json, os, re, sys
+from pathlib import Path
+import auto_evals_cscs as A
+from pretrain_progress import CKPT_ROOT, NAME_RE, SCHEME_OF_LABEL, SIZES
+from launch_trainings import HYPERPARAMS, schedule_for, due_iters
+from evals.scripts.utils.configs import tasks_for_benchmarks
+
+ENTITY = Path(os.environ.get("EVAL_ROOT", A.DEFAULT_LOGS_ROOT)) / A.WANDB_ENTITY
+SRC, DST = ENTITY / A.PROJECT_NAME, ENTITY / f"{A.PROJECT_NAME}-preworker"
+ONLY, APPLY, DETAIL = os.environ.get("ONLY"), os.environ.get("APPLY") == "1", os.environ.get("DETAIL") == "1"
+
+def tasks_in(d):        # the "done" test of _eval_status, for one eval dir
+    t = {p.name for p in d.glob("per_task/*") if p.is_dir()}
+    for f in d.glob("results_*.json"):
+        try: r = json.loads(f.read_text())
+        except (OSError, json.JSONDecodeError): continue
+        t |= set(r.get("results") or {}) - set().union(*map(set, (r.get("group_subtasks") or {}).values()))
+    return t
+
+def worker_pool(d):     # job.json naming a harness spec = worker pool + pinned 0.4.13 wheel
+    try: return bool(json.loads((d / "job.json").read_text()).get("harness"))
+    except (OSError, json.JSONDecodeError): return False
+
+cfgs = {a: json.loads(p.read_text())["configs"] for a, p in HYPERPARAMS.items()}
+bench, due_of = A.auto_benchmarks(), {}
+moves, stale_by_size, n_ckpt, n_nondue = [], collections.Counter(), 0, 0
+for nd in sorted(SRC.iterdir()):
+    m = re.match(r"(lm-.+)-iter(\d+)$", nd.name)
+    cm = m and NAME_RE.match(m.group(1))
+    if not cm or (ONLY and nd.name != ONLY):
+        continue
+    dirs = [d for d in sorted((nd / "harness").glob("eval_*")) if d.is_dir()]
+    old = [d for d in dirs if not worker_pool(d)]
+    if not old:
+        continue
+    cell, it = m.group(1), int(m.group(2))
+    scheme, arch, seed = SCHEME_OF_LABEL[cm["scheme"] or ""], cm["arch"], int(cm["seed"])
+    if cell not in due_of:
+        saved = A.saved_valid_iters(cell, CKPT_ROOT)
+        due_of[cell] = set(due_iters(saved, schedule_for(cfgs[arch][cm["size"]])[0])) if saved else set()
+    n_ckpt += 1
+    moves += [(d, DST / nd.name / "harness" / d.name) for d in old]
+    if it not in due_of[cell]:
+        n_nondue += 1
+        continue
+    want = set(tasks_for_benchmarks(bench, A.eval_languages(
+        int(cm["L"]), scheme, (scheme, arch, seed) == A.ALL_LANGUAGES_RUNS)))
+    new = set().union(*map(tasks_in, [d for d in dirs if worker_pool(d)]))
+    stale = (set().union(*map(tasks_in, old)) - new) & want
+    stale_by_size[cm["size"]] += len(stale)
+    if DETAIL:
+        print(f"  {nd.name:<45} stale {len(stale):>4}  old dirs {len(old)}  worker-pool dirs {len(dirs) - len(old)}")
+
+print(f"{len(moves)} pre-worker-pool eval dirs on {n_ckpt} checkpoints "
+      f"({n_nondue} checkpoints no longer due: archived, never re-run)")
+print(f"{sum(stale_by_size.values())} stale tasks the watcher will re-run: "
+      + "  ".join(f"{s} {stale_by_size[s]}" for s in SIZES if stale_by_size[s]))
+if not APPLY:
+    print(f"dry-run: nothing moved (APPLY=1 moves them under {DST})")
+    sys.exit(0)
+clash = [dst for _, dst in moves if dst.exists()]
+if clash:
+    sys.exit(f"refusing, {len(clash)} destinations already exist, e.g. {clash[0]}")
+DST.mkdir(exist_ok=True)
+with open(DST / "MOVED.tsv", "a") as log:
+    for src, dst in moves:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        os.rename(src, dst)             # same filesystem: atomic, nothing copied
+        log.write(f"{src}\t{dst}\n"); log.flush()
+print(f"moved {len(moves)} dirs, logged in {DST / 'MOVED.tsv'}")
+EOF
+     ap() { (cd $R/src/pretrain && env "$@" python3.11 - < $AP); }
+
+  1. Measure (read-only)
+
+     Why: the numbers above are a snapshot. Checkpoints keep landing and the
+     task lists change, so re-read them before committing to the move.
+
+     ap DETAIL=1 | tail -3          # drop `| tail -3` for the per-checkpoint list
+
+     Expect roughly: 719 dirs on 366 checkpoints, ~28k stale tasks.
+
+  2. Precondition: nothing held back for a cause that is already fixed
+
+     Why: a task the watcher holds back is never resubmitted, so a stale task
+     that is also held would silently stay missing after the move. The two
+     holds of 2026-09-13 were xstorycloze_gl, broken upstream and fixed by
+     caching revision 8ff06548c4 (jobs since 18:48 score it).
+
+     cat /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/auto_eval_errors.json
+     cd $R/src && python3.11 pretrain/auto_evals_cscs.py --retry-held    # one pass, if anything is held
+
+  3. Validate on ONE checkpoint
+
+     Why: before moving 719 dirs, prove on one that the move makes the watcher
+     re-run exactly the stale tasks, and that the new scores differ from the
+     old ones by about what was measured. A much larger shift means something
+     other than the pipeline changed, and you want to know that before the
+     other 293 checkpoints are re-run.
+
+     ap ONLY=lm-175M-L50-deep-seed1904-iter3416 APPLY=1
+     cd $R/src && python3.11 pretrain/auto_evals_cscs.py --name lm-175M-L50-deep-seed1904 --dry-run | grep -A1 iter3416
+         # expect one eval submit for iter3416 carrying the 329 re-run tasks
+         # (plus anything already pending on that checkpoint)
+
+     The tmux watcher submits it on its next pass (or run the same command
+     without --dry-run). When the job has finished:
+
+     cd $R && python3.11 src/evals/scripts/diff_scores.py lm-175M-L50-deep-seed1904-iter3416 msnr-preworker msnr
+
+     Expect ~3.5 % of the accuracy metrics to move, max |delta acc| ~0.02 (the
+     WHY table). The "max |delta|" line includes perplexities, which move more;
+     judge the acc rows. Clearly more than that: stop and investigate.
+
+  4. Move the rest
+
+     Why: this is the step that makes the re-run happen. After it, msnr holds
+     only worker-pool results plus gaps, and the watcher fills the gaps.
+
+     ap APPLY=1
+     ap | head -1                   # expect "0 pre-worker-pool eval dirs on 0 checkpoints"
+
+  5. Let the watcher re-run them
+
+     Why: no special launcher. The move turned stale tasks into missing ones,
+     which is the normal watcher's job, with its walltime sizing, held-task
+     gate and debug drainer.
+
+     cd $R/src && python3.11 pretrain/auto_evals_cscs.py --dry-run | grep -c "submit: eval-"
+
+     That count is the burst the next tmux pass submits (~300 jobs on top of
+     the usual). To spread it out, restart the tmux watcher with a cap:
+
+     cd $R/src && OPENBLAS_NUM_THREADS=1 python3.11 pretrain/auto_evals_cscs.py --watch 1200 --max-submit 100
+
+  6. Follow it until it drains
+
+     Why: the archive helper cannot measure progress any more (nothing old is
+     left in msnr); what is left is ordinary outstanding eval work.
+
+     cd $R/src && python3.11 pretrain/auto_evals_cscs.py --dry-run | grep -c "submit: eval-"   # falls back to the usual top-ups
+     cat /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/auto_eval_errors.json
+     # src/pretrain/eval_progress.png (refreshed by the watcher every pass)
+
+  7. When it has drained
+
+     cd $R/src/pretrain && python3.11 ladder_report.py --plot     # tables now on one scale
+
+     The archive's durable copy: mirror_eval_logs.sbatch rsyncs the whole
+     eval_logs tree, msnr-preworker included, to capstor. Submit it once after
+     the move (12 h job):
+     sbatch $R/src/evals/scripts/mirror_eval_logs.sbatch
+
+     DECISION, W&B: each re-evaluated checkpoint is pushed again by its eval
+     job, and re-logging a step appends a duplicate point at the same x
+     (push_all_results.py docstring), so the W&B charts overlay old and new
+     values for those checkpoints. The analysis reads disk, not W&B, so this
+     is cosmetic. For clean charts: bump RUN_ID_SUFFIX in
+     src/evals/scripts/push_all_results.py (-v6 -> -v7) and run the bulk push
+     from the login node. Never delete the old W&B runs (evals CLAUDE.md
+     bug 9: a deleted run id is blacklisted forever).
+
+  UNDO (any time; nothing is ever deleted)
+
+     tac /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr-preworker/MOVED.tsv \
+       | while IFS=$'\t' read -r src dst; do mkdir -p "$(dirname "$src")" && mv "$dst" "$src"; done
+
+     Re-evaluated results stay in msnr alongside the restored old ones, so an
+     undo brings back the reader problem described above.
+
 
 TODO
-  [ ] pick the mechanism above
-  [ ] re-fit SAFETY / OVERHEAD_MIN — median actual/requested walltime is 0.05
-      over 103 completed jobs; over-requesting 20x suppresses backfill, which
-      is what costs you concurrent nodes
-  [ ] re-fit MIN_PER_TASK from worker jobs once ~5 have run a FULL task list
-      (resumed jobs get the cheap leftovers and bias it low — only three full
-      runs exist so far, all of the same checkpoint)
+  [ ] 1. measure                 [ ] 2. clear holds          [ ] 3. validate one
+  [ ] 4. move the rest           [ ] 5-6. re-run drained     [ ] 7. report, mirror, W&B decision
+  [x] re-fit SAFETY / OVERHEAD_MIN and MIN_PER_TASK on worker-pool jobs
+      (b311d21, 2026-09-11: SAFETY 1.5 -> 1.15, OVERHEAD_MIN 15 -> 10,
+      MIN_PER_TASK roughly halved; all 440 jobs run at the 15-min minimum
+      finished)
   [ ] after any future pipeline change: measure the floor first, and compare
       against it rather than against bit-identity
 
-checkpoint                                     size  stale  old  new
-lm-1.7B-L1-deep-seed1904-iter12150             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter16200             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter20250             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter24300             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter28350             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter32400             1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter4050              1.7B      9    1    0
-lm-1.7B-L1-deep-seed1904-iter8100              1.7B      9    1    0
-lm-1.7B-L30-deep-seed1904-iter12150            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter16200            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter20250            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter24300            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter28350            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter32400            1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter4050             1.7B    164    1    0
-lm-1.7B-L30-deep-seed1904-iter8100             1.7B    164    1    0
-lm-1.7B-L8-deep-seed1904-iter12150             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter16200             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter20250             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter24300             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter28350             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter32400             1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter4050              1.7B     60    1    0
-lm-1.7B-L8-deep-seed1904-iter8100              1.7B     60    1    0
-lm-175M-L1-deep-seed1904-iter1708              175M      9    3    0
-lm-175M-L1-deep-seed1904-iter2562              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter3416              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter4270              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter5124              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter5978              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter6832              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter7686              175M      9    2    0
-lm-175M-L1-deep-seed1904-iter854               175M      9    3    0
-lm-175M-L1-deep-seed1904-iter8540              175M      9    2    0
-lm-175M-L1-deep-seed313-iter1708               175M      9    2    1
-lm-175M-L1-deep-seed313-iter2562               175M      9    2    1
-lm-175M-L1-deep-seed313-iter3416               175M      9    2    1
-lm-175M-L1-deep-seed313-iter4270               175M      9    2    1
-lm-175M-L1-deep-seed313-iter5124               175M      9    2    1
-lm-175M-L1-deep-seed313-iter5978               175M      9    2    1
-lm-175M-L1-deep-seed313-iter6832               175M      9    2    1
-lm-175M-L1-deep-seed313-iter7686               175M      9    2    1
-lm-175M-L1-deep-seed313-iter854                175M      9    2    1
-lm-175M-L1-deep-seed313-iter8540               175M      9    2    1
-lm-175M-L1-deep-seed64-iter1708                175M      9    2    1
-lm-175M-L1-deep-seed64-iter2562                175M      9    2    1
-lm-175M-L1-deep-seed64-iter3416                175M      9    2    1
-lm-175M-L1-deep-seed64-iter4270                175M      9    2    1
-lm-175M-L1-deep-seed64-iter5124                175M      9    2    1
-lm-175M-L1-deep-seed64-iter5978                175M      9    2    1
-lm-175M-L1-deep-seed64-iter6832                175M      9    2    1
-lm-175M-L1-deep-seed64-iter7686                175M      9    2    1
-lm-175M-L1-deep-seed64-iter854                 175M      9    4    1
-lm-175M-L1-deep-seed64-iter8540                175M      9    2    1
-lm-175M-L15-deep-seed1904-iter1708             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter2562             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter3416             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter4270             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter5124             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter5978             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter6832             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter7686             175M    100    1    1
-lm-175M-L15-deep-seed1904-iter854              175M    100    1    1
-lm-175M-L15-deep-seed1904-iter8540             175M    100    1    1
-lm-175M-L2-deep-seed1904-iter1708              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter2562              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter3416              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter4270              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter5124              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter5978              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter6832              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter7686              175M     18    2    0
-lm-175M-L2-deep-seed1904-iter854               175M     18    2    0
-lm-175M-L2-deep-seed1904-iter8540              175M     18    2    0
-lm-175M-L2-shallow-seed1904-iter1668           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter2502           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter3336           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter4170           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter5004           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter5838           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter6672           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter7506           175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter834            175M     18    1    0
-lm-175M-L2-shallow-seed1904-iter8340           175M     18    1    0
-lm-175M-L30-deep-seed1904-iter1708             175M    164    1    1
-lm-175M-L30-deep-seed1904-iter2562             175M    164    1    1
-lm-175M-L30-deep-seed1904-iter3416             175M    164    1    1
-lm-175M-L30-deep-seed1904-iter4270             175M    164    1    1
-lm-175M-L30-deep-seed1904-iter5124             175M    164    1    1
-lm-175M-L30-deep-seed1904-iter5978             175M    164    1    0
-lm-175M-L30-deep-seed1904-iter6832             175M    164    1    0
-lm-175M-L30-deep-seed1904-iter7686             175M    164    1    0
-lm-175M-L30-deep-seed1904-iter854              175M    164    1    1
-lm-175M-L30-deep-seed1904-iter8540             175M    164    1    0
-lm-175M-L50-deep-seed1904-iter1708             175M    219   11    0
-lm-175M-L50-deep-seed1904-iter2562             175M    403   10    0
-lm-175M-L50-deep-seed1904-iter3416             175M    329    9    0
-lm-175M-L50-deep-seed1904-iter4270             175M    329    8    0
-lm-175M-L50-deep-seed1904-iter5124             175M    329    8    0
-lm-175M-L50-deep-seed1904-iter5978             175M    329    8    0
-lm-175M-L50-deep-seed1904-iter6832             175M    329    7    0
-lm-175M-L50-deep-seed1904-iter7686             175M    329    7    0
-lm-175M-L50-deep-seed1904-iter854              175M    219   11    0
-lm-175M-L50-deep-seed1904-iter8540             175M    329    7    0
-lm-175M-L8-deep-seed1904-iter1708              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter2562              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter3416              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter4270              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter5124              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter5978              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter6832              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter7686              175M     60    1    1
-lm-175M-L8-deep-seed1904-iter854               175M     60    1    1
-lm-175M-L8-deep-seed1904-iter8540              175M     60    1    1
-lm-1B-L50-deep-seed1904-iter13716                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter18288                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter22860                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter27432                1B    219    1    0
-lm-1B-L50-deep-seed1904-iter32004                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter36576                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter41148                1B    219    2    0
-lm-1B-L50-deep-seed1904-iter4572                 1B    219    2    1
-lm-1B-L50-deep-seed1904-iter45720                1B    219    1    0
-lm-1B-L50-deep-seed1904-iter9144                 1B    219    2    0
-lm-1B-L8-deep-seed1904-iter13716                 1B     60    1    0
-lm-1B-L8-deep-seed1904-iter18288                 1B     60    1    0
-lm-1B-L8-deep-seed1904-iter22860                 1B     60    3    0
-lm-1B-L8-deep-seed1904-iter27432                 1B     60    2    0
-lm-1B-L8-deep-seed1904-iter32004                 1B     60    1    0
-lm-1B-L8-deep-seed1904-iter36576                 1B     60    3    0
-lm-1B-L8-deep-seed1904-iter41148                 1B     60    2    0
-lm-1B-L8-deep-seed1904-iter4572                  1B     60    1    0
-lm-1B-L8-deep-seed1904-iter45720                 1B     60    1    0
-lm-1B-L8-deep-seed1904-iter9144                  1B     60    3    0
-lm-350M-L1-deep-seed1904-iter11662             350M      9    1    0
-lm-350M-L1-deep-seed1904-iter13328             350M      9    1    0
-lm-350M-L1-deep-seed1904-iter14994             350M      9    1    0
-lm-350M-L1-deep-seed1904-iter1666              350M      9    2    0
-lm-350M-L1-deep-seed1904-iter16660             350M      9    1    0
-lm-350M-L1-deep-seed1904-iter3332              350M      9    2    0
-lm-350M-L1-deep-seed1904-iter4998              350M      9    2    0
-lm-350M-L1-deep-seed1904-iter6664              350M      9    2    0
-lm-350M-L1-deep-seed1904-iter8330              350M      9    2    0
-lm-350M-L1-deep-seed1904-iter9996              350M      9    1    0
-lm-350M-L15-deep-seed1904-iter11662            350M    100    1    0
-lm-350M-L15-deep-seed1904-iter13328            350M    100    2    0
-lm-350M-L15-deep-seed1904-iter14994            350M    100    1    0
-lm-350M-L15-deep-seed1904-iter1666             350M    100    2    0
-lm-350M-L15-deep-seed1904-iter16660            350M    100    1    0
-lm-350M-L15-deep-seed1904-iter3332             350M    100    1    0
-lm-350M-L15-deep-seed1904-iter4998             350M    100    1    0
-lm-350M-L15-deep-seed1904-iter6664             350M    100    1    0
-lm-350M-L15-deep-seed1904-iter8330             350M    100    2    0
-lm-350M-L15-deep-seed1904-iter9996             350M    100    1    0
-lm-350M-L2-deep-seed1904-iter11662             350M     18    1    1
-lm-350M-L2-deep-seed1904-iter13328             350M     18    1    1
-lm-350M-L2-deep-seed1904-iter14994             350M     18    1    1
-lm-350M-L2-deep-seed1904-iter1666              350M     18    1    1
-lm-350M-L2-deep-seed1904-iter16660             350M     18    1    1
-lm-350M-L2-deep-seed1904-iter3332              350M     18    1    1
-lm-350M-L2-deep-seed1904-iter4998              350M     18    1    1
-lm-350M-L2-deep-seed1904-iter6664              350M     18    1    1
-lm-350M-L2-deep-seed1904-iter8330              350M     18    1    1
-lm-350M-L2-deep-seed1904-iter9996              350M     18    1    1
-lm-350M-L30-deep-seed1904-iter11662            350M    164    1    0
-lm-350M-L30-deep-seed1904-iter13328            350M    164    1    0
-lm-350M-L30-deep-seed1904-iter14994            350M    164    1    0
-lm-350M-L30-deep-seed1904-iter1666             350M    164    1    0
-lm-350M-L30-deep-seed1904-iter16660            350M    164    1    0
-lm-350M-L30-deep-seed1904-iter3332             350M    164    1    0
-lm-350M-L30-deep-seed1904-iter4998             350M    164    1    0
-lm-350M-L30-deep-seed1904-iter6664             350M    164    1    0
-lm-350M-L30-deep-seed1904-iter8330             350M    164    1    0
-lm-350M-L30-deep-seed1904-iter9996             350M    164    1    0
-lm-350M-L50-deep-seed1904-iter11662            350M    219    1    0
-lm-350M-L50-deep-seed1904-iter13328            350M    219    1    0
-lm-350M-L50-deep-seed1904-iter14994            350M    219    1    0
-lm-350M-L50-deep-seed1904-iter1666             350M    219    1    1
-lm-350M-L50-deep-seed1904-iter16660            350M    219    1    0
-lm-350M-L50-deep-seed1904-iter3332             350M    219    1    0
-lm-350M-L50-deep-seed1904-iter4998             350M    219    1    0
-lm-350M-L50-deep-seed1904-iter6664             350M    219    1    0
-lm-350M-L50-deep-seed1904-iter8330             350M    219    1    0
-lm-350M-L50-deep-seed1904-iter9996             350M    219    1    0
-lm-350M-L8-deep-seed1904-iter11662             350M     60    1    1
-lm-350M-L8-deep-seed1904-iter13328             350M     60    1    1
-lm-350M-L8-deep-seed1904-iter14994             350M     60    1    1
-lm-350M-L8-deep-seed1904-iter1666              350M     60    1    1
-lm-350M-L8-deep-seed1904-iter16660             350M     60    1    1
-lm-350M-L8-deep-seed1904-iter3332              350M     60    1    1
-lm-350M-L8-deep-seed1904-iter4998              350M     60    1    1
-lm-350M-L8-deep-seed1904-iter6664              350M     60    1    1
-lm-350M-L8-deep-seed1904-iter8330              350M     60    1    1
-lm-350M-L8-deep-seed1904-iter9996              350M     60    1    1
-lm-600M-L1-deep-seed1904-iter11520             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter14400             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter17280             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter20160             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter23040             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter25920             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter2880              600M      9    1    1
-lm-600M-L1-deep-seed1904-iter28800             600M      9    1    1
-lm-600M-L1-deep-seed1904-iter5760              600M      9    1    1
-lm-600M-L1-deep-seed1904-iter8640              600M      9    1    1
-lm-600M-L1-deep-seed313-iter11520              600M      9    2    1
-lm-600M-L1-deep-seed313-iter14400              600M      9    2    1
-lm-600M-L1-deep-seed313-iter17280              600M      9    2    1
-lm-600M-L1-deep-seed313-iter20160              600M      9    2    1
-lm-600M-L1-deep-seed313-iter23040              600M      9    2    1
-lm-600M-L1-deep-seed313-iter25920              600M      9    2    1
-lm-600M-L1-deep-seed313-iter2880               600M      9    2    1
-lm-600M-L1-deep-seed313-iter28800              600M      9    1    1
-lm-600M-L1-deep-seed313-iter5760               600M      9    2    1
-lm-600M-L1-deep-seed313-iter8640               600M      9    2    1
-lm-600M-L1-deep-seed64-iter11520               600M      9    1    1
-lm-600M-L1-deep-seed64-iter14400               600M      9    1    1
-lm-600M-L1-deep-seed64-iter17280               600M      9    1    1
-lm-600M-L1-deep-seed64-iter23040               600M      9    1    1
-lm-600M-L1-deep-seed64-iter25920               600M      9    1    1
-lm-600M-L1-deep-seed64-iter2880                600M      9    1    1
-lm-600M-L1-deep-seed64-iter28800               600M      9    1    1
-lm-600M-L1-deep-seed64-iter5760                600M      9    1    1
-lm-600M-L1-deep-seed64-iter8640                600M      9    1    1
-lm-600M-L15-deep-seed1904-iter11520            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter14400            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter17280            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter20160            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter23040            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter25920            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter2880             600M    100    1    0
-lm-600M-L15-deep-seed1904-iter28800            600M    100    1    0
-lm-600M-L15-deep-seed1904-iter5760             600M    100    1    0
-lm-600M-L15-deep-seed1904-iter8640             600M    100    1    0
-lm-600M-L2-deep-seed1904-iter11520             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter14400             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter17280             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter20160             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter23040             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter25920             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter2880              600M     18    1    0
-lm-600M-L2-deep-seed1904-iter28800             600M     18    1    0
-lm-600M-L2-deep-seed1904-iter5760              600M     18    1    0
-lm-600M-L2-deep-seed1904-iter8640              600M     18    1    0
-lm-600M-L30-deep-seed1904-iter11520            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter14400            600M    164    1    4
-lm-600M-L30-deep-seed1904-iter17280            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter20160            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter23040            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter25920            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter2880             600M    164    1    0
-lm-600M-L30-deep-seed1904-iter28800            600M    164    1    0
-lm-600M-L30-deep-seed1904-iter5760             600M    164    1    0
-lm-600M-L30-deep-seed1904-iter8640             600M    164    1    0
-lm-600M-L50-deep-seed1904-iter11520            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter14400            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter17280            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter20160            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter23040            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter25920            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter2880             600M    219    1    1
-lm-600M-L50-deep-seed1904-iter28800            600M    219    1    0
-lm-600M-L50-deep-seed1904-iter5760             600M    219    1    0
-lm-600M-L50-deep-seed1904-iter8640             600M    219    1    0
-lm-600M-L8-deep-seed1904-iter11520             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter14400             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter17280             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter20160             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter23040             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter25920             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter2880              600M     60    1    0
-lm-600M-L8-deep-seed1904-iter28800             600M     60    1    0
-lm-600M-L8-deep-seed1904-iter5760              600M     60    1    0
-lm-600M-L8-deep-seed1904-iter8640              600M     60    1    0
-lm-90M-L1-deep-seed1904-iter1350                90M      9    3    0
-lm-90M-L1-deep-seed1904-iter1800                90M      9    3    0
-lm-90M-L1-deep-seed1904-iter2250                90M      9    3    0
-lm-90M-L1-deep-seed1904-iter2700                90M      9    3    0
-lm-90M-L1-deep-seed1904-iter3150                90M      9    2    0
-lm-90M-L1-deep-seed1904-iter3600                90M      9    2    0
-lm-90M-L1-deep-seed1904-iter4050                90M      9    2    0
-lm-90M-L1-deep-seed1904-iter450                 90M      9    3    0
-lm-90M-L1-deep-seed1904-iter4500                90M      9    2    0
-lm-90M-L1-deep-seed1904-iter900                 90M      9    3    0
-lm-90M-L1-shallow-seed1904-iter1278             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter1704             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter2130             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter2556             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter2982             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter3408             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter3834             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter426              90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter4260             90M      9    1    0
-lm-90M-L1-shallow-seed1904-iter852              90M      9    1    0
-lm-90M-L15-deep-seed1904-iter1350               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter1800               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter2250               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter2700               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter3150               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter3600               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter4050               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter450                90M    100    1    0
-lm-90M-L15-deep-seed1904-iter4500               90M    100    1    0
-lm-90M-L15-deep-seed1904-iter900                90M    100    1    0
-lm-90M-L2-deep-seed1904-iter1350                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter1800                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter2250                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter2700                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter3150                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter3600                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter4050                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter450                 90M     18    2    0
-lm-90M-L2-deep-seed1904-iter4500                90M     18    2    0
-lm-90M-L2-deep-seed1904-iter900                 90M     18    2    0
-lm-90M-L2-shallow-seed1904-iter1278             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter1704             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter2130             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter2556             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter2982             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter3408             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter3834             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter426              90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter4260             90M     18    1    0
-lm-90M-L2-shallow-seed1904-iter852              90M     18    1    0
-lm-90M-L30-deep-seed1904-iter1350               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter1800               90M    164    2    0
-lm-90M-L30-deep-seed1904-iter2250               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter2700               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter3150               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter3600               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter4050               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter450                90M    164    2    0
-lm-90M-L30-deep-seed1904-iter4500               90M    164    1    0
-lm-90M-L30-deep-seed1904-iter900                90M    164    2    0
-lm-90M-L50-deep-seed1904-iter1350               90M    219   17    0
-lm-90M-L50-deep-seed1904-iter1800               90M    219   17    0
-lm-90M-L50-deep-seed1904-iter2250               90M    219   16    0
-lm-90M-L50-deep-seed1904-iter2700               90M    219   16    0
-lm-90M-L50-deep-seed1904-iter3150               90M    219   17    0
-lm-90M-L50-deep-seed1904-iter3600               90M    219   16    0
-lm-90M-L50-deep-seed1904-iter4050               90M    219   14    0
-lm-90M-L50-deep-seed1904-iter450                90M    219   17    0
-lm-90M-L50-deep-seed1904-iter4500               90M    219   14    0
-lm-90M-L50-deep-seed1904-iter900                90M    219   17    0
-lm-90M-L8-deep-seed1904-iter1350                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter1800                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter2250                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter2700                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter3150                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter3600                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter4050                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter450                 90M     60    1    1
-lm-90M-L8-deep-seed1904-iter4500                90M     60    1    0
-lm-90M-L8-deep-seed1904-iter900                 90M     60    1    0
+  When step 7 is done, this file can go. msnr-preworker stays.
