@@ -328,7 +328,7 @@ def main():
     parser.add_argument(
         "--settings", type=str, default=None,
         help="Comma-separated subset of language settings to build FineWeb-2 "
-             f"for (default: all of {all_settings}).",
+             "for (default: every setting the --scheme defines).",
     )
     parser.add_argument(
         "--val_tokens_per_language", type=int, default=5_000_000,

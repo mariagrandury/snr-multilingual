@@ -355,8 +355,8 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     print(f"[plot] saved {detailed_path}", file=sys.stderr)
 
 
-def eval_counts(root: Path, logs_root: Path | None = None
-                ) -> dict[tuple[str, int], dict]:
+def eval_counts(root: Path, logs_root: Path | None = None,
+                all_languages: bool = False) -> dict[tuple[str, int], dict]:
     """Per (size, L) cell: benchmark results banked, and the two totals.
 
     The unit is one (checkpoint, benchmark-result) pair, because that is what
@@ -373,8 +373,11 @@ def eval_counts(root: Path, logs_root: Path | None = None
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
-    per language the cell trains on, 9 at L=1 and 290 at L=100. That is why
+    per language the cell trains on, 13 at L=1 and 446 at L=100. That is why
     the eval cost of a cell is a property of L, not of the model size.
+
+    all_languages counts only auto_evals_cscs.ALL_LANGUAGES_RUNS (one run per
+    cell), each against every language — exactly what the watcher runs there.
 
     Due checkpoints and the benchmark list come from auto_evals_cscs itself
     (imported lazily: it imports this module, so a top-level import would
@@ -383,14 +386,15 @@ def eval_counts(root: Path, logs_root: Path | None = None
     import auto_evals_cscs as ae
     from evals.scripts._eval_status import completed_tasks
     from evals.scripts.utils.configs import tasks_for_benchmarks
-    from launch_trainings import cell_languages, due_iters, save_interval
+    from launch_trainings import due_iters, save_interval
 
     logs_root = Path(logs_root or ae.DEFAULT_LOGS_ROOT)
     benchmarks = ae.auto_benchmarks()
     targets = _targets()
 
     def benches(L: int, scheme: str) -> int:
-        return len(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+        return len(tasks_for_benchmarks(benchmarks,
+                                        ae.eval_languages(L, scheme, all_languages)))
 
     cells: dict[tuple[str, int], dict] = {}
     for size in SIZES:
@@ -407,14 +411,19 @@ def eval_counts(root: Path, logs_root: Path | None = None
             # is trained in — not always both: ZH and ES are deep only.
             runs = {v: len(seeds_for(size, L, v)) * len(DATA_SCHEMES[v]["arches"])
                     for v in schemes}
+            if all_languages:
+                s, _, seed = ae.ALL_LANGUAGES_RUNS
+                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s) else {}
+                if not runs:
+                    continue
             cells[(size, L)] = {
                 "done": 0, "models": 0, "ckpts": n_due,
                 # Schemes can evaluate different language sets, so their
                 # benchmark counts differ (L=8: A 60, B 47). Keep them separate
                 # rather than pretending the cell is uniform.
-                "benches": {v: benches(L, v) for v in schemes},
+                "benches": {v: benches(L, v) for v in runs},
                 "planned_runs": sum(runs.values()),
-                "planned": sum(runs[v] * n_due * benches(L, v) for v in schemes),
+                "planned": sum(runs[v] * n_due * benches(L, v) for v in runs),
                 # `seen*` describe what is on disk NOW, which for a
                 # mid-training run is fewer checkpoints than the schedule.
                 "avail": 0, "seen": {}, "seen_ckpts": set(),
@@ -436,15 +445,17 @@ def eval_counts(root: Path, logs_root: Path | None = None
             continue
         size, L = m["size"], int(m["L"])
         c = cells.get((size, L))
-        if c is None:
+        scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
+        if c is None or (all_languages and (scheme, m["arch"], int(m["seed"]))
+                         != ae.ALL_LANGUAGES_RUNS):
             continue
         saved = ae.saved_valid_iters(entry.name, root)
         if not saved:
             continue
-        scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
         target = targets[(m["arch"], size)]
         due = due_iters(saved, target)   # on the run's own grid, like the watcher
-        want = set(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+        want = set(tasks_for_benchmarks(benchmarks,
+                                        ae.eval_languages(L, scheme, all_languages)))
         c["models"] += 1
         c["seen"][scheme] = len(want)
         c["seen_ckpts"].add(len(due))
@@ -467,8 +478,11 @@ def _bench_str(counts) -> str:
 
 
 def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
-                  out_dir: Path = SCRIPT_DIR) -> None:
+                  out_dir: Path = SCRIPT_DIR, all_languages: bool = False) -> None:
     """Heatmap of eval progress per grid cell, three numbers deep.
+
+    all_languages=True draws eval_progress_all_languages.png instead: only the
+    auto_evals_cscs.ALL_LANGUAGES_RUNS, each against every language.
 
     Each cell reads:
 
@@ -484,7 +498,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     Colour is the FRACTION of the middle row complete, not the absolute count
     missing, so a finished cell reads the same whether it is 180/180 or
     1080/1080 — yellow at 0%, blue at 100%. Absolute counts already vary
-    ~30x across the grid (9 benchmarks at L=1, 290 at L=100), so colouring by
+    ~30x across the grid (13 benchmarks at L=1, 446 at L=100), so colouring by
     them would say little more than "this row has many languages". Cells with
     no trained run are grey like the off-grid ones: there is no fraction to
     show because there is nothing to evaluate yet.
@@ -492,7 +506,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
 
-    cells = eval_counts(root, logs_root)
+    cells = eval_counts(root, logs_root, all_languages)
     matrix, labels = [], []
     done_total = now_total = plan_total = 0
     for L in LANG_SETTINGS:
@@ -545,7 +559,8 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     ax.set_xlabel("model size (non-embedding)")
     ax.set_ylabel("number of languages")
     ax.set_title(
-        "Eval progress per grid cell — benchmark results banked (bold)\n"
+        ("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages else "")
+        + "Eval progress per grid cell — benchmark results banked (bold)\n"
         "models x checkpoints x benchmarks: trained so far (middle), "
         "planned (bottom)\n"
         f"{done_total:,} done of {now_total:,} available "
@@ -554,7 +569,8 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
         "colour = % of available done (yellow 0 → blue 100)",
         fontsize=9)
     fig.tight_layout()
-    path = out_dir / "eval_progress.png"
+    path = out_dir / ("eval_progress_all_languages.png" if all_languages
+                      else "eval_progress.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"[plot] saved {path}", file=sys.stderr)
@@ -741,6 +757,7 @@ def main() -> None:
         # the training plots that already succeeded.
         try:
             eval_progress(root=Path(args.root))
+            eval_progress(root=Path(args.root), all_languages=True)
         except Exception as e:
             print(f"[plot] eval progress skipped: {e}", file=sys.stderr)
         sync_docs()

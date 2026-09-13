@@ -69,19 +69,19 @@ is ever touched (see plan/90M-rung-anomaly.md):
 Examples:
     # the scheme-A ladder
     python3.11 pretrain/launch_trainings.py cscs --dry-run
-    # three sizes, all L                
-    python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M    
+    # three sizes, all L
+    python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M
     python3.11 pretrain/launch_trainings.py azure --size 1.7B --langs 30
     # monolingual anchors on Azure
-    python3.11 pretrain/launch_trainings.py azure --langs 1        
-    # depth intervention       
+    python3.11 pretrain/launch_trainings.py azure --langs 1
+    # depth intervention
     python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
-    # diversity-first lists 
-    python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8 
-    # T=3: L50 and L100    
-    python3.11 pretrain/launch_trainings.py cscs --scheme AT3       
-    # L2 with Chinese      
-    python3.11 pretrain/launch_trainings.py cscs --scheme ZH              
+    # diversity-first lists
+    python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8
+    # T=3: L50 and L100
+    python3.11 pretrain/launch_trainings.py cscs --scheme AT3
+    # L2 with Chinese
+    python3.11 pretrain/launch_trainings.py cscs --scheme ZH
 """
 
 from __future__ import annotations
@@ -969,7 +969,9 @@ def main() -> None:
             # Hold D = 100 x N: a smaller batch takes proportionally more steps.
             # Scaling the predictivity block itself carries the change to
             # everything derived from it — target/done-check, ADEMAMIX_WARMUP,
-            # save_interval (still 20 saves), a beta3 factor, the walltime and
+            # save_interval (20 saves at 90M — n_checkpoints reads the scaled
+            # iters, so a larger size can cross its 30k/60k thresholds and
+            # get 40 or 60), a beta3 factor, the walltime and
             # the undersized-data check. The first --gbs pair (2026-09-09) kept
             # 4500 steps and so saw 1/2 and 1/6 of the tokens.
             k = GBS // args.gbs

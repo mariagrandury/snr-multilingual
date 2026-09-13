@@ -36,7 +36,7 @@ reintroduces the drift this design removed.
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause; `--all-languages` swaps a cell's trained languages for every language any task is tagged with); needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
@@ -139,7 +139,7 @@ then never log again without a code-side id suffix.
   refuses to resume a run saved on another checkpoint grid
   (`skip [foreign schedule]`).
 - **Never change a grid cell's training config.** #5 covers not changing the
-  optimizer *schedule* on a resume; this is the wider rule, across cells: 24
+  optimizer *schedule* on a resume; this is the wider rule, across cells: dozens of
   cells are trained, and a rung that ran different hyperparameters is not on
   the same ladder as the rest — the scaling fit cannot absorb it, so "fixing"
   one rung means re-running every rung. `launch_trainings.py` has exactly three

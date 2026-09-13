@@ -129,7 +129,7 @@ width-scaled (`INIT_STD` = 0.008944 × √(1792/hidden), anchored so the 1B
 keeps the reviewed value exactly).
 
 **A new training run must reproduce the config the already-pretrained cells
-used.** Two dozen cells are on disk; a rung trained with different
+used.** Dozens of cells are already trained; a rung trained with different
 hyperparameters is not on the same ladder as the rest, and the scaling fit
 cannot absorb that. So there is no way to perturb a *grid* cell's config from
 the command line. The three experimental knobs that exist —
@@ -208,7 +208,8 @@ a preempted one resumes from its checkpoint, so re-running is always safe.
 Scheme A builds into `<DATA_DIR>/` itself; every other scheme gets its own
 `--data_dir` under it (`AT3/`, `schemeB/`, `ZH/`, `ES/`), with the shared
 english build and validation manifest symlinked in. A finished build stages
-its mixture and, for a scheme subdir, that english link; `launch_trainings.py
+its mixture and, for a scheme subdir, that english link (a 92B rebuild stages
+its mixture only); `launch_trainings.py
 cscs` skips (`skip [no data]`) any cell whose blend files are not on the stage
 yet, instead of allocating nodes that fail at dataset build.
 
@@ -403,7 +404,11 @@ regardless of variant:
 All three PNGs and the generated doc blocks are refreshed automatically at
 the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
 (embedded above) is refreshed by the auto-eval watcher after every pass,
-since that is what changes the state it shows. Unlike the two model
+since that is what changes the state it shows. So is
+[`eval_progress_all_languages.png`](eval_progress_all_languages.png): the
+deep scheme-A seed-1904 runs, which the watcher always evaluates in every
+language (`ALL_LANGUAGES_RUNS` in `auto_evals_cscs.py`), counted against
+that full list. Unlike the two model
 heatmaps it counts only runs the grid names — a run on disk outside the grid
 is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.
@@ -420,14 +425,14 @@ destination (W&B
 **`mariagrandury-epflnlp/msnr`** — the project the training loss logs to,
 so loss and benchmark curves live side by side). The `auto` group in
 [`configs/tasks.json`](../../configs/tasks.json) lists **benchmark names**
-(afrimmlu, afrixnli, arc, belebele, global_mmlu, global_piqa, hellaswag,
-include_base_44, lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1,
-xcopa, xnli, xstorycloze, xwinograd); each cell is evaluated on every
+(arc, belebele, global_mmlu, global_piqa, hellaswag, include_base_44,
+lambada_openai_mt, multiblimp, paws, truthfulqa-multi_mc1, xcopa, xnli,
+xstorycloze, xwinograd); each cell is evaluated on every
 listed benchmark's tasks **in the languages it trains on** (English + its
 setting's FineWeb-2 languages, mapped via
 [`configs/languages.json`](../../configs/languages.json)) — e.g. the L2
-cells get `hellaswag` + `hellaswag_ru` + … (18 tasks); L30 cells get 164,
-L100 cells 290 — the task languages cover the full 100-language set.
+cells get `hellaswag` + `hellaswag_ru` + … (23 tasks); L30 cells get 233,
+L100 cells 446 — the task languages cover the full 100-language set.
 Both watchers are idempotent: stop them, restart them, run them twice —
 nothing duplicates.
 
@@ -447,6 +452,9 @@ nothing duplicates.
   python3.11 auto_evals_cscs.py --dry-run       # preview one pass
   python3.11 auto_evals_cscs.py --watch 600     # tmux: a pass every 10 min
   python3.11 auto_evals_cscs.py --retry-held    # after fixing a root cause
+  # every auto language, not only the trained ones — always filter it:
+  # unfiltered, one pass submits ~1,300 eval jobs (2026-09-13)
+  python3.11 auto_evals_cscs.py --seed 1904 --all-languages --max-submit 20
   ```
 
   `--retry-held` exists because the failure gate has no other way out. A task
@@ -475,7 +483,10 @@ nothing duplicates.
 90M–600M are measured on **this** sweep: medians over 500k+ logged iterations
 from the 2026-08-21…27 runs (flash attention, data on iopsstor), sampled
 mid-run so neither cold start nor the end-of-run checkpoint flush is included,
-and pooled across L. 1B and 1.7B have no run here yet.
+and pooled across L. 1B and 1.7B are measured since 2026-09-11 on their first
+runs (no shallow 1B yet); by wall clock, saves included, they run at 849 and
+1155 ms, which is what `ITER_MS` sizes walltimes from — see
+[plan/compute-budget.md](../../plan/compute-budget.md).
 
 | Size  | Nodes | MBS | ms/iter deep | ms/iter shallow | Predictivity iters (5×C) | h (steady) |
 | ----- | ----: | --: | -----------: | --------------: | -----------------------: | ---------: |
@@ -483,8 +494,8 @@ and pooled across L. 1B and 1.7B have no run here yet.
 | 175M  |     6 |   7 |      **844** |         **810** |                    8 540 |     ~2.0 h |
 | 350M  |    14 |   3 |      **604** |         **567** |                   16 660 |     ~2.8 h |
 | 600M  |    21 |   6 |      **548** |         **539** |                   28 800 |     ~4.4 h |
-| 1B    |    21 |   6 |    715 (est) |       715 (est) |                   45 740 |     ~9.1 h |
-| 1.7B  |    21 |   2 |   1200 (est) |      1200 (est) |                   81 000 |      ~27 h |
+| 1B    |    21 |   6 |      **754** |               — |                   45 720 |     ~9.6 h |
+| 1.7B  |    21 |   2 |     **1138** |        **1079** |                   81 000 |    ~25.6 h |
 
 **Training cost does not depend on L.** Across all seven language settings at
 a fixed size the medians vary by ≤4% (350M deep: 589–614 ms) — tokens per

@@ -107,7 +107,7 @@ def convert_job_name(cell: str) -> str:
     Keep the two in step: this string is the only dedupe against submitting a
     second conversion for a cell that already has one in flight."""
     return f"convert-snr-{cell}"
-# The auto group spans 9 tasks (L=1) to 290 (L=100), so a fixed walltime can't
+# The auto group spans 13 tasks (L=1) to 446 (L=100), so a fixed walltime can't
 # fit both. The ladder's KV-head counts force TP=1, so evaluate.sbatch runs
 # EVAL_WORKERS independent workers per job — one per GPU of the node, each
 # with its own model copy — sharing the task queue (../evals/scripts/
@@ -526,7 +526,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
             try:
-                one_cell(args, c, cell, scheme, configs, root, staging,
+                one_cell(args, {**c, "arch": arch}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
             except OSError as e:
                 print(f"{cell}: skipped this pass — {e.strerror or e}",
@@ -552,6 +552,21 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
+# (scheme, arch, seed) of the runs evaluated in EVERY language, flag or not:
+# one full size x L ladder showing how each benchmark behaves in languages
+# the model never trained on (eval_progress_all_languages.png).
+ALL_LANGUAGES_RUNS = ("A", "deep", 1904)
+
+
+def eval_languages(L: int, scheme: str, all_languages: bool = False):
+    """The languages a cell is evaluated in: the ones it trains on, or every
+    language any task is tagged with ("multi"/"??" stay out, as
+    tasks_for_benchmarks promises)."""
+    if all_languages:
+        return {e.get("language") for e in load_tasks().values()} - {"multi", "??"}
+    return cell_languages(L, scheme)
+
+
 def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
              staging: Path, logs_root: Path, benchmarks: list[str],
              running: set[str], errors: dict, submitted: dict) -> None:
@@ -564,12 +579,11 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # actually saved at (a 20-save 1B run yields every save, a 40-save one
     # every 2nd — the same points), plus its final one — same rule as Azure.
     due = due_iters(saved, target, args.every)
-    # The cell's task list: every auto benchmark, in the languages
-    # this cell trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...).
-    # --all-languages: every language any task is tagged with, not only the
-    # cell's ("multi"/"??" stay out, as tasks_for_benchmarks promises).
-    langs = ({e.get("language") for e in load_tasks().values()} - {"multi", "??"}
-             if args.all_languages else cell_languages(c["L"], scheme))
+    # The cell's task list: every auto benchmark, in the languages this cell
+    # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
+    # under --all-languages and for the ALL_LANGUAGES_RUNS.
+    langs = eval_languages(c["L"], scheme, args.all_languages
+                           or (scheme, c["arch"], c["seed"]) == ALL_LANGUAGES_RUNS)
     task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
@@ -648,9 +662,10 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    # Default: EVERY scheme. One watcher covers the whole grid, so the
-    # shallow ladder and the scheme-B cells cannot quietly fall behind while
-    # a deep/A-only watcher runs. The flags narrow it for a targeted pass.
+    # Default: every arch and every scheme. One watcher covers the whole
+    # grid, so the shallow ladder and the non-A schemes cannot quietly fall
+    # behind while a deep/A-only watcher runs. The flags narrow it for a
+    # targeted pass.
     p.add_argument("--arch", choices=["deep", "shallow"], default=None,
                    help="only this architecture (default: both)")
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
@@ -723,6 +738,8 @@ def main() -> None:
             try:
                 from pretrain_progress import eval_progress
                 eval_progress(root=Path(args.root), logs_root=Path(args.logs_root))
+                eval_progress(root=Path(args.root), logs_root=Path(args.logs_root),
+                              all_languages=True)
             except Exception as e:
                 print(f"(eval progress plot not refreshed: {e})", file=sys.stderr)
         if not args.watch:

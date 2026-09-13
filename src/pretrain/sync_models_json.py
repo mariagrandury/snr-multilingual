@@ -12,8 +12,9 @@ never disagree.
 Normally you never run this by hand: **both auto-eval watchers call sync()
 at the start of every pass**, so the registry follows the grid
 automatically. The CLI exists for explicit use after editing the grid
-(commit the resulting models.json diff). Idempotent; entries of other
-schemes (e.g. an earlier --arch shallow run) are left untouched.
+(commit the resulting models.json diff). Idempotent; entries outside the
+--arch/--scheme filter (e.g. the shallow cells under --arch deep) are left
+untouched.
 
 Usage:
     python sync_models_json.py                 # every deep cell, all schemes
