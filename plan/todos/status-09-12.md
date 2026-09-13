@@ -7,14 +7,14 @@
 ✅ cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 52 --interval 1800
 
 ✅ resume 1.7B models:
-python3.11 launch_trainings.py cscs --size 1.7B                  # L2 deep
-python3.11 launch_trainings.py cscs --size 1.7B --scheme B       # L8, L30 scheme B deep
-python3.11 launch_trainings.py cscs --size 1.7B --arch shallow   # L1, L2, L8, L30 shallow
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B                  # L2 deep
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme B       # L8, L30 scheme B deep
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --arch shallow   # L1, L2, L8, L30 shallow
 scontrol update jobid=3377944 reservation=SD-69241-apertus-1-5-0 # L2 deep
 
 ✅ resume 1B models:
-python3.11 launch_trainings.py cscs --size 1B --langs 1 --seed 1904
-python3.11 launch_trainings.py cscs --size 1B --langs 15 --seed 1904
+python3.11 pretrain/launch_trainings.py cscs --size 1B --langs 1 --seed 1904
+python3.11 pretrain/launch_trainings.py cscs --size 1B --langs 15 --seed 1904
 
 ✅ rebuild data for 1.7B size:
 M=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data
@@ -36,6 +36,8 @@ python3.11 launch_trainings.py cscs --scheme ES --size 175M,350M
 python3.11 launch_trainings.py cscs --scheme AT3 --size 175M
 python3.11 launch_trainings.py cscs --size 90M --langs 2 --seed 1904 --ademamix-beta3-factor 0.2 --gbs 252
 
+resume 1.7B models:
+✅ python3.11 pretrain/launch_trainings.py cscs --size 1.7B --arch shallow
 
 - ✅ launch 90M config comparison runs (4x)
 - ✅ mirror_eval_logs time -> 12h
@@ -53,6 +55,7 @@ python3.11 launch_trainings.py cscs --size 90M --langs 2 --seed 1904 --ademamix-
 - Write methodology
 - Consider models needed language interference study
 
+---
 
 ## 90M config comparison
 
@@ -92,13 +95,14 @@ Production scores back-to-back 4,096-token windows, so the first tokens of each 
 
 Impact: every model is scored on identical windows, so rankings and decision accuracy are unaffected. Absolute BPB is pessimistic, and more so for scripts with few bytes per token. Suggestion: if absolute values matter — for comparison with published numbers — score with a sliding window and a 512–1,024-token stride.
 
-[report]
+✅ [report]
 - set the flag to --rope-scaling-factor 8
 - fix the “trained language” flag
 - validation languages -> good catch! since we will change the final L100 list, we will have to change the validation 100 languages, how will this affect the validation rebuild and calculation of bpb scores? give me a short list of tasks to follow and what to remember when i do this (i will give this task to another session)
 - The byte-count self-check never runs in production: explain further this caveat, why is it relevant and the proposed fix
 - create a 2nd version of the artifact without the BPB implementation review section
 
+---
 
 # 1B and 1.7B training status
 
@@ -157,6 +161,8 @@ python3.11 launch_trainings.py cscs --size 1B --langs 1 --seed 1904 --dry-run
 python3.11 launch_trainings.py cscs --size 1B --langs 1 --seed 1904
 python3.11 launch_trainings.py cscs --size 1B --langs 15 --seed 1904 --dry-run
 python3.11 launch_trainings.py cscs --size 1B --langs 15 --seed 1904
+
+---
 
 ## Reservation check
 
