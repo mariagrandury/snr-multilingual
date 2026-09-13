@@ -57,7 +57,12 @@ build_megatron_cmd() {
 		--position-embedding-type rope
 		--rotary-base 500000
 		--use-rope-scaling
-		--rope-scaling-factor 32
+		# 8, not 32: Megatron c92402e never forwards this flag to the model
+		# (model_provider.py passes rope_scaling only), so every cell trained at
+		# the RotaryEmbedding default of 8 and the HF configs say 8. The flag read
+		# 32 until 2026-09-13 with no effect; setting it to the value actually used
+		# keeps a future Megatron that does forward it on the same ladder.
+		--rope-scaling-factor 8
 		--make-vocab-size-divisible-by 128
 		--normalization RMSNorm
 		--xielu
