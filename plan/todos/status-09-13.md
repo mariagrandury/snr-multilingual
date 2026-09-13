@@ -41,6 +41,10 @@ eval --all-languages for all deep models:
 ✅ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /90M/ {print $1}' | xargs -r scancel
 
 ✅ python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
+✅ sbatch evals/scripts/mirror_eval_logs.sbatch 
+✅ bash evals/scripts/launch_bpb.sh
+✅ python3.11 pretrain/auto_evals_cscs.py --watch 1200
+✅ cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 100 --interval 1800 --hours 14
 
 - ✅ resume 90M config comparison runs (4x)
 - ✅ resume 1.7B models
