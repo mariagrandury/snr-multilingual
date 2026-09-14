@@ -86,9 +86,10 @@ Computed on the ≤ 600M ladder before this pipeline existed
 - **The language-count axis gives distinct models** (across-L range at 600M ≈
   4.4× checkpoint noise, on BPB one to two orders of magnitude); the depth
   intervention's benchmark effect is of the order of the seed effect
-  (`ladder_report.md`'s transformation table: arch |Δ mean benchmark|
-  −0.005…+0.003 against seed −0.014…−0.012), which is why rq06 puts every
-  decision against the seed noise.
+  (transformation table on the published report: arch Δ mean benchmark
+  −0.009…+0.014 against seed −0.004…+0.007, each pair averaged over the tasks
+  both of its cells were scored on), which is why rq06 puts every decision
+  against the seed noise.
 - **Decision accuracy from the recipe ranking**: HellaSwag is the most
   decision-reliable family (mean 0.72, 0.91 deciding from 350M);
   chance-level knowledge benchmarks are coin flips.

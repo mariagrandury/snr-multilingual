@@ -142,7 +142,10 @@ then never log again without a code-side id suffix.
   (Russian 2021–24 share 4% → 14%, Chinese 0% → 32%), so a shallow or new-seed
   cell moved onto it would stop seeing what its trained counterparts saw
   (verified 2026-09-13). The launcher also refuses to resume a run saved on
-  another checkpoint grid (`skip [foreign schedule]`).
+  another checkpoint grid (`skip [foreign schedule]`) — but only when at least
+  three of its saves sit on the inferred interval, because `run_interval`
+  breaks ties toward the larger gap and would otherwise read a bogus grid off
+  two or three saves and park the cell for good.
 - **Never change a grid cell's training config.** #5 covers not changing the
   optimizer *schedule* on a resume; this is the wider rule, across cells: dozens of
   cells are trained, and a rung that ran different hyperparameters is not on

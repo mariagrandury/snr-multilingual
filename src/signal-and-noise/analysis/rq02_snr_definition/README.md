@@ -158,10 +158,11 @@ checkpoints, median 0.004): the across-L range of final benchmark scores at
 600M has median 0.022 ≈ 4.4× that noise (56/60 benchmarks above 2×; top:
 `xwinograd_en` 17×, `hellaswag_ru` 13×), and on BPB the separation is one to
 two orders of magnitude above noise — the language-count axis gives genuinely
-distinct models for SNR. The `ladder_report.md` transformation table
-(2026-09-03, six seed pairs) puts the seed effect at |Δ final loss| ≤ 0.043,
-|Δ macro BPB| ≤ 0.024 and |Δ mean benchmark| ≈ 0.013; the depth effect on
-benchmarks is of the same order (−0.005 … +0.003 on the mean over tasks), so
+distinct models for SNR. The transformation table on the 14 September report
+(18 seed pairs) puts the seed effect at Δ final loss −0.061 … +0.046,
+Δ macro BPB −0.050 … +0.034 and Δ mean benchmark −0.004 … +0.007; the depth
+effect on benchmarks is of the same order (−0.009 … +0.014 over the tasks each
+pair shares), so
 whether deep vs shallow is a distinct model for SNR is exactly what rq06's
 effect-vs-noise table decides per task.
 

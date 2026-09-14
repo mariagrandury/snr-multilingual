@@ -1002,8 +1002,11 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
 
     Two figures, because a mean over different task sets is not a comparison.
     By default every cell counts only the tasks in the languages it trains
-    on, so all cells share one definition of a benchmark's score (the deep
-    scheme-A seed-1904 runs carry ~2,900 tasks, their siblings 74-155).
+    on (the deep scheme-A seed-1904 runs carry ~2,900 tasks, their siblings
+    74-155), and one line is drawn per (size, arch, scheme, L) so a line is
+    always one task population. Within a line the mean is still over whatever
+    tasks that checkpoint was scored on, which is a diagnostic curve, not a
+    comparison — `transform_effects` is what differences two cells.
     all_languages=True draws only ALL_LANGUAGES_RUNS, the runs evaluated in
     every language, over every task they have, trained on or not.
     """
@@ -1032,7 +1035,9 @@ def plot_benchmarks(csv_path: Path, out_dir: Path,
     fig, axes = _panels(len(benches), 3.4, 2.8)
     for ax, b in zip(axes, benches):
         g = df[df["benchmark"] == b]
-        for (size, arch, scheme), gs in g.groupby(["size", "arch", "scheme"]):
+        # L is part of the key: each language setting trains a different task
+        # list, so pooling L averaged incomparable populations into one line.
+        for (size, arch, scheme, _L), gs in g.groupby(["size", "arch", "scheme", "L"]):
             m = gs.groupby("iter")["value"].mean().sort_index()
             # x is the fraction of the run so rungs of different length are
             # comparable, as in the loss figure.
@@ -1132,18 +1137,20 @@ def transform_effects(csv_path: Path) -> str:
     full = _read_wide(csv_path)
     if full is None:
         return "_no runs found_"
-    # Both at each run's FINAL checkpoint, like the loss, and the benchmark
-    # mean over the tasks in the languages the cell trains on: a mean over
-    # whatever tasks a cell happens to carry compared the all-language runs
-    # (~2,900 tasks) with siblings holding 74-155, and flipped the sign of
-    # some arch and seed deltas.
+    # Both at each run's FINAL checkpoint, like the loss. The benchmark side
+    # is restricted twice: to the tasks in the languages the cell trains on
+    # (a mean over whatever tasks a cell happens to carry compared the
+    # all-language runs, ~2,900 tasks, with siblings holding 74-155), and
+    # then, per pair, to the tasks both cells actually have a score for.
     fin = _final_rows(full)
     bench, bpb = {}, {}
     for _, r in fin.iterrows():
         cols = [f"bench__{t}" for t in _trained_tasks(r["L"], r["scheme"])
                 if f"bench__{t}" in fin]
-        v = pd.to_numeric(r[cols], errors="coerce").mean() if cols else float("nan")
-        if v == v:
+        # The scores themselves, not their mean: the pair loop averages over
+        # the tasks the two cells SHARE. See the comment there.
+        v = pd.to_numeric(r[cols], errors="coerce").dropna() if cols else None
+        if v is not None and len(v):
             bench[r["cell"]] = v
         if "macro_bpb" in fin and r["macro_bpb"] == r["macro_bpb"]:
             bpb[r["cell"]] = r["macro_bpb"]
@@ -1176,7 +1183,7 @@ def transform_effects(csv_path: Path) -> str:
                 if axis == "scheme" and "A" not in (keys[a][axis], keys[b][axis]):
                     continue
                 npairs += 1
-                for name, src in (("loss", loss), ("bpb", bpb), ("bench", bench)):
+                for name, src in (("loss", loss), ("bpb", bpb)):
                     if a in src and b in src and src[a] == src[a] and src[b] == src[b]:
                         deltas[name].append(src[b] - src[a])
                         if name == "loss":
@@ -1184,6 +1191,17 @@ def transform_effects(csv_path: Path) -> str:
                                 f"| {axis} | {keys[a]['size']} L{keys[a]['L']} | "
                                 f"{keys[a][axis]} -> {keys[b][axis]} | "
                                 f"{src[b] - src[a]:+.3f} |")
+                if a in bench and b in bench:
+                    # Mean over the tasks BOTH cells were scored on. A per-cell
+                    # mean is not comparable: it skips that cell's own NaNs, and
+                    # on the scheme axis the trained-task lists differ outright
+                    # (L8: A 86 tasks, B 66). Differencing two of them put the
+                    # seed row at -0.045 where its shared tasks give -0.001, and
+                    # flipped the sign of the ES delta.
+                    shared = bench[a].index.intersection(bench[b].index)
+                    if len(shared):
+                        deltas["bench"].append(
+                            bench[b][shared].mean() - bench[a][shared].mean())
 
         def rng(v):
             if not v:
@@ -1280,17 +1298,22 @@ def _git_publish(files: list[Path], repo_root: Path) -> None:
     tree = git("mktree", stdin=entries)
 
     ref = f"refs/heads/{GIT_DATA_BRANCH}"
+    remote = f"refs/remotes/origin/{GIT_DATA_BRANCH}"
     try:
-        # Append to whatever the remote already holds, so a re-push stays a
-        # fast-forward instead of forking the branch.
-        git("fetch", "--quiet", "origin", f"{GIT_DATA_BRANCH}:{ref}")
+        # Into the remote-tracking ref, and forced. The local branch is only a
+        # staging area: update-ref below advances it whether or not the push
+        # that follows succeeds, so after one failed push (no SSH agent on a
+        # compute node — the case the caller catches) it sits ahead of origin,
+        # this fetch is then refused as a non-fast-forward, and every later run
+        # reads its own unpushed commit as proof the report is published.
+        git("fetch", "--quiet", "origin", f"+{GIT_DATA_BRANCH}:{remote}")
     except subprocess.CalledProcessError:
         pass                       # first publish: the branch does not exist
     try:
-        parent = ["-p", git("rev-parse", "--verify", "--quiet", ref)]
+        parent = ["-p", git("rev-parse", "--verify", "--quiet", remote)]
     except subprocess.CalledProcessError:
         parent = []                # orphan root commit
-    if parent and git("rev-parse", f"{ref}^{{tree}}") == tree:
+    if parent and git("rev-parse", f"{remote}^{{tree}}") == tree:
         print(f"[publish] {GIT_DATA_BRANCH} already holds this report", file=sys.stderr)
         return
 

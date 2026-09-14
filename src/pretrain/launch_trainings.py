@@ -1086,9 +1086,20 @@ def main() -> None:
                 ckdir = CKPT_ROOT / exp / "checkpoints"
                 saved = sorted(int(m.group(1)) for e in ckdir.iterdir()
                                if (m := ITER_RE.match(e.name)) and is_valid_iter_dir(e))
-                if len(saved) >= 2 and run_interval(saved) != save_interval(target):
+                interval = run_interval(saved) if len(saved) >= 2 else 0
+                # A real grid divides every save it produced. run_interval
+                # breaks ties toward the LARGER gap, so two saves around a
+                # SIGUSR2 exit save — or three with one interior checkpoint
+                # missing — report an interval the run never used; refusing on
+                # that is permanent, because this launcher is the only resume
+                # path and the cell can never grow the saves that would clear
+                # it. Requiring three saves ON the inferred grid keeps
+                # aromanou's 20-save 2287 cells refused and lets a run this
+                # checkout just started continue.
+                if interval and interval != save_interval(target) and sum(
+                        1 for i in saved if i % interval == 0) >= 3:
                     print(f"  skip [foreign schedule]: {exp} saved every "
-                          f"{run_interval(saved)} iters; this checkout would continue "
+                          f"{interval} iters; this checkout would continue "
                           f"every {save_interval(target)} — resume it from the "
                           f"checkout that started it")
                     continue

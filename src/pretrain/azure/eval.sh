@@ -89,8 +89,16 @@ ls "$HARNESS_EVAL_DIR"
 python - "$HARNESS_EVAL_DIR" <<'EOF'
 import json, sys
 from pathlib import Path
-results = sorted(Path(sys.argv[1]).glob("results_*.json"))[-1]
-for task, metrics in json.load(open(results))["results"].items():
+# _run_per_task.sh exits 0 without a merged results_*.json in two normal
+# cases: every task already had results (the resume gate) and the merge
+# failed (deliberately non-fatal). Under `set -euo pipefail` an IndexError
+# here killed the job before the W&B push below, losing the per-task results
+# a preempted Spot job had already written to blob.
+results = sorted(Path(sys.argv[1]).glob("results_*.json"))
+if not results:
+    print("no merged results_*.json — per-task results only, see per_task/")
+    sys.exit(0)
+for task, metrics in json.load(open(results[-1]))["results"].items():
     print(task, {k: round(v, 4) for k, v in metrics.items() if isinstance(v, float)})
 EOF
 
