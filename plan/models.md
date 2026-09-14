@@ -1,5 +1,11 @@
 # Predictivity sweep — model card sheet
 
+> **Stale since 2026-09-10.** The grid now has 1.7B at every L, the AT3/ZH/ES
+> data schemes, per-size seed triples and 92B builds at L15/L50 — see
+> [the training plan](small-to-large-predictivity-training-plan.md) and
+> `src/pretrain/launch_trainings.py`. The counts, cells and data sizes below
+> predate it.
+
 All models trained in the small-to-large predictivity study
 ([plan](small-to-large-predictivity-training-plan.md) ·
 [compute budget](compute-budget.md)). Source of truth: the two **reviewed**
@@ -16,24 +22,28 @@ sheet carried the fixed-100B-token LRs and the 51-run grid).
 
 L ∈ {1, 2, 8, 15, 30, 50, 100} languages (English + L−1 FineWeb-2 languages,
 lists per scheme in `src/pretrain/data/language_sets_scheme{A,B}.json`).
-✓ = one seed (1904) · **×3** = seeds 64, 313, 1904. The generated block in
+✓ = one seed (1904) · **×3** = seeds 64, 313, 1904 (1B: 28, 1797, 1904). The generated block in
 [`src/pretrain/README.md`](../src/pretrain/README.md) is the live version of
 this table.
 
 | Languages | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| 1 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
-| 2 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
+| 1 | ✓ | **×3** | ✓ | **×3** | **×3†** | ✓ |
+| 2 | ✓ | **×3** | ✓ | **×3** | **×3†** | ✓ |
 | 8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | 15 | ✓ | ✓ | ✓ | ✓ | ✓ | — |
-| 30 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 30 | ✓ | ✓ | ✓ | ✓ | **×3†** | ✓ |
 | 50 | ✓ | **×3** | ✓ | **×3** | ✓ | — |
 | 100 | ✓ | **×3** | ✓ | **×3** | ✓ | ✓ |
-| **Runs/level** | 7 | 15 | 7 | 15 | 7 | 5 |
+| **Runs/level** | 7 | 15 | 7 | 15 | 13 | 5 |
 
-**56 runs per intervention level** (scheme A, deep). Counting both
+† the 1B row's ×3 cells carry seeds 28, 1797, 1904 — the runs launched on
+2026-09-02 from a clone predating the seed change, adopted as they are
+([1b-models.md](1b-models.md)); `launch_trainings.SEED_TRIPLE_1B`.
+
+**62 runs per intervention level** (scheme A, deep). Counting both
 architectures and scheme B where its language set differs (L ∈ {8, 15, 30}):
-146 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
+162 runs. Cell name = Slurm job name = checkpoint dir = W&B run name:
 `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>` (e.g.
 `lm-1B-L30-deep-seed1904`, `lm-350M-L8-schemeB-shallow-seed1904`). W&B project **`msnr`**
 (entity `mariagrandury-epflnlp`).
@@ -130,7 +140,7 @@ column in its file — the deep ladder's per-size node counts apply):
 | Framework | swiss-ai/Megatron-LM fork (`pretrain_gpt.py`, commit `c92402e` + `src/pretrain/patches/`), bf16 + fp32 main grads, flash attention |
 | Global batch · sequence | 504 × 4096 tokens (2,064,384 tokens/iter) |
 | Tokenizer · vocab | swiss-ai/Apertus-70B-2509 (V1) · 131,072 (divisible-by-128 padding) |
-| Positional | RoPE, base 500,000, rope-scaling factor 32 |
+| Positional | RoPE, base 500,000, llama3 scaling with factor 8 (original context 8,192). `--rope-scaling-factor` read 32 until 2026-09-13, but Megatron `c92402e` never forwards it, so every cell trained — and is evaluated — at the default 8 |
 | Norm / activation | RMSNorm · xIELU · QK-layernorm (apex impl) · no biases |
 | Dropout | 0.0 (attention and hidden) |
 | Optimizer | AdEMAMix: β1 0.9, β2 0.999, β3 0.9999, α 8; β3/α warmup = the run's full schedule (`ADEMAMIX_WARMUP` = target iters, identical on every resume). β3's **endpoint** is 0.9999 for every grid cell — only the warmup scales with run length, which is the subject of [`90M-rung-anomaly.md`](90M-rung-anomaly.md); overriding it is diagnostic-only and forces a `diag-` run name |

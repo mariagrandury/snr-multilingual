@@ -3,6 +3,36 @@
 *Written 2026-09-03. Covers the 1B cells trained by `aromanou` from 2026-09-02
 alongside the two trained under `mariagrandury`.*
 
+## Resolved 2026-09-10
+
+**Closed.** The row is in the grid and its checkpoints are evaluated; nothing
+is retrained.
+
+- **Grid.** `SEED_TRIPLES["1B"] = (28, 1797, 1904)` at L ∈ {1, 2, 30}, plus
+  L50 added so the 1B column matches the other ×3 columns (those two cells
+  are new and save 40 checkpoints; the ×3 seeds at 175M/600M stay 64/313/1904
+  at L ∈ {1, 2, 50}). Every one of her `lm-1B-*` dirs on disk is now a grid
+  cell — follow-up 1 done.
+- **Evals.** Due checkpoints are read on the run's *own* save grid
+  (`launch_trainings.due_iters`, shared by both watchers, `eval_counts` and
+  the ladder report): `run_interval()` takes the modal gap between saves and
+  maps "every 2nd of the size's grid" onto it, so her 20-save cells yield
+  every save and the 40-save cells every 2nd — the same k/20 points. Before
+  this the watcher reported `eval DONE (0/0)` for all 15 of her cells;
+  the dry-run now finds 270 evals due (20 per finished cell), conversions
+  already on capstor. The final save is due whatever its iter (45740).
+- **Noise window (follow-up 2).** The eval grid *is* the shared k/20 subset
+  for every 1B cell — 40-save runs are evaluated every 2nd checkpoint — so
+  the row is self-consistent on the evaluated points by construction. The
+  extra density of the two 40-save cells stays available by lowering
+  `--every`.
+- **Still open.** Her runs' loss curves: the ladder report reads
+  `logs/slurm/training/pretrain-*.out` under the shared Megatron checkout,
+  and her jobs logged elsewhere, so her cells have BPB and benchmark rows in
+  the report but no loss curve and no point on the scaling fit. Follow-ups
+  3 and 5 are unchanged (5: `lm-175M-L30-schemeB-deep-seed{28,1797}` sit at
+  iter ~7.2k of 8540, not queued, not in the grid).
+
 ## TL;DR
 
 Fourteen 1B jobs (thirteen cells with checkpoints so far) were launched from

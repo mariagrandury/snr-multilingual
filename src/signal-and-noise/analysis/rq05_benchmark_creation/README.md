@@ -6,23 +6,27 @@
 > framework and others don't? Is it curation quality, task format, item
 > length, or the answer space?
 
-<!-- BEGIN auto:highlight (analyze.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
 - **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every at-chance 4-option *translated knowledge* MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is computed, leaving **9 families** that clear the gate — most of them 2-option.
-- **Among survivors, no single design feature is individually significant.** Family-level Kruskal–Wallis on option count is **H = 1.78, p = 0.18** and on task format **H = 0.00, p = 1.00** — too little variation left (mostly 2-option) to resolve them.
-- **Curation method explains nothing** — family-level Kruskal–Wallis on curation is **H = 0.50, p = 0.78**. Once the gate fixes the answer space, how a benchmark was built does not predict its reliability.
+- **Among survivors, no single design feature is individually significant.** Family-level Kruskal–Wallis on option count is **H = 0.02, p = 0.88**, and on task format is **H = 1.12, p = 0.57**. Too little variation is left among the survivors (mostly 2-option) to resolve either.
+- **Curation method explains nothing** — family-level Kruskal–Wallis on curation is **H = 5.12, p = 0.08**. Once the gate fixes the answer space, how a benchmark was built does not predict its reliability.
 <!-- END auto:highlight -->
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/`; headline numbers reflect the
-comprehensive pool `custom_swissai_hf` (3 seeds + external pretraining models),
-cross-checked against the pure `seeds_28_1797_1904` pool. The SNR signal is
-`snr_mpd_1B` (Q1's headline pick: mean pairwise distance, dispersion cluster).
-Each family's per-language aggregate tasks are grouped along several design
-axes — curation method, source origin, task format, answer-option count,
-reading-passage flag — and tested with a family-level Kruskal–Wallis. The
+Outputs live under `pretraining/<pool>/`; headline numbers reflect the ladder
+pool `predictivity`, with the 36-sweep pools as history. The SNR signal is
+`snr_mpd_<ref>` (Q1's headline pick: mean pairwise distance, dispersion
+cluster) at the target size, or at the largest size with data while the
+reference rungs train. Each family's per-language aggregate tasks are grouped
+along several design axes — curation method, source origin, task format,
+answer-option count, reading-passage flag — and tested with a family-level
+Kruskal–Wallis. The ladder adds the natively-sourced INCLUDE and Global-PIQA
+families, the human-translated IrokoBench families (AfriMMLU, AfriXNLI) and
+TruthfulQA-Multi to the twelve 36-sweep families (`FAMILY_META` in
+[analyze.py](analyze.py), provenance in `plan/benchmark_selection.md`). The
 above-random gate (computed upstream of SNR) drops every at-chance benchmark
 before this analysis, so the families seen here are the gate's survivors.
 
@@ -61,39 +65,39 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. `global_mmlu` (Lite, one Apertus model) and `arc_de/fr` /
 `hellaswag_de/fr` are NaN at 1B and excluded.
 
-<!-- BEGIN auto:results (analyze.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool custom_swissai_hf`.
+Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool predictivity`.
 
 **Per-family SNR ranking** — median `snr_mpd_1B` over each family's per-language tasks, above-random survivors only:
 
 | family | median SNR | n | format | n_opts |
 |---|---|---|---|---|
-| `multiblimp` | 3.85 | 7 | minimal_pair | 2 |
-| `paws` | 2.55 | 2 | classification | 2 |
-| `xwinograd` | 2.48 | 4 | completion | 2 |
-| `xstorycloze` | 2.27 | 5 | completion | 2 |
-| `xcopa` | 2.06 | 4 | completion | 2 |
-| `hellaswag` | 2.05 | 4 | completion | 4 |
-| `arc` | 2.05 | 2 | mcq_question_only | 4 |
-| `global_piqa_completions` | 1.45 | 5 | completion | 2 |
-| `xnli` | 1.15 | 7 | classification | 3 |
+| `hellaswag` | 3.66 | 15 | completion | 4 |
+| `multiblimp` | 3.23 | 57 | minimal_pair | 2 |
+| `paws` | 1.40 | 2 | classification | 2 |
+| `arc` | 1.03 | 2 | mcq_question_only | 4 |
+| `xnli` | 0.91 | 9 | classification | 3 |
+| `xstorycloze` | 0.78 | 5 | completion | 2 |
+| `xcopa` | 0.58 | 6 | completion | 2 |
+| `xwinograd` | 0.50 | 6 | completion | 2 |
+| `include_base_44` | 0.26 | 1 | mcq_question_only | 4 |
 
-![Per-family SNR ranking](pretraining/custom_swissai_hf/snr_per_family_ranked.png)
+![Per-family SNR ranking](pretraining/predictivity/snr_per_family_ranked.png)
 
 **Significance of each design axis** — family-level Kruskal–Wallis over the survivors (high-option families already removed by the gate):
 
 | axis | H | p |
 |---|---|---|
-| n_options | 1.78 | 0.18 |
-| format | 0.00 | 1.00 |
-| data source | 0.60 | 0.44 |
-| curation method | 0.50 | 0.78 |
-| reading passage | 0.00 | 1.00 |
+| n_options | 0.02 | 0.88 |
+| format | 1.12 | 0.57 |
+| data source | 1.07 | 0.30 |
+| curation method | 5.12 | 0.08 |
+| reading passage | 0.77 | 0.38 |
 <!-- END auto:results -->
 
-## External model-set tier (`all/external`)
+## External model-set tier (`all/external`, 36-sweep)
 
 Re-running the design-axis analysis on the `external` tier (cross-model
 dispersion over the 270M…70B external ladder) is the sharpest test of RQ2's
@@ -153,6 +157,46 @@ artifact of the capability-driven above-random gate (RQ0), not a property of
 benchmark design. Once capable models clear the gate, answer-option count carries
 no signal and the sharpest benchmarks span both 2- and 4-option formats.
 
+
+## Results from the 36-model sweep (2026-06, superseded)
+
+The numbers below were generated on the 36-model sweep (4 sizes × 3 data mixtures × 3 seeds, 12 languages, pool `custom_swissai_hf` unless stated) and are kept as history; the predictivity ladder regenerates the blocks above.
+
+### Highlighted result
+
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every at-chance 4-option *translated knowledge* MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is computed, leaving **9 families** that clear the gate — most of them 2-option.
+- **Among survivors, no single design feature is individually significant.** Family-level Kruskal–Wallis on option count is **H = 1.78, p = 0.18** and on task format **H = 0.00, p = 1.00** — too little variation left (mostly 2-option) to resolve them.
+- **Curation method explains nothing** — family-level Kruskal–Wallis on curation is **H = 0.50, p = 0.78**. Once the gate fixes the answer space, how a benchmark was built does not predict its reliability.
+
+### Results
+
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq05_benchmark_creation/analyze.py --pool custom_swissai_hf`.
+
+**Per-family SNR ranking** — median `snr_mpd_1B` over each family's per-language tasks, above-random survivors only:
+
+| family | median SNR | n | format | n_opts |
+|---|---|---|---|---|
+| `multiblimp` | 3.85 | 7 | minimal_pair | 2 |
+| `paws` | 2.55 | 2 | classification | 2 |
+| `xwinograd` | 2.48 | 4 | completion | 2 |
+| `xstorycloze` | 2.27 | 5 | completion | 2 |
+| `xcopa` | 2.06 | 4 | completion | 2 |
+| `hellaswag` | 2.05 | 4 | completion | 4 |
+| `arc` | 2.05 | 2 | mcq_question_only | 4 |
+| `global_piqa_completions` | 1.45 | 5 | completion | 2 |
+| `xnli` | 1.15 | 7 | classification | 3 |
+
+![Per-family SNR ranking](pretraining/custom_swissai_hf/snr_per_family_ranked.png)
+
+**Significance of each design axis** — family-level Kruskal–Wallis over the survivors (high-option families already removed by the gate):
+
+| axis | H | p |
+|---|---|---|
+| n_options | 1.78 | 0.18 |
+| format | 0.00 | 1.00 |
+| data source | 0.60 | 0.44 |
+| curation method | 0.50 | 0.78 |
+| reading passage | 0.00 | 1.00 |
 ## TODO
 
 - [ ] Bootstrap CIs on the per-family SNR medians and on each Kruskal–Wallis H.

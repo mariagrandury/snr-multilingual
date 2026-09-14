@@ -55,7 +55,7 @@ had. The recurring shapes here:
 - Anything that copies data: check size, idempotency on re-run, and whether
   the source is a symlink into another build.
 - Doc examples that are commands: a `--seed`/`--size`/`--langs` value must
-  exist in the grid (`SEED_SINGLE`/`SEED_TRIPLE`, `SIZE_LANG_SETTINGS` in
+  exist in the grid (`SEED_SINGLE`/`SEED_TRIPLES`, `DATA_SCHEMES` in
   `launch_trainings.py`) — these flags are *filters*, and a value outside
   the grid silently matches nothing. When the intended value is not
   guessable, report it; never pick one.

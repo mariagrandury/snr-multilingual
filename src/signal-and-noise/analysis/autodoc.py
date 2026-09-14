@@ -23,12 +23,15 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-# Canonical pool whose numbers each README/slide reflects. Most RQs use the
-# comprehensive pool (3 seeds + external pretraining models); the AllenAI
-# cross-corpus claim is the pure 3-seed pool (externals shift the shared-task
-# SNR — see allenai_comparison/README.md). A generator no-ops on other pools.
-CANONICAL_POOL = "custom_swissai_hf"
-ALLENAI_POOL = "seeds_28_1797_1904"
+# Canonical pool whose numbers each README/slide reflects: the predictivity
+# ladder as planned (one run per size x L x arch x scheme, seed 1904). The
+# seed-replicate pools feed the noise estimates and the seed holdout; the
+# 36-sweep pools (`custom_swissai_hf`, `seeds_*`) keep their committed results
+# as history. A generator no-ops on other pools.
+CANONICAL_POOL = "predictivity"
+ALLENAI_POOL = "predictivity"
+# The seed holdout the rq02 README reports (compare_seed_splits.py).
+HOLDOUT = ("predictivity_seeds_train", "predictivity_seeds_test")
 
 # The Slidev deck (repo-root/documents/slides.md).
 SLIDES = Path(__file__).resolve().parents[3] / "documents" / "slides.md"

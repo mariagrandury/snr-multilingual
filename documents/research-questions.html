@@ -1,0 +1,712 @@
+<title>Predictivity Ladder Compendium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --ink:#1b1b19; --body:#33332f; --muted:#5c5c57; --faint:#8a897f;
+  --rule:#e3e2de; --hair:#efeeea; --ground:#fbfaf7; --panel:#ffffff; --sunk:#f4f2ed;
+  --deep:#0d366b; --mid:#3987e5; --pale:#86b6ef; --wash:#eef4fd;
+  --flag:#eb6834; --flagwash:#fdf0e9; --good:#1baf7a; --goodwash:#e9f7f1;
+  --shadow:0 1px 2px rgba(27,27,25,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#f4f2ed; --body:#ddd9d0; --muted:#a5a299; --faint:#7d7a72;
+    --rule:#33322e; --hair:#2a2926; --ground:#14140f; --panel:#1c1c18; --sunk:#232320;
+    --deep:#9dc3f2; --mid:#6ba6ee; --pale:#3d6fa8; --wash:#182437;
+    --flag:#f58a5f; --flagwash:#31201a; --good:#4ecb9d; --goodwash:#132a23;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#f4f2ed; --body:#ddd9d0; --muted:#a5a299; --faint:#7d7a72;
+  --rule:#33322e; --hair:#2a2926; --ground:#14140f; --panel:#1c1c18; --sunk:#232320;
+  --deep:#9dc3f2; --mid:#6ba6ee; --pale:#3d6fa8; --wash:#182437;
+  --flag:#f58a5f; --flagwash:#31201a; --good:#4ecb9d; --goodwash:#132a23;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--body);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.62; margin:0;
+  padding-block:0; padding-left:20px; padding-right:20px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:210px minmax(0,1fr); gap:56px; align-items:start}
+@media (max-width:900px){ .wrap{grid-template-columns:minmax(0,1fr); gap:0} nav.rail{display:none} }
+
+/* ---- masthead ---- */
+header.top{grid-column:1/-1; padding-block:56px 30px; border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--flag); margin:0 0 14px}
+h1{font-family:Newsreader,Georgia,"Times New Roman",serif; font-weight:500; font-size:clamp(34px,5.2vw,54px);
+  line-height:1.06; letter-spacing:-.015em; color:var(--ink); margin:0 0 16px; text-wrap:balance; max-width:20ch}
+.standfirst{font-size:17.5px; line-height:1.6; color:var(--muted); max-width:64ch; margin:0}
+.standfirst em{font-style:italic; color:var(--body)}
+.meta{display:flex; flex-wrap:wrap; gap:8px 26px; margin-top:24px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px; color:var(--faint)}
+.meta b{color:var(--muted); font-weight:500}
+
+/* ---- rail ---- */
+nav.rail{position:sticky; top:0; padding-block:34px 40px; font-size:13px; max-height:100vh; overflow-y:auto}
+nav.rail h2{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); margin:22px 0 9px; font-weight:500}
+nav.rail h2:first-child{margin-top:0}
+nav.rail a{display:grid; grid-template-columns:36px 1fr; gap:6px; color:var(--muted); text-decoration:none;
+  padding:3px 0; line-height:1.35}
+nav.rail a:hover{color:var(--deep)}
+nav.rail a:focus-visible{outline:2px solid var(--mid); outline-offset:2px; border-radius:2px}
+nav.rail .id{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; color:var(--faint)}
+
+/* ---- sections ---- */
+main{padding-block:8px 90px; min-width:0}
+.band{margin:52px 0 0; padding-top:22px; border-top:1px solid var(--rule)}
+.band:first-child{border-top:0; margin-top:34px; padding-top:0}
+.band-id{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--flag); margin:0 0 6px}
+.band h2{font-family:Newsreader,Georgia,serif; font-weight:500; font-size:29px; line-height:1.2;
+  color:var(--ink); margin:0 0 8px; letter-spacing:-.01em}
+.band p.intro{color:var(--muted); max-width:66ch; margin:0; font-size:15.5px}
+
+article{margin-top:34px; padding-top:26px; border-top:1px solid var(--hair)}
+.rq-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; margin-bottom:6px}
+.rq-id{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px; font-weight:500;
+  color:var(--deep); background:var(--wash); padding:2px 8px; border-radius:3px; letter-spacing:.02em}
+.chip{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.07em;
+  text-transform:uppercase; padding:3px 8px; border-radius:3px; white-space:nowrap}
+.chip.done{background:var(--goodwash); color:var(--good)}
+.chip.part{background:var(--flagwash); color:var(--flag)}
+.chip.open{background:var(--sunk); color:var(--muted)}
+h3.q{font-family:Newsreader,Georgia,serif; font-weight:500; font-size:23px; line-height:1.28;
+  color:var(--ink); margin:0 0 16px; max-width:44ch; text-wrap:balance; letter-spacing:-.005em}
+
+.tldr{background:var(--panel); border-left:3px solid var(--deep); border-radius:0 4px 4px 0;
+  padding:15px 20px; margin:0 0 22px; box-shadow:var(--shadow); max-width:70ch}
+.tldr .lab{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); display:block; margin-bottom:5px}
+.tldr p{margin:0; font-size:16.5px; line-height:1.55; color:var(--ink)}
+.tldr strong{font-weight:600; color:var(--deep)}
+article.proposal .tldr{border-left-color:var(--flag)}
+article.proposal .tldr strong{color:var(--flag)}
+
+.part{margin:20px 0 0}
+.part > p, .part > ul, .part > ol{max-width:70ch}
+.part > .formula{max-width:78ch}
+.part > .lab{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); display:block; margin-bottom:7px}
+.part p{margin:0 0 11px}
+.part p:last-child{margin-bottom:0}
+.part ul{margin:0 0 11px; padding-left:19px}
+.part li{margin-bottom:6px}
+.part li::marker{color:var(--pale)}
+strong{color:var(--ink); font-weight:600}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.87em; background:var(--sunk);
+  padding:1px 5px; border-radius:3px; color:var(--body); overflow-wrap:anywhere}
+a.src{color:var(--deep); text-decoration:none; border-bottom:1px solid var(--pale)}
+a.src:hover{border-bottom-color:var(--deep)}
+a.src:focus-visible{outline:2px solid var(--mid); outline-offset:2px}
+
+.formula{background:var(--sunk); border-radius:4px; padding:12px 16px; margin:0 0 12px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13.5px; line-height:1.75;
+  color:var(--ink); overflow-x:auto}
+.formula .note{color:var(--muted); font-size:12.5px}
+
+.tbl{overflow-x:auto; margin:0 0 12px}
+table{border-collapse:collapse; font-size:14px; min-width:100%; font-variant-numeric:tabular-nums}
+th{text-align:left; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--faint); font-weight:500;
+  padding:0 16px 7px 0; border-bottom:1px solid var(--rule); white-space:nowrap}
+td{padding:7px 16px 7px 0; border-bottom:1px solid var(--hair); vertical-align:top}
+td:last-child,th:last-child{padding-right:0}
+tr:last-child td{border-bottom:0}
+td.num{text-align:right; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13px}
+td.win{color:var(--good); font-weight:600}
+td.lose{color:var(--flag)}
+
+figure{margin:16px 0 4px; max-width:100%}
+figure img{width:100%; max-width:100%; display:block; border:1px solid var(--rule); border-radius:4px; background:#fff}
+figcaption{font-size:12.5px; color:var(--faint); margin-top:7px; line-height:1.5}
+
+footer{grid-column:1/-1; border-top:2px solid var(--ink); padding-block:24px 60px;
+  font-size:13.5px; color:var(--muted); max-width:70ch}
+footer p{margin:0 0 9px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">Signal-aware multilingual evaluation</p>
+  <h1>Predictivity Ladder Compendium</h1>
+  <p class="standfirst">Every research question the ladder has been asked, what each one answered, and exactly how the number was produced. Fourteen questions are <em>answered</em> on the 14 September 2026 ladder report; one is blocked; five more are <em>proposed</em>.</p>
+  <div class="meta">
+    <span><b>Ladder</b> 90M–1.7B × L ∈ {1,2,8,15,30,50,100}</span>
+    <span><b>Cells</b> 89 in report, 60 complete, 48 healthy</span>
+    <span><b>Source</b> msnr-data/ladder-report</span>
+    <span><b>Run</b> 2026-09-08</span>
+  </div>
+</header>
+
+<nav class="rail" aria-label="Research questions">
+  <h2>Original programme</h2>
+  <a href="#rq0"><span class="id">RQ0</span><span>Curves and the chance gate</span></a>
+  <a href="#rq1"><span class="id">RQ1</span><span>Decision accuracy</span></a>
+  <a href="#rq2"><span class="id">RQ2</span><span>Which SNR definition</span></a>
+  <a href="#rq3"><span class="id">RQ3</span><span>Agreement with DataDecide</span></a>
+  <a href="#rq4"><span class="id">RQ4</span><span>Subsets beating full sets</span></a>
+  <a href="#rq5"><span class="id">RQ5</span><span>Benchmark design features</span></a>
+  <a href="#rq6"><span class="id">RQ6</span><span>Proxy predictivity</span></a>
+  <h2>The instruments</h2>
+  <a href="#a1"><span class="id">A1</span><span>Which scale predictably</span></a>
+  <a href="#a2"><span class="id">A2</span><span>Which are stable</span></a>
+  <a href="#a3"><span class="id">A3</span><span>Which languages gain</span></a>
+  <a href="#a4"><span class="id">A4</span><span>Which separate models</span></a>
+  <h2>Surrogates</h2>
+  <a href="#b1"><span class="id">B1</span><span>How early we can call it</span></a>
+  <a href="#b2"><span class="id">B2</span><span>Smallest useful suite</span></a>
+  <a href="#b3"><span class="id">B3</span><span>Best surrogate</span></a>
+  <h2>Proposed</h2>
+  <a href="#p1"><span class="id">P1</span><span>Cheapest reliable decision</span></a>
+  <a href="#p2"><span class="id">P2</span><span>Seeds per language claim</span></a>
+  <a href="#p3"><span class="id">P3</span><span>Benchmark where signal is</span></a>
+  <a href="#p4"><span class="id">P4</span><span>Optimizer as confound</span></a>
+  <a href="#p5"><span class="id">P5</span><span>Matched compute decisions</span></a>
+</nav>
+
+<main>
+
+<section class="band">
+  <p class="band-id">Part one</p>
+  <h2>The original programme</h2>
+  <p class="intro">Seven questions carried over from the Signal-and-Noise framework and adapted to the ladder. Each is one directory under <code>src/signal-and-noise/analysis/</code>, run in dependency order by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/run_all_predictivity.sh"><code>run_all_predictivity.sh</code></a>.</p>
+</section>
+
+<article id="rq0">
+  <div class="rq-head"><span class="rq-id">RQ0</span><span class="chip done">Answered</span></div>
+  <h3 class="q">How do scores move with compute, and which benchmarks are above chance at all?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p><strong>113 of 461</strong> gated tasks beat chance at some size. It is overwhelmingly an answer-count effect: <strong>42 %</strong> of two-option tasks clear it and <strong>8 %</strong> of four-option ones.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>A (benchmark, size) cell is <em>above random</em> when its mean final score beats chance by a fixed margin. Chance comes from the option counts derived from the evaluated samples in <code>configs/tasks.json</code>, with a per-family fallback.</p>
+  <div class="formula">above_random(b, s) &nbsp;⟺&nbsp; mean_score(b, s) &gt; 1/n_options(b) + 0.05<br><span class="note">per-language BPB and generative tasks have no chance level and are never gated</span></div>
+  <p>Every downstream SNR cell that fails the gate is set to NaN, so the gate propagates to every other RQ and never depends on one. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq00_acc_vs_flops/above_random.py"><code>rq00_acc_vs_flops/above_random.py</code></a>, curves in <code>run_apertus.py</code>.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Answer options</th><th>Chance</th><th>Clears at some size</th><th>Share</th></tr></thead>
+    <tbody>
+    <tr><td>2 — completion, minimal pair</td><td class="num">0.50</td><td class="num">80 / 191</td><td class="num">42 %</td></tr>
+    <tr><td>3 — XNLI</td><td class="num">0.33</td><td class="num">12 / 18</td><td class="num">67 %</td></tr>
+    <tr><td>4 — knowledge MCQA</td><td class="num">0.25</td><td class="num">21 / 252</td><td class="num">8 %</td></tr>
+    </tbody></table></div>
+  <p>Survivors grow monotonically with size: 3 at 90M, 62 at 175M, 71 at 350M, 85 at 600M, 103 at 1B and 110 at 1.7B. Four families never clear chance anywhere — <code>global_mmlu_full</code>, <code>global_piqa_parallel_cloze</code>, <code>global_piqa_nonparallel_cloze</code> and <code>truthfulqa-multi_mc1</code>. At 1B the survivors are <code>multiblimp</code> (57 tasks), <code>hellaswag</code> (15), <code>xnli</code> (9), <code>xwinograd</code> (6), <code>xcopa</code> (6), <code>xstorycloze</code> (5), <code>arc</code> (2), <code>paws</code> (2), <code>include_base_44</code> (1); the 1.7B rung adds three <code>xnli</code>, two <code>paws</code>, one <code>hellaswag</code> and the first <code>belebele</code> task to clear chance anywhere.</p>
+  <p>On the earlier 36-model sweep the same four-option families cleared chance for external 270M–70B models (122 of 124), so this is a capability floor of the small rungs and not a property of the benchmarks.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>The +0.05 margin is a convention inherited from the framework. A per-task binomial test against chance, using the real sample count, would replace a fixed margin with a stated false-positive rate.</li>
+  <li>The gate has moved from 94 of 324 to 113 of 461 tasks in a week of extra evals. Worth tracking as a time series, since it moves the denominator of every other result.</li></ul></div>
+</article>
+
+<article id="rq1">
+  <div class="rq-head"><span class="rq-id">RQ1</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Does a benchmark rank design variants at a small size, or an early checkpoint, the way the reference does?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p><strong>15,558 decision-accuracy cells</strong> over 568 tasks and 15 benchmark families. This is not a finding in itself — it is the ground truth every other RQ is scored against.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Models are the ladder's cells. The cross-size identity is the cell's design variant — language setting, scheme, architecture, seed — so one variant trained at two sizes forms one pair. Two definitions:</p>
+  <div class="formula">DA-size(b; s→S) = share of variant pairs ordered the same at size s and size S, both at their final checkpoint<br>DA-ckpt(b; f@s) = share ordered the same at checkpoint f ∈ {20, 40, 60, 80} % and the final one, within size s<br><span class="note">computed by decision_acc_fast; a pair needs ≥ 2 variants present at both buckets</span></div>
+  <p>Multilingual tasks are scored only on cells that train the language, so each task's population is the variants that exist at both sizes <em>and</em> were evaluated on it. <code>n</code> travels with every value. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq01_decision_accuracy/compute_da.py"><code>rq01_decision_accuracy/compute_da.py</code></a>.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <p>4,198 DA-size cells and 11,360 DA-ckpt cells. Six size pairs are computable: 175M→350M, 175M→600M, 175M→1.7B, 350M→600M, 350M→1.7B, 600M→1.7B. Aggregated over languages, the well-powered pairs are the three that stop at 600M, backed by <strong>11 model families</strong>; the three reaching 1.7B rest on <strong>2 families</strong> each, so their DA can only read 0 or 1 and should not be read as a strong result.</p>
+  <p>On the 11-family pairs the ordering is clear: training loss 0.91–0.96, per-language BPB 0.75–0.86, and the benchmark families clustered near 0.5.</p>
+  <figure><img src="public/ladder/appendix/da_by_benchmark.png" alt="Heatmap of decision accuracy by benchmark family and size pair, with the number of model families backing each column">
+  <figcaption>Decision accuracy by benchmark family and size pair, averaged over every language the family covers. Column labels carry the number of model families behind each comparison.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>The 1.7B columns need more finished cells before they mean anything. Two families is one pairwise call.</li>
+  <li>DA is quantised at these counts. A continuous alternative — rank correlation over variants instead of pair agreement — would use the same data with less granularity loss.</li></ul></div>
+</article>
+
+<article id="rq2">
+  <div class="rq-head"><span class="rq-id">RQ2</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Which of 22 SNR definitions predicts decision accuracy, and does the choice survive a seed swap?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Best variant overall is <code>discrepancy</code> at <strong>r = +0.06</strong> against size decision accuracy, and <code>dist_std</code> at <strong>+0.20</strong> against checkpoint decision accuracy, against <strong>0.791</strong> reported on the English DataDecide ladder. Nothing about the choice survives a seed swap: Spearman ρ is <strong>+0.01</strong>, and per-language family agreement is 11 %.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Twenty-two spread statistics — dispersion, relative-spread, discrepancy, robust and depth families — are computed per (task, size) from the variants' final scores and the late-checkpoint noise, then correlated per language against both DA definitions.</p>
+  <div class="formula">signal(b,s) = spread over design variants' final scores &nbsp;(22 statistics)<br>noise(b,s)  = σ over the last 5 checkpoints of the reference run, ÷ mean<br>SNR = signal / noise&nbsp;&nbsp;&nbsp;score = mean over languages of Pearson r( log₁₀ SNR , DA )</div>
+  <p>Two technical decisions that changed the answer historically, both recorded in <code>src/signal-and-noise/CLAUDE.md</code>: rank variants by <strong>signed</strong> Pearson r, never R², because R² conflates +0.5 with −0.5 and floats anti-signals to the top; and apply <code>_is_parent_task</code>, because the subject facets of Global-MMLU are statistical replicates that six-fold-weight whichever variant tracks the subject decomposition.</p>
+  <p>The seed holdout trains the ranking on seeds 64 and 313 of the ×3 cells and tests it on seed 1904 of the same cells. Scripts: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_snr_definition/run_apertus_snr_variants.py"><code>run_apertus_snr_variants.py</code></a>, <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_snr_definition/compare_seed_splits.py"><code>compare_seed_splits.py</code></a>.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Variant</th><th>r vs DA-size</th><th>r vs DA-ckpt</th><th>Overall</th></tr></thead>
+    <tbody>
+    <tr><td><code>discrepancy</code></td><td class="num win">+0.056</td><td class="num">−0.049</td><td class="num">+0.004</td></tr>
+    <tr><td><code>dist_std</code></td><td class="num">−0.008</td><td class="num win">+0.196</td><td class="num win">+0.094</td></tr>
+    <tr><td><code>mad</code></td><td class="num">−0.036</td><td class="num">+0.169</td><td class="num">+0.066</td></tr>
+    <tr><td><code>rel_mpsd</code></td><td class="num">−0.001</td><td class="num">+0.067</td><td class="num">+0.033</td></tr>
+    <tr><td><code>rel_std</code> <span style="color:var(--faint)">(framework default)</span></td><td class="num">−0.009</td><td class="num">−0.041</td><td class="num">−0.025</td></tr>
+    </tbody></table></div>
+  <p>The extra eval coverage moved this, and downwards. Successive runs have put the checkpoint-DA leader at +0.20 (<code>iqr</code>), +0.32 (<code>rel_mpsd</code>) and now +0.20 (<code>dist_std</code>), on a different variant each time, and no variant is best on both kinds of decision. That pattern is what an estimate dominated by noise looks like, so the claim to carry forward is the negative one.</p>
+  <p><strong>Seed holdout.</strong> Spearman ρ on the global ranking is +0.01 under checkpoint DA and −0.20 under size DA. Pearson r between splits is −0.06 (n = 1,104) and +0.27 (n = 22). Per-language family agreement is 11 % and 1 % over 122 language cells, and exact-variant agreement 5 % and 1 %.</p>
+  <p>Earlier runs of the same holdout gave ρ = +0.70 and +0.29. Three values that far apart on the same test are the result: the estimate is noise. The conclusion stable across all of them is the negative one: recommend a variant <em>family</em>, never an exact variant, and never a per-language argmax.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>The seed holdout rests on six ×3 cells. It cannot separate "the ranking is unstable" from "the estimate is unstable". See <a class="src" href="#p2">P2</a>.</li>
+  <li>Noise here is late-checkpoint noise. <a class="src" href="#rq6">RQ6</a> shows it understates seed noise by 2×, so every SNR in this table is optimistic by roughly that factor.</li></ul></div>
+</article>
+
+<article id="rq3">
+  <div class="rq-head"><span class="rq-id">RQ3</span><span class="chip open">Blocked</span></div>
+  <h3 class="q">Does our SNR agree with AllenAI DataDecide on the tasks both corpora evaluate?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p><strong>Not run.</strong> The DataDecide-side SNR table is a git-lfs pointer in this clone and <code>lfs.github.com</code> is unreachable from the build environment. One <code>git lfs pull</code> where the endpoint resolves and the stage runs unchanged.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Cross-corpus Pearson r and Spearman ρ of log SNR over the English tasks both corpora evaluate, at matched sizes (90M↔90M through 1B↔1B). Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq03_allenai_comparison/analyze.py"><code>rq03_allenai_comparison/analyze.py</code></a>, fed by <code>build_allenai_variants.py</code>.</p>
+  <p>Worth stating before the number arrives: the shared universe is small — <code>arc_easy</code>, <code>arc_challenge</code>, <code>hellaswag</code> and MMLU through the Global-MMLU English split. DataDecide's signal is a dispersion over 25 data recipes; ours is over language settings and schemes, a narrower axis. A low correlation would say the populations differ before it says the definition does.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>Run it from an environment with LFS access. It is the only RQ with no number at all.</li>
+  <li>Because the axes differ, the honest comparison may be a matched-axis one: recompute DataDecide's SNR over a sub-population of its recipes chosen to have similar dispersion to ours.</li></ul></div>
+</article>
+
+<article id="rq4">
+  <div class="rq-head"><span class="rq-id">RQ4</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Can a language or subject subset beat the full benchmark's SNR?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Yes, and by a lot on the weakest benchmarks. Median gain <strong>+1.09 SNR</strong> on Global-MMLU subjects and <strong>+0.80</strong> on its per-language split. The largest single gain takes <code>global_piqa_parallel_cloze</code> at 175M from <strong>1.08 to 3.15</strong> on seven of its languages.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>For each multilingual family the per-language tasks are ranked by standalone SNR, then cumulative subsets are swept and the best recorded per size, against a random-order baseline. Three cases: per benchmark, Global-MMLU subjects, and Global-MMLU per language. The per-language BPB family is swept the same way — which languages make the sharpest macro average. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq04_smooth_subtasks/smooth_subtasks.py"><code>rq04_smooth_subtasks/smooth_subtasks.py</code></a>.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Case</th><th>Task</th><th>Size</th><th>Full → best</th><th>Gain</th></tr></thead>
+    <tbody>
+    <tr><td>per benchmark</td><td><code>global_piqa_parallel_cloze</code></td><td>175M</td><td class="num">1.08 → 3.15</td><td class="num win">+2.07</td></tr>
+    <tr><td>per language</td><td><code>global_mmlu_full_ja</code></td><td>175M</td><td class="num">1.15 → 3.17</td><td class="num win">+2.02</td></tr>
+    <tr><td>per benchmark</td><td><code>xnli</code></td><td>1.7B</td><td class="num">0.06 → 1.99</td><td class="num win">+1.93</td></tr>
+    <tr><td>per language</td><td><code>global_mmlu_full_ha</code></td><td>1B</td><td class="num">0.02 → 1.86</td><td class="num win">+1.84</td></tr>
+    <tr><td>per language</td><td><code>global_mmlu_full_hi</code></td><td>175M</td><td class="num">1.25 → 3.07</td><td class="num win">+1.81</td></tr>
+    </tbody></table></div>
+  <p>Read this the right way round. Every large gain sits on a benchmark that is at or near chance as a whole, so the finding is "the full set is nearly signal-free" rather than "the subset is good". Median gain across benchmarks generally is +0.51.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>Only subsets that recur across the seed holdout should be recommended. Report the Jaccard overlap of best subsets between train and test seeds, as the 36-sweep did across sizes.</li>
+  <li>The subset selection and the evaluation currently use the same data, so the gains are optimistic. A held-out split would give an honest estimate.</li></ul></div>
+</article>
+
+<article id="rq5">
+  <div class="rq-head"><span class="rq-id">RQ5</span><span class="chip part">Underpowered</span></div>
+  <h3 class="q">Which benchmark design features predict reliability?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>The answer-count penalty lives in the <em>gate</em>, upstream of SNR. Among the nine families that survive it, <strong>no design feature is individually significant</strong> — option count H = 0.02, p = 0.88; task format H = 1.12, p = 0.57; curation H = 5.12, p = 0.08.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Per-family SNR — the median over that family's per-language tasks at 1B — grouped by curation method, source origin, task format, option count and a reading-passage flag, then tested with a family-level Kruskal–Wallis. Fifteen families carry provenance, including the natively-sourced INCLUDE and Global PIQA and the human-translated IrokoBench families. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq05_benchmark_creation/analyze.py"><code>rq05_benchmark_creation/analyze.py</code></a>.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Family</th><th>Median SNR</th><th>n</th><th>Format</th><th>Options</th></tr></thead>
+    <tbody>
+    <tr><td><code>hellaswag</code></td><td class="num win">3.66</td><td class="num">15</td><td>completion</td><td class="num">4</td></tr>
+    <tr><td><code>multiblimp</code></td><td class="num win">3.23</td><td class="num">57</td><td>minimal pair</td><td class="num">2</td></tr>
+    <tr><td><code>paws</code></td><td class="num">1.40</td><td class="num">2</td><td>classification</td><td class="num">2</td></tr>
+    <tr><td><code>arc</code></td><td class="num">1.03</td><td class="num">2</td><td>mcq question only</td><td class="num">4</td></tr>
+    <tr><td><code>xnli</code></td><td class="num">0.91</td><td class="num">9</td><td>classification</td><td class="num">3</td></tr>
+    <tr><td><code>xstorycloze</code></td><td class="num">0.78</td><td class="num">5</td><td>completion</td><td class="num">2</td></tr>
+    <tr><td><code>xcopa</code></td><td class="num">0.58</td><td class="num">6</td><td>completion</td><td class="num">2</td></tr>
+    <tr><td><code>xwinograd</code></td><td class="num">0.50</td><td class="num">6</td><td>completion</td><td class="num">2</td></tr>
+    <tr><td><code>include_base_44</code></td><td class="num">0.26</td><td class="num">1</td><td>mcq question only</td><td class="num">4</td></tr>
+    </tbody></table></div>
+  <p>Kruskal–Wallis over the survivors: n_options H = 0.02 p = 0.88, format H = 1.12 p = 0.57, data source H = 1.07 p = 0.30, curation H = 5.12 p = 0.08, reading passage H = 0.77 p = 0.38. Once the gate has fixed the answer space, how a benchmark was built does not predict its reliability. The per-family SNRs themselves have risen sharply with the new evals, <code>hellaswag</code> from 0.65 to 3.66 on 15 tasks instead of 6, so the ranking is now worth reading even though the tests still resolve nothing.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>Nine families is still too few to resolve anything. The within-format contrasts the ladder now supports would isolate curation from format: HellaSwag-MT against XStoryCloze-human, both completion; ARC-MT against Global-MMLU-full, both four-option.</li>
+  <li>Testing on survivors only conditions on the outcome. A model over all 15 families with gate status as a covariate would use the discarded information.</li></ul></div>
+</article>
+
+<article id="rq6">
+  <div class="rq-head"><span class="rq-id">RQ6</span><span class="chip part">Partly answered</span></div>
+  <h3 class="q">Which proxy sizes rank an intervention the way the reference does, at each language count?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>For bits per byte, <strong>350M</strong> is enough: it agrees with the reference on the scheme decision at 8, 15 and 30 languages while 175M gets it backwards. Benchmarks now score, and they read the same decision as a coin flip at <em>both</em> proxy rungs, 0.45–0.57 across the three settings. Every comparison still resolves against 600M, not 1B.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Three reads over the (proxy size, L) grid. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq06_proxy_predictivity/analyze.py"><code>rq06_proxy_predictivity/analyze.py</code></a>.</p>
+  <div class="formula"><b>i. Intervention DA.</b> With two levels, pairwise agreement reduces to sign agreement:<br>
+  &nbsp;&nbsp;DA(L, s) = share of population items i with sign(x<sub>i</sub><sup>A</sup>−x<sub>i</sub><sup>B</sup>)|<sub>s</sub> = sign(x<sub>i</sub><sup>A</sup>−x<sub>i</sub><sup>B</sup>)|<sub>ref</sub><br>
+  &nbsp;&nbsp;<span class="note">populations: bpb_trained (languages both levels train), bpb_all (100 subsets), benchmark, bpb_macro</span><br><br>
+  <b>ii. Scaling-law error.</b> log BPB = a − α log N fitted on the proxy rungs, predicting the reference<br>
+  &nbsp;&nbsp;rel_error = (predicted − observed) / observed<br><br>
+  <b>iii. Effect vs noise.</b> |Δ| ÷ seed std, and ÷ detrended late-checkpoint std<br>
+  &nbsp;&nbsp;<span class="note">detrended because under WSD the final window is still descending</span></div>
+  <p>The reference at each L is the largest size trained there. Interventions: depth (deep vs shallow) exists at L ∈ {1, 2}; data scheme (A vs B) at L ∈ {8, 15, 30}.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <p><strong>The scheme decision on bits per byte</strong>, over the languages both schemes train:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Proxy</th><th>L = 8</th><th>L = 15</th><th>L = 30</th></tr></thead>
+    <tbody>
+    <tr><td>175M</td><td class="num win">1.00</td><td class="num lose">0.00</td><td class="num lose">0.04</td></tr>
+    <tr><td>350M</td><td class="num win">1.00</td><td class="num win">0.83</td><td class="num win">1.00</td></tr>
+    </tbody></table></div>
+  <p><strong>The benchmark population is no longer empty, and it is scored at both rungs.</strong> Over 2,896 shared benchmark tasks per setting, a 175M proxy agrees with the 600M reference on 0.46 at L8, 0.50 at L15 and 0.57 at L30, and a 350M proxy on 0.45, 0.55 and 0.48. A bigger proxy buys nothing, which is the sharpest contrast with bits per byte, where 350M is the size at which the answer becomes right. Under the strict test, a proxy that agrees <em>and keeps agreeing at every larger size</em>, 3,995 of 8,449 benchmark comparisons pass (47 %) against 365 of 500 for per-language BPB (73 %). That 47 % was 0 % on the thinner ladder, but it is also close to what agreeing at two rungs by chance would give, so read it as unreliable rather than as working.</p>
+  <p>The two measurements also disagree about the answer itself: bits per byte prefers scheme B at L15 and L30, the benchmark suite prefers scheme A at L30.</p>
+  <figure><img src="public/ladder/benchmark_predictivity.png" alt="Two panels: proxy agreement with the 600M reference by measurement and language count, and the share of measurements with any working proxy size">
+  <figcaption>Left, agreement with the 600M reference at each proxy rung. Right, the strict test across every comparison.</figcaption></figure>
+  <p><strong>Scaling-law error.</strong> 505 fits, of which 202 predict a 1B reference and 202 a 1.7B one. Median absolute relative error 0.076 predicting 1.7B at L1, 0.051 predicting 1B at L8, 0.058 predicting 1.7B at L30 and 0.043 predicting 1B at L50, so per-language BPB at the reference is predicted from the proxy rungs to within 4–8 %. L2 is the one outlier at 0.244 against a 600M reference.</p>
+  <p><strong>Effect against noise.</strong> Seed noise is <strong>2.04×</strong> detrended late-checkpoint noise over 5,546 cells. Against a seed standard deviation of 0.021 nats on final loss: the across-L range is 11.5×, the scheme difference 2.2×, and the depth difference <strong>1.0×</strong> — the same model measured twice. Per individual task the depth effect is larger, median 1.43× with 35 % of 853 cells above 2×, so depth separates somewhere, just not on the metric the ladder is built around.</p></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>All 36 intervention comparisons resolve against 600M. The finished cells above 600M are 1B at L ∈ {8, 50} and 1.7B at L ∈ {1, 30}, all deep and scheme A, so none has a matched twin and nothing here is yet a small-to-large result.</li>
+  <li>The 47 % strict-test pass rate for benchmarks needs a null. Shuffling the reference signs would say how much of it is agreement and how much is two coin flips landing the same way.</li></ul></div>
+</article>
+
+<section class="band">
+  <p class="band-id">Part two</p>
+  <h2>How good are our instruments?</h2>
+  <p class="intro">Four questions asked of the benchmarks themselves, before any result is quoted with them. All four come from <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/documents/figures/fig_rqs.py"><code>documents/figures/fig_rqs.py</code></a> on the same published ladder report.</p>
+</section>
+
+<article id="a1">
+  <div class="rq-head"><span class="rq-id">A1</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Which benchmarks scale predictably?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Completion tasks do — median <strong>R² = 0.97</strong> for LAMBADA-MT and <strong>0.96</strong> for XWinograd and per-language bits per byte. Knowledge tasks barely move with size: Global-MMLU sits at <strong>0.08</strong>, INCLUDE at 0.15 and Belebele at 0.31.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Each task's mean score is fitted against log non-embedding parameters across the four healthy rungs — 175M, 350M, 600M, 1B. 90M is excluded because nine of its ten runs diverged. A task needs three of the four rungs to be fitted.</p>
+  <div class="formula">y = b · log₁₀ N + a &nbsp;&nbsp;fitted by least squares over the sizes present<br>R² = 1 − SS<sub>res</sub> / SS<sub>tot</sub> &nbsp;&nbsp;ρ = Spearman( log₁₀ N , y )<br><span class="note">reported as the median over each family's tasks; input is above_random_scores.csv</span></div>
+  <p>Sign matters here. Bits per byte and training loss fall as models improve, so ρ = −1 is their ideal, not a failure.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Family</th><th>Median R²</th><th>Median ρ</th><th>Tasks</th></tr></thead>
+    <tbody>
+    <tr><td><code>lambada_openai_mt</code></td><td class="num win">0.970</td><td class="num">+1.0</td><td class="num">5</td></tr>
+    <tr><td><code>xwinograd</code></td><td class="num win">0.962</td><td class="num">+1.0</td><td class="num">6</td></tr>
+    <tr><td><code>bpb</code></td><td class="num win">0.956</td><td class="num">−1.0</td><td class="num">101</td></tr>
+    <tr><td><code>xstorycloze</code></td><td class="num win">0.929</td><td class="num">+1.0</td><td class="num">12</td></tr>
+    <tr><td><code>hellaswag</code></td><td class="num win">0.893</td><td class="num">+1.0</td><td class="num">31</td></tr>
+    <tr><td><code>truthfulqa-multi_mc1</code></td><td class="num">0.864</td><td class="num lose">−0.8</td><td class="num">3</td></tr>
+    <tr><td><code>multiblimp</code></td><td class="num">0.800</td><td class="num">+0.8</td><td class="num">57</td></tr>
+    <tr><td><code>belebele</code></td><td class="num lose">0.312</td><td class="num">+0.4</td><td class="num">105</td></tr>
+    <tr><td><code>include_base_44</code></td><td class="num lose">0.145</td><td class="num lose">−0.2</td><td class="num">43</td></tr>
+    <tr><td><code>global_mmlu_full</code></td><td class="num lose">0.077</td><td class="num lose">−0.4</td><td class="num">37</td></tr>
+    </tbody></table></div>
+  <p>TruthfulQA is the interesting failure: a tight fit with a negative slope, so it reliably gets <em>worse</em> as models grow. That is a known inverse-scaling behaviour and it means the benchmark is measuring something the ladder is training away.</p>
+  <figure><img src="public/ladder/rq_a1_scaling.png" alt="Dot plot of median R squared and Spearman rho per benchmark family, ranked">
+  <figcaption>R² of the log-parameter fit and Spearman ρ against size, median across each family's tasks.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>A linear fit in log N is the simplest defensible form at four rungs. The fit still stops at 1B: the two finished 1.7B cells are at L1 and L30, and the 1B cells at L8 and L50, so no design variant yet spans both. Once one does, a saturating form (Bhagia-style loss-to-accuracy) becomes fittable and would separate "not scaling" from "already saturated".</li>
+  <li>The fit is over size at fixed language count. The same fit over compute would fold in the token budget and is the more decision-relevant axis.</li></ul></div>
+</article>
+
+<article id="a2">
+  <div class="rq-head"><span class="rq-id">A2</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Which benchmarks are stable?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Training loss (0.009), <code>xstorycloze</code> (0.010), <code>multiblimp</code> (0.011) and per-language bits per byte (0.014) give the same answer twice. <code>include_base_44</code> at 0.206 is twenty times noisier than any of them, which compounds A1: it neither moves with size nor sits still.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Relative noise at 1B — the standard deviation over a run's last five saved checkpoints, divided by the mean of those checkpoints. This is the denominator of every SNR quoted in this document.</p>
+  <div class="formula">noise_rel_std(b, s) = σ<sub>t ∈ last 5</sub>( c<sub>t</sub> ) / c̄<br><span class="note">checkpoints are taken on the shared grid, so the window is the same fraction of training at every rung</span></div>
+  <p>The shared checkpoint grid matters. Without it the five-checkpoint window spans 50 % of a 20-checkpoint run and 12.5 % of a 40-checkpoint one, and the 1B rung would look artificially quiet.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <p>Median relative noise per family at 1B: <code>loss</code> 0.009, <code>xstorycloze</code> 0.010, <code>multiblimp</code> 0.011, <code>bpb</code> 0.014, <code>hellaswag</code> 0.016, <code>xwinograd</code> 0.017, <code>xcopa</code> 0.018, <code>arc</code> 0.021, <code>xnli</code> 0.022, <code>paws</code> 0.023, <code>lambada_openai_mt</code> 0.031, <code>include_base_44</code> 0.206.</p>
+  <p>Stability alone is not a virtue — a benchmark stuck at chance is perfectly stable. It only becomes meaningful next to the signal, which is A4.</p>
+  <figure><img src="public/ladder/rq_a2_stability.png" alt="Horizontal bar chart of median relative checkpoint noise per benchmark family">
+  <figcaption>Relative noise over each run's last checkpoints at 1B, median across each family's tasks. Lower is steadier.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>This is checkpoint noise. RQ6 shows seed noise is 2.04× larger, so the honest per-family stability ranking should be recomputed on seed replicates once more ×3 cells exist.</li>
+  <li>Noise is measured on the reference run only. Per-family noise may itself depend on size and language count, which this single number hides.</li></ul></div>
+</article>
+
+<article id="a3">
+  <div class="rq-head"><span class="rq-id">A3</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Which languages benefit most from increasing model scale?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>All <strong>100</strong> validation languages improve, median <strong>0.391 bits per byte</strong>. The ordering is the result: Spearman <strong>ρ = +0.63</strong> between where a language starts and what it gains, so scale helps most where the model is currently worst.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>On the 50-language mixture, deep architecture, scheme A, seed 1904, at each language's final checkpoint:</p>
+  <div class="formula">baseline<sub>ℓ</sub> = BPB<sub>ℓ</sub>(175M) &nbsp;&nbsp;&nbsp; gain<sub>ℓ</sub> = BPB<sub>ℓ</sub>(175M) − BPB<sub>ℓ</sub>(1B)<br><span class="note">L50 is used because it is the only setting with a complete 175M→1B chain</span></div>
+  <p>The three patterns the team named map onto the plot's regions, split at the median of each axis rather than an absolute floor, because nothing regresses. Bits per byte is byte-normalised, so it is comparable across languages with different tokenizer fertility — that is why it is the metric here rather than perplexity.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Pattern</th><th>Reading</th><th>Examples</th></tr></thead>
+    <tbody>
+    <tr><td>Starts hard, gains a lot</td><td>above median on both axes</td><td>div, gle, and most of the right-hand cloud</td></tr>
+    <tr><td>Starts easy, gains a lot</td><td>below median baseline, above median gain</td><td>slv, nno</td></tr>
+    <tr><td>Gains little, wherever it starts</td><td>below median gain</td><td>tam, mal, asm</td></tr>
+    </tbody></table></div>
+  <p>The correlation is the headline and it points the other way from a rich-get-richer story. It is the argument for pushing the ladder <em>higher</em> before widening it: the languages that most need capacity are the ones a bigger model helps most.</p>
+  <figure><img src="public/ladder/rq_a3_languages.png" alt="Scatter of baseline bits per byte against bits per byte saved, per validation language, split into three regions">
+  <figcaption>Where each language starts against what scale buys it, on the 50-language mixture.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>One chain at one language count. The same plot at L8 and L30 would say whether the correlation is a property of scale or of the mixture.</li>
+  <li>45 of the 100 validation languages are never trained on. Splitting the plot by trained versus zero-shot would separate "capacity helps" from "transfer helps".</li></ul></div>
+</article>
+
+<article id="a4">
+  <div class="rq-head"><span class="rq-id">A4</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Does the benchmark distinguish the things we want to compare?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Bits per byte clears its own noise at <strong>7.1×</strong>, and it is no longer alone: <code>hellaswag</code> reaches <strong>5.1×</strong> on 15 tasks and <code>multiblimp</code> <strong>2.3×</strong> on 57. Six families are still <strong>below 1×</strong>, meaning they vary more between checkpoints of one model than between the models we are trying to tell apart.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Signal is the spread across the design variants at a fixed size; noise is the spread within one run. Both are relative, so the ratio is dimensionless and comparable across benchmarks with different score scales.</p>
+  <div class="formula">signal_rel_std(b,s) = σ<sub>variants</sub>( final score ) / mean<br>noise_rel_std(b,s)  = σ<sub>last 5 ckpts</sub>( score ) / mean<br>ratio = signal / noise &nbsp;&nbsp;<span class="note">this ratio is the rel_std SNR variant; reported at 1B</span></div></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Family</th><th>Signal</th><th>Noise</th><th>Ratio</th><th>Tasks</th></tr></thead>
+    <tbody>
+    <tr><td><code>bpb</code></td><td class="num">0.101</td><td class="num">0.014</td><td class="num win">7.1×</td><td class="num">101</td></tr>
+    <tr><td><code>hellaswag</code></td><td class="num">0.082</td><td class="num">0.016</td><td class="num win">5.1×</td><td class="num">15</td></tr>
+    <tr><td><code>multiblimp</code></td><td class="num">0.025</td><td class="num">0.011</td><td class="num win">2.3×</td><td class="num">57</td></tr>
+    <tr><td><code>arc</code></td><td class="num">0.033</td><td class="num">0.021</td><td class="num win">1.6×</td><td class="num">2</td></tr>
+    <tr><td><code>lambada_openai_mt</code></td><td class="num">0.043</td><td class="num">0.031</td><td class="num win">1.4×</td><td class="num">5</td></tr>
+    <tr><td><code>loss</code></td><td class="num">0.012</td><td class="num">0.009</td><td class="num win">1.3×</td><td class="num">1</td></tr>
+    <tr><td><code>paws</code></td><td class="num">0.018</td><td class="num">0.023</td><td class="num lose">0.8×</td><td class="num">2</td></tr>
+    <tr><td><code>xnli</code></td><td class="num">0.013</td><td class="num">0.022</td><td class="num lose">0.6×</td><td class="num">9</td></tr>
+    <tr><td><code>xcopa</code></td><td class="num">0.009</td><td class="num">0.018</td><td class="num lose">0.5×</td><td class="num">6</td></tr>
+    <tr><td><code>xstorycloze</code></td><td class="num">0.005</td><td class="num">0.010</td><td class="num lose">0.5×</td><td class="num">5</td></tr>
+    <tr><td><code>xwinograd</code></td><td class="num">0.006</td><td class="num">0.017</td><td class="num lose">0.4×</td><td class="num">6</td></tr>
+    </tbody></table></div>
+  <p>Read the counts. <code>arc</code> rests on two tasks and <code>loss</code> on one, but <code>hellaswag</code> on 15 and <code>multiblimp</code> on 57 are properly powered, so this is the one place in the compendium where the benchmark suite has genuinely improved rather than merely grown. <code>multiblimp</code> is also the case A2 flagged as steady, and its signal has now overtaken its steadiness.</p>
+  <figure><img src="public/ladder/rq_a4_signal.png" alt="Dot plot pairing signal and noise per benchmark family on a log scale, annotated with the ratio">
+  <figcaption>Signal against noise at 1B, both relative. The ratio is on the right; above 1× the benchmark separates the models.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>Signal here is dispersion across language settings and schemes. A benchmark could separate models on an axis this ladder does not vary — instruction tuning, for instance — and still score below 1× here.</li>
+  <li>With seed noise as the denominator instead of checkpoint noise, every ratio roughly halves. Bits per byte, <code>hellaswag</code> and <code>multiblimp</code> would still clear 1×, and nothing else would.</li></ul></div>
+</article>
+
+<section class="band">
+  <p class="band-id">Part three</p>
+  <h2>Can a cheap measurement stand in for the real one?</h2>
+  <p class="intro">The three questions the ladder exists to answer. A proxy is only worth having if the decision it produces is the decision the expensive model would have produced.</p>
+</section>
+
+<article id="b1">
+  <div class="rq-head"><span class="rq-id">B1</span><span class="chip done">Answered</span></div>
+  <h3 class="q">How early can we predict final multilingual performance?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Bits per byte calls the ranking at <strong>20 % of training</strong> and never improves on it — 0.91 agreement, flat to 80 %. Four fifths of every run adds nothing to the ranking. The benchmark median climbs slowly from 0.65 to 0.80 and only <code>hellaswag</code> (0.90) and <code>arc</code> (0.88) are as early as bits per byte.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>Within one size, the checkpoint nearest each fraction of the run is compared against that same run's final checkpoint. This is DA-ckpt from RQ1, read across the fractions rather than aggregated.</p>
+  <div class="formula">DA-ckpt(b; f@s) = share of variant pairs ordered the same at fraction f and at the end<br>f ∈ {0.2, 0.4, 0.6, 0.8} &nbsp;&nbsp;<span class="note">da_early_fracs in the snr section of configs/models.json</span></div>
+  <p>Reported at 1B, the largest size with a full checkpoint grid. The benchmark families are drawn individually and as a median, rather than in six invented colours, because they are one kind of thing and the contrast against bits per byte is the point.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Checkpoint</th><th>Bits per byte (101 tasks)</th><th>Benchmark families, median</th></tr></thead>
+    <tbody>
+    <tr><td>20 % of the run</td><td class="num win">0.911</td><td class="num">0.651</td></tr>
+    <tr><td>40 %</td><td class="num win">0.911</td><td class="num lose">0.636</td></tr>
+    <tr><td>60 %</td><td class="num win">0.931</td><td class="num">0.695</td></tr>
+    <tr><td>80 %</td><td class="num win">0.911</td><td class="num">0.800</td></tr>
+    </tbody></table></div>
+  <p>The benchmark spread is enormous at every fraction, 0.00 to 1.00 at 20 % and 0.50 to 1.00 at 80 %, because most families have a handful of comparable tasks and the metric is quantised at that count. Bits per byte is flat because it is measured over 101 subsets and genuinely does not change its mind.</p>
+  <p>The practical consequence is a budget one. If the decision is read on bits per byte, the milestone-eval rule could fire far earlier than it does and free most of the evaluation budget.</p>
+  <figure><img src="public/ladder/rq_b1_early.png" alt="Line chart of decision accuracy against checkpoint fraction, bits per byte against benchmark families">
+  <figcaption>Agreement between an early checkpoint's ranking and the same run's final ranking, at 1B.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>This is agreement with a run's <em>own</em> final ranking, not with a larger model. Early-and-small is the combination that actually saves money, and B3 only covers the small half.</li>
+  <li>Under WSD the last 20 % is the decay phase. Whether 20 % of a run with a different schedule is equally decisive is untested.</li></ul></div>
+</article>
+
+<article id="b2">
+  <div class="rq-head"><span class="rq-id">B2</span><span class="chip done">Answered</span></div>
+  <h3 class="q">What is the smallest evaluation suite that reliably predicts full multilingual model quality?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p><strong>Four tasks</strong> reach ρ = 0.98 against the bits-per-byte ranking. The whole suite of 2,897 reaches <strong>0.53</strong>. A small curated suite is not a compromise here, it is strictly better than running everything.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>The reference is the ranking of models by their mean per-language bits per byte, sign-flipped so higher is better throughout. Benchmark tasks are added best-first, judged by how well each alone tracks that reference, and the growing suite is scored the same way.</p>
+  <div class="formula">ref<sub>m</sub> = −mean<sub>ℓ</sub> BPB<sub>m,ℓ</sub> &nbsp;&nbsp;<span class="note">m over the 41 models of the canonical pool</span><br>solo(t) = Spearman( score<sub>·,t</sub> , ref )&nbsp;&nbsp;→ tasks sorted descending<br>suite(k) = Spearman( mean of z-scored top-k tasks , ref )<br><span class="note">z-scored per task so tasks on different scales contribute equally; a task must be scored on ≥ 60 % of models to enter</span></div>
+  <p>The z-scoring is the one substantive choice. Without it the average is dominated by whichever tasks have the widest raw range, which is a scale artefact rather than a signal.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Suite</th><th>Tasks</th><th>Spearman ρ vs the BPB ranking</th></tr></thead>
+    <tbody>
+    <tr><td>Best single task</td><td class="num">1</td><td class="num">0.96</td></tr>
+    <tr><td>Best suite</td><td class="num win">4</td><td class="num win">0.98</td></tr>
+    <tr><td>Within 10 % of the peak</td><td class="num">1 – 27</td><td class="num">0.88 – 0.98</td></tr>
+    <tr><td>Everything</td><td class="num">2,897</td><td class="num lose">0.53</td></tr>
+    </tbody></table></div>
+  <p><strong>2,893 of the 2,897 suite sizes beat the whole suite.</strong> The decline is monotone past the plateau and the cause is mechanical: the tail is at-chance tasks whose scores are noise, and averaging noise into a signal dilutes it. This is the strongest practical result in the compendium — it says the evaluation budget is being spent on tasks that make the answer worse.</p>
+  <figure><img src="public/ladder/rq_b2_suite_size.png" alt="Curve of rank agreement against suite size, peaking at three tasks and declining to the whole-suite value">
+  <figcaption>Agreement with the bits-per-byte ranking as tasks are added best first.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>The suite is selected and evaluated on the same 41 models, so ρ = 0.98 is optimistic. A seed or size holdout would give the honest number and say whether the same four tasks are chosen twice.</li>
+  <li>Best-first is greedy and ignores redundancy. A selection that rewards complementary tasks would likely find a better four.</li>
+  <li>The reference is bits per byte, which assumes BPB <em>is</em> model quality. It is the best available proxy on this ladder but it is not a downstream task.</li></ul></div>
+</article>
+
+<article id="b3">
+  <div class="rq-head"><span class="rq-id">B3</span><span class="chip done">Answered</span></div>
+  <h3 class="q">Which is the most informative surrogate?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Per-language bits per byte, on <strong>73 % of 500</strong> comparisons, and 175M alone suffices for a third of them. Benchmarks on <strong>47 % of 8,449</strong>, up from 0 % on the thinner ladder. The two aggregate metrics look better but rest on five comparisons each.</p></div>
+
+  <div class="part"><span class="lab">Setup and method</span>
+  <p>This is the min-model-size question the team sketched, aggregated across language counts. A surrogate <em>works</em> for a given measurement when some proxy size picks the reference's winner and every larger size keeps picking it — the monotonicity requirement is what makes it a usable rule rather than a coincidence.</p>
+  <div class="formula">min_predictive(x) = smallest s such that ∀ s′ ≥ s : sign(Δx)|<sub>s′</sub> = sign(Δx)|<sub>ref</sub><br><span class="note">NaN when no such size exists; reference is the largest size trained at that L</span></div>
+  <p>Computed by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/documents/figures/predictivity.py"><code>documents/figures/predictivity.py</code></a>, with the intervention held fixed per language count: depth at L ∈ {1, 2}, scheme at L ∈ {8, 15, 30}.</p></div>
+
+  <div class="part"><span class="lab">Results</span>
+  <div class="tbl"><table>
+    <thead><tr><th>Surrogate</th><th>Some size works</th><th>175M is enough</th><th>Comparisons</th></tr></thead>
+    <tbody>
+    <tr><td>Training loss</td><td class="num">80 %</td><td class="num">60 %</td><td class="num lose">5</td></tr>
+    <tr><td>Per-language bits per byte</td><td class="num win">73 %</td><td class="num">32 %</td><td class="num win">500</td></tr>
+    <tr><td>Macro bits per byte</td><td class="num">60 %</td><td class="num">40 %</td><td class="num lose">5</td></tr>
+    <tr><td>Any benchmark task</td><td class="num lose">47 %</td><td class="num lose">23 %</td><td class="num win">8,449</td></tr>
+    </tbody></table></div>
+  <p>Only the second and last rows are well powered. Training loss and macro bits per byte are single measurements, so five comparisons each, and should not be ranked against the others on this evidence. The comparison that matters is 73 % against 47 %, and the benchmark figure deserves a null before it is called a success: agreeing at two rungs by chance lands near 47 % on its own.</p>
+  <p>Broken out by language count, per-language bits per byte fails on 50 of 100 subsets at L1 — where the intervention is depth, the axis that sits at the seed-noise floor — and on 15 to 24 at every other setting. Benchmarks pass on 38 of 73 at L1, 81 of 141 at L2, 1,160 of 2,740 at L8, 1,458 of 2,749 at L15 and 1,258 of 2,746 at L30, a flat 42–53 % at every language count.</p>
+  <figure><img src="public/ladder/rq_b3_surrogate.png" alt="Horizontal bars of the share of measurements with a working proxy size, per surrogate">
+  <figcaption>Share of measurements on which a proxy reproduces the reference's decision and keeps reproducing it.</figcaption></figure>
+  <figure><img src="public/ladder/rq6_whiteboard.png" alt="Smallest model reaching each decision accuracy level against the number of languages, with the unanswerable region greyed">
+  <figcaption>The same question in the shape the team drew it. Grey is what today's grid cannot answer: 600M is the reference, so no answer lands at or past it, and above 30 languages nothing is paired.</figcaption></figure></div>
+
+  <div class="part"><span class="lab">Follow-ups</span>
+  <ul><li>Only two proxy rungs exist below the reference. The curve the team sketched needs four or five, and a reference above them, before it can be drawn.</li>
+  <li>The monotonicity requirement is strict. Reporting the share that agree at a <em>given</em> size, without requiring every larger size to agree, would be a softer and possibly more useful rule.</li></ul></div>
+</article>
+
+<section class="band">
+  <p class="band-id">Part four</p>
+  <h2>What we should also be asking</h2>
+  <p class="intro">Five questions the current programme does not cover. Each is answerable with the ladder we already have, or with a clearly bounded addition to it. Seven further proposals, narrower and already written up, are in §9 of <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/documents/report/snr_predictivity_report.md">the report</a>.</p>
+</section>
+
+<article id="p1" class="proposal">
+  <div class="rq-head"><span class="rq-id">P1</span><span class="chip open">Proposed</span></div>
+  <h3 class="q">What is the cheapest evaluation that still gets the decision right?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>B1, B2 and B3 each cut one axis in isolation — checkpoint, suite, size. Nobody has cut all three at once, and the savings multiply. <strong>The three results together imply a 20 % checkpoint of a 350M model on four tasks</strong>, and that combination has never been tested.</p></div>
+
+  <div class="part"><span class="lab">Why it is missing</span>
+  <p>Each of the three answers holds the other two axes at their most generous setting. B1 reads bits per byte at full suite and full size; B2 uses final checkpoints of every model; B3 uses full runs. Interactions are plausible in both directions: a four-task suite may be far noisier at 20 % of training than at the end, or the size reduction may be free once the suite is curated.</p></div>
+
+  <div class="part"><span class="lab">Proposed method</span>
+  <div class="formula">for (s, f, k) in sizes × fractions × suite_sizes:<br>
+  &nbsp;&nbsp;DA(s, f, k) = agreement with the reference decision at (largest size, final ckpt, full suite)<br>
+  &nbsp;&nbsp;cost(s, f, k) ≈ C<sub>train</sub>(s) · f &nbsp;+&nbsp; C<sub>eval</sub> · k · n<sub>ckpts</sub>(f)<br>
+  report the Pareto front of (cost, DA), not the grid</div>
+  <p>Everything needed is already in the ladder report — the grid is a re-slice of existing DA machinery, not new training. The deliverable is one curve a practitioner can read a budget off, plus the single recommended triple.</p></div>
+
+  <div class="part"><span class="lab">What would make it decisive</span>
+  <ul><li>Report it separately for the depth and scheme decisions. The two axes have very different effect sizes and the cheapest adequate evaluation almost certainly differs.</li>
+  <li>Include the cost of the reference itself. If the proxy costs 30 % of the reference, the saving is smaller than the DA table suggests.</li></ul></div>
+</article>
+
+<article id="p2" class="proposal">
+  <div class="rq-head"><span class="rq-id">P2</span><span class="chip open">Proposed</span></div>
+  <h3 class="q">How many seeds does a per-language claim actually need?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Every negative result here — the SNR ranking not transferring, depth sitting at the noise floor, per-language argmax at 10 % agreement — is consistent with "the effect is absent" and with "six replicate cells cannot see it". <strong>We have never computed which.</strong></p></div>
+
+  <div class="part"><span class="lab">Why it is missing</span>
+  <p>The whole noise estimate rests on six ×3 cells: 175M and 600M at L ∈ {1, 2, 50}. That is enough to say seed noise is 2.04× checkpoint noise, and not enough to put an interval on any per-language quantity. RQ2's holdout swung from ρ = +0.70 to +0.29 on one night of extra evals, which is the symptom.</p></div>
+
+  <div class="part"><span class="lab">Proposed method</span>
+  <p>A straightforward power analysis on the quantities already computed, then a bootstrap over the replicates we have:</p>
+  <div class="formula">σ<sub>seed</sub>(ℓ, s) from the ×3 cells &nbsp;→&nbsp; n<sub>required</sub>(ℓ) = ⌈ 2 (z<sub>α/2</sub>+z<sub>β</sub>)² σ² / δ² ⌉<br><span class="note">δ = the smallest effect worth detecting; the scheme effect (2.2×σ) and the depth effect (1.0×σ) are the two candidates</span></div>
+  <p>Then resample the existing seeds to show how the holdout ρ and the per-language agreement behave as a function of replicate count, which turns "the estimate is noisy" into a number.</p></div>
+
+  <div class="part"><span class="lab">What would make it decisive</span>
+  <ul><li>Every negative claim in this document should carry a minimum detectable effect. Without one, "no significant difference" is unreadable.</li>
+  <li>If the required n is large, that is itself the finding, and it argues for spending the next node-hours on replicates rather than on new cells.</li></ul></div>
+</article>
+
+<article id="p3" class="proposal">
+  <div class="rq-head"><span class="rq-id">P3</span><span class="chip open">Proposed</span></div>
+  <h3 class="q">Can we build a benchmark where the signal actually is?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>The suite now reaches 62 of the 68 languages we can score, but in <strong>40 of them the only surviving benchmark is MultiBLiMP</strong>, and no knowledge or reasoning benchmark clears the gate in any language at all. The coverage problem has become a construct problem: we can measure grammaticality almost everywhere and everything else nowhere.</p></div>
+
+  <div class="part"><span class="lab">Why it is missing</span>
+  <p>This came out of RQ2 as a description. Nobody has turned it into a construction. It is still the most actionable finding the project has produced, and the refresh sharpened it rather than removing it: ten families survive the gate somewhere, but <code>global_mmlu_full</code>, both Global-PIQA variants and <code>truthfulqa-multi_mc1</code> survive nowhere, so the whole knowledge and reasoning half of the suite is silent at every size we have trained.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Group</th><th>Languages</th><th>Median BPB SNR</th><th>Detail</th></tr></thead>
+    <tbody>
+    <tr><td>Keeps a benchmark after the gate</td><td class="num win">62</td><td class="num">7.47</td><td class="num">of which 40 keep only <code>multiblimp</code></td></tr>
+    <tr><td>No benchmark survives</td><td class="num lose">6</td><td class="num">5.09</td><td class="num">bo, kn, ml, ne, te, th</td></tr>
+    </tbody></table></div></div>
+
+  <div class="part"><span class="lab">Proposed method</span>
+  <ol style="margin:0 0 11px; padding-left:19px"><li>Rank the 87 uncovered languages by BPB SNR at 1B. The top 39 clear 10.0 and are the target list.</li>
+  <li>For each, check what the harness already has that the gate rejected, and why — no task at all, or a task that never beats chance.</li>
+  <li>Pick the format the ladder shows survives at these sizes: two-option, completion or minimal pair. A4 and RQ5 agree that four-option knowledge MCQA is dead at this scale.</li>
+  <li>Validate a candidate by the same gate plus signal ratio, not by human agreement alone.</li></ol></div>
+
+  <div class="part"><span class="lab">What would make it decisive</span>
+  <ul><li>MultiBLiMP already covers grammaticality in many of these languages cheaply and is the steadiest family on the ladder. Extending it may be far cheaper than new authoring, even though its signal is currently low.</li>
+  <li>The anti-correlation may be partly mechanical: high-resource languages are well served by every mixture <em>because</em> they are high-resource. Stating that mechanism is part of the result, not a caveat against it.</li></ul></div>
+</article>
+
+<article id="p4" class="proposal">
+  <div class="rq-head"><span class="rq-id">P4</span><span class="chip open">Proposed</span></div>
+  <h3 class="q">Is the optimizer timescale quietly depressing every small proxy?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>AdEMAMix's slow average is fixed at <strong>10,000 steps</strong> while run length spans 18× across the ladder. The 90M rung is shorter than its own optimizer's memory and nine of ten runs diverged. The control run says the fix also <strong>beats the uncorrected 175M</strong>, which means the next rung up is depressed too.</p></div>
+
+  <div class="part"><span class="lab">Why it is missing</span>
+  <p>It was diagnosed as a 90M problem and handled by dropping the rung. But the evidence points further up: a 90M run with β₃ tied to run length reaches final loss 2.778, against 5.762 uncorrected, and that corrected 90M beats the uncorrected 175M. If 175M is depressed, every "the small proxy disagrees with the reference" result in this document is partly an artefact of the proxy being handicapped rather than small.</p>
+  <p>That would be a finding with reach beyond this project. Step-fixed optimizer hyperparameters are standard practice, and small-model proxies are how the field makes decisions.</p></div>
+
+  <div class="part"><span class="lab">Proposed method</span>
+  <div class="formula">β₃ ← tied to run length (0.2 × total steps), holding everything else fixed<br>cells: 175M and 350M at L ∈ {1, 2, 8}, one seed<br>read: Δ final loss, Δ per-language BPB, and Δ intervention DA against the same reference</div>
+  <p>Six runs. The comparison that matters is not whether the corrected models are better — they will be — but whether the corrected proxy's <em>decision</em> agrees with the reference more often than the uncorrected one does.</p></div>
+
+  <div class="part"><span class="lab">What would make it decisive</span>
+  <ul><li>If DA improves, every proxy result needs re-reading and the ladder needs re-running with the tie. If DA is unchanged, the rung is simply worse and nothing else follows, which is also worth knowing.</li>
+  <li>Check the same question for the learning-rate law and the warmup, both of which are also defined against a run's own budget.</li></ul></div>
+</article>
+
+<article id="p5" class="proposal">
+  <div class="rq-head"><span class="rq-id">P5</span><span class="chip open">Proposed</span></div>
+  <h3 class="q">Would the decision change if we compared at equal compute instead of equal size?</h3>
+  <div class="tldr"><span class="lab">TL;DR</span>
+  <p>Every result here compares a small model at <em>its own</em> full budget against a large one at <em>its</em> full budget. A practitioner has a fixed budget and chooses shape. <strong>Those two framings can disagree</strong>, and the ladder can already answer the second.</p></div>
+
+  <div class="part"><span class="lab">Why it is missing</span>
+  <p>Carried over from the report's §9 and still unrun. The ladder trains every rung to 100 × N tokens, so size and compute move together and the current design cannot separate them. But the IsoFLOP slices exist: at 1e19, 3.2e19 and 1e20 FLOPs, three to four sizes each have a checkpoint on the shared grid.</p></div>
+
+  <div class="part"><span class="lab">Proposed method</span>
+  <div class="formula">compute = 6 · (N<sub>non-emb</sub> + d·V) · D &nbsp;&nbsp;<span class="note">already a column in the ladder report</span><br>for each IsoFLOP slice: pick each size's nearest checkpoint, then run the RQ6 intervention DA<br>compare against the equal-size, equal-fraction answer</div>
+  <p>No new training. It re-slices checkpoints already evaluated, using the compute column the FLOPs convention fix put on a single basis.</p></div>
+
+  <div class="part"><span class="lab">What would make it decisive</span>
+  <ul><li>If the two framings pick different proxies, the practitioner-facing recommendation has to be stated at fixed budget, and the paper's framing changes with it.</li>
+  <li>The milestone-eval rule needed for clean IsoFLOP slices is decided but not implemented, so today's slices use nearest checkpoints, which adds error the comparison must carry.</li></ul></div>
+</article>
+
+<footer>
+  <p><strong>Provenance.</strong> Every number here regenerates from one artefact: the wide per-checkpoint table <code>ladder_report.csv</code>, published to <code>msnr-data/ladder-report</code> and read from the repository branch <code>data/ladder-report</code>. The run is 14 September 2026, on 106 cells of which 66 are complete, and it is reproduced end to end by <code>scripts/refresh_analysis.sh</code>.</p>
+  <p><strong>Reproduce.</strong> <code>cd src/signal-and-noise &amp;&amp; bash run_all_predictivity.sh</code> for RQ0–RQ6; <code>cd documents/figures &amp;&amp; python3 fig_rqs.py</code> for A1–B3. The per-task tables under <code>analysis/&lt;rq&gt;/pretraining/&lt;pool&gt;/</code> are the persisted truth and every figure derives from them.</p>
+  <p><strong>Read alongside.</strong> The full write-up is <code>documents/report/snr_predictivity_report.md</code>; the presentation is <code>documents/slides.md</code>; each RQ directory carries its own README with the generated results block.</p>
+</footer>
+</main>
+</div>

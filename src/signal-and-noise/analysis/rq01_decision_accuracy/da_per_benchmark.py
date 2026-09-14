@@ -34,7 +34,10 @@ Outputs (under `snr_definition/<stage>/<pool>/`):
 
 `generate_slides()` additionally rewrites the data-driven appendix of the
 Slidev deck (`documents/slides.md`, between BEGIN/END markers — idempotent):
-2 above-random slides (custom / all models) + 1 DA-size slide per language.
+the above-random slides, 2 overview heatmap slides, then per language a DA-size
+table slide followed by the same numbers as a heatmap. The heatmap PNGs are
+rendered by `documents/figures/fig_appendix.py` from the CSV this script writes,
+so run that too after regenerating the appendix.
 
     python analysis/rq01_decision_accuracy/da_per_benchmark.py --pool custom_swissai_hf
 """
@@ -55,9 +58,11 @@ if str(_SRC) not in sys.path:
 
 import pandas as pd  # noqa: E402
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
+from evals.scripts.utils.configs import (  # noqa: E402
+    bucket_order, load_languages, load_pools)
 from analysis.rq00_acc_vs_flops.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
+from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.utils import (  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -144,12 +149,8 @@ _DA_BOLD = 0.75         # bold decision-accuracy cells at/above this
 _BEGIN = "<!-- BEGIN generated signal slides (analysis/rq01_decision_accuracy/da_per_benchmark.py) -->"
 _END = "<!-- END generated signal slides -->"
 
-_LANG_NAME = {
-    "en": "English", "es": "Spanish", "ar": "Arabic", "zh": "Chinese",
-    "ru": "Russian", "hi": "Hindi", "vi": "Vietnamese", "eu": "Basque",
-    "sw": "Swahili", "th": "Thai", "tr": "Turkish", "ja": "Japanese",
-    "de": "German", "fr": "French",
-}
+# Display names from configs/languages.json where curated; the tag otherwise.
+_LANG_NAME = {code: e["language"] for code, e in load_languages()["languages"].items()}
 
 
 def _comparison_key(comp: str) -> tuple[int, int]:
@@ -164,8 +165,14 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
     """One DA-size slide per language: benchmark rows × every computable size
     pair, cell = decision accuracy (bold ≥ _DA_BOLD), most-predictive first."""
     size = long[long["da_def"] == "DA-size"]
+    # The ladder resolves 96 languages, but only the ones it actually pretrains
+    # on carry a claim. `groups.trained` is that set, capped at the 50-language
+    # setting because the 100-language distribution is not settled. The CSVs keep
+    # every language.
+    report_langs = [l for l in load_languages()["groups"]["trained"]
+                    if l in set(size["language"])]
     slides = []
-    for lang in sorted(size["language"].unique(), key=lambda l: (l != "en", l)):
+    for lang in sorted(report_langs, key=lambda l: (l != "en", l)):
         sub = size[size["language"] == lang]
         comps = sorted(sub["comparison"].unique(), key=_comparison_key)
         wide = sub.pivot_table(index=["benchmark", "task"], columns="comparison",
@@ -197,22 +204,59 @@ def _da_language_slides(long: pd.DataFrame) -> list[str]:
             f"{md_table(header, rows)}\n\n"
             f"{TABLE_STYLE}\n"
         )
+        # The same table as a picture, for reading a language at a glance.
+        # documents/figures/fig_appendix.py renders these from the same CSV.
+        slides.append(_figure_slide(
+            f"/ladder/appendix/da_{lang}.png",
+            "Appendix — Decision accuracy across sizes",
+            f"{name} ({lang}) · the table before, as a heatmap"))
     return slides
+
+
+def _figure_slide(image: str, title: str, subtitle: str, height: str = "72vh") -> str:
+    return (f"---\n"
+            f"layout: figure\n"
+            f"image: {image}\n"
+            f"fit: contain\n"
+            f"height: {height}\n"
+            f"title: {title}\n"
+            f"subtitle: \"{subtitle}\"\n"
+            f"---\n")
+
+
+def _overview_slides() -> list[str]:
+    """The two aggregate views that open the appendix: the grid collapsed over
+    languages, then over benchmarks."""
+    return [
+        _figure_slide("/ladder/appendix/da_by_benchmark.png",
+                      "Appendix — Decision accuracy, all languages at once",
+                      "Benchmark × size pair, averaged over every language it covers"),
+        _figure_slide("/ladder/appendix/da_by_language.png",
+                      "Appendix — Decision accuracy, all benchmarks at once",
+                      "Language × size pair, averaged over every benchmark it has",
+                      height="78vh"),
+    ]
 
 
 def generate_slides(long: pd.DataFrame, pool: str) -> None:
     """Rewrite the deck's appendix (between BEGIN/END markers) from `long`:
-    2 above-random slides (custom / all models) + 1 DA-size slide per language.
-    Idempotent — replaces an existing block, else appends to slides.md."""
+    the above-random slides + 1 DA-size slide per language. Canonical pool
+    only, like every other generator; idempotent — replaces an existing
+    block, else appends to slides.md."""
+    if pool != CANONICAL_POOL:
+        return
     stage = load_pools()[pool].get("stage", "pretraining")
+    ar, lang_slides = above_random_slides(stage), _da_language_slides(long)
+    overview = _overview_slides()
     block = "\n".join([
         _BEGIN,
         "",
         "---\nlayout: section\n---\n\n"
         "# Appendix — Signal & Predictability across Sizes\n",
         "",
-        *above_random_slides(stage),
-        *_da_language_slides(long),
+        *ar,
+        *overview,
+        *lang_slides,
         _END,
     ]) + "\n"
 
@@ -223,15 +267,15 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
     else:
         text = text.rstrip() + "\n\n" + block
     _SLIDES.write_text(text)
-    n_lang = long.loc[long.da_def == "DA-size", "language"].nunique()
     print(f"Wrote appendix slides → {_SLIDES} "
-          f"(2 above-random + {n_lang} per-language DA)")
+          f"({len(ar)} above-random + {len(overview)} overview + "
+          f"{len(lang_slides)} per-language DA)")
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--pool", default="custom_swissai_hf",
-                   help="Pool name from configs/models.json (default: custom_swissai_hf).")
+    p.add_argument("--pool", default=CANONICAL_POOL,
+                   help=f"Pool name from configs/models.json (default: {CANONICAL_POOL}).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")

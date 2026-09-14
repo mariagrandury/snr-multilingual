@@ -46,7 +46,7 @@ from snr.metrics import decision_acc_fast  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, SMALL_SIZES, TARGET_SIZE, _is_parent_task,
-    build_snr_pool, expand_pool,
+    build_snr_pool, pool_models,
 )
 
 OUT_ROOT = DECISION_ACCURACY
@@ -174,11 +174,11 @@ def run(pool: str, out_dir: Path):
     pool_buckets = [b for b in bucket_order() if b in set(df_pool["bucket"].dropna())]
     scaling_pairs = _scaling_da_pairs(df_pool)
 
-    pool_models = set(expand_pool(pool))
+    own_models = pool_models(pool, df_pool)
     all_models = set(df_pool["model"])
     print(
-        f"Pool '{pool}': {len(all_models & pool_models)} custom + "
-        f"{len(all_models - pool_models)} external model(s); "
+        f"Pool '{pool}': {len(all_models & own_models)} custom + "
+        f"{len(all_models - own_models)} external model(s); "
         f"include_external={pool_include_external(pool)}"
     )
     print(f"  Buckets: {pool_buckets} | {len(tasks)} parent tasks")

@@ -1,0 +1,199 @@
+{
+  "grid": {
+    "cells_in_report": 106,
+    "complete": 66,
+    "complete_not_diverged": 57,
+    "healthy": 54,
+    "complete_by_size": {
+      "1.7B": 2,
+      "175M": 17,
+      "1B": 2,
+      "350M": 15,
+      "600M": 20,
+      "90M": 10
+    },
+    "complete_L": [
+      1,
+      2,
+      8,
+      15,
+      30,
+      50
+    ],
+    "schemes_present": [
+      "A",
+      "AT3",
+      "B",
+      "ES",
+      "ZH"
+    ]
+  },
+  "gate": {
+    "gated_tasks": 461,
+    "clear_any_size": 113,
+    "by_options": {
+      "2": [
+        80,
+        191
+      ],
+      "3": [
+        12,
+        18
+      ],
+      "4": [
+        21,
+        252
+      ]
+    },
+    "per_size": {
+      "90M": 3,
+      "175M": 62,
+      "350M": 71,
+      "600M": 85,
+      "1B": 103,
+      "1.7B": 110
+    },
+    "never_clearing_families": [
+      "global_mmlu_full",
+      "global_piqa_nonparallel_cloze",
+      "global_piqa_parallel_cloze",
+      "truthfulqa-multi_mc1"
+    ]
+  },
+  "snr": {
+    "best_variant": "discrepancy",
+    "best_r_da_ckpt": -0.049,
+    "best_r_da_size": 0.056,
+    "best_r_overall": 0.004,
+    "validation_languages": 68,
+    "rank1_is_bpb": 9,
+    "languages_with_surviving_benchmark": 62,
+    "benchmark_beats_bpb": 11,
+    "bpb_snr_median_with_benchmark": 7.473,
+    "bpb_snr_median_without": 5.093
+  },
+  "seed_holdout": {
+    "exact_variant_agreement_size": 0.008,
+    "exact_variant_agreement_ckpt": 0.049,
+    "family_agreement_size": 0.008,
+    "family_agreement_ckpt": 0.115,
+    "pearson_r_cells_size": 0.266,
+    "pearson_r_cells_ckpt": -0.065,
+    "spearman_rank_global_size": -0.205,
+    "spearman_rank_global_ckpt": 0.007,
+    "retention_size": 1.0,
+    "retention_ckpt": 0.408
+  },
+  "rq6": {
+    "intervention_cells": 36,
+    "reference_sizes": [
+      "600M"
+    ],
+    "scaling_fits": 505,
+    "fits_by_reference": {
+      "1.7B": 202,
+      "1B": 202,
+      "600M": 101
+    },
+    "rel_error_median_abs_by_L": {
+      "1": 0.076,
+      "2": 0.244,
+      "8": 0.051,
+      "30": 0.058,
+      "50": 0.043
+    },
+    "seed_over_ckpt_noise": 2.04,
+    "seed_over_ckpt_n": 5546,
+    "depth_over_seed_median": 1.43,
+    "depth_over_seed_above2_share": 0.35,
+    "depth_over_seed_n": 853,
+    "benchmark_population": [
+      {
+        "L": 1,
+        "proxy": "175M",
+        "n": 70,
+        "da": 0.571
+      },
+      {
+        "L": 1,
+        "proxy": "350M",
+        "n": 70,
+        "da": 0.557
+      },
+      {
+        "L": 2,
+        "proxy": "175M",
+        "n": 148,
+        "da": 0.473
+      },
+      {
+        "L": 2,
+        "proxy": "350M",
+        "n": 153,
+        "da": 0.608
+      },
+      {
+        "L": 8,
+        "proxy": "175M",
+        "n": 2896,
+        "da": 0.456
+      },
+      {
+        "L": 8,
+        "proxy": "350M",
+        "n": 2896,
+        "da": 0.453
+      },
+      {
+        "L": 15,
+        "proxy": "175M",
+        "n": 2896,
+        "da": 0.505
+      },
+      {
+        "L": 15,
+        "proxy": "350M",
+        "n": 2896,
+        "da": 0.555
+      },
+      {
+        "L": 30,
+        "proxy": "175M",
+        "n": 2896,
+        "da": 0.567
+      },
+      {
+        "L": 30,
+        "proxy": "350M",
+        "n": 2896,
+        "da": 0.48
+      }
+    ],
+    "bpb_trained_scheme": {
+      "L8@175M": 1.0,
+      "L8@350M": 1.0,
+      "L15@175M": 0.0,
+      "L15@350M": 0.833,
+      "L30@175M": 0.038,
+      "L30@350M": 1.0
+    }
+  },
+  "surrogates": {
+    "a benchmark task": {
+      "works": 0.473,
+      "n": 8449
+    },
+    "macro bits per byte": {
+      "works": 0.6,
+      "n": 5
+    },
+    "one language's bits per byte": {
+      "works": 0.73,
+      "n": 500
+    },
+    "training loss": {
+      "works": 0.8,
+      "n": 5
+    }
+  }
+}

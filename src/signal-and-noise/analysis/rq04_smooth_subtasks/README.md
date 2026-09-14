@@ -7,20 +7,26 @@
 > individual *items* — give higher SNR than the full set, and does the same
 > subset hold across seeds and scales?
 
-<!-- BEGIN auto:highlight (smooth_subtasks.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`global_mmlu_full_vi` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **2.05 → 4.01** (**+1.95**) with `high_school_world_history|business_ethics|marketing`.
-- **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.12 → 3.65** (**+1.52**) with `medical_genetics`.
-- **`paws` 3B (per_benchmark)** — a subset beats the full set: SNR **0.37 → 1.81** (**+1.44**) with `paws_eu`.
-- **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject subset matches or beats the full ~48-subject set across sizes (`medical_genetics`, `human_aging`, `international_law`, world-history recur).
-- **Per-item (per-sample) ranking is mostly noise / overfits across scale** — per-sample subsets give even larger gains but their best picks barely overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer subtask-level selection.
+- **`global_piqa_parallel_cloze` 175M (per_benchmark)** — a subset beats the full set: SNR **1.08 → 3.15** (**+2.07**) with `global_piqa_parallel_cloze_urd_arab|global_piqa_parallel_cloze_cmn_hant|global_piqa_parallel_cloze_npi_deva|global_piqa_parallel_cloze_ukr_cyrl|… (+3)`.
+- **`global_mmlu_full_ja` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.15 → 3.17** (**+2.02**) with `business_ethics|high_school_mathematics|college_biology|anatomy|… (+1)`.
+- **`xnli` 1.7B (per_benchmark)** — a subset beats the full set: SNR **0.06 → 1.99** (**+1.93**) with `xnli_th|xnli_vi`.
+- **Median gain by case** — global_mmlu_full_subjects 1.09; global_mmlu_full_per_language 0.80; per_benchmark 0.51 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
 <!-- END auto:highlight -->
 
 ## Experimental setup
 
-Subtask-level outputs under `pretraining/<pool>/`; per-item (Option D) under
-`per_sample/variance_prefilter/`. Three subtask cases plus a per-item view:
+Subtask-level outputs under `pretraining/<pool>/` (ladder pool `predictivity`;
+the 36-sweep pools as history); per-item (Option D) under
+`per_sample/variance_prefilter/` (36-sweep only — it needs the per-sample
+files that live on the cluster). Three subtask cases plus a per-item view;
+on the ladder the multilingual families span up to 100 languages, so Case 1
+asks which language subset of Belebele, Global-PIQA, MultiBLiMP or
+Global-MMLU carries the family's signal, and the per-language BPB family
+(`bpb`) is swept the same way (which languages' BPB make the sharpest
+macro-average):
 
 - **Case 1** — language subset of a multilingual family. `task` = the benchmark
   family (arc, belebele, global_mmlu, xnli, …); `subtask` = the per-language
@@ -43,32 +49,32 @@ that formula. For each (task, size) the subtasks are ranked by standalone SNR
 and cumulative subsets of size 1..N are swept; `best_n` / `best_subset` is the
 cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
 
-<!-- BEGIN auto:results (smooth_subtasks.py --pool custom_swissai_hf) -->
+<!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
 ## Results
 
-Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool custom_swissai_hf`.
+Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity`.
 
 **Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
 
 | case | task | size | full → best SNR | +gain | best subset |
 |---|---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 | `high_school_world_history` \| `business_ethics` \| `marketing` |
-| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 | `medical_genetics` |
-| per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
-| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 | `public_relations` \| `philosophy` |
-| global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 | `prehistory` \| `college_medicine` \| `high_school_geography` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 | `high_school_world_history` \| `international_law` |
-| per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
-| per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 | `belebele_swh_Latn` \| `belebele_hin_Deva` \| `belebele_eus_Latn` |
-| global_mmlu_full_per_language | `global_mmlu_full_ru` | 600M | 2.09 → 3.24 | +1.15 | `medical_genetics` \| `international_law` \| `high_school_statistics` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 3.15 → 4.27 | +1.13 | `other` \| `high_school_world_history` \| `marketing` \| `human_aging` \| `… (+4)` |
-| global_mmlu_full_per_language | `global_mmlu_full_hi` | 1B | 2.91 → 4.03 | +1.12 | `marketing` \| `high_school_world_history` |
-| global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
+| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.08 → 3.15 | +2.07 | `global_piqa_parallel_cloze_urd_arab` \| `global_piqa_parallel_cloze_cmn_hant` \| `global_piqa_parallel_cloze_npi_deva` \| `global_piqa_parallel_cloze_ukr_cyrl` \| `… (+3)` |
+| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.15 → 3.17 | +2.02 | `business_ethics` \| `high_school_mathematics` \| `college_biology` \| `anatomy` \| `… (+1)` |
+| per_benchmark | `xnli` | 1.7B | 0.06 → 1.99 | +1.93 | `xnli_th` \| `xnli_vi` |
+| global_mmlu_full_per_language | `global_mmlu_full_ha` | 1B | 0.02 → 1.86 | +1.84 | `formal_logic` |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 175M | 1.25 → 3.07 | +1.81 | `professional_law` \| `jurisprudence` |
+| per_benchmark | `lambada_openai_mt` | 1.7B | 0.21 → 1.98 | +1.77 | `lambada_openai_mt_de` |
+| per_benchmark | `xstorycloze` | 1.7B | 0.24 → 1.99 | +1.76 | `xstorycloze_ar` |
+| per_benchmark | `hellaswag` | 1.7B | 0.25 → 2.00 | +1.75 | `hellaswag_ru` |
+| per_benchmark | `xwinograd` | 1.7B | 0.24 → 1.98 | +1.75 | `xwinograd_jp` \| `xwinograd_fr` \| `xwinograd_pt` \| `xwinograd_ru` \| `… (+1)` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1.7B | 0.18 → 1.88 | +1.71 | `philosophy` \| `global_facts` \| `high_school_chemistry` |
+| global_mmlu_full_per_language | `global_mmlu_full_sv` | 1B | 0.10 → 1.80 | +1.70 | `high_school_computer_science` \| `international_law` \| `abstract_algebra` |
+| global_mmlu_full_per_language | `global_mmlu_full_si` | 1B | 0.16 → 1.86 | +1.70 | `formal_logic` |
 
-![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
+![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
 
-## External model-set tier (`all/external`)
+## External model-set tier (`all/external`, 36-sweep)
 
 Run on the `external` tier the SNR is **cross-model dispersion** over the
 270M…70B external ladder (no mixture axis), and only the three subtask cases run
@@ -100,6 +106,41 @@ ladder) for the highest-gain families:
 
 ![TruthfulQA subset sweep (external)](all/external/per_benchmark_plots/truthfulqa.png)
 
+
+## Results from the 36-model sweep (2026-06, superseded)
+
+The numbers below were generated on the 36-model sweep (4 sizes × 3 data mixtures × 3 seeds, 12 languages, pool `custom_swissai_hf` unless stated) and are kept as history; the predictivity ladder regenerates the blocks above.
+
+### Highlighted result
+
+- **`global_mmlu_full_vi` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **2.05 → 4.01** (**+1.95**) with `high_school_world_history|business_ethics|marketing`.
+- **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.12 → 3.65** (**+1.52**) with `medical_genetics`.
+- **`paws` 3B (per_benchmark)** — a subset beats the full set: SNR **0.37 → 1.81** (**+1.44**) with `paws_eu`.
+- **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject subset matches or beats the full ~48-subject set across sizes (`medical_genetics`, `human_aging`, `international_law`, world-history recur).
+- **Per-item (per-sample) ranking is mostly noise / overfits across scale** — per-sample subsets give even larger gains but their best picks barely overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer subtask-level selection.
+
+### Results
+
+Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool custom_swissai_hf`.
+
+**Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
+
+| case | task | size | full → best SNR | +gain | best subset |
+|---|---|---|---|---|---|
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 | `high_school_world_history` \| `business_ethics` \| `marketing` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 | `medical_genetics` |
+| per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 | `public_relations` \| `philosophy` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 | `prehistory` \| `college_medicine` \| `high_school_geography` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 | `high_school_world_history` \| `international_law` |
+| per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
+| per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 | `belebele_swh_Latn` \| `belebele_hin_Deva` \| `belebele_eus_Latn` |
+| global_mmlu_full_per_language | `global_mmlu_full_ru` | 600M | 2.09 → 3.24 | +1.15 | `medical_genetics` \| `international_law` \| `high_school_statistics` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 3.15 → 4.27 | +1.13 | `other` \| `high_school_world_history` \| `marketing` \| `human_aging` \| `… (+4)` |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 1B | 2.91 → 4.03 | +1.12 | `marketing` \| `high_school_world_history` |
+| global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
+
+![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
 ## TODO
 
 - [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,

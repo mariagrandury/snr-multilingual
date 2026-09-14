@@ -25,13 +25,15 @@ has not decayed yet and its loss is not comparable to a finished one.
 generated ladder_report.md summary table next to them. Some of this evidence is only obvious as a shape:
 the 90M divergence is two numbers in a table and unmistakable as a curve.
 
-    python3.11 ladder_report.py                 # everything
-    python3.11 ladder_report.py --check scaling
-    python3.11 ladder_report.py --plot          # + figures and ladder_report.md
+    python3.11 pretrain/ladder_report.py                 # everything
+    python3.11 pretrain/ladder_report.py --check scaling
+    python3.11 pretrain/ladder_report.py --plot          # + figures and ladder_report.md
+    python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
 """
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import math
 import re
@@ -40,17 +42,46 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from pretrain_progress import SIZES  # noqa: E402
+from pretrain_progress import CKPT_ROOT, SIZES  # noqa: E402
+from launch_trainings import (  # noqa: E402
+    DATA_SCHEMES, cell_fineweb_subsets, exp_name, mix_label, run_interval,
+    save_interval)
+from auto_evals_cscs import (  # noqa: E402
+    ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
+from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
 
 TRAIN_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
                   "Megatron-LM/logs/slurm/training")
+# Every account that trains sweep cells: each one's Slurm logs land under its
+# own scratch (`%u` in --output). Reading only the first dropped aromanou's 1B
+# cells from every loss curve and from the 1B point of the scaling fits. Eval
+# and BPB results need no such list: every account writes them to EVAL_LOGS.
+TRAIN_LOG_DIRS = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/"))
+                  for u in ("mariagrandury", "aromanou")]
 EVAL_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
                  "Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr")
 
 LOSS_RE = re.compile(r"iteration\s+(\d+)/\s*(\d+).*?lm loss: ([0-9.E+-]+)")
+# The name labels come straight from the launcher's registry, because the names
+# being parsed here are BUILT there (exp_name/mix_label): a hand-written
+# `(-schemeB)?` silently dropped every run of a scheme added later — an AT3 or
+# ZH cell simply vanished from the report instead of failing loudly. Longest
+# label first so one that is a prefix of another cannot shadow it, and the
+# reverse map turns the matched label back into the scheme KEY the rest of the
+# pipeline speaks ("" -> "A").
+SCHEME_OF = {v["label"]: k for k, v in DATA_SCHEMES.items()}
+_LABELS = "|".join(re.escape(lab) for lab in
+                   sorted((lab for lab in SCHEME_OF if lab), key=len, reverse=True))
 LOG_RE = re.compile(r"pretrain-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
-                    r"(?P<scheme>-schemeB)?-(?P<arch>deep|shallow)"
+                    rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
                     r"-seed(?P<seed>\d+)-\d+\.out")
+# The same name without the job-id suffix — the checkpoint / eval-dir form.
+# Requiring `lm-` and a seed is load-bearing: it keeps the hyperparameter
+# diagnostics (`diag-90M-L2-deep-lr0.0006`) out of the ladder, where their
+# short runs would sit nats off every scaling fit.
+CELL_RE = re.compile(r"lm-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
+                     rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
+                     r"-seed(?P<seed>\d+)")
 
 # Non-embedding parameters — the x of the scaling fit. The ladder is defined by
 # these targets, so they are the right abscissa even though the realised counts
@@ -59,34 +90,50 @@ NON_EMB = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8,
            "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9}
 
 
+def _key(m: re.Match) -> tuple:
+    """(size, L, arch, scheme, seed) from a LOG_RE/CELL_RE match — the tuple
+    every table in this file is keyed by."""
+    return (m["size"], int(m["L"]), m["arch"],
+            SCHEME_OF[m["scheme"] or ""], int(m["seed"]))
+
+
+def _train_logs() -> list[tuple[Path, str]]:
+    """(log, text) for every account's pretrain logs, OLDEST JOB FIRST. Ordered
+    by job id, not by path: a cell resumed from another account must let its
+    newest segment win, and a path sort would make that depend on which user
+    name sorts first."""
+    logs = sorted((f for d in TRAIN_LOG_DIRS for f in d.glob("pretrain-*.out")
+                   if LOG_RE.match(f.name)),
+                  key=lambda f: int(f.stem.rsplit("-", 1)[1]))
+    out = []
+    for f in logs:
+        try:
+            out.append((f, f.read_text(errors="ignore")))
+        except OSError:            # a log its owner has not shared: skip it
+            continue
+    return out
+
+
 def loss_curves() -> dict[tuple, list[tuple[int, float]]]:
     """(size, L, arch, scheme, seed) -> [(iter, loss), ...], newest log wins."""
     runs: dict[tuple, dict[int, float]] = {}
-    for f in sorted(TRAIN_LOGS.glob("pretrain-*.out")):
-        m = LOG_RE.match(f.name)
-        if not m:
-            continue
-        key = (m["size"], int(m["L"]), m["arch"],
-               "B" if m["scheme"] else "A", int(m["seed"]))
+    for f, text in _train_logs():
         # A resumed cell has several logs; later iterations supersede earlier
         # ones, so merging by iteration rebuilds the whole curve.
-        got = runs.setdefault(key, {})
-        for it, _tgt, loss in LOSS_RE.findall(f.read_text(errors="ignore")):
+        got = runs.setdefault(_key(LOG_RE.match(f.name)), {})
+        for it, _tgt, loss in LOSS_RE.findall(text):
             got[int(it)] = float(loss)
     return {k: sorted(d.items()) for k, d in runs.items()}
 
 
 def targets() -> dict[tuple, int]:
-    """(size, L, arch, scheme, seed) -> the run's own --train-iters."""
+    """(size, L, arch, scheme, seed) -> the run's own --train-iters, as its
+    newest job logged it."""
     out = {}
-    for f in sorted(TRAIN_LOGS.glob("pretrain-*.out")):
-        m = LOG_RE.match(f.name)
-        if not m:
-            continue
-        hits = LOSS_RE.findall(f.read_text(errors="ignore"))
+    for f, text in _train_logs():
+        hits = LOSS_RE.findall(text)
         if hits:
-            out[(m["size"], int(m["L"]), m["arch"],
-                 "B" if m["scheme"] else "A", int(m["seed"]))] = int(hits[-1][1])
+            out[_key(LOG_RE.match(f.name))] = int(hits[-1][1])
     return out
 
 
@@ -122,24 +169,28 @@ def check_loss(curves, tgts) -> list[str]:
             tag = "DIVRG"
         if done:
             finished[k] = last_loss
-        print(f"  {tag} {k[0]:>5} L{k[1]:<3} {k[2]:<7} seed{k[4]:<5} "
+        print(f"  {tag} {k[0]:>5} {mix_label(k[1], k[2], k[3]):<20} seed{k[4]:<5} "
               f"iter {last_it}/{target}  loss {last_loss:.3f}  (fell {drop:.2f}, "
               f"best {min_loss:.3f}@{min_it})")
 
-    # Ordering by size at fixed (L, arch): a bigger model that is worse is a
-    # real signal, not noise, at these gaps.
-    for (L, arch) in sorted({(k[1], k[2]) for k in finished}):
-        row = [(s, finished[(s, L, arch, "A", 1904)])
-               for s in SIZES if (s, L, arch, "A", 1904) in finished]
+    # Ordering by size at fixed (L, arch, scheme): a bigger model that is
+    # worse is a real signal, not noise, at these gaps. Per SCHEME because a
+    # scheme is a different data build at the same L — its rungs are only
+    # comparable with each other, and L100 exists ONLY as AT3, so keying the
+    # ladder on the baseline would leave that column unchecked.
+    for (L, arch, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
+        row = [(s, finished[(s, L, arch, scheme, 1904)])
+               for s in SIZES if (s, L, arch, scheme, 1904) in finished]
         for (s1, v1), (s2, v2) in zip(row, row[1:]):
             if v2 > v1:
                 problems.append(
-                    f"L{L} {arch}: {s2} loss {v2:.3f} WORSE than {s1} {v1:.3f}")
+                    f"{mix_label(L, arch, scheme)}: {s2} loss {v2:.3f} WORSE "
+                    f"than {s1} {v1:.3f}")
     return problems
 
 
 def check_scaling(curves, tgts, tol: float) -> list[str]:
-    """Fit log L = log A - alpha log N per (L, arch) and flag rungs off it.
+    """Fit log L = log A - alpha log N per (L, arch, scheme) and flag rungs.
 
     Fitted on the sizes that are ON the trend and predicted for the rest, so a
     single broken rung cannot drag the fit toward itself and hide.
@@ -148,9 +199,11 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
     print("\n== scaling ==")
     finished = {k: pts[-1][1] for k, pts in curves.items()
                 if pts and pts[-1][0] >= tgts.get(k, pts[-1][0])}
-    for (L, arch) in sorted({(k[1], k[2]) for k in finished}):
-        pts = [(NON_EMB[s], finished[(s, L, arch, "A", 1904)], s)
-               for s in SIZES if (s, L, arch, "A", 1904) in finished]
+    # Per scheme, for the reason in check_loss: fitting a power law across two
+    # different data builds is a line through two distributions.
+    for (L, arch, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
+        pts = [(NON_EMB[s], finished[(s, L, arch, scheme, 1904)], s)
+               for s in SIZES if (s, L, arch, scheme, 1904) in finished]
         if len(pts) < 3:
             continue
         # Fit on everything but the smallest rung, then predict it: with 3-4
@@ -164,7 +217,7 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
             continue
         slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / denom
         icpt = my - slope * mx
-        print(f"  L{L:<3} {arch:<7} alpha={-slope:.3f}  fitted on "
+        print(f"  {mix_label(L, arch, scheme):<20} alpha={-slope:.3f}  fitted on "
               f"{','.join(s for _, _, s in fit)}")
         for n, v, s in pts:
             pred = math.exp(icpt + slope * math.log(n))
@@ -173,23 +226,47 @@ def check_scaling(curves, tgts, tol: float) -> list[str]:
             print(f"       {s:>5}  obs {v:.3f}  pred {pred:.3f}  "
                   f"resid {resid:+.3f}{flag}")
             if abs(resid) > tol:
-                problems.append(f"L{L} {arch} {s}: {resid:+.2f} off the "
-                                f"scaling fit (obs {v:.2f}, pred {pred:.2f})")
+                problems.append(f"{mix_label(L, arch, scheme)} {s}: {resid:+.2f} "
+                                f"off the scaling fit (obs {v:.2f}, pred {pred:.2f})")
     return problems
 
 
-def _scores(path: Path) -> dict[str, float]:
+def _primary(results_file: Path) -> dict[str, float]:
+    """task -> `acc`, falling back to `exact_match` for the generative tasks —
+    the same rule push_all_results.py uses for W&B, so the CSV and the
+    dashboards cannot disagree about what a task's score is."""
+    try:
+        res = json.loads(results_file.read_text()).get("results", {})
+    except Exception:
+        return {}
     out = {}
-    for f in path.glob("harness/eval_*/results_*.json"):
-        try:
-            res = json.loads(f.read_text()).get("results", {})
-        except Exception:
-            continue
-        for task, metrics in res.items():
-            for key, val in metrics.items():
-                if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
-                    out[task] = val
-                    break
+    for task, metrics in res.items():
+        for key, val in metrics.items():
+            if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
+                out[task] = val
+                break
+    return out
+
+
+def _scores(ckpt_dir: Path) -> dict[str, float]:
+    """task -> score for one <cell>-iter<N> dir.
+
+    Every eval run of the checkpoint, OLDEST FIRST, so the newest result for a
+    task wins. Inside a run, the merged results file, plus the per_task/<task>/
+    files of any task it does not cover: a walltime-killed job never merges,
+    and its per-task results are exactly what the watcher counts as done, so a
+    reader that skipped them left those tasks blank forever. Only uncovered
+    tasks are opened — a merged run holds ~470 per-task files."""
+    out = {}
+    for run in sorted(p for p in ckpt_dir.glob("harness/eval_*") if p.is_dir()):
+        merged = {}
+        for f in sorted(run.glob("results_*.json")):
+            merged.update(_primary(f))
+        for d in run.glob("per_task/*"):
+            if d.name not in merged:
+                for f in sorted(d.glob("*/results_*.json")):
+                    out.update(_primary(f))
+        out.update(merged)
     return out
 
 
@@ -202,7 +279,12 @@ def check_benchmarks() -> list[str]:
         if m:
             cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
     for cell, iters in sorted(cells.items()):
-        pts = sorted(iters)
+        # Only iters that carry harness scores. score_bpb.py writes
+        # <cell>-iter<N>/bpb/ for every checkpoint while evals run on every
+        # 2nd, so the lowest iter dir of every cell is bpb-only: taking it as
+        # `first` left `common` empty, skipped all 87 cells, and still
+        # reported "nothing flagged".
+        pts = sorted(i for i, scores in iters.items() if scores)
         if len(pts) < 2:
             continue
         first, last = iters[pts[0]], iters[pts[-1]]
@@ -248,13 +330,12 @@ def check_bpb() -> list[str]:
 # also the hand-off to any analysis that does not live here.
 # ---------------------------------------------------------------------------
 
-# Size picks the HUE, (arch, scheme) picks the SHADE within it. Widely
-# separated hues because neighbouring rungs are what the eye must tell apart
-# (a viridis ramp makes 175M and 350M nearly identical); shades within a hue
-# because in the close-up the variants of ONE size sit hundredths of a nat
-# apart, and there a shared colour plus a linestyle is not enough to follow a
-# line across the panel. Linestyle is kept as a redundant second channel.
-# Size picks the colour FAMILY, (arch, scheme) picks the step within it.
+# Size picks the HUE, the arch picks the SHADE within it, the data scheme
+# picks the dash pattern. Widely separated hues because neighbouring rungs are
+# what the eye must tell apart (a viridis ramp makes 175M and 350M nearly
+# identical); shades within a hue because in the close-up the schemes of ONE
+# size sit hundredths of a nat apart, and there a shared colour plus a
+# linestyle is not enough to follow a line across the panel.
 # Hand-picked ColorBrewer steps rather than samples of a continuous colormap:
 # sampling `Blues` at 0.45 and 0.68 gives two mid-blues that are
 # indistinguishable in a 1px line, which is exactly the comparison the
@@ -268,16 +349,31 @@ SIZE_PALETTE = {
     "1B":   ["#fcbba1", "#fb6a4a", "#cb181d", "#67000d"],
     "1.7B": ["#ccece6", "#66c2a4", "#238b45", "#005824"],
 }
-# Scheme B is a DIFFERENT data distribution at the same L, not a variant of A,
-# so its runs must never read as points on an A curve.
-VARIANT_STYLE = {("deep", "A"): "-", ("shallow", "A"): "--",
-                 ("deep", "B"): ":", ("shallow", "B"): "-."}
-# Palettes run pale -> very dark. The two COMMON variants take the two most
-# readable steps (mid and dark); the palest is reserved for shallow/B, which
-# barely occurs. An earlier assignment gave shallow/A the palest step and it
-# was legible in the legend but not in the plot.
-VARIANT_STEP = {("deep", "A"): 1, ("shallow", "A"): 2,
-                ("deep", "B"): 3, ("shallow", "B"): 0}
+# Each scheme is a DIFFERENT data distribution at the same L, not a flavour of
+# the baseline, so its runs must never read as points on the baseline curve —
+# hence one dash pattern per scheme, keyed off the registry. The two channels
+# now carry one axis each: the old table paired (arch, scheme) on BOTH, which
+# only worked while there were four combinations. Five schemes x two arches is
+# ten, more than a six-step palette has readable steps, so the arch keeps the
+# shade and the scheme takes the dash. The list is indexed modulo its length
+# so an eleventh combination repeats a pattern rather than crashing.
+_DASHES = ["-", "--", ":", "-.", (0, (3, 1, 1, 1)), (0, (1, 1)), (0, (5, 1))]
+SCHEME_STYLE = {v: _DASHES[i % len(_DASHES)] for i, v in enumerate(DATA_SCHEMES)}
+# Palettes run pale -> very dark. Deep and shallow take the two most readable
+# steps (mid and dark); an earlier assignment gave shallow the palest step and
+# it was legible in the legend but not in the plot.
+ARCH_STEP = {"deep": 1, "shallow": 2}
+# The scaling panels put SIZE on the x axis, so colour is free to carry the
+# whole intervention there — one hue per (arch, scheme). Generated from the
+# registry rather than written out, for the same reason as SCHEME_STYLE: the
+# hand-written four-entry table silently greyed out (#555) every combination it
+# did not list. No red in the list — the off-trend ring owns #c0392b in these
+# panels and a red fit line next to it reads as a flag.
+_FIT_HUES = ["#2980b9", "#e67e22", "#8e44ad", "#27ae60", "#16a085",
+             "#d35400", "#2c3e50", "#7f8c8d", "#b7950b", "#6c3483"]
+FIT_COLOUR = {(arch, v): _FIT_HUES[(2 * i + j) % len(_FIT_HUES)]
+              for i, v in enumerate(DATA_SCHEMES)
+              for j, arch in enumerate(("deep", "shallow"))}
 CURVE_WINDOWS = 400
 CLOSEUP_YMAX = 3.5   # ceiling for the last-10% panels     # per run, emitting each window's min AND max
 
@@ -341,17 +437,7 @@ def benchmark_results() -> dict[str, dict[int, dict[str, float]]]:
         m = re.match(r"(.+)-iter(\d+)$", d.name)
         if not m:
             continue
-        scores: dict[str, float] = {}
-        for f in d.glob("harness/eval_*/results_*.json"):
-            try:
-                res = json.loads(f.read_text()).get("results", {})
-            except Exception:
-                continue
-            for task, metrics in res.items():
-                for key, val in metrics.items():
-                    if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
-                        scores[task] = val
-                        break
+        scores = _scores(d)
         if scores:
             out.setdefault(m.group(1), {})[int(m.group(2))] = scores
     return out
@@ -385,12 +471,11 @@ def _meta_for(task: str, meta: dict) -> dict:
 
 
 def _cell_parts(cell: str):
-    m = re.match(r"lm-([\d.]+[MB])-L(\d+)(-schemeB)?-(deep|shallow)-seed(\d+)", cell)
+    m = CELL_RE.match(cell)
     if not m:
         return None
-    return {"size": m.group(1), "L": int(m.group(2)),
-            "scheme": "B" if m.group(3) else "A",
-            "arch": m.group(4), "seed": int(m.group(5))}
+    size, L, arch, scheme, seed = _key(m)
+    return {"size": size, "L": L, "scheme": scheme, "arch": arch, "seed": seed}
 
 
 def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
@@ -428,14 +513,22 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         if not pts:
             continue
         size, L, arch, scheme, seed = k
-        cell = f"lm-{size}-L{L}{'-schemeB' if scheme == 'B' else ''}-{arch}-seed{seed}"
+        # The launcher owns the naming rule (it is what wrote these logs), so
+        # the cell name is rebuilt with its own function rather than re-spelled.
+        cell = exp_name(size, L, arch, seed, scheme)
         parts = {"size": size, "L": L, "arch": arch, "scheme": scheme, "seed": seed}
         target = tgts.get(k, pts[-1][0]) or 1
         last_it, final = pts[-1]
         best_it, best = min(pts, key=lambda p: p[1])
+        # The grid the run actually saved on, not the size's: aromanou's 1B
+        # cells saved 20 checkpoints every 2287 iters, and every per-checkpoint
+        # row below has to land on THOSE iters or the table plans 40 rows the
+        # run can never fill. Carried as a summary so the wide table sees it.
+        saved = saved_valid_iters(cell, CKPT_ROOT)
+        si = run_interval(saved) if saved else save_interval(target)
         summaries[k] = {
             "cell": cell, "parts": parts, "n_params": NON_EMB[size],
-            "target_iters": target, "last_iter": last_it,
+            "target_iters": target, "last_iter": last_it, "save_interval": si,
             "complete": int(last_it >= target), "final_loss": final,
             "best_loss": best, "best_iter": best_it,
             "diverged": int(final > best + 0.25 and best_it < last_it * 0.9),
@@ -444,10 +537,8 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         # AT each save-grid iteration — the subsampled curve rows below keep
         # only each window's min/max and only land on a checkpoint iteration
         # by coincidence.
-        from launch_trainings import save_interval
         loss_by_iter = dict(pts)
-        si = save_interval(target)
-        for it in range(si, target + 1, si):
+        for it in range(si, target + si, si):
             if it in loss_by_iter:
                 add(cell, parts, it, round(it / target, 5), "loss_at_ckpt", "",
                     round(loss_by_iter[it], 4))
@@ -466,7 +557,7 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
                     add(cell, parts, it, round(it / target, 5), "loss", "",
                         round(v, 4))
 
-    # --- scaling fit, per (L, arch, scheme) --------------------------------
+    # --- scaling fit, per (L, arch, scheme) -------------------------------
     done = {(s["parts"]["size"], k[1], k[2], k[3]): s
             for k, s in summaries.items() if s["complete"] and k[4] == 1904}
     for (L, arch, scheme) in {(k[1], k[2], k[3]) for k in done}:
@@ -486,8 +577,8 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
             s["off_trend"] = int(abs(s["final_loss"] - pred) > tol)
 
     for s in summaries.values():
-        for name in ("n_params", "target_iters", "last_iter", "complete",
-                     "final_loss", "best_loss", "best_iter", "diverged",
+        for name in ("n_params", "target_iters", "last_iter", "save_interval",
+                     "complete", "final_loss", "best_loss", "best_iter", "diverged",
                      "alpha", "pred_loss", "resid", "off_trend"):
             if name in s:
                 add(s["cell"], s["parts"], "", "", "summary", name,
@@ -498,15 +589,11 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         parts = _cell_parts(cell)
         if not parts:
             continue
-        try:
-            from launch_trainings import cell_languages
-            trained = {t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
-        except Exception:
-            trained = set()
+        trained = _trained_fineweb(parts)
         for it, d in sorted(iters.items()):
             for lang, v in d["languages"].items():
                 short = lang.replace("fineweb_", "")
-                tr = int(lang == "dclm" or short.split("_")[0][:2] in trained)
+                tr = int(lang == "dclm" or short in trained)
                 for kind, val in (("bpb", v["bpb"]), ("ppl", v["ppl"])):
                     add(cell, parts, it, "", kind, short, round(val, 6),
                         language=short, trained=tr)
@@ -603,19 +690,23 @@ def write_wide_csv(rows: list[dict], out_dir: Path) -> Path:
     # have results. The empty cells are the point: the same table then answers
     # "what do we have?" and "what is still missing?", and a co-author can see
     # that a gap is unevaluated rather than silently absent.
-    from launch_trainings import save_interval
     for cell, s in summary.items():
         target = int(s.get("target_iters", 0))
         if not target:
             continue
-        si = save_interval(target)
+        # The run's own interval (write_csv read it off disk), so a run saved
+        # at a different density than the size's rule gets the rows it can
+        # fill, not the size's.
+        si = int(s.get("save_interval") or save_interval(target))
         # EVERY saved checkpoint, not just the eval-due half. Conversion and
         # score_bpb.py already cover all of them, so planning for 10 left the
         # BPB-only checkpoints as stray extra rows and made the row count
         # depend on which jobs had run. 20 rows per cell; the odd ones simply
         # carry BPB with the bench__ columns empty, which is the honest
-        # picture of what each checkpoint has.
-        planned = list(range(si, target + 1, si))
+        # picture of what each checkpoint has. `target + si` so a final save
+        # that overshoots the target by less than an interval (45740 vs 45720)
+        # still gets its row.
+        planned = list(range(si, target + si, si))
         for it in planned:
             wide.setdefault((cell, it),
                             {**meta_of.get(cell, {"cell": cell}), "iter": it})
@@ -674,11 +765,11 @@ def _melt(wide_csv: Path, prefix: str, name: str):
 
 
 def _style(size, arch, scheme):
-    """(colour, linestyle) — family from the size, step from (arch, scheme)."""
+    """(colour, linestyle) — family from the size, shade from the arch, dash
+    pattern from the data scheme."""
     pal = SIZE_PALETTE.get(size)
-    step = VARIANT_STEP.get((arch, scheme), 1)
-    colour = pal[step] if pal else "#555"
-    return colour, VARIANT_STYLE.get((arch, scheme), "-")
+    colour = pal[ARCH_STEP.get(arch, 1)] if pal else "#555"
+    return colour, SCHEME_STYLE.get(scheme, "-")
 
 
 def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
@@ -688,7 +779,7 @@ def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
     divergence, which is exactly what hides the architecture and scheme
     differences — those are hundredths of a nat at the very end. The close-up
     column autoscales to that window, so the ordering between deep/shallow and
-    scheme A/B becomes readable instead of being a single pixel.
+    between the data schemes becomes readable instead of being a single pixel.
     """
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
@@ -754,7 +845,7 @@ def plot_loss(csv_path: Path, out_dir: Path) -> Path | None:
                loc="lower center", frameon=False)
     fig.suptitle("Training loss — full run (dot = each run's best) and a "
                  "close-up of the last 10%\nthe close-up drops diverged runs, so arch "
-                 "and scheme separate", y=1.0, fontsize=10)
+                 "and data scheme separate", y=1.0, fontsize=10)
     fig.tight_layout(rect=(0, 0.02, 1, 1))
     path = out_dir / "ladder_report_loss.png"
     fig.savefig(path, dpi=150, bbox_inches="tight")
@@ -768,8 +859,8 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
     Overlaid rather than one panel each, because the question the ladder is
     for is whether depth or the language set changes the EXPONENT — and that
     is a comparison between fits, which only reads if they share an axis.
-    Each variant keeps its own fit: scheme B is different data, so a combined
-    fit would be a line through two distributions.
+    Each scheme keeps its own fit: a scheme is a different language list or
+    temperature, so a combined fit would be a line through two distributions.
     """
     import matplotlib.pyplot as plt
 
@@ -786,12 +877,10 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
         return None
     Ls = sorted(wide["L"].unique())
     fig, axes = _panels(len(Ls), 3.8, 3.2)
-    variant_colour = {("deep", "A"): "#2980b9", ("shallow", "A"): "#e67e22",
-                      ("deep", "B"): "#8e44ad", ("shallow", "B"): "#27ae60"}
     for ax, L in zip(axes, Ls):
         for (arch, scheme), g in wide[wide["L"] == L].groupby(["arch", "scheme"]):
             g = g.sort_values("n_params")
-            c = variant_colour.get((arch, scheme), "#555")
+            c = FIT_COLOUR.get((arch, scheme), "#555")
             ax.plot(g["n_params"], g["final_loss"], "o", ms=5, color=c, zorder=3,
                     label=f"{arch}/{scheme} α={g.iloc[0]['alpha']:.3f}")
             ax.plot(g["n_params"], g["pred_loss"], "-", lw=1, color=c, alpha=0.6)
@@ -799,9 +888,12 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
             ax.plot(off["n_params"], off["final_loss"], "o", ms=13, mfc="none",
                     mec="#c0392b", mew=1.6, zorder=4)
         ax.set_xscale("log"); ax.set_yscale("log")
-        sizes = [s for s in SIZES if s in set(wide[wide["L"] == L]["size"])]
-        ax.set_xticks([NON_EMB[s] for s in sizes], minor=False)
-        ax.set_xticklabels(sizes, fontsize=6)
+        # The whole ladder on every panel, 90M through 1.7B, whatever has
+        # finished: a rung that is missing then reads as a gap at its own
+        # position, and the fitted line's slope compares across panels.
+        ax.set_xlim(NON_EMB[SIZES[0]] / 1.4, NON_EMB[SIZES[-1]] * 1.4)
+        ax.set_xticks([NON_EMB[s] for s in SIZES], minor=False)
+        ax.set_xticklabels(SIZES, fontsize=6)
         ax.set_xticks([], minor=True)
         ax.set_title(f"L={L}", fontsize=9)
         ax.set_xlabel("non-embedding params", fontsize=7)
@@ -810,7 +902,7 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
         ax.legend(fontsize=6)
         ax.grid(alpha=0.25, lw=0.4, which="major")
     fig.suptitle("Scaling fit per language setting — every architecture and "
-                 "scheme overlaid, each fitted separately\nline fitted WITHOUT "
+                 "data scheme overlaid, each fitted separately\nline fitted WITHOUT "
                  "the smallest rung then predicting it; red ring = off trend",
                  y=1.0, fontsize=10)
     fig.tight_layout()
@@ -820,21 +912,31 @@ def plot_scaling(csv_path: Path, out_dir: Path) -> Path | None:
     return path
 
 
+def _trained_fineweb(parts: dict | None) -> set[str]:
+    """The FineWeb-2 subsets a cell trains on, as exact codes (`cmn_Hani`).
+
+    Exact membership, not a language match: BPB is scored per subset, so
+    `arz_Arab` is untrained in a cell whose list holds only `arb_Arab`. The
+    old test compared the first two letters of these iso3 codes (`cm`, `jp`,
+    `sp`) with cell_languages()'s canonical codes (`zh`, `ja`, `es`) and got
+    175 of 1,386 (scheme, L, language) cases wrong — at L8 it called Chinese,
+    Japanese and Spanish untrained. L1 has no FW_L1 list, hence the empty set.
+    """
+    if not parts:
+        return set()
+    return set(cell_fineweb_subsets(parts["L"], parts["scheme"]))
+
+
 def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     """Per-language BPB vs checkpoint, one panel per scored cell."""
     import matplotlib.pyplot as plt
 
     import pandas as pd
-    from launch_trainings import cell_languages
     df = _melt(csv_path, "bpb__", "key")
     if df.empty:
         return None
-    trained_by_cell = {}
-    for cell in df["cell"].unique():
-        parts = _cell_parts(cell)
-        trained_by_cell[cell] = ({t[:2] for t in cell_languages(parts["L"], parts["scheme"])}
-                                 if parts else set())
-    df["trained"] = [int(k == "dclm" or k.split("_")[0][:2] in trained_by_cell[c])
+    trained_by_cell = {c: _trained_fineweb(_cell_parts(c)) for c in df["cell"].unique()}
+    df["trained"] = [int(k == "dclm" or k in trained_by_cell[c])
                      for c, k in zip(df["cell"], df["key"])]
     # macro_bpb is a per-CHECKPOINT column (it used to be run-level, which
     # flattened this curve); read it under that name or the macro line
@@ -877,16 +979,48 @@ def plot_bpb(csv_path: Path, out_dir: Path) -> Path | None:
     return path
 
 
-def plot_benchmarks(csv_path: Path, out_dir: Path) -> Path | None:
+_TRAINED_TASKS: dict[tuple, frozenset] = {}
+
+
+def _trained_tasks(L, scheme: str) -> frozenset:
+    """The tasks a cell is evaluated on in the languages it TRAINS on — the
+    watcher's default list, whatever extra languages the cell also carries."""
+    key = (int(L), scheme)
+    if key not in _TRAINED_TASKS:
+        _TRAINED_TASKS[key] = frozenset(
+            tasks_for_benchmarks(auto_benchmarks(), eval_languages(*key)))
+    return _TRAINED_TASKS[key]
+
+
+def plot_benchmarks(csv_path: Path, out_dir: Path,
+                    all_languages: bool = False) -> Path | None:
     """Benchmark accuracy vs checkpoint, one panel per benchmark.
 
     Scores are averaged over the languages of a benchmark and drawn per size,
     with the chance line from tasks.json's n_options: a benchmark sitting on
     its chance line has told us nothing, however smooth the curve looks.
+
+    Two figures, because a mean over different task sets is not a comparison.
+    By default every cell counts only the tasks in the languages it trains
+    on (the deep scheme-A seed-1904 runs carry ~2,900 tasks, their siblings
+    74-155), and one line is drawn per (size, arch, scheme, L) so a line is
+    always one task population. Within a line the mean is still over whatever
+    tasks that checkpoint was scored on, which is a diagnostic curve, not a
+    comparison — `transform_effects` is what differences two cells.
+    all_languages=True draws only ALL_LANGUAGES_RUNS, the runs evaluated in
+    every language, over every task they have, trained on or not.
     """
     import matplotlib.pyplot as plt
 
     df = _melt(csv_path, "bench__", "key")
+    if df.empty:
+        return None
+    if all_languages:
+        scheme, arch, seed = ALL_LANGUAGES_RUNS
+        df = df[(df["scheme"] == scheme) & (df["arch"] == arch) & (df["seed"] == seed)]
+    else:
+        df = df[[k in _trained_tasks(L, s)
+                 for k, L, s in zip(df["key"], df["L"], df["scheme"])]]
     if df.empty:
         return None
     # Per-task metadata comes from tasks.json rather than being repeated on
@@ -901,7 +1035,9 @@ def plot_benchmarks(csv_path: Path, out_dir: Path) -> Path | None:
     fig, axes = _panels(len(benches), 3.4, 2.8)
     for ax, b in zip(axes, benches):
         g = df[df["benchmark"] == b]
-        for (size, arch, scheme), gs in g.groupby(["size", "arch", "scheme"]):
+        # L is part of the key: each language setting trains a different task
+        # list, so pooling L averaged incomparable populations into one line.
+        for (size, arch, scheme, _L), gs in g.groupby(["size", "arch", "scheme", "L"]):
             m = gs.groupby("iter")["value"].mean().sort_index()
             # x is the fraction of the run so rungs of different length are
             # comparable, as in the loss figure.
@@ -915,14 +1051,27 @@ def plot_benchmarks(csv_path: Path, out_dir: Path) -> Path | None:
         ax.set_ylabel("accuracy", fontsize=7)
         ax.tick_params(labelsize=6)
         ax.grid(alpha=0.25, lw=0.4)
-    fig.suptitle("Benchmark accuracy vs checkpoint, averaged over each "
+    fig.suptitle(("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages
+                  else "Trained languages only — each cell's own task list\n")
+                 + "Benchmark accuracy vs checkpoint, averaged over each "
                  "benchmark's languages\ncolour = size, dotted red = chance "
                  "(from tasks.json n_options)", y=1.0, fontsize=10)
     fig.tight_layout()
-    path = out_dir / "ladder_report_benchmarks.png"
+    path = out_dir / ("ladder_report_benchmarks_all_languages.png" if all_languages
+                      else "ladder_report_benchmarks.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return path
+
+
+def _final_rows(full):
+    """Each run's FINAL checkpoint row (the one at its target iter). Tables put
+    these values beside the final loss, so a cell whose final checkpoint is not
+    scored yet must show nothing rather than an earlier checkpoint's value."""
+    if "run__target_iters" not in full:
+        return full.iloc[0:0]
+    tgt = full.groupby("cell")["run__target_iters"].max()
+    return full[[it == tgt.get(c) for c, it in zip(full["cell"], full["iter"])]]
 
 
 def summary_table(csv_path: Path, tol: float) -> str:
@@ -932,10 +1081,10 @@ def summary_table(csv_path: Path, tol: float) -> str:
     full = _read_wide(csv_path)
     if full is None:
         return "_no runs found_"
-    # macro_bpb is per CHECKPOINT; the table wants the latest scored one.
-    latest = (full[full["macro_bpb"].notna()].sort_values("iter")
-              .groupby("cell")["macro_bpb"].last().to_dict()
-              if "macro_bpb" in full else {})
+    # macro_bpb is per CHECKPOINT; the table wants the final checkpoint's.
+    fin = _final_rows(full)
+    latest = (dict(zip(fin["cell"], fin["macro_bpb"])) if "macro_bpb" in full else {})
+    latest = {c: v for c, v in latest.items() if v == v}
     w = (full[["cell", "size", "L", "arch", "scheme"]
               + [c for c in full.columns if c.startswith("run__")]]
          .drop_duplicates(subset="cell"))
@@ -988,13 +1137,23 @@ def transform_effects(csv_path: Path) -> str:
     full = _read_wide(csv_path)
     if full is None:
         return "_no runs found_"
-    bcols = [c for c in full.columns if c.startswith("bench__")]
-    scored = full[full[bcols].notna().any(axis=1)]
-    bench = (scored.assign(v=scored[bcols].mean(axis=1))
-             .sort_values("iter").groupby("cell")["v"].last().to_dict())
-    bpb = (full[full["macro_bpb"].notna()].sort_values("iter")
-           .groupby("cell")["macro_bpb"].last().to_dict()
-           if "macro_bpb" in full else {})
+    # Both at each run's FINAL checkpoint, like the loss. The benchmark side
+    # is restricted twice: to the tasks in the languages the cell trains on
+    # (a mean over whatever tasks a cell happens to carry compared the
+    # all-language runs, ~2,900 tasks, with siblings holding 74-155), and
+    # then, per pair, to the tasks both cells actually have a score for.
+    fin = _final_rows(full)
+    bench, bpb = {}, {}
+    for _, r in fin.iterrows():
+        cols = [f"bench__{t}" for t in _trained_tasks(r["L"], r["scheme"])
+                if f"bench__{t}" in fin]
+        # The scores themselves, not their mean: the pair loop averages over
+        # the tasks the two cells SHARE. See the comment there.
+        v = pd.to_numeric(r[cols], errors="coerce").dropna() if cols else None
+        if v is not None and len(v):
+            bench[r["cell"]] = v
+        if "macro_bpb" in fin and r["macro_bpb"] == r["macro_bpb"]:
+            bpb[r["cell"]] = r["macro_bpb"]
     runs = full.drop_duplicates("cell")
     runs = runs[runs.get("run__complete") == 1] if "run__complete" in runs else runs
     loss = dict(zip(runs["cell"], runs.get("run__final_loss", [])))
@@ -1009,20 +1168,40 @@ def transform_effects(csv_path: Path) -> str:
             groups.setdefault(tuple(r[f] for f in fixed), []).append(cell)
         deltas = {"loss": [], "bpb": [], "bench": []}
         npairs = 0
-        for fixedvals, cells in groups.items():
-            if len(cells) < 2:
-                continue
+        for cells in groups.values():
+            # EVERY pair in the group, not just its extremes. An axis with more
+            # than two values is now the normal case — three seeds on the x3
+            # columns, and L2 carrying A/ZH/ES — and taking (first, last) threw
+            # away the middle member, i.e. the ES intervention never appeared in
+            # this table at all.
             cells = sorted(cells, key=lambda c: str(keys[c][axis]))
-            a, b = cells[0], cells[-1]
-            npairs += 1
-            for name, src in (("loss", loss), ("bpb", bpb), ("bench", bench)):
-                if a in src and b in src and src[a] == src[a] and src[b] == src[b]:
-                    deltas[name].append(src[b] - src[a])
-                    if name == "loss":
-                        detail.append(
-                            f"| {axis} | {keys[a]['size']} L{keys[a]['L']} | "
-                            f"{keys[a][axis]} -> {keys[b][axis]} | "
-                            f"{src[b] - src[a]:+.3f} |")
+            for a, b in itertools.combinations(cells, 2):
+                # A scheme is an intervention against the baseline, not against
+                # another intervention: ES->ZH or AT3->B would fold two changes
+                # into one delta. Seeds and archs have no baseline; every pair
+                # of those stands. Sorted by name, so A is always `a`.
+                if axis == "scheme" and "A" not in (keys[a][axis], keys[b][axis]):
+                    continue
+                npairs += 1
+                for name, src in (("loss", loss), ("bpb", bpb)):
+                    if a in src and b in src and src[a] == src[a] and src[b] == src[b]:
+                        deltas[name].append(src[b] - src[a])
+                        if name == "loss":
+                            detail.append(
+                                f"| {axis} | {keys[a]['size']} L{keys[a]['L']} | "
+                                f"{keys[a][axis]} -> {keys[b][axis]} | "
+                                f"{src[b] - src[a]:+.3f} |")
+                if a in bench and b in bench:
+                    # Mean over the tasks BOTH cells were scored on. A per-cell
+                    # mean is not comparable: it skips that cell's own NaNs, and
+                    # on the scheme axis the trained-task lists differ outright
+                    # (L8: A 86 tasks, B 66). Differencing two of them put the
+                    # seed row at -0.045 where its shared tasks give -0.001, and
+                    # flipped the sign of the ES delta.
+                    shared = bench[a].index.intersection(bench[b].index)
+                    if len(shared):
+                        deltas["bench"].append(
+                            bench[b][shared].mean() - bench[a][shared].mean())
 
         def rng(v):
             if not v:
@@ -1045,7 +1224,8 @@ def write_artifacts(curves, tgts, out_dir: Path, tol: float) -> None:
     made = [p for p in (plot_loss(curve, out_dir),
                         plot_scaling(wide, out_dir),
                         plot_bpb(wide, out_dir),
-                        plot_benchmarks(wide, out_dir)) if p]
+                        plot_benchmarks(wide, out_dir),
+                        plot_benchmarks(wide, out_dir, all_languages=True)) if p]
     for p in made:
         print(f"[plot] saved {p}", file=sys.stderr)
 
@@ -1080,13 +1260,82 @@ CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr-ladder-report")
 HF_DATASET_REPO = "msnr-data/ladder-report"
 
 
-def publish(out_dir: Path, push_hf: bool) -> None:
-    """Copy the shared CSV to capstor, and optionally to a private HF dataset.
+GIT_DATA_BRANCH = "data/ladder-report"
 
-    The CSV is gitignored: it is 1-2 MB that changes on every regeneration, so
-    committing it would churn the history for a file that is pure output.
-    capstor is the durable home (iopsstor is swept ~30 days) and the Hub is
-    what a collaborator without cluster access can actually reach.
+
+def _git_publish(files: list[Path], repo_root: Path) -> None:
+    """Push the report to an orphan branch, without touching the working tree.
+
+    Plumbing (hash-object / mktree / commit-tree / update-ref) rather than
+    `git checkout --orphan`: this runs on the cluster while someone usually
+    has edits in flight, and a checkout would move their HEAD and index.
+
+    The branch is deliberately NEVER merged into main, and that is the whole
+    point of it. main keeps the .gitignore rule and stays free of a 13 MB
+    artifact regenerated several times a week, while the branch gives a
+    collaborator with neither cluster nor Hub access a plain `git fetch` of
+    the same three files.
+
+    Plain git, not LFS. Successive snapshots delta-compress to roughly 1 MB
+    each (measured on four real revisions: 29 MB raw, 4 MB packed), whereas
+    LFS stores every version whole — ~13x more — and its quota cannot be
+    reclaimed afterwards without rewriting history and a support ticket.
+    """
+    import subprocess
+
+    def git(*args: str, stdin: str | None = None) -> str:
+        return subprocess.run(("git", "-C", str(repo_root)) + args, check=True,
+                              text=True, input=stdin,
+                              capture_output=True).stdout.strip()
+
+    # hash-object ignores .gitignore, which is what lets the ignored CSVs be
+    # written to the object store without ever being added to the index.
+    # resolve() because `git -C` runs from the repo root: a relative --out-dir
+    # would otherwise be looked up there and not found.
+    entries = "".join(
+        f"100644 blob {git('hash-object', '-w', '--', str(f.resolve()))}\t{f.name}\n"
+        for f in files)
+    tree = git("mktree", stdin=entries)
+
+    ref = f"refs/heads/{GIT_DATA_BRANCH}"
+    remote = f"refs/remotes/origin/{GIT_DATA_BRANCH}"
+    try:
+        # Into the remote-tracking ref, and forced. The local branch is only a
+        # staging area: update-ref below advances it whether or not the push
+        # that follows succeeds, so after one failed push (no SSH agent on a
+        # compute node — the case the caller catches) it sits ahead of origin,
+        # this fetch is then refused as a non-fast-forward, and every later run
+        # reads its own unpushed commit as proof the report is published.
+        git("fetch", "--quiet", "origin", f"+{GIT_DATA_BRANCH}:{remote}")
+    except subprocess.CalledProcessError:
+        pass                       # first publish: the branch does not exist
+    try:
+        parent = ["-p", git("rev-parse", "--verify", "--quiet", remote)]
+    except subprocess.CalledProcessError:
+        parent = []                # orphan root commit
+    if parent and git("rev-parse", f"{remote}^{{tree}}") == tree:
+        print(f"[publish] {GIT_DATA_BRANCH} already holds this report", file=sys.stderr)
+        return
+
+    commit = git("commit-tree", tree, *parent, "-m",
+                 f"ladder report snapshot ({git('rev-parse', '--short', 'HEAD')})")
+    git("update-ref", ref, commit)
+    # Pack what hash-object wrote: the iopsstor sweeper deletes loose objects,
+    # and a swept blob would leave the local branch ref dangling.
+    git("repack", "-d", "-q")
+    git("push", "--quiet", "origin", f"{ref}:{ref}")
+    print(f"[publish] pushed {GIT_DATA_BRANCH} ({commit[:8]})", file=sys.stderr)
+
+
+def publish(out_dir: Path, push_hf: bool, push_git: bool = False) -> None:
+    """Copy the shared CSV to capstor, and optionally to the Hub and to git.
+
+    The CSV is gitignored: it is ~13 MB across the two tables and changes on
+    every regeneration, so committing it to main would churn the history of
+    every clone for a file that is pure output. capstor is the durable home
+    (iopsstor is swept ~30 days), the Hub is what a collaborator without
+    cluster access can reach, and `--push-git` adds an orphan branch for one
+    who has neither (see `_git_publish`).
     """
     import shutil
 
@@ -1104,22 +1353,30 @@ def publish(out_dir: Path, push_hf: bool) -> None:
         shutil.copy2(src, CAPSTOR_REPORTS / src.name)
         print(f"[publish] {CAPSTOR_REPORTS / src.name}", file=sys.stderr)
 
-    if not push_hf:
-        return
-    try:
-        from huggingface_hub import HfApi
-        api = HfApi()
-        api.create_repo(HF_DATASET_REPO, repo_type="dataset", private=True,
-                        exist_ok=True)
-        for src in files:
-            api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
-                            repo_id=HF_DATASET_REPO, repo_type="dataset")
-        print(f"[publish] https://huggingface.co/datasets/{HF_DATASET_REPO}",
-              file=sys.stderr)
-    except Exception as e:
-        # Compute nodes have no internet and the token may be absent; a failed
-        # upload must not lose the figures that already succeeded.
-        print(f"[publish] HF upload skipped: {e}", file=sys.stderr)
+    if push_hf:
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi()
+            api.create_repo(HF_DATASET_REPO, repo_type="dataset", private=True,
+                            exist_ok=True)
+            for src in files:
+                api.upload_file(path_or_fileobj=str(src), path_in_repo=src.name,
+                                repo_id=HF_DATASET_REPO, repo_type="dataset")
+            print(f"[publish] https://huggingface.co/datasets/{HF_DATASET_REPO}",
+                  file=sys.stderr)
+        except Exception as e:
+            # Compute nodes have no internet and the token may be absent; a
+            # failed upload must not lose the figures that already succeeded.
+            print(f"[publish] HF upload skipped: {e}", file=sys.stderr)
+
+    if push_git:
+        try:
+            _git_publish(files, SCRIPT_DIR.parent.parent)
+        except Exception as e:
+            # Same reasoning as the Hub push, plus: no SSH agent on a compute
+            # node. Never let a failed push lose the copies that succeeded.
+            err = getattr(e, "stderr", "") or e
+            print(f"[publish] git push skipped: {err}", file=sys.stderr)
 
 
 def main() -> None:
@@ -1134,8 +1391,12 @@ def main() -> None:
     p.add_argument("--out-dir", type=Path, default=SCRIPT_DIR)
     p.add_argument("--publish", action="store_true",
                    help="copy the shared CSV to capstor (add --push-hf for "
-                        "the private HF dataset repo)")
+                        "the private HF dataset repo, --push-git for the "
+                        f"{GIT_DATA_BRANCH} orphan branch)")
     p.add_argument("--push-hf", action="store_true")
+    p.add_argument("--push-git", action="store_true",
+                   help=f"also push the report to the {GIT_DATA_BRANCH} "
+                        "orphan branch (never merge it into main)")
     args = p.parse_args()
     want = args.check or ["loss", "scaling", "benchmarks", "bpb"]
 
@@ -1155,8 +1416,8 @@ def main() -> None:
 
     if args.plot:
         write_artifacts(curves, tgts, args.out_dir, args.tol)
-    if args.publish or args.push_hf:
-        publish(args.out_dir, args.push_hf)
+    if args.publish or args.push_hf or args.push_git:
+        publish(args.out_dir, args.push_hf, args.push_git)
 
     print("\n== summary ==")
     if not problems:
