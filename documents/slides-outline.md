@@ -74,7 +74,7 @@ so `grep -n '^layout:\|^title:' slides.md` is the quick check.
 
 ### F4 — more languages
 
-38. **[figure]** Finding 4 — More languages is nearly free for English (`bpb_vs_languages.png`).
+38. **[figure]** Finding 4 — More languages is nearly free for English (`english_vs_rest.png`).
 39. **[bullets]** Finding 4 — the multilingual tax is paid once, at the first extra language. ⚠️ **Broken slide**: body is raw frontmatter for `bpb_gain_per_language.png` — see *Known deck bugs*.
 40. **[default]** *(empty orphan slide, fallout from 39)*.
 41. **[figure]** English pays once, everyone else keeps gaining (`english_vs_rest.png`; dotted English vs the median of 99 others).

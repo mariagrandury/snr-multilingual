@@ -79,60 +79,74 @@ def first_clearing_size(out):
 
 def snr_bpb_vs_benchmark(out):
     """Two panels. Left: how many languages still have a benchmark after the gate.
-    Right: where one survives, does it beat that language's bits per byte?"""
-    t = pd.read_csv(ANALYSIS / "rq02_snr_definition/pretraining/predictivity/"
-                    "top_benchmarks_per_language.csv")
-    t = t[t["language"] != "multi"]
-    rows = []
-    for lang, d in t.groupby("language"):
-        bench = d[~d["task"].str.startswith("bpb_")]
-        bpb = d[d["task"].str.startswith("bpb_")]["snr"].max()
-        rows.append({"lang": lang, "bpb": bpb,
-                     "bench": bench["snr"].max() if not bench.empty else np.nan,
-                     "task": (bench.sort_values("snr", ascending=False)["task"].iloc[0]
-                              if not bench.empty else "")})
-    d = pd.DataFrame(rows)
-    head = d.dropna(subset=["bench"]).sort_values("bench", ascending=True)
-    n_none = int(d["bench"].isna().sum())
+    Right: where both are measurable, does the benchmark beat bits per byte?
+
+    Reads the full per-task SNR table, not the top-5 table next to it: the top-5
+    keeps a language's bits-per-byte row only when it lands in that language's
+    first five, so ranking off it silently scored 48 of 68 languages as having
+    no bits per byte at all.
+    """
+    P = ANALYSIS / "rq02_snr_definition/pretraining/predictivity"
+    variant = pd.read_csv(P / "top_variants_overall.csv")["variant"].iloc[0]
+    size = pd.read_csv(P / "top_benchmarks_per_language.csv")["size"].iloc[0]
+    col = f"snr_{variant}_{size}"
+    t = pd.read_csv(P / "snr_variants_per_task.csv", index_col=0)
+    t = pd.DataFrame({"lang": [assign_language(x) for x in t.index],
+                      "is_bpb": [str(x).startswith("bpb_") for x in t.index],
+                      "snr": t[col].to_numpy()}, index=t.index)
+    t = t[t["snr"].notna() & ~t["lang"].isin(["??", "multi"])]
+
+    bpb = t[t["is_bpb"]].groupby("lang")["snr"].max()
+    bench = t[~t["is_bpb"]].groupby("lang")["snr"].max()
+    top = t[~t["is_bpb"]].sort_values("snr", ascending=False).reset_index()
+    best_task = top.groupby("lang")["task"].first()
+    n_langs = t["lang"].nunique()
+    n_none = n_langs - len(bench)
+
+    both = sorted(set(bpb.index) & set(bench.index), key=lambda l: bench[l])
+    n_wins = sum(bench[l] > bpb[l] for l in both)
 
     fig, (a0, a1) = plt.subplots(1, 2, figsize=(11.0, 3.6),
                                  gridspec_kw={"width_ratios": [1, 2.1]})
 
     # left: the coverage fact
     a0.barh([0], [n_none], color=S.NODATA, height=.55)
-    a0.barh([0], [len(head)], left=[n_none], color=S.RAMP[1], height=.55)
+    a0.barh([0], [len(bench)], left=[n_none], color=S.RAMP[0], height=.55)
     a0.text(n_none / 2, 0, f"{n_none}", ha="center", va="center", fontsize=16, color=S.INK)
-    a0.text(n_none + len(head) / 2, 0, f"{len(head)}", ha="center", va="center",
+    a0.text(n_none + len(bench) / 2, 0, f"{len(bench)}", ha="center", va="center",
             fontsize=13, color="white")
     a0.text(n_none / 2, .42, "no benchmark left\nafter the gate", ha="center", va="bottom",
             fontsize=8.5, color=S.MUTED)
-    a0.text(n_none + len(head) / 2, .42, "at least one\nsurvives", ha="center", va="bottom",
+    a0.text(n_none + len(bench) / 2, .42, "at least one\nsurvives", ha="center", va="bottom",
             fontsize=8.5, color=S.MUTED)
-    a0.set_xlim(0, len(d)); a0.set_ylim(-.5, 1.2); a0.axis("off")
-    a0.set_title(f"{len(d)} validation languages", fontsize=10, color=S.INK, pad=2)
+    a0.set_xlim(0, n_langs); a0.set_ylim(-.5, 1.2); a0.axis("off")
+    a0.set_title(f"{n_langs} validation languages", fontsize=10, color=S.INK, pad=2)
 
-    # right: the head to head
-    y = np.arange(len(head))
-    for yi, r in zip(y, head.itertuples()):
-        lo, hi = sorted((r.bpb, r.bench))
+    # right: the head to head, on the languages where both sides exist
+    y = np.arange(len(both))
+    for yi, lang in zip(y, both):
+        lo, hi = sorted((bpb[lang], bench[lang]))
         a1.plot([lo, hi], [yi, yi], color="#dfe8f5", lw=3, solid_capstyle="round", zorder=2)
-        a1.plot(r.bpb, yi, "o", ms=9, color=S.RAMP[3], zorder=4)
-        a1.plot(r.bench, yi, "o", ms=9, color=S.RAMP[0], zorder=3)
-        a1.annotate(r.task, (max(r.bpb, r.bench), yi), textcoords="offset points",
-                    xytext=(10, 0), fontsize=7.5, color=S.MUTED, va="center")
-    a1.set_yticks(y); a1.set_yticklabels(head["lang"], fontsize=10, color=S.INK)
-    a1.set_xlabel("signal to noise ratio at 1B", fontsize=9, color=S.MUTED)
-    a1.set_xlim(0, float(head[["bpb", "bench"]].to_numpy().max()) * 1.55)
+        a1.plot(bpb[lang], yi, "o", ms=9, color=S.RAMP[3], zorder=4)
+        a1.plot(bench[lang], yi, "o", ms=9, color=S.RAMP[0], zorder=3)
+        a1.annotate(best_task[lang], (max(bpb[lang], bench[lang]), yi),
+                    textcoords="offset points", xytext=(10, 0), fontsize=7.5,
+                    color=S.MUTED, va="center")
+    a1.set_yticks(y); a1.set_yticklabels(both, fontsize=10, color=S.INK)
+    a1.set_xlabel(f"signal to noise ratio at {size}, log scale", fontsize=9, color=S.MUTED)
+    a1.set_xscale("log")
+    lo = min(bpb[l] for l in both) * 0.7
+    a1.set_xlim(lo, max(bench[l] for l in both) * 4.0)
+    a1.set_ylim(-.8, len(both) - .2)
     a1.grid(axis="x", color=S.GRID, lw=0.8); a1.set_axisbelow(True)
     S.clean(a1, spines=("bottom",)); a1.tick_params(length=0)
-    n_bench_wins = int((head["bench"] > head["bpb"]).sum())
-    a1.set_title(f"and where one survives it wins, in {n_bench_wins} of {len(head)}",
+    a1.set_title(f"it wins in {n_wins} of the {len(both)} languages that have both",
                  fontsize=10, color=S.INK, pad=2)
     a1.legend(handles=[Patch(color=S.RAMP[3], label="bits per byte"),
                        Patch(color=S.RAMP[0], label="best benchmark")],
               frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="lower right")
-    S.title(fig, "Bits per byte wins almost everywhere because almost nothing else is left",
-            y=1.04)
+    S.title(fig, "Almost every language keeps a benchmark, and the benchmark "
+                 "usually beats bits per byte", y=1.04)
     S.save(fig, OUT / "snr_bpb_vs_benchmark.png")
 
 

@@ -10,10 +10,10 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`global_mmlu_full_ro` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.07 → 2.49** (**+2.42**) with `humanities|us_foreign_policy|moral_disputes|anatomy|… (+9)`.
-- **`global_mmlu_full_ja` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.10 → 3.12** (**+2.03**) with `business_ethics|college_biology|computer_security|high_school_mathematics|… (+4)`.
-- **`global_mmlu_full_sv` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.36 → 2.31** (**+1.95**) with `high_school_mathematics|anatomy`.
-- **Median gain by case** — global_mmlu_full_subjects 1.18; global_mmlu_full_per_language 0.97; per_benchmark 0.15 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
+- **`global_piqa_parallel_cloze` 175M (per_benchmark)** — a subset beats the full set: SNR **1.08 → 3.15** (**+2.07**) with `global_piqa_parallel_cloze_urd_arab|global_piqa_parallel_cloze_cmn_hant|global_piqa_parallel_cloze_npi_deva|global_piqa_parallel_cloze_ukr_cyrl|… (+3)`.
+- **`global_mmlu_full_ja` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.15 → 3.17** (**+2.02**) with `business_ethics|high_school_mathematics|college_biology|anatomy|… (+1)`.
+- **`xnli` 1.7B (per_benchmark)** — a subset beats the full set: SNR **0.06 → 1.99** (**+1.93**) with `xnli_th|xnli_vi`.
+- **Median gain by case** — global_mmlu_full_subjects 1.09; global_mmlu_full_per_language 0.80; per_benchmark 0.51 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -58,18 +58,18 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | best subset |
 |---|---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_ro` | 175M | 0.07 → 2.49 | +2.42 | `humanities` \| `us_foreign_policy` \| `moral_disputes` \| `anatomy` \| `… (+9)` |
-| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.10 → 3.12 | +2.03 | `business_ethics` \| `college_biology` \| `computer_security` \| `high_school_mathematics` \| `… (+4)` |
-| global_mmlu_full_per_language | `global_mmlu_full_sv` | 175M | 0.36 → 2.31 | +1.95 | `high_school_mathematics` \| `anatomy` |
-| per_benchmark | `global_piqa_parallel_cloze` | 350M | 0.75 → 2.66 | +1.91 | `global_piqa_parallel_cloze_rus_cyrl` \| `global_piqa_parallel_cloze_ita_latn` \| `global_piqa_parallel_cloze_jpn_jpan` |
-| global_mmlu_full_per_language | `global_mmlu_full_uk` | 350M | 0.15 → 1.95 | +1.80 | `international_law` \| `medical_genetics` \| `professional_law` \| `humanities` \| `… (+10)` |
-| global_mmlu_full_per_language | `global_mmlu_full_uk` | 175M | 0.47 → 2.24 | +1.77 | `abstract_algebra` \| `high_school_computer_science` \| `electrical_engineering` \| `international_law` \| `… (+14)` |
-| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.13 → 3.87 | +1.75 | `econometrics` |
-| global_mmlu_full_per_language | `global_mmlu_full_ar` | 350M | 0.54 → 2.26 | +1.72 | `business_ethics` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 1.59 → 3.30 | +1.71 | `high_school_chemistry` \| `human_sexuality` \| `sociology` \| `conceptual_physics` \| `… (+8)` |
-| global_mmlu_full_per_language | `global_mmlu_full_hi` | 350M | 0.25 → 1.95 | +1.70 | `global_facts` |
-| global_mmlu_full_per_language | `global_mmlu_full_pl` | 175M | 0.79 → 2.46 | +1.67 | `international_law` \| `high_school_mathematics` |
-| global_mmlu_full_per_language | `global_mmlu_full_nl` | 175M | 0.75 → 2.39 | +1.64 | `professional_accounting` \| `humanities` \| `sociology` \| `formal_logic` |
+| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.08 → 3.15 | +2.07 | `global_piqa_parallel_cloze_urd_arab` \| `global_piqa_parallel_cloze_cmn_hant` \| `global_piqa_parallel_cloze_npi_deva` \| `global_piqa_parallel_cloze_ukr_cyrl` \| `… (+3)` |
+| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.15 → 3.17 | +2.02 | `business_ethics` \| `high_school_mathematics` \| `college_biology` \| `anatomy` \| `… (+1)` |
+| per_benchmark | `xnli` | 1.7B | 0.06 → 1.99 | +1.93 | `xnli_th` \| `xnli_vi` |
+| global_mmlu_full_per_language | `global_mmlu_full_ha` | 1B | 0.02 → 1.86 | +1.84 | `formal_logic` |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 175M | 1.25 → 3.07 | +1.81 | `professional_law` \| `jurisprudence` |
+| per_benchmark | `lambada_openai_mt` | 1.7B | 0.21 → 1.98 | +1.77 | `lambada_openai_mt_de` |
+| per_benchmark | `xstorycloze` | 1.7B | 0.24 → 1.99 | +1.76 | `xstorycloze_ar` |
+| per_benchmark | `hellaswag` | 1.7B | 0.25 → 2.00 | +1.75 | `hellaswag_ru` |
+| per_benchmark | `xwinograd` | 1.7B | 0.24 → 1.98 | +1.75 | `xwinograd_jp` \| `xwinograd_fr` \| `xwinograd_pt` \| `xwinograd_ru` \| `… (+1)` |
+| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1.7B | 0.18 → 1.88 | +1.71 | `philosophy` \| `global_facts` \| `high_school_chemistry` |
+| global_mmlu_full_per_language | `global_mmlu_full_sv` | 1B | 0.10 → 1.80 | +1.70 | `high_school_computer_science` \| `international_law` \| `abstract_algebra` |
+| global_mmlu_full_per_language | `global_mmlu_full_si` | 1B | 0.16 → 1.86 | +1.70 | `formal_logic` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

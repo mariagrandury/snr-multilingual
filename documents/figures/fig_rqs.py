@@ -117,6 +117,7 @@ def a2_stability(out):
               frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="lower right")
     S.title(fig, "Which benchmarks give the same answer twice", y=1.02)
     S.save(fig, out / "rq_a2_stability.png")
+    return g
 
 
 # --- A4 ---------------------------------------------------------------------
@@ -156,6 +157,7 @@ def a4_signal(out):
               bbox_to_anchor=(1.0, 1.07), ncol=2)
     S.title(fig, "Does the benchmark separate the models we are comparing", y=1.02)
     S.save(fig, out / "rq_a4_signal.png")
+    return g
 
 
 # --- A3 ---------------------------------------------------------------------
@@ -366,11 +368,13 @@ if __name__ == "__main__":
     f = a1_scaling(OUT)
     print("A1 top families by R²:")
     print(f.groupby("family")["r2"].median().sort_values(ascending=False).head(5).round(3).to_string())
-    a2_stability(OUT)
+    print("\nA2 relative noise at 1B, steadiest first:")
+    print(a2_stability(OUT).round(3).to_string())
     d = a3_languages(OUT)
     print(f"\nA3: {len(d)} languages; median gain {d['gain'].median():.3f} bits/byte; "
           f"{int((d['gain'] > 0).sum())} gain, {int((d['gain'] <= 0).sum())} do not")
-    a4_signal(OUT)
+    print("\nA4 signal over noise at 1B:")
+    print(a4_signal(OUT).round(3).to_string())
     b1 = b1_early(OUT)
     print("\nB1 mean DA by checkpoint fraction at the top size:")
     print(b1[b1['size'] == SIZES[-1]].groupby("pct")["da"].mean().round(3).to_string())

@@ -99,5 +99,5 @@ if __name__ == "__main__":
     agreement(a0)
     ever_predictive(a1)
     fig.subplots_adjust(wspace=.32)
-    S.title(fig, "The benchmark suite can finally be scored on the proxy question, and it fails", y=1.04)
+    S.title(fig, "The benchmark suite can now be scored on the proxy question, and it reads as a coin flip", y=1.04)
     S.save(fig, OUT / "benchmark_predictivity.png")

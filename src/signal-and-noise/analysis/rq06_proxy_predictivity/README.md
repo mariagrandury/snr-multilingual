@@ -12,9 +12,10 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_seeds) -->
 ## Highlighted result
 
-- **Scaling-law error** — median |relative error| of the reference's per-language BPB predicted from the proxy ladder: L8 0.058, L50 0.046 (largest proxy ladder at that L).
+- **Depth decision on benchmarks** — mean DA over L by proxy: 175M 0.52, 350M 0.58.
+- **Scaling-law error** — median |relative error| of the reference's per-language BPB predicted from the proxy ladder: L1 0.077, L8 0.058, L30 0.086, L50 0.046 (largest proxy ladder at that L).
 - **Seed noise vs detrended checkpoint noise** — median ratio 2.04 over 5546 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.55; 39% of 556 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.43; 35% of 853 cells above 2× (a distinct model for SNR, not a re-roll).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -74,7 +75,9 @@ Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq0
 
 | L | 600M |
 |---|---|
+| L1 | 0.077 |
 | L8 | 0.058 |
+| L30 | 0.086 |
 | L50 | 0.046 |
 
 ![Scaling-law error](pretraining/predictivity_seeds/scaling_law_error.png)
@@ -83,11 +86,11 @@ Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq0
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.33 | 152 |
-| benchmark | arch / ckpt | 4.72 | 156 |
-| benchmark | scheme / ckpt | 2.05 | 4840 |
-| bpb | arch / seed | 1.65 | 404 |
-| bpb | arch / ckpt | 3.53 | 909 |
+| benchmark | arch / seed | 1.31 | 449 |
+| benchmark | arch / ckpt | 2.35 | 4216 |
+| benchmark | scheme / ckpt | 1.96 | 26064 |
+| bpb | arch / seed | 1.64 | 404 |
+| bpb | arch / ckpt | 3.58 | 909 |
 | bpb | scheme / ckpt | 8.69 | 909 |
 
 ![Effect vs noise](pretraining/predictivity_seeds/effect_vs_noise.png)

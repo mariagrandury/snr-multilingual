@@ -447,22 +447,23 @@ subtitle: The planned grid
 
 ---
 title: Experimental Setup — What exists today
-subtitle: "60 of 89 cells finished; the top of the ladder is missing"
+subtitle: "66 of 106 cells finished, and the top of the ladder has started to arrive"
 ---
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| **complete cells** | 10 | 17 | 14 | 17 | 2 | **0** |
+| **complete cells** | 10 | 17 | 15 | 20 | 2 | **2** |
 
-- **L ∈ {1, 2, 8, 15, 30, 50}** — **L = 100 has no finished cell at any size**
-- 1B is finished at **L8 and L50 only**; 1.7B has not finished anywhere
-- After the loader drops diverged and unfinished runs: **51 models** enter the analysis, 48 of them also on-trend
-- Seed replicates: 175M and 600M at L ∈ {1, 2, 50} — six ×3 cells, the whole noise estimate
+- **L ∈ {1, 2, 8, 15, 30, 50}**, and **L = 100 has no finished cell at any size**
+- 1B is finished at **L8 and L50**, 1.7B at **L1 and L30**. All four are deep, scheme A, seed 1904
+- After the loader drops diverged and unfinished runs, **57 models** enter the analysis and 54 of them are also on trend
+- Seed replicates: 175M and 600M at L ∈ {1, 2, 50}, six ×3 cells, the whole noise estimate
 
 <!--
 Counts from ladder_report.csv (msnr-data/ladder-report, branch data/ladder-report).
-89 cells in the report, 60 complete, 51 complete-and-not-diverged, 48 also on-trend.
-The reference rung the whole predictivity question needs is the one we do not have.
+106 cells in the report, 66 complete, 57 complete-and-not-diverged, 54 also on-trend.
+Every cell above 600M is deep and scheme A, so none of them can host an intervention
+comparison yet. That is why every RQ6 decision still resolves against 600M.
 -->
 
 ---
@@ -557,11 +558,12 @@ subtitle: "Only bits per byte clears its own noise. Every benchmark family but t
 
 <!--
 Signal is the spread across the models we want to tell apart, noise is the spread
-within one run. The ratio is the number on the right. Bits per byte 7.1×, arc 1.6×,
-training loss 1.3×, and then everything else is under 1×, meaning the benchmark
-varies more between checkpoints of one model than between the models themselves.
-arc rests on 2 tasks and loss on 1, so bits per byte is the only well-powered row
-above the line.
+within one run. The ratio is the number on the right. Bits per byte 7.1x, hellaswag
+5.1x, multiblimp 2.3x, arc 1.6x, lambada 1.4x, training loss 1.3x, and then
+everything else is under 1x, meaning the benchmark varies more between checkpoints
+of one model than between the models themselves. This is the clearest gain from the
+new evals: hellaswag on 15 tasks and multiblimp on 57 have crossed the line, so bits
+per byte is no longer the only well-powered row above it.
 -->
 ---
 layout: section
@@ -583,10 +585,11 @@ subtitle: "Bits per byte calls it at 20 % of training. Benchmarks never settle."
 <!--
 Decision accuracy of an early checkpoint against the same run's final ranking, at 1B.
 Bits per byte is at 0.91 by 20 percent of the run and stays there, so four fifths of
-each run adds nothing to the ranking. The benchmark families sit between 0.53 and
-0.76 and jump around, because each family has 5 to 8 comparable tasks and the metric
-is quantised at that count. The practical read: we could evaluate at 20 percent and
-free most of the eval budget.
+each run adds nothing to the ranking. Hellaswag at 0.90 and arc at 0.88 are almost as
+early, multiblimp starts at 0.81 and reaches 0.91, and the at-chance families crawl up
+from 0.41. Averaged over everything the suite goes 0.70, 0.71, 0.74, 0.84 across the
+four fractions. The practical read: we could evaluate at 20 percent and free most of
+the eval budget.
 -->
 ---
 layout: figure
@@ -594,14 +597,15 @@ image: /ladder/rq_b2_suite_size.png
 fit: contain
 height: 68vh
 title: "6. What is the smallest suite that predicts full model quality?"
-subtitle: "Three tasks. Adding the other 150 makes the answer worse, not better."
+subtitle: "Four tasks. Adding the other 2,893 makes the answer worse, not better."
 ---
 
 <!--
 Tasks are added best first, by how well each alone tracks the ranking that
-per-language bits per byte gives. Three tasks reach ρ = 0.78. The whole suite of 153
-reaches 0.31. Every suite size but the last beats the whole suite, because the tail
-is at-chance tasks whose scores are noise and dilute the average.
+per-language bits per byte gives. Four tasks reach rho = 0.98, and one task already
+gets within 5 percent of that. The whole suite of 2,897 reaches 0.53. 2,893 of the
+2,897 suite sizes beat the whole suite, because the tail is at-chance tasks whose
+scores are noise and dilute the average.
 This is the strongest practical result in the deck: a small curated suite is not a
 compromise, it is better than running everything.
 -->
@@ -611,14 +615,17 @@ image: /ladder/rq_b3_surrogate.png
 fit: contain
 height: 58vh
 title: "7. Which is the most informative surrogate?"
-subtitle: "Per-language bits per byte, on 500 comparisons. Benchmarks, on 2,116, never work."
+subtitle: "Per-language bits per byte works on 73 % of 500 comparisons. Benchmarks, on 47 % of 8,449."
 ---
 
 <!--
 This is the min-model-size question in aggregate. A surrogate counts as working when
 some proxy size picks the same winner as the reference and every larger size keeps
-picking it. Per-language bits per byte 74 percent of 500, and 175M alone is enough
-for half of those. Benchmarks 0 of 2,116.
+picking it. Per-language bits per byte 73 percent of 500, and 175M alone is enough
+for 32 percent of those. Benchmarks 47 percent of 8,449, up from 0 percent on the
+thinner ladder, with 175M alone enough for 23 percent. Read the benchmark row against
+the coin-flip result later in the deck: agreeing at two rungs by chance is close to
+what 47 percent looks like.
 Read the top two rows with care: training loss and macro bits per byte are single
 measurements, so they rest on 5 comparisons each. The two well-powered rows are
 per-language bits per byte and the benchmarks, and they are the two that matter.
@@ -737,7 +744,7 @@ icon: "⚠️"
 - The divergence test is `final > best + 0.25 nats`. **`90M-L2-shallow` ends 0.234 above its best** — 0.016 under the line
 - So it is flagged healthy, while its scaling residual is **+1.29 nats**
 - It is therefore the **only** 90M model that reaches the pools — every "90M" column is that one run
-- It anchors **101 of RQ6's 303** scaling fits — every fit starting below 175M, all `shallow / scheme A`
+- It anchors **101 of RQ6's 505** scaling fits, the shallow scheme-A L2 chain, the only ladder that starts below 175M
 - `run__off_trend` is already published in the ladder report; the loader ignores it
 
 <!--
@@ -748,7 +755,7 @@ changes what enters every pool, so it is a call for the team, not a patch.
 
 ---
 layout: figure
-image: /ladder/bpb_vs_languages.png
+image: /ladder/english_vs_rest.png
 fit: contain
 height: 62vh
 title: Finding 4 — More languages is nearly free for English
@@ -815,17 +822,17 @@ subtitle: "Depth is currently indistinguishable from re-rolling the seed"
 icon: "📉"
 ---
 
-- Seed noise: **0.021 nats** on final loss, **0.011 bits/byte** on macro BPB (six ×3 cells)
-- **Language count**: 12.0× the seed noise — a real axis
-- **Data scheme** (A vs B): 2.2× on loss, 1.2× on macro BPB — marginal
-- **Model depth** (deep vs shallow): **1.0×** on the aggregate loss — the same model measured twice
-- Per *individual* task the depth effect is larger — median **1.55×**, 39 % of 556 cells above 2× — so it separates *somewhere*, just not on the headline metric
+- Seed noise: **0.021 nats** on final loss, measured on the six ×3 cells
+- **Language count**: 11.5× the seed noise, a real axis
+- **Data scheme** (A vs B): 2.2× on loss, marginal
+- **Model depth** (deep vs shallow): **1.0×** on the aggregate loss, the same model measured twice
+- Per *individual* task the depth effect is larger, median **1.43×** with 35 % of 853 cells above 2×, so it separates *somewhere*, just not on the headline metric
 - Depth is **half the grid**, and it buys a per-task effect we would have to hunt for
 
 <!--
 Matched pairs on healthy complete cells only: depth n=9, scheme n=7. Language axis is the
-across-L range at fixed size (n=18 cells). This is the transformation table of
-ladder_report.md, resolved against a proper seed standard deviation.
+across-L range at fixed size (n=14 cells). Regenerated by documents/figures/fig_setup.py
+from ladder_report.csv, so the figure and these numbers move together from now on.
 -->
 
 
@@ -843,25 +850,24 @@ title: Finding 6 — Three quarters of the suite is at chance
 subtitle: "A benchmark must beat 1/#options by +0.05 to enter any analysis"
 ---
 
-Of the **324** tasks that have a chance level, **94 clear it at any size**. Last night's evals added nine.
+Of the **461** tasks that have a chance level, **113 clear it at any size**.
 
 | answer options | chance | clears chance | at 1B |
 | :---: | :---: | :---: | :---: |
-| **2** (completion, minimal pair) | 0.50 | **58 / 129** | 53 / 129 |
-| **3** (XNLI) | 0.33 | **12 / 15** | 11 / 15 |
-| **4** (knowledge MCQA) | 0.25 | **24 / 180** | 23 / 180 |
+| **2** (completion, minimal pair) | 0.50 | **80 / 191** | 76 / 191 |
+| **3** (XNLI) | 0.33 | **12 / 18** | 9 / 18 |
+| **4** (knowledge MCQA) | 0.25 | **21 / 252** | 18 / 252 |
 
-- Clearing chance at 1B: `multiblimp` (34), `hellaswag` (20), `xnli` (11), `xwinograd` (6), `xcopa` (5), `xstorycloze` (5), `paws` (3), `arc` (2), `include_base_44` (1)
-- **Never clearing chance anywhere**: `belebele`, `global_mmlu_full`, `global_piqa_parallel_cloze`, `truthfulqa-multi`
-- Strongly an **answer-count effect**: 45 % of 2-option tasks clear chance, **13 % of 4-option** ones do
-- On the 36-model sweep the same families cleared chance for external 270M–70B models (122 of 124) — a capability floor of the small rungs, not a property of the benchmarks
+- Clearing chance at 1B: `multiblimp` (57), `hellaswag` (15), `xnli` (9), `xwinograd` (6), `xcopa` (6), `xstorycloze` (5), `arc` (2), `paws` (2), `include_base_44` (1)
+- **Never clearing chance anywhere**: `global_mmlu_full`, `global_piqa_parallel_cloze`, `global_piqa_nonparallel_cloze`, `truthfulqa-multi_mc1`
+- Strongly an **answer-count effect**: 42 % of 2-option tasks clear chance, **8 % of 4-option** ones do
+- On the 36-model sweep the same families cleared chance for external 270M–70B models (122 of 124), a capability floor of the small rungs rather than a property of the benchmarks
 
 <!--
-above_random.py --only predictivity on the 8 September report: 431 tasks, 324 with a chance
-level. The other 107 are per-language BPB and generative tasks, which have none and are
-never gated. Per bucket: 90M 3/22, 175M 41/324, 350M 59/324, 600M 82/324, 1B 87/324.
-`paws` and `global_piqa_nonparallel_cloze` crossed the line for the first time last night,
-which is why the never-clearing list is four families rather than six.
+above_random.py --only predictivity on the 14 September report: 568 tasks, 461 with a chance
+level. The other 107 are per-language BPB, the training loss and the generative tasks, which
+have none and are never gated. Per size: 90M 3/22, 175M 62/461, 350M 71/461, 600M 85/461,
+1B 103/461, 1.7B 110/461. The 1.7B rung brings the first belebele task ever to clear chance.
 -->
 
 ---
@@ -887,13 +893,15 @@ color: blue
 icon: "📏"
 ---
 
-## In 89 of the 95 validation languages, the most reliable measurement is **bits-per-byte**, not any benchmark
+## In 55 of the 68 languages we can score at 1B, the most reliable measurement is now **MultiBLiMP**, not bits per byte
 
 <!--
-top_benchmarks_per_language.csv on the canonical pool, 8 September run: rank-1 task is a
-bpb_ task in 90 of 96 rows, which is 89 of the 95 real validation languages plus the `multi`
-pseudo language. The six exceptions are high-resource languages with mature benchmarks:
-de, en, es, fr, ru, zh. Italian and Japanese moved to bpb in this run.
+top_benchmarks_per_language.csv on the canonical pool, 14 September run: the rank-1 task is
+a benchmark in 59 of 68 languages and multiblimp in 55 of them. Bits per byte is rank 1 in
+only 9: bn, bo, ja, kn, ml, mr, ne, te, th. This reverses the reading of the previous deck,
+and the eval coverage added since is what changed it. Say the caveat out loud: multiblimp is
+a minimal-pair grammaticality test, so it separates models on morphosyntax, not on the
+knowledge or reasoning the rest of the suite is meant to measure.
 -->
 
 ---
@@ -906,25 +914,24 @@ subtitle: "Checkpoint decision accuracy at 1B; grey = removed by the gate, × = 
 ---
 
 ---
-title: Finding 7 — BPB out-SNRs the benchmarks, and not narrowly
-subtitle: "Highest-SNR above-random measurement per language (`rel_mpsd` @ 1B)"
+title: Finding 7 — One benchmark family now out-SNRs bits per byte
+subtitle: "Highest-SNR above-random measurement per language (`discrepancy` @ 1B)"
 ---
 
 | | rank-1 measurement | typical SNR |
 |---|---|---|
-| **89 languages** | `bpb_<language>` | median 5.9, up to 78.9 (sq 78.9, et 78.3, lt 77.3, sk 66.3) |
-| **6 languages** | a harness benchmark | 0.01 – 0.20 |
+| **59 languages** | a harness benchmark, `multiblimp` in 55 of them | median 13.2, up to 200.5 (sv 200.5, fr 164.2, es 122.5, ru 116.8) |
+| **9 languages** | `bpb_<language>` | median 6.4 (bn, bo, ja, kn, ml, mr, ne, te, th) |
 
-The six exceptions are `de`, `en`, `es`, `fr`, `ru`, `zh` — and their best benchmark
-(`arc_challenge` 0.198, `hellaswag_de` 0.021) sits far below a typical BPB task.
-
-- The gate is part of the story: most benchmarks are removed before SNR is computed, BPB never is
-- But where a benchmark does survive, **neither measurement has much signal** — see the next slide
+- The gate is still part of the story: most benchmarks are removed before SNR is computed, bits per byte never is
+- The whole result rests on **one family**. Drop `multiblimp` and bits per byte leads again in most languages
+- `multiblimp` tests minimal-pair grammaticality, so this says our models separate on morphosyntax, not on knowledge
 
 <!--
-This is the project's research question answered in the negative for the benchmark suite,
-and in the positive for BPB. It is also why the plan made per-language BPB the outcome
-metric rather than the benchmarks.
+This flips the previous deck. It is a coverage result as much as a quality one: multiblimp
+covers 57 languages and clears the gate in all of them, while the knowledge benchmarks clear
+it almost nowhere. Present it as "the suite now has one instrument that works" rather than
+"the benchmarks work".
 -->
 
 ---
@@ -933,14 +940,15 @@ image: /ladder/snr_bpb_vs_benchmark.png
 fit: contain
 height: 60vh
 title: Finding 7, read again
-subtitle: "Bits per byte wins on coverage, not on sharpness"
+subtitle: "Almost every language keeps a benchmark, and it usually wins the head to head"
 ---
 
 <!--
-Improved version of the two slides before. Left bar: of the 95 validation
-languages, 87 have no benchmark left once the above-random gate has run, so bits
-per byte wins there with nothing to beat. Right: the 8 languages where a
-benchmark does survive, best benchmark against best bits per byte at 1B.
+Left bar: of the 68 languages with any measurable SNR at 1B, 62 still have a benchmark once the above-random
+gate has run and 6 have none. Right: the 14 languages where both a benchmark and a bits per
+byte SNR exist at 1B, best against best. The benchmark wins 11 of the 14. The comparison
+needs a language to be trained in at least two of the settings finished at 1B, which is why
+it is 14 languages and not 62.
 -->
 ---
 layout: bullets
@@ -949,79 +957,67 @@ subtitle: "What that number is really counting"
 icon: "🔁"
 ---
 
-- In **87 of the 95** validation languages the gate removes every benchmark. Bits per byte is the only thing left, so it wins by walkover
-- **8 languages** keep a benchmark. The benchmark edges it in 6, bits per byte in 2. The margins are tiny either way
-- Here is the real point. In those 8 languages **every** measurement scores under 0.03. In the other 87, bits per byte has a median of **6.8** and clears 10 in 39 of them
-- So the suite covers the languages where **no data mixture we tried makes a difference**, and says nothing about the languages where they do
+- In **62 of the 68** validation languages a benchmark now survives the gate. Six months of the deck said the opposite, and the new evals are the reason
+- Where **both** measurements exist, 14 languages, the benchmark wins **11**. The margins are large, not tiny: `multiblimp_fra` 164 against 13.6 for French bits per byte
+- The catch is concentration. **55 of the 62** are won by `multiblimp` alone, so the suite has one working instrument rather than a working suite
+- And it is a grammaticality instrument. Nothing here says the knowledge and reasoning benchmarks have started to work
 
 <!--
-Numbers from top_benchmarks_per_language.csv on the canonical pool, 8 September run,
-variant rel_mpsd at 1B. The 96 in the original headline counts the `multi` pseudo language
-(train_loss) alongside the 95 real ones. SNR here is spread across mixtures over the mean,
-so a low score means the mixtures land on top of each other. English scores 0.001 because
-every mixture serves it about equally well. This is the slide to say out loud: our suite is
-silent in most
-languages, which is a coverage problem to fix, not a reason to drop benchmarks.
+Numbers from top_benchmarks_per_language.csv on the canonical pool, 14 September run,
+variant discrepancy at 1B. SNR here is spread across design variants over the mean, so a
+low score means the variants land on top of each other. The honest framing for the room:
+coverage improved a lot, the diagnosis did not change much, because one family carries it.
 -->
 
 <!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
 ---
 title: RQ2 — SNR definition
-subtitle: "Results (auto) — most reliable benchmark per language (`rel_mpsd` @ 1B)"
+subtitle: "Results (auto) — most reliable benchmark per language (`discrepancy` @ 1B)"
 ---
 
 | lang | top benchmark | SNR | DA-ckpt@1B |
 |---|---|---|---|
-| ar | `bpb_ary_Arab` | 13.7 | 1.00 |
-| az | `bpb_azj_Latn` | 48.4 | 1.00 |
-| bg | `bpb_bul_Cyrl` | 20.0 | 1.00 |
-| bn | `bpb_ben_Beng` | 13.9 | 1.00 |
-| bs | `bpb_bos_Latn` | 43.8 | 1.00 |
-| ca | `bpb_cat_Latn` | 21.1 | 1.00 |
-| cs | `bpb_ces_Latn` | 42.7 | 1.00 |
-| da | `bpb_dan_Latn` | 32.5 | 1.00 |
-| de | `hellaswag_de` | 0.0 | 1.00 |
-| el | `bpb_ell_Grek` | 15.0 | 1.00 |
-| en | `arc_challenge` | 0.2 | 1.00 |
-| es | `hellaswag_es` | 0.0 | 1.00 |
-| et | `bpb_ekk_Latn` | 78.3 | 1.00 |
-| fa | `bpb_fas_Arab` | 18.5 | 1.00 |
-| fi | `bpb_fin_Latn` | 48.8 | 1.00 |
-| fr | `xwinograd_fr` | 0.1 | 0.50 |
-| he | `bpb_heb_Hebr` | 23.1 | 1.00 |
-| hi | `bpb_hin_Deva` | 7.3 | 1.00 |
-| hr | `bpb_hrv_Latn` | 46.1 | 1.00 |
-| hu | `bpb_hun_Latn` | 64.6 | 1.00 |
-| id | `bpb_ind_Latn` | 13.4 | 1.00 |
-| it | `bpb_ita_Latn` | 0.0 | 1.00 |
-| ja | `bpb_jpn_Jpan` | 0.0 | 1.00 |
-| ka | `bpb_kat_Geor` | 8.8 | 1.00 |
-| kk | `bpb_kaz_Cyrl` | 20.2 | 1.00 |
-| ko | `bpb_kor_Hang` | 14.2 | 1.00 |
-| lt | `bpb_lit_Latn` | 77.3 | 1.00 |
-| lv | `bpb_lvs_Latn` | 57.0 | 1.00 |
-| ml | `bpb_mal_Mlym` | 15.4 | 1.00 |
-| mr | `bpb_mar_Deva` | 17.8 | 1.00 |
-| ms | `bpb_zsm_Latn` | 11.3 | 1.00 |
-| ne | `bpb_npi_Deva` | 10.8 | 1.00 |
-| nl | `bpb_nld_Latn` | 16.2 | 1.00 |
-| no | `bpb_nob_Latn` | 34.2 | 1.00 |
-| pl | `bpb_pol_Latn` | 33.8 | 1.00 |
-| pt | `bpb_por_Latn` | 5.9 | 1.00 |
-| ro | `bpb_ron_Latn` | 32.2 | 1.00 |
-| ru | `hellaswag_ru` | 0.0 | 1.00 |
-| sk | `bpb_slk_Latn` | 66.3 | 1.00 |
-| sl | `bpb_slv_Latn` | 40.8 | 1.00 |
-| sq | `bpb_als_Latn` | 78.9 | 1.00 |
-| sr | `bpb_srp_Latn` | 47.5 | 1.00 |
-| sv | `bpb_swe_Latn` | 27.5 | 1.00 |
-| ta | `bpb_tam_Taml` | 6.8 | 1.00 |
-| th | `bpb_tha_Thai` | 11.4 | 1.00 |
-| tr | `bpb_tur_Latn` | 37.2 | 1.00 |
-| uk | `bpb_ukr_Cyrl` | 7.8 | 1.00 |
-| ur | `bpb_urd_Arab` | 13.2 | 1.00 |
-| vi | `bpb_vie_Latn` | 16.7 | 1.00 |
-| zh | `xcopa_zh` | 0.0 | 1.00 |
+| ar | `multiblimp_arb` | 15.4 | 1.00 |
+| bg | `multiblimp_bul` | 14.5 | 1.00 |
+| bn | `bpb_ben_Beng` | 3.1 | 1.00 |
+| ca | `multiblimp_cat` | 24.8 | 1.00 |
+| cs | `multiblimp_ces` | 9.8 | 1.00 |
+| da | `multiblimp_dan` | 11.3 | 1.00 |
+| de | `multiblimp_deu` | 59.3 | 0.50 |
+| el | `multiblimp_ell` | 21.5 | 1.00 |
+| en | `multiblimp_eng` | 103.9 | 0.75 |
+| es | `multiblimp_spa` | 122.5 | 0.50 |
+| et | `multiblimp_est` | 12.4 | 1.00 |
+| fa | `multiblimp_fas` | 7.7 | 1.00 |
+| fi | `multiblimp_fin` | 13.2 | 1.00 |
+| fr | `multiblimp_fra` | 164.2 | 0.75 |
+| he | `multiblimp_heb` | 6.2 | 1.00 |
+| hi | `multiblimp_hin` | 18.1 | 1.00 |
+| hu | `multiblimp_hun` | 13.7 | 1.00 |
+| id | `hellaswag_id` | 8.6 | 1.00 |
+| it | `multiblimp_ita` | 51.9 | 0.75 |
+| ja | `bpb_jpn_Jpan` | 15.9 | 1.00 |
+| ka | `multiblimp_kat` | 16.5 | 1.00 |
+| kk | `multiblimp_kaz` | 7.2 | 1.00 |
+| lt | `multiblimp_lit` | 14.6 | 1.00 |
+| ml | `bpb_mal_Mlym` | 3.8 | 1.00 |
+| mr | `bpb_mar_Deva` | 7.1 | 1.00 |
+| ne | `bpb_npi_Deva` | 3.0 | 1.00 |
+| nl | `multiblimp_nld` | 13.2 | 1.00 |
+| pl | `multiblimp_pol` | 22.6 | 1.00 |
+| pt | `multiblimp_por` | 29.5 | 1.00 |
+| ro | `multiblimp_ron` | 18.3 | 1.00 |
+| ru | `multiblimp_rus` | 116.8 | 0.75 |
+| sk | `multiblimp_slk` | 8.2 | 1.00 |
+| sl | `multiblimp_slv` | 21.3 | 1.00 |
+| sv | `multiblimp_swe` | 200.5 | 1.00 |
+| ta | `multiblimp_tam` | 13.8 | 1.00 |
+| th | `bpb_tha_Thai` | 2.9 | 1.00 |
+| tr | `multiblimp_tur` | 15.3 | 1.00 |
+| uk | `multiblimp_ukr` | 20.5 | 1.00 |
+| ur | `multiblimp_urd` | 10.8 | 1.00 |
+| vi | `hellaswag_vi` | 8.5 | 1.00 |
+| zh | `xstorycloze_zh` | 13.9 | 0.50 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1030,23 +1026,23 @@ subtitle: "Results (auto) — most reliable benchmark per language (`rel_mpsd` @
 
 ---
 layout: bullets
-title: Finding 8 — SNR predicts decision accuracy weakly, but better than yesterday
-subtitle: "R = 0.79 in Heineman et al., 0.32 on this ladder"
+title: Finding 8 — SNR barely predicts decision accuracy here
+subtitle: "R = 0.79 in Heineman et al., 0.06 on this ladder"
 icon: "❓"
 ---
 
-- Best of the 22 variants on the canonical pool (`rel_mpsd`): mean Pearson r of log₁₀(SNR) vs DA
-  = **+0.32** (DA-ckpt), **+0.06** (DA-size), **+0.19** overall
-- Last night's evals moved this. A day earlier the leader was `iqr` at +0.28, and DA-size was **negative** at −0.10
-- The **relative-spread** family leads throughout: `rel_mpsd` 0.32, `iqr` 0.28, `mpsd` 0.27. Plain dispersion trails at 0.03
-- With this few models per size and a two-level intervention, DA is coarse — **the variant question may simply not be answerable at this pool size**
+- Best of the 22 variants on the canonical pool is `discrepancy`: mean Pearson r of log₁₀(SNR) vs DA
+  = **+0.06** (DA-size), **−0.05** (DA-ckpt), **0.00** overall
+- Checkpoint decisions have a different leader, `dist_std` at **+0.20**, with `mad` and `rel_mpsd` beside it. No variant is best on both
+- More eval coverage made this **worse**, not better. The thinner ladder gave +0.32 on DA-ckpt, this one gives +0.20 at best
+- With 41 models in the canonical pool and a two-level intervention, DA is coarse. **The variant question may simply not be answerable at this pool size**
 
 <!--
 Compare Heineman et al. (2025): R = 0.791 between SNR and DA on the English DataDecide
-ladder. Ours is over 96 languages with 39 models in the canonical pool and mostly BPB
-tasks surviving the gate. The jump from 0.20 to 0.32 came from eval coverage alone, with
-no change to the models, which is the strongest hint we have that the pool is the binding
-constraint rather than the framework.
+ladder. Ours is over 68 languages with 41 models in the canonical pool. Do not oversell the
+earlier +0.32: three successive runs of this pipeline have put the leader at +0.20, +0.32
+and now +0.20, on different variants each time, which is what an estimate dominated by
+noise looks like. The claim to make is the negative one.
 -->
 
 ---
@@ -1057,10 +1053,10 @@ icon: "❓"
 ---
 
 - Heineman et al. report a correlation of 0.79 between SNR and decision accuracy on the English ladder
-- Our best of 22 definitions now reaches 0.32, when decisions are read across checkpoints
-- Read across sizes it is 0.06. That is weak, but it was negative before last night's evals
-- The definitions that do best are the relative spread family, around 0.3
-- More evaluation data moved this number and no new models did. That points at the pool size as the thing holding us back
+- Our best of 22 definitions reaches 0.20, when decisions are read across checkpoints
+- Read across sizes the best is 0.06, and the overall winner sits at 0.00
+- No definition is best on both kinds of decision, which is itself a sign the ranking is noise
+- More evaluation data made this number smaller, not larger. The pool size is the thing holding us back
 ---
 title: Finding 9 — No SNR choice survives a seed swap cleanly
 subtitle: "Train on seeds 64/313, test on seed 1904"
@@ -1068,18 +1064,19 @@ subtitle: "Train on seeds 64/313, test on seed 1904"
 
 | | DA-size | DA-ckpt |
 | --- | ---: | ---: |
-| Spearman ρ on the global variant ranking | **−0.09** | **+0.29** |
-| Pearson r between splits (all cells) | +0.52 (n = 43) | +0.03 (n = 1094) |
-| Retention of the train-picked variant | 58 % | 35 % |
-| Per-language family agreement | 1 % | 10 % |
+| Spearman ρ on the global variant ranking | **−0.20** | **+0.01** |
+| Pearson r between splits (all cells) | +0.27 (n = 22) | −0.06 (n = 1,104) |
+| Per-language family agreement | 1 % | 11 % |
+| Per-language exact-variant agreement | 1 % | 5 % |
 
 - Recommend an SNR **family**, never an exact variant
-- The **per-language argmax never transfers** — 10 of 96 languages agree even at family level
-- This is weaker than the same test gave a day earlier (ρ = +0.70). Read that as a noisy estimate, not a regression
+- The **per-language argmax never transfers**. 11 % of the 122 language cells agree even at family level
+- Three runs of this holdout have given ρ = +0.70, +0.29 and now +0.01 on DA-ckpt. The estimate is noise
 
 <!--
 compare_seed_splits.py, predictivity_seeds_train -> predictivity_seeds_test. The x3 cells
 are 175M/600M at L in {1,2,50} only, so this holdout is thinner than the 36-sweep's.
+Retention reads 100 % under DA-size but on a single cell, so it is left off the table.
 Same qualitative conclusion as the 36-sweep, which is itself reassuring.
 -->
 
@@ -1095,9 +1092,9 @@ subtitle: "Pick the best variant on seeds 64 and 313, test it on seed 1904"
 <!--
 Improved version of the table. Blue is the checkpoint based ranking, orange is
 the size based one. Only the checkpoint bars are usable. The last row is the one
-that matters for the paper: the per language argmax agrees on 4 percent of
-languages, so we recommend a family of SNR definitions and never a single one.
-Numbers refreshed on the 8 September run: 10 percent at family level, not 4.
+that matters for the paper: the per language argmax agrees on 11 percent of
+languages at family level and 5 percent exactly, so we recommend a family of SNR
+definitions and never a single one. Numbers refreshed on the 14 September run.
 -->
 ---
 layout: bullets
@@ -1123,8 +1120,8 @@ title: Finding 11 — Bits per byte answers the question, benchmarks do not
 subtitle: "RQ6 now scores both, and every comparison still resolves against 600M"
 ---
 
-All **28 intervention comparisons** resolve against **600M** — 1B is finished at two language
-settings and its scheme-B twins are started but not done.
+All **36 intervention comparisons** resolve against **600M**. Every finished cell above 600M is
+deep and scheme A, so none of them has a matched twin to compare against.
 
 Data-scheme decision, bits per byte over the languages both schemes train:
 
@@ -1133,16 +1130,17 @@ Data-scheme decision, bits per byte over the languages both schemes train:
 | **175M** | 1.00 | 0.00 | **0.04** |
 | **350M** | 1.00 | 0.83 | 1.00 |
 
-175M gets the scheme decision **backwards** at L15 and L30; 350M is reliable wherever it is measured.
+175M gets the scheme decision **backwards** at L15 and L30, and 350M is reliable wherever it is measured.
 
-- The encouraging half: the **scaling fits do reach 1B** (202 of 303), and per-language BPB at the
-  reference is predicted from the proxy rungs to within **5–6 %** (L8 0.058, L50 0.046)
+- The encouraging half: the **scaling fits now reach the top of the ladder** (202 predict 1B, 202 predict 1.7B),
+  and per-language BPB at the reference is predicted from the proxy rungs to within **4–8 %**
 
 <!--
-rq06 on predictivity_seeds, 8 September: 28 intervention-DA cells, 303 scaling fits,
-reference_size = 600M throughout. The depth rows exist only at L1/L2 and swing 0.24-0.84,
-which is what "not enough matched pairs" looks like. The benchmark population is no longer
-empty — see the next slide. This slide is still the argument for finishing 1B first.
+rq06 on predictivity_seeds, 14 September: 36 intervention-DA cells, 505 scaling fits,
+reference_size = 600M throughout. The depth rows exist only at L1/L2 and swing 0.13-0.77,
+which is what "not enough matched pairs" looks like. Scaling error by reference: 0.076 for
+1.7B at L1, 0.051 for 1B at L8, 0.058 for 1.7B at L30, 0.043 for 1B at L50, with L2 the one
+outlier at 0.244. This slide is still the argument for finishing a matched pair above 600M.
 -->
 
 ---
@@ -1150,18 +1148,18 @@ layout: figure
 image: /ladder/benchmark_predictivity.png
 fit: contain
 height: 56vh
-title: The benchmark suite can be scored, and it fails
-subtitle: "Two schemes, 2,227 shared benchmark tasks, one clear answer"
+title: The benchmark suite can be scored, and it reads as a coin flip
+subtitle: "Two schemes, 2,896 shared benchmark tasks per setting, one clear answer"
 ---
 
 <!--
-This is the headline change from last night's evals. Until this run no intervention had
-both of its levels on enough shared benchmark tasks to score, so the benchmark population
-was empty. It is not any more. Left: at 175M neither measurement is right, and bits per
-byte is confidently wrong. What separates them is 350M, where bits per byte recovers to
-0.83 and 1.00 while the benchmark suite has no comparison at all. Right: the strict test,
-a proxy that agrees and keeps agreeing at every larger size. 369 of 500 bits per byte
-comparisons pass it. None of 2,116 benchmark comparisons do.
+Left: the benchmark bars sit on the coin-flip line at both proxy rungs, 0.46 and 0.45 at
+8 languages, 0.50 and 0.55 at 15, 0.57 and 0.48 at 30. Going from 175M to 350M does not
+help and at 30 languages it hurts. Bits per byte behaves completely differently: wrong at
+175M, right at 350M. Right: the strict test, a proxy that agrees and keeps agreeing at
+every larger size. 365 of 500 bits per byte comparisons pass it, 3,995 of 8,449 benchmark
+comparisons do. That 47 percent was 0 percent on the thinner ladder, but it is also about
+what agreeing twice by chance would give, so read it as unreliable rather than as working.
 -->
 ---
 layout: bullets
@@ -1170,10 +1168,10 @@ subtitle: "The first direct answer to the question the ladder was built for"
 icon: "🎯"
 ---
 
-- The suite now has **2,227 task comparisons** with both data schemes on the same tasks. A week ago it had none
-- At 175M the suite reads the scheme decision as a **coin flip**: 0.51 at 15 languages, 0.57 at 30
-- Under the strict test, a proxy that agrees **and keeps agreeing** as models grow, **0 of 2,116** benchmark comparisons pass. **369 of 500** bits per byte comparisons do
-- The two measurements also **disagree on the answer**. Bits per byte prefers scheme B, the benchmark suite prefers scheme A
+- The suite now has **2,896 shared task comparisons per language setting**. A month ago it had none
+- The suite reads the scheme decision as a **coin flip at both proxy rungs**: 0.46 and 0.45 at 8 languages, 0.50 and 0.55 at 15, 0.57 and 0.48 at 30
+- A bigger proxy does not help it. Bits per byte, by contrast, goes from wrong at 175M to right at 350M
+- Under the strict test, a proxy that agrees **and keeps agreeing** as models grow, **3,995 of 8,449** benchmark comparisons pass against **365 of 500** for bits per byte. Two coin flips would give about the same 47 %
 - We are not saying benchmarks cannot work. We are saying that at the sizes we can afford, **they do not carry the decision and bits per byte does**
 
 <!--
@@ -1209,17 +1207,18 @@ subtitle: "What the two plots say"
 icon: "🪜"
 ---
 
-- At **1 language** the depth decision is the hardest. 43 of the 100 validation subsets have no proxy size that gets it right
+- At **1 language** the depth decision is the hardest. 50 of the 100 validation subsets have no proxy size that gets it right
 - At **8 and 15 languages** a 175M model is enough for most languages. The scheme decision is easier to predict than the depth one
-- **Macro bits per byte is not a shortcut.** It fails outright at 8 languages, where the per language answers are mostly fine
+- **Macro bits per byte is not a shortcut.** It fails outright at 1 and 8 languages, where the per language answers are mostly fine
 - Training loss agrees with 600M at every language count except 1
-- Benchmarks now appear, at 15 and 30 languages. **Not one of the 2,116** ever reaches a proxy size that agrees and keeps agreeing
+- Benchmarks now appear at every language count, and **3,995 of 8,449** reach a proxy size that agrees and keeps agreeing. Per setting that is 38 of 73 at L1, 81 of 141 at L2, 1,160 of 2,740 at L8, 1,458 of 2,749 at L15 and 1,258 of 2,746 at L30
 
 <!--
-The reference here is 600M, not 1B, because 1B has no finished matched shallow or scheme B
-cell. So this is a small to 600M read, not a small to large one. Two messages for the room:
-the aggregate metric we planned to decide on is worse than the per language ones it
-averages, and the benchmark line sits flat on "no size works" for every task we can test.
+The reference here is 600M, not 1B, because no cell above 600M has a finished matched
+shallow or scheme B twin. So this is a small to 600M read, not a small to large one. Two
+messages for the room: the aggregate metric we planned to decide on is worse than the per
+language ones it averages, and the benchmark line has moved off the floor but sits close to
+what chance would give.
 -->
 ---
 layout: figure
@@ -1282,14 +1281,14 @@ subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 
 | case | task | size | full → best SNR | +gain |
 |---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_ro` | 175M | 0.07 → 2.49 | +2.42 |
-| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.10 → 3.12 | +2.03 |
-| global_mmlu_full_per_language | `global_mmlu_full_sv` | 175M | 0.36 → 2.31 | +1.95 |
-| per_benchmark | `global_piqa_parallel_cloze` | 350M | 0.75 → 2.66 | +1.91 |
-| global_mmlu_full_per_language | `global_mmlu_full_uk` | 350M | 0.15 → 1.95 | +1.80 |
-| global_mmlu_full_per_language | `global_mmlu_full_uk` | 175M | 0.47 → 2.24 | +1.77 |
-| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.13 → 3.87 | +1.75 |
-| global_mmlu_full_per_language | `global_mmlu_full_ar` | 350M | 0.54 → 2.26 | +1.72 |
+| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.08 → 3.15 | +2.07 |
+| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.15 → 3.17 | +2.02 |
+| per_benchmark | `xnli` | 1.7B | 0.06 → 1.99 | +1.93 |
+| global_mmlu_full_per_language | `global_mmlu_full_ha` | 1B | 0.02 → 1.86 | +1.84 |
+| global_mmlu_full_per_language | `global_mmlu_full_hi` | 175M | 1.25 → 3.07 | +1.81 |
+| per_benchmark | `lambada_openai_mt` | 1.7B | 0.21 → 1.98 | +1.77 |
+| per_benchmark | `xstorycloze` | 1.7B | 0.24 → 1.99 | +1.76 |
+| per_benchmark | `hellaswag` | 1.7B | 0.25 → 2.00 | +1.75 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1304,13 +1303,15 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 
 | family | median SNR | n_opts | format |
 |---|---|---|---|
+| `hellaswag` | 3.66 | 4 | completion |
+| `multiblimp` | 3.23 | 2 | minimal_pair |
+| `paws` | 1.40 | 2 | classification |
 | `arc` | 1.03 | 4 | mcq_question_only |
-| `multiblimp` | 0.71 | 2 | minimal_pair |
-| `hellaswag` | 0.65 | 4 | completion |
-| `xcopa` | 0.63 | 2 | completion |
-| `xstorycloze` | 0.61 | 2 | completion |
-| `xnli` | 0.37 | 3 | classification |
-| `xwinograd` | 0.32 | 2 | completion |
+| `xnli` | 0.91 | 3 | classification |
+| `xstorycloze` | 0.78 | 2 | completion |
+| `xcopa` | 0.58 | 2 | completion |
+| `xwinograd` | 0.50 | 2 | completion |
+| `include_base_44` | 0.26 | 4 | mcq_question_only |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1448,9 +1449,10 @@ subtitle: "What the ladder has established, and what it cannot yet answer"
 icon: "✅"
 ---
 
-- **Established**: scaling holds above 90M (α ≈ 0.16–0.20, residuals ≤ 0.07 nats); more languages is nearly free for English and worth ~0.3 bits/byte to everything else; three quarters of the multilingual suite sits at chance at these sizes; no per-language SNR choice survives a seed swap, so recommend a *family*
-- **Answered, for one decision**: on data scheme, per-language bits per byte transfers from a 350M proxy and the benchmark suite does not, on 2,116 task comparisons. Still small-to-600M, because 1B has no finished matched pair yet
-- **Uncomfortable**: two of our three axes — depth and data scheme — are at or near the seed-noise floor
+- **Established**: scaling holds above 90M (α ≈ 0.13–0.19, residuals ≤ 0.10 nats); more languages is nearly free for English and worth ~0.4 bits/byte to everything else; three quarters of the multilingual suite sits at chance at these sizes; no per-language SNR choice survives a seed swap, so recommend a *family*
+- **Answered, for one decision**: on data scheme, per-language bits per byte transfers from a 350M proxy and the benchmark suite reads a coin flip at both proxy rungs, on 2,896 shared tasks per setting. Still small-to-600M, because nothing above 600M has a finished matched pair
+- **Changed this run**: 62 of 68 languages now keep a benchmark after the gate, and `multiblimp` out-SNRs bits per byte in 55 of them. One family carries the whole improvement
+- **Uncomfortable**: two of our three axes, depth and data scheme, are at or near the seed-noise floor, and SNR itself barely predicts decision accuracy (best +0.20 on checkpoint decisions)
 
 ---
 layout: bullets
@@ -1460,8 +1462,9 @@ icon: "✅"
 ---
 
 - **Solid.** Scaling works above 90M. More languages costs English once and keeps paying everyone else. Three quarters of the benchmark suite sits at chance
-- **Awkward.** The suite is silent in 87 of 95 languages, and the 8 it covers are the ones where no mixture we tried makes a difference. Our noise estimate is twice too small. Depth and scheme sit at or near the noise floor
-- **Open.** The question the ladder was built for. Every proxy comparison we can make today lands on 600M, because 1B has no matched pair and 1.7B has none at all
+- **Better than we thought.** 62 of 68 languages keep a benchmark after the gate, and it beats bits per byte in 11 of the 14 languages where both can be measured
+- **Awkward.** All of that improvement is `multiblimp`, a grammaticality test. Our noise estimate is twice too small. Depth and scheme sit at or near the noise floor. SNR still does not predict decision accuracy
+- **Open.** The question the ladder was built for. Every proxy comparison we can make today lands on 600M, because every finished cell above it is deep and scheme A
 ---
 layout: bullets
 title: Next
@@ -1472,7 +1475,7 @@ icon: "➡️"
 1. Decide **T** — it gates every remaining data build
 2. Fix the **eval walltime** — it is why L = 100 is empty
 3. Settle the **90M** treatment and gate the loader on `run__off_trend`
-4. Finish the **reference rungs**: 1B at more L, or 1.7B, but not both
+4. Finish a **matched pair above 600M**: a shallow or scheme-B twin of one of the four finished 1B/1.7B cells is what unblocks every small-to-large claim
 5. Re-run `run_all_predictivity.sh` — every number in this deck refreshes from the published report
 
 
@@ -1490,25 +1493,25 @@ title: Appendix — Above-random signal
 subtitle: "Predictivity ladder (90M–1.7B, seed 1904) · mean score per family × size (bold = beats chance + 0.05)"
 ---
 
-| benchmark | rand | 90M | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|---|---|
-| `loss` |  | 4.85 | 3.10 | 2.65 | 2.46 | 2.37 |
-| `bpb` |  | 4.36 | 1.97 | 1.68 | 1.58 | 1.40 |
-| `multiblimp` | 0.50 | **0.70** | **0.80** | **0.89** | **0.91** | **0.92** |
-| `xwinograd` | 0.50 | 0.51 | 0.53 | **0.59** | **0.64** | **0.68** |
-| `xcopa` | 0.50 |  | 0.54 | 0.55 | **0.56** | **0.57** |
-| `xstorycloze` | 0.50 | 0.48 | 0.50 | 0.54 | **0.57** | **0.58** |
-| `global_piqa_nonparallel_cloze` | 0.50 |  | 0.49 | 0.53 | **0.57** | 0.50 |
-| `paws` | 0.50 | 0.50 | 0.49 | 0.50 | 0.49 | 0.52 |
-| `xnli` | 0.33 | 0.33 | 0.35 | **0.40** | **0.42** | **0.44** |
-| `hellaswag` | 0.25 | 0.26 | 0.26 | 0.28 | **0.30** | **0.33** |
-| `include_base_44` | 0.25 | 0.27 | 0.25 | 0.25 | 0.25 | 0.25 |
-| `global_mmlu_full` | 0.25 | 0.23 | 0.24 | 0.25 | 0.24 | 0.24 |
-| `belebele` | 0.25 | 0.23 | 0.25 | 0.24 | 0.24 | 0.25 |
-| `truthfulqa-multi_mc1` | 0.25 | 0.24 | 0.25 | 0.22 | 0.22 | 0.22 |
-| `arc` | 0.25 | 0.23 | 0.20 | 0.22 | 0.23 | 0.26 |
-| `lambada_openai_mt` |  | 0.00 | 0.14 | 0.27 | 0.33 | 0.31 |
-| `global_piqa_parallel_cloze` | 0.50 | 0.19 | 0.20 | 0.21 | 0.21 | 0.21 |
+| benchmark | rand | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|---|
+| `loss` |  | 4.85 | 3.10 | 2.65 | 2.46 | 2.37 | 2.30 |
+| `bpb` |  | 4.36 | 1.97 | 1.68 | 1.58 | 1.40 | 1.39 |
+| `multiblimp` | 0.50 | **0.70** | **0.74** | **0.77** | **0.77** | **0.80** | **0.79** |
+| `xwinograd` | 0.50 | 0.51 | 0.54 | **0.58** | **0.62** | **0.67** | **0.67** |
+| `xcopa` | 0.50 |  | 0.53 | 0.53 | 0.54 | **0.56** | **0.56** |
+| `xstorycloze` | 0.50 | 0.48 | 0.49 | 0.52 | 0.53 | **0.55** | **0.55** |
+| `paws` | 0.50 | 0.50 | 0.49 | 0.50 | 0.50 | 0.52 | 0.53 |
+| `global_piqa_nonparallel_cloze` | 0.50 |  | 0.47 | 0.46 | 0.46 | 0.48 | 0.47 |
+| `xnli` | 0.33 | 0.33 | 0.35 | 0.38 | **0.39** | **0.41** | **0.41** |
+| `hellaswag` | 0.25 | 0.26 | 0.26 | 0.27 | 0.28 | **0.30** | **0.31** |
+| `include_base_44` | 0.25 | 0.27 | 0.25 | 0.25 | 0.25 | 0.26 | 0.25 |
+| `belebele` | 0.25 | 0.23 | 0.24 | 0.24 | 0.24 | 0.25 | 0.25 |
+| `global_mmlu_full` | 0.25 | 0.23 | 0.24 | 0.25 | 0.25 | 0.24 | 0.25 |
+| `lambada_openai_mt` |  | 0.00 | 0.16 | 0.25 | 0.29 | 0.37 | 0.36 |
+| `truthfulqa-multi_mc1` | 0.25 | 0.24 | 0.24 | 0.23 | 0.23 | 0.22 | 0.23 |
+| `arc` | 0.25 | 0.23 | 0.20 | 0.21 | 0.22 | 0.24 | 0.25 |
+| `global_piqa_parallel_cloze` | 0.50 | 0.19 | 0.21 | 0.21 | 0.21 | 0.21 | 0.22 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1538,22 +1541,22 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "English (en) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `multiblimp` | **0.80** | 0.71 | **1.00** | 0.60 | **1.00** | **1.00** |
-| `hellaswag` | 0.67 | 0.46 | 0.00 | **0.80** | **1.00** | **1.00** |
-| `xwinograd` | **0.87** | 0.50 | **1.00** | 0.53 | **1.00** | 0.00 |
-| `global_mmlu_full` | 0.47 | **0.75** | 0.00 | 0.67 | **1.00** | **1.00** |
-| `arc_challenge` | 0.53 | 0.54 | 0.00 | 0.67 | **1.00** | **1.00** |
-| `paws` | 0.33 | 0.60 | **1.00** | 0.30 | 0.00 | **1.00** |
-| `belebele` | 0.60 | 0.71 | 0.00 | 0.60 | 0.00 | **1.00** |
-| `bpb` | 0.71 | 0.53 | 0.00 | 0.67 | 0.00 | **1.00** |
-| `xnli` | 0.47 | 0.54 | **1.00** | **0.87** | 0.00 | 0.00 |
-| `arc_easy` | 0.73 | 0.43 | 0.00 | 0.53 | 0.00 | **1.00** |
-| `lambada_openai_mt` | 0.67 | 0.60 | 0.00 | 0.30 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze` | 0.33 | 0.67 | **1.00** | 0.40 | 0.00 | 0.00 |
-| `xstorycloze` | 0.60 | 0.68 | 0.00 | **0.93** | 0.00 | 0.00 |
-| `truthfulqa-multi_mc1` | 0.50 | 0.07 | 0.00 | 0.50 | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.78** | 0.69 | **1.00** | **1.00** | 0.55 | **1.00** | **1.00** | **1.00** | **1.00** |
+| `arc_challenge` | 0.60 | 0.60 | 0.00 | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | 0.65 | 0.51 | 0.00 | **1.00** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `xwinograd` | 0.73 | 0.60 | **1.00** | **1.00** | 0.65 | **1.00** | **1.00** | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.49 | 0.65 | 0.00 | **1.00** | 0.40 | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb` | 0.69 | 0.53 | 0.00 | **1.00** | 0.69 | 0.00 | **1.00** | **1.00** | **1.00** |
+| `arc_easy` | 0.65 | 0.49 | 0.00 | **1.00** | 0.69 | 0.00 | **1.00** | **1.00** | **1.00** |
+| `belebele` | 0.56 | 0.75 | 0.00 | **1.00** | 0.49 | 0.00 | **1.00** | **1.00** | **1.00** |
+| `lambada_openai_mt` | 0.64 | **0.79** | 0.00 |  | 0.47 | 0.00 |  | **1.00** | **1.00** |
+| `xstorycloze` | 0.51 | 0.55 | 0.00 | **1.00** | **0.85** | 0.00 | **1.00** | 0.00 | **1.00** |
+| `xnli` | 0.60 | 0.60 | **1.00** | 0.00 | 0.71 | 0.00 | **1.00** | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze` | 0.43 | **0.82** | 0.00 |  | 0.42 | **1.00** |  | **1.00** | 0.00 |
+| `paws` | 0.54 | 0.57 | **1.00** |  | 0.40 | 0.00 |  | **1.00** | 0.00 |
+| `truthfulqa-multi_mc1` | 0.39 | 0.14 | 0.00 |  | 0.56 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1574,33 +1577,33 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Modern Std. Arabic (ar) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb_ary_Arab` | **0.82** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `bpb_ars_Arab` | **0.78** | **0.80** | **1.00** | **0.98** | **1.00** | **1.00** |
-| `bpb_arb_Arab` | **0.78** | **0.80** | **1.00** | **0.98** | **1.00** | **1.00** |
-| `bpb_arz_Arab` | **0.78** | **0.82** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `arc` | 0.67 | 0.67 |  | **1.00** |  |  |
-| `multiblimp` | **1.00** | 0.67 |  | 0.67 |  |  |
-| `global_piqa_parallel_cloze_arb_arab` | **1.00** | 0.67 |  | 0.33 |  |  |
-| `global_piqa_parallel_cloze_apc_arab_jord` | 0.33 | 0.50 |  | **1.00** |  |  |
-| `global_mmlu_full` | 0.33 | **0.83** |  | 0.33 |  |  |
-| `global_piqa_parallel_cloze_arz_arab` | 0.33 | 0.50 |  | 0.67 |  |  |
-| `global_piqa_parallel_cloze_ars_arab` | 0.67 | 0.67 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze_ary_arab` | 0.33 | 0.33 |  | 0.67 |  |  |
-| `belebele_arz_Arab` | 0.33 | 0.67 |  | 0.33 |  |  |
-| `belebele_arb_Latn` | 0.67 | 0.33 |  | 0.33 |  |  |
-| `belebele_ars_Arab` | 0.67 | 0.67 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze_apc_arab_leba` | 0.33 | 0.67 |  | 0.33 |  |  |
-| `xnli` | 0.33 | **0.83** |  | 0.00 |  |  |
-| `belebele_arb_Arab` | 0.33 | 0.17 |  | 0.67 |  |  |
-| `belebele_apc_Arab` | 0.33 | 0.00 |  | 0.67 |  |  |
-| `belebele_ary_Arab` | 0.33 | 0.00 |  | 0.67 |  |  |
-| `global_piqa_parallel_cloze_apc_arab_pale` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze_apc_arab_syri` | 0.33 | 0.33 |  | 0.33 |  |  |
-| `hellaswag` | 0.00 | 0.33 |  | 0.67 |  |  |
-| `include_base_44` | 0.33 | 0.50 |  | 0.00 |  |  |
-| `xstorycloze` | 0.00 | 0.17 |  | 0.67 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb_ary_Arab` | **0.82** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb_arz_Arab` | **0.78** | **0.80** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb_arb_Arab` | **0.78** | **0.80** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb_ars_Arab` | **0.78** | **0.78** | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.95** | **0.76** | **1.00** |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.67 | 0.71 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `xstorycloze` | 0.67 | 0.62 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_arz_arab` | **0.76** | 0.43 | **1.00** |  | 0.57 | **1.00** |  | **1.00** | **1.00** |
+| `belebele_arb_Arab` | 0.52 | 0.52 | **1.00** |  | 0.50 | **1.00** |  | **1.00** | **1.00** |
+| `belebele_ars_Arab` | 0.57 | 0.62 | **1.00** |  | 0.29 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_arb_arab` | 0.67 | 0.48 | **1.00** |  | 0.43 | **1.00** |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_apc_arab_leba` | 0.43 | 0.57 | 0.00 |  | 0.43 | **1.00** |  | 0.00 | **1.00** |
+| `arc` | **0.76** | **0.76** | **1.00** |  | **0.89** | 0.00 |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_apc_arab_syri` | 0.38 | 0.52 | 0.00 |  | 0.46 | **1.00** |  | 0.00 | **1.00** |
+| `belebele_apc_Arab` | 0.62 | 0.52 | 0.00 |  | 0.50 | 0.00 |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_ary_arab` | 0.67 | 0.43 | 0.00 |  | 0.43 | 0.00 |  | **1.00** | 0.00 |
+| `belebele_ary_Arab` | 0.38 | 0.38 | **1.00** |  | 0.71 | 0.00 |  | 0.00 | 0.00 |
+| `belebele_arb_Latn` | 0.67 | 0.43 | 0.00 |  | 0.36 | 0.00 |  | **1.00** | 0.00 |
+| `belebele_arz_Arab` | 0.43 | 0.52 | 0.00 |  | 0.36 | 0.00 |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_apc_arab_pale` | 0.24 | 0.52 | 0.00 |  | 0.50 | **1.00** |  | 0.00 | 0.00 |
+| `xnli` | 0.24 | 0.52 | 0.00 |  | 0.50 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_ars_arab` | 0.14 | 0.52 | 0.00 |  | 0.29 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_apc_arab_jord` | 0.57 | **0.81** | 0.00 |  | 0.57 | 0.00 |  | 0.00 | 0.00 |
+| `global_mmlu_full` | 0.48 | **0.81** | 0.00 |  | 0.32 | 0.00 |  | 0.00 | 0.00 |
+| `include_base_44` | 0.52 | 0.43 | 0.00 |  | 0.39 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1621,9 +1624,12 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "az (az) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.87** | **0.91** | **1.00** | **0.93** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.91** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `belebele` | 0.48 | 0.57 | 0.00 |  | 0.61 | **1.00** |  | **1.00** | **1.00** |
+| `include_base_44` | 0.33 | 0.33 | **1.00** |  | 0.64 | **1.00** |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze` | **0.76** | 0.38 | 0.00 |  | 0.36 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1644,14 +1650,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "bg (bg) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `xnli` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | **0.95** | **0.95** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze` | **1.00** | 0.00 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.95** | **0.93** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.67 | 0.71 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.67 | 0.62 | 0.00 |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.57 | 0.62 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `include_base_44` | 0.24 | 0.52 | 0.00 |  | 0.50 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.62 | 0.57 | **1.00** |  | 0.54 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1672,18 +1678,18 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "bn (bn) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `global_piqa_parallel_cloze_ben_latn` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | **0.85** | **0.89** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `multiblimp` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `global_mmlu_full` | **1.00** | 0.67 |  | 0.00 |  |  |
-| `hellaswag` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `arc` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze_ben_beng` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `belebele_ben_Latn` | 0.00 | **0.83** |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | **0.83** |  | 0.00 |  |  |
-| `belebele_ben_Beng` | 0.00 | 0.67 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.85** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.86** | **0.76** | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.62 | 0.67 | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.52 | 0.38 | **1.00** |  | 0.32 | 0.00 |  | **1.00** | **1.00** |
+| `belebele_ben_Beng` | 0.52 | 0.71 | 0.00 |  | 0.54 | **1.00** |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_ben_latn` | 0.67 | **0.76** | 0.00 |  | **0.82** | **1.00** |  | 0.00 | 0.00 |
+| `include_base_44` | 0.48 | **0.86** | 0.00 |  | 0.50 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_ben_beng` | 0.33 | 0.24 | **1.00** |  | 0.71 | 0.00 |  | 0.00 | 0.00 |
+| `belebele_ben_Latn` | 0.33 | 0.52 | 0.00 |  | 0.39 | 0.00 |  | **1.00** | 0.00 |
+| `arc` | 0.43 | 0.24 | 0.00 |  | 0.46 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1704,9 +1710,10 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "bs (bs) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.78** | 0.75 | **1.00** | **0.89** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | 0.75 | **1.00** | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `global_piqa_nonparallel_cloze` | 0.24 | 0.57 | 0.00 |  | 0.46 | **1.00** |  | **1.00** | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1727,9 +1734,17 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ca (ca) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.85** | **0.84** | **1.00** | **0.91** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.84** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.86** | 0.71 | **1.00** |  | **0.89** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.86** | 0.67 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `xstorycloze` | **0.86** | 0.57 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.38 | 0.71 | **1.00** |  | 0.25 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.52 | 0.62 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.67 | 0.38 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.43 | 0.57 | 0.00 |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `paws` | 0.48 | 0.33 | 0.00 |  | 0.61 | **1.00** |  | **1.00** | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1750,13 +1765,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "cs (cs) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `belebele` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | 0.75 | 0.75 | **1.00** | **0.96** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.00 | 0.67 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.33 |  | **1.00** |  |  |
-| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.75 | 0.75 | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.81** | 0.67 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.71 | 0.71 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.71 | 0.67 | **1.00** |  | 0.57 | **1.00** |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.62 | 0.62 | 0.00 |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1777,13 +1792,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "da (da) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.87** | **0.80** | **1.00** | **0.85** | **1.00** | **1.00** |
-| `arc` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `hellaswag` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `multiblimp` | 0.00 | **1.00** |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.84** | **1.00** | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | 0.62 | **0.90** | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | **0.81** | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.57 | 0.19 | 0.00 |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.33 | 0.48 | **1.00** |  | 0.50 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1804,19 +1819,19 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "German (de) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `hellaswag` | **1.00** | 0.67 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `bpb` | **0.82** | **0.80** | **1.00** | **0.98** | **1.00** | **1.00** |
-| `multiblimp` | **1.00** | 0.47 | **1.00** | 0.67 | **1.00** | **1.00** |
-| `arc` | 0.33 | 0.67 | **1.00** | 0.67 | **1.00** | **1.00** |
-| `global_piqa_parallel_cloze` | 0.33 | 0.60 | **1.00** | 0.50 | 0.00 | **1.00** |
-| `lambada_openai_mt` | 0.33 | 0.67 | **1.00** | 0.33 | 0.00 | **1.00** |
-| `xnli` | 0.67 | 0.40 | **1.00** | 0.50 | 0.00 | 0.00 |
-| `belebele` | 0.67 | 0.20 | 0.00 | 0.50 | 0.00 | **1.00** |
-| `paws` | 0.17 | **0.87** | 0.00 | 0.33 | **1.00** | 0.00 |
-| `global_mmlu_full` | 0.50 | 0.40 | 0.00 | 0.17 | **1.00** | 0.00 |
-| `include_base_44` | 0.33 | 0.73 | 0.00 | 0.50 | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.80** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.81** | 0.71 | **1.00** |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.81** | 0.62 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.57 | 0.62 | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `lambada_openai_mt` | 0.62 | 0.67 | **1.00** |  | 0.54 | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.33 | 0.43 | **1.00** |  | 0.71 | 0.00 |  | **1.00** | **1.00** |
+| `xnli` | 0.48 | 0.43 | **1.00** |  | 0.68 | 0.00 |  | 0.00 | **1.00** |
+| `paws` | 0.38 | **0.86** | **1.00** |  | 0.32 | 0.00 |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.43 | 0.33 | 0.00 |  | 0.39 | **1.00** |  | 0.00 | **1.00** |
+| `belebele` | 0.38 | 0.19 | 0.00 |  | 0.71 | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.14 | 0.71 | 0.00 |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1837,15 +1852,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "el (el) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `multiblimp` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | **0.89** | **0.87** | **1.00** | **0.98** | **1.00** | **1.00** |
-| `global_mmlu_full` | **1.00** | 0.50 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `xnli` | **1.00** | 0.17 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | **0.83** |  | 0.00 |  |  |
-| `belebele` | 0.00 | 0.67 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.85** | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.71 | **0.81** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | **0.95** | 0.57 | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.29 | 0.67 | **1.00** |  | 0.50 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.29 | 0.71 | **1.00** |  | 0.39 | 0.00 |  | 0.00 | **1.00** |
+| `global_mmlu_full` | **0.81** | 0.24 | **1.00** |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
+| `include_base_44` | 0.33 | 0.48 | **1.00** |  | 0.61 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1866,23 +1881,23 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Spanish (es) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.91** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `hellaswag` | **0.83** | 0.60 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `truthfulqa-multi_mc1` | 0.50 | 0.50 | **1.00** | 0.50 | **1.00** | **1.00** |
-| `arc` | 0.67 | 0.30 | 0.00 | 0.50 | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.17 | **0.80** | 0.00 | 0.50 | **1.00** | **1.00** |
-| `lambada_openai_mt` | 0.50 | 0.60 | 0.00 | 0.33 | **1.00** | **1.00** |
-| `paws` | 0.17 | 0.30 | 0.00 | **0.83** | **1.00** | **1.00** |
-| `xstorycloze` | 0.33 | 0.30 | 0.00 | 0.67 | **1.00** | **1.00** |
-| `xnli` | 0.67 | 0.30 | **1.00** | 0.17 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze_spa_latn_spai` | 0.33 | 0.10 | 0.00 | 0.67 | **1.00** | **1.00** |
-| `multiblimp` | 0.33 | 0.50 | **1.00** | 0.00 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze_spa_latn_mexi` | 0.50 | 0.60 | 0.00 | 0.33 | **1.00** | 0.00 |
-| `global_piqa_parallel_cloze_spa_latn_peru` | 0.67 | 0.60 | 0.00 | **0.83** | 0.00 | 0.00 |
-| `include_base_44` | 0.17 | 0.60 | 0.00 | 0.33 | **1.00** | 0.00 |
-| `belebele` | 0.33 | 0.40 | 0.00 | 0.17 | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.89** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.90** | **0.81** | **1.00** |  | **0.93** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | **0.81** | 0.71 | **1.00** |  | 0.68 | 0.00 |  | **1.00** | **1.00** |
+| `lambada_openai_mt` | 0.71 | 0.71 | 0.00 |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `xstorycloze` | 0.62 | 0.62 | 0.00 |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | 0.62 | 0.71 | **1.00** |  | 0.64 | 0.00 |  | **1.00** | **1.00** |
+| `arc` | 0.62 | 0.48 | 0.00 |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.43 | 0.62 | 0.00 |  | 0.46 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_spa_latn_spai` | 0.52 | 0.33 | 0.00 |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `paws` | 0.67 | **0.76** | 0.00 |  | **0.82** | **1.00** |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_spa_latn_mexi` | 0.38 | 0.52 | 0.00 |  | 0.46 | **1.00** |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_spa_latn_peru` | 0.57 | 0.62 | 0.00 |  | 0.71 | 0.00 |  | 0.00 | **1.00** |
+| `belebele` | 0.33 | 0.71 | 0.00 |  | 0.50 | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.29 | 0.57 | 0.00 |  | 0.61 | **1.00** |  | 0.00 | 0.00 |
+| `truthfulqa-multi_mc1` | 0.48 | 0.43 | 0.00 |  | 0.54 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1903,9 +1918,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "et (et) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.60 | 0.60 | **1.00** | **0.96** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.60 | 0.58 | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.52 | 0.67 | **1.00** |  | 0.46 | **1.00** |  | **1.00** | **1.00** |
+| `xcopa` | **0.95** | 0.71 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `multiblimp` | 0.71 | 0.52 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.29 | **0.86** | **1.00** |  | 0.36 | **1.00** |  | 0.00 | **1.00** |
+| `include_base_44` | 0.33 | **0.76** | **1.00** |  | 0.57 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1926,14 +1946,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "fa (fa) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.89** | **1.00** | **0.98** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.67 | **0.90** |  | 0.33 |  |  |
-| `multiblimp` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `belebele` | 0.33 | 0.60 |  | 0.33 |  |  |
-| `global_piqa_parallel_cloze` | 0.33 | 0.10 |  | 0.67 |  |  |
-| `include_base_44` | 0.33 | 0.50 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.89** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.86** | **0.81** | **1.00** |  | **0.96** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.43 | 0.29 | **1.00** |  | 0.68 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.52 | 0.62 | **1.00** |  | 0.57 | 0.00 |  | **1.00** | 0.00 |
+| `belebele` | 0.33 | 0.67 | 0.00 |  | 0.25 | 0.00 |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.57 | 0.57 | 0.00 |  | 0.36 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1954,13 +1974,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "fi (fi) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `global_piqa_parallel_cloze` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `include_base_44` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | **0.76** | **0.76** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `belebele` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `multiblimp` | 0.00 | **1.00** |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.76** | **0.76** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.57 | **0.76** | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.67 | 0.52 | **1.00** |  | 0.57 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | **0.86** | 0.48 | **1.00** |  | 0.43 | **1.00** |  | 0.00 | **1.00** |
+| `belebele` | 0.38 | 0.33 | 0.00 |  | 0.32 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -1981,21 +2001,21 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "French (fr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.87** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `hellaswag` | 0.67 | **0.80** | **1.00** | **0.83** | **1.00** | **1.00** |
-| `arc` | **0.83** | 0.30 | **1.00** | 0.33 | **1.00** | **1.00** |
-| `xnli` | 0.33 | 0.60 | **1.00** | 0.33 | **1.00** | **1.00** |
-| `multiblimp` | 0.33 | 0.40 | **1.00** | 0.50 | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.33 | 0.70 | **1.00** | 0.50 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze_fra_latn_cana` | 0.17 | 0.60 | **1.00** | 0.50 | 0.00 | **1.00** |
-| `paws` | 0.50 | 0.10 | 0.00 | 0.50 | **1.00** | **1.00** |
-| `global_piqa_parallel_cloze_fra_latn_fran` | 0.33 | 0.20 | 0.00 | 0.50 | **1.00** | **1.00** |
-| `lambada_openai_mt` | 0.00 | **0.90** | **1.00** | 0.00 | 0.00 | **1.00** |
-| `belebele` | **1.00** | 0.50 | 0.00 | 0.33 | 0.00 | **1.00** |
-| `xwinograd` | 0.33 | **0.80** | 0.00 | 0.67 | **1.00** | 0.00 |
-| `include_base_44` | 0.67 | 0.50 | 0.00 | 0.50 | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.87** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.81** | **0.81** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.71 | **0.76** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | 0.62 | **0.76** | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | **0.76** | 0.52 | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `lambada_openai_mt` | 0.71 | **0.95** | **1.00** |  | **0.75** | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_fra_latn_cana` | 0.67 | **0.81** | **1.00** |  | **0.82** | 0.00 |  | **1.00** | **1.00** |
+| `xwinograd` | 0.33 | 0.43 | 0.00 |  | **0.86** | **1.00** |  | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.48 | 0.43 | **1.00** |  | 0.36 | 0.00 |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_fra_latn_fran` | 0.48 | 0.19 | 0.00 |  | 0.50 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.71 | 0.57 | 0.00 |  | 0.43 | 0.00 |  | **1.00** | 0.00 |
+| `paws` | 0.38 | 0.19 | **1.00** |  | 0.50 | 0.00 |  | 0.00 | 0.00 |
+| `include_base_44` | 0.52 | 0.43 | 0.00 |  | 0.54 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2016,14 +2036,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "he (he) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `include_base_44` |  | **1.00** |  |  |  |  |
-| `global_mmlu_full` |  | **1.00** |  |  |  |  |
-| `bpb` | **0.80** | **0.76** | **1.00** | **0.89** | **1.00** | **1.00** |
-| `belebele` |  | 0.67 |  |  |  |  |
-| `global_piqa_parallel_cloze` |  | 0.33 |  |  |  |  |
-| `multiblimp` |  | 0.33 |  |  |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.95** | 0.71 | **1.00** |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `bpb` | **0.82** | **0.78** | **1.00** | 0.00 | **0.89** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `include_base_44` | 0.57 | 0.57 | 0.00 |  | 0.54 | **1.00** |  | 0.00 | 0.00 |
+| `global_mmlu_full` | 0.67 | 0.52 | 0.00 |  | 0.36 | 0.00 |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze` | 0.38 | 0.33 | 0.00 |  | 0.36 | **1.00** |  | 0.00 | 0.00 |
+| `belebele` | 0.43 | 0.71 | 0.00 |  | 0.64 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2044,19 +2064,19 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Hindi (hi) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.80** | **0.84** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `hellaswag` | **1.00** | 0.50 |  | **1.00** |  |  |
-| `xnli` | **1.00** | 0.17 |  | **1.00** |  |  |
-| `include_base_44` | 0.00 | 0.67 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.50 |  | **1.00** |  |  |
-| `belebele_hin_Deva` | 0.00 | 0.33 |  | **1.00** |  |  |
-| `multiblimp` | **1.00** | 0.17 |  | 0.00 |  |  |
-| `xstorycloze` | **1.00** | 0.17 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `belebele_hin_Latn` | 0.00 | 0.50 |  | 0.00 |  |  |
-| `arc` | 0.00 | 0.50 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.84** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `xstorycloze` | **0.86** | 0.71 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | 0.71 | **1.00** |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.57 | 0.57 | **1.00** |  | **0.93** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.71 | 0.62 | 0.00 |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `belebele_hin_Latn` | 0.57 | 0.48 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | 0.00 |
+| `arc` | 0.71 | 0.57 | **1.00** |  | 0.29 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.19 | 0.67 | **1.00** |  | 0.46 | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.52 | 0.71 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.48 | 0.52 | 0.00 |  | 0.36 | **1.00** |  | **1.00** | 0.00 |
+| `belebele_hin_Deva` | 0.33 | 0.38 | **1.00** |  | 0.50 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2077,9 +2097,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "hr (hr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.78** | 0.73 | **1.00** | **0.91** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.80** | **0.76** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | 0.57 | **0.86** | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | **0.76** | 0.71 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.43 | 0.29 | **1.00** |  | 0.50 | **1.00** |  | 0.00 | 0.00 |
+| `belebele` | 0.48 | 0.57 | 0.00 |  | 0.61 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.62 | 0.00 |  | 0.57 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2100,15 +2125,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "hu (hu) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.78** | 0.73 | **1.00** | **0.91** | **1.00** | **1.00** |
-| `multiblimp` | **1.00** | 0.33 |  | **1.00** |  |  |
-| `hellaswag` | **1.00** | 0.33 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
-| `arc` | 0.00 | 0.67 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | 0.33 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | 0.73 | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.86** | 0.71 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | 0.71 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.48 | 0.14 | 0.00 |  | 0.57 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.38 | 0.38 | 0.00 |  | 0.36 | **1.00** |  | **1.00** | **1.00** |
+| `include_base_44` | 0.29 | 0.29 | 0.00 |  | 0.57 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.24 | 0.57 | 0.00 |  | 0.21 | **1.00** |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2129,17 +2154,17 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "id (id) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.85** | **1.00** | **0.89** | **1.00** | **1.00** |
-| `belebele` | **1.00** | **0.83** |  | 0.67 |  |  |
-| `arc` | 0.67 | 0.17 |  | 0.67 |  |  |
-| `global_mmlu_full` | **1.00** | 0.50 |  | 0.00 |  |  |
-| `hellaswag` | 0.33 | 0.33 |  | 0.67 |  |  |
-| `xstorycloze` | 0.33 | 0.33 |  | 0.67 |  |  |
-| `global_piqa_parallel_cloze` | 0.33 | 0.67 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | 0.67 |  | 0.33 |  |  |
-| `xcopa` | 0.67 | 0.00 |  | 0.33 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.85** | **1.00** | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `xcopa` | **0.81** | **0.86** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `xstorycloze` | 0.71 | **0.76** | **1.00** |  | **0.89** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | **0.76** | 0.71 | **1.00** |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.62 | 0.48 | 0.00 |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.48 | 0.48 | 0.00 |  | 0.39 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.52 | 0.43 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.33 | 0.62 | 0.00 |  | 0.32 | **1.00** |  | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.62 | 0.43 | 0.00 |  | 0.43 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2160,18 +2185,18 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "it (it) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.85** | **0.87** | **1.00** | **0.91** | **1.00** | **1.00** |
-| `belebele` | **0.83** | 0.70 | **1.00** | 0.50 | **1.00** | **1.00** |
-| `hellaswag` | 0.67 | 0.50 | **1.00** | **0.83** | **1.00** | **1.00** |
-| `arc` | 0.67 | 0.50 | **1.00** | 0.67 | **1.00** | **1.00** |
-| `include_base_44` | 0.33 | 0.70 | **1.00** | 0.33 | 0.00 | **1.00** |
-| `global_mmlu_full` | 0.50 | 0.50 | **1.00** | 0.33 | 0.00 | **1.00** |
-| `lambada_openai_mt` | 0.50 | 0.60 | 0.00 | 0.67 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze` | **0.83** | 0.30 | 0.00 | 0.00 | 0.00 | **1.00** |
-| `xcopa` | 0.17 | **0.80** | 0.00 | 0.00 | **1.00** | 0.00 |
-| `multiblimp` | 0.17 | 0.60 | 0.00 | 0.67 | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.89** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.81** | **0.76** | **1.00** |  | **0.89** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.52 | 0.29 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | **1.00** |
+| `xcopa` | 0.38 | 0.57 | **1.00** |  | 0.71 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.52 | 0.71 | **1.00** |  | 0.43 | **1.00** |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.48 | 0.48 | **1.00** |  | 0.36 | 0.00 |  | **1.00** | **1.00** |
+| `lambada_openai_mt` | 0.67 | **0.81** | 0.00 |  | **0.75** | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | **0.81** | 0.38 | 0.00 |  | 0.46 | 0.00 |  | **1.00** | **1.00** |
+| `include_base_44` | 0.43 | 0.57 | **1.00** |  | 0.43 | 0.00 |  | **1.00** | 0.00 |
+| `multiblimp` | 0.67 | 0.67 | 0.00 |  | **0.82** | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2192,15 +2217,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Japanese (ja) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.84** | **0.80** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `paws` | 0.50 | 0.33 | **1.00** | **0.83** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.50 | 0.73 | **1.00** | 0.50 | 0.00 | **1.00** |
-| `xwinograd` | **1.00** | 0.60 | 0.00 | **0.83** | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze` | 0.33 | 0.20 | 0.00 | 0.50 | **1.00** | **1.00** |
-| `include_base_44` | 0.33 | 0.53 | **1.00** | 0.17 | 0.00 | 0.00 |
-| `belebele` | 0.50 | 0.40 | 0.00 | 0.67 | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.82** | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `paws` | 0.48 | 0.57 | **1.00** |  | 0.43 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.43 | 0.38 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.57 | 0.52 | **1.00** |  | 0.29 | 0.00 |  | **1.00** | **1.00** |
+| `xwinograd` | 0.67 | 0.48 | 0.00 |  | 0.57 | 0.00 |  | **1.00** | **1.00** |
+| `include_base_44` | 0.43 | 0.57 | **1.00** |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
+| `belebele` | 0.24 | 0.52 | 0.00 |  | 0.32 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2221,13 +2246,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ka (ka) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.78** | **0.80** | **1.00** | **0.95** | **1.00** | **1.00** |
-| `belebele` |  | 0.67 |  |  |  |  |
-| `global_piqa_parallel_cloze` |  | 0.67 |  |  |  |  |
-| `multiblimp` |  | 0.67 |  |  |  |  |
-| `include_base_44` |  | 0.00 |  |  |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | 0.67 | **0.76** | **1.00** |  | **0.75** | **1.00** |  | **1.00** | 0.00 |
+| `bpb` | **0.78** | **0.80** | **1.00** | 0.00 | **0.95** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `belebele` | **0.86** | 0.52 | 0.00 |  | 0.57 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze` | **0.76** | 0.62 | 0.00 |  | 0.43 | 0.00 |  | 0.00 | **1.00** |
+| `include_base_44` | **0.81** | 0.29 | 0.00 |  | 0.46 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2248,9 +2273,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "kk (kk) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.84** | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.84** | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | **0.76** | **1.00** |  | **0.89** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_nonparallel_cloze` | 0.62 | 0.57 | **1.00** |  | **0.79** | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.48 | 0.43 | 0.00 |  | **0.82** | 0.00 |  | 0.00 | **1.00** |
+| `belebele` | 0.67 | 0.71 | 0.00 |  | 0.50 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2271,14 +2300,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Korean (ko) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `global_piqa_parallel_cloze` | **1.00** | **0.83** |  | **1.00** |  |  |
-| `bpb` | **0.85** | **0.78** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `belebele` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `paws` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `include_base_44` | **1.00** | 0.50 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.00 | 0.33 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.78** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.62 | 0.71 | **1.00** |  | 0.61 | 0.00 |  | **1.00** | **1.00** |
+| `include_base_44` | 0.52 | **0.76** | 0.00 |  | 0.36 | **1.00** |  | 0.00 | **1.00** |
+| `paws` | **0.81** | 0.57 | 0.00 |  | 0.57 | 0.00 |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.62 | 0.43 | **1.00** |  | 0.46 | 0.00 |  | 0.00 | 0.00 |
+| `belebele` | 0.24 | 0.24 | 0.00 |  | 0.68 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2299,9 +2328,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "lt (lt) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.62 | 0.64 | **1.00** | **0.95** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `include_base_44` | 0.62 | 0.62 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.57 | 0.48 | **1.00** |  | 0.64 | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | 0.71 | **1.00** |  | 0.57 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | **0.76** | 0.48 | 0.00 |  | 0.43 | **1.00** |  | **1.00** | **1.00** |
+| `bpb` | 0.62 | 0.65 | **1.00** | 0.00 | **0.93** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.38 | 0.52 | **1.00** |  | 0.50 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2322,9 +2356,10 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "lv (lv) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.56 | 0.60 | **1.00** | **0.96** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.56 | 0.58 | **1.00** | **1.00** | **0.98** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `belebele` | 0.38 | 0.67 | **1.00** |  | 0.46 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2345,14 +2380,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ml (ml) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `hellaswag` |  | **1.00** |  |  |  |  |
-| `global_piqa_parallel_cloze` |  | **1.00** |  |  |  |  |
-| `bpb` | **0.82** | **0.91** | **1.00** | **0.87** | **1.00** | **1.00** |
-| `include_base_44` |  | 0.67 |  |  |  |  |
-| `arc` |  | 0.33 |  |  |  |  |
-| `belebele` |  | 0.00 |  |  |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.82** | **0.80** | **1.00** | **1.00** | **0.95** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.90** | 0.71 | **1.00** |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.62 | 0.52 | **1.00** |  | **0.82** | **1.00** |  | 0.00 | **1.00** |
+| `belebele` | **0.81** | 0.43 | **1.00** |  | 0.29 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze` | 0.67 | 0.57 | 0.00 |  | 0.61 | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.62 | 0.71 | 0.00 |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2373,9 +2408,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "mr (mr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.82** | **0.78** | **1.00** | **0.85** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.62 | **0.81** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `bpb` | **0.80** | 0.75 | **1.00** | **1.00** | **0.87** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze` | 0.57 | **0.90** | **1.00** |  | 0.50 | **1.00** |  | **1.00** | 0.00 |
+| `arc` | 0.38 | 0.52 | **1.00** |  | 0.71 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.57 | 0.43 | 0.00 |  | 0.57 | **1.00** |  | 0.00 | **1.00** |
+| `multiblimp` | 0.38 | 0.57 | 0.00 |  | 0.39 | **1.00** |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2396,9 +2436,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ms (ms) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.87** | **1.00** | **0.91** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.87** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `belebele` | 0.14 | 0.52 | 0.00 |  | 0.25 | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.67 | 0.48 | **1.00** |  | 0.21 | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.62 | 0.19 | **1.00** |  | 0.61 | 0.00 |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze` | 0.67 | 0.24 | 0.00 |  | 0.36 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2419,9 +2463,16 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ne (ne) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.78** | **1.00** | **0.78** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `global_piqa_parallel_cloze` | 0.62 | **0.76** | **1.00** |  | 0.68 | **1.00** |  | **1.00** | 0.00 |
+| `bpb` | **0.87** | **0.78** | **1.00** | **1.00** | **0.80** | **1.00** | 0.00 | **1.00** | 0.00 |
+| `arc` | 0.38 | 0.62 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.38 | 0.62 | **1.00** |  | 0.64 | **1.00** |  | **1.00** | 0.00 |
+| `belebele_npi_Deva` | 0.33 | 0.67 | 0.00 |  | 0.39 | **1.00** |  | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.48 | 0.62 | **1.00** |  | 0.25 | **1.00** |  | 0.00 | 0.00 |
+| `belebele_npi_Latn` | 0.67 | 0.43 | 0.00 |  | 0.46 | 0.00 |  | **1.00** | 0.00 |
+| `include_base_44` | 0.57 | 0.38 | 0.00 |  | 0.57 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2442,15 +2493,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "nl (nl) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.84** | **1.00** | **0.91** | **1.00** | **1.00** |
-| `multiblimp` | 0.67 | **1.00** |  | 0.67 |  |  |
-| `global_mmlu_full` | 0.67 | **1.00** |  | 0.67 |  |  |
-| `hellaswag` | 0.33 | 0.50 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | 0.67 | 0.50 |  | 0.33 |  |  |
-| `belebele` | 0.33 | 0.33 |  | 0.67 |  |  |
-| `arc` | 0.67 | 0.67 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.84** | **1.00** | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.81** | **0.95** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | **0.76** | **0.76** | **1.00** |  | **0.93** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.62 | 0.48 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.52 | 0.24 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.33 | 0.43 | 0.00 |  | 0.43 | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.48 | 0.38 | **1.00** |  | 0.25 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2471,11 +2522,11 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "no (no) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `global_piqa_parallel_cloze` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | **0.93** | **0.89** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.93** | **0.89** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `belebele` | 0.24 | 0.48 | 0.00 |  | 0.54 | **1.00** |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze` | **0.76** | 0.48 | 0.00 |  | 0.61 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2496,14 +2547,14 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "pl (pl) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.75 | **0.78** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `multiblimp` | 0.67 | **1.00** |  | 0.67 |  |  |
-| `global_piqa_parallel_cloze` | 0.33 | 0.50 |  | 0.67 |  |  |
-| `belebele` | 0.67 | 0.33 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.33 | 0.67 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | 0.67 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.73 | **0.78** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.81** | 0.71 | **1.00** |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.52 | 0.33 | **1.00** |  | 0.46 | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.67 | 0.71 | 0.00 |  | 0.61 | 0.00 |  | 0.00 | **1.00** |
+| `belebele` | 0.43 | 0.43 | 0.00 |  | 0.64 | **1.00** |  | 0.00 | 0.00 |
+| `include_base_44` | 0.29 | 0.67 | 0.00 |  | 0.50 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2524,18 +2575,18 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Portuguese (pt) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.91** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `global_piqa_parallel_cloze_por_latn_port` | **1.00** | **0.83** |  | 0.67 |  |  |
-| `multiblimp` | **1.00** | 0.67 |  | 0.67 |  |  |
-| `global_mmlu_full` | 0.33 | **0.83** |  | 0.67 |  |  |
-| `hellaswag` | 0.33 | 0.33 |  | 0.67 |  |  |
-| `arc` | 0.67 | 0.67 |  | 0.00 |  |  |
-| `belebele` | 0.00 | 0.17 |  | **1.00** |  |  |
-| `include_base_44` | 0.67 | 0.50 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze_por_latn_braz` | 0.67 | 0.33 |  | 0.00 |  |  |
-| `xwinograd` | 0.33 | 0.50 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.89** | **0.91** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.95** | **0.81** | **1.00** |  | **0.89** | **1.00** |  | **1.00** | **1.00** |
+| `xwinograd` | **0.86** | **0.86** | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.71 | **0.76** | **1.00** |  | **0.96** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.71 | 0.71 | 0.00 |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.48 | 0.67 | **1.00** |  | 0.57 | 0.00 |  | 0.00 | **1.00** |
+| `include_base_44` | 0.38 | 0.29 | 0.00 |  | 0.61 | **1.00** |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_por_latn_braz` | 0.57 | 0.14 | **1.00** |  | 0.39 | 0.00 |  | 0.00 | **1.00** |
+| `belebele` | 0.33 | 0.38 | **1.00** |  | **0.86** | 0.00 |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_por_latn_port` | **0.81** | 0.67 | 0.00 |  | 0.64 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2556,15 +2607,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ro (ro) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.78** | **0.78** | **1.00** | **0.89** | **1.00** | **1.00** |
-| `global_mmlu_full` | **1.00** | 0.33 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | **1.00** | 0.67 |  | 0.00 |  |  |
-| `arc` | **1.00** | 0.33 |  | 0.00 |  |  |
-| `belebele` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `hellaswag` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `multiblimp` | **1.00** | 0.00 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.78** | 0.75 | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | 0.71 | **0.86** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.76** | 0.57 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.48 | 0.33 | 0.00 |  | 0.57 | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.48 | 0.19 | 0.00 |  | 0.43 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.62 | 0.19 | 0.00 |  | 0.39 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.62 | 0.52 | **1.00** |  | **0.75** | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2585,19 +2636,19 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Russian (ru) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `hellaswag` | 0.70 | 0.57 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.70 | 0.48 | 0.00 | **1.00** | **1.00** | **1.00** |
-| `include_base_44` | 0.60 | 0.48 | **1.00** | 0.60 | **1.00** | 0.00 |
-| `belebele` | 0.50 | 0.57 | 0.00 | 0.30 | **1.00** | **1.00** |
-| `global_piqa_parallel_cloze` | 0.50 | 0.27 | **1.00** | 0.60 | 0.00 | **1.00** |
-| `multiblimp` | **1.00** | 0.62 | 0.00 | 0.70 | 0.00 | **1.00** |
-| `global_mmlu_full` | 0.40 | 0.52 | **1.00** | 0.30 | 0.00 | **1.00** |
-| `xnli` | **0.90** | 0.43 | 0.00 | 0.40 | 0.00 | **1.00** |
-| `xwinograd` | 0.50 | 0.43 | **1.00** | 0.40 | 0.00 | 0.00 |
-| `xstorycloze` | **1.00** | 0.67 | 0.00 | 0.60 | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.89** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | 0.69 | **0.78** | **1.00** |  | **0.86** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | **0.75** | 0.56 | 0.00 |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.44 | 0.67 | 0.00 |  | 0.39 | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | **0.86** | **0.75** | 0.00 |  | **0.89** | 0.00 |  | **1.00** | **1.00** |
+| `xwinograd` | 0.58 | 0.39 | **1.00** |  | 0.53 | 0.00 |  | 0.00 | **1.00** |
+| `include_base_44` | 0.44 | 0.33 | **1.00** |  | 0.61 | **1.00** |  | 0.00 | 0.00 |
+| `xnli` | 0.53 | 0.36 | 0.00 |  | 0.44 | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.38 | 0.38 | 0.00 |  | 0.56 | **1.00** |  | 0.00 | **1.00** |
+| `global_mmlu_full` | 0.39 | 0.42 | **1.00** |  | 0.42 | 0.00 |  | **1.00** | 0.00 |
+| `xstorycloze` | 0.69 | 0.64 | 0.00 |  | 0.61 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2618,9 +2669,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "sk (sk) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.76** | 0.71 | **1.00** | **0.91** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.90** | **0.86** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `bpb` | **0.76** | 0.71 | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.81** | **0.76** | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.52 | 0.43 | 0.00 |  | 0.57 | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.62 | 0.67 | **1.00** |  | 0.46 | **1.00** |  | 0.00 | 0.00 |
+| `global_piqa_parallel_cloze_slk_latn` | 0.67 | 0.48 | **1.00** |  | 0.32 | 0.00 |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_slk_latn_sari` | 0.62 | 0.71 | 0.00 |  | 0.57 | 0.00 |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2641,9 +2698,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "sl (sl) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.67 | 0.73 | **1.00** | **0.95** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.65 | 0.71 | **1.00** | **1.00** | **0.95** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.43 | 0.62 | **1.00** |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_slv_latn` | **0.76** | 0.67 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.52 | **0.90** | **1.00** |  | 0.50 | 0.00 |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_slv_latn_cerk` | 0.52 | 0.43 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2664,9 +2725,12 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "sq (sq) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | 0.60 | 0.65 | **1.00** | **0.76** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.60 | 0.62 | **1.00** | **1.00** | **0.76** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `belebele` | 0.33 | 0.57 | 0.00 |  | 0.57 | **1.00** |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze` | 0.57 | 0.52 | 0.00 |  | 0.36 | **1.00** |  | 0.00 | **1.00** |
+| `include_base_44` | 0.38 | 0.52 | **1.00** |  | 0.39 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2687,10 +2751,17 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "sr (sr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb_srp_Cyrl` | **0.80** | **0.76** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `bpb_srp_Latn` | 0.73 | **0.76** | **1.00** | **0.93** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb_srp_Cyrl` | **0.78** | 0.75 | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `bpb_srp_Latn` | 0.73 | **0.76** | **1.00** | **1.00** | **0.93** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_srp_latn` | 0.43 | 0.38 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | 0.67 | **0.81** | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_srp_cyrl` | 0.67 | 0.67 | **1.00** |  | 0.71 | 0.00 |  | **1.00** | **1.00** |
+| `belebele` | 0.52 | 0.43 | 0.00 |  | 0.50 | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.29 | 0.57 | 0.00 |  | 0.71 | **1.00** |  | **1.00** | 0.00 |
+| `global_mmlu_full` | 0.67 | 0.43 | **1.00** |  | 0.36 | 0.00 |  | 0.00 | **1.00** |
+| `include_base_44` | 0.67 | 0.62 | **1.00** |  | **0.75** | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2711,15 +2782,15 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "sv (sv) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `hellaswag` | **1.00** | **1.00** |  | **1.00** |  |  |
-| `bpb` | 0.75 | **0.87** | **1.00** | **0.80** | **1.00** | **1.00** |
-| `multiblimp` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `belebele` | 0.00 | 0.33 |  | **1.00** |  |  |
-| `arc` | **1.00** | 0.33 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.95** | **0.90** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `bpb` | 0.75 | **0.85** | **1.00** | **1.00** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.76** | 0.67 | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.29 | 0.10 | 0.00 |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | 0.57 | 0.62 | **1.00** |  | 0.39 | 0.00 |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze` | 0.19 | 0.38 | 0.00 |  | **0.82** | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.19 | 0.43 | 0.00 |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2740,16 +2811,16 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ta (ta) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.89** | **0.85** | **1.00** | **0.89** | **1.00** | **1.00** |
-| `xcopa` |  | 0.67 |  |  |  |  |
-| `multiblimp` |  | 0.67 |  |  |  |  |
-| `belebele` |  | 0.33 |  |  |  |  |
-| `include_base_44` |  | 0.33 |  |  |  |  |
-| `global_piqa_parallel_cloze` |  | 0.33 |  |  |  |  |
-| `arc` |  | 0.00 |  |  |  |  |
-| `hellaswag` |  | 0.00 |  |  |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.84** | **1.00** | **1.00** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.67 | **0.81** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `xcopa` | 0.71 | 0.62 | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | **0.76** | **0.76** | 0.00 |  | **0.79** | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.62 | 0.14 | **1.00** |  | 0.32 | **1.00** |  | **1.00** | 0.00 |
+| `hellaswag` | 0.52 | 0.52 | **1.00** |  | 0.57 | 0.00 |  | **1.00** | 0.00 |
+| `arc` | 0.29 | 0.10 | 0.00 |  | **0.79** | **1.00** |  | **1.00** | 0.00 |
+| `belebele` | 0.62 | 0.24 | 0.00 |  | 0.46 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2770,13 +2841,13 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Thai (th) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.87** | **0.87** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `global_piqa_parallel_cloze` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `xnli` | **1.00** | 0.50 |  | **1.00** |  |  |
-| `xcopa` | **1.00** | 0.33 |  | **1.00** |  |  |
-| `belebele` | 0.00 | 0.33 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | **0.87** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `xnli` | 0.52 | 0.62 | 0.00 |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.24 | 0.52 | 0.00 |  | 0.54 | **1.00** |  | 0.00 | **1.00** |
+| `xcopa` | 0.29 | **0.81** | 0.00 |  | 0.25 | 0.00 |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze` | 0.71 | **0.76** | 0.00 |  | 0.43 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2797,16 +2868,16 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Turkish (tr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.82** | **0.82** | **1.00** | **0.93** | **1.00** | **1.00** |
-| `xnli` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `multiblimp` | 0.00 | 0.33 |  | **1.00** |  |  |
-| `global_piqa_parallel_cloze` | **1.00** | 0.33 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `belebele` | **1.00** | 0.00 |  | 0.00 |  |  |
-| `include_base_44` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `xcopa` | 0.00 | 0.00 |  | **1.00** |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.84** | **0.78** | **1.00** | **1.00** | **0.95** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | **0.81** | 0.67 | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.52 | 0.38 | **1.00** |  | 0.57 | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.43 | 0.57 | 0.00 |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `xcopa` | **0.76** | 0.57 | 0.00 |  | 0.61 | 0.00 |  | **1.00** | **1.00** |
+| `include_base_44` | 0.57 | 0.71 | **1.00** |  | 0.46 | **1.00** |  | 0.00 | 0.00 |
+| `global_mmlu_full` | 0.48 | 0.71 | **1.00** |  | 0.36 | **1.00** |  | 0.00 | 0.00 |
+| `belebele` | 0.48 | 0.57 | **1.00** |  | 0.46 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2827,16 +2898,16 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Ukrainian (uk) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `hellaswag` | **1.00** | 0.67 |  | **1.00** |  |  |
-| `belebele` | **1.00** | 0.67 |  | 0.00 |  |  |
-| `global_piqa_parallel_cloze` | 0.00 | 0.00 |  | **1.00** |  |  |
-| `include_base_44` | 0.00 | **1.00** |  | 0.00 |  |  |
-| `arc` | 0.00 | 0.67 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.00 | 0.67 |  | 0.00 |  |  |
-| `multiblimp` | 0.00 | 0.67 |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.89** | **1.00** | **1.00** | **0.98** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `hellaswag` | **0.95** | **0.76** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `multiblimp` | 0.71 | **0.76** | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `arc` | 0.57 | **0.81** | **1.00** |  | 0.68 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.48 | 0.62 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `belebele` | 0.43 | 0.52 | **1.00** |  | 0.57 | **1.00** |  | 0.00 | 0.00 |
+| `global_mmlu_full` | 0.62 | 0.57 | 0.00 |  | 0.46 | **1.00** |  | 0.00 | 0.00 |
+| `include_base_44` | 0.33 | 0.57 | 0.00 |  | 0.64 | **1.00** |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2857,9 +2928,16 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "ur (ur) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.87** | **0.80** | **1.00** | **0.85** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.85** | 0.73 | **1.00** | **1.00** | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `multiblimp` | 0.71 | 0.67 | **1.00** |  | **0.82** | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | 0.43 | 0.67 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `include_base_44` | 0.48 | 0.71 | **1.00** |  | 0.64 | 0.00 |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_urd_latn` | 0.48 | 0.52 | **1.00** |  | 0.71 | 0.00 |  | 0.00 | **1.00** |
+| `global_piqa_parallel_cloze_urd_arab` | 0.43 | 0.62 | **1.00** |  | 0.71 | 0.00 |  | 0.00 | 0.00 |
+| `belebele_urd_Latn` | 0.57 | 0.33 | 0.00 |  | 0.39 | 0.00 |  | 0.00 | 0.00 |
+| `belebele_urd_Arab` | 0.38 | 0.43 | 0.00 |  | 0.36 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2880,17 +2958,17 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Vietnamese (vi) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.87** | **0.84** | **1.00** | **0.89** | **1.00** | **1.00** |
-| `include_base_44` | 0.67 | 0.67 |  | **1.00** |  |  |
-| `arc` | 0.67 | 0.33 |  | **1.00** |  |  |
-| `xnli` | **1.00** | 0.33 |  | 0.33 |  |  |
-| `global_piqa_parallel_cloze` | **1.00** | 0.33 |  | 0.33 |  |  |
-| `hellaswag` | 0.67 | 0.67 |  | 0.00 |  |  |
-| `global_mmlu_full` | 0.67 | 0.67 |  | 0.00 |  |  |
-| `belebele` | 0.00 | 0.50 |  | 0.67 |  |  |
-| `xcopa` | 0.00 | **0.83** |  | 0.00 |  |  |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.87** | **0.82** | **1.00** | **1.00** | **0.91** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `xcopa` | 0.71 | **0.95** | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `xnli` | **0.90** | 0.67 | **1.00** |  | **0.79** | **1.00** |  | **1.00** | **1.00** |
+| `hellaswag` | **0.81** | 0.67 | **1.00** |  | **0.75** | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze` | 0.71 | 0.48 | **1.00** |  | 0.61 | **1.00** |  | **1.00** | 0.00 |
+| `include_base_44` | 0.57 | 0.62 | 0.00 |  | 0.61 | **1.00** |  | **1.00** | **1.00** |
+| `global_mmlu_full` | **0.81** | **0.76** | 0.00 |  | 0.64 | 0.00 |  | 0.00 | **1.00** |
+| `arc` | **0.76** | 0.67 | 0.00 |  | 0.50 | 0.00 |  | 0.00 | **1.00** |
+| `belebele` | 0.19 | 0.38 | 0.00 |  | 0.57 | 0.00 |  | 0.00 | **1.00** |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
@@ -2911,21 +2989,21 @@ title: Appendix — Decision accuracy across sizes
 subtitle: "Mandarin Chinese (zh) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B |
-|---|---|---|---|---|---|---|
-| `bpb` | **0.91** | **0.87** | **1.00** | **0.96** | **1.00** | **1.00** |
-| `arc` | 0.50 | **0.80** | **1.00** | **0.83** | **1.00** | **1.00** |
-| `paws` | 0.50 | 0.53 | **1.00** | 0.67 | **1.00** | **1.00** |
-| `xnli` | 0.33 | 0.73 | **1.00** | 0.67 | 0.00 | **1.00** |
-| `global_piqa_parallel_cloze_cmn_hans` | 0.33 | 0.53 | **1.00** | 0.33 | **1.00** | 0.00 |
-| `belebele_zho_Hans` | 0.50 | 0.47 | **1.00** | 0.17 | 0.00 | **1.00** |
-| `include_base_44` | 0.17 | 0.47 | **1.00** | 0.50 | 0.00 | **1.00** |
-| `belebele_zho_Hant` | 0.67 | **0.80** | **1.00** | 0.50 | 0.00 | 0.00 |
-| `global_mmlu_full` | 0.17 | 0.67 | **1.00** | 0.50 | 0.00 | 0.00 |
-| `xstorycloze` | 0.50 | 0.47 | 0.00 | 0.33 | 0.00 | **1.00** |
-| `xcopa` | 0.33 | 0.53 | 0.00 | 0.33 | **1.00** | 0.00 |
-| `xwinograd` | 0.00 | 0.53 | 0.00 | 0.67 | **1.00** | 0.00 |
-| `global_piqa_parallel_cloze_cmn_hant` | 0.67 | 0.27 | 0.00 | 0.00 | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B |
+|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.91** | **0.87** | **1.00** | **1.00** | **0.96** | **1.00** | **1.00** | **1.00** | **1.00** |
+| `arc` | 0.71 | 0.43 | **1.00** |  | 0.71 | **1.00** |  | **1.00** | **1.00** |
+| `global_piqa_parallel_cloze_cmn_hans` | 0.48 | 0.52 | **1.00** |  | 0.39 | **1.00** |  | 0.00 | **1.00** |
+| `include_base_44` | 0.38 | 0.33 | **1.00** |  | 0.57 | 0.00 |  | **1.00** | **1.00** |
+| `xstorycloze` | **0.76** | 0.67 | 0.00 |  | 0.64 | 0.00 |  | **1.00** | **1.00** |
+| `xnli` | 0.33 | 0.71 | **1.00** |  | 0.64 | 0.00 |  | **1.00** | 0.00 |
+| `belebele_zho_Hans` | 0.62 | 0.52 | **1.00** |  | 0.32 | 0.00 |  | **1.00** | 0.00 |
+| `global_piqa_parallel_cloze_cmn_hant` | 0.67 | 0.38 | 0.00 |  | 0.36 | 0.00 |  | **1.00** | **1.00** |
+| `xcopa` | 0.14 | 0.62 | 0.00 |  | 0.50 | **1.00** |  | 0.00 | **1.00** |
+| `xwinograd` | 0.33 | 0.33 | 0.00 |  | 0.57 | **1.00** |  | 0.00 | **1.00** |
+| `paws` | 0.48 | 0.62 | 0.00 |  | **0.82** | 0.00 |  | 0.00 | **1.00** |
+| `belebele_zho_Hant` | **0.81** | 0.48 | **1.00** |  | 0.57 | 0.00 |  | 0.00 | 0.00 |
+| `global_mmlu_full` | 0.33 | 0.43 | **1.00** |  | 0.46 | 0.00 |  | 0.00 | 0.00 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
