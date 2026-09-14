@@ -113,6 +113,60 @@ def seed_holdout(out):
     S.save(fig, out / "seed_holdout.png")
 
 
+def effect_vs_seed_noise(out):
+    """Each design axis' median effect on final loss, in units of the seed noise.
+
+    The seed noise is the std of final loss over the cells that ran three seeds.
+    An axis below 1x moves the model no further than re-rolling the seed does.
+    """
+    h = data.healthy(data.wide()).reset_index()
+    h = h.assign(L=h["L"].astype(int), loss=h["run__final_loss"].astype(float)).dropna(subset=["loss"])
+    reps = h.groupby(["size", "L", "arch", "scheme"])["loss"]
+    sd = float(reps.std()[reps.size() >= 2].median())
+
+    across_L = [g["loss"].max() - g["loss"].min()
+                for _, g in h.groupby(["size", "arch", "scheme", "seed"]) if g["L"].nunique() >= 2]
+
+    def paired(col, a, b, keys):
+        p = h.pivot_table(index=keys, columns=col, values="loss")
+        return (p[a] - p[b]).dropna().abs() if a in p and b in p else pd.Series(dtype=float)
+
+    rows = [("language count L\nrange across L, per size", np.median(across_L), len(across_L)),
+            ("data scheme\nA vs B, matched cells",
+             *(lambda d: (d.median(), len(d)))(paired("scheme", "A", "B", ["size", "L", "arch", "seed"]))),
+            ("model depth\ndeep vs shallow, matched",
+             *(lambda d: (d.median(), len(d)))(paired("arch", "deep", "shallow", ["size", "L", "scheme", "seed"])))]
+    rows = [(lab, v / sd, n) for lab, v, n in rows]
+
+    fig, ax = plt.subplots(figsize=(8.6, 3.3))
+    y = np.arange(len(rows))[::-1]
+    for yi, (_, ratio, n) in zip(y, rows):
+        ax.hlines(yi, 1, ratio, color="#dfe8f5", lw=4, zorder=1)
+        ax.plot(ratio, yi, "o", ms=13, color=S.RAMP[2], zorder=3)
+        ax.annotate(f"{ratio:.1f}\u00d7", (ratio, yi), xytext=(14, 0), textcoords="offset points",
+                    va="center", fontsize=12, color=S.INK)
+        ax.annotate(f"n={n}", (ratio, yi), xytext=(58, 0), textcoords="offset points",
+                    va="center", fontsize=9, color=S.MUTED)
+    ax.axvline(1, color=S.MUTED, lw=1.2, ls="--")
+    ax.axvline(2, color=S.GRID, lw=1.2, ls=":")
+    ax.set_xscale("log")
+    ax.set_xlim(0.7, max(r for _, r, _ in rows) * 2.6)
+    ax.set_xticks([1, 2, 5, 10, 20]); ax.set_xticklabels(["1", "2", "5", "10", "20"])
+    ax.set_ylim(-.6, len(rows) - .4)
+    ax.set_yticks(y); ax.set_yticklabels([lab for lab, _, _ in rows], fontsize=9.5, color=S.INK)
+    ax.set_xlabel(f"median |change in final loss| divided by the seed noise ({sd:.3f} nats), "
+                  "log scale", fontsize=9.5, color=S.MUTED)
+    ax.grid(axis="x", color=S.GRID, lw=.8); ax.set_axisbelow(True)
+    S.clean(ax, spines=("bottom",)); ax.tick_params(length=0)
+    ax.legend(handles=[Line2D([], [], color=S.MUTED, ls="--", label="1x, the same as re-rolling the seed"),
+                       Line2D([], [], color=S.GRID, ls=":", label="2x, where an axis starts to separate")],
+              frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="lower right")
+    S.title(fig, "Only the language axis clears the seed noise floor", y=1.06)
+    S.save(fig, out / "effect_vs_seed_noise.png")
+    return rows
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     grid_status(OUT); optimizer_timescale(OUT); seed_holdout(OUT)
+    print(effect_vs_seed_noise(OUT))

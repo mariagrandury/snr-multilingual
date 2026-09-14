@@ -141,6 +141,32 @@ keep these numbers in their "36-model sweep" sections.
   to its loader; the RQ scripts compute DA (rq01), the 22 SNR variants (rq02)
   and everything downstream. `run_all_predictivity.sh` runs it all.
 
+### 4. Keep every derived file current
+
+New eval results land in the ladder report, and everything else — the RQ
+CSVs, the figures, the deck, the report PDF, the compendium — is derived from
+it. One script rebuilds the lot in dependency order, so no plot or table can
+be older than the data:
+
+```bash
+bash scripts/refresh_analysis.sh              # fetch the report, then rebuild
+bash scripts/refresh_analysis.sh --no-fetch   # rebuild from the local copy
+bash scripts/refresh_analysis.sh --no-deck    # skip the slidev build
+```
+
+It fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,
+runs `run_all_predictivity.sh` (which recomputes whatever is older than the
+report), regenerates the nine figure scripts in
+[`documents/figures/`](documents/figures/), rebuilds the report PDF and the
+compendium, checks that no slide or compendium section points at a missing
+figure, and builds the deck.
+
+Prose is the one thing it cannot rewrite. The last step,
+[`documents/figures/facts.py`](documents/figures/facts.py), collects the
+headline numbers into `documents/ladder-facts.json` and prints every one that
+moved since the previous run, old value next to new, so the sentences quoting
+them can be found instead of quietly going stale.
+
 ## Project structure
 
 - [`configs/`](configs/) — `models.json` (every cell, pools, the `snr`

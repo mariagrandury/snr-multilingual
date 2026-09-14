@@ -49,3 +49,7 @@ src/pretrain/azure/.quota_cache.json
 # churn in history across three commits for a file that is never read from
 # git. Paste it where it is needed instead.
 /quota_status.png
+
+# Built by scripts/inline_artifact.py: the compendium with its figures inlined
+# for publishing. The source with relative paths is the one under version control.
+documents/build/

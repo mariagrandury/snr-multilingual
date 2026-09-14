@@ -25,6 +25,21 @@ Re-publishing the same file path updates that URL. The file has no
 `<html>`/`<body>` wrapper because the artifact host supplies one; browsers
 supply it too, so opening the file directly works.
 
+## Keeping all of it current
+
+`bash scripts/refresh_analysis.sh` (from the repo root) is the one command to
+run after new eval results land. It fetches the ladder report, re-runs the
+analysis, regenerates every figure below, rebuilds the report PDF and the
+compendium, refuses to finish if a slide points at a missing or stale figure,
+and builds the deck. Its last step, `figures/facts.py`, writes the headline
+numbers to `ladder-facts.json` and prints every one that moved since the
+previous run, which is how the hand-written prose gets found and fixed.
+
+Four figures the deck shows are drawn on the cluster from the training logs
+and cannot refresh here: `ladder_report_loss.png` and the three
+`pretrain_progress_*.png`. The check names them separately so they are not
+mistaken for a pipeline failure.
+
 ## Deck figures
 
 `figures/` regenerates every PNG under `public/ladder/` from the published
@@ -43,7 +58,8 @@ python3 fig_from_analysis.py    # after src/signal-and-noise/analysis/report_fig
 ```
 
 - `fig_setup.py`: the planned grid and what happened in each cell, the 90M
-  optimizer timescale, the seed holdout.
+  optimizer timescale, the seed holdout, and each design axis' effect on final
+  loss in units of the seed noise.
 - `fig_languages.py`: bits per byte gained per language, English against the rest.
 - `fig_benchmarks.py`: the smallest size at which each benchmark family clears
   chance in each language, and bits per byte against the surviving benchmarks.

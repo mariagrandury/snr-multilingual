@@ -135,7 +135,17 @@ python3.11 src/pretrain/auto_evals_cscs.py --dry-run
 
 # Slides
 cd documents && npx slidev --open
+
+# After new eval results land: rebuild every derived file from the report
+bash scripts/refresh_analysis.sh
 ```
+
+`scripts/refresh_analysis.sh` is the only thing to run after new results:
+it fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,
+re-runs the analysis, the figures, the report PDF, the compendium and the
+deck, and fails if a slide points at a figure that no longer exists. Prose it
+cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
+numbers against `documents/ladder-facts.json` and prints the ones that moved.
 
 System Python on the login nodes is 3.6 — use `python3.11`.
 

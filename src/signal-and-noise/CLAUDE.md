@@ -47,6 +47,8 @@ failure modes worth remembering.
 ## What's actually running
 
 ```bash
+bash scripts/refresh_analysis.sh              # from the repo root: this plus every figure, doc and deck
+
 cd src/signal-and-noise
 bash run_all_predictivity.sh                  # everything, from the published ladder report
 SNR_LADDER_DIR=/capstor/store/cscs/swissai/infra01/msnr-ladder-report bash run_all_predictivity.sh   # cluster copy
@@ -119,8 +121,16 @@ predictivity               lm-{90M…1.7B}-L{1…100}[-schemeB]-{deep,shallow}-s
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
 predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50, 100}
 predictivity_seeds_test    seed 1904 on the same cells
+predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
+
+The four `predictivity*` pools above filter on `scheme ∈ {A, B}`. AT3, ES and
+ZH are a different intervention (a sampling temperature, a swapped second
+language), so letting them into the headline pool would widen every signal
+without widening the decision the pool exists to measure. They live in
+`predictivity_schemes` instead, which no driver runs — invoke a script with
+`--pool predictivity_schemes` when the scheme axis itself is the question.
 
 The `snr` section of models.json is global: `small_sizes` 90M–600M,
 `target_size` 1B, `da_early_fracs` 0.2/0.4/0.6/0.8, `last_n` 5,
