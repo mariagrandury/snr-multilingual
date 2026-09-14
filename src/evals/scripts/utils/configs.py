@@ -145,8 +145,17 @@ def loader_for_source(source: str,
     """Which eval-results loader serves a `source`: ``parquet`` (the
     published multilingual-snr splits, the default) or ``ladder`` (the
     predictivity ladder read from ladder_report.csv). Declared per source in
-    models.json so the analysis never guesses from the model name."""
-    return load_sources(path)[source].get("loader", "parquet")
+    models.json so the analysis never guesses from the model name.
+
+    The default follows the split rather than being a flat ``parquet``: the
+    predictivity ladder has no parquet split, so a source pointing at it is a
+    ladder source whether or not the key survived. Without that, dropping the
+    key routes every ladder pool to the parquet loader and the analysis
+    reports the 36-sweep's models under the ladder's name — a wrong answer
+    rather than an error. A merge did exactly that once."""
+    src = load_sources(path)[source]
+    default = "ladder" if src.get("split") == "pretraining_predictivity" else "parquet"
+    return src.get("loader", default)
 
 
 # --- FLOPs convention --------------------------------------------------------

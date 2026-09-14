@@ -254,6 +254,20 @@ def scheme_sizes(scheme: str, L: int) -> list[str]:
     return sizes[: sizes.index(cap) + 1] if cap else sizes
 
 
+def cell_fineweb_subsets(L: int, scheme: str = "A") -> list[str]:
+    """The FineWeb-2 subsets (``rus_Cyrl``, ...) a cell's data blend draws
+    from — the setting's list in data/language_sets_scheme{A,B}.json, which
+    the temperature and swap schemes share through their `sets` key; empty at
+    L = 1 (100 % English). These are the keys score_bpb.py writes, so a BPB
+    language is "trained" iff its subset is in this list."""
+    if L == 1:
+        return []
+    sets_ = json.loads((SCRIPT_DIR / "data" /
+                        f"language_sets_scheme{DATA_SCHEMES[scheme]['sets']}"
+                        ".json").read_text())["sets"]
+    return list(sets_[f"FW_L{L}"])
+
+
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
     """Canonical language codes a cell trains on: English plus its setting's
     FineWeb-2 languages, mapped through the `fineweb_iso2` table in
@@ -262,15 +276,10 @@ def cell_languages(L: int, scheme: str = "A") -> set[str]:
     tasks.json tags its tasks with the same codes, so the auto-eval watchers
     intersect the two to pick each cell's benchmark tasks."""
     langs = {"en"}
-    if L == 1:
-        return langs
     iso3_to_code = json.loads(
         (SCRIPT_DIR.parent.parent / "configs" / "languages.json").read_text()
     )["fineweb_iso2"]
-    sets_ = json.loads((SCRIPT_DIR / "data" /
-                        f"language_sets_scheme{DATA_SCHEMES[scheme]['sets']}"
-                        ".json").read_text())["sets"]
-    for code in sets_[f"FW_L{L}"]:
+    for code in cell_fineweb_subsets(L, scheme):
         mapped = iso3_to_code.get(code.split("_")[0])
         if mapped:
             langs.add(mapped)

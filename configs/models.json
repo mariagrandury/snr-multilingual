@@ -18516,7 +18516,8 @@
       "split": null
     },
     "snr-pretraining-predictivity": {
-      "split": "pretraining_predictivity"
+      "split": "pretraining_predictivity",
+      "loader": "ladder"
     }
   },
   "snr": {
