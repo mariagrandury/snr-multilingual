@@ -434,8 +434,8 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     Russian, ES's Spanish, AT3 L100 at T=3). A build smaller than that is a
     stale one the grid has since outgrown (the 52B A-L15/A-L50/B-L15 copies,
     once the 1.7B row gained those settings), and training on it would repeat
-    data only because the full build was not used — main() falls back to the
-    92B rebuild stage for exactly those cells."""
+    data only because the full build was not used — fineweb_source() falls
+    back to the 92B rebuild stage for exactly those cells."""
     have = Path(f"{prefix}.bin").stat().st_size // BYTES_PER_TOKEN
     draw = run_tokens * (100 - EN_SHARE) // 100
     if draw <= have:
@@ -473,6 +473,34 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     return (f"draws {draw / 1e9:.1f}B ({draw / have:.2f} epochs) from a "
             f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B — "
             f"stage the full build first")
+
+
+def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Optional[str]]:
+    """(directory whose fineweb_L{L} the cell reads, why it must not train or None).
+
+    The stage copy under `data_dir`, unless undersized_build refuses it; then
+    the 92B rebuild stage, when training off the default stage and the rebuild
+    holds enough. English always stays on the stage. Every rung the stage copy
+    fits keeps it: the rebuild extends each language byte for byte, but
+    Megatron shuffles over the whole file and the extra documents are newer
+    crawls, so a cell moved onto it would stop seeing what its already-trained
+    counterparts saw (verified 2026-09-13). Only cells the check used to refuse
+    get the rebuild, so none switches data mid-run. The stage prefix must exist
+    (main() checks first). pretrain_progress reports the same choice."""
+    subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
+    cell_dir = data_dir + (f"/{subdir}" if subdir else "")
+    if c["L"] == 1:
+        return cell_dir, None
+    short = undersized_build(f"{cell_dir}/fineweb_L{c['L']}", c["L"], c["scheme"],
+                             run_tokens)
+    rebuilt = CSCS_REBUILD_DATA_DIR + (f"/{subdir}" if subdir else "")
+    if (short and data_dir == CSCS_DEFAULT_DATA_DIR
+            and all(Path(f"{rebuilt}/fineweb_L{c['L']}.{ext}").is_file()
+                    for ext in ("bin", "idx"))
+            and not undersized_build(f"{rebuilt}/fineweb_L{c['L']}", c["L"],
+                                     c["scheme"], run_tokens)):
+        return rebuilt, None
+    return cell_dir, short
 
 
 # Width-scaled init anchor: 1/sqrt(hidden_size) scaling that keeps the
@@ -1044,30 +1072,13 @@ def main() -> None:
             # A build that exists but is smaller than the grid now sizes it
             # (the 52B A-L15/A-L50/B-L15 copies, once the 1.7B row gained those
             # settings) must not feed a cell that draws more than it holds:
-            # Megatron silently repeats it.
-            fineweb_dir = cell_dir
-            if c["L"] > 1:
-                run_tokens = target * (args.gbs or GBS) * SEQ_LEN
-                short = undersized_build(f"{cell_dir}/fineweb_L{c['L']}", c["L"],
-                                         c["scheme"], run_tokens)
-                # Such a cell reads its FineWeb-2 half from the 92B rebuild
-                # instead; English stays on the stage. Every rung the stage copy
-                # fits keeps it: the rebuild extends each language byte for byte,
-                # but Megatron shuffles over the whole file and the extra
-                # documents are newer crawls, so a cell moved onto it would stop
-                # seeing what its already-trained counterparts saw (verified
-                # 2026-09-13). Only cells this check used to refuse get here, so
-                # none switches data mid-run.
-                rebuilt = CSCS_REBUILD_DATA_DIR + (f"/{subdir}" if subdir else "")
-                if (short and args.data_dir == CSCS_DEFAULT_DATA_DIR
-                        and all(Path(f"{rebuilt}/fineweb_L{c['L']}.{ext}").is_file()
-                                for ext in ("bin", "idx"))
-                        and not undersized_build(f"{rebuilt}/fineweb_L{c['L']}", c["L"],
-                                                 c["scheme"], run_tokens)):
-                    fineweb_dir, short = rebuilt, None
-                if short:
-                    print(f"  skip [data undersized]: {exp} — {short}")
-                    continue
+            # Megatron silently repeats it. fineweb_source() reads such a cell's
+            # FineWeb-2 half from the 92B rebuild stage instead, when it can.
+            fineweb_dir, short = fineweb_source(c, args.data_dir,
+                                                target * (args.gbs or GBS) * SEQ_LEN)
+            if short:
+                print(f"  skip [data undersized]: {exp} — {short}")
+                continue
             # A run started on another checkpoint grid (aromanou's 1B cells: every
             # 2287 to 45740) must not be resumed from this checkout, which would
             # save every save_interval(target) from here on: the run ends on no
@@ -1134,19 +1145,21 @@ def main() -> None:
         else:
             print("(auto-evals already watching)")
 
-    # Refresh the training-side figures (plan, simple, detailed) and the
-    # generated grid block in README.md / the plan doc. plan_table and
-    # sync_docs are derived from the constants in THIS file, so a grid edit
-    # reaches the docs on the next launch instead of leaving stale numbers
-    # behind. eval_progress.png is NOT redrawn here: it tracks the eval state
-    # the auto-eval watcher changes, so the watcher refreshes it each pass.
-    # Best-effort: a plotting problem must never fail a submission.
+    # Refresh the training-side figures (plan, simple, detailed), the generated
+    # grid block in README.md / the plan doc and the 1B/1.7B status table.
+    # plan_table and sync_docs are derived from the constants in THIS file, so
+    # a grid edit reaches the docs on the next launch instead of leaving stale
+    # numbers behind. eval_progress.png is NOT redrawn here: it tracks the eval
+    # state the auto-eval watcher changes, so the watcher refreshes it each
+    # pass. Best-effort: a plotting problem must never fail a submission.
     if args.platform == "cscs" and not args.dry_run:
         try:
-            from pretrain_progress import plan_table, sync_docs, update_plots
+            from pretrain_progress import (large_rung_status, plan_table,
+                                           sync_docs, update_plots)
             update_plots()
             plan_table()
             sync_docs()
+            large_rung_status()
         except Exception as e:  # e.g. matplotlib missing off-cluster
             print(f"(progress plots not refreshed: {e})", file=sys.stderr)
 

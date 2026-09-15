@@ -826,6 +826,13 @@ def main() -> None:
                               all_languages=True)
             except Exception as e:
                 print(f"(eval progress plot not refreshed: {e})", file=sys.stderr)
+            # The 1B/1.7B status table rides along: its job states go stale
+            # within a pass, and nothing else redraws it between launches.
+            try:
+                from pretrain_progress import large_rung_status
+                large_rung_status(root=Path(args.root))
+            except Exception as e:
+                print(f"(1B/1.7B status not refreshed: {e})", file=sys.stderr)
         if not args.watch:
             break
         time.sleep(args.watch)

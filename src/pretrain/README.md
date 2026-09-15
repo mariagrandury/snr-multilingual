@@ -415,9 +415,19 @@ regardless of variant:
   settings, a seed outside that size's triple — are greyed out rather than
   drawn as permanently missing runs.
 
-All three PNGs and the generated doc blocks are refreshed automatically at
-the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
-(embedded above) is refreshed by the auto-eval watcher after every pass,
+It also writes [`pretrain_progress_1b_17b.md`](pretrain_progress_1b_17b.md),
+one table per rung for the runs that take days and several resubmissions:
+per planned 1B / 1.7B run, the FineWeb-2 file its newest training log read
+(⚠ when that is off iopsstor or differs from what a launch would pick now),
+its latest checkpoint, its running or queued job (any account) and the 12h
+jobs that still have to start — followed by one launch command per size ×
+scheme × architecture that still has incomplete runs. The auto-eval watcher
+also rewrites it after every pass, so job states stay current between
+launches.
+
+All three PNGs, the 1B/1.7B table and the generated doc blocks are refreshed
+automatically at the end of every `launch_trainings.py cscs` invocation;
+`eval_progress.png` (embedded above) is refreshed by the auto-eval watcher after every pass,
 since that is what changes the state it shows. So is
 [`eval_progress_all_languages.png`](eval_progress_all_languages.png): the
 deep scheme-A seed-1904 runs, which the watcher always evaluates in every
