@@ -44,7 +44,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, LADDER, exp_name, predictivity_cells)
-from ladder_report import EVAL_LOGS, TRAIN_LOGS  # noqa: E402
+from ladder_report import EVAL_LOGS  # noqa: E402
+from pretrain_progress import TRAIN_LOGS  # noqa: E402
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, EVAL_JOB_LOGS, auto_benchmarks, eval_languages)
 sys.path.insert(0, str(SCRIPT_DIR.parent))

@@ -42,7 +42,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from pretrain_progress import CKPT_ROOT, SIZES  # noqa: E402
+from pretrain_progress import CKPT_ROOT, SIZES, TRAIN_LOG_DIRS  # noqa: E402
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, cell_fineweb_subsets, exp_name, mix_label, run_interval,
     save_interval)
@@ -50,14 +50,8 @@ from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
 
-TRAIN_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
-                  "Megatron-LM/logs/slurm/training")
-# Every account that trains sweep cells: each one's Slurm logs land under its
-# own scratch (`%u` in --output). Reading only the first dropped aromanou's 1B
-# cells from every loss curve and from the 1B point of the scaling fits. Eval
-# and BPB results need no such list: every account writes them to EVAL_LOGS.
-TRAIN_LOG_DIRS = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/"))
-                  for u in ("mariagrandury", "aromanou")]
+# Training logs come from every account's TRAIN_LOG_DIRS (pretrain_progress);
+# eval and BPB results need no such list: every account writes them here.
 EVAL_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
                  "Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr")
 
