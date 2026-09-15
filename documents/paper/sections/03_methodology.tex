@@ -1,0 +1,98 @@
+\section{Methodology}
+\label{sec:methodology}
+
+We extend the Signal and Noise framework of \citet{heineman_signal_2025} from English to multilingual language model development. We first define decision accuracy (DA) as whether benchmark rankings transfer from smaller to larger models. We propose the signal-to-noise ratio (SNR) as a proxy for decision accuracy, and present multiple possible definitions for signal and noise. We then enumerate the models used to compute the correlations between DA and SNR, and the benchmark suite.
+
+\subsection{Decision Accuracy}
+\label{subsec:methodology-da}
+
+Decision accuracy (DA) measures whether the ranking induced by small proxy models matches the ranking of larger target models on a benchmark. We define it as
+\begin{equation}
+\text{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b) \in \mathcal{P}} \mathbb{1}\big[\text{sign}(B(s_a) - B(s_b)) = \text{sign}(B(m_a) - B(m_b))\big]
+\end{equation}
+where $\mathcal{P}$ is a set of model pairs, $s_a$ is the small proxy model trained with characteristic $a$, $m_a$ is the corresponding target model, and $B(\cdot)$ returns the benchmark score. A higher DA means rankings observed at small scale transfer reliably to large scale, and therefore that the benchmark can guide development decisions.
+
+\textbf{Pretraining DA.} For pretraining, we propose two variants. DA by size compares models from the same family across two sizes, for example 1B and 8B parameters. DA by checkpoint compares intermediate checkpoints of a single model, taken at 10\%, 33\%, 66\%, or 100\% of training in terms of FLOPS.
+
+%\textbf{Post-training DA.} For post-training, we also propose two variants. Cross-context DA measures whether short-context scores preserve recipe rankings after context extension. Cross-stage DA measures whether checkpoint scores preserve rankings across the SFT, DPO, and RLVR stages.
+
+\textbf{From DA to SNR.} Decision accuracy is expensive to compute, since it requires evaluating the larger target models. We therefore search for cheaper benchmark statistics whose values correlate with DA, computed at the benchmark level and at the sample level, for each language and each stage. The next subsection introduces the candidates.
+
+\subsection{Signal and Noise}
+\label{subsec:methodology-snr}
+
+The signal-to-noise ratio (SNR) summarizes a benchmark's reliability as the ratio between signal, how well a benchmark separates models of similar compute, and noise, the variability in scores across training checkpoints or stochastic runs. 
+% for posttraining: signal, the variance of mean scores across recipes, and noise, the variance across checkpoints and seeds for a fixed recipe.
+We define it as
+\begin{equation}
+\text{SNR} = \frac{\text{Signal}}{\text{Noise}}.
+\end{equation}
+A higher SNR means score differences across models are large relative to the benchmark's intrinsic variability. The framework is not tied to a particular signal or noise definition, so we evaluate several candidates and select the pair with the strongest empirical correlation to DA.
+
+\textbf{Signal candidates.} Given the final checkpoints of training runs at similar compute $C_\text{final}$, we consider five candidate signal definitions to capture a different notion of how spread out model scores are. Variance is the average squared distance from the mean. Mean distance is the average pairwise distance between points. Relative standard deviation is the standard deviation divided by the mean. Star discrepancy is the largest difference between any point and the uniform distribution. Dispersion is the largest pairwise distance,
+\begin{equation}
+\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|.
+\end{equation}
+
+\textbf{Noise candidates.} We consider four sources of noise that the framework can in principle account for. Seed noise is the the standard deviation of the final checkpoint across training runs with different random seeds. Data order noise is the equivalent across runs that vary the order of training documents. Total variation is the average change in metric score across training checkpoints minus an improvement term. Checkpoint-to-checkpoint noise is proposed by \citet{heineman_signal_2025} as a proxy when the first three are too expensive to estimate at large scale and depends only on the final $n$ training checkpoints:
+\begin{equation}
+\text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
+\end{equation}
+%All four require access to multiple training runs or intermediate checkpoints, which limits their applicability to external models.
+We propose a fifth noise definition, computable from a single evaluation run on any public model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
+\begin{equation}
+\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
+\end{equation}
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. The fold scores are obtained by partitioning the stored per-question outputs of a single evaluation run, so no inference is repeated and no intermediate checkpoints are needed. This makes the framework applicable to any model with public scores.
+
+
+\subsection{Models}
+\label{subsec:methodology-models}
+
+We pretrain XX small models across six scales, 90M, 175M, 350M, 600M, 1B, and 1.7B non-embedding parameters, using XX English/multilingual data mixtures ... We extend the analysis to 8B and 70B models by considering open-source models with available intermediate checkpoints.
+
+\textbf{Custom proxy models.} 
+All models follow a decoder-only transformer architecture with grouped query attention, rotary positional embeddings (RoPE) \citep{su_roformer_2023} and XiELU as the activation function \citep{huang_xielu_2025}. The architecture scales by jointly increasing depth, model dimension, and number of attention heads while keeping the KV head ratio fixed at 1/4. All models are trained on approximately 100B tokens drawn from FineEdu-DCLM and FineWeb2 \citep{penedo_fineweb_2024}, with a shared vocabulary of 131,072 tokens. Since this vocabulary size places a large fraction of parameters in the embeddings at these scales, we tie input and output embeddings. Training is done in BF16 mixed precision using Megatron-LM \citep{shoeybi_megatron-lm_2019}.
+
+
+\textbf{Data mixtures.} We construct 3 mixtures by varying the ratio of English to multilingual data, namely 90/10, 60/40, and 30/70. The English component comes from FineWeb-Edu \citep{lozhkov_fineweb-edu_2024} filtered through the DCLM pipeline \citep{li_datacomp-lm_2025}. The multilingual component is drawn from FineWeb2 \citep{penedo_fineweb2_2025} using the Apertus high-quality filter \citep{messmer_enhancing_2026}, covering the top 200 languages and preserving the original language distribution of the corpus.
+
+\textbf{Open-source models.} We extend the analysis to larger scales and later training stages with three open-source multilingual model families (Apertus \citep{apertus_apertus_2025}, SmolLM3 \citep{bakouch_smollm3_2025}, and OLMo3 \citep{olmo_olmo_2025}) with intermediate checkpoints across post-training stages and sizes from 0.6B to 8B.
+%For pretraining, we add Apertus 1B, 3B, and 8B base. For mid-training, we include SmolLM3 3B Base, OLMo3 7B Base, and Apertus 8B and 70B base. For post-training, Apertus 0.6B and 1.7B distilled and distilled SFT, SmolLM3 3B Instruct, OLMo3 7B SFT, DPO, and Instruct (RLVR), and Apertus 8B and 70B Instruct.
+
+
+\subsection{Benchmarks}
+\label{subsec:methodology-benchmarks}
+
+\textbf{Languages.} We evaluate on a selection of 12 languages that balances typological breadth with benchmark availability (Table \ref{tab:languages}).
+%Following the resource taxonomy of \citet{joshi-etal-2020-language-resources},
+We include languages from across the resource spectrum, %, from high -resource (English, Spanish, Russian, Chinese, Japanese, Arabic) through mid-resource (Hindi, Turkish, Vietnamese) to lower-resource (Swahili, Basque).
+covering seven language families and one language isolate \citep{campbell_language_2010},
+%: Indo-European with four branches (Germanic, Romance, Slavic, Indo-Aryan), Sino-Tibetan, Japonic, Afro-Asiatic, Turkic, Niger-Congo, Austroasiatic, and Basque.
+six writing systems, % are represented
+%: Latin, Cyrillic, Han, Devanagari, Arabic, and Japanese mixed scripts
+%The set also covers
+and typological features that stress tokenization and modeling \citep{petrov_language_2023, ahia_all_2023, limisiewicz_tokenization_2023}.
+%\citet{petrov2023tokenizersunfairness} and \citet{ahia-etal-2023-tokenization-cost} show that the same content can require many more tokens in some languages than in others.
+%, with differences of up to 15 times across the languages of the FLORES-200 benchmark CITE.
+%This gap is largest for non-Latin scripts and for morphologically rich languages, and it directly affects training compute, context length, and inference cost. \citet{limisiewicz-etal-2023-tokenization-vocabulary} further show that vocabulary allocation and overlap across languages systematically influence downstream task performance. Our set covers the main axes along which these effects vary: agglutinative morphology (Turkish, Basque), absence of explicit word boundaries (Chinese, Japanese), root-and-pattern morphology (Arabic), tonal systems (Chinese, Vietnamese), and noun-class agreement (Swahili). Basque, as a language isolate \citet{Campbell2010LanguageIsolates}, gives a clean diagnostic case in which transfer from typologically related high-resource languages is not available.
+
+
+%We intentionally select benchmarks that are widely adopted in the evaluation of each training stage.
+\textbf{Benchmark suite.} We evaluate pretraining benchmarks covering several capabilities:
+world knowledge, reading comprehension, natural language inference, commonsense reasoning (decomposed into physical, narrative, and activity-based variants), grammatical acceptability, and truthfulness \citep{conneau_xnli_2018, bandarkar_belebele_2024, zellers_hellaswag_2019}. 
+%World knowledge is measured with Global MMLU \citep{singh2024globalmmluunderstandingaddressing} and the multilingual MMLU and ARC of the Okapi suite \citep{}; reading comprehension with Belebele \citep{bandarkar-etal-2024-belebele}; and natural language inference with XNLI \citep{conneau-etal-2018-xnli}. For commonsense reasoning we use three complementary benchmarks: Global PIQA for physical commonsense, XStoryCloze for narrative commonsense \citep{}, and the multilingual HellaSwag for activity-based commonsense CITE. Truthfulness is measured with the multilingual TruthfulQA \citep{}, and mathematical reasoning with MGSM in its direct (no chain-of-thought) variant CITE, the form usable on pretrained models that do not yet produce reliable chain-of-thought outputs. Grammatical acceptability is measured with MultiBLiMP \citep{}. The combination of capabilities is intentional: grammatical acceptability emerges early in pretraining and provides signal at small model scales, while knowledge and mathematical reasoning emerge later and discriminate larger models.
+% - add egyhellaswag?
+% - turkishmmlu?
+The mid-training suite reuses some pretraining benchmarks and focuses on regional knowledge, reasoning capabilities, including math, code, and long-context tasks \citep{singh_global_2024,romanou_include_2024,shi_language_2022}.
+The post-training suite considers reasoning, code, and adds instruction-following, bias, and safety benchmarks \citep{zhang_p-mmeval_2025, dussolle_m-ifeval_2025, nangia_crows-pairs_2020}. Table \ref{tab:benchmarks} shows the language coverage of the benchmarks.
+%The multilingual benchmark suite covers reasoning (ARC Multilingual, CITE), math (MGSM CoT, CITE), logical reasoning (MLogiQA, CITE), instruction following (MIFEval, CITE), regional knowledge (Global MMLU, CITE; INCLUDE, CITE), and truthfulness (TruthfulQA, CITE).
+%- arc multilingual (reasoning, MCQA)
+%- global\_mmlu\_gen\_0shot (regional knowledge, MCQA)
+%- mgsm\_en\_cot (math, generative)
+%- include\_base\_44\_gen\_0shot (regional knowledge, MCQA)
+%- mlogiqa\_gen
+%- multi-if (instruction following, gen)
+%- truthfulqa\_multilingual\_mc2 (MCQA)
+%Given the scarcity of post-training multilingual benchmarks, we will also consider English-centric benchmarks like ... 
+

@@ -1,0 +1,138 @@
+\section{Languages, benchmarks, and models}
+
+\begin{table*}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Language selection. We cover 8 language families plus one isolate, 7 writing systems, and high to low-resource.}
+\label{tab:languages}
+\begin{tabular}{lllll}
+\toprule
+Code & Language & Family & Script & Resource \\
+\midrule
+en & English & Indo-European, Germanic & Latin & High \\
+es & Spanish & Indo-European, Romance & Latin & High \\
+ru & Russian & Indo-European, Slavic & Cyrillic & High \\
+hi & Hindi & Indo-European, Indo-Aryan & Devanagari & Mid \\
+zh & Mandarin Chinese & Sino-Tibetan & Han & High \\
+ja & Japanese & Japonic & Kanji and Kana & High \\
+ar & Modern Std. Arabic & Afro-Asiatic, Semitic & Arabic & High \\
+vi & Vietnamese & Austroasiatic, Vietic & Latin & Mid \\
+tr & Turkish & Turkic & Latin & Mid \\
+th & Thai & Tai-Kadai & Thai & Mid \\
+sw & Swahili & Niger-Congo, Bantu & Latin & Low \\
+eu & Basque & Isolate & Latin & Low \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Benchmark suite.}
+\label{tab:benchmarks}
+\begin{tabular}{llcccccccccccc}
+\toprule
+Benchmark & Capability & en & es & ru & hi & zh & ja & ar & vi & tr & th & sw & eu \\
+\midrule
+\texttt{arc} & scientific knowledge & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark \\
+\texttt{belebele} & reading comprehension & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\texttt{global\_mmlu\_full} & world knowledge & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark &  \\
+\texttt{global\_piqa} & physical commonsense & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  \\
+\texttt{hellaswag} & activity commonsense & \checkmark & \checkmark & \checkmark & \checkmark &  &  & \checkmark & \checkmark &  &  &  & \checkmark \\
+\texttt{include\_base\_44} & regional knowledge &  & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark & \checkmark &  &  & \checkmark \\
+\texttt{mlqa} & cross-lingual QA & \checkmark & \checkmark &  & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  &  \\
+\texttt{multiblimp} & grammatical acceptability & \checkmark & \checkmark & \checkmark & \checkmark &  &  & \checkmark &  & \checkmark &  &  & \checkmark \\
+\texttt{paws} & paraphrase detection & \checkmark & \checkmark &  &  & \checkmark & \checkmark &  &  &  &  &  & \checkmark \\
+\texttt{truthfulqa} & truthfulness &  & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark \\
+\texttt{xcopa} & causal commonsense &  &  &  &  & \checkmark &  &  & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\texttt{xnli} & natural language inference & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\texttt{xstorycloze} & narrative commonsense & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark &  &  &  & \checkmark & \checkmark \\
+\texttt{xwinograd} & coreference resolution & \checkmark &  & \checkmark &  & \checkmark & \checkmark &  &  &  &  &  &  \\
+\texttt{mgsm\_direct} & mathematical reasoning & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark & \checkmark & \checkmark \\
+\texttt{mgsm\_native\_cot} & mathematical reasoning & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark & \checkmark &  \\
+\texttt{multi-if} & instruction following &  &  &  &  &  &  &  &  &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+
+\begin{table*}
+\tiny
+\centering
+\caption{Coverage of the \texttt{external} model set: 68 open-source models.}
+\begin{tabular}{llrrr}
+\toprule
+Model & Size & Ckpts & Tasks & Families \\
+\midrule
+\texttt{gemma-3-270m} & 270M & 1 & 1006 & 30 \\
+\texttt{gemma-3-270m-it} & 270M & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0425-1B} & 1B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0425-1B-DPO} & 1B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0425-1B-Instruct} & 1B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0425-1B-SFT} & 1B & 1 & 1006 & 30 \\
+\texttt{apertus-1b-from8b-TOP256-long} & 1B & 10 & 1006 & 30 \\
+\texttt{apertus3-1b-21-nodes} & 1B & 18 & 1006 & 30 \\
+\texttt{gemma-3-1b-it} & 1B & 1 & 1021 & 30 \\
+\texttt{gemma-3-1b-pt} & 1B & 1 & 1006 & 30 \\
+\texttt{Qwen3-1.7B} & 1.7B & 1 & 1026 & 30 \\
+\texttt{Qwen3-1.7B-Base} & 1.7B & 1 & 1006 & 30 \\
+\texttt{SmolLM3-3B} & 3B & 1 & 1026 & 30 \\
+\texttt{SmolLM3-3B-checkpoints} & 3B & 26 & 1246 & 38 \\
+\texttt{apertus3-3b-64-nodes} & 3B & 13 & 1006 & 30 \\
+\texttt{tiny-aya-base} & 3B & 1 & 1006 & 30 \\
+\texttt{tiny-aya-earth} & 3B & 1 & 1006 & 30 \\
+\texttt{tiny-aya-fire} & 3B & 1 & 1006 & 30 \\
+\texttt{tiny-aya-global} & 3B & 1 & 1006 & 30 \\
+\texttt{tiny-aya-water} & 3B & 1 & 1006 & 30 \\
+\texttt{Qwen3-4B} & 4B & 1 & 1026 & 30 \\
+\texttt{Qwen3-4B-Base} & 4B & 1 & 1006 & 30 \\
+\texttt{gemma-3-4b-it} & 4B & 1 & 1006 & 30 \\
+\texttt{gemma-3-4b-pt} & 4B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-7B} & 7B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-7B-DPO} & 7B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-7B-Instruct} & 7B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-7B-SFT} & 7B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-1025-7B} & 7B & 16 & 1070 & 34 \\
+\texttt{Olmo-3-7B-Instruct} & 7B & 1 & 1021 & 30 \\
+\texttt{Olmo-3-7B-Instruct-DPO} & 7B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-7B-Instruct-SFT} & 7B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-7B-Think} & 7B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-7B-Think-DPO} & 7B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-7B-Think-SFT} & 7B & 1 & 1006 & 30 \\
+\texttt{Apertus-8B-2509} & 8B & 14 & 1070 & 34 \\
+\texttt{Apertus-8B-Instruct-2509} & 8B & 1 & 1021 & 30 \\
+\texttt{Qwen3-8B} & 8B & 1 & 1026 & 30 \\
+\texttt{Qwen3-8B-Base} & 8B & 1 & 1006 & 30 \\
+\texttt{aya-expanse-8b} & 8B & 1 & 1026 & 30 \\
+\texttt{gemma-3-12b-it} & 12B & 1 & 1006 & 30 \\
+\texttt{gemma-3-12b-pt} & 12B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-13B} & 13B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-13B-DPO} & 13B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-13B-Instruct} & 13B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-1124-13B-SFT} & 13B & 1 & 1006 & 30 \\
+\texttt{Qwen3-14B} & 14B & 1 & 1026 & 30 \\
+\texttt{Qwen3-14B-Base} & 14B & 1 & 1006 & 30 \\
+\texttt{gemma-3-27b-it} & 27B & 1 & 1006 & 30 \\
+\texttt{gemma-3-27b-pt} & 27B & 1 & 1006 & 30 \\
+\texttt{Qwen3-30B-A3B} & 30B-A3B & 1 & 1026 & 30 \\
+\texttt{OLMo-2-0325-32B} & 32B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0325-32B-DPO} & 32B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0325-32B-Instruct} & 32B & 1 & 1006 & 30 \\
+\texttt{OLMo-2-0325-32B-SFT} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-1125-32B} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-32B-Think} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-32B-Think-DPO} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3-32B-Think-SFT} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3.1-32B-Instruct} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3.1-32B-Instruct-DPO} & 32B & 1 & 1006 & 30 \\
+\texttt{Olmo-3.1-32B-Instruct-SFT} & 32B & 1 & 1006 & 30 \\
+\texttt{aya-expanse-32b} & 32B & 1 & 1026 & 30 \\
+\texttt{Apertus-70B-2509} & 70B & 1 & 1006 & 30 \\
+\texttt{Qwen3-0.6B} & 600M & 1 & 1026 & 30 \\
+\texttt{Qwen3-0.6B-Base} & 600M & 1 & 1006 & 30 \\
+\texttt{apertus-0.6b-from8b-TOP256-long} & 600M & 10 & 1006 & 30 \\
+\bottomrule
+\end{tabular}
+\end{table*}
