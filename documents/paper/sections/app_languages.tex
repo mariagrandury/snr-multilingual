@@ -1,138 +1,22 @@
-\section{Languages, benchmarks, and models}
+\section{Languages and benchmark coverage}
+\label{app:languages}
 
-\begin{table*}[ht]
-\centering
-\small
-\setlength{\tabcolsep}{5pt}
-\caption{Language selection. We cover 8 language families plus one isolate, 7 writing systems, and high to low-resource.}
-\label{tab:languages}
-\begin{tabular}{lllll}
-\toprule
-Code & Language & Family & Script & Resource \\
-\midrule
-en & English & Indo-European, Germanic & Latin & High \\
-es & Spanish & Indo-European, Romance & Latin & High \\
-ru & Russian & Indo-European, Slavic & Cyrillic & High \\
-hi & Hindi & Indo-European, Indo-Aryan & Devanagari & Mid \\
-zh & Mandarin Chinese & Sino-Tibetan & Han & High \\
-ja & Japanese & Japonic & Kanji and Kana & High \\
-ar & Modern Std. Arabic & Afro-Asiatic, Semitic & Arabic & High \\
-vi & Vietnamese & Austroasiatic, Vietic & Latin & Mid \\
-tr & Turkish & Turkic & Latin & Mid \\
-th & Thai & Tai-Kadai & Thai & Mid \\
-sw & Swahili & Niger-Congo, Bantu & Latin & Low \\
-eu & Basque & Isolate & Latin & Low \\
-\bottomrule
-\end{tabular}
-\end{table*}
+Table~\ref{tab:app-languages} lists the 99 FineWeb-2 languages of the sweep with the language setting at which each enters the scheme-A and scheme-B lists, and the number of benchmark families the harness offers for it. The scheme-A lists are the top $L-1$ FineWeb-2 subsets by training-split bytes, nested across settings; scheme B reorders the top 49 so that each script, then each family, is covered first, and coincides with scheme A at $L \geq 50$. The table is generated from the language-set files and the task registry of the released code.
 
-\begin{table*}[ht]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\caption{Benchmark suite.}
-\label{tab:benchmarks}
-\begin{tabular}{llcccccccccccc}
-\toprule
-Benchmark & Capability & en & es & ru & hi & zh & ja & ar & vi & tr & th & sw & eu \\
-\midrule
-\texttt{arc} & scientific knowledge & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark \\
-\texttt{belebele} & reading comprehension & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-\texttt{global\_mmlu\_full} & world knowledge & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark &  \\
-\texttt{global\_piqa} & physical commonsense & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  \\
-\texttt{hellaswag} & activity commonsense & \checkmark & \checkmark & \checkmark & \checkmark &  &  & \checkmark & \checkmark &  &  &  & \checkmark \\
-\texttt{include\_base\_44} & regional knowledge &  & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark & \checkmark &  &  & \checkmark \\
-\texttt{mlqa} & cross-lingual QA & \checkmark & \checkmark &  & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  &  \\
-\texttt{multiblimp} & grammatical acceptability & \checkmark & \checkmark & \checkmark & \checkmark &  &  & \checkmark &  & \checkmark &  &  & \checkmark \\
-\texttt{paws} & paraphrase detection & \checkmark & \checkmark &  &  & \checkmark & \checkmark &  &  &  &  &  & \checkmark \\
-\texttt{truthfulqa} & truthfulness &  & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark \\
-\texttt{xcopa} & causal commonsense &  &  &  &  & \checkmark &  &  & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-\texttt{xnli} & natural language inference & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-\texttt{xstorycloze} & narrative commonsense & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &  & \checkmark &  &  &  & \checkmark & \checkmark \\
-\texttt{xwinograd} & coreference resolution & \checkmark &  & \checkmark &  & \checkmark & \checkmark &  &  &  &  &  &  \\
-\texttt{mgsm\_direct} & mathematical reasoning & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark & \checkmark & \checkmark \\
-\texttt{mgsm\_native\_cot} & mathematical reasoning & \checkmark & \checkmark & \checkmark &  & \checkmark & \checkmark &  &  &  & \checkmark & \checkmark &  \\
-\texttt{multi-if} & instruction following &  &  &  &  &  &  &  &  &  &  &  &  \\
-\bottomrule
-\end{tabular}
-\end{table*}
+\input{sections/app_tables_generated}
 
+\label{app:benchmark-coverage}
+\textbf{Coverage.} Every trained language is covered by at least one benchmark family, and English by twelve. Eighteen languages have exactly one family and fifteen have two; the languages with a single family are covered by Belebele or Global PIQA alone, and for those the per-language benchmark read rests on one task. Counting tasks rather than families, a cell is evaluated on 13 tasks at $L=1$, 23 at $L=2$, 86 at $L=8$, 148 at $L=15$, 233 at $L=30$, 329 at $L=50$ and 446 at $L=100$. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness; re-enabling them would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.
 
-\begin{table*}
-\tiny
-\centering
-\caption{Coverage of the \texttt{external} model set: 68 open-source models.}
-\begin{tabular}{llrrr}
-\toprule
-Model & Size & Ckpts & Tasks & Families \\
-\midrule
-\texttt{gemma-3-270m} & 270M & 1 & 1006 & 30 \\
-\texttt{gemma-3-270m-it} & 270M & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0425-1B} & 1B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0425-1B-DPO} & 1B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0425-1B-Instruct} & 1B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0425-1B-SFT} & 1B & 1 & 1006 & 30 \\
-\texttt{apertus-1b-from8b-TOP256-long} & 1B & 10 & 1006 & 30 \\
-\texttt{apertus3-1b-21-nodes} & 1B & 18 & 1006 & 30 \\
-\texttt{gemma-3-1b-it} & 1B & 1 & 1021 & 30 \\
-\texttt{gemma-3-1b-pt} & 1B & 1 & 1006 & 30 \\
-\texttt{Qwen3-1.7B} & 1.7B & 1 & 1026 & 30 \\
-\texttt{Qwen3-1.7B-Base} & 1.7B & 1 & 1006 & 30 \\
-\texttt{SmolLM3-3B} & 3B & 1 & 1026 & 30 \\
-\texttt{SmolLM3-3B-checkpoints} & 3B & 26 & 1246 & 38 \\
-\texttt{apertus3-3b-64-nodes} & 3B & 13 & 1006 & 30 \\
-\texttt{tiny-aya-base} & 3B & 1 & 1006 & 30 \\
-\texttt{tiny-aya-earth} & 3B & 1 & 1006 & 30 \\
-\texttt{tiny-aya-fire} & 3B & 1 & 1006 & 30 \\
-\texttt{tiny-aya-global} & 3B & 1 & 1006 & 30 \\
-\texttt{tiny-aya-water} & 3B & 1 & 1006 & 30 \\
-\texttt{Qwen3-4B} & 4B & 1 & 1026 & 30 \\
-\texttt{Qwen3-4B-Base} & 4B & 1 & 1006 & 30 \\
-\texttt{gemma-3-4b-it} & 4B & 1 & 1006 & 30 \\
-\texttt{gemma-3-4b-pt} & 4B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-7B} & 7B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-7B-DPO} & 7B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-7B-Instruct} & 7B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-7B-SFT} & 7B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-1025-7B} & 7B & 16 & 1070 & 34 \\
-\texttt{Olmo-3-7B-Instruct} & 7B & 1 & 1021 & 30 \\
-\texttt{Olmo-3-7B-Instruct-DPO} & 7B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-7B-Instruct-SFT} & 7B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-7B-Think} & 7B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-7B-Think-DPO} & 7B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-7B-Think-SFT} & 7B & 1 & 1006 & 30 \\
-\texttt{Apertus-8B-2509} & 8B & 14 & 1070 & 34 \\
-\texttt{Apertus-8B-Instruct-2509} & 8B & 1 & 1021 & 30 \\
-\texttt{Qwen3-8B} & 8B & 1 & 1026 & 30 \\
-\texttt{Qwen3-8B-Base} & 8B & 1 & 1006 & 30 \\
-\texttt{aya-expanse-8b} & 8B & 1 & 1026 & 30 \\
-\texttt{gemma-3-12b-it} & 12B & 1 & 1006 & 30 \\
-\texttt{gemma-3-12b-pt} & 12B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-13B} & 13B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-13B-DPO} & 13B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-13B-Instruct} & 13B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-1124-13B-SFT} & 13B & 1 & 1006 & 30 \\
-\texttt{Qwen3-14B} & 14B & 1 & 1026 & 30 \\
-\texttt{Qwen3-14B-Base} & 14B & 1 & 1006 & 30 \\
-\texttt{gemma-3-27b-it} & 27B & 1 & 1006 & 30 \\
-\texttt{gemma-3-27b-pt} & 27B & 1 & 1006 & 30 \\
-\texttt{Qwen3-30B-A3B} & 30B-A3B & 1 & 1026 & 30 \\
-\texttt{OLMo-2-0325-32B} & 32B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0325-32B-DPO} & 32B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0325-32B-Instruct} & 32B & 1 & 1006 & 30 \\
-\texttt{OLMo-2-0325-32B-SFT} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-1125-32B} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-32B-Think} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-32B-Think-DPO} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3-32B-Think-SFT} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3.1-32B-Instruct} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3.1-32B-Instruct-DPO} & 32B & 1 & 1006 & 30 \\
-\texttt{Olmo-3.1-32B-Instruct-SFT} & 32B & 1 & 1006 & 30 \\
-\texttt{aya-expanse-32b} & 32B & 1 & 1026 & 30 \\
-\texttt{Apertus-70B-2509} & 70B & 1 & 1006 & 30 \\
-\texttt{Qwen3-0.6B} & 600M & 1 & 1026 & 30 \\
-\texttt{Qwen3-0.6B-Base} & 600M & 1 & 1006 & 30 \\
-\texttt{apertus-0.6b-from8b-TOP256-long} & 600M & 10 & 1006 & 30 \\
-\bottomrule
-\end{tabular}
-\end{table*}
+\section{The smallest rung of the ladder}
+\label{app:90m-rung}
+
+A ladder is only as good as its span: the bottom rung sets the left-hand anchor of every scaling fit, and a displaced anchor tilts the fitted slope across the whole range. We therefore examined the 90M rung before using it, and found that it does not lie on the curve traced by the larger rungs.
+
+\textbf{The failure.} Nine of the ten completed 90M runs diverge: each reaches its best training loss between 15\% and 19\% of the way through training and then degrades monotonically for the remaining four fifths, ending between 1.2 and 1.9 nats worse than its own best. No larger rung shows this. The 175M runs take at most a single loss spike and recover; the 350M and 600M runs reach their best loss after more than 90\% of training, as expected under a warmup-stable-decay schedule. This is not overfitting, since every run is single-epoch, and it is not a capacity floor, since a capacity-limited model converges to a poor loss and stays there, whereas these models reach roughly 4.4 nats, against a value near 3.5 implied by extrapolating the larger rungs, and then get worse. Held-out evidence confirms the degradation is real: bits per byte on the disjoint validation set rises with training on every language we checked (English 1.68 to 1.95, Russian 1.17 to 1.45 between 10\% and 100\% of training).
+
+\textbf{What it is not.} We trained the 90M rung at three learning rates spanning a factor of nearly five, down to a value well below the compute-based law's prescription; all three diverge with the same signature within the first quarter of training. We retrained it at one half and one sixth of the global batch, keeping the number of optimizer steps fixed; both diverge like the original, after 16 to 17\% of their steps, having seen 1.92B, 0.81B and 0.25B tokens. The failure follows optimizer steps, not tokens, gradient noise or a defect at some position in the data.
+
+\textbf{What it is.} We train with AdEMAMix, whose slow exponential moving average of past gradients has a timescale of order $1/(1-\beta_3)$ steps. We held $\beta_3$ fixed across the ladder at a value whose timescale is 10,000 steps, while run lengths span 4,500 steps at 90M to 81,000 at 1.7B, because each rung trains a budget proportional to its own parameter count. The 90M run is less than half the optimizer's averaging window: the slow average remains dominated by gradients from early training and is applied with a large multiplier throughout. The ordering of steps over timescale (0.45, 0.85, 1.7, 2.9, 4.6, 8.1 from 90M to 1.7B) matches the ordering of the observed severity exactly. In a control run at 90M with $\beta_3$ set so that the timescale is one fifth of the run, changing nothing else, the divergence disappears: the drift from best to final loss falls from $+1.38$ to $+0.03$ nats and the final loss improves by 2.99 nats, 1.60 nats better than the uncorrected run's own best. The same correction at 175M lowers its final loss by 0.31 nats and removes its loss spike, so the effect reaches the second rung too, which had never visibly diverged. Whether it reaches 350M, at 1.7 timescales, is untested; until it is, the ladder's absolute losses at 350M and below are upper bounds on those architectures' loss.
+
+\textbf{Treatment.} The 90M rung is excluded from every scaling fit as a rung whose optimizer configuration is known to be mismatched to its run length, a documented and reproducible training defect, and not as an unexplained outlier; the one 90M run that stays under the divergence threshold (the shallow run at $L=2$) is kept by the loader and flagged as off-trend. Correcting the whole ladder would require retraining every rung, since the correction changes the optimizer at all of them, which was outside the compute budget of this study. We note it as a recommendation for future ladders: express every optimizer timescale as a fraction of the run, not as a fixed number of steps. Auditing the configuration against that rule, three further constants are written in steps: the second-moment decay (a 1,000-step timescale, 22\% of the shortest run and 1\% of the longest), the first-moment decay (10 steps, negligible everywhere), and decoupled weight decay, which applies once per step and therefore shrinks the largest rung 18 times more in total than the smallest. None is implicated in the divergence, and we did not vary them.

@@ -1,122 +1,102 @@
+% Every number in this section is produced by documents/paper/figures/make_rq_figures.py
+% from the ladder report of 16 September 2026 (120 cells, 107 complete, 98 healthy after
+% the loader drops diverged runs), plus the rq00/rq01/rq02 tables of run_all_predictivity.sh.
+% The per-figure CSVs and rq_facts.json next to the figures carry the exact values.
 \section{Analysis}
 \label{sec:results}
 
-We organize the analysis around four questions, namely which benchmarks provide signal on small multilingual models (\ref{subsec:exp-da}), which SNR definition best predicts decision accuracy (\ref{subsec:exp-snr-da}), whether the resulting ranking generalizes across seeds and model suites (\ref{subsec:exp-generalization}), and whether benchmark subsets and design choices can improve reliability (\ref{subsec:exp-benchmark-design}).
+We organize the analysis around five questions. Which benchmarks scale predictably (\S\ref{subsec:rq1}); how early in scale and in training a design decision can be read (\S\ref{subsec:rq2}); whether a cheap statistic can tell us in advance that the decision will be reliable (\S\ref{subsec:rq3}); whether the answers depend on the design choice being made (\S\ref{subsec:rq4}); and whether they transfer to languages we never measured (\S\ref{subsec:rq5}). Each subsection opens with the finding, then states the setup and the evidence.
 
-\subsection{Calculation of Decision Accuracy}
-\label{subsec:exp-da}
+\textbf{What the ladder contains.} The analysis reads 98 healthy cells: 24 at 175M, 18 at 350M, 24 at 600M, 19 at 1B and 12 at 1.7B, plus the one 90M run that did not diverge. Every cell is scored on all 100 validation languages. A design decision is read against the largest size trained at both of its levels with a final-checkpoint score, which is 1.7B for the language-list decision at $L \in \{8, 30\}$ and 1B at $L=15$, and 600M for the depth decision at $L \geq 2$, because the shallow 1.7B cells have not yet been scored on bits per byte at their final checkpoint. Every value below is reported with the reference it resolves against.
 
-\textbf{Checkpoint selection.} For each custom and open-source model, we evaluate 10 evenly spaced checkpoints across training and 5 additional checkpoints in the final 10\% of training FLOPS. This schedule captures both the long-range trajectory and the late-training variation.
+\textbf{The above-random gate.} A (benchmark, size) cell enters a benchmark analysis only if its mean score beats chance by 0.05, with chance taken from the task's option count. Of the 462 tasks that have a chance level, 114 clear it at some size and 348 never do. The gate opens with size: 3 tasks clear it at 90M, 62 at 175M, 72 at 350M, 87 at 600M, 99 at 1B and 112 at 1.7B. Bits per byte has no chance level and is never gated.
 
-\textbf{The above-random gate.} Before computing DA or SNR, we filter (benchmark, size) cells whose mean score does not exceed the random baseline by at least 5 points. Figure~\ref{fig:gate} illustrates the two regimes. Of 118 benchmarks\footnote{Since we analyze results by language, we consider each language subset as a different benchmark (i.e. \texttt{hellaswag\_es} and \texttt{hellaswag\_hi} are two different benchmarks.}, only 44 clear chance at one or more custom model sizes, and 74 are at chance everywhere. The failures are almost entirely an answer-count effect, since four-option translated knowledge tasks sit at chance across all custom sizes while two-option tasks clear the gate. Notably, the three benchmarks that separate the data mixtures most are exactly the ones the gate removes. Their apparent signal is variation around chance, not capability. This shows that raw score separation cannot guide benchmark selection on its own.
+\subsection{RQ1: What scales predictably?}
+\label{subsec:rq1}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.7\textwidth]{figures/fig1_gate.pdf}
-\caption{The above-random gate. Accuracy against training compute for the three data mixtures (colored curves) with final checkpoints marked. Left, a benchmark that clears the gate (\texttt{multiblimp}) shows scores well above the random baseline (dashed line) and consistent mixture separation.
-Right, a gated benchmark (\texttt{belebele}) fluctuates around its baseline, so any apparent separation between mixtures is noise. A (benchmark, size) cell is kept iff its mean score exceeds the baseline by 5 points.}
-\label{fig:gate}
-\end{figure}
+\textbf{TL;DR.} Completion-format benchmarks and per-language bits per byte follow a log-linear trend in model size almost exactly, with median $R^2$ above 0.9. Four-option knowledge benchmarks do not move with size at all: Global-MMLU, INCLUDE and Belebele have median $R^2$ below 0.3 and are the families the gate removes. The answer count, not the construction, separates the two groups.
 
-\textbf{Extension with external models.} Many tasks are at chance for the custom models, which are trained on 200 languages with only 100B tokens and at most 1B parameters. We therefore extend the analysis with 68 external models from 270M to 70B parameters (Appendix Table~\ref{tab:external}).
-External sizes pool into buckets so that each bucket holds at least two models, and buckets contribute to signal and decision accuracy while singleton sizes only appear on the accuracy curves. With capable models in the pool, additional benchmarks clear the gate and enter the analysis.
-
-% TODO: Figure or table showing acc vs flops and or top DA benchmarks, per DA type, and per language
-
-\textbf{Per-language reliability at small scale.} Figure~\ref{fig:reliability-map} shows the full benchmark-by-language map for the above-random benchmarks on the small pretrained models. MultiBLiMP is the most reliable benchmark in six of eleven languages, with decision accuracy between 0.79 and 0.87, which matches the expectation that grammatical acceptability emerges early and therefore discriminates small models. Swahili retains no above-random benchmark on the custom models, so no reliable small-scale decision can be made for it at this scale. This confirms that benchmark reliability is language dependent and motivates the per-language reliability map as the practical output of the framework.
-
-\textbf{Per-language reliability at 32B.} 
-Table~\ref{tab:reliability-map} reports,
-for each language, the benchmark whose small-model rankings best transfer to large models on the external suite. For each benchmark and language we average decision accuracy over all small-to-large size pairs, with small models up to 1.7B and large models from 7B to 32B parameters. Human-translated narrative and commonsense tasks dominate. XStoryCloze is the most transferable benchmark in four languages and close behind in three more, with decision accuracy up to 0.99, while machine-translated knowledge tasks rarely lead. The most reliable benchmark differs by language, and for Swahili no benchmark exceeds 0.57, barely above a random decision. This confirms that benchmark reliability is language dependent and that a single universal benchmark choice leaves some languages effectively unmeasured.
+\textbf{Setup.} For every task and language setting we fit the final-checkpoint score of the deep, scheme-A, seed-1904 ladder against $\log_{10} N$ over the rungs from 175M to 1.7B, and record the coefficient of determination $R^2$ and the Spearman correlation $\rho$ between score and size. A fit needs at least three rungs. Bits per byte and the training loss fall as models grow, so $\rho = -1$ is their ideal. We report medians over each family's (task, $L$) fits: 3,408 fits over 568 tasks, of which 2,802 are benchmark fits. The 90M rung is excluded (\S\ref{subsec:models}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/fig3_reliability_map.pdf}
-\caption{Benchmark reliability map. Decision accuracy by checkpoint at the 1B target for every benchmark family and language. Grey cells fail the above-random gate. Practitioners can read off which benchmarks support small-scale decisions for their target languages.}
-\label{fig:reliability-map}
+\includegraphics[width=\textwidth]{figures/rq1_scaling.pdf}
+\caption{Which benchmarks scale predictably. (a) Accuracy above chance against non-embedding parameters at $L=30$, one faint line per language task and a bold line per family median, for two families that scale (MultiBLiMP, HellaSwag), one that starts to (XNLI), and two that stay at chance up to 1.7B (Belebele, Global-MMLU). (b) Median $R^2$ of the log-linear fit and median Spearman $\rho$ against size per family, with the number of (task, $L$) fits and the answer count. Bits per byte and loss fall with size, so $\rho=-1$ is correct for them.}
+\label{fig:rq1}
 \end{figure}
 
-\begin{table}[t]
-\centering
-\small
-\caption{Per-language reliability map on the external suite (68 open-source models, 270M to 70B). For each language, the benchmark with the highest decision accuracy averaged over the nine small-to-large size pairs (small $\leq$ 1.7B, large 7B to 32B). DA is the fraction of model pairs whose small-scale ranking holds at large scale.}
-\label{tab:reliability-map}
-\begin{tabular}{llclc}
-\toprule
-Lang & Top benchmark & DA & Runner-up & DA \\
-\midrule
-en & \texttt{xwinograd}         & 0.81 & \texttt{xstorycloze} & 0.76 \\
-es & \texttt{hellaswag}         & 0.97 & \texttt{xstorycloze} & 0.76 \\
-ru & \texttt{xstorycloze}       & 0.99 & \texttt{hellaswag}   & 0.95 \\
-hi & \texttt{xstorycloze}       & 0.78 & \texttt{multiblimp}  & 0.74 \\
-zh & \texttt{xstorycloze}       & 0.97 & \texttt{xcopa}       & 0.76 \\
-ja & \texttt{paws}              & 0.90 & \texttt{xwinograd}   & 0.83 \\
-ar & \texttt{xstorycloze}       & 0.98 & \texttt{xnli}        & 0.81 \\
-vi & \texttt{xcopa}             & 0.93 & \texttt{hellaswag}   & 0.73 \\
-tr & \texttt{global\_mmlu\_full}& 0.92 & \texttt{xnli}        & 0.66 \\
-th & \texttt{belebele}          & 0.90 & \texttt{xnli}        & 0.34 \\
-sw & \texttt{belebele}          & 0.57 & \texttt{xcopa}       & 0.56 \\
-eu & \texttt{hellaswag}         & 0.90 & \texttt{truthfulqa}  & 0.71 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\textbf{Results.} Figure~\ref{fig:rq1} shows a clean split. Multilingual LAMBADA ($R^2 = 0.99$), per-language bits per byte (0.95), XStoryCloze (0.94), XWinograd (0.94), the training loss (0.94) and HellaSwag (0.91) are near-perfectly ordered by size, and MultiBLiMP (0.85, $\rho = 0.97$ over 342 fits) and XNLI (0.81) follow. At the other end, Global-MMLU ($R^2 = 0.22$, $\rho = -0.2$), INCLUDE (0.25, $\rho = 0.0$) and Belebele (0.29) have scores that are close to unrelated to size, and Global PIQA sits in between (0.34). The split follows the answer space: the median $R^2$ is 0.64 over the 1,152 two-option fits and 0.81 over the 108 three-option ones, against 0.39 over the 1,512 four-option fits. Panel (a) shows why. At $L = 30$ the four-option knowledge families never leave the chance line up to 1.7B, so there is no trend to fit, while MultiBLiMP is 0.24 above chance already at 175M. TruthfulQA is the one family with a tight fit and a negative slope ($R^2 = 0.68$, $\rho = -0.57$): it reliably gets worse as models grow, a known inverse-scaling behaviour. This indicates that at these sizes the predictable multilingual measurements are the likelihood-based ones, and that a knowledge benchmark that sits at chance contributes no trend to extrapolate from, whatever its provenance.
 
-\subsection{Definition of SNR}
-\label{subsec:exp-snr-da}
+\subsection{RQ2: How early can we make the right decision?}
+\label{subsec:rq2}
 
-\textbf{SNR computation.} We compute the signal-to-noise ratio under each of the signal and noise definitions introduced in Section \ref{sec:methodology}, for every benchmark and every language. This lets us identify which definition correlates most strongly with decision accuracy for each language.
+\textbf{TL;DR.} On per-language bits per byte, a 350M proxy reads the language-list decision the way the 1.7B reference does at 8, 15 and 30 languages, and the reference's own ranking is fixed by 20\% of its run. The 175M proxy gets the decision backwards at 15 and 30 languages. On the benchmark suite the decision is a coin flip at every size and every checkpoint.
 
-\textbf{Which SNR definition predicts decision accuracy.}
-Table reports the mean Pearson correlation between log SNR and decision accuracy across languages, on the external suite and on the custom pool. The two populations differ in what signal measures, spread across controlled data mixtures for the custom models and spread across heterogeneous open-source models for the external suite, yet the result replicates. Under DA by checkpoint, the dispersion and relative-spread families reach correlations of 0.43 to 0.45 on the external suite and 0.43 to 0.51 on the custom pool, while depth and projection variants never help. Under DA by size the correlation is weak in both pools, for structural reasons. External size pairs compare different model families that differ in data and tokenizer, not only in size, and the custom 1B target is not fully converged. We therefore base benchmark selection on DA by checkpoint, and we recommend a metric family rather than a single variant.
+\textbf{Setup.} For an intervention with two levels, decision accuracy reduces to sign agreement: over a population of items, the share on which the proxy prefers the same level as the reference. The reference is the largest size trained at both levels, read at its final checkpoint. The proxy is every smaller size, read at the checkpoint nearest 20, 40, 60, 80 and 100\% of its own run, so that one grid answers both halves of the question, how small and how early. Two populations are used: the per-language bits per byte of the languages both levels train on, and the benchmark tasks both levels were evaluated on. A cell needs at least three items. We report the mean over language settings of the per-setting agreement, so that a setting with 2,250 benchmark tasks does not outweigh one with 500. Figure~\ref{fig:rq2} shows the two planned decisions, language lists (scheme A against B at $L \in \{8, 15, 30\}$) and depth (deep against shallow at every $L$).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.5\textwidth]{figures/fig2_snr_vs_da.pdf}
-\caption{SNR against decision accuracy by checkpoint at the 1B target, one
-point per above-random benchmark, colored by language. Higher SNR predicts
-higher decision accuracy.
-}
-\label{fig:snr-da}
+\includegraphics[width=\textwidth]{figures/rq2_early_small.pdf}
+\caption{How small and how early a proxy can read a decision. Each cell is the agreement between the proxy's decision, at the given size and fraction of its own run, and the reference's final decision, averaged over language settings (number of settings in brackets). Rows: the two planned decisions. Columns: per-language bits per byte over the languages both levels train, and the benchmark tasks both levels were evaluated on. The reference is 1.7B at $L \in \{8, 30\}$ and 1B at $L = 15$ for the language-list decision, and 600M for the depth decision at $L \geq 2$; the bottom row of each panel is the reference read at its own earlier checkpoints.}
+\label{fig:rq2}
 \end{figure}
 
-%\textbf{Language-dependent metric.} The same benchmark may be reliable for some languages and noisy for others. We therefore report all SNR and decision accuracy values per language and aggregate into a benchmark reliability map that practitioners can consult for the languages they target.
+\textbf{Results.} On bits per byte the language-list decision has a clean size threshold. The 350M proxy agrees with the reference on 100\% of the shared languages at $L = 8$, 15 and 30, and the 600M proxy on 100, 83 and 100\%. The 175M proxy agrees at $L = 8$ but gets the decision backwards at $L = 15$ (17\%) and $L = 30$ (4\%). The 1B proxy, which exists only against the 1.7B reference at $L = 8$ and 30, agrees on 100\% at $L = 8$ but only 31\% at $L = 30$. The $L = 30$ discrepancy has a reason: the effect of the list decision on bits per byte at the 1.7B reference is 0.58 seed standard deviations there (\S\ref{subsec:rq4}), so the reference itself is deciding inside its noise and every proxy's agreement at that setting is uninformative. Where the effect clears the noise, at $L = 8$ (1.6 seed standard deviations) and $L = 15$ (2.7), 350M is enough.
 
-\subsection{Framework Generalization}
-\label{subsec:exp-generalization}
+The training axis is even more favourable. The reference's ranking at 20\% of its run already matches its final ranking on 100\% of the languages for the list decision and on 100\% for the depth decision, and stays there through 80\%. Four fifths of the reference run adds nothing to the decision. The one exception is the smallest proxy, which reverses its answer over its own run: at 175M the list decision agrees with the reference on 86\% of languages at 20\% of training and on 40\% at the end, so the 175M final checkpoint is a worse proxy than its own early checkpoint. We hypothesize that this is the optimizer-timescale effect of \S\ref{subsec:models} reaching the 175M rung, whose run is shorter than the optimizer's memory.
 
-\textbf{Generalization across seeds.} We test whether the variant ranking survives a change of training seed in our custom pretrained moddels by fitting on two seeds and holding out the third. The variant ranking transfers under DA by checkpoint, with a holdout Spearman correlation of 0.81, and does not transfer under DA by size, with a Spearman correlation of -0.07. The DA-size correlations are small and clustered within roughly 0.1 of each other, so their ranking is noise dominated. The exact best variant per language never transfers either. We therefore recommend a metric family rather than a single variant, and we treat DA-by-size variant rankings as unreliable at this scale.
+The depth decision behaves differently, and \S\ref{subsec:rq4} explains why: its effect at the reference is within 1.1 to 2.4 seed standard deviations, so the 175M proxy's 0\% agreement and the 350M proxy's 51\% are agreement with a decision that the reference is not really making. The benchmark suite reads every cell of both decisions as a coin flip: between 0.37 and 0.58 at every size and every fraction of training, including the reference read against its own final checkpoint. This suggests that the suite's tasks do not carry the decision at all rather than carrying it late, which \S\ref{subsec:rq3} confirms from the other side.
 
-\textbf{Agreement with the English SNR framework.} We compare our SNR values against those of \citet{heineman_signal_2025} on the DataDecide corpus. Seven English benchmarks are shared between the two model suites, of which four survive the above-random gate. Over these four tasks, SNR values computed on our custom models and on DataDecide agree closely, with a Pearson correlation of 0.98 on log SNR and a Spearman rank correlation of 1.00 under the \texttt{dispersion\_shifted} variant. With so few shared tasks, this is indicative rather than conclusive, but it suggests the framework measures a property of the benchmark rather than of the model suite. % A caveat applies to MMLU, since our suite runs the Cohere translation of the English split while DataDecide runs the original, so this row is not strictly like for like. We plan to rerun the original MMLU task on our checkpoints to remove the alias.
+\subsection{RQ3: Can we know cheaply whether the decision will be reliable?}
+\label{subsec:rq3}
 
-TODO: We will compare our benchmark selection and its compute cost against FineTasks \citep{kydlicek_finetasks_nodate} and SMART filtering \citep{gupta_improving_2025}.
+\textbf{TL;DR.} Partly. The signal-to-noise ratio computed on the proxy alone, in its relative-standard-deviation form, ranks tasks by their eventual decision accuracy with a Spearman correlation of 0.4 to 0.6 on benchmarks and 0.5 to 0.7 on per-language bits per byte, and the agreement between a proxy's ranking at 20\% of its run and at its end does about as well. The signal term carries the correlation; noise on its own predicts nothing, and the discrepancy variant is uninformative on this ladder.
 
-
-\subsection{Improvement of Benchmark Quality}
-\label{subsec:exp-benchmark-design}
-
-%\textbf{Subsampling methods.} We explore subsampling rules that increase SNR on existing benchmarks, including selecting harder questions and removing semantically similar items. The output is a set of higher-SNR subsets that practitioners can use as replacements for full benchmark runs when running ablations. 
-
-\textbf{Benchmarks subtasks are redundant.} Per benchmark, we rank
-subtasks by standalone SNR and sweep cumulative subsets
-(Figure~\ref{fig:subsets}). A subset of one to two MMLU subjects matches or beats the full set of roughly 48 subjects across model sizes, raising SNR from 2.12 to 3.65 at 175M, and the same subjects recur across sizes and languages. We do not read this as a recommendation to evaluate on a handful of subjects. We read it as evidence that a large share of benchmark content adds variance without adding discriminative signal, so the size of a benchmark is a poor proxy for its reliability. This invites a closer look at which portions of standard suites are informative and which are redundant.
+\textbf{Setup.} Decision accuracy needs the reference model. We ask which statistics that are available on the proxy alone predict it. For every task and proxy size we compute the signal-to-noise ratio under three of the definitions of \S\ref{subsec:methodology-snr} (relative standard deviation, discrepancy, and the standard deviation of pairwise distances), the signal and the noise on their own, the margin above chance, the coefficient of determination of the scaling fit of \S\ref{subsec:rq1}, and the agreement between the proxy's ranking at 20\% of its run and at its end. Each candidate is correlated (Spearman $\rho$) with the task's decision accuracy by size, the agreement between the ranking of all design variants at the proxy size and at the reference, computed by the pipeline of \citet{heineman_signal_2025} on the same cells. We report the correlation separately for benchmark tasks and for the per-language bits-per-byte tasks, at the 175M, 350M and 600M proxies.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/fig4_subset_sweep.pdf}
-\caption{Cumulative subset sweep for Global MMLU subjects. Combined SNR as
-subjects are added in order of standalone SNR, one line per model size, with
-the full-set SNR as horizontal dashed lines. Small subsets match or beat the
-full set.
-% TODO: confirm best_n per size from regenerated figure. 
-Per-item selection yields larger gains
-that do not transfer across sizes.}
-\label{fig:subsets}
+\includegraphics[width=\textwidth]{figures/rq3_surrogates.pdf}
+\caption{Which small-scale statistic predicts decision accuracy. Spearman correlation between each candidate, computed on the proxy alone, and the task's decision accuracy against the reference, for benchmark tasks (left) and per-language bits per byte (right), at three proxy sizes; $n$ is the number of tasks behind each point.}
+\label{fig:rq3}
 \end{figure}
 
-\textbf{Item-level subsets.} The same procedure at the level of individual items finds subsets with even larger SNR gains, showing that informative items exist and can be identified within a single model size. The selected items, however, differ across model sizes, with a Jaccard overlap of 0.03 between the best subsets at different scales. Item-level selection is therefore promising as a per-scale tool, and making the selected subsets transfer across scales is the main open problem, which we continue to investigate.
+\textbf{Results.} Figure~\ref{fig:rq3} scores every candidate on the same population, the tasks that clear the gate at the proxy size: 68, 78 and 93 benchmark tasks at 175M, 350M and 600M, and the 101 bits-per-byte tasks. Decision accuracy against the 1B target is 0.73, 0.71 and 0.79 (median) for those benchmark tasks and 0.81, 0.89 and 0.89 for bits per byte, so there is variation to predict on both sides. The relative-standard-deviation SNR is the strongest or joint-strongest predictor at every proxy: $\rho = 0.52$, 0.60 and 0.41 on benchmarks and 0.69, 0.60 and 0.52 on bits per byte. Its signal term alone is almost as good (0.48, 0.54, 0.36 and 0.62, 0.50, 0.48), while its noise term alone is at most 0.23 anywhere, which indicates that on this ladder the SNR works because of the dispersion across design variants, not because of the checkpoint noise. The discrepancy variant is uninformative on benchmarks (0.11, 0.16, $-0.01$) and undefined on bits per byte, and the margin above chance predicts little (0.27 at 175M, negative at 600M): clearing chance is a precondition, not a ranking.
 
-TODO: We will pursue item-level subset selection that transfers across scales, combining our SNR ranking with item response theory approaches \citep{zhou_lost_2026}.
+The cheapest surrogate is the proxy's own training curve. The agreement between a proxy's ranking of the variants at 20\% of its run and at its end correlates with its eventual decision accuracy at 0.33, 0.59 and 0.57 on benchmarks and 0.61, 0.62 and 0.55 on bits per byte, matching the SNR from 350M up without any noise estimate. The coefficient of determination of the scaling fit is a weak predictor on bits per byte (0.10 to 0.22), where every language scales predictably, and a moderate one on benchmarks (0.21 to 0.48), where it separates the families of \S\ref{subsec:rq1}. This suggests a two-step rule for practitioners: read the decision on bits per byte, and check on the proxy alone that the variants are already ordered the same way at a fifth of the run and that their dispersion exceeds the late-checkpoint noise. Both statistics are available before the reference exists.
 
+\subsection{RQ4: Does it depend on the design choice?}
+\label{subsec:rq4}
 
-\textbf{Benchmark creation decisions.} We document the data source and curation method of each benchmark in our suite, and compute the correlation between these characteristics and SNR. We classify the data source as web data, news, literature, crowdsourced, expert-generated, or synthetic, and the curation method by whether the data was machine or manually translated and by the review process applied.
-We test whether benchmark design features predict SNR on the external suite, where eleven benchmark families clear the above-random gate, including four-option knowledge tasks that capable models solve. No single feature is significant. Family-level Kruskal-Wallis tests on curation method ($p = 0.49$), task format ($p = 1.00$), answer-option count ($p = 0.83$), and source origin ($p = 0.68$) are all far from significance. How a benchmark was built does not predict its reliability once models clear chance on it. The pattern that does hold sits in the answer space, since every benchmark that fails the gate on small models is a four-option translated knowledge task, and benchmarks are sharper when the model compares fewer and longer scored completions. This suggests that for small-scale evaluation, reducing the answer space matters more than curation quality.
+\textbf{TL;DR.} Yes, through the size of the effect. The two data decisions that change the training distribution most, sampling temperature and the choice of second language, move bits per byte at the reference by 3.4 to 4.9 seed standard deviations and are read correctly by a 350M proxy. The depth and language-list decisions move it by 1.5 to 1.6, and a proxy can only be as reliable as the reference's own coin. Benchmarks sit at 1.1 to 1.8 seed standard deviations for every decision and read every one of them as a coin flip.
+
+\textbf{Setup.} Before asking whether a proxy agrees with the reference, we ask whether the reference is deciding anything. For each intervention and language setting we measure the absolute difference between the two levels at the reference, per item, in units of that item's seed standard deviation, taken as the median over the seed-replicated cells of the baseline (deep, scheme A) at the same task. A ratio near 1 means the two levels are the same model as far as a ranking is concerned. We then read the decision accuracy of each proxy size at its final checkpoint, as in \S\ref{subsec:rq2}, for all five interventions the ladder trains: depth, language lists, sampling temperature ($T = 1$ against $T = 3$ at $L = 50$), and the second language at $L = 2$ (Russian against Chinese, and against Spanish). The second-language decision has one shared trained language, English, so its bits-per-byte population is the 98 languages neither level trains on.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rq4_interventions.pdf}
+\caption{Does predictivity depend on the design choice. (a) Median absolute effect of each intervention at the reference, in seed standard deviations, on per-language bits per byte and on benchmark tasks; the dashed line is one seed re-roll. (b) Agreement of each proxy size with the reference's final decision, averaged over language settings, on bits per byte (solid) and on benchmarks (dashed). The second-language decisions are read on the languages neither level trains.}
+\label{fig:rq4}
+\end{figure}
+
+\textbf{Results.} Figure~\ref{fig:rq4}a orders the interventions by how much they matter. On bits per byte, the median effect at the reference is 4.9 seed standard deviations for Russian against Chinese, 3.9 for sampling temperature and 3.4 for Russian against Spanish, against 1.6 for the language lists and 1.5 for depth. On benchmarks every intervention sits between 1.1 and 1.8. Figure~\ref{fig:rq4}b shows that the proxy's reliability follows the same order. The temperature decision is read correctly on 88\% of the trained languages by 175M and 96\% by 350M, against a 600M reference; the second-language decisions on 75 to 78\% at 175M and 86 to 90\% at 350M over the never-trained languages. The list decision needs 350M (\S\ref{subsec:rq2}), and the depth decision is not recovered by any proxy. Its effect is the smallest of the five, which is what the shallow ladder was designed for: the same layer structure at roughly twice the aspect ratio, near the optimum. On the aggregate training loss the two architectures differ by about one seed standard deviation, so the depth "decision" at the reference is largely a re-roll of the seed, and the 0\% agreement of 175M reflects the shallow 175M run being depressed rather than a wrong ranking of a real effect.
+
+The benchmark suite is flat across interventions: between 0.30 and 0.54 at every proxy size for every decision, with no gain from a larger proxy. This indicates that benchmark predictivity here is not conditional on the design choice. It is absent for all of them, because at these sizes the tasks that survive the gate separate the intervention levels by about one checkpoint's worth of noise. We hypothesize that the property that transfers across interventions is the effect-to-noise ratio of the measurement, which bits per byte inherits from being byte-normalised and averaged over millions of tokens, and which a 500-item accuracy does not.
+
+\subsection{RQ5: Does it generalize to languages we have not measured?}
+\label{subsec:rq5}
+
+\textbf{TL;DR.} The scaling exponent transfers across languages. Fitting nothing on the held-out language beyond a single 175M measurement, and borrowing the exponent from the other languages, predicts its bits per byte at the 1.7B reference within 3.4\% for trained languages and 6.7\% for languages the model never saw. That beats a per-language fit on three rungs. The list decision also transfers to never-trained languages, though less cleanly: 76\% agreement at 600M against 94\% on the trained ones.
+
+\textbf{Setup.} Bits per byte is scored on all 100 validation languages for every cell, so 45 of them are measured on models that never trained on them. On the deep, scheme-A ladder at each $L$ we fit, per language, $\log \mathrm{BPB} = a_\ell - \alpha_\ell \log N$ on the proxy rungs. We then hold each language out in turn and predict its reference bits per byte with the median exponent of the other 99 languages at that $L$ and an intercept fitted on its own $k$ smallest rungs, for $k$ from one (175M alone) to four. We compare the relative error at the reference against the language's own fit (which needs three rungs) and against taking the largest proxy's value as the prediction. The reference is 1.7B at $L \in \{1, 2, 8, 30\}$ and 1B at $L \in \{15, 50\}$; 106 (language, $L$) chains are trained languages and 494 are not. For decisions, we read the language-list decision of \S\ref{subsec:rq2} on the languages neither scheme trains.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/rq5_transfer.pdf}
+\caption{Transfer of scaling behaviour to held-out languages. (a) Median absolute relative error of the reference's bits per byte as a function of how many of the held-out language's smallest rungs are measured, with the exponent borrowed from the other languages (solid), fitted on the language itself (dashed, needs three rungs), or with no extrapolation at all (dotted), for trained and never-trained languages. (b) Predicted against observed reference bits per byte from a single 175M measurement per language.}
+\label{fig:rq5}
+\end{figure}
+
+\textbf{Results.} The exponent barely varies between languages: its median is 0.14 at $L = 1$, 0.16 to 0.17 at $L \in \{2, 8, 15, 30\}$ and 0.20 at $L = 50$, with a standard deviation across languages of 0.03 to 0.07. Consequently, the borrowed exponent with a single 175M measurement predicts the reference within a median 3.4\% for trained languages and 6.7\% for never-trained ones (Figure~\ref{fig:rq5}a), and 71\% of the never-trained predictions land within 10\%. Adding rungs helps only the trained languages, to 2.1\% at three rungs. Notably, the borrowed exponent beats the language's own fit at every $k$ where both exist, 2.1\% against 5.1\% at three rungs, because a three-point power law fitted to one language overfits its noise while the pooled exponent does not. The no-extrapolation baseline is 36 to 45\% off from one rung and still 6.5 to 7.3\% off from four. Never-trained languages are predicted with a small systematic bias (median signed error $-3.4$\%), so the reference is slightly better on them than the proxies imply: zero-shot transfer improves with size faster than the trained-language exponent predicts. Panel (b) shows the two populations on one line across a five-fold range of bits per byte.
+
+The decision reads transfer less cleanly. On the languages neither scheme trains, the list decision is read correctly by 56\% at 175M, 68\% at 350M and 76\% at 600M and 1B, against 40, 100, 94 and 65\% on the trained languages. This suggests that a proxy's decision on the languages it was trained on is more reliable than on the rest, but that the direction of a data decision does carry over to unseen languages at 600M and above. We leave the question of which language properties predict the residual to future work.
