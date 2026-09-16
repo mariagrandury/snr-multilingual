@@ -10,8 +10,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `global_piqa_nonparallel_cloze`, `global_piqa_parallel_cloze`, `multiblimp`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
-- **Above-random gate.** Of **461 benchmarks, 113 clear chance at ≥1 size** and 103 at 1B (348 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `global_piqa_nonparallel_cloze`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
+- **Above-random gate.** Of **462 benchmarks, 113 clear chance at ≥1 size** and 99 at 1B (349 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -89,21 +89,21 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `global_piqa_parallel_cloze_bul_cyrl` | global_piqa_parallel_cloze | bg | 0.600 |
-| `global_piqa_parallel_cloze_pol_latn` | global_piqa_parallel_cloze | pl | 0.476 |
-| `include_base_44_ukrainian` | include_base_44 | uk | 0.476 |
-| `global_piqa_parallel_cloze_apc_arab_syri` | global_piqa_parallel_cloze | ar | 0.468 |
-| `global_piqa_parallel_cloze_hin_deva` | global_piqa_parallel_cloze | hi | 0.468 |
+| `global_piqa_parallel_cloze_apc_arab_syri` | global_piqa_parallel_cloze | ar | 0.780 |
+| `lambada_openai_mt_it` | lambada_openai_mt | it | 0.617 |
+| `lambada_openai_mt_de` | lambada_openai_mt | de | 0.596 |
+| `lambada_openai_mt_es` | lambada_openai_mt | es | 0.563 |
+| `global_piqa_parallel_cloze_hin_deva` | global_piqa_parallel_cloze | hi | 0.541 |
 
-![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/global_piqa_nonparallel_cloze.png)
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/lambada_openai_mt.png)
 
 **Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
 | options | chance | above ≥1 size | above @1B |
 |---|---|---|---|
-| 2 | 0.50 | 80 / 191 | 76 / 191 |
-| 3 | 0.33 | 12 / 18 | 9 / 18 |
-| 4 | 0.25 | 21 / 252 | 18 / 252 |
+| 2 | 0.50 | 80 / 192 | 77 / 192 |
+| 3 | 0.33 | 13 / 18 | 9 / 18 |
+| 4 | 0.25 | 20 / 252 | 13 / 252 |
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact

@@ -10,10 +10,10 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`global_piqa_parallel_cloze` 175M (per_benchmark)** — a subset beats the full set: SNR **1.08 → 3.15** (**+2.07**) with `global_piqa_parallel_cloze_urd_arab|global_piqa_parallel_cloze_cmn_hant|global_piqa_parallel_cloze_npi_deva|global_piqa_parallel_cloze_ukr_cyrl|… (+3)`.
-- **`global_mmlu_full_ja` 175M (global_mmlu_full_per_language)** — a subset beats the full set: SNR **1.15 → 3.17** (**+2.02**) with `business_ethics|high_school_mathematics|college_biology|anatomy|… (+1)`.
-- **`xnli` 1.7B (per_benchmark)** — a subset beats the full set: SNR **0.06 → 1.99** (**+1.93**) with `xnli_th|xnli_vi`.
-- **Median gain by case** — global_mmlu_full_subjects 1.09; global_mmlu_full_per_language 0.80; per_benchmark 0.51 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
+- **`global_mmlu_full_he` 1.7B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.32 → 2.43** (**+2.12**) with `professional_law`.
+- **`global_mmlu_full_fr` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.73 → 2.83** (**+2.09**) with `formal_logic`.
+- **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.62 → 4.64** (**+2.02**) with `econometrics`.
+- **Median gain by case** — global_mmlu_full_subjects 1.18; global_mmlu_full_per_language 0.84; per_benchmark 0.53 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -58,18 +58,18 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | best subset |
 |---|---|---|---|---|---|
-| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.08 → 3.15 | +2.07 | `global_piqa_parallel_cloze_urd_arab` \| `global_piqa_parallel_cloze_cmn_hant` \| `global_piqa_parallel_cloze_npi_deva` \| `global_piqa_parallel_cloze_ukr_cyrl` \| `… (+3)` |
-| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.15 → 3.17 | +2.02 | `business_ethics` \| `high_school_mathematics` \| `college_biology` \| `anatomy` \| `… (+1)` |
-| per_benchmark | `xnli` | 1.7B | 0.06 → 1.99 | +1.93 | `xnli_th` \| `xnli_vi` |
-| global_mmlu_full_per_language | `global_mmlu_full_ha` | 1B | 0.02 → 1.86 | +1.84 | `formal_logic` |
-| global_mmlu_full_per_language | `global_mmlu_full_hi` | 175M | 1.25 → 3.07 | +1.81 | `professional_law` \| `jurisprudence` |
-| per_benchmark | `lambada_openai_mt` | 1.7B | 0.21 → 1.98 | +1.77 | `lambada_openai_mt_de` |
-| per_benchmark | `xstorycloze` | 1.7B | 0.24 → 1.99 | +1.76 | `xstorycloze_ar` |
-| per_benchmark | `hellaswag` | 1.7B | 0.25 → 2.00 | +1.75 | `hellaswag_ru` |
-| per_benchmark | `xwinograd` | 1.7B | 0.24 → 1.98 | +1.75 | `xwinograd_jp` \| `xwinograd_fr` \| `xwinograd_pt` \| `xwinograd_ru` \| `… (+1)` |
-| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1.7B | 0.18 → 1.88 | +1.71 | `philosophy` \| `global_facts` \| `high_school_chemistry` |
-| global_mmlu_full_per_language | `global_mmlu_full_sv` | 1B | 0.10 → 1.80 | +1.70 | `high_school_computer_science` \| `international_law` \| `abstract_algebra` |
-| global_mmlu_full_per_language | `global_mmlu_full_si` | 1B | 0.16 → 1.86 | +1.70 | `formal_logic` |
+| global_mmlu_full_per_language | `global_mmlu_full_he` | 1.7B | 0.32 → 2.43 | +2.12 | `professional_law` |
+| global_mmlu_full_per_language | `global_mmlu_full_fr` | 1B | 0.73 → 2.83 | +2.09 | `formal_logic` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.62 → 4.64 | +2.02 | `econometrics` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 1.01 → 3.01 | +1.99 | `professional_psychology` \| `us_foreign_policy` \| `anatomy` \| `professional_law` \| `… (+5)` |
+| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.71 → 3.70 | +1.99 | `global_piqa_parallel_cloze_spa_latn_spai` \| `global_piqa_parallel_cloze_fra_latn_fran` \| `global_piqa_parallel_cloze_pes_arab` \| `global_piqa_parallel_cloze_apc_arab_syri` \| `… (+3)` |
+| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.78 → 3.74 | +1.97 | `business_ethics` \| `computer_security` \| `abstract_algebra` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 1.96 → 3.79 | +1.83 | `international_law` \| `moral_disputes` \| `high_school_chemistry` \| `logical_fallacies` \| `… (+18)` |
+| global_mmlu_full_per_language | `global_mmlu_full_ky` | 1B | 1.14 → 2.91 | +1.78 | `international_law` \| `high_school_computer_science` |
+| global_mmlu_full_per_language | `global_mmlu_full_zh` | 350M | 2.23 → 3.96 | +1.73 | `formal_logic` \| `professional_medicine` |
+| global_mmlu_full_per_language | `global_mmlu_full_es` | 1B | 1.17 → 2.87 | +1.70 | `public_relations` |
+| per_benchmark | `multiblimp` | 350M | 2.72 → 4.42 | +1.70 | `multiblimp_deu` \| `multiblimp_eng` |
+| global_mmlu_full_per_language | `global_mmlu_full_ha` | 175M | 1.55 → 3.21 | +1.66 | `anatomy` \| `moral_disputes` \| `abstract_algebra` \| `marketing` \| `… (+7)` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

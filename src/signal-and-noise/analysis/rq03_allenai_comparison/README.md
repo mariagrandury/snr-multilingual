@@ -17,7 +17,8 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+- **On the `predictivity` pool SNR values and rank order agree across corpora** — best variant `quartile_deviation`, Pearson r of log₁₀(SNR) **1.00**, Spearman ρ **1.00**, but over only **3** shared English tasks after the above-random gate — indicative rather than robust.
+- **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -110,7 +111,18 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
-_Not generated yet for the predictivity ladder — the ladder report (`msnr-data/ladder-report`) was not reachable from the environment this README was written in. `bash run_all_predictivity.sh` fills this block from the `predictivity` pool._
+Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool predictivity`.
+
+**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The above-random gate leaves the `n_shared` shown per pool; where it is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
+
+| pool | best variant | Pearson r | Spearman ρ | n_shared |
+|---|---|---|---|---|
+| `predictivity` (grid, seed 1904) | `quartile_deviation` | 1.00 | 1.00 | 3 |
+| `predictivity_seeds` (all seeds) | `projection` | 1.00 | 1.00 | 3 |
+
+![Ladder vs AllenAI SNR — best variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_quartile_deviation.png)
+
+![Ladder vs AllenAI SNR across variants](pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

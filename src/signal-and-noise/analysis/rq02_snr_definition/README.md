@@ -10,9 +10,9 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-- **Global-best SNR definition (`predictivity`): `discrepancy`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.06** (DA-size), **-0.05** (DA-ckpt), 0.00 overall. DA-ckpt is led by `dist_std`/`mad`/`rel_mpsd` (≈ 0.20; families: dispersion, rel_spread, robust) — recommend the *family*, not an exact variant.
-- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **55 of 68** languages (`discrepancy` SNR @ 1B). Weakest variants overall: `projection`, `rel_star_discrepancy`.
-- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.01** (DA-ckpt), **-0.20** (DA-size); family-level per-language agreement 11% / 1%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
+- **Global-best SNR definition (`predictivity`): `discrepancy`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.03** (DA-size), **-0.05** (DA-ckpt), -0.01 overall. DA-ckpt is led by `mpsd`/`rel_mpsd`/`aad` (≈ 0.27; families: dispersion, rel_spread) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **55 of 65** languages (`discrepancy` SNR @ 1B). Weakest variants overall: `tukey`, `projection`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **-0.21** (DA-ckpt), **0.01** (DA-size); family-level per-language agreement 15% / 3%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -44,16 +44,16 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---|---|---|
-| `discrepancy` | 0.06 | -0.05 | 0.00 |
-| `rel_mpsd` | -0.00 | 0.07 | 0.03 |
-| `mpsd` | -0.00 | 0.05 | 0.02 |
-| `dist_std` | -0.01 | 0.20 | 0.09 |
-| `rel_std` | -0.01 | -0.04 | -0.03 |
-| `rel_dispersion` | -0.01 | -0.08 | -0.05 |
-| `rms_deviation` | -0.01 | -0.04 | -0.03 |
+| `discrepancy` | 0.03 | -0.05 | -0.01 |
+| `rel_mpsd` | -0.00 | 0.27 | 0.13 |
+| `star_discrepancy_shifted` | -0.00 | 0.11 | 0.05 |
+| `mpsd` | -0.00 | 0.27 | 0.13 |
+| `dist_std` | -0.01 | 0.24 | 0.12 |
+| `rms_deviation` | -0.01 | 0.24 | 0.11 |
+| `aad` | -0.02 | 0.25 | 0.12 |
 | … |  |  |  |
-| `projection` | -0.09 | -0.35 | -0.22 |
-| `tukey` | -0.12 | -0.12 | -0.12 |
+| `projection` | -0.17 | -0.03 | -0.10 |
+| `tukey` | -0.21 | -0.10 | -0.16 |
 
 ![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
 
@@ -61,81 +61,78 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | pool | best variant (DA-size) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `predictivity` (grid, seed 1904) | `discrepancy` | 0.06 | -0.05 |
-| `predictivity_seeds` (all seeds) | `discrepancy` | 0.12 | -0.05 |
+| `predictivity` (grid, seed 1904) | `discrepancy` | 0.03 | -0.05 |
+| `predictivity_seeds` (all seeds) | `star_discrepancy_shifted` | 0.04 | 0.11 |
 
 **Most reliable benchmark per language** — `discrepancy` SNR @ 1B over above-random tasks (DA-size is undefined at the reference size itself, so DA-ckpt@1B is shown):
 
 | lang | top benchmark | SNR | DA-ckpt@1B |
 |---|---|---|---|
-| am | `multiblimp_amh` | 5.46 | 0.75 |
-| ar | `multiblimp_arb` | 15.37 | 1.00 |
-| be | `multiblimp_bel` | 6.45 | 0.75 |
-| bg | `multiblimp_bul` | 14.52 | 1.00 |
-| bn | `bpb_ben_Beng` | 3.09 | 1.00 |
-| bo | `bpb_bod_Tibt` | 6.38 | 0.50 |
-| ca | `multiblimp_cat` | 24.81 | 1.00 |
-| cs | `multiblimp_ces` | 9.81 | 1.00 |
-| cy | `multiblimp_cym` | 5.12 | 0.75 |
-| da | `multiblimp_dan` | 11.32 | 1.00 |
-| de | `multiblimp_deu` | 59.34 | 0.50 |
-| el | `multiblimp_ell` | 21.51 | 1.00 |
-| en | `multiblimp_eng` | 103.90 | 0.75 |
-| es | `multiblimp_spa` | 122.55 | 0.50 |
-| et | `multiblimp_est` | 12.43 | 1.00 |
-| eu | `multiblimp_eus` | 32.68 | 1.00 |
-| fa | `multiblimp_fas` | 7.67 | 1.00 |
-| fi | `multiblimp_fin` | 13.22 | 1.00 |
-| fo | `multiblimp_fao` | 1.76 | 0.50 |
-| fr | `multiblimp_fra` | 164.21 | 0.75 |
-| ga | `multiblimp_gle` | 2.59 | 0.75 |
-| gd | `multiblimp_gla` | 16.74 | 1.00 |
-| gl | `multiblimp_glg` | 13.22 | 0.25 |
-| grc | `multiblimp_grc` | 6.87 | 1.00 |
-| gu | `multiblimp_guj` | 5.67 | 1.00 |
-| hbo | `multiblimp_hbo` | 7.02 | 1.00 |
-| he | `multiblimp_heb` | 6.22 | 1.00 |
-| hi | `multiblimp_hin` | 18.06 | 1.00 |
-| hu | `multiblimp_hun` | 13.68 | 1.00 |
-| hy | `multiblimp_hye` | 7.72 | 0.50 |
-| hyw | `multiblimp_hyw` | 3.07 | 0.50 |
-| id | `hellaswag_id` | 8.57 | 1.00 |
-| is | `multiblimp_isl` | 7.29 | 0.50 |
-| it | `multiblimp_ita` | 51.85 | 0.75 |
-| ja | `bpb_jpn_Jpan` | 15.94 | 1.00 |
-| ka | `multiblimp_kat` | 16.54 | 1.00 |
-| kk | `multiblimp_kaz` | 7.21 | 1.00 |
-| kmr | `multiblimp_kmr` | 12.17 | 0.75 |
-| kn | `bpb_kan_Knda` | 14.30 | 0.75 |
-| ky | `multiblimp_kir` | 24.45 | 1.00 |
-| la | `multiblimp_lat` | 3.91 | 1.00 |
-| lt | `multiblimp_lit` | 14.57 | 1.00 |
-| mk | `multiblimp_mkd` | 7.28 | 0.50 |
-| ml | `bpb_mal_Mlym` | 3.80 | 1.00 |
-| mr | `bpb_mar_Deva` | 7.13 | 1.00 |
-| nds | `multiblimp_nds` | 16.56 | 1.00 |
-| ne | `bpb_npi_Deva` | 3.03 | 1.00 |
-| nl | `multiblimp_nld` | 13.19 | 1.00 |
-| pl | `multiblimp_pol` | 22.59 | 1.00 |
-| pt | `multiblimp_por` | 29.55 | 1.00 |
-| ro | `multiblimp_ron` | 18.35 | 1.00 |
-| ru | `multiblimp_rus` | 116.85 | 0.75 |
-| sa | `multiblimp_san` | 12.16 | 0.00 |
-| sah | `multiblimp_sah` | 8.65 | 0.50 |
-| se | `multiblimp_sme` | 12.20 | 0.50 |
-| sk | `multiblimp_slk` | 8.23 | 1.00 |
-| sl | `multiblimp_slv` | 21.29 | 1.00 |
-| sv | `multiblimp_swe` | 200.48 | 1.00 |
-| ta | `multiblimp_tam` | 13.76 | 1.00 |
-| te | `bpb_tel_Telu` | 14.03 | 1.00 |
-| th | `bpb_tha_Thai` | 2.91 | 1.00 |
-| tr | `multiblimp_tur` | 15.30 | 1.00 |
-| ug | `multiblimp_uig` | 11.93 | 1.00 |
-| uk | `multiblimp_ukr` | 20.51 | 1.00 |
-| ur | `multiblimp_urd` | 10.82 | 1.00 |
-| uz | `include_base_44_uzbek` | 0.45 | 1.00 |
-| vi | `hellaswag_vi` | 8.49 | 1.00 |
-| zh | `xstorycloze_zh` | 13.94 | 0.50 |
+| am | `multiblimp_amh` | 6.55 | 0.46 |
+| ar | `multiblimp_arb` | 16.45 | 0.84 |
+| be | `multiblimp_bel` | 5.85 | 0.76 |
+| bg | `multiblimp_bul` | 9.08 | 0.92 |
+| bn | `bpb_ben_Beng` | 2.77 | 0.96 |
+| ca | `multiblimp_cat` | 12.03 | 0.87 |
+| cs | `multiblimp_ces` | 7.50 | 0.88 |
+| cy | `multiblimp_cym` | 3.49 | 0.71 |
+| da | `multiblimp_dan` | 8.08 | 0.72 |
+| de | `multiblimp_deu` | 51.07 | 0.82 |
+| el | `multiblimp_ell` | 24.70 | 0.82 |
+| en | `multiblimp_eng` | 113.20 | 0.46 |
+| es | `multiblimp_spa` | 36.66 | 0.85 |
+| et | `multiblimp_est` | 9.72 | 0.74 |
+| eu | `multiblimp_eus` | 28.68 | 0.70 |
+| fa | `multiblimp_fas` | 8.09 | 0.83 |
+| fi | `multiblimp_fin` | 7.03 | 0.78 |
+| fo | `multiblimp_fao` | 1.96 | 0.60 |
+| fr | `multiblimp_fra` | 39.99 | 0.72 |
+| ga | `multiblimp_gle` | 2.00 | 0.69 |
+| gd | `multiblimp_gla` | 14.07 | 0.56 |
+| gl | `multiblimp_glg` | 9.94 | 0.79 |
+| grc | `multiblimp_grc` | 7.20 | 0.65 |
+| gu | `multiblimp_guj` | 6.91 | 0.84 |
+| hbo | `multiblimp_hbo` | 7.90 | 0.74 |
+| he | `multiblimp_heb` | 7.62 | 0.84 |
+| hi | `multiblimp_hin` | 17.87 | 0.78 |
+| hu | `multiblimp_hun` | 14.08 | 0.85 |
+| hy | `multiblimp_hye` | 4.81 | 0.62 |
+| hyw | `multiblimp_hyw` | 2.99 | 0.59 |
+| id | `hellaswag_id` | 9.43 | 0.86 |
+| is | `multiblimp_isl` | 10.00 | 0.69 |
+| it | `multiblimp_ita` | 14.51 | 0.81 |
+| ja | `xwinograd_jp` | 4.75 | 0.72 |
+| ka | `multiblimp_kat` | 7.66 | 0.78 |
+| kk | `multiblimp_kaz` | 5.30 | 0.76 |
+| kmr | `multiblimp_kmr` | 6.22 | 0.65 |
+| kn | `bpb_kan_Knda` | 12.31 | 0.71 |
+| ky | `multiblimp_kir` | 28.90 | 0.41 |
+| la | `multiblimp_lat` | 5.25 | 0.80 |
+| lt | `multiblimp_lit` | 10.99 | 0.61 |
+| mk | `multiblimp_mkd` | 4.54 | 0.77 |
+| ml | `bpb_mal_Mlym` | 3.76 | 0.93 |
+| mr | `bpb_mar_Deva` | 20.52 | 0.86 |
+| nds | `multiblimp_nds` | 13.36 | 0.62 |
+| ne | `bpb_npi_Deva` | 9.03 | 0.92 |
+| nl | `multiblimp_nld` | 12.55 | 0.88 |
+| pl | `multiblimp_pol` | 11.71 | 0.93 |
+| pt | `multiblimp_por` | 33.51 | 0.87 |
+| ro | `multiblimp_ron` | 18.05 | 0.88 |
+| ru | `multiblimp_rus` | 61.02 | 0.86 |
+| sa | `multiblimp_san` | 10.19 | 0.64 |
+| sah | `multiblimp_sah` | 7.85 | 0.62 |
+| se | `multiblimp_sme` | 12.44 | 0.43 |
+| sk | `multiblimp_slk` | 3.96 | 0.90 |
+| sl | `multiblimp_slv` | 8.23 | 0.85 |
+| sv | `multiblimp_swe` | 73.09 | 0.87 |
+| ta | `multiblimp_tam` | 11.41 | 0.86 |
+| th | `xcopa_th` | 4.68 | 0.61 |
+| tr | `multiblimp_tur` | 12.12 | 0.75 |
+| ug | `multiblimp_uig` | 13.79 | 0.62 |
+| uk | `multiblimp_ukr` | 12.64 | 0.90 |
+| ur | `multiblimp_urd` | 5.81 | 0.78 |
+| vi | `hellaswag_vi` | 8.83 | 0.79 |
+| zh | `xstorycloze_zh` | 8.85 | 0.84 |
 
 ![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
 
@@ -143,11 +140,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | -0.20 | 0.01 |
-| Pearson r between splits (all cells) | 0.27 | -0.06 |
-| Exact-variant agreement (per lang) | 1% | 5% |
-| Family-level agreement (per lang) | 1% | 11% |
-| Retention of train-best r on test | 100% | 41% |
+| Spearman ρ on global variant ranking | 0.01 | -0.21 |
+| Pearson r between splits (all cells) | -0.43 | 0.05 |
+| Exact-variant agreement (per lang) | 2% | 7% |
+| Family-level agreement (per lang) | 3% | 15% |
+| Retention of train-best r on test | 68% | 39% |
 <!-- END auto:results -->
 
 ## Preliminary findings (ladder snapshot, 2026-09-01)
