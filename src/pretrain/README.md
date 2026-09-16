@@ -156,7 +156,7 @@ launcher — the core design):
 | File | Role |
 | ---- | ---- |
 | [`megatron_args.sh`](megatron_args.sh) | **The single source of the training logic.** Builds every Megatron argument (architecture, AdEMAMix, WSD schedule, torch_dist checkpointing, data blend, W&B) from env vars. Both platforms produce an identical command; the only delta is the SLURM graceful-exit trigger, added when `TRIGGER_PATH` is set. |
-| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. |
+| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
 | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
@@ -324,6 +324,19 @@ by design.
   collaborators run against this path rather than cloning their own (it is the
   `MEGATRON_LM_DIR` default in `launch_pretraining_cscs.sh`; override the
   variable only for a deliberate one-off).
+- **When `/capstor` is unavailable, trainings still run — everything they read
+  and write is on iopsstor.** The job picks
+  `container/ngc_nemo_iopsstor.toml` automatically (the a139 toml is on
+  capstor, and pyxis dies before the container starts if it cannot read it) —
+  same image from the local EDF store, with the netstack hooks off because
+  their libraries are on capstor and the -alps3 image carries its own,
+  and drops the capstor `HF_HUB_CACHE` from `~/.bashrc` so the tokenizer
+  resolves in `$HF_HOME/hub` — prefetch it once on the login node with
+  `HF_HUB_CACHE= python -c "from transformers import AutoTokenizer;
+  AutoTokenizer.from_pretrained('swiss-ai/Apertus-70B-2509')"` (17 MB).
+  `CONTAINER_TOML=...` overrides the choice. Submit to an `up` partition
+  (`sinfo -p normal`): jobs queued against a down partition sit on
+  `PartitionDown` and the launcher counts them as in flight.
 - **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
   cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
   **every resume** dies in `get_reformulation_metadata` with `AttributeError:

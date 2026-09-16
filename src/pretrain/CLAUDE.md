@@ -193,7 +193,11 @@ parse over-rejected good iters (2026-05-14).
 ### 3. Slurm reports `COMPLETED` even when the inner step crashed
 The wrapper exits cleanly after `srun` returns. Check the `.0` step:
 `sacct -j <id> --format=JobID,State,ExitCode` — and read the training log
-under `.../logs/slurm/training/<jobname>-<id>.err`.
+under `.../logs/slurm/training/<jobname>-<id>.err`. The 2026-09-16 capstor
+outage is the worst shape of this: with the container toml unreadable, pyxis
+failed before any rank started and 10 job-wide relaunches were recorded
+`COMPLETED 0:0` after ~3 min, having trained nothing. An elapsed time far
+under the walltime with no new checkpoint is the tell.
 
 ### 4. The 1h SIGUSR2 grace window
 `#SBATCH --signal=SIGUSR2@3600` + `--exit-signal-handler` checkpoint-and-exit
