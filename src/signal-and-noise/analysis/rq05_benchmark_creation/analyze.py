@@ -485,25 +485,35 @@ def generate_readme(stage: str, pool: str) -> None:
                     f"the gate")
         return f"on {label} is **H = {fmt(row['H'])}, p = {fmt(row['p'])}**"
 
-    nopt_H, nopt_p = hp("family/n_options")
-    cur_H, cur_p = hp("family/curation")
-
+    fam_views = {"family/curation": "curation", "family/source": "source origin",
+                 "family/n_options": "option count", "family/format": "task format",
+                 "family/passage": "passage flag"}
+    tested = {v: gs.loc[v] for v in fam_views if v in gs.index and gs.loc[v, "n_groups"] >= 2}
+    sig = {v: r for v, r in tested.items() if r["p"] < 0.05}
+    per_task = gs.loc["task/curation"] if "task/curation" in gs.index else None
+    n_tasks = int(per_family["n_tasks"].sum())
+    top_fam = per_family.sort_values("n_tasks", ascending=False).iloc[0]
     highlight = "\n".join([
         "- **The answer-count penalty lives in the above-random gate, upstream "
-        "of SNR.** Every at-chance 4-option *translated knowledge* MCQA "
-        "(`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is "
-        f"computed, leaving **{n_families} families** that clear the gate — most "
-        "of them 2-option.",
-        "- **Among survivors, no single design feature is individually "
-        f"significant.** Family-level Kruskal–Wallis on option count is "
-        f"**H = {nopt_H}, p = {nopt_p}**, and {clause('family/format', 'task format')}. "
-        "Too little variation is left among the survivors (mostly 2-option) to "
-        "resolve either.",
-        f"- **Curation method explains nothing** — family-level Kruskal–Wallis "
-        f"on curation is **H = {cur_H}, p = {cur_p}**. Once the gate fixes the "
-        "answer space, how a benchmark was built does not predict its "
-        "reliability.",
-    ])
+        "of SNR.** Every family whose tasks sit at chance at the reference size is "
+        f"dropped before SNR is computed, leaving **{n_families} families** that "
+        "clear the gate — most of them 2-option.",
+        ("- **Among survivors, no family-level design feature reaches p < 0.05** "
+         "(five Kruskal–Wallis tests on the same families, uncorrected): "
+         if not sig else
+         f"- **Among survivors, {', '.join(fam_views[v] for v in sig)} reach{'es' if len(sig) == 1 else ''} "
+         "p < 0.05 at the family level** — with five uncorrected tests on the same families, "
+         "one such hit is what chance produces: ")
+        + "; ".join(f"{fam_views[v]} H = {fmt(r['H'])}, p = {fmt(r['p'], 3)}" for v, r in tested.items())
+        + ". Too little variation is left among the survivors (mostly 2-option) to resolve any axis.",
+    ] + ([
+        f"- **Per-task curation test** (tasks as observations, {n_tasks} tasks of which "
+        f"{int(top_fam['n_tasks'])} are `{top_fam['family']}`): H = {fmt(per_task['H'])}, "
+        f"p = {fmt(per_task['p'], 3)}"
+        + (" — nominally significant, but the tasks of one family are not independent "
+           "observations, so it says which family dominates, not which curation works."
+           if per_task["p"] < 0.05 else ".")
+    ] if per_task is not None else []))
 
     rank_rows = [
         [f"`{r.family}`", fmt(r.snr_median), int(r.n_tasks), r.format,
@@ -573,7 +583,9 @@ def main(snr_dir: Path, out_dir: Path, stage: str, pool: str) -> None:
     print(f"  → {len(per_task)} per-language aggregate tasks across "
           f"{per_task['family'].nunique()} families")
 
-    length_csv = out_dir.parent / "length_features.csv"
+    # length_features.py writes next to itself; this looked one level down
+    # and Phase B silently never ran.
+    length_csv = Path(__file__).resolve().parent / "length_features.csv"
     per_family = per_family_aggregate(per_task, length_csv)
     out_csv = out_dir / "per_family_snr.csv"
     per_family.to_csv(out_csv, index=False)

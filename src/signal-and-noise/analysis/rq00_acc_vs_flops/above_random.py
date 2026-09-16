@@ -17,6 +17,7 @@ dir `acc_vs_flops/<stage>/<pool>/` (pool-named, matching every other RQ):
 
 Each report writes:
 - `above_random_scores.csv` — row per benchmark, column per size bucket, value =
+  (on the ladder: mean over the cells that trained the benchmark's language)
   mean score across all models in that bucket.
 - `above_random_mask.csv`   — same shape, value = 1 (above random) / 0 (at
   chance) / blank (no models in that bucket, or no chance level for the task).
@@ -117,11 +118,25 @@ def scores_and_mask(df: pd.DataFrame, margin: float = MARGIN,
     if sizes is None:
         sizes = [b for b in bucket_order() if b in set(df["bucket"].dropna())]
 
-    # mean of each model's final-ckpt score, averaged over all models in a bucket
+    # mean of each model's final-ckpt score, averaged over the models in a bucket
     finals = df.loc[df.groupby(["task", "model"])["step"].idxmax()]
     scores = (finals.pivot_table(index="task", columns="bucket",
                                  values="primary_score", aggfunc="mean")
               .reindex(columns=sizes))
+    # On the ladder a cell enters a benchmark's bucket mean only if it trained
+    # the benchmark's language: the all-languages runs are scored on every
+    # language, and an English-only cell averaged into `arc_th` drags the mean
+    # to chance whatever a cell that trained Thai can do. A task no cell
+    # trained keeps the plain mean.
+    if {"L", "scheme"} <= set(finals.columns):
+        from pretrain.ladder_report import _trained_tasks
+        keep = pd.Series(False, index=finals.index)
+        for (L, scheme), g in finals.groupby(["L", "scheme"]):
+            keep.loc[g.index] = g["task"].isin(_trained_tasks(int(L), scheme))
+        trained = (finals[keep].pivot_table(index="task", columns="bucket",
+                                            values="primary_score", aggfunc="mean")
+                   .reindex(index=scores.index, columns=sizes))
+        scores = trained.combine_first(scores)
 
     fam = df.groupby("task")["family"].first()
     lang = df.groupby("task")["language"].first()

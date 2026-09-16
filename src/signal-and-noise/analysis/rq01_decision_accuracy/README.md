@@ -8,6 +8,13 @@
 > languages, keep the ranking of the ladder's design variants across sizes
 > (**DA-size**) and across training (**DA-ckpt**)?
 
+<!-- BEGIN auto:highlight (da_per_benchmark.py --pool predictivity) -->
+## Highlighted result
+
+- **DA-size, proxy → 1B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 175M → 1B 0.60 / 0.77; 350M → 1B 0.68 / 0.84; 600M → 1B 0.72 / 0.86.
+- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 175M 80 % (0.86).
+<!-- END auto:highlight -->
+
 ## Experimental setup
 
 Models are the predictivity ladder's cells (`configs/models.json` pool
@@ -44,7 +51,34 @@ reference, with languages as the population.
 
 With few families at a bucket (the 1.7B row has five language settings; a
 task in one language may have three), DA is quantised to 1/#pairs: read the
-family-level averages, and `n` alongside every value.
+family-level averages, and `n` alongside every value
+(`da_n_pairs_per_task.csv`).
+
+<!-- BEGIN auto:results (da_per_benchmark.py --pool predictivity) -->
+## Results
+
+Numbers from the `predictivity` pool (`da_per_task.csv`, pairs from `da_n_pairs_per_task.csv`, gate from rq00). Regenerate with `python analysis/rq01_decision_accuracy/da_per_benchmark.py --pool predictivity`.
+
+**DA-size by proxy size** (`n` tasks; median pairs per cell):
+
+| comparison | benchmarks | n | pairs | BPB | n |
+|---|---|---|---|---|---|
+| 175M → 1B | 0.60 | 61 | 15 | 0.77 | 101 |
+| 350M → 1B | 0.68 | 79 | 21 | 0.84 | 101 |
+| 600M → 1B | 0.72 | 105 | 28 | 0.86 | 101 |
+
+![DA-size by family](pretraining/predictivity/da_size_by_family.png)
+
+**DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):
+
+| bucket | 20 % | 40 % | 60 % | 80 % |
+|---|---|---|---|---|
+| 175M | 0.64 | 0.75 | 0.76 | 0.86 |
+| 350M | 0.66 | 0.70 | 0.76 | 0.81 |
+| 600M | 0.70 | 0.74 | 0.75 | 0.79 |
+| 1B | 0.71 | 0.72 | 0.75 | 0.80 |
+| 1.7B | 0.73 | 0.75 | 0.77 | 0.80 |
+<!-- END auto:results -->
 
 ## Departure from upstream: tie handling in `decision_acc_fast`
 

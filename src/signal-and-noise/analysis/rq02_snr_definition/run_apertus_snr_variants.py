@@ -265,6 +265,21 @@ def run(pool: str, out_dir: Path):
 
     snr_df = pd.DataFrame(rows).set_index("task").sort_index()
 
+    # Coverage per (variant, bucket): the discrepancy family needs scores in
+    # [0, 1] and is undefined on BPB and loss (scores > 1), so its cells are
+    # NaN where every other variant has a value. Ranking variants against
+    # DA on different task populations is not a like-for-like comparison;
+    # the table makes the gap visible and the postprocess reads it.
+    cov = pd.DataFrame({b: {variant_key(fd): int(snr_df[f"snr_{variant_key(fd)}_{b}"].notna().sum())
+                            for fd in AGGREGATION_FUNCTIONS} for b in pool_buckets})
+    cov.index.name = "variant"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cov.to_csv(out_dir / "snr_variant_coverage.csv")
+    short = cov.lt(0.9 * cov.max(axis=0), axis=1)
+    for v in cov.index[short.any(axis=1)]:
+        print(f"  coverage: `{v}` is finite on {cov.loc[v].to_dict()} cells vs "
+              f"{cov.max(axis=0).to_dict()} for the best-covered variant")
+
     # Copy the DA ground truth (rq01) and append the SNR columns. DA is computed
     # before SNR, so the table must already exist.
     da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_per_task.csv"

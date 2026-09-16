@@ -11,7 +11,7 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `global_piqa_nonparallel_cloze`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
-- **Above-random gate.** Of **462 benchmarks, 113 clear chance at ≥1 size** and 99 at 1B (349 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **462 benchmarks, 128 clear chance at ≥1 size** and 116 at 1B (334 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -101,9 +101,9 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | options | chance | above ≥1 size | above @1B |
 |---|---|---|---|
-| 2 | 0.50 | 80 / 192 | 77 / 192 |
-| 3 | 0.33 | 13 / 18 | 9 / 18 |
-| 4 | 0.25 | 20 / 252 | 13 / 252 |
+| 2 | 0.50 | 84 / 192 | 80 / 192 |
+| 3 | 0.33 | 13 / 18 | 13 / 18 |
+| 4 | 0.25 | 31 / 252 | 23 / 252 |
 <!-- END auto:results -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact

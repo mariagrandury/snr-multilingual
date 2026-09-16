@@ -11,7 +11,7 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `SNR, relative std` 0.51; weakest: `SNR, discrepancy` 0.09.
+- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `SNR, relative std` 0.54; weakest: `margin above chance` -0.02.
 - **per-language bits per byte** — strongest surrogate of DA-size (mean ρ over proxies): `SNR, relative std` 0.61; weakest: `SNR, discrepancy` -0.28.
 <!-- END auto:highlight -->
 
@@ -43,14 +43,14 @@ Numbers from the `predictivity` pool's rq02 table. Regenerate with `python analy
 
 | metric | 175M | 350M | 600M |
 |---|---|---|---|
-| SNR, relative std | 0.52 | 0.60 | 0.41 |
-| early-checkpoint agreement (20 %) | 0.33 | 0.59 | 0.57 |
-| signal alone (relative std) | 0.48 | 0.54 | 0.36 |
-| SNR, dist_std | 0.43 | 0.53 | 0.33 |
-| scaling-fit R² | 0.21 | 0.34 | 0.48 |
-| noise alone (relative std, inverted) | 0.09 | 0.18 | 0.08 |
-| margin above chance | 0.27 | 0.14 | -0.12 |
-| SNR, discrepancy | 0.11 | 0.16 | -0.01 |
+| SNR, relative std | 0.50 | 0.63 | 0.50 |
+| early-checkpoint agreement (20 %) | 0.37 | 0.65 | 0.57 |
+| signal alone (relative std) | 0.49 | 0.55 | 0.31 |
+| scaling-fit R² | 0.32 | 0.43 | 0.57 |
+| SNR, dist_std | 0.38 | 0.49 | 0.37 |
+| noise alone (relative std, inverted) | 0.04 | 0.17 | 0.23 |
+| SNR, discrepancy | -0.00 | 0.06 | 0.09 |
+| margin above chance | 0.17 | -0.03 | -0.19 |
 
 **per-language bits per byte** (Spearman ρ of the statistic with DA-size, per proxy size):
 

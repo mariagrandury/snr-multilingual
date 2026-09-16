@@ -230,7 +230,9 @@ def variant_clusters(best_df: pd.DataFrame) -> pd.DataFrame:
 
 def top_variants_overall(df: pd.DataFrame) -> pd.DataFrame:
     """Mean Pearson r across languages per variant, for both DA-size and
-    DA-ckpt. Returns a long table sorted by mean DA-size r descending."""
+    DA-ckpt. Sorted by the mean over the two DA kinds: DA-size alone sits at
+    noise level on the ladder (|r| < 0.1 for every variant), so sorting on
+    it picked a variant at r = 0.03 over the DA-ckpt leaders at 0.27."""
     rows = []
     tables = {k: _table(df, k) for k in ("size", "ckpt")}
     variants = sorted(set(tables["size"].index) | set(tables["ckpt"].index))
@@ -245,7 +247,7 @@ def top_variants_overall(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame(rows)
     out["mean_r_overall"] = out[["mean_r_da_size", "mean_r_da_ckpt"]].mean(
         axis=1, skipna=True)
-    return out.sort_values("mean_r_da_size", ascending=False).reset_index(drop=True)
+    return out.sort_values("mean_r_overall", ascending=False).reset_index(drop=True)
 
 
 def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path):
@@ -377,9 +379,26 @@ def _read_tv(stage: str, pool: str) -> pd.DataFrame | None:
 
 
 def _anchor_rank1(stage: str, pool: str) -> pd.DataFrame:
-    """Rank-1 benchmark per language from top_benchmarks_per_language.csv."""
-    df = pd.read_csv(_snr_dir(stage, pool) / "top_benchmarks_per_language.csv")
-    return df[df["rank"] == 1].sort_values("language").reset_index(drop=True)
+    """Top above-random benchmark per language at the reference size under the
+    global variant, with the language's own BPB SNR alongside (`bpb_snr`, NaN
+    where the language has none).
+
+    Benchmarks and per-language BPB are ranked apart: BPB has no chance level
+    (never gated) and far smaller checkpoint noise, so on one SNR scale it
+    outranks every benchmark and the "most reliable benchmark" would name an
+    ungated measurement. Read from snr_variants_per_task.csv rather than the
+    top-5 table, whose cut can leave a language with BPB rows only."""
+    d = _snr_dir(stage, pool)
+    variant = _read_tv(stage, pool).iloc[0]["variant"]
+    size = pd.read_csv(d / "top_benchmarks_per_language.csv")["size"].iloc[0]
+    df = pd.read_csv(d / "snr_variants_per_task.csv", index_col="task")
+    full = top_benchmarks_per_language(df, variant, size, top_k=len(df))
+    is_bpb = full["task"].str.startswith("bpb_")
+    bench = full[~is_bpb]
+    bench = bench.loc[bench.groupby("language")["snr"].idxmax()]
+    bpb = full[is_bpb].groupby("language")["snr"].max().rename("bpb_snr")
+    return (bench.merge(bpb, left_on="language", right_index=True, how="left")
+            .sort_values("language").reset_index(drop=True))
 
 
 def _holdout_metrics(stage: str) -> dict | None:
@@ -392,7 +411,7 @@ def _holdout_metrics(stage: str) -> dict | None:
 
 def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     tv = _read_tv(stage, pool)
-    g = tv.iloc[0]                                   # best by DA-size
+    g = tv.iloc[0]                                   # best by mean r over both DA kinds
     ckpt_sorted = tv.sort_values("mean_r_da_ckpt", ascending=False)
     ckpt_leaders = ckpt_sorted.head(3)["variant"].tolist()
     ckpt_r = ckpt_sorted.iloc[0]["mean_r_da_ckpt"]
@@ -402,6 +421,8 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     fam_counts = anchor["task"].map(benchmark_family).value_counts()
     fam_name, fam_n = fam_counts.index[0], int(fam_counts.iloc[0])
     n_langs = anchor["language"].nunique()
+    n_with_bpb = int(anchor["bpb_snr"].notna().sum())
+    n_bpb_top = int((anchor["bpb_snr"] > anchor["snr"]).sum())
     ref = anchor["size"].iloc[0]
     hm = _holdout_metrics(stage)
 
@@ -413,7 +434,9 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         f"{'one family: ' + next(iter(families)) if len(families) == 1 else 'families: ' + ', '.join(sorted(families))}) — "
         f"recommend the *family*, not an exact variant.",
         f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
-        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}). "
+        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}); the language's own "
+        f"BPB, ungated and on its own noise scale, outranks that benchmark in "
+        f"{n_bpb_top} of the {n_with_bpb} languages that have both. "
         f"Weakest variants overall: `{'`, `'.join(worst)}`.",
     ]
     if hm is not None:
@@ -446,12 +469,12 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         bp = tvp.iloc[0]
         pw.append([f"`{p}` ({lab})", f"`{bp.variant}`", fmt(bp.mean_r_da_size),
                    fmt(bp.mean_r_da_ckpt)])
-    t_power = md_table(["pool", "best variant (DA-size)", "DA-size r", "DA-ckpt r"], pw)
+    t_power = md_table(["pool", "best variant (overall)", "DA-size r", "DA-ckpt r"], pw)
 
     # 3) per-language anchor
-    an = [[r.language, f"`{r.task}`", fmt(r.snr), fmt(r.da_ckpt_mean)]
+    an = [[r.language, f"`{r.task}`", fmt(r.snr), fmt(r.da_ckpt_mean), fmt(r.bpb_snr)]
           for _, r in anchor.iterrows()]
-    t_anchor = md_table(["lang", "top benchmark", "SNR", f"DA-ckpt@{ref}"], an)
+    t_anchor = md_table(["lang", "top benchmark", "SNR", f"DA-ckpt@{ref}", "BPB SNR"], an)
 
     results = [
         f"Headline numbers from the `{pool}` pool. Regenerate with "
@@ -459,10 +482,11 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages:",
         t_variants,
         f"![SNR variants ranked by correlation with DA]({stage}/{pool}/top_variants_overall.png)",
-        "**Statistical power by pool** — each pool's best DA-size variant:",
+        "**Statistical power by pool** — each pool's best variant (mean r over both DA kinds):",
         t_power,
-        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {ref} over "
-        f"above-random tasks (DA-size is undefined at the reference size itself, so "
+        f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {ref} over the "
+        f"above-random benchmarks, with the language's own BPB SNR alongside (ungated, "
+        f"on its own noise scale; DA-size is undefined at the reference size itself, so "
         f"DA-ckpt@{ref} is shown):",
         t_anchor,
         f"![Top-5 benchmarks per language by SNR]({stage}/{pool}/top_benchmarks_per_language.png)",
@@ -516,7 +540,7 @@ def generate_slides(stage: str, pool: str) -> None:
     # table and top_benchmarks_per_language.csv carry all 96.
     trained = load_languages()["groups"]["trained"]
     shown = anchor[anchor["language"].isin(trained)]
-    rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_mean)]
+    rows = [[r.language, f"`{r.task}`", fmt(r.snr, 1), fmt(r.da_ckpt_mean), fmt(r.bpb_snr, 1)]
             for _, r in shown.iterrows()]
     slide = (
         "---\n"
@@ -524,7 +548,7 @@ def generate_slides(stage: str, pool: str) -> None:
         f"subtitle: \"Results (auto) — most reliable benchmark per language "
         f"(`{g_variant}` @ {ref})\"\n"
         "---\n\n"
-        f"{md_table(['lang', 'top benchmark', 'SNR', f'DA-ckpt@{ref}'], rows)}\n\n"
+        f"{md_table(['lang', 'top benchmark', 'SNR', f'DA-ckpt@{ref}', 'BPB SNR'], rows)}\n\n"
         "<style>\n.slidev-layout table { font-size: 0.7em; }\n</style>"
     )
     replace_block(SLIDES, "rq1-results", slide,
@@ -579,7 +603,7 @@ def main(stage: str, pool: str, out_dir: Path):
     print(f"Wrote → {out_dir / 'top_variants_overall.png'}")
 
     g_best = tv_df.iloc[0]["variant"]
-    print(f"\nGlobal best variant (mean Pearson r across languages, DA-size): {g_best}")
+    print(f"\nGlobal best variant (mean Pearson r across languages, DA-size and DA-ckpt): {g_best}")
 
     # Q4
     top_df = top_benchmarks_per_language(df, g_best)

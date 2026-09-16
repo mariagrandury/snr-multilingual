@@ -210,7 +210,10 @@ def write_summary(out_dir: Path, train_dir: Path, test_dir: Path,
     def _agree_frac(df, col):
         if df.empty:
             return float("nan"), 0
-        valid = df.dropna(subset=["train_best_variant", "test_best_variant"])
+        # A language with no data on a split carries "" (not NaN) in these
+        # columns; counting it in the denominator understated agreement 10x.
+        valid = df.replace({"train_best_variant": {"": None}, "test_best_variant": {"": None}}) \
+                  .dropna(subset=["train_best_variant", "test_best_variant"])
         if valid.empty:
             return float("nan"), 0
         return float(valid[col].mean()), len(valid)

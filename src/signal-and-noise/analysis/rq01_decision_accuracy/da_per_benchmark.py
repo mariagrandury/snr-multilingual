@@ -139,6 +139,98 @@ def run(pool: str, out_dir: Path) -> None:
     print(f"Wrote {out_dir/'da_per_benchmark.csv'} (+ _size / _ckpt pivots)")
 
     generate_slides(long, pool)
+    generate_readme(df, pool, out_dir)
+
+
+def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
+    """Highlight + results blocks of the rq01 README (canonical pool only):
+    mean DA-size per proxy over the above-random benchmark tasks and over the
+    per-language BPB tasks, a family x proxy heatmap, and DA-ckpt per bucket
+    and fraction. Pair counts come from da_n_pairs_per_task.csv."""
+    if pool != CANONICAL_POOL:
+        return
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from analysis import style as S
+    from analysis.autodoc import fmt, md_table as md_tbl, replace_block
+    from analysis.rq00_acc_vs_flops.above_random import load_mask
+    stage = load_pools()[pool].get("stage", "pretraining")
+    npairs_path = out_dir / "da_n_pairs_per_task.csv"
+    npairs = pd.read_csv(npairs_path, index_col="task") if npairs_path.is_file() else None
+    mask = load_mask(pool)
+    is_bpb = df.index.str.startswith("bpb_")
+    fam = pd.Series(df.index.map(benchmark_family), index=df.index)
+    sizes = [b for b in bucket_order() if f"decision_acc_size_{b}" in df.columns
+             and df[f"decision_acc_size_{b}"].notna().any()]
+    bullets, rows = [], []
+    for b in sizes:
+        col = f"decision_acc_size_{b}"
+        gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else ~is_bpb
+        bench, bpb = df.loc[gated & ~is_bpb, col].dropna(), df.loc[is_bpb, col].dropna()
+        med_n = int(npairs[col].reindex(bench.index).median()) if npairs is not None and len(bench) else 0
+        rows.append([f"{b} → {TARGET_SIZE}", fmt(bench.mean()), len(bench), med_n, fmt(bpb.mean()), len(bpb)])
+    if rows:
+        bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "** (mean over the above-random benchmark tasks / over the "
+                       "per-language BPB tasks): " + "; ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
+    ckpt = [c for c in df.columns if c.startswith("decision_acc_ckpt_")]
+    ck_rows = []
+    if ckpt:
+        piv = {}
+        for c in ckpt:
+            _, _, _, frac, bucket = c.split("_", 4)
+            gated = (mask[bucket] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and bucket in mask else ~is_bpb
+            piv[(bucket, frac)] = df.loc[gated & ~is_bpb, c].mean()
+        buckets = [b for b in bucket_order()          # a bucket with one cell has no pairs: no row
+                   if any(k[0] == b and np.isfinite(v) for k, v in piv.items())]
+        fracs = sorted({k[1] for k in piv}, key=lambda f: int(f[1:]))
+        ck_rows = [[b] + [fmt(piv.get((b, f), float("nan"))) for f in fracs] for b in buckets]
+        best = max(piv.items(), key=lambda kv: kv[1] if np.isfinite(kv[1]) else -1)
+        bullets.append(f"- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at "
+                       f"{best[0][0]} {int(best[0][1][1:])} % ({fmt(best[1])}).")
+    blocks = []
+    if rows:
+        blocks += ["**DA-size by proxy size** (`n` tasks; median pairs per cell):",
+                   md_tbl(["comparison", "benchmarks", "n", "pairs", "BPB", "n"], rows)]
+        # family x proxy heatmap over the above-random tasks
+        fams = sorted(fam[~is_bpb].unique())
+        mat = np.full((len(fams), len(sizes)), np.nan)
+        for j, b in enumerate(sizes):
+            col = f"decision_acc_size_{b}"
+            gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else ~is_bpb
+            g = df.loc[gated & ~is_bpb, col].groupby(fam).mean()
+            for i, f in enumerate(fams):
+                if f in g.index and np.isfinite(g[f]):
+                    mat[i, j] = g[f]
+        keep = ~np.isnan(mat).all(axis=1)
+        fams, mat = [f for f, k in zip(fams, keep) if k], mat[keep]
+        if fams:
+            fig, ax = plt.subplots(figsize=(1.4 * len(sizes) + 3, 0.32 * len(fams) + 1.2))
+            im = ax.imshow(mat, vmin=0, vmax=1, cmap=S.SEQ, aspect="auto")
+            for i in range(len(fams)):
+                for j in range(len(sizes)):
+                    if np.isfinite(mat[i, j]):
+                        ax.text(j, i, f"{mat[i, j]:.2f}", ha="center", va="center", fontsize=7,
+                                color="white" if mat[i, j] > 0.7 else S.INK)
+            ax.set_xticks(range(len(sizes))); ax.set_xticklabels([f"{b}→{TARGET_SIZE}" for b in sizes])
+            ax.set_yticks(range(len(fams))); ax.set_yticklabels(fams, fontsize=8)
+            ax.set_title("DA-size per family, mean over its above-random tasks", loc="left")
+            S.clean(ax, spines=()); ax.tick_params(length=0)
+            fig.colorbar(im, ax=ax, fraction=0.04, label="decision accuracy")
+            S.save(fig, out_dir / "da_size_by_family.png", dpi=150)
+            blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family.png)")
+    if ck_rows:
+        blocks += ["**DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):",
+                   md_tbl(["bucket"] + [f"{int(f[1:])} %" for f in fracs], ck_rows)]
+    readme = DECISION_ACCURACY / "README.md"
+    gen = f"da_per_benchmark.py --pool {pool}"
+    replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
+    replace_block(readme, "results", "## Results\n\n"
+                  + f"Numbers from the `{pool}` pool (`da_per_task.csv`, pairs from `da_n_pairs_per_task.csv`, "
+                  f"gate from rq00). Regenerate with `python analysis/rq01_decision_accuracy/da_per_benchmark.py --pool {pool}`.\n\n"
+                  + "\n\n".join(blocks), gen)
+    print(f"Wrote auto README blocks → {readme}")
 
 
 # --- Slidev appendix slides -------------------------------------------------

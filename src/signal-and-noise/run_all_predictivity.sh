@@ -7,7 +7,7 @@
 # ladder_report.csv to use a local copy (the cluster's capstor copy, a fixture).
 #
 # Idempotent: the per-task DA and SNR tables are computed once per pool and
-# reused, until the ladder report is newer than them. Output layout:
+# reused, until the ladder report is newer than them (FORCE=1 recomputes them). Output layout:
 # analysis/<rqNN_name>/pretraining/<pool>/
 #
 #   A. The above-random gate (its report feeds the rq01 slides), then DA and SNR
@@ -37,7 +37,9 @@ stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models
 # from data we no longer have. Reusing it lets a whole run finish on last
 # night's numbers while every log line claims success.
 LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_dir() / 'ladder_report.csv')")
-fresh() { [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
+# FORCE=1 recomputes the cached tables even when the report is not newer — after
+# a change to the kernel, the gate or the loader, which the mtime cannot see.
+fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
 
 echo "############################## PASS A — gate, DA, SNR compute ##############################"
 run $PY analysis/rq00_acc_vs_flops/above_random.py --only predictivity

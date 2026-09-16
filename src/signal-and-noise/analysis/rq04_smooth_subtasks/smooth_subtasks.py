@@ -54,6 +54,7 @@ from analysis.utils import (
 )
 from analysis.autodoc import (
     CANONICAL_POOL, SLIDES, fmt, md_table, replace_block)
+from analysis.rq00_acc_vs_flops.above_random import scores_and_mask
 from snr.constants import PLOT_DIR
 from analysis.paths import SMOOTH_SUBTASKS
 from snr.download.apertus import (
@@ -77,6 +78,12 @@ _GMF_LANGS = tuple(sorted(
     if t.startswith("global_mmlu_full_") and "_" not in t[len("global_mmlu_full_"):]))
 
 LAST_N = load_snr_params()["last_n"]
+# MMLU's category roll-ups are means of their member subjects; sweeping them
+# next to the leaves double-counts every item.
+_GMF_ROLLUPS = {"humanities", "other", "social_sciences", "stem"}
+NULL_DRAWS = 100          # random subsets of the best size, for the selection null
+# (task, bucket) cells the rq00 gate marks at chance; filled by main().
+_AT_CHANCE: set[tuple[str, str]] = set()
 OUT_ROOT = SMOOTH_SUBTASKS
 
 
@@ -183,12 +190,25 @@ def sweep_subset_snrs(
         snr_for_subset(df, rand_order[: n + 1], size) for n in range(len(rand_order))
     ]
 
+    # Selection null: the best prefix is chosen on the same numbers it is
+    # scored on, so best >= full by construction. Random subsets of the same
+    # size say how much of the gain is that selection; a gain that does not
+    # clear their 95th percentile is noise.
+    best_idx = _argmax_safe(cumulative)
+    k = best_idx + 1
+    null = []
+    if 0 < k < len(ordered):
+        for _ in range(NULL_DRAWS):
+            null.append(snr_for_subset(df, list(rng.choice(ordered, k, replace=False)), size))
+    null = np.asarray([v for v in null if np.isfinite(v)], dtype=float)
     return {
         "per_subtask": per_subtask,
         "sorted_subtasks": sorted_subtasks,
         "cumulative_snrs": cumulative,
         "random_subtasks": rand_order,
         "random_cumulative_snrs": rand_cumulative,
+        "null_snr_p95": float(np.percentile(null, 95)) if null.size else float("nan"),
+        "null_snr_median": float(np.median(null)) if null.size else float("nan"),
     }
 
 
@@ -263,6 +283,8 @@ def _result_row(task_name: str, size: str, sweep: dict) -> dict:
         "best_n": best_idx + 1 if best_idx >= 0 else 0,
         "best_snr": cum[best_idx] if best_idx >= 0 else float("nan"),
         "best_subset": "|".join(sorted_subs[: best_idx + 1]) if best_idx >= 0 else "",
+        "null_snr_p95": sweep.get("null_snr_p95", float("nan")),
+        "null_snr_median": sweep.get("null_snr_median", float("nan")),
     }
 
 
@@ -309,10 +331,15 @@ def run_per_benchmark(df: pd.DataFrame, out_dir: Path) -> Path:
     for family, langs in tqdm(sorted(families.items()), desc="families"):
         per_size = {}
         for size in _sizes(df):
-            sweep = sweep_subset_snrs(df, langs, size)
+            # the gate: a language task at chance at this size carries no signal
+            subs = [t for t in langs if (t, size) not in _AT_CHANCE]
+            if len(subs) < 2:
+                continue
+            sweep = sweep_subset_snrs(df, subs, size)
             per_size[size] = sweep
             rows.append(_result_row(family, size, sweep))
-        _plot_sweep(family, langs, per_size, plot_dir / f"{family}.png")
+        if per_size:
+            _plot_sweep(family, langs, per_size, plot_dir / f"{family}.png")
 
     out = pd.DataFrame(rows)
     csv_path = out_dir / "per_benchmark.csv"
@@ -344,7 +371,7 @@ def _parse_gmf_lang_subject(task: str) -> tuple[str, str] | None:
         return None
     rest = task[len("global_mmlu_full_"):]
     parts = rest.split("_", 1)
-    if len(parts) < 2 or parts[0] not in _GMF_LANGS:
+    if len(parts) < 2 or parts[0] not in _GMF_LANGS or parts[1] in _GMF_ROLLUPS:
         return None
     return parts[0], parts[1]
 
@@ -399,7 +426,7 @@ def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | No
     print(f"global_mmlu_full subjects: {len(subjects)}; "
           f"per-size #(mix, seed) units with data: {coverage.to_dict()}")
     print(f"  mean #languages averaged per cell: "
-          f"{df_gmf['n_languages'].mean():.2f} (max=10)")
+          f"{df_gmf['n_languages'].mean():.2f} (max={len(_GMF_LANGS)})")
     insufficient = [s for s, n in coverage.items() if n < 2]
     if insufficient:
         print(f"  warning: sizes {insufficient} have <2 (mix, seed) units "
@@ -408,10 +435,18 @@ def run_gmf_subjects(out_dir: Path, df: pd.DataFrame | None = None) -> Path | No
     rows = []
     per_size = {}
     for size in _sizes(df_gmf):
+        # gate at the parent: skip a size where no language aggregate clears chance
+        if all((f"global_mmlu_full_{lang}", size) in _AT_CHANCE for lang in _GMF_LANGS):
+            continue
         sweep = sweep_subset_snrs(df_gmf, subjects, size)
         per_size[size] = sweep
         rows.append(_result_row("global_mmlu_full", size, sweep))
 
+    if not rows:
+        print("global_mmlu_full: at chance at every size (rq00 gate) — nothing to sweep.")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame().to_csv(out_dir / "global_mmlu_full.csv", index=False)
+        return None
     _plot_sweep("global_mmlu_full", subjects, per_size,
                 out_dir / "global_mmlu_full_subjects.png")
 
@@ -469,14 +504,22 @@ def run_gmf_subjects_per_language(out_dir: Path, df: pd.DataFrame | None = None)
         subjects = sorted(df_l["task"].unique())
         per_size = {}
         for size in _sizes(df_l):
+            if (f"global_mmlu_full_{lang}", size) in _AT_CHANCE:   # the gate, at the parent
+                continue
             sweep = sweep_subset_snrs(df_l, subjects, size)
             per_size[size] = sweep
             row = _result_row(f"global_mmlu_full_{lang}", size, sweep)
             row["language"] = lang
             rows.append(row)
-        _plot_sweep(f"global_mmlu_full_{lang}", subjects, per_size,
-                    plot_dir / f"{lang}.png")
+        if per_size:
+            _plot_sweep(f"global_mmlu_full_{lang}", subjects, per_size,
+                        plot_dir / f"{lang}.png")
 
+    if not rows:
+        print("global_mmlu_full per language: every (language, size) at chance (rq00 gate) — nothing to sweep.")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame().to_csv(out_dir / "global_mmlu_full_per_language.csv", index=False)
+        return None
     out = pd.DataFrame(rows)
     cols = ["language"] + [c for c in out.columns if c != "language"]
     out = out[cols]
@@ -494,8 +537,7 @@ def run_gmf_subjects_per_language(out_dir: Path, df: pd.DataFrame | None = None)
 _SUMMARY_COLS = [
     "case", "task", "size",
     "full_set_snr", "best_n", "best_snr", "snr_gain",
-    "best_subset_short",
-]
+    "best_subset_short", "null_snr_p95", "gain_over_null"]
 
 
 def _short_subset(s: str, max_items: int = 4) -> str:
@@ -523,13 +565,20 @@ def build_summary(out_dir: Path) -> Path:
         if not path.exists() or path.stat().st_size == 0:
             print(f"  skip {case}: no rows for this pool")
             continue
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path)
+        except pd.errors.EmptyDataError:          # a case with nothing to sweep
+            df = pd.DataFrame()
         if df.empty:
             print(f"  skip {case}: no rows for this pool")
             continue
+        for c in ("null_snr_p95", "null_snr_median"):      # tables from before the null
+            if c not in df:
+                df[c] = np.nan
         df = df.assign(
             case=case,
             snr_gain=df["best_snr"] - df["full_set_snr"],
+            gain_over_null=df["best_snr"] - df["null_snr_p95"],
             best_subset_short=df["best_subset"].apply(_short_subset),
         )
         frames.append(df[_SUMMARY_COLS])
@@ -575,6 +624,15 @@ def generate_readme(stage: str, pool: str) -> None:
         + " (SNR units; a subset only helps where the gain clears the seed noise "
         "reported in rq06)."
     )
+    tested = summary.dropna(subset=["gain_over_null"])
+    if not tested.empty:
+        above = tested[tested["gain_over_null"] > 0]
+        bullets.append(
+            f"- **Selection null** — the best prefix is chosen on the numbers it is scored on, so "
+            f"`best ≥ full` always; against {NULL_DRAWS} random subsets of the same size, "
+            f"**{len(above)} of {len(tested)}** swept cells beat the null's 95th percentile"
+            + (": " + ", ".join(f"`{r.task}` {r['size']}" for _, r in above.head(5).iterrows()) if len(above) else "")
+            + ".")
     highlight = "## Highlighted result\n\n" + "\n".join(bullets)
 
     rows = []
@@ -583,10 +641,10 @@ def generate_readme(stage: str, pool: str) -> None:
         rows.append([
             _short_case(r.case), f"`{r.task}`", r["size"],
             f"{fmt(r.full_set_snr)} → {fmt(r.best_snr)}",
-            f"+{fmt(r.snr_gain)}", subset,
+            f"+{fmt(r.snr_gain)}", fmt(r.get("null_snr_p95", float("nan"))), subset,
         ])
     table = md_table(
-        ["case", "task", "size", "full → best SNR", "+gain", "best subset"], rows)
+        ["case", "task", "size", "full → best SNR", "+gain", "null p95", "best subset"], rows)
 
     images = []
     for img in ("global_mmlu_full_subjects.png",):
@@ -643,6 +701,11 @@ def main(stage: str, pool: str, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = build_pool(pool)
+    # The above-random gate every other RQ applies: cells at chance are not swept.
+    _, mask, _ = scores_and_mask(df)
+    _AT_CHANCE.clear()
+    _AT_CHANCE.update((t, b) for b in mask.columns for t in mask.index[(mask[b] == 0).fillna(False)])
+    print(f"gate: {len(_AT_CHANCE)} (task, bucket) cells at chance are not swept")
     pool_n_models = df.groupby("bucket")["model"].nunique().to_dict()
     print(f"Pool '{pool}': {len(df):,} rows | {df['model'].nunique()} models | "
           f"models per bucket in SNR pool: {pool_n_models}")

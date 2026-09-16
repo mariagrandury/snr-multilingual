@@ -10,9 +10,9 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-- **Global-best SNR definition (`predictivity`): `discrepancy`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.03** (DA-size), **-0.05** (DA-ckpt), -0.01 overall. DA-ckpt is led by `mpsd`/`rel_mpsd`/`aad` (≈ 0.27; families: dispersion, rel_spread) — recommend the *family*, not an exact variant.
-- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **55 of 65** languages (`discrepancy` SNR @ 1B). Weakest variants overall: `tukey`, `projection`.
-- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **-0.21** (DA-ckpt), **0.01** (DA-size); family-level per-language agreement 15% / 3%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
+- **Global-best SNR definition (`predictivity`): `mpsd`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.05** (DA-size), **0.32** (DA-ckpt), 0.19 overall. DA-ckpt is led by `mpsd`/`rel_mpsd`/`aad` (≈ 0.32; families: dispersion, rel_spread) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **55 of 66** languages (`mpsd` SNR @ 1B); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 55 of the 57 languages that have both. Weakest variants overall: `tukey`, `projection`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.07** (DA-ckpt), **0.75** (DA-size); family-level per-language agreement 29% / 57%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -35,6 +35,29 @@ The seed holdout is English-heavy by construction: among the ×3 cells
 L100, so its per-language variant ranking rests on two language settings per
 seed, while English and the BPB tasks cover all four.
 
+## Methodology
+
+- **Signal and noise per (task, size bucket).** Signal pool = every model at
+  the bucket (`per_model_inputs`); each model's `data_score` is its final
+  checkpoint, `step_noise` the std over its last `last_n` = 5 checkpoints on
+  the shared grid. The 22 aggregators in `snr/snr_variants.py` differ in how
+  they turn the cross-model scores into a dispersion; all but `rel_std` share
+  `noise = mean(step_noise) / mean(last-N means)`. Cells the rq00 gate marks
+  at chance are NaN. Variants of the discrepancy family need scores in
+  [0, 1] and are undefined on per-language BPB and loss;
+  `snr_variant_coverage.csv` records how many cells each variant covers per
+  bucket, and the driver prints the ones that fall short.
+- **Decision accuracy** is joined from rq01 (`decision_acc_size_*`,
+  `decision_acc_ckpt_*`; pair counts in `da_n_pairs_per_task.csv`).
+- **Ranking.** Per language, Pearson r of log₁₀(SNR) against DA over the
+  (task, bucket) cells; the global variant is the highest mean r over
+  languages and over both DA kinds (`top_variants_overall.csv`), and the
+  per-language "most reliable benchmark" table reads that variant at the
+  reference size.
+- **Seed holdout.** The same per-language table on the replicate seeds
+  (64/313) and on seed 1904 of the same cells; agreement is counted over
+  the languages that have a best variant on both splits.
+
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
 
@@ -44,95 +67,96 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---|---|---|
-| `discrepancy` | 0.03 | -0.05 | -0.01 |
-| `rel_mpsd` | -0.00 | 0.27 | 0.13 |
-| `star_discrepancy_shifted` | -0.00 | 0.11 | 0.05 |
-| `mpsd` | -0.00 | 0.27 | 0.13 |
-| `dist_std` | -0.01 | 0.24 | 0.12 |
-| `rms_deviation` | -0.01 | 0.24 | 0.11 |
-| `aad` | -0.02 | 0.25 | 0.12 |
+| `mpsd` | 0.05 | 0.32 | 0.19 |
+| `rel_mpsd` | 0.05 | 0.31 | 0.18 |
+| `aad` | 0.04 | 0.30 | 0.17 |
+| `dist_std` | 0.04 | 0.29 | 0.17 |
+| `rms_deviation` | 0.04 | 0.29 | 0.17 |
+| `mpd` | 0.04 | 0.29 | 0.16 |
+| `dispersion` | 0.03 | 0.28 | 0.16 |
 | … |  |  |  |
-| `projection` | -0.17 | -0.03 | -0.10 |
-| `tukey` | -0.21 | -0.10 | -0.16 |
+| `projection` | -0.16 | -0.07 | -0.11 |
+| `tukey` | -0.20 | -0.12 | -0.16 |
 
 ![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
 
-**Statistical power by pool** — each pool's best DA-size variant:
+**Statistical power by pool** — each pool's best variant (mean r over both DA kinds):
 
-| pool | best variant (DA-size) | DA-size r | DA-ckpt r |
+| pool | best variant (overall) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `predictivity` (grid, seed 1904) | `discrepancy` | 0.03 | -0.05 |
-| `predictivity_seeds` (all seeds) | `star_discrepancy_shifted` | 0.04 | 0.11 |
+| `predictivity` (grid, seed 1904) | `mpsd` | 0.05 | 0.32 |
+| `predictivity_seeds` (all seeds) | `mpsd` | 0.08 | 0.30 |
 
-**Most reliable benchmark per language** — `discrepancy` SNR @ 1B over above-random tasks (DA-size is undefined at the reference size itself, so DA-ckpt@1B is shown):
+**Most reliable benchmark per language** — `mpsd` SNR @ 1B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1B is shown):
 
-| lang | top benchmark | SNR | DA-ckpt@1B |
-|---|---|---|---|
-| am | `multiblimp_amh` | 6.55 | 0.46 |
-| ar | `multiblimp_arb` | 16.45 | 0.84 |
-| be | `multiblimp_bel` | 5.85 | 0.76 |
-| bg | `multiblimp_bul` | 9.08 | 0.92 |
-| bn | `bpb_ben_Beng` | 2.77 | 0.96 |
-| ca | `multiblimp_cat` | 12.03 | 0.87 |
-| cs | `multiblimp_ces` | 7.50 | 0.88 |
-| cy | `multiblimp_cym` | 3.49 | 0.71 |
-| da | `multiblimp_dan` | 8.08 | 0.72 |
-| de | `multiblimp_deu` | 51.07 | 0.82 |
-| el | `multiblimp_ell` | 24.70 | 0.82 |
-| en | `multiblimp_eng` | 113.20 | 0.46 |
-| es | `multiblimp_spa` | 36.66 | 0.85 |
-| et | `multiblimp_est` | 9.72 | 0.74 |
-| eu | `multiblimp_eus` | 28.68 | 0.70 |
-| fa | `multiblimp_fas` | 8.09 | 0.83 |
-| fi | `multiblimp_fin` | 7.03 | 0.78 |
-| fo | `multiblimp_fao` | 1.96 | 0.60 |
-| fr | `multiblimp_fra` | 39.99 | 0.72 |
-| ga | `multiblimp_gle` | 2.00 | 0.69 |
-| gd | `multiblimp_gla` | 14.07 | 0.56 |
-| gl | `multiblimp_glg` | 9.94 | 0.79 |
-| grc | `multiblimp_grc` | 7.20 | 0.65 |
-| gu | `multiblimp_guj` | 6.91 | 0.84 |
-| hbo | `multiblimp_hbo` | 7.90 | 0.74 |
-| he | `multiblimp_heb` | 7.62 | 0.84 |
-| hi | `multiblimp_hin` | 17.87 | 0.78 |
-| hu | `multiblimp_hun` | 14.08 | 0.85 |
-| hy | `multiblimp_hye` | 4.81 | 0.62 |
-| hyw | `multiblimp_hyw` | 2.99 | 0.59 |
-| id | `hellaswag_id` | 9.43 | 0.86 |
-| is | `multiblimp_isl` | 10.00 | 0.69 |
-| it | `multiblimp_ita` | 14.51 | 0.81 |
-| ja | `xwinograd_jp` | 4.75 | 0.72 |
-| ka | `multiblimp_kat` | 7.66 | 0.78 |
-| kk | `multiblimp_kaz` | 5.30 | 0.76 |
-| kmr | `multiblimp_kmr` | 6.22 | 0.65 |
-| kn | `bpb_kan_Knda` | 12.31 | 0.71 |
-| ky | `multiblimp_kir` | 28.90 | 0.41 |
-| la | `multiblimp_lat` | 5.25 | 0.80 |
-| lt | `multiblimp_lit` | 10.99 | 0.61 |
-| mk | `multiblimp_mkd` | 4.54 | 0.77 |
-| ml | `bpb_mal_Mlym` | 3.76 | 0.93 |
-| mr | `bpb_mar_Deva` | 20.52 | 0.86 |
-| nds | `multiblimp_nds` | 13.36 | 0.62 |
-| ne | `bpb_npi_Deva` | 9.03 | 0.92 |
-| nl | `multiblimp_nld` | 12.55 | 0.88 |
-| pl | `multiblimp_pol` | 11.71 | 0.93 |
-| pt | `multiblimp_por` | 33.51 | 0.87 |
-| ro | `multiblimp_ron` | 18.05 | 0.88 |
-| ru | `multiblimp_rus` | 61.02 | 0.86 |
-| sa | `multiblimp_san` | 10.19 | 0.64 |
-| sah | `multiblimp_sah` | 7.85 | 0.62 |
-| se | `multiblimp_sme` | 12.44 | 0.43 |
-| sk | `multiblimp_slk` | 3.96 | 0.90 |
-| sl | `multiblimp_slv` | 8.23 | 0.85 |
-| sv | `multiblimp_swe` | 73.09 | 0.87 |
-| ta | `multiblimp_tam` | 11.41 | 0.86 |
-| th | `xcopa_th` | 4.68 | 0.61 |
-| tr | `multiblimp_tur` | 12.12 | 0.75 |
-| ug | `multiblimp_uig` | 13.79 | 0.62 |
-| uk | `multiblimp_ukr` | 12.64 | 0.90 |
-| ur | `multiblimp_urd` | 5.81 | 0.78 |
-| vi | `hellaswag_vi` | 8.83 | 0.79 |
-| zh | `xstorycloze_zh` | 8.85 | 0.84 |
+| lang | top benchmark | SNR | DA-ckpt@1B | BPB SNR |
+|---|---|---|---|---|
+| am | `multiblimp_amh` | 0.10 | 0.42 | 0.11 |
+| ar | `multiblimp_arb` | 1.57 | 0.84 | 10.22 |
+| be | `multiblimp_bel` | 0.40 | 0.76 | 3.35 |
+| bg | `multiblimp_bul` | 2.54 | 0.91 | 8.32 |
+| bn | `multiblimp_ben` | 0.62 | 0.68 | 5.64 |
+| bs | `global_piqa_nonparallel_cloze_bos_latn` | 0.27 | 0.62 | 17.41 |
+| ca | `multiblimp_cat` | 1.25 | 0.83 | 10.97 |
+| cs | `multiblimp_ces` | 4.12 | 0.88 | 28.78 |
+| cy | `multiblimp_cym` | 0.09 | 0.71 | 0.47 |
+| da | `multiblimp_dan` | 0.34 | 0.64 | 16.78 |
+| de | `multiblimp_deu` | 1.52 | 0.82 | 7.15 |
+| el | `multiblimp_ell` | 1.82 | 0.78 | 5.90 |
+| en | `xnli_en` | 0.03 | 0.72 | 0.04 |
+| es | `multiblimp_spa` | 0.57 | 0.85 | 4.06 |
+| et | `multiblimp_est` | 1.81 | 0.74 | 42.67 |
+| eu | `multiblimp_eus` | 0.00 | 0.53 | 0.79 |
+| fa | `multiblimp_fas` | 1.18 | 0.83 | 7.96 |
+| fi | `multiblimp_fin` | 3.87 | 0.77 | 35.62 |
+| fo | `multiblimp_fao` | 0.02 | 0.54 |  |
+| fr | `multiblimp_fra` | 0.67 | 0.72 | 3.48 |
+| ga | `multiblimp_gle` | 0.10 | 0.55 | 0.32 |
+| gd | `multiblimp_gla` | 0.06 | 0.39 |  |
+| gl | `multiblimp_glg` | 0.23 | 0.79 | 3.88 |
+| grc | `multiblimp_grc` | 0.01 | 0.64 |  |
+| gu | `multiblimp_guj` | 0.22 | 0.44 | 0.02 |
+| hbo | `multiblimp_hbo` | 0.04 | 0.72 |  |
+| he | `multiblimp_heb` | 1.03 | 0.83 | 13.93 |
+| hi | `multiblimp_hin` | 2.34 | 0.77 | 2.68 |
+| hr | `hellaswag_hr` | 0.16 | 0.75 | 18.26 |
+| hu | `multiblimp_hun` | 3.48 | 0.82 | 57.00 |
+| hy | `multiblimp_hye` | 0.06 | 0.60 | 0.27 |
+| hyw | `multiblimp_hyw` | 0.07 | 0.59 |  |
+| id | `xstorycloze_id` | 0.48 | 0.84 | 7.79 |
+| is | `multiblimp_isl` | 0.00 | 0.65 | 0.12 |
+| it | `multiblimp_ita` | 2.32 | 0.81 | 7.66 |
+| ja | `xwinograd_jp` | 0.40 | 0.71 | 11.10 |
+| ka | `multiblimp_kat` | 0.30 | 0.71 | 5.13 |
+| kk | `multiblimp_kaz` | 0.31 | 0.70 | 6.47 |
+| kmr | `multiblimp_kmr` | 0.01 | 0.61 | 0.26 |
+| ky | `multiblimp_kir` | 0.01 | 0.27 | 1.31 |
+| la | `multiblimp_lat` | 0.02 | 0.80 | 0.01 |
+| lt | `multiblimp_lit` | 0.95 | 0.61 | 37.12 |
+| mk | `multiblimp_mkd` | 0.14 | 0.68 | 1.50 |
+| mr | `multiblimp_mar` | 0.09 | 0.60 | 3.95 |
+| multi | `train_loss` | 1.37 | 0.97 | 2.18 |
+| nds | `multiblimp_nds` | 0.01 | 0.60 |  |
+| nl | `multiblimp_nld` | 1.82 | 0.88 | 12.69 |
+| pl | `multiblimp_pol` | 3.89 | 0.92 | 27.28 |
+| pt | `multiblimp_por` | 1.91 | 0.87 | 5.85 |
+| ro | `multiblimp_ron` | 3.47 | 0.87 | 23.15 |
+| ru | `multiblimp_rus` | 3.32 | 0.85 | 4.05 |
+| sa | `multiblimp_san` | 0.02 | 0.64 |  |
+| sah | `multiblimp_sah` | 0.04 | 0.57 |  |
+| se | `multiblimp_sme` | 0.02 | 0.42 |  |
+| sk | `multiblimp_slk` | 1.98 | 0.90 | 31.50 |
+| sl | `multiblimp_slv` | 1.36 | 0.85 | 22.54 |
+| sr | `hellaswag_sr` | 0.14 | 0.78 | 21.32 |
+| sv | `hellaswag_sv` | 0.33 | 0.92 | 19.11 |
+| ta | `multiblimp_tam` | 0.18 | 0.86 | 2.33 |
+| th | `xnli_th` | 0.14 | 0.87 | 4.90 |
+| tr | `multiblimp_tur` | 1.11 | 0.74 | 22.81 |
+| ug | `multiblimp_uig` | 0.03 | 0.61 | 0.14 |
+| uk | `multiblimp_ukr` | 2.04 | 0.90 | 6.28 |
+| ur | `multiblimp_urd` | 0.24 | 0.77 | 4.32 |
+| vi | `xcopa_vi` | 0.44 | 0.79 | 9.86 |
+| zh | `xstorycloze_zh` | 0.19 | 0.82 | 10.08 |
 
 ![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
 
@@ -140,11 +164,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | 0.01 | -0.21 |
-| Pearson r between splits (all cells) | -0.43 | 0.05 |
-| Exact-variant agreement (per lang) | 2% | 7% |
-| Family-level agreement (per lang) | 3% | 15% |
-| Retention of train-best r on test | 68% | 39% |
+| Spearman ρ on global variant ranking | 0.75 | 0.07 |
+| Pearson r between splits (all cells) | -0.14 | 0.19 |
+| Exact-variant agreement (per lang) | 43% | 15% |
+| Family-level agreement (per lang) | 57% | 29% |
+| Retention of train-best r on test | 82% | 41% |
 <!-- END auto:results -->
 
 ## Preliminary findings (ladder snapshot, 2026-09-01)

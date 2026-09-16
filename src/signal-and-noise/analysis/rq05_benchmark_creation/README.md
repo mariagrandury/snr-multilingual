@@ -9,9 +9,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every at-chance 4-option *translated knowledge* MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) is dropped before SNR is computed, leaving **9 families** that clear the gate — most of them 2-option.
-- **Among survivors, no single design feature is individually significant.** Family-level Kruskal–Wallis on option count is **H = 1.80, p = 0.18**, and on task format is **H = 6.00, p = 0.05**. Too little variation is left among the survivors (mostly 2-option) to resolve either.
-- **Curation method explains nothing** — family-level Kruskal–Wallis on curation is **H = 0.50, p = 0.78**. Once the gate fixes the answer space, how a benchmark was built does not predict its reliability.
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **9 families** that clear the gate — most of them 2-option.
+- **Among survivors, task format, passage flag reach p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 1.12, p = 0.570; source origin H = 0.27, p = 0.606; option count H = 1.09, p = 0.297; task format H = 6.00, p = 0.050; passage flag H = 4.20, p = 0.040. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
+- **Per-task curation test** (tasks as observations, 114 tasks of which 57 are `multiblimp`): H = 5.89, p = 0.117.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -74,13 +74,13 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | family | median SNR | n | format | n_opts |
 |---|---|---|---|---|
-| `xstorycloze` | 4.08 | 4 | completion | 2 |
+| `xstorycloze` | 4.38 | 7 | completion | 2 |
+| `hellaswag` | 2.92 | 20 | completion | 4 |
 | `multiblimp` | 2.78 | 57 | minimal_pair | 2 |
-| `hellaswag` | 2.74 | 10 | completion | 4 |
+| `xcopa` | 2.17 | 6 | completion | 2 |
 | `xwinograd` | 2.05 | 6 | completion | 2 |
-| `xcopa` | 1.55 | 7 | completion | 2 |
-| `xnli` | 1.27 | 9 | classification | 3 |
-| `paws` | 1.00 | 3 | classification | 2 |
+| `xnli` | 1.56 | 13 | classification | 3 |
+| `paws` | 0.95 | 2 | classification | 2 |
 | `arc` | 0.70 | 2 | mcq_question_only | 4 |
 | `include_base_44` | 0.19 | 1 | mcq_question_only | 4 |
 
@@ -90,11 +90,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | axis | H | p |
 |---|---|---|
-| n_options | 1.80 | 0.18 |
+| n_options | 1.09 | 0.30 |
 | format | 6.00 | 0.05 |
-| data source | 0.00 | 1.00 |
-| curation method | 0.50 | 0.78 |
-| reading passage | 3.09 | 0.08 |
+| data source | 0.27 | 0.61 |
+| curation method | 1.12 | 0.57 |
+| reading passage | 4.20 | 0.04 |
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

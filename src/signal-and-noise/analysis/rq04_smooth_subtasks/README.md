@@ -10,10 +10,11 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`global_mmlu_full_he` 1.7B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.32 → 2.43** (**+2.12**) with `professional_law`.
-- **`global_mmlu_full_fr` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **0.73 → 2.83** (**+2.09**) with `formal_logic`.
-- **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.62 → 4.64** (**+2.02**) with `econometrics`.
-- **Median gain by case** — global_mmlu_full_subjects 1.18; global_mmlu_full_per_language 0.84; per_benchmark 0.53 (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
+- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.73 → 4.42** (**+1.69**) with `multiblimp_deu|multiblimp_eng`.
+- **`multiblimp` 600M (per_benchmark)** — a subset beats the full set: SNR **2.76 → 4.06** (**+1.30**) with `multiblimp_rus`.
+- **`hellaswag` 1B (per_benchmark)** — a subset beats the full set: SNR **2.53 → 3.83** (**+1.30**) with `hellaswag_ru|hellaswag_ca|hellaswag_sk`.
+- **Median gain by case** — per_benchmark 0.38; global_mmlu_full_subjects  (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **17 of 35** swept cells beat the null's 95th percentile: `multiblimp` 350M, `multiblimp` 600M, `hellaswag` 1B, `bpb` 175M, `bpb` 600M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -32,9 +33,9 @@ macro-average):
   family (arc, belebele, global_mmlu, xnli, …); `subtask` = the per-language
   tasks in that family (arc_de, arc_es, …). Which language subset, ordered by
   per-language SNR, gives the highest combined SNR for the family?
-- **Case 2** — MMLU subject subset (mean over the 10 global_mmlu languages).
-  `task` = `global_mmlu_full`; `subtask` = one subject, whose per-(model, ckpt)
-  score is the mean across the 10 languages.
+- **Case 2** — MMLU subject subset (mean over the global_mmlu languages the
+  pool carries, 37 on the ladder). `task` = `global_mmlu_full`; `subtask` = one
+  subject (leaves only), whose per-(model, ckpt) score is the mean across languages.
 - **Case 3** — MMLU subject subset per language (no cross-language averaging).
   `task` = `global_mmlu_full_<lang>`; `subtask` = one subject within that
   language.
@@ -42,44 +43,47 @@ macro-average):
   the individual-item level (per-sample SNR on binary item accuracy — not
   comparable to subtask-level SNR).
 
-The SNR primitive is `signal_to_noise_ratio` over per-mix, last-N-ckpt arrays
-(same formula as `snr.snr_simple.compute_snr_small_scale`). Combined-subset SNR
-averages per-(mix, step) scores across the included subtasks before applying
-that formula. For each (task, size) the subtasks are ranked by standalone SNR
-and cumulative subsets of size 1..N are swept; `best_n` / `best_subset` is the
-cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
+## Methodology
+
+- **Subset SNR.** `signal_to_noise_ratio` over per-*model* last-N-checkpoint
+  arrays, one array per training run (seed replicates and external models
+  are separate runs), with the noise pooled across runs as in upstream's
+  `compute_snr_small_scale` (see the comparability note below). A
+  combined subset averages the per-(model, step) scores across its subtasks
+  first.
+- **Sweep.** Per (task, size) the subtasks are ranked by standalone SNR and
+  the cumulative prefixes 1..N are scored; `best_n` / `best_subset` is the
+  prefix with the highest SNR and `snr_gain = best − full`.
+- **Gate.** The rq00 above-random mask: a language task at chance at a size
+  is not swept (Case 1), and a language whose `global_mmlu_full_<lang>`
+  aggregate is at chance is skipped (Cases 2 and 3). The four MMLU category
+  roll-ups are excluded from the subject lists.
+- **Selection null.** The prefix is chosen on the same numbers it is scored
+  on, so `best ≥ full` by construction. For every swept cell, 100 random
+  subsets of the best size give `null_snr_p95`; `gain_over_null =
+  best − null_p95` is the part of the gain that is not selection.
 
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
-## Comparability note
-
-The subset SNR here pools every model's last-N window into one noise sample
-(`np.concatenate` of the raw windows, `smooth_subtasks.py`), which is
-upstream's `compute_snr_small_scale` formula. The pooled std therefore also
-contains the spread *between* models, so these SNRs sit below rq02's, whose
-noise is the per-model checkpoint std. The formula is kept as upstream's so
-the numbers stay comparable with the paper's; read gains within this RQ, not
-against rq02's values.
-
 ## Results
 
 Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity`.
 
 **Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
 
-| case | task | size | full → best SNR | +gain | best subset |
-|---|---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_he` | 1.7B | 0.32 → 2.43 | +2.12 | `professional_law` |
-| global_mmlu_full_per_language | `global_mmlu_full_fr` | 1B | 0.73 → 2.83 | +2.09 | `formal_logic` |
-| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.62 → 4.64 | +2.02 | `econometrics` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 1.01 → 3.01 | +1.99 | `professional_psychology` \| `us_foreign_policy` \| `anatomy` \| `professional_law` \| `… (+5)` |
-| per_benchmark | `global_piqa_parallel_cloze` | 175M | 1.71 → 3.70 | +1.99 | `global_piqa_parallel_cloze_spa_latn_spai` \| `global_piqa_parallel_cloze_fra_latn_fran` \| `global_piqa_parallel_cloze_pes_arab` \| `global_piqa_parallel_cloze_apc_arab_syri` \| `… (+3)` |
-| global_mmlu_full_per_language | `global_mmlu_full_ja` | 175M | 1.78 → 3.74 | +1.97 | `business_ethics` \| `computer_security` \| `abstract_algebra` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 1.96 → 3.79 | +1.83 | `international_law` \| `moral_disputes` \| `high_school_chemistry` \| `logical_fallacies` \| `… (+18)` |
-| global_mmlu_full_per_language | `global_mmlu_full_ky` | 1B | 1.14 → 2.91 | +1.78 | `international_law` \| `high_school_computer_science` |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 350M | 2.23 → 3.96 | +1.73 | `formal_logic` \| `professional_medicine` |
-| global_mmlu_full_per_language | `global_mmlu_full_es` | 1B | 1.17 → 2.87 | +1.70 | `public_relations` |
-| per_benchmark | `multiblimp` | 350M | 2.72 → 4.42 | +1.70 | `multiblimp_deu` \| `multiblimp_eng` |
-| global_mmlu_full_per_language | `global_mmlu_full_ha` | 175M | 1.55 → 3.21 | +1.66 | `anatomy` \| `moral_disputes` \| `abstract_algebra` \| `marketing` \| `… (+7)` |
+| case | task | size | full → best SNR | +gain | null p95 | best subset |
+|---|---|---|---|---|---|---|
+| per_benchmark | `multiblimp` | 350M | 2.73 → 4.42 | +1.69 | 3.40 | `multiblimp_deu` \| `multiblimp_eng` |
+| per_benchmark | `multiblimp` | 600M | 2.76 → 4.06 | +1.30 | 3.04 | `multiblimp_rus` |
+| per_benchmark | `hellaswag` | 1B | 2.53 → 3.83 | +1.30 | 3.24 | `hellaswag_ru` \| `hellaswag_ca` \| `hellaswag_sk` |
+| per_benchmark | `xwinograd` | 1B | 2.68 → 3.52 | +0.83 | 3.52 | `xwinograd_ru` |
+| per_benchmark | `bpb` | 350M | 2.62 → 3.43 | +0.81 | 3.43 | `bpb_swh_Latn` |
+| per_benchmark | `bpb` | 175M | 2.84 → 3.64 | +0.79 | 3.19 | `bpb_eus_Latn` \| `bpb_swh_Latn` |
+| per_benchmark | `bpb` | 600M | 2.59 → 3.34 | +0.75 | 3.00 | `bpb_rus_Cyrl` \| `bpb_swh_Latn` |
+| per_benchmark | `multiblimp` | 1.7B | 2.45 → 3.20 | +0.74 | 2.68 | `multiblimp_rus` \| `multiblimp_ukr` |
+| per_benchmark | `bpb` | 1B | 2.55 → 3.26 | +0.71 | 3.13 | `bpb_rus_Cyrl` \| `bpb_swh_Latn` |
+| per_benchmark | `multiblimp` | 1B | 3.05 → 3.75 | +0.70 | 3.21 | `multiblimp_bel` |
+| per_benchmark | `lambada_openai_mt` | 350M | 4.01 → 4.68 | +0.68 | 4.68 | `lambada_openai_mt_de` \| `lambada_openai_mt_en` |
+| per_benchmark | `xstorycloze` | 1B | 3.06 → 3.71 | +0.65 | 3.42 | `xstorycloze_ru` \| `xstorycloze_ca` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

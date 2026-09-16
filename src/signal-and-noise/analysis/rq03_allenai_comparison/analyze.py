@@ -51,8 +51,7 @@ APERTUS_SIZE = TARGET_SIZE   # the ladder's reference size (1B)
 ALLENAI_SIZE = "1B"          # matched: AllenAI also has 1B in DataDecide
 
 # Approximate matched-size pairs for the size-sweep (ours → AllenAI DataDecide).
-SIZE_PAIRS = [
-    ("90M",  "90M"),
+SIZE_PAIRS = [                # DataDecide has no 90M, so no pair for our 90M rung
     ("175M", "150M"),
     ("350M", "300M"),
     ("600M", "750M"),
@@ -177,6 +176,20 @@ def _per_variant_pearson(
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     """Default headline correlation: Apertus@1B ↔ AllenAI@1B."""
     return _pearson_for_pair(ap_df, al_df, shared, APERTUS_SIZE, ALLENAI_SIZE)
+
+
+def _rq02_variant(stage: str, pool: str, summary: pd.DataFrame) -> str:
+    """rq02's global-best variant for the pool (top_variants_overall.csv),
+    provided it has a finite cross-corpus r here; else `rel_std`, the paper's
+    definition; else whatever has the most shared points."""
+    path = SNR_DEFINITION_ROOT / stage / pool / "top_variants_overall.csv"
+    if path.is_file():
+        v = pd.read_csv(path).iloc[0]["variant"]
+        if v in summary.index and np.isfinite(summary.loc[v, "r"]):
+            return v
+    if "rel_std" in summary.index and np.isfinite(summary.loc["rel_std", "r"]):
+        return "rel_std"
+    return summary["n"].idxmax()
 
 
 def _pearson_size_sweep(
@@ -314,11 +327,11 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     weak = n_shared <= 5   # too few shared tasks for the correlation to be robust
     highlight = "\n".join([
         f"- **On the `{ALLENAI_POOL}` pool SNR values and rank order "
-        f"{'agree' if g.pearson_log_snr > 0.5 else 'do not clearly agree'} across corpora** — "
-        f"best variant `{g.variant}`, Pearson r of log₁₀(SNR) **{fmt(g.pearson_log_snr)}**, "
-        f"Spearman ρ **{fmt(g.spearman_rank)}**"
-        + (f", but over only **{n_shared}** shared English tasks after the above-random gate "
-           f"— indicative rather than robust."
+        f"{'cannot be compared' if weak else ('agree' if g.pearson_log_snr > 0.5 else 'do not clearly agree')} across corpora** — "
+        f"variant `{g.variant}` (rq02's global best, not selected here), Pearson r of log₁₀(SNR) "
+        f"**{fmt(g.pearson_log_snr)}**, Spearman ρ **{fmt(g.spearman_rank)}**"
+        + (f", over only **{n_shared}** shared English tasks after the above-random gate "
+           f"— too few for a correlation to mean anything."
            if weak else f" over the {n_shared} shared English tasks."),
         f"- **The shared universe is the English tasks both corpora evaluate** "
         f"(ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA "
@@ -334,18 +347,18 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         rs.append([f"`{p}` ({lab})", f"`{r.variant}`", fmt(r.pearson_log_snr),
                    fmt(r.spearman_rank), int(r.n_shared)])
     t_pools = md_table(
-        ["pool", "best variant", "Pearson r", "Spearman ρ", "n_shared"], rs)
+        ["pool", "variant (from rq02)", "Pearson r", "Spearman ρ", "n_shared"], rs)
 
     results = "\n\n".join([
         f"Cross-corpus agreement by pool (headline = `{ALLENAI_POOL}`). Regenerate with "
         f"`python analysis/rq03_allenai_comparison/analyze.py --pool {CANONICAL_POOL}`.",
         "**Cross-corpus agreement over the shared English tasks** — Pearson r of "
-        "log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus "
-        "variant. The above-random gate leaves the `n_shared` shown per pool; where it "
+        "log₁₀(SNR) (values) and Spearman ρ (rank), at the variant rq02 selected "
+        "on our ladder (the per-variant grid below shows the other 21). The above-random gate leaves the `n_shared` shown per pool; where it "
         "is small (≤5) the correlations are over a handful of points and should be read "
         "as indicative, not robust:",
         t_pools,
-        f"![Ladder vs AllenAI SNR — best variant]"
+        f"![Ladder vs AllenAI SNR — rq02's variant]"
         f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_{g.variant}.png)",
         f"![Ladder vs AllenAI SNR across variants]"
         f"({stage}/{ALLENAI_POOL}/snr_apertus_vs_snr_allenai_grid.png)",
@@ -431,8 +444,10 @@ def run(stage: str, pool: str, apertus_dir: Path, out_dir: Path) -> None:
     sweep = _pearson_size_sweep(ap_df, al_df, shared)
     sweep.to_csv(out_dir / "pearson_r_size_sweep.csv", index=False)
 
-    # Headline scatter on the best variant.
-    best_variant = summary["r"].idxmax()
+    # Headline variant: the one rq02 chose on our own ladder, not the argmax
+    # over 22 candidates on the handful of shared tasks (with 3 points and 22
+    # tries, r ~ 1 is what the best of the bunch looks like under the null).
+    best_variant = _rq02_variant(out_dir.parent.name, out_dir.name, summary)
     best_r = summary.loc[best_variant, "r"]
     best_n = int(summary.loc[best_variant, "n"])
     headline_path = out_dir / f"snr_apertus_vs_snr_allenai_{best_variant}.png"

@@ -17,6 +17,9 @@ Two DA definitions (the cluster's two flavours):
 
 DA is computed on every above-random-or-not (task, size) cell — it is the truth,
 not a proxy, so it is NOT gated (the above-random gate only NaN-s SNR cells).
+``da_n_pairs_per_task.csv`` has the same shape and carries the number of model
+pairs behind every value; an early checkpoint counts only within CKPT_TOL of
+the fraction asked for.
 
     python analysis/rq01_decision_accuracy/compute_da.py --pool custom_swissai_hf
 """
@@ -63,15 +66,21 @@ _LOGGED_MISSING_CKPTS: set = set()
 
 
 def _safe(fn, *args, **kwargs):
+    """(DA, number of pairs) — NaN and 0 when the cell is not computable."""
     try:
-        v = fn(*args, **kwargs)
-        return float(v) if np.isfinite(v) else float("nan")
+        v, n = fn(*args, return_n=True, **kwargs)
+        return (float(v) if np.isfinite(v) else float("nan")), int(n)
     except Exception:
-        return float("nan")
+        return float("nan"), 0
+
+
+# An early checkpoint counts only within this share of the run of the
+# fraction asked for (half the k/10 benchmark grid, as analysis.utils.at_fraction).
+CKPT_TOL = 0.06
 
 
 def compute_size_decision_accuracy(
-    df, task, small_size, target_size=TARGET_SIZE, model_filter=None
+    df, task, small_size, target_size=TARGET_SIZE, model_filter=None, return_n=False
 ):
     """DA across size buckets: small_bucket@last vs target_bucket@last.
 
@@ -96,14 +105,17 @@ def compute_size_decision_accuracy(
     keys_small = set(scores_small["family"])
     keys_target = set(scores_target["family"])
     common = sorted(keys_small & keys_target)
+    n_pairs = len(common) * (len(common) - 1) // 2
     if len(common) < 2:
-        return float("nan")
+        return (float("nan"), 0) if return_n else float("nan")
     s = scores_small.set_index("family").loc[common, "primary_score"]
     t = scores_target.set_index("family").loc[common, "primary_score"]
-    return decision_acc_fast(s.to_numpy(), t.to_numpy())
+    da = decision_acc_fast(s.to_numpy(), t.to_numpy())
+    return (da, n_pairs) if return_n else da
 
 
-def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=None):
+def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=None,
+                                   return_n=False):
     """DA within a size bucket: ``family`` ranking at an *early* ckpt vs the
     same family's max-step ckpt.
 
@@ -139,13 +151,17 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
             continue
         target_step = early_frac * max_step
         early_row = g_pre.iloc[(g_pre["step"] - target_step).abs().argmin()]
+        if abs(early_row["step"] - target_step) > CKPT_TOL * max_step:
+            continue                    # no checkpoint near that fraction
         max_row = g.loc[g["step"].idxmax()]
         early.append(float(early_row["primary_score"]))
         late.append(float(max_row["primary_score"]))
         keys.append(fam)
+    n_pairs = len(keys) * (len(keys) - 1) // 2
     if len(keys) < 2:
-        return float("nan")
-    return decision_acc_fast(np.asarray(early), np.asarray(late))
+        return (float("nan"), 0) if return_n else float("nan")
+    da = decision_acc_fast(np.asarray(early), np.asarray(late))
+    return (da, n_pairs) if return_n else da
 
 
 def _scaling_da_pairs(df_pool) -> list[tuple[str, str]]:
@@ -189,33 +205,37 @@ def run(pool: str, out_dir: Path):
     # task, so grouping avoids re-scanning the whole pool per call.
     df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
 
-    rows = []
+    rows, n_rows = [], []
     for task in tqdm(tasks, desc="DA tasks"):
-        row = {"task": task}
+        row, nrow = {"task": task}, {"task": task}
         dft = df_by_task[task]
         # Core size-DA: small custom bucket@last → 1B target@last.
         for s in SMALL_SIZES:
-            row[f"decision_acc_size_{s}"] = _safe(
+            row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
                 compute_size_decision_accuracy, dft, task, s,
             )
         # Scaling-DA: every other cross-bucket pair with ≥2 shared families.
         for sb, tb in scaling_pairs:
-            row[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
+            row[f"decision_acc_size_{sb}_to_{tb}"], nrow[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
                 compute_size_decision_accuracy, dft, task, sb, tb,
             )
         # ckpt-DA: relative-fraction early ckpt vs max, per bucket.
         for frac in CKPT_DA_EARLY_FRACS:
             fl = _frac_label(frac)
             for b in pool_buckets:
-                row[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
+                row[f"decision_acc_ckpt_{fl}_{b}"], nrow[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
                     compute_ckpt_decision_accuracy, dft, task, b, frac,
                 )
         rows.append(row)
+        n_rows.append(nrow)
 
     out = pd.DataFrame(rows).set_index("task").sort_index()
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / "da_per_task.csv"
     out.to_csv(csv_path)
+    # The same shape, holding the number of model pairs behind every cell: a
+    # one-pair 1.00 and a 28-pair 0.96 must not read alike downstream.
+    pd.DataFrame(n_rows).set_index("task").sort_index().to_csv(out_dir / "da_n_pairs_per_task.csv")
     n_size = len(SMALL_SIZES) + len(scaling_pairs)
     n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
     print(f"\nWrote DA CSV → {csv_path}")

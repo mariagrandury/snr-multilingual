@@ -50,7 +50,8 @@ import pandas as pd  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
-from analysis.utils import (  # noqa: E402
+from analysis.utils import (
+    LADDER_SIZES,  # noqa: E402
     _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
     assign_language, benchmark_family, build_snr_pool, pool_models,
 )
@@ -71,7 +72,7 @@ _SNR = load_snr_params()
 SMALL_SIZES = _SNR["small_sizes"]
 TARGET_SIZE = _SNR["target_size"]
 PLOTTED_MIXES = _SNR["plotted_mixes"]
-ALL_SIZES = SMALL_SIZES + [TARGET_SIZE]
+ALL_SIZES = LADDER_SIZES              # every rung, 1.7B included
 
 # One colour per plotted mix — tab10 for the 36-sweep's three mixtures, a
 # viridis ramp once the mixes are the seven language settings of the ladder.

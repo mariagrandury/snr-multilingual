@@ -17,7 +17,7 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the `predictivity` pool SNR values and rank order agree across corpora** — best variant `quartile_deviation`, Pearson r of log₁₀(SNR) **1.00**, Spearman ρ **1.00**, but over only **3** shared English tasks after the above-random gate — indicative rather than robust.
+- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `mpsd` (rq02's global best, not selected here), Pearson r of log₁₀(SNR) **0.19**, Spearman ρ **-0.50**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
 - **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
 <!-- END auto:highlight -->
 
@@ -113,14 +113,14 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 
 Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `python analysis/rq03_allenai_comparison/analyze.py --pool predictivity`.
 
-**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), each pool's best cross-corpus variant. The above-random gate leaves the `n_shared` shown per pool; where it is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
+**Cross-corpus agreement over the shared English tasks** — Pearson r of log₁₀(SNR) (values) and Spearman ρ (rank), at the variant rq02 selected on our ladder (the per-variant grid below shows the other 21). The above-random gate leaves the `n_shared` shown per pool; where it is small (≤5) the correlations are over a handful of points and should be read as indicative, not robust:
 
-| pool | best variant | Pearson r | Spearman ρ | n_shared |
+| pool | variant (from rq02) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` (grid, seed 1904) | `quartile_deviation` | 1.00 | 1.00 | 3 |
-| `predictivity_seeds` (all seeds) | `projection` | 1.00 | 1.00 | 3 |
+| `predictivity` (grid, seed 1904) | `mpsd` | 0.19 | -0.50 | 3 |
+| `predictivity_seeds` (all seeds) | `mpsd` | 0.69 | 0.50 | 3 |
 
-![Ladder vs AllenAI SNR — best variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_quartile_deviation.png)
+![Ladder vs AllenAI SNR — rq02's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_mpsd.png)
 
 ![Ladder vs AllenAI SNR across variants](pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
