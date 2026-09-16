@@ -93,6 +93,7 @@ def load_predictivity_eval_results(
     include_diverged: bool = False,
     include_incomplete: bool = False,
     shared_grid: bool = True,
+    require_final: bool = True,
 ) -> pd.DataFrame:
     """One row per (cell, checkpoint, task) for the predictivity ladder.
 
@@ -104,7 +105,12 @@ def load_predictivity_eval_results(
 
     Diverged runs (the 90M rung, see plan/90M-rung-anomaly.md) and runs that
     have not reached their target are dropped by default: their final
-    checkpoint is not the annealed endpoint the ladder compares.
+    checkpoint is not the annealed endpoint the ladder compares. For the same
+    reason `require_final` drops every (cell, task) series whose last scored
+    checkpoint is not the run's final save: the evaluation of that cell is
+    still in flight, and "the last checkpoint per task" that every analysis
+    reads would otherwise be a mid-run checkpoint standing in for the
+    reference (2026-09-16: seven 1.7B cells and one 1B cell).
     """
     wide = load_ladder_wide(path)
     wide = wide.dropna(subset=["cell"])
@@ -142,6 +148,10 @@ def load_predictivity_eval_results(
         df = df[df["diverged"] == 0]
     if not include_incomplete:
         df = df[df["complete"] == 1]
+    if require_final:
+        target = pd.to_numeric(df["run__target_iters"], errors="coerce")
+        last = df.groupby(["cell", "task"])["iter"].transform("max")
+        df = df[(last >= target) | target.isna()]
     if shared_grid:
         df = df[_on_shared_grid(df)]
     df = df.drop(columns=["run__target_iters"])
