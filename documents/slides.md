@@ -975,58 +975,50 @@ title: RQ2 — SNR definition
 subtitle: "Results (auto) — most reliable benchmark per language (`mpsd` @ 1B)"
 ---
 
-| lang | top benchmark | SNR | DA-ckpt@1B |
-|---|---|---|---|
-| ar | `bpb_ary_Arab` | 10.2 | 0.96 |
-| az | `bpb_azj_Latn` | 15.1 | 0.87 |
-| bg | `bpb_bul_Cyrl` | 8.3 | 0.97 |
-| bn | `bpb_ben_Beng` | 5.6 | 0.96 |
-| bs | `bpb_bos_Latn` | 17.4 | 0.96 |
-| ca | `bpb_cat_Latn` | 11.0 | 0.96 |
-| cs | `bpb_ces_Latn` | 28.8 | 0.96 |
-| da | `bpb_dan_Latn` | 16.8 | 0.98 |
-| de | `bpb_deu_Latn` | 7.2 | 1.00 |
-| el | `bpb_ell_Grek` | 5.9 | 0.97 |
-| en | `bpb_dclm` | 0.0 | 0.93 |
-| es | `bpb_spa_Latn` | 4.1 | 0.98 |
-| et | `bpb_ekk_Latn` | 42.7 | 0.91 |
-| fa | `bpb_fas_Arab` | 8.0 | 0.96 |
-| fi | `bpb_fin_Latn` | 35.6 | 0.91 |
-| fr | `bpb_fra_Latn` | 3.5 | 0.94 |
-| he | `bpb_heb_Hebr` | 13.9 | 0.88 |
-| hi | `bpb_hin_Deva` | 2.7 | 0.94 |
-| hr | `bpb_hrv_Latn` | 18.3 | 0.96 |
-| hu | `bpb_hun_Latn` | 57.0 | 0.92 |
-| id | `bpb_ind_Latn` | 7.8 | 0.97 |
-| it | `bpb_ita_Latn` | 7.7 | 0.95 |
-| ja | `bpb_jpn_Jpan` | 11.1 | 0.96 |
-| ka | `bpb_kat_Geor` | 5.1 | 0.91 |
-| kk | `bpb_kaz_Cyrl` | 6.5 | 0.96 |
-| ko | `bpb_kor_Hang` | 12.4 | 0.96 |
-| lt | `bpb_lit_Latn` | 37.1 | 0.87 |
-| lv | `bpb_lvs_Latn` | 26.8 | 0.90 |
-| ml | `bpb_mal_Mlym` | 4.5 | 0.93 |
-| mr | `bpb_mar_Deva` | 4.0 | 0.86 |
-| ms | `bpb_zsm_Latn` | 3.9 | 0.97 |
-| ne | `bpb_npi_Deva` | 2.0 | 0.92 |
-| nl | `bpb_nld_Latn` | 12.7 | 0.98 |
-| no | `bpb_nob_Latn` | 19.9 | 0.95 |
-| pl | `bpb_pol_Latn` | 27.3 | 0.97 |
-| pt | `bpb_por_Latn` | 5.8 | 0.96 |
-| ro | `bpb_ron_Latn` | 23.1 | 0.95 |
-| ru | `bpb_rus_Cyrl` | 4.0 | 0.95 |
-| sk | `bpb_slk_Latn` | 31.5 | 0.96 |
-| sl | `bpb_slv_Latn` | 22.5 | 0.88 |
-| sq | `bpb_als_Latn` | 38.4 | 0.83 |
-| sr | `bpb_srp_Latn` | 21.3 | 0.94 |
-| sv | `bpb_swe_Latn` | 19.1 | 0.98 |
-| ta | `bpb_tam_Taml` | 2.3 | 0.91 |
-| th | `bpb_tha_Thai` | 4.9 | 0.96 |
-| tr | `bpb_tur_Latn` | 22.8 | 0.94 |
-| uk | `bpb_ukr_Cyrl` | 6.3 | 0.95 |
-| ur | `bpb_urd_Arab` | 4.3 | 0.89 |
-| vi | `bpb_vie_Latn` | 9.9 | 0.88 |
-| zh | `bpb_cmn_Hani` | 10.1 | 0.97 |
+| lang | top benchmark | SNR | DA-ckpt@1B | BPB SNR |
+|---|---|---|---|---|
+| ar | `multiblimp_arb` | 1.6 | 0.84 | 10.2 |
+| bg | `multiblimp_bul` | 2.5 | 0.91 | 8.3 |
+| bn | `multiblimp_ben` | 0.6 | 0.68 | 5.6 |
+| bs | `global_piqa_nonparallel_cloze_bos_latn` | 0.3 | 0.62 | 17.4 |
+| ca | `multiblimp_cat` | 1.3 | 0.83 | 11.0 |
+| cs | `multiblimp_ces` | 4.1 | 0.88 | 28.8 |
+| da | `multiblimp_dan` | 0.3 | 0.64 | 16.8 |
+| de | `multiblimp_deu` | 1.5 | 0.82 | 7.2 |
+| el | `multiblimp_ell` | 1.8 | 0.78 | 5.9 |
+| en | `xnli_en` | 0.0 | 0.72 | 0.0 |
+| es | `multiblimp_spa` | 0.6 | 0.85 | 4.1 |
+| et | `multiblimp_est` | 1.8 | 0.74 | 42.7 |
+| fa | `multiblimp_fas` | 1.2 | 0.83 | 8.0 |
+| fi | `multiblimp_fin` | 3.9 | 0.77 | 35.6 |
+| fr | `multiblimp_fra` | 0.7 | 0.72 | 3.5 |
+| he | `multiblimp_heb` | 1.0 | 0.83 | 13.9 |
+| hi | `multiblimp_hin` | 2.3 | 0.77 | 2.7 |
+| hr | `hellaswag_hr` | 0.2 | 0.75 | 18.3 |
+| hu | `multiblimp_hun` | 3.5 | 0.82 | 57.0 |
+| id | `xstorycloze_id` | 0.5 | 0.84 | 7.8 |
+| it | `multiblimp_ita` | 2.3 | 0.81 | 7.7 |
+| ja | `xwinograd_jp` | 0.4 | 0.71 | 11.1 |
+| ka | `multiblimp_kat` | 0.3 | 0.71 | 5.1 |
+| kk | `multiblimp_kaz` | 0.3 | 0.70 | 6.5 |
+| lt | `multiblimp_lit` | 0.9 | 0.61 | 37.1 |
+| mr | `multiblimp_mar` | 0.1 | 0.60 | 4.0 |
+| nl | `multiblimp_nld` | 1.8 | 0.88 | 12.7 |
+| pl | `multiblimp_pol` | 3.9 | 0.92 | 27.3 |
+| pt | `multiblimp_por` | 1.9 | 0.87 | 5.8 |
+| ro | `multiblimp_ron` | 3.5 | 0.87 | 23.1 |
+| ru | `multiblimp_rus` | 3.3 | 0.85 | 4.0 |
+| sk | `multiblimp_slk` | 2.0 | 0.90 | 31.5 |
+| sl | `multiblimp_slv` | 1.4 | 0.85 | 22.5 |
+| sr | `hellaswag_sr` | 0.1 | 0.78 | 21.3 |
+| sv | `hellaswag_sv` | 0.3 | 0.92 | 19.1 |
+| ta | `multiblimp_tam` | 0.2 | 0.86 | 2.3 |
+| th | `xnli_th` | 0.1 | 0.87 | 4.9 |
+| tr | `multiblimp_tur` | 1.1 | 0.74 | 22.8 |
+| uk | `multiblimp_ukr` | 2.0 | 0.90 | 6.3 |
+| ur | `multiblimp_urd` | 0.2 | 0.77 | 4.3 |
+| vi | `xcopa_vi` | 0.4 | 0.79 | 9.9 |
+| zh | `xstorycloze_zh` | 0.2 | 0.82 | 10.1 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
