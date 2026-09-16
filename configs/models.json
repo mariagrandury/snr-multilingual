@@ -19043,6 +19043,16 @@
         }
       ],
       "include_external": false
+    },
+    "predictivity_all": {
+      "description": "Every trained predictivity cell: all seeds and all five data schemes (A, B, AT3, ZH, ES), both archs. The pool of rq06-rq08 and rq10, which read one intervention at a time against its own baseline and need the seed replicates for the noise columns; not a headline SNR pool, its signal would mix five interventions.",
+      "stage": "pretraining",
+      "members": [
+        {
+          "source": "snr-pretraining-predictivity"
+        }
+      ],
+      "include_external": false
     }
   },
   "sources": {

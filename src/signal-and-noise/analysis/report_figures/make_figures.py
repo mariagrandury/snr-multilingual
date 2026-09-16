@@ -194,6 +194,10 @@ def fig2_snr_vs_da(csv_path: Path, out_name: str, tag: str) -> None:
         print(f"[{tag}] skipped: {csv_path} has no SNR columns (an LFS pointer?)")
         return
     snr_col, da_col = _ref_cols(df)
+    if snr_col not in df or da_col not in df:
+        # the external pool's table predates the ckpt-DA fractions of the ladder
+        print(f"[{tag}] skipped: {csv_path.name} has no {snr_col} / {da_col}")
+        return
     sub = df.dropna(subset=[snr_col, da_col])
     if len(sub) < 3:
         print(f"[{tag}] skipped: fewer than 3 finite ({snr_col}, {da_col}) cells")
@@ -457,12 +461,12 @@ def fig4_subset_sweep() -> None:
 # Figure 5 — proxy size x language count: intervention decision accuracy
 # ===========================================================================
 def fig5_proxy_grid() -> None:
-    path = PROXY_PREDICTIVITY / POOL_STAGE / "predictivity_seeds" / "intervention_da.csv"
+    path = PROXY_PREDICTIVITY / POOL_STAGE / "predictivity_all" / "intervention_da.csv"
     if not path.exists():
         print(f"[fig5] skipped: {path} missing")
         return
     da = pd.read_csv(path)
-    da = da[(da["intervention"] == "arch") & (da["population"] == "bpb_trained")]
+    da = da[(da["intervention"] == "arch") & (da["population"] == "bpb_trained") & (da["frac"] == 1.0)]
     if da.empty:
         print("[fig5] skipped: no depth-on-BPB cells")
         return

@@ -1,4 +1,4 @@
-# RQ1 — Which SNR definition best predicts decision accuracy?
+# RQ2 — Which SNR definition best predicts decision accuracy?
 
 ## Research question
 

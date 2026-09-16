@@ -1,4 +1,4 @@
-# Accuracy-vs-FLOPs curves + the above-random gate
+# RQ0 — Accuracy-vs-FLOPs curves + the above-random gate
 
 ## Research question
 

@@ -16,6 +16,10 @@ INCLUDES = [
     ("src/signal-and-noise/analysis/rq04_smooth_subtasks", "signal-noise"),
     ("src/signal-and-noise/analysis/rq05_benchmark_creation", "signal-noise"),
     ("src/signal-and-noise/analysis/rq06_proxy_predictivity", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq07_scaling_predictability", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq08_early_decision", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq09_surrogates", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq10_language_transfer", "signal-noise"),
 ]
 
 _PLACEHOLDER = (

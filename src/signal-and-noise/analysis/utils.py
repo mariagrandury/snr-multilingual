@@ -247,3 +247,50 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
             if not df_e.empty:
                 frames.append(df_e)
     return pd.concat(frames, ignore_index=True)
+
+# --- ladder-frame helpers (rq06-rq10) -----------------------------------------
+# The ladder's size axis by non-embedding parameters, from the report module
+# that defines it (CLAUDE.md #13: importable through src/).
+from pretrain.ladder_report import NON_EMB  # noqa: E402
+
+LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
+GRID_SEED = 1904                      # the plan grid's seed
+
+
+def size_order(sizes) -> list[str]:
+    """The given sizes in ladder order (unknown sizes last, alphabetically)."""
+    present = set(sizes)
+    return ([s for s in LADDER_SIZES if s in present]
+            + sorted(s for s in present if s not in NON_EMB))
+
+
+def ladder_frame(pool: str) -> pd.DataFrame:
+    """`build_snr_pool` plus `frac`, each checkpoint's position in its own run
+    (step over the cell's last scored step, which `require_final` makes the
+    target)."""
+    df = build_snr_pool(pool)
+    df["frac"] = df["step"] / df.groupby("model")["step"].transform("max")
+    return df
+
+
+def finals(df: pd.DataFrame) -> pd.DataFrame:
+    """Each (model, task)'s last checkpoint."""
+    return df.loc[df.groupby(["model", "task"])["step"].idxmax()]
+
+
+def at_fraction(df: pd.DataFrame, f: float, tol: float = 0.06) -> pd.DataFrame:
+    """Each (model, task)'s score at the checkpoint nearest fraction `f` of
+    its run, within `tol` (half the k/10 benchmark grid spacing)."""
+    d = df.assign(dist=(df["frac"] - f).abs())
+    d = d.loc[d.groupby(["model", "task"])["dist"].idxmin()]
+    return d[d["dist"] <= tol].drop(columns="dist")
+
+
+def trained_bpb_tasks(L: int, scheme: str) -> set[str] | None:
+    """The `bpb_<subset>` tasks of the languages a (L, scheme) cell trains on
+    (English always); None when the scheme defines no list at that L."""
+    from pretrain.launch_trainings import cell_fineweb_subsets
+    try:
+        return {"bpb_dclm"} | {f"bpb_{s}" for s in cell_fineweb_subsets(L, scheme)}
+    except KeyError:
+        return None

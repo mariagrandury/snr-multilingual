@@ -25,7 +25,9 @@ design variants) a measurement carries against its *noise* (variability over
 late checkpoints or seeds), whether the resulting SNR predicts *decision
 accuracy* (does a small model or an early checkpoint rank the variants like
 the reference?), and — new with the ladder — which proxy size is reliable at
-each L ([`rq06`](src/signal-and-noise/analysis/rq06_proxy_predictivity/)).
+each L ([`rq06`](src/signal-and-noise/analysis/rq06_proxy_predictivity/)). The
+paper's five questions ([`documents/paper/`](documents/paper/)) are RQ7–RQ10
+plus rq06, whose figures are copied into `documents/paper/figures/`.
 
 **Source of truth.** Every analysis reads one file: the wide per-checkpoint
 table `ladder_report.csv` that
@@ -56,6 +58,10 @@ report is published — the results.
 | RQ4 | [`rq04_smooth_subtasks/`](src/signal-and-noise/analysis/rq04_smooth_subtasks/) | Can a language or subject subset beat the full benchmark's SNR? |
 | RQ5 | [`rq05_benchmark_creation/`](src/signal-and-noise/analysis/rq05_benchmark_creation/) | Which design features (curation, format, option count, length) predict SNR? |
 | RQ6 | [`rq06_proxy_predictivity/`](src/signal-and-noise/analysis/rq06_proxy_predictivity/) | Which proxy sizes rank an intervention like the reference, and how does that depend on L? |
+| RQ7 | [`rq07_scaling_predictability/`](src/signal-and-noise/analysis/rq07_scaling_predictability/) | What scales predictably? (paper RQ1; also the ladder's loss, scaling-fit and benchmark curves) |
+| RQ8 | [`rq08_early_decision/`](src/signal-and-noise/analysis/rq08_early_decision/) | How small a proxy, and how early in its run, still reads a decision like the reference? (paper RQ2) |
+| RQ9 | [`rq09_surrogates/`](src/signal-and-noise/analysis/rq09_surrogates/) | Can a statistic on the proxy alone tell us the decision will be reliable? (paper RQ3) |
+| RQ10 | [`rq10_language_transfer/`](src/signal-and-noise/analysis/rq10_language_transfer/) | Does per-language scaling transfer to languages never measured or never trained? (paper RQ5; also the per-language BPB curves) |
 
 The report [`documents/snr_predictivity_report.pdf`](documents/snr_predictivity_report.pdf)
 (source: [`documents/report/`](documents/report/)) collects the design, the

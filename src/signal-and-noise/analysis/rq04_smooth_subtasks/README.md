@@ -50,6 +50,16 @@ and cumulative subsets of size 1..N are swept; `best_n` / `best_subset` is the
 cumulative subset that maximises combined SNR, and `snr_gain = best − full`.
 
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
+## Comparability note
+
+The subset SNR here pools every model's last-N window into one noise sample
+(`np.concatenate` of the raw windows, `smooth_subtasks.py`), which is
+upstream's `compute_snr_small_scale` formula. The pooled std therefore also
+contains the spread *between* models, so these SNRs sit below rq02's, whose
+noise is the per-model checkpoint std. The formula is kept as upstream's so
+the numbers stay comparable with the paper's; read gains within this RQ, not
+against rq02's values.
+
 ## Results
 
 Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity`.

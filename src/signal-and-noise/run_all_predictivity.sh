@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..100} × deep/shallow
-# × scheme A/B × seeds) from the published ladder report — the wide CSV that
+# × five data schemes × seeds) from the published ladder report — the wide CSV that
 # `src/pretrain/ladder_report.py --plot --publish --push-hf` writes to the HF
 # dataset named in configs/hf_wandb.json (`repo_id_ladder_report`). The loader
 # downloads it on first use; point SNR_LADDER_DIR at a directory holding
@@ -14,10 +14,14 @@
 #      per pool (DA is the truth rq02's variants are scored against).
 #   B. Seed holdout — needs the train/test pool CSVs from A, read by rq02's README.
 #   C. Per-pool analysis + docs (the canonical pool last so it sees the holdout).
-#   D. rq06 (proxy size × L), rq04, the curve viewer, the figures.
+#   D. rq06 (proxy size × L), rq04, the curve viewer, rq07–rq10 (the paper's
+#      questions and the ladder curves), the figures.
 set -uo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-python3}
+# Fixed PDF creation date: an unchanged figure re-renders to the same bytes,
+# so git sees no diff (PNGs are already deterministic).
+export SOURCE_DATE_EPOCH=0
 # Steps that exited non-zero. Without this every stage failed silently and
 # the script still printed ALL DONE, so a README could keep stale numbers.
 FAILED=()
@@ -75,10 +79,17 @@ for t in predictivity_seeds predictivity; do
   fi
 done
 
-echo "############################## PASS D — rq06, rq04, curves, figures ##############################"
-run $PY analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds
+echo "############################## PASS D — rq06-rq10, rq04, curves, figures ##############################"
+# rq06 reads every seed and scheme (five interventions, seed noise); rq07 and
+# rq10 draw the ladder's curves on the same cells; rq08 reads rq06's decision
+# table and rq09 the headline pool's rq02 table plus rq07's fits.
+run $PY analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_all
 run $PY analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq00_acc_vs_flops/run_apertus.py --pool predictivity
+run $PY analysis/rq07_scaling_predictability/analyze.py --pool predictivity_all
+run $PY analysis/rq08_early_decision/analyze.py --pool predictivity_all
+run $PY analysis/rq09_surrogates/analyze.py --pool predictivity
+run $PY analysis/rq10_language_transfer/analyze.py --pool predictivity_all
 run $PY analysis/report_figures/make_figures.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then

@@ -18,6 +18,9 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 REPO=$PWD
 PY=${PY:-python3}
+# Fixed PDF creation date: an unchanged figure re-renders to the same bytes,
+# so git sees no diff (PNGs are already deterministic).
+export SOURCE_DATE_EPOCH=0
 FETCH=1; DECK=1
 for a in "$@"; do
   case "$a" in
@@ -52,6 +55,11 @@ echo "report: $(wc -l < "$LADDER") rows, $(date -r "$LADDER" '+%Y-%m-%d %H:%M')"
 step "analysis pipeline"
 ( cd src/signal-and-noise && HF_HUB_OFFLINE=1 bash run_all_predictivity.sh ) \
   || FAILED+=("run_all_predictivity.sh")
+
+# 2b. The paper's figures: every one is written by an rqNN script above and
+#     only copied here, so the paper can never be newer than the tables.
+step "paper figures"
+( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
 
 # 3. The deck figures, then the two report figures the deck reuses.
 step "figures"

@@ -1,4 +1,4 @@
-# RQ2 — What makes a benchmark high-SNR?
+# RQ5 — What makes a benchmark high-SNR?
 
 ## Research question
 

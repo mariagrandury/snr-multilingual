@@ -6,44 +6,53 @@ choice the way the reference size — the largest model trained at that L —
 does? Three reads, all from the ladder report (rq00–rq05 ask which
 *benchmarks* are reliable; this RQ asks which *model sizes* are):
 
-  1. intervention DA   — per (intervention, L, proxy size): the fraction of
-                         population items on which the proxy and the reference
-                         agree about which level of the intervention is better.
-                         Two levels per intervention: model depth (deep vs
-                         shallow, every L) and data scheme (A vs B, L ∈
-                         {8, 15, 30}). Populations: per-language BPB on the
-                         languages both levels train (`bpb_trained`), on all
-                         100 validation languages (`bpb_all`), the benchmark
-                         tasks (`benchmark`), and the single macro-BPB decision
-                         (`bpb_macro`). `decision_acc_fast` on the two models
-                         of one item is exactly that agreement.
+  1. intervention DA   — per (intervention, L, population, proxy size, fraction
+                         of the proxy's run): the share of population items on
+                         which the proxy and the reference (final checkpoint)
+                         prefer the same level. Five two-level interventions,
+                         each read with the other axes at their baseline:
+                         depth (deep vs shallow), language lists (A vs B),
+                         temperature (A vs AT3), the second language of L2
+                         (ru vs zh, ru vs es). Populations: per-language BPB
+                         on the languages both levels train (`bpb_trained`),
+                         on the languages neither trains (`bpb_untrained`),
+                         on all 100 (`bpb_all`), the benchmark tasks
+                         (`benchmark`), and the single macro-BPB decision
+                         (`bpb_macro`). With two models per item this is
+                         `snr.metrics.decision_acc_fast` per item — sign
+                         agreement, items the reference ties dropped.
   2. scaling-law error — per (L, arch, scheme, language): log BPB = a − α log N
                          fitted on the proxy rungs up to a ladder top, predicting
                          the reference's BPB; relative error. The plan's
                          "prediction ability" read.
-  3. effect vs noise   — per (size, L, task): the intervention's |Δ| against
+  3. effect vs noise   — per (size, L, task): each intervention's |Δ| against
                          seed noise (std over the seed replicates, where the ×3
                          cells exist) and late-checkpoint noise (std over the
                          last N checkpoints — raw, and detrended because under
-                         WSD the final window is still descending). A decision
-                         whose effect sits inside the noise is a coin flip
-                         whatever the DA says (the plan's caveat); this table is
-                         also ladder_report.md's "effect of each transformation",
-                         resolved per benchmark and per language with a proper
-                         seed std.
+                         WSD the final window is still descending); and, per
+                         intervention at its reference, the |Δ| in seed
+                         standard deviations (the paper's "is there a decision
+                         to make?"). A decision whose effect sits inside the
+                         noise is a coin flip whatever the DA says.
 
-    python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds
+rq08 reads the decision table for "how early", rq10 for the never-trained
+languages; the paper's RQ4 figure (`rq4_interventions`) is drawn here.
+
+    python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_all
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
 
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
@@ -52,41 +61,36 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
-from pretrain.launch_trainings import cell_fineweb_subsets  # noqa: E402
-from pretrain.ladder_report import NON_EMB, _fit  # noqa: E402
-from snr.metrics import decision_acc_fast  # noqa: E402
+from evals.scripts.utils.configs import load_pools  # noqa: E402
+from pretrain.ladder_report import _fit  # noqa: E402
+from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import PROXY_PREDICTIVITY  # noqa: E402
-from analysis.utils import LAST_N, assign_language, benchmark_family, build_snr_pool  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    GRID_SEED, LAST_N, NON_EMB, assign_language, at_fraction, benchmark_family, finals,
+    ladder_frame, size_order, trained_bpb_tasks)
 
 OUT_ROOT = PROXY_PREDICTIVITY
-CANONICAL = "predictivity_seeds"      # the pool whose numbers the README carries
-GRID_SEED = 1904                      # the plan grid's seed
+CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
 MIN_ITEMS = 3                         # fewest population items for a DA cell
-INTERVENTIONS = {"arch": ("deep", "shallow"), "scheme": ("A", "B")}
-# The other axis is held at its baseline level while an intervention is read.
-BASELINE = {"arch": ("scheme", "A"), "scheme": ("arch", "deep")}
+FRACS = [0.2, 0.4, 0.6, 0.8, 1.0]     # where the proxy is read, as a share of its run
+# key -> (label, axis, levels, (held axis, its baseline level)). The first
+# level is the baseline; the reference at each L is the largest size trained
+# at both levels.
+INTERVENTIONS = {
+    "arch":        ("depth (deep vs shallow)",  "arch",   ("deep", "shallow"), ("scheme", "A")),
+    "scheme":      ("language lists (A vs B)",  "scheme", ("A", "B"),          ("arch", "deep")),
+    "temperature": ("temperature (T=1 vs T=3)", "scheme", ("A", "AT3"),        ("arch", "deep")),
+    "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("arch", "deep")),
+    "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("arch", "deep")),
+}
+POPULATIONS = ("bpb_trained", "bpb_untrained", "bpb_all", "benchmark", "bpb_macro")
+COLOUR = dict(zip(INTERVENTIONS, [S.RAMP[3], S.RAMP[1], S.SERIES[2], S.SERIES[1], "#8c1d18"]))
+mpl.rcParams.update(S.RC)
 
 
-def _size_order(sizes) -> list[str]:
-    order = bucket_order()
-    return sorted(set(sizes),
-                  key=lambda s: (order.index(s) if s in order else 99, s))
-
-
-def _finals(df: pd.DataFrame) -> pd.DataFrame:
-    """Each cell's last checkpoint per task."""
-    return df.loc[df.groupby(["model", "task"])["step"].idxmax()]
-
-
-def _trained(L: int, scheme: str) -> set[str]:
-    return {"bpb_dclm"} | {f"bpb_{s}" for s in cell_fineweb_subsets(L, scheme)}
-
-
-def _population(fin: pd.DataFrame, name: str, L: int, levels: tuple, axis: str) -> pd.DataFrame:
-    """Rows of `fin` belonging to one population at language setting L."""
-    sub = fin[fin["L"] == L]
+def _population(sub: pd.DataFrame, name: str, L: int, levels: tuple, axis: str) -> pd.DataFrame:
+    """Rows of `sub` (already at one L) belonging to one population."""
     if name == "benchmark":
         return sub[sub["kind"] == "benchmark"]
     if name == "bpb_macro":
@@ -94,55 +98,69 @@ def _population(fin: pd.DataFrame, name: str, L: int, levels: tuple, axis: str) 
     bpb = sub[(sub["kind"] == "bpb") & (sub["task"] != "bpb_macro")]
     if name == "bpb_all":
         return bpb
-    # bpb_trained: languages every level of the intervention trains on
     schemes = levels if axis == "scheme" else ("A",)
-    keep = set.intersection(*(_trained(L, s) for s in schemes))
-    return bpb[bpb["task"].isin(keep)]
+    tr = [trained_bpb_tasks(L, s) for s in schemes]
+    if any(t is None for t in tr):              # a level defines no list at this L
+        return bpb.iloc[0:0]
+    if name == "bpb_trained":
+        return bpb[bpb["task"].isin(set.intersection(*tr))]
+    return bpb[~bpb["task"].isin(set.union(*tr))]   # bpb_untrained
+
+
+def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
+    piv = rows.pivot_table(index=["size", "task"], columns=axis, values="primary_score")
+    if not set(levels) <= set(piv.columns):
+        return None
+    return piv.dropna(subset=list(levels))
 
 
 # --- 1. intervention decision accuracy ---------------------------------------
 
-def intervention_da(fin: pd.DataFrame) -> pd.DataFrame:
-    fin = fin[fin["seed"] == GRID_SEED]
+def intervention_da(df: pd.DataFrame) -> pd.DataFrame:
+    grid = df[df["seed"] == GRID_SEED]
+    fin = finals(grid)
+    at_f = {f: at_fraction(grid, f) for f in FRACS}
     rows = []
-    for axis, levels in INTERVENTIONS.items():
-        base_axis, base_level = BASELINE[axis]
-        sub = fin[fin[base_axis] == base_level]
-        for L in sorted(sub["L"].unique()):
-            for pop in ("bpb_trained", "bpb_all", "benchmark", "bpb_macro"):
-                piv = (_population(sub, pop, L, levels, axis)
-                       .pivot_table(index=["size", "task"], columns=axis,
-                                    values="primary_score"))
-                if not set(levels) <= set(piv.columns):
+    for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
+        sub_fin = fin[fin[hcol] == hval]
+        for L in sorted(sub_fin["L"].unique()):
+            for pop in POPULATIONS:
+                min_items = 1 if pop == "bpb_macro" else MIN_ITEMS
+                ref_piv = _pivot(_population(sub_fin[sub_fin["L"] == L], pop, int(L), levels, axis), axis, levels)
+                if ref_piv is None:
                     continue
-                piv = piv.dropna(subset=list(levels))
-                sizes = _size_order(piv.index.get_level_values("size"))
+                sizes = size_order(ref_piv.index.get_level_values("size"))
                 if len(sizes) < 2:
                     continue
                 ref = sizes[-1]
-                ref_scores = piv.xs(ref, level="size")
-                for proxy in sizes[:-1]:
-                    p = piv.xs(proxy, level="size")
-                    items = p.index.intersection(ref_scores.index)
-                    if len(items) < (1 if pop == "bpb_macro" else MIN_ITEMS):
+                r = ref_piv.xs(ref, level="size")
+                d_ref = r[levels[0]] - r[levels[1]]
+                ref_sign = np.sign(d_ref)[np.sign(d_ref) != 0]      # items the reference decides
+                for f in FRACS:
+                    sub = at_f[f]
+                    sub = sub[(sub[hcol] == hval) & (sub["L"] == L)]
+                    piv = _pivot(_population(sub, pop, int(L), levels, axis), axis, levels)
+                    if piv is None:
                         continue
-                    agree = [decision_acc_fast(p.loc[t, list(levels)].to_numpy(),
-                                               ref_scores.loc[t, list(levels)].to_numpy())
-                             for t in items]
-                    d_ref = (ref_scores.loc[items, levels[0]] - ref_scores.loc[items, levels[1]])
-                    d_proxy = (p.loc[items, levels[0]] - p.loc[items, levels[1]])
-                    # the first level wins an item when its score is higher on a
-                    # benchmark, lower on BPB
-                    first_better = (d_ref > 0) if pop == "benchmark" else (d_ref < 0)
-                    rows.append({
-                        "intervention": axis, "population": pop, "L": L,
-                        "proxy_size": proxy, "reference_size": ref, "n_items": len(items),
-                        "decision_acc": float(np.mean(agree)),
-                        "mean_abs_delta_proxy": float(d_proxy.abs().mean()),
-                        "mean_abs_delta_ref": float(d_ref.abs().mean()),
-                        # which level the reference prefers on the majority of items
-                        "reference_prefers": levels[0] if first_better.mean() > 0.5 else levels[1],
-                    })
+                    for s in sizes:
+                        if (s == ref and f == 1.0) or s not in piv.index.get_level_values("size"):
+                            continue
+                        p = piv.xs(s, level="size")
+                        items = p.index.intersection(ref_sign.index)
+                        if len(items) < min_items:
+                            continue
+                        d_proxy = p.loc[items, levels[0]] - p.loc[items, levels[1]]
+                        row = {"intervention": key, "label": label, "population": pop, "L": int(L),
+                               "proxy_size": s, "frac": f, "reference_size": ref, "n_items": int(len(items)),
+                               "decision_acc": float((np.sign(d_proxy) == ref_sign.loc[items]).mean())}
+                        if f == 1.0:
+                            # the first level wins an item when its score is
+                            # higher on a benchmark, lower on BPB
+                            first = (d_ref.loc[items] > 0) if pop == "benchmark" else (d_ref.loc[items] < 0)
+                            row.update({"mean_abs_delta_proxy": float(d_proxy.abs().mean()),
+                                        "mean_abs_delta_ref": float(d_ref.loc[items].abs().mean()),
+                                        "reference_prefers": levels[0] if first.mean() > 0.5 else levels[1]})
+                        rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -157,6 +175,7 @@ def scaling_law_error(fin: pd.DataFrame) -> pd.DataFrame:
             continue
         ref = g.iloc[-1]
         proxies = g.iloc[:-1]
+        trained = trained_bpb_tasks(int(L), scheme) or set()
         for top in range(3, len(proxies) + 1):
             pts = proxies.iloc[:top]
             fit = _fit(list(zip(pts["N"], pts["primary_score"])))
@@ -165,9 +184,8 @@ def scaling_law_error(fin: pd.DataFrame) -> pd.DataFrame:
             slope, icpt = fit
             pred = float(np.exp(icpt + slope * np.log(ref["N"])))
             rows.append({
-                "L": L, "arch": arch, "scheme": scheme, "task": task,
-                "language": assign_language(task),
-                "trained": task in _trained(L, scheme),
+                "L": int(L), "arch": arch, "scheme": scheme, "task": task,
+                "language": assign_language(task), "trained": task in trained,
                 "ladder_top": pts["size"].iloc[-1], "n_points": top,
                 "reference_size": ref["size"], "alpha": -slope,
                 "predicted": pred, "observed": float(ref["primary_score"]),
@@ -189,15 +207,15 @@ def _late_std(scores: np.ndarray, detrend: bool) -> float:
 
 
 def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame) -> pd.DataFrame:
+    """Per (size, L, task): each intervention's |Δ| at the grid seed, the seed
+    noise of the baseline cell and its late-checkpoint noise."""
     key = ["size", "L", "task"]
     grid = fin[fin["seed"] == GRID_SEED]
     out = None
-    for axis, levels in INTERVENTIONS.items():
-        base_axis, base_level = BASELINE[axis]
-        piv = (grid[grid[base_axis] == base_level]
-               .pivot_table(index=key, columns=axis, values="primary_score"))
+    for k, (_label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
+        piv = grid[grid[hcol] == hval].pivot_table(index=key, columns=axis, values="primary_score")
         if set(levels) <= set(piv.columns):
-            eff = (piv[levels[0]] - piv[levels[1]]).abs().rename(f"effect_{axis}")
+            eff = (piv[levels[0]] - piv[levels[1]]).abs().rename(f"effect_{k}")
             out = eff.to_frame() if out is None else out.join(eff, how="outer")
     if out is None:
         return pd.DataFrame()
@@ -214,52 +232,85 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame) -> pd.DataFrame:
     out = out.reset_index()
     out["family"] = out["task"].map(benchmark_family)
     out["population"] = np.where(out["family"] == "bpb", "bpb", "benchmark")
-    for axis in INTERVENTIONS:
-        col = f"effect_{axis}"
+    for k in INTERVENTIONS:
+        col = f"effect_{k}"
         if col in out:
             out[f"{col}_over_seed"] = out[col] / out["seed_noise"]
             out[f"{col}_over_ckpt"] = out[col] / out["ckpt_noise_detrended"]
     return out
 
 
+def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
+    """Per (intervention, L, population): at the reference size, the median
+    |Δ| in per-task seed standard deviations (the seed sd of the baseline
+    cells, median over the (size, L) cells with replicates)."""
+    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    sd = base.groupby(["size", "L", "task"])["primary_score"].agg(["std", "count"])
+    sd = sd[sd["count"] >= 2]["std"].groupby("task").median()
+    grid = fin[fin["seed"] == GRID_SEED]
+    rows = []
+    for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
+        sub = grid[grid[hcol] == hval]
+        for L, g in sub.groupby("L"):
+            piv = _pivot(g, axis, levels)
+            if piv is None:
+                continue
+            tasks = piv.index.get_level_values("task")
+            is_bpb = tasks.str.startswith("bpb_")
+            for pop, mask in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb)):
+                pp = piv[mask]
+                counts = pp.groupby(level="size").size()
+                sizes = size_order(counts[counts >= MIN_ITEMS].index)
+                if not sizes:
+                    continue
+                ref = sizes[-1]
+                p = pp.xs(ref, level="size")
+                ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).dropna()
+                if len(ratio) >= MIN_ITEMS:
+                    rows.append({"intervention": key, "label": label, "L": int(L), "reference_size": ref,
+                                 "population": pop, "median_effect_over_seed_sd": float(ratio.median()),
+                                 "share_above_2": float((ratio > 2).mean()), "n": int(len(ratio))})
+    return pd.DataFrame(rows)
+
+
 # --- figures ----------------------------------------------------------------
 
 def plot_da_grid(da: pd.DataFrame, path: Path) -> None:
+    da = da[da["frac"] == 1.0]
     pops = [p for p in ("bpb_trained", "benchmark", "bpb_all") if p in set(da["population"])]
-    if not pops:
+    keys = [k for k in INTERVENTIONS if k in set(da["intervention"])]
+    if not pops or not keys:
         return
-    axes_ = list(INTERVENTIONS)
-    fig, axes = plt.subplots(len(axes_), len(pops),
-                             figsize=(4.2 * len(pops), 3.0 * len(axes_)), squeeze=False)
-    for i, axis in enumerate(axes_):
+    fig, axes = plt.subplots(len(keys), len(pops), figsize=(4.2 * len(pops), 3.0 * len(keys)), squeeze=False)
+    im = None
+    for i, k in enumerate(keys):
         for j, pop in enumerate(pops):
             ax = axes[i][j]
-            sub = da[(da["intervention"] == axis) & (da["population"] == pop)]
+            sub = da[(da["intervention"] == k) & (da["population"] == pop)]
             if sub.empty:
                 ax.set_visible(False)
                 continue
             Ls = sorted(sub["L"].unique())
-            sizes = _size_order(sub["proxy_size"])
+            sizes = size_order(sub["proxy_size"])
             mat = np.full((len(sizes), len(Ls)), np.nan)
             for _, r in sub.iterrows():
                 mat[sizes.index(r["proxy_size"]), Ls.index(r["L"])] = r["decision_acc"]
-            im = ax.imshow(mat, vmin=0, vmax=1, cmap="viridis", aspect="auto")
+            im = ax.imshow(mat, vmin=0, vmax=1, cmap=S.SEQ, aspect="auto")
             for a in range(len(sizes)):
                 for b in range(len(Ls)):
                     if np.isfinite(mat[a, b]):
                         n = int(sub[(sub["proxy_size"] == sizes[a]) & (sub["L"] == Ls[b])]["n_items"].iloc[0])
                         ax.text(b, a, f"{mat[a, b]:.2f}\n(n={n})", ha="center", va="center",
-                                fontsize=6, color="white" if mat[a, b] < 0.6 else "black")
+                                fontsize=6, color="white" if mat[a, b] > 0.7 else S.INK)
             ax.set_xticks(range(len(Ls))); ax.set_xticklabels([f"L{L}" for L in Ls], fontsize=7)
             ax.set_yticks(range(len(sizes))); ax.set_yticklabels(sizes, fontsize=7)
-            ax.set_title(f"{axis}: {' vs '.join(INTERVENTIONS[axis])} — {pop}", fontsize=8)
-            ax.set_xlabel("languages"); ax.set_ylabel("proxy size")
-    fig.colorbar(im, ax=axes.ravel().tolist(), label="decision accuracy (proxy vs reference)",
-                 fraction=0.02)
-    fig.suptitle("Does a proxy size rank the intervention like the reference size at that L?",
-                 fontsize=10)
-    fig.savefig(path, dpi=140, bbox_inches="tight")
-    plt.close(fig)
+            ax.set_title(f"{INTERVENTIONS[k][0]} — {pop}", loc="left", fontsize=8)
+            ax.set_xlabel("languages"); ax.set_ylabel("proxy size"); S.clean(ax, spines=()); ax.tick_params(length=0)
+    if im is not None:
+        fig.colorbar(im, ax=axes.ravel().tolist(), label="decision accuracy (proxy vs reference, final checkpoints)",
+                     fraction=0.02)
+    fig.suptitle("Does a proxy size rank the intervention like the reference size at that L?", y=1.0)
+    S.save(fig, path, dpi=140)
 
 
 def plot_scaling_error(sle: pd.DataFrame, path: Path) -> None:
@@ -269,106 +320,154 @@ def plot_scaling_error(sle: pd.DataFrame, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6, 3.6))
     for L, g in sub.groupby("L"):
         med = g.groupby("ladder_top")["rel_error"].apply(lambda v: np.median(np.abs(v)))
-        tops = _size_order(med.index)
+        tops = size_order(med.index)
         ax.plot(tops, [med[t] for t in tops], marker="o", label=f"L{L}")
     ax.set_xlabel("largest proxy rung in the fit")
     ax.set_ylabel("median |relative error| of predicted BPB")
-    ax.set_title("Per-language BPB power-law prediction of the reference rung", fontsize=9)
-    ax.grid(alpha=0.3); ax.legend(fontsize=7, ncol=2)
-    fig.tight_layout(); fig.savefig(path, dpi=140); plt.close(fig)
+    ax.set_title("Per-language BPB power-law prediction of the reference rung", loc="left")
+    ax.grid(color=S.GRID, lw=.6); ax.legend(fontsize=7, ncol=2, frameon=False); S.clean(ax)
+    fig.tight_layout(); S.save(fig, path, dpi=140)
 
 
 def plot_effect_vs_noise(evn: pd.DataFrame, path: Path) -> None:
-    cols = [c for c in ("effect_arch_over_seed", "effect_scheme_over_seed",
-                        "effect_arch_over_ckpt", "effect_scheme_over_ckpt") if c in evn]
+    cols = [c for c in evn.columns if c.startswith("effect_") and ("_over_seed" in c or "_over_ckpt" in c)
+            and evn[c].notna().any()]
     if not cols:
         return
-    fig, axes = plt.subplots(1, len(cols), figsize=(3.6 * len(cols), 3.2), squeeze=False)
+    fig, axes = plt.subplots(1, len(cols), figsize=(3.4 * len(cols), 3.2), squeeze=False)
     for ax, col in zip(axes[0], cols):
         for pop, g in evn.groupby("population"):
             med = g.groupby("size")[col].median().dropna()
-            sizes = _size_order(med.index)
+            sizes = size_order(med.index)
             if sizes:
                 ax.plot(sizes, [med[s] for s in sizes], marker="o", label=pop)
-        ax.axhline(1, ls="--", lw=0.8, color="grey")
-        ax.set_yscale("log"); ax.set_title(col, fontsize=8); ax.grid(alpha=0.3)
-        ax.set_xlabel("size")
+        ax.axhline(1, ls="--", lw=0.8, color=S.MUTED)
+        ax.set_yscale("log"); ax.set_title(col.replace("effect_", "").replace("_over_", " / "), loc="left", fontsize=8)
+        ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("size"); S.clean(ax)
     axes[0][0].set_ylabel("median |effect| / noise")
-    axes[0][0].legend(fontsize=7)
-    fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = same model)",
-                 fontsize=9)
-    fig.tight_layout(); fig.savefig(path, dpi=140); plt.close(fig)
+    axes[0][0].legend(fontsize=7, frameon=False)
+    fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)", y=1.0)
+    fig.tight_layout(); S.save(fig, path, dpi=140)
+
+
+def plot_interventions(ev: pd.DataFrame, dag: pd.DataFrame, out_dir: Path) -> None:
+    """The paper's RQ4 figure: (a) |effect| at the reference in seed sds per
+    intervention; (b) final-checkpoint agreement by proxy size per intervention."""
+    keys = [k for k in INTERVENTIONS if k in set(ev["intervention"]) | set(dag["intervention"])]
+    names = [INTERVENTIONS[k][0] for k in keys]
+    fig, (a0, a1) = plt.subplots(1, 2, figsize=(9.6, 3.7), gridspec_kw={"width_ratios": [1, 1.15]})
+    y = np.arange(len(keys))
+    for j, (pop, col) in enumerate((("bits per byte", S.RAMP[3]), ("benchmarks", S.SERIES[1]))):
+        g = (ev[ev["population"] == pop].groupby("intervention")["median_effect_over_seed_sd"].median()
+             .reindex(keys))
+        a0.barh(y + (j - .5) * .36, g.values, .34, color=col, label=pop)
+        for yi, val in zip(y, g.values):
+            if np.isfinite(val):
+                a0.annotate(f"{val:.1f}×", (val, yi + (j - .5) * .36), xytext=(4, 0), va="center",
+                            textcoords="offset points", fontsize=7, color=S.INK)
+    a0.axvline(1, color=S.MUTED, ls="--", lw=1); a0.axvline(2, color=S.GRID, lw=.8)
+    a0.set_yticks(y); a0.set_yticklabels(names, fontsize=7.5); a0.invert_yaxis()
+    a0.set_xscale("log"); a0.set_xlabel("|effect| at the reference, in seed standard deviations (median)")
+    a0.set_title("(a) is there a decision to make?", loc="left")
+    a0.legend(frameon=False, loc="lower right"); a0.grid(axis="x", color=S.GRID, lw=.6); a0.set_axisbelow(True)
+    S.clean(a0); a0.tick_params(length=0)
+    styles = {"bpb_trained": ("-", "o"), "benchmark": ("--", "s")}
+    order = size_order(dag["proxy_size"])
+    for k in keys:
+        for pop, (ls, mk) in styles.items():
+            g = dag[(dag["intervention"] == k) & (dag["population"] == pop)]
+            if g.empty:
+                continue
+            g = g.set_index("proxy_size").reindex(order)
+            a1.plot(range(len(order)), g["decision_acc"], ls=ls, marker=mk, ms=4.5, lw=1.6, color=COLOUR[k])
+    a1.axhline(.5, color=S.MUTED, ls=":", lw=1)
+    a1.set_xticks(range(len(order))); a1.set_xticklabels(order)
+    a1.set_ylim(0, 1.05); a1.set_xlabel("proxy size"); a1.set_ylabel("agreement with the reference (mean over L)")
+    a1.set_title("(b) does the proxy agree, per intervention", loc="left")
+    h = [Line2D([], [], color=COLOUR[k], lw=1.6, label=INTERVENTIONS[k][0]) for k in keys]
+    h += [Line2D([], [], color=S.INK, ls="-", marker="o", ms=4, label="per-language bits per byte"),
+          Line2D([], [], color=S.INK, ls="--", marker="s", ms=4, label="benchmark tasks")]
+    a1.legend(handles=h, frameon=False, loc="lower right", ncol=1, fontsize=6.8)
+    a1.grid(color=S.GRID, lw=.6); a1.set_axisbelow(True); S.clean(a1)
+    fig.subplots_adjust(wspace=.5)
+    S.save_figure(fig, out_dir, "rq4_interventions")
 
 
 # --- README ------------------------------------------------------------------
 
 def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, sle: pd.DataFrame,
-                    evn: pd.DataFrame) -> None:
+                    evn: pd.DataFrame, ev: pd.DataFrame, dag: pd.DataFrame) -> None:
     if pool != CANONICAL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
+    rel = f"{stage}/{pool}"
     bullets, blocks = [], []
-    if not da.empty:
-        core = da[(da["intervention"] == "arch") & (da["population"] == "bpb_trained")]
-        if not core.empty:
-            grid = core.pivot_table(index="proxy_size", columns="L", values="decision_acc")
-            grid = grid.reindex(_size_order(grid.index))
-            # smallest proxy that reaches 0.75 at each L
-            first = {L: next((s for s in grid.index if grid.loc[s, L] >= 0.75), "—")
-                     for L in grid.columns}
-            bullets.append(
-                "- **Depth decision (deep vs shallow) on per-language BPB** — smallest proxy "
-                "reaching DA ≥ 0.75 against the reference: "
-                + ", ".join(f"L{L}: {s}" for L, s in first.items()) + ".")
-            rows = [[s] + [fmt(grid.loc[s, L]) for L in grid.columns] for s in grid.index]
-            blocks += ["**Intervention DA, depth on per-language BPB** (rows: proxy size; "
-                       "columns: language setting; reference = largest size at that L):",
-                       md_table(["proxy"] + [f"L{L}" for L in grid.columns], rows)]
-        bench = da[(da["intervention"] == "arch") & (da["population"] == "benchmark")]
+    fin = da[da["frac"] == 1.0] if not da.empty else da
+    if not fin.empty:
+        for pop, title in (("bpb_trained", "per-language BPB"), ("benchmark", "benchmarks")):
+            for k in INTERVENTIONS:
+                core = fin[(fin["intervention"] == k) & (fin["population"] == pop)]
+                if core.empty:
+                    continue
+                grid = core.pivot_table(index="proxy_size", columns="L", values="decision_acc")
+                grid = grid.reindex(size_order(grid.index))
+                first = {L: next((s for s in grid.index if grid.loc[s, L] >= 0.75), "—") for L in grid.columns}
+                if pop == "bpb_trained":
+                    bullets.append(f"- **{INTERVENTIONS[k][0]} on {title}** — smallest proxy reaching DA ≥ 0.75 "
+                                   "against the reference: " + ", ".join(f"L{L}: {s}" for L, s in first.items()) + ".")
+                rows = [[s] + [fmt(grid.loc[s, L]) for L in grid.columns] for s in grid.index]
+                refs = ", ".join(f"L{L} → {r}" for L, r in core.groupby("L")["reference_size"].first().items())
+                blocks += [f"**{INTERVENTIONS[k][0]}, {title}** (rows: proxy size; columns: L; reference {refs}):",
+                           md_table(["proxy"] + [f"L{L}" for L in grid.columns], rows)]
+        bench = fin[(fin["intervention"] == "arch") & (fin["population"] == "benchmark")]
         if not bench.empty:
             m = bench.groupby("proxy_size")["decision_acc"].mean()
             bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
-                           + ", ".join(f"{s} {fmt(m[s])}" for s in _size_order(m.index)) + ".")
-        blocks.append(f"![Intervention DA grid]({stage}/{pool}/intervention_da.png)")
+                           + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + ".")
+        blocks.append(f"![Intervention DA grid]({rel}/intervention_da.png)")
+    if not ev.empty:
+        med = ev.groupby(["intervention", "population"])["median_effect_over_seed_sd"].median().unstack("population")
+        bullets.append("- **Is there a decision to make?** median |Δ| at the reference in seed sds — "
+                       + "; ".join(f"{INTERVENTIONS[k][0]}: " + ", ".join(f"{p} {fmt(v, 1)}×" for p, v in r.items() if np.isfinite(v))
+                                   for k, r in med.iterrows()) + ".")
+        blocks += ["**Effect at the reference in seed standard deviations** (median over items and L):",
+                   md_table(["intervention"] + list(med.columns),
+                            [[INTERVENTIONS[k][0]] + [fmt(med.loc[k, c], 1) for c in med.columns] for k in med.index]),
+                   f"![Interventions]({rel}/rq4_interventions.png)"]
     if not sle.empty:
         core = sle[(sle["arch"] == "deep") & (sle["scheme"] == "A") & sle["trained"]]
         if not core.empty:
-            med = (core.groupby(["L", "ladder_top"])["rel_error"]
-                   .apply(lambda v: float(np.median(np.abs(v)))).unstack("ladder_top"))
-            med = med[_size_order(med.columns)]
-            rows = [[f"L{L}"] + [fmt(med.loc[L, c], 3) for c in med.columns] for L in med.index]
-            bullets.append(
-                "- **Scaling-law error** — median |relative error| of the reference's "
-                "per-language BPB predicted from the proxy ladder: "
-                + ", ".join(f"L{L} {fmt(med.loc[L].dropna().iloc[-1], 3)}" for L in med.index)
-                + " (largest proxy ladder at that L).")
-            blocks += ["**Scaling-law error on trained-language BPB** (median |relative "
-                       "error|; columns: largest proxy rung in the fit):",
-                       md_table(["L"] + list(med.columns), rows),
-                       f"![Scaling-law error]({stage}/{pool}/scaling_law_error.png)"]
+            m = (core.groupby(["L", "ladder_top"])["rel_error"]
+                 .apply(lambda v: float(np.median(np.abs(v)))).unstack("ladder_top"))
+            m = m[size_order(m.columns)]
+            rows = [[f"L{L}"] + [fmt(m.loc[L, c], 3) for c in m.columns] for L in m.index]
+            bullets.append("- **Scaling-law error** — median |relative error| of the reference's per-language BPB "
+                           "predicted from the proxy ladder: "
+                           + ", ".join(f"L{L} {fmt(m.loc[L].dropna().iloc[-1], 3)}" for L in m.index)
+                           + " (largest proxy ladder at that L).")
+            blocks += ["**Scaling-law error on trained-language BPB** (median |relative error|; columns: largest "
+                       "proxy rung in the fit):", md_table(["L"] + list(m.columns), rows),
+                       f"![Scaling-law error]({rel}/scaling_law_error.png)"]
     if not evn.empty:
         rows = []
         for pop, g in evn.groupby("population"):
-            for col in ("effect_arch_over_seed", "effect_scheme_over_seed",
-                        "effect_arch_over_ckpt", "effect_scheme_over_ckpt"):
-                if col in g and g[col].notna().any():
-                    rows.append([pop, col.replace("effect_", "").replace("_over_", " / "),
-                                 fmt(g[col].median()), int(g[col].notna().sum())])
-        seed_vs_ckpt = (evn["seed_noise"] / evn["ckpt_noise_detrended"]).replace(
-            [np.inf, -np.inf], np.nan).dropna()
+            for k in INTERVENTIONS:
+                for kind in ("seed", "ckpt"):
+                    col = f"effect_{k}_over_{kind}"
+                    if col in g and g[col].notna().any():
+                        rows.append([pop, f"{k} / {kind}", fmt(g[col].median()), int(g[col].notna().sum())])
+        seed_vs_ckpt = (evn["seed_noise"] / evn["ckpt_noise_detrended"]).replace([np.inf, -np.inf], np.nan).dropna()
         if not seed_vs_ckpt.empty:
             bullets.append(f"- **Seed noise vs detrended checkpoint noise** — median ratio "
-                           f"{fmt(seed_vs_ckpt.median())} over {len(seed_vs_ckpt)} "
-                           f"(size, L, task) cells with seed replicates.")
+                           f"{fmt(seed_vs_ckpt.median())} over {len(seed_vs_ckpt)} (size, L, task) cells with seed replicates.")
         arch = evn.get("effect_arch_over_seed")
         if arch is not None and arch.notna().any():
             arch = arch.dropna()
-            bullets.append(f"- **Depth effect vs seed noise** — median |Δ|/seed-std "
-                           f"{fmt(arch.median())}; {(arch > 2).mean():.0%} of {len(arch)} cells "
-                           f"above 2× (a distinct model for SNR, not a re-roll).")
-        blocks += ["**Intervention effect against noise** (median over cells):",
+            bullets.append(f"- **Depth effect vs seed noise** — median |Δ|/seed-std {fmt(arch.median())}; "
+                           f"{(arch > 2).mean():.0%} of {len(arch)} cells above 2× (a distinct model for SNR, not a re-roll).")
+        blocks += ["**Intervention effect against noise** (median over (size, L, task) cells):",
                    md_table(["population", "effect / noise", "median", "n"], rows),
-                   f"![Effect vs noise]({stage}/{pool}/effect_vs_noise.png)"]
+                   f"![Effect vs noise]({rel}/effect_vs_noise.png)"]
     readme = OUT_ROOT / "README.md"
     gen = f"analyze.py --pool {pool}"
     replace_block(readme, "highlight", "## Highlighted result\n\n" + "\n".join(bullets), gen)
@@ -382,17 +481,22 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, sle: pd.DataFram
 # --- driver -------------------------------------------------------------------
 
 def main(pool: str, out_dir: Path) -> None:
-    df = build_snr_pool(pool)
-    fin = _finals(df)
+    df = ladder_frame(pool)
+    fin = finals(df)
     out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Pool '{pool}': {df['model'].nunique()} cells, "
-          f"{fin['task'].nunique()} tasks, seeds {sorted(df['seed'].unique())}")
+    print(f"Pool '{pool}': {df['model'].nunique()} cells, {fin['task'].nunique()} tasks, "
+          f"seeds {sorted(df['seed'].unique())}, schemes {sorted(df['scheme'].unique())}")
 
-    da = intervention_da(fin)
+    da = intervention_da(df)
     da.to_csv(out_dir / "intervention_da.csv", index=False)
     print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
+    dag = pd.DataFrame()
     if not da.empty:
         plot_da_grid(da, out_dir / "intervention_da.png")
+        dag = (da[da["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
+               .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
+                    refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
+        dag.to_csv(out_dir / "rq4_da_by_intervention.csv", index=False)
 
     sle = scaling_law_error(fin)
     sle.to_csv(out_dir / "scaling_law_error.csv", index=False)
@@ -406,15 +510,22 @@ def main(pool: str, out_dir: Path) -> None:
     if not evn.empty:
         plot_effect_vs_noise(evn, out_dir / "effect_vs_noise.png")
 
-    generate_readme(pool, out_dir, da, sle, evn)
+    ev = effect_at_reference(fin)
+    ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)
+    if not ev.empty or not dag.empty:
+        plot_interventions(ev, dag, out_dir)
+
+    (out_dir / "facts.json").write_text(json.dumps(
+        {"rq4": {"effect": ev.round(3).to_dict("records"), "da": dag.round(3).to_dict("records")}},
+        indent=1, default=str))
+    generate_readme(pool, out_dir, da, sle, evn, ev, dag)
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description=__doc__,
-                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL,
-                   help=f"Ladder pool from configs/models.json (default: {CANONICAL}; "
-                        "all seeds are needed for the seed-noise column).")
+                   help=f"Ladder pool from configs/models.json (default: {CANONICAL}; every seed and "
+                        "scheme is needed for the five interventions and the seed-noise column).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")

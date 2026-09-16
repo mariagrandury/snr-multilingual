@@ -179,7 +179,7 @@ footer p{margin:0 0 9px}
 <section class="band">
   <p class="band-id">Part one</p>
   <h2>The original programme</h2>
-  <p class="intro">Seven questions carried over from the Signal-and-Noise framework and adapted to the ladder. Each is one directory under <code>src/signal-and-noise/analysis/</code>, run in dependency order by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/run_all_predictivity.sh"><code>run_all_predictivity.sh</code></a>.</p>
+  <p class="intro">Seven questions carried over from the Signal-and-Noise framework and adapted to the ladder, RQ0–RQ6; the paper's five questions are the four further directories <code>rq07_scaling_predictability</code> (A1), <code>rq08_early_decision</code> (B1), <code>rq09_surrogates</code> (B3) and <code>rq10_language_transfer</code> (A3), plus RQ6 for the interventions. Each is one directory under <code>src/signal-and-noise/analysis/</code>, run in dependency order by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/run_all_predictivity.sh"><code>run_all_predictivity.sh</code></a>.</p>
 </section>
 
 <article id="rq0">
@@ -705,7 +705,7 @@ footer p{margin:0 0 9px}
 
 <footer>
   <p><strong>Provenance.</strong> Every number here regenerates from one artefact: the wide per-checkpoint table <code>ladder_report.csv</code>, published to <code>msnr-data/ladder-report</code> and read from the repository branch <code>data/ladder-report</code>. The run is 14 September 2026, on 106 cells of which 66 are complete, and it is reproduced end to end by <code>scripts/refresh_analysis.sh</code>.</p>
-  <p><strong>Reproduce.</strong> <code>cd src/signal-and-noise &amp;&amp; bash run_all_predictivity.sh</code> for RQ0–RQ6; <code>cd documents/figures &amp;&amp; python3 fig_rqs.py</code> for A1–B3. The per-task tables under <code>analysis/&lt;rq&gt;/pretraining/&lt;pool&gt;/</code> are the persisted truth and every figure derives from them.</p>
+  <p><strong>Reproduce.</strong> <code>cd src/signal-and-noise &amp;&amp; bash run_all_predictivity.sh</code> for RQ0–RQ10 (the paper's figures are then copied by <code>documents/paper/figures/make_rq_figures.py</code>); <code>cd documents/figures &amp;&amp; python3 fig_rqs.py</code> for A1–B3. The per-task tables under <code>analysis/&lt;rq&gt;/pretraining/&lt;pool&gt;/</code> are the persisted truth and every figure derives from them.</p>
   <p><strong>Read alongside.</strong> The full write-up is <code>documents/report/snr_predictivity_report.md</code>; the presentation is <code>documents/slides.md</code>; each RQ directory carries its own README with the generated results block.</p>
 </footer>
 </main>

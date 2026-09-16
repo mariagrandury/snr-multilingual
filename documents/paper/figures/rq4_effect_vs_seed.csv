@@ -1,25 +1,25 @@
-intervention,L,reference_size,population,median_effect_over_seed_sd,share_above_2,n
-depth (deep vs shallow),1,1.7B,bits per byte,1.324705608182885,0.3,100
-depth (deep vs shallow),1,1.7B,benchmarks,1.8773006512247357,0.44,75
-depth (deep vs shallow),2,600M,bits per byte,2.1607549463033564,0.55,100
-depth (deep vs shallow),2,1.7B,benchmarks,1.1160814867444242,0.2727272727272727,154
-depth (deep vs shallow),8,600M,bits per byte,1.109735661688184,0.27,100
-depth (deep vs shallow),8,600M,benchmarks,1.0000111499708235,0.2679738562091503,612
-depth (deep vs shallow),15,600M,bits per byte,2.359678524780872,0.59,100
-depth (deep vs shallow),15,600M,benchmarks,1.664080875688176,0.39149689991142606,1129
-depth (deep vs shallow),30,600M,bits per byte,1.0796802615875944,0.24,100
-depth (deep vs shallow),30,1.7B,benchmarks,1.1338864672102726,0.2624861265260821,1802
-depth (deep vs shallow),50,600M,bits per byte,1.5761935895048809,0.26,100
-depth (deep vs shallow),50,600M,benchmarks,1.1523473838849188,0.26844444444444443,2250
-language lists (A vs B),8,1.7B,bits per byte,1.6139936247782596,0.43,100
-language lists (A vs B),8,1.7B,benchmarks,1.6860020418854655,0.4071969696969697,528
-language lists (A vs B),15,1B,bits per byte,2.690811996119345,0.55,100
-language lists (A vs B),15,1B,benchmarks,1.3330764317589516,0.31555555555555553,2250
-language lists (A vs B),30,1.7B,bits per byte,0.5751691383880325,0.18,100
-language lists (A vs B),30,1.7B,benchmarks,1.4846149779161801,0.36645299145299143,1872
-temperature (T=1 vs T=3),50,600M,bits per byte,3.858661169317731,0.7,100
-temperature (T=1 vs T=3),50,1B,benchmarks,1.3913089239136578,0.348,2250
-2nd language (ru vs zh),2,600M,bits per byte,4.884612273385542,0.69,100
-2nd language (ru vs zh),2,1B,benchmarks,1.124199390549131,0.26282051282051283,156
-2nd language (ru vs es),2,600M,bits per byte,3.3959559338507654,0.62,100
-2nd language (ru vs es),2,600M,benchmarks,1.7474733723745226,0.45454545454545453,154
+intervention,label,L,reference_size,population,median_effect_over_seed_sd,share_above_2,n
+arch,depth (deep vs shallow),1,1.7B,bits per byte,1.324705608182885,0.3,100
+arch,depth (deep vs shallow),1,1.7B,benchmarks,1.8773006512247357,0.44,75
+arch,depth (deep vs shallow),2,600M,bits per byte,2.1607549463033564,0.55,100
+arch,depth (deep vs shallow),2,1.7B,benchmarks,1.1160814867444242,0.2727272727272727,154
+arch,depth (deep vs shallow),8,600M,bits per byte,1.109735661688184,0.27,100
+arch,depth (deep vs shallow),8,600M,benchmarks,1.0000111499708235,0.2679738562091503,612
+arch,depth (deep vs shallow),15,600M,bits per byte,2.359678524780872,0.59,100
+arch,depth (deep vs shallow),15,600M,benchmarks,1.664080875688176,0.39149689991142606,1129
+arch,depth (deep vs shallow),30,600M,bits per byte,1.0796802615875944,0.24,100
+arch,depth (deep vs shallow),30,1.7B,benchmarks,1.1338864672102726,0.2624861265260821,1802
+arch,depth (deep vs shallow),50,600M,bits per byte,1.5761935895048809,0.26,100
+arch,depth (deep vs shallow),50,600M,benchmarks,1.1523473838849188,0.26844444444444443,2250
+scheme,language lists (A vs B),8,1.7B,bits per byte,1.6139936247782596,0.43,100
+scheme,language lists (A vs B),8,1.7B,benchmarks,1.6860020418854655,0.4071969696969697,528
+scheme,language lists (A vs B),15,1B,bits per byte,2.690811996119345,0.55,100
+scheme,language lists (A vs B),15,1B,benchmarks,1.3330764317589516,0.31555555555555553,2250
+scheme,language lists (A vs B),30,1.7B,bits per byte,0.5751691383880325,0.18,100
+scheme,language lists (A vs B),30,1.7B,benchmarks,1.4846149779161801,0.36645299145299143,1872
+temperature,temperature (T=1 vs T=3),50,600M,bits per byte,3.858661169317731,0.7,100
+temperature,temperature (T=1 vs T=3),50,1B,benchmarks,1.3913089239136578,0.348,2250
+zh,2nd language (ru vs zh),2,600M,bits per byte,4.884612273385542,0.69,100
+zh,2nd language (ru vs zh),2,1B,benchmarks,1.124199390549131,0.26282051282051283,156
+es,2nd language (ru vs es),2,600M,bits per byte,3.3959559338507654,0.62,100
+es,2nd language (ru vs es),2,600M,benchmarks,1.7474733723745226,0.45454545454545453,154

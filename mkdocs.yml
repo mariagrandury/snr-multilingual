@@ -53,6 +53,10 @@ nav:
       - "RQ4 · Subtask subsets": signal-noise/smooth_subtasks.md
       - "RQ5 · Benchmark creation": signal-noise/benchmark_creation.md
       - "RQ6 · Proxy predictivity": signal-noise/proxy_predictivity.md
+      - "RQ7 · Scaling predictability": signal-noise/scaling_predictability.md
+      - "RQ8 · Early decision": signal-noise/early_decision.md
+      - "RQ9 · Surrogates": signal-noise/surrogates.md
+      - "RQ10 · Language transfer": signal-noise/language_transfer.md
   - Documents: documents.md
   - Slides: /slides/
 

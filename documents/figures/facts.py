@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 P = "pretraining/predictivity"
-PS = "pretraining/predictivity_seeds"
+PS = "pretraining/predictivity_all"      # rq06 reads every seed and scheme
 OUT = REPO / "documents" / "ladder-facts.json"
 
 

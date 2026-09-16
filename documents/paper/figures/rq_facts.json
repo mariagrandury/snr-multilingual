@@ -142,7 +142,8 @@
  "rq2": {
   "table": [
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.2,
@@ -152,7 +153,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.4,
@@ -162,7 +164,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.6,
@@ -172,7 +175,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.8,
@@ -182,7 +186,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -192,7 +197,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -202,7 +208,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -212,7 +219,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -222,7 +230,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -232,7 +241,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -242,7 +252,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -252,7 +263,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -262,7 +274,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -272,7 +285,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -282,7 +296,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -292,7 +307,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -302,7 +318,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -312,7 +329,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -322,7 +340,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
@@ -332,7 +351,426 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 0.49,
+    "cells": 1,
+    "items": 100,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 0.52,
+    "cells": 1,
+    "items": 100,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 0.67,
+    "cells": 1,
+    "items": 100,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 0.74,
+    "cells": 1,
+    "items": 100,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.465,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 0.12,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 0.158,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.8,
+    "da": 0.178,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 0.213,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.2,
+    "da": 0.615,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.4,
+    "da": 0.658,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.6,
+    "da": 0.572,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 0.638,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.59,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 0.79,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.4,
+    "da": 0.853,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 0.848,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 0.858,
+    "cells": 6,
+    "items": 600,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 1.0,
+    "da": 0.67,
+    "cells": 1,
+    "items": 100,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 0.0,
+    "cells": 1,
+    "items": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 0.0,
+    "cells": 1,
+    "items": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 1,
+    "items": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 1,
+    "items": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.5,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 0.0,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 0.167,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.8,
+    "da": 0.167,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 0.167,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.2,
+    "da": 0.833,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.4,
+    "da": 0.167,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.6,
+    "da": 0.333,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 0.5,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.333,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 0.5,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 6,
+    "items": 6,
+    "refs": "1.7B/600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 1.0,
+    "da": 1.0,
+    "cells": 1,
+    "items": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -342,7 +780,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -352,7 +791,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -362,7 +802,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -372,7 +813,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -382,7 +824,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -392,7 +835,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -402,7 +846,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -412,7 +857,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -422,7 +868,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -432,7 +879,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -442,7 +890,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -452,7 +901,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -462,7 +912,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -472,7 +923,8 @@
     "refs": "600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.2,
@@ -482,7 +934,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.4,
@@ -492,7 +945,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.6,
@@ -502,7 +956,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.8,
@@ -512,7 +967,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -522,7 +978,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -532,7 +989,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -542,7 +1000,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -552,7 +1011,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -562,7 +1022,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -572,7 +1033,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -582,7 +1044,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -592,7 +1055,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -602,7 +1066,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -612,7 +1077,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -622,7 +1088,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -632,7 +1099,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -642,7 +1110,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -652,7 +1121,8 @@
     "refs": "1.7B/600M"
    },
    {
-    "intervention": "depth (deep vs shallow)",
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 1.0,
@@ -662,7 +1132,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.2,
@@ -672,7 +1143,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.4,
@@ -682,7 +1154,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.6,
@@ -692,7 +1165,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.8,
@@ -702,7 +1176,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -712,7 +1187,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -722,7 +1198,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -732,7 +1209,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -742,7 +1220,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -752,7 +1231,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.2,
@@ -762,7 +1242,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.4,
@@ -772,7 +1253,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.6,
@@ -782,7 +1264,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.8,
@@ -792,7 +1275,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 1.0,
@@ -802,7 +1286,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -812,7 +1297,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -822,7 +1308,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -832,7 +1319,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -842,7 +1330,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -852,7 +1341,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -862,7 +1352,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -872,7 +1363,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -882,7 +1374,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -892,7 +1385,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
@@ -902,7 +1396,536 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 0.695,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 0.775,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 0.785,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 0.785,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.693,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 0.653,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 0.48,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 0.8,
+    "da": 0.63,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 0.573,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "frac": 0.2,
+    "da": 0.72,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "frac": 0.4,
+    "da": 0.69,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "frac": 0.6,
+    "da": 0.705,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "frac": 0.8,
+    "da": 0.71,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "frac": 1.0,
+    "da": 0.745,
+    "cells": 2,
+    "items": 200,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.2,
+    "da": 0.693,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.4,
+    "da": 0.733,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.6,
+    "da": 0.763,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 0.76,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.757,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 0.773,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.4,
+    "da": 0.79,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 0.8,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 0.8,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "frac": 1.0,
+    "da": 0.823,
+    "cells": 3,
+    "items": 300,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 0.5,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.333,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "frac": 0.2,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "frac": 1.0,
+    "da": 1.0,
+    "cells": 2,
+    "items": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.2,
+    "da": 0.667,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.667,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "frac": 1.0,
+    "da": 1.0,
+    "cells": 3,
+    "items": 3,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1.7B",
     "frac": 0.2,
@@ -912,7 +1935,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1.7B",
     "frac": 0.4,
@@ -922,7 +1946,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1.7B",
     "frac": 0.6,
@@ -932,7 +1957,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1.7B",
     "frac": 0.8,
@@ -942,7 +1968,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -952,7 +1979,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -962,7 +1990,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -972,7 +2001,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -982,7 +2012,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -992,7 +2023,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.2,
@@ -1002,7 +2034,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.4,
@@ -1012,7 +2045,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.6,
@@ -1022,7 +2056,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.8,
@@ -1032,7 +2067,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 1.0,
@@ -1042,7 +2078,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -1052,7 +2089,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -1062,7 +2100,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -1072,7 +2111,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -1082,7 +2122,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -1092,7 +2133,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -1102,7 +2144,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -1112,7 +2155,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -1122,7 +2166,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -1132,7 +2177,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 1.0,
@@ -1142,7 +2188,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.2,
@@ -1152,7 +2199,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.4,
@@ -1162,7 +2210,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.6,
@@ -1172,7 +2221,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1.7B",
     "frac": 0.8,
@@ -1182,7 +2232,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.2,
@@ -1192,7 +2243,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.4,
@@ -1202,7 +2254,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.6,
@@ -1212,7 +2265,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 0.8,
@@ -1222,7 +2276,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "175M",
     "frac": 1.0,
@@ -1232,7 +2287,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1B",
     "frac": 0.2,
@@ -1242,7 +2298,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1B",
     "frac": 0.4,
@@ -1252,7 +2309,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1B",
     "frac": 0.6,
@@ -1262,7 +2320,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1B",
     "frac": 0.8,
@@ -1272,7 +2331,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "1B",
     "frac": 1.0,
@@ -1282,7 +2342,8 @@
     "refs": "1.7B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.2,
@@ -1292,7 +2353,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.4,
@@ -1302,7 +2364,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.6,
@@ -1312,7 +2375,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 0.8,
@@ -1322,7 +2386,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "350M",
     "frac": 1.0,
@@ -1332,7 +2397,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.2,
@@ -1342,7 +2408,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.4,
@@ -1352,7 +2419,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.6,
@@ -1362,7 +2430,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 0.8,
@@ -1372,7 +2441,8 @@
     "refs": "1.7B/1B"
    },
    {
-    "intervention": "language lists (A vs B)",
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
     "population": "bpb_untrained",
     "proxy_size": "600M",
     "frac": 1.0,
@@ -1383,703 +2453,50 @@
    }
   ],
   "references": {
-   "depth (deep vs shallow)|benchmark|L1": "1.7B",
-   "depth (deep vs shallow)|benchmark|L2": "1.7B",
-   "depth (deep vs shallow)|benchmark|L8": "600M",
-   "depth (deep vs shallow)|benchmark|L15": "600M",
-   "depth (deep vs shallow)|benchmark|L30": "1.7B",
-   "depth (deep vs shallow)|benchmark|L50": "600M",
-   "depth (deep vs shallow)|bpb_trained|L8": "600M",
-   "depth (deep vs shallow)|bpb_trained|L15": "600M",
-   "depth (deep vs shallow)|bpb_trained|L30": "600M",
-   "depth (deep vs shallow)|bpb_trained|L50": "600M",
-   "depth (deep vs shallow)|bpb_untrained|L1": "1.7B",
-   "depth (deep vs shallow)|bpb_untrained|L2": "600M",
-   "depth (deep vs shallow)|bpb_untrained|L8": "600M",
-   "depth (deep vs shallow)|bpb_untrained|L15": "600M",
-   "depth (deep vs shallow)|bpb_untrained|L30": "600M",
-   "depth (deep vs shallow)|bpb_untrained|L50": "600M",
-   "language lists (A vs B)|benchmark|L8": "1.7B",
-   "language lists (A vs B)|benchmark|L15": "1B",
-   "language lists (A vs B)|benchmark|L30": "1.7B",
-   "language lists (A vs B)|bpb_trained|L8": "1.7B",
-   "language lists (A vs B)|bpb_trained|L15": "1B",
-   "language lists (A vs B)|bpb_trained|L30": "1.7B",
-   "language lists (A vs B)|bpb_untrained|L8": "1.7B",
-   "language lists (A vs B)|bpb_untrained|L15": "1B",
-   "language lists (A vs B)|bpb_untrained|L30": "1.7B"
+   "arch|benchmark|L1": "1.7B",
+   "arch|benchmark|L2": "1.7B",
+   "arch|benchmark|L8": "600M",
+   "arch|benchmark|L15": "600M",
+   "arch|benchmark|L30": "1.7B",
+   "arch|benchmark|L50": "600M",
+   "arch|bpb_all|L1": "1.7B",
+   "arch|bpb_all|L2": "600M",
+   "arch|bpb_all|L8": "600M",
+   "arch|bpb_all|L15": "600M",
+   "arch|bpb_all|L30": "600M",
+   "arch|bpb_all|L50": "600M",
+   "arch|bpb_macro|L1": "1.7B",
+   "arch|bpb_macro|L2": "600M",
+   "arch|bpb_macro|L8": "600M",
+   "arch|bpb_macro|L15": "600M",
+   "arch|bpb_macro|L30": "600M",
+   "arch|bpb_macro|L50": "600M",
+   "arch|bpb_trained|L8": "600M",
+   "arch|bpb_trained|L15": "600M",
+   "arch|bpb_trained|L30": "600M",
+   "arch|bpb_trained|L50": "600M",
+   "arch|bpb_untrained|L1": "1.7B",
+   "arch|bpb_untrained|L2": "600M",
+   "arch|bpb_untrained|L8": "600M",
+   "arch|bpb_untrained|L15": "600M",
+   "arch|bpb_untrained|L30": "600M",
+   "arch|bpb_untrained|L50": "600M",
+   "scheme|benchmark|L8": "1.7B",
+   "scheme|benchmark|L15": "1B",
+   "scheme|benchmark|L30": "1.7B",
+   "scheme|bpb_all|L8": "1.7B",
+   "scheme|bpb_all|L15": "1B",
+   "scheme|bpb_all|L30": "1.7B",
+   "scheme|bpb_macro|L8": "1.7B",
+   "scheme|bpb_macro|L15": "1B",
+   "scheme|bpb_macro|L30": "1.7B",
+   "scheme|bpb_trained|L8": "1.7B",
+   "scheme|bpb_trained|L15": "1B",
+   "scheme|bpb_trained|L30": "1.7B",
+   "scheme|bpb_untrained|L8": "1.7B",
+   "scheme|bpb_untrained|L15": "1B",
+   "scheme|bpb_untrained|L30": "1.7B"
   }
- },
- "rq4": {
-  "effect": [
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 1,
-    "reference_size": "1.7B",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.325,
-    "share_above_2": 0.3,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 1,
-    "reference_size": "1.7B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.877,
-    "share_above_2": 0.44,
-    "n": 75
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 2,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 2.161,
-    "share_above_2": 0.55,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 2,
-    "reference_size": "1.7B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.116,
-    "share_above_2": 0.273,
-    "n": 154
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 8,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.11,
-    "share_above_2": 0.27,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 8,
-    "reference_size": "600M",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.0,
-    "share_above_2": 0.268,
-    "n": 612
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 15,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 2.36,
-    "share_above_2": 0.59,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 15,
-    "reference_size": "600M",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.664,
-    "share_above_2": 0.391,
-    "n": 1129
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 30,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.08,
-    "share_above_2": 0.24,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 30,
-    "reference_size": "1.7B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.134,
-    "share_above_2": 0.262,
-    "n": 1802
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 50,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.576,
-    "share_above_2": 0.26,
-    "n": 100
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "L": 50,
-    "reference_size": "600M",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.152,
-    "share_above_2": 0.268,
-    "n": 2250
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 8,
-    "reference_size": "1.7B",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.614,
-    "share_above_2": 0.43,
-    "n": 100
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 8,
-    "reference_size": "1.7B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.686,
-    "share_above_2": 0.407,
-    "n": 528
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 15,
-    "reference_size": "1B",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 2.691,
-    "share_above_2": 0.55,
-    "n": 100
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 15,
-    "reference_size": "1B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.333,
-    "share_above_2": 0.316,
-    "n": 2250
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 30,
-    "reference_size": "1.7B",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 0.575,
-    "share_above_2": 0.18,
-    "n": 100
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "L": 30,
-    "reference_size": "1.7B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.485,
-    "share_above_2": 0.366,
-    "n": 1872
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "L": 50,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 3.859,
-    "share_above_2": 0.7,
-    "n": 100
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "L": 50,
-    "reference_size": "1B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.391,
-    "share_above_2": 0.348,
-    "n": 2250
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "L": 2,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 4.885,
-    "share_above_2": 0.69,
-    "n": 100
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "L": 2,
-    "reference_size": "1B",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.124,
-    "share_above_2": 0.263,
-    "n": 156
-   },
-   {
-    "intervention": "2nd language (ru vs es)",
-    "L": 2,
-    "reference_size": "600M",
-    "population": "bits per byte",
-    "median_effect_over_seed_sd": 3.396,
-    "share_above_2": 0.62,
-    "n": 100
-   },
-   {
-    "intervention": "2nd language (ru vs es)",
-    "L": 2,
-    "reference_size": "600M",
-    "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.747,
-    "share_above_2": 0.455,
-    "n": 154
-   }
-  ],
-  "da": [
-   {
-    "intervention": "2nd language (ru vs es)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "da": 0.3,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "2nd language (ru vs es)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "da": 0.43,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "2nd language (ru vs es)",
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.784,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "2nd language (ru vs es)",
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.897,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "da": 0.522,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "da": 0.527,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "da": 0.541,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.753,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "2nd language (ru vs zh)",
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.856,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "da": 0.494,
-    "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "da": 0.477,
-    "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "da": 0.513,
-    "cells": 3,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "da": 0.0,
-    "cells": 4,
-    "refs": "600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "da": 0.511,
-    "cells": 4,
-    "refs": "600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.229,
-    "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.639,
-    "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "depth (deep vs shallow)",
-    "population": "bpb_untrained",
-    "proxy_size": "600M",
-    "da": 0.667,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "da": 0.46,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "da": 0.384,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "da": 0.507,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "da": 0.45,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "da": 0.402,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_trained",
-    "proxy_size": "1B",
-    "da": 0.654,
-    "cells": 2,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "da": 1.0,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "da": 0.944,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.565,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_untrained",
-    "proxy_size": "1B",
-    "da": 0.764,
-    "cells": 2,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.677,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "language lists (A vs B)",
-    "population": "bpb_untrained",
-    "proxy_size": "600M",
-    "da": 0.763,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "da": 0.351,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "da": 0.417,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "da": 0.477,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "da": 0.88,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "da": 0.96,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.46,
-    "cells": 1,
-    "refs": "600M"
-   },
-   {
-    "intervention": "temperature (T=1 vs T=3)",
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.7,
-    "cells": 1,
-    "refs": "600M"
-   }
-  ]
- },
- "rq5": {
-  "summary": [
-   {
-    "trained": false,
-    "k": 1,
-    "transfer": 0.067,
-    "own": NaN,
-    "last": 0.358,
-    "n": 494
-   },
-   {
-    "trained": false,
-    "k": 2,
-    "transfer": 0.065,
-    "own": NaN,
-    "last": 0.163,
-    "n": 494
-   },
-   {
-    "trained": false,
-    "k": 3,
-    "transfer": 0.058,
-    "own": 0.058,
-    "last": 0.102,
-    "n": 494
-   },
-   {
-    "trained": false,
-    "k": 4,
-    "transfer": 0.051,
-    "own": 0.032,
-    "last": 0.065,
-    "n": 359
-   },
-   {
-    "trained": true,
-    "k": 1,
-    "transfer": 0.034,
-    "own": NaN,
-    "last": 0.454,
-    "n": 106
-   },
-   {
-    "trained": true,
-    "k": 2,
-    "transfer": 0.024,
-    "own": NaN,
-    "last": 0.194,
-    "n": 106
-   },
-   {
-    "trained": true,
-    "k": 3,
-    "transfer": 0.021,
-    "own": 0.051,
-    "last": 0.094,
-    "n": 106
-   },
-   {
-    "trained": true,
-    "k": 4,
-    "transfer": 0.021,
-    "own": 0.045,
-    "last": 0.073,
-    "n": 41
-   }
-  ],
-  "alpha_pooled_by_L": {
-   "1": 0.141,
-   "2": 0.163,
-   "8": 0.163,
-   "15": 0.165,
-   "30": 0.16,
-   "50": 0.203
-  },
-  "alpha_own_spread_by_L": {
-   "1": {
-    "median": 0.141,
-    "std": 0.034
-   },
-   "2": {
-    "median": 0.164,
-    "std": 0.043
-   },
-   "8": {
-    "median": 0.163,
-    "std": 0.062
-   },
-   "15": {
-    "median": 0.166,
-    "std": 0.051
-   },
-   "30": {
-    "median": 0.161,
-    "std": 0.047
-   },
-   "50": {
-    "median": 0.202,
-    "std": 0.065
-   }
-  },
-  "n_languages": 100,
-  "references": {
-   "1": "1.7B",
-   "2": "1.7B",
-   "8": "1.7B",
-   "15": "1B",
-   "30": "1.7B",
-   "50": "1B"
-  },
-  "decision_transfer": [
-   {
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "da": 0.261,
-    "cells": 8
-   },
-   {
-    "population": "bpb_trained",
-    "proxy_size": "1B",
-    "da": 0.654,
-    "cells": 2
-   },
-   {
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "da": 0.75,
-    "cells": 8
-   },
-   {
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "da": 0.944,
-    "cells": 3
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.422,
-    "cells": 12
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "1B",
-    "da": 0.764,
-    "cells": 2
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.693,
-    "cells": 12
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "600M",
-    "da": 0.739,
-    "cells": 4
-   }
-  ]
  },
  "rq3": [
   {
@@ -2426,5 +2843,970 @@
    "p": 0.313,
    "n": 100
   }
- ]
+ ],
+ "rq4": {
+  "effect": [
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 1,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.325,
+    "share_above_2": 0.3,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 1,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.877,
+    "share_above_2": 0.44,
+    "n": 75
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.161,
+    "share_above_2": 0.55,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 2,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.116,
+    "share_above_2": 0.273,
+    "n": 154
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 8,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.11,
+    "share_above_2": 0.27,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 8,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.0,
+    "share_above_2": 0.268,
+    "n": 612
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 15,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.36,
+    "share_above_2": 0.59,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 15,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.664,
+    "share_above_2": 0.391,
+    "n": 1129
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 30,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.08,
+    "share_above_2": 0.24,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.134,
+    "share_above_2": 0.262,
+    "n": 1802
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.576,
+    "share_above_2": 0.26,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.152,
+    "share_above_2": 0.268,
+    "n": 2250
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.614,
+    "share_above_2": 0.43,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.686,
+    "share_above_2": 0.407,
+    "n": 528
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 15,
+    "reference_size": "1B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.691,
+    "share_above_2": 0.55,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 15,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.333,
+    "share_above_2": 0.316,
+    "n": 2250
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.575,
+    "share_above_2": 0.18,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.485,
+    "share_above_2": 0.366,
+    "n": 1872
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 3.859,
+    "share_above_2": 0.7,
+    "n": 100
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 50,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.391,
+    "share_above_2": 0.348,
+    "n": 2250
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 4.885,
+    "share_above_2": 0.69,
+    "n": 100
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "L": 2,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.124,
+    "share_above_2": 0.263,
+    "n": 156
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 3.396,
+    "share_above_2": 0.62,
+    "n": 100
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.747,
+    "share_above_2": 0.455,
+    "n": 154
+   }
+  ],
+  "da": [
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.494,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.477,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.513,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.213,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.59,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "decision_acc": 0.67,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 0.167,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.333,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.0,
+    "cells": 4,
+    "refs": "600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.511,
+    "cells": 4,
+    "refs": "600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.229,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.639,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "decision_acc": 0.667,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.3,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.43,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.79,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.9,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.784,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.897,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.46,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.384,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.507,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.45,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.573,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "decision_acc": 0.745,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.757,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "decision_acc": 0.823,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.402,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "decision_acc": 0.654,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.944,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.565,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "1B",
+    "decision_acc": 0.764,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.677,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "decision_acc": 0.763,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.351,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.417,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.477,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.67,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.83,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.88,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.96,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.46,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.7,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.522,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.527,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.541,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.75,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.86,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.753,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.856,
+    "cells": 1,
+    "refs": "600M"
+   }
+  ]
+ },
+ "rq5": {
+  "summary": [
+   {
+    "trained": false,
+    "k": 1,
+    "transfer": 0.067,
+    "own": NaN,
+    "last": 0.358,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 2,
+    "transfer": 0.065,
+    "own": NaN,
+    "last": 0.163,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 3,
+    "transfer": 0.058,
+    "own": 0.058,
+    "last": 0.102,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 4,
+    "transfer": 0.051,
+    "own": 0.032,
+    "last": 0.065,
+    "n": 359
+   },
+   {
+    "trained": true,
+    "k": 1,
+    "transfer": 0.034,
+    "own": NaN,
+    "last": 0.454,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 2,
+    "transfer": 0.024,
+    "own": NaN,
+    "last": 0.194,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 3,
+    "transfer": 0.021,
+    "own": 0.051,
+    "last": 0.094,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 4,
+    "transfer": 0.021,
+    "own": 0.045,
+    "last": 0.073,
+    "n": 41
+   }
+  ],
+  "alpha_pooled_by_L": {
+   "1": 0.141,
+   "2": 0.163,
+   "8": 0.163,
+   "15": 0.165,
+   "30": 0.16,
+   "50": 0.203
+  },
+  "alpha_own_spread_by_L": {
+   "1": {
+    "median": 0.141,
+    "std": 0.034
+   },
+   "2": {
+    "median": 0.164,
+    "std": 0.043
+   },
+   "8": {
+    "median": 0.163,
+    "std": 0.062
+   },
+   "15": {
+    "median": 0.166,
+    "std": 0.051
+   },
+   "30": {
+    "median": 0.161,
+    "std": 0.047
+   },
+   "50": {
+    "median": 0.202,
+    "std": 0.065
+   }
+  },
+  "n_languages": 100,
+  "references": {
+   "1": "1.7B",
+   "2": "1.7B",
+   "8": "1.7B",
+   "15": "1B",
+   "30": "1.7B",
+   "50": "1B"
+  },
+  "decision_transfer": [
+   {
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "da": 0.261,
+    "cells": 8
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "da": 0.422,
+    "cells": 12
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "da": 0.75,
+    "cells": 8
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "da": 0.693,
+    "cells": 12
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "da": 0.944,
+    "cells": 3
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "da": 0.739,
+    "cells": 4
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "da": 0.654,
+    "cells": 2
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "1B",
+    "da": 0.764,
+    "cells": 2
+   }
+  ]
+ }
 }

@@ -93,11 +93,22 @@ so a script never decides by model name.
 truth) → rq02 `run_apertus_snr_variants.py` (22 SNR variants × bucket, joined
 to the DA table) → `compare_seed_splits.py` (holdout) → per pool
 `analyze_snr_variants.py`, `snr_definition_postprocess.py`,
-`da_per_benchmark.py`, rq05 `analyze.py`, rq03 `analyze.py` → rq06, rq04,
-the above-random gate, the rq00 curves, `report_figures/make_figures.py`. The
+`da_per_benchmark.py`, rq05 `analyze.py`, rq03 `analyze.py` → rq06 (every
+seed and scheme, `predictivity_all`), rq04, the rq00 curves, then rq07
+(scaling fits + the loss/scaling/benchmark curves), rq08 (reads rq06's
+decision table), rq09 (reads rq02's table, rq00's scores, rq07's fits), rq10
+(transfer + the per-cell BPB curves), `report_figures/make_figures.py`. The
 canonical pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) runs last so
 its README generators see every other pool's CSVs; generators no-op on other
 pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
+
+**Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
+every rq06+ script uses — `ladder_frame` (the pool plus `frac`), `finals`,
+`at_fraction`, `trained_bpb_tasks`, `size_order`, `NON_EMB`, `GRID_SEED` — and
+`analysis/style.py` is the one palette (`documents/figures/style.py` re-exports
+it). `tests/test_metrics.py` (`python -m unittest discover -s tests`) pins the
+SNR definition and the decision-accuracy kernel, including its one departure
+from upstream (ties, below).
 
 **Task metadata** comes from `configs/tasks.json` first: `assign_language`,
 `benchmark_family`, `_is_parent_task` and the gate's option counts
@@ -122,6 +133,7 @@ predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28
 predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50, 100}
 predictivity_seeds_test    seed 1904 on the same cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
+predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq06-rq08, rq10)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
@@ -388,8 +400,26 @@ owner's call.
 
 ## When upstream changes
 
-This repo tracks `allenai/signal-and-noise`. When pulling upstream, the
-local additions to watch for are:
+This repo tracks `allenai/signal-and-noise`: `snr/` is the subtree merge of
+upstream commit `f70bfcc` (our `a76ed63`). **Nothing under `snr/` is edited
+for our analyses — our code lives in `analysis/`** — so that our numbers stay
+comparable with the paper's. Verified against upstream `48fbb34` on
+2026-09-16, the complete list of differences is:
+
+- `snr/metrics.py` — `decision_acc_fast` compares ties by sign (upstream's
+  `>` made the value depend on the listing order); the upstream kernel is
+  kept as `decision_acc_fast_upstream`. Reason and measured effect: the
+  function's docstring and `analysis/rq01_decision_accuracy/README.md`.
+- `snr/snr_simple.py` — `target_size`/`target_step` parameters (latest step
+  when `None`), lazy import of olmo-ladder, jagged last-5 windows, a
+  `DEFAULT_TASKS` list. The jagged tolerance is moot on the ladder (every
+  cell saves ≥ 20 checkpoints and ≥ 10 are evaluated).
+- `snr/constants/__init__.py` — `DATA_DIR`/`PLOT_DIR` paths, no auto-mkdir.
+- `snr/plot.py` — one added function, `plot_snr_da_grid`.
+- `snr/download/apertus.py`, `snr/download/ladder.py` — our loaders (new files).
+
+Re-check with `diff -rq <upstream clone>/snr src/signal-and-noise/snr`.
+When pulling upstream, the local additions to watch for are:
 
 - `analysis/` (the whole per-RQ layout, `utils.py`, `autodoc.py`, `paths.py`)
 - `snr/download/apertus.py` and `snr/download/ladder.py` (local-only loaders)

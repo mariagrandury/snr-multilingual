@@ -1,0 +1,348 @@
+{
+ "rq3": [
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, relative std",
+   "rho": 0.52,
+   "p": 0.0,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, discrepancy",
+   "rho": 0.11,
+   "p": 0.377,
+   "n": 67
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, dist_std",
+   "rho": 0.431,
+   "p": 0.0,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "signal alone (relative std)",
+   "rho": 0.481,
+   "p": 0.0,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.092,
+   "p": 0.455,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.333,
+   "p": 0.006,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.209,
+   "p": 0.088,
+   "n": 68
+  },
+  {
+   "proxy": "175M",
+   "kind": "benchmark tasks",
+   "metric": "margin above chance",
+   "rho": 0.273,
+   "p": 0.032,
+   "n": 62
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, relative std",
+   "rho": 0.693,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, dist_std",
+   "rho": 0.644,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "signal alone (relative std)",
+   "rho": 0.62,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.227,
+   "p": 0.023,
+   "n": 101
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.606,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "175M",
+   "kind": "per-language bits per byte",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.222,
+   "p": 0.026,
+   "n": 100
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, relative std",
+   "rho": 0.602,
+   "p": 0.0,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, discrepancy",
+   "rho": 0.16,
+   "p": 0.164,
+   "n": 77
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, dist_std",
+   "rho": 0.533,
+   "p": 0.0,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "signal alone (relative std)",
+   "rho": 0.54,
+   "p": 0.0,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.182,
+   "p": 0.111,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.589,
+   "p": 0.0,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.335,
+   "p": 0.003,
+   "n": 78
+  },
+  {
+   "proxy": "350M",
+   "kind": "benchmark tasks",
+   "metric": "margin above chance",
+   "rho": 0.143,
+   "p": 0.23,
+   "n": 72
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, relative std",
+   "rho": 0.6,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, dist_std",
+   "rho": 0.577,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "signal alone (relative std)",
+   "rho": 0.498,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.095,
+   "p": 0.343,
+   "n": 101
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.623,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "350M",
+   "kind": "per-language bits per byte",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.135,
+   "p": 0.179,
+   "n": 100
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, relative std",
+   "rho": 0.411,
+   "p": 0.0,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, discrepancy",
+   "rho": -0.009,
+   "p": 0.931,
+   "n": 92
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "SNR, dist_std",
+   "rho": 0.334,
+   "p": 0.001,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "signal alone (relative std)",
+   "rho": 0.355,
+   "p": 0.0,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.082,
+   "p": 0.434,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.565,
+   "p": 0.0,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.477,
+   "p": 0.0,
+   "n": 93
+  },
+  {
+   "proxy": "600M",
+   "kind": "benchmark tasks",
+   "metric": "margin above chance",
+   "rho": -0.123,
+   "p": 0.255,
+   "n": 87
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, relative std",
+   "rho": 0.525,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, discrepancy",
+   "rho": -0.282,
+   "p": 0.498,
+   "n": 8
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "SNR, dist_std",
+   "rho": 0.516,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "signal alone (relative std)",
+   "rho": 0.483,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "noise alone (relative std, inverted)",
+   "rho": 0.058,
+   "p": 0.567,
+   "n": 101
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "early-checkpoint agreement (20 %)",
+   "rho": 0.554,
+   "p": 0.0,
+   "n": 101
+  },
+  {
+   "proxy": "600M",
+   "kind": "per-language bits per byte",
+   "metric": "scaling-fit R\u00b2",
+   "rho": 0.102,
+   "p": 0.313,
+   "n": 100
+  }
+ ]
+}
