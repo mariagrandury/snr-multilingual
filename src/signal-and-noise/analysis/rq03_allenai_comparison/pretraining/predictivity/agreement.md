@@ -1,7 +1,7 @@
 # Top-K reliability agreement
 
-Variant used: **Quartile Deviation** (`quartile_deviation`)
-Apertus SNR column: `snr_quartile_deviation_1B`  ·  AllenAI SNR column: `snr_quartile_deviation_1B`
+Variant used: **Mean Squared Pairwise Distance** (`mpsd`)
+Apertus SNR column: `snr_mpsd_1B`  ·  AllenAI SNR column: `snr_mpsd_1B`
 Shared-task universe: **4** tasks.
 
 ## ⚠️ Methodological caveat — MMLU aliasing
@@ -14,12 +14,12 @@ Other Apertus → AllenAI aliases that hit the shared set: _none_.
 
 ## Cross-corpus agreement over the shared tasks (the result)
 
-Best variant `quartile_deviation`, n = 3 shared tasks:
+Best variant `mpsd`, n = 3 shared tasks:
 
 | metric | value |
 |---|---:|
-| **Pearson r** (log₁₀ SNR values) | **+1.000** |
-| **Spearman ρ** (rank order) | **+1.000** |
+| **Pearson r** (log₁₀ SNR values) | **+0.188** |
+| **Spearman ρ** (rank order) | **-0.500** |
 
 > With only 4 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 4 spans the whole universe, so Jaccard is trivially 1.0. Only K < 4 is reported below.
 
@@ -27,7 +27,7 @@ Best variant `quartile_deviation`, n = 3 shared tasks:
 
 | K | n_intersection | intersection / K | Jaccard | Shared top-K tasks |
 |---|---:|---:|---:|---|
-| 3 | 2 | 0.67 | 0.50 | arc_challenge, arc_easy |
+| 3 | 3 | 1.00 | 1.00 | arc_challenge, arc_easy, hellaswag |
 
 ## Full ranking per corpus (all shared tasks)
 
@@ -35,15 +35,15 @@ Best variant `quartile_deviation`, n = 3 shared tasks:
 
 | task          |   snr |
 |:--------------|------:|
-| arc_easy      | 0.246 |
-| arc_challenge | 0.117 |
-| hellaswag     | 0.07  |
+| arc_challenge | 0.023 |
+| arc_easy      | 0.019 |
+| hellaswag     | 0.013 |
 
 ### AllenAI
 
 | task          |   snr |
 |:--------------|------:|
-| arc_easy      | 7.793 |
-| mmlu          | 5.663 |
-| arc_challenge | 4.792 |
-| hellaswag     | 3.491 |
+| arc_easy      | 1.545 |
+| hellaswag     | 0.482 |
+| arc_challenge | 0.463 |
+| mmlu          | 0.332 |

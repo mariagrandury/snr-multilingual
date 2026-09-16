@@ -4,11 +4,11 @@
 
 |  | DA-size | DA-ckpt |
 |---|---:|---:|
-| Exact-variant agreement (lang-level) | 2% (3/122) | 7% (8/122) |
-| **Family-level agreement** (lang-level) | 3% (4/122) | 15% (18/122) |
-| Pearson r between splits (over all variant cells) | -0.433 (n = 115) | +0.053 (n = 1128) |
-| **Spearman ρ on global variant ranking** | +0.006 | -0.212 |
-| Retention of train-best (r_test / r_test_best, mean across langs) | 68% (n = 7) | 39% (n = 45) |
+| Exact-variant agreement (lang-level) | 43% (3/7) | 15% (8/52) |
+| **Family-level agreement** (lang-level) | 57% (4/7) | 29% (14/52) |
+| Pearson r between splits (over all variant cells) | -0.135 (n = 115) | +0.192 (n = 1130) |
+| **Spearman ρ on global variant ranking** | +0.747 | +0.073 |
+| Retention of train-best (r_test / r_test_best, mean across langs) | 82% (n = 7) | 41% (n = 47) |
 
 **Family** groups together algebraically near-equivalent variants (e.g. the dispersion cluster: `dispersion`/`mpd`/`range`/`quartile_deviation`/`rms_deviation`/`aad`). At n_mixes=3, members of a family correlate at r ≥ 0.999 so exact-variant equality is overly strict.
 
@@ -20,7 +20,7 @@
 |---|---|---:|---:|---|---:|:---:|:---:|
 | af | `` () | +nan | +nan | `` () | +nan |  |  |
 | am | `` () | +nan | +nan | `` () | +nan |  |  |
-| ar | `gini` (discrepancy) | +0.966 | -0.708 | `projection` (depth) | +1.000 |  |  |
+| ar | `mad` (robust) | +0.999 | +0.998 | `projection` (depth) | +1.000 |  |  |
 | as | `` () | +nan | +nan | `` () | +nan |  |  |
 | az | `` () | +nan | +nan | `` () | +nan |  |  |
 | be | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -38,7 +38,7 @@
 | de | `rel_star_discrepancy` (discrepancy) | -0.789 | +0.998 | `projection` (depth) | +1.000 |  |  |
 | dv | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `tukey` (depth) | +0.815 | +0.592 | `tukey` (depth) | +0.592 | ✅ | ✅ |
+| en | `tukey` (depth) | +0.883 | +0.424 | `tukey` (depth) | +0.424 | ✅ | ✅ |
 | eo | `` () | +nan | +nan | `` () | +nan |  |  |
 | es | `rel_std` (rel_spread) | +1.000 | +0.259 | `rel_star_discrepancy` (discrepancy) | +0.902 |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -147,34 +147,34 @@
 |---|---|---:|---:|---|---:|:---:|:---:|
 | af | `` () | +nan | +nan | `mad` (robust) | -0.408 |  |  |
 | am | `` () | +nan | +nan | `star_discrepancy` (discrepancy) | +0.183 |  |  |
-| ar | `star_discrepancy` (discrepancy) | +0.255 | +0.147 | `projection` (depth) | +0.594 |  |  |
+| ar | `star_discrepancy` (discrepancy) | +0.339 | +0.147 | `projection` (depth) | +0.594 |  |  |
 | as | `` () | +nan | +nan | `rel_mpsd` (rel_spread) | +0.513 |  |  |
 | az | `dispersion` (dispersion) | -0.356 | -0.500 | `aad` (dispersion) | -0.500 |  | ✅ |
 | be | `` () | +nan | +nan | `tukey` (depth) | +0.239 |  |  |
 | bew | `` () | +nan | +nan | `` () | +nan |  |  |
-| bg | `projection` (depth) | +0.636 | -0.466 | `discrepancy` (discrepancy) | +0.577 |  |  |
-| bn | `discrepancy` (discrepancy) | +0.366 | +0.891 | `discrepancy` (discrepancy) | +0.891 | ✅ | ✅ |
+| bg | `projection` (depth) | +0.636 | -0.461 | `discrepancy` (discrepancy) | +0.631 |  |  |
+| bn | `iqr` (rel_spread) | +0.519 | +0.710 | `projection` (depth) | +0.845 |  |  |
 | bo | `` () | +nan | +nan | `aad` (dispersion) | +0.209 |  |  |
-| bs | `projection` (depth) | +0.485 | -0.444 | `rel_mpsd` (rel_spread) | -0.444 |  |  |
-| ca | `rel_star_discrepancy` (discrepancy) | +0.360 | +0.021 | `discrepancy` (discrepancy) | +0.647 |  | ✅ |
+| bs | `projection` (depth) | +0.485 | +0.300 | `mpsd` (dispersion) | +0.453 |  |  |
+| ca | `rel_star_discrepancy` (discrepancy) | +0.360 | -0.113 | `dist_std` (dispersion) | +0.367 |  |  |
 | ceb | `` () | +nan | +nan | `` () | +nan |  |  |
 | ckb | `` () | +nan | +nan | `star_discrepancy_shifted` (discrepancy) | +0.420 |  |  |
-| cs | `projection` (depth) | +0.424 | -0.485 | `discrepancy` (discrepancy) | +0.898 |  |  |
+| cs | `projection` (depth) | +0.424 | -0.476 | `discrepancy` (discrepancy) | +0.905 |  |  |
 | cy | `` () | +nan | +nan | `projection` (depth) | +0.110 |  |  |
-| da | `star_discrepancy` (discrepancy) | +0.446 | +0.143 | `star_discrepancy` (discrepancy) | +0.143 | ✅ | ✅ |
-| de | `projection` (depth) | +0.352 | +0.153 | `mad` (robust) | +0.175 |  |  |
+| da | `star_discrepancy` (discrepancy) | +0.446 | +0.380 | `projection` (depth) | +0.616 |  |  |
+| de | `projection` (depth) | +0.352 | +0.143 | `mad` (robust) | +0.168 |  |  |
 | dv | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `projection` (depth) | +0.484 | -0.427 | `iqr` (rel_spread) | +0.760 |  |  |
-| en | `rel_mpsd` (rel_spread) | +0.486 | +0.438 | `iqr` (rel_spread) | +0.441 |  | ✅ |
+| en | `rel_mpsd` (rel_spread) | +0.501 | +0.488 | `rel_mpsd` (rel_spread) | +0.488 | ✅ | ✅ |
 | eo | `` () | +nan | +nan | `` () | +nan |  |  |
-| es | `mad` (robust) | +0.325 | -0.314 | `rel_star_discrepancy` (discrepancy) | +0.286 |  |  |
+| es | `mpsd` (dispersion) | +0.314 | -0.084 | `rel_star_discrepancy` (discrepancy) | +0.386 |  |  |
 | et | `mad` (robust) | +0.346 | -0.435 | `discrepancy` (discrepancy) | +0.378 |  |  |
 | eu | `` () | +nan | +nan | `star_discrepancy` (discrepancy) | +0.497 |  |  |
 | fa | `projection` (depth) | +0.236 | -0.328 | `rel_mpsd` (rel_spread) | +0.297 |  |  |
 | fi | `rel_mpsd` (rel_spread) | +0.489 | -0.498 | `discrepancy` (discrepancy) | +0.577 |  |  |
 | fo | `` () | +nan | +nan | `` () | +nan |  |  |
-| fr | `rel_mpd` (rel_spread) | +0.311 | -0.234 | `projection` (depth) | +0.463 |  |  |
-| ga | `` () | +nan | +nan | `star_discrepancy` (discrepancy) | -0.127 |  |  |
+| fr | `rel_mpd` (rel_spread) | +0.329 | +0.108 | `projection` (depth) | +0.500 |  |  |
+| ga | `` () | +nan | +nan | `star_discrepancy` (discrepancy) | +0.529 |  |  |
 | gd | `` () | +nan | +nan | `` () | +nan |  |  |
 | gl | `` () | +nan | +nan | `rel_mpsd` (rel_spread) | +0.288 |  |  |
 | gmh | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -184,21 +184,21 @@
 | haw | `` () | +nan | +nan | `` () | +nan |  |  |
 | hbo | `` () | +nan | +nan | `` () | +nan |  |  |
 | he | `discrepancy` (discrepancy) | +0.500 | +0.898 | `discrepancy` (discrepancy) | +0.898 | ✅ | ✅ |
-| hi | `mpsd` (dispersion) | +0.346 | -0.277 | `projection` (depth) | +0.785 |  |  |
+| hi | `mpsd` (dispersion) | +0.346 | +0.149 | `star_discrepancy_shifted` (discrepancy) | +0.618 |  |  |
 | hif | `` () | +nan | +nan | `` () | +nan |  |  |
 | hr | `gini` (discrepancy) | -0.243 | -0.513 | `rms_deviation` (dispersion) | -0.513 |  |  |
 | ht | `` () | +nan | +nan | `` () | +nan |  |  |
-| hu | `projection` (depth) | +0.704 | +0.026 | `tukey` (depth) | +0.489 |  | ✅ |
+| hu | `projection` (depth) | +0.704 | +0.137 | `discrepancy` (discrepancy) | +0.577 |  |  |
 | hy | `` () | +nan | +nan | `mad` (robust) | +0.220 |  |  |
 | hyw | `` () | +nan | +nan | `` () | +nan |  |  |
-| id | `projection` (depth) | +0.521 | +0.627 | `projection` (depth) | +0.627 | ✅ | ✅ |
+| id | `projection` (depth) | +0.521 | +0.600 | `projection` (depth) | +0.600 | ✅ | ✅ |
 | ig | `` () | +nan | +nan | `` () | +nan |  |  |
 | is | `` () | +nan | +nan | `rel_mpsd` (rel_spread) | +0.588 |  |  |
-| it | `projection` (depth) | +0.259 | -0.048 | `discrepancy` (discrepancy) | +0.275 |  |  |
-| ja | `rel_mpsd` (rel_spread) | +0.958 | -0.054 | `mpsd` (dispersion) | -0.051 |  |  |
+| it | `projection` (depth) | +0.259 | -0.033 | `discrepancy` (discrepancy) | +0.266 |  |  |
+| ja | `rel_mpsd` (rel_spread) | +0.958 | +0.716 | `mpsd` (dispersion) | +0.719 |  |  |
 | jv | `` () | +nan | +nan | `` () | +nan |  |  |
 | ka | `projection` (depth) | +0.743 | -0.550 | `discrepancy` (discrepancy) | +0.965 |  |  |
-| kk | `rel_mpsd` (rel_spread) | +0.301 | +0.571 | `projection` (depth) | +0.583 |  |  |
+| kk | `rel_mpsd` (rel_spread) | +0.301 | +0.565 | `dist_std` (dispersion) | +0.743 |  |  |
 | km | `` () | +nan | +nan | `aad` (dispersion) | +0.143 |  |  |
 | kmr | `` () | +nan | +nan | `star_discrepancy` (discrepancy) | +0.761 |  |  |
 | kn | `` () | +nan | +nan | `star_discrepancy_shifted` (discrepancy) | +0.374 |  |  |
@@ -211,7 +211,7 @@
 | lv | `aad` (dispersion) | -0.277 | -0.232 | `aad` (dispersion) | -0.232 | ✅ | ✅ |
 | mg | `` () | +nan | +nan | `aad` (dispersion) | +0.524 |  |  |
 | mi | `` () | +nan | +nan | `` () | +nan |  |  |
-| mk | `` () | +nan | +nan | `projection` (depth) | +0.880 |  |  |
+| mk | `` () | +nan | +nan | `projection` (depth) | +0.897 |  |  |
 | ml | `gini` (discrepancy) | -0.067 | -0.405 | `star_discrepancy_shifted` (discrepancy) | +0.405 |  | ✅ |
 | mn | `` () | +nan | +nan | `aad` (dispersion) | +0.436 |  |  |
 | mr | `iqr` (rel_spread) | +0.279 | +0.472 | `dist_std` (dispersion) | +0.551 |  |  |
@@ -221,7 +221,7 @@
 | my | `` () | +nan | +nan | `dist_std` (dispersion) | +0.140 |  |  |
 | nds | `` () | +nan | +nan | `` () | +nan |  |  |
 | ne | `dispersion` (dispersion) | -0.302 | +0.289 | `mpd` (dispersion) | +0.289 |  | ✅ |
-| nl | `projection` (depth) | +0.763 | -0.291 | `discrepancy` (discrepancy) | +0.577 |  |  |
+| nl | `projection` (depth) | +0.763 | -0.300 | `discrepancy` (discrepancy) | +0.485 |  |  |
 | nn | `` () | +nan | +nan | `rel_dispersion` (rel_spread) | -0.475 |  |  |
 | no | `star_discrepancy` (discrepancy) | -0.436 | -0.475 | `gini` (discrepancy) | -0.475 |  | ✅ |
 | nrm | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -231,8 +231,8 @@
 | pl | `rel_mpsd` (rel_spread) | +0.672 | -0.469 | `discrepancy` (discrepancy) | +0.577 |  |  |
 | ps | `` () | +nan | +nan | `dispersion_shifted` (discrepancy) | +0.712 |  |  |
 | pt | `projection` (depth) | +0.130 | -0.296 | `discrepancy` (discrepancy) | +0.597 |  |  |
-| ro | `rel_mpd` (rel_spread) | +0.301 | -0.535 | `discrepancy` (discrepancy) | +1.000 |  |  |
-| ru | `quartile_deviation` (dispersion) | +0.503 | +0.289 | `gini` (discrepancy) | +0.316 |  |  |
+| ro | `projection` (depth) | +0.492 | +0.491 | `projection` (depth) | +0.491 | ✅ | ✅ |
+| ru | `quartile_deviation` (dispersion) | +0.503 | +0.302 | `gini` (discrepancy) | +0.340 |  |  |
 | rw | `` () | +nan | +nan | `` () | +nan |  |  |
 | sa | `` () | +nan | +nan | `` () | +nan |  |  |
 | sah | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -247,23 +247,23 @@
 | sr | `projection` (depth) | +0.201 | +0.310 | `tukey` (depth) | +0.327 |  | ✅ |
 | st | `` () | +nan | +nan | `` () | +nan |  |  |
 | su | `` () | +nan | +nan | `` () | +nan |  |  |
-| sv | `rel_mpsd` (rel_spread) | +0.361 | +0.489 | `dist_std` (dispersion) | +0.546 |  |  |
+| sv | `projection` (depth) | +0.536 | +0.071 | `dist_std` (dispersion) | +0.562 |  |  |
 | sw | `` () | +nan | +nan | `aad` (dispersion) | -0.107 |  |  |
 | ta | `projection` (depth) | +0.717 | -0.243 | `discrepancy` (discrepancy) | +0.729 |  |  |
 | te | `` () | +nan | +nan | `mpd` (dispersion) | +0.470 |  |  |
 | tg | `` () | +nan | +nan | `rel_star_discrepancy` (discrepancy) | -0.081 |  |  |
-| th | `rel_mpsd` (rel_spread) | +0.414 | -0.528 | `discrepancy` (discrepancy) | +0.500 |  |  |
+| th | `rel_mpsd` (rel_spread) | +0.414 | -0.299 | `discrepancy` (discrepancy) | +0.619 |  |  |
 | ti | `` () | +nan | +nan | `` () | +nan |  |  |
 | tl | `` () | +nan | +nan | `quartile_deviation` (dispersion) | -0.217 |  |  |
-| tr | `discrepancy` (discrepancy) | +0.408 | +0.345 | `discrepancy` (discrepancy) | +0.345 | ✅ | ✅ |
+| tr | `discrepancy` (discrepancy) | +0.408 | +0.249 | `discrepancy` (discrepancy) | +0.249 | ✅ | ✅ |
 | tt | `` () | +nan | +nan | `` () | +nan |  |  |
 | ug | `` () | +nan | +nan | `rel_mpsd` (rel_spread) | +0.483 |  |  |
-| uk | `discrepancy` (discrepancy) | +0.566 | +0.351 | `discrepancy` (discrepancy) | +0.351 | ✅ | ✅ |
+| uk | `discrepancy` (discrepancy) | +0.566 | +0.346 | `discrepancy` (discrepancy) | +0.346 | ✅ | ✅ |
 | ur | `projection` (depth) | +0.147 | +0.410 | `dist_std` (dispersion) | +0.873 |  |  |
 | uz | `projection` (depth) | +0.378 | +0.197 | `iqr` (rel_spread) | +0.361 |  |  |
-| vi | `iqr` (rel_spread) | +0.478 | +0.304 | `mpsd` (dispersion) | +0.411 |  |  |
+| vi | `iqr` (rel_spread) | +0.478 | +0.413 | `mpsd` (dispersion) | +0.569 |  |  |
 | xh | `` () | +nan | +nan | `` () | +nan |  |  |
 | yo | `` () | +nan | +nan | `` () | +nan |  |  |
 | yue | `` () | +nan | +nan | `` () | +nan |  |  |
-| zh | `projection` (depth) | +0.706 | +0.739 | `projection` (depth) | +0.739 | ✅ | ✅ |
+| zh | `projection` (depth) | +0.706 | +0.740 | `projection` (depth) | +0.740 | ✅ | ✅ |
 | zu | `` () | +nan | +nan | `` () | +nan |  |  |
