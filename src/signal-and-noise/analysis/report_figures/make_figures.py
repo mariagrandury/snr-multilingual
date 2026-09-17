@@ -4,12 +4,12 @@ Each figure reuses the loaders / CSVs the ``rqNN_*`` analysis scripts already
 emit (no parser is re-implemented here):
 
 * fig1 — per-task accuracy-vs-FLOPs trajectories, via ``get_slice`` on the
-  ``rq00_acc_vs_flops`` signal pool (``seeds_28_1797_1904``, seed 1904).
+  ``rq00_gate_and_curves`` signal pool (``seeds_28_1797_1904``, seed 1904).
 * fig2 — SNR (``rel_mpd`` @ 1B) vs checkpoint decision accuracy (f56 @ 1B),
-  from ``rq02_snr_definition``'s ``snr_variants_per_task.csv``.
+  from ``rq03_noise_and_snr``'s ``snr_variants_per_task.csv``.
 * fig3 — family x language reliability map of the same DA values + gate mask.
 * fig4 — cumulative subject-subset SNR sweep, straight from
-  ``rq04_smooth_subtasks``'s ``global_mmlu_full.csv``.
+  ``rq08_subset_selection``'s ``global_mmlu_full.csv``.
 
 Run from anywhere::
 
@@ -41,10 +41,10 @@ from scipy.stats import pearsonr  # noqa: E402
 
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import (  # noqa: E402
-    ACC_VS_FLOPS, DECISION_ACCURACY, PROXY_PREDICTIVITY, SMOOTH_SUBTASKS,
-    SNR_DEFINITION)
-from analysis.rq01_decision_accuracy.compute_da import _frac_label  # noqa: E402
-from analysis.rq02_snr_definition.analyze_snr_variants import buckets_in_df  # noqa: E402
+    GATE_AND_CURVES, DECISION_ACCURACY, DESIGN_DECISIONS, SUBSET_SELECTION,
+    NOISE_AND_SNR)
+from analysis.rq02_decision_accuracy.compute_da import _frac_label  # noqa: E402
+from analysis.rq04_surrogates.analyze_snr_variants import buckets_in_df  # noqa: E402
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, SMALL_SIZES, TARGET_SIZE, assign_language,
     benchmark_family, build_snr_pool, pool_models)
@@ -110,7 +110,7 @@ def fig1_gate() -> None:
     df = build_snr_pool(POOL_CURVES)
     df = df[df["model"].isin(pool_models(POOL_CURVES, df))]
 
-    scores = pd.read_csv(ACC_VS_FLOPS / POOL_STAGE / POOL_CURVES
+    scores = pd.read_csv(GATE_AND_CURVES / POOL_STAGE / POOL_CURVES
                          / "above_random_scores.csv").set_index("task")
 
     panels = [(t, lab) for t, lab in FIG1_TASKS if t in scores.index]
@@ -319,7 +319,7 @@ def _fig3_family(fam: str) -> str | None:
 
 
 def fig3_reliability_map() -> None:
-    df = pd.read_csv(SNR_DEFINITION / POOL_STAGE / POOL_SNR
+    df = pd.read_csv(NOISE_AND_SNR / POOL_STAGE / POOL_SNR
                      / "snr_variants_per_task.csv")
     snr_col, da_col = _ref_cols(df)
     df = df.copy()
@@ -413,12 +413,12 @@ def fig3b_reliability_map_external() -> None:
 # Figure 4 — cumulative subject-subset SNR sweep (global_mmlu_full_subjects)
 # ===========================================================================
 def fig4_subset_sweep() -> None:
-    path = SMOOTH_SUBTASKS / POOL_STAGE / POOL_SNR / "global_mmlu_full.csv"
+    path = SUBSET_SELECTION / POOL_STAGE / POOL_SNR / "global_mmlu_full.csv"
     if not path.exists():
         print(f"[fig4] skipped: {path} missing")
         return
     sweep = pd.read_csv(path)
-    summary = pd.read_csv(SMOOTH_SUBTASKS / POOL_STAGE / POOL_SNR / "summary.csv")
+    summary = pd.read_csv(SUBSET_SELECTION / POOL_STAGE / POOL_SNR / "summary.csv")
     summary = summary[summary["case"] == "case2_global_mmlu_full_subjects"]
 
     # A size with no above-random subject at all carries an all-NaN row; it has
@@ -440,7 +440,7 @@ def fig4_subset_sweep() -> None:
         ax.axhline(full, color=colors[size], ls="--", lw=0.8, alpha=0.5)
         ax.scatter([best_n], [best_snr], color=colors[size], s=24, zorder=5)
 
-        # Cross-check against rq04's summary.csv row.
+        # Cross-check against rq08's summary.csv row.
         srow = summary[summary["size"] == size].iloc[0]
         assert abs(best_n - srow["best_n"]) == 0 and \
             abs(best_snr - srow["best_snr"]) < 1e-6 and \
@@ -461,7 +461,7 @@ def fig4_subset_sweep() -> None:
 # Figure 5 — proxy size x language count: intervention decision accuracy
 # ===========================================================================
 def fig5_proxy_grid() -> None:
-    path = PROXY_PREDICTIVITY / POOL_STAGE / "predictivity_all" / "intervention_da.csv"
+    path = DESIGN_DECISIONS / POOL_STAGE / "predictivity_all" / "intervention_da.csv"
     if not path.exists():
         print(f"[fig5] skipped: {path} missing")
         return
@@ -493,9 +493,9 @@ def fig5_proxy_grid() -> None:
 def main() -> None:
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     fig1_gate()
-    fig2_snr_vs_da(SNR_DEFINITION / POOL_STAGE / POOL_SNR
+    fig2_snr_vs_da(NOISE_AND_SNR / POOL_STAGE / POOL_SNR
                    / "snr_variants_per_task.csv", "fig2_snr_vs_da.pdf", "fig2")
-    fig2_snr_vs_da(SNR_DEFINITION / "all" / "external"
+    fig2_snr_vs_da(NOISE_AND_SNR / "all" / "external"
                    / "snr_variants_per_task.csv", "fig2b_snr_vs_da.pdf", "fig2b")
     fig3_reliability_map()
     fig3b_reliability_map_external()

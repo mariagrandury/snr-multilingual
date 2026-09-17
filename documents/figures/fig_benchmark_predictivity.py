@@ -17,7 +17,7 @@ from predictivity import min_predictive_size, kind
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "documents" / "public" / "ladder"
-IV = (REPO / "src" / "signal-and-noise" / "analysis" / "rq06_proxy_predictivity"
+IV = (REPO / "src" / "signal-and-noise" / "analysis" / "rq05_design_decisions"
       / "pretraining" / "predictivity_seeds" / "intervention_da.csv")
 BPB, BENCH = S.RAMP[3], S.SERIES[1]
 

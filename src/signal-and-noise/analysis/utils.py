@@ -248,7 +248,7 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
                 frames.append(df_e)
     return pd.concat(frames, ignore_index=True)
 
-# --- ladder-frame helpers (rq06-rq10) -----------------------------------------
+# --- ladder-frame helpers (rq00 curves, rq01, rq03, rq05, rq06) -----------------------------------------
 # The ladder's size axis by non-embedding parameters, from the report module
 # that defines it (CLAUDE.md #13: importable through src/).
 from pretrain.ladder_report import NON_EMB  # noqa: E402

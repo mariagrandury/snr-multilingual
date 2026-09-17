@@ -10,12 +10,18 @@
 # reused, until the ladder report is newer than them (FORCE=1 recomputes them). Output layout:
 # analysis/<rqNN_name>/pretraining/<pool>/
 #
-#   A. The above-random gate (its report feeds the rq01 slides), then DA and SNR
-#      per pool (DA is the truth rq02's variants are scored against).
-#   B. Seed holdout — needs the train/test pool CSVs from A, read by rq02's README.
-#   C. Per-pool analysis + docs (the canonical pool last so it sees the holdout).
-#   D. rq06 (proxy size × L), rq04, the curve viewer, rq07–rq10 (the paper's
-#      questions and the ladder curves), the figures.
+#   A. The above-random gate (rq00), then DA (rq02, the truth) and the 22 SNR
+#      variants (rq03) per pool.
+#   B. Seed holdout (rq03) — needs the train/test pool CSVs from A.
+#   C. Per-pool analysis + docs: the variant ranking (rq04), the DA slides
+#      (rq02), benchmark design (rq09), DataDecide (rq07); the canonical pool
+#      last so it sees the holdout.
+#   D. The ladder-frame reads on every seed and scheme — design decisions
+#      (rq05), scaling predictability (rq01), noise (rq03), transfer (rq06) —
+#      then subset selection (rq08), the curves (rq00), surrogates (rq04), figures.
+#
+# Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
+# (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09).
 set -uo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-python3}
@@ -26,7 +32,7 @@ export SOURCE_DATE_EPOCH=0
 # the script still printed ALL DONE, so a README could keep stale numbers.
 FAILED=()
 # `predictivity` is the plan grid (seed 1904): the headline pool. The
-# all-seeds pool feeds the seed-noise estimates (rq06); the two holdout pools are
+# all-seeds pool feeds the seed-noise estimates (rq03, rq05); the two holdout pools are
 # the ×3 cells split by seed.
 POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predictivity)
 
@@ -42,56 +48,61 @@ LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_di
 fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
 
 echo "############################## PASS A — gate, DA, SNR compute ##############################"
-run $PY analysis/rq00_acc_vs_flops/above_random.py --only predictivity
+run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
-  if fresh "analysis/rq01_decision_accuracy/$st/$t/da_per_task.csv"; then
-    echo "  (DA cached: analysis/rq01_decision_accuracy/$st/$t/da_per_task.csv)"
+  if fresh "analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv"; then
+    echo "  (DA cached: analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv)"
   else
-    run $PY analysis/rq01_decision_accuracy/compute_da.py --pool "$t"
+    run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
-  if fresh "analysis/rq02_snr_definition/$st/$t/snr_variants_per_task.csv"; then
-    echo "  (SNR cached: analysis/rq02_snr_definition/$st/$t/snr_variants_per_task.csv)"
+  if fresh "analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv"; then
+    echo "  (SNR cached: analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv)"
   else
-    run $PY analysis/rq02_snr_definition/run_apertus_snr_variants.py --pool "$t"
+    run $PY analysis/rq03_noise_and_snr/run_apertus_snr_variants.py --pool "$t"
   fi
 done
 
 echo "############################## PASS B — seed holdout ##############################"
-run $PY analysis/rq02_snr_definition/compare_seed_splits.py \
+run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
     --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
 
 echo "############################## PASS C — analysis + docs ##############################"
-# rq03 needs the AllenAI-side SNR table (built once from the DataDecide `core`
+# rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
 # split on HF; a git-lfs pointer here means `git lfs pull` first).
-ALLENAI_CSV=analysis/rq03_allenai_comparison/allenai_snr_variants_per_task.csv
+ALLENAI_CSV=analysis/rq07_external_frameworks/allenai_snr_variants_per_task.csv
 if [ ! -f "$ALLENAI_CSV" ]; then
-  run $PY analysis/rq03_allenai_comparison/build_allenai_variants.py
+  run $PY analysis/rq07_external_frameworks/build_allenai_variants.py
 fi
 for t in predictivity_seeds predictivity; do
   echo "############################## POOL $t ##############################"
-  run $PY analysis/rq02_snr_definition/analyze_snr_variants.py --pool "$t"
-  run $PY analysis/rq02_snr_definition/snr_definition_postprocess.py --pool "$t"
-  run $PY analysis/rq01_decision_accuracy/da_per_benchmark.py --pool "$t"
-  run $PY analysis/rq05_benchmark_creation/analyze.py --pool "$t"
+  run $PY analysis/rq04_surrogates/analyze_snr_variants.py --pool "$t"
+  run $PY analysis/rq04_surrogates/snr_definition_postprocess.py --pool "$t"
+  run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
+  run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
   if grep -q "^version https://git-lfs" "$ALLENAI_CSV" 2>/dev/null; then
-    echo "  (rq03 skipped: $ALLENAI_CSV is a git-lfs pointer — run git lfs pull)"
+    echo "  (rq07 skipped: $ALLENAI_CSV is a git-lfs pointer — run git lfs pull)"
   else
-    run $PY analysis/rq03_allenai_comparison/analyze.py --pool "$t"
+    run $PY analysis/rq07_external_frameworks/analyze.py --pool "$t"
   fi
 done
 
-echo "############################## PASS D — rq06-rq10, rq04, curves, figures ##############################"
-# rq06 reads every seed and scheme (five interventions, seed noise); rq07 and
-# rq10 draw the ladder's curves on the same cells; rq08 reads rq06's decision
-# table and rq09 the headline pool's rq02 table plus rq07's fits.
-run $PY analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_all
-run $PY analysis/rq04_smooth_subtasks/smooth_subtasks.py --pool predictivity
-run $PY analysis/rq00_acc_vs_flops/run_apertus.py --pool predictivity
-run $PY analysis/rq07_scaling_predictability/analyze.py --pool predictivity_all
-run $PY analysis/rq08_early_decision/analyze.py --pool predictivity_all
-run $PY analysis/rq09_surrogates/analyze.py --pool predictivity
-run $PY analysis/rq10_language_transfer/analyze.py --pool predictivity_all
+echo "############################## PASS D — ladder-frame reads, subsets, curves, surrogates, figures ##############################"
+# The ladder-frame reads take every seed and scheme (`predictivity_all`): rq05
+# needs the five interventions and its early-decision read follows from its
+# decision table; rq01's scaling-law error reads every scheme and rq03's
+# effect-vs-noise the seed replicates; rq06 reads rq05's table for the never-trained languages.
+run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
+run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
+run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
+run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity
+run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
+# surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
+run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/report_figures/make_figures.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then

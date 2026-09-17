@@ -57,7 +57,7 @@ def decision_acc_fast(scores_small: np.ndarray, scores_target: np.ndarray) -> fl
 
     The same happens for a pair the target ties and the proxy decides. The
     published number therefore depends on how the models happen to be sorted
-    (alphabetically by family name in rq01), which is not a property of the
+    (alphabetically by family name in rq02), which is not a property of the
     benchmark. This version compares the SIGN of the score difference on both
     sides: a pair tied in both vectors agrees, a pair tied in one and decided
     in the other disagrees, and the result does not depend on the listing
@@ -69,12 +69,12 @@ def decision_acc_fast(scores_small: np.ndarray, scores_target: np.ndarray) -> fl
     item count ties easily) and 0 % of per-language BPB and loss pairs — and
     1,225 of 2,845 (task, size) cells contain at least one. A cell's value
     can move by up to (tied pairs) / (all pairs). The per-task tables
-    committed on 2026-09-16 (rq01 ``da_per_task.csv``, rq02
+    committed on 2026-09-16 (rq02 ``da_per_task.csv``, rq03
     ``snr_variants_per_task.csv``) were produced with the upstream kernel;
     ``run_all_predictivity.sh`` regenerates them with this one.
 
     An alternative convention would drop the pairs the target cannot decide
-    instead of counting them as misses; rq06 does that for its two-model
+    instead of counting them as misses; rq05 does that for its two-model
     items, where the reference's tie leaves no decision to agree with. The
     kernel keeps the one-number signature upstream callers expect.
     """

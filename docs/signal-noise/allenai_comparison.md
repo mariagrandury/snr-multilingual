@@ -1,1 +1,0 @@
---8<-- "src/signal-and-noise/analysis/rq03_allenai_comparison/README.md"

@@ -46,17 +46,16 @@ nav:
       - Signal-to-Ratio Configs: evaluation/configs.md
   - Signal & Noise:
       - Overview: signal-noise/index.md
-      - "RQ0 · Curves & above-random gate": signal-noise/acc_vs_flops.md
-      - "RQ1 · Decision accuracy": signal-noise/decision_accuracy.md
-      - "RQ2 · SNR definition": signal-noise/snr-definition.md
-      - "RQ3 · AllenAI comparison": signal-noise/allenai_comparison.md
-      - "RQ4 · Subtask subsets": signal-noise/smooth_subtasks.md
-      - "RQ5 · Benchmark creation": signal-noise/benchmark_creation.md
-      - "RQ6 · Proxy predictivity": signal-noise/proxy_predictivity.md
-      - "RQ7 · Scaling predictability": signal-noise/scaling_predictability.md
-      - "RQ8 · Early decision": signal-noise/early_decision.md
-      - "RQ9 · Surrogates": signal-noise/surrogates.md
-      - "RQ10 · Language transfer": signal-noise/language_transfer.md
+      - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
+      - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
+      - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
+      - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
+      - "RQ4 · Surrogates": signal-noise/surrogates.md
+      - "RQ5 · Design decisions": signal-noise/design_decisions.md
+      - "RQ6 · Language transfer": signal-noise/language_transfer.md
+      - "RQ7 · External frameworks": signal-noise/external_frameworks.md
+      - "RQ8 · Subset selection": signal-noise/subset_selection.md
+      - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
   - Documents: documents.md
   - Slides: /slides/
 

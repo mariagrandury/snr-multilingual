@@ -52,7 +52,7 @@ bash scripts/refresh_analysis.sh              # from the repo root: this plus ev
 cd src/signal-and-noise
 bash run_all_predictivity.sh                  # everything, from the published ladder report
 SNR_LADDER_DIR=/capstor/store/cscs/swissai/infra01/msnr-ladder-report bash run_all_predictivity.sh   # cluster copy
-python analysis/rq06_proxy_predictivity/analyze.py --pool predictivity_seeds   # one RQ
+python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds   # one RQ
 ```
 
 **Loaders.** `snr/download/ladder.py::load_predictivity_eval_results` pulls
@@ -81,29 +81,33 @@ so a script never decides by model name.
   grid every size was evaluated on, BPB rows on the k/20 save grid, plus the
   final checkpoint. Without it the late-window noise (`last_n = 5`) spans 50 %
   of a 20-checkpoint run and 12.5 % of a 40-checkpoint one
-  (plan/1b-models.md). rq06 reads the seed replicates for the noise that does
-  not depend on the window at all.
+  (plan/1b-models.md). rq03 and rq05 read the seed replicates for the noise
+  that does not depend on the window at all.
 - Pool member filters apply to the frame's columns (`seeds`, `sizes`, `L`,
   `arch`, `scheme`), not to models.json names, so scheme-B cells and adopted
   off-grid seeds count whether or not the registry lists them.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
 
-**Pipeline order** (`run_all_predictivity.sh`): rq01 `compute_da.py` (the
-truth) → rq02 `run_apertus_snr_variants.py` (22 SNR variants × bucket, joined
-to the DA table) → `compare_seed_splits.py` (holdout) → per pool
-`analyze_snr_variants.py`, `snr_definition_postprocess.py`,
-`da_per_benchmark.py`, rq05 `analyze.py`, rq03 `analyze.py` → rq06 (every
-seed and scheme, `predictivity_all`), rq04, the rq00 curves, then rq07
-(scaling fits + the loss/scaling/benchmark curves), rq08 (reads rq06's
-decision table), rq09 (reads rq02's table, rq00's scores, rq07's fits), rq10
-(transfer + the per-cell BPB curves), `report_figures/make_figures.py`. The
+**Pipeline order** (`run_all_predictivity.sh`): rq00 `above_random.py` (the
+gate) → rq02 `compute_da.py` (the truth) → rq03 `run_apertus_snr_variants.py`
+(22 SNR variants × bucket, joined to the DA table) → rq03
+`compare_seed_splits.py` (holdout) → per pool rq04 `analyze_snr_variants.py`
+and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py`, rq09
+`analyze.py`, rq07 `analyze.py` → on `predictivity_all` (every seed and
+scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
+`scaling_law_error.py`, rq03 `effect_vs_noise.py`, rq06 → rq08, the rq00
+curves (`run_apertus.py`, `curves.py`), rq04 `analyze.py` (reads rq03's table,
+rq00's scores, rq01's fits), `report_figures/make_figures.py`. Themes: A
+predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C generalisation
+(rq05–rq07), D benchmark improvement (rq08–rq09); `analysis/paths.py` is the
+one map from constant to folder. The
 canonical pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) runs last so
 its README generators see every other pool's CSVs; generators no-op on other
 pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
-every rq06+ script uses — `ladder_frame` (the pool plus `frac`), `finals`,
+the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
 `at_fraction`, `trained_bpb_tasks`, `size_order`, `NON_EMB`, `GRID_SEED` — and
 `analysis/style.py` is the one palette (`documents/figures/style.py` re-exports
 it). `tests/test_metrics.py` (`python -m unittest discover -s tests`) pins the
@@ -133,7 +137,7 @@ predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28
 predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50, 100}
 predictivity_seeds_test    seed 1904 on the same cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq06-rq08, rq10)
+predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq01, rq03, rq05, rq06)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
@@ -159,7 +163,7 @@ them).
   same design variant at two sizes is one pair.
 - **seed** is a separate model in the signal pool of `predictivity_seeds`
   ("the same model measured twice" — ladder_report.md); the headline pool is
-  seed 1904 only, and rq06 turns the replicates into a seed-noise column.
+  seed 1904 only, and rq03 turns the replicates into a seed-noise column.
 
 ---
 
@@ -181,8 +185,8 @@ strips the `-fwY` mix complement and numeric-size-sorts.
 ## Outputs
 
 Each RQ writes next to its script: `analysis/<rq>/<stage>/<pool>/`. The
-per-task tables are the persisted truth (`rq01/.../da_per_task.csv`,
-`rq02/.../snr_variants_per_task.csv`); every figure and README block is
+per-task tables are the persisted truth (`rq02/.../da_per_task.csv`,
+`rq03/.../snr_variants_per_task.csv`); every figure and README block is
 derived from them. `*.csv` / `*.png` under this directory are git-LFS
 tracked (`.gitattributes`): commit regenerated results with `git lfs`
 installed, and never commit outputs produced from a fixture.
@@ -227,7 +231,7 @@ you're modifying the multilingual / variant pipelines, scan this list
 before editing.
 
 ### 1. `_is_language_aggregate` filter must accept 3- and 4-trailing-token forms
-`analysis/rq04_smooth_subtasks/smooth_subtasks.py:_is_language_aggregate` was originally
+`analysis/rq08_subset_selection/smooth_subtasks.py:_is_language_aggregate` was originally
 `<family>_<lang>` or `<family>_<lang>_<script>` only, with a hard-coded
 ISO 15924 script list. That silently dropped:
 
@@ -327,7 +331,7 @@ If you change the eval cadence, expect more warnings and possibly
 more NaN cells in `da_ckpt` views.
 
 ### 9. `top_benchmarks_per_language` size column is parametric
-`analysis/rq02_snr_definition/snr_definition_postprocess.py:top_benchmarks_per_language`
+`analysis/rq04_surrogates/snr_definition_postprocess.py:top_benchmarks_per_language`
 used to hardcode `da_size_col = "decision_acc_size_600M"`. Now it
 follows the `size` arg (`f"decision_acc_size_{size}"`). At the default
 `size=1B` the column is NaN by definition — DA-size is `small_size →
@@ -356,14 +360,14 @@ column. The gate now removes only cells whose mask is **0** (at chance).
 `.fillna(False)`, or pandas refuses the boolean indexer.
 
 ### 12. Reference size while the big rungs train
-`snr_definition_postprocess.top_benchmarks_per_language`, rq05's `SNR_COL`
+`snr_definition_postprocess.top_benchmarks_per_language`, rq09's `SNR_COL`
 and `make_figures._ref_cols` read the configured `target_size` when its SNR
 columns exist and fall back to the largest bucket in the CSV otherwise —
 the ladder is analysed while 1B/1.7B are still training. The fallback is
 printed / carried in a `size` column; don't hardcode `_1B` again.
 
 ### 13. `pretrain.ladder_report` is importable, but only through `src/`
-rq06 reuses `_fit` and `NON_EMB` from `src/pretrain/ladder_report.py`. The
+rq01 and rq05 reuse `_fit` and `NON_EMB` from `src/pretrain/ladder_report.py`. The
 module inserts its own directory on `sys.path` to import `pretrain_progress`
 → `launch_trainings`, which read `configs/hf_wandb.json` at import; nothing
 heavier happens at import time (matplotlib is lazy). Import it as
@@ -385,12 +389,12 @@ Not imported by anything we run: `snr/ladder_wrapper.py` (needs the
 law), `snr/metaanalysis.py`, `snr/mask_analysis.py` (instance-level IRT
 masks), `snr/stats.py` (total variation / monotonicity of training curves),
 `snr/snr_simple.py` (the paper's table driver; `compute_snr_small_scale`
-is quoted by rq04's docstring only), `snr/autobencher/`, `snr/scripts/`,
+is quoted by rq08's docstring only), `snr/autobencher/`, `snr/scripts/`,
 `snr/constants/{datadecide,ladder,ladder_config.json,models,signal,smooth}.py`,
 `allenai_analysis/*.ipynb` (LFS pointers) and `allenai_analysis/plotting/scaling.py`,
 `analysis/PARALLEL_SESSIONS.md`, the `INSTRUCTIONS.md` files (pre-refactor
 `results/` layout), `analysis/ANALYSIS_new_vs_previous.md`,
-`analysis/rq04_smooth_subtasks/per_sample/` (cluster-only per-item outputs
+`analysis/rq08_subset_selection/per_sample/` (cluster-only per-item outputs
 of the 36-sweep), `posttraining.ipynb`, `notebook_guidelines.md`,
 `run_all_pretraining.sh` (36-sweep driver). See the root README's
 "Legacy code" for the removal proposal; nothing is deleted without the
@@ -409,7 +413,7 @@ comparable with the paper's. Verified against upstream `48fbb34` on
 - `snr/metrics.py` — `decision_acc_fast` compares ties by sign (upstream's
   `>` made the value depend on the listing order); the upstream kernel is
   kept as `decision_acc_fast_upstream`. Reason and measured effect: the
-  function's docstring and `analysis/rq01_decision_accuracy/README.md`.
+  function's docstring and `analysis/rq02_decision_accuracy/README.md`.
 - `snr/snr_simple.py` — `target_size`/`target_step` parameters (latest step
   when `None`), lazy import of olmo-ladder, jagged last-5 windows, a
   `DEFAULT_TASKS` list. The jagged tolerance is moot on the ladder (every

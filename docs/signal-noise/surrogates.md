@@ -1,1 +1,1 @@
---8<-- "src/signal-and-noise/analysis/rq09_surrogates/README.md"
+--8<-- "src/signal-and-noise/analysis/rq04_surrogates/README.md"

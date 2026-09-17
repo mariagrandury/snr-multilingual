@@ -31,11 +31,11 @@ SIZES = ["175M", "350M", "600M", "1B"]          # 90M is off the ladder, see Fin
 
 
 def _scores():
-    return pd.read_csv(ANALYSIS / f"rq00_acc_vs_flops/{P}/above_random_scores.csv")
+    return pd.read_csv(ANALYSIS / f"rq00_gate_and_curves/{P}/above_random_scores.csv")
 
 
 def _variants():
-    return pd.read_csv(ANALYSIS / f"rq02_snr_definition/{P}/snr_variants_per_task.csv")
+    return pd.read_csv(ANALYSIS / f"rq03_noise_and_snr/{P}/snr_variants_per_task.csv")
 
 
 def _fam_of(v):

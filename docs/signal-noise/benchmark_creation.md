@@ -1,1 +1,0 @@
---8<-- "src/signal-and-noise/analysis/rq05_benchmark_creation/README.md"

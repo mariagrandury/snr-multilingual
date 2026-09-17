@@ -1,1 +1,1 @@
---8<-- "src/signal-and-noise/analysis/rq07_scaling_predictability/README.md"
+--8<-- "src/signal-and-noise/analysis/rq01_scaling_predictability/README.md"

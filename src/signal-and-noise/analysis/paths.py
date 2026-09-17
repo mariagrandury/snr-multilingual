@@ -3,23 +3,28 @@ directory names.
 
 Each analysis script writes its artifacts under ``<its RQ dir>/<stage>/<pool>/``
 and reads sibling RQs' artifacts via these constants, so the numbered directory
-names live in exactly one module. Replaces the old ``PLOT_DIR / "<area>"``
-roots (outputs used to live under ``results/``; they now live next to each RQ's
-script).
+names live in exactly one module.
+
+The numbering follows the four themes of the study: A, is the evaluation
+predictable (rq00–rq02); B, can it be measured cheaply (rq03–rq04); C, does the
+framework generalise (rq05–rq07); D, can the benchmarks be improved (rq08–rq09).
 """
 
 from pathlib import Path
 
 _ANALYSIS = Path(__file__).resolve().parent
 
-ACC_VS_FLOPS = _ANALYSIS / "rq00_acc_vs_flops"
-DECISION_ACCURACY = _ANALYSIS / "rq01_decision_accuracy"
-SNR_DEFINITION = _ANALYSIS / "rq02_snr_definition"
-ALLENAI_COMPARISON = _ANALYSIS / "rq03_allenai_comparison"
-SMOOTH_SUBTASKS = _ANALYSIS / "rq04_smooth_subtasks"
-BENCHMARK_CREATION = _ANALYSIS / "rq05_benchmark_creation"
-PROXY_PREDICTIVITY = _ANALYSIS / "rq06_proxy_predictivity"
-SCALING_PREDICTABILITY = _ANALYSIS / "rq07_scaling_predictability"
-EARLY_DECISION = _ANALYSIS / "rq08_early_decision"
-SURROGATES = _ANALYSIS / "rq09_surrogates"
-LANGUAGE_TRANSFER = _ANALYSIS / "rq10_language_transfer"
+# A. predictivity and patterns in the evaluations
+GATE_AND_CURVES = _ANALYSIS / "rq00_gate_and_curves"            # the above-random gate; score vs compute and vs training
+SCALING_PREDICTABILITY = _ANALYSIS / "rq01_scaling_predictability"  # what moves with size; power-law prediction of the reference
+DECISION_ACCURACY = _ANALYSIS / "rq02_decision_accuracy"        # does a small size / early checkpoint rank like the reference
+# B. cheap measurements
+NOISE_AND_SNR = _ANALYSIS / "rq03_noise_and_snr"                # seed vs checkpoint noise; the 22 SNR definitions; the seed holdout
+SURROGATES = _ANALYSIS / "rq04_surrogates"                      # which cheap statistic predicts decision accuracy
+# C. generalisation of the framework
+DESIGN_DECISIONS = _ANALYSIS / "rq05_design_decisions"          # the five interventions; how small and how early
+LANGUAGE_TRANSFER = _ANALYSIS / "rq06_language_transfer"        # unmeasured and never-trained languages
+EXTERNAL_FRAMEWORKS = _ANALYSIS / "rq07_external_frameworks"    # agreement with AllenAI DataDecide
+# D. benchmark improvement
+SUBSET_SELECTION = _ANALYSIS / "rq08_subset_selection"          # can a subset beat the full set
+BENCHMARK_DESIGN = _ANALYSIS / "rq09_benchmark_design"          # which design features predict reliability

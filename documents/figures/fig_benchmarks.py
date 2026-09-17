@@ -18,7 +18,7 @@ from analysis.utils import assign_language, benchmark_family  # noqa: E402
 def first_clearing_size(out):
     """Rows = benchmark family, columns = language, cell = the smallest model that
     beats chance. Grey where the family never does, blank where there is no task."""
-    m = pd.read_csv(ANALYSIS / "rq00_acc_vs_flops/pretraining/predictivity/above_random_mask.csv")
+    m = pd.read_csv(ANALYSIS / "rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv")
     m = m[m["n_options"].notna()]
     m["lang"] = m["task"].map(assign_language)
     m["fam"] = m["task"].map(benchmark_family)
@@ -86,9 +86,10 @@ def snr_bpb_vs_benchmark(out):
     first five, so ranking off it silently scored 48 of 68 languages as having
     no bits per byte at all.
     """
-    P = ANALYSIS / "rq02_snr_definition/pretraining/predictivity"
-    variant = pd.read_csv(P / "top_variants_overall.csv")["variant"].iloc[0]
-    size = pd.read_csv(P / "top_benchmarks_per_language.csv")["size"].iloc[0]
+    P = ANALYSIS / "rq03_noise_and_snr/pretraining/predictivity"          # the per-task table
+    R = ANALYSIS / "rq04_surrogates/pretraining/predictivity"             # the variant ranking and anchor
+    variant = pd.read_csv(R / "top_variants_overall.csv")["variant"].iloc[0]
+    size = pd.read_csv(R / "top_benchmarks_per_language.csv")["size"].iloc[0]
     col = f"snr_{variant}_{size}"
     t = pd.read_csv(P / "snr_variants_per_task.csv", index_col=0)
     t = pd.DataFrame({"lang": [assign_language(x) for x in t.index],

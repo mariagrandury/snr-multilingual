@@ -85,7 +85,7 @@ def optimizer_timescale(out):
 
 def seed_holdout(out):
     """Does the SNR variant ranking survive a seed swap?"""
-    h = pd.read_csv(ANALYSIS / "rq02_snr_definition/pretraining/"
+    h = pd.read_csv(ANALYSIS / "rq03_noise_and_snr/pretraining/"
                     "predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv")
     v = {(r.metric, r.da_kind): r.value for r in h.itertuples()}
     labels = ["ranking of the 22 variants\n(Spearman)", "values, cell by cell\n(Pearson)",

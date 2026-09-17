@@ -21,7 +21,7 @@ sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 from evals.scripts.utils.configs import bucket_order, load_languages  # noqa: E402
 
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
-SRC = ANALYSIS / "rq01_decision_accuracy" / "pretraining" / "predictivity" / "da_per_benchmark.csv"
+SRC = ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity" / "da_per_benchmark.csv"
 OUT = REPO / "documents" / "public" / "ladder" / "appendix"
 BOLD = 0.75
 

@@ -179,7 +179,7 @@ footer p{margin:0 0 9px}
 <section class="band">
   <p class="band-id">Part one</p>
   <h2>The original programme</h2>
-  <p class="intro">Seven questions carried over from the Signal-and-Noise framework and adapted to the ladder, RQ0–RQ6; the paper's five questions are the four further directories <code>rq07_scaling_predictability</code> (A1), <code>rq08_early_decision</code> (B1), <code>rq09_surrogates</code> (B3) and <code>rq10_language_transfer</code> (A3), plus RQ6 for the interventions. Each is one directory under <code>src/signal-and-noise/analysis/</code>, run in dependency order by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/run_all_predictivity.sh"><code>run_all_predictivity.sh</code></a>.</p>
+  <p class="intro">Seven questions carried over from the Signal-and-Noise framework and adapted to the ladder, RQ0–RQ6; the paper's five questions live in <code>rq01_scaling_predictability</code> (A1), <code>rq05_design_decisions</code> (RQ6, the interventions, and B1 via <code>early_decision.py</code>), <code>rq04_surrogates</code> (B3, next to the SNR-definition ranking) and <code>rq06_language_transfer</code> (A3). The directory numbers follow the study's four themes (A predictivity rq00–rq02, B cheap measurements rq03–rq04, C generalisation rq05–rq07, D benchmark improvement rq08–rq09); the labels on this page are the programme's own. Each is one directory under <code>src/signal-and-noise/analysis/</code>, run in dependency order by <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/run_all_predictivity.sh"><code>run_all_predictivity.sh</code></a>.</p>
 </section>
 
 <article id="rq0">
@@ -191,7 +191,7 @@ footer p{margin:0 0 9px}
   <div class="part"><span class="lab">Setup and method</span>
   <p>A (benchmark, size) cell is <em>above random</em> when its mean final score beats chance by a fixed margin. Chance comes from the option counts derived from the evaluated samples in <code>configs/tasks.json</code>, with a per-family fallback.</p>
   <div class="formula">above_random(b, s) &nbsp;⟺&nbsp; mean_score(b, s) &gt; 1/n_options(b) + 0.05<br><span class="note">per-language BPB and generative tasks have no chance level and are never gated</span></div>
-  <p>Every downstream SNR cell that fails the gate is set to NaN, so the gate propagates to every other RQ and never depends on one. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq00_acc_vs_flops/above_random.py"><code>rq00_acc_vs_flops/above_random.py</code></a>, curves in <code>run_apertus.py</code>.</p></div>
+  <p>Every downstream SNR cell that fails the gate is set to NaN, so the gate propagates to every other RQ and never depends on one. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq00_gate_and_curves/above_random.py"><code>rq00_gate_and_curves/above_random.py</code></a>, curves in <code>run_apertus.py</code>.</p></div>
 
   <div class="part"><span class="lab">Results</span>
   <div class="tbl"><table>
@@ -218,7 +218,7 @@ footer p{margin:0 0 9px}
   <div class="part"><span class="lab">Setup and method</span>
   <p>Models are the ladder's cells. The cross-size identity is the cell's design variant — language setting, scheme, architecture, seed — so one variant trained at two sizes forms one pair. Two definitions:</p>
   <div class="formula">DA-size(b; s→S) = share of variant pairs ordered the same at size s and size S, both at their final checkpoint<br>DA-ckpt(b; f@s) = share ordered the same at checkpoint f ∈ {20, 40, 60, 80} % and the final one, within size s<br><span class="note">computed by decision_acc_fast; a pair needs ≥ 2 variants present at both buckets</span></div>
-  <p>Multilingual tasks are scored only on cells that train the language, so each task's population is the variants that exist at both sizes <em>and</em> were evaluated on it. <code>n</code> travels with every value. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq01_decision_accuracy/compute_da.py"><code>rq01_decision_accuracy/compute_da.py</code></a>.</p></div>
+  <p>Multilingual tasks are scored only on cells that train the language, so each task's population is the variants that exist at both sizes <em>and</em> were evaluated on it. <code>n</code> travels with every value. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_decision_accuracy/compute_da.py"><code>rq02_decision_accuracy/compute_da.py</code></a>.</p></div>
 
   <div class="part"><span class="lab">Results</span>
   <p>4,198 DA-size cells and 11,360 DA-ckpt cells. Six size pairs are computable: 175M→350M, 175M→600M, 175M→1.7B, 350M→600M, 350M→1.7B, 600M→1.7B. Aggregated over languages, the well-powered pairs are the three that stop at 600M, backed by <strong>11 model families</strong>; the three reaching 1.7B rest on <strong>2 families</strong> each, so their DA can only read 0 or 1 and should not be read as a strong result.</p>
@@ -241,7 +241,7 @@ footer p{margin:0 0 9px}
   <p>Twenty-two spread statistics — dispersion, relative-spread, discrepancy, robust and depth families — are computed per (task, size) from the variants' final scores and the late-checkpoint noise, then correlated per language against both DA definitions.</p>
   <div class="formula">signal(b,s) = spread over design variants' final scores &nbsp;(22 statistics)<br>noise(b,s)  = σ over the last 5 checkpoints of the reference run, ÷ mean<br>SNR = signal / noise&nbsp;&nbsp;&nbsp;score = mean over languages of Pearson r( log₁₀ SNR , DA )</div>
   <p>Two technical decisions that changed the answer historically, both recorded in <code>src/signal-and-noise/CLAUDE.md</code>: rank variants by <strong>signed</strong> Pearson r, never R², because R² conflates +0.5 with −0.5 and floats anti-signals to the top; and apply <code>_is_parent_task</code>, because the subject facets of Global-MMLU are statistical replicates that six-fold-weight whichever variant tracks the subject decomposition.</p>
-  <p>The seed holdout trains the ranking on seeds 64 and 313 of the ×3 cells and tests it on seed 1904 of the same cells. Scripts: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_snr_definition/run_apertus_snr_variants.py"><code>run_apertus_snr_variants.py</code></a>, <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_snr_definition/compare_seed_splits.py"><code>compare_seed_splits.py</code></a>.</p></div>
+  <p>The seed holdout trains the ranking on seeds 64 and 313 of the ×3 cells and tests it on seed 1904 of the same cells. Scripts: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq03_noise_and_snr/run_apertus_snr_variants.py"><code>run_apertus_snr_variants.py</code></a>, <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq03_noise_and_snr/compare_seed_splits.py"><code>compare_seed_splits.py</code></a>.</p></div>
 
   <div class="part"><span class="lab">Results</span>
   <div class="tbl"><table>
@@ -269,7 +269,7 @@ footer p{margin:0 0 9px}
   <p><strong>Not run.</strong> The DataDecide-side SNR table is a git-lfs pointer in this clone and <code>lfs.github.com</code> is unreachable from the build environment. One <code>git lfs pull</code> where the endpoint resolves and the stage runs unchanged.</p></div>
 
   <div class="part"><span class="lab">Setup and method</span>
-  <p>Cross-corpus Pearson r and Spearman ρ of log SNR over the English tasks both corpora evaluate, at matched sizes (90M↔90M through 1B↔1B). Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq03_allenai_comparison/analyze.py"><code>rq03_allenai_comparison/analyze.py</code></a>, fed by <code>build_allenai_variants.py</code>.</p>
+  <p>Cross-corpus Pearson r and Spearman ρ of log SNR over the English tasks both corpora evaluate, at matched sizes (90M↔90M through 1B↔1B). Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq07_external_frameworks/analyze.py"><code>rq07_external_frameworks/analyze.py</code></a>, fed by <code>build_allenai_variants.py</code>.</p>
   <p>Worth stating before the number arrives: the shared universe is small — <code>arc_easy</code>, <code>arc_challenge</code>, <code>hellaswag</code> and MMLU through the Global-MMLU English split. DataDecide's signal is a dispersion over 25 data recipes; ours is over language settings and schemes, a narrower axis. A low correlation would say the populations differ before it says the definition does.</p></div>
 
   <div class="part"><span class="lab">Follow-ups</span>
@@ -284,7 +284,7 @@ footer p{margin:0 0 9px}
   <p>Yes, and by a lot on the weakest benchmarks. Median gain <strong>+1.09 SNR</strong> on Global-MMLU subjects and <strong>+0.80</strong> on its per-language split. The largest single gain takes <code>global_piqa_parallel_cloze</code> at 175M from <strong>1.08 to 3.15</strong> on seven of its languages.</p></div>
 
   <div class="part"><span class="lab">Setup and method</span>
-  <p>For each multilingual family the per-language tasks are ranked by standalone SNR, then cumulative subsets are swept and the best recorded per size, against a random-order baseline. Three cases: per benchmark, Global-MMLU subjects, and Global-MMLU per language. The per-language BPB family is swept the same way — which languages make the sharpest macro average. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq04_smooth_subtasks/smooth_subtasks.py"><code>rq04_smooth_subtasks/smooth_subtasks.py</code></a>.</p></div>
+  <p>For each multilingual family the per-language tasks are ranked by standalone SNR, then cumulative subsets are swept and the best recorded per size, against a random-order baseline. Three cases: per benchmark, Global-MMLU subjects, and Global-MMLU per language. The per-language BPB family is swept the same way — which languages make the sharpest macro average. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq08_subset_selection/smooth_subtasks.py"><code>rq08_subset_selection/smooth_subtasks.py</code></a>.</p></div>
 
   <div class="part"><span class="lab">Results</span>
   <div class="tbl"><table>
@@ -310,7 +310,7 @@ footer p{margin:0 0 9px}
   <p>The answer-count penalty lives in the <em>gate</em>, upstream of SNR. Among the nine families that survive it, <strong>no design feature is individually significant</strong> — option count H = 0.02, p = 0.88; task format H = 1.12, p = 0.57; curation H = 5.12, p = 0.08.</p></div>
 
   <div class="part"><span class="lab">Setup and method</span>
-  <p>Per-family SNR — the median over that family's per-language tasks at 1B — grouped by curation method, source origin, task format, option count and a reading-passage flag, then tested with a family-level Kruskal–Wallis. Fifteen families carry provenance, including the natively-sourced INCLUDE and Global PIQA and the human-translated IrokoBench families. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq05_benchmark_creation/analyze.py"><code>rq05_benchmark_creation/analyze.py</code></a>.</p></div>
+  <p>Per-family SNR — the median over that family's per-language tasks at 1B — grouped by curation method, source origin, task format, option count and a reading-passage flag, then tested with a family-level Kruskal–Wallis. Fifteen families carry provenance, including the natively-sourced INCLUDE and Global PIQA and the human-translated IrokoBench families. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq09_benchmark_design/analyze.py"><code>rq09_benchmark_design/analyze.py</code></a>.</p></div>
 
   <div class="part"><span class="lab">Results</span>
   <div class="tbl"><table>
@@ -340,7 +340,7 @@ footer p{margin:0 0 9px}
   <p>For bits per byte, <strong>350M</strong> is enough: it agrees with the reference on the scheme decision at 8, 15 and 30 languages while 175M gets it backwards. Benchmarks now score, and they read the same decision as a coin flip at <em>both</em> proxy rungs, 0.45–0.57 across the three settings. Every comparison still resolves against 600M, not 1B.</p></div>
 
   <div class="part"><span class="lab">Setup and method</span>
-  <p>Three reads over the (proxy size, L) grid. Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq06_proxy_predictivity/analyze.py"><code>rq06_proxy_predictivity/analyze.py</code></a>.</p>
+  <p>Three reads over the (proxy size, L) grid (the scaling-law error now lives in rq01 and the effect against noise in rq03). Script: <a class="src" href="https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq05_design_decisions/analyze.py"><code>rq05_design_decisions/analyze.py</code></a>.</p>
   <div class="formula"><b>i. Intervention DA.</b> With two levels, pairwise agreement reduces to sign agreement:<br>
   &nbsp;&nbsp;DA(L, s) = share of population items i with sign(x<sub>i</sub><sup>A</sup>−x<sub>i</sub><sup>B</sup>)|<sub>s</sub> = sign(x<sub>i</sub><sup>A</sup>−x<sub>i</sub><sup>B</sup>)|<sub>ref</sub><br>
   &nbsp;&nbsp;<span class="note">populations: bpb_trained (languages both levels train), bpb_all (100 subsets), benchmark, bpb_macro</span><br><br>

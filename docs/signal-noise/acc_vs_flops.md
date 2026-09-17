@@ -1,1 +1,0 @@
---8<-- "src/signal-and-noise/analysis/rq00_acc_vs_flops/README.md"

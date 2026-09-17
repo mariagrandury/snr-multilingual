@@ -1,1 +1,1 @@
---8<-- "src/signal-and-noise/analysis/rq01_decision_accuracy/README.md"
+--8<-- "src/signal-and-noise/analysis/rq02_decision_accuracy/README.md"

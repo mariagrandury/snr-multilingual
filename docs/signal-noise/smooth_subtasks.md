@@ -1,1 +1,0 @@
---8<-- "src/signal-and-noise/analysis/rq04_smooth_subtasks/README.md"

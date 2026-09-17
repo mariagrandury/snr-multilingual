@@ -9,17 +9,16 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 # location. Map each source dir to the URL prefix of the page that includes
 # its README so those relative paths resolve in the rendered site.
 INCLUDES = [
-    ("src/signal-and-noise/analysis/rq00_acc_vs_flops", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq01_decision_accuracy", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq02_snr_definition", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq03_allenai_comparison", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq04_smooth_subtasks", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq05_benchmark_creation", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq06_proxy_predictivity", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq07_scaling_predictability", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq08_early_decision", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq09_surrogates", "signal-noise"),
-    ("src/signal-and-noise/analysis/rq10_language_transfer", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq00_gate_and_curves", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq01_scaling_predictability", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq02_decision_accuracy", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq03_noise_and_snr", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq04_surrogates", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq05_design_decisions", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq06_language_transfer", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq07_external_frameworks", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq08_subset_selection", "signal-noise"),
+    ("src/signal-and-noise/analysis/rq09_benchmark_design", "signal-noise"),
 ]
 
 _PLACEHOLDER = (

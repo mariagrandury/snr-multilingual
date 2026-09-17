@@ -30,7 +30,7 @@ from pathlib import Path
 # as history. A generator no-ops on other pools.
 CANONICAL_POOL = "predictivity"
 ALLENAI_POOL = "predictivity"
-# The seed holdout the rq02 README reports (compare_seed_splits.py).
+# The seed holdout rq03 computes (compare_seed_splits.py) and the rq04 README reports.
 HOLDOUT = ("predictivity_seeds_train", "predictivity_seeds_test")
 
 # The Slidev deck (repo-root/documents/slides.md).

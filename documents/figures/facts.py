@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 P = "pretraining/predictivity"
-PS = "pretraining/predictivity_all"      # rq06 reads every seed and scheme
+PS = "pretraining/predictivity_all"      # rq01, rq03 and rq05 read every seed and scheme
 OUT = REPO / "documents" / "ladder-facts.json"
 
 
@@ -44,7 +44,7 @@ def collect():
         "schemes_present": sorted(c["scheme"].dropna().unique().tolist()),
     }
 
-    g = pd.read_csv(ANALYSIS / f"rq00_acc_vs_flops/{P}/above_random_mask.csv")
+    g = pd.read_csv(ANALYSIS / f"rq00_gate_and_curves/{P}/above_random_mask.csv")
     g = g[g["n_options"].notna()]
     sizes = [s for s in ["90M", "175M", "350M", "600M", "1B", "1.7B"] if s in g.columns]
     clears = g[sizes].eq(1).any(axis=1)
@@ -59,9 +59,9 @@ def collect():
         "never_clearing_families": sorted(fam[~fam].index.tolist()),
     }
 
-    tv = pd.read_csv(ANALYSIS / f"rq02_snr_definition/{P}/top_variants_overall.csv")
+    tv = pd.read_csv(ANALYSIS / f"rq04_surrogates/{P}/top_variants_overall.csv")
     best = tv.iloc[0]
-    d = pd.read_csv(ANALYSIS / f"rq02_snr_definition/{P}/top_benchmarks_per_language.csv")
+    d = pd.read_csv(ANALYSIS / f"rq04_surrogates/{P}/top_benchmarks_per_language.csv")
     d["is_bpb"] = d.task.str.startswith("bpb_")
     r1 = d[(d["rank"] == 1) & (d.language != "multi")]
     bench = d[~d.is_bpb & (d.language != "multi")]
@@ -82,13 +82,13 @@ def collect():
         "bpb_snr_median_without": _r(bpb_best[~bpb_best.index.isin(bench.language)].median()),
     }
 
-    h = pd.read_csv(ANALYSIS / f"rq02_snr_definition/pretraining/"
+    h = pd.read_csv(ANALYSIS / f"rq03_noise_and_snr/pretraining/"
                     f"predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv")
     f["seed_holdout"] = {f"{r.metric}_{r.da_kind}": _r(r.value) for r in h.itertuples()}
 
-    iv = pd.read_csv(ANALYSIS / f"rq06_proxy_predictivity/{PS}/intervention_da.csv")
-    sl = pd.read_csv(ANALYSIS / f"rq06_proxy_predictivity/{PS}/scaling_law_error.csv")
-    ev = pd.read_csv(ANALYSIS / f"rq06_proxy_predictivity/{PS}/effect_vs_noise.csv")
+    iv = pd.read_csv(ANALYSIS / f"rq05_design_decisions/{PS}/intervention_da.csv")
+    sl = pd.read_csv(ANALYSIS / f"rq01_scaling_predictability/{PS}/scaling_law_error.csv")
+    ev = pd.read_csv(ANALYSIS / f"rq03_noise_and_snr/{PS}/effect_vs_noise.csv")
     ratio = (ev.seed_noise / ev.ckpt_noise_detrended).replace([np.inf, -np.inf], np.nan).dropna()
     arch = ev.effect_arch_over_seed.dropna()
     f["rq6"] = {

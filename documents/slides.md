@@ -969,9 +969,9 @@ low score means the variants land on top of each other. The honest framing for t
 coverage improved a lot, the diagnosis did not change much, because one family carries it.
 -->
 
-<!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
+<!-- BEGIN auto:rq4-results (snr_definition_postprocess.py) -->
 ---
-title: RQ2 — SNR definition
+title: RQ4 — Surrogates: SNR definition
 subtitle: "Results (auto) — most reliable benchmark per language (`mpsd` @ 1B)"
 ---
 
@@ -1023,7 +1023,7 @@ subtitle: "Results (auto) — most reliable benchmark per language (`mpsd` @ 1B)
 <style>
 .slidev-layout table { font-size: 0.7em; }
 </style>
-<!-- END auto:rq1-results -->
+<!-- END auto:rq4-results -->
 
 ---
 layout: bullets
@@ -1111,7 +1111,7 @@ icon: "🔬"
 - An effect that looks like 2× checkpoint noise is about the size of **one seed re-roll**
 
 <!--
-rq06 effect_vs_noise.csv. Checkpoint noise is detrended first — under WSD the final window
+rq03 effect_vs_noise.csv. Checkpoint noise is detrended first — under WSD the final window
 is still descending, so the raw std would be smaller still. A methodological result about
 the framework rather than about our models; worth reporting in the paper.
 -->
@@ -1137,7 +1137,7 @@ Data-scheme decision, bits per byte over the languages both schemes train:
   and per-language BPB at the reference is predicted from the proxy rungs to within **4–8 %**
 
 <!--
-rq06 on predictivity_seeds, 14 September: 36 intervention-DA cells, 505 scaling fits,
+rq05 (with rq01 and rq03) on predictivity_seeds, 14 September: 36 intervention-DA cells, 505 scaling fits,
 reference_size = 600M throughout. The depth rows exist only at L1/L2 and swing 0.13-0.77,
 which is what "not enough matched pairs" looks like. Scaling error by reference: 0.076 for
 1.7B at L1, 0.051 for 1B at L8, 0.058 for 1.7B at L30, 0.043 for 1B at L50, with L2 the one
@@ -1262,9 +1262,9 @@ icon: "⏸️"
 - RQ3 additionally needs the DataDecide-side SNR table — `git lfs pull` first, then re-run
 - The shared universe is small either way: only the English tasks both corpora evaluate
 
-<!-- BEGIN auto:rq2-results (allenai_comparison/analyze.py) -->
+<!-- BEGIN auto:rq7-results (allenai_comparison/analyze.py) -->
 ---
-title: RQ2 — Framework Generalization
+title: RQ7 — External frameworks
 subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
 ---
 
@@ -1278,7 +1278,7 @@ The shared universe is the English tasks both corpora evaluate, after the above-
 <style>
 .slidev-layout table { font-size: 0.7em; }
 </style>
-<!-- END auto:rq2-results -->
+<!-- END auto:rq7-results -->
 
 ---
 layout: figure
@@ -1289,9 +1289,9 @@ title: Finding 12 — A subject subset beats the full Global-MMLU at every size
 subtitle: "Cumulative SNR as subjects are added in standalone-SNR order; dashed = the full set"
 ---
 
-<!-- BEGIN auto:rq3-results (smooth_subtasks.py) -->
+<!-- BEGIN auto:rq8-results (smooth_subtasks.py) -->
 ---
-title: RQ4 — Subtask subsets
+title: RQ8 — Subset selection
 subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 ---
 
@@ -1309,11 +1309,11 @@ subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 <style>
 .slidev-layout table { font-size: 0.7em; }
 </style>
-<!-- END auto:rq3-results -->
+<!-- END auto:rq8-results -->
 
-<!-- BEGIN auto:rq4-results (benchmark_creation/analyze.py) -->
+<!-- BEGIN auto:rq9-results (benchmark_creation/analyze.py) -->
 ---
-title: RQ5 — Benchmark design
+title: RQ9 — Benchmark design
 subtitle: "Results (auto) — per-family SNR, above-random survivors"
 ---
 
@@ -1332,7 +1332,7 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 <style>
 .slidev-layout table { font-size: 0.7em; }
 </style>
-<!-- END auto:rq4-results -->
+<!-- END auto:rq9-results -->
 
 ---
 layout: section
@@ -1495,7 +1495,7 @@ icon: "➡️"
 5. Re-run `run_all_predictivity.sh` — every number in this deck refreshes from the published report
 
 
-<!-- BEGIN generated signal slides (analysis/rq01_decision_accuracy/da_per_benchmark.py) -->
+<!-- BEGIN generated signal slides (analysis/rq02_decision_accuracy/da_per_benchmark.py) -->
 
 ---
 layout: section
