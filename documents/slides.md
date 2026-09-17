@@ -972,53 +972,50 @@ coverage improved a lot, the diagnosis did not change much, because one family c
 <!-- BEGIN auto:rq4-results (snr_definition_postprocess.py) -->
 ---
 title: RQ4 — Surrogates: SNR definition
-subtitle: "Results (auto) — most reliable benchmark per language (`mpsd` @ 1B)"
+subtitle: "Results (auto) — most reliable benchmark per language (`mpsd` @ 1.7B)"
 ---
 
-| lang | top benchmark | SNR | DA-ckpt@1B | BPB SNR |
+| lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| ar | `multiblimp_arb` | 1.6 | 0.84 | 10.2 |
-| bg | `multiblimp_bul` | 2.5 | 0.91 | 8.3 |
-| bn | `multiblimp_ben` | 0.6 | 0.68 | 5.6 |
-| bs | `global_piqa_nonparallel_cloze_bos_latn` | 0.3 | 0.62 | 17.4 |
-| ca | `multiblimp_cat` | 1.3 | 0.83 | 11.0 |
-| cs | `multiblimp_ces` | 4.1 | 0.88 | 28.8 |
-| da | `multiblimp_dan` | 0.3 | 0.64 | 16.8 |
-| de | `multiblimp_deu` | 1.5 | 0.82 | 7.2 |
-| el | `multiblimp_ell` | 1.8 | 0.78 | 5.9 |
-| en | `xnli_en` | 0.0 | 0.72 | 0.0 |
-| es | `multiblimp_spa` | 0.6 | 0.85 | 4.1 |
-| et | `multiblimp_est` | 1.8 | 0.74 | 42.7 |
-| fa | `multiblimp_fas` | 1.2 | 0.83 | 8.0 |
-| fi | `multiblimp_fin` | 3.9 | 0.77 | 35.6 |
-| fr | `multiblimp_fra` | 0.7 | 0.72 | 3.5 |
-| he | `multiblimp_heb` | 1.0 | 0.83 | 13.9 |
-| hi | `multiblimp_hin` | 2.3 | 0.77 | 2.7 |
-| hr | `hellaswag_hr` | 0.2 | 0.75 | 18.3 |
-| hu | `multiblimp_hun` | 3.5 | 0.82 | 57.0 |
-| id | `xstorycloze_id` | 0.5 | 0.84 | 7.8 |
-| it | `multiblimp_ita` | 2.3 | 0.81 | 7.7 |
-| ja | `xwinograd_jp` | 0.4 | 0.71 | 11.1 |
-| ka | `multiblimp_kat` | 0.3 | 0.71 | 5.1 |
-| kk | `multiblimp_kaz` | 0.3 | 0.70 | 6.5 |
-| lt | `multiblimp_lit` | 0.9 | 0.61 | 37.1 |
-| mr | `multiblimp_mar` | 0.1 | 0.60 | 4.0 |
-| nl | `multiblimp_nld` | 1.8 | 0.88 | 12.7 |
-| pl | `multiblimp_pol` | 3.9 | 0.92 | 27.3 |
-| pt | `multiblimp_por` | 1.9 | 0.87 | 5.8 |
-| ro | `multiblimp_ron` | 3.5 | 0.87 | 23.1 |
-| ru | `multiblimp_rus` | 3.3 | 0.85 | 4.0 |
-| sk | `multiblimp_slk` | 2.0 | 0.90 | 31.5 |
-| sl | `multiblimp_slv` | 1.4 | 0.85 | 22.5 |
-| sr | `hellaswag_sr` | 0.1 | 0.78 | 21.3 |
-| sv | `hellaswag_sv` | 0.3 | 0.92 | 19.1 |
-| ta | `multiblimp_tam` | 0.2 | 0.86 | 2.3 |
-| th | `xnli_th` | 0.1 | 0.87 | 4.9 |
-| tr | `multiblimp_tur` | 1.1 | 0.74 | 22.8 |
-| uk | `multiblimp_ukr` | 2.0 | 0.90 | 6.3 |
-| ur | `multiblimp_urd` | 0.2 | 0.77 | 4.3 |
-| vi | `xcopa_vi` | 0.4 | 0.79 | 9.9 |
-| zh | `xstorycloze_zh` | 0.2 | 0.82 | 10.1 |
+| ar | `multiblimp_arb` | 1.6 | 0.83 | 5.4 |
+| bg | `multiblimp_bul` | 2.1 | 0.95 | 3.1 |
+| bn | `multiblimp_ben` | 0.3 | 0.72 | 3.5 |
+| ca | `multiblimp_cat` | 0.2 | 0.96 | 1.3 |
+| cs | `multiblimp_ces` | 3.9 | 0.83 | 16.4 |
+| da | `hellaswag_da` | 0.4 | 0.92 | 6.4 |
+| de | `multiblimp_deu` | 1.2 | 0.83 | 5.9 |
+| el | `multiblimp_ell` | 1.4 | 0.83 | 3.7 |
+| en | `xstorycloze_en` | 0.0 | 0.76 | 0.0 |
+| es | `multiblimp_spa` | 0.4 | 0.90 | 2.5 |
+| et | `multiblimp_est` | 0.0 | 0.62 | 0.2 |
+| fa | `multiblimp_fas` | 1.5 | 0.90 | 5.7 |
+| fi | `multiblimp_fin` | 5.0 | 0.85 | 17.1 |
+| fr | `multiblimp_fra` | 1.0 | 0.80 | 2.2 |
+| he | `multiblimp_heb` | 1.0 | 0.88 | 5.6 |
+| hi | `multiblimp_hin` | 1.9 | 0.75 | 1.4 |
+| hu | `multiblimp_hun` | 4.6 | 0.82 | 30.6 |
+| id | `xstorycloze_id` | 0.5 | 0.90 | 3.4 |
+| it | `multiblimp_ita` | 1.7 | 0.80 | 4.6 |
+| ja | `xwinograd_jp` | 0.6 | 0.87 | 10.5 |
+| ka | `multiblimp_kat` | 0.1 | 0.75 | 1.9 |
+| kk | `multiblimp_kaz` | 0.0 | 0.58 | 1.3 |
+| lt | `multiblimp_lit` | 0.0 | 0.54 | 0.2 |
+| mr | `multiblimp_mar` | 0.2 | 0.42 | 0.0 |
+| nl | `multiblimp_nld` | 2.0 | 0.88 | 5.7 |
+| pl | `multiblimp_pol` | 2.3 | 0.90 | 14.7 |
+| pt | `multiblimp_por` | 0.6 | 0.88 | 2.5 |
+| ro | `multiblimp_ron` | 2.3 | 0.75 | 10.6 |
+| ru | `multiblimp_rus` | 2.1 | 0.87 | 4.5 |
+| sk | `multiblimp_slk` | 1.3 | 0.96 | 14.4 |
+| sl | `multiblimp_slv` | 0.1 | 0.79 | 1.5 |
+| sv | `hellaswag_sv` | 0.5 | 0.95 | 9.6 |
+| ta | `multiblimp_tam` | 0.1 | 0.60 | 0.8 |
+| th | `xnli_th` | 0.3 | 0.81 | 3.7 |
+| tr | `multiblimp_tur` | 1.2 | 0.82 | 13.4 |
+| uk | `multiblimp_ukr` | 2.2 | 0.87 | 6.1 |
+| ur | `multiblimp_urd` | 0.1 | 0.75 | 0.1 |
+| vi | `xcopa_vi` | 0.6 | 0.80 | 5.7 |
+| zh | `xwinograd_zh` | 0.4 | 0.87 | 8.8 |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -1262,7 +1259,7 @@ icon: "⏸️"
 - RQ3 additionally needs the DataDecide-side SNR table — `git lfs pull` first, then re-run
 - The shared universe is small either way: only the English tasks both corpora evaluate
 
-<!-- BEGIN auto:rq7-results (allenai_comparison/analyze.py) -->
+<!-- BEGIN auto:rq7-results (rq07_external_frameworks/analyze.py) -->
 ---
 title: RQ7 — External frameworks
 subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
@@ -1311,7 +1308,7 @@ subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
 </style>
 <!-- END auto:rq8-results -->
 
-<!-- BEGIN auto:rq9-results (benchmark_creation/analyze.py) -->
+<!-- BEGIN auto:rq9-results (rq09_benchmark_design/analyze.py) -->
 ---
 title: RQ9 — Benchmark design
 subtitle: "Results (auto) — per-family SNR, above-random survivors"
@@ -1319,15 +1316,14 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 
 | family | median SNR | n_opts | format |
 |---|---|---|---|
-| `xstorycloze` | 4.38 | 2 | completion |
-| `hellaswag` | 2.92 | 4 | completion |
-| `multiblimp` | 2.78 | 2 | minimal_pair |
-| `xcopa` | 2.17 | 2 | completion |
-| `xwinograd` | 2.05 | 2 | completion |
-| `xnli` | 1.56 | 3 | classification |
-| `paws` | 0.95 | 2 | classification |
-| `arc` | 0.70 | 4 | mcq_question_only |
-| `include_base_44` | 0.19 | 4 | mcq_question_only |
+| `xstorycloze` | 3.50 | 2 | completion |
+| `hellaswag` | 2.74 | 4 | completion |
+| `xwinograd` | 2.71 | 2 | completion |
+| `xcopa` | 2.26 | 2 | completion |
+| `multiblimp` | 2.02 | 2 | minimal_pair |
+| `xnli` | 1.75 | 3 | classification |
+| `arc` | 1.25 | 4 | mcq_question_only |
+| `paws` | 0.69 | 2 | classification |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }

@@ -47,6 +47,31 @@ and rq06 (RQ5); their figures keep the paper's file names (`rq1_scaling`,
   Decision accuracy is `snr.metrics.decision_acc_fast`, the upstream kernel with
   the documented tie fix. Noise is the std over the last 5 checkpoints unless a
   script says seed noise. Figures use the one palette in `style.py`.
+- **Reference size.** 1.7B (`snr.target_size`); the proxies are 90M–1B. Sizes and
+  cells with no information yet (the 90M rung, L15 at 1.7B) stay in every grid
+  as white cells. rq07 alone reads 1B, the largest rung DataDecide has.
+- **Units of training.** Every run trains D(N) = 100 N tokens, five times the
+  Chinchilla-optimal 20 N. A point along a run is written as a multiple of
+  Chinchilla, 1C–5C (20 %–100 % of the run; `grids.chinchilla`); the tables keep
+  the fraction in `frac`.
+- **A table per figure.** Everything a PNG draws is saved as a CSV of the same
+  name. PNGs that show one table from different angles start with the table's
+  name: `early_small.csv` → `early_small.png`, `early_small_by_benchmark.png`,
+  `early_small_by_language.png`; `score_curves.csv` → `score_curves/<lang>.png`.
+  This holds for the `panels.py` / `early_small.py` figures; the older aggregated
+  figures still read tables under other names (listed per RQ below).
+- **Empty cells.** In a grid white means no value (the benchmark does not exist
+  in that language, or the cell is not trained yet) and grey means the
+  above-random gate filtered the value out; in a smallest-level map red means
+  no level reaches it. The line under a figure's title says how a cell is computed.
+- **One page per RQ.** `highlights.png` (+ `highlights.csv`) in each RQ's pool
+  folder condenses the long grids: family-level means, the best and worst
+  benchmarks or languages, and how a benchmark's languages split over the levels.
+- **Per benchmark and per language.** An aggregate over all benchmarks hides
+  which one carries a result, so every aggregated figure has two siblings,
+  `<name>_by_benchmark.png` (bits per byte first, then the benchmarks
+  alphabetically) and `<name>_by_language.png`: one long figure with a cell
+  grid per subplot, drawn by `grids.py` from each folder's `panels.py`.
 
 ## Flow
 
@@ -73,11 +98,17 @@ files under their own directory.
   benchmark is averaged over the cells that trained its language);
   `predictivity_all` for the run curves.
 - **Scripts.** `above_random.py` (gate), `run_apertus.py` (accuracy vs FLOPs,
-  Signal per task), `curves.py` (loss and benchmark accuracy vs fraction of run).
+  Signal per task), `curves.py` (loss and benchmark accuracy vs fraction of run),
+  `panels.py` (the gate per benchmark and per language, score curves per language).
 - **Tables.** `above_random_scores.csv`, `above_random_mask.csv`,
   `acc_vs_flops_signal.csv`.
-- **Figures.** `per_benchmark/<family>.png`, `per_language/<lang>.png` (80
-  panels); `predictivity_all/loss_curves.png`, `benchmark_curves.png`.
+- **Figures.** `highlights.png` (rq00 on one page); `per_benchmark/<family>.png`
+  (every benchmark family and BPB), `per_language/<lang>.png` (every benchmark
+  the language has); `predictivity_all/loss_curves.png`, `benchmark_curves.png`;
+  `first_size_above_random.png` (language × benchmark: smallest size from which
+  the score stays above chance), `gate_margin_by_benchmark.png`,
+  `gate_margin_by_language.png`; `score_curves/<language>.png` (score vs training
+  tokens in Chinchilla multiples, one line per size, one subplot per benchmark).
 
 ### rq01 — What scales predictably? (A, paper RQ1)
 
@@ -88,25 +119,39 @@ files under their own directory.
   cells from 175M up, one series per (task, L).
 - **Scripts.** `analyze.py` (log-N fits per task, loss power law per
   (L, arch, scheme)), `scaling_law_error.py` (per-language BPB prediction error
-  by largest proxy rung in the fit).
+  by largest proxy rung in the fit), `panels.py`.
 - **Tables.** `rq1_fits.csv`, `rq1_families.csv`, `scaling_fit.csv`,
   `scaling_law_error.csv`, `facts.json`.
 - **Figures.** `rq1_scaling.png/.pdf` (paper), `scaling_fit.png`,
-  `scaling_law_error.png`.
+  `scaling_law_error.png`, `fit_r2_by_benchmark.png`, `fit_r2_by_language.png`.
 
 ### rq02 — Decision accuracy (A)
 
 - **Intention.** The ground truth of the study: per task, does the ranking of
-  the design variants at a small size (**DA-size**), or at 20/40/60/80 % of a
-  run (**DA-ckpt**), match the ranking at the reference?
+  the design variants at a small size (**DA-size**), at 20/40/60/80 % of a
+  run (**DA-ckpt**), or early *and* small at once, match the ranking at the
+  reference's final checkpoint? How small, how early and how cheaply can the
+  ranking be called, per language and benchmark?
 - **Setup.** `predictivity` (plus the seed pools for the holdout). Every design
   variant at a size is ranked, so L, depth and scheme are pooled in one ranking.
   DA is not gated; the gate is applied when it is summarised.
 - **Scripts.** `compute_da.py` (per-task DA and the pair count behind every
-  cell), `da_per_benchmark.py` (family roll-ups, README blocks, appendix slides).
+  cell, and the early-and-small grid: every proxy size at 1C–5C of training
+  against the reference final), `da_per_benchmark.py` (family roll-ups, README
+  blocks, appendix slides), `early_small.py` (the grid's figures and the
+  smallest-safe maps; safe = DA ≥ 0.75 over ≥ 3 pairs, held at every larger level).
 - **Tables.** `da_per_task.csv`, `da_n_pairs_per_task.csv`,
-  `da_per_benchmark.csv`, `da_per_benchmark_size.csv`, `da_per_benchmark_ckpt.csv`.
-- **Figures.** `da_size_by_family.png`.
+  `da_per_benchmark.csv`, `da_per_benchmark_size.csv`, `da_per_benchmark_ckpt.csv`,
+  `da_early_small_per_task.csv`, `early_small_summary.csv`, and one table per
+  figure (`early_small.csv`, `da_size.csv`, `safe_size.csv`, `safe_checkpoint.csv`,
+  `safe_flops.csv`, `highlights.csv`).
+- **Figures.** `highlights.png` (rq02 on one page); `da_size_by_family.png`; `early_small.png` (BPB and all
+  benchmarks), `early_small_by_benchmark.png`, `early_small_by_language.png`,
+  `da_size_by_benchmark.png`, `da_size_by_language.png`; language × benchmark
+  maps `safe_size.png` (smallest size that predicts the 1.7B ranking),
+  `safe_checkpoint.png` (fewest training tokens, in Chinchilla multiples, that predict the size's own
+  final ranking, one subplot per size), `safe_flops.png` (cheapest share of the
+  1.7B run's FLOPs that predicts its ranking).
 
 ### rq03 — Noise and SNR (B)
 
@@ -126,7 +171,9 @@ files under their own directory.
   `predictivity_seeds_train__vs__predictivity_seeds_test/` with
   `headline_metrics.csv`, `per_language_agreement_da_{size,ckpt}.csv`,
   `variant_r_train_vs_test.csv`, `top_variants_train_vs_test.csv`, `summary.md`.
-- **Figures.** `effect_vs_noise.png`; holdout `per_language_agreement_da_{size,ckpt}.png`,
+- **Figures.** `effect_vs_noise.png`; `snr_by_benchmark.png`, `snr_by_language.png`,
+  `effect_over_seed_by_benchmark.png`, `effect_over_seed_by_language.png`
+  (`panels.py`); holdout `per_language_agreement_da_{size,ckpt}.png`,
   `variant_r_train_vs_test.png`.
 
 ### rq04 — Surrogates (B, paper RQ3)
@@ -147,7 +194,9 @@ files under their own directory.
   `best_variant_per_language.csv`, `best_variant_family_per_language.csv`,
   `variant_clusters.csv`, `top_benchmarks_per_language.csv`,
   `rq3_surrogates.csv`, `facts.json`.
-- **Figures.** `top_variants_overall.png`, `best_variant_per_language.png`,
+- **Figures.** `snr_definition_by_language.png` (SNR definition × language:
+  correlation with DA), `surrogates_by_benchmark.png`, `surrogates_by_language.png`
+  (`panels.py`); `top_variants_overall.png`, `best_variant_per_language.png`,
   `best_variant_family_per_language.png`, `top_benchmarks_per_language.png`,
   `variant_correlation_matrix.png`, `da_size_vs_da_ckpt.png`,
   `da_size/` and `da_ckpt/<bucket>/` scatter grids and heat maps,
@@ -160,16 +209,19 @@ files under their own directory.
   prefer the level the reference prefers, how small can the proxy be, how early
   in its run, and is the effect larger than seed noise at all?
 - **Setup.** `predictivity_all`. Reference = the largest size trained at both
-  levels at that L, final checkpoint; proxy = every smaller size at 20–100 % of
-  its run. Populations: BPB on trained languages, on untrained languages, on
+  levels at that L, final checkpoint; proxy = every smaller size at 1C–5C of
+  training. Populations: BPB on trained languages, on untrained languages, on
   all, benchmark tasks, macro BPB. Items the reference ties are dropped.
 - **Scripts.** `analyze.py` (decision table, effect at the reference in seed
   standard deviations), `early_decision.py` (the two planned decisions, proxy
-  size × fraction of run, mean over L).
+  size × Chinchilla multiple, mean over L).
 - **Tables.** `intervention_da.csv`, `rq4_da_by_intervention.csv`,
   `rq4_effect_vs_seed.csv`, `facts.json`; `rq2_decisions.csv`,
   `rq2_early_small.csv`, `early_decision_facts.json`.
-- **Figures.** `intervention_da.png`, `rq4_interventions.png/.pdf` (paper),
+- **Figures.** `intervention_da_by_benchmark.png`, `intervention_da_by_language.png`,
+  `intervention_da_by_benchmark_early.png`, `intervention_da_by_language_early.png`
+  (`panels.py`, from `intervention_da_by_benchmark.csv` / `_by_language.csv`);
+  `intervention_da.png`, `rq4_interventions.png/.pdf` (paper),
   `rq2_early_small.png/.pdf` (paper).
 
 ### rq06 — Language transfer (C, paper RQ5)
@@ -180,7 +232,8 @@ files under their own directory.
   prediction, and rq05's decision table restricted to never-trained languages.
 - **Scripts.** `analyze.py`.
 - **Tables.** `rq5_transfer.csv`, `rq5_transfer_summary.csv`, `facts.json`.
-- **Figures.** `rq5_transfer.png/.pdf` (paper), `bpb_curves.png`.
+- **Figures.** `rq5_transfer.png/.pdf` (paper), `bpb_curves.png`,
+  `transfer_error_by_L.png` (language × rungs used, one subplot per L).
 
 ### rq07 — External frameworks (C)
 
@@ -190,7 +243,10 @@ files under their own directory.
   `allenai_snr_variants_per_task.csv`, built once from DataDecide. The headline
   variant is rq04's choice; with three shared tasks after the gate the
   correlations are reported as not comparable.
-- **Scripts.** `build_allenai_variants.py`, `analyze.py`.
+- **Scripts.** `build_allenai_variants.py`, `analyze.py`. The headline is the
+  matched 1B↔1B pair; 1.7B↔1B is a row of the size sweep. The `allenai` group of
+  `configs/tasks.json` lists the harness tasks to evaluate so that the shared
+  set grows from 3 to 11 families.
 - **Tables.** `task_overlap.csv`, `pearson_r_per_variant.csv`,
   `pearson_r_size_sweep.csv`, `top_apertus.csv`, `top_allenai.csv`,
   `agreement.csv`, `shared_task_agreement.csv`, `agreement.md`.
@@ -211,7 +267,8 @@ files under their own directory.
 - **Tables.** `per_benchmark.csv`, `global_mmlu_full.csv`,
   `global_mmlu_full_per_language.csv`, `summary.csv` (with `null_snr_p95`,
   `gain_over_null`).
-- **Figures.** `per_benchmark_plots/<family>.png`,
+- **Figures.** `gain_over_null.png` (every swept cell in one grid),
+  `per_benchmark_plots/<family>.png`,
   `global_mmlu_full_subjects.png`, `global_mmlu_full_per_language_plots/<lang>.png`.
 
 ### rq09 — Benchmark design (D)
@@ -223,7 +280,8 @@ files under their own directory.
   feature, Spearman for the length features (`length_features.csv`).
 - **Scripts.** `analyze.py`, `length_features.py`.
 - **Tables.** `per_task_snr.csv`, `per_family_snr.csv`, `group_stats.csv`.
-- **Figures.** `snr_per_family_ranked.png`, `snr_by_curation_process.png`,
+- **Figures.** `snr_family_by_language.png` (benchmark × language),
+  `snr_per_family_ranked.png`, `snr_by_curation_process.png`,
   `snr_by_curation_per_task.png`, `snr_by_data_source.png`, `snr_by_format.png`,
   `snr_by_n_options.png`, `snr_by_passage.png`, `snr_vs_random_baseline.png`,
   `snr_vs_context_len.png`, `snr_vs_option_len.png`,
@@ -231,7 +289,8 @@ files under their own directory.
 
 ## Other files here
 
-- `paths.py` (folder map), `utils.py` (pools, ladder-frame helpers),
+- `paths.py` (folder map), `utils.py` (pools, ladder-frame helpers), `grids.py`
+  (the per-benchmark / per-language panel figures and the smallest-level maps),
   `autodoc.py` (README and slide block writer), `style.py` (palette).
 - `report_figures/make_figures.py` — publication figures fig1–fig5 from the
   tables above.

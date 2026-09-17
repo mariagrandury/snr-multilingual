@@ -149,8 +149,8 @@ Everything comes from the decision table above: with two levels,
 decision accuracy is the share of population items on which the proxy
 prefers the level the reference prefers. The reference is the largest size
 trained at both levels, at its final checkpoint; the proxy is every smaller
-size, read at the checkpoint nearest 20, 40, 60, 80 and 100 % of its own
-run — one grid answers both halves of the question, how small and how
+size, read at the checkpoint nearest 1C, 2C, 3C, 4C and 5C of training (C = the
+Chinchilla-optimal 20 tokens per parameter; 5C is the full run) — one grid answers both halves of the question, how small and how
 early. Two populations: the per-language BPB of the languages both levels
 train, and the benchmark tasks both levels were evaluated on. A cell needs
 at least three items.
@@ -169,29 +169,29 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 
 - **depth (deep vs shallow), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.00, 350M 0.51; no proxy reaches 0.75.
 - **depth (deep vs shallow), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.49, 350M 0.48, 600M 0.51; no proxy reaches 0.75.
-- **language lists (A vs B), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.40, 350M 1.00, 600M 0.94, 1B 0.65; smallest proxy at ≥ 0.75: **350M**, which reaches it at 20 % of its run.
+- **language lists (A vs B), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.40, 350M 1.00, 600M 0.94, 1B 0.65; smallest proxy at ≥ 0.75: **350M**, which reaches it at 1C of training (5C = the full run).
 - **language lists (A vs B), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.46, 350M 0.51, 600M 0.45, 1B 0.38; no proxy reaches 0.75.
 
-**depth (deep vs shallow) — per-language bits per byte** (rows: proxy size; columns: fraction of the proxy's run; mean over L of the per-L agreement):
+**depth (deep vs shallow) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 20 % | 40 % | 60 % | 80 % | 100 % |
+| proxy | 1C | 2C | 3C | 4C | 5C |
 |---|---|---|---|---|---|
 | 175M | 0.50 | 0.01 | 0.00 | 0.00 | 0.00 |
 | 350M | 0.74 | 0.83 | 0.55 | 0.69 | 0.51 |
 | 600M | 1.00 | 1.00 | 1.00 | 0.99 |  |
 
-**depth (deep vs shallow) — benchmark tasks** (rows: proxy size; columns: fraction of the proxy's run; mean over L of the per-L agreement):
+**depth (deep vs shallow) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 20 % | 40 % | 60 % | 80 % | 100 % |
+| proxy | 1C | 2C | 3C | 4C | 5C |
 |---|---|---|---|---|---|
 | 175M | 0.39 | 0.45 | 0.47 | 0.49 | 0.49 |
 | 350M | 0.50 | 0.49 | 0.48 | 0.49 | 0.48 |
 | 600M | 0.46 | 0.45 | 0.53 | 0.51 | 0.51 |
 | 1.7B | 0.58 | 0.46 | 0.55 | 0.51 |  |
 
-**language lists (A vs B) — per-language bits per byte** (rows: proxy size; columns: fraction of the proxy's run; mean over L of the per-L agreement):
+**language lists (A vs B) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 20 % | 40 % | 60 % | 80 % | 100 % |
+| proxy | 1C | 2C | 3C | 4C | 5C |
 |---|---|---|---|---|---|
 | 175M | 0.86 | 0.68 | 0.40 | 0.40 | 0.40 |
 | 350M | 0.88 | 0.94 | 1.00 | 0.97 | 1.00 |
@@ -199,9 +199,9 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 | 1B | 0.87 | 0.75 | 0.75 | 0.58 | 0.65 |
 | 1.7B | 1.00 | 1.00 | 1.00 | 0.98 |  |
 
-**language lists (A vs B) — benchmark tasks** (rows: proxy size; columns: fraction of the proxy's run; mean over L of the per-L agreement):
+**language lists (A vs B) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 20 % | 40 % | 60 % | 80 % | 100 % |
+| proxy | 1C | 2C | 3C | 4C | 5C |
 |---|---|---|---|---|---|
 | 175M | 0.46 | 0.50 | 0.47 | 0.45 | 0.46 |
 | 350M | 0.48 | 0.48 | 0.46 | 0.49 | 0.51 |
@@ -222,8 +222,9 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
   (the loader's default): 5 late checkpoints span the final 25 % of a
   20-checkpoint run and 12.5 % of a 40-checkpoint one
   ([`plan/1b-models.md`](../../../../plan/1b-models.md)).
-- Reference = 1B at L ∈ {15, 50} and, until the 1.7B row lands, everywhere.
-  The `reference_size` column names it per cell.
+- The reference is the largest size trained at both levels: 1.7B wherever it
+  exists, 1B where it does not yet (L15, and the temperature and
+  second-language decisions). The `reference_size` column names it per cell.
 
 ## Files
 
@@ -235,3 +236,19 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 - `…/rq2_decisions.csv`, `rq2_early_small.csv`, `rq2_early_small.png/.pdf`,
   `early_decision_facts.json` — the paper's RQ2 figure (`early_decision.py`).
 - `…/intervention_da.png`.
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+## Per benchmark and per language
+
+The decision table and the early read above, without pooling the benchmarks (`predictivity_all` pool). Language aggregates and per-subject facets are left out here (about 60 % of the pooled benchmark items remain), and a language's subplot averages its BPB item with its benchmark items. Regenerate with `python analysis/rq05_design_decisions/panels.py --pool predictivity_all`. White cells have no value; each figure's table sits next to it under the same name (`intervention_da_by_<unit>.csv`).
+
+![rq05 in one figure](pretraining/predictivity_all/highlights.png)
+
+![Decisions per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark.png)
+
+![Early and small per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark_early.png)
+
+![Decisions per language](pretraining/predictivity_all/intervention_da_by_language.png)
+
+![Early and small per language](pretraining/predictivity_all/intervention_da_by_language_early.png)
+<!-- END auto:panels -->

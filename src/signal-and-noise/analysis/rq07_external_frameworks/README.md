@@ -28,7 +28,10 @@ Outputs live under `pretraining/<pool>/` for the ladder pools (`predictivity`,
 compute, over the shared English tasks, the cross-corpus Pearson r of
 log₁₀(SNR@1B) (values) and Spearman ρ (rank order), reporting the
 best-correlating variant, plus the same at every matched size pair
-(90M↔90M, 175M↔150M, 350M↔300M, 600M↔750M, 1B↔1B). The AllenAI side is the
+(175M↔150M, 350M↔300M, 600M↔750M, 1B↔1B, and the unmatched 1.7B↔1B as the
+last row of the size sweep). The headline stays the matched 1B↔1B pair: the
+study's reference is 1.7B, but DataDecide stops at 1B and SNR grows with size,
+so an unmatched headline would mix a size effect into the agreement. The AllenAI side is the
 DataDecide ladder (25 data recipes at each size), so both corpora's "signal"
 is a data-recipe dispersion at fixed size; on our ladder the recipes are the
 language settings (and the scheme), which is a narrower axis — read a low
@@ -104,6 +107,17 @@ comparison surface:
 | OLMES core knowledge / commonsense | 10 | `:mc` forms of boolq, openbookqa, piqa, commonsense_qa, socialiqa, winogrande, truthfulqa_mc1. |
 | Generative QA | 8 | `drop`, `squad`, `triviaqa`, `medmcqa`, `jeopardy`. |
 | `arc_*:mc`, `hellaswag:mc`, Code | 7 | Multi-choice ARC/HellaSwag; `codex_humaneval`, `mbpp` (need code sandboxing). |
+
+**The harness tasks to evaluate on the ladder** are registered as the `allenai`
+group of `configs/tasks.json` (lm-eval names, all rank-classification, all
+scoreable by a sub-2B model): `arc_easy`, `arc_challenge`, `hellaswag`, `mmlu`
+(the English original, which removes the Global-MMLU aliasing caveat), `piqa`,
+`openbookqa`, `commonsense_qa` (DataDecide `csqa`), `social_iqa` (`socialiqa`),
+`winogrande`, `boolq`, `medmcqa`. That is 11 shared task families (plus the 57
+MMLU subjects) against 3 today. DataDecide's generative and code tasks
+(`gsm8k`, `minerva_*`, `drop`, `squad`, `triviaqa`, `jeopardy`, `mbpp`,
+`codex_humaneval`), BBH, AGI Eval and the `:mc` formats sit at the floor below
+2B parameters and would only add gated-out rows.
 
 Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).

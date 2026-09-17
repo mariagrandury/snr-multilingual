@@ -82,3 +82,13 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
   `rq5_transfer.png/.pdf` — the paper's RQ5 table and figure.
 - `…/bpb_curves.png` — per-cell per-language BPB curves.
 - `…/facts.json` — the numbers the paper quotes.
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+## Per benchmark and per language
+
+The summary above, per language (`predictivity_all` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool predictivity_all`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq06 in one figure](pretraining/predictivity_all/highlights.png)
+
+![Transfer error per language and L](pretraining/predictivity_all/transfer_error_by_L.png)
+<!-- END auto:panels -->

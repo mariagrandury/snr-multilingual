@@ -13,7 +13,7 @@
 - **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.73 → 4.42** (**+1.69**) with `multiblimp_deu|multiblimp_eng`.
 - **`multiblimp` 600M (per_benchmark)** — a subset beats the full set: SNR **2.76 → 4.06** (**+1.30**) with `multiblimp_rus`.
 - **`hellaswag` 1B (per_benchmark)** — a subset beats the full set: SNR **2.53 → 3.83** (**+1.30**) with `hellaswag_ru|hellaswag_ca|hellaswag_sk`.
-- **Median gain by case** — per_benchmark 0.38; global_mmlu_full_subjects  (SNR units; a subset only helps where the gain clears the seed noise reported in rq06).
+- **Median gain by case** — per_benchmark 0.38; global_mmlu_full_subjects  (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
 - **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **17 of 35** swept cells beat the null's 95th percentile: `multiblimp` 350M, `multiblimp` 600M, `hellaswag` 1B, `bpb` 175M, `bpb` 600M.
 <!-- END auto:highlight -->
 
@@ -173,3 +173,13 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `global_mmlu_full_per_language.csv` (Case 3) + their `*_plots/`.
 - `per_sample/variance_prefilter/analysis/` — Option-D size distribution,
   cross-size Jaccard/Spearman, `highlights.md`.
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+Every swept cell in one grid (`predictivity` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq08 in one figure](pretraining/predictivity/highlights.png)
+
+![Gain over the null](pretraining/predictivity/gain_over_null.png)
+<!-- END auto:panels -->

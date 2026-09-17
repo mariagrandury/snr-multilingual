@@ -9,9 +9,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **9 families** that clear the gate — most of them 2-option.
-- **Among survivors, task format, passage flag reach p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 1.12, p = 0.570; source origin H = 0.27, p = 0.606; option count H = 1.09, p = 0.297; task format H = 6.00, p = 0.050; passage flag H = 4.20, p = 0.040. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
-- **Per-task curation test** (tasks as observations, 114 tasks of which 57 are `multiblimp`): H = 5.89, p = 0.117.
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **8 families** that clear the gate — most of them 2-option.
+- **Among survivors, passage flag reaches p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 0.00, p = 1.000; source origin H = 0.11, p = 0.739; option count H = 0.00, p = 1.000; task format H = 3.43, p = 0.064; passage flag H = 4.00, p = 0.046. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
+- **Per-task curation test** (tasks as observations, 119 tasks of which 57 are `multiblimp`): H = 1.74, p = 0.629.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -32,7 +32,8 @@ before this analysis, so the families seen here are the gate's survivors.
 
 ## Methodology
 
-Three phases, all on the per-family `snr_mpd_1B` signal (median across a
+Three phases, all on the per-family `snr_mpd_<reference>` signal (the reference
+size, 1.7B; the largest bucket in the table while it is missing) (median across a
 family's per-language aggregate tasks):
 
 - **Phase 0 — curation process.** Group families by how their items were
@@ -63,26 +64,25 @@ MRC) is low — what the prompt *does* with the passage is what counts.
 lm-eval task READMEs); the `FAMILY_META` dict in [analyze.py](analyze.py) is its
 machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. `global_mmlu` (Lite, one Apertus model) and `arc_de/fr` /
-`hellaswag_de/fr` are NaN at 1B and excluded.
+`hellaswag_de/fr` were NaN at the reference when this was written and excluded.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
 Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq09_benchmark_design/analyze.py --pool predictivity`.
 
-**Per-family SNR ranking** — median `snr_mpd_1B` over each family's per-language tasks, above-random survivors only:
+**Per-family SNR ranking** — median `snr_mpd_1.7B` over each family's per-language tasks, above-random survivors only:
 
 | family | median SNR | n | format | n_opts |
 |---|---|---|---|---|
-| `xstorycloze` | 4.38 | 7 | completion | 2 |
-| `hellaswag` | 2.92 | 20 | completion | 4 |
-| `multiblimp` | 2.78 | 57 | minimal_pair | 2 |
-| `xcopa` | 2.17 | 6 | completion | 2 |
-| `xwinograd` | 2.05 | 6 | completion | 2 |
-| `xnli` | 1.56 | 13 | classification | 3 |
-| `paws` | 0.95 | 2 | classification | 2 |
-| `arc` | 0.70 | 2 | mcq_question_only | 4 |
-| `include_base_44` | 0.19 | 1 | mcq_question_only | 4 |
+| `xstorycloze` | 3.50 | 7 | completion | 2 |
+| `hellaswag` | 2.74 | 17 | completion | 4 |
+| `xwinograd` | 2.71 | 6 | completion | 2 |
+| `xcopa` | 2.26 | 7 | completion | 2 |
+| `multiblimp` | 2.02 | 57 | minimal_pair | 2 |
+| `xnli` | 1.75 | 13 | classification | 3 |
+| `arc` | 1.25 | 8 | mcq_question_only | 4 |
+| `paws` | 0.69 | 4 | classification | 2 |
 
 ![Per-family SNR ranking](pretraining/predictivity/snr_per_family_ranked.png)
 
@@ -90,11 +90,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | axis | H | p |
 |---|---|---|
-| n_options | 1.09 | 0.30 |
-| format | 6.00 | 0.05 |
-| data source | 0.27 | 0.61 |
-| curation method | 1.12 | 0.57 |
-| reading passage | 4.20 | 0.04 |
+| n_options | 0.00 | 1.00 |
+| format | 3.43 | 0.06 |
+| data source | 0.11 | 0.74 |
+| curation method | 0.00 | 1.00 |
+| reading passage | 4.00 | 0.05 |
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)
@@ -221,3 +221,13 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 - `…/snr_by_*.png` — SNR distribution by curation, format, option count,
   passage, data source; `snr_per_family_ranked.png`; `snr_vs_random_baseline.png`;
   `snr_vs_length_features.png`.
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+The family medians above, per language (`predictivity` pool). Regenerate with `python analysis/rq09_benchmark_design/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq09 in one figure](pretraining/predictivity/highlights.png)
+
+![SNR per benchmark and language](pretraining/predictivity/snr_family_by_language.png)
+<!-- END auto:panels -->

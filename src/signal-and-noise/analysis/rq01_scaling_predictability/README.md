@@ -109,3 +109,15 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; trained lan
   language, ladder top): fitted α, predicted vs observed reference BPB,
   relative error (`scaling_law_error.py`).
 - `…/facts.json` — the numbers the paper quotes (merged into `rq_facts.json`).
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+## Per benchmark and per language
+
+The family medians above, without the aggregation (`predictivity_all` pool). Regenerate with `python analysis/rq01_scaling_predictability/panels.py --pool predictivity_all`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq01 in one figure](pretraining/predictivity_all/highlights.png)
+
+![Fit R² per benchmark](pretraining/predictivity_all/fit_r2_by_benchmark.png)
+
+![Fit R² per language](pretraining/predictivity_all/fit_r2_by_language.png)
+<!-- END auto:panels -->

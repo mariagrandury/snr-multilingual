@@ -11,7 +11,9 @@
 <!-- BEGIN auto:highlight (da_per_benchmark.py --pool predictivity) -->
 ## Highlighted result
 
-- **DA-size, proxy → 1B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 175M → 1B 0.60 / 0.77; 350M → 1B 0.68 / 0.84; 600M → 1B 0.72 / 0.86.
+- **DA-size, proxy → 1.7B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 175M → 1.7B 0.63 / 0.80; 350M → 1.7B 0.73 / 0.81; 600M → 1.7B 0.72 / 0.85; 1B → 1.7B 0.75 / 0.85.
+- **DA-size of `bpb_macro`** (one task, kept out of the means above): 175M 0.86; 350M 0.90; 600M 1.00; 1B 0.93.
+- **DA-size of `train_loss`** (one task, kept out of the means above): 175M 0.84; 350M 0.91; 600M 0.85; 1B 0.87.
 - **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 175M 80 % (0.86).
 <!-- END auto:highlight -->
 
@@ -25,7 +27,7 @@ separate models). The cross-size identity is the cell's `family`
 present at two sizes is one pair.
 
 - **DA-size** — `decision_acc_size_<small>`: the families' ranking at
-  `<small>`'s final checkpoint vs at the target size's (1B) final checkpoint;
+  `<small>`'s final checkpoint vs at the reference size's (1.7B) final checkpoint;
   `decision_acc_size_<a>_to_<b>` for every other bucket pair with ≥ 2 shared
   families (90M→175M … 1B→1.7B). Multilingual tasks are only evaluated on
   cells that train the language, so each task's pair set is the families
@@ -63,9 +65,10 @@ Numbers from the `predictivity` pool (`da_per_task.csv`, pairs from `da_n_pairs_
 
 | comparison | benchmarks | n | pairs | BPB | n |
 |---|---|---|---|---|---|
-| 175M → 1B | 0.60 | 61 | 15 | 0.77 | 101 |
-| 350M → 1B | 0.68 | 79 | 21 | 0.84 | 101 |
-| 600M → 1B | 0.72 | 105 | 28 | 0.86 | 101 |
+| 175M → 1.7B | 0.63 | 61 | 3 | 0.80 | 100 |
+| 350M → 1.7B | 0.73 | 79 | 10 | 0.81 | 100 |
+| 600M → 1.7B | 0.72 | 105 | 15 | 0.85 | 100 |
+| 1B → 1.7B | 0.75 | 116 | 6 | 0.85 | 100 |
 
 ![DA-size by family](pretraining/predictivity/da_size_by_family.png)
 
@@ -126,3 +129,55 @@ them.
   for rq03).
 - `…/da_per_benchmark.csv`, `da_per_benchmark_size.csv`,
   `da_per_benchmark_ckpt.csv` — long and wide per-(language, benchmark) views.
+
+<!-- BEGIN auto:early-small (early_small.py --pool predictivity) -->
+## Early and small, as a ranking
+
+Numbers from the `predictivity` pool: every design variant at a proxy size, read at 1C–5C of training (C = the Chinchilla-optimal 20 tokens per parameter; every run trains 5C, so 1C is 20 % of it), ranked against the same variants at the 1.7B final checkpoint (the 5C column is DA-size, the 1.7B row is that size's DA-ckpt). A benchmark task counts only where it clears chance at the proxy size and at 1.7B. Regenerate with `python analysis/rq02_decision_accuracy/early_small.py --pool predictivity`.
+
+- **bpb** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **175M at 2C** (0.76).
+- **all benchmarks** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **1B at 2C** (0.77).
+- **Smallest safe size per (benchmark, language)** — never: 75, 175M: 55, 1B: 29, 600M: 27, 350M: 22 of 208 cells.
+
+![rq02 in one figure](pretraining/predictivity/highlights.png)
+
+**bpb** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 100 tasks):
+
+| proxy | 1C | 2C | 3C | 4C | 5C |
+|---|---|---|---|---|---|
+| 90M |  |  |  |  |  |
+| 175M | 0.70 | 0.76 | 0.78 | 0.80 | 0.80 |
+| 350M | 0.77 | 0.80 | 0.80 | 0.82 | 0.81 |
+| 600M | 0.83 | 0.83 | 0.84 | 0.86 | 0.85 |
+| 1B | 0.84 | 0.84 | 0.83 | 0.85 | 0.85 |
+| 1.7B | 0.83 | 0.86 | 0.88 | 0.89 |  |
+
+**all benchmarks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 124 tasks):
+
+| proxy | 1C | 2C | 3C | 4C | 5C |
+|---|---|---|---|---|---|
+| 90M |  |  |  |  |  |
+| 175M | 0.63 | 0.60 | 0.66 | 0.61 | 0.63 |
+| 350M | 0.66 | 0.67 | 0.69 | 0.70 | 0.73 |
+| 600M | 0.70 | 0.71 | 0.71 | 0.75 | 0.73 |
+| 1B | 0.72 | 0.77 | 0.75 | 0.80 | 0.76 |
+| 1.7B | 0.73 | 0.75 | 0.77 | 0.80 |  |
+
+![Early and small](pretraining/predictivity/early_small.png)
+
+![Early and small per benchmark](pretraining/predictivity/early_small_by_benchmark.png)
+
+![Early and small per language](pretraining/predictivity/early_small_by_language.png)
+
+**Smallest safe level per language and benchmark** (DA ≥ 0.75 over ≥ 3 pairs, held at every larger level — for FLOPs, at every costlier (size, checkpoint) cell; red = never, grey = filtered out by the above-random gate, white = no value). Each figure's table sits next to it under the same name:
+
+![Smallest safe size](pretraining/predictivity/safe_size.png)
+
+![Smallest safe checkpoint](pretraining/predictivity/safe_checkpoint.png)
+
+![Smallest safe FLOPs](pretraining/predictivity/safe_flops.png)
+
+![DA-size per benchmark](pretraining/predictivity/da_size_by_benchmark.png)
+
+![DA-size per language](pretraining/predictivity/da_size_by_language.png)
+<!-- END auto:early-small -->

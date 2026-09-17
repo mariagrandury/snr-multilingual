@@ -13,8 +13,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `global_piqa_nonparallel_cloze`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1B.
-- **Above-random gate.** Of **462 benchmarks, 128 clear chance at ≥1 size** and 116 at 1B (334 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `arc`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
+- **Above-random gate.** Of **462 benchmarks, 128 clear chance at ≥1 size** and 119 at 1.7B (334 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -24,7 +24,7 @@ FLOPs (log-x, `6 × (N_non_emb + d·V) × D`), one curve per language setting
 (`plotted_mixes` in the `snr` config: L1 … L100, deep, scheme A, seed 1904)
 and per size 90M–1.7B. Tasks are parent-aggregated (subjects collapse into the
 parent; languages stay distinct); each task's **Signal** = (max−min)/mean of
-the per-setting final scores at the target size (1B, or the largest size with
+the per-setting final scores at the reference size (1.7B, or the largest size with
 data); only the top-3 families by Signal get curve grids. The 36-sweep pools
 still draw their three data mixtures and overlay the external models to 70B.
 
@@ -92,21 +92,21 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `global_piqa_parallel_cloze_apc_arab_syri` | global_piqa_parallel_cloze | ar | 0.780 |
-| `lambada_openai_mt_it` | lambada_openai_mt | it | 0.617 |
-| `lambada_openai_mt_de` | lambada_openai_mt | de | 0.596 |
-| `lambada_openai_mt_es` | lambada_openai_mt | es | 0.563 |
-| `global_piqa_parallel_cloze_hin_deva` | global_piqa_parallel_cloze | hi | 0.541 |
+| `global_piqa_parallel_cloze_bul_cyrl` | global_piqa_parallel_cloze | bg | 0.840 |
+| `global_piqa_parallel_cloze_fra_latn_cana` | global_piqa_parallel_cloze | fr | 0.659 |
+| `global_piqa_parallel_cloze_hin_deva` | global_piqa_parallel_cloze | hi | 0.658 |
+| `global_piqa_parallel_cloze_swe_latn` | global_piqa_parallel_cloze | sv | 0.558 |
+| `global_piqa_parallel_cloze_cmn_hans` | global_piqa_parallel_cloze | zh | 0.543 |
 
 ![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/lambada_openai_mt.png)
 
 **Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
-| options | chance | above ≥1 size | above @1B |
+| options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 84 / 192 | 80 / 192 |
+| 2 | 0.50 | 84 / 192 | 81 / 192 |
 | 3 | 0.33 | 13 / 18 | 13 / 18 |
-| 4 | 0.25 | 31 / 252 | 23 / 252 |
+| 4 | 0.25 | 31 / 252 | 25 / 252 |
 <!-- END auto:results -->
 
 <!-- BEGIN auto:curves (curves.py --pool predictivity_all) -->
@@ -213,3 +213,21 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 - `…/per_language/<lang>.png` — per language, subplots = top-3 families.
 - `pretraining/predictivity_all/loss_curves.png`, `benchmark_curves.png` — the
   ladder's curves on the analysis' cells (`curves.py`).
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+The gate and the curves without the aggregation (`predictivity` pool). Regenerate with `python analysis/rq00_gate_and_curves/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq00 in one figure](pretraining/predictivity/highlights.png)
+
+![Smallest size above chance](pretraining/predictivity/first_size_above_random.png)
+
+![Margin above chance per benchmark](pretraining/predictivity/gate_margin_by_benchmark.png)
+
+![Margin above chance per language](pretraining/predictivity/gate_margin_by_language.png)
+
+Score along the run, one figure per language (50 languages, one subplot per benchmark, one line per size): `pretraining/predictivity/score_curves/<language>.png`, e.g.
+
+![Score curves, German](pretraining/predictivity/score_curves/de.png)
+<!-- END auto:panels -->
