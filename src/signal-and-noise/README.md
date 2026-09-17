@@ -46,8 +46,9 @@ uses is declared per `source` in `configs/models.json` (`loader: ladder`).
 | `predictivity_all` | every trained cell, all seeds and all five schemes | rq01, rq03, rq05 and rq06: one intervention at a time against its own baseline |
 | `seeds_*`, `custom_swissai_hf`, `external` | the 36-sweep and the external models | committed history; still runnable |
 
-The size axis (`snr` section of `configs/models.json`): proxies 90M–600M,
-target 1B, 1.7B enters through the cross-size DA pairs; ckpt-DA reads early
+The size axis (`snr` section of `configs/models.json`): proxies 90M–1B,
+reference 1.7B (cells with no information yet, the 90M rung and L15 at 1.7B,
+stay blank rather than being dropped); ckpt-DA reads early
 checkpoints at 20/40/60/80 % of each run (1×C … 4×C); late-window noise over
 the last 5 checkpoints.
 

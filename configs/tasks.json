@@ -401,7 +401,8 @@
       "benchmark": "commonsense_qa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 5
     },
     "cultural_bench_easy_argentina": {
       "language": "es",
@@ -1543,7 +1544,8 @@
       "benchmark": "mmlu",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "mmlu_flan_cot_zeroshot": {
       "language": "en",
@@ -1619,7 +1621,8 @@
       "benchmark": "openbookqa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 4
     },
     "paws_en": {
       "language": "en",
@@ -1668,7 +1671,8 @@
       "benchmark": "piqa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "polyglotoxicitypromptsllama_small_english": {
       "language": "en",
@@ -1717,7 +1721,8 @@
       "benchmark": "social_iqa",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 3
     },
     "squadv2": {
       "language": "en",
@@ -1885,7 +1890,8 @@
       "benchmark": "winogrande",
       "stages": [
         "pretraining"
-      ]
+      ],
+      "n_options": 2
     },
     "xcopa": {
       "language": "multi",
@@ -4855,6 +4861,22 @@
       "stages": [
         "pretraining"
       ]
+    },
+    "boolq": {
+      "language": "en",
+      "benchmark": "boolq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2
+    },
+    "medmcqa": {
+      "language": "en",
+      "benchmark": "medmcqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4
     }
   },
   "groups": {
@@ -5076,6 +5098,19 @@
       "global_mmlu_full_tr",
       "global_mmlu_full_vi",
       "global_mmlu_full_zh"
+    ],
+    "allenai": [
+      "arc_easy",
+      "arc_challenge",
+      "hellaswag",
+      "mmlu",
+      "piqa",
+      "openbookqa",
+      "commonsense_qa",
+      "social_iqa",
+      "winogrande",
+      "boolq",
+      "medmcqa"
     ],
     "pretraining_allenai": [
       "TriviaQA",

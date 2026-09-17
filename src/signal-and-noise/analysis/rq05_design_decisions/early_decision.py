@@ -36,6 +36,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
+from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
@@ -76,7 +77,7 @@ def plot(agg: pd.DataFrame, out_dir: Path) -> None:
                     if np.isfinite(mat[a, b]):
                         ax.text(b, a, f"{mat[a, b]:.2f}\n({int(cnt[a, b])})", ha="center", va="center",
                                 fontsize=6.8, color="white" if mat[a, b] > 0.7 else S.INK)
-            ax.set_xticks(range(len(fracs))); ax.set_xticklabels([f"{int(f * 100)} %" for f in fracs])
+            ax.set_xticks(range(len(fracs))); ax.set_xticklabels([G.chinchilla(f) for f in fracs])
             ax.set_yticks(range(len(sizes))); ax.set_yticklabels(sizes)
             if i == 0:
                 ax.set_title(title, loc="left")
@@ -84,7 +85,7 @@ def plot(agg: pd.DataFrame, out_dir: Path) -> None:
                 label = g["label"].iloc[0] if not g.empty else dec
                 ax.set_ylabel(f"{label}\nproxy size")
             if i == len(DECISIONS) - 1:
-                ax.set_xlabel("checkpoint, as a share of the proxy's own run")
+                ax.set_xlabel("proxy's training tokens (C = Chinchilla-optimal; 5C = the full run)")
             S.clean(ax, spines=()); ax.tick_params(length=0)
     if im is not None:
         cb = fig.colorbar(im, ax=axes.ravel().tolist(), fraction=.025, pad=.02)
@@ -108,17 +109,17 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
             sizes = size_order(final.index)
             first = next((s for s in sizes if final[s] >= 0.75), None)
             early = g[(g["proxy_size"] == (first or sizes[-1]))].sort_values("frac")
-            e_first = next((f"{int(r.frac * 100)} %" for r in early.itertuples() if r.da >= 0.75), "never")
+            e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= 0.75), "never")
             bullets.append(
                 f"- **{label}, {title}** — final-checkpoint agreement by proxy: "
                 + ", ".join(f"{s} {fmt(final[s])}" for s in sizes)
-                + (f"; smallest proxy at ≥ 0.75: **{first}**, which reaches it at {e_first} of its run."
+                + (f"; smallest proxy at ≥ 0.75: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
                    if first else "; no proxy reaches 0.75."))
             piv = g.pivot_table(index="proxy_size", columns="frac", values="da")
             piv = piv.reindex(size_order(piv.index))
-            blocks += [f"**{label} — {title}** (rows: proxy size; columns: fraction of the proxy's run; "
+            blocks += [f"**{label} — {title}** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; "
                        "mean over L of the per-L agreement):",
-                       md_table(["proxy"] + [f"{int(f * 100)} %" for f in piv.columns],
+                       md_table(["proxy"] + [G.chinchilla(f) for f in piv.columns],
                                 [[s] + [fmt(piv.loc[s, f]) for f in piv.columns] for s in piv.index])]
     blocks.append(f"![Early and small]({stage}/{pool}/rq2_early_small.png)")
     readme = OUT_ROOT / "README.md"

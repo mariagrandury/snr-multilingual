@@ -7,7 +7,7 @@ TOP_N variants (by mean Pearson r) per DA definition, to keep the PNG count
 small.
 
 Per DA definition we rank SNR variants by mean Pearson r across cols:
-  DA-size (3 cols): SNR(<small>) vs DA(<small>@last → 1B@last) for
+  DA-size (3 cols): SNR(<small>) vs DA(<small>@last → reference@last) for
                     small ∈ {175M, 350M, 600M}.
   DA-ckpt (3 cols): SNR(size) vs DA(<size>@<early> → <size>@max) for
                     early ∈ {6000, 18000, 28000}, pooling all 4 sizes
@@ -113,7 +113,7 @@ def stat_col(stat: str, variant: str, size: str) -> str:
 def da_size_pairs(df: pd.DataFrame):
     """Yield (col_label, snr_buckets, da_col) per DA-size col found in the CSV.
 
-    Canonical columns ``decision_acc_size_<bucket>`` are small→1B; scaling
+    Canonical columns ``decision_acc_size_<bucket>`` are small→reference; scaling
     columns ``decision_acc_size_<small>_to_<target>`` carry their own target.
     Each pair plots SNR(small bucket) against that DA column — no pooling.
     """

@@ -19,6 +19,8 @@
 #   D. The ladder-frame reads on every seed and scheme — design decisions
 #      (rq05), scaling predictability (rq01), noise (rq03), transfer (rq06) —
 #      then subset selection (rq08), the curves (rq00), surrogates (rq04), figures.
+#      Each folder's panels.py redraws its aggregate per benchmark and per
+#      language (analysis/grids.py: one long figure, one subplot per page).
 #
 # Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
 # (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09).
@@ -79,6 +81,7 @@ for t in predictivity_seeds predictivity; do
   run $PY analysis/rq04_surrogates/analyze_snr_variants.py --pool "$t"
   run $PY analysis/rq04_surrogates/snr_definition_postprocess.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
+  run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
   if grep -q "^version https://git-lfs" "$ALLENAI_CSV" 2>/dev/null; then
     echo "  (rq07 skipped: $ALLENAI_CSV is a git-lfs pointer — run git lfs pull)"
@@ -94,15 +97,23 @@ echo "############################## PASS D — ladder-frame reads, subsets, cur
 # effect-vs-noise the seed replicates; rq06 reads rq05's table for the never-trained languages.
 run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
 run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
 run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
 run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
+run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
 run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
+run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
+run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
+run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
+run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 run $PY analysis/report_figures/make_figures.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then

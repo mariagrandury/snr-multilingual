@@ -93,7 +93,7 @@ so a script never decides by model name.
 gate) → rq02 `compute_da.py` (the truth) → rq03 `run_apertus_snr_variants.py`
 (22 SNR variants × bucket, joined to the DA table) → rq03
 `compare_seed_splits.py` (holdout) → per pool rq04 `analyze_snr_variants.py`
-and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py`, rq09
+and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py` and `early_small.py`, rq09
 `analyze.py`, rq07 `analyze.py` → on `predictivity_all` (every seed and
 scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
 `scaling_law_error.py`, rq03 `effect_vs_noise.py`, rq06 → rq08, the rq00
@@ -110,7 +110,19 @@ pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
 `at_fraction`, `trained_bpb_tasks`, `size_order`, `NON_EMB`, `GRID_SEED` — and
 `analysis/style.py` is the one palette (`documents/figures/style.py` re-exports
-it). `tests/test_metrics.py` (`python -m unittest discover -s tests`) pins the
+it). `analysis/grids.py` draws every per-benchmark / per-language figure: one
+long figure with a subplot per benchmark (BPB first, then alphabetical) or per
+language, never one file per page; each folder's `panels.py` feeds it that
+folder's tables and also writes the RQ's one-page `highlights.png`. Its
+conventions are the figures' contract: a CSV of the same name next to every
+PNG (`<name>.csv` for `<name>_by_benchmark.png` / `_by_language.png`), white =
+no value, grey = filtered out by the above-random gate (`grids.mark_gated`,
+never drop the gated rows before drawing), a line under the title saying how
+a cell is computed, and points along a run as Chinchilla multiples (1C–5C,
+`grids.chinchilla`), not as a share of the run. The gate's margin is
+`above_random.MARGIN` = 0.05. `tests/` (`python -m unittest discover -s tests`) pins the
+early-and-small grid of rq02 (its 100 % = 5C column is DA-size) and, in
+`test_metrics.py`, the
 SNR definition and the decision-accuracy kernel, including its one departure
 from upstream (ties, below).
 
@@ -148,11 +160,15 @@ without widening the decision the pool exists to measure. They live in
 `predictivity_schemes` instead, which no driver runs — invoke a script with
 `--pool predictivity_schemes` when the scheme axis itself is the question.
 
-The `snr` section of models.json is global: `small_sizes` 90M–600M,
-`target_size` 1B, `da_early_fracs` 0.2/0.4/0.6/0.8, `last_n` 5,
+The `snr` section of models.json is global: `small_sizes` 90M–1B,
+`target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
+largest rung DataDecide has), `da_early_fracs` 0.2/0.4/0.6/0.8, `last_n` 5,
 `size_buckets` (singleton buckets for our sizes, pooled buckets for the
-external models). The 36-sweep pools run with these values too — their 90M
-columns are simply empty. **Do not drop `da_early_fracs` / `size_buckets`
+external models). The 36-sweep pools run with these values too, but they stop at 1B:
+rerun today their canonical `decision_acc_size_<s>` columns (→ 1.7B) would be
+empty and only the `_to_1B` scaling pairs would carry DA-size, so their
+committed outputs are the 1B-reference ones and are not regenerated. Sizes and cells with no information yet
+(the 90M rung, L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets`
 again** (commit 56c806d did, and `analysis/utils.py` fails at import without
 them).
 
@@ -334,7 +350,7 @@ more NaN cells in `da_ckpt` views.
 `analysis/rq04_surrogates/snr_definition_postprocess.py:top_benchmarks_per_language`
 used to hardcode `da_size_col = "decision_acc_size_600M"`. Now it
 follows the `size` arg (`f"decision_acc_size_{size}"`). At the default
-`size=1B` the column is NaN by definition — DA-size is `small_size →
+`size` (the reference, 1.7B) the column is NaN by definition — DA-size is `small_size →
 target`, so no DA-size exists for the target itself. Don't "fix" the
 NaN by reverting to a hardcoded smaller size; it would mix two
 different definitions in the same table.

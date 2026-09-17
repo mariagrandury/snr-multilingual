@@ -16,8 +16,8 @@ which *model sizes* do.
                       per-language BPB on the languages both levels train
                       (`bpb_trained`), on the languages neither trains
                       (`bpb_untrained`), on all 100 (`bpb_all`), the benchmark
-                      tasks (`benchmark`), and the single macro-BPB decision
-                      (`bpb_macro`). With two models per item this is
+                      tasks (`benchmark`), and the two single-item decisions, the
+                      macro BPB (`bpb_macro`) and the training loss (`loss`). With two models per item this is
                       `snr.metrics.decision_acc_fast` per item — sign
                       agreement, items the reference ties dropped.
   effect at the reference — per intervention, the |Δ| in seed standard
@@ -53,6 +53,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
+from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
@@ -73,7 +74,9 @@ INTERVENTIONS = {
     "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("arch", "deep")),
     "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("arch", "deep")),
 }
-POPULATIONS = ("bpb_trained", "bpb_untrained", "bpb_all", "benchmark", "bpb_macro")
+POPULATIONS = ("bpb_trained", "bpb_untrained", "bpb_all", "benchmark", "bpb_macro", "loss")
+SINGLE = {"bpb_macro": "bpb_macro", "loss": "train_loss"}   # one-task populations: the aggregates
+CELL_POPULATIONS = ("bpb_trained", "benchmark")   # the items behind the per-benchmark / per-language tables
 COLOUR = dict(zip(INTERVENTIONS, [S.RAMP[3], S.RAMP[1], S.SERIES[2], S.SERIES[1], "#8c1d18"]))
 mpl.rcParams.update(S.RC)
 
@@ -82,8 +85,8 @@ def _population(sub: pd.DataFrame, name: str, L: int, levels: tuple, axis: str) 
     """Rows of `sub` (already at one L) belonging to one population."""
     if name == "benchmark":
         return sub[sub["kind"] == "benchmark"]
-    if name == "bpb_macro":
-        return sub[sub["task"] == "bpb_macro"]
+    if name in SINGLE:
+        return sub[sub["task"] == SINGLE[name]]
     bpb = sub[(sub["kind"] == "bpb") & (sub["task"] != "bpb_macro")]
     if name == "bpb_all":
         return bpb
@@ -105,16 +108,20 @@ def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
 
 # --- 1. intervention decision accuracy ---------------------------------------
 
-def intervention_da(df: pd.DataFrame) -> pd.DataFrame:
+def intervention_da(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(the decision table, the per-item agreement behind it). The second
+    frame has one row per (intervention, L, proxy size, fraction, task) of
+    CELL_POPULATIONS with `agree` in {0, 1}: what the per-benchmark and
+    per-language tables aggregate."""
     grid = df[df["seed"] == GRID_SEED]
     fin = finals(grid)
     at_f = {f: at_fraction(grid, f) for f in FRACS}
-    rows = []
+    rows, items_rows = [], []
     for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
         sub_fin = fin[fin[hcol] == hval]
         for L in sorted(sub_fin["L"].unique()):
             for pop in POPULATIONS:
-                min_items = 1 if pop == "bpb_macro" else MIN_ITEMS
+                min_items = 1 if pop in SINGLE else MIN_ITEMS
                 ref_piv = _pivot(_population(sub_fin[sub_fin["L"] == L], pop, int(L), levels, axis), axis, levels)
                 if ref_piv is None:
                     continue
@@ -139,6 +146,10 @@ def intervention_da(df: pd.DataFrame) -> pd.DataFrame:
                         if len(items) < min_items:
                             continue
                         d_proxy = p.loc[items, levels[0]] - p.loc[items, levels[1]]
+                        if pop in CELL_POPULATIONS:
+                            items_rows.append(pd.DataFrame({
+                                "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f,
+                                "task": items, "agree": (np.sign(d_proxy) == ref_sign.loc[items]).to_numpy(float)}))
                         row = {"intervention": key, "label": label, "population": pop, "L": int(L),
                                "proxy_size": s, "frac": f, "reference_size": ref, "n_items": int(len(items)),
                                "decision_acc": float((np.sign(d_proxy) == ref_sign.loc[items]).mean())}
@@ -150,7 +161,7 @@ def intervention_da(df: pd.DataFrame) -> pd.DataFrame:
                                         "mean_abs_delta_ref": float(d_ref.loc[items].abs().mean()),
                                         "reference_prefers": levels[0] if first.mean() > 0.5 else levels[1]})
                         rows.append(row)
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows), (pd.concat(items_rows, ignore_index=True) if items_rows else pd.DataFrame())
 
 
 def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
@@ -170,7 +181,7 @@ def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
                 continue
             tasks = piv.index.get_level_values("task")
             is_bpb = tasks.str.startswith("bpb_")
-            for pop, mask in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb)):
+            for pop, mask in (("bits per byte", is_bpb & (tasks != "bpb_macro")), ("benchmarks", ~is_bpb & (tasks != "train_loss"))):
                 pp = piv[mask]
                 counts = pp.groupby(level="size").size()
                 sizes = size_order(counts[counts >= MIN_ITEMS].index)
@@ -178,7 +189,7 @@ def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
                     continue
                 ref = sizes[-1]
                 p = pp.xs(ref, level="size")
-                ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).dropna()
+                ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).replace(np.inf, np.nan).dropna()
                 if len(ratio) >= MIN_ITEMS:
                     rows.append({"intervention": key, "label": label, "L": int(L), "reference_size": ref,
                                  "population": pop, "median_effect_over_seed_sd": float(ratio.median()),
@@ -329,8 +340,16 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Pool '{pool}': {df['model'].nunique()} cells, {fin['task'].nunique()} tasks, "
           f"seeds {sorted(df['seed'].unique())}, schemes {sorted(df['scheme'].unique())}")
 
-    da = intervention_da(df)
+    da, items = intervention_da(df)
     da.to_csv(out_dir / "intervention_da.csv", index=False)
+    if not items.empty:
+        # the same agreement, per benchmark and per language (panels.py draws them);
+        # add_meta drops the items with no single language (aggregates, subject facets)
+        items = G.add_meta(items)
+        keys = ["intervention", "label", "L", "proxy_size", "frac"]
+        for by, name in (("family", "benchmark"), ("language", "language")):
+            (items.groupby(keys + [by]).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+             .to_csv(out_dir / f"intervention_da_by_{name}.csv", index=False))
     print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:

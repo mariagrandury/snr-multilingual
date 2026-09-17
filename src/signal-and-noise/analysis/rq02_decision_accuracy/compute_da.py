@@ -9,7 +9,7 @@ SNR step reads this CSV and appends its variant columns.
 Two DA definitions (the cluster's two flavours):
 
   DA-size — (mix, seed) ranking at <small>'s last ckpt vs the ranking at
-            TARGET_SIZE's last ckpt. ``decision_acc_size_<175M|350M|600M>``
+            TARGET_SIZE's last ckpt. ``decision_acc_size_<small>`` for every ``snr.small_sizes`` entry
             plus the cross-bucket scaling pairs ``decision_acc_size_<a>_to_<b>``.
   DA-ckpt — within a bucket, ranking at an early ckpt (a relative fraction of
             each model's own max step) vs the bucket's last ckpt.
@@ -164,6 +164,62 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
     return (da, n_pairs) if return_n else da
 
 
+EARLY_SMALL_FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]
+
+
+def _scores_at(dft, bucket, frac) -> dict:
+    """family -> (score, compute) at the checkpoint nearest ``frac`` of the
+    family's own run (its final checkpoint at 1.0), under the CKPT_TOL rule of
+    ``compute_ckpt_decision_accuracy``."""
+    out = {}
+    for fam, g in dft[dft["bucket"] == bucket].groupby("family"):
+        g = g.sort_values("step")
+        max_step = g["step"].max()
+        if frac >= 1.0:
+            r = g.loc[g["step"].idxmax()]
+        else:
+            pre = g[g["step"] < max_step]
+            if pre.empty:
+                continue
+            r = pre.iloc[(pre["step"] - frac * max_step).abs().argmin()]
+            if abs(r["step"] - frac * max_step) > CKPT_TOL * max_step:
+                continue
+        out[fam] = (float(r["primary_score"]), float(r.get("compute", np.nan)))
+    return out
+
+
+def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE) -> list[dict]:
+    """Early AND small, as a ranking: every design variant at a proxy bucket,
+    read at 20-100 % of its own run, ranked against the same variants at the
+    reference bucket's final checkpoint. The cross of DA-size (the 100 %
+    column) and DA-ckpt (the reference's own row), one task at a time.
+
+    One row per (proxy bucket, fraction) with >= 2 shared families: ``da``,
+    ``n_pairs``, the mean training compute of the proxy checkpoints and of the
+    reference finals (the cost axis of "how cheaply can we call it")."""
+    dft = add_family_column(dft)
+    ref = _scores_at(dft, target_size, 1.0)
+    if len(ref) < 2:
+        return []
+    order = bucket_order()
+    rows = []
+    for b in [b for b in order[: order.index(target_size) + 1] if b in set(dft["bucket"])]:
+        for frac in EARLY_SMALL_FRACS:
+            if b == target_size and frac >= 1.0:
+                continue                    # the reference against itself
+            got = _scores_at(dft, b, frac)
+            common = sorted(set(got) & set(ref))
+            if len(common) < 2:
+                continue
+            da = decision_acc_fast(np.asarray([got[f][0] for f in common]),
+                                   np.asarray([ref[f][0] for f in common]))
+            rows.append({"proxy_size": b, "frac": frac, "da": float(da),
+                         "n_pairs": len(common) * (len(common) - 1) // 2,
+                         "compute": float(np.mean([got[f][1] for f in common])),
+                         "ref_compute": float(np.mean([ref[f][1] for f in common]))})
+    return rows
+
+
 def _scaling_da_pairs(df_pool) -> list[tuple[str, str]]:
     """Ordered (small_bucket, target_bucket) pairs (small < target by bucket
     order) with ≥2 families present at both buckets — the cross-size pairs
@@ -205,11 +261,11 @@ def run(pool: str, out_dir: Path):
     # task, so grouping avoids re-scanning the whole pool per call.
     df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
 
-    rows, n_rows = [], []
+    rows, n_rows, early_rows = [], [], []
     for task in tqdm(tasks, desc="DA tasks"):
         row, nrow = {"task": task}, {"task": task}
         dft = df_by_task[task]
-        # Core size-DA: small custom bucket@last → 1B target@last.
+        # Core size-DA: small bucket@last → reference bucket@last.
         for s in SMALL_SIZES:
             row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
                 compute_size_decision_accuracy, dft, task, s,
@@ -228,6 +284,8 @@ def run(pool: str, out_dir: Path):
                 )
         rows.append(row)
         n_rows.append(nrow)
+        if TARGET_SIZE in pool_buckets:
+            early_rows += [{"task": task, **r} for r in compute_early_small_decision_accuracy(dft)]
 
     out = pd.DataFrame(rows).set_index("task").sort_index()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -236,6 +294,9 @@ def run(pool: str, out_dir: Path):
     # The same shape, holding the number of model pairs behind every cell: a
     # one-pair 1.00 and a 28-pair 0.96 must not read alike downstream.
     pd.DataFrame(n_rows).set_index("task").sort_index().to_csv(out_dir / "da_n_pairs_per_task.csv")
+    # Early and small, as a ranking: long, one row per (task, proxy bucket, fraction).
+    pd.DataFrame(early_rows, columns=["task", "proxy_size", "frac", "da", "n_pairs", "compute", "ref_compute"]
+                 ).to_csv(out_dir / "da_early_small_per_task.csv", index=False)
     n_size = len(SMALL_SIZES) + len(scaling_pairs)
     n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
     print(f"\nWrote DA CSV → {csv_path}")

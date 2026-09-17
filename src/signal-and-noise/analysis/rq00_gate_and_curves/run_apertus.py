@@ -59,6 +59,7 @@ from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import GATE_AND_CURVES
+from analysis.rq00_gate_and_curves.above_random import MARGIN
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results,
     load_apertus_eval_results,
@@ -80,9 +81,10 @@ COLORS = (["#1f77b4", "#ff7f0e", "#2ca02c"] if len(PLOTTED_MIXES) <= 3
           else [plt.cm.viridis(x) for x in np.linspace(0, 0.95, len(PLOTTED_MIXES))])
 OUT_ROOT = GATE_AND_CURVES
 
-# Only render curve grids for the top-N benchmark families by Signal (relative
-# dispersion of final scores across mixtures at the target size — the project's
-# "Signal" metric). Every task's signal is written to acc_vs_flops_signal.csv.
+# Families are ranked by Signal (relative dispersion of final scores across
+# mixtures at the target size — the project's "Signal" metric) for the README;
+# every family gets its curve grid, and every language's grid holds every
+# benchmark it has. Every task's signal is written to acc_vs_flops_signal.csv.
 TOP_N = 3
 
 
@@ -233,7 +235,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
         fam_tasks_sorted = sorted(fam_tasks, key=assign_language)
         subtitles = [assign_language(t) for t in fam_tasks_sorted]
         if _plot_grid(df, df_ext, f"benchmark: {family}", fam_tasks_sorted, subtitles,
-                      per_bench_dir / f"{family}.png", seed):
+                      per_bench_dir / f"{family}.png", seed, ncols=6):
             n_bench += 1
 
     n_lang = 0
@@ -247,7 +249,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
     return n_bench, n_lang
 
 
-def run(pool: str, out_dir: Path, seed: int | None = None, top_n: int = TOP_N):
+def run(pool: str, out_dir: Path, seed: int | None = None):
     if seed is None:
         seed = _seed_of(pool)
     df = build_snr_pool(pool)
@@ -274,12 +276,10 @@ def run(pool: str, out_dir: Path, seed: int | None = None, top_n: int = TOP_N):
     sig_df.to_csv(out_dir / "acc_vs_flops_signal.csv", index=False)
     fam_rank = (sig_df[~sig_df["family"].isin(("bpb", "loss"))]
                 .groupby("family")["signal"].mean().sort_values(ascending=False))
-    top_families = list(fam_rank.head(top_n).index)
-    print(f"  Wrote signal CSV ({len(sig_df)} tasks). Top-{top_n} families by "
-          f"Signal: {top_families}")
+    print(f"  Wrote signal CSV ({len(sig_df)} tasks). Top-{TOP_N} families by "
+          f"Signal: {list(fam_rank.head(TOP_N).index)}")
 
-    # Only plot the top-N families (both views) to keep the PNG count small.
-    plot_tasks = [t for t in tasks if benchmark_family(t) in top_families]
+    plot_tasks = [t for t in tasks if benchmark_family(t) != "loss"]
     n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed)
     print(f"Wrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
     print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
@@ -301,7 +301,7 @@ def generate_readme(pool: str, out_dir: Path) -> None:
     sig = sig[~sig["family"].isin(("bpb", "loss"))]
     fam_rank = (sig.groupby("family")["signal"].mean()
                 .sort_values(ascending=False))
-    top3 = list(fam_rank.head(3).index)
+    top3 = list(fam_rank.head(TOP_N).index)
     top_sig = sig.sort_values("signal", ascending=False).head(5)
 
     # above-random gate from the pool's own report; benchmarks only (BPB and
@@ -346,7 +346,7 @@ def generate_readme(pool: str, out_dir: Path) -> None:
         t_signal,
         f"![top-Signal family accuracy vs FLOPs]({stage}/{pool}/per_benchmark/{top3[0]}.png)",
         f"**Above-random gate** — a benchmark must beat chance (`1/n_options`) by "
-        f"+0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` "
+        f"+{MARGIN}; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` "
         f"SNR cell, so the gate propagates to all RQs:",
         t_gate,
     ])

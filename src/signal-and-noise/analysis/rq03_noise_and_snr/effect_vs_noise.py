@@ -82,12 +82,15 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame) -> pd.DataFrame:
     out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))
     out = out.reset_index()
     out["family"] = out["task"].map(benchmark_family)
-    out["population"] = np.where(out["family"] == "bpb", "bpb", "benchmark")
+    # the aggregates are populations of their own: bpb_macro is the mean of the per-language BPBs
+    out["population"] = np.select([out["task"] == "bpb_macro", out["family"] == "loss", out["family"] == "bpb"],
+                                  ["bpb_macro", "loss", "bpb"], "benchmark")
     for k in INTERVENTIONS:
         col = f"effect_{k}"
         if col in out:
-            out[f"{col}_over_seed"] = out[col] / out["seed_noise"]
-            out[f"{col}_over_ckpt"] = out[col] / out["ckpt_noise_detrended"]
+            # a zero noise estimate gives no ratio, not an infinite one
+            out[f"{col}_over_seed"] = out[col] / out["seed_noise"].where(out["seed_noise"] > 0)
+            out[f"{col}_over_ckpt"] = out[col] / out["ckpt_noise_detrended"].where(out["ckpt_noise_detrended"] > 0)
     return out
 
 

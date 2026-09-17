@@ -160,28 +160,34 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     npairs_path = out_dir / "da_n_pairs_per_task.csv"
     npairs = pd.read_csv(npairs_path, index_col="task") if npairs_path.is_file() else None
     mask = load_mask(pool)
-    is_bpb = df.index.str.startswith("bpb_")
+    # the two aggregates are DA proxies of their own, not members of a mean
+    is_bench = ~df.index.str.startswith("bpb_") & (df.index != "train_loss")
+    is_bpb = df.index.str.startswith("bpb_") & (df.index != "bpb_macro")
     fam = pd.Series(df.index.map(benchmark_family), index=df.index)
     sizes = [b for b in bucket_order() if f"decision_acc_size_{b}" in df.columns
              and df[f"decision_acc_size_{b}"].notna().any()]
     bullets, rows = [], []
     for b in sizes:
         col = f"decision_acc_size_{b}"
-        gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else ~is_bpb
-        bench, bpb = df.loc[gated & ~is_bpb, col].dropna(), df.loc[is_bpb, col].dropna()
+        gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else is_bench
+        bench, bpb = df.loc[gated & is_bench, col].dropna(), df.loc[is_bpb, col].dropna()
         med_n = int(npairs[col].reindex(bench.index).median()) if npairs is not None and len(bench) else 0
         rows.append([f"{b} → {TARGET_SIZE}", fmt(bench.mean()), len(bench), med_n, fmt(bpb.mean()), len(bpb)])
     if rows:
         bullets.append("- **DA-size, proxy → " + TARGET_SIZE + "** (mean over the above-random benchmark tasks / over the "
                        "per-language BPB tasks): " + "; ".join(f"{r[0]} {r[1]} / {r[4]}" for r in rows) + ".")
+        for agg in ("bpb_macro", "train_loss"):
+            if agg in df.index:
+                bullets.append(f"- **DA-size of `{agg}`** (one task, kept out of the means above): "
+                               + "; ".join(f"{b} {fmt(df.at[agg, f'decision_acc_size_{b}'])}" for b in sizes) + ".")
     ckpt = [c for c in df.columns if c.startswith("decision_acc_ckpt_")]
     ck_rows = []
     if ckpt:
         piv = {}
         for c in ckpt:
             _, _, _, frac, bucket = c.split("_", 4)
-            gated = (mask[bucket] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and bucket in mask else ~is_bpb
-            piv[(bucket, frac)] = df.loc[gated & ~is_bpb, c].mean()
+            gated = (mask[bucket] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and bucket in mask else is_bench
+            piv[(bucket, frac)] = df.loc[gated & is_bench, c].mean()
         buckets = [b for b in bucket_order()          # a bucket with one cell has no pairs: no row
                    if any(k[0] == b and np.isfinite(v) for k, v in piv.items())]
         fracs = sorted({k[1] for k in piv}, key=lambda f: int(f[1:]))
@@ -194,12 +200,12 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         blocks += ["**DA-size by proxy size** (`n` tasks; median pairs per cell):",
                    md_tbl(["comparison", "benchmarks", "n", "pairs", "BPB", "n"], rows)]
         # family x proxy heatmap over the above-random tasks
-        fams = sorted(fam[~is_bpb].unique())
+        fams = sorted(fam[is_bench].unique())
         mat = np.full((len(fams), len(sizes)), np.nan)
         for j, b in enumerate(sizes):
             col = f"decision_acc_size_{b}"
-            gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else ~is_bpb
-            g = df.loc[gated & ~is_bpb, col].groupby(fam).mean()
+            gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else is_bench
+            g = df.loc[gated & is_bench, col].groupby(fam).mean()
             for i, f in enumerate(fams):
                 if f in g.index and np.isfinite(g[f]):
                     mat[i, j] = g[f]

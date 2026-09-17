@@ -19,7 +19,9 @@ PY=python3
 # `external` (no mixture axis / custom random baseline there).
 TIERS=(seeds_1904 seeds_28_1797 seeds_28_1797_1904 custom_swissai_hf external)
 
-run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18; }
+FAILED=()
+run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
+       [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*"); }
 
 # A tier's output stage (pretraining / external / …) comes from its pool config,
 # so the DA/SNR cache paths must follow it — otherwise the `external` tier (a
@@ -81,4 +83,9 @@ run $PY analysis/rq00_gate_and_curves/above_random.py
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool seeds_28_1797_1904
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool custom_swissai_hf
 
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "############################## FAILED ##############################"
+  printf "  %s\n" "${FAILED[@]}"
+  exit 1
+fi
 echo "############################## ALL DONE ##############################"

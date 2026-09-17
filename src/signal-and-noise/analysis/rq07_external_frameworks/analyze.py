@@ -47,8 +47,11 @@ ROOT_OUT = EXTERNAL_FRAMEWORKS
 SNR_DEFINITION_ROOT = NOISE_AND_SNR
 ALLENAI_CSV = ROOT_OUT / "allenai_snr_variants_per_task.csv"
 
-APERTUS_SIZE = TARGET_SIZE   # the ladder's reference size (1B)
-ALLENAI_SIZE = "1B"          # matched: AllenAI also has 1B in DataDecide
+# The headline is the matched pair: SNR grows with size, so our 1.7B reference
+# against their largest rung (1B) would mix a size effect into the agreement.
+# The unmatched pair is one row of the size sweep.
+APERTUS_SIZE = "1B"
+ALLENAI_SIZE = "1B"          # DataDecide's largest rung
 
 # Approximate matched-size pairs for the size-sweep (ours → AllenAI DataDecide).
 SIZE_PAIRS = [                # DataDecide has no 90M, so no pair for our 90M rung
@@ -56,6 +59,7 @@ SIZE_PAIRS = [                # DataDecide has no 90M, so no pair for our 90M ru
     ("350M", "300M"),
     ("600M", "750M"),
     ("1B",   "1B"),
+    (TARGET_SIZE, "1B"),      # our reference against their largest rung (unmatched)
 ]
 
 VARIANTS = [variant_key(fd) for fd in AGGREGATION_FUNCTIONS]
@@ -70,6 +74,7 @@ VARIANT_TITLES = {variant_key(fd): fd["title"] for fd in AGGREGATION_FUNCTIONS}
 # rename.
 _TASK_ALIASES: dict[str, str] = {
     "commonsense_qa": "csqa",
+    "social_iqa": "socialiqa",
     # Add more obvious mismatches here as we discover them.
 }
 

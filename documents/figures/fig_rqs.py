@@ -26,8 +26,9 @@ sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 P = "pretraining/predictivity"
 OUT = REPO / "documents" / "public" / "ladder"
-NPARAMS = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8, "600M": 6.0e8, "1B": 1.0e9}
-SIZES = ["175M", "350M", "600M", "1B"]          # 90M is off the ladder, see Finding 2
+from analysis.utils import TARGET_SIZE as REF  # noqa: E402  (the reference size, 1.7B)
+NPARAMS = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8, "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9}
+SIZES = ["175M", "350M", "600M", "1B", "1.7B"]  # 90M is off the ladder, see Finding 2
 
 
 def _scores():
@@ -87,7 +88,7 @@ def a1_scaling(out):
     S.clean(ax); ax.tick_params(length=0)
     ax.legend(frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="upper left",
               bbox_to_anchor=(0, 1.06), ncol=2)
-    S.title(fig, "Which benchmarks scale predictably, 175M to 1B", y=1.02)
+    S.title(fig, f"Which benchmarks scale predictably, 175M to {REF}", y=1.02)
     S.save(fig, out / "rq_a1_scaling.png")
     return f
 
@@ -98,9 +99,9 @@ def a2_stability(out):
     the mean. Small means the number is repeatable."""
     v = _variants()
     v = v.assign(family=_fam_of(v))
-    v = v[["family", "noise_rel_std_1B", "signal_rel_std_1B"]].dropna(subset=["noise_rel_std_1B"])
-    g = v.groupby("family").agg(noise=("noise_rel_std_1B", "median"),
-                                n=("noise_rel_std_1B", "size")).sort_values("noise")
+    v = v[["family", f"noise_rel_std_{REF}", f"signal_rel_std_{REF}"]].dropna(subset=[f"noise_rel_std_{REF}"])
+    g = v.groupby("family").agg(noise=(f"noise_rel_std_{REF}", "median"),
+                                n=(f"noise_rel_std_{REF}", "size")).sort_values("noise")
     fig, ax = plt.subplots(figsize=(8.6, 0.34 * len(g) + 1.9))
     y = np.arange(len(g))
     ax.barh(y, g["noise"], .58, color=S.RAMP[1])
@@ -113,7 +114,7 @@ def a2_stability(out):
     ax.set_xlim(0, g["noise"].max() * 1.32)
     ax.grid(axis="x", color=S.GRID, lw=.8); ax.set_axisbelow(True)
     S.clean(ax); ax.tick_params(length=0)
-    ax.legend(handles=[Patch(facecolor=S.RAMP[1], label="median over the family's tasks at 1B")],
+    ax.legend(handles=[Patch(facecolor=S.RAMP[1], label=f"median over the family's tasks at {REF}")],
               frameon=False, fontsize=8.5, labelcolor=S.MUTED, loc="lower right")
     S.title(fig, "Which benchmarks give the same answer twice", y=1.02)
     S.save(fig, out / "rq_a2_stability.png")
@@ -126,10 +127,10 @@ def a4_signal(out):
     useful above the noise, so both are drawn."""
     v = _variants()
     v = v.assign(family=_fam_of(v))
-    v = v[["family", "signal_rel_std_1B", "noise_rel_std_1B"]].dropna()
-    g = v.groupby("family").agg(signal=("signal_rel_std_1B", "median"),
-                                noise=("noise_rel_std_1B", "median"),
-                                n=("signal_rel_std_1B", "size"))
+    v = v[["family", f"signal_rel_std_{REF}", f"noise_rel_std_{REF}"]].dropna()
+    g = v.groupby("family").agg(signal=(f"signal_rel_std_{REF}", "median"),
+                                noise=(f"noise_rel_std_{REF}", "median"),
+                                n=(f"signal_rel_std_{REF}", "size"))
     g["ratio"] = g["signal"] / g["noise"]
     g = g.sort_values("ratio")
     fig, ax = plt.subplots(figsize=(8.8, 0.34 * len(g) + 2.0))
@@ -146,7 +147,7 @@ def a4_signal(out):
     ax.set_yticks(y); ax.set_yticklabels([f"{i}  ({int(n)})" for i, n in zip(g.index, g["n"])],
                                          fontsize=9)
     ax.set_xscale("log")
-    ax.set_xlabel("relative spread at 1B, log scale", fontsize=9.5, color=S.MUTED)
+    ax.set_xlabel(f"relative spread at {REF}, log scale", fontsize=9.5, color=S.MUTED)
     ax.annotate("the number on the right is signal ÷ noise. Above 1× the benchmark "
                 "separates the models, below it does not",
                 (.5, -.14), xycoords="axes fraction", ha="center", fontsize=8.5,
@@ -368,12 +369,12 @@ if __name__ == "__main__":
     f = a1_scaling(OUT)
     print("A1 top families by R²:")
     print(f.groupby("family")["r2"].median().sort_values(ascending=False).head(5).round(3).to_string())
-    print("\nA2 relative noise at 1B, steadiest first:")
+    print(f"\nA2 relative noise at {REF}, steadiest first:")
     print(a2_stability(OUT).round(3).to_string())
     d = a3_languages(OUT)
     print(f"\nA3: {len(d)} languages; median gain {d['gain'].median():.3f} bits/byte; "
           f"{int((d['gain'] > 0).sum())} gain, {int((d['gain'] <= 0).sum())} do not")
-    print("\nA4 signal over noise at 1B:")
+    print(f"\nA4 signal over noise at {REF}:")
     print(a4_signal(OUT).round(3).to_string())
     b1 = b1_early(OUT)
     print("\nB1 mean DA by checkpoint fraction at the top size:")

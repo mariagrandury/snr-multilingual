@@ -296,7 +296,7 @@ def top_benchmarks_per_language(df: pd.DataFrame, variant: str,
     df = df[df["language"] != "??"]
     da_size_col = f"decision_acc_size_{size}"
     # Mean ckpt-DA across the relative-fraction early ckpts at the same bucket
-    # (1B; the same bucket we use for SNR ranking). Columns are named with the
+    # (the reference; the same bucket we use for SNR ranking). Columns are named with the
     # fraction label (f12/f36/f56), so select them by pattern.
     import re as _re
     ckpt_cols = [c for c in df.columns

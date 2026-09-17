@@ -19093,9 +19093,10 @@
       "90M",
       "175M",
       "350M",
-      "600M"
+      "600M",
+      "1B"
     ],
-    "target_size": "1B",
+    "target_size": "1.7B",
     "plotted_mixes": [
       "L1-deep",
       "L2-deep",
