@@ -332,7 +332,7 @@ by design.
   their libraries are on capstor and the -alps3 image carries its own,
   and drops the capstor `HF_HUB_CACHE` from `~/.bashrc` so the tokenizer
   resolves in `$HF_HOME/hub` — prefetch it once on the login node with
-  `HF_HUB_CACHE= python -c "from transformers import AutoTokenizer;
+  `env -u HF_HUB_CACHE python -c "from transformers import AutoTokenizer;
   AutoTokenizer.from_pretrained('swiss-ai/Apertus-70B-2509')"` (17 MB).
   `CONTAINER_TOML=...` overrides the choice. Submit to an `up` partition
   (`sinfo -p normal`): jobs queued against a down partition sit on

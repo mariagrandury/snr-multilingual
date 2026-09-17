@@ -32,7 +32,7 @@ reintroduces the drift this design removed.
 | File | Role |
 |---|---|
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
