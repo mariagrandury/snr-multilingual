@@ -117,6 +117,8 @@ The family medians above, without the aggregation (`predictivity_all` pool). Reg
 
 ![rq01 in one figure](pretraining/predictivity_all/highlights.png)
 
+![Median R² per benchmark and L](pretraining/predictivity_all/fit_r2_median.png)
+
 ![Fit R² per benchmark](pretraining/predictivity_all/fit_r2_by_benchmark.png)
 
 ![Fit R² per language](pretraining/predictivity_all/fit_r2_by_language.png)

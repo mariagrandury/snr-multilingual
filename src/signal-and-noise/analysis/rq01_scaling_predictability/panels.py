@@ -3,6 +3,7 @@ the log-N fit.
 
     fit_r2_by_benchmark.png   R² of the log-N fit, language x L, one subplot per benchmark (BPB first)
     fit_r2_by_language.png    R² of the log-N fit, benchmark x L, one subplot per language
+    fit_r2_median.png         median R² per benchmark and L (the left panel of highlights.png on its own)
 
 Reads `rq1_fits.csv` (one row per (task, L) fit on the deep, scheme-A,
 seed-1904 cells).
@@ -53,12 +54,18 @@ def main(pool: str) -> None:
     G.panel_grid(fits, out_dir / "fit_r2_by_language.png", by="language", row="family", ylabel="benchmark", ncols=6,
                  col="L", value="r2", col_order=Ls, col_label=lambda L: f"L{L}", cbar="R² of score ~ log N", note=note, csv=False,
                  xlabel="language setting", title="How predictably each language scales: R² of the log-N fit")
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), gridspec_kw={"width_ratios": [1.1, 1, 1]})
     fam = G.panel_order(fits["family"].unique())
     by = fits.groupby(["family", "L"])["r2"]
     lang = fits[fits["kind"] == "benchmark"].groupby("language")["r2"].median()
-    tables = [G.matrix_ax(axes[0], by.median().unstack().reindex(index=fam, columns=Ls).rename(columns=lambda L: f"L{L}"),
-                          "Median R² of the log-N fit", cnt=by.count().unstack().reindex(index=fam, columns=Ls), xlabel="language setting"),
+    med, cnt = (t.unstack().reindex(index=fam, columns=Ls) for t in (by.median(), by.count()))
+    # the family x L median on its own (the paper's figure), then the one-page summary that also carries it
+    fig, ax = plt.subplots(figsize=(0.62 * len(Ls) + 2.6, 0.3 * len(fam) + 1.4))
+    t = G.matrix_ax(ax, med.rename(columns=lambda L: f"L{L}"), "", cnt=cnt, xlabel="language setting").assign(panel="fit_r2_median")
+    G.save_highlights(fig, out_dir, "Median R² of the log-N fit per benchmark and language setting",
+                      "R² of final score ~ log(parameters) per (task, language setting), median over the benchmark's tasks; "
+                      "small number = fits behind the cell", [t], name="fit_r2_median")
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), gridspec_kw={"width_ratios": [1.1, 1, 1]})
+    tables = [G.matrix_ax(axes[0], med.rename(columns=lambda L: f"L{L}"), "Median R² of the log-N fit", cnt=cnt, xlabel="language setting"),
               G.rank_ax(axes[1], fits[fits["family"] != "bpb"].groupby("family")["r2"].median(), "Benchmarks by median R²", xlabel="median R²"),
               G.rank_ax(axes[2], lang, "Languages by median R² over their benchmarks", xlabel="median R²")]
     G.save_highlights(fig, out_dir, "rq01 in one figure: what scales predictably with model size?",
@@ -68,7 +75,7 @@ def main(pool: str) -> None:
     body = "\n\n".join([
         "## Per benchmark and per language",
         f"The family medians above, without the aggregation (`{pool}` pool). Regenerate with `python analysis/rq01_scaling_predictability/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
-        f"![rq01 in one figure]({stage}/{pool}/highlights.png)"]
+        f"![rq01 in one figure]({stage}/{pool}/highlights.png)", f"![Median R² per benchmark and L]({stage}/{pool}/fit_r2_median.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Fit R² per benchmark', 'fit_r2_by_benchmark.png'), ('Fit R² per language', 'fit_r2_by_language.png')]])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
