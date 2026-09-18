@@ -4877,6 +4877,1671 @@
         "pretraining"
       ],
       "n_options": 4
+    },
+    "rf_belebele_arb_Arab": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_eng_Latn": {
+      "language": "en",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_eus_Latn": {
+      "language": "eu",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hin_Deva": {
+      "language": "hi",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_jpn_Jpan": {
+      "language": "ja",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_rus_Cyrl": {
+      "language": "ru",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_spa_Latn": {
+      "language": "es",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_swh_Latn": {
+      "language": "sw",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tel_Telu": {
+      "language": "te",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tha_Thai": {
+      "language": "th",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tur_Latn": {
+      "language": "tr",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_vie_Latn": {
+      "language": "vi",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_zho_Hans": {
+      "language": "zh",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ar": {
+      "language": "ar",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_en": {
+      "language": "en",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_es": {
+      "language": "es",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_hi": {
+      "language": "hi",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ja": {
+      "language": "ja",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ru": {
+      "language": "ru",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_sw": {
+      "language": "sw",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_tr": {
+      "language": "tr",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_vi": {
+      "language": "vi",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_zh": {
+      "language": "zh",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_albanian": {
+      "language": "sq",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_arabic": {
+      "language": "ar",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_armenian": {
+      "language": "hy",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_azerbaijani": {
+      "language": "az",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_basque": {
+      "language": "eu",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_belarusian": {
+      "language": "be",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_bengali": {
+      "language": "bn",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_bulgarian": {
+      "language": "bg",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_chinese": {
+      "language": "zh",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_croatian": {
+      "language": "hr",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_finnish": {
+      "language": "fi",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_french": {
+      "language": "fr",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_georgian": {
+      "language": "ka",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_german": {
+      "language": "de",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_greek": {
+      "language": "el",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_hebrew": {
+      "language": "he",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_hindi": {
+      "language": "hi",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_hungarian": {
+      "language": "hu",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_indonesian": {
+      "language": "id",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_italian": {
+      "language": "it",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_japanese": {
+      "language": "jp",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_kazakh": {
+      "language": "kk",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_korean": {
+      "language": "ko",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_lithuanian": {
+      "language": "lt",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_malay": {
+      "language": "ms",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_malayalam": {
+      "language": "ml",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_nepali": {
+      "language": "ne",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_north_macedonian": {
+      "language": "mk",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_persian": {
+      "language": "fa",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_polish": {
+      "language": "pl",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_portuguese": {
+      "language": "pt",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_russian": {
+      "language": "ru",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_serbian": {
+      "language": "sr",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_spanish": {
+      "language": "es",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_tagalog": {
+      "language": "tl",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_tamil": {
+      "language": "ta",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_telugu": {
+      "language": "te",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_turkish": {
+      "language": "tr",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_ukrainian": {
+      "language": "uk",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_uzbek": {
+      "language": "uz",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_vietnamese": {
+      "language": "vi",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ars_Arab": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ita_Latn": {
+      "language": "it",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_uzn_Latn": {
+      "language": "uz",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_isl_Latn": {
+      "language": "is",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ory_Orya": {
+      "language": "or",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kat_Geor": {
+      "language": "ka",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ben_Latn": {
+      "language": "bn",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_pan_Guru": {
+      "language": "pa",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_bul_Cyrl": {
+      "language": "bg",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_slv_Latn": {
+      "language": "sl",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_asm_Beng": {
+      "language": "as",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_swe_Latn": {
+      "language": "sv",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_deu_Latn": {
+      "language": "de",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ukr_Cyrl": {
+      "language": "uk",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_heb_Hebr": {
+      "language": "he",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_npi_Deva": {
+      "language": "ne",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_amh_Ethi": {
+      "language": "am",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_por_Latn": {
+      "language": "pt",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_som_Latn": {
+      "language": "so",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hun_Latn": {
+      "language": "hu",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_fin_Latn": {
+      "language": "fi",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_urd_Latn": {
+      "language": "ur",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_plt_Latn": {
+      "language": "mg",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ces_Latn": {
+      "language": "cs",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_lvs_Latn": {
+      "language": "lv",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_afr_Latn": {
+      "language": "af",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_sin_Latn": {
+      "language": "si",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_slk_Latn": {
+      "language": "sk",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_khm_Khmr": {
+      "language": "km",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_nob_Latn": {
+      "language": "no",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_pol_Latn": {
+      "language": "pl",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ckb_Arab": {
+      "language": "ckb",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hin_Latn": {
+      "language": "hi",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ary_Arab": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_bod_Tibt": {
+      "language": "bo",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mal_Mlym": {
+      "language": "ml",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ben_Beng": {
+      "language": "bn",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_guj_Gujr": {
+      "language": "gu",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_nld_Latn": {
+      "language": "nl",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hau_Latn": {
+      "language": "ha",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kir_Cyrl": {
+      "language": "ky",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kor_Hang": {
+      "language": "ko",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_urd_Arab": {
+      "language": "ur",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_snd_Arab": {
+      "language": "sd",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_fra_Latn": {
+      "language": "fr",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_lit_Latn": {
+      "language": "lt",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ron_Latn": {
+      "language": "ro",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_srp_Cyrl": {
+      "language": "sr",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mya_Mymr": {
+      "language": "my",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_npi_Latn": {
+      "language": "ne",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_pbt_Arab": {
+      "language": "ps",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_glg_Latn": {
+      "language": "gl",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mkd_Cyrl": {
+      "language": "mk",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kaz_Cyrl": {
+      "language": "kk",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_lao_Laoo": {
+      "language": "lo",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tam_Taml": {
+      "language": "ta",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ind_Latn": {
+      "language": "id",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kan_Knda": {
+      "language": "kn",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tgk_Cyrl": {
+      "language": "tg",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_dan_Latn": {
+      "language": "da",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_sin_Sinh": {
+      "language": "si",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_cat_Latn": {
+      "language": "ca",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_azj_Latn": {
+      "language": "az",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hrv_Latn": {
+      "language": "hr",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_als_Latn": {
+      "language": "sq",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_khk_Cyrl": {
+      "language": "mn",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_arb_Latn": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mar_Deva": {
+      "language": "mr",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_zsm_Latn": {
+      "language": "ms",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mlt_Latn": {
+      "language": "mt",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ell_Grek": {
+      "language": "el",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_zho_Hant": {
+      "language": "zh",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hye_Armn": {
+      "language": "hy",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_arz_Arab": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_he": {
+      "language": "he",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_estonian": {
+      "language": "et",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ne": {
+      "language": "ne",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_pl": {
+      "language": "pl",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_cs": {
+      "language": "cs",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_include_base_44_urdu": {
+      "language": "ur",
+      "benchmark": "rf_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_fa": {
+      "language": "fa",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_si": {
+      "language": "si",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_pt": {
+      "language": "pt",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_nl": {
+      "language": "nl",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_mg": {
+      "language": "mg",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_sv": {
+      "language": "sv",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ko": {
+      "language": "ko",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_bn": {
+      "language": "bn",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_fr": {
+      "language": "fr",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_te": {
+      "language": "te",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_de": {
+      "language": "de",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ms": {
+      "language": "ms",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_uk": {
+      "language": "uk",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ha": {
+      "language": "ha",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ro": {
+      "language": "ro",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_el": {
+      "language": "el",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_it": {
+      "language": "it",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_sr": {
+      "language": "sr",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_id": {
+      "language": "id",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_am": {
+      "language": "am",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_lt": {
+      "language": "lt",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_so": {
+      "language": "so",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_global_mmlu_full_ky": {
+      "language": "ky",
+      "benchmark": "rf_global_mmlu_full",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_apc_Arab": {
+      "language": "ar",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ceb_Latn": {
+      "language": "ceb",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_est_Latn": {
+      "language": "et",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_hat_Latn": {
+      "language": "ht",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_ibo_Latn": {
+      "language": "ig",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_jav_Latn": {
+      "language": "jv",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_kin_Latn": {
+      "language": "rw",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_mri_Latn": {
+      "language": "mi",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_nya_Latn": {
+      "language": "ny",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_pes_Arab": {
+      "language": "fa",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_sna_Latn": {
+      "language": "sn",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_sot_Latn": {
+      "language": "st",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_sun_Latn": {
+      "language": "su",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tgl_Latn": {
+      "language": "tl",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_tir_Ethi": {
+      "language": "ti",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_xho_Latn": {
+      "language": "xh",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_yor_Latn": {
+      "language": "yo",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
+    },
+    "rf_belebele_zul_Latn": {
+      "language": "zu",
+      "benchmark": "rf_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm"
     }
   },
   "groups": {
@@ -5520,6 +7185,11 @@
       "xnli",
       "xstorycloze",
       "xwinograd"
+    ],
+    "auto_rf": [
+      "rf_belebele",
+      "rf_global_mmlu_full",
+      "rf_include_base_44"
     ]
   },
   "benchmarks": {
@@ -5648,6 +7318,27 @@
       "name": "TruthfulQA-Multi (Calvo Figueras et al.)",
       "languages": 5,
       "format": "MC truthfulness, professionally translated"
+    },
+    "rf_belebele": {
+      "paper": "https://aclanthology.org/2024.acl-long.44/",
+      "venue": "ACL 2024",
+      "name": "Belebele (Bandarkar et al.)",
+      "languages": 122,
+      "format": "cloze reformulation of belebele: passage + question, the four answers scored as continuations"
+    },
+    "rf_global_mmlu_full": {
+      "paper": "https://aclanthology.org/2025.acl-long.919/",
+      "venue": "ACL 2025",
+      "name": "Global-MMLU (Singh et al.)",
+      "languages": 42,
+      "format": "cloze reformulation of global_mmlu_full: question only, the four options scored as continuations"
+    },
+    "rf_include_base_44": {
+      "paper": "https://openreview.net/forum?id=k3gCieTXeY",
+      "venue": "ICLR 2025",
+      "name": "INCLUDE (Romanou et al.)",
+      "languages": 44,
+      "format": "cloze reformulation of include_base_44: question only, the four options scored as continuations"
     }
   }
 }

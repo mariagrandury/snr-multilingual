@@ -369,6 +369,13 @@ if [[ -n "${NUM_FEWSHOT}" ]]; then
 	COMMON_EVAL_ARGS+=(--num_fewshot $NUM_FEWSHOT)
 fi
 
+# Repo-local task YAMLs (the reformulated `rf_*` tasks, src/evals/tasks) on
+# top of the wheel's: TaskManager(include_path=...) in eval_worker.py. An
+# absolute path — the container's cwd is not the repo.
+if [[ -n "${HARNESS_INCLUDE_PATH:-}" ]]; then
+    COMMON_EVAL_ARGS+=(--include_path "$HARNESS_INCLUDE_PATH")
+fi
+
 if [[ $APPLY_CHAT_TEMPLATE = true ]]; then
 	COMMON_EVAL_ARGS+=(--apply_chat_template)
 	COMMON_EVAL_ARGS+=(--fewshot_as_multiturn)

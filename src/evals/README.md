@@ -77,6 +77,29 @@ Task lists live under [`configs/signal_to_ratio/`](configs/signal_to_ratio/):
 | `tasks_posttraining.txt` | post-training tasks (instruct/SFT) |
 | `*_main_table.txt` | matching `task/metric` pairs for the W&B summary table |
 
+### Reformulated tasks (`tasks/rf/`)
+
+The three auto families that ask for a letter — `belebele`,
+`global_mmlu_full`, `include_base_44` — sit at chance for base models at
+these sizes. [`scripts/make_rf_tasks.py`](scripts/make_rf_tasks.py)
+generates a cloze twin of each (`rf_<task>`: same dataset, config and
+split, no lettered option list, the four answer strings scored as
+continuations, zero-shot, `acc` + `acc_norm`) under
+[`tasks/rf/`](tasks/rf/) and registers them in `configs/tasks.json`
+(`benchmark: rf_<family>`, `metric: acc_norm`, group `auto_rf`). The YAMLs
+reach the harness through `eval_worker.py --include_path`, which
+`evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
+wheel is untouched. Re-run the generator after adding a language to any of
+the three families; it is idempotent. Design and the LLM-rewrite cost
+estimate: [`analysis/rq00_task_reformulation/`](../signal-and-noise/analysis/rq00_task_reformulation/README.md).
+Its `compare.py` reads both task sets off
+the ladder report (the deep scheme-A seed-1904 cells, through the rq00
+gate; `run_all_predictivity.sh` runs it) and rewrites the
+figures and the generated table in that README (`rf_gate.png`, per
+language `rf_gate_by_language.png`, a CSV each): the rq00 gate cell —
+median task margin over chance, trained languages — before, after, and the
+difference.
+
 ## How to run
 
 The two-step flow: **generate a runner** from a models file (lists which

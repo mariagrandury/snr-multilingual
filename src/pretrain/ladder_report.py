@@ -48,7 +48,7 @@ from launch_trainings import (  # noqa: E402
     save_interval)
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
-from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
+from evals.scripts.utils.configs import metric_for, tasks_for_benchmarks  # noqa: E402
 
 # Training logs come from every account's TRAIN_LOG_DIRS (pretrain_progress);
 # eval and BPB results need no such list: every account writes them here.
@@ -235,8 +235,11 @@ def _primary(results_file: Path) -> dict[str, float]:
         return {}
     out = {}
     for task, metrics in res.items():
+        # tasks.json's per-task `metric` (the rf_* cloze twins score
+        # acc_norm) wins, as it does in results_io.flatten for W&B.
+        want = (metric_for(task) or "acc", "exact_match")
         for key, val in metrics.items():
-            if key.startswith(("acc,", "exact_match,")) and isinstance(val, float):
+            if key.startswith(tuple(f"{m}," for m in want)) and isinstance(val, float):
                 out[task] = val
                 break
     return out

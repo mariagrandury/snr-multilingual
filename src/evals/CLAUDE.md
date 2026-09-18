@@ -167,6 +167,22 @@ so no job is ever submitted for it again and nothing can reset it. After you
 fix a root cause, `auto_evals_cscs.py --retry-held` gives every held task one
 more chance (first pass only, even under `--watch`).
 
+**Reformulated twins** (2026-09-18). `scripts/make_rf_tasks.py` writes
+`tasks/rf/<family>/rf_<task>.yaml` for belebele / global_mmlu_full /
+include_base_44 — the letter-MCF families — as cloze tasks (answer strings
+as choices, no letters), and registers them in tasks.json with an `rf_`
+PREFIX: `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix
+would be swept into the original family. They ship via
+`HARNESS_INCLUDE_PATH` → `--include_path` (the wheel does not know them;
+`test_new_tasks.py`'s registry check will call them unregistered). Their
+tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
+honours through `configs.metric_for` — the W&B series is
+`rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
+`auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
+and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
+watcher never mistake each other's in-flight job for their own
+(`compute_cost.kind_of` strips the suffix).
+
 ---
 
 ## The one-liner workflow (idempotent, multi-collaborator-safe)
