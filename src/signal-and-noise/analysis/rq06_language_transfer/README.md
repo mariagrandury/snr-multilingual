@@ -91,4 +91,8 @@ The summary above, per language (`predictivity_all` pool). Regenerate with `pyth
 ![rq06 in one figure](pretraining/predictivity_all/highlights.png)
 
 ![Transfer error per language and L](pretraining/predictivity_all/transfer_error_by_L.png)
+
+![The list decision on untrained languages, by proxy size and checkpoint](pretraining/predictivity_all/transfer_da_lines.png)
+
+![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_by_L.png)
 <!-- END auto:panels -->
