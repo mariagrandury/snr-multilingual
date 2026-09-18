@@ -349,9 +349,10 @@ def rank_ax(ax, values: pd.Series, title: str, *, k: int = 8, xlabel: str = "", 
     return shown.rename("value").rename_axis("row").reset_index().assign(col="", panel=title)
 
 
-def save_highlights(fig, out_dir: Path, title: str, note: str, tables: list) -> None:
+def save_highlights(fig, out_dir: Path, title: str, note: str, tables: list, name: str = "highlights") -> None:
+    """`<name>.png` and `<name>.csv`: the highlights page, or one of its panels on its own."""
     top = _header(fig, title, note)
     fig.tight_layout(rect=(0, 0, 1, top))
     out_dir.mkdir(parents=True, exist_ok=True)
-    pd.concat(tables)[["panel", "row", "col", "value"]].to_csv(out_dir / "highlights.csv", index=False)
-    S.save(fig, out_dir / "highlights.png", dpi=150)
+    pd.concat(tables)[["panel", "row", "col", "value"]].to_csv(out_dir / f"{name}.csv", index=False)
+    S.save(fig, out_dir / f"{name}.png", dpi=150)

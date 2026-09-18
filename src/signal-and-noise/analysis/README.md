@@ -9,6 +9,7 @@ methodology · results · files) and its outputs under `<stage>/<pool>/`.
 | theme | folder | question |
 |---|---|---|
 | **A. Is the evaluation predictable?** | [`rq00_gate_and_curves/`](rq00_gate_and_curves/) | Which benchmarks clear chance at each size, and how do scores move with compute and along the run? |
+| | [`rq00_task_reformulation/`](rq00_task_reformulation/) | Do the letter-format families (belebele, Global-MMLU, INCLUDE) clear chance once scored on their answer strings instead of A–D? Before/after gate, per family and language. |
 | | [`rq01_scaling_predictability/`](rq01_scaling_predictability/) | What moves with size in a way a power law captures, and how well does a fit on the proxy rungs predict the reference? |
 | | [`rq02_decision_accuracy/`](rq02_decision_accuracy/) | Does a benchmark rank the design variants at a small size, or at an early checkpoint, the way the reference does? |
 | **B. Can it be measured cheaply?** | [`rq03_noise_and_snr/`](rq03_noise_and_snr/) | How noisy is a measurement (seed, checkpoint), how big is a design effect against that noise, and what is each benchmark's SNR? |
