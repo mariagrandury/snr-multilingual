@@ -161,6 +161,11 @@ EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 # The ladder, small -> large. The order is load-bearing: a scheme's
 # per-setting size cap below means "this rung and every rung under it".
 LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
+# The sizes the eval watcher and the eval-progress views cover. 90M trains
+# (its checkpoints stay on disk) but is not on the ladder: nine of its ten
+# runs diverge (plan/90M-rung-anomaly.md) and the report drops the rung, so
+# evaluating it buys nothing (2026-09-18). `--name` still reaches a 90M cell.
+EVAL_SIZES = [s for s in LADDER if s != "90M"]
 
 # Which language settings each size trains at. Every size now covers every
 # setting — the 1.7B row gained L=15 and L=50 on 2026-09-10, so the top rung

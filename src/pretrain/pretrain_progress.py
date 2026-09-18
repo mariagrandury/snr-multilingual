@@ -59,7 +59,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, GBS, HYPERPARAMS, ITER_MS,
+    CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
     LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
     SIZE_LANG_SETTINGS, TIME_MAX_SEC, exp_name, fineweb_source, job_name,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
@@ -451,7 +451,8 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in DATA_SCHEMES[c["scheme"]]["arches"]}
+            for c in predictivity_cells() for a in DATA_SCHEMES[c["scheme"]]["arches"]
+            if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:

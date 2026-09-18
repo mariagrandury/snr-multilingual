@@ -76,8 +76,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, TOKENIZER_MODEL, cell_languages, due_iters,
-    exp_name, job_name, predictivity_cells, schedule_for)
+    DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
+    due_iters, exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import load_tasks, tasks_for_benchmarks  # noqa: E402
@@ -582,7 +582,10 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             if arch not in DATA_SCHEMES[scheme]["arches"]:
                 continue
             cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
-            if (args.name and cell != args.name) or (args.seed and c["seed"] != args.seed):
+            if args.name:
+                if cell != args.name:
+                    continue
+            elif c["size"] not in args.sizes or (args.seed and c["seed"] != args.seed):
                 continue
             # capstor intermittently faults a read outright (Errno 5 / 108 —
             # the same blips data_progress.py works around, hit here on a
@@ -751,6 +754,10 @@ def main() -> None:
                         "makes a single-job integration test possible")
     p.add_argument("--name", help="watch a single cell (its full name)")
     p.add_argument("--seed", type=int, help="only cells with this seed")
+    p.add_argument("--size", metavar="SIZES",
+                   help="only these sizes, comma-separated (e.g. '600M' or "
+                        f"'1B,1.7B'); default {','.join(EVAL_SIZES)} — 90M is "
+                        "off the ladder and not evaluated unless named")
     p.add_argument("--all-languages", action="store_true",
                    help="evaluate every auto benchmark in every language, not "
                         "only the languages the cell trains on")
@@ -795,6 +802,9 @@ def main() -> None:
     # The pass iterates over these; a flag narrows the default "everything".
     args.archs = [args.arch] if args.arch else list(HYPERPARAMS)
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
+    args.sizes = args.size.split(",") if args.size else EVAL_SIZES
+    if bad := set(args.sizes) - set(LADDER):
+        p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
     benchmarks = auto_benchmarks()
     if args.retry_held:
