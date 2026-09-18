@@ -539,6 +539,33 @@ def merge_unmerged(name: str, logs_root: Path, running: set[str],
                   file=sys.stderr)
 
 
+# The shared offline dataset cache (evaluate.sbatch hard-sets HF_HOME to it for
+# every user). `datasets` takes a FileLock next to each dataset it loads and
+# creates the lock file 0644, so the directory's default ACL (rwx for the
+# named collaborators) is masked down to r-- on it — and the OTHER user's
+# jobs then die on that dataset with PermissionError at the lock, every task,
+# every job (2026-09-15..18: 22k of aromanou's task attempts failed on locks
+# I created, 800 of mine on hers). A lock file's mask is its owner's to
+# raise, so each watcher pass widens the mask on the locks its user owns;
+# the other user's watcher does the same for theirs.
+DATASETS_CACHE = Path("/iopsstor/scratch/cscs/mariagrandury/hf_home/datasets")
+
+
+def share_dataset_locks() -> None:
+    # Create the lock of every cached config up front (the path is the
+    # config dir with "/" -> "_"): a lock that already exists with an open
+    # mask is what everyone's jobs then take, and nobody creates a closed one.
+    for cfg in DATASETS_CACHE.glob("*/*/*/*"):     # <ns>___<name>/<config>/<version>/<hash>
+        lock = DATASETS_CACHE / (str(cfg).replace("/", "_") + ".lock")
+        if cfg.is_dir() and not lock.exists():
+            lock.touch()
+    mine = [p for p in DATASETS_CACHE.glob("*.lock")
+            if (st := p.stat()).st_uid == os.getuid() and st.st_mode & 0o070 != 0o070]
+    if mine:
+        subprocess.run(["setfacl", "-m", "m::rwx", *map(str, mine)], check=False)
+        print(f"({len(mine)} dataset lock file(s) opened to the collaborators)")
+
+
 def one_pass(args, root: Path, staging: Path, logs_root: Path,
              benchmarks: list[str]) -> None:
     # The memos live for ONE pass. Under --watch a single process runs every
@@ -546,6 +573,8 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # a task misread as a missing dataset was retried every pass, never held.
     for memo in (_EVAL_ERROR, _DATASET_FIXED, _JOB_STATE):
         memo.clear()
+    if not args.dry_run:
+        share_dataset_locks()
     # Keep configs/models.json following the grid — conversion and the W&B
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync

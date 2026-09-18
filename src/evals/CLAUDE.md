@@ -247,6 +247,16 @@ Read it before hand-rolling `setfacl` — two things bite:
   which opens the existing inode `'w'` — without a file-level ACL the watcher
   dies with `PermissionError` after submitting its jobs. Same for the
   `.lock` files in `hf_home/datasets/`.
+  The lock files are the worse case (found 2026-09-18): `datasets` creates
+  them 0644 on every `load_dataset`, which sets the file's ACL **mask** to
+  `r--`, so the other user's jobs die on that dataset with
+  `PermissionError: ... .lock` — every task, every job (22k of aromanou's
+  task attempts 09-15..18 failed on locks my jobs had created, 800 of mine on
+  hers). umask cannot help (filelock passes the mode explicitly); only the
+  lock's owner can widen it. `auto_evals_cscs.share_dataset_locks()` runs
+  `setfacl -m m::rwx` on the current user's locks at the start of every
+  pass, so each collaborator's watcher opens their own; a foreign 0-byte
+  lock can be deleted by the directory owner (sticky bit).
 
 - **The container must mount the shared tree, not just `${USER}`'s.** Both
   eval tomls used to mount `/iopsstor/scratch/cscs/${USER}`, so for anyone but
