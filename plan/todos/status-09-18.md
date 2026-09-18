@@ -1,4 +1,35 @@
+# Commands
 
+Finish training and eval grid.
+
+✅ resume training of 1.7B models:
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme B 
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --arch shallow
+
+When we have L100:
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --arch shallow
+python3.11 pretrain/launch_trainings.py cscs --size 1B --scheme AT3 --arch shallow
+
+cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 84
+scontrol update jobid=3398524 reservation=SD-69241-apertus-1-5-0 
+
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --dry-run
+
+squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scancel
+
+✅ eval new ckpts:
+bash evals/scripts/launch_bpb.sh
+python3.11 pretrain/auto_evals_cscs.py --watch 1200
+python3.11 pretrain/auto_evals_cscs.py --retry-held
+
+✅ save new results:
+python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
+sbatch evals/scripts/mirror_eval_logs.sbatch 
+
+cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 45  --interval 1800
+
+# ToDos
 
 - check 09-15
 - check 09-16
@@ -8,7 +39,7 @@
 
 # Finish grid pretraining and eval
 
-python3.11 auto_evals_cscs.py --retry-held
+python3.11 pretrain/auto_evals_cscs.py --retry-held
 
 
 # 90M
@@ -16,7 +47,7 @@ python3.11 auto_evals_cscs.py --retry-held
 - decision: out of grid
 - remove from auto evals and pretraining plan
 - do not waste compute:
-squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /90M/ {print $1}' | xargs -r scancels
+squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /90M/ {print $1}' | xargs -r scancel
 
 # Language reformulation
 
