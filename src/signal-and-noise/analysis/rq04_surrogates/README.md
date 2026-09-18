@@ -405,4 +405,30 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 ![Surrogates per benchmark](pretraining/predictivity/surrogates_by_benchmark.png)
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
+
+**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L; a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3):
+
+![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines.png)
+
+![Smallest size at which an SNR definition tracks DA, per L](pretraining/predictivity/snr_variant_min_size_by_L.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
+
+**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints):
+
+![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines_b.png)
+
+![Spearman rho of each SNR definition with DA per proxy size](pretraining/predictivity/snr_variant_min_size_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
+
+**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute:
+
+![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
+
+![rho of each SNR definition against compute](pretraining/predictivity/snr_variant_min_size_by_L_flops.png)
 <!-- END auto:panels -->

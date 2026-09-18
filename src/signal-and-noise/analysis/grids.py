@@ -331,6 +331,57 @@ def stack_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=s
     return t.assign(panel=title)
 
 
+def level_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, never: str = "—",
+             xlabel: str = "", ylabel: str = "", fontsize: float = 6.5) -> pd.DataFrame:
+    """A small level map (rows x columns, cell = index in `levels`, NEVER_CODE,
+    GATED or NaN as in `level_heatmap`), drawn with the level's own colour
+    scale and legend; returns its long table."""
+    colours = [S.SEQ(x) for x in np.linspace(0.15, 0.95, len(levels))]
+    cmap = ListedColormap([S.NODATA, NEVER] + colours); cmap.set_bad(S.SURFACE)
+    norm = BoundaryNorm(np.arange(-2.5, len(levels) + 0.5, 1), cmap.N)
+    vals = level.to_numpy(dtype=float)
+    ax.imshow(np.ma.masked_invalid(vals), cmap=cmap, norm=norm, aspect="auto")
+    for i in range(vals.shape[0]):
+        for j in range(vals.shape[1]):
+            v = vals[i, j]
+            if np.isfinite(v) and v > GATED:
+                ax.text(j, i, never if v < 0 else level_label(levels[int(v)]), ha="center", va="center",
+                        fontsize=fontsize, color="white" if v >= 0.6 * len(levels) else S.INK)
+    ax.set_xticks(range(vals.shape[1])); ax.set_xticklabels([str(c) for c in level.columns], fontsize=fontsize + .5)
+    ax.set_yticks(range(vals.shape[0])); ax.set_yticklabels([str(r) for r in level.index], fontsize=fontsize + .5)
+    ax.set_title(title, loc="left", fontsize=8.5); ax.set_xlabel(xlabel, fontsize=7.5); ax.set_ylabel(ylabel, fontsize=7.5)
+    S.clean(ax, spines=()); ax.tick_params(length=0)
+    any_gated = (vals == GATED).any()
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colours + [NEVER] + ([S.NODATA] if any_gated else [])]
+    ax.legend(handles, [level_label(l) for l in levels] + [f"{never} never"] + (["filtered out"] if any_gated else []),
+              fontsize=6, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    t = level.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
+    return t.assign(panel=title)
+
+
+def level_lines_ax(ax, level: pd.DataFrame, title: str, *, levels: list, level_label=str, xlabel: str = "",
+                   ylabel: str = "", colours: list | None = None, styles: list | None = None) -> pd.DataFrame:
+    """The same level map as lines: one line per row, y = the columns in
+    order, x = the level (never drawn one step past the last level, no value
+    = a gap; rows jittered a little so coincident lines stay visible).
+    Returns the long table."""
+    cols = list(level.columns)
+    colours = colours or [plt.cm.tab20(i % 20) for i in range(len(level))]
+    jitter = np.linspace(-0.18, 0.18, len(level)) if len(level) > 1 else [0.0]
+    for (name, r), c, dy, ls in zip(level.iterrows(), colours, jitter, styles or ["-"] * len(level)):
+        x = r.to_numpy(dtype=float)
+        x = np.where(x == GATED, np.nan, np.where(x == NEVER_CODE, len(levels), x))
+        ax.plot(x, np.arange(len(cols)) + dy, marker="o", ms=3.5, lw=1.2, ls=ls, color=c, label=str(name))
+    ax.set_yticks(range(len(cols))); ax.set_yticklabels([str(c) for c in cols])
+    ax.set_xticks(range(len(levels) + 1)); ax.set_xticklabels([level_label(l) for l in levels] + ["never"])
+    ax.set_xlim(-0.5, len(levels) + 0.5); ax.set_ylim(-0.5, len(cols) - 0.5); ax.invert_yaxis()
+    ax.set_title(title, loc="left", fontsize=8.5); ax.set_xlabel(xlabel, fontsize=7.5); ax.set_ylabel(ylabel, fontsize=7.5)
+    ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    ax.legend(fontsize=6, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0), ncol=1 if len(level) <= 12 else 2)
+    t = level.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
+    return t.assign(panel=title)
+
+
 def rank_ax(ax, values: pd.Series, title: str, *, k: int = 8, xlabel: str = "", fmt="{:.2f}", ref: float | None = None,
             ascending: bool = False) -> pd.DataFrame:
     """The k best and the k worst of a series (a language or a benchmark
