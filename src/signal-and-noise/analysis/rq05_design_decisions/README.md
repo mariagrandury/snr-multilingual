@@ -244,6 +244,10 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 ![rq05 in one figure](pretraining/predictivity_all/highlights.png)
 
+![Decisions by proxy size and checkpoint](pretraining/predictivity_all/da_lines.png)
+
+![Decisions by compute](pretraining/predictivity_all/da_lines_flops.png)
+
 ![Decisions per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark.png)
 
 ![Early and small per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark_early.png)

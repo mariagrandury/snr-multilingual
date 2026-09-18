@@ -108,15 +108,16 @@ def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
 
 # --- 1. intervention decision accuracy ---------------------------------------
 
-def intervention_da(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """(the decision table, the per-item agreement behind it). The second
-    frame has one row per (intervention, L, proxy size, fraction, task) of
-    CELL_POPULATIONS with `agree` in {0, 1}: what the per-benchmark and
-    per-language tables aggregate."""
+def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """(the decision table, the per-item agreement behind it, the same for
+    every language's BPB with its `group`). The second frame has one row per
+    (intervention, L, proxy size, fraction, task) of CELL_POPULATIONS with
+    `agree` in {0, 1}: what the per-benchmark and per-language tables
+    aggregate; the third is what rq06's transfer lines aggregate."""
     grid = df[df["seed"] == GRID_SEED]
     fin = finals(grid)
-    at_f = {f: at_fraction(grid, f) for f in FRACS}
-    rows, items_rows = [], []
+    at_f = {f: at_fraction(grid, f) for f in fracs}
+    rows, items_rows, group_rows = [], [], []
     for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
         sub_fin = fin[fin[hcol] == hval]
         for L in sorted(sub_fin["L"].unique()):
@@ -132,7 +133,7 @@ def intervention_da(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                 r = ref_piv.xs(ref, level="size")
                 d_ref = r[levels[0]] - r[levels[1]]
                 ref_sign = np.sign(d_ref)[np.sign(d_ref) != 0]      # items the reference decides
-                for f in FRACS:
+                for f in fracs:
                     sub = at_f[f]
                     sub = sub[(sub[hcol] == hval) & (sub["L"] == L)]
                     piv = _pivot(_population(sub, pop, int(L), levels, axis), axis, levels)
@@ -146,10 +147,15 @@ def intervention_da(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                         if len(items) < min_items:
                             continue
                         d_proxy = p.loc[items, levels[0]] - p.loc[items, levels[1]]
+                        agree = (np.sign(d_proxy) == ref_sign.loc[items]).to_numpy(float)
                         if pop in CELL_POPULATIONS:
                             items_rows.append(pd.DataFrame({
                                 "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f,
-                                "task": items, "agree": (np.sign(d_proxy) == ref_sign.loc[items]).to_numpy(float)}))
+                                "task": items, "agree": agree}))
+                        if pop == "bpb_all":            # every language, grouped by what the cell's lists train
+                            group_rows.append(pd.DataFrame({
+                                "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f, "reference_size": ref,
+                                "group": language_group(items, int(L), levels if axis == "scheme" else ("A",)), "agree": agree}))
                         row = {"intervention": key, "label": label, "population": pop, "L": int(L),
                                "proxy_size": s, "frac": f, "reference_size": ref, "n_items": int(len(items)),
                                "decision_acc": float((np.sign(d_proxy) == ref_sign.loc[items]).mean())}
@@ -161,7 +167,20 @@ def intervention_da(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                                         "mean_abs_delta_ref": float(d_ref.loc[items].abs().mean()),
                                         "reference_prefers": levels[0] if first.mean() > 0.5 else levels[1]})
                         rows.append(row)
-    return pd.DataFrame(rows), (pd.concat(items_rows, ignore_index=True) if items_rows else pd.DataFrame())
+    return (pd.DataFrame(rows), pd.concat(items_rows, ignore_index=True) if items_rows else pd.DataFrame(),
+            pd.concat(group_rows, ignore_index=True) if group_rows else pd.DataFrame())
+
+
+LANGUAGE_GROUPS = ("language trained", "script trained", "script not trained")
+
+
+def language_group(tasks, L: int, schemes: tuple) -> list[str]:
+    """Per `bpb_<subset>` task: whether the cell's lists (the union over
+    `schemes` at this L) train the language, only its script, or neither."""
+    trained = set.union(*[trained_bpb_tasks(L, s) or set() for s in schemes])
+    scripts = {t.rsplit("_", 1)[-1] for t in trained} | {"Latn"}          # bpb_dclm is English
+    return [LANGUAGE_GROUPS[0] if t in trained else LANGUAGE_GROUPS[1] if t.rsplit("_", 1)[-1] in scripts
+            else LANGUAGE_GROUPS[2] for t in tasks]
 
 
 def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
@@ -340,7 +359,7 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Pool '{pool}': {df['model'].nunique()} cells, {fin['task'].nunique()} tasks, "
           f"seeds {sorted(df['seed'].unique())}, schemes {sorted(df['scheme'].unique())}")
 
-    da, items = intervention_da(df)
+    da, items, groups = intervention_da(df)
     da.to_csv(out_dir / "intervention_da.csv", index=False)
     if not items.empty:
         # the same agreement, per benchmark and per language (panels.py draws them);
@@ -350,6 +369,10 @@ def main(pool: str, out_dir: Path) -> None:
         for by, name in (("family", "benchmark"), ("language", "language")):
             (items.groupby(keys + [by]).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
              .to_csv(out_dir / f"intervention_da_by_{name}.csv", index=False))
+    if not groups.empty:
+        (groups.groupby(["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"])
+         .agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+         .to_csv(out_dir / "intervention_da_by_group.csv", index=False))
     print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:

@@ -5,6 +5,12 @@ early-decision read, without pooling the benchmarks.
     intervention_da_by_language.png    the same, one subplot per (intervention, language)
     intervention_da_by_benchmark_early.png   the two planned decisions, proxy size x share of the run (mean over L), per benchmark
     intervention_da_by_language_early.png    the same per language
+    da_lines.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
+                                       intervention, mean over L; solid per-language BPB, dashed benchmarks, dotted training loss.
+                                       Read on the ten evaluated checkpoints of every run (`intervention_da_ckpt10.csv` and
+                                       `intervention_da_by_group_ckpt10.csv`, the decision table of analyze.py recomputed at
+                                       every k/10 checkpoint; the rest of the folder stays on 20-100 %)
+    da_lines_flops.png                 the same with every (proxy size, checkpoint) cell at its training compute
 
 Reads `intervention_da_by_benchmark.csv` and `intervention_da_by_language.csv`
 (the per-item agreement `analyze.py` aggregates: per-language BPB on the
@@ -40,12 +46,99 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
-from analysis.rq05_design_decisions.analyze import CANONICAL, INTERVENTIONS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, INTERVENTIONS, intervention_da  # noqa: E402
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
-from analysis.utils import LADDER_SIZES  # noqa: E402
+from analysis.utils import LADDER_SIZES, TARGET_SIZE, ladder_frame  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
+FRACS10 = [k / 10 for k in range(1, 11)]   # every evaluated checkpoint, for the line figures only
+LINE_POPULATIONS = (("bpb_trained", "-", "per-language BPB (trained languages)"), ("benchmark", "--", "benchmark tasks"),
+                    ("loss", ":", "training loss"))
 mpl.rcParams.update(S.RC)
+
+
+def one_reference(da: pd.DataFrame, series: str) -> tuple[pd.DataFrame, str]:
+    """Keep, per (series, population) line, only the L's whose reference is
+    the size most of that line's L's share (ties: the largest), so a line
+    never averages decisions read against different references. Returns the
+    frame and a caption line naming each line's reference and L's."""
+    keep, words = [], []
+    for (key, pop), g in da.groupby([series, "population"], sort=False):
+        per_L = g[g["frac"] == 1.0].groupby("L")["reference_size"].first()
+        if per_L.empty:
+            continue
+        counts = per_L.value_counts()
+        ref = sorted(counts[counts == counts.max()].index, key=LADDER_SIZES.index)[-1]
+        Ls = sorted(per_L.index[per_L == ref])
+        keep.append(g[g["L"].isin(Ls)])
+        words.append(f"{key}/{pop}: vs {ref} on L{','.join(map(str, Ls))}")
+    return pd.concat(keep) if keep else da.iloc[0:0], "; ".join(words)
+
+
+def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_lines", series: str = "intervention", colours: dict = COLOUR,
+             labels: dict | None = None, populations=LINE_POPULATIONS, title: str, note: str) -> None:
+    """Two panels: DA-size (x = proxy size at its final checkpoint) and DA-ckpt
+    (x = the reference's own checkpoints), one line per value of `series`
+    (mean over the L's that share the line's reference size), one line style
+    per population."""
+    da, refs = one_reference(da[da[series].notna()], series)
+    note = note + ". Each line keeps the L's that share one reference size (the largest size trained at both levels): " + refs
+    size = (da[da["frac"] == 1.0].groupby([series, "population", "proxy_size"])["decision_acc"].mean().reset_index())
+    ckpt = (da[(da["proxy_size"] == da["reference_size"]) & (da["frac"] < 1.0)]
+            .groupby([series, "population", "frac"])["decision_acc"].mean().reset_index())
+    sizes = [s_ for s_ in LADDER_SIZES if s_ in set(size["proxy_size"])]
+    fracs = sorted(ckpt["frac"].unique())
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 4.6), sharey=True)
+    tables = []
+    for ax, t, x, xs, xlab, ttl in ((axes[0], size, "proxy_size", sizes, "proxy size (final checkpoint)",
+                                     "DA-size: the proxy's final ranking vs the reference's"),
+                                    (axes[1], ckpt, "frac", fracs, "reference's training tokens (× Chinchilla)",
+                                     "DA-ckpt: the reference's own early checkpoints vs its final ranking")):
+        for key in colours:
+            for pop, ls, _ in populations:
+                g = t[(t[series] == key) & (t["population"] == pop)].set_index(x).reindex(xs)
+                if g["decision_acc"].notna().any():
+                    ax.plot(range(len(xs)), g["decision_acc"], color=colours[key], ls=ls, marker="o", ms=3.5, lw=1.3)
+        ax.set_xticks(range(len(xs))); ax.set_xticklabels([str(v) if x != "frac" else G.chinchilla(v) for v in xs])
+        ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+        ax.set_xlabel(xlab); ax.set_title(ttl, loc="left", fontsize=8.5); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+        tables.append(t.rename(columns={series: "row", x: "col", "decision_acc": "value"}).assign(panel=ttl)
+                      .assign(row=lambda d: d["row"].astype(str) + " / " + d["population"])[["panel", "row", "col", "value"]])
+    axes[0].set_ylabel("decision accuracy (mean over L)")
+    axes[1].legend(handles=[plt.Line2D([], [], color=c, lw=2, label=(labels or {}).get(k, k)) for k, c in colours.items()]
+                   + [plt.Line2D([], [], color=S.INK, ls=ls, label=lab) for _, ls, lab in populations],
+                   fontsize=6.5, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    G.save_highlights(fig, out_dir, title, note, tables, name=name)
+
+
+def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, name: str = "da_lines_flops",
+                   series: str = "intervention", colours: dict = COLOUR, labels: dict | None = None,
+                   populations=LINE_POPULATIONS, title: str, note: str) -> None:
+    """One panel: every (proxy size, fraction) cell at its training compute
+    (fraction x the size's mean full run, as a share of the reference's), y = DA
+    (mean over the L's sharing the line's reference), one line per value of
+    `series`, one style per population."""
+    da, refs = one_reference(da[da[series].notna() & da["proxy_size"].isin(full_compute.index)], series)
+    note = note + ". Each line keeps the L's that share one reference size: " + refs
+    da = da.copy()
+    da["compute_share"] = da["frac"] * da["proxy_size"].map(full_compute) / full_compute[TARGET_SIZE]
+    t = da.groupby([series, "population", "proxy_size", "frac", "compute_share"])["decision_acc"].mean().reset_index()
+    fig, ax = plt.subplots(figsize=(9, 5))
+    tables = []
+    for key in colours:
+        for pop, ls, _ in populations:
+            g = t[(t[series] == key) & (t["population"] == pop)].sort_values("compute_share")
+            if len(g):
+                ax.plot(g["compute_share"], g["decision_acc"], color=colours[key], ls=ls, marker="o", ms=2.8, lw=1.1)
+                tables.append(g.assign(panel="flops", row=f"{key} / {pop}").rename(columns={"compute_share": "col", "decision_acc": "value"})
+                              [["panel", "row", "col", "value"]])
+    ax.set_xscale("log"); ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+    ax.set_xlabel(f"training compute of the (proxy size, checkpoint) cell, share of the {TARGET_SIZE} run")
+    ax.set_ylabel("decision accuracy (mean over L)"); ax.grid(color=S.GRID, lw=.6, which="both"); S.clean(ax)
+    ax.legend(handles=[plt.Line2D([], [], color=c, lw=2, label=(labels or {}).get(k, k)) for k, c in colours.items()]
+              + [plt.Line2D([], [], color=S.INK, ls=ls, label=lab) for _, ls, lab in populations],
+              fontsize=6.5, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    G.save_highlights(fig, out_dir, title, note, tables, name=name)
 
 
 def _panels(t: pd.DataFrame, by: str, path: Path, *, keys: list, ncols: int, **kw) -> None:
@@ -97,6 +190,22 @@ def main(pool: str) -> None:
                 title=f"How small and how early, per {name} (mean over language settings)")
         if by == "family":
             highlights(out_dir, fin, keys)
+    frame = ladder_frame(pool)
+    da, _, groups = intervention_da(frame, fracs=FRACS10)
+    da.to_csv(out_dir / "intervention_da_ckpt10.csv", index=False)
+    (groups.groupby(["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"])
+     .agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+     .to_csv(out_dir / "intervention_da_by_group_ckpt10.csv", index=False))
+    da_lines(da, out_dir, labels={k: v[0] for k, v in INTERVENTIONS.items()},
+             title="How small and how early each design decision can be read",
+             note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
+                  "checkpoint, mean over the language settings; dotted line = 0.75")
+    # a proxy cell's compute: the mean full-run compute of the size's families (deep and shallow differ by up to 13 %)
+    da_lines_flops(da, frame.groupby(["size", "model"])["compute"].max().groupby("size").mean(), out_dir,
+                   labels={k: v[0] for k, v in INTERVENTIONS.items()},
+                   title="How much compute reads each design decision",
+                   note="point = one (proxy size, checkpoint) cell at the compute spent up to that checkpoint; DA = share of items on "
+                        "which the cell prefers the level the reference prefers at its final checkpoint, mean over L; dotted line = 0.75")
     if pool != CANONICAL:
         return
     rel = f"{stage}/{pool}"
@@ -108,6 +217,8 @@ def main(pool: str) -> None:
         f"`python analysis/rq05_design_decisions/panels.py --pool {pool}`. White cells have no value; each figure's table "
         "sits next to it under the same name (`intervention_da_by_<unit>.csv`).",
         f"![rq05 in one figure]({rel}/highlights.png)",
+        f"![Decisions by proxy size and checkpoint]({rel}/da_lines.png)",
+        f"![Decisions by compute]({rel}/da_lines_flops.png)",
         f"![Decisions per benchmark]({rel}/intervention_da_by_benchmark.png)",
         f"![Early and small per benchmark]({rel}/intervention_da_by_benchmark_early.png)",
         f"![Decisions per language]({rel}/intervention_da_by_language.png)",
