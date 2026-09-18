@@ -208,7 +208,8 @@ def benchmark_and_language_panels(cells: pd.DataFrame, out_dir: Path, name: str,
 
 
 def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "", cbar: str = "",
-                  level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark") -> None:
+                  level_label=str, never: str = "—", xlabel: str = "language", ylabel: str = "benchmark",
+                  rows: list | None = None, cols: list | None = None, separators: list = ()) -> None:
     """Language x benchmark maps whose cell is a *level* (the smallest size,
     Chinchilla multiple or compute at which something holds). `mats` is one
     frame or a dict label -> frame (stacked subplots, e.g. one per model
@@ -222,8 +223,10 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     mats = {k: m for k, m in mats.items() if m is not None and not m.empty}
     if not mats:
         return
-    rows = panel_order(pd.unique(np.concatenate([m.index.to_numpy() for m in mats.values()])))
-    cols = sorted(set().union(*[set(m.columns) for m in mats.values()]), key=str)
+    if rows is None:                # a square map passes one order for both so its diagonal is a thing with itself
+        rows = panel_order(pd.unique(np.concatenate([m.index.to_numpy() for m in mats.values()])))
+    if cols is None:
+        cols = sorted(set().union(*[set(m.columns) for m in mats.values()]), key=str)
     colours = [S.SEQ(x) for x in np.linspace(0.15, 0.95, len(levels))]
     cmap = ListedColormap([S.NODATA, NEVER] + colours); cmap.set_bad(S.SURFACE)
     norm = BoundaryNorm(np.arange(-2.5, len(levels) + 0.5, 1), cmap.N)
@@ -234,6 +237,8 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
         mat = mat.reindex(index=rows, columns=cols)
         vals = mat.to_numpy(dtype=float)
         ax.imshow(np.ma.masked_invalid(vals), cmap=cmap, norm=norm, aspect="auto")
+        for k in separators:            # a square map's block boundaries, drawn on both axes
+            ax.axhline(k - 0.5, color=S.INK, lw=0.6); ax.axvline(k - 0.5, color=S.INK, lw=0.6)
         for i in range(vals.shape[0]):
             for j in range(vals.shape[1]):
                 v = vals[i, j]

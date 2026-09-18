@@ -201,3 +201,19 @@ The early-and-small reading one L at a time: pairs of design variants that share
 
 ![Early and small per L](pretraining/predictivity/early_small_by_L.png)
 <!-- END auto:by-L -->
+
+<!-- BEGIN auto:cross-task (cross_task.py --pool predictivity) -->
+## Cross-task predictability
+
+Every parent task as the proxy for every other one (569 x 569): the cell is the smallest proxy size (DA-size, 11 variants at 1.7B, 55 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 406 pairs, ten checkpoints) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
+
+![Cross-task DA-size by benchmark](pretraining/predictivity/cross_task_size_by_family.png)
+
+![Cross-task DA-ckpt by benchmark](pretraining/predictivity/cross_task_ckpt_by_family.png)
+
+![Cross-task DA-size by language](pretraining/predictivity/cross_task_size_by_language.png)
+
+![Cross-task DA-ckpt by language](pretraining/predictivity/cross_task_ckpt_by_language.png)
+
+Full task-level maps: [`cross_task_size.png`](pretraining/predictivity/cross_task_size.png), [`cross_task_ckpt.png`](pretraining/predictivity/cross_task_ckpt.png).
+<!-- END auto:cross-task -->

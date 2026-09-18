@@ -115,6 +115,8 @@ run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 run $PY analysis/rq00_task_reformulation/compare.py
 # per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
+# cross-task predictability: every parent task as the proxy for every other one (DA-size and DA-ckpt level maps)
+run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
