@@ -188,7 +188,7 @@ def _scores_at(dft, bucket, frac) -> dict:
     return out
 
 
-def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE) -> list[dict]:
+def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EARLY_SMALL_FRACS) -> list[dict]:
     """Early AND small, as a ranking: every design variant at a proxy bucket,
     read at 20-100 % of its own run, ranked against the same variants at the
     reference bucket's final checkpoint. The cross of DA-size (the 100 %
@@ -204,7 +204,7 @@ def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE) -> list[
     order = bucket_order()
     rows = []
     for b in [b for b in order[: order.index(target_size) + 1] if b in set(dft["bucket"])]:
-        for frac in EARLY_SMALL_FRACS:
+        for frac in fracs:
             if b == target_size and frac >= 1.0:
                 continue                    # the reference against itself
             got = _scores_at(dft, b, frac)

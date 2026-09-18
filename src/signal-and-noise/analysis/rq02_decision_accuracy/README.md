@@ -181,3 +181,23 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 
 ![DA-size per language](pretraining/predictivity/da_size_by_language.png)
 <!-- END auto:early-small -->
+
+<!-- BEGIN auto:by-L (by_L.py --pool predictivity) -->
+## Per language count
+
+**Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ZH and ES stop at 1B, so they never pair against the reference; L1, L2 and L100 have one pair, so their per-task DA is 0 or 1; L15 has no 1.7B cell yet.
+
+| L | variants | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|
+| 1 | L1-deep, L1-shallow | 1 / 0/0/0 | 1 / 1/1/1 | 1 / 1/1/1 | 1 / 1/1/1 | 1 / 0/0/0 |
+| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 1 / 0/0/0 | 1 / 0/1/1 | 1 / 0/1/1 | 1 / 0/1/1 | 1 / 0/0/0 |
+| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 0/0/0 | 6 / 1/1/3 | 6 / 1/1/3 | 6 / 1/1/3 | 6 / 1/0/0 |
+| 15 | L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 |
+| 30 | L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 6 / 0/0/0 | 6 / 1/3/3 | 6 / 1/3/3 | 6 / 1/3/3 | 6 / 1/1/1 |
+| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 0/0/0 | 6 / 0/0/1 | 6 / 0/0/1 | 6 / 0/0/1 | 6 / 0/0/1 |
+| 100 | L100-AT3-deep, L100-AT3-shallow | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 |
+
+The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair of schemes A and B (the `predictivity` pool's, `da_pooled_per_task.csv`). `da_by_L_per_task.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity`.
+
+![Early and small per L](pretraining/predictivity/early_small_by_L.png)
+<!-- END auto:by-L -->

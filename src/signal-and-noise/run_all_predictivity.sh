@@ -113,6 +113,8 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
+run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
