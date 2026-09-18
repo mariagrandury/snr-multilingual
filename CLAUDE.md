@@ -66,7 +66,8 @@ they carry the failure modes, and they are more current than this file.
 configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
-scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh, reservation_drain.sh
+scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh,
+                  # reservation_drain.sh, preempt_drain.sh (queue drainers)
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
