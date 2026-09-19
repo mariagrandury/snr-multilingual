@@ -16,24 +16,25 @@ yet, which blanks every per-L figure at those L.
 ![Smallest size above chance per language and benchmark](rq00_gate_and_curves/pretraining/predictivity/first_size_above_random.png)
 
 How it is computed
-- A run is *confidently above chance* when the Wilson 95 % lower bound of its final accuracy over the task's items (`n_items`, tasks.json) clears chance (`1/n_options`); a (benchmark, language, size) cell is above random when at least half of the size's runs are (`above_random.py`, 2026-09-19; before that: the mean beat chance by a fixed 0.05).
+- A run is *confidently above chance* when the **one-sided 95 %** Wilson lower bound of its final accuracy over the task's items (`n_items`, tasks.json) clears chance (`1/n_options`) — `proportion_confint(alpha=0.10)`, whose alpha is the two-sided level; a (benchmark, language, size) cell is above random when at least half of the size's runs are (`above_random.py`, 2026-09-19; before that: the mean beat chance by a fixed 0.05).
 - Left: share of a benchmark's languages above the gate per size (number = language tasks). Middle: median margin above chance. Right and second figure: the smallest size from which the gate holds at every larger size.
 - The gate NaN-s every at-chance SNR cell downstream, so it propagates to every RQ.
 
 Key finding
-- Of 462 benchmark tasks, 165 clear chance at some size and 146 at 1.7B; 297 are random at every size (Wilson gate, 2026-09-19; the fixed +0.05 margin gave 128 / 119 / 334 — the binomial test admits 161 cells the margin refused, almost all HellaSwag, XNLI, XStoryCloze and PAWS cells that are 1–4 points above chance on 500–10 000 items, and refuses 5). The gate is the first result: most multilingual accuracy benchmarks carry no information below 2B.
+- Of 462 benchmark tasks, 180 clear chance at some size and 155 at 1.7B; 282 are random at every size (one-sided 95 % Wilson gate, 2026-09-19; the fixed +0.05 margin gave 128 / 119 / 334, the two-sided-95 % bound 165 / 146 / 297). The test admits the cells the margin refused — mostly HellaSwag, XNLI, XStoryCloze and PAWS, 1–4 points above chance on 500–10 000 items. The gate is still the first result: most multilingual accuracy benchmarks carry no information below 2B.
 
 Other findings
 - MultiBLiMP is above chance in every language from 175M (margin +0.29 to +0.41); HellaSwag in 22–24 of 31 languages from 175M; XNLI 13–14 of 18 and XStoryCloze 8–9 of 13 from 350M; XWinograd in every language from 1B; XCOPA in 7–8 of 11 from 600M.
 - Global-MMLU, INCLUDE, TruthfulQA and both PIQA clozes stay at chance in (almost) every language; belebele clears it in 5 of 105 languages at 1.7B only. Statistically above chance is not usefully above chance: a HellaSwag cell passes at +0.01 over 10 042 items — an effect floor (e.g. margin ≥ 0.02) on top of the test is the paper's call.
-- The reformulation (rq00_task_reformulation, same models for both task sets): at 1.7B in the trained languages belebele goes from −0.01 to +0.15 over chance, INCLUDE from −0.01 to +0.12, Global-MMLU from +0.01 to +0.07, and every one of those gains is significant (two-proportion z-test over the items, p < 0.05: 9/9, 6/7, 8/8 tasks); at 175M the gains are within 0.04 of zero but still significant for 27/59 belebele and 23/29 Global-MMLU tasks (900 and ~14 000 items).
+- The reformulation (rq00_task_reformulation, same models for both task sets, 2026-09-19 report): at 1.7B in the trained languages belebele goes from +0.011 to +0.109 over chance (56 of 59 tasks significant), Global-MMLU from −0.010 to +0.048 (26/29), INCLUDE from +0.005 to +0.052 (18/36); the gain grows with size and 38/59 belebele tasks are already significant at 175M. Significance is tested on one metric — the original's `acc` against the rf run's own `acc` — because the rf twins are *scored* with `acc_norm`, whose offset is family-shaped (belebele −0.016, Global-MMLU +0.016, INCLUDE +0.018; median +0.005 overall) and exceeds half the plotted gain in 36 % of the (task, model) pairs.
 
 Issues / open
-- The rq00–rq04 numbers below were computed with the old fixed-margin gate; regenerate (`run_all_predictivity.sh`) before quoting them.
+- rq00 and the reformulation are regenerated under the new gate; the rq01–rq04 numbers below still come from the old fixed-margin one, so regenerate (`run_all_predictivity.sh`, FORCE=1) before quoting them.
 - The per-language map is only readable at appendix size.
 
 Measurement issues
-- *Fixed — chance is per task, the margin was not.* The old +0.05 was a larger step on a 2-option task than on a 4-option one and ignored the test-set size; the gate is now the Wilson lower bound per run against 1/n, so a 500-item 2-option task and a 100-item 4-option task are held to the same evidence. Still open: the runs of a size are not independent draws (they share the test set), so "at least half of the runs" is a majority rule, not a pooled test (31 of 2 310 cells sit exactly at half); `_APPROX` families (TruthfulQA, AGIEval) have a variable option count per item, so their chance level is the family table's approximation; and the test has no effect floor (above).
+- *Fixed — chance is per task, the margin was not.* The old +0.05 was a larger step on a 2-option task than on a 4-option one and ignored the test-set size; the gate is now the one-sided 95 % Wilson lower bound per run against 1/n, so a 500-item 2-option task and a 100-item 4-option task are held to the same evidence. Still open: the runs of a size are not independent draws (they share the test set), so "at least half of the runs" is a majority rule, not a pooled test; `_APPROX` families (TruthfulQA, AGIEval) have a variable option count per item, so for them `random_baseline` is the family table's approximation, not a measured null; and the test has no effect floor — a HellaSwag cell passes at +0.01 over 10 042 items, and 141 of the positives would not survive a Bonferroni bound over the 2 310 cells, so `above_random_thresholds.png` shows what each rule keeps and an effect floor (the gate plus 0.02) remains the paper's call.
+- *The cell's population can change along the size axis.* Where a size has cells that trained the benchmark's language the gate reads only those, and where it has none it falls back to every cell of the size; `above_random_share.csv` now carries a `population` column per bucket (1 545 cells `trained`, 765 `all`) so the switch is visible.
 - *Formulation decides the gate.* The letter-format families are at chance because of the prompt format, not the knowledge (the rf twins clear the gate at 1.7B). Fix: report the gate for both formulations (the rf evals are running) and make "formulation" a row of the rq00 figure, see "New analyses".
 
 ## rq01 — What scales predictably with model size?
@@ -220,12 +221,12 @@ How it is computed
 - `depth_crossover`: deep − shallow final BPB per size × L, on the languages the scheme-A list trains, in seed sds (median over languages; < 0 = deep wins).
 
 Key finding
-- Most decisions on the shared languages are not decisions at the reference: its |Δ| clears 2 seed sds on 4 of 103 trained-language items for depth and on 1 of 37 for the lists. Only temperature has a real effect there (44 of 50 items), and it is read from 175M (0.88; 0.95 on the decided items) and at 350M (0.96; 1.00).
-- Benchmarks read no decision at any size or checkpoint, and restricting to the items the reference decides does not help (0.21–0.57): the benchmarks' failure is not noise at the reference.
+- Most decisions on the shared languages are not decisions at the reference: its |Δ| clears 2 sds of the two-run difference (√2 × the seed sd) on **0 of 206** trained-language items for depth and **0 of 142** for the lists. Only temperature has a real effect there (82 of 100 items), and every proxy reads it (DA 0.92, and 1.00 on the decided items).
+- Benchmarks read no decision at any size or checkpoint, and restricting to the items the reference decides does not help (0.33–0.50 over the five interventions, on 7 521 decided items): the benchmarks' failure is not noise at the reference.
 
 Other findings
-- Depth is a vanishing advantage, not a crossover: deep beats shallow by 5–14 seed sds at 175M, by |z| < 0.6 at 350M, and shallow is ahead by 0.3–1.6 sds (within noise) at the 600M reference. The DA of 0.0 at 175M and 0.03–1.0 at 350M read a reference that has no real preference.
-- On every language's BPB (`bpb_all`, which includes the languages only one level trains) the decided items are read well: lists 0.83 / 0.92 / 0.94 / 0.96 (175M / 350M / 600M / 1B), ru-vs-zh 0.84 / 0.97, ru-vs-es 0.95 / 0.97 — but that population is dominated by "the model that saw the language wins" (rq06).
+- Depth is a vanishing advantage, not a crossover: deep beats shallow by 3.9–10.1 difference sds at 175M, by |z| ≤ 0.4 at 350M, and at the 600M reference shallow is ahead by ≤ 1.1 sds — inside noise. The DA of 0.0 at 175M and 0.03–1.0 at 350M read a reference that has no real preference.
+- On every language's BPB (`bpb_all`, which includes the languages only one level trains) the decided items are read well: lists 0.96, ru-vs-zh 0.95, ru-vs-es 0.98, temperature 0.91 (mean over proxy sizes) against 0.72–0.85 on all items — but that population is dominated by "the model that saw the language wins" (rq06).
 - Effect sizes at the reference (`rq4_effect_vs_seed.csv`): temperature 3.9 and second language 3.4 seed sds on BPB, depth 1.5, lists 1.6; benchmarks 1.1–1.7. Where the effect is large the decision is read early.
 
 Issues / open
@@ -237,7 +238,7 @@ Issues / open
 Measurement issues
 - *Items are not independent.* A language's BPB items move together (a better model is better on every language), so 37 languages agreeing is closer to one decision measured 37 times than to 37 decisions. Fix: report the number of *decisions* (intervention × L) that agree, with the item share as a secondary number, and bootstrap over L, not items.
 - *The reference changes between lines.* Depth, temperature and zh/es are read against 600M, the lists against 1.7B, and a 1.7B depth or temperature decision may differ. Fix: once the 1.7B shallow and AT3 cells finish, re-read every line against 1.7B; until then name the reference in the legend, not only in the note.
-- *The seed sd comes from the baseline cells.* It is the median over the deep scheme-A cells with replicates (175M, 600M, 1B), applied to every size and scheme. Fix: where the ×3 cells exist at the reference's own size, use that size's sd; state the fallback.
+- *The seed sd comes from the baseline cells.* It is the median over the deep scheme-A cells with replicates (175M, 600M, 1B), applied to every size and scheme, and each cell's own sd rests on 3 seeds (the median-of-sd is biased low by ~17 %). The |Δ| of two runs is compared against √2 × that sd. Fix: where the ×3 cells exist at the reference's size, use that size's sd, and widen DECIDED to cover the sd's sampling error.
 
 ## rq06 — Does the decision transfer to languages the proxy did not train? (`predictivity_all`)
 
