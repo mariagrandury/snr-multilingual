@@ -8,8 +8,9 @@ statistic, tracks decision accuracy where.
                                      at which each measurement reads the decision at DA >= SAFE_DA, per language count
     min_level_by_L_lines.png         the same as lines, one per measurement
     snr_variant_min_size_by_L.png    smallest proxy size at which an SNR definition's Spearman rho with DA (across the
-                                     L's benchmark tasks; BPB is a separate population, see the CSV's `kind`) reaches
-                                     RHO_MIN, per language count, DA-size and DA-ckpt
+                                     L's benchmark tasks in the languages every variant at the L trains on; BPB is a
+                                     separate population, see the CSV's `kind`) reaches RHO_MIN, per language count,
+                                     DA-size and DA-ckpt
     snr_variant_min_size_by_L_lines.png   the same as lines, one per definition
     min_level_by_L_b.png             version B, every pair pooled (the headline pool): per measurement and proxy size,
                                      the earliest checkpoint (0.5C-5C) at DA >= SAFE_DA against the reference, and the
@@ -58,7 +59,9 @@ from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, NOISE_AND_SNR, SCALING_PREDICTABILITY, SURROGATES  # noqa: E402
 from analysis.rq04_surrogates.analyze import CANONICAL, FITS_POOL, KINDS, MIN_TASKS, surrogates  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
-from analysis.utils import SMALL_SIZES, TARGET_SIZE, benchmark_family  # noqa: E402
+from analysis.utils import SMALL_SIZES, TARGET_SIZE, benchmark_family, trained_bpb_tasks  # noqa: E402
+from pretrain.ladder_report import _trained_tasks  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 from scipy.stats import spearmanr  # noqa: E402
 
 OUT_ROOT = SURROGATES
@@ -135,7 +138,7 @@ def main(pool: str) -> None:
         f"The rankings above, without the aggregation (`{pool}` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq04 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('SNR definition per language', 'snr_definition_by_language.png'), ('Surrogates per benchmark', 'surrogates_by_benchmark.png'), ('Surrogates per language', 'surrogates_by_language.png')]]
-        + [f"**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}):"]
+        + [f"**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Smallest safe level per measurement and L', 'min_level_by_L.png'), ('the same as lines', 'min_level_by_L_lines.png'), ('Smallest size at which an SNR definition tracks DA, per L', 'snr_variant_min_size_by_L.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines.png')]]
         + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Earliest checkpoint per proxy size and DA at 1C', 'min_level_by_L_b.png'), ('the same as lines', 'min_level_by_L_lines_b.png'), ('Spearman rho of each SNR definition with DA per proxy size', 'snr_variant_min_size_by_L_b.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines_b.png')]]
@@ -194,11 +197,27 @@ def _two_panels(out_dir: Path, name: str, size_map: pd.DataFrame, ckpt_map: pd.D
         G.save_highlights(fig, out_dir, title, note, tables, name=f"{name}{kind}")
 
 
+def trained_at(L: int) -> set[str]:
+    """The tasks (benchmarks and per-language BPB) in the languages EVERY
+    design variant at L trains on: the intersection of the lists of the
+    schemes the registry (`DATA_SCHEMES`) defines at L, English always — the
+    registry, not the schemes with a cell in the table, so a scheme that has
+    not trained at L yet already narrows the set. A benchmark in a language
+    only one scheme's list carries measures that list, not the decision."""
+    schemes = [s for s, d in DATA_SCHEMES.items() if L in d["langs"]]
+    return set.intersection(*[set(_trained_tasks(L, s)) | (trained_bpb_tasks(L, s) or set()) for s in schemes])
+
+
+TRAINED_NOTE = "tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always)"
+
+
 def by_L(pool: str, out_dir: Path, stage: str) -> None:
     src = DECISION_ACCURACY / stage / pool / "da_by_L_per_task.csv"
     if not src.is_file():
         return
     t = pd.read_csv(src)
+    trained = {L: trained_at(L) for L in t["L"].unique()}
+    t = t[t["task"].isin(("train_loss", "bpb_macro")) | np.array([task in trained[L] for task, L in zip(t["task"], t["L"])], dtype=bool)]
     t["measurement"] = _measurement(t["task"])
     t = _with_mean_benchmarks(t)
     sizes = [s for s in SMALL_SIZES if s in set(t["proxy_size"])]        # before the pair filter: the pooled maps keep 1B
@@ -219,7 +238,7 @@ def by_L(pool: str, out_dir: Path, stage: str) -> None:
                 "How small, and how early, each measurement reads the decision, per language count",
                 f"cell = smallest proxy size whose final ranking agrees with the {TARGET_SIZE} final ranking at DA ≥ {SAFE_DA} "
                 f"(left), and the earliest checkpoint of the {TARGET_SIZE} run that agrees with its own final ranking (right); "
-                f"DA = mean over the measurement's gated tasks (≥ {MIN_PAIRS} pairs) of the share of design-variant pairs sharing the L ordered alike; "
+                f"DA = mean over the measurement's gated tasks (≥ {MIN_PAIRS} pairs; {TRAINED_NOTE}) of the share of design-variant pairs sharing the L ordered alike; "
                 "a level counts when it holds at every larger level with a value" + few_note,
                 "measurement", rows, sizes, f"DA-size: smallest proxy size at DA ≥ {SAFE_DA}",
                 f"DA-ckpt: earliest {TARGET_SIZE} checkpoint at DA ≥ {SAFE_DA}")
@@ -256,7 +275,7 @@ def by_L(pool: str, out_dir: Path, stage: str) -> None:
     order += [x for x in variants if x not in order]
     _two_panels(out_dir, "snr_variant_min_size_by_L", _min_size(rv[rv["da"] == "size"]), _min_size(rv[rv["da"] == "ckpt"]),
                 sizes, str, "Smallest size at which an SNR definition tracks decision accuracy, per language count",
-                f"cell = smallest proxy size at which the Spearman ρ, over the L's benchmark tasks (≥ {MIN_TASKS}; BPB in the CSV), between log10 SNR at that "
+                f"cell = smallest proxy size at which the Spearman ρ, over the L's benchmark {TRAINED_NOTE} (≥ {MIN_TASKS}; BPB in the CSV), between log10 SNR at that "
                 f"size and the task's DA reaches {RHO_MIN} and stays there at every larger size with a value; left: DA-size "
                 f"(proxy final → {TARGET_SIZE} final), right: DA-ckpt (the size's own early checkpoints → its final, mean over "
                 f"the nine checkpoints before the last); cells need ≥ {MIN_PAIRS} pairs; definitions ordered by their mean ρ with DA-size" + few_note,

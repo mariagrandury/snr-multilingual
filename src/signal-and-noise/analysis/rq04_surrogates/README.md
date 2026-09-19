@@ -406,7 +406,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
 
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L; a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3):
+**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3):
 
 ![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
 
