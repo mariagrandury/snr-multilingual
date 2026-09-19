@@ -208,8 +208,9 @@ moves pending convert/eval jobs there, holding at most `--max-nodes` (default
 50). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
 full cluster parks these jobs on `QOSGrpNodeLimit` for hours, while
 `preemptable` has every node and no group cap — its price is preemption
-(REQUEUE, 4 min grace), which costs a conversion its in-flight checkpoint and
-an eval its in-flight tasks, both of which the next watcher pass redoes.
+(4 min grace, then cancelled: Clariden runs `JobRequeue=0`), which costs a
+conversion its in-flight checkpoint and an eval its in-flight tasks, both of
+which the next watcher pass resubmits and redoes.
 Pretrain jobs are never moved: they are `--no-requeue` and a preemption costs
 up to a save interval. Nothing is truncated (preemptable allows 24 h), so this
 one is simpler than the debug drainer. Order: conversions, then the final

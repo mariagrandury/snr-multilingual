@@ -16,10 +16,11 @@
 #              finishes (per_task/<task>/), and the auto-eval watcher
 #              resubmits with only the tasks still missing.
 #
-# Neither sets --no-requeue, so Slurm requeues them and they pick up where
-# they stopped. Pretrain jobs are NEVER moved: 21 nodes lost to a preemption
-# costs up to a save interval of training and there is no requeue for them
-# (--no-requeue in launch_pretraining_cscs.sh). Unlike debug_drain.sh nothing
+# Clariden has JobRequeue=0 and neither sets --requeue, so a preempted job is
+# cancelled, not requeued; the next watcher pass resubmits it and it picks up
+# where it stopped. Pretrain jobs are NEVER moved: 21 nodes lost to a
+# preemption costs up to a save interval of training (--no-requeue in
+# launch_pretraining_cscs.sh). Unlike debug_drain.sh nothing
 # is truncated here — preemptable's 24 h limit is above every eval walltime.
 #
 # Order — the priority ladder (2026-09-18):
