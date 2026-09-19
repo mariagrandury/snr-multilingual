@@ -75,8 +75,11 @@ so a script never decides by model name.
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
-- Diverged runs (`run__diverged`, the 90M rung) and runs short of their target
-  are dropped by default; the pool flag `include_diverged` keeps them.
+- Diverged runs (`run__diverged`) and runs short of their target are dropped
+  by default; the pool flag `include_diverged` keeps them. `build_snr_pool`
+  also drops every size outside `launch_trainings.EVAL_SIZES`: the 90M rung
+  trains but is off the ladder (nine of its ten runs diverge), so no ladder
+  pool, table or figure carries it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
   grid every size was evaluated on, BPB rows on the k/20 save grid, plus the
   final checkpoint. Without it the late-window noise (`last_n = 5`) spans 50 %
@@ -146,7 +149,7 @@ schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{90M…1.7B}-L{1…100}[-schemeB]-{deep,shallow}-seed1904
+predictivity               lm-{175M…1.7B}-L{1…100}[-schemeB]-{deep,shallow}-seed1904
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
 predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50, 100}
 predictivity_seeds_test    seed 1904 on the same cells
@@ -162,7 +165,7 @@ without widening the decision the pool exists to measure. They live in
 `predictivity_schemes` instead, which no driver runs — invoke a script with
 `--pool predictivity_schemes` when the scheme axis itself is the question.
 
-The `snr` section of models.json is global: `small_sizes` 90M–1B,
+The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
 largest rung DataDecide has), `da_early_fracs` 0.2/0.4/0.6/0.8, `last_n` 5,
 `size_buckets` (singleton buckets for our sizes, pooled buckets for the
@@ -170,11 +173,11 @@ external models). The 36-sweep pools run with these values too, but they stop at
 rerun today their canonical `decision_acc_size_<s>` columns (→ 1.7B) would be
 empty and only the `_to_1B` scaling pairs would carry DA-size, so their
 committed outputs are the 1B-reference ones and are not regenerated. Sizes and cells with no information yet
-(the 90M rung, L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets`
+(L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets`
 again** (commit 56c806d did, and `analysis/utils.py` fails at import without
 them).
 
-- **size** = `90M`…`1.7B` (the ladder), `175M`…`1B` (36-sweep), native sizes
+- **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes
   for externals; **bucket** = `size_bucket(size)`.
 - **family** = cross-size identity (`lm-L8-deep-seed1904` /
   `apertus-fwEdu30-fw270-seed1904`), attached at load; DA groups on it so the

@@ -218,6 +218,7 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
     if _is_ladder_pool(pool):
         df = load_predictivity_eval_results(
             include_diverged=spec.get("include_diverged", False))
+        df = df[df["size"].isin(EVAL_SIZES)]      # 90M trains but is off the ladder
         frames = []
         for m in spec["members"]:
             sub = df
@@ -252,6 +253,7 @@ def build_snr_pool(pool: str) -> pd.DataFrame:
 # The ladder's size axis by non-embedding parameters, from the report module
 # that defines it (CLAUDE.md #13: importable through src/).
 from pretrain.ladder_report import NON_EMB  # noqa: E402
+from pretrain.launch_trainings import EVAL_SIZES  # noqa: E402
 
 LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
 GRID_SEED = 1904                      # the plan grid's seed

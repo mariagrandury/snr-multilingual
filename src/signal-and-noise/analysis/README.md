@@ -30,7 +30,7 @@ and rq06 (RQ5); their figures keep the paper's file names (`rq1_scaling`,
 - **Data.** One input: the published ladder report (`ladder_report.csv`), read by
   `snr/download/ladder.py`. The loader drops diverged and unfinished runs and
   keeps the checkpoints of the shared k/10 and k/20 grid.
-- **Models.** The predictivity ladder: sizes 90M–1.7B × language settings
+- **Models.** The predictivity ladder: sizes 175M–1.7B × language settings
   L ∈ {1, 2, 8, 15, 30, 50, 100} × depth (deep, shallow) × data scheme
   (A, B, AT3, ZH, ES) × seeds. A "design variant" is one such cell.
 - **Pools** (`configs/models.json`):
@@ -48,9 +48,9 @@ and rq06 (RQ5); their figures keep the paper's file names (`rq1_scaling`,
   Decision accuracy is `snr.metrics.decision_acc_fast`, the upstream kernel with
   the documented tie fix. Noise is the std over the last 5 checkpoints unless a
   script says seed noise. Figures use the one palette in `style.py`.
-- **Reference size.** 1.7B (`snr.target_size`); the proxies are 90M–1B. Sizes and
-  cells with no information yet (the 90M rung, L15 at 1.7B) stay in every grid
-  as white cells. rq07 alone reads 1B, the largest rung DataDecide has.
+- **Reference size.** 1.7B (`snr.target_size`); the proxies are 175M–1B (the 90M rung
+  trains but is dropped at load). Cells with no information yet (L15 at 1.7B)
+  stay in every grid as white cells. rq07 alone reads 1B, the largest rung DataDecide has.
 - **Units of training.** Every run trains D(N) = 100 N tokens, five times the
   Chinchilla-optimal 20 N. A point along a run is written as a multiple of
   Chinchilla, 1C–5C (20 %–100 % of the run; `grids.chinchilla`); the tables keep
