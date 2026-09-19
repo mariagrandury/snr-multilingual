@@ -268,11 +268,17 @@ Read it before hand-rolling `setfacl` — two things bite:
   `r--`, so the other user's jobs die on that dataset with
   `PermissionError: ... .lock` — every task, every job (22k of aromanou's
   task attempts 09-15..18 failed on locks my jobs had created, 800 of mine on
-  hers). umask cannot help (filelock passes the mode explicitly); only the
-  lock's owner can widen it. `auto_evals_cscs.share_dataset_locks()` runs
-  `setfacl -m m::rwx` on the current user's locks at the start of every
-  pass, so each collaborator's watcher opens their own; a foreign 0-byte
-  lock can be deleted by the directory owner (sticky bit).
+  hers). The mode is `0o666 & ~umask`, and filelock re-`fchmod`s the lock
+  to it on every acquire by its owner, so the cause is the umask:
+  `eval_worker.py` sets umask 002 around `simple_evaluate` (lock 0664,
+  mask `rw-`) and restores it before writing results. In a directory with a
+  default ACL the umask is ignored for ordinary `open`/`mkdir` (the ACL
+  applies), so this changes only such explicit-mode files there; elsewhere
+  it would make them group (a139) writable, hence the narrow scope.
+  `auto_evals_cscs.share_dataset_locks()` still runs `setfacl -m m::rwx` on
+  the current user's closed locks every pass, for locks created before the
+  fix or by a job outside `eval_worker.py`; a foreign 0-byte lock can be
+  deleted by the directory owner (sticky bit).
 
 - **The container must mount the shared tree, not just `${USER}`'s.** Both
   eval tomls used to mount `/iopsstor/scratch/cscs/${USER}`, so for anyone but

@@ -554,9 +554,10 @@ def merge_unmerged(name: str, logs_root: Path, running: set[str],
 # named collaborators) is masked down to r-- on it — and the OTHER user's
 # jobs then die on that dataset with PermissionError at the lock, every task,
 # every job (2026-09-15..18: 22k of aromanou's task attempts failed on locks
-# I created, 800 of mine on hers). A lock file's mask is its owner's to
-# raise, so each watcher pass widens the mask on the locks its user owns;
-# the other user's watcher does the same for theirs.
+# I created, 800 of mine on hers). eval_worker.py now evaluates under umask
+# 002, so new locks are 0664 (mask rw-); this pass repairs the ones that are
+# still closed. A lock file's mask is its owner's to raise, so each watcher
+# widens the locks its user owns; the other user's watcher does the same.
 DATASETS_CACHE = Path("/iopsstor/scratch/cscs/mariagrandury/hf_home/datasets")
 
 
