@@ -100,6 +100,7 @@ run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
 run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
 run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
 run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity

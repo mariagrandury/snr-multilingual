@@ -123,3 +123,17 @@ The family medians above, without the aggregation (`predictivity_all` pool). Reg
 
 ![Fit R² per language](pretraining/predictivity_all/fit_r2_by_language.png)
 <!-- END auto:panels -->
+
+<!-- BEGIN auto:regimes (regimes.py --pool predictivity_all) -->
+## Scaling regimes per benchmark-language pair
+
+`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells that train its language — the R² and (oriented) Spearman ρ of the log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ 5 points), one per (L, size). The quadrants of (b) split at R² = 0.5, a heuristic. Table: `scaling_regimes.csv`. Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all`.
+
+![Scaling regimes](pretraining/predictivity_all/scaling_regimes.png)
+
+Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, `scaling_regimes_families.csv`), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's majority and > 0.25 from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf` is its bare, square-panel version for the paper), `scaling_regimes_by_family.png` (panel (b) per family, tasks named by language) and `scaling_regimes.html` (hover names, click-to-highlight legend; for the project site).
+
+![Scaling regimes, outliers named](pretraining/predictivity_all/scaling_regimes_outliers.png)
+
+![Scaling regimes per family](pretraining/predictivity_all/scaling_regimes_by_family.png)
+<!-- END auto:regimes -->
