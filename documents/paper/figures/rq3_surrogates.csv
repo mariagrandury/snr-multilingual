@@ -1,0 +1,44 @@
+proxy,kind,metric,rho,p,n
+175M,benchmark tasks,"SNR, relative std",0.5009744464133116,1.575862273999663e-05,67
+175M,benchmark tasks,"SNR, discrepancy",-0.0024379012702081624,0.9845003069794602,66
+175M,benchmark tasks,"SNR, dist_std",0.3816202217176086,0.0014403903609924355,67
+175M,benchmark tasks,signal alone (relative std),0.49129436290273965,2.4265472890733234e-05,67
+175M,benchmark tasks,"noise alone (relative std, inverted)",0.043680874762435457,0.7256015754369376,67
+175M,benchmark tasks,early-checkpoint agreement (20 %),0.36968226008363136,0.0020776730390183185,67
+175M,benchmark tasks,scaling-fit R²,0.3213506561258528,0.00801121294634224,67
+175M,benchmark tasks,margin above chance,0.17175077026766228,0.18566099625330007,61
+175M,per-language bits per byte,"SNR, relative std",0.693158530894232,9.559550289919211e-16,101
+175M,per-language bits per byte,"SNR, dist_std",0.6442325817317561,3.639343404506663e-13,101
+175M,per-language bits per byte,signal alone (relative std),0.6201320215887588,4.660917450746334e-12,101
+175M,per-language bits per byte,"noise alone (relative std, inverted)",0.22657332323616847,0.022702362251145296,101
+175M,per-language bits per byte,early-checkpoint agreement (20 %),0.6060343406238188,1.8769822396605908e-11,101
+175M,per-language bits per byte,scaling-fit R²,0.22246658275419476,0.026104523877275413,100
+350M,benchmark tasks,"SNR, relative std",0.6297372326513854,1.072799527103543e-10,85
+350M,benchmark tasks,"SNR, discrepancy",0.0640223141746745,0.5628752220219745,84
+350M,benchmark tasks,"SNR, dist_std",0.4925961568129112,1.6775154525447982e-06,85
+350M,benchmark tasks,signal alone (relative std),0.5509465523658884,4.667492546978337e-08,85
+350M,benchmark tasks,"noise alone (relative std, inverted)",0.16905144840650865,0.12194642409401894,85
+350M,benchmark tasks,early-checkpoint agreement (20 %),0.654623280277646,1.0807030045310526e-11,85
+350M,benchmark tasks,scaling-fit R²,0.4280009356605981,4.389052660099319e-05,85
+350M,benchmark tasks,margin above chance,-0.03417048378563222,0.7649703711590577,79
+350M,per-language bits per byte,"SNR, relative std",0.5996139740968291,3.4614456790361625e-11,101
+350M,per-language bits per byte,"SNR, dist_std",0.5768012045189727,2.7394679625816085e-10,101
+350M,per-language bits per byte,signal alone (relative std),0.4984262248476148,1.1318243867882255e-07,101
+350M,per-language bits per byte,"noise alone (relative std, inverted)",0.0952679058089647,0.3432970397058145,101
+350M,per-language bits per byte,early-checkpoint agreement (20 %),0.6230008919516528,3.4803588089049556e-12,101
+350M,per-language bits per byte,scaling-fit R²,0.1353325170270745,0.17943533196141428,100
+600M,benchmark tasks,"SNR, relative std",0.49551346305771854,3.215522748291724e-08,111
+600M,benchmark tasks,"SNR, discrepancy",0.09376060762773882,0.32991537116058944,110
+600M,benchmark tasks,"SNR, dist_std",0.3676289242205076,7.20861907386274e-05,111
+600M,benchmark tasks,signal alone (relative std),0.31198995822152653,0.0008578511913443441,111
+600M,benchmark tasks,"noise alone (relative std, inverted)",0.2272067719373649,0.01647914893497293,111
+600M,benchmark tasks,early-checkpoint agreement (20 %),0.5729986600764946,4.97158120008378e-11,111
+600M,benchmark tasks,scaling-fit R²,0.5725333802566882,5.195222852212996e-11,111
+600M,benchmark tasks,margin above chance,-0.1929403501696447,0.048614839855417154,105
+600M,per-language bits per byte,"SNR, relative std",0.5245619869084072,1.7962937855810796e-08,101
+600M,per-language bits per byte,"SNR, discrepancy",-0.28234145428063595,0.4980711046629202,8
+600M,per-language bits per byte,"SNR, dist_std",0.5163265707724848,3.262487919282796e-08,101
+600M,per-language bits per byte,signal alone (relative std),0.4831854730745065,3.090409591424473e-07,101
+600M,per-language bits per byte,"noise alone (relative std, inverted)",0.05760098750338882,0.5672185932715504,101
+600M,per-language bits per byte,early-checkpoint agreement (20 %),0.5535179186285518,1.9324038071387275e-09,101
+600M,per-language bits per byte,scaling-fit R²,0.10198792957885928,0.31264259653279536,100

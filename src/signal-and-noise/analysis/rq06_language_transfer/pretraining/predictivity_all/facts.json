@@ -1,0 +1,163 @@
+{
+ "rq5": {
+  "summary": [
+   {
+    "trained": false,
+    "k": 1,
+    "transfer": 0.067,
+    "own": NaN,
+    "last": 0.358,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 2,
+    "transfer": 0.065,
+    "own": NaN,
+    "last": 0.163,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 3,
+    "transfer": 0.058,
+    "own": 0.058,
+    "last": 0.102,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 4,
+    "transfer": 0.051,
+    "own": 0.032,
+    "last": 0.065,
+    "n": 359
+   },
+   {
+    "trained": true,
+    "k": 1,
+    "transfer": 0.034,
+    "own": NaN,
+    "last": 0.454,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 2,
+    "transfer": 0.024,
+    "own": NaN,
+    "last": 0.194,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 3,
+    "transfer": 0.021,
+    "own": 0.051,
+    "last": 0.094,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 4,
+    "transfer": 0.021,
+    "own": 0.045,
+    "last": 0.073,
+    "n": 41
+   }
+  ],
+  "alpha_pooled_by_L": {
+   "1": 0.141,
+   "2": 0.163,
+   "8": 0.163,
+   "15": 0.165,
+   "30": 0.16,
+   "50": 0.203
+  },
+  "alpha_own_spread_by_L": {
+   "1": {
+    "median": 0.141,
+    "std": 0.034
+   },
+   "2": {
+    "median": 0.164,
+    "std": 0.043
+   },
+   "8": {
+    "median": 0.163,
+    "std": 0.062
+   },
+   "15": {
+    "median": 0.166,
+    "std": 0.051
+   },
+   "30": {
+    "median": 0.161,
+    "std": 0.047
+   },
+   "50": {
+    "median": 0.202,
+    "std": 0.065
+   }
+  },
+  "n_languages": 100,
+  "references": {
+   "1": "1.7B",
+   "2": "1.7B",
+   "8": "1.7B",
+   "15": "1B",
+   "30": "1.7B",
+   "50": "1B"
+  },
+  "decision_transfer": [
+   {
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "da": 0.261,
+    "cells": 8
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "da": 0.422,
+    "cells": 12
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "da": 0.75,
+    "cells": 8
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "da": 0.693,
+    "cells": 12
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "da": 0.944,
+    "cells": 3
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "da": 0.739,
+    "cells": 4
+   },
+   {
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "da": 0.654,
+    "cells": 2
+   },
+   {
+    "population": "bpb_untrained",
+    "proxy_size": "1B",
+    "da": 0.764,
+    "cells": 2
+   }
+  ]
+ }
+}

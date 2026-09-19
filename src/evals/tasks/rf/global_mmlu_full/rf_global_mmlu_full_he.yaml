@@ -1,0 +1,23 @@
+task: rf_global_mmlu_full_he
+dataset_path: CohereForAI/Global-MMLU
+test_split: test
+dataset_name: he
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: 'The following are questions about {{subject.replace(''_'', '' '')}}.
+
+  Question: {{question.strip()}}
+
+  Answer:'
+doc_to_choice: '{{[option_a, option_b, option_c, option_d]}}'
+doc_to_target: '{{[''A'', ''B'', ''C'', ''D''].index(answer)}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_docs

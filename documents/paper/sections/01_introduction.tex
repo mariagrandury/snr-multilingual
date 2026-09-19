@@ -1,0 +1,47 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Pretraining multilingual language models requires billions of tokens of data and hundreds of thousands of euros in compute.
+A modern pretraining project iterates over dozens of design decisions, from language mixtures and sampling temperatures to architectures and tokenizers, each made on small proxy models and evaluated on long, expensive benchmark suites. Benchmarks inform decisions that impact the final model quality, but they vary in their diagnostic value. Some are sensitive to recipe changes, others have high variance, redundancy, or weak correlation with downstream objectives.
+Improvements on certain benchmarks, therefore, may not reflect meaningful progress.
+Evaluation cost scales with the number of decisions made, and unreliable benchmarks waste a large share of the development budget.
+Moreover, these reliability gaps widen for multilingual settings, where small models score at chance on most translated benchmarks and low-resource languages are represented by a handful of tasks \citep{kim_one_2025, hada_are_2024, watts_pariksha_2024}.
+
+% As a result, practitioners often evaluate on extensive benchmark suites with diminishing diagnostic returns, or rely on small subsets of tasks whose signals may be noisy or misaligned with the decisions being made. Systematically identifying benchmarks that provide meaningful, stage-specific diagnostic signal could substantially improve the efficiency and reliability of multilingual model development.
+
+
+Recent work has begun to examine the diagnostic value and efficiency of language model benchmarks, recognizing that not all benchmarks provide equally informative signals for guiding model development. \citet{heineman_signal_2025} introduce a signal-to-noise ratio (SNR) framework that quantifies benchmark reliability for English models.
+%In this framework, signal measures how well a benchmark separates models of similar scale, while noise captures variability in scores across training checkpoints or stochastic runs.
+Their empirical analysis shows that benchmarks with higher SNR more consistently preserve model rankings across scales, improving the accuracy of training decisions and reducing error when extrapolating performance using scaling laws. This work highlights that benchmark choice directly affects the reliability of decisions made during model development.
+Other work targets evaluation efficiency, identifying benchmark subsets with high discriminative power \citep{chen_scaling_2025, gupta_improving_2025, zhou_lost_2026}.
+%\citet{chen2025scalinglawspredictingdownstream} show that only some downstream tasks follow predictable scaling trends. \citet{gupta-etal-2025-improving-smart} propose SMART filtering to remove redundant, contaminated, or overly easy examples. \citet{Zhou_Huang_Zhao_Han_Wang_Chen_Yang_Bao_Dong_Xu_Zhu_Cao_Zhao_2026_lostinbenchmarks} use item response theory to identify items with weak discriminative power.
+
+Together, these works suggest that benchmark effectiveness depends not only on coverage but also on how much reliable signal a benchmark provides relative to its evaluation cost. However, existing studies focus on English benchmarks and on a single data axis.
+It is unclear whether their conclusions transfer to multilingual model
+development. Decision accuracy may differ across languages, since languages
+differ in data availability, tokenization cost, and scaling behavior
+\citep{petrov_language_2023, ahia_all_2023}. Cross-lingual transfer further
+couples decisions across languages, since adding data for one language can help or hurt others depending on model capacity and language similarity \citep{chang_when_2023, longpre_atlas_2026}, so a benchmark that is reliable for one language may be uninformative for another.
+
+%In this report, we present our progress in extending the aforementioned frameworks to multilingual settings to identify the most reliable multilingual benchmarks for each training stage that correlate with final model performance. This will enable practitioners to make better, cheaper decisions during multilingual model development.
+
+In this paper, we extend the SNR framework to multilingual pretraining and ask
+five questions: which multilingual measurements scale predictably; how early in
+model size and in training a design decision can be read reliably, and with
+which measurement; whether a statistic available at small scale can predict that
+reliability; whether the answers depend on the design choice being made; and
+whether they generalize to languages that were never measured. To answer them we
+pretrain a controlled ladder of 186 models at six sizes from 90M to 1.7B
+non-embedding parameters and seven language settings from 1 to 100 languages,
+with four design interventions and seed replicates, and score every checkpoint
+on per-language bits per byte in 100 languages and on 14 multilingual benchmark
+families. We find that likelihood-based measurements scale predictably while
+four-option knowledge benchmarks sit at chance up to 1.7B; that a 350M proxy at
+20\% of its run reads a data decision the way the 1.7B reference does on bits
+per byte, while the benchmark suite reads every decision as a coin flip; that a
+proxy's reliability is set by the intervention's effect relative to seed noise
+rather than by the intervention itself; and that scaling exponents transfer
+across languages, so one small measurement predicts a never-trained language's
+bits per byte at 1.7B within 7\%. We release the ladder and its per-checkpoint
+measurements so that practitioners can make better, cheaper decisions during
+multilingual model development.

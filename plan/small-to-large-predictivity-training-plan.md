@@ -22,25 +22,51 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 
 | Languages | 90M | 175M | 350M | 600M | 1B  | 1.7B |
 | --------- | --- | ---- | ---- | ---- | --- | ---- |
-| 1         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
-| 2         | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 1         | ✓   | ×3   | ✓    | ×3   | ×3  | ✓    |
+| 2         | ✓   | ×3   | ✓    | ×3   | ×3  | ✓    |
 | 8         | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
-| 15        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
-| 30        | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
-| 50        | ✓   | ✓    | ✓    | ✓    | ✓   | —    |
-| 100       | ✓   | ×3   | ✓    | ✓    | ×3  | ✓    |
+| 15        | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
+| 30        | ✓   | ✓    | ✓    | ✓    | ×3  | ✓    |
+| 50        | ✓   | ×3   | ✓    | ×3   | ×3  | ✓    |
+| 100       | ✓   | ✓    | ✓    | ✓    | ✓   | ✓    |
+
+The ×3 columns use **different seed triples**, because two people fill them:
+175M and 600M run (64, 313, 1904) at L ∈ {1, 2, 50}; the 1B column is
+aromanou's and runs (28, 1797, 1904) at L ∈ {1, 2, 30}, plus L50 (added
+2026-09-10 to match the other ×3 columns — those two cells are new). The grid
+names the seeds that exist on disk — under the wrong triple the launcher
+would submit two more runs per cell and the auto-eval watcher would never
+evaluate the ones already trained.
+
+Her 1B runs were saved under the earlier 20-checkpoint regime (every 2287
+iters, to 45740), while the 1B rung now saves 40 (every 1143 iters, to
+45720; the regime itself is unchanged — 20 per run, 40 at the 1B, 60 at the
+1.7B). None of their checkpoints lands on that grid (15 cells: seed 1904 at
+L1, L2, L15, L30 and schemeB L8/L15/L30, and seeds 28/1797 at L1, L2, L30 and
+schemeB L30; their schedule also ends at 45,740, the new 1B L50 ×3 at 45,720), so the
+watchers now read due checkpoints on the run's *own* grid
+(`launch_trainings.due_iters`): every save of a 20-checkpoint run sits at the
+same k/20 fraction as every 2nd save of a 40-checkpoint run, so the two are
+evaluated at the same points and compared checkpoint for checkpoint.
+
+Changes of 2026-09-10: the 1.7B row gained L15 and L50, so every size now
+trains at every setting; L100 lost its ×3 cells; L100 is no longer a
+scheme-A cell at all — it exists only as the flattened `AT3` mixture below;
+the 1B column gained its ×3 at L50; and `AT3` runs the whole ladder at L50
+as well as L100 (the flattened L50 build covers the 1.7B draw, see
+"Sampling temperature").
 
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B (1.7B at L ∈ {1, 2, 8, 30, 100}) |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, every size at every setting |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904; ×3 seeds (64, 313, 1904) on the 175M, 600M columns at L ∈ {1, 2, 50, 100} |
-| Data scheme | A everywhere; B only where its language set differs — L ∈ {8, 15, 30} |
+| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **146 runs**.
+Counting every scheme and the architectures each is trained in: **186 runs**.
 
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
@@ -51,7 +77,11 @@ Counting both architectures and scheme B where it differs: **146 runs**.
 
 (The 200-language setting was dropped on 2026-08-13 to fit the compute budget
 and deadline. The ×3-seed rows were 1, 30 and 100; L=2 was added to them, and
-the 1.7B row gained L=2, taking the grid from 52 to 56.)
+the 1.7B row gained L=2, taking the grid from 52 to 56. The 2026-09-10 changes
+above kept the scheme-A deep grid at 56 cells — L100's ×3 rows came out, the
+1.7B row gained L15 and L50, the 1B column gained ×3 at L50 — and took the
+whole sweep, over every scheme and the architectures each is trained in, to
+186 runs.)
 
 ## Intervention axis (the design choice under test)
 
@@ -90,7 +120,7 @@ Reasoning:
 
 - **Sources:** FineWeb2 for the non-English languages. Ayush recommended using the hq variant at fineweb2-hq. English from `dclm-edu-filterrobots_fine` (there is no eng_Latn in FineWeb2). Default tokenizer: swiss-ai/Apertus-70B-2509 (the V1 tokenizer).
 - **English share:** 50% in every multilingual setting; the other 50% is the FineWeb2 languages. The 1-language setting is 100% English. (See open question 2.)
-- **Allocation within the FineWeb2 50%:** temperature sampling with T = 1 by default (proportional to estimated per-language tokens). (See open question 1.)
+- **Allocation within the FineWeb2 50%:** temperature sampling, `p_i ∝ p_i^(1/T)`. T = 1 (proportional to estimated per-language tokens) for the baseline scheme A. The flattened scheme `AT3` uses the same language lists at a higher temperature and supplies two settings: L50, where it is the temperature *intervention* against A's T = 1, and L100, which exists **only** as the flattened build. See "Sampling temperature" below for the measured allocations — including why the value is under revision from T = 3 to T = 2.
 - **Language counts include English,** so the FineWeb2 language list for an L-setting has L − 1 entries. The lists are nested: the 1-language FineWeb2 list is a subset of the 7-language list, which is a subset of the 14-, 29-, 49-, and 99-language lists, all drawn from the 199 FineWeb2 languages used in the prior 200-language run. The validation build covers the 99-language list plus English (the largest trained setting). The lists are generated by `src/pretrain/data/generate_language_sets.py` from the FineWeb2 distribution and the benchmark availability in `configs/tasks.json`: the top-k subsets by train-split UTF-8 bytes, excluding `und_*` subsets and `hau_Latn` (absent from the swiss-ai filtered dataset dir); for the 99-language list, subsets with no benchmark in the lm-eval harness are replaced by the next subsets by bytes that have at least two benchmark families and are not a script variant of a kept language (2026-08-21: gmh, nrm, bew, tat, div, epo, hif, ltz → kin, jav, xho, hat, fao, zul, ibo, sot). Scheme B swaps the small settings for script/family-diverse picks. See `plan/benchmark_selection.md`.
 
 To avoid tokenizing English once per setting, build the English data once and the FineWeb2 data once per setting, then blend them 50/50 at training time with the Megatron data loader's blend weights. So the artifacts are: one English dataset, one FineWeb2 dataset per multilingual setting, and one fixed validation set.
@@ -98,14 +128,27 @@ To avoid tokenizing English once per setting, build the English data once and th
 | Setting (L) | FineWeb2 languages | FineWeb2 build tokens | English share at training time |
 | ----------- | ------------------ | --------------------- | ------------------------------ |
 | 1           | 0 (English only)   | —                     | 100%                           |
-| 2           | 1                  | 93.5B                 | 50%                            |
-| 8           | 7                  | 93.5B                 | 50%                            |
-| 15          | 14                 | 55B                   | 50%                            |
-| 30          | 29                 | 93.5B                 | 50%                            |
-| 50          | 49                 | 55B                   | 50%                            |
-| 100         | 99                 | 93.5B                 | 50%                            |
+| 2           | 1                  | 92B                   | 50%                            |
+| 8           | 7                  | 92B                   | 50%                            |
+| 15          | 14                 | 92B                   | 50%                            |
+| 30          | 29                 | 92B                   | 50%                            |
+| 50          | 49                 | 92B (A and AT3)       | 50%                            |
+| 100         | 99                 | 92B (AT3 only)        | 50%                            |
 
-Each FineWeb2 build is sized to half of the largest budget at that setting, with about 10% headroom: 93.5B where a 1.7B model trains (settings 2, 8, 30, 100; half of 170B plus headroom), 55B otherwise (half of 100B plus headroom). The English dataset is built once to 187B, which covers the 1-language setting's largest need (170B) and the English half of every other setting. The build script reports the realized per-language token counts and warns when a language runs out of data; record any shortfall.
+Each FineWeb2 build is sized to half of the largest budget at that setting, with about 10% headroom, and that number is **derived from the grid** rather than tabulated (`build_data_mixtures.largest_size` reads `launch_trainings.scheme_sizes`): 92B where a 1.7B model trains (half of 167B plus headroom), 52B where the largest rung is the 1B (half of 94B plus headroom). Since the 1.7B row gained L15 and L50 on 2026-09-10, every scheme-A and AT3 build is 92B; only ZH and ES at L2, capped at the 1B rung, are 52B. The English dataset is built once to 184B, which covers the 1-language setting's largest need and the English half of every other setting.
+
+The build script reports the realized per-language token counts and warns when a language runs out of data; record any shortfall. **The builder never repeats data** — it prints the shortfall and moves on — so a target the source cannot reach yields a *smaller* build, not a flatter one. Two consequences already bite:
+
+- The L15 and L50 builds on capstor (scheme A and scheme B's L15) are the 52B ones made when the 1B topped those settings. They are being rebuilt at 92B into a parallel root (`data/launch_builds.sh`, the `REBUILD` array) rather than overwritten, because already-trained cells read the 52B copies.
+
+  **A bigger build is an *extension* of a smaller one, not a different dataset.** The per-language proportions come from the estimated token counts and the temperature alone — `target_tokens = total × prop` — and each language's parquet files are read in `sorted()` order from the same start, minus the same fixed validation skip, with no build-time shuffling. So the 92B build's token stream per language *begins with* the 52B build's and continues. Nothing is re-drawn — verified byte for byte on all three rebuilds on 2026-09-13 (every language section of each 52B build is the start of the 92B one: 14, 49 and 14 languages).
+
+  That is why **no already-trained cell has to be re-run.** A model reads only its own budget out of the build, and at L15/L50 every rung through the 1B fits inside 52B — 4.7B at 90M (9 % of the pool) up to 47.2B at the 1B (91 %). Only the 1.7B exceeds it, at 83.6B (1.61 epochs), which is the sole reason the rebuild exists. The residual asymmetry is that the 1.7B reference reads a 92B pool while its proxies read the nested 52B one; since the proportions are identical and each rung already reads a different *fraction* of the pool, that difference is of the same kind and scale as a data-order seed change — which the ×3 seed columns already quantify as noise. Record it; do not re-run the column for it. One qualification, measured 2026-09-13: FineWeb-2's parquet files are grouped by CommonCrawl dump, so the extension is not a random superset of the smaller pool but a newer one — in scheme B's L15, crawls from 2021–24 are 4% of the 52B Russian and 14% of the 92B, 0% and 32% of the Chinese. The 1.7B reference therefore also reads a later crawl mix than its proxies.
+
+  **Nothing is swapped into the training stage.** `launch_trainings.py cscs` reads the 92B copy (staged to `/iopsstor/scratch/cscs/mariagrandury/data-92B`) only for a cell the staged 52B build is too small for — the 1.7B cells at A-L15, A-L50 and B-L15 — and keeps every other rung, including cells not trained yet (the shallow ones, the new 1B ×3 seeds at L50), on the 52B pool their peers read. Replacing the stage files would change what those cells see, not just how much: Megatron shuffles over the whole file, so a different pool is a different sample order as well as a newer crawl mix. Without a big-enough rebuild the launcher still skips a cell drawing more than its staged build holds (`skip [data undersized]`), unless the build already realizes what the source allows at the current target.
+
+  **For the paper:** the six 1.7B cells at A-L15, A-L50 and B-L15 (deep and shallow) train on a different build from their smaller rungs — the same languages in the same proportions, extended with newer crawls — and nothing in `configs/models.json` records which build a cell read. The record is this paragraph, the launcher's `(FineWeb-2 from /iopsstor/scratch/cscs/mariagrandury/data-92B…)` line when it submitted them, and the `data-92B/` paths in those cells' training logs. State it wherever results at those settings compare the 1.7B reference with its proxies.
+- **No L2 language can feed a 1.7B.** A 1.7B draws 83.6B from the multilingual half, and the filtered subset holds about 71.8B of Russian by the builder's estimate (the L2 build realized 72.8B, so the estimates undercount slightly), 59.9B of Chinese and 23.4B of Spanish. The existing scheme-A L2 build is 72.8B, not 92B, for exactly this reason; Spanish is clean only through the 350M rung.
 
 ## Validation set
 
@@ -229,7 +272,7 @@ Before the largest run at a setting, check the realized FineWeb2 build size that
 
 Log the final checkpoints (for example the last 30, spaced about 1000 steps), so that per-language BPB and the checkpoint-to-checkpoint noise estimate can be computed over the final window, matching the Signal-and-Noise noise definition.
 
-**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint and **the run's final one** (`auto_evals_*.py --every 2`); the third piece decided 09-02 — **the checkpoint nearest each half-decade FLOPs milestone** (~1 extra per run, see "The compute axis" below) — is **not implemented yet**: the `configs.milestone_iters` helper it needs does not exist, so the watchers today run only the every-2nd+final rule. The odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
+**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint of the size's grid and **the run's final one** (`auto_evals_*.py --every 2`), read on the grid the run actually saved at (`launch_trainings.due_iters` — a 20-save 1B run from before this rule yields every save, the same k/20 points); the third piece decided 09-02 — **the checkpoint nearest each half-decade FLOPs milestone** (~1 extra per run, see "The compute axis" below) — is **not implemented yet**: the `configs.milestone_iters` helper it needs does not exist, so the watchers today run only the every-2nd+final rule. The odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
 
 Note the deviation from "the last 30": with 20 checkpoints per run (40/60 at the reference rungs) the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
 
@@ -372,30 +415,82 @@ data share buys nothing: a per-language SNR of ~0 there is an artefact of the
 mixture, not a property of the benchmark, which is the opposite of what this
 study is trying to measure.
 
-### Recommendation, given that 1.7B may not be trained
+### Re-measured against the filtered subset (2026-09-10)
 
-Dropping the 1.7B rung removes 40 % of the sweep's node-hours (15,086 of
-37,860) and makes **1B the reference at every L**. The 1B row above is then the
-best case, not the middle one — 66 of 99 languages under 100 M tokens in the
-model every decision-accuracy comparison is anchored on.
+The table above is computed from the **raw** FineWeb-2 byte distribution
+(`fineweb2-language-distribution.csv`). The builds read the much smaller
+**swiss-ai filtered** dir, and its per-language totals — measured by
+`create_data_mixture.py` sampling the real parquet files, and recorded as the
+`estimated=` column of every build log — are what actually bounds an
+allocation. Redone on those figures, with each language capped at what it
+has (the builder never repeats data: it prints a shortfall and moves on):
 
-**Adopt T = 2 sweep-wide.** It is the only setting that fixes the floor without
-introducing a second problem:
+| L100 · 92B target · 99 languages | T = 1 | T = 2 | T = 3 |
+|---|---:|---:|---:|
+| Build realizes | 92.0 B | 85.9 B | **75.4 B** |
+| Feeds the 1.7B (draws 83.6 B) | yes (0.91 epochs) | yes (0.97 epochs) | **no, 8.2 B short — 1.11 epochs**, every language seen 1.11 times |
+| Largest language's share | 18.8 % | 7.2 % | 4.9 % |
+| Median language | 90 M | 373 M | 373 M |
+| Smallest language | 3.5 M | 14.5 M | 14.5 M |
+| Languages that exhaust their source | 0 | 56 | 60 |
+
+| L50 · 52B target · 49 languages | T = 1 | T = 2 | T = 3 |
+|---|---:|---:|---:|
+| Build realizes | 52.0 B | 52.0 B | 51.4 B |
+| Median language | 529 M | 946 M | 1,037 M |
+| Smallest language | 46.7 M | 281 M | 336 M |
+| Languages that exhaust their source | 0 | 0 | 8 |
+
+| L50 · 92B target · 49 languages | T = 1 | T = 2 | T = 3 |
+|---|---:|---:|---:|
+| Build realizes | 92.0 B | 90.8 B | 87.1 B |
+| Feeds the 1.7B (draws 83.6 B) | yes (0.91 epochs) | yes (0.92 epochs) | yes (0.96 epochs) |
+| Median language | 935 M | 1,673 M | 1,834 M |
+| Smallest language | 82.6 M | 335.6 M | 335.6 M |
+| Languages that exhaust their source | 0 | 9 | 13 |
+
+The 92B row is why the AT3 column runs the whole ladder at L50 (decided
+2026-09-10): even at T = 3 the flattened L50 build covers the 1.7B draw
+without repetition, so the temperature intervention gets the same 1.7B
+reference as every other axis. (The same simulation, run on the builder's
+own per-language estimates from the finished L50/L100 build plans,
+reproduces every number in the 52B and L100 tables above.)
+
+**This changes the recommendation's basis, not its answer: T = 2.** At L100,
+T = 2 and T = 3 reach an *identical* tail — same median, same smallest
+language — because 56 of the 99 have already run out of data at T = 2. Raising
+the temperature further only takes tokens off the head, and the build then
+falls short of what the 1.7B rung needs. **At L100 the tail is data-limited,
+not allocation-limited**, which is the thing the raw-bytes table could not
+show. T = 3 is therefore strictly dominated there. At L50 it is still viable
+(51.4 B, and a slightly better floor than T = 2), but L50's flattened build is
+what calibrates L100 against the T = 1 curve, so the two must share one
+temperature.
+
+The 2026-09-02 argument below still stands on its own terms, and its
+conclusion is unchanged:
 
 - It lifts the smallest language from 0.8 M to **33 M tokens** at the 1B rung,
   a 40× change, and empties the "<10 M" column at every rung from 350M up.
 - **It repeats nothing.** Max epochs 0.3 at 1B, 0.6 even at 1.7B — every
-  language is still trained on unseen data. T = 3.33 crosses into duplication
-  (1.2 epochs at 1B, 2.1 at 1.7B), which confounds the language-count axis
-  with a data-repetition axis.
+  language is still trained on unseen data. (Re-measured, a higher T does not
+  duplicate either: the builder cannot repeat, so it short-builds instead.
+  Same conclusion, different failure.)
 - One value for every cell. **T must not vary with L** — the intervention is
   the language *count* at fixed English share; a T that moves with L confounds
   the two and makes the L-ladder uninterpretable.
 
-Cost: the FineWeb-2 builds are per-setting, so this is a rebuild of L8…L100.
-The L100 build is already owed (the 8-language swap), so its share is free;
-L8/L15/L30/L50 are the added cost. L1 is unaffected (100 % English) and L2 is
-nearly so.
+The last bullet is the one the 2026-09-10 grid does **not** honour, knowingly:
+L2…L50 are T = 1 and L100 is flattened. The mitigation is that L50 is built
+*both* ways, so the A-vs-flattened pair at L50 measures the temperature effect
+directly and lets L100 be read against the T = 1 curve instead of being
+compared to it naively. Any cross-L claim that skips that correction is
+confounded, and the plan should say so wherever such a claim is made.
+
+Cost: the FineWeb-2 builds are per-setting. Under the 2026-09-10 grid this is
+two builds, not a sweep-wide rebuild: L50 and L100 in the flattened scheme's
+own directory. Nothing already built is discarded, and no L100 model has
+trained yet.
 
 **If that rebuild cannot be afforded**, the fallback is to keep T = 1 and
 report the constraint honestly: define a per-language token floor (100 M is the
@@ -439,7 +534,7 @@ token/parameter ratio well above Chinchilla's ~20 for large K. The check does
 
 ## Open questions
 
-1. Sampling temperature is set to T = 1 (proportional to estimated tokens) by default. Should the FineWeb2 proportion instead be tempered toward uniform (for example alpha = 0.3, i.e. T ≈ 3.3) to give lower-resource languages more weight? Similarly, the datasets are all fixed to 50% English. Is this sound or should it change as languages are added (for example, scaling down with the number of languages)? — **quantified above; recommendation: T = 2 sweep-wide, and never varying with L.**
+1. Sampling temperature is set to T = 1 (proportional to estimated tokens) by default. Should the FineWeb2 proportion instead be tempered toward uniform (for example alpha = 0.3, i.e. T ≈ 3.3) to give lower-resource languages more weight? Similarly, the datasets are all fixed to 50% English. Is this sound or should it change as languages are added (for example, scaling down with the number of languages)? — **quantified above; recommendation: T = 2 sweep-wide, and never varying with L.** The 2026-09-10 grid departs from this knowingly: L2…L50 stay at T = 1, L100 exists only flattened and is calibrated by the L50 pair, and the flattened scheme is coded at T = 3 (`AT3`), where the 1.7B at L100 repeats its data 1.11×.
 2. Still need to make sure we can create Megatron configs for the specific parameter counts we had in mind (maybe Maria already has these, just not 100% sure).
 3. 5 × C tokens does not give the ATLAS compute-optimal point for ≥ 30 languages. Should we instead base full dataset sizes on ATLAS numbers for K = 200? This would be a ridiculous number of tokens (462B for the 1.7B model). — **method to settle it above ("Is 5 × C the right budget"): 12 WSD cooldown branches, ≈ 6 % of a level.**
 4. Which design choice to use as the intervention: tokenizer, model depth, or sampling temperature. If the tokenizer, all data and the validation sets are built once per tokenizer.

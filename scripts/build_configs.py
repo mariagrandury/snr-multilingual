@@ -1186,9 +1186,9 @@ def build_tasks_json(merge_existing: bool = True) -> dict:
         if t in existing_opts:
             tasks_section[t]["n_options"] = existing_opts[t]
     # Synthetic launch group: union of the three stage groups, so ONE job per
-    # checkpoint covers pretraining + midtraining + posttraining in a single
-    # BATCH_TASKS=1 lm_eval call (avoids the same-NAME collision of launching
-    # the three groups as separate jobs). Dedup preserves first-seen order.
+    # checkpoint covers pretraining + midtraining + posttraining (avoids the
+    # same-NAME collision of launching the three groups as separate jobs).
+    # Dedup preserves first-seen order.
     groups["all_stages"] = list(dict.fromkeys(
         groups.get("pretraining_full", [])
         + groups.get("midtraining", [])

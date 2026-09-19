@@ -43,6 +43,8 @@ usage() {
     echo " CKPT_ITER: Megatron checkpoint iteration (integer). Required when LM_EVAL_BACKEND=megatron_lm."
     echo " HARNESS_LIMIT: Optional argument to pass as --limit to the lm-evaluation-harness, to limit the number of samples per task (default: no limit)."
     echo " LM_EVAL_HARNESS_BRANCH: Branch/ref to install from swiss-ai/lm-evaluation-harness (default: repository default branch)."
+    echo " EVAL_WORKERS: vllm only. Worker processes per job, each with its own model copy on its own GPU group, sharing one task queue (default: GPUs / (TP x PP), i.e. every GPU busy)."
+    echo " PREFIX_CACHING: vllm only. vLLM enable_prefix_caching (default: True; measured 2026-09-07 to move 0.7% of metrics against a 0.5% same-settings floor). Set False to re-run that A/B."
 	echo "For more information see the README: https://github.com/swiss-ai/evals?tab=readme-ov-file."
 }
 die() {
@@ -67,6 +69,19 @@ BS=${BS:-"auto:20"}
 SIZE=${SIZE:-1}
 BOS=${BOS:-false}
 LOGS_ROOT=${LOGS_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs}
+# TASKS set but EMPTY is a caller bug, never a request for the default below.
+# Callers build it with `TASKS="$(python3.11 -c ...)"`, and a command
+# substitution that dies leaves the variable set-and-empty with sbatch none the
+# wiser. `${TASKS:-...}` substitutes on empty as well as unset, so without this
+# the job silently adopts the legacy default -- a path this repo no longer
+# ships, which therefore survives the `[ -f ]` test below as a literal TASK
+# NAME and burns a whole node (container pull, pip install, one vLLM load per
+# worker) to fail on it. Jobs 3312838, 3312890 and 3313509 all died that way on
+# 2026-09-07. Test `+set`, not the value: an intentionally unset TASKS still
+# gets the default.
+if [[ -n "${TASKS+set}" && -z "$TASKS" ]]; then
+    die "TASKS is set but empty — a failed command substitution? Unset it to use the default."
+fi
 TASKS=${TASKS:-./configs/apertus/tasks_default.txt}
 TABLE_METRICS=${TABLE_METRICS:-./configs/apertus/tasks_default_main_table.txt}
 WANDB_ENTITY=${WANDB_ENTITY:-apertus}
@@ -156,11 +171,28 @@ export HF_HUB_CACHE=/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_m
 # probe the hub for the latest revision of m_truthfulqa / m_hellaswag /
 # multiblimp ⇒ 429 ⇒ "FileNotFoundError: hf://datasets/.../val.jsonl". The
 # datasets are pre-staged at HF_HOME/datasets/<repo>/<lang>/0.0.0/<rev>/, so
-# skipping the hub probe here is the right thing. We deliberately do NOT set
-# HF_HUB_OFFLINE — that broke `AutoTokenizer.from_pretrained("alehc/swissai-
-# tokenizer")` because transformers' cache layout doesn't satisfy strict
-# offline lookups.
+# skipping the hub probe here is the right thing.
 export HF_DATASETS_OFFLINE=${HF_DATASETS_OFFLINE:-1}
+# Models/tokenizers too, since 2026-09-08. The same 429 came back in a new
+# place: every eval_worker builds its own vLLM engine, so a job probes
+# huggingface.co/api/models/<tokenizer> once PER WORKER — 4x the old rate —
+# and the overnight burst returned 429, failed the vocabulary load, killed all
+# four engines and lost the job before a single task ran. 94 of 112 failures
+# that night were exactly this.
+#
+# This was previously left unset because it broke
+# `AutoTokenizer.from_pretrained("alehc/swissai-tokenizer")`, whose cache does
+# not satisfy a strict offline lookup. That is still true, and it is why this
+# is a default rather than a hard export — but it is the LEGACY 36-sweep
+# tokenizer. Checked against this cache: swiss-ai/Apertus-70B-2509 loads
+# offline and is byte-identical either way (vocab 131072, same vocab hash,
+# same ids), while alehc/swissai-tokenizer still fails. Offline is in fact the
+# more reproducible setting — an online probe would happily pick up a newer
+# hub revision mid-sweep.
+#
+# Set HF_HUB_OFFLINE=0 for the legacy runners and for hub models pinned by
+# REVISION, which must reach the hub to resolve.
+export HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-1}
 GPUS_PER_NODE=4
 
 # Print configuration.
@@ -208,7 +240,6 @@ HARNESS_DIR=$RUN_ROOT/harness
 export WANDB_DIR=$RUN_ROOT
 mkdir -p $HARNESS_DIR
 
-# export HF_HUB_OFFLINE=1
 export HF_ALLOW_CODE_EVAL=1
 # export PERSPECTIVE_API_KEY="" # Uncomment if you want to use perspective API, needed for realtoxicityprompts task
 
@@ -221,15 +252,30 @@ HF_CHECKPOINT_PATH=$MODEL
 PP=${PP:-1}
 # vLLM rejects offline data_parallel_size>1 for dense models with
 # "Offline data parallel mode is not supported/useful for dense models."
-# (CLAUDE.md bug 11). When TP*PP < GPUS_PER_NODE the leftover GPUs are idle —
-# DP would have absorbed them historically, but since vLLM dropped offline DP
-# we clamp it to 1. To use all 4 GPUs, pick TP and PP per-size at submit time.
-DP=$(( GPUS_PER_NODE / (MP * PP) ))
-if [[ "$LM_EVAL_BACKEND" == "vllm" && "$DP" -gt 1 ]]; then
-    leftover=$(( GPUS_PER_NODE - MP * PP ))
-    echo "vLLM dense models reject offline DP>1; clamping data_parallel_size=1 (TP=$MP PP=$PP, $leftover GPU(s) idle)"
-    DP=1
+# (CLAUDE.md bug 11), so data_parallel_size stays 1 and the GPUs that TP x PP
+# leave over are used the other way round: that many independent
+# scripts/eval_worker.py processes, each with its own model copy on its own
+# GPU group, all drawing from one task queue (scripts/_run_per_task.sh). The
+# ladder's KV-head counts force TP=1, so on a 4-GPU node that is 4 workers.
+DP=1
+EVAL_WORKERS=${EVAL_WORKERS:-$(( GPUS_PER_NODE / (MP * PP) ))}
+if [[ "$LM_EVAL_BACKEND" != "vllm" ]]; then
+    EVAL_WORKERS=1    # accelerate / torchrun already span the node's GPUs
+elif (( EVAL_WORKERS < 1 )); then
+    # TP x PP claims more GPUs than the node has: the division floors to 0,
+    # which would start no workers at all and burn the allocation on a job
+    # that reports "no task finished". One worker, and let vLLM complain
+    # about the layout if it is genuinely impossible.
+    echo "WARNING: TP=$MP x PP=$PP exceeds $GPUS_PER_NODE GPUs; running 1 worker"
+    EVAL_WORKERS=1
+elif (( EVAL_WORKERS * MP * PP > GPUS_PER_NODE )); then
+    # A hand-set EVAL_WORKERS the node cannot host: _run_per_task.sh would
+    # hand the last workers CUDA_VISIBLE_DEVICES indices that do not exist.
+    echo "WARNING: EVAL_WORKERS=$EVAL_WORKERS x $((MP * PP)) GPU(s) exceeds" \
+         "$GPUS_PER_NODE; capping at $(( GPUS_PER_NODE / (MP * PP) ))"
+    EVAL_WORKERS=$(( GPUS_PER_NODE / (MP * PP) ))
 fi
+echo "Eval workers: $EVAL_WORKERS x (TP=$MP PP=$PP) GPU(s)"
 COMMON_MODEL_ARGS="dtype=bfloat16"
 if [[ $BOS = true ]]; then
 	echo "Adding BOS token."
@@ -253,7 +299,30 @@ VLLM_MEMORY_FRACTION=0.75
 # export VLLM_DISABLE_CUSTOM_ALL_REDUCE=1
 
 if [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_thinking=False"
+    # PREFIX_CACHING: the choices of a multiple-choice doc share the whole
+    # context, so its KV blocks are computed once and reused per choice.
+    # Ported from include-private's run_include_eval.sbatch. MEASURED on
+    # 2026-09-07, three full 329-task runs of lm-175M-L50-deep-seed1904-iter3416
+    # (4776 accuracy metrics each), because "vLLM's V1 engine enables it anyway"
+    # is a claim about a container, not a result:
+    #
+    #   same settings twice (the floor)   0.5 % of metrics move, max 0.0020
+    #   caching on vs off                 0.7 %,                 max 0.0080
+    #   old batched vs new worker + cache 3.5 %,                 max 0.0200
+    #   old batched vs new worker, no cache 3.4 %,               max 0.0200
+    #
+    # So it is not quite a no-op — it sits just above the floor — but the last
+    # two rows are why it stays: turning it OFF does not bring the worker pool
+    # any closer to the pre-2026-09-04 results. The worker pool moves scores;
+    # this flag is a rounding error on top, and it buys real throughput.
+    # Reproduce with `PREFIX_CACHING=False WANDB_PROJECT=<throwaway>` and
+    # `scripts/diff_scores.py <NAME> msnr <throwaway>` — always against a floor
+    # measured the same way, never against an assumption of bit-identity.
+    # The include-private max_model_len cap is deliberately NOT ported — the
+    # ladder's config already says 4096 (megatron_args.sh), and a lower cap
+    # would truncate prompts differently from every past result.
+    PREFIX_CACHING=${PREFIX_CACHING:-True}
+    COMMON_MODEL_ARGS="$COMMON_MODEL_ARGS,pretrained=$HF_CHECKPOINT_PATH,tokenizer=$TOKENIZER$MAYBE_REVISION${MAYBE_TOKENIZER_REVISION:-},data_parallel_size=$DP,tensor_parallel_size=$MP,pipeline_parallel_size=$PP,gpu_memory_utilization=$VLLM_MEMORY_FRACTION,enable_prefix_caching=$PREFIX_CACHING,enable_thinking=False"
 elif [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
     # `--dist-ckpt-strictness=log_unexpected` tells Megatron's distributed
     # checkpoint loader to log (instead of raise) on missing keys like
@@ -290,7 +359,7 @@ COMMON_EVAL_ARGS=(
     # --cache_requests true - causes problems for long model names due to file name length limits
     --gen_kwargs max_gen_toks=$MAX_NEW_TOKENS
 )
-# --tasks and --output_path are appended per task by scripts/_run_per_task.sh.
+# --tasks and --output_path are appended by scripts/_run_per_task.sh.
 
 if [[ -n "${HARNESS_LIMIT}" ]]; then
     COMMON_EVAL_ARGS+=(--limit $HARNESS_LIMIT)
@@ -298,6 +367,13 @@ fi
 
 if [[ -n "${NUM_FEWSHOT}" ]]; then
 	COMMON_EVAL_ARGS+=(--num_fewshot $NUM_FEWSHOT)
+fi
+
+# Repo-local task YAMLs (the reformulated `rf_*` tasks, src/evals/tasks) on
+# top of the wheel's: TaskManager(include_path=...) in eval_worker.py. An
+# absolute path — the container's cwd is not the repo.
+if [[ -n "${HARNESS_INCLUDE_PATH:-}" ]]; then
+    COMMON_EVAL_ARGS+=(--include_path "$HARNESS_INCLUDE_PATH")
 fi
 
 if [[ $APPLY_CHAT_TEMPLATE = true ]]; then
@@ -333,9 +409,57 @@ if echo "$TASKS" | grep -q "ruler"; then
     fi
 fi
 
-LM_EVAL_HARNESS_PIP_SPEC="git+https://github.com/swiss-ai/lm-evaluation-harness.git"
-if [[ -n "$LM_EVAL_HARNESS_BRANCH" ]]; then
-    LM_EVAL_HARNESS_PIP_SPEC="${LM_EVAL_HARNESS_PIP_SPEC}@${LM_EVAL_HARNESS_BRANCH}"
+# Install the harness from a SHARED CHECKOUT, not from GitHub.
+#
+# Every job used to run `pip install git+https://github.com/swiss-ai/...`,
+# i.e. one fresh clone per job. That is fine for a handful of jobs and fails
+# as a fleet: with ~120 evals queued on 2026-09-02 the partial clone's
+# promisor fetch started coming back `HTTP 401`, pip aborted, and the job died
+# in 35 s on `lm_eval: command not found` — 90 failures in a row, none of
+# which reached a single dataset. One watcher pass now submits ~700 evals, so
+# that ceiling is further below us than it was. The clone is also the slowest
+# part of a short eval (a 110-task top-up runs in ~5 min total), and it
+# silently tracked whatever HEAD was at submission time, so two checkpoints of
+# the same cell could be scored by different harness versions — which makes
+# harness drift indistinguishable from checkpoint noise in the SNR fit, the
+# one thing this sweep measures. A pinned local checkout fixes all three.
+#
+# Refresh it deliberately (login node, then note the commit in the eval log):
+#   git -C $HARNESS_SRC pull
+HARNESS_SRC=${HARNESS_SRC:-/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness}
+# A PREBUILT WHEEL is the first choice, because `pip install <dir>` builds
+# in-tree: setuptools writes build/ INSIDE the source directory, so every
+# concurrent job shares one build tree and they delete each other's files
+# mid-copy — `error: [Errno 2] No such file or directory`, then
+# `lm_eval: command not found`. Two of six jobs died that way on 2026-09-03;
+# the ones that ran alone were fine, which is exactly the signature of a race.
+# Installing an artifact writes nothing shared and skips the ~15 min build.
+#
+# Rebuild it after refreshing the checkout (login node, minutes):
+#   git -C $HARNESS_SRC pull
+#   rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
+#         $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
+#   pip wheel --no-deps --no-build-isolation \
+#         -w $(dirname $HARNESS_SRC)/wheels /iopsstor/.../tmp-harness-build/src
+# Nothing checks that the newest wheel was built from the current checkout —
+# skip the rebuild and jobs keep silently installing the old code. job.json
+# records the resolved spec so a past run can at least be identified.
+HARNESS_WHEEL=$(ls -t "$(dirname "$HARNESS_SRC")"/wheels/lm_eval-*.whl 2>/dev/null | head -1)
+if [[ -z "$LM_EVAL_HARNESS_BRANCH" && -n "$HARNESS_WHEEL" ]]; then
+    LM_EVAL_HARNESS_PIP_SPEC="$HARNESS_WHEEL"
+    echo "Harness: $(basename "$HARNESS_WHEEL") (prebuilt wheel)"
+elif [[ -z "$LM_EVAL_HARNESS_BRANCH" && -d "$HARNESS_SRC" ]]; then
+    # No wheel yet: build from the checkout. Correct, but serialize the jobs —
+    # see the race above.
+    LM_EVAL_HARNESS_PIP_SPEC="$HARNESS_SRC"
+    echo "Harness: $HARNESS_SRC @ $(git -C "$HARNESS_SRC" rev-parse --short HEAD 2>/dev/null || echo '?') (in-tree build — no wheel found)"
+else
+    # Explicit branch, or the shared checkout is missing: fall back to GitHub.
+    LM_EVAL_HARNESS_PIP_SPEC="git+https://github.com/swiss-ai/lm-evaluation-harness.git"
+    if [[ -n "$LM_EVAL_HARNESS_BRANCH" ]]; then
+        LM_EVAL_HARNESS_PIP_SPEC="${LM_EVAL_HARNESS_PIP_SPEC}@${LM_EVAL_HARNESS_BRANCH}"
+    fi
+    echo "Harness: cloning $LM_EVAL_HARNESS_PIP_SPEC (no shared checkout at $HARNESS_SRC)"
 fi
 
 INSTALL_CMD="pip install --no-cache-dir sentencepiece tiktoken protobuf && \
@@ -377,18 +501,23 @@ echo \"Patched \$LM_EVAL_DIR/models/megatron_lm.py: load_checkpoint strict=True 
   INSTALL_CMD="$INSTALL_CMD && pip install megatron-core --no-deps && $PATCH_HARNESS_CMD && export MEGATRON_PATH=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM"
 fi
 
+# scripts/eval_worker.py takes the lm_eval CLI's flags and runs the tasks one
+# simple_evaluate() call at a time against a model it loads once, writing each
+# task's results as it finishes; only the launcher in front of it differs per
+# backend (vLLM manages its own GPUs, hf/megatron span the node via
+# accelerate/torchrun with a single worker).
 if [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-    CMD_BASE="lm_eval --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="python scripts/eval_worker.py --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 elif [[ $LM_EVAL_BACKEND == "hf" ]]; then
-    CMD_BASE="accelerate launch --num_processes=4  -m lm_eval --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="accelerate launch --num_processes=4 scripts/eval_worker.py --model $LM_EVAL_BACKEND --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 elif [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
-    CMD_BASE="torchrun --nproc-per-node=4 -m lm_eval --model megatron_lm --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
+    CMD_BASE="torchrun --nproc-per-node=4 scripts/eval_worker.py --model megatron_lm --model_args=$COMMON_MODEL_ARGS ${COMMON_EVAL_ARGS[@]}"
 fi
 # scripts/_run_per_task.sh reads CMD_BASE/TASKS/HARNESS_EVAL_DIR from env.
 export CMD_BASE TASKS HARNESS_EVAL_DIR NAME WANDB_ENTITY WANDB_PROJECT LOGS_ROOT
 
 echo "Installation command: $INSTALL_CMD"
-echo "Per-task command base: $CMD_BASE"
+echo "Worker command base: $CMD_BASE"
 
 # Start timing for lines 182-189
 echo "Starting timing for installation and evaluation..."
@@ -403,8 +532,51 @@ REPO_DIR="$PWD"
 # container, so re-export the ones _run_per_task.sh needs by host-side
 # interpolation into the bash -lc heredoc. Single-quote the values so
 # arbitrary characters in TASKS/CMD_BASE survive intact.
-INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' BATCH_TASKS='${BATCH_TASKS:-0}' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE'"
+INNER_EXPORTS="export NAME='$NAME' WANDB_ENTITY='$WANDB_ENTITY' WANDB_PROJECT='$WANDB_PROJECT' LOGS_ROOT='$LOGS_ROOT' TASKS='$TASKS' HARNESS_EVAL_DIR='$HARNESS_EVAL_DIR' CMD_BASE='$CMD_BASE' EVAL_WORKERS='$EVAL_WORKERS' GPUS_PER_WORKER='$(( MP * PP ))' HF_HOME='$HF_HOME' HF_HUB_CACHE='$HF_HUB_CACHE' HF_DATASETS_OFFLINE='$HF_DATASETS_OFFLINE' HF_HUB_OFFLINE='$HF_HUB_OFFLINE'"
 
+# job.json — what only the job knows, beside the harness's own files: Slurm
+# ids, node, walltime, backend/model/parallelism, repo commit, container, and
+# at the end the outcome. Written before the eval (a walltime kill still
+# leaves the header) and rewritten after it with the counts.
+job_json() {
+    command -v python3 >/dev/null || return 0
+    python3 - "$HARNESS_EVAL_DIR/job.json" "$@" <<'PY'
+import json, sys
+d = {}
+for kv in sys.argv[2:]:
+    k, v = kv.split("=", 1)
+    d[k] = int(v) if v.lstrip("-").isdigit() else v
+json.dump(d, open(sys.argv[1], "w"), indent=1, sort_keys=True)
+PY
+}
+count_lines() { if [ -f "$1" ]; then grep -c . "$1" || true; else echo 0; fi; }
+# failed_tasks.log is "<task>\t<reason>", one line per worker that hit it, so
+# count DISTINCT tasks. A task no worker can claim is owned by nobody and
+# therefore attempted by all of them: job 3313509 logged one task four times
+# and job.json read "tasks_failed: 4, tasks_requested: 1".
+count_failed() { if [ -f "$1" ]; then cut -f1 "$1" | sort -u | grep -c . || true; else echo 0; fi; }
+CONTAINER_TOML=./containers/env_vllm.toml
+[[ $LM_EVAL_BACKEND == "hf" ]] && CONTAINER_TOML=./containers/env.toml
+JOB_FACTS=(job_id="$SLURM_JOBID" job_name="${SLURM_JOB_NAME:-}" node="$SLURM_JOB_NODELIST"
+    partition="${SLURM_JOB_PARTITION:-}"
+    time_limit="$(squeue -h -j "$SLURM_JOBID" -o %l 2>/dev/null || true)"
+    name="$NAME" model="$MODEL" tokenizer="$TOKENIZER" backend="$LM_EVAL_BACKEND"
+    tp="$MP" pp="$PP" workers="$EVAL_WORKERS"
+    tasks_requested="$(tr ',' '\n' <<<"$TASKS" | grep -c . || true)"
+    repo_commit="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || true)"
+    # Which lm_eval this run installed. The whole spec, not its basename: a
+    # checkout and a GitHub clone both end in "lm-evaluation-harness" and the
+    # point of recording it is telling them apart. A wheel filename carries no
+    # commit and nothing verifies it was built from HARNESS_SRC, so store the
+    # checkout's commit beside it — together they identify a past run's harness.
+    harness="$LM_EVAL_HARNESS_PIP_SPEC"
+    harness_src_commit="$(git -C "$HARNESS_SRC" rev-parse --short HEAD 2>/dev/null || true)"
+    container="$(sed -n 's/^image = "\(.*\)"/\1/p' "$CONTAINER_TOML" || true)"
+    eval_dir="$HARNESS_EVAL_DIR" started="$(date -Iseconds)")
+mkdir -p "$HARNESS_EVAL_DIR"
+job_json "${JOB_FACTS[@]}" status=started
+
+EVAL_RC=0
 if [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
   srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml bash -lc "
     cd '$REPO_DIR'
@@ -416,9 +588,10 @@ if [[ $LM_EVAL_BACKEND == "megatron_lm" ]]; then
     # Make torch CUDA libs discoverable for vllm._C import
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 elif [[ $LM_EVAL_BACKEND == "vllm" ]]; then
-  # vLLM needs to run with a single process that manages all GPUs, so we run the install and eval in the same command to avoid issues with environment persistence across srun calls
+  # The install and the eval run in the same srun so the pip-installed harness
+  # is there for the workers; _run_per_task.sh starts one worker per GPU group.
   srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml bash -lc "
     cd '$REPO_DIR'
     $INNER_EXPORTS
@@ -429,7 +602,7 @@ elif [[ $LM_EVAL_BACKEND == "vllm" ]]; then
     # Make torch CUDA libs discoverable for vllm._C import
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 else
   # hf (via accelerate)
   srun -n 1 --mpi=pmix -ul --environment=./containers/env.toml --export=ALL,HF_TOKEN,HF_HOME,WANDB_API_KEY bash -lc "
@@ -444,13 +617,25 @@ else
     export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/torch/lib:\${LD_LIBRARY_PATH:-}
 
     bash ./scripts/_run_per_task.sh
-    "
+    " || EVAL_RC=$?
 fi
 
 # End timing and calculate duration
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 echo "Time taken for installation and evaluation: ${DURATION} seconds ($(($DURATION / 60)) minutes and $(($DURATION % 60)) seconds)"
+
+job_json "${JOB_FACTS[@]}" status=$([[ $EVAL_RC -eq 0 ]] && echo finished || echo failed) \
+    exit_code="$EVAL_RC" finished="$(date -Iseconds)" duration_s="$DURATION" \
+    tasks_done="$(find "$HARNESS_EVAL_DIR/per_task" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')" \
+    tasks_failed="$(count_failed "$HARNESS_EVAL_DIR/failed_tasks.log")" \
+    tasks_skipped="$(count_lines "$HARNESS_EVAL_DIR/skipped_tasks.log")"
+# No tasks_unfinished: _run_per_task.sh appends a task whose worker died to
+# failed_tasks.log, so counting the inflight/ dirs too would report each one
+# twice.
+# A failed eval step means NO task finished (_run_per_task.sh exits 1 only
+# then); whatever did land is on disk and the next submission picks it up.
+(( EVAL_RC == 0 )) || die "Evaluation step failed (rc=$EVAL_RC) — nothing to upload; see $HARNESS_EVAL_DIR"
 
 # Goodbye.
 echo "Evaluation finished"

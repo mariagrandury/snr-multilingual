@@ -1,0 +1,63 @@
+intervention,label,population,proxy_size,decision_acc,cells,refs
+arch,depth (deep vs shallow),benchmark,175M,0.4935980267927222,6,"1.7B,600M"
+arch,depth (deep vs shallow),benchmark,350M,0.47719354327352154,6,"1.7B,600M"
+arch,depth (deep vs shallow),benchmark,600M,0.5130039460660875,3,1.7B
+arch,depth (deep vs shallow),bpb_all,175M,0.21333333333333335,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_all,350M,0.59,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_all,600M,0.67,1,1.7B
+arch,depth (deep vs shallow),bpb_macro,175M,0.16666666666666666,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_macro,350M,0.3333333333333333,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_macro,600M,1.0,1,1.7B
+arch,depth (deep vs shallow),bpb_trained,175M,0.0,4,600M
+arch,depth (deep vs shallow),bpb_trained,350M,0.5108333333333334,4,600M
+arch,depth (deep vs shallow),bpb_untrained,175M,0.22895171507338116,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_untrained,350M,0.6388106819363669,6,"1.7B,600M"
+arch,depth (deep vs shallow),bpb_untrained,600M,0.6666666666666666,1,1.7B
+es,2nd language (ru vs es),benchmark,175M,0.3,1,600M
+es,2nd language (ru vs es),benchmark,350M,0.4304635761589404,1,600M
+es,2nd language (ru vs es),bpb_all,175M,0.79,1,600M
+es,2nd language (ru vs es),bpb_all,350M,0.9,1,600M
+es,2nd language (ru vs es),bpb_macro,175M,1.0,1,600M
+es,2nd language (ru vs es),bpb_macro,350M,1.0,1,600M
+es,2nd language (ru vs es),bpb_untrained,175M,0.7835051546391752,1,600M
+es,2nd language (ru vs es),bpb_untrained,350M,0.8969072164948454,1,600M
+scheme,language lists (A vs B),benchmark,175M,0.4600526994324399,3,"1.7B,1B"
+scheme,language lists (A vs B),benchmark,1B,0.3838782412626832,1,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.5068322049517534,3,"1.7B,1B"
+scheme,language lists (A vs B),benchmark,600M,0.45030008447599656,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_all,175M,0.5733333333333334,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_all,1B,0.7450000000000001,2,1.7B
+scheme,language lists (A vs B),bpb_all,350M,0.7566666666666667,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_all,600M,0.8233333333333333,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_macro,175M,1.0,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_macro,1B,1.0,2,1.7B
+scheme,language lists (A vs B),bpb_macro,350M,0.6666666666666666,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_macro,600M,1.0,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_trained,175M,0.40170940170940167,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_trained,1B,0.6538461538461539,2,1.7B
+scheme,language lists (A vs B),bpb_trained,350M,1.0,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_trained,600M,0.9444444444444445,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_untrained,175M,0.5648546374448208,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_untrained,1B,0.7637044603336738,2,1.7B
+scheme,language lists (A vs B),bpb_untrained,350M,0.6765451678225185,3,"1.7B,1B"
+scheme,language lists (A vs B),bpb_untrained,600M,0.7629801862504406,3,"1.7B,1B"
+temperature,temperature (T=1 vs T=3),benchmark,175M,0.3510838831291235,1,1B
+temperature,temperature (T=1 vs T=3),benchmark,350M,0.4170593779453346,1,1B
+temperature,temperature (T=1 vs T=3),benchmark,600M,0.4773798303487276,1,1B
+temperature,temperature (T=1 vs T=3),bpb_all,175M,0.67,1,600M
+temperature,temperature (T=1 vs T=3),bpb_all,350M,0.83,1,600M
+temperature,temperature (T=1 vs T=3),bpb_macro,175M,1.0,1,600M
+temperature,temperature (T=1 vs T=3),bpb_macro,350M,1.0,1,600M
+temperature,temperature (T=1 vs T=3),bpb_trained,175M,0.88,1,600M
+temperature,temperature (T=1 vs T=3),bpb_trained,350M,0.96,1,600M
+temperature,temperature (T=1 vs T=3),bpb_untrained,175M,0.46,1,600M
+temperature,temperature (T=1 vs T=3),bpb_untrained,350M,0.7,1,600M
+zh,2nd language (ru vs zh),benchmark,175M,0.5223880597014925,1,1B
+zh,2nd language (ru vs zh),benchmark,350M,0.5273972602739726,1,1B
+zh,2nd language (ru vs zh),benchmark,600M,0.541095890410959,1,1B
+zh,2nd language (ru vs zh),bpb_all,175M,0.75,1,600M
+zh,2nd language (ru vs zh),bpb_all,350M,0.86,1,600M
+zh,2nd language (ru vs zh),bpb_macro,175M,1.0,1,600M
+zh,2nd language (ru vs zh),bpb_macro,350M,1.0,1,600M
+zh,2nd language (ru vs zh),bpb_untrained,175M,0.7525773195876289,1,600M
+zh,2nd language (ru vs zh),bpb_untrained,350M,0.8556701030927835,1,600M

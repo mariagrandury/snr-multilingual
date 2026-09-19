@@ -1,0 +1,1 @@
+--8<-- "src/signal-and-noise/analysis/rq02_decision_accuracy/README.md"

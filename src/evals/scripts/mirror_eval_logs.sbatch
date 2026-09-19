@@ -12,9 +12,9 @@
 #   * _eval_status.completed_tasks scans LOGS_ROOT to decide what is already
 #     evaluated. Point that at an empty iopsstor tree and every watcher pass
 #     re-submits every checkpoint — thousands of jobs.
-#   * eval jobs would then WRITE results to capstor at the end of a run. A
-#     capstor blip (errno 108, seen twice this week) would lose a finished
-#     45-minute job, because BATCH_TASKS=1 writes nothing until the very end.
+#   * eval jobs would then WRITE results to capstor. A capstor blip (errno
+#     108, seen twice this week) would fail the task being written, or the
+#     job's final merge and W&B push.
 # Keeping iopsstor as the working copy costs one rsync and no new failure mode.
 #
 # It also TOUCHES every checkpoint tree on scratch, which it deliberately does
@@ -33,7 +33,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=06:00:00
+#SBATCH --time=12:00:00
 # Logs go to capstor beside the data they describe: Slurm opens them before the
 # script runs, so a swept scratch dir would mean no log at all.
 #SBATCH --output=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
@@ -61,6 +61,19 @@ PAIRS=(
     "$LOGS/slurm/training|$CAP/msnr-train-logs"
     "$LOGS/Meg-Runs/msnr|$CAP/msnr-run-logging"
 )
+# Collaborators' trees. Every account's Slurm logs and Megatron run logging
+# land under its OWN scratch (`%u` in --output, and the checkpoint dir of a
+# cell it launched), while its eval results already go to the shared tree
+# above — so aromanou's training logs, all of her 1B cells among them, never
+# reached capstor. Each goes into a subdir named after the account, so two
+# users' run logging for the same cell cannot overwrite each other. Their
+# checkpoints are not touched below: only a file's owner can refresh its mtime.
+for u in ${OTHER_USERS:-aromanou}; do
+    ulogs=${LOGS/\/mariagrandury\//\/$u\/}
+    [ "$ulogs" = "$LOGS" ] && continue
+    PAIRS+=("$ulogs/slurm/training|$CAP/msnr-train-logs/$u"
+            "$ulogs/Meg-Runs/msnr|$CAP/msnr-run-logging/$u")
+done
 
 # --partial: a 2 MB samples file interrupted mid-write resumes rather than
 #   restarting. --inplace is NOT used: a torn file would look complete.
@@ -104,7 +117,16 @@ if (( ${#CKPT_DIRS[@]} )); then
     else
         echo "[$(date)] touching $where"
         # -c: a checkpoint being written can vanish between find and touch.
-        find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>/dev/null
+        # stderr is COUNTED, not discarded: a file owned by a collaborator is
+        # `group::r-x` under the shared ACLs, so touch fails with EPERM and only
+        # its owner can refresh it. Swallowing that would report success while
+        # leaving whole cells exposed — on 2026-09-07, 57952 of 200884 files
+        # (28%, every aromanou-owned cell) failed exactly this way.
+        fails=$(find "${CKPT_DIRS[@]}" -exec touch -c {} + 2>&1 >/dev/null | wc -l)
+        if (( fails )); then
+            echo "[$(date)] WARNING: $fails find/touch errors (mostly paths NOT touched: not owner) —" \
+                 "those cells stay exposed; their owner must run this too" >&2
+        fi
         echo "[$(date)] touched"
     fi
 else

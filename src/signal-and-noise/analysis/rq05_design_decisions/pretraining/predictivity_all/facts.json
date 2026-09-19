@@ -1,0 +1,950 @@
+{
+ "rq4": {
+  "effect": [
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 1,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.325,
+    "share_above_2": 0.3,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 1,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.899,
+    "share_above_2": 0.446,
+    "n": 74
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.161,
+    "share_above_2": 0.55,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 2,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.134,
+    "share_above_2": 0.275,
+    "n": 153
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 8,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.11,
+    "share_above_2": 0.27,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 8,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.0,
+    "share_above_2": 0.268,
+    "n": 611
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 15,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.36,
+    "share_above_2": 0.59,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 15,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.665,
+    "share_above_2": 0.392,
+    "n": 1128
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 30,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.08,
+    "share_above_2": 0.24,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.134,
+    "share_above_2": 0.263,
+    "n": 1801
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.576,
+    "share_above_2": 0.26,
+    "n": 100
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.152,
+    "share_above_2": 0.269,
+    "n": 2249
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 1.614,
+    "share_above_2": 0.43,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 8,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.691,
+    "share_above_2": 0.408,
+    "n": 527
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 15,
+    "reference_size": "1B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 2.691,
+    "share_above_2": 0.55,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 15,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.333,
+    "share_above_2": 0.316,
+    "n": 2249
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 0.575,
+    "share_above_2": 0.18,
+    "n": 100
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.485,
+    "share_above_2": 0.367,
+    "n": 1871
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 50,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 3.859,
+    "share_above_2": 0.7,
+    "n": 100
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 50,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.391,
+    "share_above_2": 0.348,
+    "n": 2249
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 4.885,
+    "share_above_2": 0.69,
+    "n": 100
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "L": 2,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.109,
+    "share_above_2": 0.258,
+    "n": 155
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 3.396,
+    "share_above_2": 0.62,
+    "n": 100
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "L": 2,
+    "reference_size": "600M",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.742,
+    "share_above_2": 0.458,
+    "n": 153
+   }
+  ],
+  "da": [
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.494,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.477,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.513,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.213,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.59,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "decision_acc": 0.67,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 0.167,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.333,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.0,
+    "cells": 4,
+    "refs": "600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.511,
+    "cells": 4,
+    "refs": "600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.229,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.639,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "decision_acc": 0.667,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.667,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 6,
+    "refs": "1.7B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 0.25,
+    "cells": 4,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.3,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.43,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.79,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.9,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.784,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.897,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.46,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.384,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.507,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.45,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.573,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "1B",
+    "decision_acc": 0.745,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.757,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_all",
+    "proxy_size": "600M",
+    "decision_acc": 0.823,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.402,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "decision_acc": 0.654,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.944,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.565,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "1B",
+    "decision_acc": 0.764,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.677,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "bpb_untrained",
+    "proxy_size": "600M",
+    "decision_acc": 0.763,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 0.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.351,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.417,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.477,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.67,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.83,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.88,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.96,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.46,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.7,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.522,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.527,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.541,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_all",
+    "proxy_size": "175M",
+    "decision_acc": 0.75,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_all",
+    "proxy_size": "350M",
+    "decision_acc": 0.86,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_untrained",
+    "proxy_size": "175M",
+    "decision_acc": 0.753,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_untrained",
+    "proxy_size": "350M",
+    "decision_acc": 0.856,
+    "cells": 1,
+    "refs": "600M"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
+   }
+  ]
+ }
+}

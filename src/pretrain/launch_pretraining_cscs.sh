@@ -70,6 +70,21 @@ export WORLD_SIZE=$SLURM_NPROCS
 
 ulimit -c 0
 
+# Container. The a139 capstor toml is the default; when capstor is unavailable
+# fall back to the repo's copy, which pins the same image from the local EDF
+# image store (see container/ngc_nemo_iopsstor.toml). CONTAINER_TOML overrides
+# both, like convert-snr.sh.
+CONTAINER_TOML=${CONTAINER_TOML:-/capstor/store/cscs/swissai/a139/containers/ngc_25-11-nemo-alps3.toml}
+[ -f "$CONTAINER_TOML" ] || CONTAINER_TOML=$SCRIPT_DIR/container/ngc_nemo_iopsstor.toml
+
+# ~/.bashrc points HF_HUB_CACHE at capstor, where the tokenizer of
+# --tokenizer-model is cached. Unreadable (capstor down) -> drop the override
+# so huggingface_hub uses $HF_HOME/hub on iopsstor instead.
+if [ -n "$HF_HUB_CACHE" ] && [ ! -d "$HF_HUB_CACHE" ]; then
+  echo "[$(date)] HF_HUB_CACHE=$HF_HUB_CACHE unreachable - using \$HF_HOME/hub"
+  unset HF_HUB_CACHE
+fi
+
 cd $MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR:$PYTHONPATH
 
@@ -112,6 +127,7 @@ cp $SCRIPT_PATH $DEBUG_DIR
   echo "CMD: $CMD_PREFIX $TRAINING_CMD"
   echo "NODES: $(scontrol show hostnames $SLURM_JOB_NODELIST)"
   echo "Megatron path: $MEGATRON_LM_DIR ($(git -C $MEGATRON_LM_DIR rev-parse --verify HEAD))"
+  echo "Container: $CONTAINER_TOML"
   nvidia-smi
   echo "Environment Variables:"
   printenv
@@ -120,7 +136,7 @@ cp $SCRIPT_PATH $DEBUG_DIR
 srun --mpi=pmix \
 	--network=disable_rdzv_get \
 	--cpus-per-task $SLURM_CPUS_PER_TASK \
-	--environment=/capstor/store/cscs/swissai/a139/containers/ngc_25-11-nemo-alps3.toml \
+	--environment=$CONTAINER_TOML \
 	-lu bash \
 	-c "RANK=\$SLURM_PROCID LOCAL_RANK=\$SLURM_LOCALID $CMD_PREFIX $TRAINING_CMD"
 
