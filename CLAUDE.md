@@ -49,8 +49,8 @@ Two sweeps, in this order:
 1. **The finished 36-model sweep** (4 sizes × 3 data mixtures × 3 seeds,
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
-2. **The predictivity sweep** (current work): a 6-rung ladder
-   90M–1.7B × 7 language settings × deep/shallow × five data schemes
+2. **The predictivity sweep** (current work): a 7-rung ladder
+   90M–3B × 7 language settings × deep/shallow × five data schemes
    (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
@@ -162,8 +162,9 @@ System Python on the login nodes is 3.6 — use `python3.11`.
 Predictivity-sweep specifics (the 36-sweep's sizes and 30/70-style mixtures
 are retired — do not carry them into new work):
 
-- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding — every size trains at
-  every language setting
+- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
+  at every language setting except 3B, the extrapolation check above the 1.7B
+  reference: deep only, L ∈ {8, 15}, schemes A and B ([`plan/3b_models.md`](plan/3b_models.md))
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50,
   100} languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.

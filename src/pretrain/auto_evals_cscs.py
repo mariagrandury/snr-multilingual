@@ -77,7 +77,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
-    due_iters, exp_name, job_name, predictivity_cells, schedule_for)
+    arches_for, due_iters, exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import load_tasks, tasks_for_benchmarks  # noqa: E402
@@ -144,7 +144,8 @@ def convert_job_name(cell: str) -> str:
 # is a resume point, not a loss. SAFETY and the fixed overhead only buy fewer
 # resubmissions.
 MIN_PER_TASK = {"90M": 0.39, "175M": 0.48, "350M": 0.54,   # per worker-task, 583 jobs
-                "600M": 0.55, "1B": 0.59, "1.7B": 0.68}
+                "600M": 0.55, "1B": 0.59, "1.7B": 0.68,
+                "3B": 0.85}   # not fitted: 1.7B x 1.25, the 1B->1.7B step
 OVERHEAD_MIN = 10   # max fitted intercept 1.9; the rest is cold-start headroom
 SAFETY = 1.15       # worst observed requirement 0.91 -> 26% margin
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
@@ -639,7 +640,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
         for c in predictivity_cells(args.schemes):
             scheme = c["scheme"]
-            if arch not in DATA_SCHEMES[scheme]["arches"]:
+            if arch not in arches_for(scheme, c["size"]):
                 continue
             cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
             if args.name:

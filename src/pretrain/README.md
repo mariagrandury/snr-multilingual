@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 6-rung size ladder (90M–1.7B non-embedding) × 7 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 7 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -76,14 +76,14 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, every size at every setting |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
 | Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **186 runs**.
+**58 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting every scheme and the architectures each is trained in: **190 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -165,6 +165,7 @@ launcher — the core design):
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
 | [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. Reads every account's training logs (aromanou's 1B cells are under her scratch) and a killed eval job's unmerged `per_task/` results. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md): benchmarks twice, over each cell's trained languages and, for the runs evaluated in every language, over all of them; BPB in the tables is the final checkpoint's, blank until that one is scored. |
 | [`compute_cost.py`](compute_cost.py) | What the sweep actually spent, in node-hours by task (pretrain, eval, BPB, convert, data), size and user: every allocation from sacct, split into **kept** (grid cells, `auto` tasks, iterations that reached a checkpoint) and the reasons the rest was not (failed, not in grid, not auto, superseded, wasted, in flight, no record). Writes [plan/compute-costs.md](../../plan/compute-costs.md), the measured counterpart of [plan/compute-budget.md](../../plan/compute-budget.md). CSCS only — Azure runs are not in sacct. |
+| [`dryrun_after_build.sbatch`](dryrun_after_build.sbatch) | Runs `launch_trainings.py cscs $ARGS --dry-run` once the build job `WAIT_FOR` has fully finished: a build is a chain of 12h singleton segments, so instead of `afterok` on one segment the job requeues itself after whichever segment is current and runs when none is left (usage in its header). |
 
 **Subfolders:**
 

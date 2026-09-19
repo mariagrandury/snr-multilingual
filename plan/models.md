@@ -66,15 +66,19 @@ Non-embedding parameter convention (Signal-and-Noise / OLMo ladder); tied
 embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated);
 width/depth ≈ 64 (the `find_hyperparams_deep.py` rule).
 
-| | 90M | 175M | 350M | 600M | 1B | 1.7B |
-|---|---|---|---|---|---|---|
-| Layers | 15 | 16 | 20 | 24 | 28 | 30 |
-| d_model | 768 | 1024 | 1280 | 1536 | 1792 | 2304 |
-| FFN size | 3072 | 4096 | 5120 | 6144 | 7168 | 9216 |
-| Attention heads | 12 | 16 | 20 | 24 | 28 | 36 |
-| KV groups | 3 | 4 | 5 | 6 | 7 | 9 |
-| Non-emb params | 92.90M | 176.16M | 344.06M | 594.54M | 944.11M | 1,672.15M |
-| Total params (tied) | 193.6M | 310.4M | 511.9M | 795.9M | 1,179.0M | 1,974.1M |
+| | 90M | 175M | 350M | 600M | 1B | 1.7B | 3B |
+|---|---|---|---|---|---|---|---|
+| Layers | 15 | 16 | 20 | 24 | 28 | 30 | 36 |
+| d_model | 768 | 1024 | 1280 | 1536 | 1792 | 2304 | 2816 |
+| FFN size | 3072 | 4096 | 5120 | 6144 | 7168 | 9216 | 11264 |
+| Attention heads | 12 | 16 | 20 | 24 | 28 | 36 | 44 |
+| KV groups | 3 | 4 | 5 | 6 | 7 | 9 | 11 |
+| Non-emb params | 92.90M | 176.16M | 344.06M | 594.54M | 944.11M | 1,672.15M | 2,997.49M |
+| Total params (tied) | 193.6M | 310.4M | 511.9M | 795.9M | 1,179.0M | 1,974.1M | 3,366.6M |
+
+The 3B rung (2026-09-19) is the extrapolation check above the 1.7B reference:
+deep only, L ∈ {8, 15}, schemes A and B, seed 1904 — see
+[`3b_models.md`](3b_models.md) for the choice and its cost.
 
 ## Architecture per size — shallow variant (`hyperparams_shallow.json`)
 
@@ -108,16 +112,16 @@ spaced checkpoints per run — 40 at 1B, 60 at 1.7B) so
 
 Deep baseline:
 
-| | 90M | 175M | 350M | 600M | 1B | 1.7B |
-|---|---|---|---|---|---|---|
-| Train tokens | 9.29B | 17.63B | 34.39B | 59.45B | 94.38B | 167.22B |
-| Iterations | 4,500 | 8,540 | 16,660 | 28,800 | 45,720 | 81,000 |
-| Peak LR | 1.428e-3 | 1.217e-3 | 1.029e-3 | 8.976e-4 | 7.996e-4 | 6.931e-4 |
-| LR warmup iters | 200 | 300 | 700 | 1,200 | 1,800 | 3,200 |
-| WSD decay iters | 900 | 1,700 | 3,300 | 5,800 | 9,100 | 16,200 |
-| Micro-batch · nodes | 7 · 3 | 7 · 6 | 3 · 14 | 6 · 21 | 6 · 21 | 2 · 21 |
-| Checkpoint interval (iters) | 225 | 427 | 833 | 1,440 | 1,143 (×40) | 1,350 (×60) |
-| 1×C checkpoint (20N tokens) | iter 900 | 1,708 | 3,332 | 5,760 | 9,144 | 16,200 |
+| | 90M | 175M | 350M | 600M | 1B | 1.7B | 3B |
+|---|---|---|---|---|---|---|---|
+| Train tokens | 9.29B | 17.63B | 34.39B | 59.45B | 94.38B | 167.22B | 299.75B |
+| Iterations | 4,500 | 8,540 | 16,660 | 28,800 | 45,720 | 81,000 | 145,200 |
+| Peak LR | 1.428e-3 | 1.217e-3 | 1.029e-3 | 8.976e-4 | 7.996e-4 | 6.931e-4 | 5.990e-4 |
+| LR warmup iters | 200 | 300 | 700 | 1,200 | 1,800 | 3,200 | 5,800 |
+| WSD decay iters | 900 | 1,700 | 3,300 | 5,800 | 9,100 | 16,200 | 29,000 |
+| Micro-batch · nodes | 7 · 3 | 7 · 6 | 3 · 14 | 6 · 21 | 6 · 21 | 2 · 21 | 1 · 21 |
+| Checkpoint interval (iters) | 225 | 427 | 833 | 1,440 | 1,143 (×40) | 1,350 (×60) | 2,420 (×60) |
+| 1×C checkpoint (20N tokens) | iter 900 | 1,708 | 3,332 | 5,760 | 9,144 | 16,200 | 29,040 |
 
 Shallow variant (its own N → slightly different schedules; no `nodes`
 column in its file — the deep ladder's per-size node counts apply):

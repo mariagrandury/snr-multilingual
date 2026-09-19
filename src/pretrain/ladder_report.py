@@ -81,7 +81,7 @@ CELL_RE = re.compile(r"lm-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
 # these targets, so they are the right abscissa even though the realised counts
 # differ by a fraction of a percent.
 NON_EMB = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8,
-           "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9}
+           "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9, "3B": 3.0e9}
 
 
 def _key(m: re.Match) -> tuple:
@@ -345,6 +345,7 @@ SIZE_PALETTE = {
     "600M": ["#c7e9c0", "#74c476", "#238b45", "#00441b"],
     "1B":   ["#fcbba1", "#fb6a4a", "#cb181d", "#67000d"],
     "1.7B": ["#ccece6", "#66c2a4", "#238b45", "#005824"],
+    "3B":   ["#d9d9d9", "#969696", "#525252", "#000000"],
 }
 # Each scheme is a DIFFERENT data distribution at the same L, not a flavour of
 # the baseline, so its runs must never read as points on the baseline curve —

@@ -41,7 +41,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, exp_name, mix_label, predictivity_cells,
+    DATA_SCHEMES, HYPERPARAMS, arches_for, exp_name, mix_label, predictivity_cells,
     save_interval, schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
@@ -120,7 +120,7 @@ def grid_names() -> set[str]:
     must enumerate the whole grid, not one slice of it."""
     return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
             for c in predictivity_cells()
-            for arch in DATA_SCHEMES[c["scheme"]]["arches"]}
+            for arch in arches_for(c["scheme"], c["size"])}
 
 
 def prune(write: bool = True) -> list[str]:
@@ -150,7 +150,7 @@ def sync(arch: str = "deep", scheme: str | None = None,
 
     added, updated = [], []
     for c in predictivity_cells([scheme] if scheme else None):
-        if arch not in DATA_SCHEMES[c["scheme"]]["arches"]:
+        if arch not in arches_for(c["scheme"], c["size"]):
             continue
         name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
         old = data["models"].get(name)

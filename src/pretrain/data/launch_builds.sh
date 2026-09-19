@@ -30,6 +30,16 @@ DRY=${1:-}
 REBUILD=(A:15 A:50 B:15)
 REBUILD_ROOT=$OUT/rebuild-92B
 REBUILD_DST=/iopsstor/scratch/cscs/mariagrandury/data-92B   # = launch_trainings.CSCS_REBUILD_DATA_DIR
+# The 3B rung (2026-09-19, A and B at L8 and L15) draws 150B from the
+# multilingual half, so those four builds are now sized 165B, against 92B
+# finished on capstor and, for the two L15s, in rebuild-92B. Same mechanism,
+# a second tier: rebuild-165B, staged to data-165B, read by the launcher only
+# for cells the 92B copies cannot feed (CSCS_REBUILD_DATA_DIRS). A 165B T=1
+# build exhausts no language at any of the four (measured on the builder's
+# own estimates: A-L8 240B, A-L15 287B, B-L8 199B, B-L15 209B available).
+REBUILD_165=(A:8 A:15 B:8 B:15)
+REBUILD_165_ROOT=$OUT/rebuild-165B
+REBUILD_165_DST=/iopsstor/scratch/cscs/mariagrandury/data-165B
 
 mkdir -p "$OUT" "$LOGS"
 
@@ -101,6 +111,14 @@ while IFS=: read -r scheme subdir L; do
   # reusing the finished 52B build's name would chain onto its history.
   if [[ " ${REBUILD[*]} " == *" $scheme:$L "* ]]; then
     root=$REBUILD_ROOT; name="$name-92b"; extra=",BUILD_DST=$REBUILD_DST"
+  fi
+  # A setting in both tiers submits both names; the finished 92B one no-ops
+  # on its idempotency guard and the 165B one builds. The grid-derived target
+  # (165B) reaches both, which is harmless for a finished build and exactly
+  # right for the new root.
+  if [[ " ${REBUILD_165[*]} " == *" $scheme:$L "* ]]; then
+    vdir=$(variant_dir "$REBUILD_165_ROOT" "$subdir") || { echo "cannot prepare $REBUILD_165_ROOT/$subdir" >&2; exit 1; }
+    submit "build-${scheme,,}-L$L-165b" "BUILD_SCHEME=$scheme,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$vdir,BUILD_DST=$REBUILD_165_DST"
   fi
   dep=()
   if [ "$scheme:$L" = A:2 ]; then dep=("${L2_DEP[@]}"); fi

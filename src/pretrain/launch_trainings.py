@@ -4,12 +4,15 @@ Launch predictivity-sweep training jobs on CSCS (sbatch) or Azure ML (az ml).
 
 The grid (see plan/small-to-large-predictivity-training-plan.md):
 
-  * size — the 6-rung ladder (90M..1.7B) shared by the reviewed hyperparams
+  * size — the 7-rung ladder (90M..3B) shared by the reviewed hyperparams
            files; --arch picks deep (hyperparams/hyperparams_deep.json, the
            baseline) or shallow (hyperparams/hyperparams_shallow.json, the
-           model-depth intervention level).
+           model-depth intervention level). A rung is trained in an arch only
+           if that arch's file defines it (arches_for): 3B is deep only.
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
-           FineWeb-2 languages. Every size trains at every setting.
+           FineWeb-2 languages. Every size trains at every setting except 3B,
+           the extrapolation check, which trains at L in {8, 15} only
+           (SIZE_LANG_SETTINGS).
   * scheme — the data build (DATA_SCHEMES, selected with --scheme): A is the
            resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
            supplies both the L50 temperature intervention and L100, which
@@ -135,9 +138,15 @@ CSCS_SUBMIT_SCRIPT = SCRIPT_DIR / "launch_pretraining_cscs.sh"
 # (iopsstor is purged ~30 days); data/launch_builds.sh writes there and the
 # copy is staged here for training.
 CSCS_DEFAULT_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data"
-# Where data/launch_builds.sh stages the 92B rebuilds of the builds the grid
-# outgrew (A-L15, A-L50, B-L15): the same layout, FineWeb-2 prefixes only.
+# Where data/launch_builds.sh stages the rebuilds of the builds the grid
+# outgrew: the same layout, FineWeb-2 prefixes only. 92B for the settings the
+# 1.7B row gained (A-L15, A-L50, B-L15); 165B for the four settings the 3B
+# rung trains (A/B at L8 and L15 — a 3B draws 150B from the multilingual
+# half). fineweb_source tries them in this order, smallest first, so a cell
+# keeps the smallest copy that covers its draw.
 CSCS_REBUILD_DATA_DIR = "/iopsstor/scratch/cscs/mariagrandury/data-92B"
+CSCS_REBUILD_DATA_DIRS = (CSCS_REBUILD_DATA_DIR,
+                          "/iopsstor/scratch/cscs/mariagrandury/data-165B")
 
 # The auto-eval watcher's stdout/stderr. Under the cluster log tree with every
 # other generated log, NOT next to the source: it is an append-only file the
@@ -148,7 +157,7 @@ AUTO_EVAL_LOGS = Path(
 
 AZURE_JOB_YML = SCRIPT_DIR / "azure" / "jobs" / "pretrain.yml"
 DATASTORE = "azureml://datastores/workspaceblobstore/paths/predictivity"
-ND_SIZES = {"1B", "1.7B"}  # the 8xH100 pool; everything else runs on the
+ND_SIZES = {"1B", "1.7B", "3B"}  # the 8xH100 pool; everything else runs on the
                           # Spain economy pool. Moved UK South -> Canada
                           # Central 2026-08-26 (meters + the already-granted
                           # low-priority allowance; see azure/env.sh).
@@ -160,17 +169,22 @@ EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
 # The ladder, small -> large. The order is load-bearing: a scheme's
 # per-setting size cap below means "this rung and every rung under it".
-LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
+LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
 # The sizes the eval watcher and the eval-progress views cover. 90M trains
 # (its checkpoints stay on disk) but is not on the ladder: nine of its ten
 # runs diverge (plan/90M-rung-anomaly.md) and the report drops the rung, so
 # evaluating it buys nothing (2026-09-18). `--name` still reaches a 90M cell.
 EVAL_SIZES = [s for s in LADDER if s != "90M"]
 
-# Which language settings each size trains at. Every size now covers every
-# setting — the 1.7B row gained L=15 and L=50 on 2026-09-10, so the top rung
-# exists at every language count.
+# Which language settings each size trains at. Every size covers every
+# setting — the 1.7B row gained L=15 and L=50 on 2026-09-10 — except the 3B,
+# added 2026-09-19 as the extrapolation check above the 1.7B reference: the
+# paper's DA-across-size question is asked on benchmarks, and at 3B only the
+# settings whose pairs are still unresolved at 1.7B are worth ~1,900
+# node-hours each (plan/3b_models.md). L8 and L15 in schemes A
+# and B, deep only (arches_for), seed 1904 only (SEED_TRIPLES has no 3B).
 SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
+SIZE_LANG_SETTINGS["3B"] = [8, 15]
 
 # --- Data schemes -----------------------------------------------------------
 #
@@ -271,6 +285,22 @@ def cell_fineweb_subsets(L: int, scheme: str = "A") -> list[str]:
                         f"language_sets_scheme{DATA_SCHEMES[scheme]['sets']}"
                         ".json").read_text())["sets"]
     return list(sets_[f"FW_L{L}"])
+
+
+# The sizes each reviewed hyperparams file defines. A rung exists in an
+# architecture iff its file has a config for it — the file is the only place
+# the architecture is described, so nothing else could train it anyway.
+SIZES_BY_ARCH = {arch: tuple(json.loads(p.read_text())["configs"])
+                 for arch, p in HYPERPARAMS.items()}
+
+
+def arches_for(scheme: str, size: str) -> tuple[str, ...]:
+    """Architectures a scheme trains at one rung: the scheme's arches, minus
+    any whose hyperparams file has no config for the size. The 3B rung is
+    deep only (hyperparams_shallow.json stops at 1.7B), and every tool that
+    fans a cell out over architectures must read this rather than the
+    scheme's list, or the shallow ladder plans a 3B it cannot configure."""
+    return tuple(a for a in DATA_SCHEMES[scheme]["arches"] if size in SIZES_BY_ARCH[a])
 
 
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
@@ -493,27 +523,30 @@ def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Option
     """(directory whose fineweb_L{L} the cell reads, why it must not train or None).
 
     The stage copy under `data_dir`, unless undersized_build refuses it; then
-    the 92B rebuild stage, when training off the default stage and the rebuild
-    holds enough. English always stays on the stage. Every rung the stage copy
-    fits keeps it: the rebuild extends each language byte for byte, but
-    Megatron shuffles over the whole file and the extra documents are newer
-    crawls, so a cell moved onto it would stop seeing what its already-trained
-    counterparts saw (verified 2026-09-13). Only cells the check used to refuse
-    get the rebuild, so none switches data mid-run. The stage prefix must exist
-    (main() checks first). pretrain_progress reports the same choice."""
+    the rebuild stages (CSCS_REBUILD_DATA_DIRS, 92B then 165B), when training
+    off the default stage and a rebuild holds enough. English always stays on
+    the stage. Every rung the stage copy fits keeps it, and a cell the 92B
+    copy fits keeps that one: a rebuild extends each language byte for byte,
+    but Megatron shuffles over the whole file and the extra documents are newer
+    crawls, so a cell moved onto a bigger copy would stop seeing what its
+    already-trained counterparts saw (verified 2026-09-13). Only cells the
+    check used to refuse get a rebuild, so none switches data mid-run. The
+    stage prefix must exist (main() checks first). pretrain_progress reports
+    the same choice."""
     subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
     cell_dir = data_dir + (f"/{subdir}" if subdir else "")
     if c["L"] == 1:
         return cell_dir, None
     short = undersized_build(f"{cell_dir}/fineweb_L{c['L']}", c["L"], c["scheme"],
                              run_tokens)
-    rebuilt = CSCS_REBUILD_DATA_DIR + (f"/{subdir}" if subdir else "")
-    if (short and data_dir == CSCS_DEFAULT_DATA_DIR
-            and all(Path(f"{rebuilt}/fineweb_L{c['L']}.{ext}").is_file()
+    if short and data_dir == CSCS_DEFAULT_DATA_DIR:
+        for root in CSCS_REBUILD_DATA_DIRS:
+            rebuilt = root + (f"/{subdir}" if subdir else "")
+            if (all(Path(f"{rebuilt}/fineweb_L{c['L']}.{ext}").is_file()
                     for ext in ("bin", "idx"))
-            and not undersized_build(f"{rebuilt}/fineweb_L{c['L']}", c["L"],
-                                     c["scheme"], run_tokens)):
-        return rebuilt, None
+                    and not undersized_build(f"{rebuilt}/fineweb_L{c['L']}", c["L"],
+                                             c["scheme"], run_tokens)):
+                return rebuilt, None
     return cell_dir, short
 
 
@@ -659,7 +692,8 @@ ITER_MS = {
                 "350M": 750,   # [m]  604
                 "600M": 660,   # [m]  548
                 "1B": 940,     # [w]  849, 4 jobs
-                "1.7B": 1280}, # [w] 1155, 11 jobs
+                "1.7B": 1280,  # [w] 1155, 11 jobs
+                "3B": 2300},   # not measured: 1.7B x (3.0/1.67) params; clamps to the cap anyway
     "shallow": {"90M": 1400,   # [m] 1154
                 "175M": 1000,  # [m]  810
                 "350M": 700,   # [m]  567
@@ -996,7 +1030,8 @@ def main() -> None:
         return
     cells = [
         c for c in predictivity_cells([args.scheme])
-        if (size_filter is None or c["size"] in size_filter)
+        if args.arch in arches_for(c["scheme"], c["size"])
+        and (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
         and (args.seed is None or c["seed"] == args.seed)
     ]

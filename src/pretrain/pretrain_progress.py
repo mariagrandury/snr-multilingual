@@ -60,8 +60,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
-    LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
-    SIZE_LANG_SETTINGS, TIME_MAX_SEC, exp_name, fineweb_source, job_name,
+    LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
+    SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name, fineweb_source, job_name,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
@@ -87,7 +87,7 @@ ITER_RE = re.compile(r"^iter_(\d+)$")
 # otherwise win and leave the remainder unmatched.
 SCHEME_OF_LABEL = {v["label"]: name for name, v in DATA_SCHEMES.items()}
 NAME_RE = re.compile(
-    r"^lm-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
+    r"^lm-(?P<size>" + "|".join(re.escape(s) for s in LADDER) + r")-L(?P<L>\d+)"
     r"(?P<scheme>"
     + "|".join(re.escape(lab) for lab in
                sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
@@ -426,7 +426,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
             schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
             # Per scheme the grid plans seeds x the architectures that scheme
             # is trained in — not always both: ZH and ES are deep only.
-            runs = {v: len(seeds_for(size, L, v)) * len(DATA_SCHEMES[v]["arches"])
+            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size))
                     for v in schemes}
             if all_languages:
                 s, _, seed = ae.ALL_LANGUAGES_RUNS
@@ -451,7 +451,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in DATA_SCHEMES[c["scheme"]]["arches"]
+            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"])
             if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
@@ -613,7 +613,7 @@ def planned_variants(size: str, L: int) -> list[str]:
         if not cell_in_scheme(scheme, size, L):
             continue
         seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
-        for arch in DATA_SCHEMES[scheme]["arches"]:
+        for arch in arches_for(scheme, size):
             lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
@@ -672,7 +672,7 @@ def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
 # heatmap cannot answer (which data, which job, how many more jobs) get a table.
 # ---------------------------------------------------------------------------
 
-STATUS_SIZES = ("1B", "1.7B")
+STATUS_SIZES = ("1B", "1.7B", "3B")
 # A 12h job trains until the SIGUSR2 exit an hour before its limit, minus a
 # cold start and the final save.
 JOB_TRAIN_SEC = TIME_MAX_SEC - 3600 - 600
@@ -770,7 +770,7 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
             ms = ITER_MS[arch][size]
             per_job = JOB_TRAIN_SEC * 1000 // ms
             for c in predictivity_cells():
-                if c["size"] != size or arch not in DATA_SCHEMES[c["scheme"]]["arches"]:
+                if c["size"] != size or arch not in arches_for(c["scheme"], size):
                     continue
                 exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
                 jid, log = logs.get(exp, (None, None))
@@ -925,15 +925,18 @@ def grid_markdown(png_dir: str) -> str:
     # Every run the grid plans: per scheme, its cells x the architectures that
     # scheme is actually trained in (ZH and ES are deep only, so multiplying
     # the whole grid by 2 would over-count them).
-    full = sum(len(predictivity_cells([v])) * len(DATA_SCHEMES[v]["arches"])
-               for v in DATA_SCHEMES)
+    full = sum(len(arches_for(v, c["size"]))
+               for v in DATA_SCHEMES for c in predictivity_cells([v]))
+    # Sizes that do not train at every setting (the 3B extrapolation check).
+    partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
+                        for s in SIZES if SIZE_LANG_SETTINGS[s] != LANG_SETTINGS)
     seeds = " · ".join(f"{_fmt(triple)} at {size}, L ∈ {{{_fmt(sorted(langs))}}}"
                        for size, (triple, langs) in SEED_TRIPLES.items())
 
     return f"""{DOC_BEGIN}
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | {_fmt(SIZES)}, every size at every setting |
+| Size (non-embedding) | {_fmt(SIZES)}, every size at every setting{" except " + partial if partial else ""} |
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | {_fmt(SEED_SINGLE)} everywhere; ×3 on the marked columns — {seeds} |
 | Data scheme | {" · ".join(_scheme_desc(v, d) for v, d in DATA_SCHEMES.items())} |

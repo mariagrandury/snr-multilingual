@@ -40,6 +40,11 @@ reintroduces the drift this design removed.
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
+A rung is trained in an architecture only if that architecture's hyperparams
+file defines it (`launch_trainings.arches_for`): the 3B exists in
+`hyperparams_deep.json` only, so every fan-out over architectures reads
+`arches_for(scheme, size)`, never a scheme's `arches` list directly.
+
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
 `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
@@ -135,7 +140,11 @@ then never log again without a code-side id suffix.
   the `REBUILD` array), never overwritten, and staged to
   `/iopsstor/scratch/cscs/mariagrandury/data-92B`. The launcher reads a cell's
   FineWeb-2 half from there only when the stage copy is too small for it (the
-  six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. **Do not
+  six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. The 3B
+  rung (2026-09-19, A/B at L8/L15, deep only — `plan/3b_models.md`) repeats
+  the pattern as a second tier: those four builds are sized 165B, built into
+  `rebuild-165B`, staged to `data-165B`, and read only by cells the 92B copies
+  cannot feed (`CSCS_REBUILD_DATA_DIRS`, smallest fit first). **Do not
   swap the 92B files into the training stage.** Each language section is a
   byte-exact extension of the 52B one, but Megatron shuffles over the whole
   file (a different sample order) and the extra documents are newer crawls
