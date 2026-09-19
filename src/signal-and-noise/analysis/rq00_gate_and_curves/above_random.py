@@ -3,10 +3,11 @@
 For every benchmark (parent task) and every model-size *bucket*: each model's
 final-checkpoint accuracy is a binomial proportion over the task's `n_items`
 scored examples (`configs/tasks.json`, derived from the harness results by
-`derive_task_options.py`), so it has a Wilson 95 % confidence interval
-(`statsmodels.stats.proportion.proportion_confint`, ALPHA = 0.05). A run is
-**confidently above chance** when the interval's lower bound clears chance
-(`LCB_95 > 1 / n_options`), and a (benchmark, bucket) cell is above random
+`derive_task_options.py`), so it has a Wilson lower confidence bound
+(`statsmodels.stats.proportion.proportion_confint`, ALPHA = 0.10 — the
+two-sided 90 % interval, whose lower end is the **one-sided 95 %** bound
+this asks for). A run is **confidently above chance** when that bound
+clears chance (`LCB_95 > 1 / n_options`), and a (benchmark, bucket) cell is above random
 when at least half of the bucket's runs are (`MIN_SHARE`). The old fixed
 margin (+0.05 over chance, whatever the option count or the test-set size)
 is gone: a 2-option task with 500 items and a 4-option task with 100 items
@@ -27,7 +28,9 @@ Each report writes:
   (on the ladder: mean over the cells that trained the benchmark's language)
   mean score across all models in that bucket.
 - `above_random_share.csv`  — same shape, value = share of the bucket's runs
-  whose Wilson lower bound clears chance.
+  whose Wilson lower bound clears chance, plus a `population` column per
+  bucket saying whether the cell was read on the cells that trained the
+  language (`trained`) or on every cell of the bucket (`all`).
 - `above_random_mask.csv`   — same shape, value = 1 (above random: share ≥
   MIN_SHARE) / 0 (at chance) / blank (no models in that bucket, or no chance
   level or item count for the task).
@@ -72,7 +75,9 @@ from analysis.utils import (  # noqa: E402
 from analysis.utils import _is_parent_task  # noqa: E402
 from analysis.paths import GATE_AND_CURVES
 
-ALPHA = 0.05        # the Wilson interval's level: LCB_95
+# proportion_confint's alpha is the TWO-sided level, so 0.10 gives the
+# one-sided 95 % lower bound ("is this run above chance?" is one-sided).
+ALPHA = 0.10
 MIN_SHARE = 0.5     # a cell is above random when at least this share of its runs is
 # Answer-option count per task. configs/tasks.json carries `n_options` where
 # it was derived from the evaluated samples (derive_task_options.py); the
@@ -120,7 +125,7 @@ def task_n_items(task: str) -> float:
 
 
 def wilson_lcb(score, n_items):
-    """Lower bound of the Wilson 95 % interval of an accuracy over `n_items`
+    """One-sided 95 % Wilson lower bound of an accuracy over `n_items`
     examples (the accuracy is turned back into its count of correct answers).
     Elementwise; NaN where the score or the count is missing."""
     score, n = np.asarray(score, float), np.asarray(n_items, float)
@@ -132,7 +137,7 @@ def wilson_lcb(score, n_items):
 
 
 def above_chance(score, task) -> pd.Series:
-    """Per element: 1.0 when the run's LCB_95 clears chance, 0.0 when it
+    """Per element: 1.0 when the run's one-sided 95 % LCB clears chance, 0.0 when it
     does not, NaN when the task has no chance level or no item count."""
     task = pd.Series(task)
     chance = 1 / task.map(task_n_options).astype(float)
@@ -188,8 +193,12 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
                                             values="primary_score", aggfunc="mean")
                    .reindex(index=scores.index, columns=sizes))
         scores = trained.combine_first(scores)
-        share = share_of(finals[keep]).combine_first(share)
+        share_tr = share_of(finals[keep])
+        population = share_tr.notna().replace({True: "trained", False: "all"}).where(share.notna())
+        share = share_tr.combine_first(share)
         finals["trained"] = keep
+    else:
+        population = share.notna().replace({True: "all"}).where(share.notna())
 
     fam = df.groupby("task")["family"].first()
     lang = df.groupby("task")["language"].first()
@@ -203,7 +212,7 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
                          "options_exact": ~fam.isin(_APPROX)})
     if runs:
         cols = ["task", "model", "bucket", "primary_score", "n_items", "lcb", "above"] + (["trained"] if "trained" in finals else [])
-        return scores, mask, meta, finals[cols].rename(columns={"primary_score": "score"}), share
+        return scores, mask, meta, finals[cols].rename(columns={"primary_score": "score"}), share, population
     return scores, mask, meta
 
 
@@ -239,7 +248,7 @@ def run(pool: str) -> None:
     from analysis.utils import build_snr_pool
 
     df = build_snr_pool(pool)
-    scores, mask, meta, runs, share = scores_and_mask(df, runs=True)
+    scores, mask, meta, runs, share, population = scores_and_mask(df, runs=True)
     buckets = list(scores.columns)
 
     stage = load_pools()[pool].get("stage", "pretraining")
@@ -249,7 +258,8 @@ def run(pool: str) -> None:
     scores_out.index.name = mask_out.index.name = "task"
     scores_out.to_csv(out_dir / "above_random_scores.csv")
     mask_out.to_csv(out_dir / "above_random_mask.csv")
-    share_out = meta.join(share); share_out.index.name = "task"
+    share_out = meta.join(share).join(population.add_suffix("__population"))
+    share_out.index.name = "task"
     share_out.to_csv(out_dir / "above_random_share.csv")
     runs.sort_values(["task", "bucket", "model"]).to_csv(out_dir / "above_random_runs.csv", index=False)
 
@@ -259,7 +269,7 @@ def run(pool: str) -> None:
     fully_random = ((mask == 0).sum(axis=1) == mask.notna().sum(axis=1))[gated].sum()
     no_items = int((meta["n_options"].notna() & meta["n_items"].isna()).sum())
     print(f"[{pool}] {int(gated.sum())} benchmarks with a chance level "
-          f"(of {len(scores)} tasks) × {len(buckets)} buckets (gate: Wilson LCB at alpha {ALPHA} > chance "
+          f"(of {len(scores)} tasks) × {len(buckets)} buckets (gate: one-sided 95 % Wilson LCB > chance "
           f"in ≥ {MIN_SHARE:.0%} of the runs); {no_items} tasks with a chance level but no item count")
     for s in buckets:
         print(f"  {s:>7}: above random {int(above[s])}/{int(have[s])}")
