@@ -9,23 +9,31 @@ the same models: a (model, task) enters only when the original and its rf
 twin are both scored, so the difference is not one of model sets while the
 rf evals are still landing. The scores are the
 report's `primary_score` — `acc` for the originals, `acc_norm` for the rf
-twins (tasks.json `metric`; the cloze answers differ in length). The
-originals' acc equals their acc_norm — one letter per option — so this IS
-the like-for-like comparison. Writes, in this directory:
+twins (tasks.json `metric`; the cloze answers differ in length). Writes, in
+this directory:
 
     rf_gate.png / .csv               family x size: original | reformulated | difference
     rf_gate_by_language.png / .csv   one row per family, language x size, same three panels
-    rf_significance.csv              per (task, size, model): the two accuracies, their item counts and the p-value of
-                                     the two-proportion z-test (`statsmodels.stats.proportion.proportions_ztest`)
+    rf_significance.csv              per (task, size, model): both accuracies, the rf run's own `acc`, the
+                                     normalisation offset, the item counts and the z-test p-value
 
-The difference panel says whether a gain is more than noise: per model, the
-original and the reformulated accuracy are two binomial proportions over the
-task's items (`n_items` in tasks.json; the rf twin drops the items with a
-missing option, so the counts differ), and their difference is significant
-at P_SIG under the two-proportion z-test. A task's gain is significant at a
-size when it is for at least half of the size's models; the small number on
-the difference panel is how many of the family's tasks (per family) or of
-the models (per language) that is. README.md gets the `auto:rf-compare`
+The difference panel says whether a gain is more than noise, and the test is
+run on ONE metric. The rf twins are scored with `acc_norm` and the originals
+with `acc`, so part of every plotted difference is the metric, not the
+reformulation. Measured on the same run and the same items (`norm_offset`,
+1 393 pairs): the median is +0.005 but it is family-shaped — belebele −0.016,
+Global-MMLU +0.016, INCLUDE +0.018 on average, spanning −0.058 to +0.084 —
+and it is more than half the size of the plotted gain in 36 % of the pairs.
+The significance test therefore compares the ORIGINAL's acc with the rf run's
+own `acc` (read from the harness results files, which carry both metrics) —
+same metric, only the formulation differs — as two binomial proportions over
+the task's items (`n_items` in tasks.json; the rf twin drops the items with a
+missing option, so the counts differ) under the two-proportion z-test. The
+panels keep acc_norm for the rf side, because that is the metric a cloze task
+is scored with, and `norm_offset` in the CSV is how much of the cell is that
+choice. A task's gain is significant at a size when p < P_SIG for at least
+half of the size's models (per family); per language the small number counts
+the significant (task, model) pairs instead. README.md gets the `auto:rf-compare`
 block (the family x size table).
 
     python3.11 src/signal-and-noise/analysis/rq00_task_reformulation/compare.py
@@ -52,6 +60,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.utils import build_snr_pool, size_order  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import scores_and_mask, task_n_items  # noqa: E402
+from pretrain.auto_evals_cscs import DEFAULT_LOGS_ROOT  # noqa: E402
 from analysis.utils import finals  # noqa: E402
 from statsmodels.stats.proportion import proportions_ztest  # noqa: E402
 
@@ -60,6 +69,9 @@ TASKS = json.loads((ROOT / "configs" / "tasks.json").read_text())["tasks"]
 FAMILIES = ["belebele", "global_mmlu_full", "include_base_44"]
 CHANCE = 0.25
 P_SIG = 0.05      # two-proportion z-test level for "the reformulation moved the score"
+# The harness writes both metrics; the report keeps only each task's primary
+# one (tasks.json `metric`), so the rf side's plain `acc` is read from here.
+RESULTS = Path(DEFAULT_LOGS_ROOT) / "mariagrandury-epflnlp" / "msnr"
 # orange = the reformulation lost score, blue = gained; white = no change
 DIFF = LinearSegmentedColormap.from_list("rf_diff", ["#d9730d", "#f7f4ef", "#0d366b"])
 DIFF.set_bad(S.NODATA)
@@ -84,19 +96,47 @@ def pool() -> pd.DataFrame:
     return df
 
 
+def rf_plain_acc(finals: pd.DataFrame) -> pd.Series:
+    """The rf runs' own `acc` (not acc_norm), per (model, step, task), from the
+    harness results files — the like-for-like control for the originals' acc."""
+    out = {}
+    for (model, step), g in finals[finals["task"].str.startswith("rf_")].groupby(["model", "step"]):
+        want = set(g["task"])
+        for f in (RESULTS / f"{model}-iter{step}").glob("harness/eval_*/per_task/rf_*/*/results_*.json"):
+            try:
+                res = json.loads(f.read_text()).get("results", {})
+            except (OSError, json.JSONDecodeError):
+                continue
+            for task, r in res.items():
+                if task in want and "acc,none" in r:
+                    out[(model, task)] = r["acc,none"]
+    return pd.Series(out, name="acc_rf_plain")
+
+
 def significance(df: pd.DataFrame) -> pd.DataFrame:
     """Per (task, size, model): original vs rf accuracy at the final checkpoint
     and the two-proportion z-test p-value; `sig` when p < P_SIG."""
-    f = finals(df)[["model", "size", "task", "primary_score"]].copy()
+    f = finals(df)[["model", "size", "step", "task", "primary_score"]].copy()
     f["base"] = f["task"].str.removeprefix("rf_")
     f["n"] = f["task"].map(task_n_items)
     f["set"] = np.where(f["task"].str.startswith("rf_"), "rf", "orig")
     w = f.pivot(index=["model", "size", "base"], columns="set", values=["primary_score", "n"]).dropna()
-    k = np.rint(w["primary_score"].to_numpy() * w["n"].to_numpy())
-    p = np.array([proportions_ztest([ko, kr], [no, nr])[1] for (ko, kr), (no, nr) in zip(k, w["n"].to_numpy())])
+    plain = rf_plain_acc(f)
+    # the rf side on the originals' metric; where the results file is gone the
+    # pair drops out of the test rather than being compared across metrics
+    acc_rf_plain = pd.Series([plain.get((m, "rf_" + t), np.nan) for m, _, t in w.index], index=w.index)
+    k_orig = np.rint(w[("primary_score", "orig")].to_numpy() * w[("n", "orig")].to_numpy())
+    k_rf = np.rint(acc_rf_plain.to_numpy() * w[("n", "rf")].to_numpy())
+    n_orig, n_rf = w[("n", "orig")].to_numpy(), w[("n", "rf")].to_numpy()
+    p = np.array([proportions_ztest([ko, kr], [no, nr])[1] if np.isfinite(kr) else np.nan
+                  for ko, kr, no, nr in zip(k_orig, k_rf, n_orig, n_rf)])
     out = pd.DataFrame({"acc_orig": w["primary_score"]["orig"], "acc_rf": w["primary_score"]["rf"],
+                        "acc_rf_plain": acc_rf_plain, "norm_offset": w["primary_score"]["rf"] - acc_rf_plain,
                         "n_orig": w["n"]["orig"].astype(int), "n_rf": w["n"]["rf"].astype(int), "p": p}, index=w.index).reset_index()
     out["sig"] = out["p"] < P_SIG
+    missing = out["acc_rf_plain"].isna().sum()
+    if missing:
+        print(f"({missing} of {len(out)} pairs have no rf results file: not tested)")
     return out.rename(columns={"base": "task"})
 
 
@@ -137,10 +177,16 @@ def main() -> None:
     sig.to_csv(HERE / "rf_significance.csv", index=False)
     fam_o, fam_r, fam_sig = cells(df, sig, ["family"])
     sizes = size_order(set(fam_o["size"]) | set(fam_r["size"]))
-    note = (f"cell = median over the family's tasks of (mean final-checkpoint score of the size's deep scheme-A seed-1904 models "
-            f"that trained the language and have both task sets scored) − chance 0.25; small number = tasks, and on the "
-            f"difference panel the tasks whose gain is significant (two-proportion z-test over the task's items, p < {P_SIG}, "
-            f"for at least half of the size's models); original = acc, reformulated = acc_norm")
+    cell = ("cell = median over the {unit}'s tasks of (mean final-checkpoint score of the size's deep scheme-A seed-1904 "
+            "models that trained the language and have both task sets scored) − chance 0.25; original = acc, reformulated = "
+            "acc_norm, and part of every rf cell is that metric choice (`norm_offset` in rf_significance.csv: median +0.005, "
+            "belebele −0.016 / Global-MMLU +0.016 / INCLUDE +0.018 on average)")
+    sig_note = ("the z-test compares the original's acc with the rf run's own acc, so the formulation is the only difference "
+                f"(p < {P_SIG})")
+    note = f"{cell.format(unit='family')}; small number = tasks, and on the difference panel the tasks significant for at " \
+           f"least half of the size's models — {sig_note}"
+    note_lang = f"{cell.format(unit='language')}; small number = tasks, and on the difference panel the significant " \
+                f"(task, model) pairs — {sig_note}"
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.2))
     tables = panels(axes, fam_o, fam_r, fam_sig, "family", sizes, "benchmark")
@@ -153,14 +199,15 @@ def main() -> None:
         tables += panels(row, lang_o[lang_o["family"] == fam], lang_r[lang_r["family"] == fam], lang_sig[lang_sig["family"] == fam],
                          "language", sizes, fam, prefix=f"{fam}: ")
     G.save_highlights(fig, HERE, "Per language, before and after the reformulation",
-                      note.replace("the tasks whose gain is significant", "the models whose gain is significant"), tables,
-                      name="rf_gate_by_language")
+                      note_lang, tables, name="rf_gate_by_language")
 
     # the markdown block: family x size, original / rf / Δ
     lines = [f"Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, "
              f"from the ladder report; both sets on the same models, those with the original and the rf twin scored). "
              f"Cell: original acc → rf acc_norm, **Δ** = rf − original; n = rf tasks, sig = tasks whose gain is significant "
-             f"(two-proportion z-test, p < {P_SIG}, for at least half of the size's models).", "",
+             f"for at least half of the size's models (two-proportion z-test of the original's acc against the rf run's own "
+             f"acc, p < {P_SIG}; the acc_norm−acc offset is family-shaped, median +0.005, and exceeds half the plotted gain "
+             f"in 36 % of the pairs).", "",
              "| family | " + " | ".join(sizes) + " |", "|---|" + "---:|" * len(sizes)]
     for fam in FAMILIES:
         out = []

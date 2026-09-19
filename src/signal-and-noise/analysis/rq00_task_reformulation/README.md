@@ -203,13 +203,13 @@ measure, so the "every benchmark" row is an upper bound; a 1k-item pilot per
 family (≈ $1) should precede any full run.
 
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
-Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; both sets on the same models, those with the original and the rf twin scored). Cell: original acc → rf acc_norm, **Δ** = rf − original; n = rf tasks, sig = tasks whose gain is significant (two-proportion z-test, p < 0.05, for at least half of the size's models).
+Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; both sets on the same models, those with the original and the rf twin scored). Cell: original acc → rf acc_norm, **Δ** = rf − original; n = rf tasks, sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the rf run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, median +0.005, and exceeds half the plotted gain in 36 % of the pairs).
 
-| family | 175M | 350M | 600M | 1.7B |
-|---|---:|---:|---:|---:|
-| belebele | -0.007 → +0.030, **+0.037**, n=59, sig=27 | -0.018 → +0.048, **+0.066**, n=21, sig=21 | +0.002 → +0.092, **+0.090**, n=9, sig=9 | -0.013 → +0.150, **+0.163**, n=9, sig=9 |
-| global_mmlu_full | -0.006 → +0.006, **+0.012**, n=29, sig=23 | -0.008 → +0.014, **+0.021**, n=15, sig=14 | -0.005 → +0.030, **+0.035**, n=8, sig=8 | +0.007 → +0.066, **+0.059**, n=8, sig=8 |
-| include_base_44 | +0.003 → +0.005, **+0.002**, n=36, sig=6 | +0.006 → +0.033, **+0.026**, n=13, sig=3 | +0.007 → +0.067, **+0.061**, n=7, sig=3 | -0.010 → +0.124, **+0.134**, n=7, sig=6 |
+| family | 175M | 350M | 600M | 1B | 1.7B |
+|---|---:|---:|---:|---:|---:|
+| belebele | -0.007 → +0.030, **+0.037**, n=59, sig=38 | -0.013 → +0.046, **+0.059**, n=59, sig=55 | -0.007 → +0.058, **+0.065**, n=59, sig=54 | +0.000 → +0.083, **+0.083**, n=59, sig=57 | +0.011 → +0.109, **+0.098**, n=59, sig=56 |
+| global_mmlu_full | -0.006 → +0.006, **+0.012**, n=29, sig=10 | -0.000 → +0.009, **+0.010**, n=29, sig=17 | -0.004 → +0.015, **+0.019**, n=29, sig=15 | -0.008 → +0.029, **+0.036**, n=29, sig=24 | -0.010 → +0.048, **+0.058**, n=29, sig=26 |
+| include_base_44 | +0.003 → +0.005, **+0.002**, n=36, sig=7 | +0.001 → +0.023, **+0.022**, n=36, sig=9 | +0.001 → +0.027, **+0.026**, n=36, sig=10 | +0.001 → +0.039, **+0.038**, n=36, sig=14 | +0.005 → +0.052, **+0.047**, n=36, sig=18 |
 
 ![family x size](rf_gate.png)
 
