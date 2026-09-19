@@ -59,7 +59,7 @@ from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, fmt, md_table, replace_block)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import GATE_AND_CURVES
-from analysis.rq00_gate_and_curves.above_random import MARGIN
+from analysis.rq00_gate_and_curves.above_random import ALPHA, MIN_SHARE
 from snr.download.apertus import (  # noqa: E402
     load_a06_eval_results,
     load_apertus_eval_results,
@@ -345,8 +345,9 @@ def generate_readme(pool: str, out_dir: Path) -> None:
         f"`{stage}/{pool}/acc_vs_flops_signal.csv`):",
         t_signal,
         f"![top-Signal family accuracy vs FLOPs]({stage}/{pool}/per_benchmark/{top3[0]}.png)",
-        f"**Above-random gate** — a benchmark must beat chance (`1/n_options`) by "
-        f"+{MARGIN}; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` "
+        f"**Above-random gate** — a (benchmark, size) cell is kept when at least {MIN_SHARE:.0%} of the size's runs "
+        f"clear chance (`1/n_options`) with the Wilson {1 - ALPHA:.0%} lower bound of their accuracy over the task's "
+        f"items; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` "
         f"SNR cell, so the gate propagates to all RQs:",
         t_gate,
     ])

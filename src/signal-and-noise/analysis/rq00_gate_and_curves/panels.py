@@ -26,6 +26,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -41,7 +42,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import MARGIN, task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import ALPHA, MIN_SHARE, task_n_options, wilson_lcb  # noqa: E402
 from analysis.utils import LADDER_SIZES, ladder_frame  # noqa: E402
 
 OUT_ROOT = GATE_AND_CURVES
@@ -55,40 +56,92 @@ def gate_panels(out_dir: Path) -> None:
                        var_name="size", value_name="score").dropna(subset=["score", "random_baseline"])
     long = long[~long["language"].isin(["??", "multi"])]
     long["margin"] = long["score"] - long["random_baseline"]
+    mask = pd.read_csv(out_dir / "above_random_mask.csv").melt(id_vars=["task"], value_vars=sizes, var_name="size", value_name="above")
+    long = long.merge(mask, on=["task", "size"], how="left")
+    gate = (f"the gate keeps a cell when at least {MIN_SHARE:.0%} of the size's runs are confidently above chance "
+            f"(Wilson {1 - ALPHA:.0%} lower bound over the task's items > chance)")
     note = ("cell = mean final-checkpoint score of the size's models that trained the language (every model of the size where none did), minus chance (1 / number of "
-            f"options); the gate keeps a cell above {MARGIN:+.2f}")
-    kw = dict(value="margin", vmin=-0.1, vmax=0.3, center=MARGIN, cmap=S.DIV, fmt="{:+.2f}", note=note,
-              cbar=f"score − chance (neutral colour = the gate, {MARGIN:+.2f})")
+            f"options); {gate}")
+    kw = dict(value="margin", vmin=-0.1, vmax=0.3, center=0.0, cmap=S.DIV, fmt="{:+.2f}", note=note,
+              cbar="score − chance (neutral colour = chance)")
     G.panel_grid(long, out_dir / "gate_margin_by_benchmark.png", by="family", row="size", row_order=sizes,
                  col="language", ncols=1, cell_w=0.3, counts=False, xlabel="language", ylabel="model size",
-                 title=f"Margin above chance per benchmark (gate: > {MARGIN:+.2f})", **kw)
+                 title="Margin above chance per benchmark", **kw)
     G.panel_grid(long, out_dir / "gate_margin_by_language.png", by="language", row="family", ylabel="benchmark",
                  col="size", col_order=sizes, xlabel="model size", ncols=6, csv=False,
-                 title=f"Margin above chance per language (gate: > {MARGIN:+.2f})", **kw)
-    cell = long.groupby(["family", "language", "size"])["margin"].mean().unstack("size").reindex(columns=sizes)
-    ok = cell.gt(MARGIN).where(cell.notna())
+                 title="Margin above chance per language", **kw)
+    ok = long.groupby(["family", "language", "size"])["above"].mean().unstack("size").reindex(columns=sizes)
+    ok = ok.ge(MIN_SHARE).where(ok.notna())
     level = G.smallest_safe(ok).rename("level").rename_axis(["family", "language"]).reset_index() \
              .pivot(index="family", columns="language", values="level")
     G.level_heatmap(level, out_dir / "first_size_above_random.png", levels=sizes, cbar="smallest size above chance",
                     title="Smallest model size from which the score stays above chance",
-                    note=f"cell = smallest size whose mean score beats chance by more than {MARGIN}, and so does every larger "
-                         "size with a value (mean over the models of that size that trained the language)")
-    highlights(out_dir, long, level, sizes)
+                    note=f"cell = smallest size that clears the gate ({gate}), and so does every larger size with a value")
+    highlights(out_dir, long, level, sizes, gate)
+    threshold_panels(out_dir)
 
 
-def highlights(out_dir: Path, long: pd.DataFrame, level: pd.DataFrame, sizes: list) -> None:
+def threshold_panels(out_dir: Path) -> None:
+    """above_random_thresholds.png: what the Wilson gate asks of each benchmark
+    and how many (task, size) cells it keeps, against fixed margins."""
+    runs = pd.read_csv(out_dir / "above_random_runs.csv")
+    runs = runs[runs["trained"]] if "trained" in runs else runs
+    scores = pd.read_csv(out_dir / "above_random_scores.csv")
+    sizes = [b for b in bucket_order() if b in scores.columns]
+    scores = scores[scores["language"].isin(["??", "multi"]) == False]
+    runs = runs.merge(scores[["task", "family", "random_baseline"]], on="task")
+    # the smallest accuracy whose lower bound clears chance, per task: the margin the test implies
+    tasks = runs.drop_duplicates("task").set_index("task")
+    thr = {}
+    for t, r in tasks.iterrows():
+        n = int(r["n_items"]); ks = np.arange(0, n + 1)
+        ok = wilson_lcb(ks / n, np.full(n + 1, n)) > r["random_baseline"]
+        thr[t] = ks[ok][0] / n - r["random_baseline"] if ok.any() else np.nan
+    tasks["threshold"] = pd.Series(thr)
+    fam = G.panel_order(tasks["family"].unique())
+    # cells above random under each rule
+    cell = runs.groupby(["task", "bucket"]).agg(share=("above", "mean"), lcb=("lcb", "median"), n=("score", "size")).reset_index()
+    cell = cell.merge(scores.melt(id_vars=["task", "random_baseline", "family"], value_vars=sizes, var_name="bucket", value_name="score"),
+                      on=["task", "bucket"])
+    cell["margin"] = cell["score"] - cell["random_baseline"]
+    cell["share_002"] = runs.assign(a=(runs["lcb"] > runs["random_baseline"] + 0.02).astype(float)).groupby(["task", "bucket"])["a"].mean() \
+                            .reindex(pd.MultiIndex.from_frame(cell[["task", "bucket"]])).to_numpy()
+    rules = {"Wilson LCB > chance": cell["share"] >= MIN_SHARE, "Wilson LCB > chance + 0.02": cell["share_002"] >= MIN_SHARE,
+             "mean > chance + 0.01": cell["margin"] > 0.01, "mean > chance + 0.03": cell["margin"] > 0.03,
+             "mean > chance + 0.05": cell["margin"] > 0.05}
+    counts = pd.DataFrame({k: v.groupby(cell["family"]).sum() for k, v in rules.items()}).reindex(fam)
+    total = cell.groupby("family").size().reindex(fam)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.4), gridspec_kw={"width_ratios": [1, 1.5]})
+    med = tasks.groupby("family")["threshold"].median().reindex(fam)
+    ni = tasks.groupby("family")["n_items"].median().reindex(fam)
+    tables = [G.rank_ax(axes[0], med.rename(index=lambda f: f"{f}  (n = {int(ni[f]):,})"),
+                        "Margin over chance the Wilson gate implies per benchmark (median task)", k=len(fam),
+                        xlabel="smallest (accuracy − chance) with LCB > chance", fmt="{:+.3f}")]
+    tables.append(G.matrix_ax(axes[1], counts.div(total, axis=0), "Share of a benchmark's (task, size) cells above random, per rule",
+                              cnt=counts, xlabel="rule", ylabel="benchmark"))
+    for lab in axes[1].get_xticklabels():
+        lab.set_rotation(20); lab.set_ha("right")
+    G.save_highlights(fig, out_dir, "What the Wilson gate asks, and what each rule keeps",
+                      f"left: per task the smallest accuracy whose Wilson {1 - ALPHA:.0%} lower bound over its n items clears chance, "
+                      "minus chance (median over the benchmark's tasks; n = median items); right: (task, size) cells above random "
+                      f"under the gate (≥ {MIN_SHARE:.0%} of the size's runs), the gate with a +0.02 floor, and fixed margins on the "
+                      "mean score; small number = cells; runs of the size that trained the language", tables,
+                      name="above_random_thresholds")
+
+
+def highlights(out_dir: Path, long: pd.DataFrame, level: pd.DataFrame, sizes: list, gate: str) -> None:
     """rq00 on one page: which benchmarks clear chance, at which size, and in how many languages."""
     fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), gridspec_kw={"width_ratios": [1, 1, 1.3]})
     fam = G.panel_order(long["family"].unique())
-    share = long.assign(ok=long["margin"] > MARGIN).groupby(["family", "size"])["ok"].mean().unstack().reindex(index=fam, columns=sizes)
+    share = long.groupby(["family", "size"])["above"].mean().unstack().reindex(index=fam, columns=sizes)
     n = long.groupby(["family", "size"])["task"].nunique().unstack().reindex(index=fam, columns=sizes)
     margin = long.groupby(["family", "size"])["margin"].median().unstack().reindex(index=fam, columns=sizes)
     tables = [G.matrix_ax(axes[0], share, "Share of a benchmark's languages above the gate", cnt=n, xlabel="model size"),
-              G.matrix_ax(axes[1], margin, "Median margin above chance", vmin=-0.1, vmax=0.3, center=MARGIN, cmap=S.DIV,
+              G.matrix_ax(axes[1], margin, "Median margin above chance", vmin=-0.1, vmax=0.3, center=0.0, cmap=S.DIV,
                           fmt="{:+.2f}", xlabel="model size"),
               G.stack_ax(axes[2], level, "Smallest size that stays above chance, share of languages", levels=sizes)]
     G.save_highlights(fig, out_dir, "rq00 in one figure: which benchmarks carry information, and from which size?",
-                      f"gate: mean score of a size's models > chance + {MARGIN}; small number = language tasks behind the cell; "
+                      f"{gate}; small number = language tasks behind the cell; "
                       "right: per benchmark, how its languages split by the smallest size from which the gate holds", tables)
 
 
@@ -150,6 +203,7 @@ def main(pool: str) -> None:
         f"![Smallest size above chance]({rel}/first_size_above_random.png)",
         f"![Margin above chance per benchmark]({rel}/gate_margin_by_benchmark.png)",
         f"![Margin above chance per language]({rel}/gate_margin_by_language.png)",
+        f"![What the gate asks, and what each rule keeps]({rel}/above_random_thresholds.png)",
         f"Score along the run, one figure per language ({n} languages, one subplot per benchmark, one line per "
         f"size): `{rel}/score_curves/<language>.png`, e.g.",
         f"![Score curves, German]({rel}/score_curves/de.png)"])

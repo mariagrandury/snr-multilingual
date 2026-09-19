@@ -124,8 +124,11 @@ PNG (`<name>.csv` for `<name>_by_benchmark.png` / `_by_language.png`), white =
 no value, grey = filtered out by the above-random gate (`grids.mark_gated`,
 never drop the gated rows before drawing), a line under the title saying how
 a cell is computed, and points along a run as Chinchilla multiples (1C–5C,
-`grids.chinchilla`), not as a share of the run. The gate's margin is
-`above_random.MARGIN` = 0.05. `tests/` (`python -m unittest discover -s tests`) pins the
+`grids.chinchilla`), not as a share of the run. The gate is
+`above_random.above_chance`: a run's accuracy over the task's `n_items`
+(tasks.json, `derive_task_options.py`) has a Wilson 95 % lower bound, and a
+(task, size) cell is above random when at least `MIN_SHARE` (half) of the
+size's runs clear chance with it — no fixed margin. `tests/` (`python -m unittest discover -s tests`) pins the
 early-and-small grid of rq02 (its 100 % = 5C column is DA-size) and, in
 `test_metrics.py`, the
 SNR definition and the decision-accuracy kernel, including its one departure
