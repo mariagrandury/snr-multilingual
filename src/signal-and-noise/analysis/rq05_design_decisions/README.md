@@ -246,6 +246,10 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 ![Decisions by proxy size and checkpoint](pretraining/predictivity_all/da_lines.png)
 
+![The same on the items decided outside seed noise](pretraining/predictivity_all/da_lines_decided.png)
+
+![Which depth wins, in seed sds](pretraining/predictivity_all/depth_crossover.png)
+
 ![Decisions by compute](pretraining/predictivity_all/da_lines_flops.png)
 
 ![Decisions per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark.png)

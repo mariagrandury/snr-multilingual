@@ -20,6 +20,10 @@ which *model sizes* do.
                       macro BPB (`bpb_macro`) and the training loss (`loss`). With two models per item this is
                       `snr.metrics.decision_acc_fast` per item — sign
                       agreement, items the reference ties dropped.
+                      `decision_acc_decided` is the same on the items whose
+                      reference |Δ| is at least DECIDED seed standard
+                      deviations: where the reference's own preference is
+                      inside seed noise there is no decision to agree with.
   effect at the reference — per intervention, the |Δ| in seed standard
                       deviations (the paper's "is there a decision to make?").
 
@@ -63,6 +67,7 @@ from analysis.utils import (  # noqa: E402
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
 MIN_ITEMS = 3                         # fewest population items for a DA cell
+DECIDED = 2.0                         # reference |Δ| in seed sds for an item to count as decided
 FRACS = [0.2, 0.4, 0.6, 0.8, 1.0]     # where the proxy is read, as a share of its run
 # key -> (label, axis, levels, (held axis, its baseline level)). The first
 # level is the baseline; the reference at each L is the largest size trained
@@ -108,12 +113,21 @@ def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
 
 # --- 1. intervention decision accuracy ---------------------------------------
 
+def seed_sd(fin: pd.DataFrame) -> pd.Series:
+    """Per task, the seed standard deviation of the final score: the median
+    over the baseline (deep, scheme A) (size, L) cells with replicates."""
+    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    sd = base.groupby(["size", "L", "task"])["primary_score"].agg(["std", "count"])
+    return sd[sd["count"] >= 2]["std"].groupby("task").median()
+
+
 def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """(the decision table, the per-item agreement behind it, the same for
     every language's BPB with its `group`). The second frame has one row per
     (intervention, L, proxy size, fraction, task) of CELL_POPULATIONS with
     `agree` in {0, 1}: what the per-benchmark and per-language tables
     aggregate; the third is what rq06's transfer lines aggregate."""
+    sd = seed_sd(finals(df))
     grid = df[df["seed"] == GRID_SEED]
     fin = finals(grid)
     at_f = {f: at_fraction(grid, f) for f in fracs}
@@ -133,6 +147,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
                 r = ref_piv.xs(ref, level="size")
                 d_ref = r[levels[0]] - r[levels[1]]
                 ref_sign = np.sign(d_ref)[np.sign(d_ref) != 0]      # items the reference decides
+                over_sd = d_ref.abs() / d_ref.index.map(sd).to_numpy(float)   # NaN where no seed replicates
+                decided = ref_sign.index[over_sd.reindex(ref_sign.index) >= DECIDED]
                 for f in fracs:
                     sub = at_f[f]
                     sub = sub[(sub[hcol] == hval) & (sub["L"] == L)]
@@ -156,9 +172,12 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
                             group_rows.append(pd.DataFrame({
                                 "intervention": key, "label": label, "L": int(L), "proxy_size": s, "frac": f, "reference_size": ref,
                                 "group": language_group(items, int(L), levels if axis == "scheme" else ("A",)), "agree": agree}))
+                        dec = items.intersection(decided)
                         row = {"intervention": key, "label": label, "population": pop, "L": int(L),
                                "proxy_size": s, "frac": f, "reference_size": ref, "n_items": int(len(items)),
-                               "decision_acc": float((np.sign(d_proxy) == ref_sign.loc[items]).mean())}
+                               "decision_acc": float(agree.mean()), "n_decided": int(len(dec)),
+                               "decision_acc_decided": float((np.sign(d_proxy.loc[dec]) == ref_sign.loc[dec]).mean())
+                               if len(dec) >= min_items else np.nan}
                         if f == 1.0:
                             # the first level wins an item when its score is
                             # higher on a benchmark, lower on BPB
@@ -171,25 +190,27 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
             pd.concat(group_rows, ignore_index=True) if group_rows else pd.DataFrame())
 
 
-LANGUAGE_GROUPS = ("language trained", "script trained", "script not trained")
+LANGUAGE_GROUPS = ("trained by both levels", "trained by one level", "script trained", "script not trained")
 
 
 def language_group(tasks, L: int, schemes: tuple) -> list[str]:
-    """Per `bpb_<subset>` task: whether the cell's lists (the union over
-    `schemes` at this L) train the language, only its script, or neither."""
-    trained = set.union(*[trained_bpb_tasks(L, s) or set() for s in schemes])
-    scripts = {t.rsplit("_", 1)[-1] for t in trained} | {"Latn"}          # bpb_dclm is English
-    return [LANGUAGE_GROUPS[0] if t in trained else LANGUAGE_GROUPS[1] if t.rsplit("_", 1)[-1] in scripts
-            else LANGUAGE_GROUPS[2] for t in tasks]
+    """Per `bpb_<subset>` task, what the lists of the two levels (`schemes`
+    at this L) do with the language: both train it, only one does (then the
+    decision is mostly "prefer the model that saw it"), neither does but a
+    list trains its script, or neither trains even the script. The last two
+    are the transfer test proper."""
+    lists = [trained_bpb_tasks(L, s) or set() for s in schemes]
+    both, either = set.intersection(*lists), set.union(*lists)
+    scripts = {t.rsplit("_", 1)[-1] for t in either} | {"Latn"}          # bpb_dclm is English
+    return [LANGUAGE_GROUPS[0] if t in both else LANGUAGE_GROUPS[1] if t in either
+            else LANGUAGE_GROUPS[2] if t.rsplit("_", 1)[-1] in scripts else LANGUAGE_GROUPS[3] for t in tasks]
 
 
 def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
     """Per (intervention, L, population): at the reference size, the median
     |Δ| in per-task seed standard deviations (the seed sd of the baseline
     cells, median over the (size, L) cells with replicates)."""
-    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
-    sd = base.groupby(["size", "L", "task"])["primary_score"].agg(["std", "count"])
-    sd = sd[sd["count"] >= 2]["std"].groupby("task").median()
+    sd = seed_sd(fin)
     grid = fin[fin["seed"] == GRID_SEED]
     rows = []
     for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():

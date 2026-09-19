@@ -10,6 +10,8 @@ early-decision read, without pooling the benchmarks.
                                        Read on the ten evaluated checkpoints of every run (`intervention_da_ckpt10.csv` and
                                        `intervention_da_by_group_ckpt10.csv`, the decision table of analyze.py recomputed at
                                        every k/10 checkpoint; the rest of the folder stays on 20-100 %)
+    da_lines_decided.png               da_lines on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
+    depth_crossover.png                deep − shallow final BPB per size x L in seed sds: which depth wins, and by more than noise?
     da_lines_flops.png                 the same with every (proxy size, checkpoint) cell at its training compute
 
 Reads `intervention_da_by_benchmark.csv` and `intervention_da_by_language.csv`
@@ -46,9 +48,10 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
-from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, INTERVENTIONS, intervention_da  # noqa: E402
+from analysis.rq05_design_decisions.analyze import (  # noqa: E402
+    CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, intervention_da, seed_sd)
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
-from analysis.utils import LADDER_SIZES, TARGET_SIZE, ladder_frame  # noqa: E402
+from analysis.utils import GRID_SEED, LADDER_SIZES, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
 FRACS10 = [k / 10 for k in range(1, 11)]   # every evaluated checkpoint, for the line figures only
@@ -141,6 +144,38 @@ def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, 
     G.save_highlights(fig, out_dir, title, note, tables, name=name)
 
 
+def depth_crossover(frame: pd.DataFrame, out_dir: Path) -> None:
+    """Which depth wins, per (size, L), and is it outside seed noise: deep −
+    shallow final BPB on the languages the scheme-A list trains, in seed
+    standard deviations, median over the languages (< 0: deep wins)."""
+    fin = finals(frame)
+    sd = seed_sd(fin)
+    g = fin[(fin["seed"] == GRID_SEED) & (fin["scheme"] == "A") & (fin["kind"] == "bpb") & (fin["task"] != "bpb_macro")]
+    piv = g.pivot_table(index=["size", "L", "task"], columns="arch", values="primary_score")
+    if not {"deep", "shallow"} <= set(piv.columns):
+        return
+    piv = piv.dropna(subset=["deep", "shallow"])
+    rows = []
+    for (size, L), p in piv.groupby(level=["size", "L"]):
+        tasks = p.index.get_level_values("task")
+        p = p[tasks.isin(trained_bpb_tasks(int(L), "A") or set())]
+        z = ((p["deep"] - p["shallow"]) / p.index.get_level_values("task").map(sd).to_numpy(float)).dropna()
+        if len(z) >= MIN_ITEMS:
+            rows.append({"size": size, "L": int(L), "value": z.median(), "n": len(z)})
+    if not rows:
+        return
+    t = pd.DataFrame(rows)
+    sizes = [s_ for s_ in LADDER_SIZES if s_ in set(t["size"])]
+    mat, cnt = (t.pivot(index="size", columns="L", values=v).reindex(sizes).rename(columns=lambda L: f"L{L}") for v in ("value", "n"))
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
+    tables = [G.matrix_ax(ax, mat, "deep − shallow final BPB, in seed sds (< 0: deep wins)", cnt=cnt, vmin=-6, vmax=6, center=0.0,
+                          cmap=S.DIV, fmt="{:+.1f}", xlabel="language setting", ylabel="model size")]
+    G.save_highlights(fig, out_dir, "Depth: which architecture wins at each size, and is it outside seed noise?",
+                      f"cell = median over the languages the scheme-A list trains of (deep − shallow final BPB) / the language's seed "
+                      f"sd (median over the replicated baseline cells), seed {GRID_SEED}; small number = languages; |cell| < 2 is inside "
+                      f"seed noise", tables, name="depth_crossover")
+
+
 def _panels(t: pd.DataFrame, by: str, path: Path, *, keys: list, ncols: int, **kw) -> None:
     units = G.panel_order(t[by].unique())
     t = t.assign(panel=[f"{INTERVENTIONS[k][0]} — {u}" for k, u in zip(t["intervention"], t[by])])
@@ -201,6 +236,14 @@ def main(pool: str) -> None:
              note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
                   "checkpoint, mean over the language settings; dotted line = 0.75")
     # a proxy cell's compute: the mean full-run compute of the size's families (deep and shallow differ by up to 13 %)
+    depth_crossover(frame, out_dir)
+    decided = da.assign(decision_acc=da["decision_acc_decided"])
+    da_lines(decided, out_dir, name="da_lines_decided", labels={k: v[0] for k, v in INTERVENTIONS.items()},
+             populations=LINE_POPULATIONS[:2],                  # the loss is one item: a 0/1 step, not a share
+             title="The same, on the items the reference decides outside seed noise",
+             note=f"DA as in da_lines, restricted to the items (languages' BPB, benchmark tasks) whose reference |Δ| between the "
+                  f"two levels is at least {DECIDED:g} seed standard deviations (seed sd = median over the replicated baseline "
+                  f"cells); a cell needs {MIN_ITEMS} such items; missing points = the reference decides too few items")
     da_lines_flops(da, frame.groupby(["size", "model"])["compute"].max().groupby("size").mean(), out_dir,
                    labels={k: v[0] for k, v in INTERVENTIONS.items()},
                    title="How much compute reads each design decision",
@@ -218,6 +261,8 @@ def main(pool: str) -> None:
         "sits next to it under the same name (`intervention_da_by_<unit>.csv`).",
         f"![rq05 in one figure]({rel}/highlights.png)",
         f"![Decisions by proxy size and checkpoint]({rel}/da_lines.png)",
+        f"![The same on the items decided outside seed noise]({rel}/da_lines_decided.png)",
+        f"![Which depth wins, in seed sds]({rel}/depth_crossover.png)",
         f"![Decisions by compute]({rel}/da_lines_flops.png)",
         f"![Decisions per benchmark]({rel}/intervention_da_by_benchmark.png)",
         f"![Early and small per benchmark]({rel}/intervention_da_by_benchmark_early.png)",

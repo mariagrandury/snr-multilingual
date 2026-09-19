@@ -2,8 +2,9 @@
 
     transfer_error_by_L.png   |relative error| of the transferred prediction, language x rungs used, one subplot per L
     transfer_da_lines.png     the list decision (scheme A vs B) read on per-language BPB, DA-size (x = proxy size) and
-                              DA-ckpt (x = the reference's checkpoint), one line per language group: the language is
-                              in the cell's lists, only its script is, or neither (mean over L)
+                              DA-ckpt (x = the reference's checkpoint), one line per language group: both levels'
+                              lists train the language, only one does, neither does but one trains its script, or
+                              neither trains even the script (mean over L); the last two are the transfer test
     transfer_da_by_L.png      the same agreement per language count, one panel per intervention, one line per group
                               (DA-size, mean over the proxy sizes)
 
@@ -43,7 +44,7 @@ from analysis.rq05_design_decisions.panels import da_lines  # noqa: E402
 
 OUT_ROOT = LANGUAGE_TRANSFER
 CANONICAL = "predictivity_all"
-GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.RAMP[1], S.SERIES[1]]))
+GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.MUTED, S.RAMP[1], S.SERIES[1]]))
 mpl.rcParams.update(S.RC)
 
 
@@ -56,8 +57,9 @@ def decision_lines(out_dir: Path, stage: str) -> None:
              populations=(("bpb", "-", "per-language BPB"),),
              title="Does a proxy read the list decision (scheme A vs B) for languages it did not train?",
              note="DA = share of a group's languages on which the proxy prefers the list the reference prefers at its final "
-                  "checkpoint (per-language BPB), mean over L; group = the language is in the cell's lists, only its script is, "
-                  "or neither; dotted line = 0.75")
+                  "checkpoint (per-language BPB), mean over L; group = what the two levels' lists do with the language: both train "
+                  "it, only one does (a decision the language's inclusion makes by itself), neither does but a list trains its "
+                  "script, or neither trains even the script; dotted line = 0.75")
     fin = g[g["frac"] == 1.0].groupby(["intervention", "label", "L", "group"])["decision_acc"].mean().reset_index()
     keys = [k for k in INTERVENTIONS if k in set(fin["intervention"])]
     Ls = sorted(fin["L"].unique())
@@ -78,7 +80,9 @@ def decision_lines(out_dir: Path, stage: str) -> None:
     G.save_highlights(fig, out_dir, "Does the decision transfer to untrained languages at every language count?",
                       "DA-size = share of the group's languages on which the proxy's final ranking of the two levels matches the "
                       "reference's (the largest size trained at both levels at that L, so the reference changes along x), mean over "
-                      "the proxy sizes with a value; a group is empty where the cell's lists leave it no language",
+                      "the proxy sizes with a value (a proxy that flips and one that agrees average to 0.5; the per-size values are "
+                      "in the CSV of transfer_da_lines); a group is empty where the lists leave it no language — \"trained by one "
+                      "level\" exists only where the two levels' lists differ",
                       tables, name="transfer_da_by_L")
 
 
