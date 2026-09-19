@@ -414,7 +414,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
                                         ae.eval_languages(L, scheme, all_languages)))
 
     cells: dict[tuple[str, int], dict] = {}
-    for size in SIZES:
+    for size in EVAL_SIZES:              # 90M trains but is not evaluated: a blank column
         for L in SIZE_LANG_SETTINGS[size]:
             # Due checkpoints are a property of the schedule, not of what is on
             # disk, so every cell gets a planned budget — including the ones
@@ -458,6 +458,8 @@ def eval_counts(root: Path, logs_root: Path | None = None,
         if not m:
             continue
         if entry.name not in grid:
+            if m["size"] not in EVAL_SIZES:
+                continue
             print(f"[eval_counts] {entry.name}: on disk but not a grid cell — "
                   "not counted (the watcher does not evaluate it)", file=sys.stderr)
             continue
