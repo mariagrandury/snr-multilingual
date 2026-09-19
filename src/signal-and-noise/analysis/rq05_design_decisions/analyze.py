@@ -21,9 +21,11 @@ which *model sizes* do.
                       `snr.metrics.decision_acc_fast` per item — sign
                       agreement, items the reference ties dropped.
                       `decision_acc_decided` is the same on the items whose
-                      reference |Δ| is at least DECIDED seed standard
-                      deviations: where the reference's own preference is
-                      inside seed noise there is no decision to agree with.
+                      reference |Δ| is at least DECIDED sds of the difference
+                      (sqrt(2) x the per-run seed sd, itself a median over the
+                      cells with 3 replicates): where the reference's own
+                      preference is inside seed noise there is no decision to
+                      agree with.
   effect at the reference — per intervention, the |Δ| in seed standard
                       deviations (the paper's "is there a decision to make?").
 
@@ -67,7 +69,9 @@ from analysis.utils import (  # noqa: E402
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
 MIN_ITEMS = 3                         # fewest population items for a DA cell
-DECIDED = 2.0                         # reference |Δ| in seed sds for an item to count as decided
+# The reference's |Δ| is a difference of two single runs, so its null sd is
+# sqrt(2) x the per-run seed sd; DECIDED counts in those difference sds.
+DECIDED = 2.0
 FRACS = [0.2, 0.4, 0.6, 0.8, 1.0]     # where the proxy is read, as a share of its run
 # key -> (label, axis, levels, (held axis, its baseline level)). The first
 # level is the baseline; the reference at each L is the largest size trained
@@ -114,8 +118,9 @@ def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
 # --- 1. intervention decision accuracy ---------------------------------------
 
 def seed_sd(fin: pd.DataFrame) -> pd.Series:
-    """Per task, the seed standard deviation of the final score: the median
-    over the baseline (deep, scheme A) (size, L) cells with replicates."""
+    """Per task, the seed standard deviation of ONE run's final score: the
+    median over the baseline (deep, scheme A) (size, L) cells with replicates
+    (3 seeds where they exist, so the estimate itself is coarse)."""
     base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
     sd = base.groupby(["size", "L", "task"])["primary_score"].agg(["std", "count"])
     return sd[sd["count"] >= 2]["std"].groupby("task").median()
@@ -147,7 +152,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
                 r = ref_piv.xs(ref, level="size")
                 d_ref = r[levels[0]] - r[levels[1]]
                 ref_sign = np.sign(d_ref)[np.sign(d_ref) != 0]      # items the reference decides
-                over_sd = d_ref.abs() / d_ref.index.map(sd).to_numpy(float)   # NaN where no seed replicates
+                # sqrt(2): d_ref is a difference of two runs, each with sd `sd`
+                over_sd = d_ref.abs() / (np.sqrt(2) * d_ref.index.map(sd).to_numpy(float))   # NaN where no seed replicates
                 decided = ref_sign.index[over_sd.reindex(ref_sign.index) >= DECIDED]
                 for f in fracs:
                     sub = at_f[f]

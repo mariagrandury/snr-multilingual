@@ -34,6 +34,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -146,8 +147,9 @@ def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, 
 
 def depth_crossover(frame: pd.DataFrame, out_dir: Path) -> None:
     """Which depth wins, per (size, L), and is it outside seed noise: deep −
-    shallow final BPB on the languages the scheme-A list trains, in seed
-    standard deviations, median over the languages (< 0: deep wins)."""
+    shallow final BPB on the languages the scheme-A list trains, in sds of
+    that difference (sqrt(2) x the per-run seed sd), median over the
+    languages (< 0: deep wins)."""
     fin = finals(frame)
     sd = seed_sd(fin)
     g = fin[(fin["seed"] == GRID_SEED) & (fin["scheme"] == "A") & (fin["kind"] == "bpb") & (fin["task"] != "bpb_macro")]
@@ -159,7 +161,7 @@ def depth_crossover(frame: pd.DataFrame, out_dir: Path) -> None:
     for (size, L), p in piv.groupby(level=["size", "L"]):
         tasks = p.index.get_level_values("task")
         p = p[tasks.isin(trained_bpb_tasks(int(L), "A") or set())]
-        z = ((p["deep"] - p["shallow"]) / p.index.get_level_values("task").map(sd).to_numpy(float)).dropna()
+        z = ((p["deep"] - p["shallow"]) / (np.sqrt(2) * p.index.get_level_values("task").map(sd).to_numpy(float))).dropna()
         if len(z) >= MIN_ITEMS:
             rows.append({"size": size, "L": int(L), "value": z.median(), "n": len(z)})
     if not rows:
@@ -168,12 +170,12 @@ def depth_crossover(frame: pd.DataFrame, out_dir: Path) -> None:
     sizes = [s_ for s_ in LADDER_SIZES if s_ in set(t["size"])]
     mat, cnt = (t.pivot(index="size", columns="L", values=v).reindex(sizes).rename(columns=lambda L: f"L{L}") for v in ("value", "n"))
     fig, ax = plt.subplots(figsize=(7.5, 3.6))
-    tables = [G.matrix_ax(ax, mat, "deep − shallow final BPB, in seed sds (< 0: deep wins)", cnt=cnt, vmin=-6, vmax=6, center=0.0,
+    tables = [G.matrix_ax(ax, mat, "deep − shallow final BPB, in difference sds (< 0: deep wins)", cnt=cnt, vmin=-6, vmax=6, center=0.0,
                           cmap=S.DIV, fmt="{:+.1f}", xlabel="language setting", ylabel="model size")]
     G.save_highlights(fig, out_dir, "Depth: which architecture wins at each size, and is it outside seed noise?",
-                      f"cell = median over the languages the scheme-A list trains of (deep − shallow final BPB) / the language's seed "
-                      f"sd (median over the replicated baseline cells), seed {GRID_SEED}; small number = languages; |cell| < 2 is inside "
-                      f"seed noise", tables, name="depth_crossover")
+                      f"cell = median over the languages the scheme-A list trains of (deep − shallow final BPB) / sqrt(2) x the "
+                      f"language's seed sd (a median over the baseline cells with 3 replicates), seed {GRID_SEED}; small number = "
+                      f"languages; |cell| < 2 is the two-run difference inside seed noise", tables, name="depth_crossover")
 
 
 def _panels(t: pd.DataFrame, by: str, path: Path, *, keys: list, ncols: int, **kw) -> None:
@@ -242,8 +244,9 @@ def main(pool: str) -> None:
              populations=LINE_POPULATIONS[:2],                  # the loss is one item: a 0/1 step, not a share
              title="The same, on the items the reference decides outside seed noise",
              note=f"DA as in da_lines, restricted to the items (languages' BPB, benchmark tasks) whose reference |Δ| between the "
-                  f"two levels is at least {DECIDED:g} seed standard deviations (seed sd = median over the replicated baseline "
-                  f"cells); a cell needs {MIN_ITEMS} such items; missing points = the reference decides too few items")
+                  f"two levels is at least {DECIDED:g} sds of that difference (sqrt(2) x the per-run seed sd, a median over the "
+                  f"baseline cells with 3 replicates); a cell needs {MIN_ITEMS} such items; missing points = the reference "
+                  f"decides too few items")
     da_lines_flops(da, frame.groupby(["size", "model"])["compute"].max().groupby("size").mean(), out_dir,
                    labels={k: v[0] for k, v in INTERVENTIONS.items()},
                    title="How much compute reads each design decision",
