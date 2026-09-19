@@ -2,6 +2,10 @@
 # Names must match the Hub exactly (case-sensitive): the local datasets/ cache
 # lowercases dir names, so don't reconstruct repo ids from it.
 # Add a line when you add a benchmark; download_eval_datasets.py is idempotent.
+# `repo@<commit>` pins a revision when the tip is broken upstream:
+# proxectonos/xstorycloze_gl's card (2105c4dc, 2026-04-24) declares
+# train.csv/test.csv, which were never uploaded — 8ff06548 is the last
+# revision whose `gl` config points at the TSVs the repo actually holds.
 alexandrainst/m_arc
 alexandrainst/m_hellaswag
 alexandrainst/m_truthfulqa
@@ -89,4 +93,4 @@ projecte-aina/xstorycloze_ca
 proxectonos/xnli_gl
 proxectonos/PAWS-gl
 proxectonos/belebele_gl
-proxectonos/xstorycloze_gl
+proxectonos/xstorycloze_gl@8ff06548c41e77b1e9dd5401e884b9fc556bb328

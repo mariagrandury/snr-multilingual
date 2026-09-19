@@ -372,10 +372,10 @@ def classify(reason: str) -> tuple[str, str]:
     return ("dataset", hit.group(1)) if hit else ("other", reason[:200])
 
 
-_EVAL_ERROR: dict[str, tuple[str, str]] = {}
+_EVAL_ERROR: dict[tuple[str, str], tuple[str, str]] = {}
 
 
-def eval_error(name: str) -> tuple[str, str]:
+def eval_error(name: str, logs_root: Path, suffix: str = "") -> tuple[str, str]:
     """Why NAME's most recent eval job wrote nothing — for runs that died
     before any task could be recorded in failed_tasks.log, and as the second
     opinion when a per-task reason is not self-explanatory.
@@ -387,17 +387,32 @@ def eval_error(name: str) -> tuple[str, str]:
     Memoised for the pass: the answer is a property of NAME's job logs, and
     an L100 checkpoint asks it once per held-back task — up to ~290 scans of
     the same 400 KB log tails.
+
+    The logs read are those of the runs being explained: NAME's two newest
+    runs that count as attempts (task_attempts' rule), found by the job id
+    their eval_* dir ends in, in THIS watcher's job family (SUFFIX, e.g. -rf).
+    Until 2026-09-19 it read the two newest `eval-<cell>-iter<N>_*.err` by
+    mtime instead — the plain family only, so for -rf jobs it read another
+    family's logs, and a Sep 11 xstorycloze_gl line relabelled a week of
+    lock-file PermissionErrors as that dataset missing (308 tasks held on 22
+    checkpoints behind a "repair" of a dataset that was already cached).
     """
-    if name in _EVAL_ERROR:
-        return _EVAL_ERROR[name]
-    _EVAL_ERROR[name] = _eval_error_uncached(name)
-    return _EVAL_ERROR[name]
+    key = (name, suffix)
+    if key not in _EVAL_ERROR:
+        _EVAL_ERROR[key] = _eval_error_uncached(name, logs_root, suffix)
+    return _EVAL_ERROR[key]
 
 
-def _eval_error_uncached(name: str) -> tuple[str, str]:
-    logs = sorted(EVAL_JOB_LOGS.glob(f"{job_name('eval', name)}_*.err"),
-                  key=lambda p: p.stat().st_mtime, reverse=True)
-    for log in logs[:2]:                     # the two most recent attempts
+def _eval_error_uncached(name: str, logs_root: Path, suffix: str) -> tuple[str, str]:
+    job = job_name("eval", name) + suffix
+    # The two newest attempts FIRST, then their logs: filtering on "has a log
+    # in this family" before slicing would skip past a newer run of the other
+    # family and reach back to a stale log — the very bug this replaced.
+    runs = [r for r in eval_runs(name, logs_root)
+            if not (attempted_nothing(r) or interrupted(r))][:2]
+    logs = [EVAL_JOB_LOGS / f"{job}_{r.name.rsplit('_', 1)[-1]}.err" for r in runs]
+    logs = [p for p in logs if p.exists() or p.with_suffix(".out").exists()]
+    for log in logs:
         for path in (log, log.with_suffix(".out")):   # srun splits the two
             try:
                 with open(path, errors="ignore") as f:
@@ -411,7 +426,8 @@ def _eval_error_uncached(name: str) -> tuple[str, str]:
             lines = ERROR_LINE_RE.findall(text)
             if lines:
                 return "other", f"{lines[-1][0]}: {lines[-1][1][:160]}"
-    return "unknown", "no eval job log found"
+    return "unknown", ("no error line in the job log" if logs
+                       else "no eval job log found")
 
 
 _DATASET_FIXED: dict[str, bool] = {}
@@ -426,7 +442,12 @@ def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
     parks its checkpoints in the errors file."""
     if repo in _DATASET_FIXED:
         return _DATASET_FIXED[repo]
-    listed = repo in DATASET_MANIFEST.read_text().split()
+    # The manifest may pin a revision (`repo@commit`, see eval_datasets.txt):
+    # build THAT entry, never the bare repo — a pin exists because the tip no
+    # longer loads, and appending an unpinned duplicate would rebuild from it.
+    entry = next((e for e in DATASET_MANIFEST.read_text().split()
+                  if e.partition("@")[0] == repo), None)
+    listed = entry is not None
     print(f"  missing offline dataset {repo}"
           f"{'' if listed else ' (also absent from eval_datasets.txt)'}"
           f" — building it into the cache")
@@ -439,7 +460,7 @@ def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
             f.write(f"{repo}\n")
         print(f"  ({DATASET_MANIFEST.name} updated — commit the diff)")
     with tempfile.NamedTemporaryFile("w", suffix=".txt") as manifest:
-        manifest.write(f"{repo}\n")
+        manifest.write(f"{entry or repo}\n")
         manifest.flush()
         out = subprocess.run([sys.executable, str(DOWNLOAD_DATASETS),
                               manifest.name], capture_output=True, text=True)
@@ -722,13 +743,14 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         for t, (n, why) in task_attempts(name, logs_root, remaining).items():
             if n < args.max_attempts:
                 continue
-            kind, detail = classify(why) if why else eval_error(name)
+            kind, detail = (classify(why) if why
+                            else eval_error(name, logs_root, args.job_suffix))
             if kind == "other":
                 # The per-task reason is one truncated line; the job log may
                 # still name a missing dataset, and that is the one cause
                 # this watcher can repair itself. Memoised, so at most one
                 # log scan per checkpoint per pass.
-                log_kind, log_detail = eval_error(name)
+                log_kind, log_detail = eval_error(name, logs_root, args.job_suffix)
                 if log_kind == "dataset":
                     kind, detail = log_kind, log_detail
             # A repair is trusted for a bounded number of runs: a task whose

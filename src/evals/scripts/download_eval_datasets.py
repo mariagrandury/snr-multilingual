@@ -13,6 +13,10 @@ automatically — nothing to hand-list.
 Idempotent: already-built configs are a no-op, so re-run any time. Adding a
 benchmark = add its repo to configs/eval_datasets.txt.
 
+A manifest line `repo@revision` builds that commit instead of the tip: a
+dataset card edited upstream can break load_dataset for everyone, and a pin
+also keeps the data fixed for the whole sweep.
+
     python3.11 scripts/download_eval_datasets.py
 """
 import os
@@ -42,9 +46,11 @@ repos = [ln.strip() for ln in MANIFEST.read_text().splitlines()
 print(f"{len(repos)} dataset repos -> {os.environ['HF_DATASETS_CACHE']}")
 
 failed, built = [], 0
-for i, repo in enumerate(repos, 1):
+for i, entry in enumerate(repos, 1):
+    repo, _, rev = entry.partition("@")
+    rev = rev or None
     try:
-        configs = get_dataset_config_names(repo) or [None]
+        configs = get_dataset_config_names(repo, revision=rev) or [None]
     except Exception as e:
         failed.append((repo, str(e).split("\n")[0][:110]))
         print(f"[{i}/{len(repos)}] FAIL {repo} (configs): {failed[-1][1]}")
@@ -52,7 +58,7 @@ for i, repo in enumerate(repos, 1):
     for cfg in configs:
         label = f"{repo}:{cfg}" if cfg else repo
         try:
-            load_dataset(repo, cfg)
+            load_dataset(repo, cfg, revision=rev)
             built += 1
             print(f"[{i}/{len(repos)}] ok   {label}")
         except Exception as e:      # one bad config must not stop the rest

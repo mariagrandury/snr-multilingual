@@ -562,6 +562,28 @@ done. Two things bit while building it:
   claimed the next task, failing each in seconds and taking most of the queue
   from the healthy workers (job 3355520: 145 strikes for tasks the next job
   all passed). The worker stops claiming on `EngineDeadError`.
+- **A second opinion from the wrong job's log held 308 tasks** (fixed
+  2026-09-19). When a task's own failure reason is not self-explanatory the
+  watcher asks `eval_error()`, which read the two newest
+  `eval-<cell>-iter<N>_*.err` by mtime — the PLAIN job family only, and with
+  no bound on age. So the `-rf` watcher read the plain family's logs, and a
+  Sep 11 `Couldn't reach 'proxectonos/xstorycloze_gl'` line relabelled a week
+  of lock-file `PermissionError`s as that dataset missing: 22 checkpoints of
+  175M L8/L15/L30 held back on 308 tasks, none of them xstorycloze_gl, behind
+  a "repair" of a dataset that was already cached. It now reads the logs of
+  the two newest runs that count as attempts, by the job id their `eval_*`
+  dir ends in and in its own job family — the right log or none.
+- **A dataset can break upstream.** `proxectonos/xstorycloze_gl`'s card was
+  edited on 2026-04-24 to declare a `default` config reading
+  `train.csv`/`test.csv`, files the repo never held (it has
+  `XStoryCloze_{train,test}_gl.tsv`), so `load_dataset` resolves nothing,
+  `datasets` falls back to its cache module and reports "Couldn't find cache
+  ... for config 'default'" — which reads as a local cache problem and is not
+  one. A manifest line may therefore pin a commit, `repo@<sha>`
+  (`eval_datasets.txt`, honoured by `download_eval_datasets.py` and by the
+  watcher's repair): `8ff06548` is the last revision whose `gl` config points
+  at the TSVs. Pinning also freezes the data, which is what comparability
+  needs.
 - **The watcher's gate had four holes** (closed 2026-09-13). Its diagnosis
   memos lived for the whole `--watch` process, so a task misread as a missing
   dataset was retried forever: they are cleared every pass, and a dataset
