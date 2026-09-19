@@ -1,5 +1,5 @@
 #!/bin/bash
-# preempt_drain.sh — move my PENDING convert/eval jobs from `normal` to
+# preempt_drain.sh — move my PENDING convert/eval/bpb jobs from `normal` to
 # `preemptable`, keeping at most --max-nodes (default 50) nodes of mine there.
 #
 # Why: `normal` is capped by its QOS at 480 nodes for the WHOLE partition, so
@@ -8,20 +8,29 @@
 # and 04:36 on `preemptable`. `preemptable` has all 1343 nodes and no group
 # cap; the price is preemption (PreemptMode=REQUEUE, 4 min grace).
 #
-# That price is small for exactly these two kinds, and both RESUME:
+# That price is small for exactly these three kinds, and all RESUME:
 #
 #   convert-*  convert-snr.sh touches .hf_complete per iter and skips what
 #              carries it, so a preemption costs at most the in-flight iter.
 #   eval-*     scripts/eval_worker.py writes each task's results as it
 #              finishes (per_task/<task>/), and the auto-eval watcher
 #              resubmits with only the tasks still missing.
+#   *bpb*      score_bpb.py writes each checkpoint's bpb.json before starting
+#              the next, and skips what is already written on re-run.
 #
-# Clariden has JobRequeue=0 and neither sets --requeue, so a preempted job is
-# cancelled, not requeued; the next watcher pass resubmits it and it picks up
-# where it stopped. Pretrain jobs are NEVER moved: 21 nodes lost to a
-# preemption costs up to a save interval of training (--no-requeue in
-# launch_pretraining_cscs.sh). Unlike debug_drain.sh nothing
-# is truncated here — preemptable's 24 h limit is above every eval walltime.
+# Clariden has JobRequeue=0 and none sets --requeue, so a preempted job is
+# cancelled, not requeued; the next watcher pass resubmits a convert or eval
+# and it picks up where it stopped. BPB is not the watcher's: score_bpb.sbatch
+# chains itself, queuing its successor BEFORE scoring, so a preempted link's
+# successor is already pending (and is moved here in turn). But a link killed
+# before its FIRST checkpoint lands trips the chain's no-progress guard and the
+# successor ends the chain — re-run launch_bpb.sh, which skips scored cells and
+# cells with a job in flight. That, and their number, is why BPB goes last.
+#
+# Pretrain jobs are NEVER moved: 21 nodes lost to a preemption costs up to a
+# save interval of training (--no-requeue in launch_pretraining_cscs.sh).
+# Unlike debug_drain.sh nothing is truncated here — preemptable's 24 h limit
+# is above every eval walltime.
 #
 # Order — the priority ladder (2026-09-18):
 #
@@ -29,6 +38,8 @@
 #   1  eval-* of the FINAL ckpt      the headline number for each model
 #   2  eval-* at 20/40/60/80 %       the training-curve points
 #   3  every other eval-*            the rest of the k/20 grid
+#   4  any job with "bpb" in its name  last: hundreds of them, and they must
+#                                      not starve convert -> eval
 #
 # The fraction comes from the size's own schedule (launch_trainings.schedule_for,
 # the same source the watcher's due_iters uses), not from the iter number, so
@@ -96,8 +107,9 @@ drain_once() {
         echo "[$(date +%H:%M:%S)] squeue failed — retrying next tick"; return 0
     fi
     # Jobs already placed in a reservation (%v) stay there, and only convert/
-    # eval are eligible — the pretrain filter is this line.
-    pend=$(awk -F'|' '$1=="(null)" && $4 ~ /^(convert|eval)-/' <<<"$q")
+    # eval/bpb are eligible — the pretrain filter is this line (spelled out,
+    # since "bpb" is matched anywhere in the name).
+    pend=$(awk -F'|' '$1=="(null)" && $4 !~ /^pretrain-/ && ($4 ~ /^(convert|eval)-/ || $4 ~ /bpb/)' <<<"$q")
     npend=$(grep -c . <<<"$pend")
     if ! mine=$(squeue --me -h -p "$PART" -t PD,R,CG -o "%D" 2>/dev/null | sum); then
         echo "[$(date +%H:%M:%S)] squeue on $PART failed — retrying next tick"; return 0
@@ -110,7 +122,8 @@ drain_once() {
     awk -F'|' '
         NR == FNR { target[$1 "|" $2] = $3; next }        # size|arch -> iters
         { name = $4; rank = 3
-          if (name ~ /^convert-/) rank = 0
+          if (name ~ /bpb/) rank = 4
+          else if (name ~ /^convert-/) rank = 0
           else {
               split(name, f, "-")                         # eval-<size>-L..-...
               arch = (name ~ /-shallow-/) ? "shallow" : "deep"

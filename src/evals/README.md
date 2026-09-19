@@ -204,17 +204,21 @@ bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/rese
 
 And the same idea for the `preemptable` partition:
 `/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh`
-moves pending convert/eval jobs there, holding at most `--max-nodes` (default
-50). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
+moves pending convert/eval/BPB jobs there, holding at most `--max-nodes`
+(default 50). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
 full cluster parks these jobs on `QOSGrpNodeLimit` for hours, while
 `preemptable` has every node and no group cap — its price is preemption
 (4 min grace, then cancelled: Clariden runs `JobRequeue=0`), which costs a
 conversion its in-flight checkpoint and an eval its in-flight tasks, both of
-which the next watcher pass resubmits and redoes.
+which the next watcher pass resubmits and redoes. A BPB chain already has its
+next link queued, except when a link dies before scoring its first
+checkpoint: the chain's no-progress guard then ends it, and `launch_bpb.sh`
+restarts it (it skips scored cells and cells with a job in flight).
 Pretrain jobs are never moved: they are `--no-requeue` and a preemption costs
 up to a save interval. Nothing is truncated (preemptable allows 24 h), so this
 one is simpler than the debug drainer. Order: conversions, then the final
-checkpoint of a model, then its 20/40/60/80 % points, then the rest — the
+checkpoint of a model, then its 20/40/60/80 % points, then the other evals,
+then anything with `bpb` in its name — the
 fraction read from the size's own schedule, so it means the same at every
 rung. Unlike the other two it does not exit when the queue empties; it keeps
 moving what later watcher passes submit, until you kill it.
