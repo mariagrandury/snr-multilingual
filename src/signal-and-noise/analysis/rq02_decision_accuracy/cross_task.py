@@ -248,7 +248,7 @@ L_LISTS = (1, 2, 8, 15, 30, 50, 100)
 
 
 def resource_rank() -> dict:
-    """language -> position in English + the scheme-A L100 list (resource-
+    """language -> position in English + the generated 99-language list (resource-
     ranked; every smaller list is its prefix, so rank < L means "trained at L")."""
     return {l: i for i, l in enumerate(["en"] + [fineweb_language(sub) for sub in cell_fineweb_subsets(100, "AT3")])}
 
@@ -352,8 +352,8 @@ def run(pool: str, out_dir: Path) -> None:
                 xlabel="proxy language x", ylabel="target language y",
                 note="Cell: the median level over the pairs of tasks of the SAME benchmark in the two languages (bpb_x -> bpb_y, "
                      "arc_x -> arc_y, ...) that reach one, rounded up; the CSV adds the share that never do. Languages in the "
-                     "resource order of the scheme-A lists: English, then the L100 list; the lines mark where the L2, L8, L15, L30, L50 "
-                     "and L100 lists end, so the languages between two lines enter the mixture at the same L.")
+                     "resource order of the scheme-A lists: English, then the 99-language list; the lines mark where the L2, L8, L15, L30 "
+                     "and L50 lists end, so the languages between two lines enter the mixture at the same L.")
     for kind, lv, levels, label, cb in [("size", size_lv, sizes, str, "median smallest proxy size"),
                                         ("ckpt", ckpt_lv, FRACS[:-1], G.chinchilla, "median earliest checkpoint")]:
         group_map(lv, out_dir / f"cross_task_{kind}_by_family.png", levels=levels, level_label=label, cbar=cb,

@@ -107,7 +107,7 @@ def convert_job_name(cell: str) -> str:
     Keep the two in step: this string is the only dedupe against submitting a
     second conversion for a cell that already has one in flight."""
     return f"convert-snr-{cell}"
-# The auto group spans 13 tasks (L=1) to 446 (L=100), so a fixed walltime can't
+# The auto group spans 13 tasks (L=1) to 329 (L=50), so a fixed walltime can't
 # fit both. The ladder's KV-head counts force TP=1, so evaluate.sbatch runs
 # EVAL_WORKERS independent workers per job — one per GPU of the node, each
 # with its own model copy — sharing the task queue (../evals/scripts/
@@ -386,7 +386,7 @@ def eval_error(name: str, logs_root: Path, suffix: str = "") -> tuple[str, str]:
     in the errors file rather than retried into the ground.
 
     Memoised for the pass: the answer is a property of NAME's job logs, and
-    an L100 checkpoint asks it once per held-back task — up to ~290 scans of
+    an L50 checkpoint asks it once per held-back task — up to ~290 scans of
     the same 400 KB log tails.
 
     The logs read are those of the runs being explained: NAME's two newest

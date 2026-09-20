@@ -170,7 +170,7 @@ def check_loss(curves, tgts) -> list[str]:
     # Ordering by size at fixed (L, arch, scheme): a bigger model that is
     # worse is a real signal, not noise, at these gaps. Per SCHEME because a
     # scheme is a different data build at the same L — its rungs are only
-    # comparable with each other, and L100 exists ONLY as AT3, so keying the
+    # comparable with each other, and AT3 is its own build, so keying the
     # ladder on the baseline would leave that column unchecked.
     for (L, arch, scheme) in sorted({(k[1], k[2], k[3]) for k in finished}):
         row = [(s, finished[(s, L, arch, scheme, 1904)])

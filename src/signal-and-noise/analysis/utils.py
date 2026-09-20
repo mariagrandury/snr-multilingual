@@ -194,7 +194,8 @@ def pool_models(pool: str, df: pd.DataFrame) -> set[str]:
     return set(df["model"]) if _is_ladder_pool(pool) else set(expand_pool(pool))
 
 
-def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False) -> pd.DataFrame:
+def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
+                   above_reference: bool = False) -> pd.DataFrame:
     """SNR signal-pool dataframe for the named pool. Apertus rows are filtered
     to the pool's `members` (via expand_pool); when the pool sets
     `include_external=true`, every external pretraining row (reference_hf, a06,
@@ -208,6 +209,10 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False) 
     (`facets=True` keeps them, for rq08 alone) and a model's score on a
     language its mixture does not train is dropped (`untrained=True` keeps
     it, for rq06 alone and for the gate, which has to cover every task).
+
+    Sizes are ANALYSIS_SIZES, 175M to the reference (rule 10);
+    `above_reference=True` widens that to every evaluated size and belongs to
+    the size-generalization question alone, which is what the 3B rung is for.
     """
     # The "external" tier pools every non-custom model across all four
     # external parquets (reference_hf + a06 + distillation + posttraining),
@@ -233,7 +238,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False) 
     if _is_ladder_pool(pool):
         df = load_predictivity_eval_results(
             include_diverged=spec.get("include_diverged", False))
-        df = df[df["size"].isin(EVAL_SIZES)]      # 90M trains but is off the ladder
+        df = df[df["size"].isin(EVAL_SIZES if above_reference else ANALYSIS_SIZES)]   # rule 10
         frames = []
         for m in spec["members"]:
             sub = df
@@ -276,6 +281,13 @@ from pretrain.ladder_report import NON_EMB  # noqa: E402
 from pretrain.launch_trainings import EVAL_SIZES  # noqa: E402
 
 LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
+# Rule 10: every analysis reads the ladder from 175M up to the reference. 90M
+# trains but diverges, and the 3B rung sits ABOVE the reference — it exists for
+# the size-generalization question, which opts in with `above_reference=True`.
+# Everywhere else a size above the reference would quietly become one more
+# column in a table whose reference is 1.7B. Derived from TARGET_SIZE, so
+# moving the reference moves this with it.
+ANALYSIS_SIZES = [s for s in EVAL_SIZES if NON_EMB[s] <= NON_EMB[TARGET_SIZE]]
 GRID_SEED = 1904                      # the plan grid's seed
 
 
@@ -289,7 +301,8 @@ def size_order(sizes) -> list[str]:
 def ladder_frame(pool: str, **kw) -> pd.DataFrame:
     """`build_snr_pool` plus `frac`, each checkpoint's position in its own run
     (step over the cell's last scored step, which `require_final` makes the
-    target). `kw` = build_snr_pool's `untrained` / `facets` opt-outs."""
+    target). `kw` = build_snr_pool's `untrained` / `facets` /
+    `above_reference` opt-outs."""
     df = build_snr_pool(pool, **kw)
     df["frac"] = df["step"] / df.groupby("model")["step"].transform("max")
     return df

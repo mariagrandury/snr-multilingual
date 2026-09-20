@@ -346,7 +346,7 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
             matrix = [[min(v, 1) if v == v else v for v in row] for row in matrix]
             if key == "scheme":
                 # A scheme covers only the settings and rungs it defines —
-                # AT3 is L50/L100, ZH/ES are L2 alone and stop at 1B — so grey
+                # AT3 is L15/L30/L50, ZH/ES are L2 alone (ES stops at 1B) — so grey
                 # the rest out like off-grid cells rather than drawing a run
                 # that was never planned as permanently missing.
                 matrix = [[v if cell_in_scheme(value, size, L) else float("nan")
@@ -392,7 +392,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
-    per language the cell trains on, 13 at L=1 and 446 at L=100. That is why
+    per language the cell trains on, 13 at L=1 and 329 at L=50. That is why
     the eval cost of a cell is a property of L, not of the model size.
 
     all_languages counts only auto_evals_cscs.ALL_LANGUAGES_RUNS (one run per
@@ -520,7 +520,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     Colour is the FRACTION of the middle row complete, not the absolute count
     missing, so a finished cell reads the same whether it is 180/180 or
     1080/1080 — yellow at 0%, blue at 100%. Absolute counts already vary
-    ~30x across the grid (13 benchmarks at L=1, 446 at L=100), so colouring by
+    ~25x across the grid (13 benchmarks at L=1, 329 at L=50), so colouring by
     them would say little more than "this row has many languages". Cells with
     no trained run are grey like the off-grid ones: there is no fraction to
     show because there is nothing to evaluate yet.

@@ -1,7 +1,7 @@
 """Decision accuracy per language count — the early-and-small grid read one
 L at a time: pairs of design variants that share the L (deep vs shallow,
 scheme A vs B, AT3, the second language), at the grid seed of every scheme
-(`predictivity_all`, seed 1904). L100 has one pair (AT3 deep vs shallow) once
+(`predictivity_all`, seed 1904). L1 and L2 have few pairs once
 its 1.7B cells are final; until then its cells stay blank.
 
     da_by_L_per_task.csv   per task, L, proxy size and fraction of the proxy's own run, on
@@ -199,7 +199,7 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
         f"**Pairs per L** — the design variants the grid plans at seed {GRID_SEED}, and per proxy size the pairs usable "
         f"against {TARGET_SIZE} (both members planned at that size and at {TARGET_SIZE}): planned / with data today on "
         "BPB / on the benchmarks / on the training loss. ZH and ES stop at 1B, so they never pair against the reference; "
-        "L1, L2 and L100 have one pair, so their per-task DA is 0 or 1; L15 has no 1.7B cell yet.",
+        "A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.",
         md_table(list(pairs.columns), pairs.values.tolist()),
         f"The early-and-small reading one L at a time: pairs of design variants that share the L (seed {GRID_SEED} of every "
         f"scheme, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "

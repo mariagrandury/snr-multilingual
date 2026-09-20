@@ -15,7 +15,7 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
            (SIZE_LANG_SETTINGS).
   * scheme — the data build (DATA_SCHEMES, selected with --scheme): A is the
            resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
-           supplies both the L50 temperature intervention and L100, which
+           supplies the temperature intervention at L15, L30 and L50, which
            exists ONLY at T=3; B is diversity-first at L in {8, 15, 30}; ZH
            and ES swap L2's Russian for Chinese / Spanish.
   * seed — 1904 by default; three seeds on the columns the plan marks x3, and
@@ -81,7 +81,7 @@ Examples:
     python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
     # diversity-first lists
     python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8
-    # T=3: L50 and L100
+    # T=3: L15, L30 and L50
     python3.11 pretrain/launch_trainings.py cscs --scheme AT3
     # L2 with Chinese
     python3.11 pretrain/launch_trainings.py cscs --scheme ZH
@@ -517,7 +517,7 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     A run drawing no more than the build holds is always fine. One drawing
     more repeats data, which is accepted only when the SOURCE is the limit —
     the build already realizes what its current target can (scheme A's L2
-    Russian, ES's Spanish, AT3 L100 at T=3). A build smaller than that is a
+    Russian, ES's Spanish, ZH's Chinese). A build smaller than that is a
     stale one the grid has since outgrown (the 52B A-L15/A-L50/B-L15 copies,
     once the 1.7B row gained those settings), and training on it would repeat
     data only because the full build was not used — fineweb_source() falls
@@ -966,7 +966,7 @@ def main() -> None:
     parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                         help="Data scheme to submit: A (resource-ranked, "
                              "T=1 — the baseline), AT3 (same lists at T=3; "
-                             "L50 as the temperature intervention and L100, "
+                             "L15, L30 and L50 as the temperature intervention, "
                              "which exists only at T=3), B (diversity-first "
                              "lists at L in {8, 15, 30}), ZH / ES (L2 with "
                              "Chinese / Spanish instead of Russian). Each "

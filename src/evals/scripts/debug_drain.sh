@@ -20,7 +20,7 @@
 #              watcher resubmits a killed job with only the tasks still
 #              missing. Until 2026-09-04 evals ran BATCH_TASKS=1 — one lm_eval
 #              call writing everything in a single burst at the end, so a 1:30
-#              kill of a 4h L100 job discarded 100% of it (../CLAUDE.md bug
+#              kill of a 4h L50 job discarded 100% of it (../CLAUDE.md bug
 #              13) — and were only moved when their own walltime already fit.
 #
 # Every kind is therefore moved regardless of its requested walltime. A

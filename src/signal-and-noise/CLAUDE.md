@@ -78,9 +78,13 @@ so a script never decides by model name.
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
 - Diverged runs (`run__diverged`) and runs short of their target are dropped
   by default; the pool flag `include_diverged` keeps them. `build_snr_pool`
-  also drops every size outside `launch_trainings.EVAL_SIZES`: the 90M rung
-  trains but is off the ladder (nine of its ten runs diverge), so no ladder
-  pool, table or figure carries it.
+  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 175M
+  up to the reference (rule 10): the 90M rung trains but is off the ladder
+  (nine of its ten runs diverge), and the 3B rung sits ABOVE the reference and
+  belongs to the size-generalization question alone, which opts in with
+  `above_reference=True`. Neither carries into any other pool, table or
+  figure. `ANALYSIS_SIZES` derives from `TARGET_SIZE`, so moving the reference
+  moves the ladder with it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
   grid every size was evaluated on, BPB rows on the k/20 save grid, plus the
   final checkpoint, and — inside the noise window — benchmark rows on the k/20
@@ -99,7 +103,8 @@ so a script never decides by model name.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
   only, `multi` is not a language, three tasks per language, one reference, no
-  90M, no leakage, the figure conventions. `build_snr_pool` applies the
+  90M and no size above the reference, no leakage, the figure conventions.
+  `build_snr_pool` applies the
   population rules at load (parents only, trained languages only; rq06 and
   rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
   `analysis/check_rules.py` tests the tables on disk; the driver and the
