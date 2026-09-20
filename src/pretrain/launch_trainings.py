@@ -704,13 +704,21 @@ ITER_MS = {
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
+# `preemptable` allows 24h. A time limit cannot be raised after submission
+# (scontrol answers "Access/permission denied" to anyone but an operator, so
+# no drainer can stretch a job it moves), so a run that is to live there must
+# ask for the longer wall up front — and a job asking for it is refused by
+# `normal`, which is why this is tied to --partition rather than a default.
+TIME_MAX_PREEMPT_SEC = 86340   # 23:59:00
+PREEMPT_PARTITION = "preemptable"
 
 
-def auto_time(size: str, remaining_iters: int, arch: str = "deep") -> str:
+def auto_time(size: str, remaining_iters: int, arch: str = "deep",
+              cap: int = TIME_MAX_SEC) -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
     total = remaining_iters * ITER_MS[arch].get(size, 2400) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
-    total = min(max(total, TIME_MIN_SEC), TIME_MAX_SEC)
+    total = min(max(total, TIME_MIN_SEC), cap)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
 
 
@@ -765,7 +773,8 @@ def rewind_marker(ckpt_dir: Path, want: int, dry_run: bool) -> bool:
 
 def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
                 time: Optional[str] = None, account: Optional[str] = None,
-                dependency: Optional[str] = None) -> None:
+                dependency: Optional[str] = None,
+                partition: Optional[str] = None) -> None:
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
     # from $0 — pass the real checkout dir here.
@@ -779,6 +788,16 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
         cmd.append(f"--account={account}")
     if dependency is not None:
         cmd.append(f"--dependency={dependency}")
+    if partition is not None:
+        cmd.append(f"--partition={partition}")
+        if partition == PREEMPT_PARTITION:
+            # The wrapper's #SBATCH --no-requeue exists so a node failure does
+            # not overwrite the logs; on `preemptable` coming back is the whole
+            # point, and the command line outranks the directive. A requeued
+            # job keeps its jobid AND its partition, so it returns straight to
+            # `preemptable` — see the wrapper's SIGTERM trap for the
+            # checkpoint it saves on the way out.
+            cmd.append("--requeue")
     cmd.append(str(CSCS_SUBMIT_SCRIPT))
 
     print(f"  job:    {job_name('pretrain', env['EXP_NAME'])}"
@@ -925,6 +944,14 @@ def main() -> None:
                         help="CSCS only: override sbatch --time")
     parser.add_argument("--account", metavar="ACCOUNT",
                         help="CSCS only: override sbatch --account (e.g. a139)")
+    parser.add_argument("--partition", metavar="NAME",
+                        help=f"CSCS only: submit to this partition. "
+                             f"`{PREEMPT_PARTITION}` starts immediately "
+                             f"instead of queueing behind the 480-node cap on "
+                             f"`normal`, and also adds --requeue and lets the "
+                             f"auto walltime reach 23:59:00 — the run "
+                             f"checkpoints on preemption and resumes when it "
+                             f"is requeued (../pretrain/CLAUDE.md)")
     parser.add_argument("--dependency", metavar="DEP",
                         help="CSCS only: pass-through to sbatch --dependency")
     parser.add_argument("--training-steps", metavar="N", type=int,
@@ -1171,8 +1198,12 @@ def main() -> None:
                          lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
                          gbs=args.gbs),
                 dry_run=args.dry_run, nodes=nodes,
-                time=args.time or auto_time(c["size"], tgt - load_iter, args.arch),
+                time=args.time or auto_time(
+                    c["size"], tgt - load_iter, args.arch,
+                    TIME_MAX_PREEMPT_SEC if args.partition == PREEMPT_PARTITION
+                    else TIME_MAX_SEC),
                 account=args.account, dependency=args.dependency,
+                partition=args.partition,
             )
         else:
             # $ENGLISH_DIR/$FINEWEB_DIR, not ${{inputs.*}}: binding expressions

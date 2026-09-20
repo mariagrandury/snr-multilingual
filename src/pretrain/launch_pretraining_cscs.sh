@@ -11,6 +11,11 @@
 #SBATCH --mem=460000
 #SBATCH --signal=SIGUSR2@3600	# Send SIGUSR2 1h before hitting the time limit
 #SBATCH --no-requeue	# Don't requeue on node failure so we don't lose the logs
+#SBATCH --open-mode=append	# A requeue keeps the jobid, so %x-%j would be
+				# reopened: append, or the first attempt's log is
+				# truncated. (launch_trainings.py --partition
+				# preemptable passes --requeue, which outranks
+				# the directive above.)
 
 # CSCS wrapper of the predictivity training pair — the SLURM half
 # (launch_pretraining_azure.sh is the Azure half). Every Megatron argument
@@ -133,12 +138,39 @@ cp $SCRIPT_PATH $DEBUG_DIR
   printenv
 } > $COMPUTE_ENVIRONMENT_DIR
 
+# Preemption (only on `preemptable`) arrives as SIGTERM with GraceTime=240s
+# before the kill, but Megatron's --exit-signal-handler listens for SIGUSR2
+# alone (DistributedSignalHandler(sig=signal.SIGUSR2)), so a preemption would
+# otherwise drop everything since the last save. Forward it: `scancel
+# --signal` reaches every rank on every node, and without --full it leaves
+# this batch shell alone (SIGUSR2's default action would kill it). Megatron
+# checkpoints at the next iteration boundary and exits; with --requeue
+# (launch_trainings.py adds it for `preemptable`) the job comes back with the
+# same jobid and partition and resumes from that checkpoint. Such a save is
+# off the checkpoint grid, which `run_interval`/`due_iters` already expect
+# from the walltime SIGUSR2 — an off-grid save is never due for eval.
+term_handler() {
+	echo "[$(date)] SIGTERM (preemption or scancel) — sending SIGUSR2 so Megatron checkpoints and exits"
+	scancel --signal=USR2 "$SLURM_JOB_ID"
+}
+trap term_handler TERM
+
+# Backgrounded so the trap runs when the signal lands rather than after srun
+# returns; `wait` is itself interrupted by the trap (returns >128 with the
+# step still alive), hence the loop.
 srun --mpi=pmix \
 	--network=disable_rdzv_get \
 	--cpus-per-task $SLURM_CPUS_PER_TASK \
 	--environment=$CONTAINER_TOML \
 	-lu bash \
-	-c "RANK=\$SLURM_PROCID LOCAL_RANK=\$SLURM_LOCALID $CMD_PREFIX $TRAINING_CMD"
+	-c "RANK=\$SLURM_PROCID LOCAL_RANK=\$SLURM_LOCALID $CMD_PREFIX $TRAINING_CMD" &
+SRUN_PID=$!
+while :; do
+	wait "$SRUN_PID"; SRUN_RC=$?
+	(( SRUN_RC > 128 )) && kill -0 "$SRUN_PID" 2>/dev/null && continue
+	break
+done
+echo "srun exited $SRUN_RC"
 
 echo "END TIME: $(date)"
 

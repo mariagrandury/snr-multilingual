@@ -196,7 +196,34 @@ each `.bin`/`.idx` is ready to start its training run independently:
 cd data
 ./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
 ./launch_builds.sh
+BUILD_PARTITION=preemptable ./launch_builds.sh   # start now, 24h segments
 ```
+
+`BUILD_PARTITION` (with `BUILD_TIME`, which defaults to 23:59:00 there and
+11:59:59 elsewhere) picks the queue, and each chain segment passes both to its
+successor. `preemptable` has every node and no group cap, so builds start
+immediately instead of waiting on `normal`'s 480-node QOS limit, and its 24h
+wall halves the number of segments.
+
+Two things make that safe, both added 2026-09-20 after six chains were lost:
+
+- **`--exclusive`, always.** `normal` is an `OverSubscribe=EXCLUSIVE`
+  partition, so a build has always been given a whole node there — `AllocCPUS`
+  is 288 for a job that asks for 32, and the "~9 builds pack per node" in
+  `submit_build_one.sh`'s header is an intent the cluster never honoured.
+  `preemptable` is `OverSubscribe=FORCE:1`, so there the request really is
+  packed: six builds moved there landed on one node beside a stranger's job
+  and were cancelled by the system 16 s in, before writing a line of output.
+- **Two segments queued up front** (`BUILD_SEGMENTS`, 2 on `preemptable`).
+  They are singletons, so they run one after another and the idempotency guard
+  no-ops the extra once the mixture is built — but a kill that lands before
+  the script reaches its self-chain line can no longer end the chain, which is
+  how those six died.
+
+Submit them there; don't let a drainer move them. A job already queued for
+`normal` was shaped for a partition that hands out whole nodes, and
+`scontrol` cannot add `--exclusive` afterwards — which is why
+`scripts/preempt_drain.sh` leaves `build-*` alone.
 
 [`data/launch_builds.sh`](data/launch_builds.sh) fans out to
 [`data/submit_build_one.sh`](data/submit_build_one.sh) (one mixture per job —
@@ -287,8 +314,18 @@ python launch_trainings.py cscs --size 90M,175M,350M,600M --langs 15 --seed 1904
 ```
 
 CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
-`--account`, `--dependency`, `--training-steps` (cap `--train-iters`
-manually), `--test`.
+`--account`, `--partition`, `--dependency`, `--training-steps` (cap
+`--train-iters` manually), `--test`.
+
+`--partition preemptable` starts a run now instead of queueing behind the
+480-node QOS cap on `normal`, at the price of preemption. It is safe here
+because the three pieces travel together: `--requeue` (so a preempted run
+comes back with the same jobid and partition), the wrapper's SIGTERM→SIGUSR2
+trap (so Megatron checkpoints inside the 4 min grace and the requeued job
+resumes from it), and a walltime cap of 23:59:00 instead of 11:59:59 —
+`preemptable` allows 24h, and a limit cannot be raised after submission, so it
+has to be asked for here. `scripts/preempt_drain.sh` moves *pending* runs
+there too, but only the top rungs and only if they already carry `--requeue`.
 
 Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
 each forces a `diag-` name, so neither can touch a grid cell):

@@ -1,6 +1,6 @@
 #!/bin/bash
 # preempt_drain.sh — move my PENDING convert/eval/bpb jobs from `normal` to
-# `preemptable`, keeping at most --max-nodes (default 50) nodes of mine there.
+# `preemptable`, keeping at most --max-nodes (default 100) nodes of mine there.
 #
 # Why: `normal` is capped by its QOS at 480 nodes for the WHOLE partition, so
 # with the cluster full my jobs sit on QOSGrpNodeLimit for hours — on
@@ -8,43 +8,77 @@
 # and 04:36 on `preemptable`. `preemptable` has all 1343 nodes and no group
 # cap; the price is preemption (PreemptMode=REQUEUE, 4 min grace).
 #
-# That price is small for exactly these three kinds, and all RESUME:
+# That price is small for exactly these kinds, and all RESUME:
 #
+#   build-*    NOT MOVED — they have to be SUBMITTED here instead
+#              (`BUILD_PARTITION=preemptable data/launch_builds.sh`). The first
+#              six moved (3448609-12, 3449776-7) were placed on ONE node that
+#              already ran another user's job and were cancelled by uid 0
+#              sixteen seconds after starting, before writing a line of output,
+#              so no successor was ever queued and six chains died. A build
+#              asks for 32 CPUs and `normal`, being OverSubscribe=EXCLUSIVE,
+#              has always given it a whole node anyway (AllocCPUS=288);
+#              `preemptable` is FORCE:1 and packs them. The launcher therefore
+#              asks for --exclusive, and scontrol cannot add that to a job
+#              already queued — hence submit, never move.
 #   convert-*  convert-snr.sh touches .hf_complete per iter and skips what
 #              carries it, so a preemption costs at most the in-flight iter.
 #   eval-*     scripts/eval_worker.py writes each task's results as it
 #              finishes (per_task/<task>/), and the auto-eval watcher
 #              resubmits with only the tasks still missing.
+#   pretrain-* ONLY the runs listed in the ladder below, and only when they
+#              were submitted by launch_trainings.py --partition preemptable:
+#              that adds --requeue, and the wrapper's SIGTERM trap forwards
+#              SIGUSR2 so Megatron checkpoints inside the 240s grace and
+#              resumes when the job comes back. A pretrain job submitted
+#              WITHOUT those (the `normal` default) loses everything back to
+#              its last save and never returns — moving one here is a loss,
+#              which is why the filter takes only the named sizes.
 #   *bpb*      score_bpb.py writes each checkpoint's bpb.json before starting
 #              the next, and skips what is already written on re-run.
 #
-# Clariden has JobRequeue=0 and none sets --requeue, so a preempted job is
-# cancelled, not requeued; the next watcher pass resubmits a convert or eval
-# and it picks up where it stopped. BPB is not the watcher's: score_bpb.sbatch
+# Clariden has JobRequeue=0, so a preempted job is cancelled rather than
+# requeued unless it asked for it (only the pretrain runs do, see above); the
+# next watcher pass resubmits a convert or eval and it picks up where it
+# stopped, and a build's successor is already queued. BPB is not the
+# watcher's: score_bpb.sbatch
 # chains itself, queuing its successor BEFORE scoring, so a preempted link's
 # successor is already pending (and is moved here in turn). But a link killed
 # before its FIRST checkpoint lands trips the chain's no-progress guard and the
 # successor ends the chain — re-run launch_bpb.sh, which skips scored cells and
 # cells with a job in flight. That, and their number, is why BPB goes last.
 #
-# Pretrain jobs are NEVER moved: 21 nodes lost to a preemption costs up to a
-# save interval of training (--no-requeue in launch_pretraining_cscs.sh).
-# Unlike debug_drain.sh nothing is truncated here — preemptable's 24 h limit
-# is above every eval walltime.
+# A pretrain job below the named rungs is never moved, and neither is one
+# without --requeue: 21 nodes lost to a preemption costs up to a save interval
+# of training. Unlike debug_drain.sh nothing is truncated here — preemptable's
+# 24 h limit is above every eval walltime.
 #
-# Order — the priority ladder (2026-09-18):
+# Order — the priority ladder (2026-09-20):
 #
-#   0  convert-*                     the gate on every eval downstream
-#   1  eval-* of the FINAL ckpt      the headline number for each model
-#   2  eval-* at 20/40/60/80 %       the training-curve points
-#   3  every other eval-*            the rest of the k/20 grid
-#   4  any job with "bpb" in its name  last: hundreds of them, and they must
+#   (build-* would head this list; it is excluded above until the 09-20
+#    cancellations are explained)
+#   1  convert-*                     the gate on every eval downstream
+#   2  eval-* of the FINAL ckpt      the headline number for each model
+#   3  pretrain-3B-*                 the extrapolation rung
+#   4  pretrain-1.7B-*-deep-*        the reference rung
+#   5  pretrain-1B-*-deep-*
+#   6  eval-* at 20/40/60/80 %       the training-curve points
+#   7  every other eval-*            the rest of the k/20 grid
+#   8  any job with "bpb" in its name  last: hundreds of them, and they must
 #                                      not starve convert -> eval
+#
+# Walltime is NOT touched: `preemptable` allows 24h where `normal` allows 12,
+# but a job's limit can only be LOWERED after submission ("Access/permission
+# denied" for anyone but an operator, verified 2026-09-20). A moved job
+# therefore keeps the wall it was submitted with; to use the full 24h, submit
+# there in the first place — `launch_trainings.py --partition preemptable`
+# (23:59:00 + --requeue).
 #
 # The fraction comes from the size's own schedule (launch_trainings.schedule_for,
 # the same source the watcher's due_iters uses), not from the iter number, so
 # 81000 at 1.7B and 28800 at 600M both read as 100 %. If that lookup fails the
-# script still runs — every eval then ranks 3 and only converts keep priority.
+# script still runs — every eval then ranks 7 and only the kinds above them
+# (builds, converts, the pretrain rungs) keep their priority.
 #
 # It does NOT submit anything: it only moves jobs that are already pending, so
 # it cannot duplicate work. It also does not exit when the queue empties — it
@@ -61,7 +95,7 @@
 #   bash scripts/preempt_drain.sh --once            # single pass
 #   bash scripts/preempt_drain.sh --max-nodes 20 --interval 600
 set -uo pipefail
-MAX_NODES=50
+MAX_NODES=100
 INTERVAL=300; ONCE=0; DRY=0
 PART=preemptable
 PRETRAIN_DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
@@ -106,10 +140,16 @@ drain_once() {
     if ! q=$(squeue --me -h -p normal -t PD -o "%v|%i|%D|%j" 2>/dev/null); then
         echo "[$(date +%H:%M:%S)] squeue failed — retrying next tick"; return 0
     fi
-    # Jobs already placed in a reservation (%v) stay there, and only convert/
-    # eval/bpb are eligible — the pretrain filter is this line (spelled out,
-    # since "bpb" is matched anywhere in the name).
-    pend=$(awk -F'|' '$1=="(null)" && $4 !~ /^pretrain-/ && ($4 ~ /^(convert|eval)-/ || $4 ~ /bpb/)' <<<"$q")
+    # Jobs already placed in a reservation (%v) stay there. Eligibility is this
+    # line ("bpb" is matched anywhere in the name; every other kind is
+    # anchored): build/convert/eval unconditionally, and of the pretrain runs
+    # only 3B and the deep 1.7B/1B (builds excluded, see the header) — a shallow
+    # or smaller rung is cheap enough
+    # to wait for `normal`, and every pretrain job is checked for --requeue
+    # again below before it is actually moved.
+    pend=$(awk -F'|' '$1=="(null)" && ($4 ~ /^(convert|eval)-/ || $4 ~ /bpb/ \
+                       || $4 ~ /^pretrain-3B-/ \
+                       || ($4 ~ /^pretrain-(1\.7B|1B)-/ && $4 ~ /-deep-/))' <<<"$q")
     npend=$(grep -c . <<<"$pend")
     if ! mine=$(squeue --me -h -p "$PART" -t PD,R,CG -o "%D" 2>/dev/null | sum); then
         echo "[$(date +%H:%M:%S)] squeue on $PART failed — retrying next tick"; return 0
@@ -121,18 +161,26 @@ drain_once() {
     # rank|jobid|nodes|name, then: rank, then oldest job id first.
     awk -F'|' '
         NR == FNR { target[$1 "|" $2] = $3; next }        # size|arch -> iters
-        { name = $4; rank = 3
-          if (name ~ /bpb/) rank = 4
-          else if (name ~ /^convert-/) rank = 0
+        { name = $4; rank = 7                             # every other eval-*
+          if (name ~ /bpb/) rank = 8
+          else if (name ~ /^build-/) rank = 0
+          else if (name ~ /^convert-/) rank = 1
+          else if (name ~ /^pretrain-3B-/) rank = 3
+          else if (name ~ /^pretrain-1\.7B-/) rank = 4
+          else if (name ~ /^pretrain-1B-/) rank = 5
           else {
               split(name, f, "-")                         # eval-<size>-L..-...
               arch = (name ~ /-shallow-/) ? "shallow" : "deep"
               t = target[f[2] "|" arch]
-              if (match(name, /-iter[0-9]+$/) && t > 0) {
-                  pct = 100.0 * substr(name, RSTART + 5) / t
-                  if (pct >= 99.0) rank = 1
+              # Not anchored at the end: a reformulated eval carries a family
+              # suffix (-rf, -rfgm) after the iter, and anchoring sent every
+              # one of them to the bottom rank.
+              if (match(name, /-iter[0-9]+/) && t > 0) {
+                  it = substr(name, RSTART + 5); sub(/[^0-9].*/, "", it)
+                  pct = 100.0 * it / t
+                  if (pct >= 99.0) rank = 2
                   else for (k = 20; k <= 80; k += 20)
-                           if (pct > k - 1.0 && pct < k + 1.0) rank = 2
+                           if (pct > k - 1.0 && pct < k + 1.0) rank = 6
               }
           }
           printf "%d|%s|%s|%s\n", rank, $2, $3, name }' <(echo "$TARGETS") - <<<"$pend" \
@@ -141,6 +189,16 @@ drain_once() {
         while IFS='|' read -r rank jid n name; do
             if (( n > room )); then
                 (( waiting++ == 0 )) && echo "  wait: $jid $name needs $n nodes, room=$room"
+                continue
+            fi
+            # A pretrain job is only preemption-safe if it can come back:
+            # --requeue (launch_trainings.py --partition preemptable) plus the
+            # wrapper's SIGTERM trap. Without it a preemption is a cancelled
+            # run and a lost save interval on 21 nodes, so ask the controller
+            # rather than assume — Requeue is 0/1 per job.
+            if [[ $name == pretrain-* ]] \
+               && [[ $(squeue -h -j "$jid" -O Requeue 2>/dev/null | tr -d ' ') != 1 ]]; then
+                echo "  skip: $jid $name submitted without --requeue (relaunch with --partition $PART)"
                 continue
             fi
             if (( DRY )); then

@@ -99,13 +99,24 @@ if [ -f "$PREFIX.idx" ] && [ ! -f "$PREFIX.checkpoint.json" ]; then
   exit $?   # FAILED if the staging did — --no-requeue, so this only sets the job state
 fi
 
-# Survive the 12h wall: queue a singleton successor UP FRONT (same job name, so
+# Survive the wall: queue a singleton successor UP FRONT (same job name, so
 # only one runs at a time). The idempotent build resumes from its checkpoint;
-# the guard above no-ops the successor once done. Capped against a failure loop.
+# the guard above no-ops the successor once done. Queuing it first is also what
+# makes this preemption-safe: a killed attempt leaves its successor pending.
+# Capped against a failure loop — and a preemption spends one of those
+# attempts, so BUILD_MAX_ATTEMPTS raises the cap for a heavily preempted chain.
+# The successor inherits the partition this attempt actually ran in (a drainer
+# may have moved it) and, on `preemptable`, its longer wall — a limit cannot be
+# raised later, so it has to be asked for at submission.
+CHAIN_PART=${BUILD_PARTITION:-$SLURM_JOB_PARTITION}
+CHAIN_TIME=${BUILD_TIME:-11:59:59}
+[ "$CHAIN_PART" = preemptable ] && [ -z "${BUILD_TIME:-}" ] && CHAIN_TIME=23:59:00
 n_attempts=$(find "$LOGDIR" -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
-if [ "$n_attempts" -lt 25 ]; then
-  echo "[$(date)] queuing singleton successor (attempt $n_attempts)"
-  sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" --export=ALL "$SCRIPT"
+if [ "$n_attempts" -lt "${BUILD_MAX_ATTEMPTS:-25}" ]; then
+  echo "[$(date)] queuing singleton successor (attempt $n_attempts, $CHAIN_PART, $CHAIN_TIME)"
+  sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" \
+         --partition="$CHAIN_PART" --time="$CHAIN_TIME" \
+         ${BUILD_EXCLUSIVE:---exclusive} --export=ALL "$SCRIPT"
 fi
 
 python build_data_mixtures.py --scheme "$BUILD_SCHEME" --output_dir "$BUILD_OUT" "${STAGE_ARGS[@]}"

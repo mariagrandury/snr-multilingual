@@ -32,11 +32,11 @@ reintroduces the drift this design removed.
 | File | Role |
 |---|---|
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger (and the SIGTERM→SIGUSR2 trap that makes preemption checkpoint — #4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated` evaluates the `auto_rf` group — belebele / global_mmlu_full / include_base_44 as cloze `rf_*` tasks, see ../evals/CLAUDE.md "Reformulated twins"; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated [rf|rfgm]` evaluates the `auto_rf` group — belebele / global_mmlu_full / include_base_44 as cloze `rf_*` tasks — or `auto_rfgm`, the Gemini-rewritten `rfgm_*` twins (`-rfgm` job names), see ../evals/CLAUDE.md "Reformulated twins"; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
@@ -213,6 +213,27 @@ under the walltime with no new checkpoint is the tell.
 before walltime. `launch_trainings.py::auto_time()` adds a 2h30m margin
 (grace + cold-start + buffer), rounds up to 15 min, caps at 11:59:59.
 
+**SIGUSR2 is the only signal Megatron listens for** —
+`DistributedSignalHandler(sig=signal.SIGUSR2)` — while Slurm preempts with
+SIGTERM. A preemption would therefore drop everything back to the last save,
+so `launch_pretraining_cscs.sh` traps TERM and re-emits USR2 to the step
+(`scancel --signal=USR2 $SLURM_JOB_ID`; without `--full`, so the batch shell,
+which has no USR2 handler, survives). srun runs in the background with a
+`wait` loop, or the trap would only fire after srun returned — which is after
+the kill. The save is off the checkpoint grid, and that is already expected:
+`run_interval()` takes the modal gap and `due_iters()` never marks an off-grid
+save due, so preemption saves add disk, not eval work.
+
+That, `--requeue` and a 23:59:00 wall are what
+`launch_trainings.py --partition preemptable` sets up (2026-09-20): a
+preempted run checkpoints, is requeued with the same jobid *and partition*,
+and resumes. Two constraints it works around, both verified: a job's time
+limit can only be LOWERED after submission (so no drainer can stretch a job it
+moves — ask for 24h at submit), and `normal` refuses a 23:59:00 request
+outright ("Requested time limit is invalid"), so the long wall and the
+partition have to travel together. A requeue reopens the same `%x-%j` log,
+hence `#SBATCH --open-mode=append`.
+
 ### 5. `OptimizerParamScheduler` train_iters mismatch on capped resumes
 Megatron asserts the CLI schedule total equals the checkpoint's. When a
 resume is submitted with a reduced `--train-iters` (mid-gap backfill), the
@@ -350,6 +371,22 @@ Corollary for planning: Azure jobs are **single-node**
 GPUs-per-node is the binding constraint. A 1.7B run is 7.2 d on one 8×H100
 node but 29 d on a 2×H100 node — and since a run cannot span nodes, no
 quantity of small nodes fixes that.
+
+### 12. `preemptable` packs jobs; `normal` and `debug` do not
+`normal` and `debug` are `OverSubscribe=EXCLUSIVE`, so every job there gets a
+whole node whatever it asks for — a data build requesting 32 CPUs is recorded
+`AllocCPUS=288`, and `submit_build_one.sh`'s "~9 builds pack per node" has
+never actually happened. `preemptable` is `OverSubscribe=FORCE:1`, which does
+pack: on 2026-09-20 six builds moved there landed on ONE node that already ran
+another user's job and were cancelled by uid 0 sixteen seconds after starting,
+before writing a line of output — so none reached `submit_build_one.sh`'s
+self-chain line and six chains died silently, with no job left in the queue to
+notice. `launch_builds.sh` now passes `--exclusive` always (reproducing the
+allocation every finished build has had) and queues `BUILD_SEGMENTS` segments
+up front, 2 on `preemptable`, so a kill before the script runs cannot end a
+chain. `scontrol` cannot add `--exclusive` to a queued job, so builds are
+submitted to `preemptable`, never moved there — `scripts/preempt_drain.sh`
+skips `build-*` for exactly that reason.
 
 ---
 

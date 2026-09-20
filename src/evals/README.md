@@ -204,8 +204,9 @@ bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/rese
 
 And the same idea for the `preemptable` partition:
 `/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh`
-moves pending convert/eval/BPB jobs there, holding at most `--max-nodes`
-(default 50). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
+moves pending convert/eval/pretrain/BPB jobs there, holding at most
+`--max-nodes`
+(default 100). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
 full cluster parks these jobs on `QOSGrpNodeLimit` for hours, while
 `preemptable` has every node and no group cap — its price is preemption
 (4 min grace, then cancelled: Clariden runs `JobRequeue=0`), which costs a
@@ -214,18 +215,38 @@ which the next watcher pass resubmits and redoes. A BPB chain already has its
 next link queued, except when a link dies before scoring its first
 checkpoint: the chain's no-progress guard then ends it, and `launch_bpb.sh`
 restarts it (it skips scored cells and cells with a job in flight).
-Pretrain jobs are never moved: they are `--no-requeue` and a preemption costs
-up to a save interval. Nothing is truncated (preemptable allows 24 h), so this
-one is simpler than the debug drainer. Order: conversions, then the final
-checkpoint of a model, then its 20/40/60/80 % points, then the other evals,
-then anything with `bpb` in its name — the
-fraction read from the size's own schedule, so it means the same at every
-rung. Unlike the other two it does not exit when the queue empties; it keeps
-moving what later watcher passes submit, until you kill it.
+Data builds are **not** moved (2026-09-20): the first six put there were
+cancelled by the system 16 s after starting, before reaching the line that
+queues their successor, and six chains died. A build asks for 32 CPUs and
+`normal`, being `OverSubscribe=EXCLUSIVE`, has always given it a whole node
+anyway; `preemptable` is `FORCE:1` and really did pack all six onto one node
+beside a stranger's job. `scontrol` cannot add `--exclusive` to a queued job,
+so builds belong on `preemptable` only by being *submitted* there —
+`BUILD_PARTITION=preemptable ./launch_builds.sh`, which asks for the node and
+queues two segments (../pretrain/README.md).
+
+Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
+only when they carry `--requeue`**, which is what
+`launch_trainings.py --partition preemptable` adds: the wrapper then traps
+Slurm's SIGTERM and forwards SIGUSR2, so Megatron checkpoints inside the 4 min
+grace and the requeued job resumes from that save. The drainer asks the
+controller per job (`squeue -O Requeue`) and skips the ones submitted without
+it — for those a preemption really would cost a save interval on 21 nodes.
+
+Nothing is truncated (preemptable allows 24 h), so this one is simpler than
+the debug drainer. It cannot *raise* a walltime either — a limit can only be
+lowered after submission — so a job moved here keeps the 12 h `normal` wall;
+submit to `preemptable` up front (`--partition preemptable`,
+`--partition preemptable`) to get the full 24. Order: builds, conversions,
+the final checkpoint of a model, the 3B / 1.7B-deep / 1B-deep pretrainings,
+the 20/40/60/80 % points, the other evals, then anything with `bpb` in its
+name — the fraction read from the size's own schedule, so it means the same at
+every rung. Unlike the other two it does not exit when the queue empties; it
+keeps moving what later watcher passes submit, until you kill it.
 
 ```bash
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --dry-run
-bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --max-nodes 50
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --max-nodes 100
 ```
 
 ## Bits-per-byte: the second way to evaluate a model
