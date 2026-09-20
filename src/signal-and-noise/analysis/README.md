@@ -44,8 +44,11 @@ and rq06 (RQ5); their figures are copied to `documents/paper/figures/` as `rq1.p
 - **Conventions.** Tasks are benchmark tasks per language plus per-language bits
   per byte (`bpb_*`) and the training loss. The rq00 gate (score above
   `1/n_options + 0.05`) sets at-chance SNR cells to NaN everywhere downstream.
+  Every number here follows [RULES.md](RULES.md), the 14 analysis-wide rules
+  `check_rules.py` verifies before each commit.
   Decision accuracy is `snr.metrics.decision_acc_fast`, the upstream kernel with
-  the documented tie fix. Noise is the std over the last 5 checkpoints unless a
+  the documented tie fix. Noise is the std over the noise window — the k/20
+  points in the last 20 % of a run, 80/85/90/95/100 % (rule 4) — unless a
   script says seed noise. Figures use the one palette in `style.py`.
 - **Reference size.** 1.7B (`snr.target_size`); the proxies are 175M–1B (the 90M rung
   trains but is dropped at load). Cells with no information yet (L15 at 1.7B)
@@ -161,7 +164,7 @@ files under their own directory.
   rq09 (rq08 computes its own SNR per subset).
 - **Setup.** SNR per (task, size bucket) on `predictivity` and the seed pools:
   signal = dispersion across the design variants at the size, noise = std over
-  the last 5 checkpoints. Effect-vs-noise on `predictivity_all`, where seed
+  the noise window (the k/20 points in the last 20 %: 80/85/90/95/100 %). Effect-vs-noise on `predictivity_all`, where seed
   replicates exist.
 - **Scripts.** `run_apertus_snr_variants.py` (the table), `effect_vs_noise.py`
   (|Δ| of each intervention over seed and checkpoint noise),

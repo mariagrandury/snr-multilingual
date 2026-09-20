@@ -62,7 +62,7 @@ def main(pool: str) -> None:
     long = long[long["log_snr"].notna() | long["gated"]]
     kw = dict(value="log_snr", vmin=-1.0, vmax=2.0, fmt="{:.1f}", cbar=f"log10 SNR ({VARIANT})",
               note=f"cell = log10 of SNR ({VARIANT}): spread of the final scores across the size's design variants over the "
-                   "checkpoint-to-checkpoint noise over the 80/90/100 % checkpoints; 0 = signal equals noise, 1 = ten times the noise")
+                   "checkpoint-to-checkpoint noise over the 80/85/90/95/100 % checkpoints; 0 = signal equals noise, 1 = ten times the noise")
     G.panel_grid(long, out_dir / "snr_by_benchmark.png", by="family", row="size", row_order=sizes, col="language",
                  ncols=1, cell_w=0.3, counts=False, xlabel="language", ylabel="model size",
                  title="Signal-to-noise ratio per benchmark", **kw)
@@ -100,7 +100,7 @@ def main(pool: str) -> None:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/90/100 % checkpoints (rule 4).",
+        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/85/90/95/100 % checkpoints (rule 4).",
         f"![rq03 in one figure]({stage}/{pool}/highlights.png)",
         f"![SNR per benchmark]({stage}/{pool}/snr_by_benchmark.png)",
         f"![SNR per language]({stage}/{pool}/snr_by_language.png)",

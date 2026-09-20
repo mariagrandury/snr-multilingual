@@ -17,7 +17,7 @@ them) and each aggregator returns (signal, noise, snr), stored as
            (`data_scores_last_n`)
 
 The noise window is analysis/RULES.md rule 4: `utils.noise_checkpoints`, the
-shared tenths in the last NOISE_WINDOW (20 %) of each run, 80 / 90 / 100 %,
+k/20 points in the last NOISE_WINDOW (20 %) of each run, 80 / 85 / 90 / 95 / 100 %,
 the same rows for BPB (also scored on the twentieths, which are left out) and
 for benchmarks. Before this the window was "the last five checkpoints of
 whatever grid the task has", 80-100 % for BPB and 60-100 % for benchmarks.
@@ -102,7 +102,7 @@ def per_model_inputs(df, task, size):
     its run, as `utils.ladder_frame` defines it) is added when missing.
 
     The noise window is the one of RULES.md rule 4, `utils.noise_checkpoints`:
-    the shared tenths in the last NOISE_WINDOW (20 %) of the run, 80 / 90 /
+    the k/20 points in the last NOISE_WINDOW (20 %) of the run, 80 / 85 / 90 / 95 /
     100 %, the same rows for BPB and benchmarks.
       step_noise         = per-model std (ddof 0) over the window checkpoints
       data_scores        = per-model final-checkpoint score
@@ -242,7 +242,7 @@ def run(pool: str, out_dir: Path):
     )
     print(f"  Buckets: {pool_buckets}")
     print(f"  Pool models per bucket: {pool_n_models}")
-    print(f"  Noise window: the shared tenths in the last {NOISE_WINDOW:.0%} of each run (rule 4), "
+    print(f"  Noise window: the k/20 points in the last {NOISE_WINDOW:.0%} of each run (rule 4), "
           f"every kind of measurement; {sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN outside benchmarks")
 
     write_variants_definitions(out_dir)

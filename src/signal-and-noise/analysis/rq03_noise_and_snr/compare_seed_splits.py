@@ -11,7 +11,7 @@ seed 1904 on the same cells, as the "test" split) and asks:
      Pearson r values between the two splits?
 
 The per-language r is rq04's ``_per_language_pearson_table``: a language needs
-MIN_LANG_TASKS (5) distinct tasks with a value, fewer is NaN (rule 8), and
+MIN_LANG_TASKS (3) distinct tasks with a value, fewer is NaN (rule 8), and
 ``multi`` / ``??`` are never a language (rule 7, `utils.languages_only`). The
 two pools must hold the same cells (size × L × arch × scheme); the script
 checks that on the loaded pools and says so in the README block.

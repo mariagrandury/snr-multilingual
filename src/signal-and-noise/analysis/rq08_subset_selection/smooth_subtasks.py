@@ -110,7 +110,7 @@ def _per_model_noise_window(scores_df: pd.DataFrame) -> list[np.ndarray]:
     name per tuple) with external reference models (one model name per
     HF release)."""
     scores_df = scores_df.sort_values("step").copy()
-    # rule 4: the shared tenths in the last NOISE_WINDOW of each run, as every other noise estimate
+    # rule 4: the k/20 points in the last NOISE_WINDOW of each run, as every other noise estimate
     scores_df["frac"] = scores_df["step"] / scores_df.groupby("model")["step"].transform("max")
     return [
         np.asarray(lst, dtype=float)

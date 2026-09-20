@@ -27,7 +27,8 @@ replicates enter the signal pool as separate models), and the seed holdout
 `predictivity_seeds_train` (seeds 64/313 at the ×3 cells) → `_test` (seed 1904
 on the same cells). The signal population at a size is every design variant
 trained there (language setting × depth × scheme); the noise is the
-late-checkpoint std over the last 5 checkpoints on the shared grid (rq03
+late-checkpoint std over the noise window, the k/20 points in the last 20 %
+of the run — 80/85/90/95/100 % (rule 4) — (rq03
 carries the seed-replicate noise). DA has two flavours: **DA-size**
 (small→1.7B ranking, plus every other bucket pair) and **DA-ckpt**
 (20/40/60/80 % → final within a size). The 22 variants are grouped into

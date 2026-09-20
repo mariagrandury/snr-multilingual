@@ -66,7 +66,7 @@ descriptive.
 Rule 9's L2 exception exists because the L2 builds are capped by the SOURCE,
 not the budget: the swiss-ai filtered subset holds 71.8B tokens of Russian
 (scheme A), 59.9B of Chinese and 23.4B of Spanish, against the 50 × N tokens
-of second language a run draws. What a cell repeats is set by the BUILD it
+of second language a run draws (the exact budget, `models.json` `stages.pretraining.tokens` / 2, not 50 x the label size). What a cell repeats is set by the BUILD it
 reads, which is smaller still — A 72.8B, ZH 52.0B, ES 23.9B — and every rung
 of a scheme reads the same build file, so these are the epoch counts the
 trained models actually have:
@@ -74,8 +74,8 @@ trained models actually have:
 | size | draw | Russian (A) | Chinese (ZH) | Spanish (ES) |
 | --- | ---: | ---: | ---: | ---: |
 | 175M | 8.8B | 0.12 | 0.17 | 0.37 |
-| 350M | 17.5B | 0.24 | 0.34 | 0.73 |
-| 600M | 30.0B | 0.41 | 0.58 | 1.26 |
+| 350M | 17.2B | 0.24 | 0.33 | 0.72 |
+| 600M | 29.7B | 0.41 | 0.57 | 1.25 |
 | 1B | 47.2B | 0.65 | 0.91 | 1.98 |
 | 1.7B | 83.6B | 1.15 | **1.61** | 3.51 |
 

@@ -17,7 +17,7 @@ replicates enter the signal pool as separate models), and the seed holdout
 on the same cells). The signal population at a size is every design variant
 trained there (language setting × depth × scheme); the noise is the
 checkpoint std over the one noise window of rule 4 (`utils.noise_checkpoints`:
-the shared tenths in the last 20 % of the run, 80/90/100 %, the same rows for
+the k/20 points in the last 20 % of the run, 80/85/90/95/100 %, the same rows for
 BPB and benchmarks; `effect_vs_noise.py` below carries the seed-replicate
 noise). DA has two flavours: **DA-size** (small→1.7B ranking, plus every
 other bucket pair) and **DA-ckpt** (10 … 90 % → final within a size). The 22
@@ -36,7 +36,7 @@ tasks cover all three.
 - **Signal and noise per (task, size bucket).** Signal pool = every model at
   the bucket (`per_model_inputs`); each model's `data_score` is its final
   checkpoint, `step_noise` the std (ddof 0) over the noise window, the
-  shared tenths in the last `noise_window` = 20 % of its run (80/90/100 %,
+  k/20 points in the last `noise_window` = 20 % of its run (80/85/90/95/100 %,
   rule 4 — before 2026-09-20 it was the last five checkpoints of whatever grid
   the task had, 80–100 % for BPB and 60–100 % for benchmarks, which put BPB's
   noise on a narrower window). The 22 aggregators in `snr/snr_variants.py`
@@ -52,7 +52,7 @@ tasks cover all three.
   definitions table writes them under the right name and no figure uses them.)
 - **Effect vs noise.** For every (size, L, task) the intervention's |Δ| is put
   against the seed noise (sample std, n−1, over the seed replicates, where
-  ≥ 2 seeds exist) and the checkpoint noise (std over the same 80/90/100 %
+  ≥ 2 seeds exist) and the checkpoint noise (std over the same 80/85/90/95/100 %
   window of the baseline cell, raw with n−1 and detrended with n−2 — under
   WSD the final window is still descending, so the raw std carries trend).
   Every std divides by its residual degrees of freedom. A ratio near 1 means
@@ -61,7 +61,7 @@ tasks cover all three.
   such a cell is a coin flip whatever its DA (rq05). Cells at chance at their
   size keep their row with no number (rule 1) and are grey in the panels.
 - **Seed holdout.** `compare_seed_splits.py` builds the per-language variant
-  ranking (rq04's Pearson table: at least `min_lang_tasks` = 5 distinct tasks
+  ranking (rq04's Pearson table: at least `min_lang_tasks` = 3 distinct tasks
   per language, rule 8; `multi` is never a language, rule 7) on the replicate
   seeds (64/313 of the ×3 cells) and on seed 1904 of the same cells and writes
   `<train>__vs__<test>/headline_metrics.csv`; agreement is counted over the

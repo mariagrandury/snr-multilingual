@@ -143,7 +143,7 @@ Measurement issues
 ![rq03 highlights](rq03_noise_and_snr/pretraining/predictivity/highlights.png)
 
 How it is computed
-- SNR (`rel_std`) per (task, size) = relative spread of the final scores across the design variants / relative std over the last 5 checkpoints of each variant (the checkpoint noise). Cells the gate filters out are left out.
+- SNR (`rel_std`) per (task, size) = relative spread of the final scores across the design variants / relative std over each variant's noise window, the k/20 points in the last 20 % of its run (80/85/90/95/100 %) (the checkpoint noise). Cells the gate filters out are left out.
 - Left: median log₁₀ SNR per family × size (number = tasks). Middle/right: benchmarks and languages ranked by median log₁₀ SNR at 1.7B.
 
 Key finding

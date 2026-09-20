@@ -135,7 +135,7 @@ def plot_effect_vs_noise(evn: pd.DataFrame, path: Path) -> None:
     fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)\n"
                  f"point = median over the size's (L, task) cells of |Δ final score| over the noise: seed = sample std (n−1) "
                  f"across replicate seeds, ckpt = detrended std (n−2) over the {NOISE_WINDOW:.0%} noise window "
-                 "(80/90/100 %); gated cells left out", y=1.0, fontsize=8)
+                 "(80/85/90/95/100 %); gated cells left out", y=1.0, fontsize=8)
     fig.tight_layout(); S.save(fig, path, dpi=140)
 
 
@@ -148,7 +148,7 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     bullets, rows = [], []
     bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
                    f"of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
-                   f"the shared tenths in the last {NOISE_WINDOW:.0%} of the run (80/90/100 %, the same for BPB and "
+                   f"the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB and "
                    f"benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees "
                    f"of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
                    f"of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.")

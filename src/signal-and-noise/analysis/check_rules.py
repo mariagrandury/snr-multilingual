@@ -33,7 +33,8 @@ _REPO = Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from analysis.utils import LANGUAGE_AGGREGATES, MIN_PAIRS, SHARED_FRACS, _is_parent_task, is_trained  # noqa: E402
+from analysis.utils import (FRAC_TOL, LANGUAGE_AGGREGATES, MIN_PAIRS, NOISE_WINDOW,  # noqa: E402
+                            SHARED_FRACS, _is_parent_task, is_trained)
 
 SIZE_COLS = ("size", "proxy_size", "bucket", "reference", "reference_size", "small", "target")
 # folders allowed to break a rule, by rule number, each with its reason:
@@ -57,8 +58,13 @@ def _exempt(path: Path, rule: int) -> bool:
 def check_csv(path: Path) -> list[str]:
     try:
         df = pd.read_csv(path, low_memory=False)
-    except Exception as e:                       # an LFS pointer, an empty file
-        return [f"unreadable: {e}"][:0]
+    except pd.errors.EmptyDataError:             # a table with no rows is not a violation
+        return []
+    except Exception as e:
+        # An unreadable table is a finding, not silence: without git-lfs smudge
+        # EVERY csv here is a pointer file, and returning [] would let the whole
+        # check pass on a tree it never read.
+        return [f"unreadable ({type(e).__name__}: {e}); is git-lfs smudged?"]
     out = []
     # rule 10
     if any(re.search(r"(^|_)90M(_|$)", c) for c in df.columns):
@@ -85,10 +91,23 @@ def check_csv(path: Path) -> list[str]:
             out.append(f"rule 6: {len(facets)} non-parent tasks, e.g. {facets[:3]}")
     # rule 3
     if "frac" in df.columns:
-        have = set((df["frac"].dropna().astype(float) * 10).round().astype(int) / 10)
+        fr = df["frac"].dropna().astype(float)
+        have = set((fr * 10).round().astype(int) / 10)
         missing = [f for f in SHARED_FRACS if f not in have]
         if missing and len(have) > 1:
             out.append(f"rule 3: frac axis lacks {missing}")
+        # the hazard rule 3 names: a checkpoint axis drawn on the twentieths.
+        # Rounding to tenths hides it, so test the distance to the tenths, and
+        # allow the noise window, where the k/20 points are the rule (rule 4).
+        off = fr[((fr * 10).round() / 10 - fr).abs() > FRAC_TOL]
+        off = off[off < 1 - NOISE_WINDOW - FRAC_TOL]
+        # `*_curves` tables are single-measurement viewers (BPB on its own k/20
+        # save grid, the training loss on its logging interval). Rule 3 governs
+        # the axis a quantity is READ on and where kinds are compared, not how
+        # densely one kind may be drawn against itself.
+        if len(off) and not path.stem.endswith("_curves"):
+            out.append(f"rule 3: {len(off)} rows off the tenths outside the noise "
+                       f"window, e.g. {sorted(set(off.round(3)))[:3]}")
     # rule 2
     if {"task", "L", "scheme"} <= set(df.columns) and not _exempt(path, 2):
         sub = df[["task", "L", "scheme"]].dropna().drop_duplicates()
@@ -107,7 +126,9 @@ def check_wide_pairs(folder: Path) -> list[str]:
             continue
         da = pd.read_csv(da_path, index_col="task"); n = pd.read_csv(n_path, index_col="task")
         common = [c for c in da.columns if c in n.columns]
-        bad = int((da[common].notna() & (n[common].reindex(da.index) < MIN_PAIRS)).sum().sum())
+        n_al = n[common].reindex(da.index)
+        # NaN < MIN_PAIRS is False, so an absent pair count would pass silently
+        bad = int((da[common].notna() & ~(n_al >= MIN_PAIRS)).sum().sum())
         if bad:
             out.append(f"{da_path.relative_to(folder)}: rule 5: {bad} finite DA cells with fewer than {MIN_PAIRS} pairs")
     return out

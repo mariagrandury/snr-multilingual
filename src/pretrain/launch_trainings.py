@@ -234,7 +234,7 @@ DATA_SCHEMES = {
     # tokens of Russian (scheme A's L2), 59.9B of Chinese and 23.4B of Spanish,
     # against the 83.6B a 1.7B draws and the 47.2B a 1B draws. So no L2 build
     # can feed a 1.7B without repeating — scheme A's own L2 build is 72.8B,
-    # not 92B, for this reason, and its 1.7B already repeats 1.16x.
+    # not 92B, for this reason, and its 1.7B already repeats 1.15x.
     # Chinese runs the full ladder (2026-09-20): it is what takes L2 at 1.7B
     # from two families to three — one DA pair to three, the minimum rule 5
     # accepts (analysis/RULES.md). Its build holds 52.0B, not the 59.9B of
