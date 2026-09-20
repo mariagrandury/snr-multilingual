@@ -61,7 +61,8 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
     LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
-    SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name, fineweb_source, job_name,
+    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name,
+    fineweb_source, job_name,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
@@ -189,7 +190,9 @@ def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
     """(exp_name, target_iters) for every cell of one data scheme, in grid
     order. predictivity_cells() already restricts a scheme to the settings and
     rungs it defines, so unlike the old two-scheme version there is nothing to
-    normalise here — a scheme not trained in `arch` simply yields nothing."""
+    normalise here — a scheme not trained in `arch` simply yields nothing, and
+    neither does a rung this arch has no config for (the 3B is deep only, and
+    indexing `configs` with it would raise)."""
     if arch not in DATA_SCHEMES[scheme]["arches"]:
         return []
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
@@ -197,6 +200,7 @@ def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
         (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
          schedule_for(configs[c["size"]])[0])
         for c in predictivity_cells([scheme])
+        if c["size"] in SIZES_BY_ARCH[arch]
     ]
 
 
@@ -766,6 +770,8 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
         rows, tally, node_h = [], Counter(), 0.0
         groups: dict[tuple[str, str], dict] = {}  # (scheme, arch) -> its incomplete runs
         for arch, path in HYPERPARAMS.items():
+            if size not in SIZES_BY_ARCH[arch]:   # the 3B rung is deep only
+                continue
             target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
             ms = ITER_MS[arch][size]
             per_job = JOB_TRAIN_SEC * 1000 // ms
