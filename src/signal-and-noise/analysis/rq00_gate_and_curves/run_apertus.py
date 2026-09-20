@@ -249,7 +249,7 @@ def _plot_grouped_curves(df, df_ext, tasks, out_dir, seed):
     return n_bench, n_lang
 
 
-def run(pool: str, out_dir: Path, seed: int | None = None):
+def run(pool: str, out_dir: Path, seed: int | None = None, grids: bool = True):
     if seed is None:
         seed = _seed_of(pool)
     df = build_snr_pool(pool)
@@ -279,10 +279,18 @@ def run(pool: str, out_dir: Path, seed: int | None = None):
     print(f"  Wrote signal CSV ({len(sig_df)} tasks). Top-{TOP_N} families by "
           f"Signal: {list(fam_rank.head(TOP_N).index)}")
 
-    plot_tasks = [t for t in tasks if benchmark_family(t) != "loss"]
-    n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed)
-    print(f"Wrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
-    print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
+    # The grids are a viewer: ~140 figures that no other script reads, and
+    # about an hour of a three-hour pipeline (measured 2026-09-18: the 122
+    # per-language grids alone ran 06:15 to 07:13). Everything above — the
+    # Signal CSV every RQ ranks by, and the README blocks — is seconds, so a
+    # routine refresh skips the drawing and the previous figures stay on disk.
+    if grids:
+        plot_tasks = [t for t in tasks if benchmark_family(t) != "loss"]
+        n_bench, n_lang = _plot_grouped_curves(df, df_ext, plot_tasks, out_dir, seed)
+        print(f"Wrote {n_bench} per-benchmark grids → {out_dir / 'per_benchmark'}")
+        print(f"Wrote {n_lang} per-language grids → {out_dir / 'per_language'}")
+    else:
+        print("Skipped the per-benchmark and per-language grids (--no-grids)")
 
     # Auto-refresh the acc_vs_flops README (canonical pool only — no-op else).
     generate_readme(pool, out_dir)
@@ -373,6 +381,12 @@ def main():
              "(default: last seed listed in the pool).",
     )
     p.add_argument(
+        "--no-grids", action="store_true",
+        help="Write the Signal CSV and the README blocks but do not redraw the "
+             "~140 per-benchmark and per-language grids (about an hour). The "
+             "figures already on disk are left untouched.",
+    )
+    p.add_argument(
         "--out-subdir", default=None,
         help="Subdir under results/<stage>/acc_vs_flops/ (default: <pool>).",
     )
@@ -383,7 +397,7 @@ def main():
     stage = load_pools()[args.pool].get("stage", "pretraining")
     run(pool=args.pool,
         out_dir=GATE_AND_CURVES / stage / (args.out_subdir or args.pool),
-        seed=args.seed)
+        seed=args.seed, grids=not args.no_grids)
 
 
 if __name__ == "__main__":

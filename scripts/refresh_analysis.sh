@@ -10,6 +10,19 @@
 #   bash scripts/refresh_analysis.sh              # fetch the report, then rebuild
 #   bash scripts/refresh_analysis.sh --no-fetch   # rebuild from the local copy
 #   bash scripts/refresh_analysis.sh --no-deck    # skip the slidev build
+#   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~140
+#                                                 # acc-vs-FLOPs grids (+1 h)
+#
+# Two things this cannot guess, both of which silently produce stale numbers:
+#
+#   FORCE=1 — the fetched report carries its COMMIT time, so a report
+#   published at noon and an analysis re-run that evening leave every cached
+#   table "newer than the report" and the pipeline reuses them. Pass FORCE=1
+#   whenever the report was regenerated since the last analysis run, which is
+#   the normal case; without it only the figures downstream are redrawn.
+#
+#   The run takes hours, so it belongs in a Slurm allocation, not on the
+#   login node (src/pretrain/CLAUDE.md).
 #
 # Prose is the one thing it cannot fix. The last step writes
 # documents/ladder-facts.json and prints every headline number that moved, so
@@ -22,10 +35,12 @@ PY=${PY:-python3}
 # so git sees no diff (PNGs are already deterministic).
 export SOURCE_DATE_EPOCH=0
 FETCH=1; DECK=1
+export CURVES=${CURVES:-0}
 for a in "$@"; do
   case "$a" in
     --no-fetch) FETCH=0 ;;
     --no-deck)  DECK=0 ;;
+    --curves)   CURVES=1 ;;
     *) echo "unknown flag: $a" >&2; exit 2 ;;
   esac
 done
@@ -53,7 +68,7 @@ echo "report: $(wc -l < "$LADDER") rows, $(date -r "$LADDER" '+%Y-%m-%d %H:%M')"
 # 2. The analysis. Its own cache re-runs whatever is older than the report, so
 #    a refreshed report invalidates every table below it.
 step "analysis pipeline"
-( cd src/signal-and-noise && HF_HUB_OFFLINE=1 bash run_all_predictivity.sh ) \
+( cd src/signal-and-noise && HF_HUB_OFFLINE=1 CURVES=$CURVES bash run_all_predictivity.sh ) \
   || FAILED+=("run_all_predictivity.sh")
 
 # 2b. The paper's figures: every one is written by an rqNN script above and

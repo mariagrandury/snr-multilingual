@@ -164,7 +164,7 @@ ND_SIZES = {"1B", "1.7B", "3B"}  # the 8xH100 pool; everything else runs on the
 
 # --- Grid definition (edit these to change the sweep) ------------------------
 
-LANG_SETTINGS = [1, 2, 8, 15, 30, 50, 100]
+LANG_SETTINGS = [1, 2, 8, 15, 30, 50]   # L100 dropped 2026-09-20 (plan/l100_data_mixture.md)
 EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
 
 # The ladder, small -> large. The order is load-bearing: a scheme's
@@ -203,19 +203,16 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15]
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
 #   arches    architecture families the scheme is trained in
 #
-# L=100 exists ONLY as AT3, deliberately. At T=1 the 99-language allocation is
-# so skewed that the median language gets 90M tokens and the smallest 3.5M
-# (measured on the filtered subset the builds read — plan, "Re-measured") —
-# most per-language BPB numbers would be measuring a model that never saw the
-# language. Flattening lifts the median to 373M and the floor to 14.5M, but
-# the tail is data-limited: T=2 and T=3 reach the same floor, and at T=3 the
-# L100 build realizes 75.4B, short of the 83.6B a 1.7B draws, where T=2 still
-# realizes 85.9B. The plan therefore recommends T=2; `temp` here is still 3
-# (open decision), and the label and subdir spell the temperature, so a
-# switch renames the scheme — free only while nothing is built or trained as
-# AT3. L=50 is then built BOTH ways: that pair calibrates the temperature
-# change against the T=1 curve running L2..L50, without which L100 could not
-# be compared with any other setting.
+# L=100 is not in the grid (dropped 2026-09-20, plan/l100_data_mixture.md;
+# it was planned as AT3 only). At T=1 the 99-language allocation gives the
+# median language 90M tokens and the smallest 3.5M; flattening (T=3) lifts
+# that to 373M / 14.5M but the tail is data-limited, so the T=3 build
+# realizes 75.4B and the 1.7B would repeat it (1.11 epochs). On the L50 pair,
+# tripling a tail language's tokens moved its share of above-chance tasks by
+# ~4 points, so neither temperature makes the L100 tail measurable on
+# benchmarks. The ladder ends at L50; the temperature intervention is read
+# at L50 (built both ways, calibrating T=3 against the T=1 curve) and
+# replicated at L15 and L30 where nothing is starved.
 DATA_SCHEMES = {
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
               max_size={}, temp=1.0, sets="A", seeds="grid",
@@ -223,9 +220,12 @@ DATA_SCHEMES = {
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
     # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
     # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
-    "AT3": dict(label="-AT3", subdir="AT3", langs={50, 100},
-                max_size={}, temp=3.0, sets="A", seeds="single",
-                arches=("deep", "shallow")),
+    # L15 and L30 (2026-09-20, plan/l100_data_mixture.md): the temperature
+    # pair replicated where no language is starved (T=1 floors 1.2B / 343M
+    # tokens) — deep only, 1.7B reference (no 3B), launched 1B and 1.7B first.
+    "AT3": dict(label="-AT3", subdir="AT3", langs={15, 30, 50},
+                max_size={15: "1.7B", 30: "1.7B"}, temp=3.0, sets="A", seeds="single",
+                arches=("deep", "shallow"), arches_by_L={15: ("deep",), 30: ("deep",)}),
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
               max_size={}, temp=1.0, sets="B", seeds="grid",
               arches=("deep", "shallow")),
@@ -294,13 +294,16 @@ SIZES_BY_ARCH = {arch: tuple(json.loads(p.read_text())["configs"])
                  for arch, p in HYPERPARAMS.items()}
 
 
-def arches_for(scheme: str, size: str) -> tuple[str, ...]:
-    """Architectures a scheme trains at one rung: the scheme's arches, minus
-    any whose hyperparams file has no config for the size. The 3B rung is
-    deep only (hyperparams_shallow.json stops at 1.7B), and every tool that
+def arches_for(scheme: str, size: str, L: int) -> tuple[str, ...]:
+    """Architectures a scheme trains at one cell: the scheme's arches (or its
+    `arches_by_L` override at that setting — AT3 is deep only at L15/L30),
+    minus any whose hyperparams file has no config for the size (the 3B rung
+    is deep only: hyperparams_shallow.json stops at 1.7B). Every tool that
     fans a cell out over architectures must read this rather than the
-    scheme's list, or the shallow ladder plans a 3B it cannot configure."""
-    return tuple(a for a in DATA_SCHEMES[scheme]["arches"] if size in SIZES_BY_ARCH[a])
+    scheme's list, or it plans cells the grid never trains."""
+    cfg = DATA_SCHEMES[scheme]
+    return tuple(a for a in cfg.get("arches_by_L", {}).get(L, cfg["arches"])
+                 if size in SIZES_BY_ARCH[a])
 
 
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
@@ -1057,7 +1060,7 @@ def main() -> None:
         return
     cells = [
         c for c in predictivity_cells([args.scheme])
-        if args.arch in arches_for(c["scheme"], c["size"])
+        if args.arch in arches_for(c["scheme"], c["size"], c["L"])
         and (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
         and (args.seed is None or c["seed"] == args.seed)

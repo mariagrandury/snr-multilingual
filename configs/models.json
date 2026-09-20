@@ -19144,6 +19144,750 @@
           }
         }
       }
+    },
+    "lm-90M-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "n_non_emb": 92897280,
+      "d_model": 768,
+      "vocab_size": 131072,
+      "hyperparams_key": "90M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-90M-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-90M-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              225,
+              450,
+              675,
+              900,
+              1125,
+              1350,
+              1575,
+              1800,
+              2025,
+              2250,
+              2475,
+              2700,
+              2925,
+              3150,
+              3375,
+              3600,
+              3825,
+              4050,
+              4275,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "lm-90M-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "90M",
+      "params": 193560576,
+      "n_non_emb": 92897280,
+      "d_model": 768,
+      "vocab_size": 131072,
+      "hyperparams_key": "90M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-90M-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-90M-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 9289728000,
+          "num_iters": 4500,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 4500,
+            "all": [
+              225,
+              450,
+              675,
+              900,
+              1125,
+              1350,
+              1575,
+              1800,
+              2025,
+              2250,
+              2475,
+              2700,
+              2925,
+              3150,
+              3375,
+              3600,
+              3825,
+              4050,
+              4275,
+              4500
+            ]
+          }
+        }
+      }
+    },
+    "lm-175M-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "n_non_emb": 176160768,
+      "d_model": 1024,
+      "vocab_size": 131072,
+      "hyperparams_key": "175M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-175M-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17629839360,
+          "num_iters": 8540,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8540,
+            "all": [
+              427,
+              854,
+              1281,
+              1708,
+              2135,
+              2562,
+              2989,
+              3416,
+              3843,
+              4270,
+              4697,
+              5124,
+              5551,
+              5978,
+              6405,
+              6832,
+              7259,
+              7686,
+              8113,
+              8540
+            ]
+          }
+        }
+      }
+    },
+    "lm-175M-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "175M",
+      "params": 310378496,
+      "n_non_emb": 176160768,
+      "d_model": 1024,
+      "vocab_size": 131072,
+      "hyperparams_key": "175M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-175M-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-175M-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 17629839360,
+          "num_iters": 8540,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 8540,
+            "all": [
+              427,
+              854,
+              1281,
+              1708,
+              2135,
+              2562,
+              2989,
+              3416,
+              3843,
+              4270,
+              4697,
+              5124,
+              5551,
+              5978,
+              6405,
+              6832,
+              7259,
+              7686,
+              8113,
+              8540
+            ]
+          }
+        }
+      }
+    },
+    "lm-350M-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "n_non_emb": 344064000,
+      "d_model": 1280,
+      "vocab_size": 131072,
+      "hyperparams_key": "350M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-350M-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-350M-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34392637440,
+          "num_iters": 16660,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16660,
+            "all": [
+              833,
+              1666,
+              2499,
+              3332,
+              4165,
+              4998,
+              5831,
+              6664,
+              7497,
+              8330,
+              9163,
+              9996,
+              10829,
+              11662,
+              12495,
+              13328,
+              14161,
+              14994,
+              15827,
+              16660
+            ]
+          }
+        }
+      }
+    },
+    "lm-350M-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "350M",
+      "params": 511836160,
+      "n_non_emb": 344064000,
+      "d_model": 1280,
+      "vocab_size": 131072,
+      "hyperparams_key": "350M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-350M-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-350M-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 34392637440,
+          "num_iters": 16660,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 16660,
+            "all": [
+              833,
+              1666,
+              2499,
+              3332,
+              4165,
+              4998,
+              5831,
+              6664,
+              7497,
+              8330,
+              9163,
+              9996,
+              10829,
+              11662,
+              12495,
+              13328,
+              14161,
+              14994,
+              15827,
+              16660
+            ]
+          }
+        }
+      }
+    },
+    "lm-600M-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "n_non_emb": 594542592,
+      "d_model": 1536,
+      "vocab_size": 131072,
+      "hyperparams_key": "600M",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-600M-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-600M-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              1440,
+              2880,
+              4320,
+              5760,
+              7200,
+              8640,
+              10080,
+              11520,
+              12960,
+              14400,
+              15840,
+              17280,
+              18720,
+              20160,
+              21600,
+              23040,
+              24480,
+              25920,
+              27360,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "lm-600M-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "600M",
+      "params": 795869184,
+      "n_non_emb": 594542592,
+      "d_model": 1536,
+      "vocab_size": 131072,
+      "hyperparams_key": "600M",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-600M-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-600M-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 59454259200,
+          "num_iters": 28800,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 28800,
+            "all": [
+              1440,
+              2880,
+              4320,
+              5760,
+              7200,
+              8640,
+              10080,
+              11520,
+              12960,
+              14400,
+              15840,
+              17280,
+              18720,
+              20160,
+              21600,
+              23040,
+              24480,
+              25920,
+              27360,
+              28800
+            ]
+          }
+        }
+      }
+    },
+    "lm-1B-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "n_non_emb": 944111616,
+      "d_model": 1792,
+      "vocab_size": 131072,
+      "hyperparams_key": "1B",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-1B-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-1B-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94383636480,
+          "num_iters": 45720,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45720,
+            "all": [
+              1143,
+              2286,
+              3429,
+              4572,
+              5715,
+              6858,
+              8001,
+              9144,
+              10287,
+              11430,
+              12573,
+              13716,
+              14859,
+              16002,
+              17145,
+              18288,
+              19431,
+              20574,
+              21717,
+              22860,
+              24003,
+              25146,
+              26289,
+              27432,
+              28575,
+              29718,
+              30861,
+              32004,
+              33147,
+              34290,
+              35433,
+              36576,
+              37719,
+              38862,
+              40005,
+              41148,
+              42291,
+              43434,
+              44577,
+              45720
+            ]
+          }
+        }
+      }
+    },
+    "lm-1B-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "1B",
+      "params": 1178992640,
+      "n_non_emb": 944111616,
+      "d_model": 1792,
+      "vocab_size": 131072,
+      "hyperparams_key": "1B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-1B-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-1B-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 94383636480,
+          "num_iters": 45720,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 45720,
+            "all": [
+              1143,
+              2286,
+              3429,
+              4572,
+              5715,
+              6858,
+              8001,
+              9144,
+              10287,
+              11430,
+              12573,
+              13716,
+              14859,
+              16002,
+              17145,
+              18288,
+              19431,
+              20574,
+              21717,
+              22860,
+              24003,
+              25146,
+              26289,
+              27432,
+              28575,
+              29718,
+              30861,
+              32004,
+              33147,
+              34290,
+              35433,
+              36576,
+              37719,
+              38862,
+              40005,
+              41148,
+              42291,
+              43434,
+              44577,
+              45720
+            ]
+          }
+        }
+      }
+    },
+    "lm-1.7B-L15-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L15-AT3-deep-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "n_non_emb": 1672151040,
+      "d_model": 2304,
+      "vocab_size": 131072,
+      "hyperparams_key": "1.7B",
+      "L": 15,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-1.7B-L15-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-1.7B-L15-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              1350,
+              2700,
+              4050,
+              5400,
+              6750,
+              8100,
+              9450,
+              10800,
+              12150,
+              13500,
+              14850,
+              16200,
+              17550,
+              18900,
+              20250,
+              21600,
+              22950,
+              24300,
+              25650,
+              27000,
+              28350,
+              29700,
+              31050,
+              32400,
+              33750,
+              35100,
+              36450,
+              37800,
+              39150,
+              40500,
+              41850,
+              43200,
+              44550,
+              45900,
+              47250,
+              48600,
+              49950,
+              51300,
+              52650,
+              54000,
+              55350,
+              56700,
+              58050,
+              59400,
+              60750,
+              62100,
+              63450,
+              64800,
+              66150,
+              67500,
+              68850,
+              70200,
+              71550,
+              72900,
+              74250,
+              75600,
+              76950,
+              78300,
+              79650,
+              81000
+            ]
+          }
+        }
+      }
+    },
+    "lm-1.7B-L30-AT3-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L30-AT3-deep-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "n_non_emb": 1672151040,
+      "d_model": 2304,
+      "vocab_size": 131072,
+      "hyperparams_key": "1.7B",
+      "L": 30,
+      "arch": "deep",
+      "scheme": "AT3",
+      "temperature": 3.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-1.7B-L30-AT3-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-1.7B-L30-AT3-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              1350,
+              2700,
+              4050,
+              5400,
+              6750,
+              8100,
+              9450,
+              10800,
+              12150,
+              13500,
+              14850,
+              16200,
+              17550,
+              18900,
+              20250,
+              21600,
+              22950,
+              24300,
+              25650,
+              27000,
+              28350,
+              29700,
+              31050,
+              32400,
+              33750,
+              35100,
+              36450,
+              37800,
+              39150,
+              40500,
+              41850,
+              43200,
+              44550,
+              45900,
+              47250,
+              48600,
+              49950,
+              51300,
+              52650,
+              54000,
+              55350,
+              56700,
+              58050,
+              59400,
+              60750,
+              62100,
+              63450,
+              64800,
+              66150,
+              67500,
+              68850,
+              70200,
+              71550,
+              72900,
+              74250,
+              75600,
+              76950,
+              78300,
+              79650,
+              81000
+            ]
+          }
+        }
+      }
     }
   },
   "pools": {

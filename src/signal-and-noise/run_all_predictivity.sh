@@ -7,7 +7,9 @@
 # ladder_report.csv to use a local copy (the cluster's capstor copy, a fixture).
 #
 # Idempotent: the per-task DA and SNR tables are computed once per pool and
-# reused, until the ladder report is newer than them (FORCE=1 recomputes them). Output layout:
+# reused, until the ladder report is newer than them (FORCE=1 recomputes them).
+# CURVES=1 also redraws rq00's ~140 acc-vs-FLOPs grids, which nothing reads
+# and which cost about an hour; the default leaves the ones on disk. Output layout:
 # analysis/<rqNN_name>/pretraining/<pool>/
 #
 #   A. The above-random gate (rq00), then DA (rq02, the truth) and the 22 SNR
@@ -38,8 +40,11 @@ FAILED=()
 # the ×3 cells split by seed.
 POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predictivity)
 
-run() { echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
-       [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*"); }
+# Per-step wall time, so the next person can see where the hours go instead
+# of inferring it from output timestamps.
+run() { local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
+       [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*")
+       printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${1##*/}"; }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
 # The ladder report is the only input, so a cached table older than it was built
 # from data we no longer have. Reusing it lets a whole run finish on last
@@ -48,6 +53,12 @@ LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_di
 # FORCE=1 recomputes the cached tables even when the report is not newer — after
 # a change to the kernel, the gate or the loader, which the mtime cannot see.
 fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
+# The acc-vs-FLOPs grids (rq00) are ~140 figures nothing else reads and about
+# an hour of this script; CURVES=1 redraws them. Every table, CSV and README
+# block is written either way, so the default is a complete refresh of the
+# numbers with a stale set of viewer figures.
+CURVES=${CURVES:-0}
+GRIDS=(--no-grids); [ "$CURVES" = 1 ] && GRIDS=()
 
 echo "############################## PASS A — gate, DA, SNR compute ##############################"
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
@@ -98,6 +109,7 @@ echo "############################## PASS D — ladder-frame reads, subsets, cur
 run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
 run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
 run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
@@ -109,7 +121,7 @@ run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
 run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
-run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity
+run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
@@ -118,6 +130,8 @@ run $PY analysis/rq00_task_reformulation/compare.py
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
 # cross-task predictability: every parent task as the proxy for every other one (DA-size and DA-ckpt level maps)
 run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
+# the paper's RQ2 figure: DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
+run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity

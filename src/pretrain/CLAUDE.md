@@ -66,16 +66,17 @@ so a cell's scheme *is* its data and two schemes can never collide in a
 checkpoint dir, a W&B run id or a models.json key (which keeps the key
 `scheme`, now holding the scheme name, plus a `temperature` field).
 
-**L=100 exists ONLY flattened (AT3)**: at T=1, measured on the filtered
-subset the builds read, the median of the 99 languages gets 90M tokens and
-the smallest 3.5M, so most per-language BPB would measure a language the
-model never saw; flattening lifts the median to 373M (floor 14.5M —
-data-limited, identical at T=2 and T=3). The plan's re-measured table
-recommends T=2: at T=3 the L100 build realizes 75.4B, under the 83.6B a 1.7B
-draws. The registry still codes T=3 and the name label / subdir spell it, so
-a switch renames the scheme — free only while nothing is built or trained as
-AT3. L50 is built both ways so the temperature change is calibrated against
-the T=1 curve. AT3 runs the whole ladder at both settings: a 92B L50 build at
+**L=100 is not trained** (planned as AT3 only, dropped 2026-09-20 —
+`plan/l100_data_mixture.md`): at T=1, measured on the filtered subset the
+builds read, the median of the 99 languages gets 90M tokens and the smallest
+3.5M; flattening lifts that to 373M / 14.5M but the tail is data-limited, so
+the T=3 build realizes 75.4B, under the 83.6B a 1.7B draws (1.11 epochs).
+On the L50 pair, tripling a tail language's tokens moved its share of
+above-chance tasks by ~4 points, so neither temperature makes the L100 tail
+measurable on benchmarks. The ladder ends at L50. L50 is built both ways so
+the temperature change is calibrated against the T=1 curve, and AT3 adds
+L15 and L30 (deep only, 1B and 1.7B launched first) where no language is
+starved (T=1 floors 1.2B and 343M tokens). AT3 runs the whole ladder at L50: a 92B L50 build at
 T=3 realizes 87.1B on the filtered subset, enough for the 83.6B a 1.7B draws
 (0.96 epochs). ZH/ES stop at the 1B rung — no L2 source can feed a 1.7B — so
 their reference is 1B.

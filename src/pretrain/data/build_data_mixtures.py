@@ -344,7 +344,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # A scheme only builds the settings it defines: AT3 is L50 and L100, ZH
+    # A scheme only builds the settings it defines: AT3 is L15, L30 and L50, ZH
     # and ES are L2 alone. Asking for one it does not define is a mistake worth
     # reporting — silently building it would put a file in the scheme's
     # directory that no cell will ever read.

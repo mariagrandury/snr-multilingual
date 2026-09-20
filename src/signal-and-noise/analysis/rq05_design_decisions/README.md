@@ -235,6 +235,10 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
   `facts.json` — the paper's RQ4 figure and the numbers it quotes.
 - `…/rq2_decisions.csv`, `rq2_early_small.csv`, `rq2_early_small.png/.pdf`,
   `early_decision_facts.json` — the paper's RQ2 figure (`early_decision.py`).
+- `pretraining/<pool>/transformation_da.csv`, `transformation_da.png` — the four
+  transformations (language count, temperature, depth, language lists) on one
+  gated item set, so their predictability can be compared (`transformations.py`;
+  the block "Transformations on one item set" below).
 - `…/intervention_da.png`.
 
 <!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
@@ -260,3 +264,28 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 ![Early and small per language](pretraining/predictivity_all/intervention_da_by_language_early.png)
 <!-- END auto:panels -->
+
+<!-- BEGIN auto:transformations (transformations.py --pool predictivity_all) -->
+## Transformations on one item set
+
+Mean decision accuracy over each transformation's pairs, on the items every transformation decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); `transformation_da.csv` has every pair. Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool predictivity_all`.
+
+**benchmarks** (rows: transformation; columns: proxy size; mean over pairs, shared items):
+
+| transformation | pairs (with data) | items | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|
+| depth (deep vs shallow) | 6 (4) | 92 | 0.58 | 0.63 | 0.47 | 0.58 |
+| language count (L vs next L) | 5 (5) | 94 | 0.71 | 0.74 | 0.64 | 0.58 |
+| language lists (A vs B) | 3 (3) | 92 | 0.58 | 0.60 | 0.60 | 0.52 |
+| temperature (T=1 vs T=3) | 1 (1) | 94 | 0.51 | 0.70 | 0.77 | 0.67 |
+
+**per-language BPB (100 validation languages)** (rows: transformation; columns: proxy size; mean over pairs, shared items):
+
+| transformation | pairs (with data) | items | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|
+| depth (deep vs shallow) | 6 (1) | 100 | 0.82 | 0.53 | 0.67 |  |
+| language count (L vs next L) | 5 (2) | 100 | 0.82 | 0.87 | 0.92 | 0.85 |
+| language lists (A vs B) | 3 (3) | 100 | 0.57 | 0.76 | 0.82 | 0.75 |
+
+![Transformations](pretraining/predictivity_all/transformation_da.png)
+<!-- END auto:transformations -->

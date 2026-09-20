@@ -77,9 +77,9 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Axis | Values |
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
-| Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
+| Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **58 runs** at one intervention level (scheme A, deep — the plan grid).
@@ -100,15 +100,17 @@ axis, one of the five entries of `DATA_SCHEMES` in
 | `--scheme` | What it changes | Where it applies |
 | ---------- | --------------- | ---------------- |
 | `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
-| `AT3` | the same lists at T=3 — the temperature intervention, and the only scheme that has L=100 | L ∈ {50, 100}, the whole ladder; seed 1904 only |
+| `AT3` | the same lists at T=3 — the temperature intervention | L ∈ {15, 30, 50}: L50 the whole ladder, L15 and L30 deep only (2026-09-20); seed 1904 only |
 | `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
 | `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, up to the 1B rung, deep only, seed 1904 only |
 
 Every scheme defines only the settings it covers and reads its own data
 directory, so a `--scheme` sweep submits exactly its own cells — there is no
-fallback to A. **L=100 exists only as AT3**: at T=1 more than half of the 99
-languages get too few tokens for their BPB to mean anything, so L50 is built
-at both temperatures and calibrates the change. Each size trains
+fallback to A. **L=100 is not trained** (planned as AT3 only, dropped
+2026-09-20 — [`plan/l100_data_mixture.md`](../../plan/l100_data_mixture.md)):
+even flattened, its tail stays below what the benchmarks can measure. L50 is
+built at both temperatures and calibrates the temperature change, which AT3
+replicates at L15 and L30 (deep only). Each size trains
 D(N) = 100 × N tokens (5×C); the per-size schedule lives in the
 `predictivity` block of the hyperparams files.
 
@@ -298,7 +300,7 @@ Intervention axes and filters compose:
 ```bash
 python launch_trainings.py cscs --arch shallow         # the depth intervention
 python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
-python launch_trainings.py cscs --scheme AT3           # T=3: L50 and L100
+python launch_trainings.py cscs --scheme AT3           # T=3: L15, L30 and L50
 python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
 python launch_trainings.py cscs --size 600M --langs 8 --seed 1904
 python launch_trainings.py azure --langs 1             # monolingual anchors
@@ -507,7 +509,7 @@ listed benchmark's tasks **in the languages it trains on** (English + its
 setting's FineWeb-2 languages, mapped via
 [`configs/languages.json`](../../configs/languages.json)) — e.g. the L2
 cells get `hellaswag` + `hellaswag_ru` + … (23 tasks); L30 cells get 233,
-L100 cells 446 — the task languages cover the full 100-language set.
+L50 cells 329.
 Both watchers are idempotent: stop them, restart them, run them twice —
 nothing duplicates.
 

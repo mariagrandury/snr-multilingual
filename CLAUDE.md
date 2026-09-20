@@ -137,8 +137,30 @@ python3.11 src/pretrain/auto_evals_cscs.py --dry-run
 # Slides
 cd documents && npx slidev --open
 
-# After new eval results land: rebuild every derived file from the report
-bash scripts/refresh_analysis.sh
+# After new eval results land. 1. publish the report (login node: needs the
+# network for the Hub and the orphan-branch push)
+python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf --push-git
+
+# 2a. fetch it into the cache and rebuild every derived artefact, documents
+#     included (~2 h; the refresh does the fetch itself)
+FORCE=1 bash scripts/refresh_analysis.sh
+
+# 2b. the same, also redrawing rq00's grids (+1 h, so submit it). A compute
+#     node has no network: fetch here first, and build the deck afterwards.
+git fetch origin data/ladder-report && git archive origin/data/ladder-report \
+  | tar -x -C src/signal-and-noise/data/ladder-report
+sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
+  --job-name=snr-analysis \
+  --output=/iopsstor/scratch/cscs/mariagrandury/snr-analysis-%j.log \
+  --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
+    && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual \
+    && FORCE=1 HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
+       bash scripts/refresh_analysis.sh --curves --no-fetch --no-deck'
+cd documents && npx slidev build                # the deck the job skipped
+
+# 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
+#     so refresh the cache first as in 2b.
+cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 ```
 
 `scripts/refresh_analysis.sh` is the only thing to run after new results:
@@ -147,6 +169,21 @@ re-runs the analysis, the figures, the report PDF, the compendium and the
 deck, and fails if a slide points at a figure that no longer exists. Prose it
 cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
 numbers against `documents/ladder-facts.json` and prints the ones that moved.
+
+Three things it cannot guess:
+
+- **`FORCE=1`.** The fetched report carries its *commit* time, so a report
+  published at noon and an analysis re-run that evening leave every cached
+  table "newer than the report" and the pipeline reuses them — a whole run
+  finishes on the old numbers while every log line claims success. Pass
+  `FORCE=1` whenever the report was regenerated since the last analysis run.
+- **It takes hours, so it belongs in a Slurm allocation.** The pipeline is
+  the heavy part; the fetch and the deck build need network, which a compute
+  node lacks, so fetch on the login node and submit the rest with
+  `--no-fetch --no-deck`.
+- **`--curves`.** rq00's ~140 acc-vs-FLOPs grids are a viewer that nothing
+  reads and about an hour of the run. They are skipped by default and the
+  previous figures stay on disk; pass `--curves` to redraw them.
 
 System Python on the login nodes is 3.6 — use `python3.11`.
 
@@ -165,12 +202,12 @@ are retired — do not carry them into new work):
 - Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
   at every language setting except 3B, the extrapolation check above the 1.7B
   reference: deep only, L ∈ {8, 15}, schemes A and B ([`plan/3b_models.md`](plan/3b_models.md))
-- Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50,
-  100} languages; L=1 is 100% English. The mixture varies the language *count*,
+- Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
+  languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
 - Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
-  unlabelled baseline), AT3 (A's lists at T=3 — L50 and L100, which exists
-  ONLY at T=3), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
+  unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
+  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
   / Spanish instead of Russian). "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:

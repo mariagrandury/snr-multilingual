@@ -135,8 +135,8 @@ keep these numbers in their "36-model sweep" sections.
 - SLURM pipeline on the swiss-ai
   [`lm-evaluation-harness`](https://github.com/swiss-ai/lm-evaluation-harness)
   fork; the `auto` benchmark group of [`configs/tasks.json`](configs/tasks.json)
-  intersected with each cell's trained languages (15 tasks at L1, 463 at
-  L100), provenance in [`plan/benchmark_selection.md`](plan/benchmark_selection.md).
+  intersected with each cell's trained languages (15 tasks at L1, 329 at
+  L50), provenance in [`plan/benchmark_selection.md`](plan/benchmark_selection.md).
 - W&B project `mariagrandury-epflnlp/msnr`; the FLOPs axis is
   6 × (N_non-emb + d·V) × D everywhere (`configs.flops_params`).
 

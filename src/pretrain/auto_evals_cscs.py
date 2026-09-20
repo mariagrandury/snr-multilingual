@@ -640,7 +640,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
         for c in predictivity_cells(args.schemes):
             scheme = c["scheme"]
-            if arch not in arches_for(scheme, c["size"]):
+            if arch not in arches_for(scheme, c["size"], c["L"]):
                 continue
             cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
             if args.name:

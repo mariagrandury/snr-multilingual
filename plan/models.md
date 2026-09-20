@@ -171,7 +171,7 @@ manifest. Live per-language coverage: `src/pretrain/data/data_progress.py`.
 | L15 | 14 | 52.0B | 1B · 94.4B |
 | L30 | 29 | 92.0B | 1.7B |
 | L50 | 49 | 52.0B | 1B |
-| L100 | 99 | 92.0B | 1.7B |
+| L100 | 99 | not built: planned as AT3 only, dropped 2026-09-20 ([`l100_data_mixture.md`](l100_data_mixture.md)) | — |
 | English (shared) | — | 184.0B | bounds the L1 1.7B run |
 | Validation (fixed) | 99 + EN | 5M tokens/language | reused by every model |
 
@@ -185,7 +185,7 @@ one** (`auto_evals_cscs.py` / `auto_evals_azure.py`; the planned third
 piece — the checkpoint nearest each half-decade FLOPs milestone — is not
 implemented yet): the `auto` benchmark
 group of `configs/tasks.json`, expanded to one task per benchmark per
-language the cell trains on (15 tasks at L1, 463 at L100), pushed to W&B
+language the cell trains on (15 tasks at L1, 329 at L50), pushed to W&B
 `msnr`. Per-language bits-per-byte on the fixed validation set (byte counts
 from the validation manifest) on the languages each model trained on.
 Reference at each L = the largest model trained there (1.7B or 1B).

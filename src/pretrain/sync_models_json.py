@@ -120,7 +120,7 @@ def grid_names() -> set[str]:
     must enumerate the whole grid, not one slice of it."""
     return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
             for c in predictivity_cells()
-            for arch in arches_for(c["scheme"], c["size"])}
+            for arch in arches_for(c["scheme"], c["size"], c["L"])}
 
 
 def prune(write: bool = True) -> list[str]:
@@ -150,7 +150,7 @@ def sync(arch: str = "deep", scheme: str | None = None,
 
     added, updated = [], []
     for c in predictivity_cells([scheme] if scheme else None):
-        if arch not in arches_for(c["scheme"], c["size"]):
+        if arch not in arches_for(c["scheme"], c["size"], c["L"]):
             continue
         name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
         old = data["models"].get(name)

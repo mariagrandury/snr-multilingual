@@ -172,7 +172,7 @@ def main() -> None:
     users = args.users.split(",")
 
     grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): {**c, "arch": arch}
-            for c in predictivity_cells() for arch in arches_for(c["scheme"], c["size"])}
+            for c in predictivity_cells() for arch in arches_for(c["scheme"], c["size"], c["L"])}
     # evaluate.sbatch writes every user's results into ONE tree, but each
     # user's Slurm logs go under their own scratch (`%u` in --output).
     log_dirs = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/")) for u in users]

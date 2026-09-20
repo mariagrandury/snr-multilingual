@@ -187,20 +187,18 @@ def cell_action(model_dir: Path, target: int) -> tuple[str, int, int]:
 
 
 def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
-    """(exp_name, target_iters) for every cell of one data scheme, in grid
-    order. predictivity_cells() already restricts a scheme to the settings and
-    rungs it defines, so unlike the old two-scheme version there is nothing to
-    normalise here — a scheme not trained in `arch` simply yields nothing, and
-    neither does a rung this arch has no config for (the 3B is deep only, and
-    indexing `configs` with it would raise)."""
-    if arch not in DATA_SCHEMES[scheme]["arches"]:
-        return []
+    """(exp_name, target_iters) for every cell of one data scheme trained in
+    `arch`, in grid order. predictivity_cells() already restricts a scheme to
+    the settings and rungs it defines, and arches_for drops the cells this
+    arch does not train — a scheme not trained in `arch` yields nothing, and
+    so does a rung its hyperparams file has no config for (the 3B is deep
+    only, and indexing `configs` with it would raise)."""
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
     return [
         (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
          schedule_for(configs[c["size"]])[0])
         for c in predictivity_cells([scheme])
-        if c["size"] in SIZES_BY_ARCH[arch]
+        if arch in arches_for(scheme, c["size"], c["L"])
     ]
 
 
@@ -430,7 +428,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
             schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
             # Per scheme the grid plans seeds x the architectures that scheme
             # is trained in — not always both: ZH and ES are deep only.
-            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size))
+            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size, L))
                     for v in schemes}
             if all_languages:
                 s, _, seed = ae.ALL_LANGUAGES_RUNS
@@ -455,7 +453,7 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"])
+            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"], c["L"])
             if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
@@ -617,7 +615,7 @@ def planned_variants(size: str, L: int) -> list[str]:
         if not cell_in_scheme(scheme, size, L):
             continue
         seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
-        for arch in arches_for(scheme, size):
+        for arch in arches_for(scheme, size, L):
             lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
@@ -776,7 +774,7 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
             ms = ITER_MS[arch][size]
             per_job = JOB_TRAIN_SEC * 1000 // ms
             for c in predictivity_cells():
-                if c["size"] != size or arch not in arches_for(c["scheme"], size):
+                if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
                     continue
                 exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
                 jid, log = logs.get(exp, (None, None))
@@ -931,7 +929,7 @@ def grid_markdown(png_dir: str) -> str:
     # Every run the grid plans: per scheme, its cells x the architectures that
     # scheme is actually trained in (ZH and ES are deep only, so multiplying
     # the whole grid by 2 would over-count them).
-    full = sum(len(arches_for(v, c["size"]))
+    full = sum(len(arches_for(v, c["size"], c["L"]))
                for v in DATA_SCHEMES for c in predictivity_cells([v]))
     # Sizes that do not train at every setting (the 3B extrapolation check).
     partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
