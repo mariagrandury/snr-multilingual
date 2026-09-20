@@ -57,7 +57,7 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import CKPT_TOL, add_family_column  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
-from analysis.utils import (  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES,  # noqa: E402
     SMALL_SIZES, TARGET_SIZE, _is_parent_task, assign_language, benchmark_family, build_snr_pool)
 from evals.scripts.utils.configs import fineweb_language  # noqa: E402
 from pretrain.launch_trainings import cell_fineweb_subsets  # noqa: E402
@@ -274,7 +274,7 @@ def group_map(mat: pd.DataFrame, path: Path, *, group, order, same_family: bool,
     long = mat.stack(future_stack=True).rename("level").reset_index()
     long["target"] = long["target_task"].map(group)
     long["proxy"] = long["proxy_task"].map(group)
-    long = long[long["level"].notna() & ~long["target"].isin(["??", "multi"]) & ~long["proxy"].isin(["??", "multi"])]
+    long = long[long["level"].notna() & ~long["target"].isin(LANGUAGE_AGGREGATES) & ~long["proxy"].isin(LANGUAGE_AGGREGATES)]   # rule 7
     if same_family:
         long = long[long["target_task"].map(benchmark_family) == long["proxy_task"].map(benchmark_family)]
     rows = []
@@ -283,8 +283,10 @@ def group_map(mat: pd.DataFrame, path: Path, *, group, order, same_family: bool,
         rows.append({"target": t, "proxy": p, "n_cells": len(g),
                      "share_reached": len(reached) / len(g), "share_never": (g["level"] == G.NEVER_CODE).mean(),
                      "share_gated": (g["level"] == G.GATED).mean(),
-                     "median_level": level_label(levels[int(np.ceil(reached.median()))]) if len(reached) else "",
-                     "level_index": np.ceil(reached.median()) if len(reached) else
+                     # rule 13: a level is shown only when at least half of the group's task pairs reach one;
+                     # a group where most pairs never do reads "never", whatever the reaching minority's median is
+                     "median_level": level_label(levels[int(np.ceil(reached.median()))]) if len(reached) > len(g) / 2 else "",
+                     "level_index": np.ceil(reached.median()) if len(reached) > len(g) / 2 else
                      (G.GATED if (g["level"] == G.GATED).all() else G.NEVER_CODE)})
     t = pd.DataFrame(rows)
     wide = t.pivot(index="target", columns="proxy", values="level_index")
@@ -369,7 +371,7 @@ def generate_readme(pool: str, out_dir: Path, n_tasks: int, ref_fams: int, pairs
         "## Cross-task predictability",
         f"Every parent task as the proxy for every other one ({n_tasks} x {n_tasks}): the cell is the smallest proxy size "
         f"(DA-size, {ref_fams} variants at {TARGET_SIZE}, {pairs_ref} pairs) or the earliest checkpoint (DA-ckpt, the within-size "
-        f"pairs of every size pooled, {pairs_within} pairs, ten checkpoints) at which the ranking on task x (columns) safely "
+        f"pairs of every size pooled, {pairs_within} pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely "
         f"predicts the final ranking on task y (rows): DA >= {SAFE_DA} over >= {MIN_PAIRS} pairs there and at every larger "
         "level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it "
         "is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` "

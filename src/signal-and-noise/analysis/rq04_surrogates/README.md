@@ -14,9 +14,9 @@
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-- **Global-best SNR definition (`predictivity`): `mpsd`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.05** (DA-size), **0.32** (DA-ckpt), 0.19 overall. DA-ckpt is led by `mpsd`/`rel_mpsd`/`aad` (≈ 0.32; families: dispersion, rel_spread) — recommend the *family*, not an exact variant.
-- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **54 of 63** languages (`mpsd` SNR @ 1.7B); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 48 of the 54 languages that have both. Weakest variants overall: `tukey`, `projection`.
-- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.07** (DA-ckpt), **0.75** (DA-size); family-level per-language agreement 29% / 57%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
+- **Global-best SNR definition (`predictivity`): `rel_star_discrepancy`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.24** (DA-size, proxy → 1.7B, 6 languages), **0.19** (DA-ckpt, proxy sizes pooled, 6 languages), 0.21 overall. DA-ckpt is led by `rel_star_discrepancy`/`dist_std`/`star_discrepancy` (≈ 0.19; families: discrepancy, dispersion) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **27 of 46** languages (`rel_star_discrepancy` SNR @ 1.7B; `train_loss` and `bpb_macro` are not a language's and are left out); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 0 of the 0 languages that have both. Weakest variants overall: `tukey`, `projection`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.81** (DA-ckpt), **-0.03** (DA-size); family-level per-language agreement 100% / 100%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -59,20 +59,20 @@ seed, while English and the BPB tasks cover all four.
 
 Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/snr_definition_postprocess.py --pool predictivity`.
 
-**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages:
+**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across the trained languages with ≥ 5 tasks (rule 8; 6 languages under DA-size, 6 under DA-ckpt). DA-size = proxy final → 1.7B final only (the proxy-to-proxy scaling pairs are not DA-size, rule 9); DA-ckpt = a proxy size's early checkpoints → its final, the proxy sizes 175M, 350M, 600M, 1B pooled, never the 1.7B run's own checkpoints (rule 11):
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---|---|---|
-| `mpsd` | 0.05 | 0.32 | 0.19 |
-| `rel_mpsd` | 0.05 | 0.31 | 0.18 |
-| `aad` | 0.04 | 0.30 | 0.17 |
-| `dist_std` | 0.04 | 0.29 | 0.17 |
-| `rms_deviation` | 0.04 | 0.29 | 0.17 |
-| `mpd` | 0.04 | 0.29 | 0.16 |
-| `dispersion` | 0.03 | 0.28 | 0.16 |
+| `rel_star_discrepancy` | 0.24 | 0.19 | 0.21 |
+| `star_discrepancy` | 0.06 | 0.12 | 0.09 |
+| `discrepancy` | 0.03 | 0.12 | 0.07 |
+| `dist_std` | -0.01 | 0.13 | 0.06 |
+| `dispersion_shifted` | 0.05 | 0.05 | 0.05 |
+| `rms_deviation` | -0.02 | 0.11 | 0.04 |
+| `aad` | -0.02 | 0.10 | 0.04 |
 | … |  |  |  |
-| `projection` | -0.16 | -0.07 | -0.11 |
-| `tukey` | -0.20 | -0.12 | -0.16 |
+| `projection` | 0.06 | -0.11 | -0.03 |
+| `tukey` | 0.04 | -0.18 | -0.07 |
 
 ![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
 
@@ -80,76 +80,59 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | pool | best variant (overall) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `predictivity` (grid, seed 1904) | `mpsd` | 0.05 | 0.32 |
-| `predictivity_seeds` (all seeds) | `mpsd` | 0.08 | 0.30 |
+| `predictivity` (grid, seed 1904) | `rel_star_discrepancy` | 0.24 | 0.19 |
+| `predictivity_seeds` (all seeds) | `rel_star_discrepancy` | 0.24 | 0.14 |
 
-**Most reliable benchmark per language** — `mpsd` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown):
+**Most reliable benchmark per language** — `rel_star_discrepancy` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown; `train_loss` and `bpb_macro` measure the whole mixture and are not a row, rule 7):
 
 | lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| am | `multiblimp_amh` | 0.05 | 0.62 | 0.14 |
-| ar | `multiblimp_arb` | 1.62 | 0.83 | 5.44 |
-| be | `multiblimp_bel` | 0.88 | 0.92 | 4.67 |
-| bg | `multiblimp_bul` | 2.13 | 0.95 | 3.05 |
-| bn | `multiblimp_ben` | 0.30 | 0.72 | 3.45 |
-| ca | `multiblimp_cat` | 0.19 | 0.96 | 1.26 |
-| cs | `multiblimp_ces` | 3.91 | 0.83 | 16.45 |
-| cy | `multiblimp_cym` | 0.07 | 0.58 | 0.80 |
-| da | `hellaswag_da` | 0.44 | 0.92 | 6.40 |
-| de | `multiblimp_deu` | 1.16 | 0.83 | 5.93 |
-| el | `multiblimp_ell` | 1.44 | 0.83 | 3.71 |
-| en | `xstorycloze_en` | 0.03 | 0.76 | 0.04 |
-| es | `multiblimp_spa` | 0.36 | 0.90 | 2.49 |
-| et | `multiblimp_est` | 0.03 | 0.62 | 0.25 |
-| eu | `multiblimp_eus` | 0.02 | 0.46 | 0.80 |
-| fa | `multiblimp_fas` | 1.53 | 0.90 | 5.71 |
-| fi | `multiblimp_fin` | 5.01 | 0.85 | 17.13 |
-| fo | `multiblimp_fao` | 0.06 | 0.79 |  |
-| fr | `multiblimp_fra` | 0.96 | 0.80 | 2.21 |
-| ga | `multiblimp_gle` | 0.02 | 0.33 | 0.25 |
-| gd | `multiblimp_gla` | 0.02 | 0.21 |  |
-| gl | `multiblimp_glg` | 0.20 | 0.75 | 2.27 |
-| grc | `multiblimp_grc` | 0.01 | 0.75 |  |
-| gu | `multiblimp_guj` | 0.00 | 0.88 | 0.06 |
-| hbo | `multiblimp_hbo` | 0.02 | 0.42 |  |
-| he | `multiblimp_heb` | 0.96 | 0.88 | 5.62 |
-| hi | `multiblimp_hin` | 1.86 | 0.75 | 1.43 |
-| hu | `multiblimp_hun` | 4.59 | 0.82 | 30.58 |
-| hy | `multiblimp_hye` | 0.17 | 0.88 | 0.20 |
-| hyw | `multiblimp_hyw` | 0.01 | 0.42 |  |
-| id | `xstorycloze_id` | 0.54 | 0.90 | 3.37 |
-| is | `multiblimp_isl` | 0.02 | 0.62 | 0.16 |
-| it | `multiblimp_ita` | 1.68 | 0.80 | 4.58 |
-| ja | `xwinograd_jp` | 0.60 | 0.87 | 10.52 |
-| ka | `multiblimp_kat` | 0.09 | 0.75 | 1.86 |
-| kk | `multiblimp_kaz` | 0.00 | 0.58 | 1.30 |
-| kmr | `multiblimp_kmr` | 0.00 | 0.42 | 0.14 |
-| ky | `multiblimp_kir` | 0.04 | 0.50 | 2.31 |
-| la | `multiblimp_lat` | 0.03 | 0.83 | 0.02 |
-| lt | `multiblimp_lit` | 0.01 | 0.54 | 0.22 |
-| mk | `multiblimp_mkd` | 0.26 | 0.46 | 0.46 |
-| mr | `multiblimp_mar` | 0.15 | 0.42 | 0.05 |
-| multi | `train_loss` | 1.28 | 0.94 | 0.88 |
-| nds | `multiblimp_nds` | 0.02 | 0.25 |  |
-| nl | `multiblimp_nld` | 2.05 | 0.88 | 5.71 |
-| pl | `multiblimp_pol` | 2.27 | 0.90 | 14.69 |
-| pt | `multiblimp_por` | 0.64 | 0.88 | 2.48 |
-| ro | `multiblimp_ron` | 2.34 | 0.75 | 10.63 |
-| ru | `multiblimp_rus` | 2.13 | 0.87 | 4.47 |
-| sa | `multiblimp_san` | 0.03 | 0.88 |  |
-| sah | `multiblimp_sah` | 0.13 | 0.71 |  |
-| se | `multiblimp_sme` | 0.01 | 0.62 |  |
-| sk | `multiblimp_slk` | 1.28 | 0.96 | 14.42 |
-| sl | `multiblimp_slv` | 0.09 | 0.79 | 1.47 |
-| sv | `hellaswag_sv` | 0.48 | 0.95 | 9.63 |
-| ta | `multiblimp_tam` | 0.12 | 0.60 | 0.82 |
-| th | `xnli_th` | 0.26 | 0.81 | 3.66 |
-| tr | `multiblimp_tur` | 1.16 | 0.82 | 13.38 |
-| ug | `multiblimp_uig` | 0.06 | 0.58 | 0.02 |
-| uk | `multiblimp_ukr` | 2.16 | 0.87 | 6.15 |
-| ur | `multiblimp_urd` | 0.07 | 0.75 | 0.06 |
-| vi | `xcopa_vi` | 0.56 | 0.80 | 5.71 |
-| zh | `xwinograd_zh` | 0.43 | 0.87 | 8.83 |
+| ar | `multiblimp_arb` | 61.43 | 0.44 |  |
+| az | `belebele_azj_Latn` | 23.89 |  |  |
+| bg | `multiblimp_bul` | 46.95 | 0.59 |  |
+| bn | `hellaswag_bn` | 242.15 | 0.77 |  |
+| bs | `global_piqa_nonparallel_cloze_bos_latn` | 11.14 |  |  |
+| ca | `hellaswag_ca` | 35.91 |  |  |
+| cs | `multiblimp_ces` | 44.00 | 0.67 |  |
+| da | `multiblimp_dan` | 125.58 | 0.50 |  |
+| de | `multiblimp_deu` | 180.12 | 0.62 |  |
+| el | `multiblimp_ell` | 160.66 | 0.62 |  |
+| en | `multiblimp_eng` | 206.37 | 0.48 |  |
+| es | `multiblimp_spa` | 115.00 | 0.64 |  |
+| et | `xcopa_et` | 42.54 |  |  |
+| fa | `belebele_pes_Arab` | 29.11 | 0.65 |  |
+| fi | `multiblimp_fin` | 39.89 | 0.72 |  |
+| fr | `multiblimp_fra` | 174.38 | 0.45 |  |
+| he | `multiblimp_heb` | 33.87 | 0.63 |  |
+| hi | `multiblimp_hin` | 95.34 | 0.51 |  |
+| hr | `hellaswag_hr` | 62.79 |  |  |
+| hu | `multiblimp_hun` | 61.93 | 0.55 |  |
+| id | `hellaswag_id` | 38.55 | 0.81 |  |
+| it | `multiblimp_ita` | 86.89 | 0.60 |  |
+| ja | `xwinograd_jp` | 25.39 | 0.74 |  |
+| ka | `multiblimp_kat` | 36.78 | 0.59 |  |
+| kk | `multiblimp_kaz` | 6.59 |  |  |
+| lt | `multiblimp_lit` | 27.76 |  |  |
+| mr | `hellaswag_mr` | 278.87 |  |  |
+| ne | `hellaswag_ne` | 368.01 |  |  |
+| nl | `multiblimp_nld` | 54.44 | 0.61 |  |
+| no | `belebele_nob_Latn` | 28.96 | 0.37 |  |
+| pl | `multiblimp_pol` | 60.35 | 0.59 |  |
+| pt | `multiblimp_por` | 87.49 | 0.54 |  |
+| ro | `multiblimp_ron` | 76.35 | 0.53 |  |
+| ru | `multiblimp_rus` | 152.34 | 0.76 |  |
+| sk | `hellaswag_sk` | 54.07 |  |  |
+| sl | `multiblimp_slv` | 23.20 |  |  |
+| sq | `belebele_als_Latn` | 48.75 |  |  |
+| sr | `hellaswag_sr` | 40.50 |  |  |
+| sv | `multiblimp_swe` | 456.85 | 0.62 |  |
+| ta | `hellaswag_ta` | 261.17 | 0.57 |  |
+| th | `xnli_th` | 37.02 | 0.64 |  |
+| tr | `multiblimp_tur` | 34.22 | 0.59 |  |
+| uk | `multiblimp_ukr` | 81.09 | 0.53 |  |
+| ur | `multiblimp_urd` | 36.98 |  |  |
+| vi | `hellaswag_vi` | 45.51 | 0.75 |  |
+| zh | `xstorycloze_zh` | 55.96 | 0.68 |  |
 
 ![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
 
@@ -157,11 +140,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | 0.75 | 0.07 |
-| Pearson r between splits (all cells) | -0.14 | 0.19 |
-| Exact-variant agreement (per lang) | 43% | 15% |
-| Family-level agreement (per lang) | 57% | 29% |
-| Retention of train-best r on test | 82% | 41% |
+| Spearman ρ on global variant ranking | -0.03 | 0.81 |
+| Pearson r between splits (all cells) | -0.06 | 0.87 |
+| Exact-variant agreement (per lang) | 0% | 100% |
+| Family-level agreement (per lang) | 100% | 100% |
+| Retention of train-best r on test | 0% | 100% |
 <!-- END auto:results -->
 
 ### Statistics beyond SNR — setup
@@ -183,35 +166,34 @@ is better" holds for every candidate.
 <!-- BEGIN auto:surrogates (analyze.py --pool predictivity) -->
 ## Statistics beyond SNR (paper RQ3)
 
-Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analysis/rq04_surrogates/analyze.py --pool predictivity`.
+Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analysis/rq04_surrogates/analyze.py --pool predictivity`. The population at a proxy size is the tasks above chance at the proxy and at 1.7B (rule 1); each candidate is scored on the tasks of it where the candidate has a value, so n differs per candidate and is given next to every ρ. The scaling-fit R² is rq01's log-N fit refitted on the rungs up to the proxy only (rule 11; it needs 3 rungs, so it starts at 600M). `bpb_macro` and `train_loss` are in neither population (rule 7).
 
-- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `early-checkpoint agreement (20 %)` 0.36; weakest: `margin above chance` -0.09.
-- **per-language bits per byte** — strongest surrogate of DA-size (mean ρ over proxies): `early-checkpoint agreement (20 %)` 0.51; weakest: `SNR, discrepancy` -0.58.
+- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `scaling-fit R² (proxy rungs only)` 0.38; weakest: `margin above chance` -0.17.
+- **per-language bits per byte** — strongest surrogate of DA-size (mean ρ over proxies): `early-checkpoint agreement (10 %)` 0.29; weakest: `noise alone (relative std, inverted)` -0.23.
 
-**benchmark tasks** (Spearman ρ of the statistic with DA-size, per proxy size):
+**benchmark tasks** (Spearman ρ of the statistic with DA-size, per proxy size; n = the tasks behind the ρ):
 
-| metric | 175M | 350M | 600M | 1B |
+| metric | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
 |---|---|---|---|---|
-| early-checkpoint agreement (20 %) | 0.27 | 0.28 | 0.57 | 0.33 |
-| SNR, relative std | -0.02 | 0.26 | 0.42 | 0.44 |
-| SNR, dist_std | -0.02 | 0.25 | 0.33 | 0.39 |
-| signal alone (relative std) | -0.04 | 0.18 | 0.31 | 0.35 |
-| scaling-fit R² | -0.07 | 0.11 | 0.50 | 0.26 |
-| noise alone (relative std, inverted) | -0.06 | 0.09 | 0.18 | 0.17 |
-| SNR, discrepancy | -0.15 | 0.11 | 0.08 | 0.11 |
-| margin above chance | -0.17 | -0.06 | -0.10 | -0.02 |
+| scaling-fit R² (proxy rungs only) |  |  | 0.37 (62) | 0.40 (80) |
+| early-checkpoint agreement (10 %) | 0.07 (63) | 0.08 (79) | 0.22 (85) | 0.12 (90) |
+| noise alone (relative std, inverted) | 0.38 (63) | 0.18 (79) | 0.12 (85) | -0.21 (90) |
+| SNR, discrepancy | 0.28 (63) | 0.04 (79) | 0.13 (85) | -0.15 (90) |
+| SNR, relative std | 0.02 (63) | 0.24 (79) | 0.12 (85) | -0.10 (90) |
+| signal alone (relative std) | -0.21 (63) | 0.03 (79) | -0.06 (85) | 0.12 (90) |
+| SNR, dist_std | -0.21 (63) | -0.04 (79) | -0.10 (85) | -0.21 (90) |
+| margin above chance | -0.34 (58) | -0.30 (74) | -0.01 (80) | -0.04 (85) |
 
-**per-language bits per byte** (Spearman ρ of the statistic with DA-size, per proxy size):
+**per-language bits per byte** (Spearman ρ of the statistic with DA-size, per proxy size; n = the tasks behind the ρ):
 
-| metric | 175M | 350M | 600M | 1B |
+| metric | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
 |---|---|---|---|---|
-| early-checkpoint agreement (20 %) | 0.51 | 0.42 | 0.61 | 0.50 |
-| signal alone (relative std) | 0.20 | 0.31 | 0.34 | 0.43 |
-| SNR, relative std | 0.12 | 0.30 | 0.37 | 0.45 |
-| SNR, dist_std | 0.03 | 0.23 | 0.31 | 0.41 |
-| noise alone (relative std, inverted) | -0.23 | 0.04 | 0.04 | 0.19 |
-| scaling-fit R² | -0.20 | -0.05 | 0.08 | 0.06 |
-| SNR, discrepancy |  |  | -0.33 | -0.84 |
+| early-checkpoint agreement (10 %) | -0.13 (11) | 0.50 (11) | 0.50 (11) | 0.29 (11) |
+| SNR, relative std | 0.46 (11) | -0.40 (11) | -0.40 (11) | 0.58 (11) |
+| signal alone (relative std) | 0.10 (11) | -0.40 (11) | -0.30 (11) | 0.80 (11) |
+| SNR, dist_std | 0.64 (11) | -0.50 (11) | -0.50 (11) | 0.25 (11) |
+| scaling-fit R² (proxy rungs only) |  |  | -0.40 (11) | 0.16 (11) |
+| noise alone (relative std, inverted) | 0.36 (11) | -0.50 (11) | -0.50 (11) | -0.29 (11) |
 
 ![Surrogates](pretraining/predictivity/rq3_surrogates.png)
 <!-- END auto:surrogates -->
@@ -406,7 +388,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
 
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3):
+**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the ZH/ES L2 settings stop at 1B, rule 9); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
 
 ![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
 
@@ -416,7 +398,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
 
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints):
+**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
 
 ![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
 
@@ -426,7 +408,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
 
-**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute:
+**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:
 
 ![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
 

@@ -1,0 +1,41 @@
+{
+  "source": "src/signal-and-noise/data/ladder-report/ladder_report.csv",
+  "sha256": "07e063597c32d82d316b6177a52a25fb073a6567ab57eba5fcbe66f5a4fd2844",
+  "all_runs": 120,
+  "healthy_175M_to_1_7B": 97,
+  "headline_seed1904_A_B_runs": 65,
+  "sizes": {
+    "175M": 24,
+    "600M": 24,
+    "1B": 19,
+    "350M": 18,
+    "1.7B": 12
+  },
+  "fractions": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "min_pairs": 3,
+  "checkpoint_matching_tolerance": 0.001,
+  "surrogate_size_reference": "1.7B",
+  "surrogate_checkpoint_fractions": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "snr_source": "rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv"
+}

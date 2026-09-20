@@ -306,9 +306,12 @@ def smallest_safe(levels_ok: pd.DataFrame) -> pd.Series:
 # writes them together as `highlights.csv`.
 
 def matrix_ax(ax, mat: pd.DataFrame, title: str, *, cnt: pd.DataFrame | None = None, vmin=0.0, vmax=1.0, cmap=None,
-              fmt="{:.2f}", center=None, xlabel: str = "", ylabel: str = "") -> pd.DataFrame:
-    """A small heat map (e.g. benchmark x size, mean over languages)."""
-    _draw(ax, mat, cnt, vmin=vmin, vmax=vmax, cmap=cmap or S.SEQ, fmt=fmt, fontsize=6.5, center=center)
+              fmt="{:.2f}", center=None, xlabel: str = "", ylabel: str = "", gated: pd.DataFrame | None = None) -> pd.DataFrame:
+    """A small heat map (e.g. benchmark x size, mean over languages). `gated`,
+    a boolean frame aligned with `mat`, greys the cells the above-random gate
+    filtered out (rule 12: white = no value, grey = gated)."""
+    g = gated.reindex(index=mat.index, columns=mat.columns).fillna(False).to_numpy(dtype=bool) if gated is not None else None
+    _draw(ax, mat, cnt, vmin=vmin, vmax=vmax, cmap=cmap or S.SEQ, fmt=fmt, fontsize=6.5, center=center, gated=g)
     ax.set_title(title, loc="left", fontsize=8.5); ax.set_xlabel(xlabel, fontsize=7.5); ax.set_ylabel(ylabel, fontsize=7.5)
     t = mat.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index()
     return t.assign(panel=title)

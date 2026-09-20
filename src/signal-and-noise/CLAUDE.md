@@ -27,7 +27,8 @@ augmented to run the SNR / decision-accuracy pipeline on our own pretraining
 ladders. Two generations of models flow through it:
 
 - the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`,
-  90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50, 100} × deep/shallow × scheme A/B ×
+  90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
+  2026-09-20, plan/l100_data_mixture.md) × deep/shallow × scheme A/B/AT3/ZH/ES ×
   seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
   summarised by `src/pretrain/ladder_report.py` into **one wide CSV** published
   as the HF dataset `msnr-data/ladder-report`. That CSV is the source of truth.
@@ -82,10 +83,20 @@ so a script never decides by model name.
   pool, table or figure carries it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
   grid every size was evaluated on, BPB rows on the k/20 save grid, plus the
-  final checkpoint. Without it the late-window noise (`last_n = 5`) spans 50 %
-  of a 20-checkpoint run and 12.5 % of a 40-checkpoint one
-  (plan/1b-models.md). rq03 and rq05 read the seed replicates for the noise
-  that does not depend on the window at all.
+  final checkpoint. Membership is by nearest grid point within `GRID_TOL`
+  (0.5 % of the run), not exact divisibility, and a run's last save counts as
+  its final within the same tolerance (bug #14). The checkpoint-noise window
+  is `noise_window` (20 %) of the run on the shared tenths, the same for BPB
+  and benchmarks (`utils.noise_checkpoints`, RULES.md rule 4); rq03 and rq05
+  read the seed replicates for the noise that does not depend on the window.
+- **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
+  languages only, ten checkpoints, one noise window, three pairs, parent tasks
+  only, `multi` is not a language, five tasks per language, one reference, no
+  90M, no leakage, the figure conventions. `build_snr_pool` applies the
+  population rules at load (parents only, trained languages only; rq06 and
+  rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
+  `analysis/check_rules.py` tests the tables on disk; the driver and the
+  review skill run it.
 - Pool member filters apply to the frame's columns (`seeds`, `sizes`, `L`,
   `arch`, `scheme`), not to models.json names, so scheme-B cells and adopted
   off-grid seeds count whether or not the registry lists them.
@@ -152,10 +163,10 @@ schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{175M…1.7B}-L{1…100}[-schemeB]-{deep,shallow}-seed1904
+predictivity               lm-{175M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
-predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50, 100}
-predictivity_seeds_test    seed 1904 on the same cells
+predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the only cells with replicates)
+predictivity_seeds_test    seed 1904 on the same six cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
 predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq01, rq03, rq05, rq06)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
@@ -170,15 +181,17 @@ without widening the decision the pool exists to measure. They live in
 
 The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
-largest rung DataDecide has), `da_early_fracs` 0.2/0.4/0.6/0.8, `last_n` 5,
-`size_buckets` (singleton buckets for our sizes, pooled buckets for the
-external models). The 36-sweep pools run with these values too, but they stop at 1B:
+largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
+source data and are the one labelled exception), `da_early_fracs` the nine
+evaluated tenths before the final, `noise_window` 0.2, `min_pairs` 3,
+`min_lang_tasks` 5, `size_buckets` (singleton buckets for our sizes, pooled
+buckets for the external models). The 36-sweep pools run with these values too, but they stop at 1B:
 rerun today their canonical `decision_acc_size_<s>` columns (→ 1.7B) would be
 empty and only the `_to_1B` scaling pairs would carry DA-size, so their
 committed outputs are the 1B-reference ones and are not regenerated. Sizes and cells with no information yet
-(L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets`
-again** (commit 56c806d did, and `analysis/utils.py` fails at import without
-them).
+(L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets` /
+`noise_window` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
+them, and `analysis/utils.py` fails at import without them).
 
 - **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes
   for externals; **bucket** = `size_bucket(size)`.
@@ -398,6 +411,28 @@ heavier happens at import time (matplotlib is lazy). Import it as
 `pretrain.ladder_report` with `src/` on the path, as `analysis/utils.py`
 already arranges.
 
+
+### 14. A save interval need not divide the run: grid membership is by tolerance
+`lm-1B-L8-deep-seed1904` saves every 1,143 iterations against a 45,740 target
+(the interval of the 45,720-target cells), so `iter * n % target == 0` put
+none of its checkpoints on the shared grid and `require_final` (last ≥ target)
+dropped every series: one 1B family silently missing from every DA and SNR
+table. `snr/download/ladder.py` now takes the nearest grid point within
+`GRID_TOL = 0.5 %` of the run and accepts a final save within the same
+tolerance. Any new cell with an odd interval is covered; a cell more than
+0.5 % short of its target is still (correctly) incomplete.
+
+### 15. Population rules live in the loader, not in each script
+The September 2026 review found subject facets back in `effect_vs_noise`
+(bug #3 again, 81 % of its rows), untrained languages in most pools, `multi`
+counted as a language, and one-pair DA cells in means. A rule enforced in
+one script is lost in the next, so `analysis.utils.build_snr_pool` applies
+`parents_only` and `trained_only` to every ladder pool (opt-outs
+`facets=True` for rq08, `untrained=True` for rq06 and the gate), the rq02
+kernels apply `MIN_PAIRS`, and `analysis/check_rules.py` fails the pipeline
+when a table on disk breaks a rule. Add a new rule to `analysis/RULES.md`,
+implement it in the shared layer, and teach the checker — never in a single
+rqNN script.
 ---
 
 ## Legacy code (upstream DataDecide / OLMo path)

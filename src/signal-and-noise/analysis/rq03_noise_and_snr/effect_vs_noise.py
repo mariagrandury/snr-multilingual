@@ -2,14 +2,23 @@
 
 Per (size, L, task): each intervention's |Δ| at the grid seed is put against
 the seed noise (sample std over the seed replicates of the baseline cell,
-where ≥ 2 seeds exist) and the late-checkpoint noise (std over the last
-`last_n` checkpoints of the baseline cell — raw, and detrended because under
-WSD the final window is still descending). A ratio near 1 means the two
+where ≥ 2 seeds exist) and the checkpoint noise of the baseline cell over
+the noise window of RULES.md rule 4 (`utils.noise_checkpoints`: the shared
+tenths in the last NOISE_WINDOW = 20 % of the run, 80 / 90 / 100 %, the same
+for BPB and benchmarks) — raw, and detrended because under WSD the final
+window is still descending. One ddof convention: every std divides by its
+residual degrees of freedom, n−1 for the seed std and the raw checkpoint std,
+n−2 for the detrended one (a line takes two). A ratio near 1 means the two
 levels are the same model as far as a ranking is concerned (the "read this
 against the seed row" rule of `ladder_report.md`): a decision on such a cell
 is a coin flip whatever its decision accuracy (rq05) says. The seed-over-
 checkpoint ratio is also what says how optimistic the checkpoint-noise SNR
 of `run_apertus_snr_variants.py` is.
+
+Rule 1: a (task, size) cell the above-random gate puts at chance at its size
+keeps its row (`gated` true) with no number, so it enters no median and is
+drawn grey in `panels.py`. The pool holds parent tasks and trained languages
+only (the loader, rules 6 and 2).
 
     effect_vs_noise.csv   per (size, L, task): |Δ| per intervention, seed noise, raw and detrended checkpoint noise, ratios
     effect_vs_noise.png
@@ -38,9 +47,11 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
+from analysis.grids import mark_gated  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
 from analysis.rq05_design_decisions.analyze import INTERVENTIONS  # noqa: E402
-from analysis.utils import GRID_SEED, LAST_N, benchmark_family, finals, ladder_frame, size_order  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    GRID_SEED, NOISE_WINDOW, benchmark_family, finals, ladder_frame, noise_checkpoints, size_order)
 
 OUT_ROOT = NOISE_AND_SNR
 CANONICAL = "predictivity_all"      # every seed: the seed-noise column needs the replicates
@@ -48,18 +59,23 @@ mpl.rcParams.update(S.RC)
 
 
 def _late_std(scores: np.ndarray, detrend: bool) -> float:
-    s = np.asarray(scores[-LAST_N:], dtype=float)
-    if len(s) < 2:
+    """Std over the noise-window checkpoints, divided by the residual degrees
+    of freedom: n−1 raw, n−2 after removing a linear trend (the residuals of
+    a fitted line have mean zero, so `ddof=2` is exactly that)."""
+    s = np.asarray(scores, dtype=float)
+    ddof = 2 if detrend else 1
+    if len(s) <= ddof:
         return float("nan")
     if detrend:
         x = np.arange(len(s))
         s = s - np.polyval(np.polyfit(x, s, 1), x)
-    return float(np.std(s))
+    return float(np.std(s, ddof=ddof))
 
 
-def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame) -> pd.DataFrame:
+def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFrame:
     """Per (size, L, task): each intervention's |Δ| at the grid seed, the seed
-    noise of the baseline cell and its late-checkpoint noise."""
+    noise of the baseline cell and its checkpoint noise over the noise window;
+    the gate (`pool`'s, or the canonical one's) blanks the at-chance cells."""
     key = ["size", "L", "task"]
     grid = fin[fin["seed"] == GRID_SEED]
     out = None
@@ -75,12 +91,16 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame) -> pd.DataFrame:
     seed = base.groupby(key)["primary_score"].agg(["std", "count"])
     out["seed_noise"] = seed.loc[seed["count"] >= 2, "std"]
     out["n_seeds"] = seed["count"]
-    # checkpoint noise: the grid seed's baseline cell, last N checkpoints
-    curve = df[(df["seed"] == GRID_SEED) & (df["arch"] == "deep") & (df["scheme"] == "A")]
+    # checkpoint noise: the grid seed's baseline cell over the noise window (rule 4)
+    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["arch"] == "deep") & (df["scheme"] == "A")])
     curve = curve.sort_values("step").groupby(key)["primary_score"].apply(np.asarray)
     out["ckpt_noise"] = curve.map(lambda s: _late_std(s, detrend=False))
     out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))
     out = out.reset_index()
+    # rule 1: an at-chance (task, size) cell keeps its row and no number
+    out = mark_gated(out, pool, "size", "seed_noise")
+    out.loc[out["gated"], [c for c in out.columns if c.startswith(("effect_", "ckpt_noise"))]] = np.nan
+    print(f"  gate: {int(out['gated'].sum())} of {len(out)} (size, L, task) cells at chance at their size, kept blank")
     out["family"] = out["task"].map(benchmark_family)
     # the aggregates are populations of their own: bpb_macro is the mean of the per-language BPBs
     out["population"] = np.select([out["task"] == "bpb_macro", out["family"] == "loss", out["family"] == "bpb"],
@@ -112,7 +132,10 @@ def plot_effect_vs_noise(evn: pd.DataFrame, path: Path) -> None:
         ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("size"); S.clean(ax)
     axes[0][0].set_ylabel("median |effect| / noise")
     axes[0][0].legend(fontsize=7, frameon=False)
-    fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)", y=1.0)
+    fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)\n"
+                 f"point = median over the size's (L, task) cells of |Δ final score| over the noise: seed = sample std (n−1) "
+                 f"across replicate seeds, ckpt = detrended std (n−2) over the {NOISE_WINDOW:.0%} noise window "
+                 "(80/90/100 %); gated cells left out", y=1.0, fontsize=8)
     fig.tight_layout(); S.save(fig, path, dpi=140)
 
 
@@ -123,6 +146,14 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     rel = f"{stage}/{pool}"
     bullets, rows = [], []
+    bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
+                   f"of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
+                   f"the shared tenths in the last {NOISE_WINDOW:.0%} of the run (80/90/100 %, the same for BPB and "
+                   f"benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees "
+                   f"of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "
+                   f"of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.")
+    bullets.append(f"- **Gate.** {int(evn['gated'].sum())} of {len(evn)} (size, L, task) cells are at chance at their "
+                   f"size (rule 1); they keep their row, carry no number and enter no median below.")
     seed_vs_ckpt = (evn["seed_noise"] / evn["ckpt_noise_detrended"]).replace([np.inf, -np.inf], np.nan).dropna()
     if not seed_vs_ckpt.empty:
         bullets.append(f"- **Seed noise vs detrended checkpoint noise** — median ratio "
@@ -143,7 +174,7 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
         f"Numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool {pool}`.",
         "\n".join(bullets),
-        "**Effect over noise** (median over (size, L, task) cells):",
+        "**Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):",
         md_table(["population", "effect / noise", "median", "n"], rows),
         f"![Effect vs noise]({rel}/effect_vs_noise.png)"])
     readme = OUT_ROOT / "README.md"
@@ -156,7 +187,7 @@ def main(pool: str, out_dir: Path) -> None:
     fin = finals(df)
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"Pool '{pool}': {df['model'].nunique()} cells, seeds {sorted(df['seed'].unique())}")
-    evn = effect_vs_noise(df, fin)
+    evn = effect_vs_noise(df, fin, pool)
     evn.to_csv(out_dir / "effect_vs_noise.csv", index=False)
     print(f"Wrote → {out_dir / 'effect_vs_noise.csv'} ({len(evn)} cells)")
     if not evn.empty:

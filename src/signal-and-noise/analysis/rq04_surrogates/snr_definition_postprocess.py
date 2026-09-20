@@ -1,16 +1,22 @@
 """Postprocessing for `snr_definition` — answers the four questions
 laid out in the README.
 
-Q1 (per language) — best variant under DA-size and DA-ckpt.
+Q1 (per language) — best variant under DA-size (proxy → TARGET_SIZE) and
+    DA-ckpt (the proxy sizes' own early checkpoints, pooled).
     → best_variant_per_language.csv
 Q2 (within-cluster similarities) — language groups by best variant.
     → variant_clusters.csv  (printed; the qualitative interpretation
       lives in the README).
-Q3 (across languages) — top variants by mean Pearson r.
+Q3 (across languages) — top variants by mean Pearson r over the languages
+    with a value (≥ MIN_LANG_TASKS tasks each, rule 8).
     → top_variants_overall.csv  +  top_variants_overall.png
-Q4 (top benchmarks per language) — under the global-best DA-size variant,
-    rank benchmarks per language with both DA-size and DA-ckpt values.
+Q4 (top benchmarks per language) — under the overall-best variant (Q3's
+    mean over DA-size and DA-ckpt), rank benchmarks per language with both
+    DA-size and DA-ckpt values.
     → top_benchmarks_per_language.csv  +  top_benchmarks_per_language.png
+
+Every per-language table is languages only (rule 7): `bpb_macro` and
+`train_loss` measure the whole mixture and are in no population here.
 """
 
 from __future__ import annotations
@@ -31,19 +37,20 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import (  # noqa: E402
-    load_languages, load_pools, load_snr_params)
+from evals.scripts.utils.configs import load_languages, load_pools  # noqa: E402
+from analysis import grids as G  # noqa: E402
 from analysis.rq04_surrogates.analyze_snr_variants import (  # noqa: E402
-    _per_language_pearson_table, assign_language, benchmark_family,
-    buckets_in_df, da_ckpt_pairs, da_size_pairs, list_variants,
+    _per_language_pearson_table, buckets_in_df, da_ckpt_pairs, da_size_pairs, list_variants,
 )
 from analysis.autodoc import (  # noqa: E402
     CANONICAL_POOL, HOLDOUT, SLIDES, fmt, md_table, replace_block)
-from snr.constants import PLOT_DIR  # noqa: E402
-from analysis.paths import NOISE_AND_SNR, SURROGATES
+from analysis.paths import NOISE_AND_SNR, SURROGATES  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    MIN_LANG_TASKS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, languages_only)
 
-TARGET_SIZE = load_snr_params()["target_size"]
 TOP_K = 5
+DA_NOTE = (f"DA-size = proxy final → {TARGET_SIZE} final; DA-ckpt = a proxy size's early checkpoints → its final, "
+           f"the proxy sizes ({', '.join(SMALL_SIZES)}) pooled; a language counts with ≥ {MIN_LANG_TASKS} tasks")
 
 
 # --- per-DA helpers ---------------------------------------------------------
@@ -86,7 +93,7 @@ def best_variant_per_language(df: pd.DataFrame) -> pd.DataFrame:
             row[f"runner_up_pearson_r_da_{kind}"] = (
                 float(sorted_col.iloc[1]) if len(sorted_col) > 1 else np.nan)
         rows.append(row)
-    return pd.DataFrame(rows)
+    return languages_only(pd.DataFrame(rows)).reset_index(drop=True)
 
 
 def render_best_variant_per_language(best_df: pd.DataFrame, save_path: Path):
@@ -114,13 +121,15 @@ def render_best_variant_per_language(best_df: pd.DataFrame, save_path: Path):
     ax.set_xticks(x)
     ax.set_xticklabels(langs)
     ax.set_ylabel("Pearson r — log10(SNR) vs DA")
-    ax.set_title("Best SNR variant per language (DA-size vs DA-ckpt)")
     ax.axhline(0, color="black", linewidth=0.5)
     ax.grid(True, axis="y", alpha=0.3)
     ax.legend()
     ymax = max(0.85, np.nanmax([rs_size, rs_ckpt]) + 0.15)
     ax.set_ylim(min(-0.1, np.nanmin([rs_size, rs_ckpt]) - 0.05), ymax)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, G._header(
+        fig, "Best SNR variant per language (DA-size vs DA-ckpt)",
+        "bar = the highest Pearson r, over the language's gated tasks, between log10 SNR under one definition and DA, "
+        f"labelled with the definition; {DA_NOTE}")))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=130)
     plt.close(fig)
@@ -199,8 +208,9 @@ def render_variant_family_per_language(best_df: pd.DataFrame, save_path: Path):
     ax.legend(handles, list(family_palette.keys()), title="Variant family",
               loc="upper right", bbox_to_anchor=(1.45, 1), fontsize=8,
               title_fontsize=9)
-    ax.set_title("Best variant family per language", fontsize=11)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, G._header(
+        fig, "Best variant family per language",
+        f"cell = the family of the definition with the highest Pearson r over the language's gated tasks; {DA_NOTE}")))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=130, bbox_inches="tight")
     plt.close(fig)
@@ -229,10 +239,12 @@ def variant_clusters(best_df: pd.DataFrame) -> pd.DataFrame:
 # --- Q3: across languages, top variants ------------------------------------
 
 def top_variants_overall(df: pd.DataFrame) -> pd.DataFrame:
-    """Mean Pearson r across languages per variant, for both DA-size and
-    DA-ckpt. Sorted by the mean over the two DA kinds: DA-size alone sits at
-    noise level on the ladder (|r| < 0.1 for every variant), so sorting on
-    it picked a variant at r = 0.03 over the DA-ckpt leaders at 0.27."""
+    """Mean Pearson r across the languages with a value (≥ MIN_LANG_TASKS
+    tasks each) per variant, for DA-size (proxy → TARGET_SIZE) and DA-ckpt
+    (the proxy sizes pooled; `n_languages_*` counts the languages behind
+    each mean). Sorted by the mean over the two DA kinds: DA-size alone sat
+    at noise level on the ladder (|r| < 0.1 for every variant), so sorting
+    on it picked a variant at r = 0.03 over the DA-ckpt leaders at 0.27."""
     rows = []
     tables = {k: _table(df, k) for k in ("size", "ckpt")}
     variants = sorted(set(tables["size"].index) | set(tables["ckpt"].index))
@@ -243,6 +255,8 @@ def top_variants_overall(df: pd.DataFrame) -> pd.DataFrame:
             if v in tables["size"].index else np.nan,
             "mean_r_da_ckpt": float(tables["ckpt"].loc[v].mean(skipna=True))
             if v in tables["ckpt"].index else np.nan,
+            "n_languages_da_size": int(tables["size"].loc[v].notna().sum()) if v in tables["size"].index else 0,
+            "n_languages_da_ckpt": int(tables["ckpt"].loc[v].notna().sum()) if v in tables["ckpt"].index else 0,
         })
     out = pd.DataFrame(rows)
     out["mean_r_overall"] = out[["mean_r_da_size", "mean_r_da_ckpt"]].mean(
@@ -267,14 +281,16 @@ def render_top_variants_overall(tv_df: pd.DataFrame, save_path: Path):
     ax.axvline(0, color="black", linewidth=0.5)
     ax.grid(True, axis="x", alpha=0.3)
     ax.legend(loc="lower right")
-    ax.set_title("SNR variants ranked by cross-language correlation with DA")
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, G._header(
+        fig, "SNR variants ranked by cross-language correlation with DA",
+        f"point = mean over the languages of the Pearson r, over the language's gated tasks, between log10 SNR and DA; {DA_NOTE}; "
+        f"languages behind a mean: {int(tv_df['n_languages_da_size'].max())} (DA-size), {int(tv_df['n_languages_da_ckpt'].max())} (DA-ckpt)")))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=130)
     plt.close(fig)
 
 
-# --- Q4: top benchmarks per language under the global-best variant ----------
+# --- Q4: top benchmarks per language under the overall-best variant ---------
 
 def reference_bucket(df: pd.DataFrame) -> str:
     """The size the per-language benchmark ranking is read at: the configured
@@ -293,7 +309,7 @@ def top_benchmarks_per_language(df: pd.DataFrame, variant: str,
         raise KeyError(snr_col)
     df = df.copy()
     df["language"] = [assign_language(t) for t in df.index]
-    df = df[df["language"] != "??"]
+    df = languages_only(df)                    # rule 7: bpb_macro / train_loss are no language's row
     da_size_col = f"decision_acc_size_{size}"
     # Mean ckpt-DA across the relative-fraction early ckpts at the same bucket
     # (the reference; the same bucket we use for SNR ranking). Columns are named with the
@@ -345,10 +361,11 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
         ax.grid(True, axis="x", alpha=0.3)
     for j in range(n, nrows * ncols):
         axes[j // ncols][j % ncols].set_visible(False)
-    fig.suptitle(f"Top-{TOP_K} benchmarks per language by SNR — variant "
-                 f"`{variant}` @ {top_df['size'].iloc[0]}  (annotations: DA-size, DA-ckpt mean)",
-                 fontsize=12)
-    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    fig.tight_layout(rect=(0, 0, 1, G._header(
+        fig, f"Top-{TOP_K} benchmarks per language by SNR — variant `{variant}` @ {top_df['size'].iloc[0]}",
+        f"bar = the task's SNR under `{variant}` at {top_df['size'].iloc[0]}, the language's {TOP_K} highest among its tasks "
+        f"with an SNR there; annotations: DA-s = DA-size (the size's final ranking against {TARGET_SIZE}; undefined at "
+        f"{TARGET_SIZE} itself), DA-c = mean DA-ckpt over the size's early checkpoints; `multi` is not a language")))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=130)
     plt.close(fig)
@@ -434,13 +451,15 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
 
     bullets = [
         f"- **Global-best SNR definition (`{pool}`): `{g.variant}`** — mean Pearson r of "
-        f"log₁₀(SNR) vs decision accuracy **{fmt(g.mean_r_da_size)}** (DA-size), "
-        f"**{fmt(g.mean_r_da_ckpt)}** (DA-ckpt), {fmt(g.mean_r_overall)} overall. "
+        f"log₁₀(SNR) vs decision accuracy **{fmt(g.mean_r_da_size)}** (DA-size, proxy → {TARGET_SIZE}, "
+        f"{int(g.n_languages_da_size)} languages), **{fmt(g.mean_r_da_ckpt)}** (DA-ckpt, proxy sizes pooled, "
+        f"{int(g.n_languages_da_ckpt)} languages), {fmt(g.mean_r_overall)} overall. "
         f"DA-ckpt is led by `{'`/`'.join(ckpt_leaders)}` (≈ {fmt(ckpt_r)}; "
         f"{'one family: ' + next(iter(families)) if len(families) == 1 else 'families: ' + ', '.join(sorted(families))}) — "
         f"recommend the *family*, not an exact variant.",
         f"- **Per-language anchor: `{fam_name}`** — the highest-SNR above-random benchmark "
-        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}); the language's own "
+        f"in **{fam_n} of {n_langs}** languages (`{g.variant}` SNR @ {ref}; `train_loss` and `bpb_macro` "
+        f"are not a language's and are left out); the language's own "
         f"BPB, ungated and on its own noise scale, outranks that benchmark in "
         f"{n_bpb_top} of the {n_with_bpb} languages that have both. "
         f"Weakest variants overall: `{'`, `'.join(worst)}`.",
@@ -485,7 +504,12 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
     results = [
         f"Headline numbers from the `{pool}` pool. Regenerate with "
         f"`python analysis/rq04_surrogates/snr_definition_postprocess.py --pool {pool}`.",
-        "**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across languages:",
+        f"**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across the trained languages "
+        f"with ≥ {MIN_LANG_TASKS} tasks (rule 8; {int(g.n_languages_da_size)} languages under DA-size, "
+        f"{int(g.n_languages_da_ckpt)} under DA-ckpt). DA-size = proxy final → {TARGET_SIZE} final only "
+        f"(the proxy-to-proxy scaling pairs are not DA-size, rule 9); DA-ckpt = a proxy size's early "
+        f"checkpoints → its final, the proxy sizes {', '.join(SMALL_SIZES)} pooled, never the "
+        f"{TARGET_SIZE} run's own checkpoints (rule 11):",
         t_variants,
         f"![SNR variants ranked by correlation with DA]({stage}/{pool}/top_variants_overall.png)",
         "**Statistical power by pool** — each pool's best variant (mean r over both DA kinds):",
@@ -493,7 +517,8 @@ def _readme_blocks(stage: str, pool: str) -> tuple[str, str]:
         f"**Most reliable benchmark per language** — `{g.variant}` SNR @ {ref} over the "
         f"above-random benchmarks, with the language's own BPB SNR alongside (ungated, "
         f"on its own noise scale; DA-size is undefined at the reference size itself, so "
-        f"DA-ckpt@{ref} is shown):",
+        f"DA-ckpt@{ref} is shown; `train_loss` and `bpb_macro` measure the whole mixture "
+        f"and are not a row, rule 7):",
         t_anchor,
         f"![Top-5 benchmarks per language by SNR]({stage}/{pool}/top_benchmarks_per_language.png)",
     ]

@@ -14,8 +14,8 @@ which *model sizes* do.
                       language lists (A vs B), temperature (A vs AT3), the
                       second language of L2 (ru vs zh, ru vs es). Populations:
                       per-language BPB on the languages both levels train
-                      (`bpb_trained`), on the languages neither trains
-                      (`bpb_untrained`), on all 100 (`bpb_all`), the benchmark
+                      (`bpb_trained`; the languages neither trains are rq06's
+                      measurement, RULES.md rule 2), the benchmark
                       tasks (`benchmark`), and the two single-item decisions, the
                       macro BPB (`bpb_macro`) and the training loss (`loss`). With two models per item this is
                       `snr.metrics.decision_acc_fast` per item — sign
@@ -63,7 +63,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
-from analysis.utils import (  # noqa: E402
+from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
     GRID_SEED, at_fraction, finals, ladder_frame, size_order, trained_bpb_tasks)
 
 OUT_ROOT = DESIGN_DECISIONS
@@ -72,7 +72,7 @@ MIN_ITEMS = 3                         # fewest population items for a DA cell
 # The reference's |Δ| is a difference of two single runs, so its null sd is
 # sqrt(2) x the per-run seed sd; DECIDED counts in those difference sds.
 DECIDED = 2.0
-FRACS = [0.2, 0.4, 0.6, 0.8, 1.0]     # where the proxy is read, as a share of its run
+FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]     # where the proxy is read: every evaluated tenth of its run (rule 3)
 # key -> (label, axis, levels, (held axis, its baseline level)). The first
 # level is the baseline; the reference at each L is the largest size trained
 # at both levels.
@@ -83,7 +83,11 @@ INTERVENTIONS = {
     "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("arch", "deep")),
     "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("arch", "deep")),
 }
-POPULATIONS = ("bpb_trained", "bpb_untrained", "bpb_all", "benchmark", "bpb_macro", "loss")
+# `bpb_untrained` and `bpb_all` are gone: a score on a language the mixture does
+# not train is rq06's measurement (RULES.md rule 2); the loader no longer
+# delivers those rows, so the populations would be empty. rq06 reads the
+# never-trained languages of every intervention.
+POPULATIONS = ("bpb_trained", "benchmark", "bpb_macro", "loss")
 SINGLE = {"bpb_macro": "bpb_macro", "loss": "train_loss"}   # one-task populations: the aggregates
 CELL_POPULATIONS = ("bpb_trained", "benchmark")   # the items behind the per-benchmark / per-language tables
 COLOUR = dict(zip(INTERVENTIONS, [S.RAMP[3], S.RAMP[1], S.SERIES[2], S.SERIES[1], "#8c1d18"]))
@@ -105,7 +109,7 @@ def _population(sub: pd.DataFrame, name: str, L: int, levels: tuple, axis: str) 
         return bpb.iloc[0:0]
     if name == "bpb_trained":
         return bpb[bpb["task"].isin(set.intersection(*tr))]
-    return bpb[~bpb["task"].isin(set.union(*tr))]   # bpb_untrained
+    raise ValueError(f"!!! RULE 2: population {name!r} reads untrained languages, which only rq06 may do")
 
 
 def _pivot(rows: pd.DataFrame, axis: str, levels: tuple) -> pd.DataFrame | None:
@@ -323,6 +327,7 @@ def plot_interventions(ev: pd.DataFrame, dag: pd.DataFrame, out_dir: Path) -> No
     a1.legend(handles=h, frameon=False, loc="lower right", ncol=1, fontsize=6.8)
     a1.grid(color=S.GRID, lw=.6); a1.set_axisbelow(True); S.clean(a1)
     fig.subplots_adjust(wspace=.5)
+    ev.to_csv(out_dir / "rq4_interventions.csv", index=False)   # rule 12: the table the paper figure draws
     S.save_figure(fig, out_dir, "rq4_interventions")
 
 
@@ -396,10 +401,10 @@ def main(pool: str, out_dir: Path) -> None:
         for by, name in (("family", "benchmark"), ("language", "language")):
             (items.groupby(keys + [by]).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
              .to_csv(out_dir / f"intervention_da_by_{name}.csv", index=False))
-    if not groups.empty:
-        (groups.groupby(["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"])
-         .agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-         .to_csv(out_dir / "intervention_da_by_group.csv", index=False))
+    gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
+    (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+     if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
+     ).to_csv(out_dir / "intervention_da_by_group.csv", index=False)     # written empty rather than left stale (rule 14)
     print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:

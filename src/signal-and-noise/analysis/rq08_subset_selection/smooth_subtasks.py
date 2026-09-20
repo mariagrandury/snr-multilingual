@@ -48,7 +48,7 @@ _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from analysis.utils import (
+from analysis.utils import (noise_checkpoints,
     _BENCHMARK_FAMILY_OVERRIDES, _LANG_MAP, _is_language_aggregate,
     assign_language, benchmark_family,
 )
@@ -77,7 +77,6 @@ _GMF_LANGS = tuple(sorted(
     t[len("global_mmlu_full_"):] for t in load_tasks()
     if t.startswith("global_mmlu_full_") and "_" not in t[len("global_mmlu_full_"):]))
 
-LAST_N = load_snr_params()["last_n"]
 # MMLU's category roll-ups are means of their member subjects; sweeping them
 # next to the leaves double-counts every item.
 _GMF_ROLLUPS = {"humanities", "other", "social_sciences", "stem"}
@@ -103,17 +102,19 @@ def _sizes(df: pd.DataFrame) -> list[str]:
 ### SNR primitives (per-model arrays, single subtask vs. averaged subset) ###
 
 
-def _per_model_last_n(scores_df: pd.DataFrame, last_n: int = LAST_N) -> list[np.ndarray]:
-    """Sorted-by-step, grouped-by-``model`` list of last-n score arrays.
+def _per_model_noise_window(scores_df: pd.DataFrame) -> list[np.ndarray]:
+    """Sorted-by-step, grouped-by-``model`` list of noise-window score arrays.
     Mirrors snr.snr_simple.compute_snr_small_scale (jagged-tolerant); each
     unique value of the ``model`` column is one training run, so the
     signal pool naturally combines Apertus (mix, seed) tuples (one model
     name per tuple) with external reference models (one model name per
     HF release)."""
-    scores_df = scores_df.sort_values("step")
+    scores_df = scores_df.sort_values("step").copy()
+    # rule 4: the shared tenths in the last NOISE_WINDOW of each run, as every other noise estimate
+    scores_df["frac"] = scores_df["step"] / scores_df.groupby("model")["step"].transform("max")
     return [
-        np.asarray(lst[-last_n:], dtype=float)
-        for lst in scores_df.groupby("model")["primary_score"].apply(list)
+        np.asarray(lst, dtype=float)
+        for lst in noise_checkpoints(scores_df).groupby("model")["primary_score"].apply(list)
     ]
 
 
@@ -132,14 +133,14 @@ def snr_for_subset(df: pd.DataFrame, subtasks: list[str], size: str) -> float:
     if sub.empty:
         return float("nan")
     if len(subtasks) == 1:
-        arrays = _per_model_last_n(sub)
+        arrays = _per_model_noise_window(sub)
     else:
         avg = (
             sub.groupby(["model", "step"])["primary_score"]
             .mean()
             .reset_index()
         )
-        arrays = _per_model_last_n(avg)
+        arrays = _per_model_noise_window(avg)
 
     arrays = [a for a in arrays if a.size >= 2]
     if len(arrays) < 2:
@@ -694,7 +695,7 @@ def build_pool(pool: str) -> pd.DataFrame:
     stage, or every non-custom model for the ``external`` tier), so this RQ
     respects stage/pool exactly like every other one — no local model filter."""
     from analysis.utils import build_snr_pool
-    return _with_bucket(build_snr_pool(pool))
+    return _with_bucket(build_snr_pool(pool, facets=True))   # the one analysis that reads the sub-benchmarks (rule 6)
 
 
 def main(stage: str, pool: str, out_dir: Path):

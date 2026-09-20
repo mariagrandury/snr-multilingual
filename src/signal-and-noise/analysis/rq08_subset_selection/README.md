@@ -10,11 +10,11 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.73 → 4.42** (**+1.69**) with `multiblimp_deu|multiblimp_eng`.
-- **`multiblimp` 600M (per_benchmark)** — a subset beats the full set: SNR **2.76 → 4.06** (**+1.30**) with `multiblimp_rus`.
-- **`hellaswag` 1B (per_benchmark)** — a subset beats the full set: SNR **2.53 → 3.83** (**+1.30**) with `hellaswag_ru|hellaswag_ca|hellaswag_sk`.
-- **Median gain by case** — per_benchmark 0.38; global_mmlu_full_subjects  (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **17 of 35** swept cells beat the null's 95th percentile: `multiblimp` 350M, `multiblimp` 600M, `hellaswag` 1B, `bpb` 175M, `bpb` 600M.
+- **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.54 → 3.78** (**+1.24**) with `arc_challenge`.
+- **`global_mmlu_full` 600M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.14 → 3.33** (**+1.18**) with `human_aging`.
+- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.95 → 4.08** (**+1.13**) with `multiblimp_rus|multiblimp_deu|multiblimp_eng|multiblimp_fra`.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.24 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **21 of 54** swept cells beat the null's 95th percentile: `global_mmlu_full` 600M, `multiblimp` 350M, `multiblimp` 175M, `global_mmlu_full_sr` 350M, `global_mmlu_full_ms` 350M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -72,18 +72,18 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `multiblimp` | 350M | 2.73 → 4.42 | +1.69 | 3.40 | `multiblimp_deu` \| `multiblimp_eng` |
-| per_benchmark | `multiblimp` | 600M | 2.76 → 4.06 | +1.30 | 3.04 | `multiblimp_rus` |
-| per_benchmark | `hellaswag` | 1B | 2.53 → 3.83 | +1.30 | 3.24 | `hellaswag_ru` \| `hellaswag_ca` \| `hellaswag_sk` |
-| per_benchmark | `xwinograd` | 1B | 2.68 → 3.52 | +0.83 | 3.52 | `xwinograd_ru` |
-| per_benchmark | `bpb` | 350M | 2.62 → 3.43 | +0.81 | 3.43 | `bpb_swh_Latn` |
-| per_benchmark | `bpb` | 175M | 2.84 → 3.64 | +0.79 | 3.19 | `bpb_eus_Latn` \| `bpb_swh_Latn` |
-| per_benchmark | `bpb` | 600M | 2.59 → 3.34 | +0.75 | 3.00 | `bpb_rus_Cyrl` \| `bpb_swh_Latn` |
-| per_benchmark | `multiblimp` | 1.7B | 2.45 → 3.20 | +0.74 | 2.68 | `multiblimp_rus` \| `multiblimp_ukr` |
-| per_benchmark | `bpb` | 1B | 2.55 → 3.26 | +0.71 | 3.13 | `bpb_rus_Cyrl` \| `bpb_swh_Latn` |
-| per_benchmark | `multiblimp` | 1B | 3.05 → 3.75 | +0.70 | 3.21 | `multiblimp_bel` |
-| per_benchmark | `lambada_openai_mt` | 350M | 4.01 → 4.68 | +0.68 | 4.68 | `lambada_openai_mt_de` \| `lambada_openai_mt_en` |
-| per_benchmark | `xstorycloze` | 1B | 3.06 → 3.71 | +0.65 | 3.42 | `xstorycloze_ru` \| `xstorycloze_ca` |
+| per_benchmark | `arc` | 1B | 2.54 → 3.78 | +1.24 | 3.78 | `arc_challenge` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 | 3.22 | `human_aging` |
+| per_benchmark | `multiblimp` | 350M | 2.95 → 4.08 | +1.13 | 3.67 | `multiblimp_rus` \| `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_fra` |
+| per_benchmark | `multiblimp` | 175M | 3.10 → 4.22 | +1.12 | 3.69 | `multiblimp_rus` \| `multiblimp_spa` |
+| global_mmlu_full_per_language | `global_mmlu_full_sr` | 350M | 2.66 → 3.65 | +0.99 | 3.48 | `formal_logic` |
+| per_benchmark | `bpb` | 175M | 3.11 → 4.09 | +0.98 | 4.09 | `bpb_rus_Cyrl` |
+| global_mmlu_full_per_language | `global_mmlu_full_ms` | 350M | 2.53 → 3.43 | +0.91 | 2.96 | `prehistory` \| `professional_psychology` |
+| global_mmlu_full_subjects | `global_mmlu_full` | 350M | 3.23 → 4.09 | +0.87 | 3.91 | `nutrition` |
+| per_benchmark | `multiblimp` | 600M | 2.92 → 3.70 | +0.78 | 3.34 | `multiblimp_eng` \| `multiblimp_deu` |
+| global_mmlu_full_per_language | `global_mmlu_full_lt` | 350M | 2.69 → 3.44 | +0.75 | 3.00 | `anatomy` \| `international_law` \| `professional_psychology` \| `formal_logic` \| `… (+4)` |
+| per_benchmark | `xnli` | 600M | 3.21 → 3.88 | +0.67 | 3.24 | `xnli_ru` \| `xnli_en` |
+| per_benchmark | `include_base_44` | 1B | 1.77 → 2.40 | +0.62 | 2.40 | `include_base_44_georgian` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

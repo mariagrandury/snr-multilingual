@@ -1,7 +1,9 @@
 """rq04 per benchmark and per language: which SNR definition, and which cheap
 statistic, tracks decision accuracy where.
 
-    snr_definition_by_language.png   Pearson r of log10 SNR with DA, SNR definition x language (DA-size, DA-ckpt)
+    snr_definition_by_language.png   Pearson r of log10 SNR with DA, SNR definition x language (DA-size = proxy → 1.7B,
+                                     DA-ckpt = the proxy sizes' own early checkpoints, pooled); a language needs
+                                     MIN_LANG_TASKS tasks with an SNR and a DA (rule 8)
     surrogates_by_benchmark.png      Spearman rho of each statistic with DA-size, statistic x proxy size, per benchmark
     surrogates_by_language.png       the same per language
     min_level_by_L.png               smallest proxy size (DA-size) / earliest checkpoint of the reference (DA-ckpt)
@@ -25,11 +27,19 @@ statistic, tracks decision accuracy where.
 The first reads `snr_variant_ranking.csv` (the per-language pooled r that
 `analyze_snr_variants.py` writes). The second reruns `analyze.surrogates` on
 one benchmark's, or one language's, tasks; a subplot needs MIN_TASKS tasks
-at a proxy size, so most languages stay blank.
+at a proxy size, so most languages stay blank, and a cell the gate emptied
+(tasks at chance at the proxy or at the reference) is grey (rule 1).
 The per-L figures read rq02's `da_by_L_per_task.csv` (pairs of design
 variants that share the L): a measurement is `train_loss`, `bpb_macro`, the
 per-language BPB (mean) or a benchmark family (mean over its gated tasks);
-a level is safe when it holds at every larger level with a value.
+a level is safe when it holds at every larger level with a value. Rule 9:
+the L2 ZH/ES settings stop at 1B, so L2's reference would be 1B; this pool
+excludes ZH/ES and L2 has too few pairs against 1.7B, so it is blank in the
+DA-size panel — a 1B reference is not implemented, and the script says so.
+Version B and the FLOPs version read `da_pooled_per_task.csv`: every pair
+of the pool, on the tasks of the languages each cell trains (rule 2) and
+parent tasks only (rule 6); the benchmark mean's task count per size is in
+the caption and on the DA-at-1C panel (rule 13).
 
     python analysis/rq04_surrogates/panels.py --pool predictivity
 """
@@ -52,22 +62,24 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
-from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, NOISE_AND_SNR, SCALING_PREDICTABILITY, SURROGATES  # noqa: E402
-from analysis.rq04_surrogates.analyze import CANONICAL, FITS_POOL, KINDS, MIN_TASKS, surrogates  # noqa: E402
+from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, NOISE_AND_SNR, SURROGATES  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
+from analysis.rq04_surrogates.analyze import CANONICAL, KINDS, MIN_TASKS, proxy_fit_r2, surrogates  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
-from analysis.utils import SMALL_SIZES, TARGET_SIZE, benchmark_family, trained_bpb_tasks  # noqa: E402
+from analysis.utils import MIN_LANG_TASKS, SMALL_SIZES, TARGET_SIZE, benchmark_family, passes_gate, trained_bpb_tasks  # noqa: E402
 from pretrain.ladder_report import _trained_tasks  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 from scipy.stats import spearmanr  # noqa: E402
 
 OUT_ROOT = SURROGATES
-MIN_LANG_TASKS = 5
-ALL_L = (1, 2, 8, 15, 30, 50, 100)   # every language count of the grid, blank until it has pairs
+ALL_L = (1, 2, 8, 15, 30, 50)   # every language count of the grid, blank until it has pairs (L100 was dropped)
 RHO_MIN = 0.3                   # an SNR definition "tracks" DA at a size once its Spearman rho over the L's tasks reaches this
+RULE9_NOTE = (f"L2's reference would be 1B (the ZH/ES L2 settings stop at 1B, rule 9); this pool excludes ZH/ES and L2 has "
+              f"fewer than {MIN_PAIRS} pairs against {TARGET_SIZE}, so L2 is blank in the DA-size panel; a 1B reference is not implemented")
 mpl.rcParams.update(S.RC)
 
 
@@ -78,24 +90,25 @@ def main(pool: str) -> None:
     # a language's r is pooled over its (task, size pair) points; `all` has one r per size pair, read as their mean
     rk = rk[((rk["column"] == "pooled") | ((rk["scope"] == "all") & (rk["column"] == "mean")))
             & rk["da_def"].isin(["da_size", "da_ckpt/da_ckpt_mix"])].copy()
-    rk["da"] = rk["da_def"].map({"da_size": "DA-size", "da_ckpt/da_ckpt_mix": "DA-ckpt (all sizes)"})
+    rk["da"] = rk["da_def"].map({"da_size": "DA-size", "da_ckpt/da_ckpt_mix": "DA-ckpt (proxy sizes pooled)"})
     order = rk.groupby("variant")["pearson_r"].mean().sort_values(ascending=False).index.tolist()
-    # a per-language r over fewer than MIN_LANG_TASKS tasks is ±1 by construction (CLAUDE.md #6)
-    n_tasks = G.add_meta(pd.read_csv(NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv",
-                                      usecols=["task"]))["language"].value_counts()
-    keep = ["all"] + sorted(l for l, n in n_tasks.items() if n >= MIN_LANG_TASKS)
+    # a per-language r needs MIN_LANG_TASKS distinct tasks with an SNR and a DA (rule 8): analyze_snr_variants writes NaN
+    # below that, so the languages shown are the ones with a finite r, not the ones with that many CSV rows
+    keep = ["all"] + sorted(rk.loc[(rk["column"] == "pooled") & rk["pearson_r"].notna(), "scope"].unique())
     rk = rk[rk["scope"].isin(keep)]
     G.panel_grid(rk, out_dir / "snr_definition_by_language.png", by="da", row="variant", col="scope", value="pearson_r",
                  row_order=order, col_order=keep, ncols=1, vmin=-1, vmax=1, center=0.0, cmap=S.DIV, fmt="{:+.1f}",
                  counts=False, cell_w=0.3,
-                 order=["DA-size", "DA-ckpt (all sizes)"], cbar="Pearson r of log10 SNR with DA",
-                 xlabel=f"language (≥ {MIN_LANG_TASKS} tasks; `all` = pooled)", ylabel="SNR definition",
+                 order=["DA-size", "DA-ckpt (proxy sizes pooled)"], cbar="Pearson r of log10 SNR with DA",
+                 xlabel=f"language (≥ {MIN_LANG_TASKS} tasks with an SNR and a DA; `all` = pooled)", ylabel="SNR definition",
                  title="Which SNR definition tracks decision accuracy, per language",
                  note="cell = Pearson r, over the language's tasks, between log10 SNR under that definition and the task's decision "
-                      "accuracy (pooled over proxy sizes); `all` = every task, mean of the r over the size pairs")
+                      f"accuracy (pooled over the proxy sizes {', '.join(SMALL_SIZES)}; DA-size = proxy final → {TARGET_SIZE} final, "
+                      "DA-ckpt = the proxy's early checkpoints → its final); `all` = every task, mean of the r over the columns; "
+                      f"a language with fewer than {MIN_LANG_TASKS} tasks with a point is blank; `multi` is not a language")
     fig, axes = plt.subplots(1, 3, figsize=(16, 5.2))
     tables = []
-    for ax, da in zip(axes, ["DA-size", "DA-ckpt (all sizes)"]):
+    for ax, da in zip(axes, ["DA-size", "DA-ckpt (proxy sizes pooled)"]):
         r = rk[(rk["da"] == da) & (rk["scope"] == "all")].set_index("variant")["pearson_r"]
         tables.append(G.rank_ax(ax, r, f"SNR definitions by r with {da}, all tasks", k=6, xlabel="Pearson r", ref=0.0))
     per_lang = rk[(rk["da"] == "DA-size") & (rk["scope"] != "all")].dropna(subset=["pearson_r"])
@@ -103,30 +116,40 @@ def main(pool: str) -> None:
     tables.append(G.rank_ax(axes[2], wins, f"Languages in which a definition is the best (DA-size, {per_lang['scope'].nunique()} languages)",
                             k=len(wins), xlabel="languages", fmt="{:.0f}"))
     G.save_highlights(fig, out_dir, "rq04 in one figure: which SNR definition predicts decision accuracy?",
-                      f"Pearson r between log10 SNR and DA over tasks; a language counts with ≥ {MIN_LANG_TASKS} tasks", tables)
+                      f"Pearson r between log10 SNR and DA over tasks (DA-size = proxy final → {TARGET_SIZE} final, DA-ckpt = the "
+                      f"proxy sizes' early checkpoints → their final, {', '.join(SMALL_SIZES)} pooled); a language counts with "
+                      f"≥ {MIN_LANG_TASKS} tasks with an SNR and a DA", tables)
 
     v = pd.read_csv(NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv", index_col=0).rename_axis("task").reset_index()
     scores = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_scores.csv")
-    fits_path = SCALING_PREDICTABILITY / stage / FITS_POOL / "rq1_fits.csv"
-    fits_r2 = pd.read_csv(fits_path).groupby("task")["r2"].median() if fits_path.is_file() else pd.Series(dtype=float)
-    v = G.add_meta(v)
+    fits_r2 = proxy_fit_r2(SMALL_SIZES, pool)            # the R² of the fit over the rungs up to the proxy (rule 11)
+    gate = load_mask(pool)
+    v = G.add_meta(v)                                     # languages only (rule 7)
+    proxies = [s for s in SMALL_SIZES if f"decision_acc_size_{s}" in v.columns]
     both = []
     for by, ncols in (("family", 4), ("language", 6)):
-        cells = []
+        cells, gated = [], []
         for key, g in v.groupby(by):
-            t = surrogates(g.reset_index(drop=True), scores, fits_r2)
+            t = surrogates(g.reset_index(drop=True), scores, fits_r2, gate)
             cells.append(t.assign(**{by: key}))
+            # the (subplot, proxy) cells the gate emptied: enough tasks, too few above chance at the proxy and at the
+            # reference; grey where they have no value (rules 1, 12)
+            gated += [{by: key, "proxy": s, "gated": True} for s in proxies
+                      if len(g) >= MIN_TASKS > passes_gate(gate, g["task"], s, TARGET_SIZE).sum()]
         cells = pd.concat(cells) if cells else pd.DataFrame()
         if cells.empty:
             continue
+        cells = pd.concat([cells.assign(gated=False)] + [pd.DataFrame(gated).merge(pd.DataFrame({"metric": cells["metric"].unique()}), how="cross")]
+                          if gated else [cells.assign(gated=False)], ignore_index=True)
         both.append(cells.rename(columns={by: "key"}).assign(unit="benchmark" if by == "family" else "language"))
         metrics = cells.groupby("metric")["rho"].mean().sort_values(ascending=False).index.tolist()
         G.panel_grid(cells, out_dir / f"surrogates_by_{'benchmark' if by == 'family' else 'language'}.png", by=by,
                      row="metric", col="proxy", value="rho", row_order=metrics, csv=False,
                      col_order=[s for s in SMALL_SIZES if s in set(cells["proxy"])], ncols=ncols, vmin=-1, vmax=1,
                      center=0.0, cmap=S.DIV, fmt="{:+.2f}", counts=False, cbar="Spearman ρ with DA-size", xlabel="proxy size",
-                     note="cell = Spearman ρ, over the subplot's tasks, between the statistic read at the proxy size and the "
-                          f"task's DA-size (needs {MIN_TASKS} tasks)",
+                     note="cell = Spearman ρ, over the subplot's tasks above chance at the proxy and at "
+                          f"{TARGET_SIZE}, between the statistic read at the proxy size and the task's DA-size (needs {MIN_TASKS} "
+                          "tasks with a value; the R² is fitted on the rungs up to the proxy only)",
                      title="Which statistic predicts DA-size, per " + ("benchmark" if by == "family" else "language"))
     if both:                        # the two figures draw different cells: one table, `unit` says whose
         pd.concat(both).to_csv(out_dir / "surrogates.csv", index=False)
@@ -138,11 +161,11 @@ def main(pool: str) -> None:
         f"The rankings above, without the aggregation (`{pool}` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq04 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('SNR definition per language', 'snr_definition_by_language.png'), ('Surrogates per benchmark', 'surrogates_by_benchmark.png'), ('Surrogates per language', 'surrogates_by_language.png')]]
-        + [f"**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}):"]
+        + [f"**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}). Rule 9: {RULE9_NOTE}:"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Smallest safe level per measurement and L', 'min_level_by_L.png'), ('the same as lines', 'min_level_by_L_lines.png'), ('Smallest size at which an SNR definition tracks DA, per L', 'snr_variant_min_size_by_L.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines.png')]]
-        + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints):"]
+        + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at {TARGET_SIZE}; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Earliest checkpoint per proxy size and DA at 1C', 'min_level_by_L_b.png'), ('the same as lines', 'min_level_by_L_lines_b.png'), ('Spearman rho of each SNR definition with DA per proxy size', 'snr_variant_min_size_by_L_b.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines_b.png')]]
-        + ["**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute:"]
+        + ["**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('DA of every cell against compute', 'min_level_by_L_flops.png'), ('rho of each SNR definition against compute', 'snr_variant_min_size_by_L_flops.png')]])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
@@ -228,6 +251,9 @@ def by_L(pool: str, out_dir: Path, stage: str) -> None:
     few = sorted(has_pairs - set(t.loc[t["da_ref"].notna(), "L"]))
     few_note = (f"; left out of the DA-size panel for having fewer than {MIN_PAIRS} pairs against {TARGET_SIZE}: "
                 f"L{', L'.join(map(str, few))}" if few else "")
+    if 2 not in set(t.loc[t["da_ref"].notna(), "L"]):
+        print(f"!!! RULE 9: {RULE9_NOTE}")
+        few_note += f"; rule 9: {RULE9_NOTE}"
     fracs = sorted(f for f in t["frac"].unique() if f < 1.0)
     # the measurements: DA-size at every proxy's final checkpoint, DA-ckpt within the reference's own run
     ref = G.mark_gated(t[t["frac"] == 1.0].dropna(subset=["da_ref"]), pool, "proxy_size", "da_ref", TARGET_SIZE)
@@ -299,12 +325,21 @@ def pooled_b(pool: str, out_dir: Path, stage: str, v: pd.DataFrame, variants: li
     wide = m.pivot_table(index=["measurement", "proxy_size"], columns="frac", values="da").reindex(columns=fracs)
     lev = (G.smallest_safe(wide.ge(SAFE_DA).where(wide.notna())).rename("level").rename_axis(["measurement", "proxy_size"])
            .reset_index().pivot(index="measurement", columns="proxy_size", values="level"))
-    lev = G.with_gated(lev, set(zip(e.loc[e["gated"], "measurement"], e.loc[e["gated"], "proxy_size"]))).reindex(index=rows, columns=sizes)
+    gated_pairs = set(zip(e.loc[e["gated"], "measurement"], e.loc[e["gated"], "proxy_size"]))
+    lev = G.with_gated(lev, gated_pairs).reindex(index=rows, columns=sizes)
     at_1c = wide[0.2].unstack("proxy_size").reindex(index=rows, columns=sizes)          # 1C = 20 % of the run
+    cnt_1c = (e[e["frac"] == 0.2].groupby(["measurement", "proxy_size"])["da"].count().unstack("proxy_size")
+              .reindex(index=rows, columns=sizes))                                     # tasks behind each cell (rule 13)
+    gated_1c = pd.DataFrame([[(r, c) in gated_pairs for c in sizes] for r in rows], index=rows, columns=sizes)
+    bench_n = e[(e["measurement"] == BENCH_MEAN) & (e["frac"] == 1.0)].groupby("proxy_size")["da"].count().reindex(sizes)
+    population = (f"population = every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), "
+                  f"parent tasks only, above chance at the proxy and at {TARGET_SIZE}; {BENCH_MEAN} pools "
+                  + ", ".join(f"{int(n) if np.isfinite(n) else 0} tasks at {s}" for s, n in bench_n.items()))
     title = f"How early each proxy size reads the {TARGET_SIZE} ranking, every pair pooled ({pool} pool)"
     note = (f"left: cell = earliest checkpoint (Chinchilla multiples, 5C = the proxy's final) at which the proxy's ranking of the "
             f"design variants agrees with the {TARGET_SIZE} final ranking at DA ≥ {SAFE_DA}, holding at every later checkpoint; "
-            f"right: the DA at 1C itself; DA = mean over the measurement's gated tasks of the share of pairs ordered alike")
+            f"right: the DA at 1C itself, the small number = tasks behind the cell; DA = mean over the measurement's gated tasks "
+            f"of the share of pairs ordered alike; grey = the gate emptied the cell; {population}")
     for kind, fn in (("", G.level_ax), ("_lines", G.level_lines_ax)):
         fig, axes = plt.subplots(1, 2, figsize=(14, 0.3 * len(rows) + 2.4) if not kind else (14, 4.6),
                                  gridspec_kw={"width_ratios": [1.2, 1]})
@@ -318,7 +353,8 @@ def pooled_b(pool: str, out_dir: Path, stage: str, v: pd.DataFrame, variants: li
             axes[1].set_title("DA at 1C", loc="left", fontsize=8.5); axes[1].grid(color=S.GRID, lw=.6); S.clean(axes[1])
             t2 = at_1c.rename_axis(index="row", columns="col").stack().dropna().rename("value").reset_index().assign(panel="DA at 1C")
         else:
-            t2 = G.matrix_ax(axes[1], at_1c, "DA at 1C (20 % of the proxy's run)", vmin=0.5, vmax=1.0, xlabel="proxy size")
+            t2 = G.matrix_ax(axes[1], at_1c, "DA at 1C (20 % of the proxy's run)", cnt=cnt_1c, gated=gated_1c, vmin=0.5, vmax=1.0,
+                             xlabel="proxy size")
         G.save_highlights(fig, out_dir, title, note, [t1, t2], name=f"min_level_by_L{kind}_b")
     # SNR definitions against the pooled DA, per proxy size
     rho = []
@@ -351,7 +387,7 @@ def pooled_b(pool: str, out_dir: Path, stage: str, v: pd.DataFrame, variants: li
     title = f"Which SNR definition tracks decision accuracy at each proxy size, every pair pooled ({pool} pool)"
     note = (f"cell = Spearman ρ over the gated tasks of the population (≥ {MIN_TASKS}) between log10 SNR at the proxy size and the "
             f"task's DA; DA-size = proxy final → {TARGET_SIZE} final, DA-ckpt = the size's own early checkpoints → its final, mean "
-            "over the nine checkpoints before the last; definitions ordered by their mean ρ with the benchmarks' DA-size")
+            f"over the nine checkpoints before the last; definitions ordered by their mean ρ with the benchmarks' DA-size; {population}")
     fig, axes = plt.subplots(2, 2, figsize=(11, 0.6 * len(order) + 4))
     tables = [G.matrix_ax(axes[j][i], mats[(k, kd)], f"ρ with DA-{k}, {kd}", vmin=-1, vmax=1, center=0.0, cmap=S.DIV, fmt="{:+.2f}",
                           xlabel="proxy size", ylabel="SNR definition" if i == 0 else "")
@@ -370,7 +406,7 @@ def pooled_b(pool: str, out_dir: Path, stage: str, v: pd.DataFrame, variants: li
         axes[j][0].set_ylabel("Spearman ρ")
     axes[0][1].legend(fontsize=6, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0), ncol=1)
     G.save_highlights(fig, out_dir, title, note + f"; dashed line = {RHO_MIN}", tables, name="snr_variant_min_size_by_L_lines_b")
-    flops_version(pool, out_dir, e, v, variants, order, rows)
+    flops_version(pool, out_dir, e, v, variants, order, rows, population)
 
 
 def _flops_ax(ax, curves: dict, *, colours: dict, styles: dict | None = None, ylabel: str, ref: float | None = None,
@@ -391,8 +427,11 @@ def _flops_ax(ax, curves: dict, *, colours: dict, styles: dict | None = None, yl
     return pd.concat(tables) if tables else pd.DataFrame(columns=["row", "col", "value"])
 
 
-def flops_version(pool: str, out_dir: Path, e: pd.DataFrame, v: pd.DataFrame, variants: list, order: list, rows: list) -> None:
-    """Every (proxy size, checkpoint) cell at its training compute."""
+def flops_version(pool: str, out_dir: Path, e: pd.DataFrame, v: pd.DataFrame, variants: list, order: list, rows: list,
+                  population: str) -> None:
+    """Every (proxy size, checkpoint) cell at its training compute, on version
+    B's population (`population` names it and the benchmark mean's task count
+    per size for the caption)."""
     cells = e.groupby(["measurement", "proxy_size", "frac"]).agg(y=("da", "mean"), compute_share=("compute_share", "first")).reset_index()
     colours = {m: (plt.cm.tab20(i % 20) if m not in FIRST_ROWS else [S.RAMP[3], S.RAMP[1], S.SERIES[1], S.SERIES[2]][FIRST_ROWS.index(m)])
                for i, m in enumerate(rows)}
@@ -407,7 +446,7 @@ def flops_version(pool: str, out_dir: Path, e: pd.DataFrame, v: pd.DataFrame, va
     G.save_highlights(fig, out_dir, f"How much compute reads the {TARGET_SIZE} ranking, every pair pooled ({pool} pool)",
                       f"point = one (proxy size, checkpoint) cell at the compute spent up to that checkpoint; y = mean over the "
                       f"measurement's gated tasks of the share of design-variant pairs the cell orders like the {TARGET_SIZE} final "
-                      f"checkpoint; dotted line = {SAFE_DA}", [t1.assign(panel="aggregates"), t2.assign(panel="families")],
+                      f"checkpoint; dotted line = {SAFE_DA}; {population}", [t1.assign(panel="aggregates"), t2.assign(panel="families")],
                       name="min_level_by_L_flops")
     # the SNR definitions: rho between log10 SNR at the size and the DA of each (size, checkpoint) cell
     e1 = e[e["measurement"] != BENCH_MEAN].assign(kind=lambda d: _kind(d["task"]))
@@ -437,7 +476,8 @@ def flops_version(pool: str, out_dir: Path, e: pd.DataFrame, v: pd.DataFrame, va
     G.save_highlights(fig, out_dir, f"Which SNR definition tracks the decision at every compute, every pair pooled ({pool} pool)",
                       f"point = one (proxy size, checkpoint) cell; y = Spearman ρ over the population's gated tasks (≥ {MIN_TASKS}) "
                       f"between log10 SNR at the size and the task's DA at that checkpoint against the {TARGET_SIZE} final ranking; "
-                      f"SNR is a property of the size (its final window), so every size restarts the curve; dashed line = {RHO_MIN}",
+                      f"SNR is a property of the size (its final window), so every size restarts the curve; dashed line = {RHO_MIN}; "
+                      f"{population}",
                       tables, name="snr_variant_min_size_by_L_flops")
 
 

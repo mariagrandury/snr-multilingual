@@ -53,6 +53,10 @@ def decision_lines(out_dir: Path, stage: str) -> None:
     if not src.is_file():
         return
     g = pd.read_csv(src).assign(population="bpb")
+    if g.empty:
+        print("!!! RULE 2: rq05's per-group table is empty (its pool holds trained languages only); the transfer decision "
+              "lines need the untrained groups, which only this folder's analyze.py may read — skipped")
+        return
     da_lines(g[g["intervention"] == "scheme"], out_dir, name="transfer_da_lines", series="group", colours=GROUP_COLOUR,
              populations=(("bpb", "-", "per-language BPB"),),
              title="Does a proxy read the list decision (scheme A vs B) for languages it did not train?",

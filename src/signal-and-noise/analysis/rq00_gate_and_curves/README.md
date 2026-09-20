@@ -13,8 +13,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `lambada_openai_mt`, `global_piqa_parallel_cloze`, `arc`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **462 benchmarks, 128 clear chance at ≥1 size** and 119 at 1.7B (334 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **The benchmarks that separate the language settings most: `global_piqa_parallel_cloze`, `truthfulqa-multi_mc1`, `include_base_44`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
+- **Above-random gate.** Of **647 benchmarks, 325 clear chance at ≥1 size** and 302 at 1.7B (322 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -92,21 +92,21 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `global_piqa_parallel_cloze_bul_cyrl` | global_piqa_parallel_cloze | bg | 0.840 |
-| `global_piqa_parallel_cloze_fra_latn_cana` | global_piqa_parallel_cloze | fr | 0.659 |
-| `global_piqa_parallel_cloze_hin_deva` | global_piqa_parallel_cloze | hi | 0.658 |
-| `global_piqa_parallel_cloze_swe_latn` | global_piqa_parallel_cloze | sv | 0.558 |
-| `global_piqa_parallel_cloze_cmn_hans` | global_piqa_parallel_cloze | zh | 0.543 |
+| `global_piqa_parallel_cloze_spa_latn_peru` | global_piqa_parallel_cloze | es | 0.400 |
+| `global_piqa_parallel_cloze_apc_arab_pale` | global_piqa_parallel_cloze | ar | 0.369 |
+| `global_piqa_parallel_cloze_arz_arab` | global_piqa_parallel_cloze | ar | 0.364 |
+| `global_piqa_parallel_cloze_apc_arab_jord` | global_piqa_parallel_cloze | ar | 0.338 |
+| `global_piqa_parallel_cloze_hun_latn` | global_piqa_parallel_cloze | hu | 0.308 |
 
-![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/lambada_openai_mt.png)
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/global_piqa_parallel_cloze.png)
 
-**Above-random gate** — a benchmark must beat chance (`1/n_options`) by +0.05; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
+**Above-random gate** — a (benchmark, size) cell is kept when at least 50% of the size's runs clear chance (`1/n_options`) with the Wilson 90% lower bound of their accuracy over the task's items; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
 | options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 84 / 192 | 81 / 192 |
-| 3 | 0.33 | 13 / 18 | 13 / 18 |
-| 4 | 0.25 | 31 / 252 | 25 / 252 |
+| 2 | 0.50 | 90 / 101 | 90 / 101 |
+| 3 | 0.33 | 16 / 18 | 15 / 18 |
+| 4 | 0.25 | 219 / 528 | 197 / 528 |
 <!-- END auto:results -->
 
 <!-- BEGIN auto:curves (curves.py --pool predictivity_all) -->
@@ -226,6 +226,8 @@ The gate and the curves without the aggregation (`predictivity` pool). Regenerat
 ![Margin above chance per benchmark](pretraining/predictivity/gate_margin_by_benchmark.png)
 
 ![Margin above chance per language](pretraining/predictivity/gate_margin_by_language.png)
+
+![What the gate asks, and what each rule keeps](pretraining/predictivity/above_random_thresholds.png)
 
 Score along the run, one figure per language (50 languages, one subplot per benchmark, one line per size): `pretraining/predictivity/score_curves/<language>.png`, e.g.
 

@@ -1,39 +1,49 @@
-"""Generate the per-task table consumed by analyze_snr_variants.py.
+"""The per-task SNR table: 22 signal-to-noise definitions x size bucket, joined
+to rq02's decision accuracy. `analysis/<stage>/<pool>/snr_variants_per_task.csv`
+is the single source of truth rq04, rq07 and rq09 read.
 
-For every aggregator in snr.snr_variants.AGGREGATION_FUNCTIONS, store the
-three return values (signal, noise, snr) at every model size. Also store
-two definitions of decision accuracy:
+For every parent task of the pool and every size bucket, `per_model_inputs`
+builds the four per-model arrays the aggregators in snr/snr_variants.py take
+(one model = one training run of the bucket, seeds included when the pool has
+them) and each aggregator returns (signal, noise, snr), stored as
+`signal_<variant>_<bucket>`, `noise_<variant>_<bucket>`, `snr_<variant>_<bucket>`.
 
-  size DA  — (mix, seed) ranking at <small>'s last ckpt vs the ranking at
-             TARGET_SIZE's last ckpt (the upstream allenai definition,
-             generalised to (mix, seed) "models").
-             3 cols: decision_acc_size_<175M|350M|600M>.
+  signal   the spread of the runs' final scores across the bucket
+           (`data_scores`); `rel_std` divides by the cross-run std of the
+           finals (`data_noise`, CLAUDE.md bug #4), the others by their own
+           dispersion
+  noise    the mean over runs of the checkpoint-to-checkpoint std inside the
+           noise window (`step_noise`), relative to the window mean
+           (`data_scores_last_n`)
 
-  ckpt DA  — within a single size, (mix, seed) ranking at an early ckpt vs the
-             same size's last ckpt. 3 early ckpts × 4 sizes = 12 cols:
-             decision_acc_ckpt_<early>_<size> for early in
-             CKPT_DA_EARLY_STEPS and size in ALL_SIZES.
+The noise window is analysis/RULES.md rule 4: `utils.noise_checkpoints`, the
+shared tenths in the last NOISE_WINDOW (20 %) of each run, 80 / 90 / 100 %,
+the same rows for BPB (also scored on the twentieths, which are left out) and
+for benchmarks. Before this the window was "the last five checkpoints of
+whatever grid the task has", 80-100 % for BPB and 60-100 % for benchmarks.
 
-**Signal/noise pool per size = every unique training run at that size**:
-Apertus (mix, seed) runs whose ``seed`` is in ``--seeds`` *and* any
-external reference models loaded from ``reference_hf`` at that size
-(e.g. Qwen3-0.6B at 600M, Apertus-v1.5 at 1B). Groupby is ``model``,
-so each unique training run contributes one signal datapoint and one
-trailing-N noise sample. This matches AllenAI's >1B SNR_MODELS recipe
-(heterogeneous open-source models at a fixed size); we extend it to
-small scales by pooling Apertus seeds alongside externals.
+Two families of cells are NaN and stay NaN downstream: (task, bucket) cells
+the above-random gate puts at chance (rq00's committed mask, `load_mask`; the pool's own
+runs; cells with no chance level, BPB and the loss, pass), and the discrepancy
+family (`DISCREPANCY_UNIT_INTERVAL`: `discrepancy`, `star_discrepancy`,
+`star_discrepancy_shifted`, `rel_star_discrepancy`) on every task that is not a
+benchmark, because those aggregators read the scores as points of [0, 1] and
+return finite but meaningless values on BPB and the loss.
+`snr_variant_coverage.csv` counts the finite cells per (variant, bucket).
 
-**DA stays on the (mix, seed) Apertus axis** — DA needs models that
-span both sizes for a cross-size rank comparison, and only the
-controlled Apertus (mix, seed) tuples span all four sizes consistently.
+Decision accuracy is not computed here: rq02 `compute_da.py` writes
+`da_per_task.csv` first and this script joins its columns in front of the SNR
+ones. The pool's models come from `analysis.utils.build_snr_pool` (parent
+tasks and trained languages only, 90M dropped); there is no seed or external
+model option.
 
-``--seeds`` selects the Apertus seed pool (default: 1904);
-``--include-external`` (default on) folds the reference_hf parquet
-rows into the SNR signal pool; ``--out-subdir`` routes outputs to a
-seed-specific folder so multiple seed pools can coexist under
-``results/snr_definition/``.
+`snr_variants_definitions.csv` carries each aggregator's title and formula.
+The `signal_xlabel` / `noise_xlabel` strings of AGGREGATION_FUNCTIONS are
+swapped upstream ("Step-to-Step Rel. Std" is the noise, "Data Recipe ..." the
+signal); snr/ is never edited, so they are un-swapped when written and no
+figure here labels an axis with them.
 
-The CSV is the single source of truth for analyze_snr_variants.py.
+    python analysis/rq03_noise_and_snr/run_apertus_snr_variants.py --pool predictivity
 """
 
 from __future__ import annotations
@@ -57,79 +67,66 @@ import pandas as pd
 from tqdm import tqdm
 
 from evals.scripts.utils.configs import (  # noqa: E402
-    add_family_column,
     bucket_order,
-    expand_pool,
     load_pools,
-    load_snr_params,
     pool_include_external,
     size_bucket,
-    stage_external_models,
 )
-from analysis.utils import (
-    _ENGLISH_ONLY_TASKS, _is_language_aggregate, _is_parent_task,
-    assign_language, benchmark_family, build_snr_pool, pool_models,
-)
-from analysis.rq00_gate_and_curves.above_random import scores_and_mask
-from snr.constants import PLOT_DIR
-from analysis.paths import NOISE_AND_SNR, DECISION_ACCURACY
-from snr.dataloader import get_slice
-from snr.download.apertus import (
-    load_a06_eval_results,
-    load_apertus_eval_results,
-    load_distillation_eval_results,
-    load_reference_hf_eval_results,
-)
-from snr.metrics import decision_acc_fast
-from snr.snr_variants import AGGREGATION_FUNCTIONS
-
-# SNR analysis params — single source of truth in configs/models.json.
-# The signal/noise + DA size axis is the *bucket* (size_bucket()), so nearby
-# large sizes (7B/8B → "7-9B") pool to ≥2 models. The custom small sizes are
-# singleton buckets, so SMALL_SIZES / TARGET_SIZE double as bucket labels for
-# the core holdout size-DA.
 from analysis.utils import (  # noqa: E402
-    SMALL_SIZES, TARGET_SIZE, LAST_N, CKPT_DA_EARLY_FRACS)
+    NOISE_WINDOW, _is_parent_task, benchmark_family, ladder_frame,
+    noise_checkpoints, pool_models,
+)
+from analysis.autodoc import CANONICAL_POOL  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask, scores_and_mask  # noqa: E402
+from analysis.paths import NOISE_AND_SNR, DECISION_ACCURACY  # noqa: E402
+from snr.snr_variants import AGGREGATION_FUNCTIONS  # noqa: E402
+
+# The signal/noise size axis is the *bucket* (size_bucket()), so nearby large
+# sizes (7B/8B → "7-9B") pool to ≥2 models; the ladder sizes are singletons.
 OUT_ROOT = NOISE_AND_SNR
+# Aggregators that read the scores as points of [0, 1]: finite but meaningless
+# on BPB and the loss, so NaN on every task that is not a benchmark.
+DISCREPANCY_UNIT_INTERVAL = {"discrepancy", "star_discrepancy", "star_discrepancy_shifted", "rel_star_discrepancy"}
 
 
 # --- per-model arrays for snr_variants --------------------------------------
 
 
-def per_model_inputs(df, task, size, last_n=LAST_N):
+def per_model_inputs(df, task, size):
     """Build the four per-model arrays expected by snr_variants aggregators.
 
     ``size`` is a *bucket* label and rows are selected on the ``bucket``
     column, so nearby large sizes (e.g. 7B + 8B → "7-9B") pool together.
-    Each unique value of the ``model`` column is a separate training run —
-    so the signal pool combines Apertus (mix, seed) runs with external /
-    a06 / distillation models present in the bucket. ``df`` is assumed to
-    already be filtered to the desired pool / external inclusion and to
-    carry a ``bucket`` column.
+    Each unique value of the ``model`` column is a separate training run.
+    ``df`` carries a ``bucket`` column; ``frac`` (each checkpoint's share of
+    its run, as `utils.ladder_frame` defines it) is added when missing.
 
-    Mirrors analysis/snr_variants.ipynb cells 5+7:
-      step_noise         = per-model std of the last `last_n` ckpts
-      data_scores        = per-model final-ckpt score
+    The noise window is the one of RULES.md rule 4, `utils.noise_checkpoints`:
+    the shared tenths in the last NOISE_WINDOW (20 %) of the run, 80 / 90 /
+    100 %, the same rows for BPB and benchmarks.
+      step_noise         = per-model std (ddof 0) over the window checkpoints
+      data_scores        = per-model final-checkpoint score
       data_noise         = cross-model std of `data_scores`, broadcast as
-                           a constant array of the same length
-      data_scores_last_n = per-model mean of the last `last_n` ckpts
+                           a constant array of the same length (bug #4)
+      data_scores_last_n = per-model mean over the window checkpoints
 
-    Models with fewer than 2 ckpts are dropped (they can't contribute
-    step_noise — e.g. a single-revision external like Apertus-70B-2509).
-    We require ≥ 2 surviving models overall.
+    Models with fewer than 2 window checkpoints are dropped (they can't
+    contribute step_noise — e.g. a single-revision external model). We
+    require ≥ 2 surviving models overall.
     """
     sub = df[(df["bucket"] == size) & (df["task"] == task)]
     if sub.empty:
         return None
+    if "frac" not in sub:
+        sub = sub.assign(frac=sub["step"] / sub.groupby("model")["step"].transform("max"))
     sub = sub.sort_values("step")
-    grouped = sub.groupby("model")["primary_score"].apply(list)
-    last_arrays = [np.asarray(s[-last_n:], dtype=float) for s in grouped]
-    last_arrays = [a for a in last_arrays if len(a) >= 2]
-    if len(last_arrays) < 2:
+    window = noise_checkpoints(sub).groupby("model")["primary_score"].apply(np.asarray)
+    window = window[window.map(len) >= 2]
+    if len(window) < 2:
         return None
-    step_noise = np.array([np.std(a) for a in last_arrays])
-    data_scores = np.array([a[-1] for a in last_arrays])
-    data_scores_last_n = np.array([a.mean() for a in last_arrays])
+    step_noise = np.array([np.std(a) for a in window])
+    data_scores = sub.groupby("model")["primary_score"].last().loc[window.index].to_numpy(dtype=float)
+    data_scores_last_n = np.array([a.mean() for a in window])
     data_noise = np.full_like(data_scores, np.std(data_scores))
     return step_noise, data_scores, data_noise, data_scores_last_n
 
@@ -161,7 +158,9 @@ def variant_key(func_dict):
 
 
 def variants_definitions_df() -> pd.DataFrame:
-    """One row per aggregator describing what its signal/noise/snr mean."""
+    """One row per aggregator describing what its signal/noise/snr mean.
+    Upstream's `signal_xlabel` / `noise_xlabel` are swapped (module
+    docstring); they are written under the right name here."""
     rows = []
     for fd in AGGREGATION_FUNCTIONS:
         rows.append(
@@ -169,8 +168,8 @@ def variants_definitions_df() -> pd.DataFrame:
                 "variant": variant_key(fd),
                 "title": fd["title"],
                 "latex": fd["latex"],
-                "signal_label": fd["signal_xlabel"],
-                "noise_label": fd["noise_xlabel"],
+                "signal_label": fd["noise_xlabel"],
+                "noise_label": fd["signal_xlabel"],
                 "snr_label": fd["snr_xlabel"],
             }
         )
@@ -207,7 +206,7 @@ def run(pool: str, out_dir: Path):
     # each bucket has ≥2 models. Decision accuracy is computed upstream by
     # rq02 (compute_da.py); this step reads that table and appends the SNR
     # variant columns — DA first (the truth), SNR second (the proxies).
-    df_pool = build_snr_pool(pool)
+    df_pool = ladder_frame(pool)                 # the pool plus `frac`, the noise window's axis
     df_pool["bucket"] = df_pool["size"].map(size_bucket)
     all_tasks = sorted(df_pool["task"].unique())
     tasks = [t for t in all_tasks if _is_parent_task(t)]
@@ -223,7 +222,12 @@ def run(pool: str, out_dir: Path):
     # usable signal, so its signal/noise/snr are NaN'd here — the gate
     # propagates to every analysis that reads this CSV. Cells with no chance
     # level (per-language BPB, generative tasks) or no scores are left alone.
-    _, _ar_mask, _ = scores_and_mask(df_pool[df_pool["model"].isin(own_models)])
+    # rule 1: the one canonical mask (rq00, computed on every task with untrained=True),
+    # not a mask recomputed on this pool's trained-only frame, which could differ per cell
+    _ar_mask = load_mask(pool) if load_mask(pool) is not None else load_mask(CANONICAL_POOL)
+    if _ar_mask is None:
+        _, _ar_mask, _ = scores_and_mask(df_pool[df_pool["model"].isin(own_models)])
+        print("  (no committed above-random mask: gating with one recomputed on this pool)")
     at_chance = {(t, s) for s in _ar_mask.columns
                  for t in _ar_mask.index[(_ar_mask[s] == 0).fillna(False).to_numpy(bool)]}
     pool_n_models = df_pool.groupby("bucket")["model"].nunique().to_dict()
@@ -238,6 +242,8 @@ def run(pool: str, out_dir: Path):
     )
     print(f"  Buckets: {pool_buckets}")
     print(f"  Pool models per bucket: {pool_n_models}")
+    print(f"  Noise window: the shared tenths in the last {NOISE_WINDOW:.0%} of each run (rule 4), "
+          f"every kind of measurement; {sorted(DISCREPANCY_UNIT_INTERVAL)} are NaN outside benchmarks")
 
     write_variants_definitions(out_dir)
 
@@ -250,11 +256,13 @@ def run(pool: str, out_dir: Path):
         row = {"task": task}
         dft = df_by_task[task]
         size_inputs = {b: per_model_inputs(dft, task, b) for b in pool_buckets}
+        is_benchmark = benchmark_family(task) not in ("bpb", "loss")
         for fd in AGGREGATION_FUNCTIONS:
             key = variant_key(fd)
             for b in pool_buckets:
                 # Gate at-chance cells: random benchmarks carry no signal.
-                if (task, b) in at_chance:
+                # The [0, 1] discrepancy family is undefined off the benchmarks.
+                if (task, b) in at_chance or (key in DISCREPANCY_UNIT_INTERVAL and not is_benchmark):
                     sig = noi = snr = np.nan
                 else:
                     sig, noi, snr = variant_signal_noise_snr(size_inputs[b], fd["func"])
@@ -265,11 +273,11 @@ def run(pool: str, out_dir: Path):
 
     snr_df = pd.DataFrame(rows).set_index("task").sort_index()
 
-    # Coverage per (variant, bucket): the discrepancy family needs scores in
-    # [0, 1] and is undefined on BPB and loss (scores > 1), so its cells are
-    # NaN where every other variant has a value. Ranking variants against
-    # DA on different task populations is not a like-for-like comparison;
-    # the table makes the gap visible and the postprocess reads it.
+    # Coverage per (variant, bucket): the discrepancy family is NaN on BPB and
+    # the loss (above), so its cells are empty where every other variant has a
+    # value. Ranking variants against DA on different task populations is not
+    # a like-for-like comparison; the table makes the gap visible and the
+    # postprocess reads it.
     cov = pd.DataFrame({b: {variant_key(fd): int(snr_df[f"snr_{variant_key(fd)}_{b}"].notna().sum())
                             for fd in AGGREGATION_FUNCTIONS} for b in pool_buckets})
     cov.index.name = "variant"
@@ -313,7 +321,7 @@ def main():
     p.add_argument(
         "--out-subdir",
         default=None,
-        help="Subdir under results/<stage>/snr_definition/ (default: <pool>).",
+        help="Subdir under analysis/rq03_noise_and_snr/<stage>/ (default: <pool>).",
     )
     args = p.parse_args()
     if args.pool not in load_pools():

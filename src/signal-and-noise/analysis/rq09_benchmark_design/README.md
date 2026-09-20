@@ -9,9 +9,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **8 families** that clear the gate — most of them 2-option.
-- **Among survivors, passage flag reaches p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 0.00, p = 1.000; source origin H = 0.11, p = 0.739; option count H = 0.00, p = 1.000; task format H = 3.43, p = 0.064; passage flag H = 4.00, p = 0.046. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
-- **Per-task curation test** (tasks as observations, 119 tasks of which 57 are `multiblimp`): H = 1.74, p = 0.629.
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **11 families** that clear the gate — most of them 2-option.
+- **Among survivors, no family-level design feature reaches p < 0.05** (five Kruskal–Wallis tests on the same families, uncorrected): curation H = 2.63, p = 0.268; source origin H = 0.14, p = 0.705; option count H = 3.68, p = 0.055; task format H = 1.69, p = 0.429; passage flag H = 1.04, p = 0.307. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
+- **Per-task curation test** (tasks as observations, 128 tasks of which 34 are `multiblimp`): H = 51.61, p = 0.000 — nominally significant, but the tasks of one family are not independent observations, so it says which family dominates, not which curation works.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -75,14 +75,17 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | family | median SNR | n | format | n_opts |
 |---|---|---|---|---|
-| `xstorycloze` | 3.50 | 7 | completion | 2 |
-| `hellaswag` | 2.74 | 17 | completion | 4 |
-| `xwinograd` | 2.71 | 6 | completion | 2 |
-| `xcopa` | 2.26 | 7 | completion | 2 |
-| `multiblimp` | 2.02 | 57 | minimal_pair | 2 |
-| `xnli` | 1.75 | 13 | classification | 3 |
-| `arc` | 1.25 | 8 | mcq_question_only | 4 |
-| `paws` | 0.69 | 4 | classification | 2 |
+| `xwinograd` | 1.63 | 6 | completion | 2 |
+| `paws` | 1.32 | 5 | classification | 2 |
+| `xstorycloze` | 1.30 | 8 | completion | 2 |
+| `multiblimp` | 1.18 | 34 | minimal_pair | 2 |
+| `xnli` | 0.99 | 14 | classification | 3 |
+| `xcopa` | 0.78 | 8 | completion | 2 |
+| `include_base_44` | 0.58 | 4 | mcq_question_only | 4 |
+| `arc` | 0.48 | 15 | mcq_question_only | 4 |
+| `belebele` | 0.48 | 8 | mrc_passage | 4 |
+| `global_piqa_parallel_cloze` | 0.45 | 1 | completion | 2 |
+| `hellaswag` | 0.37 | 25 | completion | 4 |
 
 ![Per-family SNR ranking](pretraining/predictivity/snr_per_family_ranked.png)
 
@@ -90,11 +93,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | axis | H | p |
 |---|---|---|
-| n_options | 0.00 | 1.00 |
-| format | 3.43 | 0.06 |
-| data source | 0.11 | 0.74 |
-| curation method | 0.00 | 1.00 |
-| reading passage | 4.00 | 0.05 |
+| n_options | 3.68 | 0.06 |
+| format | 1.69 | 0.43 |
+| data source | 0.14 | 0.71 |
+| curation method | 2.63 | 0.27 |
+| reading passage | 1.04 | 0.31 |
 <!-- END auto:results -->
 
 ## External model-set tier (`all/external`, 36-sweep)

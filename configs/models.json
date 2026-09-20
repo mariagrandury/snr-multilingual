@@ -20089,7 +20089,7 @@
       "include_external": false
     },
     "predictivity_seeds_train": {
-      "description": "Seed holdout, train split: the replicate seeds (64, 313) at the x3 cells (175M/600M, L in {1,2,50,100}).",
+      "description": "Seed holdout, train split: the replicate seeds (64, 313) at the x3 cells (175M/600M, L in {1,2,50}). Deep scheme-A cells only: the replicate seeds exist nowhere else.",
       "stage": "pretraining",
       "members": [
         {
@@ -20105,19 +20105,20 @@
           "L": [
             1,
             2,
-            50,
-            100
+            50
           ],
           "scheme": [
-            "A",
-            "B"
+            "A"
+          ],
+          "arch": [
+            "deep"
           ]
         }
       ],
       "include_external": false
     },
     "predictivity_seeds_test": {
-      "description": "Seed holdout, test split: seed 1904 on the same x3 cells as predictivity_seeds_train.",
+      "description": "Seed holdout, test split: seed 1904 on the same x3 cells as predictivity_seeds_train. Deep scheme-A cells only: the replicate seeds exist nowhere else.",
       "stage": "pretraining",
       "members": [
         {
@@ -20132,12 +20133,13 @@
           "L": [
             1,
             2,
-            50,
-            100
+            50
           ],
           "scheme": [
-            "A",
-            "B"
+            "A"
+          ],
+          "arch": [
+            "deep"
           ]
         }
       ],
@@ -20218,12 +20220,16 @@
       "L100-deep"
     ],
     "da_early_fracs": [
+      0.1,
       0.2,
+      0.3,
       0.4,
+      0.5,
       0.6,
-      0.8
+      0.7,
+      0.8,
+      0.9
     ],
-    "last_n": 5,
     "size_buckets": [
       {
         "label": "90M",
@@ -20317,6 +20323,9 @@
           "70B"
         ]
       }
-    ]
+    ],
+    "noise_window": 0.2,
+    "min_pairs": 3,
+    "min_lang_tasks": 5
   }
 }

@@ -9,6 +9,15 @@
   break tracked paths. This applies to all destructive shell
   operations (`rm`, `mv` to a different parent, `git rm`, etc.).
 
+- **Analysis work follows `src/signal-and-noise/analysis/RULES.md`.** Every
+  table, figure and README number under `src/signal-and-noise/analysis/`
+  obeys those rules (the above-random gate, trained languages only, ten
+  checkpoints, one noise window, three pairs per decision, parent tasks only,
+  `multi` is not a language, one reference size, no 90M, no leakage, the
+  figure conventions). Read it before touching an `rqNN_*` script; implement
+  a new rule in the shared layer (`analysis/utils.py`, the loader), never in
+  one script; `python analysis/check_rules.py` must pass before a commit.
+
 - **Reuse existing code aggressively; keep new code simple and
   boilerplate-free.** Before writing a new helper, grep the repo for
   one that already does the job (e.g. `get_slice`,

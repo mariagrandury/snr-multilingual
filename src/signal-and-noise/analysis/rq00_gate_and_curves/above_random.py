@@ -247,7 +247,7 @@ def run(pool: str) -> None:
     # SIZES/scores_and_mask from here, so a module-top import would be circular.
     from analysis.utils import build_snr_pool
 
-    df = build_snr_pool(pool)
+    df = build_snr_pool(pool, untrained=True)   # the gate covers every task, trained or not: rq06 gates with it too
     scores, mask, meta, runs, share, population = scores_and_mask(df, runs=True)
     buckets = list(scores.columns)
 

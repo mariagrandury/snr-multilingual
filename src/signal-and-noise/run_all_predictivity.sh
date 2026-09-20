@@ -44,7 +44,7 @@ POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predi
 # of inferring it from output timestamps.
 run() { local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
        [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*")
-       printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${1##*/}"; }
+       printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${2##*/}"; }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
 # The ladder report is the only input, so a cached table older than it was built
 # from data we no longer have. Reusing it lets a whole run finish on last
@@ -136,6 +136,8 @@ run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 run $PY analysis/report_figures/make_figures.py
+# every table on disk against analysis/RULES.md (rule 14)
+run $PY analysis/check_rules.py --quiet
 
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "############################## FAILED ##############################"

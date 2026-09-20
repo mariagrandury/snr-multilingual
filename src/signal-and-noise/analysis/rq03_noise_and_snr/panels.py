@@ -7,10 +7,13 @@ a design effect against seed noise.
     effect_over_seed_by_language.png     the same per language
 
 SNR reads `snr_variants_per_task.csv` of the pool (the paper's definition,
-`rel_std`; at-chance cells are NaN and stay blank). The effect reads
-`effect_vs_noise.csv` of `predictivity_all`, the pool with seed replicates:
-0 means the depth effect equals the seed noise (zero effects have no log and are left out).
-The effect figures are written next to their source, in `predictivity_all`, whatever `--pool` is.
+`rel_std`; cells the above-random gate puts at chance are grey, rule 1). The
+effect reads `effect_vs_noise.csv` of `predictivity_all`, the pool with seed
+replicates, gated cells included and drawn grey: 0 means the depth effect
+equals the seed noise (zero effects have no log and are left out). The effect
+figures are written next to their source, in `predictivity_all`, whatever
+`--pool` is. The size axis is EVAL_SIZES (175M–1.7B, rule 10), never a column
+the table happens to carry.
 
     python analysis/rq03_noise_and_snr/panels.py --pool predictivity
 """
@@ -33,11 +36,12 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
+from analysis.utils import EVAL_SIZES  # noqa: E402
 
 OUT_ROOT = NOISE_AND_SNR
 CANONICAL = "predictivity"
@@ -50,7 +54,7 @@ def main(pool: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = OUT_ROOT / stage / pool
     t = pd.read_csv(out_dir / "snr_variants_per_task.csv")
-    sizes = [b for b in bucket_order() if f"snr_{VARIANT}_{b}" in t.columns]
+    sizes = [b for b in EVAL_SIZES if f"snr_{VARIANT}_{b}" in t.columns]   # rule 10: never 90M
     long = t.melt(id_vars="task", value_vars=[f"snr_{VARIANT}_{b}" for b in sizes], var_name="size", value_name="snr")
     long["size"] = long["size"].str.replace(f"snr_{VARIANT}_", "", regex=False)
     long["log_snr"] = np.log10(long["snr"].where(long["snr"] > 0))
@@ -58,7 +62,7 @@ def main(pool: str) -> None:
     long = long[long["log_snr"].notna() | long["gated"]]
     kw = dict(value="log_snr", vmin=-1.0, vmax=2.0, fmt="{:.1f}", cbar=f"log10 SNR ({VARIANT})",
               note=f"cell = log10 of SNR ({VARIANT}): spread of the final scores across the size's design variants over the "
-                   "checkpoint-to-checkpoint noise of the last checkpoints; 0 = signal equals noise, 1 = ten times the noise")
+                   "checkpoint-to-checkpoint noise over the 80/90/100 % checkpoints; 0 = signal equals noise, 1 = ten times the noise")
     G.panel_grid(long, out_dir / "snr_by_benchmark.png", by="family", row="size", row_order=sizes, col="language",
                  ncols=1, cell_w=0.3, counts=False, xlabel="language", ylabel="model size",
                  title="Signal-to-noise ratio per benchmark", **kw)
@@ -81,22 +85,22 @@ def main(pool: str) -> None:
 
     src = OUT_ROOT / stage / NOISE_POOL / "effect_vs_noise.csv"
     if src.is_file():
-        e = pd.read_csv(src, usecols=["size", "L", "task", "effect_arch_over_seed"]).dropna()
+        e = pd.read_csv(src, usecols=["size", "L", "task", "effect_arch_over_seed", "gated"])
         e["log_ratio"] = np.log10(e["effect_arch_over_seed"].where(e["effect_arch_over_seed"] > 0))
-        e = G.add_meta(e.dropna(subset=["log_ratio"]))
+        e = G.add_meta(e[e["log_ratio"].notna() | e["gated"]])      # the gated rows are the grey cells
         G.benchmark_and_language_panels(
             e, OUT_ROOT / stage / NOISE_POOL, "effect_over_seed", row="size", col="L", value="log_ratio",
-            row_order=[b for b in bucket_order() if b in set(e["size"])], col_order=sorted(e["L"].unique()),
+            row_order=[b for b in EVAL_SIZES if b in set(e["size"])], col_order=sorted(e["L"].unique()),
             col_label=lambda L: f"L{L}", vmin=-1.0, vmax=1.0, center=0.0, cmap=S.DIV, fmt="{:+.1f}",
             cbar="log10 |depth effect| / seed noise", xlabel="language setting", ylabel="model size",
             title="Depth effect against seed noise (0 = the effect equals the noise)",
-            note="cell = log10 of |final score of the deep model − the shallow one| over the standard deviation across replicate "
-                 "seeds of the same cell, mean over the subplot's tasks")
+            note="cell = log10 of |final score of the deep model − the shallow one| over the sample std across replicate "
+                 "seeds of the same cell, mean over the subplot's tasks; grey = at chance at that size")
     if pool != CANONICAL:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
-        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
+        f"Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\" (at chance at that size, rule 1); each figure's table sits next to it under the same name; sizes are 175M–1.7B (rule 10). SNR noise is the std over the 80/90/100 % checkpoints (rule 4).",
         f"![rq03 in one figure]({stage}/{pool}/highlights.png)",
         f"![SNR per benchmark]({stage}/{pool}/snr_by_benchmark.png)",
         f"![SNR per language]({stage}/{pool}/snr_by_language.png)",

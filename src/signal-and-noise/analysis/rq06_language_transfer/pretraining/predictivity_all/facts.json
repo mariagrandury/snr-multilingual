@@ -117,22 +117,10 @@
     "cells": 8
    },
    {
-    "population": "bpb_untrained",
-    "proxy_size": "175M",
-    "da": 0.422,
-    "cells": 12
-   },
-   {
     "population": "bpb_trained",
     "proxy_size": "350M",
     "da": 0.75,
     "cells": 8
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "350M",
-    "da": 0.693,
-    "cells": 12
    },
    {
     "population": "bpb_trained",
@@ -141,21 +129,9 @@
     "cells": 3
    },
    {
-    "population": "bpb_untrained",
-    "proxy_size": "600M",
-    "da": 0.739,
-    "cells": 4
-   },
-   {
     "population": "bpb_trained",
     "proxy_size": "1B",
     "da": 0.654,
-    "cells": 2
-   },
-   {
-    "population": "bpb_untrained",
-    "proxy_size": "1B",
-    "da": 0.764,
     "cells": 2
    }
   ]

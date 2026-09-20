@@ -48,7 +48,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 from snr.metrics import decision_acc_fast  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    CKPT_DA_EARLY_FRACS, SMALL_SIZES, TARGET_SIZE, _is_parent_task,
+    CKPT_DA_EARLY_FRACS, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, _is_parent_task,
     build_snr_pool, pool_models,
 )
 
@@ -63,6 +63,9 @@ def _frac_label(frac: float) -> str:
 # Dedup set for missing-ckpt warnings — log each (bucket, frac, family)
 # combination at most once across the whole run, regardless of task.
 _LOGGED_MISSING_CKPTS: set = set()
+# Every cell the pair minimum emptied, (task, proxy, target, pairs): summarised
+# loudly at the end of a run so a thin population is never silent (rule 5).
+_FEW_PAIRS: list = []
 
 
 def _safe(fn, *args, **kwargs):
@@ -90,8 +93,8 @@ def compute_size_decision_accuracy(
     stripped), so a family present at both buckets contributes one pair.
 
     ``model_filter`` (optional) restricts the rows to a set of model
-    names. Returns NaN if fewer than 2 common families survive across
-    both buckets.
+    names. Returns NaN below MIN_PAIRS design-variant pairs (rule 5); with
+    `return_n` the pair count comes back either way.
     """
     df = add_family_column(df)
     if model_filter is not None:
@@ -106,8 +109,9 @@ def compute_size_decision_accuracy(
     keys_target = set(scores_target["family"])
     common = sorted(keys_small & keys_target)
     n_pairs = len(common) * (len(common) - 1) // 2
-    if len(common) < 2:
-        return (float("nan"), 0) if return_n else float("nan")
+    if n_pairs < MIN_PAIRS:          # rule 5: fewer pairs than this is not a ranking; the count is still reported
+        _FEW_PAIRS.append((task, small_size, target_size, n_pairs))
+        return (float("nan"), n_pairs) if return_n else float("nan")
     s = scores_small.set_index("family").loc[common, "primary_score"]
     t = scores_target.set_index("family").loc[common, "primary_score"]
     da = decision_acc_fast(s.to_numpy(), t.to_numpy())
@@ -125,7 +129,7 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
     trajectories (whose step scales differ from the custom megatron iters)
     participate. A family with only one checkpoint (single-ckpt HF refs)
     has no distinct early ckpt and is logged once per ``(bucket, frac,
-    family)`` and skipped. If fewer than 2 families survive, returns NaN.
+    family)`` and skipped. Below MIN_PAIRS pairs the cell is NaN (rule 5).
 
     ``model_filter`` (optional) restricts the rows to a set of model names.
     """
@@ -158,8 +162,9 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
         late.append(float(max_row["primary_score"]))
         keys.append(fam)
     n_pairs = len(keys) * (len(keys) - 1) // 2
-    if len(keys) < 2:
-        return (float("nan"), 0) if return_n else float("nan")
+    if n_pairs < MIN_PAIRS:          # rule 5
+        _FEW_PAIRS.append((task, bucket, f"ckpt@{early_frac}", n_pairs))
+        return (float("nan"), n_pairs) if return_n else float("nan")
     da = decision_acc_fast(np.asarray(early), np.asarray(late))
     return (da, n_pairs) if return_n else da
 
@@ -194,7 +199,8 @@ def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EA
     reference bucket's final checkpoint. The cross of DA-size (the 100 %
     column) and DA-ckpt (the reference's own row), one task at a time.
 
-    One row per (proxy bucket, fraction) with >= 2 shared families: ``da``,
+    One row per (proxy bucket, fraction) with >= MIN_PAIRS pairs of shared families (rule 5; the cells below it are
+    left out and counted in the run's RULE 5 report): ``da``,
     ``n_pairs``, the mean training compute of the proxy checkpoints and of the
     reference finals (the cost axis of "how cheaply can we call it")."""
     dft = add_family_column(dft)
@@ -209,7 +215,8 @@ def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EA
                 continue                    # the reference against itself
             got = _scores_at(dft, b, frac)
             common = sorted(set(got) & set(ref))
-            if len(common) < 2:
+            if len(common) * (len(common) - 1) // 2 < MIN_PAIRS:   # rule 5, as the two kernels above
+                _FEW_PAIRS.append((None, b, f"early-small@{frac}", len(common) * (len(common) - 1) // 2))
                 continue
             da = decision_acc_fast(np.asarray([got[f][0] for f in common]),
                                    np.asarray([ref[f][0] for f in common]))
@@ -299,6 +306,12 @@ def run(pool: str, out_dir: Path):
                  ).to_csv(out_dir / "da_early_small_per_task.csv", index=False)
     n_size = len(SMALL_SIZES) + len(scaling_pairs)
     n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
+    if _FEW_PAIRS:
+        few = pd.DataFrame(_FEW_PAIRS, columns=["task", "proxy", "target", "pairs"])
+        by = few.groupby(["proxy", "target"]).size().sort_values(ascending=False)
+        print(f"\n!!! RULE 5: {len(few)} decision-accuracy cells over {few['task'].nunique()} tasks had fewer than "
+              f"{MIN_PAIRS} pairs and are NaN (their pair counts are in da_n_pairs_per_task.csv). By comparison:\n"
+              + by.head(12).to_string())
     print(f"\nWrote DA CSV → {csv_path}")
     print(f"  {len(out)} tasks × {len(out.columns)} DA columns "
           f"({n_size} size-DA + {n_ckpt} ckpt-DA)")

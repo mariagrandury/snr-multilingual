@@ -1,7 +1,8 @@
 """Test framework generalization across seed splits.
 
-Reads two snr_definition outputs (e.g. ``seeds_28_1797`` as the "train"
-split and ``seeds_1904`` as the "test" split) and asks:
+Reads two pools' ``snr_variants_per_task.csv`` (``predictivity_seeds_train``,
+the replicate seeds 64/313, as the "train" split and ``predictivity_seeds_test``,
+seed 1904 on the same cells, as the "test" split) and asks:
 
   1. Does the per-language best variant agree between the two splits?
   2. For variants picked on the train split, what is their Pearson r
@@ -9,21 +10,28 @@ split and ``seeds_1904`` as the "test" split) and asks:
   3. Across all languages × variants, how correlated are the per-cell
      Pearson r values between the two splits?
 
-Outputs land under ``<out_dir>/<train_dir.name>__vs__<test_dir.name>/``:
-  - ``per_language_agreement.csv`` — for each language, the train-best
-    variant and its r in both splits, plus the test-split's own best.
-  - ``per_language_agreement.png`` — bar chart of train-vs-test r per
-    language under the train-best variant.
+The per-language r is rq04's ``_per_language_pearson_table``: a language needs
+MIN_LANG_TASKS (5) distinct tasks with a value, fewer is NaN (rule 8), and
+``multi`` / ``??`` are never a language (rule 7, `utils.languages_only`). The
+two pools must hold the same cells (size × L × arch × scheme); the script
+checks that on the loaded pools and says so in the README block.
+
+Outputs land under ``<rq03>/<stage>/<train_pool>__vs__<test_pool>/``:
+  - ``per_language_agreement_da_<size|ckpt>.csv`` — for each language, the
+    train-best variant and its r in both splits, plus the test-split's own best.
+  - ``per_language_agreement_da_<size|ckpt>.png`` — bar chart of train-vs-test
+    r per language under the train-best variant.
   - ``variant_r_train_vs_test.csv`` — long table of (language, variant,
     r_train, r_test) for every (lang, variant) cell.
   - ``variant_r_train_vs_test.png`` — scatter of r_train vs r_test for
     every (lang, variant) cell, coloured by DA flavor.
-  - ``summary.md`` — short human-readable report.
+  - ``top_variants_train_vs_test.csv`` — mean r per variant and split, the
+    Spearman ρ between the splits' global rankings.
+  - ``summary.md``, ``headline_metrics.csv`` — the headline numbers.
 
 CLI:
   python analysis/rq03_noise_and_snr/compare_seed_splits.py \
-      --train-dir results/snr_definition/seeds_28_1797 \
-      --test-dir  results/snr_definition/seeds_1904
+      --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
 """
 
 from __future__ import annotations
@@ -45,14 +53,16 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
+from analysis.autodoc import fmt, replace_block  # noqa: E402
 from analysis.rq04_surrogates.analyze_snr_variants import (  # noqa: E402
     _per_language_pearson_table, da_ckpt_pairs, da_size_pairs,
-    list_variants,
+    list_variants, scaling_pairs,
 )
 from analysis.rq04_surrogates.snr_definition_postprocess import _VARIANT_FAMILY  # noqa: E402
-from snr.constants import PLOT_DIR  # noqa: E402
-from analysis.paths import NOISE_AND_SNR
+from analysis.paths import NOISE_AND_SNR  # noqa: E402
+from analysis.utils import MIN_LANG_TASKS, assign_language, build_snr_pool, languages_only  # noqa: E402
 
+OUT_ROOT = NOISE_AND_SNR
 
 # --- helpers ----------------------------------------------------------------
 
@@ -65,8 +75,18 @@ def _load(out_dir: Path) -> pd.DataFrame:
     return pd.read_csv(csv, index_col="task")
 
 
+def _size_pairs(df: pd.DataFrame) -> list:
+    """The holdout's DA-size: the reference columns when the pool has a value
+    in them, else its `scaling_pairs` (175M → 600M on the ×3 cells, where
+    1.7B is absent), named as such wherever the numbers are shown (rule 9)."""
+    return [p for p in da_size_pairs(df) if df[p[2]].notna().any()] or scaling_pairs(df)
+
+
 def _table_for(df: pd.DataFrame, kind: str) -> pd.DataFrame:
-    pairs = list(da_size_pairs(df)) if kind == "size" else list(da_ckpt_pairs(df))
+    """rq04's (variant × language) Pearson table (≥ MIN_LANG_TASKS distinct
+    tasks per language, rule 8) on the language rows alone (rule 7)."""
+    pairs = _size_pairs(df) if kind == "size" else list(da_ckpt_pairs(df))
+    df = languages_only(df.assign(language=df.index.map(assign_language)).copy())
     return _per_language_pearson_table(df, list_variants(df), pairs)
 
 
@@ -206,7 +226,7 @@ def write_summary(out_dir: Path, train_dir: Path, test_dir: Path,
                   agreement_size: pd.DataFrame,
                   agreement_ckpt: pd.DataFrame,
                   long_all: pd.DataFrame,
-                  rank_corrs: dict | None = None):
+                  rank_corrs: dict | None = None, da_size_label: str = "DA-size"):
     def _agree_frac(df, col):
         if df.empty:
             return float("nan"), 0
@@ -245,20 +265,26 @@ def write_summary(out_dir: Path, train_dir: Path, test_dir: Path,
     rank_size = rank_corrs.get("size", float("nan")) if rank_corrs else float("nan")
     rank_ckpt = rank_corrs.get("ckpt", float("nan")) if rank_corrs else float("nan")
 
+    def _cnt(a, n):        # languages agreeing, from the share; 0 when no language qualified (a is NaN)
+        return round(a * n) if n else 0
+
     lines = []
     lines.append(f"# Seed-split generalization: `{train_dir.name}` → "
                  f"`{test_dir.name}`")
+    lines.append("")
+    lines.append(f"DA-size here is {da_size_label}; DA-ckpt is the within-size early → final ranking. "
+                 f"A language's r needs ≥ {MIN_LANG_TASKS} distinct tasks with a value (rule 8).")
     lines.append("")
     lines.append("## Headline metrics")
     lines.append("")
     lines.append("|  | DA-size | DA-ckpt |")
     lines.append("|---|---:|---:|")
     lines.append(f"| Exact-variant agreement (lang-level) | "
-                 f"{a_var_size:.0%} ({int(a_var_size*n_size)}/{n_size}) | "
-                 f"{a_var_ckpt:.0%} ({int(a_var_ckpt*n_ckpt)}/{n_ckpt}) |")
+                 f"{a_var_size:.0%} ({_cnt(a_var_size, n_size)}/{n_size}) | "
+                 f"{a_var_ckpt:.0%} ({_cnt(a_var_ckpt, n_ckpt)}/{n_ckpt}) |")
     lines.append(f"| **Family-level agreement** (lang-level) | "
-                 f"{a_fam_size:.0%} ({int(a_fam_size*n_size)}/{n_size}) | "
-                 f"{a_fam_ckpt:.0%} ({int(a_fam_ckpt*n_ckpt)}/{n_ckpt}) |")
+                 f"{a_fam_size:.0%} ({_cnt(a_fam_size, n_size)}/{n_size}) | "
+                 f"{a_fam_ckpt:.0%} ({_cnt(a_fam_ckpt, n_ckpt)}/{n_ckpt}) |")
     lines.append(f"| Pearson r between splits (over all variant cells) | "
                  f"{r_size:+.3f} (n = {n_size_cells}) | "
                  f"{r_ckpt:+.3f} (n = {n_ckpt_cells}) |")
@@ -363,9 +389,9 @@ def main():
 
     stage_train = pools[args.train_pool].get("stage", "pretraining")
     stage_test = pools[args.test_pool].get("stage", "pretraining")
-    snr_root = NOISE_AND_SNR / stage_train
+    snr_root = OUT_ROOT / stage_train
     train_dir = snr_root / args.train_pool
-    test_dir = NOISE_AND_SNR / stage_test / args.test_pool
+    test_dir = OUT_ROOT / stage_test / args.test_pool
     out_dir = snr_root / f"{args.train_pool}__vs__{args.test_pool}"
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"train = {train_dir}")
@@ -402,9 +428,6 @@ def main():
                    title="Per-(language, variant) Pearson r — train vs test split")
 
     # Top-variants-overall comparison (Q3 from the README).
-    rows = []
-    for kind, df_kind in (("size", df_train), ("ckpt", df_train)):
-        pass
     tv_rows = []
     for split_name, df_split in (("train", df_train), ("test", df_test)):
         for kind in ("size", "ckpt"):
@@ -419,6 +442,8 @@ def main():
         index="variant", columns=["split", "da_kind"], values="mean_r"
     )
     tv_wide.columns = [f"{s}_{k}" for s, k in tv_wide.columns]
+    # a DA kind with no language at MIN_LANG_TASKS tasks has no column: keep it, empty
+    tv_wide = tv_wide.reindex(columns=[f"{s}_{k}" for s in ("train", "test") for k in ("size", "ckpt")])
     tv_wide = tv_wide.sort_values("train_size", ascending=False)
     # Rank-correlation between splits for each DA flavor (Spearman ρ).
     rank_corrs = {}
@@ -432,9 +457,61 @@ def main():
     print(f"Spearman rank correlation across splits: "
           f"DA-size={rank_corrs['size']:+.3f}  DA-ckpt={rank_corrs['ckpt']:+.3f}")
 
+    da_size_label = ", ".join(label for label, _, _ in _size_pairs(df_train)) or "absent"
+    print(f"DA-size pairs on the holdout: {da_size_label}")
+    for kind in ("size", "ckpt"):
+        if tv_wide[f"train_{kind}"].isna().all() or tv_wide[f"test_{kind}"].isna().all():
+            print(f"!!! RULE 8: no language has {MIN_LANG_TASKS} distinct tasks with a DA-{kind} value on both "
+                  f"splits; the DA-{kind} holdout numbers are empty")
     write_summary(out_dir, train_dir, test_dir,
                   agreements["size"], agreements["ckpt"], long_all,
-                  rank_corrs=rank_corrs)
+                  rank_corrs=rank_corrs, da_size_label=da_size_label)
+    generate_readme(args.train_pool, args.test_pool, out_dir, agreements, rank_corrs, da_size_label)
+
+
+def pool_cells(pool: str) -> tuple[set, list]:
+    """The (size, L, arch, scheme) cells a pool holds, and its seeds."""
+    df = build_snr_pool(pool)
+    return set(map(tuple, df[["size", "L", "arch", "scheme"]].drop_duplicates().to_numpy())), sorted(df["seed"].unique())
+
+
+def generate_readme(train_pool: str, test_pool: str, out_dir: Path, agreements: dict, rank_corrs: dict,
+                    da_size_label: str) -> None:
+    """The `seed-holdout` block of the rq03 README: the two pools' cells, the
+    per-language rules and the headline numbers of `headline_metrics.csv`."""
+    (cells_train, seeds_train), (cells_test, seeds_test) = pool_cells(train_pool), pool_cells(test_pool)
+    same = cells_train == cells_test
+    if not same:
+        print(f"!!! the holdout pools hold different cells: train only {sorted(cells_train - cells_test)}, "
+              f"test only {sorted(cells_test - cells_train)}")
+    def _cells(cells):
+        return ", ".join(f"{s} L{L} {a} scheme {sc}" for s, L, a, sc in sorted(cells, key=lambda c: (c[1], c[0], c[2], c[3])))
+    rows = []
+    for kind in ("size", "ckpt"):
+        a = agreements[kind].replace({"train_best_variant": {"": None}, "test_best_variant": {"": None}}) \
+                            .dropna(subset=["train_best_variant", "test_best_variant"])
+        rows.append(f"| DA-{kind} | {len(a)} | {round(a['same_variant'].mean() * len(a)) if len(a) else 0} | "
+                    f"{round(a['same_family'].mean() * len(a)) if len(a) else 0} | "
+                    f"{fmt(rank_corrs[kind], 2) or 'no language at ' + str(MIN_LANG_TASKS) + ' tasks'} |")
+    stage = load_pools()[train_pool].get("stage", "pretraining")
+    body = "\n\n".join([
+        "## Seed holdout",
+        f"Regenerate with `python analysis/rq03_noise_and_snr/compare_seed_splits.py --train-pool {train_pool} "
+        f"--test-pool {test_pool}`; the tables are under `{stage}/{out_dir.name}/`.",
+        f"`{train_pool}` (seeds {', '.join(map(str, seeds_train))}) and `{test_pool}` (seeds "
+        f"{', '.join(map(str, seeds_test))}) hold {'the same' if same else '**different**'} {len(cells_train)} cells: "
+        f"{_cells(cells_train)}." + ("" if same else f" Train only: {_cells(cells_train - cells_test)}; test only: "
+                                                     f"{_cells(cells_test - cells_train)}."),
+        f"A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and needs at least "
+        f"{MIN_LANG_TASKS} distinct tasks with a value (rule 8); `multi` and `??` are never a language (rule 7). "
+        f"DA-size on the holdout is {da_size_label} (the pools stop at 600M, so the 1.7B reference never enters; "
+        f"rule 9); DA-ckpt is the within-size early → final ranking. Agreement is counted over the languages with "
+        f"a best variant on both splits.",
+        "| DA | languages | same variant | same family | Spearman ρ of the variant ranking |\n"
+        "|---|---|---|---|---|\n" + "\n".join(rows)])
+    readme = OUT_ROOT / "README.md"
+    replace_block(readme, "seed-holdout", body, f"compare_seed_splits.py --train-pool {train_pool} --test-pool {test_pool}")
+    print(f"Wrote auto README block → {readme}")
 
 
 if __name__ == "__main__":

@@ -16,8 +16,8 @@
 - **depth (deep vs shallow) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L8: 350M, L15: 350M, L30: —, L50: —.
 - **language lists (A vs B) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L8: 175M, L15: 350M, L30: 350M.
 - **temperature (T=1 vs T=3) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L50: 175M.
-- **Depth decision on benchmarks** — mean DA over L by proxy: 175M 0.49, 350M 0.48, 600M 0.51.
-- **Is there a decision to make?** median |Δ| at the reference in seed sds — depth (deep vs shallow): benchmarks 1.1×, bits per byte 1.5×; 2nd language (ru vs es): benchmarks 1.7×, bits per byte 3.4×; language lists (A vs B): benchmarks 1.5×, bits per byte 1.6×; temperature (T=1 vs T=3): benchmarks 1.4×, bits per byte 3.9×; 2nd language (ru vs zh): benchmarks 1.1×, bits per byte 4.9×.
+- **Depth decision on benchmarks** — mean DA over L by proxy: 175M 0.51, 350M 0.48, 600M 0.41, 1B 0.52.
+- **Is there a decision to make?** median |Δ| at the reference in seed sds — depth (deep vs shallow): benchmarks 1.2×, bits per byte 1.3×; 2nd language (ru vs es): benchmarks 1.5×; language lists (A vs B): benchmarks 1.3×, bits per byte 1.1×; temperature (T=1 vs T=3): benchmarks 1.5×, bits per byte 8.7×; 2nd language (ru vs zh): benchmarks 1.6×.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -86,45 +86,47 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 | 175M | 0.88 |
 | 350M | 0.96 |
 
-**depth (deep vs shallow), benchmarks** (rows: proxy size; columns: L; reference L1 → 1.7B, L2 → 1.7B, L8 → 600M, L15 → 600M, L30 → 1.7B, L50 → 600M):
+**depth (deep vs shallow), benchmarks** (rows: proxy size; columns: L; reference L1 → 1.7B, L2 → 1.7B, L8 → 600M, L15 → 1B, L30 → 1.7B, L50 → 1.7B):
 
 | proxy | L1 | L2 | L8 | L15 | L30 | L50 |
 |---|---|---|---|---|---|---|
-| 175M | 0.47 | 0.51 | 0.47 | 0.52 | 0.51 | 0.49 |
-| 350M | 0.51 | 0.44 | 0.47 | 0.56 | 0.46 | 0.42 |
-| 600M | 0.60 | 0.52 |  |  | 0.42 |  |
+| 175M | 0.56 | 0.44 | 0.47 | 0.48 | 0.56 | 0.55 |
+| 350M | 0.56 | 0.39 | 0.54 | 0.38 | 0.55 | 0.45 |
+| 600M | 0.42 | 0.30 |  | 0.31 | 0.53 | 0.47 |
+| 1B |  |  |  |  | 0.51 | 0.54 |
 
 **language lists (A vs B), benchmarks** (rows: proxy size; columns: L; reference L8 → 1.7B, L15 → 1B, L30 → 1.7B):
 
 | proxy | L8 | L15 | L30 |
 |---|---|---|---|
-| 175M | 0.50 | 0.45 | 0.43 |
-| 350M | 0.52 | 0.48 | 0.52 |
-| 600M | 0.48 | 0.50 | 0.37 |
-| 1B |  |  | 0.38 |
+| 175M | 0.48 | 0.58 | 0.44 |
+| 350M | 0.44 | 0.47 | 0.50 |
+| 600M | 0.42 | 0.55 | 0.44 |
+| 1B | 0.42 |  | 0.48 |
 
-**temperature (T=1 vs T=3), benchmarks** (rows: proxy size; columns: L; reference L50 → 1B):
+**temperature (T=1 vs T=3), benchmarks** (rows: proxy size; columns: L; reference L50 → 1.7B):
 
 | proxy | L50 |
 |---|---|
-| 175M | 0.35 |
-| 350M | 0.42 |
-| 600M | 0.48 |
+| 175M | 0.40 |
+| 350M | 0.48 |
+| 600M | 0.55 |
+| 1B | 0.66 |
 
 **2nd language (ru vs zh), benchmarks** (rows: proxy size; columns: L; reference L2 → 1B):
 
 | proxy | L2 |
 |---|---|
-| 175M | 0.52 |
-| 350M | 0.53 |
-| 600M | 0.54 |
+| 175M | 0.22 |
+| 350M | 0.25 |
+| 600M | 0.50 |
 
 **2nd language (ru vs es), benchmarks** (rows: proxy size; columns: L; reference L2 → 600M):
 
 | proxy | L2 |
 |---|---|
-| 175M | 0.30 |
-| 350M | 0.43 |
+| 175M | 0.22 |
+| 350M | 0.69 |
 
 ![Intervention DA grid](pretraining/predictivity_all/intervention_da.png)
 
@@ -132,11 +134,11 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 
 | intervention | benchmarks | bits per byte |
 |---|---|---|
-| depth (deep vs shallow) | 1.1 | 1.5 |
-| 2nd language (ru vs es) | 1.7 | 3.4 |
-| language lists (A vs B) | 1.5 | 1.6 |
-| temperature (T=1 vs T=3) | 1.4 | 3.9 |
-| 2nd language (ru vs zh) | 1.1 | 4.9 |
+| depth (deep vs shallow) | 1.2 | 1.3 |
+| 2nd language (ru vs es) | 1.5 |  |
+| language lists (A vs B) | 1.3 | 1.1 |
+| temperature (T=1 vs T=3) | 1.5 | 8.7 |
+| 2nd language (ru vs zh) | 1.6 |  |
 
 ![Interventions](pretraining/predictivity_all/rq4_interventions.png)
 <!-- END auto:results -->
@@ -168,46 +170,47 @@ reference each setting resolved against is carried in `refs`.
 Numbers from the `predictivity_all` decision table above. Regenerate with `python analysis/rq05_design_decisions/early_decision.py --pool predictivity_all`.
 
 - **depth (deep vs shallow), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.00, 350M 0.51; no proxy reaches 0.75.
-- **depth (deep vs shallow), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.49, 350M 0.48, 600M 0.51; no proxy reaches 0.75.
-- **language lists (A vs B), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.40, 350M 1.00, 600M 0.94, 1B 0.65; smallest proxy at ≥ 0.75: **350M**, which reaches it at 1C of training (5C = the full run).
-- **language lists (A vs B), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.46, 350M 0.51, 600M 0.45, 1B 0.38; no proxy reaches 0.75.
+- **depth (deep vs shallow), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.51, 350M 0.48, 600M 0.41, 1B 0.52; no proxy reaches 0.75.
+- **language lists (A vs B), per-language bits per byte** — final-checkpoint agreement by proxy: 175M 0.40, 350M 1.00, 600M 0.94, 1B 0.65; smallest proxy at ≥ 0.75: **350M**, which reaches it at 0.5C of training (5C = the full run).
+- **language lists (A vs B), benchmark tasks** — final-checkpoint agreement by proxy: 175M 0.50, 350M 0.47, 600M 0.47, 1B 0.45; no proxy reaches 0.75.
 
 **depth (deep vs shallow) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 175M | 0.50 | 0.01 | 0.00 | 0.00 | 0.00 |
-| 350M | 0.74 | 0.83 | 0.55 | 0.69 | 0.51 |
-| 600M | 1.00 | 1.00 | 1.00 | 0.99 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.09 | 0.50 | 0.00 | 0.01 | 0.00 | 0.00 | 0.25 | 0.00 | 0.00 | 0.00 |
+| 350M | 0.75 | 0.74 | 0.80 | 0.83 | 0.64 | 0.55 | 0.71 | 0.69 | 0.56 | 0.51 |
+| 600M | 0.81 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 | 1.00 |  |
 
 **depth (deep vs shallow) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 175M | 0.39 | 0.45 | 0.47 | 0.49 | 0.49 |
-| 350M | 0.50 | 0.49 | 0.48 | 0.49 | 0.48 |
-| 600M | 0.46 | 0.45 | 0.53 | 0.51 | 0.51 |
-| 1.7B | 0.58 | 0.46 | 0.55 | 0.51 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.54 | 0.44 | 0.50 | 0.49 | 0.52 | 0.48 | 0.55 | 0.49 | 0.52 | 0.51 |
+| 350M | 0.50 | 0.58 | 0.48 | 0.53 | 0.54 | 0.42 | 0.45 | 0.44 | 0.49 | 0.48 |
+| 600M | 0.42 | 0.47 | 0.44 | 0.45 | 0.42 | 0.50 | 0.54 | 0.51 | 0.52 | 0.41 |
+| 1B | 0.43 | 0.44 | 0.43 | 0.61 | 0.55 | 0.45 | 0.50 | 0.44 | 0.63 | 0.52 |
+| 1.7B | 0.44 | 0.50 | 0.58 | 0.56 | 0.57 | 0.60 | 0.64 | 0.55 | 0.73 |  |
 
 **language lists (A vs B) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 175M | 0.86 | 0.68 | 0.40 | 0.40 | 0.40 |
-| 350M | 0.88 | 0.94 | 1.00 | 0.97 | 1.00 |
-| 600M | 0.94 | 0.94 | 0.87 | 0.88 | 0.94 |
-| 1B | 0.87 | 0.75 | 0.75 | 0.58 | 0.65 |
-| 1.7B | 1.00 | 1.00 | 1.00 | 0.98 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.19 | 0.86 | 0.57 | 0.68 | 1.00 | 0.40 | 0.34 | 0.40 | 0.40 | 0.40 |
+| 350M | 0.86 | 0.88 | 0.94 | 0.94 | 1.00 | 1.00 | 1.00 | 0.97 | 1.00 | 1.00 |
+| 600M | 0.94 | 0.94 | 0.94 | 0.94 | 0.94 | 0.87 | 0.94 | 0.88 | 0.94 | 0.94 |
+| 1B | 0.79 | 0.91 | 0.87 | 0.83 | 0.83 | 0.83 | 0.81 | 0.72 | 0.77 | 0.65 |
+| 1.7B | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.98 | 1.00 |  |
 
 **language lists (A vs B) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 175M | 0.46 | 0.50 | 0.47 | 0.45 | 0.46 |
-| 350M | 0.48 | 0.48 | 0.46 | 0.49 | 0.51 |
-| 600M | 0.50 | 0.49 | 0.49 | 0.49 | 0.45 |
-| 1B | 0.46 | 0.44 | 0.53 | 0.53 | 0.38 |
-| 1.7B | 0.43 | 0.49 | 0.54 | 0.57 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.49 | 0.48 | 0.47 | 0.49 | 0.48 | 0.51 | 0.54 | 0.47 | 0.53 | 0.50 |
+| 350M | 0.53 | 0.48 | 0.48 | 0.47 | 0.50 | 0.46 | 0.53 | 0.49 | 0.48 | 0.47 |
+| 600M | 0.53 | 0.50 | 0.45 | 0.45 | 0.54 | 0.49 | 0.47 | 0.48 | 0.51 | 0.47 |
+| 1B | 0.51 | 0.48 | 0.52 | 0.49 | 0.52 | 0.56 | 0.52 | 0.56 | 0.57 | 0.45 |
+| 1.7B | 0.47 | 0.47 | 0.48 | 0.57 | 0.50 | 0.56 | 0.59 | 0.65 | 0.78 |  |
 
 ![Early and small](pretraining/predictivity_all/rq2_early_small.png)
 <!-- END auto:early-decision -->
@@ -258,11 +261,11 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 ![Decisions per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark.png)
 
-![Early and small per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark_early.png)
+![Early and small per benchmark](pretraining/predictivity_all/intervention_da_early_by_benchmark.png)
 
 ![Decisions per language](pretraining/predictivity_all/intervention_da_by_language.png)
 
-![Early and small per language](pretraining/predictivity_all/intervention_da_by_language_early.png)
+![Early and small per language](pretraining/predictivity_all/intervention_da_early_by_language.png)
 <!-- END auto:panels -->
 
 <!-- BEGIN auto:transformations (transformations.py --pool predictivity_all) -->
@@ -274,18 +277,15 @@ Mean decision accuracy over each transformation's pairs, on the items every tran
 
 | transformation | pairs (with data) | items | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| depth (deep vs shallow) | 6 (4) | 92 | 0.58 | 0.63 | 0.47 | 0.58 |
-| language count (L vs next L) | 5 (5) | 94 | 0.71 | 0.74 | 0.64 | 0.58 |
-| language lists (A vs B) | 3 (3) | 92 | 0.58 | 0.60 | 0.60 | 0.52 |
-| temperature (T=1 vs T=3) | 1 (1) | 94 | 0.51 | 0.70 | 0.77 | 0.67 |
+| depth (deep vs shallow) | 6 (4) | 70 | 0.58 | 0.63 | 0.47 | 0.59 |
+| language count (L vs next L) | 5 (5) | 68 | 0.63 | 0.71 | 0.60 | 0.58 |
+| language lists (A vs B) | 3 (3) | 70 | 0.51 | 0.48 | 0.53 | 0.47 |
+| temperature (T=1 vs T=3) | 1 (1) | 70 | 0.51 | 0.67 | 0.68 | 0.67 |
 
-**per-language BPB (100 validation languages)** (rows: transformation; columns: proxy size; mean over pairs, shared items):
+**per-language BPB (trained languages)** (rows: transformation; columns: proxy size; mean over pairs, shared items):
 
-| transformation | pairs (with data) | items | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|---|---|
-| depth (deep vs shallow) | 6 (1) | 100 | 0.82 | 0.53 | 0.67 |  |
-| language count (L vs next L) | 5 (2) | 100 | 0.82 | 0.87 | 0.92 | 0.85 |
-| language lists (A vs B) | 3 (3) | 100 | 0.57 | 0.76 | 0.82 | 0.75 |
+| transformation | pairs (with data) | items |
+|---|---|---|
 
 ![Transformations](pretraining/predictivity_all/transformation_da.png)
 <!-- END auto:transformations -->

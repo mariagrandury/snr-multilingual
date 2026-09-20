@@ -71,6 +71,14 @@ def cell_params(size: str, arch: str) -> int:
     return int(cfg["n_non_emb_params"] + h["global"]["vocab_size"] * cfg["hidden_size"])
 
 
+# A checkpoint is on the shared grid when it sits within this share of the run
+# of a grid point (0.5 %: far below the 1.7 % spacing of the densest, 60-save
+# grid, and above the 0.04 % drift of the one cell whose interval does not
+# divide its target). The same tolerance decides whether a run's last save
+# counts as its final checkpoint.
+GRID_TOL = 0.005
+
+
 def _on_shared_grid(df: pd.DataFrame) -> pd.Series:
     """Rows on the checkpoint grid every size shares.
 
@@ -84,8 +92,12 @@ def _on_shared_grid(df: pd.DataFrame) -> pd.Series:
     """
     target = pd.to_numeric(df["run__target_iters"], errors="coerce")
     n = df["kind"].map({"benchmark": 10}).fillna(20)
-    on_grid = (df["iter"] * n) % target == 0
-    return on_grid | (df["iter"] == target) | target.isna()
+    # nearest grid point within GRID_TOL of the run, not exact divisibility: a
+    # cell whose save interval does not divide its target (lm-1B-L8-deep-seed1904
+    # saves every 1,143 of 45,740 iterations) is on the grid to within 0.04 %
+    pos = df["iter"] / target
+    on_grid = (pos - (pos * n).round() / n).abs() <= GRID_TOL
+    return on_grid | ((1 - pos).abs() <= GRID_TOL) | target.isna()
 
 
 def load_predictivity_eval_results(
@@ -151,7 +163,7 @@ def load_predictivity_eval_results(
     if require_final:
         target = pd.to_numeric(df["run__target_iters"], errors="coerce")
         last = df.groupby(["cell", "task"])["iter"].transform("max")
-        df = df[(last >= target) | target.isna()]
+        df = df[(last >= target * (1 - GRID_TOL)) | target.isna()]   # the last save may sit a few iterations short of the target
     if shared_grid:
         df = df[_on_shared_grid(df)]
     df = df.drop(columns=["run__target_iters"])

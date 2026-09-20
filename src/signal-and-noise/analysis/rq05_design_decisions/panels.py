@@ -3,8 +3,8 @@ early-decision read, without pooling the benchmarks.
 
     intervention_da_by_benchmark.png   agreement with the reference, proxy size x L; one subplot per (intervention, benchmark), intervention by intervention, BPB first
     intervention_da_by_language.png    the same, one subplot per (intervention, language)
-    intervention_da_by_benchmark_early.png   the two planned decisions, proxy size x share of the run (mean over L), per benchmark
-    intervention_da_by_language_early.png    the same per language
+    intervention_da_early_by_benchmark.png   the two planned decisions, proxy size x share of the run (mean over L), per benchmark
+    intervention_da_early_by_language.png    the same per language
     da_lines.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
                                        intervention, mean over L; solid per-language BPB, dashed benchmarks, dotted training loss.
                                        Read on the ten evaluated checkpoints of every run (`intervention_da_ckpt10.csv` and
@@ -52,10 +52,10 @@ from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq05_design_decisions.analyze import (  # noqa: E402
     CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, intervention_da, seed_sd)
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
-from analysis.utils import GRID_SEED, LADDER_SIZES, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
+from analysis.utils import CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
-FRACS10 = [k / 10 for k in range(1, 11)]   # every evaluated checkpoint, for the line figures only
+FRACS10 = list(CKPT_DA_EARLY_FRACS) + [1.0]   # every evaluated checkpoint (rule 3)
 LINE_POPULATIONS = (("bpb_trained", "-", "per-language BPB (trained languages)"), ("benchmark", "--", "benchmark tasks"),
                     ("loss", ":", "training loss"))
 mpl.rcParams.update(S.RC)
@@ -221,7 +221,8 @@ def main(pool: str) -> None:
                 col_order=sorted(fin["L"].unique()), col_label=lambda L: f"L{L}", xlabel="language setting",
                 title=f"Does the proxy prefer the level the reference prefers? Final checkpoints, per {name}", note=note)
         early = t[t["intervention"].isin(DECISIONS)]
-        _panels(early, by, out_dir / f"intervention_da_by_{name}_early.png", keys=[k for k in DECISIONS if k in keys],
+        early.to_csv(out_dir / "intervention_da_early.csv", index=False)      # rule 12: one table for both _early panels
+        _panels(early, by, out_dir / f"intervention_da_early_by_{name}.png", keys=[k for k in DECISIONS if k in keys],
                 ncols=ncols, col="frac", col_order=sorted(early["frac"].unique()), col_label=G.chinchilla,
                 xlabel="proxy's training tokens (C = Chinchilla-optimal; 5C = the full run)", note=note,
                 title=f"How small and how early, per {name} (mean over language settings)")
@@ -230,9 +231,12 @@ def main(pool: str) -> None:
     frame = ladder_frame(pool)
     da, _, groups = intervention_da(frame, fracs=FRACS10)
     da.to_csv(out_dir / "intervention_da_ckpt10.csv", index=False)
-    (groups.groupby(["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"])
-     .agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-     .to_csv(out_dir / "intervention_da_by_group_ckpt10.csv", index=False))
+    gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
+    (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+     if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
+     ).to_csv(out_dir / "intervention_da_by_group_ckpt10.csv", index=False)
+    if groups.empty:
+        print("!!! RULE 2: no per-group BPB items — the never-trained groups are rq06's; only trained languages reach this pool")
     da_lines(da, out_dir, labels={k: v[0] for k, v in INTERVENTIONS.items()},
              title="How small and how early each design decision can be read",
              note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
@@ -268,9 +272,9 @@ def main(pool: str) -> None:
         f"![Which depth wins, in seed sds]({rel}/depth_crossover.png)",
         f"![Decisions by compute]({rel}/da_lines_flops.png)",
         f"![Decisions per benchmark]({rel}/intervention_da_by_benchmark.png)",
-        f"![Early and small per benchmark]({rel}/intervention_da_by_benchmark_early.png)",
+        f"![Early and small per benchmark]({rel}/intervention_da_early_by_benchmark.png)",
         f"![Decisions per language]({rel}/intervention_da_by_language.png)",
-        f"![Early and small per language]({rel}/intervention_da_by_language_early.png)"])
+        f"![Early and small per language]({rel}/intervention_da_early_by_language.png)"])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
 

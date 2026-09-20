@@ -11,10 +11,10 @@
 <!-- BEGIN auto:highlight (da_per_benchmark.py --pool predictivity) -->
 ## Highlighted result
 
-- **DA-size, proxy → 1.7B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 175M → 1.7B 0.63 / 0.80; 350M → 1.7B 0.73 / 0.81; 600M → 1.7B 0.72 / 0.85; 1B → 1.7B 0.75 / 0.85.
+- **DA-size, proxy → 1.7B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 175M → 1.7B 0.58 / 0.75; 350M → 1.7B 0.57 / 0.97; 600M → 1.7B 0.58 / 0.99; 1B → 1.7B 0.59 / 0.79.
 - **DA-size of `bpb_macro`** (one task, kept out of the means above): 175M 0.86; 350M 0.90; 600M 1.00; 1B 0.93.
-- **DA-size of `train_loss`** (one task, kept out of the means above): 175M 0.84; 350M 0.91; 600M 0.85; 1B 0.87.
-- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 175M 80 % (0.86).
+- **DA-size of `train_loss`** (one task, kept out of the means above): 175M 0.85; 350M 0.90; 600M 0.83; 1B 0.89.
+- **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 175M 90 % (0.87).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -65,22 +65,22 @@ Numbers from the `predictivity` pool (`da_per_task.csv`, pairs from `da_n_pairs_
 
 | comparison | benchmarks | n | pairs | BPB | n |
 |---|---|---|---|---|---|
-| 175M → 1.7B | 0.63 | 61 | 3 | 0.80 | 100 |
-| 350M → 1.7B | 0.73 | 79 | 10 | 0.81 | 100 |
-| 600M → 1.7B | 0.72 | 105 | 15 | 0.85 | 100 |
-| 1B → 1.7B | 0.75 | 116 | 6 | 0.85 | 100 |
+| 175M → 1.7B | 0.58 | 64 | 15 | 0.75 | 11 |
+| 350M → 1.7B | 0.57 | 80 | 15 | 0.97 | 11 |
+| 600M → 1.7B | 0.58 | 85 | 15 | 0.99 | 11 |
+| 1B → 1.7B | 0.59 | 90 | 10 | 0.79 | 11 |
 
 ![DA-size by family](pretraining/predictivity/da_size_by_family.png)
 
 **DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):
 
-| bucket | 20 % | 40 % | 60 % | 80 % |
-|---|---|---|---|---|
-| 175M | 0.64 | 0.75 | 0.76 | 0.86 |
-| 350M | 0.66 | 0.70 | 0.76 | 0.81 |
-| 600M | 0.70 | 0.74 | 0.75 | 0.79 |
-| 1B | 0.71 | 0.72 | 0.75 | 0.80 |
-| 1.7B | 0.73 | 0.75 | 0.77 | 0.80 |
+| bucket | 10 % | 20 % | 30 % | 40 % | 50 % | 60 % | 70 % | 80 % | 90 % |
+|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.59 | 0.58 | 0.59 | 0.73 | 0.75 | 0.73 | 0.76 | 0.81 | 0.87 |
+| 350M | 0.52 | 0.57 | 0.61 | 0.61 | 0.64 | 0.65 | 0.71 | 0.76 | 0.83 |
+| 600M | 0.54 | 0.57 | 0.58 | 0.60 | 0.59 | 0.64 | 0.62 | 0.67 | 0.79 |
+| 1B | 0.55 | 0.62 | 0.63 | 0.60 | 0.64 | 0.68 | 0.67 | 0.71 | 0.76 |
+| 1.7B | 0.56 | 0.61 | 0.62 | 0.64 | 0.63 | 0.64 | 0.64 | 0.69 | 0.75 |
 <!-- END auto:results -->
 
 ## Departure from upstream: tie handling in `decision_acc_fast`
@@ -135,33 +135,31 @@ them.
 
 Numbers from the `predictivity` pool: every design variant at a proxy size, read at 1C–5C of training (C = the Chinchilla-optimal 20 tokens per parameter; every run trains 5C, so 1C is 20 % of it), ranked against the same variants at the 1.7B final checkpoint (the 5C column is DA-size, the 1.7B row is that size's DA-ckpt). A benchmark task counts only where it clears chance at the proxy size and at 1.7B. Regenerate with `python analysis/rq02_decision_accuracy/early_small.py --pool predictivity`.
 
-- **bpb** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **175M at 2C** (0.76).
-- **all benchmarks** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **1B at 2C** (0.77).
-- **Smallest safe size per (benchmark, language)** — never: 75, 175M: 55, 1B: 29, 600M: 27, 350M: 22 of 208 cells.
+- **bpb** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **175M at 1C** (0.78).
+- **all benchmarks** — no (proxy, checkpoint) reaches a mean agreement of 0.75.
+- **Smallest safe size per (benchmark, language)** — never: 70, 1B: 15, 350M: 8, 175M: 6, 600M: 3 of 102 cells.
 
 ![rq02 in one figure](pretraining/predictivity/highlights.png)
 
-**bpb** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 100 tasks):
+**bpb** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 11 tasks):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 90M |  |  |  |  |  |
-| 175M | 0.70 | 0.76 | 0.78 | 0.80 | 0.80 |
-| 350M | 0.77 | 0.80 | 0.80 | 0.82 | 0.81 |
-| 600M | 0.83 | 0.83 | 0.84 | 0.86 | 0.85 |
-| 1B | 0.84 | 0.84 | 0.83 | 0.85 | 0.85 |
-| 1.7B | 0.83 | 0.86 | 0.88 | 0.89 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.40 | 0.78 | 0.73 | 0.74 | 0.99 | 0.75 | 0.44 | 0.75 | 0.75 | 0.75 |
+| 350M | 0.84 | 0.97 | 0.98 | 0.97 | 0.97 | 0.97 | 0.97 | 0.94 | 0.97 | 0.97 |
+| 600M | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0.96 | 0.99 | 0.98 | 0.99 | 0.99 |
+| 1B | 0.81 | 0.95 | 0.89 | 0.83 | 0.87 | 0.86 | 0.83 | 0.73 | 0.76 | 0.79 |
+| 1.7B | 1.00 | 0.99 | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 | 1.00 |  |
 
-**all benchmarks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 124 tasks):
+**all benchmarks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 106 tasks):
 
-| proxy | 1C | 2C | 3C | 4C | 5C |
-|---|---|---|---|---|---|
-| 90M |  |  |  |  |  |
-| 175M | 0.63 | 0.60 | 0.66 | 0.61 | 0.63 |
-| 350M | 0.66 | 0.67 | 0.69 | 0.70 | 0.73 |
-| 600M | 0.70 | 0.71 | 0.71 | 0.75 | 0.73 |
-| 1B | 0.72 | 0.77 | 0.75 | 0.80 | 0.76 |
-| 1.7B | 0.73 | 0.75 | 0.77 | 0.80 |  |
+| proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 175M | 0.54 | 0.49 | 0.57 | 0.56 | 0.58 | 0.59 | 0.56 | 0.55 | 0.56 | 0.58 |
+| 350M | 0.46 | 0.48 | 0.54 | 0.54 | 0.57 | 0.57 | 0.57 | 0.56 | 0.56 | 0.57 |
+| 600M | 0.50 | 0.50 | 0.53 | 0.51 | 0.53 | 0.55 | 0.54 | 0.57 | 0.56 | 0.58 |
+| 1B | 0.54 | 0.59 | 0.59 | 0.56 | 0.55 | 0.59 | 0.57 | 0.58 | 0.58 | 0.59 |
+| 1.7B | 0.56 | 0.61 | 0.62 | 0.64 | 0.63 | 0.64 | 0.64 | 0.69 | 0.75 |  |
 
 ![Early and small](pretraining/predictivity/early_small.png)
 
@@ -187,15 +185,14 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 
 **Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ZH and ES stop at 1B, so they never pair against the reference; L1, L2 and L100 have one pair, so their per-task DA is 0 or 1; L15 has no 1.7B cell yet.
 
-| L | variants | 90M | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|---|---|
-| 1 | L1-deep, L1-shallow | 1 / 0/0/0 | 1 / 1/1/1 | 1 / 1/1/1 | 1 / 1/1/1 | 1 / 0/0/0 |
-| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 1 / 0/0/0 | 1 / 0/1/1 | 1 / 0/1/1 | 1 / 0/1/1 | 1 / 0/0/0 |
-| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 0/0/0 | 6 / 1/1/3 | 6 / 1/1/3 | 6 / 1/1/3 | 6 / 1/0/0 |
-| 15 | L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 |
-| 30 | L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 6 / 0/0/0 | 6 / 1/3/3 | 6 / 1/3/3 | 6 / 1/3/3 | 6 / 1/1/1 |
-| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 0/0/0 | 6 / 0/0/1 | 6 / 0/0/1 | 6 / 0/0/1 | 6 / 0/0/1 |
-| 100 | L100-AT3-deep, L100-AT3-shallow | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 |
+| L | variants | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| 1 | L1-deep, L1-shallow | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 |
+| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 | 1 / 0/0/0 |
+| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 0/0/3 | 6 / 0/0/3 | 6 / 0/0/3 | 6 / 0/0/0 |
+| 15 | L15-AT3-deep, L15-AT3-shallow, L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 15 / 0/0/0 | 15 / 0/0/0 | 15 / 0/0/0 | 15 / 0/0/0 |
+| 30 | L30-AT3-deep, L30-AT3-shallow, L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 15 / 0/3/3 | 15 / 0/3/3 | 15 / 0/3/3 | 15 / 0/3/3 |
+| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 0/3/3 | 6 / 0/3/3 | 6 / 0/3/3 | 6 / 0/3/3 |
 
 The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair of schemes A and B (the `predictivity` pool's, `da_pooled_per_task.csv`). `da_by_L_per_task.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity`.
 
@@ -205,7 +202,7 @@ The early-and-small reading one L at a time: pairs of design variants that share
 <!-- BEGIN auto:cross-task (cross_task.py --pool predictivity) -->
 ## Cross-task predictability
 
-Every parent task as the proxy for every other one (569 x 569): the cell is the smallest proxy size (DA-size, 11 variants at 1.7B, 55 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 406 pairs, ten checkpoints) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
+Every parent task as the proxy for every other one (381 x 381): the cell is the smallest proxy size (DA-size, 16 variants at 1.7B, 120 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 513 pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
 
 ![Cross-task DA-size by benchmark](pretraining/predictivity/cross_task_size_by_family.png)
 

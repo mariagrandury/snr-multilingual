@@ -1,142 +1,102 @@
 {
  "grid": {
-  "cells": 98,
+  "cells": 106,
   "by_size": {
-   "1.7B": 12,
+   "1.7B": 17,
    "175M": 24,
-   "1B": 19,
+   "1B": 23,
    "350M": 18,
-   "600M": 24,
-   "90M": 1
+   "600M": 24
   }
  },
  "rq1": {
-  "n_fits": 3408,
+  "n_fits": 408,
+  "n_tasks": 155,
+  "gated_series": 535,
+  "gated_rungs": 98,
   "families": [
    {
-    "family": "global_mmlu_full",
-    "r2": 0.217,
-    "rho": -0.2,
-    "n": 222,
-    "n_options": 4.0
-   },
-   {
-    "family": "include_base_44",
-    "r2": 0.248,
-    "rho": 0.0,
-    "n": 258,
-    "n_options": 4.0
-   },
-   {
-    "family": "belebele",
-    "r2": 0.288,
-    "rho": 0.4,
-    "n": 630,
-    "n_options": 4.0
-   },
-   {
-    "family": "global_piqa_nonparallel_cloze",
-    "r2": 0.326,
-    "rho": 0.126,
-    "n": 24,
-    "n_options": 2.0
-   },
-   {
-    "family": "global_piqa_parallel_cloze",
-    "r2": 0.336,
-    "rho": 0.211,
-    "n": 546,
+    "family": "multiblimp",
+    "r2": 0.879,
+    "rho": 1.0,
+    "n": 76,
     "n_options": 2.0
    },
    {
     "family": "xcopa",
-    "r2": 0.569,
-    "rho": 0.5,
-    "n": 66,
+    "r2": 0.886,
+    "rho": 1.0,
+    "n": 19,
     "n_options": 2.0
-   },
-   {
-    "family": "truthfulqa-multi_mc1",
-    "r2": 0.676,
-    "rho": -0.566,
-    "n": 18,
-    "n_options": 4.0
    },
    {
     "family": "paws",
-    "r2": 0.677,
-    "rho": 0.8,
-    "n": 60,
+    "r2": 0.894,
+    "rho": 1.0,
+    "n": 11,
     "n_options": 2.0
-   },
-   {
-    "family": "arc",
-    "r2": 0.759,
-    "rho": 0.8,
-    "n": 198,
-    "n_options": 4.0
    },
    {
     "family": "xnli",
-    "r2": 0.805,
-    "rho": 0.8,
-    "n": 108,
+    "r2": 0.906,
+    "rho": 0.9,
+    "n": 37,
     "n_options": 3.0
    },
    {
-    "family": "multiblimp",
-    "r2": 0.846,
-    "rho": 0.975,
-    "n": 342,
-    "n_options": 2.0
-   },
-   {
-    "family": "hellaswag",
-    "r2": 0.906,
-    "rho": 1.0,
-    "n": 186,
-    "n_options": 4.0
-   },
-   {
-    "family": "xwinograd",
-    "r2": 0.936,
-    "rho": 1.0,
-    "n": 36,
-    "n_options": 2.0
-   },
-   {
     "family": "loss",
-    "r2": 0.937,
+    "r2": 0.94,
     "rho": -1.0,
     "n": 6,
     "n_options": NaN
    },
    {
-    "family": "xstorycloze",
-    "r2": 0.944,
+    "family": "xwinograd",
+    "r2": 0.953,
     "rho": 1.0,
-    "n": 78,
+    "n": 26,
     "n_options": 2.0
    },
    {
     "family": "bpb",
     "r2": 0.955,
     "rho": -1.0,
-    "n": 600,
+    "n": 106,
     "n_options": NaN
    },
    {
-    "family": "lambada_openai_mt",
+    "family": "hellaswag",
+    "r2": 0.969,
+    "rho": 1.0,
+    "n": 62,
+    "n_options": 4.0
+   },
+   {
+    "family": "xstorycloze",
     "r2": 0.987,
     "rho": 1.0,
-    "n": 30,
+    "n": 28,
+    "n_options": 2.0
+   },
+   {
+    "family": "arc",
+    "r2": 0.988,
+    "rho": 1.0,
+    "n": 12,
+    "n_options": 4.0
+   },
+   {
+    "family": "lambada_openai_mt",
+    "r2": 0.989,
+    "rho": 1.0,
+    "n": 22,
     "n_options": NaN
    }
   ],
   "by_options": {
-   "2.0": 0.637,
-   "3.0": 0.805,
-   "4.0": 0.392
+   "2.0": 0.923,
+   "3.0": 0.906,
+   "4.0": 0.971
   }
  }
 }

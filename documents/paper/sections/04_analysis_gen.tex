@@ -11,7 +11,10 @@
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/rq4_interventions.pdf}
+% figure copied from the analysis by documents/paper/figures/make_rq_figures.py -- never edit it here
+% generator: https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq05_design_decisions/analyze.py
+% figure:    https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_interventions.png
+\includegraphics[width=\textwidth]{figures/rq4.png}
 \caption{Does predictivity depend on the design choice. (a) Median absolute effect of each intervention at the reference, in seed standard deviations, on per-language bits per byte and on benchmark tasks; the dashed line marks a ratio of one to the pooled baseline seed standard deviation, not a significance threshold. (b) Agreement of each proxy size with the reference's final decision, averaged over language settings, on bits per byte (solid) and on benchmarks (dashed). For the second-language comparisons, BPB agreement uses languages trained by neither level. Reference sizes and evaluated populations can differ between BPB and benchmarks.}
 \label{fig:rq4}
 \end{figure}
@@ -31,7 +34,10 @@
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/rq5_transfer.pdf}
+% figure copied from the analysis by documents/paper/figures/make_rq_figures.py -- never edit it here
+% generator: https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq06_language_transfer/analyze.py
+% figure:    https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/rq5_transfer.png
+\includegraphics[width=\textwidth]{figures/rq5.png}
 \caption{Transfer of scaling behaviour to held-out languages. (a) Median absolute relative error of the reference's bits per byte as a function of how many of the held-out language's smallest rungs are measured, with the exponent borrowed from the other languages (solid), fitted on the language itself (dashed, needs three rungs), or with no extrapolation at all (dotted), for languages present in or absent from the corresponding training mixture. (b) Predicted against observed reference bits per byte from a single 175M measurement per language.}
 \label{fig:rq5}
 \end{figure}

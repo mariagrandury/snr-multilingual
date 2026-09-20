@@ -59,8 +59,8 @@ COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # BPB is read on ALL validation languages, not on the languages both cells
 # train: consecutive language-count pairs share only the smaller setting's
 # list (L1 vs L2 shares English alone), which leaves too few items to
-# compare transformations on. Every cell is validated on the same 100
-# languages, so bpb_all is the one item set they all share.
+# compare transformations on. `bpb_all` is every per-language BPB row the
+# loader delivers, i.e. the languages the cell trains (RULES.md rule 2).
 POPULATIONS = ("benchmark", "bpb_all")
 # rq00 computes the above-random gate on the grid-seed pool; the all-seeds
 # pool has no mask of its own, so fall back to that one rather than leave the
@@ -171,7 +171,7 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
               f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); "
               f"`transformation_da.csv` has every pair. Regenerate with "
               f"`python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
-    for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (100 validation languages)")):
+    for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (trained languages)")):
         g = sm[sm["population"] == pop]
         if g.empty:
             continue

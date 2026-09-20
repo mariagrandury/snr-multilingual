@@ -43,6 +43,8 @@ Measurement issues
 
 ![Scaling regimes per benchmark-language pair](rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes.png)
 
+![Appendix: scaling regimes per family, tasks named by language](rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family_paper.png)
+
 How it is computed
 - Per (task, L): final score = a + b·log₁₀N over the rungs trained at that L (deep, scheme A, seed 1904); the cell is the median R² over the benchmark's tasks (number = fits).
 - Scaling regimes (`regimes.py`): one point per task, medians over the deep scheme-A seed-1904 cells that train its language. (a) R² and Spearman ρ of the log-N fits (one per L; ρ of BPB and the loss negated so improving is positive). (b) the same R² against the R² of score ~ log tokens over each run's checkpoints (one fit per (L, size), ≥ 5 points); quadrants split at R² = 0.5, a heuristic.

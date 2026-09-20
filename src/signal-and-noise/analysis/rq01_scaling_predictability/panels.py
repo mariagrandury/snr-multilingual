@@ -5,8 +5,9 @@ the log-N fit.
     fit_r2_by_language.png    R² of the log-N fit, benchmark x L, one subplot per language
     fit_r2_median.png         median R² per benchmark and L (the left panel of highlights.png on its own)
 
-Reads `rq1_fits.csv` (one row per (task, L) fit on the deep, scheme-A,
-seed-1904 cells).
+Reads `rq1_fits.csv` (one row per (task, L) of the deep, scheme-A,
+seed-1904 cells; the fit uses the rungs where the task is above chance, and a
+row the gate left without a fit carries `gated`, drawn grey).
 
     python analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
 """
@@ -46,7 +47,8 @@ def main(pool: str) -> None:
     Ls = sorted(fits["L"].unique())
     fits["setting"] = "L" + fits["L"].astype(str)
     note = ("cell = R² of a straight line of the final score against log(parameters), over the rungs trained at that language "
-            "setting (deep, scheme A, seed 1904); 1 = the score moves with size exactly as the line says")
+            "setting where the task is above chance (rule 1 gate; deep, scheme A, seed 1904); 1 = the score moves with size exactly "
+            "as the line says; grey = the gate left fewer than 3 rungs")
     G.panel_grid(fits, out_dir / "fit_r2_by_benchmark.png", by="family", row="setting", row_order=[f"L{L}" for L in Ls],
                  col="language", value="r2", ncols=1, cell_w=0.3, counts=False, cbar="R² of score ~ log N", note=note,
                  xlabel="language", ylabel="language setting",
@@ -58,14 +60,17 @@ def main(pool: str) -> None:
     by = fits.groupby(["family", "L"])["r2"]
     lang = fits[fits["kind"] == "benchmark"].groupby("language")["r2"].median()
     med, cnt = (t.unstack().reindex(index=fam, columns=Ls) for t in (by.median(), by.count()))
+    # grey = every fit of the (family, L) was emptied by the gate (rule 12); white = the family has no series there
+    gated = (fits.groupby(["family", "L"])["gated"].all().unstack().reindex(index=fam, columns=Ls).fillna(False)
+             & cnt.isna()).rename(columns=lambda L: f"L{L}") if "gated" in fits else None
     # the family x L median on its own (the paper's figure), then the one-page summary that also carries it
     fig, ax = plt.subplots(figsize=(0.62 * len(Ls) + 2.6, 0.3 * len(fam) + 1.4))
-    t = G.matrix_ax(ax, med.rename(columns=lambda L: f"L{L}"), "", cnt=cnt, xlabel="language setting").assign(panel="fit_r2_median")
+    t = G.matrix_ax(ax, med.rename(columns=lambda L: f"L{L}"), "", cnt=cnt, xlabel="language setting", gated=gated).assign(panel="fit_r2_median")
     G.save_highlights(fig, out_dir, "Median R² of the log-N fit per benchmark and language setting",
                       "R² of final score ~ log(parameters) per (task, language setting), median over the benchmark's tasks; "
                       "small number = fits behind the cell", [t], name="fit_r2_median")
     fig, axes = plt.subplots(1, 3, figsize=(15, 5.2), gridspec_kw={"width_ratios": [1.1, 1, 1]})
-    tables = [G.matrix_ax(axes[0], med.rename(columns=lambda L: f"L{L}"), "Median R² of the log-N fit", cnt=cnt, xlabel="language setting"),
+    tables = [G.matrix_ax(axes[0], med.rename(columns=lambda L: f"L{L}"), "Median R² of the log-N fit", cnt=cnt, xlabel="language setting", gated=gated),
               G.rank_ax(axes[1], fits[fits["family"] != "bpb"].groupby("family")["r2"].median(), "Benchmarks by median R²", xlabel="median R²"),
               G.rank_ax(axes[2], lang, "Languages by median R² over their benchmarks", xlabel="median R²")]
     G.save_highlights(fig, out_dir, "rq01 in one figure: what scales predictably with model size?",

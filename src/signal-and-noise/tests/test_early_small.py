@@ -67,7 +67,8 @@ class ToleranceAndReference(unittest.TestCase):
         # variant "c" of the proxy keeps only its first and last checkpoints: nothing within CKPT_TOL of 60 %
         df = df[~((df["bucket"] == small) & (df["family"] == "c") & df["step"].between(200, 900))]
         grid = pd.DataFrame(C.compute_early_small_decision_accuracy(df)).set_index(["proxy_size", "frac"])
-        self.assertEqual(grid.loc[(small, 0.6), "n_pairs"], 1)        # a and b only
+        # a and b alone are one pair: below MIN_PAIRS (rule 5) the cell is left out and counted in the RULE 5 report
+        self.assertNotIn((small, 0.6), grid.index)
         self.assertEqual(grid.loc[(small, 1.0), "n_pairs"], 3)        # the final checkpoint is still there
 
     def test_the_reference_is_read_at_its_final_checkpoint(self):

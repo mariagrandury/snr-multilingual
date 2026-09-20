@@ -1,45 +1,30 @@
 """Melt decision-accuracy values into a long per-(language, benchmark) table.
 
-One step *back* from analyze_snr_variants.py (which correlates SNR variants
-with DA): this script just exposes the raw decision-accuracy values so you can
-read off, per language, which benchmarks are most predictive across sizes.
+One step *back* from rq04's analyze_snr_variants.py (which correlates SNR
+variants with DA): this script exposes the raw decision-accuracy values so you
+can read off, per language, which benchmarks are most predictive across sizes.
 
-It reads the `decision_acc_*` columns already computed in
-`snr_definition/<stage>/<pool>/snr_variants_per_task.csv` and reshapes them to
-long form. Two DA definitions live in that CSV:
+It reads the `decision_acc_*` columns of rq02's `da_per_task.csv` (compute_da.py,
+with the pair counts in `da_n_pairs_per_task.csv`) and reshapes them to long
+form. Two DA definitions live there:
 
-  DA-size  — small-bucket ranking @last vs large-bucket ranking @last
+  DA-size  — small-bucket ranking @last vs the reference's ranking @last
              (`decision_acc_size_<small>` is small→TARGET_SIZE; the
              `decision_acc_size_<small>_to_<large>` columns are the scaling
-             ladder). Answers "can size A predict the ranking at the larger
-             size B?".
-  DA-ckpt  — within a single bucket, early-ckpt ranking vs that bucket's
-             max-ckpt ranking (`decision_acc_ckpt_<frac>_<bucket>`). Answers
-             "can an early checkpoint predict the final ranking at this size?".
+             ladder and are never pooled into "DA-size").
+  DA-ckpt  — within one bucket, the ranking at an early checkpoint (each of
+             the nine evaluated tenths before the final, rule 3) vs that
+             bucket's final ranking.
 
-**Coverage caveat (cross-size DA):** DA-size needs ≥2 model *families* present
-at BOTH buckets. The custom Apertus ladder stops at 1B (9 mix×seed families
-spanning 175M…1B → well-powered), so every sub-1B → >1B pair has no shared
-family and is absent. Above 1B only reference models span sizes, and most
-bucket-pairs share just 2 families (DA is then binary 0/1). So the size pairs
-present here are exactly the computable ones — the gaps are not bugs.
+Every cell is over at least MIN_PAIRS pairs (rule 5, the kernel). The README
+means are over the benchmark tasks that pass the above-random gate at the
+proxy and, for DA-size, at the reference (rule 1, `utils.passes_gate`: a task
+without a chance level passes), and over the per-language BPB tasks; the two
+whole-mixture aggregates (`bpb_macro`, `train_loss`) are reported on their own
+line and never enter a mean (rule 7).
 
-Outputs (under `snr_definition/<stage>/<pool>/`):
-- `da_per_benchmark.csv`        — long: one row per (language, benchmark, task,
-                                  da_def, comparison) with the DA value.
-- `da_per_benchmark_size.csv`   — wide pivot, rows=(language, benchmark),
-                                  cols=size comparison.
-- `da_per_benchmark_ckpt.csv`   — wide pivot, rows=(language, benchmark),
-                                  cols=ckpt comparison (frac@bucket).
-
-`generate_slides()` additionally rewrites the data-driven appendix of the
-Slidev deck (`documents/slides.md`, between BEGIN/END markers — idempotent):
-the above-random slides, 2 overview heatmap slides, then per language a DA-size
-table slide followed by the same numbers as a heatmap. The heatmap PNGs are
-rendered by `documents/figures/fig_appendix.py` from the CSV this script writes,
-so run that too after regenerating the appendix.
-
-    python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool custom_swissai_hf
+Outputs, next to `da_per_task.csv`: the long table, the per-family grids and
+the README block.
 """
 
 from __future__ import annotations
@@ -63,7 +48,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
-from analysis.utils import (  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import DECISION_ACCURACY
@@ -81,6 +66,8 @@ def melt_da(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for task in df.index:
         lang = assign_language(task)
+        if lang in LANGUAGE_AGGREGATES:     # rule 7: bpb_macro / train_loss are the README's own lines, not a language's row
+            continue
         bench = benchmark_family(task)
         for col in df.columns:
             val = df.at[task, col]
@@ -169,7 +156,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     bullets, rows = [], []
     for b in sizes:
         col = f"decision_acc_size_{b}"
-        gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else is_bench
+        gated = passes_gate(mask, df.index, b, TARGET_SIZE).to_numpy() & is_bench   # rule 1: at the proxy and at the reference; NA passes
         bench, bpb = df.loc[gated & is_bench, col].dropna(), df.loc[is_bpb, col].dropna()
         med_n = int(npairs[col].reindex(bench.index).median()) if npairs is not None and len(bench) else 0
         rows.append([f"{b} → {TARGET_SIZE}", fmt(bench.mean()), len(bench), med_n, fmt(bpb.mean()), len(bpb)])
@@ -186,7 +173,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         piv = {}
         for c in ckpt:
             _, _, _, frac, bucket = c.split("_", 4)
-            gated = (mask[bucket] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and bucket in mask else is_bench
+            gated = passes_gate(mask, df.index, bucket).to_numpy() & is_bench   # rule 1: DA-ckpt ranks within the size
             piv[(bucket, frac)] = df.loc[gated & is_bench, c].mean()
         buckets = [b for b in bucket_order()          # a bucket with one cell has no pairs: no row
                    if any(k[0] == b and np.isfinite(v) for k, v in piv.items())]
@@ -204,7 +191,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
         mat = np.full((len(fams), len(sizes)), np.nan)
         for j, b in enumerate(sizes):
             col = f"decision_acc_size_{b}"
-            gated = (mask[b] == 1).reindex(df.index).fillna(False).astype(bool) if mask is not None and b in mask else is_bench
+            gated = passes_gate(mask, df.index, b, TARGET_SIZE).to_numpy() & is_bench   # rule 1: at the proxy and at the reference; NA passes
             g = df.loc[gated & is_bench, col].groupby(fam).mean()
             for i, f in enumerate(fams):
                 if f in g.index and np.isfinite(g[f]):
@@ -224,6 +211,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
             ax.set_title("DA-size per family, mean over its above-random tasks", loc="left")
             S.clean(ax, spines=()); ax.tick_params(length=0)
             fig.colorbar(im, ax=ax, fraction=0.04, label="decision accuracy")
+            pd.DataFrame(mat, index=fams, columns=sizes).rename_axis("family").to_csv(out_dir / "da_size_by_family.csv")
             S.save(fig, out_dir / "da_size_by_family.png", dpi=150)
             blocks.append(f"![DA-size by family]({stage}/{pool}/da_size_by_family.png)")
     if ck_rows:

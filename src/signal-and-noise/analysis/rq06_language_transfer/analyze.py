@@ -154,6 +154,7 @@ def plot_bpb_curves(df: pd.DataFrame, out_dir: Path) -> None:
     fig.suptitle("Per-language BPB vs fraction of run — blue = languages the cell trains on, grey = unseen",
                  y=1.0)
     fig.tight_layout()
+    b[["model", "task", "frac", "primary_score"]].sort_values(["model", "task", "frac"]).to_csv(out_dir / "bpb_curves.csv", index=False)   # rule 12
     S.save(fig, out_dir / "bpb_curves.png", dpi=120)
 
 
@@ -197,7 +198,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
 
 
 def main(pool: str, out_dir: Path) -> None:
-    df = ladder_frame(pool)
+    df = ladder_frame(pool, untrained=True)   # language transfer is the one question read on untrained languages (rule 2)
     fin = finals(df)
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"Pool '{pool}': {df['model'].nunique()} cells")

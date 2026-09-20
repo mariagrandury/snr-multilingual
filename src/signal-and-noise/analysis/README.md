@@ -21,8 +21,7 @@ methodology · results · files) and its outputs under `<stage>/<pool>/`.
 | | [`rq09_benchmark_design/`](rq09_benchmark_design/) | Which design features of a benchmark predict its SNR? |
 
 The paper's five questions map to rq01 (RQ1), rq05 (RQ2 and RQ4), rq04 (RQ3)
-and rq06 (RQ5); their figures keep the paper's file names (`rq1_scaling`,
-`rq2_early_small`, …) and are copied to `documents/paper/figures/` by
+and rq06 (RQ5); their figures are copied to `documents/paper/figures/` as `rq1.png` … `rq5.png` by
 `make_rq_figures.py` there.
 
 ## Shared setup
@@ -123,7 +122,7 @@ files under their own directory.
   by largest proxy rung in the fit), `panels.py`.
 - **Tables.** `rq1_fits.csv`, `rq1_families.csv`, `scaling_fit.csv`,
   `scaling_law_error.csv`, `facts.json`.
-- **Figures.** `rq1_scaling.png/.pdf` (paper), `scaling_fit.png`,
+- **Figures.** `scaling_regimes_outliers_paper.png/.pdf/.svg` (the paper's rq1; `scaling_regimes_by_family_paper` its appendix twin, `scaling_regimes*.csv` their tables), `rq1_scaling.png/.csv`, `scaling_fit.png`,
   `scaling_law_error.png`, `fit_r2_by_benchmark.png`, `fit_r2_by_language.png`.
 
 ### rq02 — Decision accuracy (A)
@@ -223,7 +222,7 @@ files under their own directory.
   `intervention_da_by_benchmark_early.png`, `intervention_da_by_language_early.png`
   (`panels.py`, from `intervention_da_by_benchmark.csv` / `_by_language.csv`);
   `intervention_da.png`, `rq4_interventions.png/.pdf` (paper),
-  `rq2_early_small.png/.pdf` (paper).
+  `rq2_early_small.png/.pdf` (the paper's rq2 is rq02's `paper_ten_checkpoints.py` → `rq2.png/.svg/.csv`).
 
 ### rq06 — Language transfer (C, paper RQ5)
 

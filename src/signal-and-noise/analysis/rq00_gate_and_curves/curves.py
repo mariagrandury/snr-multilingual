@@ -77,6 +77,7 @@ def plot_loss_curves(df: pd.DataFrame, out_dir: Path) -> None:
     fig.legend(handles=handles, ncol=min(8, len(handles)), loc="lower center", frameon=False)
     fig.suptitle("Training loss — colour = size, width = arch, dash = data scheme", y=1.0)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
+    curve.to_csv(out_dir / "loss_curves.csv", index=False)      # rule 12
     S.save(fig, out_dir / "loss_curves.png", dpi=150)
 
 
@@ -110,6 +111,7 @@ def plot_benchmark_curves(df: pd.DataFrame, out_dir: Path) -> None:
     fig.suptitle("Benchmark accuracy vs fraction of run, mean over the cell's trained-language tasks\n"
                  "colour = size, width = arch, dash = scheme, dotted red = chance", y=1.0)
     fig.tight_layout()
+    b[["model", "task", "frac", "primary_score"]].to_csv(out_dir / "benchmark_curves.csv", index=False)   # rule 12
     S.save(fig, out_dir / "benchmark_curves.png", dpi=150)
 
 
