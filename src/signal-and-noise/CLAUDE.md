@@ -83,15 +83,22 @@ so a script never decides by model name.
   pool, table or figure carries it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
   grid every size was evaluated on, BPB rows on the k/20 save grid, plus the
-  final checkpoint. Membership is by nearest grid point within `GRID_TOL`
+  final checkpoint, and — inside the noise window — benchmark rows on the k/20
+  grid too. Membership is by nearest grid point within `GRID_TOL`
   (0.5 % of the run), not exact divisibility, and a run's last save counts as
   its final within the same tolerance (bug #14). The checkpoint-noise window
-  is `noise_window` (20 %) of the run on the shared tenths, the same for BPB
-  and benchmarks (`utils.noise_checkpoints`, RULES.md rule 4); rq03 and rq05
+  is `noise_window` (20 %) of the run read on the k/`noise_grid` (k/20) points
+  — 80, 85, 90, 95, 100 %, five of them — the same grid for BPB and benchmarks
+  (`utils.noise_checkpoints`, RULES.md rule 4). BPB always had those points;
+  `due_iters` asks for the benchmark evals at 85 % and 95 % since 2026-09-20,
+  so a run whose two new evals have not landed contributes three points, not
+  five. `noise_checkpoints` keeps ONE row per grid point: a SIGUSR2 exit
+  leaves an off-grid save (lm-1.7B-L1-shallow-seed1904 at 89.7 %) that BPB
+  scores and that otherwise counts the 90 % point twice. rq03 and rq05
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
-  only, `multi` is not a language, five tasks per language, one reference, no
+  only, `multi` is not a language, three tasks per language, one reference, no
   90M, no leakage, the figure conventions. `build_snr_pool` applies the
   population rules at load (parents only, trained languages only; rq06 and
   rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
@@ -183,14 +190,17 @@ The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
 largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
 source data and are the one labelled exception), `da_early_fracs` the nine
-evaluated tenths before the final, `noise_window` 0.2, `min_pairs` 3,
-`min_lang_tasks` 5, `size_buckets` (singleton buckets for our sizes, pooled
+evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,
+`min_pairs` 3, `min_lang_tasks` 3 (lowered from 5 on 2026-09-20: it was the
+binding constraint on rq04's per-language panel, 6 languages against 17, and
+it never bought significance — RULES.md "Why three tasks per language"),
+`size_buckets` (singleton buckets for our sizes, pooled
 buckets for the external models). The 36-sweep pools run with these values too, but they stop at 1B:
 rerun today their canonical `decision_acc_size_<s>` columns (→ 1.7B) would be
 empty and only the `_to_1B` scaling pairs would carry DA-size, so their
 committed outputs are the 1B-reference ones and are not regenerated. Sizes and cells with no information yet
 (L15 at 1.7B) are kept as white cells, not dropped from the grids. **Do not drop `da_early_fracs` / `size_buckets` /
-`noise_window` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
+`noise_window` / `noise_grid` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
 them, and `analysis/utils.py` fails at import without them).
 
 - **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes

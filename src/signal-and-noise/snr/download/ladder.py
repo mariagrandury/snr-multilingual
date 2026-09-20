@@ -37,7 +37,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_hf_wandb_config  # noqa: E402
-from pretrain.launch_trainings import mix_label  # noqa: E402
+from pretrain.launch_trainings import NOISE_GRID, NOISE_WINDOW, mix_label  # noqa: E402
 
 LADDER_FILES = ("ladder_report.csv", "ladder_report_curve.csv", "ladder_report.md")
 TOKENS_PER_ITER = 504 * 4096            # GBS x seq, fixed across the sweep
@@ -97,7 +97,13 @@ def _on_shared_grid(df: pd.DataFrame) -> pd.Series:
     # saves every 1,143 of 45,740 iterations) is on the grid to within 0.04 %
     pos = df["iter"] / target
     on_grid = (pos - (pos * n).round() / n).abs() <= GRID_TOL
-    return on_grid | ((1 - pos).abs() <= GRID_TOL) | target.isna()
+    # The noise window (RULES.md rule 4) is read on the k/20 points at every
+    # size, benchmarks included, so 85 % and 95 % are on the grid as well —
+    # without this the evals `due_iters` now asks for would be loaded and
+    # then dropped here. Outside the window benchmarks stay on the tenths.
+    in_window = pos >= 1 - NOISE_WINDOW - GRID_TOL
+    on_window_grid = ((pos - (pos * NOISE_GRID).round() / NOISE_GRID).abs() <= GRID_TOL) & in_window
+    return on_grid | on_window_grid | ((1 - pos).abs() <= GRID_TOL) | target.isna()
 
 
 def load_predictivity_eval_results(

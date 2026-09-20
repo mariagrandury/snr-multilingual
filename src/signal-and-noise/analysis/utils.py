@@ -43,6 +43,7 @@ SMALL_SIZES = _SNR["small_sizes"]
 TARGET_SIZE = _SNR["target_size"]
 CKPT_DA_EARLY_FRACS = _SNR["da_early_fracs"]   # the nine evaluated checkpoints before the final (analysis/RULES.md, rule 3)
 NOISE_WINDOW = _SNR["noise_window"]            # noise = std over the shared checkpoints in this last share of a run (rule 4)
+NOISE_GRID = _SNR["noise_grid"]                # the k/NOISE_GRID points the window is read on: 5 of them at 20 (rule 4)
 MIN_PAIRS = _SNR["min_pairs"]                  # a decision-accuracy cell needs this many design-variant pairs (rule 5)
 MIN_LANG_TASKS = _SNR["min_lang_tasks"]        # a per-language correlation needs this many distinct tasks (rule 8)
 SHARED_FRACS = [k / 10 for k in range(1, 11)]  # the checkpoint grid every size was evaluated on
@@ -302,11 +303,36 @@ def on_shared_grid(df: pd.DataFrame) -> pd.Series:
     return ((df["frac"] * 10).round() / 10 - df["frac"]).abs() <= FRAC_TOL
 
 
+def on_noise_grid(df: pd.DataFrame) -> pd.Series:
+    """Rows at one of the k/NOISE_GRID points of the run. Inside the noise
+    window this is the grid every kind of measurement shares: BPB has always
+    been scored on the twentieths, and `launch_trainings.due_iters` now asks
+    for the benchmarks there too."""
+    return ((df["frac"] * NOISE_GRID).round() / NOISE_GRID - df["frac"]).abs() <= FRAC_TOL
+
+
 def noise_checkpoints(df: pd.DataFrame) -> pd.DataFrame:
-    """The rows the checkpoint-noise estimate is read on: the shared tenths in
-    the last NOISE_WINDOW of each run, the same window for every kind of
-    measurement (rule 4). With NOISE_WINDOW = 0.2 that is 0.8, 0.9 and 1.0."""
-    return df[on_shared_grid(df) & (df["frac"] >= 1 - NOISE_WINDOW - FRAC_TOL)]
+    """The rows the checkpoint-noise estimate is read on: the k/NOISE_GRID
+    points in the last NOISE_WINDOW of each run, the same window and the same
+    grid for every kind of measurement (rule 4). With NOISE_WINDOW = 0.2 and
+    NOISE_GRID = 20 that is 0.80, 0.85, 0.90, 0.95 and 1.00 — five points.
+
+    A run whose benchmark evals at 85 % and 95 % have not landed yet
+    contributes three points, not five, and its noise is a noisier estimate
+    of the same quantity; it is not a different definition.
+
+    One row per grid point: a run that exited on SIGUSR2 has an extra save a
+    few thousand iterations off the grid (lm-1.7B-L1-shallow-seed1904 saved at
+    72,367 of 80,640, 89.7 %), and BPB scores every converted checkpoint, so
+    without this the 90 % point is counted twice and the spread is read over
+    six samples of five checkpoints."""
+    sub = df[on_noise_grid(df) & (df["frac"] >= 1 - NOISE_WINDOW - FRAC_TOL)]
+    if sub.empty:
+        return sub
+    point = (sub["frac"] * NOISE_GRID).round()
+    keys = [sub[c] for c in ("model", "task") if c in sub.columns] + [point]
+    nearest = (sub["frac"] - point / NOISE_GRID).abs().groupby(keys).idxmin()
+    return sub.loc[sorted(nearest)]
 
 
 def passes_gate(mask: pd.DataFrame | None, tasks, *sizes) -> pd.Series:

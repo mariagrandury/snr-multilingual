@@ -34,7 +34,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import task_n_options  # noqa: E402
-from analysis.utils import LADDER_SIZES, benchmark_family, ladder_frame  # noqa: E402
+from analysis.utils import LADDER_SIZES, benchmark_family, ladder_frame, on_shared_grid  # noqa: E402
 
 OUT_ROOT = GATE_AND_CURVES
 CANONICAL = "predictivity_all"      # every cell: all seeds and schemes
@@ -86,7 +86,9 @@ def plot_benchmark_curves(df: pd.DataFrame, out_dir: Path) -> None:
     """Benchmark accuracy against fraction of run, one panel per family, one
     line per cell over the tasks in the languages that cell trains on (the
     watcher's list), with the chance line from the option count."""
-    b = df[df["kind"] == "benchmark"]
+    b = df[(df["kind"] == "benchmark") & on_shared_grid(df)]   # a checkpoint axis is the ten tenths (rule 3):
+    # the 85 % / 95 % evals exist only for the noise window and only on some
+    # runs, and would draw those lines at a different density from the rest
     b = b[[t in _trained_tasks(L, s) for t, L, s in zip(b["task"], b["L"], b["scheme"])]].copy()
     if b.empty:
         return

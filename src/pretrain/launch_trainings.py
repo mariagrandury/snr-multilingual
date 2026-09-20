@@ -233,14 +233,24 @@ DATA_SCHEMES = {
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
     # tokens of Russian (scheme A's L2), 59.9B of Chinese and 23.4B of Spanish,
     # against the 83.6B a 1.7B draws and the 47.2B a 1B draws. So no L2 build
-    # can feed a 1.7B at all — scheme A's own L2 build is 72.8B, not 92B, for
-    # this reason. Chinese is clean through the 1B rung (0.79 epochs).
-    # Spanish is clean only through 350M and repeats 2.0x at 1B; capped at 1B
-    # anyway (decided 2026-09-10) — record that repetition wherever L2-ES is
-    # compared against the other L2 schemes.
+    # can feed a 1.7B without repeating — scheme A's own L2 build is 72.8B,
+    # not 92B, for this reason, and its 1.7B already repeats 1.16x.
+    # Chinese runs the full ladder (2026-09-20): it is what takes L2 at 1.7B
+    # from two families to three — one DA pair to three, the minimum rule 5
+    # accepts (analysis/RULES.md). Its build holds 52.0B, not the 59.9B of
+    # Chinese there is (it was sized when ZH stopped at 1B), so the 1.7B cell
+    # repeats 1.61x against the baseline's 1.15x and is launched with
+    # --allow-undersized: every other ZH rung reads that same 52.0B file, and
+    # a 59.9B rebuild for the top rung alone would break its own ladder.
+    # ZH stops at the 1.7B reference: a 3B would draw 150B of Chinese against
+    # the 59.9B there is (2.5 epochs), and nothing above the reference is read.
     "ZH": dict(label="-ZH", subdir="ZH", langs={2},
-               max_size={2: "1B"}, temp=1.0, sets="ZH", seeds="single",
+               max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
                arches=("deep",)),
+    # Spanish is clean only through 350M and repeats 2.0x at 1B and 3.6x at
+    # 1.7B; capped at 1B (decided 2026-09-10) because that swing across the
+    # ladder would confound a rank flip with the repetition itself — record
+    # the epoch count wherever L2-ES is compared against the other L2 schemes.
     "ES": dict(label="-ES", subdir="ES", langs={2},
                max_size={2: "1B"}, temp=1.0, sets="ES", seeds="single",
                arches=("deep",)),
@@ -400,14 +410,29 @@ def run_interval(saved: list[int]) -> int:
     return max(set(gaps), key=lambda g: (gaps.count(g), g)) if gaps else saved[0]
 
 
+# The noise window of the analysis (src/signal-and-noise/analysis/RULES.md,
+# rule 4) and the grid it is read on. Checkpoint noise is the spread over the
+# k/20 points in the last NOISE_WINDOW of a run, so those points have to be
+# evaluated at EVERY size, not only where the size's own grid happens to hit
+# them. Keep these two in step with `configs/models.json` -> `snr`.
+NOISE_WINDOW = 0.2
+NOISE_GRID = 20
+
+
 def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
     """The saved iters to evaluate: every `every`-th checkpoint of the SIZE's
     grid, expressed on the run's OWN grid so the evaluated fractions of
-    training are the same whatever density the run saved at, plus its final
-    save. A 40-save 1B run yields every 2nd save and a 20-save 1B run every
-    save — the same k/20 points, comparable checkpoint for checkpoint. Saves
-    off the run's grid (a SIGUSR2 exit) are never due; the final save is,
-    whatever its iter (aromanou's runs end at 45740, the grid at 45720)."""
+    training are the same whatever density the run saved at, plus the k/20
+    points of the noise window and its final save. A 40-save 1B run yields
+    every 2nd save and a 20-save 1B run every save — the same k/20 points,
+    comparable checkpoint for checkpoint. Saves off the run's grid (a SIGUSR2
+    exit) are never due; the final save is, whatever its iter (aromanou's runs
+    end at 45740, the grid at 45720).
+
+    The noise window is why the rule is not `every` alone: at `every` = 2 a
+    20-save size lands on the tenths and a 60-save size on the thirtieths, and
+    neither hits 85 % or 95 %. Those two points are added here for every size,
+    which is what makes the window five checkpoints deep instead of three."""
     if not saved:
         return []
     step = run_interval(saved)
@@ -417,13 +442,27 @@ def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
     # multiple of every/n_size, i.e. when j*n_size is divisible by n_run*every.
     # Exact for any `every` (no rounding, no division by zero), and identical
     # to the old i % (every*save_interval) rule whenever n_run == n_size.
+    # It is due as well when j/n_run is one of the k/NOISE_GRID points inside
+    # the window — j*NOISE_GRID divisible by n_run, at or past the window's
+    # start. Integer arithmetic throughout: a 20-save run adds j = 17 and 19,
+    # a 60-save run j = 51 and 57, and a 40-save run already had both.
     # The final save: the target itself when the run saved it; otherwise the
     # first save past it (a run on the old 45740 schedule never writes 45720),
     # and nothing while the run is still short of the target.
     final = target if target in saved else saved[-1] if saved[-1] > target else target
-    return [i for i in saved
-            if (i % step == 0 and (i // step) * n_size % (n_run * every) == 0)
-            or i == final]
+    window_start = n_run * (1 - NOISE_WINDOW)
+
+    def _due(i: int) -> bool:
+        if i == final:
+            return True
+        if i % step:                        # off the run's own grid
+            return False
+        j = i // step
+        if j * n_size % (n_run * every) == 0:
+            return True
+        return j * NOISE_GRID % n_run == 0 and j >= window_start
+
+    return [i for i in saved if _due(i)]
 
 
 def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
@@ -968,6 +1007,16 @@ def main() -> None:
                              "e.g. gpu-nc96-a100-lp or gpu-nc96-a100-ded when "
                              "no H100 is obtainable (accepts a bare name or "
                              "azureml:<name>)")
+    # NOT a diagnostic override: it changes no training argument, so the cell
+    # keeps its grid name. It only says "train on the build that is staged,
+    # repeating it, instead of waiting for a rebuild" — a data-provenance
+    # decision, recorded by the run's own log line and in RULES.md rule 9.
+    parser.add_argument("--allow-undersized", action="store_true",
+                        help="train a cell whose FineWeb-2 build is smaller than the "
+                             "grid sizes it, repeating data rather than waiting for a "
+                             "rebuild. Prints what it repeats; record the epoch count "
+                             "wherever the cell is compared (signal-and-noise/analysis/"
+                             "RULES.md rule 9).")
     # Diagnostic overrides. Every grid cell must keep the config the trained
     # cells used, so these are opt-in, never defaults, and any run that sets
     # one is renamed diag-* below — it can then never land in a grid cell's
@@ -1155,9 +1204,17 @@ def main() -> None:
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
             fineweb_dir, short = fineweb_source(c, args.data_dir,
                                                 target * (args.gbs or GBS) * SEQ_LEN)
-            if short:
+            if short and not args.allow_undersized:
                 print(f"  skip [data undersized]: {exp} — {short}")
                 continue
+            if short:
+                # --allow-undersized: the cell trains on the build it has and
+                # repeats what it repeats. Deliberate for L2-ZH at 1.7B, where
+                # the alternative is worse: every other ZH rung reads this same
+                # 52B file (no rebuild root holds ZH), so a 59.9B rebuild would
+                # put the top of the ZH ladder on data the rest of its own
+                # ladder never saw — the hazard fineweb_source() documents.
+                print(f"  ALLOWING UNDERSIZED BUILD: {exp} — {short}")
             # A run started on another checkpoint grid (aromanou's 1B cells: every
             # 2287 to 45740) must not be resumed from this checkout, which would
             # save every save_interval(target) from here on: the run ends on no

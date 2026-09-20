@@ -491,10 +491,16 @@ is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd checkpoint of the size's save grid and each run's
-final one** whatever its iter — read on the grid the run actually saved at,
+the same rule (**every 2nd checkpoint of the size's save grid, the k/20
+points of the noise window, and each run's final one** whatever its iter —
+read on the grid the run actually saved at,
 `launch_trainings.due_iters`, so aromanou's 20-save 1B cells yield every save
-and land on the same k/20 points as the 40-save ones; the planned third piece — the checkpoint nearest each
+and land on the same k/20 points as the 40-save ones. The noise window
+(`NOISE_WINDOW`, the last 20 %) is added because `every` alone misses it: at
+`every` = 2 a 20-save size lands on the tenths and a 60-save size on the
+thirtieths, and neither hits 85 % or 95 %, which the analysis reads the
+checkpoint noise on (`signal-and-noise/analysis/RULES.md` rule 4). This costs
+two evals per run on the 20- and 60-save sizes and none on the 40-save ones; the planned third piece — the checkpoint nearest each
 shared FLOPs milestone, so cross-size reads at equal compute land on
 evaluated points rather than interpolated ones — is a 09-02 decision NOT
 yet implemented: no `milestone_iters` helper exists yet) and the same

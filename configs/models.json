@@ -19888,6 +19888,98 @@
           }
         }
       }
+    },
+    "lm-1.7B-L2-ZH-deep-seed1904": {
+      "source": "snr-pretraining-predictivity",
+      "family": "lm-L2-ZH-deep-seed1904",
+      "size": "1.7B",
+      "params": 1974140928,
+      "n_non_emb": 1672151040,
+      "d_model": 2304,
+      "vocab_size": 131072,
+      "hyperparams_key": "1.7B",
+      "L": 2,
+      "arch": "deep",
+      "scheme": "ZH",
+      "temperature": 1.0,
+      "seed": 1904,
+      "checkpoint_kind": "megatron_iter",
+      "backends": {
+        "megatron": "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/lm-1.7B-L2-ZH-deep-seed1904/checkpoints/",
+        "hf_local": "/capstor/store/cscs/swissai/infra01/msnr-hf-models/lm-1.7B-L2-ZH-deep-seed1904/"
+      },
+      "stages": {
+        "pretraining": {
+          "tokens": 167215104000,
+          "num_iters": 81000,
+          "tokens_per_iter": 2064384,
+          "checkpoints": {
+            "final": 81000,
+            "all": [
+              1350,
+              2700,
+              4050,
+              5400,
+              6750,
+              8100,
+              9450,
+              10800,
+              12150,
+              13500,
+              14850,
+              16200,
+              17550,
+              18900,
+              20250,
+              21600,
+              22950,
+              24300,
+              25650,
+              27000,
+              28350,
+              29700,
+              31050,
+              32400,
+              33750,
+              35100,
+              36450,
+              37800,
+              39150,
+              40500,
+              41850,
+              43200,
+              44550,
+              45900,
+              47250,
+              48600,
+              49950,
+              51300,
+              52650,
+              54000,
+              55350,
+              56700,
+              58050,
+              59400,
+              60750,
+              62100,
+              63450,
+              64800,
+              66150,
+              67500,
+              68850,
+              70200,
+              71550,
+              72900,
+              74250,
+              75600,
+              76950,
+              78300,
+              79650,
+              81000
+            ]
+          }
+        }
+      }
     }
   },
   "pools": {
@@ -20325,7 +20417,8 @@
       }
     ],
     "noise_window": 0.2,
+    "noise_grid": 20,
     "min_pairs": 3,
-    "min_lang_tasks": 5
+    "min_lang_tasks": 3
   }
 }
