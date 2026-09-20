@@ -20308,8 +20308,7 @@
       "L8-deep",
       "L15-deep",
       "L30-deep",
-      "L50-deep",
-      "L100-deep"
+      "L50-deep"
     ],
     "da_early_fracs": [
       0.1,

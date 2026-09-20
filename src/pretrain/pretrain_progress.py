@@ -920,6 +920,12 @@ def _scheme_desc(name: str, d: dict) -> str:
                               for L, s in sorted(d["max_size"].items())))
     if tuple(d["arches"]) != ("deep", "shallow"):
         bits.append(" + ".join(d["arches"]) + " only")
+    # A scheme can also be single-architecture at only SOME of its settings
+    # (AT3 is deep only at L15 and L30, both architectures at L50), which the
+    # scheme-wide list above cannot say.
+    for L, arches in sorted(d.get("arches_by_L", {}).items()):
+        if tuple(arches) != tuple(d["arches"]):
+            bits.append(f"L{L} is {' + '.join(arches)} only")
     return f"**{name}** ({'; '.join(bits)})"
 
 

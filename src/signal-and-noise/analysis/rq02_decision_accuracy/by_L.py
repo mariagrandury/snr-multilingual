@@ -47,7 +47,7 @@ from evals.scripts.utils.configs import bucket_order, load_pools, size_bucket  #
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES, mix_label, scheme_sizes  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, arches_for, mix_label, scheme_sizes  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import (  # noqa: E402
     compute_ckpt_decision_accuracy, compute_early_small_decision_accuracy)
@@ -111,8 +111,13 @@ def pairs_by_L(t: pd.DataFrame) -> pd.DataFrame:
     planned = {}                                        # (L, size) -> set of variants
     for scheme, cfg in DATA_SCHEMES.items():
         for L in cfg["langs"]:
-            for arch in cfg["arches"]:
-                for size in scheme_sizes(scheme, L):
+            for size in scheme_sizes(scheme, L):
+                # arches_for, never cfg["arches"]: a scheme can be trained in
+                # one architecture at some settings (AT3 is deep only at L15
+                # and L30) or lack a hyperparams config at a size (the 3B is
+                # deep only), and counting those as planned inflates the pair
+                # count — 15 where the grid plans 10, at L15 and L30.
+                for arch in arches_for(scheme, size, L):
                     planned.setdefault((L, size), set()).add(mix_label(L, arch, scheme))
     fin = t[t["frac"] == 1.0].copy()
     fin["kind"] = np.where(fin["task"].str.startswith("bpb_"), "bpb", np.where(fin["task"] == "train_loss", "loss", "bench"))
