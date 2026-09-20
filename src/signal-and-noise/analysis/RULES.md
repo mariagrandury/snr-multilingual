@@ -81,7 +81,8 @@ trained models actually have:
 
 ZH's 52.0B build is smaller than the 59.9B Chinese there is: it was sized
 when ZH stopped at 1B. The 1.7B cell trains on it anyway
-(`launch_trainings.py --allow-undersized`, 2026-09-20) rather than on a
+(`launch_trainings.py --allow-undersized lm-1.7B-L2-ZH-deep-seed1904`,
+2026-09-20 — the flag names the one cell it applies to) rather than on a
 59.9B rebuild, because every other ZH rung reads this file and moving only
 the top rung would put it on data the rest of its own ladder never saw —
 1.61 epochs instead of 1.40, and one consistent ZH ladder.

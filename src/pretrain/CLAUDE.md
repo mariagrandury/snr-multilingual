@@ -85,7 +85,9 @@ the repetition, so its reference is 1B. ZH runs to the 1.7B reference
 three, the minimum rule 5 accepts (`signal-and-noise/analysis/RULES.md`).
 **Its build holds 52.0B, not the 59.9B of Chinese there is** — it was sized
 when ZH stopped at 1B — so `undersized_build` refuses the cell and it is
-launched with `--allow-undersized`, repeating 1.61x against scheme A's own
+launched with `--allow-undersized lm-1.7B-L2-ZH-deep-seed1904` (the flag
+names the single cell it applies to, never a blanket opt-out), repeating
+1.61x against scheme A's own
 1.15x. That is deliberate and is the better of the two options: no rebuild
 root holds ZH, so every other ZH rung reads that same 52.0B file, and
 rebuilding at 59.9B for the top rung alone would put it on data the rest of

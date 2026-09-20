@@ -1011,12 +1011,17 @@ def main() -> None:
     # keeps its grid name. It only says "train on the build that is staged,
     # repeating it, instead of waiting for a rebuild" — a data-provenance
     # decision, recorded by the run's own log line and in RULES.md rule 9.
-    parser.add_argument("--allow-undersized", action="store_true",
-                        help="train a cell whose FineWeb-2 build is smaller than the "
+    # It names ONE cell rather than being a boolean: a blanket opt-out would
+    # let a filter that happens to match several undersized cells train them
+    # all on repeated data, and the only trace is a line of stdout.
+    parser.add_argument("--allow-undersized", metavar="CELL",
+                        help="train CELL although its FineWeb-2 build is smaller than the "
                              "grid sizes it, repeating data rather than waiting for a "
-                             "rebuild. Prints what it repeats; record the epoch count "
-                             "wherever the cell is compared (signal-and-noise/analysis/"
-                             "RULES.md rule 9).")
+                             "rebuild. Takes the ONE full cell name it applies to "
+                             "(e.g. lm-1.7B-L2-ZH-deep-seed1904), never a blanket opt-out: "
+                             "every other undersized cell is still skipped in the same pass. "
+                             "Prints what it repeats; record the epoch count wherever the "
+                             "cell is compared (signal-and-noise/analysis/RULES.md rule 9).")
     # Diagnostic overrides. Every grid cell must keep the config the trained
     # cells used, so these are opt-in, never defaults, and any run that sets
     # one is renamed diag-* below — it can then never land in a grid cell's
@@ -1204,7 +1209,7 @@ def main() -> None:
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
             fineweb_dir, short = fineweb_source(c, args.data_dir,
                                                 target * (args.gbs or GBS) * SEQ_LEN)
-            if short and not args.allow_undersized:
+            if short and args.allow_undersized != exp:
                 print(f"  skip [data undersized]: {exp} — {short}")
                 continue
             if short:
