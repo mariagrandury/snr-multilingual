@@ -180,7 +180,30 @@ honours through `configs.metric_for` — the W&B series is
 `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
 `auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
 and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
-watcher never mistake each other's in-flight job for their own
+watcher never mistake each other's in-flight job for their own. The
+`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
+`auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
+families rewritten by Gemini into statement stems: `dataset_path: json`
+YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never
+published), produced by `scripts/rewrite_items_gemini.py` on the login
+node. That driver talks to **Vertex AI through Application Default
+Credentials**, not an API key: the organisation policy blocks Generative
+Language API keys, and a well-formed key comes back `API_KEY_INVALID`. Two
+consequences worth remembering — a Vertex batch job's source must be a
+`gs://` object (an uploaded file is a Gemini-API-only source, so the driver
+keeps requests and answers in `gs://<project>-msnr-rfgm/rfgm/`), and
+`GOOGLE_CLOUD_LOCATION` must be `global`, because Gemini 3.x is served
+only from the global endpoint and a regional job 404s on the publisher
+model (2.5 is regional; batch itself accepts `global`), and the ADC
+account needs `storage.buckets.create` or a bucket made for it. Vertex also ignores every field
+outside `request`, so the request lines carry no `key` and `fetch` matches
+answers to items on the echoed prompt text; `GOOGLE_GENAI_USE_VERTEXAI`
+therefore decides the file format and the driver refuses to run when the
+SDK resolves the other backend. a task whose JSONL is missing gets no YAML and no tasks.json entry,
+so the watcher's `auto_rfgm` group is absent until the first `--set rfgm`
+run (KeyError). The rewritten set drops a few more items than `rf_`
+(rejected rewrites), so `derive_task_options.py` must run before the
+significance test reads `n_items`
 (`compute_cost.kind_of` strips the suffix).
 
 ---

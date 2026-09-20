@@ -11,3 +11,4 @@ matplotlib>=3.7.0
 tabulate
 statsmodels>=0.14
 scikit-learn>=1.3
+google-genai>=2.24    # rewrite_items_gemini.py (the rfgm twins), login node only

@@ -25,8 +25,14 @@ What it writes, idempotently:
 Task names carry an `rf_` PREFIX on purpose: tasks_for_benchmarks matches
 `<benchmark>_…`, so a `_rf` suffix would be swept into the original family.
 
+`--set rfgm` writes the Gemini-rewritten twins instead (Tier 2): the same
+originals, read from the JSONLs rewrite_items_gemini.py left in RFGM_DATA
+(tasks without a file are skipped and counted), through one `dataset_path:
+json` YAML per task under src/evals/tasks/rfgm/, registered as `rfgm_<task>`
+/ `rfgm_<family>` / group `auto_rfgm`.
+
 Usage:
-    python3.11 src/evals/scripts/make_rf_tasks.py [--harness DIR] [--dry-run]
+    python3.11 src/evals/scripts/make_rf_tasks.py [--set rf|rfgm] [--harness DIR] [--dry-run]
 """
 from __future__ import annotations
 
@@ -70,6 +76,13 @@ FORMAT = {
     "global_mmlu_full": "cloze reformulation of global_mmlu_full: question only, the four options scored as continuations",
     "include_base_44": "cloze reformulation of include_base_44: question only, the four options scored as continuations",
 }
+# Tier 2: the items rewritten by Gemini (rewrite_items_gemini.py) into a
+# statement stem with four short continuations, one JSONL per task with
+# `text` / `choices` / `gold` columns, so one YAML template covers every family.
+RFGM_DATA = Path("/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm")
+RFGM_DIR = ROOT / "src" / "evals" / "tasks" / "rfgm"
+FORMAT_RFGM = {f: f"Gemini statement rewrite of {f}: stem + four short continuations, scored as continuations "
+                  "(rf-data/rfgm/<task>.jsonl)" for f in TEMPLATES}
 
 
 class _Loader(yaml.SafeLoader):
@@ -128,37 +141,61 @@ def rf_yaml(name: str, family: str, src: dict) -> str:
     return body
 
 
+def rfgm_yaml(name: str) -> str:
+    """The Gemini twin: a local JSONL through the `json` loader (no network;
+    the harness splats dataset_kwargs into datasets.load_dataset), the three
+    columns read by name — the harness returns a column's raw value, so
+    `choices` is the list and `gold` the index as stored."""
+    doc = {"task": f"rfgm_{name}", "dataset_path": "json",
+           "dataset_kwargs": {"data_files": {"test": str(RFGM_DATA / f"{name}.jsonl")}},
+           "test_split": "test", "output_type": "multiple_choice", "num_fewshot": 0,
+           "doc_to_text": "text", "doc_to_choice": "choices", "doc_to_target": "gold",
+           "metric_list": [{"metric": m, "aggregation": "mean", "higher_is_better": True}
+                           for m in ("acc", "acc_norm")],
+           "metadata": {"version": 0.0}}
+    return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=1000)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    p.add_argument("--set", choices=["rf", "rfgm"], default="rf",
+                   help="rf: the cloze twins (default); rfgm: the Gemini-rewritten twins")
     p.add_argument("--harness", type=Path, default=HARNESS)
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
+    pre, out_dir = args.set, OUT_DIR if args.set == "rf" else RFGM_DIR
 
     data = json.loads(TASKS_JSON.read_text())
     tasks = data["tasks"]
     originals = [(n, e) for n, e in tasks.items()
                  if e["benchmark"] in TEMPLATES and "pretraining" in e["stages"]
                  and e["language"] not in ("multi", "??")]
-    written = 0
+    written, missing = 0, []
     for name, e in originals:
         fam = e["benchmark"]
-        rf = f"rf_{name}"
-        out = OUT_DIR / fam / f"{rf}.yaml"
-        body = rf_yaml(name, fam, source_config(name, fam, args.harness))
-        tasks[rf] = {"language": e["language"], "benchmark": f"rf_{fam}",
-                     "stages": ["pretraining"], "n_options": 4, "metric": "acc_norm"}
+        if pre == "rfgm" and not (RFGM_DATA / f"{name}.jsonl").exists():
+            missing.append(name)
+            continue
+        twin = f"{pre}_{name}"
+        out = out_dir / fam / f"{twin}.yaml"
+        body = (rf_yaml(name, fam, source_config(name, fam, args.harness)) if pre == "rf"
+                else rfgm_yaml(name))
+        tasks[twin] = {"language": e["language"], "benchmark": f"{pre}_{fam}",
+                       "stages": ["pretraining"], "n_options": 4, "metric": "acc_norm"}
         if not args.dry_run:
             out.parent.mkdir(parents=True, exist_ok=True)
-            if fam in FILTERED:
+            if pre == "rf" and fam in FILTERED:
                 (out.parent / "utils.py").write_text(UTILS_PY)
             if not out.exists() or out.read_text() != body:
                 out.write_text(body)
                 written += 1
-    data["groups"]["auto_rf"] = sorted(f"rf_{f}" for f in TEMPLATES)
+    data["groups"][f"auto_{pre}"] = sorted(f"{pre}_{f}" for f in TEMPLATES)
+    fmt = FORMAT if pre == "rf" else FORMAT_RFGM
     for fam in TEMPLATES:
-        data["benchmarks"][f"rf_{fam}"] = {**data["benchmarks"][fam], "format": FORMAT[fam]}
-    print(f"{len(originals)} rf tasks ({written} yaml files written) under {OUT_DIR}; "
-          f"auto_rf = {data['groups']['auto_rf']}")
+        data["benchmarks"][f"{pre}_{fam}"] = {**data["benchmarks"][fam], "format": fmt[fam]}
+    print(f"{len(originals) - len(missing)} {pre} tasks ({written} yaml files written) under {out_dir}; "
+          f"auto_{pre} = {data['groups'][f'auto_{pre}']}"
+          + (f"; {len(missing)} tasks have no JSONL in {RFGM_DATA} yet" if missing else ""))
     if not args.dry_run:
         TASKS_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         print(f"wrote {TASKS_JSON}")

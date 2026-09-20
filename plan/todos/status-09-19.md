@@ -67,8 +67,34 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /pretrain/ {print $1}' | xargs -r sc
 
 ✅ resume pretrainings in preempt (all <12h remaining):
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme B --partition preemptable    # L15-B
-python3.11 pretrain/launch_trainings.py cscs --size 1.7B --arch shallow --partition preemptable # L50-AT3, L15-A
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --arch shallow --partition preemptable --time 23:59:00
 python3.11 pretrain/launch_trainings.py cscs --size 1B --scheme ES --partition preemptable 
+
+
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --arch shallow --partition preemptable --time 23:59:00 
+
+python3.11 pretrain/launch_trainings.py cscs --size 1B --seed 1904 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1B --arch shallow --seed 1904 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1B --scheme B --arch shallow --seed 1904 --partition preemptable --time 23:59:00
+
+Waiting on AT3 data build:
+python3.11 pretrain/launch_trainings.py cscs --size 1B --scheme AT3 --seed 1904 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --arch shallow --partition preemptable --time 23:59:00
+
+
+
+
+curl -sSL https://sdk.cloud.google.com | bash && exec -l $SHELL
+gcloud auth application-default login --no-launch-browser
+gcloud auth application-default set-quota-project silin-482809
+gcloud services enable aiplatform.googleapis.com --project silin-482809
+unset GEMINI_API_KEY
+export GOOGLE_GENAI_USE_VERTEXAI=true GOOGLE_CLOUD_PROJECT=silin-482809 GOOGLE_CLOUD_LOCATION=global
+
+
+
+
 
 ✅ launch in preemptable with 24h:
 python3.11 pretrain/launch_trainings.py cscs --size 1B --scheme B --arch shallow --seed 1904 --partition preemptable --time 23:59:00
@@ -172,3 +198,89 @@ The multilingual snr is a huge project with many experiments, and even has 2 per
 - FineTasks
 - what do we do with the seeds?
 - notes from 09-16
+
+
+
+
+You rewrite multiple-choice test items so that small language models can be
+evaluated by scoring candidate text continuations.
+
+Use exactly the SAME LANGUAGE and script as the input. Never translate the
+item or switch to English.
+
+Rewrite the question as ONE declarative sentence with a missing final
+constituent. Return the part before that constituent as the "stem". Rewrite
+each of the four "choices" as a short continuation that completes the stem.
+
+Requirements:
+- The stem and every continuation choice must combine into a grammatical,
+  natural-sounding statement in the input language.
+- Preserve the meaning of the question and all four choices.
+- Preserve the order of the choices and which choice is correct. Each
+  completed statement must retain the truth value implied by its original
+  choice.
+- The stem must not reveal or hint at the correct answer.
+- Do not use question wording such as the input-language equivalent of
+  "which of the following".
+- Make the four continuations syntactically parallel and similar in length.
+  Keep them concise, preferably 1–8 words, unless additional words are
+  necessary to preserve meaning or grammaticality.
+- You may make minimal grammatical changes to an option (such as changing
+  capitalization, inflection, agreement, or function words) but must not
+  change its meaning or add factual content.
+- For negatively framed questions, such as questions asking which option is
+  NOT true, preserve the negation explicitly in the stem using natural
+  wording in the input language.
+- The stem must end exactly at the shared completion boundary, with no
+  trailing whitespace or terminal punctuation.
+- Each continuation choice must begin exactly as required after the stem, following
+  the spacing, capitalization, and punctuation conventions of the input
+  language.
+- Include terminal punctuation in each continuation when the completed
+  statement requires it.
+- Do not include option letters or numbers in the continuations.
+{family_note}
+
+Return only valid JSON, with no Markdown fence, explanation, or additional
+keys:
+{"stem":"...","choices":["...","...","...","..."]}
+
+
+
+- The stem and the continuation are joined with exactly one space, which you
+  do not control. Write each continuation as it should read after that
+  space, with the capitalization the input language requires and no leading
+  or trailing whitespace of its own.
+
+
+
+Family notes
+
+belebele:
+"A passage is provided as context. The completed statements must be answerable
+from that passage alone. Do not summarize, rewrite, or quote the passage
+in the stem or choices."
+
+Global-MMLU:
+"A subject label is provided as metadata. Mention the subject in the stem only when needed for clarity; do not add subject information that makes the answer easier or
+changes the item's meaning."
+
+INCLUDE:
+"A subject label may be provided as metadata. The item may depend on knowledge
+specific to a region, such as local driving rules, laws, or
+history. Preserve the original terms."
+
+
+
+
+(snr) mariagrandury@clariden-ln004:/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual> gcloud storage buckets create gs://silin-482809-msnr-rfgm \
+>     --project=silin-482809 --location=US --uniform-bucket-level-access
+
+Creating gs://silin-482809-msnr-rfgm/...
+ERROR: (gcloud.storage.buckets.create) HTTPError 403: maria.grandury@epfl.ch does not have storage.buckets.create access to the Google Cloud project. Permission 'storage.buckets.create' denied on resource '//storage.googleapis.com/projects/_/buckets/silin-482809-msnr-rfgm' (or it may not exist). This command is authenticated as maria.grandury@epfl.ch which is the active account specified by the [core/account] property.
+
+
+
+- separate in 2 commits, go ahead with the first one, then
+- force launch the spanish belebele and basque include, update the review
+- write here the proposed updated prompt

@@ -181,10 +181,10 @@ def eval_walltime(size: str, n_tasks: int) -> str:
 def auto_benchmarks(group: str = "auto") -> list[str]:
     """The `auto` group in configs/tasks.json — BENCHMARK names; each cell
     is evaluated on every benchmark's tasks in the languages it trains on
-    (tasks_for_benchmarks x cell_languages). `auto_rf` is the reformulated
-    set: the letter-format families rewritten as cloze tasks
-    (../evals/scripts/make_rf_tasks.py), distinct task names, so both sets
-    coexist on disk and in W&B."""
+    (tasks_for_benchmarks x cell_languages). `auto_rf` / `auto_rfgm` are the
+    reformulated sets: the letter-format families rewritten as cloze tasks
+    / as Gemini statements (../evals/scripts/make_rf_tasks.py), distinct task
+    names, so all sets coexist on disk and in W&B."""
     return json.loads(TASKS_JSON.read_text())["groups"][group]
 
 
@@ -493,11 +493,12 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     remaining = [t for t in remaining_tasks(name, logs_root, task_list)
                  if t not in exclude]
     tasks = ",".join(remaining)
-    # The rf Global-MMLU twins are one task over the whole 14k-row split with
-    # four answer strings to score per item: 2.7-3.3 min per worker-task on
-    # the 2026-09-18 pilots against the ~0.5 the fit assumes, so each counts
-    # as six tasks in the walltime.
-    n_tasks = sum(6 if t.startswith("rf_global_mmlu_full") else 1 for t in remaining)
+    # The rf / rfgm Global-MMLU twins are one task over the whole 14k-row split
+    # with four answer strings to score per item: 2.7-3.3 min per worker-task
+    # on the 2026-09-18 pilots against the ~0.5 the fit assumes, so each
+    # counts as six tasks in the walltime.
+    n_tasks = sum(6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1
+                  for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
     # comma-joined TASKS list would be truncated at its first comma and the
@@ -514,7 +515,7 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
            "WANDB_ENTITY": WANDB_ENTITY,
            "WANDB_PROJECT": PROJECT_NAME,
            "LOGS_ROOT": str(logs_root),
-           "HARNESS_INCLUDE_PATH": str(EVALS_DIR / "tasks"),   # the rf_* YAMLs
+           "HARNESS_INCLUDE_PATH": str(EVALS_DIR / "tasks"),   # the rf_* / rfgm_* YAMLs
            "TASKS": tasks}
     cmd = ["sbatch", f"--job-name={job}",
            f"--time={eval_walltime(size, n_tasks)}",
@@ -825,12 +826,14 @@ def main() -> None:
     p.add_argument("--all-languages", action="store_true",
                    help="evaluate every auto benchmark in every language, not "
                         "only the languages the cell trains on")
-    p.add_argument("--reformulated", action="store_true",
-                   help="evaluate the `auto_rf` group instead of `auto`: the "
+    p.add_argument("--reformulated", nargs="?", const="rf", choices=["rf", "rfgm"],
+                   help="evaluate a reformulated group instead of `auto`: the "
                         "letter-format families (belebele, global_mmlu_full, "
-                        "include_base_44) as cloze tasks scored on the answer "
-                        "strings — rf_* task names, so nothing already "
-                        "evaluated is touched")
+                        "include_base_44) as `rf` cloze tasks scored on the "
+                        "answer strings (the default when no value is given, "
+                        "group auto_rf) or as the `rfgm` Gemini-rewritten "
+                        "statements (group auto_rfgm) — prefixed task names, "
+                        "so nothing already evaluated is touched")
     p.add_argument("--every", type=int, default=2,
                    help="evaluate every N saved checkpoints (the final "
                         "checkpoint is always evaluated on top)")
@@ -876,11 +879,11 @@ def main() -> None:
     if bad := set(args.sizes) - set(LADDER):
         p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
-    benchmarks = auto_benchmarks("auto_rf" if args.reformulated else "auto")
-    # The rf evals get their own job name (`eval-<cell>-iter<N>-rf`): the
-    # original and the reformulated set of one checkpoint are different work,
-    # so neither watcher may read the other's job as its own and skip it.
-    args.job_suffix = "-rf" if args.reformulated else ""
+    benchmarks = auto_benchmarks(f"auto_{args.reformulated}" if args.reformulated else "auto")
+    # The reformulated evals get their own job name (`eval-<cell>-iter<N>-rf`
+    # / `-rfgm`): the original and each reformulated set of one checkpoint are
+    # different work, so no watcher may read another's job as its own and skip it.
+    args.job_suffix = f"-{args.reformulated}" if args.reformulated else ""
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:

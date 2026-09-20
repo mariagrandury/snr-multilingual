@@ -168,48 +168,361 @@ cross-user `datasets` lock files in the shared cache (see
 `src/evals/CLAUDE.md`, "lock files"). Steps 2 and 3 were launched the same
 day (`eval-<cell>-iter<N>-rf` jobs).
 
-## Tier 2 — rewriting the items with Gemini (not built; costed)
+## Tier 2 — rewriting the items with Gemini (`rfgm_*`, driver built, data not yet produced)
 
-For families that are cloze already and still at chance (arc, hellaswag,
-global_piqa) and for the three letter families after Tier 1, the remaining
-lever is the items themselves: shorter contexts, plainer wording, answers
-that read as natural continuations. That is a rewritten dataset per task
-(a JSONL per task, `dataset_path: json` in a second set of YAMLs, same
-`--include_path` route), produced once with an LLM and kept alongside the
-originals — never pushed publicly with gold labels.
+Tier 1 only drops the letters. Here the item itself changes: Gemini turns
+the question into one declarative sentence that stops where the answer goes
+(a stem) and the four options into short, parallel continuations, in the
+item's own language — the cloze formulation the FineWeb-2 / FineTasks work
+found readable at small scale. Decided 2026-09-19: the three letter families
+in all their languages (185 tasks, ~636k items), `gemini-3.8-flash` through
+the Batch API, evaluated on the deep scheme-A seed-1904 ladder at every
+evaluated checkpoint (the `rf_*` coverage), so original / rf / rfgm are
+compared on identical models. The families that are cloze already (arc,
+hellaswag, global_piqa) are not rewritten.
 
-Cost model: per item, input = the item (question + all options) + ~150
-tokens of instruction and JSON scaffolding; output = the rewritten item,
-about the item's own length. Token counts are bytes/3.5 estimates from the
-cache (±30 %, CJK/Indic scripts heavier). Prices per 1M tokens, September
-2026 ([1](https://developer.puter.com/tutorials/gemini-api-pricing/),
-[2](https://www.cloudzero.com/blog/gemini-pricing/),
-[3](https://benchlm.ai/google/api-pricing)): Gemini 3.1 Flash-Lite
-$0.25 in / $1.50 out, Gemini 3 Flash $0.50 / $3.00, Gemini 3 Pro
-$2 / $12; the Batch API halves all three.
+The set is a third family prefix — `rfgm_` — on the exact `rf_` plumbing:
+[`rewrite_items_gemini.py`](../../../evals/scripts/rewrite_items_gemini.py)
+produces one JSONL per task under
+`/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/` (never
+pushed publicly: gold labels), `make_rf_tasks.py --set rfgm` writes one
+`dataset_path: json` YAML per task under `src/evals/tasks/rfgm/` and the
+tasks.json entries (`benchmark: rfgm_<family>`, `metric: acc_norm`, group
+`auto_rfgm`), `auto_evals_cscs.py --reformulated rfgm` evaluates them with
+`-rfgm` job names, and `compare.py` draws them next to `rf` (SETS).
 
-| scope | questions | in Mtok | out Mtok | Flash-Lite | Flash | Pro |
-|---|---:|---:|---:|---:|---:|---:|
-| all four-option MC families (arc, belebele, global_mmlu_full, hellaswag, include_base_44) | 955k | 389 | 246 | $466 (batch $233) | $933 ($466) | $3,730 ($1,865) |
-| every auto benchmark (14 families) | 1,192k | 450 | 272 | $521 ($260) | $1,041 ($520) | $4,164 ($2,082) |
+Row schema of `<task>.jsonl` (`text`, `choices`, `gold` are what the YAML
+reads by column name; the rest is for audits):
 
-Caveats: Gemini 3 bills thinking tokens as output — set the thinking budget
-to minimal or the output side grows 1.5–2×; global_mmlu and hellaswag are 77 %
-of the tokens, and rewriting only the question and options while keeping
-belebele passages and hellaswag contexts verbatim cuts the output by about
-40 %; multiblimp, lambada and xwinograd are structure-bound (minimal pairs,
-last word, coreference) and cannot be rewritten without changing what they
-measure, so the "every benchmark" row is an upper bound; a 1k-item pilot per
-family (≈ $1) should precede any full run.
+```json
+{"id": 17, "text": "<passage>\n<stem>", "choices": ["…", "…", "…", "…"], "gold": 2,
+ "stem": "…", "context": "<passage or ''>", "subject": "anatomy|''",
+ "orig_question": "…", "orig_choices": ["…"], "lang": "deu_Latn"}
+```
+
+`text` is the full prompt: the belebele passage verbatim + newline + stem;
+Global-MMLU / INCLUDE the stem only. Gold keeps the original position. The
+stem carries no trailing space — the harness appends `" " + choice` itself.
+
+### Step by step
+
+**0. Once — Application Default Credentials.** We authenticate to Vertex AI
+with ADC, not an API key: the Generative Language API refuses keys under an
+organisation policy that blocks them, which is what `API_KEY_INVALID` on a
+well-formed key means. ADC uses your own Google identity and the SDK picks
+it up with no secret in the repo. Run Google's
+[setup script](https://storage.googleapis.com/cloud-samples-data/adc/setup_adc.sh)
+— it installs the gcloud CLI, asks for your project ID, runs the login,
+sets the quota project and enables `aiplatform.googleapis.com` — or do the
+same by hand:
+
+```bash
+curl -sSL https://sdk.cloud.google.com | bash && exec -l $SHELL   # gcloud, into $HOME
+gcloud auth application-default login --no-browser                # prints a command to run on your laptop
+gcloud auth application-default set-quota-project <project-id>
+```
+
+**Run the login on the login node, not on your laptop.** ADC is a file,
+`~/.config/gcloud/application_default_credentials.json`, and the driver
+reads the one on the machine it runs on. `--no-browser` prints a
+`gcloud … --remote-bootstrap="…"` command to paste into a laptop that has
+gcloud and a browser; that returns a URL you paste back. If you already
+authenticated on the laptop, copying the file over is equivalent and
+quicker: `scp ~/.config/gcloud/application_default_credentials.json
+clariden:.config/gcloud/`. Credentials refresh themselves and gcloud is not
+needed again afterwards.
+
+**Enabling the API is a different credential.** `gcloud auth
+application-default login` writes ADC for client libraries; it does not log
+the gcloud CLI itself in, so `gcloud services enable` answers "You do not
+currently have an active account selected". Either run `gcloud auth login`
+first, or just switch the API on in the console:
+`console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=<project-id>`.
+The project also needs billing — batch prediction is not a free-tier
+feature.
+
+**Cloud Storage.** A Vertex batch job reads its requests from Cloud Storage
+and writes its answers back there (an uploaded file, which the Gemini
+Developer API takes, is not a valid Vertex source). The driver keeps them
+under `gs://<bucket>/rfgm/`, where `<bucket>` is `$RFGM_GCS_BUCKET`, else
+`--bucket`, else `<project>-msnr-rfgm`, and creates it on first use with
+the same ADC credential — which needs `storage.buckets.create` on the
+project (`roles/storage.admin`, or `roles/storage.bucketCreator` plus
+`roles/storage.objectAdmin`). Without it the driver stops with the 403 and
+the role to ask for.
+
+```bash
+# 1. can this account create the bucket?
+gcloud storage buckets create gs://$GOOGLE_CLOUD_PROJECT-msnr-rfgm \
+    --project=$GOOGLE_CLOUD_PROJECT --location=US --uniform-bucket-level-access
+# 2. if that is a 403, a project admin runs ONE of:
+gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+    --member=user:<you@example.org> --role=roles/storage.admin     # then repeat step 1
+gcloud storage buckets create gs://<name> --project=$GOOGLE_CLOUD_PROJECT --location=US
+gcloud storage buckets add-iam-policy-binding gs://<name> \
+    --member=user:<you@example.org> --role=roles/storage.objectAdmin   # then export RFGM_GCS_BUCKET=<name>
+# 3. verify
+gcloud storage ls gs://$GOOGLE_CLOUD_PROJECT-msnr-rfgm
+```
+
+The bucket may live in another project the account does own; Vertex reads
+it as long as the caller has object access. Only `submit`/`fetch` need it —
+`pilot` and `build` do not. About 250 MB of requests and a similar volume of
+answers, at Standard-class prices a few cents a month; delete the bucket
+when the rewritten sets are on capstor.
+
+**The environment every command below starts from.** The location must be
+`global`: the whole Gemini 3.x family is served only from the global
+endpoint, and a regional job answers 404 *The PublisherModel does not
+exist* (checked 2026-09-20 against `us-central1`, `europe-west4` and
+`us-east5` — only 2.5 is regional). Batch prediction accepts `global`, and
+the bucket's `US` multi-region default serves it.
+`google-genai` is in `requirements-ml.txt` and already in the snr env; the
+storage calls use `google-auth` and `requests`, which come with it.
+
+```bash
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+export GOOGLE_GENAI_USE_VERTEXAI=true
+export GOOGLE_CLOUD_PROJECT=<project-id> GOOGLE_CLOUD_LOCATION=global
+export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1
+```
+
+`GOOGLE_GENAI_USE_VERTEXAI` decides the shape of the request files, so the
+driver refuses to run if the SDK resolves a different backend than the one
+it was configured for — export it before `build`, not between `build` and
+`submit`. Everything runs on the login node (outbound internet, the snr
+env, the offline datasets cache the items come from); the driver is
+network-bound and light, and every mode is idempotent, so re-run after any
+interruption. Vertex's batch quota is per project and region: `submit`
+stops at the first `RESOURCE_EXHAUSTED` and is re-run later.
+
+**1. Pilot (~$0.40, 15 min).** Synchronous calls with the batch's prompt
+and schema on 10 items of each review task — the `REVIEW_TASKS` in the
+driver: Spanish, Hindi, Turkish, Farsi, Greek, Arabic, Basque and Chinese
+in every family that has them (8 belebele, 7 Global-MMLU, 8 INCLUDE; 230
+items) — printed original → rewritten and written to `pilot_<task>.jsonl`
+in this directory (accepted rows in the row schema, rejected ones with
+their reason):
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py pilot
+```
+
+Read all of them: language kept, stem answerable, gold not leaked, options
+parallel. The prompt (`SYSTEM`, `NOTES` in the driver) is tuned here and
+nowhere else; the validator should pass ≥ 95 %. `--tasks a,b` / `--family`
+narrow the pilot while iterating on the prompt.
+
+**2. Build the request files.** One line per item in
+`rf-data/rfgm/_requests/<task>.jsonl` (REST JSON: the user content, the
+system instruction, `responseSchema`, `thinkingLevel: LOW`), rows with a
+missing option dropped as in the rf twins; prints the token estimate and
+the cost per family. `--dry-run` prints the estimate only.
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py build --dry-run
+python3.11 src/evals/scripts/rewrite_items_gemini.py build
+```
+
+**3. Submit.** One batch job per task (185 files of 1–20 MB): each is
+uploaded to `gs://<bucket>/rfgm/requests/<task>.jsonl` and becomes the
+job's source, and the answers land in `…/<task>/dest`. Both URIs and the
+job name go into `rf-data/rfgm/_jobs.json`; a task that has a job is
+skipped, so re-run until `status` shows 185.
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py submit --max-jobs 40
+python3.11 src/evals/scripts/rewrite_items_gemini.py status
+```
+
+**4. Fetch and validate.** Reads every SUCCEEDED job's destination prefix
+in Cloud Storage, matches each answer back to its item — Vertex drops
+everything outside `request` and echoes the request instead of a key, so
+the match is on the prompt text, and any line that matches nothing is
+counted and skipped rather than written — validates each item — JSON with a non-empty stem that ends
+without whitespace or a colon, exactly four non-empty pairwise-distinct
+choices, no choice appearing as a word in the stem (answer leak), the
+majority Unicode script unchanged (the cheap "still in its language" check;
+it cannot tell Spanish from English, step 5 covers the Latin-script
+languages) — and writes `<task>.jsonl` (accepted) and
+`_rejects/<task>.jsonl` (with reasons). A task file is written only from a
+SUCCEEDED job, so a partial run never leaves a half file; FAILED / EXPIRED
+jobs are cleared and `submit` resubmits them (from the object already in
+the bucket); rejected items get one more
+round through `submit --retry` (then `fetch` again), a second rejection
+drops the item. Batch jobs target 24 h; most finish sooner.
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
+python3.11 src/evals/scripts/rewrite_items_gemini.py submit --retry && python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
+```
+
+**5. Spot-check (45 min, human).** Per task the row and reject counts,
+reject rate, median stem / choice length, the tokens actually spent and
+their cost, and with `--show` five random items of each of the 23 review
+tasks (the pilot's eight languages):
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py report --show
+```
+
+Look for translation drift, stems that give the answer away, options
+collapsed to one word where the original was a clause. A task above 5 %
+rejects: read its rejects before evaluating it.
+
+**6. Register the tasks.** 185 YAMLs + tasks.json (idempotent; tasks whose
+JSONL is missing are skipped and counted). `n_items` is filled from the
+first results by `derive_task_options.py`.
+
+```bash
+python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm
+```
+
+**7. First eval — one job (needs approval).** `test_new_tasks.py` checks
+names against a harness clone and never passes `--include_path`, so the
+smoke test is the watcher on one final checkpoint, all rfgm tasks, ~25
+min on one node; the `per_task/rfgm_*` results must carry `acc,none` and
+`acc_norm,none`, and `samples_rfgm_*.jsonl` the rewritten docs:
+
+```bash
+cd src/pretrain
+python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed1904 --every 1000 --dry-run
+python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed1904 --every 1000 --max-submit 1
+```
+
+**8. The ladder (needs approval).** The rf watcher's shape: every 2nd
+checkpoint + final of the deep scheme-A seed-1904 cells, jobs
+`eval-<cell>-iter<N>-rfgm`, 23–45 min each on one node, ~625 jobs, ~385
+node-hours (rf took about two days at `--max-submit 20`). Held-back tasks:
+a `--retry-held` pass. `pretrain_progress.py` does not count reformulated
+sets; progress is `squeue --me | grep rfgm` and the watcher log.
+
+```bash
+python3.11 auto_evals_cscs.py --reformulated rfgm --arch deep --scheme A --seed 1904 --dry-run
+nohup python3.11 -u auto_evals_cscs.py --reformulated rfgm --arch deep --scheme A --seed 1904 \
+      --max-submit 20 --watch 1800 >> /iopsstor/scratch/cscs/mariagrandury/auto_evals_rfgm_watch.log 2>&1 &
+```
+
+Results land exactly as the originals' do: `per_task/<task>/…/results_*.json`
+and the merged `results_*.json`, one `samples_<task>_*.jsonl` per task,
+`job.json`, the Slurm log `src/evals/logs/eval-<cell>-iter<N>-rfgm_<jobid>`,
+and `push_all_results.py` pushes `rfgm_<task>/acc_norm` to W&B (registered
+tasks are never dropped).
+
+**9. Report and analysis.** The report picks the `rfgm_*` columns up
+(`metric_for` → acc_norm); `compare.py` then draws five panels — original,
+rf, rfgm, rf − original, rfgm − original — with the significance counts
+per set, the table below gets both deltas, and the rq00 gate outputs
+(`first_size_above_random`, `gate_margin_by_benchmark`) list the `rf_*` and
+`rfgm_*` families as rows next to the originals: that is the direct read of
+the gate impact. Every other RQ (decision accuracy, SNR) sees the new tasks
+too, as it does the rf ones.
+
+```bash
+python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf
+bash scripts/refresh_analysis.sh
+```
+
+### Cost
+
+| | items | in Mtok | out Mtok (incl. thinking) | batch $ | online $ |
+|---|---:|---:|---:|---:|---:|
+| belebele (105) | 94.5k | 75 | 5 | 38 | 76 |
+| global_mmlu_full (37) | 519.5k | 352 | 47 | 220 | 440 |
+| include_base_44 (43) | 22.1k | 15 | 2 | 9 | 18 |
+| total | 636k | 441 | 54 | **267** | **533** |
+
+Measured, not estimated: 16 real requests per family on 2026-09-20 gave
+791/678/658 input and 55/90/88 output tokens per item (output includes
+thinking at LOW). The earlier bytes/3.5 projection of 607 Mtok in was ~38 %
+high, so the run is cheaper than the $525–570 first documented. Online
+prices are double batch, and are what the run costs if it goes through
+`generate_content` because no Cloud Storage bucket is available.
+
+The instruction and the response schema are 550 tokens by `count_tokens`
+and go out with every single request, against an item that is only 57
+tokens for Global-MMLU and ~240 for belebele — so the scaffold is about
+80 % of the input bill, and trimming instruction text is the only lever
+that moves it. `scaffold()` estimates it as bytes/3.5, which runs ~30 %
+high on English prose (719 vs 550), so `build --dry-run` moves with the
+prompt but reads high. No cache discount is
+available against it: implicit caching wants a 2 048-token shared prefix on
+Vertex and this is a quarter of that, and batch and cache discounts would
+not compound anyway.
+
+`gemini-3.8-flash` batch: $0.375 / $1.875 per Mtok in / out through
+2026-12-31, double from 2027 — the same on Vertex as on the Gemini API
+([pricing](https://ai.google.dev/gemini-api/docs/pricing)), billed to the
+Cloud project instead of the key;
+thinking tokens bill as output and no Gemini 3 model turns thinking off,
+only down to `LOW` / `MINIMAL`. Input = item + ~150 tokens of instruction
+and schema; output = stem + four choices + JSON; belebele passages are
+input only. Bytes/3.5 estimates, ±30 %. `build --dry-run` prints the same
+table from the cache; `report` prints what was actually spent. Cheaper
+alternatives at the same scope: `gemini-3.1-flash-lite` batch
+($0.125 / $0.75 → ~$125–170), riskier on low-resource scripts;
+`gemini-3.1-pro-preview` batch ($1 / $6 → ~$1,000–1,400).
+
+### The prompt
+
+**The rewriter is never told which option is correct.** The user turn carries
+the language, the subject, the passage, the question and the four options in
+their original order, and nothing else; `gold` stays in the driver and is
+copied to the output row untouched. Telling it would invite the failure that
+defeats the whole exercise: a model that knows the answer writes the true
+statement more fully or more specifically than the false ones, and a small
+model then scores above chance by following the style rather than the
+content, which is the letter-format artefact traded for a subtler one. The
+instruction to "preserve which choice is correct" is a prohibition on
+flipping truth values, not a disclosure.
+
+It can still often infer the answer, so `report` measures what is left: how
+often the gold continuation is the single longest of the four, in the
+rewrite and in the originals side by side. Chance is 25 %, the originals
+already carry some of this artefact, and what matters is whether the rewrite
+raised it.
+
+System instruction (`SYSTEM` in the driver; `{family_note}` per family):
+
+```
+You rewrite multiple-choice test items so that a small language model can be
+scored on them as text continuations. Rewrite the item in the SAME LANGUAGE
+and script as the input — never translate, never switch to English.
+
+Turn the question into ONE declarative sentence that stops exactly where the
+answer would go (a "stem"). Turn each of the four options into a short
+continuation that completes the stem into a true or false statement. Rules:
+- The stem must not contain or hint at the correct answer, and must not say
+  "which of the following".
+- Keep the meaning of the original question and of every option; keep the
+  options in the same order; keep the correct option correct.
+- Make the four continuations parallel: same grammatical form, similar
+  length (aim for 1-8 words), no option letters or numbers.
+- The stem ends with no trailing space or punctuation; each continuation
+  starts as it would follow a space after the stem (lowercase unless it is a
+  name), and ends with a period if the stem+continuation is a full sentence.
+- Do not add facts. If the question asks for the option that is NOT true,
+  write the stem as "Of the following, the one that is not … is".
+{family_note}
+Return only JSON: {"stem": "...", "choices": ["...", "...", "...", "..."]}
+```
+
+Family notes — belebele: "A passage is given; the stem must be answerable
+from that passage alone. Do not rewrite or quote the passage." Global-MMLU:
+"The subject is given; the stem may name it." INCLUDE: "The item may test
+regional knowledge (driving rules, local history); keep the local terms."
+User content per item: `Language:`, `Subject:` (Global-MMLU, INCLUDE),
+`Passage:` (belebele), `Question:`, `Options:` numbered 1–4. The response
+schema pins `{"stem": string, "choices": [4 strings]}`.
 
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
-Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; both sets on the same models, those with the original and the rf twin scored). Cell: original acc → rf acc_norm, **Δ** = rf − original; n = rf tasks, sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the rf run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, median +0.005, and exceeds half the plotted gain in 36 % of the pairs).
+Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
 
 | family | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|
-| belebele | -0.007 → +0.030, **+0.037**, n=59, sig=38 | -0.013 → +0.046, **+0.059**, n=59, sig=55 | -0.007 → +0.058, **+0.065**, n=59, sig=54 | +0.000 → +0.083, **+0.083**, n=59, sig=57 | +0.011 → +0.109, **+0.098**, n=59, sig=56 |
-| global_mmlu_full | -0.006 → +0.006, **+0.012**, n=29, sig=10 | -0.000 → +0.009, **+0.010**, n=29, sig=17 | -0.004 → +0.015, **+0.019**, n=29, sig=15 | -0.008 → +0.029, **+0.036**, n=29, sig=24 | -0.010 → +0.048, **+0.058**, n=29, sig=26 |
-| include_base_44 | +0.003 → +0.005, **+0.002**, n=36, sig=7 | +0.001 → +0.023, **+0.022**, n=36, sig=9 | +0.001 → +0.027, **+0.026**, n=36, sig=10 | +0.001 → +0.039, **+0.038**, n=36, sig=14 | +0.005 → +0.052, **+0.047**, n=36, sig=18 |
+| belebele | -0.007 · rf +0.030 (**+0.037**, n=59, sig=38) · rfgm — | -0.013 · rf +0.046 (**+0.059**, n=59, sig=55) · rfgm — | -0.007 · rf +0.058 (**+0.065**, n=59, sig=54) · rfgm — | +0.000 · rf +0.083 (**+0.083**, n=59, sig=57) · rfgm — | +0.011 · rf +0.109 (**+0.098**, n=59, sig=56) · rfgm — |
+| global_mmlu_full | -0.006 · rf +0.006 (**+0.012**, n=29, sig=10) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=17) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=15) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
+| include_base_44 | +0.003 · rf +0.005 (**+0.002**, n=36, sig=7) · rfgm — | +0.001 · rf +0.023 (**+0.022**, n=36, sig=9) · rfgm — | +0.001 · rf +0.027 (**+0.026**, n=36, sig=10) · rfgm — | +0.002 · rf +0.039 (**+0.037**, n=36, sig=14) · rfgm — | +0.005 · rf +0.052 (**+0.047**, n=36, sig=18) · rfgm — |
 
 ![family x size](rf_gate.png)
 

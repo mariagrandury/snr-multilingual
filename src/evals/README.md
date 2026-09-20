@@ -90,15 +90,22 @@ continuations, zero-shot, `acc` + `acc_norm`) under
 reach the harness through `eval_worker.py --include_path`, which
 `evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
 wheel is untouched. Re-run the generator after adding a language to any of
-the three families; it is idempotent. Design and the LLM-rewrite cost
-estimate: [`analysis/rq00_task_reformulation/`](../signal-and-noise/analysis/rq00_task_reformulation/README.md).
-Its `compare.py` reads both task sets off
+the three families; it is idempotent. The second twin, `rfgm_<task>`
+(`--set rfgm`, group `auto_rfgm`, [`tasks/rfgm/`](tasks/rfgm/)), is the
+same item rewritten by Gemini into a statement stem with four short
+continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
+runs the Batch API from the login node and leaves one JSONL per task under
+`/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/`, which the
+YAMLs read through `dataset_path: json` (offline; never published, it
+carries the gold labels). Design, the step-by-step guide, the prompt and
+the cost: [`analysis/rq00_task_reformulation/`](../signal-and-noise/analysis/rq00_task_reformulation/README.md).
+Its `compare.py` reads every task set off
 the ladder report (the deep scheme-A seed-1904 cells, through the rq00
 gate; `run_all_predictivity.sh` runs it) and rewrites the
 figures and the generated table in that README (`rf_gate.png`, per
 language `rf_gate_by_language.png`, a CSV each): the rq00 gate cell —
-median task margin over chance, trained languages — before, after, and the
-difference.
+median task margin over chance, trained languages — original, rf, rfgm,
+and each set's difference.
 
 ## How to run
 
