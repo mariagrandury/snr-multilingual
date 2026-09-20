@@ -5,7 +5,7 @@ Finish training and eval grid.
 ✅ resume training of 1.7B models:
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme B 
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --arch shallow
-
+ 
 When we have L100:
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --arch shallow
@@ -22,6 +22,7 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scan
 bash evals/scripts/launch_bpb.sh
 python3.11 pretrain/auto_evals_cscs.py --watch 1200
 python3.11 pretrain/auto_evals_cscs.py --retry-held
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --reformulated rf
 
 ✅ save new results:
 python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
@@ -29,10 +30,20 @@ sbatch evals/scripts/mirror_eval_logs.sbatch
 
 cd Projects/snr-multilingual/ && bash scripts/reservation_drain.sh --max-nodes 45  --interval 1800
 
+# Regenerate all plots with new threshold
+
+-> Needs slurm because >1h
+
+python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
+
+sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
+  --job-name=snr-analysis \
+  --output=/iopsstor/scratch/cscs/mariagrandury/snr-analysis-%j.log \
+  --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise && FORCE=1 PY=python HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 SNR_LADDER_DIR=SNR_LADDER_DIR=/capstor/store/cscs/swissai/infra01/msnr-ladder-report bash run_all_predictivity.sh'
+
+
 # ToDos
 
-- check 09-15
-- check 09-16
 - task reformulation: programatically
 - task reformulation: Gemini
 - prep 3B architecture config
