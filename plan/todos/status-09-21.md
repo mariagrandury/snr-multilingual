@@ -31,7 +31,7 @@ SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --reformulat
 ## Update analysis with new evals
 
 ✅ on the cluster, in the snr env: rebuild and publish the report:
-python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf --push-git
+python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
 
 ✅ mirror eval logs to capstor:
 sbatch evals/scripts/mirror_eval_logs.sbatch 
