@@ -96,7 +96,7 @@ checkpoints before touching the grid:
 
 1. **Two checkpoints, one job each**: the strongest model and a small one at
    the same setting — `lm-1.7B-L8-deep-seed1904` and `lm-175M-L8-deep-seed1904`,
-   final iter only (`--every 1000` leaves just the final save due). Both are
+   final iter plus the noise window (`--every 1000` coarsens the tenths away, but the 85/90/95/100 % points are added unconditionally, so five saves are due, not one). Both are
    ALL_LANGUAGES runs, so every rf task runs (185) and the comparison covers
    trained and untrained languages. Read: per family and language, rf
    `acc_norm` vs the original `acc` on the same checkpoint (both on disk),

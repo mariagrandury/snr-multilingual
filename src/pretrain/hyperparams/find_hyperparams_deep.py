@@ -89,7 +89,8 @@ def compute_configs(deep_data: dict) -> dict:
         # decay) mirrored per size so this file alone gives the full training
         # config; the predictivity launchers read it. train_iters is rounded
         # to the checkpoint grid — 20 evenly spaced checkpoints per run, 40
-        # at the 1B rung and 60 at the 1.7B rung (the reference models get
+        # once train_iters >= 30000 (the 1B rung) and 60 once it is >= 60000
+        # (1.7B and 3B) — the reference models get
         # denser sampling; launch_trainings.n_checkpoints has the same rule
         # and save_interval divides exactly), so every size shares the same
         # relative k/20 operating points and the 1xC point (train_iters/5)

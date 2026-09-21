@@ -16,12 +16,13 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
   * scheme — the data build (DATA_SCHEMES, selected with --scheme): A is the
            resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
            supplies the temperature intervention at L15, L30 and L50, which
-           exists ONLY at T=3; B is diversity-first at L in {8, 15, 30}; ZH
+           exists ONLY at T=3; B is diversity-first at L in {8, 15, 30};
+           BT3 is B's L30 list at T=3 (the scheme x temperature pair); ZH
            and ES swap L2's Russian for Chinese / Spanish.
   * seed — 1904 by default; three seeds on the columns the plan marks x3, and
            the triple differs by size — (64, 313, 1904) at 175M and 600M for
-           L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30, 50}
-           (see SEED_TRIPLES).
+           L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30}
+           (see SEED_TRIPLES), and deep only.
 
 Each run trains its size's own budget D(N) = 5 x Chinchilla = 100 x N on the
 fixed 50/50 English (DCLM) + FineWeb-2 mix (L=1 is 100% English), blended at
@@ -202,6 +203,11 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15]
 #   sets      which language_sets_scheme<X>.json supplies its language lists
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
 #   arches    architecture families the scheme is trained in
+#   allow_undersized  cells that deliberately train on a build smaller than
+#             the grid sizes, repeating data (see the ZH note below). Full
+#             cell names, never a wildcard — the launcher is re-run to drive
+#             the sweep, so an exception that lives only in a command line is
+#             an exception that is re-decided by memory on every pass.
 #
 # L=100 is not in the grid (dropped 2026-09-20, plan/l100_data_mixture.md;
 # it was planned as AT3 only). At T=1 the 99-language allocation gives the
@@ -239,14 +245,32 @@ DATA_SCHEMES = {
     # from two families to three — one DA pair to three, the minimum rule 5
     # accepts (analysis/RULES.md). Its build holds 52.0B, not the 59.9B of
     # Chinese there is (it was sized when ZH stopped at 1B), so the 1.7B cell
-    # repeats 1.61x against the baseline's 1.15x and is launched with
-    # --allow-undersized: every other ZH rung reads that same 52.0B file, and
-    # a 59.9B rebuild for the top rung alone would break its own ladder.
+    # repeats 1.61x against the baseline's 1.15x and carries its own
+    # `allow_undersized` entry (2026-09-21 — it had been a --allow-undersized
+    # flag the operator retyped on every launcher pass, so the cell was
+    # skipped on every pass anyone forgot): every other ZH rung reads that
+    # same 52.0B file, and a 59.9B rebuild for the top rung alone would break
+    # its own ladder.
     # ZH stops at the 1.7B reference: a 3B would draw 150B of Chinese against
     # the 59.9B there is (2.5 epochs), and nothing above the reference is read.
     "ZH": dict(label="-ZH", subdir="ZH", langs={2},
                max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
-               arches=("deep",)),
+               arches=("deep",),
+               allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
+    # BT3 is the scheme x temperature interaction, registered 2026-09-21.
+    # Neither built nor launched yet: the build is a separate job and the
+    # training is gated on the AT3 L15/L30 evals. L30 is the
+    # only setting where it can be read: B is defined at L in {8, 15, 30}
+    # only (at L50 its list IS scheme A's), and the temperature effect needs
+    # a tail with room — the per-language floor a 1.7B draws is 7.5B at L8
+    # and 3.5B at L15, where T=3 changes nothing, against 1.6B at L30.
+    # Sizing: a 92B target realizes 88.5B against the 83.6B a 1.7B draws
+    # (0.94 epochs, no repetition), with 6 of the 29 languages exhausted
+    # (mal_Mlym, kat_Geor, tam_Taml, ben_Beng, hin_Deva, heb_Hebr) — scheme
+    # B's tail is thinner than A's, which is what makes the pair worth having.
+    "BT3": dict(label="-BT3", subdir="BT3", langs={30},
+                max_size={30: "1.7B"}, temp=3.0, sets="B", seeds="single",
+                arches=("deep",)),
     # Spanish is clean only through 350M and repeats 2.0x at 1B and 3.6x at
     # 1.7B; capped at 1B (decided 2026-09-10) because that swing across the
     # ladder would confound a rank flip with the repetition itself — record
@@ -262,14 +286,17 @@ DATA_SCHEMES = {
 # (28, 1797, 1904) at L in {1, 2, 30}. The grid has to name the seeds that
 # EXIST — under the wrong triple the launcher submits two more runs per cell
 # and the watcher never evaluates the ones already trained. L50 was added to
-# the 1B triple on 2026-09-10 to match the other x3 columns; those two cells
-# are new and train under the 40-checkpoint regime, unlike aromanou's runs
+# the 1B triple on 2026-09-10 to match the other x3 columns and REMOVED again
+# on 2026-09-21: it was never launched, it is 502 node-h, and the measured
+# seed noise is near size-invariant (0.0066 at 175M, 0.0055 at 600M, 0.0054 at
+# 1B), so a fourth 1B setting buys no precision the other three do not already
+# give — see plan/seed_replicates.md. aromanou's 1B runs keep their own grid
 # (20 saves, every 2287 iters to 45740 — see pretrain/CLAUDE.md).
 SEED_SINGLE = [1904]
 SEED_TRIPLES = {
     "175M": ([64, 313, 1904], {1, 2, 50}),
     "600M": ([64, 313, 1904], {1, 2, 50}),
-    "1B": ([28, 1797, 1904], {1, 2, 30, 50}),
+    "1B": ([28, 1797, 1904], {1, 2, 30}),
 }
 
 
@@ -342,28 +369,43 @@ TEST_WARMUP = 10
 TEST_DECAY = 20
 
 
-def seeds_for(size: str, L: int, scheme: str = "A") -> list[int]:
+def seeds_for(size: str, L: int, scheme: str = "A", arch: str = "deep") -> list[int]:
     """Seeds for one cell: three on the columns the plan marks x3, one
     everywhere else. The extra data schemes run a single seed — they are
-    intervention levels, not part of the seed-noise estimate."""
-    if DATA_SCHEMES[scheme]["seeds"] == "single":
+    intervention levels, not part of the seed-noise estimate.
+
+    **Deep only** (2026-09-21). The seed axis is read as the noise denominator
+    of the interventions, and every one of those is measured against a DEEP
+    baseline: INTERVENTIONS["arch"] holds ("scheme", "A") with `deep` as the
+    baseline level, and the seed-holdout pools are declared "Deep scheme-A
+    cells only". No analysis reads a shallow seed std, so a shallow replicate
+    is 3,281 node-h nothing would load. Every replicate ever trained is in
+    fact deep; this makes the grid say so."""
+    if arch != "deep" or DATA_SCHEMES[scheme]["seeds"] == "single":
         return SEED_SINGLE
     triple, langs = SEED_TRIPLES.get(size, (SEED_SINGLE, set()))
     return triple if L in langs else SEED_SINGLE
 
 
-def predictivity_cells(schemes: Optional[list] = None) -> list[dict]:
+def predictivity_cells(schemes: Optional[list] = None,
+                       arch: str = "deep") -> list[dict]:
     """Every run in the grid as {size, L, seed, scheme}, in
     scheme -> size -> L -> seed order. Defaults to EVERY scheme so the
     progress, models.json and auto-eval tools see the whole sweep; the
-    launcher narrows it with --scheme."""
+    launcher narrows it with --scheme.
+
+    `arch` selects the SEED set, not the schemes: replicate seeds are deep
+    only (see seeds_for), so a caller that fans a cell out over architectures
+    must loop `arch` OUTSIDE this call and pass it, or it plans shallow
+    replicates the grid does not train. The cells themselves are still
+    arch-free — `arches_for()` remains the filter for which arch trains them."""
     cells = []
     for scheme in (schemes or list(DATA_SCHEMES)):
         for size in LADDER:
             for L in sorted(DATA_SCHEMES[scheme]["langs"]):
                 if size not in scheme_sizes(scheme, L):
                     continue
-                for seed in seeds_for(size, L, scheme):
+                for seed in seeds_for(size, L, scheme, arch):
                     cells.append({"size": size, "L": L, "seed": seed,
                                   "scheme": scheme})
     return cells
@@ -414,38 +456,60 @@ def run_interval(saved: list[int]) -> int:
 # rule 4) and the grid it is read on. Checkpoint noise is the spread over the
 # k/20 points in the last NOISE_WINDOW of a run, so those points have to be
 # evaluated at EVERY size, not only where the size's own grid happens to hit
-# them. Keep these two in step with `configs/models.json` -> `snr`.
+# them. Keep these two in step with `configs/models.json` -> `snr`; EVAL_GRID
+# below has no models.json counterpart -- its analysis-side twin is the
+# hardcoded utils.SHARED_FRACS (k/10), so moving one means moving the other.
 NOISE_WINDOW = 0.2
 NOISE_GRID = 20
+# The grid the ANALYSIS reads benchmarks on (rule 3): the ten tenths of
+# training, which carry the Chinchilla (k/5) and half-Chinchilla points.
+# ladder._on_shared_grid discards every benchmark row off it, so evaluating
+# past it is spend nothing reads — this is why the due set is pinned to the
+# tenths instead of scaling with how densely a size happens to SAVE.
+EVAL_GRID = 10
 
 
-def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
-    """The saved iters to evaluate: every `every`-th checkpoint of the SIZE's
-    grid, expressed on the run's OWN grid so the evaluated fractions of
-    training are the same whatever density the run saved at, plus the k/20
-    points of the noise window and its final save. A 40-save 1B run yields
-    every 2nd save and a 20-save 1B run every save — the same k/20 points,
-    comparable checkpoint for checkpoint. Saves off the run's grid (a SIGUSR2
-    exit) are never due; the final save is, whatever its iter (aromanou's runs
-    end at 45740, the grid at 45720).
+def due_iters(saved: list[int], target: int, every: int = 1) -> list[int]:
+    """The saved iters to evaluate: the ten tenths of training (every
+    `every`-th of them), expressed on the run's OWN grid so the evaluated
+    fractions are the same whatever density the run saved at, plus the k/20
+    points of the noise window and its final save. Saves off the run's grid
+    (a SIGUSR2 exit) are never due; the final save is, whatever its iter
+    (aromanou's runs end at 45740, the grid at 45720).
 
-    The noise window is why the rule is not `every` alone: at `every` = 2 a
-    20-save size lands on the tenths and a 60-save size on the thirtieths, and
-    neither hits 85 % or 95 %. Those two points are added here for every size,
-    which is what makes the window five checkpoints deep instead of three."""
+    **Twelve checkpoints at every size**, by construction: the ten tenths plus
+    85 % and 95 %. That is exactly the benchmark set ladder._on_shared_grid
+    keeps, so nothing evaluated is discarded and nothing read is missing. The
+    due set deliberately does NOT scale with n_checkpoints(): 1B saves 40 and
+    1.7B/3B save 60, but the analysis reads tenths at every size, and pinning
+    the two together is what stops the surplus. Measured over the planned grid
+    2026-09-22: 824 checkpoint-evals, of which 577 had already been computed
+    and discarded (sunk) and 247 were still to come -- 128 at 1B, 71 at 3B,
+    48 at 1.7B, none at 600M or below, which were always on the tenths.
+
+    The noise window is why the rule is not the tenths alone: no size's tenths
+    hit 85 % or 95 %, so those two points are added here for every size, which
+    is what makes the window five checkpoints deep instead of three.
+
+    `every` coarsens the TENTHS only; the noise-window clause ignores it, so
+    85/90/95/100 % stay due whatever it is set to. `--every 2` therefore gives
+    8 checkpoints (the fifths plus the window) and `--every 1000` gives 5 (the
+    window alone), not the final save on its own -- which is what the rq00
+    reformulation passes actually ran. Not a knob the steady state uses, and
+    `--every 0` is a caller error: it divides."""
     if not saved:
         return []
     step = run_interval(saved)
     n_run = max(1, round(target / step))    # saves the run makes over the budget
-    n_size = n_checkpoints(target)          # saves the size's grid makes
     # Save j of the run sits at fraction j/n_run; it is due when that is a
-    # multiple of every/n_size, i.e. when j*n_size is divisible by n_run*every.
-    # Exact for any `every` (no rounding, no division by zero), and identical
-    # to the old i % (every*save_interval) rule whenever n_run == n_size.
+    # multiple of every/EVAL_GRID, i.e. when j*EVAL_GRID is divisible by
+    # n_run*every. Exact at any save density, no rounding (n_run is >= 1, and
+    # `every` >= 1): n_run = 20 -> every 2nd save, 40 -> every 4th, 60 -> 6th,
+    # and aromanou's 20-save 1B -> every 2nd. All ten tenths, in every case.
     # It is due as well when j/n_run is one of the k/NOISE_GRID points inside
     # the window — j*NOISE_GRID divisible by n_run, at or past the window's
     # start. Integer arithmetic throughout: a 20-save run adds j = 17 and 19,
-    # a 60-save run j = 51 and 57, and a 40-save run already had both.
+    # a 40-save run j = 34 and 38, a 60-save run j = 51 and 57.
     # The final save: the target itself when the run saved it; otherwise the
     # first save past it (a run on the old 45740 schedule never writes 45720),
     # and nothing while the run is still short of the target.
@@ -458,7 +522,7 @@ def due_iters(saved: list[int], target: int, every: int = 2) -> list[int]:
         if i % step:                        # off the run's own grid
             return False
         j = i // step
-        if j * n_size % (n_run * every) == 0:
+        if j * EVAL_GRID % (n_run * every) == 0:
             return True
         return j * NOISE_GRID % n_run == 0 and j >= window_start
 
@@ -557,8 +621,7 @@ def undersized_build(prefix: str, L: int, scheme: str, run_tokens: int) -> Optio
     if have >= 0.98 * can:
         return None
     return (f"draws {draw / 1e9:.1f}B ({draw / have:.2f} epochs) from a "
-            f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B — "
-            f"stage the full build first")
+            f"{have / 1e9:.1f}B build the grid now sizes at {can / 1e9:.1f}B")
 
 
 def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Optional[str]]:
@@ -594,7 +657,7 @@ def fineweb_source(c: dict, data_dir: str, run_tokens: int) -> tuple[str, Option
 
 # Width-scaled init anchor: 1/sqrt(hidden_size) scaling that keeps the
 # reviewed 0.008944 exactly at the 1B width (d=1792), so the init is
-# consistent across the 768..3072 ladder instead of one fixed value.
+# consistent across the 768..2816 ladder instead of one fixed value.
 INIT_STD_ANCHOR = 0.008944
 INIT_STD_ANCHOR_WIDTH = 1792
 
@@ -728,6 +791,13 @@ def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
 # 12h segments, which clamp to the cap anyway, but a run's final segment was
 # requested hours too long. Shallow 1B has no run yet and takes deep's value
 # (shallow is 2-8% faster at every measured rung).
+#
+# 3B measured 2026-09-22 the same way, over all 8 jobs of the four live cells:
+# 1840-2034 ms wall, median 1924. Do NOT read this rung off the LOGGED time
+# (1814-1832, near-identical across the four): at 60 saves of 57 GB the saves
+# are most of the gap, which is exactly why the reference rungs are timed on
+# wall-clock. The 2300 guess it replaced was only 20% high, not the ~26% a
+# logged-time reading suggests.
 ITER_MS = {
     "deep":    {"90M": 1500,   # [m] 1248
                 "175M": 1000,  # [m]  844
@@ -735,7 +805,7 @@ ITER_MS = {
                 "600M": 660,   # [m]  548
                 "1B": 940,     # [w]  849, 4 jobs
                 "1.7B": 1280,  # [w] 1155, 11 jobs
-                "3B": 2300},   # not measured: 1.7B x (3.0/1.67) params; clamps to the cap anyway
+                "3B": 2120},   # [w] 1924, 8 jobs (range 1840-2034)
     "shallow": {"90M": 1400,   # [m] 1154
                 "175M": 1000,  # [m]  810
                 "350M": 700,   # [m]  567
@@ -1024,9 +1094,11 @@ def main() -> None:
     parser.add_argument("--allow-undersized", metavar="CELL",
                         help="train CELL although its FineWeb-2 build is smaller than the "
                              "grid sizes it, repeating data rather than waiting for a "
-                             "rebuild. Takes the ONE full cell name it applies to "
-                             "(e.g. lm-1.7B-L2-ZH-deep-seed1904), never a blanket opt-out: "
-                             "every other undersized cell is still skipped in the same pass. "
+                             "rebuild. Takes the ONE full cell name it applies to, "
+                             "never a blanket opt-out: every other undersized cell is "
+                             "still skipped in the same pass. For a standing decision "
+                             "use the scheme's `allow_undersized` instead (L2-ZH at 1.7B "
+                             "is there) — this flag is for one-off passes. "
                              "Prints what it repeats; record the epoch count wherever the "
                              "cell is compared (signal-and-noise/analysis/RULES.md rule 9).")
     # Diagnostic overrides. Every grid cell must keep the config the trained
@@ -1120,7 +1192,7 @@ def main() -> None:
               f"architecture (only {', '.join(DATA_SCHEMES[args.scheme]['arches'])}).")
         return
     cells = [
-        c for c in predictivity_cells([args.scheme])
+        c for c in predictivity_cells([args.scheme], args.arch)
         if args.arch in arches_for(c["scheme"], c["size"], c["L"])
         and (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
@@ -1216,16 +1288,28 @@ def main() -> None:
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
             fineweb_dir, short = fineweb_source(c, args.data_dir,
                                                 target * (args.gbs or GBS) * SEQ_LEN)
-            if short and args.allow_undersized != exp:
-                print(f"  skip [data undersized]: {exp} — {short}")
+            # The exception is the registry's or the flag's, never a wildcard:
+            # a filter that happens to match several undersized cells must not
+            # train them all on repeated data.
+            allowed = (exp in DATA_SCHEMES[c["scheme"]].get("allow_undersized", ())
+                       or args.allow_undersized == exp)
+            if short and not allowed:
+                # Both ways out, because neither is always right: rebuilding
+                # is wrong when the rest of the cell's own ladder reads the
+                # small build (the ZH case), and repeating is wrong when it
+                # does not.
+                print(f"  skip [data undersized]: {exp} — {short}. Stage the "
+                      f"full build, or — if repeating is the deliberate choice "
+                      f"for this cell — add it to the scheme's "
+                      f"`allow_undersized` (--allow-undersized for a one-off)")
                 continue
             if short:
-                # --allow-undersized: the cell trains on the build it has and
-                # repeats what it repeats. Deliberate for L2-ZH at 1.7B, where
-                # the alternative is worse: every other ZH rung reads this same
-                # 52B file (no rebuild root holds ZH), so a 59.9B rebuild would
-                # put the top of the ZH ladder on data the rest of its own
-                # ladder never saw — the hazard fineweb_source() documents.
+                # The cell trains on the build it has and repeats what it
+                # repeats. Deliberate for L2-ZH at 1.7B, where the alternative
+                # is worse: every other ZH rung reads this same 52B file (no
+                # rebuild root holds ZH), so a 59.9B rebuild would put the top
+                # of the ZH ladder on data the rest of its own ladder never
+                # saw — the hazard fineweb_source() documents.
                 print(f"  ALLOWING UNDERSIZED BUILD: {exp} — {short}")
             # A run started on another checkpoint grid (aromanou's 1B cells: every
             # 2287 to 45740) must not be resumed from this checkout, which would

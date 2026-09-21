@@ -2,11 +2,11 @@
 """
 CSCS auto-eval watcher — the cluster twin of auto_evals_azure.py.
 
-Every N checkpoints of the size's save grid (default 2) plus each run's final
-checkpoint — read on the grid the run actually saved at, so a run saved at
-half the density (aromanou's 1B cells, 20 saves) yields every save and lands
-on the same fractions of training (launch_trainings.due_iters) —
-evaluate on the "auto" benchmark group (configs/tasks.json) and push to W&B
+Twelve checkpoints per run — the ten tenths of training plus 85 % and 95 %,
+which is exactly the grid the analysis reads — read on the grid the run
+actually saved at, so every size lands on the same fractions of training
+whether it saved 20, 40 or 60 times (launch_trainings.due_iters). Evaluate
+them on the "auto" benchmark group (configs/tasks.json) and push to W&B
 `mariagrandury-epflnlp/msnr` — the same project the training loss logs to.
 
 Idempotent, safe to run alongside the trainings (login node, tmux):
@@ -145,7 +145,9 @@ def convert_job_name(cell: str) -> str:
 # resubmissions.
 MIN_PER_TASK = {"90M": 0.39, "175M": 0.48, "350M": 0.54,   # per worker-task, 583 jobs
                 "600M": 0.55, "1B": 0.59, "1.7B": 0.68,
-                "3B": 0.85}   # not fitted: 1.7B x 1.25, the 1B->1.7B step
+                "3B": 0.85}   # not fitted: 1.7B x 1.25, deliberately above
+                              # the measured 1B->1.7B step (0.59->0.68 = 1.15)
+                              # because nothing at 3B has been timed yet
 OVERHEAD_MIN = 10   # max fitted intercept 1.9; the rest is cold-start headroom
 SAFETY = 1.15       # worst observed requirement 0.91 -> 26% margin
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
@@ -639,7 +641,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # old two-scheme loop there are no duplicates to dedupe.
     for arch in args.archs:
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
-        for c in predictivity_cells(args.schemes):
+        for c in predictivity_cells(args.schemes, arch):
             scheme = c["scheme"]
             if arch not in arches_for(scheme, c["size"], c["L"]):
                 continue
@@ -705,9 +707,10 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     saved = saved_valid_iters(cell, root)
     if not saved:
         return
-    # Every Nth checkpoint of the size's grid, read on the grid the run
-    # actually saved at (a 20-save 1B run yields every save, a 40-save one
-    # every 2nd — the same points), plus its final one — same rule as Azure.
+    # The ten tenths of training, read on the grid the run actually saved at
+    # (a 20-save run yields every 2nd save, a 40-save one every 4th, a
+    # 60-save one every 6th — the same fractions), plus the 85 % / 95 %
+    # noise points and its final one — same rule as Azure. 12 per run.
     due = due_iters(saved, target, args.every)
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
@@ -834,9 +837,11 @@ def main() -> None:
                         "group auto_rf) or as the `rfgm` Gemini-rewritten "
                         "statements (group auto_rfgm) — prefixed task names, "
                         "so nothing already evaluated is touched")
-    p.add_argument("--every", type=int, default=2,
-                   help="evaluate every N saved checkpoints (the final "
-                        "checkpoint is always evaluated on top)")
+    p.add_argument("--every", type=int, default=1,
+                   help="coarsen the evaluated grid: every Nth of the ten "
+                        "tenths of training. The default 1 is the grid the "
+                        "analysis reads (12 checkpoints/run: the tenths plus "
+                        "85%% and 95%%); raise it only for one-off passes")
     p.add_argument("--convert-only", action="store_true",
                    help="submit conversions but no eval jobs — for driving the "
                         "convert half forward while the eval half is blocked "

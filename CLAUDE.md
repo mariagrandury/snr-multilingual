@@ -59,8 +59,8 @@ Two sweeps, in this order:
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 7 language settings × deep/shallow × five data schemes
-   (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
+   90M–3B × 6 language settings × deep/shallow × six data schemes
+   (A, AT3, B, BT3, ZH, ES — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
@@ -216,9 +216,10 @@ are retired — do not carry them into new work):
   not the English ratio.
 - Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
   unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
-  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
-  / Spanish instead of Russian). "Variant" is the older, looser word for any
+  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), BT3 (B's L30 list at
+  T=3 — the scheme × temperature pair; registered 2026-09-21, not built or
+  trained yet), ZH / ES (L2 with Chinese / Spanish instead of Russian). "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES]-<deep|shallow>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

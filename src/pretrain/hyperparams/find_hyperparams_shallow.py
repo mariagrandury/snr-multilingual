@@ -320,7 +320,8 @@ def calculate_hyperparams_for_model_configs(
         # decay) mirrored per size so this file alone gives the full training
         # config; the predictivity launchers read it. train_iters is rounded
         # to the checkpoint grid — 20 evenly spaced checkpoints per run, 40
-        # at the 1B rung and 60 at the 1.7B rung (the reference models get
+        # once train_iters >= 30000 (the 1B rung) and 60 once it is >= 60000
+        # (1.7B and 3B) — the reference models get
         # denser sampling; launch_trainings.n_checkpoints has the same rule
         # and save_interval divides exactly), so every size shares the same
         # relative k/20 operating points and the 1xC point (train_iters/5)
@@ -378,9 +379,12 @@ def calculate_hyperparams_for_model_configs(
                         "D = 100 x n_non_emb_params tokens (5x Chinchilla) at "
                         "global_batch_size x seq_len tokens/iter; train_iters "
                         "rounded to the checkpoint grid (20 evenly spaced "
-                        "checkpoints per run, 40 for 1.7B — save_interval = "
-                        "train_iters/n divides exactly, 1xC = train_iters/5 "
-                        "on-grid); lr_warmup_iters ~4% and lr_wsd_decay_iters "
+                        "checkpoints per run, 40 once train_iters >= 30000 "
+                        "(the 1B rung) and 60 once train_iters >= 60000 (1.7B "
+                        "and 3B) — save_interval = train_iters/n divides "
+                        "exactly, 1xC = train_iters/5 on-grid; the EVALUATED "
+                        "set is 12 at every size, see launch_trainings."
+                        "due_iters); lr_warmup_iters ~4% and lr_wsd_decay_iters "
                         "~20% of train_iters, rounded to 100; lr from the 6ND "
                         "law at the run's own budget (C = 6 x N x 100N = 600 N^2)"
                     ),
@@ -449,7 +453,7 @@ if __name__ == "__main__":
         "deep baseline layer-for-layer, so the depth intervention varies ONLY "
         "the aspect ratio (see the 2026-08-21 methodology review, finding 7). "
         "d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth "
-        "in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-77). "
+        "in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-78). "
         "Per target: among candidates within 4% of N, the ratio closest to "
         "128 wins; if none is that close, the closest-N candidate does.\n\n"
     )

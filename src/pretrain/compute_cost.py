@@ -43,7 +43,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, LADDER, arches_for, exp_name, predictivity_cells)
+    DATA_SCHEMES, HYPERPARAMS, LADDER, arches_for, exp_name, predictivity_cells)
 from ladder_report import EVAL_LOGS  # noqa: E402
 from pretrain_progress import TRAIN_LOGS  # noqa: E402
 from auto_evals_cscs import (  # noqa: E402
@@ -171,8 +171,11 @@ def main() -> None:
     args = p.parse_args()
     users = args.users.split(",")
 
+    # arch OUTSIDE the cell loop: replicate seeds are deep only, so the
+    # shallow pass must enumerate its own (single-seed) cells.
     grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): {**c, "arch": arch}
-            for c in predictivity_cells() for arch in arches_for(c["scheme"], c["size"], c["L"])}
+            for arch in HYPERPARAMS for c in predictivity_cells(arch=arch)
+            if arch in arches_for(c["scheme"], c["size"], c["L"])}
     # evaluate.sbatch writes every user's results into ONE tree, but each
     # user's Slurm logs go under their own scratch (`%u` in --output).
     log_dirs = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/")) for u in users]

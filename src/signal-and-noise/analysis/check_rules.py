@@ -4,7 +4,9 @@ Reads every CSV under analysis/rq*/pretraining/ and reports each violation it
 can detect from the tables alone; exits non-zero when it finds one. What it
 checks, by rule:
 
-  10  no 90M anywhere: not a value in a size-like column, not a column name
+  10  no size outside ANALYSIS_SIZES anywhere — neither 90M (below the
+      ladder) nor a size ABOVE the reference (3B): not a value in a
+      size-like column, not a column name
    7  no `multi` / `??` row in a table that has a language column
    5  no finite decision accuracy where the pair count is below MIN_PAIRS
       (long tables with an n_pairs column; the wide da_per_task against its
@@ -33,8 +35,17 @@ _REPO = Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from analysis.utils import (FRAC_TOL, LANGUAGE_AGGREGATES, MIN_PAIRS, NOISE_WINDOW,  # noqa: E402
-                            SHARED_FRACS, _is_parent_task, is_trained)
+from analysis.utils import (ANALYSIS_SIZES, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGREGATES,  # noqa: E402
+                            MIN_PAIRS, NOISE_WINDOW, SHARED_FRACS,
+                            _is_parent_task, is_trained)
+
+# Rule 10 has two halves and the checker has to test both. Derived from the
+# constants, never spelled out, so that moving TARGET_SIZE moves the check:
+#   below  90M, which is trained but never evaluated (not in EVAL_SIZES)
+#   above  every evaluated size past the reference — 3B today. The loader
+#          drops it at utils.py:249 unless a caller passes above_reference,
+#          which only the size-generalization RQ may do.
+FORBIDDEN_SIZES = tuple(["90M"] + [s for s in EVAL_SIZES if s not in ANALYSIS_SIZES])
 
 SIZE_COLS = ("size", "proxy_size", "bucket", "reference", "reference_size", "small", "target")
 # folders allowed to break a rule, by rule number, each with its reason:
@@ -43,7 +54,12 @@ SIZE_COLS = ("size", "proxy_size", "bucket", "reference", "reference_size", "sma
 #  7  the rq00 gate tables list every task, the aggregates included (they are not per-language tables)
 # 12  rq00's score-curve viewers (~200 grids), rq07, rq08 and rq09 predate the convention and are
 #     not yet converted (listed in RULES.md as open work); the 36-sweep pools are frozen (CLAUDE.md)
-EXEMPT = {6: ("rq08_subset_selection", "rq07_external_frameworks"),
+# 10  the EXTERNAL model pools have their own size axis (270M, 4B, 7-9B, ... 70B): their "3B"
+#     is somebody else's model, not this ladder's rung, and the rule is about this ladder.
+#     The size-generalization RQ joins this list when it lands — it is the one analysis of
+#     OUR sweep that may pass above_reference=True.
+EXEMPT = {10: ("custom_swissai_hf", "external"),
+          6: ("rq08_subset_selection", "rq07_external_frameworks"),
           2: ("rq06_language_transfer", "rq00_gate_and_curves"),
           7: ("rq00_gate_and_curves",),
           12: ("rq07_external_frameworks", "rq08_subset_selection", "rq09_benchmark_design",
@@ -79,12 +95,15 @@ def check_csv(path: Path) -> list[str]:
         # check pass on a tree it never read.
         return [f"unreadable ({type(e).__name__}: {e}); is git-lfs smudged?"]
     out = []
-    # rule 10
-    if any(re.search(r"(^|_)90M(_|$)", c) for c in df.columns):
-        out.append("rule 10: a 90M column")
-    for c in SIZE_COLS:
-        if c in df.columns and (df[c].astype(str) == "90M").any():
-            out.append(f"rule 10: 90M in column {c}")
+    # rule 10 — both halves: below the ladder and above the reference
+    if not _exempt(path, 10):
+        for size in FORBIDDEN_SIZES:
+            pat = re.compile(rf"(^|_){re.escape(size)}(_|$)")
+            if any(pat.search(c) for c in df.columns):
+                out.append(f"rule 10: a {size} column")
+            for c in SIZE_COLS:
+                if c in df.columns and (df[c].astype(str) == size).any():
+                    out.append(f"rule 10: {size} in column {c}")
     # rule 7
     for c in ("language", "lang"):
         if c in df.columns and not _exempt(path, 7):

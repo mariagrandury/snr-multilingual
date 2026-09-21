@@ -133,7 +133,7 @@ build_megatron_cmd() {
 		# Width-scaled init: the launcher sets INIT_STD = 0.008944 x
 		# sqrt(1792 / hidden_size) — 1/sqrt(d) scaling anchored at the 1B
 		# (d=1792, which keeps the reviewed 0.008944 exactly), so the init
-		# is consistent across the 768..3072 ladder widths instead of one
+		# is consistent across the 768..2816 ladder widths instead of one
 		# fixed value. Default = the old fixed value for raw runs.
 		--init-method-std ${INIT_STD:-0.008944}
 	)

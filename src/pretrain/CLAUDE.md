@@ -97,10 +97,11 @@ Spanish), deep only.
 
 Seed triples are **per size** (`SEED_TRIPLES`): 175M and 600M run
 (64, 313, 1904) at L ∈ {1, 2, 50}, 1B runs (28, 1797, 1904) at
-L ∈ {1, 2, 30, 50} — the 1B column is aromanou's already-trained runs (L50
-added 2026-09-10 to match the other ×3 columns; those two cells are new), and
-naming the wrong triple would submit two more runs per cell while the watcher
-ignored the ones on disk. **Her 1B runs follow the old 20-checkpoint regime**
+L ∈ {1, 2, 30} — the 1B column is aromanou's already-trained runs (L50 was
+added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-22,
+never having been launched), and naming the wrong triple would submit two
+more runs per cell while the watcher ignored the ones on disk. Replicates are
+**deep only**: no analysis reads a shallow seed std. **Her 1B runs follow the old 20-checkpoint regime**
 (every 2287 iters to 45740, a 45,740-iter schedule — L1, L2, L15, L30 and
 schemeB L8/L15/L30 at seed 1904, plus 28/1797 at L1, L2, L30 and schemeB L30;
 15 cells), while `n_checkpoints` gives the 1B rung 40 saves

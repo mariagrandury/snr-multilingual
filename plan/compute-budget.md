@@ -365,7 +365,7 @@ size × language-setting × seed, scratch → full D = 100·N budget).
   iterations dropped, so neither cold start nor the end-of-run
   async-checkpoint flush is included). p10…p90 sits within **1–3%** of the
   median at every one of those rungs.
-- **Iteration cost does not depend on L.** Across all seven language settings
+- **Iteration cost does not depend on L.** Across every language setting
   at a fixed size the medians vary by ≤4% (350M deep: 589–614 ms). Tokens per
   iteration and sequence length are identical at every L — only the *content*
   of the batch differs. Training time is therefore a function of (size, arch)
@@ -396,8 +396,9 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 - Steady-state compute only; excludes cold-start, save-iter overhead, and queue
   wait. 56 runs: the grid gained the 1.7B@L2 cell and ×3 seeds at L2 on the
   175M and 600M columns.
-- **The grid has since grown to 186 runs** (2026-09-10: both architectures,
-  five data schemes, per-size seed triples — `launch_trainings.py`). At the
+- **The grid is now 173 runs** (2026-09-22: both architectures, six data
+  schemes, per-size seed triples, replicates deep only — `launch_trainings.py`;
+  it peaked at 191 before the untrained shallow replicates were dropped). At the
   rates above that is **~25,150 node-hours** steady-state and ~26,600 by wall
   clock, 81% of it at 1B and 1.7B. The cost table below is computed on that
   grid.
@@ -415,7 +416,7 @@ Recomputed 2026-09-11 over the current 186-run grid:
 | Stage | Volume | Unit cost | Node-hours |
 | ----- | -----: | --------: | ---------: |
 | Convert (Megatron → HF, every checkpoint) | 5,480 ckpts | ~3 min | ~275 |
-| Eval (every 2nd checkpoint + final, `auto` group; the planned +1 FLOPs milestone per run is **not implemented yet**) | 2,740 due, **all submittable** since the worker pool | 15–100 min requested | **~1,860** requested, ~930 burned |
+| Eval (12 checkpoints per run — the ten tenths plus 85 % / 95 %, `auto` group; the planned +1 FLOPs milestone per run is **not implemented yet**) | 2,740 due, **all submittable** since the worker pool | 15–100 min requested | **~1,860** requested, ~930 burned |
 | BPB (`score_bpb.sbatch`, every converted checkpoint) | 5,480 ckpts | 444 s (90M) – 2,141 s (1.7B) | **~2,100** |
 
 Against the ~25,150 training node-hours above, eval requests are **~7%** of

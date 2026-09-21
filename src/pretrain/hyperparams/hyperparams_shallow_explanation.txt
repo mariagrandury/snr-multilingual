@@ -53,7 +53,7 @@ Architecture search for target model sizes
 
 
 
-DECISION: pin ffw_multiplier = 4 and gqa_ratio = 4, matching the deep baseline layer-for-layer, so the depth intervention varies ONLY the aspect ratio (see the 2026-08-21 methodology review, finding 7). d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-77). Per target: among candidates within 4% of N, the ratio closest to 128 wins; if none is that close, the closest-N candidate does.
+DECISION: pin ffw_multiplier = 4 and gqa_ratio = 4, matching the deep baseline layer-for-layer, so the depth intervention varies ONLY the aspect ratio (see the 2026-08-21 methodology review, finding 7). d_model is a multiple of 256 (head_dim 64 x gqa 4) with width/depth in [96, 160] (~2x the deep ladder's ~64, which itself spans 51-78). Per target: among candidates within 4% of N, the ratio closest to 128 wins; if none is that close, the closest-N candidate does.
 
 
 ============================================================
@@ -68,4 +68,4 @@ Model configs
   1B       17        2304     136       64        36       4          9           4         0.948       3     0.000793     56000  
   1.7B     20        2816     141       64        44       4          11          4         1.665       2     0.000739     48000  
 
-Config saved to /Users/mariagrandury/Projects/epfl/snr-multilingual/src/pretrain/hyperparams/hyperparams_shallow.json
+Config saved to /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/hyperparams/hyperparams_shallow.json

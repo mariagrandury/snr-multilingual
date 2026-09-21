@@ -119,8 +119,8 @@ def grid_names() -> set[str]:
     scheme absent from this set gets its models.json entries deleted, so it
     must enumerate the whole grid, not one slice of it."""
     return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
-            for c in predictivity_cells()
-            for arch in arches_for(c["scheme"], c["size"], c["L"])}
+            for arch in HYPERPARAMS for c in predictivity_cells(arch=arch)
+            if arch in arches_for(c["scheme"], c["size"], c["L"])}
 
 
 def prune(write: bool = True) -> list[str]:
@@ -149,7 +149,7 @@ def sync(arch: str = "deep", scheme: str | None = None,
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
 
     added, updated = [], []
-    for c in predictivity_cells([scheme] if scheme else None):
+    for c in predictivity_cells([scheme] if scheme else None, arch):
         if arch not in arches_for(c["scheme"], c["size"], c["L"]):
             continue
         name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
@@ -187,7 +187,7 @@ def main() -> None:
             print(f"  - {n} (not in the current grid)")
     added, updated = sync(args.arch, args.scheme, write=not args.dry_run)
     print(f"added {len(added)}, updated {len(updated)} "
-          f"(of {len(predictivity_cells())} cells, arch={args.arch} "
+          f"(of {len(predictivity_cells(arch=args.arch))} cells, arch={args.arch} "
           f"scheme={args.scheme})")
     for n in added:
         print(f"  + {n}")

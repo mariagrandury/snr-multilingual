@@ -111,9 +111,12 @@ def cell_in_scheme(scheme: str, size: str, L: int) -> bool:
 
 
 def planned_seeds(size: str, L: int) -> set[int]:
-    """Every seed the grid plans at this (size, L), across all schemes."""
+    """Every seed the grid plans at this (size, L), across all schemes.
+
+    Read on the deep arch, which is the union: replicate seeds are deep only
+    (seeds_for), so the shallow set is always the single seed 1904."""
     return {s for v in DATA_SCHEMES if cell_in_scheme(v, size, L)
-            for s in seeds_for(size, L, v)}
+            for s in seeds_for(size, L, v, "deep")}
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -197,7 +200,7 @@ def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
     return [
         (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
          schedule_for(configs[c["size"]])[0])
-        for c in predictivity_cells([scheme])
+        for c in predictivity_cells([scheme], arch)
         if arch in arches_for(scheme, c["size"], c["L"])
     ]
 
@@ -387,8 +390,10 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     Returns per cell:
       done      results actually on disk
       models    runs of this cell trained so far
-      planned   runs the grid plans for it (seeds x arch x scheme)
-      ckpts     due checkpoints per run (every 2nd save, plus the final one)
+      planned   runs the grid plans for it (per scheme, summed over the
+                architectures it trains in, each with its own seeds)
+      ckpts     due checkpoints per run (12 at every size: the ten tenths
+                of training plus 85 % and 95 % -- launch_trainings.due_iters)
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
@@ -423,16 +428,21 @@ def eval_counts(root: Path, logs_root: Path | None = None,
             # with no run yet, which is most of the grid.
             target = targets[("deep", size)]
             si = save_interval(target)
-            n_due = len({i for i in range(si, target + 1, si)
-                         if i % (2 * si) == 0} | {target})
+            # The watcher's own rule, not a copy of it: 12 at every size (the
+            # ten tenths plus 85 % and 95 %) whatever density the size saves at.
+            n_due = len(due_iters(list(range(si, target + 1, si)), target))
             schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
-            # Per scheme the grid plans seeds x the architectures that scheme
-            # is trained in — not always both: ZH and ES are deep only.
-            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size, L))
+            # Per scheme the grid plans, for each architecture that scheme is
+            # trained in, that architecture's own seeds — a SUM, not a product:
+            # not every scheme trains both arches (ZH and ES are deep only) and
+            # the replicate seeds are deep only, so deep can plan 3 runs where
+            # shallow plans 1.
+            runs = {v: sum(len(seeds_for(size, L, v, a))
+                           for a in arches_for(v, size, L))
                     for v in schemes}
             if all_languages:
-                s, _, seed = ae.ALL_LANGUAGES_RUNS
-                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s) else {}
+                s, a, seed = ae.ALL_LANGUAGES_RUNS
+                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s, a) else {}
                 if not runs:
                     continue
             cells[(size, L)] = {
@@ -453,8 +463,9 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"], c["L"])
-            if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
+            for a in HYPERPARAMS for c in predictivity_cells(arch=a)
+            if a in arches_for(c["scheme"], c["size"], c["L"])
+            and c["size"] in EVAL_SIZES}    # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:
@@ -614,8 +625,8 @@ def planned_variants(size: str, L: int) -> list[str]:
     for scheme in DATA_SCHEMES:
         if not cell_in_scheme(scheme, size, L):
             continue
-        seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
         for arch in arches_for(scheme, size, L):
+            seeds = "/".join(str(x) for x in seeds_for(size, L, scheme, arch))
             lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
@@ -773,7 +784,7 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
             target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
             ms = ITER_MS[arch][size]
             per_job = JOB_TRAIN_SEC * 1000 // ms
-            for c in predictivity_cells():
+            for c in predictivity_cells(arch=arch):
                 if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
                     continue
                 exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
@@ -932,11 +943,12 @@ def _scheme_desc(name: str, d: dict) -> str:
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
     baseline = len(predictivity_cells(["A"]))
-    # Every run the grid plans: per scheme, its cells x the architectures that
-    # scheme is actually trained in (ZH and ES are deep only, so multiplying
-    # the whole grid by 2 would over-count them).
-    full = sum(len(arches_for(v, c["size"], c["L"]))
-               for v in DATA_SCHEMES for c in predictivity_cells([v]))
+    # Every run the grid plans, counted by enumerating rather than multiplying:
+    # not every scheme trains both architectures (ZH, BT3 and ES are deep only)
+    # and the replicate seeds are deep only, so the two axes do not factor.
+    full = sum(1 for a in HYPERPARAMS for v in DATA_SCHEMES
+               for c in predictivity_cells([v], a)
+               if a in arches_for(v, c["size"], c["L"]))
     # Sizes that do not train at every setting (the 3B extrapolation check).
     partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
                         for s in SIZES if SIZE_LANG_SETTINGS[s] != LANG_SETTINGS)

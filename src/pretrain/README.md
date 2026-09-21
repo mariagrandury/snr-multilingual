@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 7 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 6 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -27,7 +27,7 @@ python3.11 launch_trainings.py cscs --dry-run      # always preview first
 python3.11 launch_trainings.py cscs                # whole sweep (or filter)
 python3.11 launch_trainings.py cscs --size 90M --langs 2   # one cell
 
-# 3. Auto-evals while training (tmux; converts + evals every 2nd checkpoint
+# 3. Auto-evals while training (tmux; converts every save, evals 12/run
 #    of the size's grid, on the run's own save grid, + each run's final one,
 #    pushes to W&B mariagrandury-epflnlp/msnr;
 #    the W&B key comes from your env or src/evals/scripts/wandb_api_key.txt)
@@ -78,12 +78,12 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**58 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **191 runs**.
+**56 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting every scheme and the architectures each is trained in: **173 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -492,9 +492,9 @@ is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd checkpoint of the size's save grid, the k/20
-points of the noise window, and each run's final one** whatever its iter —
-read on the grid the run actually saved at,
+the same rule (**the ten tenths of training, the k/20 points of the noise
+window, and each run's final one** whatever its iter — twelve checkpoints at
+every size, read on the grid the run actually saved at,
 `launch_trainings.due_iters`, so aromanou's 20-save 1B cells yield every save
 and land on the same k/20 points as the 40-save ones. The noise window
 (`NOISE_WINDOW`, the last 20 %) is added because `every` alone misses it: at
@@ -581,7 +581,7 @@ runs (no shallow 1B yet); by wall clock, saves included, they run at 849 and
 | 1B    |    21 |   6 |      **754** |               — |                   45 720 |     ~9.6 h |
 | 1.7B  |    21 |   2 |     **1138** |        **1079** |                   81 000 |    ~25.6 h |
 
-**Training cost does not depend on L.** Across all seven language settings at
+**Training cost does not depend on L.** Across every language setting at
 a fixed size the medians vary by ≤4% (350M deep: 589–614 ms) — tokens per
 iteration and sequence length are identical at every L, only the batch content
 differs. The language setting costs *eval* time, not training time; the

@@ -61,12 +61,12 @@ as well as L100 (the flattened L50 build covers the 1.7B draw, see
 | ---- | ------ |
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**58 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **191 runs**.
+**56 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting every scheme and the architectures each is trained in: **173 runs**.
 
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
@@ -81,7 +81,8 @@ the 1.7B row gained L=2, taking the grid from 52 to 56. The 2026-09-10 changes
 above kept the scheme-A deep grid at 56 cells — L100's ×3 rows came out, the
 1.7B row gained L15 and L50, the 1B column gained ×3 at L50 — and took the
 whole sweep, over every scheme and the architectures each is trained in, to
-186 runs.)
+191 runs. It is 173 since 2026-09-22, when the untrained shallow replicates
+and the 1B ×3 at L50 were dropped again.)
 
 ## Intervention axis (the design choice under test)
 
@@ -272,7 +273,7 @@ Before the largest run at a setting, check the realized FineWeb2 build size that
 
 Log the final checkpoints (for example the last 30, spaced about 1000 steps), so that per-language BPB and the checkpoint-to-checkpoint noise estimate can be computed over the final window, matching the Signal-and-Noise noise definition.
 
-**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers every 2nd checkpoint of the size's grid and **the run's final one** (`auto_evals_*.py --every 2`), read on the grid the run actually saved at (`launch_trainings.due_iters` — a 20-save 1B run from before this rule yields every save, the same k/20 points); the third piece decided 09-02 — **the checkpoint nearest each half-decade FLOPs milestone** (~1 extra per run, see "The compute axis" below) — is **not implemented yet**: the `configs.milestone_iters` helper it needs does not exist, so the watchers today run only the every-2nd+final rule. The odd late checkpoints are converted to HF and kept, so the checkpoint-noise window can be densified later by lowering `--every` without retraining.
+**As implemented (2026-08-21).** Each run saves **20 checkpoints** evenly spaced — **40 at the 1B and 60 at the 1.7B**, the two reference rungs, whose intervals also stay near the ~2000-iter Azure-spot eviction window. The interval is per size, `train_iters / n`, and 40 and 60 are multiples of 20, so checkpoint *k* sits at *k*/*n* of training at **every** size and the grids stay index-aligned across the ladder, which is what lets SNR compare checkpoint *k* between sizes. Because D = 5 × Chinchilla, the 1×C operating point (`train_iters / 5`) is always checkpoint *n*/5 — 4, 8 or 12 — on-grid at every size. Evaluation covers **twelve checkpoints per run** — the ten tenths of training plus 85 % and 95 %, which is exactly the set `ladder._on_shared_grid` keeps — read on the grid the run actually saved at (`launch_trainings.due_iters`: a 20-save run yields every 2nd save, a 40-save one every 4th, a 60-save one every 6th, all landing on the same fractions). Until 2026-09-21 the evaluated set scaled with save density instead (20 at 1B, 32 at 1.7B and 3B) and the surplus was computed and then discarded by the loader; the third piece decided 09-02 — **the checkpoint nearest each half-decade FLOPs milestone** (~1 extra per run, see "The compute axis" below) — is **not implemented yet**: the `configs.milestone_iters` helper it needs does not exist, so the watchers today run only the twelve-checkpoint rule. Every saved checkpoint is still converted to HF and kept, so the checkpoint-noise window can be densified later without retraining.
 
 Note the deviation from "the last 30": with 20 checkpoints per run (40/60 at the reference rungs) the whole grid is smaller than that, and the dense tail is 5. Checkpoint noise is therefore estimated over 5 late checkpoints, not 30. Raising it means lowering the save interval — cheap in compute (checkpoints are written by training anyway) but it multiplies conversion and eval volume, which is the actual constraint (see `plan/compute-budget.md`).
 

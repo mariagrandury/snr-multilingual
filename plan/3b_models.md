@@ -21,9 +21,9 @@ not tested, and a pair inside seed noise is a coin flip at any size.
 | Tokens per run | 300B (D = 100N), 150B from the multilingual half | ladder rule |
 | Data on disk | every FineWeb-2 build is ≤ 92B → a 3B repeats data unless rebuilt | builds |
 | 165B builds at T = 1 | feasible, no language exhausted: A-L8 240B, A-L15 287B, B-L8 199B, B-L15 209B available | build logs |
-| Cost per run | **~1,900 node-h** (1.7B runs: 546–826, median 585; compute ∝ N², ×3.2) | `sacct` |
-| Wall time per run | ~90 h on 21 nodes = 8 twelve-hour segments, ~1 week with queueing | `ITER_MS` |
-| Evals + BPB per cell | 60 checkpoints; BPB ~1 h/ckpt at 3B (1.7B: 36 min) → ~60 node-h | `score_bpb` |
+| Cost per run | **~1,630 node-h** (measured 2026-09-22: 1,831–2,059 ms/iter wall, median 1,924, over all 8 jobs of the four live cells × 145,200 iters = 77.6 h × 21 nodes; the earlier ~1,900 extrapolated the 1.7B runs by N²) | job logs |
+| Wall time per run | ~78 h on 21 nodes = 8 segments (a 12 h job trains for `JOB_TRAIN_SEC` = 10.83 h once startup and the exit-save grace are taken off), ~1 week with queueing | `ITER_MS` |
+| Evals + BPB per cell | 12 benchmark checkpoints (the grid the analysis reads — `due_iters`, 2026-09-21) and 60 BPB; BPB ~1 h/ckpt at 3B (1.7B: 36 min) → ~60 node-h, which is nearly all of it | `score_bpb` |
 | Deadline | paper 2026-09-25: **nothing lands in time**; this is for the revision | plan |
 | 1.7B evals | still landing (B-L15 has no final-checkpoint benchmarks yet) | report |
 
@@ -71,14 +71,14 @@ benchmark table decides.
 
 | option | cells (deep, T = 1, seed 1904) | pairs | node-h | what it tests |
 | --- | --- | --: | --: | --- |
-| **1. 2×2 (proposed)** | A8, B8, A15, B15 | 6 | ~7,600 | scheme ranking at both L (the open pairs), L8/L15 at both schemes, interaction |
-| 2. L-axis + one scheme pair | A8, A15, A30, B15 | 6 | ~7,600 | the resolvable L pairs + one open scheme pair |
-| 3. three cells | A8, B8, A15 | 3 | ~5,700 | the open L8 scheme pair, L8/L15, one diagonal |
+| **1. 2×2 (proposed)** | A8, B8, A15, B15 | 6 | ~6,500 | scheme ranking at both L (the open pairs), L8/L15 at both schemes, interaction |
+| 2. L-axis + one scheme pair | A8, A15, A30, B15 | 6 | ~6,500 | the resolvable L pairs + one open scheme pair |
+| 3. three cells | A8, B8, A15 | 3 | ~4,900 | the open L8 scheme pair, L8/L15, one diagonal |
 | 4. none now | — | 0 | 0 | finish the 1.7B evals; decide from the complete 1.7B DA |
 
 | | pros | cons |
 | --- | --- | --- |
-| **1. 2×2** | both scheme pairs are the ones whose ranking is open at 1.7B (A8/B8 reverses there); every cell has a full 175M–1.7B series behind it; the scheme × L interaction is estimable; four 165B builds all feasible | 80% of the compute the sweep has kept so far; the L8/L15 pairs add little (predictable or inside noise); the reversal rests on 1.7B evals that are still landing; four concurrent 21-node runs will serialize (2–4 weeks) |
+| **1. 2×2** | both scheme pairs are the ones whose ranking is open at 1.7B (A8/B8 reverses there); every cell has a full 175M–1.7B series behind it; the scheme × L interaction is estimable; four 165B builds all feasible | ~68% of the compute the sweep has kept so far; the L8/L15 pairs add little (predictable or inside noise); the reversal rests on 1.7B evals that are still landing; four concurrent 21-node runs will serialize (2–4 weeks) |
 | 2. L-axis + B15 | keeps the L30 pairs, which carry the largest gated-family gaps | those pairs are already ordered the same way from 350M up — a 3B confirms; drops A8/B8, the one pair that moves with size |
 | 3. three cells | keeps the open A8/B8 pair and the L8/L15 contrast at −25% cost | loses A15/B15, the second open pair; 3 pairs is a coarse DA |
 | 4. none now | free; the 1.7B row's DA is not yet complete, so the "open pairs" list may still change | no extrapolation check in the revision |
