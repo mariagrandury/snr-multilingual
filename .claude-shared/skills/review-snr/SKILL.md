@@ -39,7 +39,7 @@ is out of scope: list it in the report's Scope line and leave it alone.
 read `src/signal-and-noise/analysis/RULES.md` and treat each rule as a review
 criterion for the changed scripts (the gate, trained languages only, ten
 checkpoints, one noise window, three pairs, parent tasks only, `multi` is not
-a language, five tasks per language, one reference, no 90M, no leakage, the
+a language, three tasks per language, one reference, no 90M, no leakage, the
 figure conventions, stated populations). Then run, in the `snr` env from
 `src/signal-and-noise/`:
 

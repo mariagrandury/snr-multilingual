@@ -33,8 +33,8 @@ The per-L figures read rq02's `da_by_L_per_task.csv` (pairs of design
 variants that share the L): a measurement is `train_loss`, `bpb_macro`, the
 per-language BPB (mean) or a benchmark family (mean over its gated tasks);
 a level is safe when it holds at every larger level with a value. Rule 9:
-the L2 ZH/ES settings stop at 1B, so L2's reference would be 1B; this pool
-excludes ZH/ES and L2 has too few pairs against 1.7B, so it is blank in the
+the L2 ES setting stops at 1B (ZH now runs to 1.7B); this pool excludes
+ZH/ES and L2 has too few pairs against 1.7B, so it is blank in the
 DA-size panel — a 1B reference is not implemented, and the script says so.
 Version B and the FLOPs version read `da_pooled_per_task.csv`: every pair
 of the pool, on the tasks of the languages each cell trains (rule 2) and
@@ -78,7 +78,7 @@ from scipy.stats import spearmanr  # noqa: E402
 OUT_ROOT = SURROGATES
 ALL_L = (1, 2, 8, 15, 30, 50)   # every language count of the grid, blank until it has pairs (L100 was dropped)
 RHO_MIN = 0.3                   # an SNR definition "tracks" DA at a size once its Spearman rho over the L's tasks reaches this
-RULE9_NOTE = (f"L2's reference would be 1B (the ZH/ES L2 settings stop at 1B, rule 9); this pool excludes ZH/ES and L2 has "
+RULE9_NOTE = (f"L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to {TARGET_SIZE}); this pool excludes ZH/ES and L2 has "
               f"fewer than {MIN_PAIRS} pairs against {TARGET_SIZE}, so L2 is blank in the DA-size panel; a 1B reference is not implemented")
 mpl.rcParams.update(S.RC)
 

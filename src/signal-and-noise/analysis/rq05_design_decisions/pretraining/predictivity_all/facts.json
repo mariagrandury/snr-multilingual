@@ -35,40 +35,40 @@
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 8,
-    "reference_size": "600M",
+    "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.121,
-    "share_above_2": 0.279,
+    "median_effect_over_seed_sd": 1.115,
+    "share_above_2": 0.221,
     "n": 86
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 15,
-    "reference_size": "600M",
+    "reference_size": "1B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.64,
-    "share_above_2": 0.2,
+    "median_effect_over_seed_sd": 0.655,
+    "share_above_2": 0.0,
     "n": 15
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 15,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.277,
-    "share_above_2": 0.207,
-    "n": 29
+    "median_effect_over_seed_sd": 1.231,
+    "share_above_2": 0.284,
+    "n": 148
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 30,
-    "reference_size": "600M",
+    "reference_size": "1.7B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 0.912,
-    "share_above_2": 0.067,
+    "median_effect_over_seed_sd": 0.938,
+    "share_above_2": 0.0,
     "n": 30
    },
    {
@@ -135,10 +135,10 @@
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "L": 15,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.303,
-    "share_above_2": 0.268,
+    "median_effect_over_seed_sd": 1.034,
+    "share_above_2": 0.304,
     "n": 56
    },
    {
@@ -165,10 +165,10 @@
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "L": 50,
-    "reference_size": "600M",
+    "reference_size": "1B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 8.74,
-    "share_above_2": 0.88,
+    "median_effect_over_seed_sd": 6.644,
+    "share_above_2": 0.8,
     "n": 50
    },
    {
@@ -195,10 +195,10 @@
     "intervention": "es",
     "label": "2nd language (ru vs es)",
     "L": 2,
-    "reference_size": "600M",
+    "reference_size": "1B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.473,
-    "share_above_2": 0.385,
+    "median_effect_over_seed_sd": 0.756,
+    "share_above_2": 0.154,
     "n": 13
    }
   ],
@@ -208,17 +208,17 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.51,
+    "decision_acc": 0.544,
     "cells": 6,
-    "refs": "1.7B,1B,600M"
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.524,
-    "cells": 2,
+    "decision_acc": 0.59,
+    "cells": 4,
     "refs": "1.7B"
    },
    {
@@ -226,117 +226,153 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.477,
+    "decision_acc": 0.489,
     "cells": 6,
-    "refs": "1.7B,1B,600M"
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.407,
-    "cells": 5,
-    "refs": "1.7B,1B"
+    "decision_acc": 0.448,
+    "cells": 6,
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "bpb_macro",
     "proxy_size": "175M",
+    "decision_acc": 0.5,
+    "cells": 6,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 0.5,
+    "cells": 2,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 0.333,
+    "cells": 6,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 0.5,
+    "cells": 4,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "decision_acc": 0.5,
+    "cells": 4,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "decision_acc": 0.494,
+    "cells": 4,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.0,
+    "cells": 2,
+    "refs": "1.7B,1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 6,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 0.5,
+    "cells": 4,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 6,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "loss",
+    "proxy_size": "600M",
     "decision_acc": 0.167,
     "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_macro",
-    "proxy_size": "350M",
-    "decision_acc": 0.333,
-    "cells": 6,
-    "refs": "1.7B,600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_macro",
-    "proxy_size": "600M",
-    "decision_acc": 1.0,
-    "cells": 1,
     "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "decision_acc": 0.0,
-    "cells": 4,
-    "refs": "600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "decision_acc": 0.511,
-    "cells": 4,
-    "refs": "600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "loss",
-    "proxy_size": "175M",
-    "decision_acc": 0.833,
-    "cells": 6,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "loss",
-    "proxy_size": "1B",
-    "decision_acc": 0.667,
-    "cells": 3,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "loss",
-    "proxy_size": "350M",
-    "decision_acc": 0.833,
-    "cells": 6,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "loss",
-    "proxy_size": "600M",
-    "decision_acc": 0.333,
-    "cells": 6,
-    "refs": "1.7B,1B"
    },
    {
     "intervention": "es",
     "label": "2nd language (ru vs es)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.222,
+    "decision_acc": 0.444,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "es",
     "label": "2nd language (ru vs es)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.692,
+    "decision_acc": 0.769,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.615,
+    "cells": 1,
+    "refs": "1B"
    },
    {
     "intervention": "es",
@@ -363,7 +399,7 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "es",
@@ -372,43 +408,52 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
+   },
+   {
+    "intervention": "es",
+    "label": "2nd language (ru vs es)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
    },
    {
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.501,
+    "decision_acc": 0.47,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.449,
-    "cells": 2,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "decision_acc": 0.472,
-    "cells": 3,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "600M",
     "decision_acc": 0.469,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.478,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.402,
+    "cells": 3,
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -489,15 +534,15 @@
     "proxy_size": "175M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "population": "loss",
     "proxy_size": "1B",
-    "decision_acc": 0.5,
-    "cells": 2,
+    "decision_acc": 0.667,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -507,7 +552,7 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -516,7 +561,7 @@
     "proxy_size": "600M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "temperature",
@@ -561,7 +606,7 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "temperature",
@@ -570,25 +615,43 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "bpb_trained",
     "proxy_size": "175M",
-    "decision_acc": 0.88,
+    "decision_acc": 0.92,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "bpb_trained",
     "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
     "decision_acc": 0.96,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "temperature",
@@ -660,7 +723,7 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
    },
    {
     "intervention": "zh",
@@ -669,7 +732,16 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 1,
-    "refs": "600M"
+    "refs": "1B"
+   },
+   {
+    "intervention": "zh",
+    "label": "2nd language (ru vs zh)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1B"
    },
    {
     "intervention": "zh",

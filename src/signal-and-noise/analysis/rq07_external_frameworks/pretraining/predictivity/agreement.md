@@ -18,8 +18,8 @@ Best variant `rel_star_discrepancy`, n = 3 shared tasks:
 
 | metric | value |
 |---|---:|
-| **Pearson r** (log₁₀ SNR values) | **+0.003** |
-| **Spearman ρ** (rank order) | **-0.500** |
+| **Pearson r** (log₁₀ SNR values) | **+0.854** |
+| **Spearman ρ** (rank order) | **+0.500** |
 
 > With only 4 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 4 spans the whole universe, so Jaccard is trivially 1.0. Only K < 4 is reported below.
 
@@ -35,9 +35,9 @@ Best variant `rel_star_discrepancy`, n = 3 shared tasks:
 
 | task          |    snr |
 |:--------------|-------:|
-| arc_challenge | 39.183 |
-| hellaswag     | 36.232 |
-| arc_easy      | 26.277 |
+| hellaswag     | 44.339 |
+| arc_challenge | 35.596 |
+| arc_easy      | 33.446 |
 
 ### AllenAI
 

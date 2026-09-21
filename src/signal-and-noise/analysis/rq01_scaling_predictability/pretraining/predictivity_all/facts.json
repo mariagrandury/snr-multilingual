@@ -1,20 +1,27 @@
 {
  "grid": {
-  "cells": 106,
+  "cells": 113,
   "by_size": {
-   "1.7B": 17,
+   "1.7B": 19,
    "175M": 24,
-   "1B": 23,
+   "1B": 28,
    "350M": 18,
    "600M": 24
   }
  },
  "rq1": {
-  "n_fits": 408,
-  "n_tasks": 155,
-  "gated_series": 535,
-  "gated_rungs": 98,
+  "n_fits": 410,
+  "n_tasks": 156,
+  "gated_series": 533,
+  "gated_rungs": 102,
   "families": [
+   {
+    "family": "include_base_44",
+    "r2": 0.552,
+    "rho": 0.25,
+    "n": 4,
+    "n_options": 4.0
+   },
    {
     "family": "multiblimp",
     "r2": 0.879,
@@ -96,7 +103,7 @@
   "by_options": {
    "2.0": 0.923,
    "3.0": 0.906,
-   "4.0": 0.971
+   "4.0": 0.97
   }
  }
 }

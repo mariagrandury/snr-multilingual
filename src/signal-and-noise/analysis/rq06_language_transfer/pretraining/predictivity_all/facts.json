@@ -113,26 +113,26 @@
    {
     "population": "bpb_trained",
     "proxy_size": "175M",
-    "da": 0.261,
+    "da": 0.516,
     "cells": 8
    },
    {
     "population": "bpb_trained",
     "proxy_size": "350M",
-    "da": 0.75,
+    "da": 0.747,
     "cells": 8
    },
    {
     "population": "bpb_trained",
     "proxy_size": "600M",
-    "da": 0.944,
-    "cells": 3
+    "da": 0.632,
+    "cells": 6
    },
    {
     "population": "bpb_trained",
     "proxy_size": "1B",
-    "da": 0.654,
-    "cells": 2
+    "da": 0.769,
+    "cells": 3
    }
   ]
  }

@@ -1,27 +1,32 @@
 intervention,label,population,proxy_size,decision_acc,cells,refs
-arch,depth (deep vs shallow),benchmark,175M,0.5101437486912647,6,"1.7B,1B,600M"
-arch,depth (deep vs shallow),benchmark,1B,0.5235558889722431,2,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.47717496046335905,6,"1.7B,1B,600M"
-arch,depth (deep vs shallow),benchmark,600M,0.40651597915079074,5,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_macro,175M,0.16666666666666666,6,"1.7B,600M"
-arch,depth (deep vs shallow),bpb_macro,350M,0.3333333333333333,6,"1.7B,600M"
-arch,depth (deep vs shallow),bpb_macro,600M,1.0,1,1.7B
-arch,depth (deep vs shallow),bpb_trained,175M,0.0,4,600M
-arch,depth (deep vs shallow),bpb_trained,350M,0.5108333333333334,4,600M
-arch,depth (deep vs shallow),loss,175M,0.8333333333333334,6,"1.7B,1B"
-arch,depth (deep vs shallow),loss,1B,0.6666666666666666,3,1.7B
-arch,depth (deep vs shallow),loss,350M,0.8333333333333334,6,"1.7B,1B"
-arch,depth (deep vs shallow),loss,600M,0.3333333333333333,6,"1.7B,1B"
-es,2nd language (ru vs es),benchmark,175M,0.2222222222222222,1,600M
-es,2nd language (ru vs es),benchmark,350M,0.6923076923076923,1,600M
+arch,depth (deep vs shallow),benchmark,175M,0.543514158279826,6,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.5897823585848332,4,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.4888113473513204,6,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.4475146010738886,6,1.7B
+arch,depth (deep vs shallow),bpb_macro,175M,0.5,6,"1.7B,1B,600M"
+arch,depth (deep vs shallow),bpb_macro,1B,0.5,2,1.7B
+arch,depth (deep vs shallow),bpb_macro,350M,0.3333333333333333,6,"1.7B,1B,600M"
+arch,depth (deep vs shallow),bpb_macro,600M,0.5,4,"1.7B,1B"
+arch,depth (deep vs shallow),bpb_trained,175M,0.5,4,"1.7B,1B,600M"
+arch,depth (deep vs shallow),bpb_trained,1B,1.0,1,1.7B
+arch,depth (deep vs shallow),bpb_trained,350M,0.49416666666666664,4,"1.7B,1B,600M"
+arch,depth (deep vs shallow),bpb_trained,600M,0.0,2,"1.7B,1B"
+arch,depth (deep vs shallow),loss,175M,1.0,6,1.7B
+arch,depth (deep vs shallow),loss,1B,0.5,4,1.7B
+arch,depth (deep vs shallow),loss,350M,0.6666666666666666,6,1.7B
+arch,depth (deep vs shallow),loss,600M,0.16666666666666666,6,1.7B
+es,2nd language (ru vs es),benchmark,175M,0.4444444444444444,1,1B
+es,2nd language (ru vs es),benchmark,350M,0.7692307692307693,1,1B
+es,2nd language (ru vs es),benchmark,600M,0.6153846153846154,1,1B
 es,2nd language (ru vs es),bpb_macro,175M,1.0,1,600M
 es,2nd language (ru vs es),bpb_macro,350M,1.0,1,600M
-es,2nd language (ru vs es),loss,175M,1.0,1,600M
-es,2nd language (ru vs es),loss,350M,1.0,1,600M
-scheme,language lists (A vs B),benchmark,175M,0.5006698564593302,3,"1.7B,1B"
-scheme,language lists (A vs B),benchmark,1B,0.44923444976076554,2,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.47170653907496013,3,"1.7B,1B"
-scheme,language lists (A vs B),benchmark,600M,0.468548644338118,3,"1.7B,1B"
+es,2nd language (ru vs es),loss,175M,1.0,1,1B
+es,2nd language (ru vs es),loss,350M,1.0,1,1B
+es,2nd language (ru vs es),loss,600M,1.0,1,1B
+scheme,language lists (A vs B),benchmark,175M,0.4703668261562998,3,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.4691866028708134,3,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.4777671451355661,3,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.40188197767145134,3,1.7B
 scheme,language lists (A vs B),bpb_macro,175M,1.0,3,"1.7B,1B"
 scheme,language lists (A vs B),bpb_macro,1B,1.0,2,1.7B
 scheme,language lists (A vs B),bpb_macro,350M,0.6666666666666666,3,"1.7B,1B"
@@ -30,18 +35,20 @@ scheme,language lists (A vs B),bpb_trained,175M,0.40170940170940167,3,"1.7B,1B"
 scheme,language lists (A vs B),bpb_trained,1B,0.6538461538461539,2,1.7B
 scheme,language lists (A vs B),bpb_trained,350M,1.0,3,"1.7B,1B"
 scheme,language lists (A vs B),bpb_trained,600M,0.9444444444444445,3,"1.7B,1B"
-scheme,language lists (A vs B),loss,175M,0.6666666666666666,3,"1.7B,1B"
-scheme,language lists (A vs B),loss,1B,0.5,2,1.7B
-scheme,language lists (A vs B),loss,350M,0.6666666666666666,3,"1.7B,1B"
-scheme,language lists (A vs B),loss,600M,0.6666666666666666,3,"1.7B,1B"
+scheme,language lists (A vs B),loss,175M,0.6666666666666666,3,1.7B
+scheme,language lists (A vs B),loss,1B,0.6666666666666666,3,1.7B
+scheme,language lists (A vs B),loss,350M,0.6666666666666666,3,1.7B
+scheme,language lists (A vs B),loss,600M,0.6666666666666666,3,1.7B
 temperature,temperature (T=1 vs T=3),benchmark,175M,0.39751552795031053,1,1.7B
 temperature,temperature (T=1 vs T=3),benchmark,1B,0.6583850931677019,1,1.7B
 temperature,temperature (T=1 vs T=3),benchmark,350M,0.4782608695652174,1,1.7B
 temperature,temperature (T=1 vs T=3),benchmark,600M,0.546583850931677,1,1.7B
-temperature,temperature (T=1 vs T=3),bpb_macro,175M,1.0,1,600M
-temperature,temperature (T=1 vs T=3),bpb_macro,350M,1.0,1,600M
-temperature,temperature (T=1 vs T=3),bpb_trained,175M,0.88,1,600M
-temperature,temperature (T=1 vs T=3),bpb_trained,350M,0.96,1,600M
+temperature,temperature (T=1 vs T=3),bpb_macro,175M,1.0,1,1B
+temperature,temperature (T=1 vs T=3),bpb_macro,350M,1.0,1,1B
+temperature,temperature (T=1 vs T=3),bpb_macro,600M,1.0,1,1B
+temperature,temperature (T=1 vs T=3),bpb_trained,175M,0.92,1,1B
+temperature,temperature (T=1 vs T=3),bpb_trained,350M,1.0,1,1B
+temperature,temperature (T=1 vs T=3),bpb_trained,600M,0.96,1,1B
 temperature,temperature (T=1 vs T=3),loss,175M,0.0,1,1.7B
 temperature,temperature (T=1 vs T=3),loss,1B,1.0,1,1.7B
 temperature,temperature (T=1 vs T=3),loss,350M,1.0,1,1.7B
@@ -49,8 +56,9 @@ temperature,temperature (T=1 vs T=3),loss,600M,1.0,1,1.7B
 zh,2nd language (ru vs zh),benchmark,175M,0.2222222222222222,1,1B
 zh,2nd language (ru vs zh),benchmark,350M,0.25,1,1B
 zh,2nd language (ru vs zh),benchmark,600M,0.5,1,1B
-zh,2nd language (ru vs zh),bpb_macro,175M,1.0,1,600M
-zh,2nd language (ru vs zh),bpb_macro,350M,1.0,1,600M
+zh,2nd language (ru vs zh),bpb_macro,175M,1.0,1,1B
+zh,2nd language (ru vs zh),bpb_macro,350M,1.0,1,1B
+zh,2nd language (ru vs zh),bpb_macro,600M,1.0,1,1B
 zh,2nd language (ru vs zh),loss,175M,1.0,1,1B
 zh,2nd language (ru vs zh),loss,350M,1.0,1,1B
 zh,2nd language (ru vs zh),loss,600M,1.0,1,1B

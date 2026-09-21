@@ -198,8 +198,9 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
         "## Per language count",
         f"**Pairs per L** — the design variants the grid plans at seed {GRID_SEED}, and per proxy size the pairs usable "
         f"against {TARGET_SIZE} (both members planned at that size and at {TARGET_SIZE}): planned / with data today on "
-        "BPB / on the benchmarks / on the training loss. ZH and ES stop at 1B, so they never pair against the reference; "
-        "A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.",
+        "BPB / on the benchmarks / on the training loss. ES stops at 1B, so it never pairs against the reference; ZH runs to "
+        f"{TARGET_SIZE} (2026-09-20) and is the third L2 family. A cell below MIN_PAIRS (3) families is left empty (rule 5), "
+        "so a thin L shows blanks rather than a 0/1 reading.",
         md_table(list(pairs.columns), pairs.values.tolist()),
         f"The early-and-small reading one L at a time: pairs of design variants that share the L (seed {GRID_SEED} of every "
         f"scheme, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "

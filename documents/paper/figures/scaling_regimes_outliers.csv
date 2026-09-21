@@ -1,6 +1,6 @@
 task,family,language,label,r2_size,rho_size,r2_trajectory,regime,regime_majority,other_regime,dist_a,dist_b
-multiblimp_ben,multiblimp,bn,multiblimp:bn,0.5785332291303169,0.6708203932499368,0.4865895257555449,predictable across size only,predictable across both,True,0.442162856509579,0.47941223978147046
-multiblimp_dan,multiblimp,da,multiblimp:da,0.5491546251123303,0.7216878364870322,0.1513110119918124,predictable across size only,predictable across both,True,0.4275689883304016,0.783423653916284
-xcopa_th,xcopa,th,xcopa:th,0.20544934531618364,0.3551956704170308,0.054876018443643426,weak / unpredictable in both,predictable across both,True,0.8887445357704923,1.0036346088972277
-xcopa_tr,xcopa,tr,xcopa:tr,0.4021167307283148,0.5999999999999999,0.21542699203805293,weak / unpredictable in both,predictable across both,True,0.587828043216603,0.7518541674305738
-xnli_el,xnli,el,xnli:el,0.5836990817783807,0.7999999999999999,0.4803013791352105,predictable across size only,predictable across both,True,0.3262249194161241,0.3890703456740793
+multiblimp_ben,multiblimp,bn,multiblimp:bn,0.5785332291303169,0.6708203932499368,0.47625495151219777,predictable across size only,predictable across both,True,0.442162856509579,0.48745120088046817
+multiblimp_dan,multiblimp,da,multiblimp:da,0.5491546251123303,0.7216878364870322,0.11204412747385362,predictable across size only,predictable across both,True,0.4275689883304016,0.8191554425063302
+xcopa_th,xcopa,th,xcopa:th,0.20544934531618364,0.3551956704170308,0.06214105847144524,weak / unpredictable in both,predictable across both,True,0.8887445357704923,0.9971065380981692
+xcopa_tr,xcopa,tr,xcopa:tr,0.4021167307283148,0.5999999999999999,0.25735953677261436,weak / unpredictable in both,predictable across both,True,0.587828043216603,0.7200110959538645
+xwinograd_ru,xwinograd,ru,xwinograd:ru,0.8427927393419853,0.7999999999999999,0.4771684730967956,predictable across size only,predictable across both,True,0.22196650030227902,0.28030377341842644

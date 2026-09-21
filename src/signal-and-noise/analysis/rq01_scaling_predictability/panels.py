@@ -61,8 +61,11 @@ def main(pool: str) -> None:
     lang = fits[fits["kind"] == "benchmark"].groupby("language")["r2"].median()
     med, cnt = (t.unstack().reindex(index=fam, columns=Ls) for t in (by.median(), by.count()))
     # grey = every fit of the (family, L) was emptied by the gate (rule 12); white = the family has no series there
+    # cnt is a .count(): a (family, L) that exists but is wholly gated has 0, not
+    # NaN, so the old `& cnt.isna()` could never fire and 27 gated cells were
+    # drawn white ("no value") instead of grey. NaN still means "no series here".
     gated = (fits.groupby(["family", "L"])["gated"].all().unstack().reindex(index=fam, columns=Ls).fillna(False)
-             & cnt.isna()).rename(columns=lambda L: f"L{L}") if "gated" in fits else None
+             & (cnt == 0)).rename(columns=lambda L: f"L{L}") if "gated" in fits else None
     # the family x L median on its own (the paper's figure), then the one-page summary that also carries it
     fig, ax = plt.subplots(figsize=(0.62 * len(Ls) + 2.6, 0.3 * len(fam) + 1.4))
     t = G.matrix_ax(ax, med.rename(columns=lambda L: f"L{L}"), "", cnt=cnt, xlabel="language setting", gated=gated).assign(panel="fit_r2_median")

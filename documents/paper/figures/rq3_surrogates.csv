@@ -1,53 +1,53 @@
 proxy,kind,metric,rho,p,n
-175M,benchmark tasks,"SNR, relative std",0.019445265871099886,0.8797662235402132,63
-175M,benchmark tasks,"SNR, discrepancy",0.28490078661328416,0.02362507648305178,63
-175M,benchmark tasks,"SNR, dist_std",-0.20949930449011936,0.09937447948949221,63
-175M,benchmark tasks,signal alone (relative std),-0.21296051374282446,0.09378595213391275,63
-175M,benchmark tasks,"noise alone (relative std, inverted)",0.3841701908748943,0.0018809180097429643,63
-175M,benchmark tasks,early-checkpoint agreement (10 %),0.07048458168160042,0.5830504283752864,63
-175M,benchmark tasks,margin above chance,-0.3446124267961883,0.008072092314020925,58
-175M,per-language bits per byte,"SNR, relative std",0.46103850627600673,0.15350818476597536,11
-175M,per-language bits per byte,"SNR, dist_std",0.6364335901853572,0.03526051848586718,11
-175M,per-language bits per byte,signal alone (relative std),0.09521447412221878,0.7806495193261995,11
-175M,per-language bits per byte,"noise alone (relative std, inverted)",0.3558014559303965,0.28286865886246115,11
-175M,per-language bits per byte,early-checkpoint agreement (10 %),-0.12556790944118607,0.7129661709768935,11
-350M,benchmark tasks,"SNR, relative std",0.24274255216166543,0.031122390064586832,79
-350M,benchmark tasks,"SNR, discrepancy",0.03830084231638443,0.7375328921387146,79
-350M,benchmark tasks,"SNR, dist_std",-0.03651005865846187,0.7493909008344063,79
-350M,benchmark tasks,signal alone (relative std),0.0317346355706684,0.7812905180832758,79
-350M,benchmark tasks,"noise alone (relative std, inverted)",0.18233101366072701,0.10777488687438683,79
-350M,benchmark tasks,early-checkpoint agreement (10 %),0.08407832696329655,0.4613054457373267,79
-350M,benchmark tasks,margin above chance,-0.30396802583432164,0.00846516130759919,74
-350M,per-language bits per byte,"SNR, relative std",-0.4000000000000001,0.2228683501335199,11
-350M,per-language bits per byte,"SNR, dist_std",-0.5,0.11730680301423814,11
-350M,per-language bits per byte,signal alone (relative std),-0.4000000000000001,0.2228683501335199,11
-350M,per-language bits per byte,"noise alone (relative std, inverted)",-0.5,0.11730680301423814,11
-350M,per-language bits per byte,early-checkpoint agreement (10 %),0.5,0.11730680301423814,11
-600M,benchmark tasks,"SNR, relative std",0.12432939503170193,0.25692307783559504,85
-600M,benchmark tasks,"SNR, discrepancy",0.1259923373728026,0.2505648877224561,85
-600M,benchmark tasks,"SNR, dist_std",-0.10090147204972505,0.3581794761688139,85
-600M,benchmark tasks,signal alone (relative std),-0.06289834854868949,0.5674068609711408,85
-600M,benchmark tasks,"noise alone (relative std, inverted)",0.12176650742365269,0.26693587994174317,85
-600M,benchmark tasks,early-checkpoint agreement (10 %),0.22082792756450373,0.042261662511620286,85
-600M,benchmark tasks,scaling-fit R² (proxy rungs only),0.36519250946149184,0.0035167637893774154,62
-600M,benchmark tasks,margin above chance,-0.008989615525169253,0.9369199306521102,80
-600M,per-language bits per byte,"SNR, relative std",-0.4000000000000001,0.2228683501335199,11
-600M,per-language bits per byte,"SNR, dist_std",-0.5,0.11730680301423814,11
-600M,per-language bits per byte,signal alone (relative std),-0.30000000000000004,0.37008312228206786,11
-600M,per-language bits per byte,"noise alone (relative std, inverted)",-0.5,0.11730680301423814,11
-600M,per-language bits per byte,early-checkpoint agreement (10 %),0.5022883414749454,0.1153706727468911,11
-600M,per-language bits per byte,scaling-fit R² (proxy rungs only),-0.4000000000000001,0.2228683501335199,11
-1B,benchmark tasks,"SNR, relative std",-0.10325992663771913,0.33279057585898525,90
-1B,benchmark tasks,"SNR, discrepancy",-0.147151170622432,0.166348743205183,90
-1B,benchmark tasks,"SNR, dist_std",-0.2072541240864607,0.04999124957200467,90
-1B,benchmark tasks,signal alone (relative std),0.11704606737051146,0.27191804390136076,90
-1B,benchmark tasks,"noise alone (relative std, inverted)",-0.206354848598804,0.05101591506334108,90
-1B,benchmark tasks,early-checkpoint agreement (10 %),0.12389553568231701,0.24465297015883475,90
-1B,benchmark tasks,scaling-fit R² (proxy rungs only),0.3998132727804219,0.00023854386744631055,80
-1B,benchmark tasks,margin above chance,-0.04073249070242837,0.7112868449593477,85
-1B,per-language bits per byte,"SNR, relative std",0.5841935049981738,0.05912751640471158,11
-1B,per-language bits per byte,"SNR, dist_std",0.2462303202884865,0.4654702690017786,11
-1B,per-language bits per byte,signal alone (relative std),0.8014555523115442,0.0030166315780179305,11
-1B,per-language bits per byte,"noise alone (relative std, inverted)",-0.29451077524701325,0.37932821840381314,11
-1B,per-language bits per byte,early-checkpoint agreement (10 %),0.29155806455336647,0.3843490025339683,11
-1B,per-language bits per byte,scaling-fit R² (proxy rungs only),0.16415354685899097,0.62959055867272,11
+175M,benchmark tasks,"SNR, relative std",0.05699936012024471,0.6572451885297846,63
+175M,benchmark tasks,"SNR, discrepancy",0.20067622820393322,0.11479298759849052,63
+175M,benchmark tasks,"SNR, dist_std",-0.2148899926896145,0.0907790572156455,63
+175M,benchmark tasks,signal alone (relative std),-0.09247364542714805,0.471010754856166,63
+175M,benchmark tasks,"noise alone (relative std, inverted)",0.28069178563855524,0.025859636802516437,63
+175M,benchmark tasks,early-checkpoint agreement (10 %),0.17462938764522515,0.1710411822403679,63
+175M,benchmark tasks,margin above chance,-0.3137924299365147,0.016454394256256617,58
+175M,per-language bits per byte,"SNR, relative std",0.6341145448276367,0.0005040682761318624,26
+175M,per-language bits per byte,"SNR, dist_std",0.024536475736982317,0.9052940531258467,26
+175M,per-language bits per byte,signal alone (relative std),-0.074759574511118,0.716633846081991,26
+175M,per-language bits per byte,"noise alone (relative std, inverted)",0.3864494928574715,0.05116109775908058,26
+175M,per-language bits per byte,early-checkpoint agreement (10 %),-0.5431962625842095,0.004134882643271109,26
+350M,benchmark tasks,"SNR, relative std",0.2990310398051066,0.00705003353879457,80
+350M,benchmark tasks,"SNR, discrepancy",0.08756105661966926,0.43991957408581517,80
+350M,benchmark tasks,"SNR, dist_std",-0.06444765965588145,0.5700647936868788,80
+350M,benchmark tasks,signal alone (relative std),-0.007978228393591733,0.9440046648939818,80
+350M,benchmark tasks,"noise alone (relative std, inverted)",0.21753578330232984,0.05257960125922915,80
+350M,benchmark tasks,early-checkpoint agreement (10 %),0.017777806511434867,0.8756237062901019,80
+350M,benchmark tasks,margin above chance,-0.3299582279579416,0.0038406492361117033,75
+350M,per-language bits per byte,"SNR, relative std",-0.42934602594921883,0.02860785247024439,26
+350M,per-language bits per byte,"SNR, dist_std",-0.2925959287315336,0.1469071080515466,26
+350M,per-language bits per byte,signal alone (relative std),-0.4638415459680944,0.016995192579192717,26
+350M,per-language bits per byte,"noise alone (relative std, inverted)",-0.14722195150912956,0.47294649442198844,26
+350M,per-language bits per byte,early-checkpoint agreement (10 %),-0.058700080105891346,0.7757683731877949,26
+600M,benchmark tasks,"SNR, relative std",0.2300682275798748,0.0341562799495863,85
+600M,benchmark tasks,"SNR, discrepancy",0.17319413349203733,0.11293610143742773,85
+600M,benchmark tasks,"SNR, dist_std",-0.0017308656556993176,0.9874565553016462,85
+600M,benchmark tasks,signal alone (relative std),-0.07180647745649767,0.5137145952641318,85
+600M,benchmark tasks,"noise alone (relative std, inverted)",0.15000835682727418,0.17059361363430633,85
+600M,benchmark tasks,early-checkpoint agreement (10 %),0.231833985876448,0.03276630650819157,85
+600M,benchmark tasks,scaling-fit R² (proxy rungs only),0.3637007881935121,0.0036640163607709977,62
+600M,benchmark tasks,margin above chance,0.026580966180268784,0.8149485447444578,80
+600M,per-language bits per byte,"SNR, relative std",0.6591231906870457,0.0002502594781782617,26
+600M,per-language bits per byte,"SNR, dist_std",0.6493305032825527,0.0003316560351724427,26
+600M,per-language bits per byte,signal alone (relative std),0.5099730286801486,0.007779066615537537,26
+600M,per-language bits per byte,"noise alone (relative std, inverted)",0.5608196748188635,0.0028794350307717715,26
+600M,per-language bits per byte,early-checkpoint agreement (10 %),0.22433966296030677,0.27056112192325743,26
+600M,per-language bits per byte,scaling-fit R² (proxy rungs only),-0.04519701878996885,0.8264647537228834,26
+1B,benchmark tasks,"SNR, relative std",0.023258793650968,0.8277428651923138,90
+1B,benchmark tasks,"SNR, discrepancy",-0.12647741457173567,0.23488269689669758,90
+1B,benchmark tasks,"SNR, dist_std",-0.24359528625027277,0.020688994872119303,90
+1B,benchmark tasks,signal alone (relative std),0.09088478666802269,0.39425769839677477,90
+1B,benchmark tasks,"noise alone (relative std, inverted)",-0.13606765042356947,0.2009803348558322,90
+1B,benchmark tasks,early-checkpoint agreement (10 %),0.16744416999815778,0.11468763248119765,90
+1B,benchmark tasks,scaling-fit R² (proxy rungs only),0.5872238503925765,1.0319967130213902e-08,80
+1B,benchmark tasks,margin above chance,-0.11641517588341925,0.2886826917250615,85
+1B,per-language bits per byte,"SNR, relative std",0.6439484916173135,0.00038557164744719365,26
+1B,per-language bits per byte,"SNR, dist_std",0.5117471456561431,0.007532606599752428,26
+1B,per-language bits per byte,signal alone (relative std),0.7139583441827719,4.206402579654627e-05,26
+1B,per-language bits per byte,"noise alone (relative std, inverted)",0.028075017018635632,0.8917098089889461,26
+1B,per-language bits per byte,early-checkpoint agreement (10 %),0.39210137218969426,0.04757414442383037,26
+1B,per-language bits per byte,scaling-fit R² (proxy rungs only),0.38949643863828676,0.04920195254214054,26

@@ -64,10 +64,10 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 | population | proxy | agreement | cells |
 |---|---|---|---|
-| bpb_trained | 175M | 0.26 | 8 |
+| bpb_trained | 175M | 0.52 | 8 |
 | bpb_trained | 350M | 0.75 | 8 |
-| bpb_trained | 600M | 0.94 | 3 |
-| bpb_trained | 1B | 0.65 | 2 |
+| bpb_trained | 600M | 0.63 | 6 |
+| bpb_trained | 1B | 0.77 | 3 |
 
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->

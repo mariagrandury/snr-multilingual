@@ -39,7 +39,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT  # noqa: E402
-from analysis.utils import GRID_SEED, finals, ladder_frame, size_order  # noqa: E402
+from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 
 mpl.rcParams.update(S.RC)
@@ -103,8 +103,12 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
                 for s in sizes[:-1]:
                     d = _items(fin, kind, s, x, y, pop)
                     items = d.index.intersection(d_ref.index)
-                    if pop == "benchmark" and gate is not None and {s, ref} <= set(gate.columns):
-                        items = items.intersection(gate.index[(gate[s] == 1) & (gate[ref] == 1)])
+                    if pop == "benchmark":
+                        # rule 1 through the shared helper: a mask of NA passes
+                        # (no chance level). Testing `== 1` here rejected NA and
+                        # silently dropped every lambada_openai_mt_* task, which
+                        # has no chance level, from this population.
+                        items = items[passes_gate(gate, items, s, ref).to_numpy()]
                     rows.append({"transformation": key, "label": label, "population": pop,
                                  "pair": f"L{x[0]}{DATA_SCHEMES[x[1]]['label']}-{x[2]} vs L{y[0]}{DATA_SCHEMES[y[1]]['label']}-{y[2]}",
                                  "proxy_size": s, "reference_size": ref,

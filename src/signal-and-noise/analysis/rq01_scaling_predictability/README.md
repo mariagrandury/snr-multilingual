@@ -13,9 +13,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
 ## Highlighted result
 
-- **408 (task, L) fits over 155 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 98 rungs from the fitted series and left 535 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 225 tasks without any fit. Best-scaling families (median R²): `lambada_openai_mt` 0.99, `arc` 0.99, `xstorycloze` 0.99, `hellaswag` 0.97; worst: `paws` 0.89, `xcopa` 0.89, `multiblimp` 0.88.
+- **410 (task, L) fits over 156 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 102 rungs from the fitted series and left 533 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 224 tasks without any fit. Best-scaling families (median R²): `lambada_openai_mt` 0.99, `arc` 0.99, `xstorycloze` 0.99, `hellaswag` 0.97; worst: `xcopa` 0.89, `multiblimp` 0.88, `include_base_44` 0.55.
 - **Median R² by answer count** (over the gated benchmark fits): 0.92 over the 2-option fits, 0.91 over the 3-option fits, 0.97 over the 4-option fits.
-- **Loss exponent α per (L, arch, scheme)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.125 (5), L1 shallow/A 0.127 (5), L2 deep/A 0.144 (5), L2 deep/ES 0.189 (3), L2 deep/ZH 0.154 (4), L2 shallow/A 0.166 (4), L8 deep/A 0.148 (5), L8 deep/B 0.143 (5), L8 shallow/A 0.157 (4), L15 deep/A 0.147 (5), L15 deep/B 0.165 (4), L15 shallow/A 0.182 (4), L30 deep/A 0.141 (5), L30 deep/B 0.149 (5), L30 shallow/A 0.161 (5), L50 deep/A 0.145 (5), L50 deep/AT3 0.160 (5), L50 shallow/A 0.154 (5).
+- **Loss exponent α per (L, arch, scheme)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.125 (5), L1 shallow/A 0.127 (5), L2 deep/A 0.144 (5), L2 deep/ES 0.153 (4), L2 deep/ZH 0.154 (4), L2 shallow/A 0.166 (4), L8 deep/A 0.148 (5), L8 deep/B 0.143 (5), L8 shallow/A 0.157 (4), L15 deep/A 0.147 (5), L15 deep/B 0.153 (5), L15 shallow/A 0.154 (5), L30 deep/A 0.141 (5), L30 deep/B 0.149 (5), L30 shallow/A 0.161 (5), L50 deep/A 0.145 (5), L50 deep/AT3 0.160 (5), L50 shallow/A 0.154 (5).
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -66,6 +66,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq01_
 
 | family | R² | ρ | fits | options |
 |---|---|---|---|---|
+| include_base_44 | 0.55 | 0.25 | 4 | 4 |
 | multiblimp | 0.88 | 1.00 | 76 | 2 |
 | xcopa | 0.89 | 1.00 | 19 | 2 |
 | paws | 0.89 | 1.00 | 11 | 2 |
@@ -86,7 +87,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq01_
 <!-- BEGIN auto:scaling-law-error (scaling_law_error.py --pool predictivity_all) -->
 ## Scaling-law error on per-language BPB
 
-Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size: dropped L2 deep/ES, L2 deep/ZH, L2 shallow/A, L8 shallow/A, L15 deep/A, L15 deep/B, L15 shallow/A, L30 shallow/A, L50 deep/A, L50 deep/AT3, L50 shallow/A. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all`.
+Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size: dropped L2 deep/ES, L2 deep/ZH, L8 shallow/A, L15 deep/A, L15 deep/B, L15 shallow/A, L50 deep/A, L50 shallow/A, L50 shallow/AT3. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all`.
 
 - **Scaling-law error** — median |relative error| of the 1.7B per-language BPB predicted from the proxy ladder: L1 0.038, L2 0.052, L8 0.049, L30 0.043 (largest proxy ladder at that L).
 
@@ -138,7 +139,7 @@ The family medians above, without the aggregation (`predictivity_all` pool). Reg
 <!-- BEGIN auto:regimes (regimes.py --pool predictivity_all) -->
 ## Scaling regimes per benchmark-language pair
 
-`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) — the R² and (oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ 5 points), one per (L, size). Both use only the sizes where the task is above chance (rule 1, rq00's mask): 109 tasks have a point; the gate removed 225 tasks that are at chance at every size where a fit was possible (per family: arc 26, belebele 59, global_mmlu_full 29, global_piqa_nonparallel_cloze 1, global_piqa_parallel_cloze 63, hellaswag 2, include_base_44 34, paws 5, truthfulqa-multi_mc1 2, xcopa 1, xnli 3); the training loss is left out (rule 7). The quadrants of (b) split at R² = 0.5, a heuristic; a task with median ρ < 0 is the fifth regime `declines with size` whatever its quadrant (0 tasks, black edge in panel (b)). Table: `scaling_regimes.csv`. Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all`.
+`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) — the R² and (oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ 5 points), one per (L, size). Both use only the sizes where the task is above chance (rule 1, rq00's mask): 110 tasks have a point; the gate removed 224 tasks that are at chance at every size where a fit was possible (per family: arc 26, belebele 59, global_mmlu_full 29, global_piqa_nonparallel_cloze 1, global_piqa_parallel_cloze 63, hellaswag 2, include_base_44 33, paws 5, truthfulqa-multi_mc1 2, xcopa 1, xnli 3); the training loss is left out (rule 7). The quadrants of (b) split at R² = 0.5, a heuristic; a task with median ρ < 0 is the fifth regime `declines with size` whatever its quadrant (0 tasks, black edge in panel (b)). Table: `scaling_regimes.csv`. Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all`.
 
 ![Scaling regimes](pretraining/predictivity_all/scaling_regimes.png)
 

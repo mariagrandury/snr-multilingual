@@ -17,7 +17,7 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `rel_star_discrepancy` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.00**, Spearman ρ **-0.50**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
+- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `rel_star_discrepancy` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.85**, Spearman ρ **0.50**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
 - **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
 <!-- END auto:highlight -->
 
@@ -131,8 +131,8 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 
 | pool | variant (from rq04) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` (grid, seed 1904) | `rel_star_discrepancy` | 0.00 | -0.50 | 3 |
-| `predictivity_seeds` (all seeds) | `rel_star_discrepancy` | -0.01 | -0.50 | 3 |
+| `predictivity` (grid, seed 1904) | `rel_star_discrepancy` | 0.85 | 0.50 | 3 |
+| `predictivity_seeds` (all seeds) | `rel_star_discrepancy` | 0.68 | 0.50 | 3 |
 
 ![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_rel_star_discrepancy.png)
 

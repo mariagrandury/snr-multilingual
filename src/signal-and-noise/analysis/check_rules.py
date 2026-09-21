@@ -55,7 +55,20 @@ def _exempt(path: Path, rule: int) -> bool:
     return any(part in path.parts for part in EXEMPT.get(rule, ()))
 
 
+LFS_POINTER = b"version https://git-lfs.github.com/spec/v1"
+
+
 def check_csv(path: Path) -> list[str]:
+    # An unsmudged LFS pointer is three short lines that pd.read_csv parses
+    # happily as a one-column table, so it raises nothing and every rule below
+    # passes on a file whose contents were never read. Sniff the header instead
+    # of relying on a parse error.
+    try:
+        with path.open("rb") as fh:
+            if fh.read(len(LFS_POINTER)) == LFS_POINTER:
+                return ["unreadable (git-lfs pointer, not smudged); run git lfs pull"]
+    except OSError as e:
+        return [f"unreadable ({type(e).__name__}: {e})"]
     try:
         df = pd.read_csv(path, low_memory=False)
     except pd.errors.EmptyDataError:             # a table with no rows is not a violation
@@ -80,7 +93,7 @@ def check_csv(path: Path) -> list[str]:
                 out.append(f"rule 7: {bad} rows with language in {LANGUAGE_AGGREGATES}")
     # rule 5, long form
     if "n_pairs" in df.columns and "da" in df.columns:
-        bad = (df["da"].notna() & (df["n_pairs"] < MIN_PAIRS)).sum()
+        bad = (df["da"].notna() & ~(df["n_pairs"] >= MIN_PAIRS)).sum()   # NaN < MIN_PAIRS is False: an absent pair count would pass
         if bad:
             out.append(f"rule 5: {bad} finite DA cells with fewer than {MIN_PAIRS} pairs")
     # rule 6

@@ -221,7 +221,7 @@ def main(pool: str) -> None:
                 col_order=sorted(fin["L"].unique()), col_label=lambda L: f"L{L}", xlabel="language setting",
                 title=f"Does the proxy prefer the level the reference prefers? Final checkpoints, per {name}", note=note)
         early = t[t["intervention"].isin(DECISIONS)]
-        early.to_csv(out_dir / "intervention_da_early.csv", index=False)      # rule 12: one table for both _early panels
+        early.to_csv(out_dir / f"intervention_da_early_by_{name}.csv", index=False)   # rule 12: the CSV beside THIS png (one name for both overwrote the benchmark table with the language one)
         _panels(early, by, out_dir / f"intervention_da_early_by_{name}.png", keys=[k for k in DECISIONS if k in keys],
                 ncols=ncols, col="frac", col_order=sorted(early["frac"].unique()), col_label=G.chinchilla,
                 xlabel="proxy's training tokens (C = Chinchilla-optimal; 5C = the full run)", note=note,

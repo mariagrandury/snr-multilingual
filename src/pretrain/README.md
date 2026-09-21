@@ -102,7 +102,7 @@ axis, one of the five entries of `DATA_SCHEMES` in
 | `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
 | `AT3` | the same lists at T=3 — the temperature intervention | L ∈ {15, 30, 50}: L50 the whole ladder, L15 and L30 deep only (2026-09-20); seed 1904 only |
 | `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
-| `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, up to the 1B rung, deep only, seed 1904 only |
+| `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, deep only, seed 1904 only; ZH to the 1.7B rung, ES to the 1B rung |
 
 Every scheme defines only the settings it covers and reads its own data
 directory, so a `--scheme` sweep submits exactly its own cells — there is no
