@@ -186,7 +186,16 @@ def _gather_points(df: pd.DataFrame, stat: str, variant: str,
 def _pearson_r(xs, ys, log_x, tasks=None):
     """Pearson r of (log10) x with y. With `tasks` (one per point) the r is a
     per-language one and needs MIN_LANG_TASKS distinct tasks with a point
-    (rule 8): a task pooled over several sizes is still one task."""
+    (rule 8): a task pooled over several sizes is still one task.
+
+    The bare `len(xs) < 3` is NOT MIN_LANG_TASKS: 3 is the mathematical
+    minimum for a Pearson r (at n = 2 it is +/-1 by construction), so it is a
+    floor on POINTS that holds whatever rule 8 is set to. The two happen to
+    coincide today, both 3. If MIN_LANG_TASKS moves, re-check this line —
+    raising rule 8 leaves this floor behind (harmless, the task floor binds
+    first), but lowering it below 3 would not lower this one, and a language
+    with 2 tasks would still return NaN here.
+    """
     if len(xs) < 3 or (tasks is not None and len(set(tasks)) < MIN_LANG_TASKS):
         return float("nan")
     x = np.log10(xs) if log_x else np.asarray(xs)

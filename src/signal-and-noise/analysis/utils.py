@@ -2,8 +2,16 @@
 the config-derived size params, and the SNR signal-pool loader.
 
 These carry no research-question identity, so every ``rqNN_*`` script imports
-them from here instead of from a sibling RQ. That keeps the numbered run order
-a clean DAG: a lower-numbered RQ never imports a higher-numbered one.
+them from here instead of from a sibling RQ, which keeps most of the numbered
+run order a clean DAG.
+
+It is not a strict one: rq03's ``compare_seed_splits`` imports rq04's
+``analyze_snr_variants`` / ``snr_definition_postprocess``, and rq03's
+``effect_vs_noise`` imports rq05's ``INTERVENTIONS``. Those are imports of
+FUNCTIONS AND CONSTANTS only — neither module reads a file at import time — so
+the run order is unaffected and a lower RQ never waits on a higher one's
+tables. Keep it that way: anything that would make a lower-numbered RQ read a
+higher-numbered one's OUTPUT belongs here instead.
 """
 
 from __future__ import annotations

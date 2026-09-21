@@ -5,6 +5,15 @@ At a fixed number of languages the ladder offers one design decision: depth
 one measurement -- a single language's bits per byte, macro BPB, or a benchmark
 task -- a proxy size is predictive when it picks the same winner as the largest
 size trained at that L, and every size above it does too.
+
+TODO (before this is used again): it loads `load_predictivity_eval_results()`
+raw, so it applies NONE of the analysis-wide rules. Nothing in
+scripts/refresh_analysis.sh runs it and nothing imports it, which is the only
+reason that is currently harmless. Anything it produces for the deck or the
+paper must first go through `analysis.utils.build_snr_pool` -- or, if it keeps
+its own loader, filter to ANALYSIS_SIZES (rule 10: 175M to the reference, so
+the 3B rung does not quietly become a column), `parents_only` (rule 6) and
+`trained_only` (rule 2), which is exactly what build_snr_pool does in one call.
 """
 import os, sys
 from pathlib import Path
