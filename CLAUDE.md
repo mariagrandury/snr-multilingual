@@ -9,6 +9,15 @@
   break tracked paths. This applies to all destructive shell
   operations (`rm`, `mv` to a different parent, `git rm`, etc.).
 
+- **Analysis work follows `src/signal-and-noise/analysis/RULES.md`.** Every
+  table, figure and README number under `src/signal-and-noise/analysis/`
+  obeys those rules (the above-random gate, trained languages only, ten
+  checkpoints, one noise window, three pairs per decision, parent tasks only,
+  `multi` is not a language, one reference size, no 90M, no leakage, the
+  figure conventions). Read it before touching an `rqNN_*` script; implement
+  a new rule in the shared layer (`analysis/utils.py`, the loader), never in
+  one script; `python analysis/check_rules.py` must pass before a commit.
+
 - **Reuse existing code aggressively; keep new code simple and
   boilerplate-free.** Before writing a new helper, grep the repo for
   one that already does the job (e.g. `get_slice`,
@@ -49,8 +58,8 @@ Two sweeps, in this order:
 1. **The finished 36-model sweep** (4 sizes × 3 data mixtures × 3 seeds,
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
-2. **The predictivity sweep** (current work): a 6-rung ladder
-   90M–1.7B × 7 language settings × deep/shallow × five data schemes
+2. **The predictivity sweep** (current work): a 7-rung ladder
+   90M–3B × 7 language settings × deep/shallow × five data schemes
    (A, AT3, B, ZH, ES — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
@@ -66,7 +75,8 @@ they carry the failure modes, and they are more current than this file.
 configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
-scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh, reservation_drain.sh
+scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh,
+                  # reservation_drain.sh, preempt_drain.sh (queue drainers)
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -94,7 +104,7 @@ Eval results are NOT in the repo: they live on the cluster at
 
 - **lm_eval** (lm-evaluation-harness): the swiss-ai fork, installed per eval
   job from a pinned shared checkout at
-  `/capstor/store/cscs/swissai/infra01/msnr-harness/` (prebuilt wheel first) —
+  `/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/` (prebuilt wheel first) —
   never a per-job GitHub clone; see `src/evals/README.md` for why and how to
   refresh it
 - **signal-and-noise** (Allen AI): reference implementation at `src/signal-and-noise/`
@@ -110,7 +120,9 @@ Eval results are NOT in the repo: they live on the cluster at
   `src/pretrain/sync_models_json.py`, not hand-edited
 - `configs/hf_wandb.json`: HF org + W&B project
 - `configs/languages.json`: the FineWeb→ISO code table the task/language
-  matching keys off
+  matching keys off, plus the `groups` the report and deck slice by —
+  `trained` is the 50 languages of the L50 mixture and is what every
+  per-language figure covers, `main` the older 12-language set
 - Architectures live in `src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`
 
 ## Development
@@ -133,7 +145,54 @@ python3.11 src/pretrain/auto_evals_cscs.py --dry-run
 
 # Slides
 cd documents && npx slidev --open
+
+# After new eval results land. 1. publish the report (login node: needs the
+# network for the Hub and the orphan-branch push)
+python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf --push-git
+
+# 2a. fetch it into the cache and rebuild every derived artefact, documents
+#     included (~2 h; the refresh does the fetch itself)
+FORCE=1 bash scripts/refresh_analysis.sh
+
+# 2b. the same, also redrawing rq00's grids (+1 h, so submit it). A compute
+#     node has no network: fetch here first, and build the deck afterwards.
+git fetch origin data/ladder-report && git archive origin/data/ladder-report \
+  | tar -x -C src/signal-and-noise/data/ladder-report
+sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
+  --job-name=snr-analysis \
+  --output=/iopsstor/scratch/cscs/mariagrandury/snr-analysis-%j.log \
+  --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr \
+    && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual \
+    && FORCE=1 HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 \
+       bash scripts/refresh_analysis.sh --curves --no-fetch --no-deck'
+cd documents && npx slidev build                # the deck the job skipped
+
+# 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
+#     so refresh the cache first as in 2b.
+cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 ```
+
+`scripts/refresh_analysis.sh` is the only thing to run after new results:
+it fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,
+re-runs the analysis, the figures, the report PDF, the compendium and the
+deck, and fails if a slide points at a figure that no longer exists. Prose it
+cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
+numbers against `documents/ladder-facts.json` and prints the ones that moved.
+
+Three things it cannot guess:
+
+- **`FORCE=1`.** The fetched report carries its *commit* time, so a report
+  published at noon and an analysis re-run that evening leave every cached
+  table "newer than the report" and the pipeline reuses them — a whole run
+  finishes on the old numbers while every log line claims success. Pass
+  `FORCE=1` whenever the report was regenerated since the last analysis run.
+- **It takes hours, so it belongs in a Slurm allocation.** The pipeline is
+  the heavy part; the fetch and the deck build need network, which a compute
+  node lacks, so fetch on the login node and submit the rest with
+  `--no-fetch --no-deck`.
+- **`--curves`.** rq00's ~140 acc-vs-FLOPs grids are a viewer that nothing
+  reads and about an hour of the run. They are skipped by default and the
+  previous figures stay on disk; pass `--curves` to redraw them.
 
 System Python on the login nodes is 3.6 — use `python3.11`.
 
@@ -149,14 +208,15 @@ System Python on the login nodes is 3.6 — use `python3.11`.
 Predictivity-sweep specifics (the 36-sweep's sizes and 30/70-style mixtures
 are retired — do not carry them into new work):
 
-- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B non-embedding — every size trains at
-  every language setting
-- Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50,
-  100} languages; L=1 is 100% English. The mixture varies the language *count*,
+- Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
+  at every language setting except 3B, the extrapolation check above the 1.7B
+  reference: deep only, L ∈ {8, 15}, schemes A and B ([`plan/3b_models.md`](plan/3b_models.md))
+- Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
+  languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
 - Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
-  unlabelled baseline), AT3 (A's lists at T=3 — L50 and L100, which exists
-  ONLY at T=3), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
+  unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
+  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), ZH / ES (L2 with Chinese
   / Spanish instead of Russian). "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:

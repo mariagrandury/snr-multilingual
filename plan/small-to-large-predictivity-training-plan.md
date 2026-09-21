@@ -59,14 +59,14 @@ as well as L100 (the flattened L50 build covers the 1.7B draw, see
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, every size at every setting |
-| Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
+| Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **186 runs**.
+**58 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting every scheme and the architectures each is trained in: **191 runs**.
 
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
@@ -146,6 +146,8 @@ The build script reports the realized per-language token counts and warns when a
   That is why **no already-trained cell has to be re-run.** A model reads only its own budget out of the build, and at L15/L50 every rung through the 1B fits inside 52B — 4.7B at 90M (9 % of the pool) up to 47.2B at the 1B (91 %). Only the 1.7B exceeds it, at 83.6B (1.61 epochs), which is the sole reason the rebuild exists. The residual asymmetry is that the 1.7B reference reads a 92B pool while its proxies read the nested 52B one; since the proportions are identical and each rung already reads a different *fraction* of the pool, that difference is of the same kind and scale as a data-order seed change — which the ×3 seed columns already quantify as noise. Record it; do not re-run the column for it. One qualification, measured 2026-09-13: FineWeb-2's parquet files are grouped by CommonCrawl dump, so the extension is not a random superset of the smaller pool but a newer one — in scheme B's L15, crawls from 2021–24 are 4% of the 52B Russian and 14% of the 92B, 0% and 32% of the Chinese. The 1.7B reference therefore also reads a later crawl mix than its proxies.
 
   **Nothing is swapped into the training stage.** `launch_trainings.py cscs` reads the 92B copy (staged to `/iopsstor/scratch/cscs/mariagrandury/data-92B`) only for a cell the staged 52B build is too small for — the 1.7B cells at A-L15, A-L50 and B-L15 — and keeps every other rung, including cells not trained yet (the shallow ones, the new 1B ×3 seeds at L50), on the 52B pool their peers read. Replacing the stage files would change what those cells see, not just how much: Megatron shuffles over the whole file, so a different pool is a different sample order as well as a newer crawl mix. Without a big-enough rebuild the launcher still skips a cell drawing more than its staged build holds (`skip [data undersized]`), unless the build already realizes what the source allows at the current target.
+
+  **For the paper:** the six 1.7B cells at A-L15, A-L50 and B-L15 (deep and shallow) train on a different build from their smaller rungs — the same languages in the same proportions, extended with newer crawls — and nothing in `configs/models.json` records which build a cell read. The record is this paragraph, the launcher's `(FineWeb-2 from /iopsstor/scratch/cscs/mariagrandury/data-92B…)` line when it submitted them, and the `data-92B/` paths in those cells' training logs. State it wherever results at those settings compare the 1.7B reference with its proxies.
 - **No L2 language can feed a 1.7B.** A 1.7B draws 83.6B from the multilingual half, and the filtered subset holds about 71.8B of Russian by the builder's estimate (the L2 build realized 72.8B, so the estimates undercount slightly), 59.9B of Chinese and 23.4B of Spanish. The existing scheme-A L2 build is 72.8B, not 92B, for exactly this reason; Spanish is clean only through the 350M rung.
 
 ## Validation set

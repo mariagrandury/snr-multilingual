@@ -1,0 +1,88 @@
+% Sources and reproducible ten-checkpoint calculations: verify_paper_results.py,
+% verified_results_provenance.json, and paper_results_review.md in this directory.
+\section{Analysis}
+\label{sec:results}
+
+We ask which multilingual measurements track learning, when their rankings transfer to larger models, and whether cheaper statistics anticipate that transfer. These questions distinguish a benchmark that improves with scale from one that supports a reliable development decision.
+
+\textbf{Analysis population.} Our experimental design comprises 163 runs at five sizes from 175M to 1.7B. The snapshot underlying the scaling figure contains 113 completed, non-diverged runs in this range: 24 at 175M, 18 at 350M, 24 at 600M, 28 at 1B, and 19 at 1.7B. The main decision-accuracy and surrogate analyses use the 79 seed-1904 runs from schemes A and B; eligible runs vary by task because we require its final-checkpoint score. The reference size is 1.7B. Comparisons involving the $L=2$ Spanish (ES) variant use a 1B reference and are outside this main A/B analysis; the Chinese (ZH) variant runs to 1.7B. We exclude the diagnostic 90M models because they did not provide reliable signal (Appendix~\ref{app:90m-rung}).
+
+\textbf{Evidence above chance.} We assess each run using the one-sided 95\% Wilson lower confidence bound on its accuracy. A run clears the gate when this bound exceeds the task's chance accuracy, $1/K$ for $K$ answer options. A task--size cell is retained when at least half its evaluated runs clear this threshold. We use runs trained on the task's language where available, and all evaluated runs otherwise. Tasks without a defined chance baseline, including BPB, are not assigned a failing gate value.
+
+Unlike a fixed five-percentage-point margin, this rule accounts for evaluation-set size. The threshold audit gives median required margins of 9.00 percentage points for nonparallel Global PIQA, 2.44 for Belebele, 0.74 for HellaSwag, and 0.60 for Global-MMLU. These are medians of task-specific thresholds, not universal cutoffs for each family. The corresponding shares of task--size cells passing the Wilson rule are 37.5\%, 6.8\%, 92.7\%, and 4.3\%. With the former five-point rule, they were 50.0\%, 0.0\%, 45.2\%, and 0.0\%. Thus, the new gate is stricter for small evaluations and can detect smaller departures from chance on large ones. These per-run confidence bounds do not provide a multiple-testing correction or establish that a benchmark can rank design variants reliably. Appendix~\ref{app:chance-gate} specifies the calculation and sensitivity rules.
+
+\subsection{RQ1: What scales predictably?}
+\label{subsec:rq1}
+
+\textbf{Scaling measurements.} Figure~\ref{fig:rq1} compares predictability across model size and training progress. We fit final-checkpoint scores against $\log_{10}N$ on the deep, scheme-A, seed-1904 ladder, requiring at least three sizes. Within each run, we fit scores against log training tokens, requiring at least five checkpoints. Each plotted task summarizes at least two fits on each axis, restricted to mixtures that train its language. We retain ungated measurements in this diagnostic figure to show where scaling signal is weak; the gate is applied to the decision analyses below. We orient Spearman's $\rho$ so that positive values indicate improvement, reversing its sign for BPB and training loss.
+
+\begin{figure*}[t]
+\centering
+% figure copied from the analysis by documents/paper/figures/make_rq_figures.py -- never edit it here
+% generator: https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq01_scaling_predictability/regimes.py
+% figure:    https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.png
+% table:     https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_families.csv
+\includegraphics[width=\textwidth]{figures/rq1.png}
+\caption{\textbf{Scaling across model size and training progress.} Small points represent tasks, usually benchmark--language pairs; large outlined points show family medians, with task counts in parentheses. Left: median log-linear size-fit $R^2$ and improvement-oriented Spearman $\rho$. Right: median $R^2$ across size and within-run training fits. The shaded regions use a descriptive $R^2=0.5$ boundary, not a significance threshold. Selected tasks that differ from their family are labeled. BPB and loss correlations are sign-reversed so that improvement points upward.}
+\label{fig:rq1}
+\end{figure*}
+
+\textbf{Predictable learning.} HellaSwag, LAMBADA, and BPB track both dimensions closely. Their median size-fit $R^2$ values are 0.97, 0.99, and 0.95, and their trajectory-fit values are 0.98, 0.94, and 0.89. Global-MMLU, INCLUDE, and Belebele have weaker size fits (0.13, 0.24, and 0.34) and trajectory fits (0.15, 0.14, and 0.17). Predictability can also differ between the axes: PAWS-X has a size-fit $R^2$ of 0.79 but a trajectory-fit value of 0.31. These results identify measurements that track learning consistently without assuming that all task formats or languages behave alike.
+
+\textbf{Direction and language variation.} A strong fit need not indicate improvement. TruthfulQA has a median size-fit $R^2$ of 0.73 and improvement-oriented $\rho=-0.83$. Conversely, a weak family median can conceal individual languages with useful signal, as the labeled Belebele tasks illustrate. We therefore assess predictivity at the task--language level rather than treating benchmark families as uniformly informative.
+
+\textbf{Task reformulation.} To test whether evaluation format suppresses signal, we reformulate Belebele, Global-MMLU, and INCLUDE from letter-option scoring to zero-shot scoring of full answer continuations. We retain the passage or question and candidate answers, omit the lettered answer menu, and score each answer after an \texttt{Answer:} prefix. This changes the elicitation protocol without generating new questions. Table~\ref{tab:reformulation} compares the original accuracy with length-normalized continuation accuracy on matched final-checkpoint evaluations of the deep scheme-A seed-1904 models, restricted to languages in their training mixtures.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Family & Size & Original & Reformulated & Significant / tasks \\
+\midrule
+Belebele & 175M & 24.3 & 28.0 & 38 / 59 \\
+         & 1.7B & 26.1 & 35.9 & 56 / 59 \\
+Global-MMLU & 175M & 24.4 & 25.6 & 10 / 29 \\
+            & 1.7B & 24.0 & 29.8 & 26 / 29 \\
+INCLUDE & 175M & 25.3 & 25.5 & 7 / 36 \\
+        & 1.7B & 25.5 & 30.2 & 18 / 36 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reformulation exposes additional signal.} Scores are median task accuracies (\%), after averaging matched models within a task and size; chance is 25\%. Original scores use accuracy; reformulated scores use length-normalized accuracy. The last column counts tasks with a nominally significant change on at least half their evaluated models, using two-sided two-proportion $z$-tests at $p<0.05$. These tests compare unnormalized accuracy on both sides, so they do not test the displayed cross-metric difference. They are unpaired and uncorrected for multiple comparisons; counts describe exploratory evidence rather than confirmatory paired tests.}
+\label{tab:reformulation}
+\end{table}
+
+At 1.7B, the median displayed gain is 9.8 percentage points for Belebele, 5.8 for Global-MMLU, and 4.7 for INCLUDE. The reformulation also increases the separation between 175M and 1.7B. The matched-accuracy tests support a formulation effect beyond length normalization, although the normalization offset itself contributes to the displayed gains. These measurements show that near-chance scores can partly reflect the evaluation protocol; they do not establish that reformulated tasks preserve design rankings, which requires checkpoint-level evaluation of the new tasks.
+
+\subsection{RQ2: How early can we make reliable decisions?}
+\label{subsec:rq2}
+
+\textbf{Decision accuracy.} We compare the ordering of shared design variants at a proxy checkpoint with their ordering at the final 1.7B checkpoint. We require at least three model pairs per task and average task-level decision accuracy (DA), giving each task equal weight. Benchmark tasks must pass the gate at both sizes; BPB remains ungated. We evaluate all ten fractions of training, from 10\% through 100\%. At the final proxy checkpoint this is DA-size; along the 1.7B curve it is DA-checkpoint. Separately, within-size DA-checkpoint compares each earlier checkpoint with that size's own final ranking. A tie agrees only with a tie, making the comparison independent of model ordering.
+
+\begin{figure}[t]
+\centering
+% figure copied from the analysis by documents/paper/figures/make_rq_figures.py -- never edit it here
+% generator: https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
+% figure:    https://github.com/mariagrandury/snr-multilingual/blob/feat/snr-update/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2.png
+\includegraphics[width=\linewidth]{figures/rq2.png}
+\caption{\textbf{Recovering the final 1.7B ranking.} Mean task-level DA over all ten evaluated training fractions. Color identifies proxy size; solid lines show the 100 per-language BPB tasks and dashed lines show benchmark tasks passing the Wilson gate at proxy and reference sizes. Eligible benchmark counts vary with size and checkpoint; missing evaluations are not interpolated. The dotted line marks a descriptive DA of 0.75. The final 1.7B self-comparison, which equals one by construction, is omitted.}
+\label{fig:rq2}
+\end{figure}
+
+\textbf{Model size.} Figure~\ref{fig:rq2} shows stronger agreement for BPB than for benchmark scores. At the final checkpoint, mean BPB DA is 0.80, 0.81, 0.85, and 0.85 for 175M, 350M, 600M, and 1B. Benchmark DA is 0.70, 0.74, 0.70, and 0.74 on their eligible task populations. Larger proxies therefore improve BPB agreement, but benchmark agreement is neither uniformly weak nor monotonically increasing. Changing task coverage also contributes to differences between benchmark averages.
+
+\textbf{Training progress.} The full checkpoint grid reveals reversals that a coarser view misses. The 175M BPB curve falls from 0.70 at 20\% of training to 0.59 at 30\%, recovers to 0.76 at 40\%, and dips to 0.73 at 70\%. A single early crossing of DA $=0.75$ would therefore be an unreliable stopping rule. In contrast, the 350M BPB curve stays above 0.75 at all ten measured fractions. The 1.7B model's agreement with its own final BPB ranking rises from 0.82 at 10\% to 0.95 at 90\%; benchmark agreement rises from 0.68 to 0.83. Early rankings carry useful information, but completing more training can still change the decision.
+
+\textbf{Cross-task transfer.} We also ask whether a proxy measurement on one task predicts the final ranking on a different task. The cross-task analysis compares only shared model pairs and reports the earliest size or checkpoint with DA at least 0.75 that remains above this threshold at every later observed level. Its checkpoint axis includes all ten training fractions. Cross-task transfer is limited. Among 1,767 ordered HellaSwag-to-MultiBLiMP task pairs, 27.3\% satisfy the size criterion, 56.6\% never do, and 16.1\% are filtered out by the gate. Reversing the direction yields 22.0\% satisfying the size criterion. For checkpoint transfer, pooling shared within-size model pairs across all ten fractions, only 4.6\% satisfy the criterion in either direction. These comparisons pool target and proxy languages; they are not success rates for a single matched-language task. We restrict this comparison to accuracy metrics with the same preference direction. Thus, predicting a measurement's own future ranking does not make it a general substitute for another evaluation.
+
+
+\subsection{RQ3: Which cheaper measurements predict decision accuracy?}
+\label{subsec:rq3}
+
+\textbf{Surrogate comparison.} We use the repository's surrogate analysis to compare 22 signal-to-noise ratio (SNR) definitions. For each language, we correlate $\log_{10}\mathrm{SNR}$ with DA across eligible task--size observations, using Pearson's $r$. We restrict DA-size to the 1.7B reference and recompute DA-checkpoint over all nine pre-final fractions of the ten-checkpoint grid. The final self-comparison is excluded from these correlations. We retain the repository's SNR measurements and exclude macro BPB as an additional language observation. Each reported leader maximizes the observed correlation within that language; it is not a separately validated selection rule.
+
+\textbf{Shared leaders.} Dispersion-based variants perform well in several languages. Relative mean pairwise squared distance (relative MPSD) is the strongest observed surrogate for both DA-size and DA-checkpoint in English ($r=0.43$ and 0.36), Thai (0.87 and 0.81), and Turkish (0.62 and 0.68). Interquartile-range SNR leads both measures in German (0.70 and 0.55) and French (0.61 and 0.50). Mean pairwise squared distance (MPSD) leads in Arabic (0.17 and 0.37) and Vietnamese (0.19 and 0.50). The weak size correlations in the latter two cases show why being the best available candidate does not by itself establish practical usefulness.
+
+\textbf{Different surrogates for different decisions.} The leading definition can change between DA-size and DA-checkpoint. Spanish favors shifted dispersion for size ($r=0.52$) and relative MPSD for checkpoints (0.46). Russian favors relative dispersion for size (0.65) and relative mean pairwise distance for checkpoints (0.50). Chinese favors shifted star discrepancy for size (0.65) and relative MPSD for checkpoints (0.74); Basque favors star discrepancy (0.85) and MPSD (0.75), respectively. These differences support reporting language-specific associations rather than declaring one universal SNR definition.
+
+\textbf{Interpretation.} The correlations remain descriptive. We select among multiple candidates on the same observations, and task--checkpoint observations share models and evaluation items. Some apparent leaders have little independent evidence: the Thai and Basque DA-size correlations each use only seven task--size observations. We therefore treat dispersion-based SNR as a candidate diagnostic and leave calibration on held-out decisions to future work, rather than equating the strongest observed correlation with a guaranteed decision.

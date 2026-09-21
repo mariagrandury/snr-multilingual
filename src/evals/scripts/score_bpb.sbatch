@@ -55,7 +55,7 @@ SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/
 MAX_CHAIN=${MAX_CHAIN:-32}
 
 REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
-STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
+STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models}
 # Results live beside the harness results, under the same cell-iter name, so
 # the eval tooling and the analysis find them in one place.
 OUT_ROOT=${OUT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr}
@@ -81,6 +81,22 @@ done
 echo "due=${#DUE[@]}: ${DUE[*]:-none}"
 [ ${#DUE[@]} -eq 0 ] && { echo "$CELL fully scored — chain ends here."; exit 0; }
 
+# Stop a chain that is not moving. PREV_DUE is what the previous link had due;
+# a link always attempts its first checkpoint, so if none of those landed, the
+# cause (a checkpoint that always fails, a write that is always refused) will
+# fail this link too, and MAX_CHAIN more after it: one cell ran 108 links and
+# 22.9 node-hours this way, every one of them COMPLETED.
+if [ -n "${PREV_DUE:-}" ]; then
+    progressed=0
+    for it in ${PREV_DUE//:/ }; do
+        [ -s "$OUT_ROOT/$CELL-iter$it/bpb/bpb.json" ] && { progressed=1; break; }
+    done
+    if [ "$progressed" -eq 0 ]; then
+        echo "ERROR: the previous link scored none of iters ${PREV_DUE//:/ } — not chaining again"
+        exit 1
+    fi
+fi
+
 # Queue the successor NOW, before any scoring: at the wall Slurm kills the
 # batch script outright, so anything submitted after the srun would never run.
 # --dependency=singleton + the shared job name keep exactly one alive.
@@ -92,7 +108,8 @@ CHAIN_DEPTH=${CHAIN_DEPTH:-0}
 if [ "$CHAIN_DEPTH" -lt "$MAX_CHAIN" ]; then
     echo "queuing singleton successor (chain depth $CHAIN_DEPTH/$MAX_CHAIN)"
     sbatch --dependency=singleton --job-name="${SLURM_JOB_NAME:-bpb-$CELL}" \
-           --chdir="$REPO_DIR" --export=ALL,CHAIN_DEPTH=$((CHAIN_DEPTH + 1)) \
+           --chdir="$REPO_DIR" \
+           --export=ALL,CHAIN_DEPTH=$((CHAIN_DEPTH + 1)),PREV_DUE=$(IFS=:; echo "${DUE[*]}") \
            "$SCRIPT" "${ORIG_ARGS[@]}"
 else
     echo "WARN: chain cap $MAX_CHAIN reached for $CELL — not queuing a successor"
@@ -155,4 +172,8 @@ srun -n 1 --mpi=pmix -ul --environment="$REPO_DIR/containers/env_vllm.toml" \
     done
     exit \$rc
 "
-echo "END: $(date)"
+# The step's exit code is the job's: a link whose scoring failed must show as
+# FAILED, not COMPLETED.
+rc=$?
+echo "END: $(date) rc=$rc"
+exit $rc

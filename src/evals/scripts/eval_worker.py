@@ -191,18 +191,27 @@ def main() -> int:
             (inflight / task).mkdir(exist_ok=True)
             attempted += 1
             tracker = EvaluationTracker(output_path=str(inflight / task))
-            results = lm_eval.simple_evaluate(
-                model=lm, model_args=model_args, tasks=[task],
-                num_fewshot=args.num_fewshot, batch_size=args.batch_size,
-                max_batch_size=args.max_batch_size, device=args.device,
-                limit=args.limit, write_out=args.write_out,
-                log_samples=args.log_samples, evaluation_tracker=tracker,
-                system_instruction=args.system_instruction,
-                apply_chat_template=args.apply_chat_template,
-                fewshot_as_multiturn=args.fewshot_as_multiturn,
-                gen_kwargs=gen_kwargs, task_manager=task_manager,
-                confirm_run_unsafe_code=args.confirm_run_unsafe_code,
-                metadata=metadata)
+            # `datasets` creates and re-chmods its lock files in the shared
+            # HF_HOME with 0o666 & ~umask on every load; under the default 022
+            # that is 0644, whose ACL mask (r--) locks the collaborators out.
+            # 002 makes it 0664 (mask rw-). Only around the evaluation: the
+            # result files written below keep the default 022.
+            umask = os.umask(0o002)
+            try:
+                results = lm_eval.simple_evaluate(
+                    model=lm, model_args=model_args, tasks=[task],
+                    num_fewshot=args.num_fewshot, batch_size=args.batch_size,
+                    max_batch_size=args.max_batch_size, device=args.device,
+                    limit=args.limit, write_out=args.write_out,
+                    log_samples=args.log_samples, evaluation_tracker=tracker,
+                    system_instruction=args.system_instruction,
+                    apply_chat_template=args.apply_chat_template,
+                    fewshot_as_multiturn=args.fewshot_as_multiturn,
+                    gen_kwargs=gen_kwargs, task_manager=task_manager,
+                    confirm_run_unsafe_code=args.confirm_run_unsafe_code,
+                    metadata=metadata)
+            finally:
+                os.umask(umask)
             if results is None:           # a non-zero rank: rank 0 writes
                 continue
             samples = results.pop("samples", None)
@@ -235,6 +244,14 @@ def main() -> int:
                 pass
             failed += 1
             log(f"FAILED {task} after {time.time() - t0:.0f}s — {reason}")
+            if type(e).__name__ == "EngineDeadError":
+                # The vLLM engine is gone for good in this process: every later
+                # task would fail in seconds and take a strike it did not earn
+                # (job 3355520: one dead worker "failed" 145 tasks that the next
+                # job all passed). Stop claiming; the other workers take the
+                # rest of the queue, and the watcher resubmits what is left.
+                log("vLLM engine is dead: this worker stops claiming tasks")
+                break
             continue
         done += 1
         print(make_table(results), flush=True)

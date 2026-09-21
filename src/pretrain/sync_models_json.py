@@ -41,7 +41,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, exp_name, mix_label, predictivity_cells,
+    DATA_SCHEMES, HYPERPARAMS, arches_for, exp_name, mix_label, predictivity_cells,
     save_interval, schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
@@ -56,7 +56,7 @@ MEG_BASE = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs
 # Where convert-snr.sh actually lands the HF snapshots (<cell>/iter_<NNNNNNN>/):
 # auto_evals_cscs.DEFAULT_STAGING. snr-hf-checkpoints on iopsstor was the
 # 36-sweep's root and is never written for lm-* cells.
-HF_LOCAL_BASE = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
+HF_LOCAL_BASE = "/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models"
 
 
 def save_points(target: int) -> list[int]:
@@ -78,8 +78,14 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         # Cross-size identity (the size token is what varies along the ladder).
         "family": f"lm-{mix_label(c['L'], arch, scheme)}-seed{c['seed']}",
         "size": c["size"],
-        # Total parameters = non-embedding + the tied embedding matrix.
+        # Total parameters = non-embedding + the tied embedding matrix — which
+        # is exactly the count the FLOPs convention wants
+        # (configs.flops_params: 6 x (N_non_emb + d_model x V) x D). The three
+        # shape fields put the cell explicitly on that basis.
         "params": int(cfg["n_non_emb_params"] + VOCAB_SIZE * cfg["hidden_size"]),
+        "n_non_emb": int(cfg["n_non_emb_params"]),
+        "d_model": int(cfg["hidden_size"]),
+        "vocab_size": VOCAB_SIZE,
         "hyperparams_key": c["size"],
         "L": c["L"],
         "arch": arch,
@@ -114,7 +120,7 @@ def grid_names() -> set[str]:
     must enumerate the whole grid, not one slice of it."""
     return {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"])
             for c in predictivity_cells()
-            for arch in DATA_SCHEMES[c["scheme"]]["arches"]}
+            for arch in arches_for(c["scheme"], c["size"], c["L"])}
 
 
 def prune(write: bool = True) -> list[str]:
@@ -144,7 +150,7 @@ def sync(arch: str = "deep", scheme: str | None = None,
 
     added, updated = [], []
     for c in predictivity_cells([scheme] if scheme else None):
-        if arch not in DATA_SCHEMES[c["scheme"]]["arches"]:
+        if arch not in arches_for(c["scheme"], c["size"], c["L"]):
             continue
         name, entry = cell_entry(configs[c["size"]], c, arch, c["scheme"])
         old = data["models"].get(name)

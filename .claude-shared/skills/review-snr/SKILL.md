@@ -35,6 +35,23 @@ is out of scope: list it in the report's Scope line and leave it alone.
 
 ## 2. What to check
 
+**The analysis rules first.** For any change under `src/signal-and-noise/`,
+read `src/signal-and-noise/analysis/RULES.md` and treat each rule as a review
+criterion for the changed scripts (the gate, trained languages only, ten
+checkpoints, one noise window, three pairs, parent tasks only, `multi` is not
+a language, three tasks per language, one reference, no 90M, no leakage, the
+figure conventions, stated populations). Then run, in the `snr` env from
+`src/signal-and-noise/`:
+
+```bash
+HF_HUB_OFFLINE=1 python analysis/check_rules.py
+```
+
+It reads every output table and lists the violations it can detect; a
+non-zero exit is a finding to report, and a rule the change cannot follow
+must be announced by the script (`!!! RULE n:`) and its README.
+
+
 **Bugs.** Read every changed hunk against the file around it, not in
 isolation, and check that every helper the hunk calls exists with that
 signature (`grep -n "def name"`) — a diff can call a kwarg the helper never

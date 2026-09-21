@@ -1,0 +1,188 @@
+% =============================================================================
+% Methodology and Experimental Setup — the predictivity sweep
+%
+% Sources (repo, as of 2026-09-16):
+%   plan/small-to-large-predictivity-training-plan.md   design, budgets, data, validation
+%   plan/methodology-review-2026-08-21.md               LR law, shallow ladder, checkpoint grid
+%   plan/benchmark_selection.md                         benchmark families + per-cell task counts
+%   plan/90M-rung-anomaly.md                            the 90M divergence (appendix draft)
+%   plan/1b-models.md                                   the 20-checkpoint 1B cells
+%   src/pretrain/launch_trainings.py                    DATA_SCHEMES, SEED_TRIPLES, n_checkpoints
+%   src/pretrain/hyperparams/hyperparams_{deep,shallow}.json
+%   src/pretrain/megatron_args.sh                       every training argument
+%   src/pretrain/data/{create_data_mixture,build_data_mixtures}.py, language_sets_scheme*.json
+%   src/evals/scripts/score_bpb.py                      BPB
+%   src/evals/README.md, src/pretrain/auto_evals_cscs.py harness settings
+%   configs/tasks.json                                  the `auto` group and family metadata
+%
+% Citation keys checked against ../zotero.bib; missing entries remain explicit
+% reference placeholders. See paper_results_review.md for the bibliography gaps.
+% =============================================================================
+\providecommand{\citeneeded}[1]{\textcolor{red}{[CITE: #1]}}
+\providecommand{\checknum}[1]{\textcolor{orange}{#1}}
+
+
+\section{Methodology Details}
+\label{app:methodology}
+
+We give the training grid and checkpoint schedule (\S\ref{app:training-grid}), model configurations (\S\ref{app:model-configurations}), data construction (\S\ref{app:data-construction}), and evaluation protocol (\S\ref{app:evaluation-protocol}).
+
+\subsection{Training Grid and Checkpoints}
+\label{app:training-grid}
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{The data schemes of the sweep. Planned runs at the five analysis sizes, 175M--1.7B. ZH and ES stop at 1B because of source-data limits. The additional 24 planned 90M diagnostic runs are excluded from these counts. Seeds: ``grid'' means one seed per cell, or three seeds for the cells marked in Table~\ref{tab:grid}. Runs count both architectures where the scheme trains both.}
+\label{tab:schemes}
+\begin{tabular}{llccllr}
+\toprule
+Scheme & Language lists & $T$ & $L$ & Sizes & Architectures & Runs \\
+\midrule
+A   & resource-ranked (baseline) & 1 & 1, 2, 8, 15, 30, 50 & all & deep, shallow & 100 \\
+AT3 & scheme A lists, flattened  & 3 & 50, 100             & all & deep, shallow & 20 \\
+B   & diversity-first            & 1 & 8, 15, 30           & all & deep, shallow & 34 \\
+ZH  & Chinese as the second language & 1 & 2              & $\leq$1B & deep     & 4 \\
+ES  & Spanish as the second language & 1 & 2              & $\leq$1B & deep     & 4 \\
+\midrule
+Total & & & & & & 163 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Seeds.} Every cell trains with seed 1904. To measure how much a ranking can move for reasons unrelated to the intervention, a subset of cells trains three seeds, each with a different initialization and data order (Table~\ref{tab:grid}): seeds 64, 313, and 1904 at 175M and 600M for $L \in \{1, 2, 50\}$, and seeds 28, 1797, and 1904 at 1B for $L \in \{1, 2, 30, 50\}$. The seed triples cover 175M, 600M, and 1B; they do not directly estimate seed variability at 1.7B. The extra schemes (AT3, ZH, ES) are intervention levels rather than part of the noise estimate and train a single seed.
+
+\begin{table}[t]
+\centering
+\small
+\caption{The scheme-A grid: seeds per $(N, L)$ cell. The shallow architecture uses the same seed grid. In total the scheme-A deep analysis grid has 50 runs.}
+\label{tab:grid}
+\begin{tabular}{lccccc}
+\toprule
+$L$ & 175M & 350M & 600M & 1B & 1.7B \\
+\midrule
+1   & 3 & 1 & 3 & 3 & 1 \\
+2   & 3 & 1 & 3 & 3 & 1 \\
+8   & 1 & 1 & 1 & 1 & 1 \\
+15  & 1 & 1 & 1 & 1 & 1 \\
+30  & 1 & 1 & 1 & 3 & 1 \\
+50  & 3 & 1 & 3 & 3 & 1 \\
+100 & \multicolumn{5}{c}{AT3 only, 1 seed per size} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Checkpoints.} Each run saves evenly spaced checkpoints: 20 per run, 40 at the 1B rung, and 60 at the 1.7B rung, so that the two reference rungs are sampled more densely. Because 40 and 60 are multiples of 20, the denser grids contain the shared fractions $k/20$, for $k=1,\ldots,20$. The $20N$ Chinchilla token budget falls at one fifth of training. We evaluate the even-indexed checkpoints of the shared grid, including the final one, which gives ten aligned operating points per run and lets us compare sizes at the same multiple of Chinchilla. For the reported DA curves we use these ten fractions for both measurement types. The existing SNR export retains BPB on the denser 20-point grid and benchmarks on the ten-point grid; its last-five-checkpoint noise windows therefore cover different training fractions.\footnote{Fifteen 1B cells were trained before the 40-checkpoint rule and save 20 checkpoints (every 2,287 steps to step 45,740 rather than every 1,143 steps to 45,720). Their saves land on the same $k/20$ fractions, so they are evaluated at the same points as every other run; the token count at matched checkpoints differs by 0.044\%.}
+
+\textbf{Compute axis.} Every checkpoint has a known $(N, D)$, so results can also be read against training compute. We estimate $\mathrm{FLOPs} = 6\,(N + d_{\mathrm{model}} V)\,D$, where $V$ is the vocabulary size: we omit embedding-lookup cost but include the output projection, and with a 131K vocabulary the projection nearly doubles the per-token cost of the smallest rungs.
+
+\subsection{Model Configurations and Optimization}
+\label{app:model-configurations}
+
+\textbf{Parameter-count convention.} All sizes are non-embedding parameters, that is, the transformer blocks alone, excluding the tied token embedding and output projection. This follows the ladder convention of \citeneeded{Bhagia et al., Establishing Task Scaling Laws (2024)} adopted by \citet{heineman_signal_2025}. The convention matters here because the 131,072-token vocabulary makes the tied embedding matrix $d_{\mathrm{model}} \times V$ parameters on its own, 101M at the 90M rung and 302M at the 1.7B rung; including it would substantially change the relative spacing of the smallest models on the size axis.
+
+\textbf{Architecture.} All models are decoder-only transformers following the Apertus pretraining recipe \citep{apertus_apertus_2025}: grouped-query attention \citeneeded{Ainslie et al., GQA (2023)} with four query heads per key-value head and a head dimension of 64, rotary position embeddings \citep{su_roformer_2023} with base 500,000 and Llama-3-style scaling factor 8, RMSNorm, QK-layernorm, the xIELU activation \citep{huang_xielu_2025}, no bias terms, no dropout, a sequence length of 4,096, and tied input and output embeddings over the 131,072-token Apertus tokenizer (\texttt{swiss-ai/Apertus-70B-2509}). The deep ladder scales by jointly increasing depth, width, and the number of attention heads, keeping a width-to-depth ratio $d_{\mathrm{model}}/n_{\mathrm{layers}}$ of 64 from 175M to 1B (51 at 90M and 77 at 1.7B, the endpoint compromises needed to hit the target sizes) and a feed-forward multiplier of 4. Table~\ref{tab:ladder} gives the configurations.
+
+\textbf{Shallow ladder.} The depth intervention trains a second ladder at five analysis sizes, with an additional 90M diagnostic configuration with roughly twice the width-to-depth ratio (110 to 146 against 64 to 77 at the analysis sizes, 128 against 51 at 90M). To constrain the architecture comparison, the shallow search pins the feed-forward multiplier and the query-to-key-value head ratio to the deep values, restricts $d_{\mathrm{model}}$ to multiples of 256, and among candidates within 4\% of the target size picks the ratio closest to 128. The shallow sizes land within 0.4\% to 3.7\% of the deep ones at the five analysis sizes (5.2\% at the excluded 90M rung), and each shallow run trains its own $D = 100N$.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{The model configurations, including the excluded 90M diagnostic rows. $N$ counts non-embedding parameters; the tied embedding adds $d_{\mathrm{model}} \times 131{,}072$. $D = 100N$ is the token budget; steps at 504 sequences of 4,096 tokens (2.06M tokens per step); LR is the peak learning rate from the compute-based law at the run's own budget; ckpts is the number of saved checkpoints. GQA (grouped-query attention) gives query/key-value head counts. Shallow rows approximately match the deep models in $N$; their token budgets follow their own parameter counts. FFN is the feed-forward hidden dimension.}
+\label{tab:ladder}
+\begin{tabular}{llrrrrrrrrr}
+\toprule
+Arch & Size & Layers & $d_{\mathrm{model}}$ & FFN & GQA & $N$ (M) & $D$ (B) & Steps & LR ($10^{-3}$) & Ckpts \\
+\midrule
+deep & 90M  & 15 &  768 & 3,072 & 12/3  &   92.9 &   9.3 &  4,500 & 1.43 & 20 \\
+deep & 175M & 16 & 1,024 & 4,096 & 16/4  &  176.2 &  17.6 &  8,540 & 1.22 & 20 \\
+deep & 350M & 20 & 1,280 & 5,120 & 20/5  &  344.1 &  34.4 & 16,660 & 1.03 & 20 \\
+deep & 600M & 24 & 1,536 & 6,144 & 24/6  &  594.5 &  59.5 & 28,800 & 0.90 & 20 \\
+deep & 1B   & 28 & 1,792 & 7,168 & 28/7  &  944.1 &  94.4 & 45,720 & 0.80 & 40 \\
+deep & 1.7B & 30 & 2,304 & 9,216 & 36/9  & 1,672.2 & 167.2 & 81,000 & 0.69 & 60 \\
+\midrule
+shallow & 90M  &  8 & 1,024 &  4,096 & 16/4  &   88.1 &   8.8 &  4,260 & 1.45 & 20 \\
+shallow & 175M & 10 & 1,280 &  5,120 & 20/5  &  172.0 &  17.2 &  8,340 & 1.22 & 20 \\
+shallow & 350M & 14 & 1,536 &  6,144 & 24/6  &  346.8 &  34.7 & 16,800 & 1.03 & 20 \\
+shallow & 600M & 14 & 2,048 &  8,192 & 32/8  &  616.6 &  61.7 & 29,860 & 0.89 & 20 \\
+shallow & 1B   & 17 & 2,304 &  9,216 & 36/9  &  947.6 &  94.8 & 45,920 & 0.80 & 40 \\
+shallow & 1.7B & 20 & 2,816 & 11,264 & 44/11 & 1,665.3 & 166.5 & 80,640 & 0.69 & 60 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Optimization.} Every run uses the same optimizer and schedule, with only the per-size values changing. We train with AdEMAMix \citeneeded{Pagliardini et al., AdEMAMix (2024)} ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping at 0.1, and a global batch of 504 sequences of 4,096 tokens, about 2.06M tokens per step, at every size. The learning rate follows a warmup-stable-decay schedule \citeneeded{Hagele et al., Scaling Laws and Compute-Optimal Training Beyond Fixed Training Durations (2024)}: linear warmup over about 4\% of the steps, a constant phase, and a $1-\sqrt{\cdot}$ decay to zero over the final 20\%. The peak learning rate comes from a compute-based law evaluated at each run's own budget, $\eta = 0.3118\, C^{-1/8}$ with $C = 6 N D = 600 N^2$, so it decreases smoothly from $1.43 \times 10^{-3}$ at 90M to $6.9 \times 10^{-4}$ at 1.7B. We scale optimizer warmup with run length and initialization with width: the AdEMAMix $\alpha$ and $\beta_3$ warmup spans the full run, and the initialization standard deviation is width-scaled as $0.008944 \sqrt{1792 / d_{\mathrm{model}}}$. Training uses BF16 mixed precision with FP32 gradient accumulation in the Swiss AI fork of Megatron-LM \citep{shoeybi_megatron-lm_2019}, with data parallelism only (no tensor or pipeline parallelism).
+
+\textbf{The 90M rung.} Nine of the ten completed 90M runs diverge: each reaches its best training loss between 15\% and 19\% of the way through training and degrades for the rest of the run, ending 1.2 to 1.9 nats above its own best. No larger rung shows this. Held-out bits-per-byte rises with training on every language we checked, so the degradation is real rather than an artefact of the training objective. Retraining the rung at three learning rates spanning a factor of five and at one half and one sixth of the batch size reproduces the failure at the same fraction of the optimizer steps, which points to the interaction between the fixed $\beta_3$ timescale of AdEMAMix, about 10,000 steps, and a run that is only 4,500 steps long. We keep the rung in the grid and report its diagnostics here, but exclude it from all analyses, including the scaling fits. Appendix~\ref{app:90m-rung} documents the investigation.
+
+\textbf{Compute.} All models are trained on the Clariden partition of the CSCS Alps supercomputer on nodes of four NVIDIA GH200 GPUs, using 3 to 21 nodes per run depending on size. As of 2026-09-14 the sweep has consumed \checknum{15,300} node-hours of pretraining on CSCS, about \checknum{61,000} GPU-hours, plus \checknum{3,500} node-hours of conversion, benchmark evaluation, bits-per-byte scoring, and data preparation.\footnote{Update from \texttt{plan/compute-costs.md} when the sweep is complete.}
+
+\subsection{Data Construction}
+\label{app:data-construction}
+
+\textbf{Language lists.} The language lists are generated from the FineWeb-2 per-language byte counts and the benchmark availability in the evaluation harness. \emph{Scheme A} ranks FineWeb-2 subsets by training-split UTF-8 bytes, excluding the unidentified-language subsets, and takes the top $L-1$; the lists are nested, so the $L=2$ list (Russian) is a subset of the $L=8$ list (Russian, Chinese, German, Japanese, Spanish, French, Italian), which is a subset of the $L=15$, $L=30$ and $L=50$ lists. The same rule generates a 99-language list that we do not train: it defines the shared validation set (below) and the language ordering of Appendix~\ref{app:languages}. In that list the eight subsets of the top 99 with no benchmark in the harness are replaced by the next subsets by bytes that have at least two benchmark families and are not a script variant of a kept language. \emph{Scheme B} builds diversity-first lists at $L \in \{8, 15, 30\}$ within the top 49: it takes the largest subset of each script not yet covered, then of each language family not yet covered, then the remaining subsets by bytes. At $L=8$ the scheme-B list spans seven scripts against four for scheme A, and at $L=30$ it spans 14 scripts and 12 families against 10 and 10. \emph{Schemes ZH and ES} replace Russian with Chinese or Spanish at $L=2$. The full lists are given in Appendix~\ref{app:languages}.
+
+\textbf{Mixture composition.} Every multilingual setting blends English and FineWeb-2 50/50 at training time with the Megatron data loader's blend weights, from one English dataset and one FineWeb-2 dataset per (scheme, setting). Within the FineWeb-2 half, language $i$ receives a share $q_i \propto p_i^{1/T}$, where $p_i$ is its estimated token proportion in the corpus. Scheme A allocates at $T=1$, proportionally to the corpus. The FineWeb-2 byte distribution is extreme, which bounds how far the language count can usefully go. We considered a 99-language setting and did not train it: at $T=1$ its median language would receive 90M tokens and its smallest 3.5M, and flattening to $T=3$ lifts those to 373M and 14.5M while leaving the tail limited by the source rather than by the allocation. On the $L=50$ pair, tripling a tail language's tokens moved its share of above-chance tasks by about four points, so neither temperature makes such a tail measurable on benchmarks; the ladder therefore ends at $L=50$. The flattened scheme AT3 allocates at $T=3$ and supplies the temperature intervention at $L=50$, replicated at $L=15$ and $L=30$, where no language is starved at either temperature ($T=1$ floors of 1.2B and 343M tokens).
+
+\textbf{Build sizing and repetition.} Each FineWeb-2 dataset is built to half of the largest budget that trains on it plus 10\% headroom: 92B tokens where the 1.7B rung trains and 52B where the largest rung is the 1B. The English dataset is built once to 184B tokens. The builder never repeats a document: a language that runs out of data yields a smaller build. Smaller models draw a shuffled fraction of the same build, so within a setting all sizes see the same language proportions. Three departures from a single pass are recorded and carried into the analysis. First, no single FineWeb-2 subset can feed the 1.7B rung at $L=2$: the Russian build realizes 72.8B tokens against the 83.6B a 1.7B draws from the multilingual half, so the 1.7B at $L=2$ sees Russian about 1.15 times. The Chinese and Spanish builds are smaller still, at 52.0B and 23.9B tokens. Scheme ZH runs the full ladder: its 1.7B sees Chinese about 1.61 times, against 1.15 for Russian, which keeps the second-language comparison about the language rather than about the repetition. Scheme ES stops at the 1B rung, where Spanish is seen about 1.98 times, because at 1.7B it would be seen about 3.51 times and that swing across the ladder would confound a reversal between rungs with the repetition itself. Second, the $L=15$ and $L=50$ builds of scheme A and the $L=15$ build of scheme B were originally built to 52B and extended to 92B when the 1.7B rung was added at those settings; the extension continues each language's token stream from the same starting point, so the six 1.7B cells there read a superset of what their proxies read, extended with later CommonCrawl dumps.\footnote{Verified byte for byte: every language section of each 52B build is a prefix of the corresponding 92B build.}
+
+\textbf{Validation set.} One fixed validation set is shared by every model and every scheme. For each of the 99 FineWeb-2 languages of the generated 99-language list plus English, it takes the first 5M tokens of that language's first parquet file, capped at 30\% of the file's rows so that single-file languages keep training data. The build records each language's token count, its UTF-8 byte count, and the number of leading rows assigned to validation; every training build reads this manifest and skips exactly those rows, so training and validation are disjoint by construction. Since there is one validation build for the whole sweep, bits-per-byte is comparable across sizes, language settings, and schemes.
+
+\subsection{Evaluation Protocol}
+\label{app:evaluation-protocol}
+
+\textbf{Bits-per-byte implementation.} We concatenate validation documents without end-of-document separators and score them in blocks with 4,096 input tokens and one-token overlap between successive blocks. Each token except the first of the stream is scored once; context resets at block boundaries. We select a deterministic prefix ending at the document boundary that reaches 1M tokens, or the full stream if it is shorter. We measure the denominator by decoding the entire selected prefix and counting its UTF-8 bytes, including the initial conditioning token. Thus, the implementation omits the first token's likelihood but retains its bytes. We also compute token-level perplexity from the same forward passes.
+
+% The original draft reports a standard error of about 0.003 bits for this
+% prefix. Add the estimation procedure before presenting it as uncertainty.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Benchmark families evaluated during pretraining. ``Langs'' is the number of languages the harness ships for the family; a model is evaluated only on the languages in its training mixture. MC = multiple choice; QA = question answering; UD = Universal Dependencies. Construction: HT = human or professional translation, MT = machine translation, native = written in the language, auto = automatically generated.}
+\label{tab:benchmark-families}
+\begin{tabular}{llllr}
+\toprule
+Family & Capability & Format & Construction & Langs \\
+\midrule
+Belebele \citep{bandarkar_belebele_2024}           & reading comprehension     & 4-way MC, 900 items/lang      & HT (FLORES)           & 122 \\
+Global PIQA \citeneeded{Chang et al. 2025}            & physical commonsense      & 2-/4-way completion           & native                & 116 \\
+MultiBLiMP \citeneeded{Jumelet et al. 2026}           & grammatical acceptability & minimal pairs                 & auto (UD, UniMorph)   & 101 \\
+INCLUDE \citep{romanou_include_2024}              & regional knowledge        & MC exam questions             & native                &  44 \\
+Global-MMLU \citep{singh_global_2024} & world knowledge & MC (MMLU)                & HT + community        &  42 \\
+Okapi HellaSwag \citeneeded{Lai et al. 2023}          & activity commonsense      & 4-way completion              & MT                    &  31 \\
+Okapi ARC \citeneeded{Lai et al. 2023}                & science QA                & MC                            & MT                    &  31 \\
+XNLI \citep{conneau_xnli_2018}                 & natural language inference & 3-way                        & HT                    &  15 \\
+XStoryCloze \citeneeded{Lin et al. 2022}              & narrative commonsense     & 2-way ending                  & HT                    &  11 \\
+XCOPA \citep{ponti_xcopa_2020}                  & causal commonsense        & 2-way, 500 items              & HT                    &  11 \\
+PAWS-X \citep{yang_paws-x_2019}                  & paraphrase identification & 2-way                         & HT                    &   7 \\
+XWinograd \citeneeded{Tikhonov and Ryabinin 2021}     & coreference               & Winograd schemas              & HT                    &   6 \\
+LAMBADA multilingual \citeneeded{EleutherAI; Paperno et al. 2016} & last-word prediction & completion             & MT                    &   5 \\
+TruthfulQA-Multi \citeneeded{Calvo Figueras et al. 2025} & truthfulness           & MC                            & HT                    &   5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Task selection.} We select the registered tasks whose language is in the training mixture; task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $L$: 13 at $L=1$, 23 at $L=2$, 86 at $L=8$, 148 at $L=15$, 233 at $L=30$ and 329 at $L=50$. Every trained language is covered by at least one family, and English by twelve. For the seed-1904 deep scheme-A ladder we additionally run every task in every language, independent of the training mixture, to read cross-lingual transfer on the benchmarks as well as on bits-per-byte. Appendix~\ref{app:benchmark-coverage} gives the per-language coverage.
+
+\textbf{Harness settings.} All benchmarks run through the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021}, installed from a pinned shared checkout with the source commit recorded in each evaluation job, with the vLLM backend \citeneeded{Kwon et al., vLLM (2023)}, a maximum context of 4,096 tokens, a beginning-of-sequence token prepended to every prompt, no chat template, and zero-shot task prompts. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones, and aggregate sub-tasks (for example the MMLU subjects) to their family by the harness's own grouping. Base models at these sizes are near chance on several families early in training, which is part of what the signal-and-noise analysis measures rather than a reason to exclude them.
+
+
+\subsection{Above-Chance Gate}
+\label{app:chance-gate}
+
+For a run with $k$ correct answers among $n$ scored examples, we set $\hat p=k/n$ and use the Wilson lower confidence bound
+\begin{equation}
+\mathrm{LCB}(\hat p,n)=
+\frac{\hat p+z^2/(2n)-z\sqrt{\hat p(1-\hat p)/n+z^2/(4n^2)}}{1+z^2/n},
+\qquad z=1.64485.
+\label{eq:wilson-gate}
+\end{equation}
+This is the one-sided 95\% lower bound. We declare the run above chance when $\mathrm{LCB}>1/K$. The implementation reconstructs $k$ by rounding the product of reported accuracy and task item count. It retains a task--size cell when at least half its available runs pass, preferring runs trained on the task's language. Where there are no such runs, it uses all evaluated runs for that task and size. Missing item counts or undefined chance levels remain unclassified, rather than being interpreted as evidence of failure.
+
+\textbf{Threshold sensitivity.} The threshold audit also evaluates $\mathrm{LCB}>1/K+0.02$ and mean-accuracy margins of 0.01, 0.03, and 0.05. The two-point Wilson margin adds an effect-size requirement to the uncertainty criterion; fixed mean margins ignore sample size. The reported family-level required margins are medians of task-specific thresholds. Option-count baselines are approximate for tasks with variable numbers of options, including TruthfulQA; the confidence calculation does not remove that approximation.
+
+\textbf{Scope of significance.} These bounds assess individual runs and are not corrected over the full task--size search. The reformulation analysis uses a separate, two-sided two-proportion test on the original and reformulated unnormalized accuracies. Its nominal $p<0.05$ counts are unpaired and uncorrected. Because many evaluation items are shared, a confirmatory analysis should align item-level predictions, use a paired test, and correct for the declared family of comparisons.

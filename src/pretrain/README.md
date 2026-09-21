@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 6-rung size ladder (90M–1.7B non-embedding) × 7 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 7 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -76,14 +76,14 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 <!-- BEGIN generated: pretrain_progress.py --plot -->
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, every size at every setting |
-| Language setting L | 1, 2, 8, 15, 30, 50, 100 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
+| Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
+| Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30, 50} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {50, 100}; T=3) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
-**56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **186 runs**.
+**58 runs** at one intervention level (scheme A, deep — the plan grid).
+Counting every scheme and the architectures each is trained in: **191 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -100,15 +100,17 @@ axis, one of the five entries of `DATA_SCHEMES` in
 | `--scheme` | What it changes | Where it applies |
 | ---------- | --------------- | ---------------- |
 | `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
-| `AT3` | the same lists at T=3 — the temperature intervention, and the only scheme that has L=100 | L ∈ {50, 100}, the whole ladder; seed 1904 only |
+| `AT3` | the same lists at T=3 — the temperature intervention | L ∈ {15, 30, 50}: L50 the whole ladder, L15 and L30 deep only (2026-09-20); seed 1904 only |
 | `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
-| `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, up to the 1B rung, deep only, seed 1904 only |
+| `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, deep only, seed 1904 only; ZH to the 1.7B rung, ES to the 1B rung |
 
 Every scheme defines only the settings it covers and reads its own data
 directory, so a `--scheme` sweep submits exactly its own cells — there is no
-fallback to A. **L=100 exists only as AT3**: at T=1 more than half of the 99
-languages get too few tokens for their BPB to mean anything, so L50 is built
-at both temperatures and calibrates the change. Each size trains
+fallback to A. **L=100 is not trained** (planned as AT3 only, dropped
+2026-09-20 — [`plan/l100_data_mixture.md`](../../plan/l100_data_mixture.md)):
+even flattened, its tail stays below what the benchmarks can measure. L50 is
+built at both temperatures and calibrates the temperature change, which AT3
+replicates at L15 and L30 (deep only). Each size trains
 D(N) = 100 × N tokens (5×C); the per-size schedule lives in the
 `predictivity` block of the hyperparams files.
 
@@ -156,15 +158,16 @@ launcher — the core design):
 | File | Role |
 | ---- | ---- |
 | [`megatron_args.sh`](megatron_args.sh) | **The single source of the training logic.** Builds every Megatron argument (architecture, AdEMAMix, WSD schedule, torch_dist checkpointing, data blend, W&B) from env vars. Both platforms produce an identical command; the only delta is the SLURM graceful-exit trigger, added when `TRIGGER_PATH` is set. |
-| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. |
+| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
 | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
-| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. |
+| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. `--reformulated [rf|rfgm]` evaluates the `auto_rf` group instead (the letter-format families as cloze `rf_*` tasks, `../evals/scripts/make_rf_tasks.py`; bare `--reformulated` = `rf`) or `auto_rfgm` (the same items rewritten by Gemini, `../evals/scripts/rewrite_items_gemini.py`). `--size` narrows to a comma-separated list; the default is every size but 90M (`launch_trainings.EVAL_SIZES` — the rung is off the ladder), which `--name` overrides. |
 | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
-| [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md). |
+| [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. Reads every account's training logs (aromanou's 1B cells are under her scratch) and a killed eval job's unmerged `per_task/` results. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md): benchmarks twice, over each cell's trained languages and, for the runs evaluated in every language, over all of them; BPB in the tables is the final checkpoint's, blank until that one is scored. |
 | [`compute_cost.py`](compute_cost.py) | What the sweep actually spent, in node-hours by task (pretrain, eval, BPB, convert, data), size and user: every allocation from sacct, split into **kept** (grid cells, `auto` tasks, iterations that reached a checkpoint) and the reasons the rest was not (failed, not in grid, not auto, superseded, wasted, in flight, no record). Writes [plan/compute-costs.md](../../plan/compute-costs.md), the measured counterpart of [plan/compute-budget.md](../../plan/compute-budget.md). CSCS only — Azure runs are not in sacct. |
+| [`dryrun_after_build.sbatch`](dryrun_after_build.sbatch) | Runs `launch_trainings.py cscs $ARGS --dry-run` once the build job `WAIT_FOR` has fully finished: a build is a chain of 12h singleton segments, so instead of `afterok` on one segment the job requeues itself after whichever segment is current and runs when none is left (usage in its header). |
 
 **Subfolders:**
 
@@ -195,7 +198,34 @@ each `.bin`/`.idx` is ready to start its training run independently:
 cd data
 ./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
 ./launch_builds.sh
+BUILD_PARTITION=preemptable ./launch_builds.sh   # start now, 24h segments
 ```
+
+`BUILD_PARTITION` (with `BUILD_TIME`, which defaults to 23:59:00 there and
+11:59:59 elsewhere) picks the queue, and each chain segment passes both to its
+successor. `preemptable` has every node and no group cap, so builds start
+immediately instead of waiting on `normal`'s 480-node QOS limit, and its 24h
+wall halves the number of segments.
+
+Two things make that safe, both added 2026-09-20 after six chains were lost:
+
+- **`--exclusive`, always.** `normal` is an `OverSubscribe=EXCLUSIVE`
+  partition, so a build has always been given a whole node there — `AllocCPUS`
+  is 288 for a job that asks for 32, and the "~9 builds pack per node" in
+  `submit_build_one.sh`'s header is an intent the cluster never honoured.
+  `preemptable` is `OverSubscribe=FORCE:1`, so there the request really is
+  packed: six builds moved there landed on one node beside a stranger's job
+  and were cancelled by the system 16 s in, before writing a line of output.
+- **Two segments queued up front** (`BUILD_SEGMENTS`, 2 on `preemptable`).
+  They are singletons, so they run one after another and the idempotency guard
+  no-ops the extra once the mixture is built — but a kill that lands before
+  the script reaches its self-chain line can no longer end the chain, which is
+  how those six died.
+
+Submit them there; don't let a drainer move them. A job already queued for
+`normal` was shaped for a partition that hands out whole nodes, and
+`scontrol` cannot add `--exclusive` afterwards — which is why
+`scripts/preempt_drain.sh` leaves `build-*` alone.
 
 [`data/launch_builds.sh`](data/launch_builds.sh) fans out to
 [`data/submit_build_one.sh`](data/submit_build_one.sh) (one mixture per job —
@@ -270,7 +300,7 @@ Intervention axes and filters compose:
 ```bash
 python launch_trainings.py cscs --arch shallow         # the depth intervention
 python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
-python launch_trainings.py cscs --scheme AT3           # T=3: L50 and L100
+python launch_trainings.py cscs --scheme AT3           # T=3: L15, L30 and L50
 python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
 python launch_trainings.py cscs --size 600M --langs 8 --seed 1904
 python launch_trainings.py azure --langs 1             # monolingual anchors
@@ -286,8 +316,19 @@ python launch_trainings.py cscs --size 90M,175M,350M,600M --langs 15 --seed 1904
 ```
 
 CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
-`--account`, `--dependency`, `--training-steps` (cap `--train-iters`
-manually), `--test`.
+`--account`, `--partition`, `--dependency`, `--training-steps` (cap
+`--train-iters` manually), `--test`.
+
+`--partition preemptable` starts a run now instead of queueing behind the
+480-node QOS cap on `normal`, at the price of preemption. It is safe here
+because the three pieces travel together: `--requeue` (so a preempted run
+comes back with the same jobid and partition), `MEGATRON_EXIT_ON_SIGTERM=1`
+on the srun line (so the patched handler catches the preemption signal and
+Megatron checkpoints inside the 4 min grace, and the requeued job resumes
+from that save), and a walltime cap of 23:59:00 instead of 11:59:59 —
+`preemptable` allows 24h, and a limit cannot be raised after submission, so it
+has to be asked for here. `scripts/preempt_drain.sh` moves *pending* runs
+there too, but only the top rungs and only if they already carry `--requeue`.
 
 Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
 each forces a `diag-` name, so neither can touch a grid cell):
@@ -324,6 +365,19 @@ by design.
   collaborators run against this path rather than cloning their own (it is the
   `MEGATRON_LM_DIR` default in `launch_pretraining_cscs.sh`; override the
   variable only for a deliberate one-off).
+- **When `/capstor` is unavailable, trainings still run — everything they read
+  and write is on iopsstor.** The job picks
+  `container/ngc_nemo_iopsstor.toml` automatically (the a139 toml is on
+  capstor, and pyxis dies before the container starts if it cannot read it) —
+  same image from the local EDF store, with the netstack hooks off because
+  their libraries are on capstor and the -alps3 image carries its own,
+  and drops the capstor `HF_HUB_CACHE` from `~/.bashrc` so the tokenizer
+  resolves in `$HF_HOME/hub` — prefetch it once on the login node with
+  `env -u HF_HUB_CACHE python -c "from transformers import AutoTokenizer;
+  AutoTokenizer.from_pretrained('swiss-ai/Apertus-70B-2509')"` (17 MB).
+  `CONTAINER_TOML=...` overrides the choice. Submit to an `up` partition
+  (`sinfo -p normal`): jobs queued against a down partition sit on
+  `PartitionDown` and the launcher counts them as in flight.
 - **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
   cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
   **every resume** dies in `get_reformulation_metadata` with `AttributeError:
@@ -347,6 +401,16 @@ by design.
   ```
   Every build job also calls it for its own mixture when it finishes, so this
   is only needed after a purge or for a mixture built before staging existed.
+  The default pass leaves the 92B rebuilds alone (they are not training-stage
+  copies), so after a purge restage those into their own stage too, **by
+  name** — a bare run with `SRC` at `rebuild-92B` would copy the 736 GB English
+  build its symlinks point to. Until this runs, the six 1.7B cells at A-L15,
+  A-L50 and B-L15 skip with `skip [data undersized]`:
+  ```bash
+  sbatch --account=infra01 \
+    --export=ALL,SRC=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/rebuild-92B,DST=/iopsstor/scratch/cscs/mariagrandury/data-92B \
+    data/stage_to_iopsstor.sh fineweb_L15 fineweb_L50 schemeB/fineweb_L15
+  ```
 - **Pre-build the eval datasets into the iopsstor HF cache.** Compute nodes have
   no internet, so an uncached dataset fails its task (the watcher downloads it
   and retries, but that costs a job per pass). They live in `$HF_HOME/datasets` on
@@ -405,9 +469,19 @@ regardless of variant:
   settings, a seed outside that size's triple — are greyed out rather than
   drawn as permanently missing runs.
 
-All three PNGs and the generated doc blocks are refreshed automatically at
-the end of every `launch_trainings.py cscs` invocation; `eval_progress.png`
-(embedded above) is refreshed by the auto-eval watcher after every pass,
+It also writes [`pretrain_progress_1b_17b.md`](pretrain_progress_1b_17b.md),
+one table per rung for the runs that take days and several resubmissions:
+per planned 1B / 1.7B run, the FineWeb-2 file its newest training log read
+(⚠ when that is off iopsstor or differs from what a launch would pick now),
+its latest checkpoint, its running or queued job (any account) and the 12h
+jobs that still have to start — followed by one launch command per size ×
+scheme × architecture that still has incomplete runs. The auto-eval watcher
+also rewrites it after every pass, so job states stay current between
+launches.
+
+All three PNGs, the 1B/1.7B table and the generated doc blocks are refreshed
+automatically at the end of every `launch_trainings.py cscs` invocation;
+`eval_progress.png` (embedded above) is refreshed by the auto-eval watcher after every pass,
 since that is what changes the state it shows. So is
 [`eval_progress_all_languages.png`](eval_progress_all_languages.png): the
 deep scheme-A seed-1904 runs, which the watcher always evaluates in every
@@ -418,10 +492,16 @@ is work the watcher will never do, and is reported on stderr instead of
 painting its cell as permanently under-evaluated.
 
 **Benchmark evals while pretraining** — automated on both platforms with
-the same rule (**every 2nd checkpoint of the size's save grid and each run's
-final one** whatever its iter — read on the grid the run actually saved at,
+the same rule (**every 2nd checkpoint of the size's save grid, the k/20
+points of the noise window, and each run's final one** whatever its iter —
+read on the grid the run actually saved at,
 `launch_trainings.due_iters`, so aromanou's 20-save 1B cells yield every save
-and land on the same k/20 points as the 40-save ones; the planned third piece — the checkpoint nearest each
+and land on the same k/20 points as the 40-save ones. The noise window
+(`NOISE_WINDOW`, the last 20 %) is added because `every` alone misses it: at
+`every` = 2 a 20-save size lands on the tenths and a 60-save size on the
+thirtieths, and neither hits 85 % or 95 %, which the analysis reads the
+checkpoint noise on (`signal-and-noise/analysis/RULES.md` rule 4). This costs
+two evals per run on the 20- and 60-save sizes and none on the 40-save ones; the planned third piece — the checkpoint nearest each
 shared FLOPs milestone, so cross-size reads at equal compute land on
 evaluated points rather than interpolated ones — is a 09-02 decision NOT
 yet implemented: no `milestone_iters` helper exists yet) and the same
@@ -436,7 +516,7 @@ listed benchmark's tasks **in the languages it trains on** (English + its
 setting's FineWeb-2 languages, mapped via
 [`configs/languages.json`](../../configs/languages.json)) — e.g. the L2
 cells get `hellaswag` + `hellaswag_ru` + … (23 tasks); L30 cells get 233,
-L100 cells 446 — the task languages cover the full 100-language set.
+L50 cells 329.
 Both watchers are idempotent: stop them, restart them, run them twice —
 nothing duplicates.
 

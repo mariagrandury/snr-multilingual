@@ -14,7 +14,7 @@ explicit `LM_EVAL_HARNESS_BRANCH`, or if the shared tree is missing). Each
 job logs and records in `job.json` which one it used.
 
 ```bash
-HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness
 git -C $HARNESS_SRC pull                       # refresh deliberately, then rebuild:
 rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
       $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
@@ -76,6 +76,36 @@ Task lists live under [`configs/signal_to_ratio/`](configs/signal_to_ratio/):
 | `tasks_pretraining_full.txt` | 86 tasks — dedup union, used by `snr-pretraining-full` |
 | `tasks_posttraining.txt` | post-training tasks (instruct/SFT) |
 | `*_main_table.txt` | matching `task/metric` pairs for the W&B summary table |
+
+### Reformulated tasks (`tasks/rf/`)
+
+The three auto families that ask for a letter — `belebele`,
+`global_mmlu_full`, `include_base_44` — sit at chance for base models at
+these sizes. [`scripts/make_rf_tasks.py`](scripts/make_rf_tasks.py)
+generates a cloze twin of each (`rf_<task>`: same dataset, config and
+split, no lettered option list, the four answer strings scored as
+continuations, zero-shot, `acc` + `acc_norm`) under
+[`tasks/rf/`](tasks/rf/) and registers them in `configs/tasks.json`
+(`benchmark: rf_<family>`, `metric: acc_norm`, group `auto_rf`). The YAMLs
+reach the harness through `eval_worker.py --include_path`, which
+`evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
+wheel is untouched. Re-run the generator after adding a language to any of
+the three families; it is idempotent. The second twin, `rfgm_<task>`
+(`--set rfgm`, group `auto_rfgm`, [`tasks/rfgm/`](tasks/rfgm/)), is the
+same item rewritten by Gemini into a statement stem with four short
+continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
+runs the Batch API from the login node and leaves one JSONL per task under
+`/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/`, which the
+YAMLs read through `dataset_path: json` (offline; never published, it
+carries the gold labels). Design, the step-by-step guide, the prompt and
+the cost: [`analysis/rq00_task_reformulation/`](../signal-and-noise/analysis/rq00_task_reformulation/README.md).
+Its `compare.py` reads every task set off
+the ladder report (the deep scheme-A seed-1904 cells, through the rq00
+gate; `run_all_predictivity.sh` runs it) and rewrites the
+figures and the generated table in that README (`rf_gate.png`, per
+language `rf_gate_by_language.png`, a CSV each): the rq00 gate cell —
+median task margin over chance, trained languages — original, rf, rfgm,
+and each set's difference.
 
 ## How to run
 
@@ -179,6 +209,54 @@ bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/rese
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/reservation_drain.sh --priority eval
 ```
 
+And the same idea for the `preemptable` partition:
+`/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh`
+moves pending convert/eval/pretrain/BPB jobs there, holding at most
+`--max-nodes`
+(default 100). `normal` is capped by its QOS at 480 nodes for the whole partition, so a
+full cluster parks these jobs on `QOSGrpNodeLimit` for hours, while
+`preemptable` has every node and no group cap — its price is preemption
+(4 min grace, then cancelled: Clariden runs `JobRequeue=0`), which costs a
+conversion its in-flight checkpoint and an eval its in-flight tasks, both of
+which the next watcher pass resubmits and redoes. A BPB chain already has its
+next link queued, except when a link dies before scoring its first
+checkpoint: the chain's no-progress guard then ends it, and `launch_bpb.sh`
+restarts it (it skips scored cells and cells with a job in flight).
+Data builds are **not** moved (2026-09-20): the first six put there were
+cancelled by the system 16 s after starting, before reaching the line that
+queues their successor, and six chains died. A build asks for 32 CPUs and
+`normal`, being `OverSubscribe=EXCLUSIVE`, has always given it a whole node
+anyway; `preemptable` is `FORCE:1` and really did pack all six onto one node
+beside a stranger's job. `scontrol` cannot add `--exclusive` to a queued job,
+so builds belong on `preemptable` only by being *submitted* there —
+`BUILD_PARTITION=preemptable ./launch_builds.sh`, which asks for the node and
+queues two segments (../pretrain/README.md).
+
+Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
+only when they carry `--requeue`**, which is what
+`launch_trainings.py --partition preemptable` adds: it also sets
+`MEGATRON_EXIT_ON_SIGTERM=1`, so the patched handler catches the preemption
+signal itself and Megatron checkpoints inside the 4 min grace, and the
+requeued job resumes from that save. The drainer asks the
+controller per job (`squeue -O Requeue`) and skips the ones submitted without
+it — for those a preemption really would cost a save interval on 21 nodes.
+
+Nothing is truncated (preemptable allows 24 h), so this one is simpler than
+the debug drainer. It cannot *raise* a walltime either — a limit can only be
+lowered after submission — so a job moved here keeps the 12 h `normal` wall;
+submit to `preemptable` up front (`--partition preemptable`,
+`--partition preemptable`) to get the full 24. Order: builds, conversions,
+the final checkpoint of a model, the 3B / 1.7B-deep / 1B-deep pretrainings,
+the 20/40/60/80 % points, the other evals, then anything with `bpb` in its
+name — the fraction read from the size's own schedule, so it means the same at
+every rung. Unlike the other two it does not exit when the queue empties; it
+keeps moving what later watcher passes submit, until you kill it.
+
+```bash
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --dry-run
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/scripts/preempt_drain.sh --max-nodes 100
+```
+
 ## Bits-per-byte: the second way to evaluate a model
 
 Benchmarks are not the study's outcome metric. The predictivity plan's outcome
@@ -240,7 +318,10 @@ finish in the time left, using the previous checkpoint's measured cost. The
 successor re-derives what is still due and exits without chaining when
 nothing is, so the chain ends itself; `MAX_CHAIN` (default 32 — a 60-save
 1.7B cell drained to 1:30 debug slots needs ~30 links) bounds it against a
-failure loop.
+failure loop. A link that finds none of its predecessor's due checkpoints
+scored exits non-zero without chaining, so a checkpoint that always fails
+stops the chain after one wasted link instead of at that cap, and every link
+exits with the scoring step's code, so a failed link shows as FAILED.
 
 `--max-tokens` (default 1M/language) takes a deterministic leading-document
 prefix, so every model is scored on byte-identical text; `--max-tokens 0` uses

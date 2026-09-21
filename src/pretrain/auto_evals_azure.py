@@ -93,7 +93,7 @@ def storage_auth() -> list[str]:
 
 def list_blobs(auth: list[str], prefix: str) -> list[str]:
     """All blob names under prefix — paginated: a single call silently
-    truncates at --num-results, and an L=100 cell's eval_logs (one samples
+    truncates at --num-results, and an L=50 cell's eval_logs (one samples
     file per task per eval) can exceed 5000 blobs."""
     names, marker = [], None
     while True:

@@ -43,9 +43,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, LADDER, cell_languages, exp_name, predictivity_cells)
-from ladder_report import EVAL_LOGS, TRAIN_LOGS  # noqa: E402
-from auto_evals_cscs import EVAL_JOB_LOGS, auto_benchmarks  # noqa: E402
+    DATA_SCHEMES, LADDER, arches_for, exp_name, predictivity_cells)
+from ladder_report import EVAL_LOGS  # noqa: E402
+from pretrain_progress import TRAIN_LOGS  # noqa: E402
+from auto_evals_cscs import (  # noqa: E402
+    ALL_LANGUAGES_RUNS, EVAL_JOB_LOGS, auto_benchmarks, eval_languages)
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.eval_timing import SIZE_RE, task_names  # noqa: E402
 from evals.scripts.utils.configs import tasks_for_benchmarks  # noqa: E402
@@ -108,7 +110,8 @@ def kind_of(name: str) -> tuple[str, str | None]:
     if name.startswith("apertus-"):
         return "pretrain", None
     if name.startswith("eval-"):
-        return "eval", "lm-" + re.sub(r"-iter\d+$", "", name.removeprefix("eval-"))
+        # `-rf` / `-rfgm`: the reformulated-task evals (auto_evals_cscs.py --reformulated)
+        return "eval", "lm-" + re.sub(r"-iter\d+(-rf|-rfgm)?$", "", name.removeprefix("eval-"))
     if name.startswith("bpb-"):
         return "bpb", name.removeprefix("bpb-")
     if name in ("convert-snr", "convert-snr-models"):
@@ -168,17 +171,21 @@ def main() -> None:
     args = p.parse_args()
     users = args.users.split(",")
 
-    grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): c
-            for c in predictivity_cells() for arch in DATA_SCHEMES[c["scheme"]]["arches"]}
+    grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): {**c, "arch": arch}
+            for c in predictivity_cells() for arch in arches_for(c["scheme"], c["size"], c["L"])}
     # evaluate.sbatch writes every user's results into ONE tree, but each
     # user's Slurm logs go under their own scratch (`%u` in --output).
     log_dirs = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/")) for u in users]
     benchmarks, auto_cache = auto_benchmarks(), {}
 
     def auto_tasks(cell: str) -> set[str]:
-        key = (grid[cell]["L"], grid[cell]["scheme"])
+        # The languages the watcher evaluates this cell in: its trained ones,
+        # or every language for ALL_LANGUAGES_RUNS, whose extra tasks are
+        # deliberate work, not work outside the auto list.
+        g = grid[cell]
+        key = (g["L"], g["scheme"], (g["scheme"], g["arch"], g["seed"]) == ALL_LANGUAGES_RUNS)
         if key not in auto_cache:
-            auto_cache[key] = set(tasks_for_benchmarks(benchmarks, cell_languages(*key)))
+            auto_cache[key] = set(tasks_for_benchmarks(benchmarks, eval_languages(*key)))
         return auto_cache[key]
 
     # evaluate.sbatch names each run's dir eval_<date>_<time>_<jobid>.

@@ -167,6 +167,45 @@ so no job is ever submitted for it again and nothing can reset it. After you
 fix a root cause, `auto_evals_cscs.py --retry-held` gives every held task one
 more chance (first pass only, even under `--watch`).
 
+**Reformulated twins** (2026-09-18). `scripts/make_rf_tasks.py` writes
+`tasks/rf/<family>/rf_<task>.yaml` for belebele / global_mmlu_full /
+include_base_44 — the letter-MCF families — as cloze tasks (answer strings
+as choices, no letters), and registers them in tasks.json with an `rf_`
+PREFIX: `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix
+would be swept into the original family. They ship via
+`HARNESS_INCLUDE_PATH` → `--include_path` (the wheel does not know them;
+`test_new_tasks.py`'s registry check will call them unregistered). Their
+tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
+honours through `configs.metric_for` — the W&B series is
+`rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
+`auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
+and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
+watcher never mistake each other's in-flight job for their own. The
+`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
+`auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
+families rewritten by Gemini into statement stems: `dataset_path: json`
+YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never
+published), produced by `scripts/rewrite_items_gemini.py` on the login
+node. That driver talks to **Vertex AI through Application Default
+Credentials**, not an API key: the organisation policy blocks Generative
+Language API keys, and a well-formed key comes back `API_KEY_INVALID`. Two
+consequences worth remembering — a Vertex batch job's source must be a
+`gs://` object (an uploaded file is a Gemini-API-only source, so the driver
+keeps requests and answers in `gs://<project>-msnr-rfgm/rfgm/`), and
+`GOOGLE_CLOUD_LOCATION` must be `global`, because Gemini 3.x is served
+only from the global endpoint and a regional job 404s on the publisher
+model (2.5 is regional; batch itself accepts `global`), and the ADC
+account needs `storage.buckets.create` or a bucket made for it. Vertex also ignores every field
+outside `request`, so the request lines carry no `key` and `fetch` matches
+answers to items on the echoed prompt text; `GOOGLE_GENAI_USE_VERTEXAI`
+therefore decides the file format and the driver refuses to run when the
+SDK resolves the other backend. a task whose JSONL is missing gets no YAML and no tasks.json entry,
+so the watcher's `auto_rfgm` group is absent until the first `--set rfgm`
+run (KeyError). The rewritten set drops a few more items than `rf_`
+(rejected rewrites), so `derive_task_options.py` must run before the
+significance test reads `n_items`
+(`compute_cost.kind_of` strips the suffix).
+
 ---
 
 ## The one-liner workflow (idempotent, multi-collaborator-safe)
@@ -247,6 +286,22 @@ Read it before hand-rolling `setfacl` — two things bite:
   which opens the existing inode `'w'` — without a file-level ACL the watcher
   dies with `PermissionError` after submitting its jobs. Same for the
   `.lock` files in `hf_home/datasets/`.
+  The lock files are the worse case (found 2026-09-18): `datasets` creates
+  them 0644 on every `load_dataset`, which sets the file's ACL **mask** to
+  `r--`, so the other user's jobs die on that dataset with
+  `PermissionError: ... .lock` — every task, every job (22k of aromanou's
+  task attempts 09-15..18 failed on locks my jobs had created, 800 of mine on
+  hers). The mode is `0o666 & ~umask`, and filelock re-`fchmod`s the lock
+  to it on every acquire by its owner, so the cause is the umask:
+  `eval_worker.py` sets umask 002 around `simple_evaluate` (lock 0664,
+  mask `rw-`) and restores it before writing results. In a directory with a
+  default ACL the umask is ignored for ordinary `open`/`mkdir` (the ACL
+  applies), so this changes only such explicit-mode files there; elsewhere
+  it would make them group (a139) writable, hence the narrow scope.
+  `auto_evals_cscs.share_dataset_locks()` still runs `setfacl -m m::rwx` on
+  the current user's closed locks every pass, for locks created before the
+  fix or by a job outside `eval_worker.py`; a foreign 0-byte lock can be
+  deleted by the directory owner (sticky bit).
 
 - **The container must mount the shared tree, not just `${USER}`'s.** Both
   eval tomls used to mount `/iopsstor/scratch/cscs/${USER}`, so for anyone but
@@ -525,6 +580,44 @@ done. Two things bit while building it:
   and the watcher never counts a strike, which is the resubmit-forever loop
   again. `_run_per_task.sh` therefore records any task still in `inflight/`
   once every worker has exited.
+- **A worker whose vLLM engine dies does not die with it.** vLLM raises
+  `EngineDeadError`, an ordinary exception, so the task loop logged it and
+  claimed the next task, failing each in seconds and taking most of the queue
+  from the healthy workers (job 3355520: 145 strikes for tasks the next job
+  all passed). The worker stops claiming on `EngineDeadError`.
+- **A second opinion from the wrong job's log held 308 tasks** (fixed
+  2026-09-19). When a task's own failure reason is not self-explanatory the
+  watcher asks `eval_error()`, which read the two newest
+  `eval-<cell>-iter<N>_*.err` by mtime — the PLAIN job family only, and with
+  no bound on age. So the `-rf` watcher read the plain family's logs, and a
+  Sep 11 `Couldn't reach 'proxectonos/xstorycloze_gl'` line relabelled a week
+  of lock-file `PermissionError`s as that dataset missing: 22 checkpoints of
+  175M L8/L15/L30 held back on 308 tasks, none of them xstorycloze_gl, behind
+  a "repair" of a dataset that was already cached. It now reads the logs of
+  the two newest runs that count as attempts, by the job id their `eval_*`
+  dir ends in and in its own job family — the right log or none.
+- **A dataset can break upstream.** `proxectonos/xstorycloze_gl`'s card was
+  edited on 2026-04-24 to declare a `default` config reading
+  `train.csv`/`test.csv`, files the repo never held (it has
+  `XStoryCloze_{train,test}_gl.tsv`), so `load_dataset` resolves nothing,
+  `datasets` falls back to its cache module and reports "Couldn't find cache
+  ... for config 'default'" — which reads as a local cache problem and is not
+  one. A manifest line may therefore pin a commit, `repo@<sha>`
+  (`eval_datasets.txt`, honoured by `download_eval_datasets.py` and by the
+  watcher's repair): `8ff06548` is the last revision whose `gl` config points
+  at the TSVs. Pinning also freezes the data, which is what comparability
+  needs.
+- **The watcher's gate had four holes** (closed 2026-09-13). Its diagnosis
+  memos lived for the whole `--watch` process, so a task misread as a missing
+  dataset was retried forever: they are cleared every pass, and a dataset
+  "repair" is trusted for at most 2 × `--max-attempts` runs. A failed `squeue`
+  read as an empty queue and resubmitted everything running: the pass is now
+  skipped. A job cancelled before it saved anything counted as a failure: runs
+  sacct reports CANCELLED, PREEMPTED or NODE_FAIL are now neither strike nor
+  reset. And one failed `sbatch` ended the watcher: a cell's submission error
+  now costs that cell one pass, any other error one pass. A killed job's
+  `per_task/` results are also merged into a results file by the next pass,
+  the step the job itself never reached.
 
 Consequences: a walltime kill costs only the tasks in flight, and the next
 watcher pass resubmits what is missing with the walltime sized to it; the
@@ -839,7 +932,9 @@ That walks every NAME on disk (incl. unfinished `eval_*/per_task/` dirs) and
 appends any new ckpts to their model's W&B run. Same effect as resubmitting
 the eval job, without the cluster cost. The merge of `per_task/` into a
 top-level results file happens inside `_run_per_task.sh` at the end of every
-job — no manual `merge_split_results` step required.
+job, and for a job killed before that step by the watcher's next pass
+(`auto_evals_cscs.merge_unmerged`) — no manual `merge_split_results` step
+required.
 
 ---
 

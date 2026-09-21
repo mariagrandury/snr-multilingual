@@ -42,7 +42,10 @@ items:
   - Introduction
   - Related Work
   - Methodology
-  - Analysis
+  - Research questions
+  - Experimental setup
+  - Findings
+  - Open discussion
 ---
 
 <!--
@@ -102,7 +105,8 @@ color: green
 icon: 🎯
 ---
 
-## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual model training?
+## Which (subsets of) benchmarks provide reliable signal at each stage of multilingual
+## model training — and which model sizes can stand in for the large one?
 
 ---
 layout: section
@@ -330,13 +334,58 @@ The right benchmark depends on **where in training** you are.
 
 | Stage | Decision being made | Models available |
 | ----- | ------------------- | ---------------- |
-| **Pretraining** | Data mixture, architecture, scale | Custom 175M–1B suite (controlled) |
+| **Pretraining** | Language count, architecture, scale | The 90M–1.7B predictivity ladder (controlled) |
 | **Midtraining** | Domain/quality up-sampling | Open-source bases (3B–70B) |
 | **Post-training** | SFT / DPO / RLVR recipe | Instruct families (3B–70B) |
 
 - We compute signal, noise, SNR, DA and scaling-law error **per stage**
 - Goal: **stage-specific evaluation recommendations**, not a single global ranking
-- Current results focus on the **pretraining** stage (the controlled custom suite)
+- Current results are the **pretraining** stage: the predictivity ladder
+
+
+---
+layout: section
+---
+
+# Research questions
+
+
+---
+title: Research questions
+---
+
+| | question | reads |
+|---|---|---|
+| **RQ0** | Score vs compute; which benchmarks clear chance? | the gate every other RQ depends on |
+| **RQ1** | Does a benchmark rank the design variants at a small size / early checkpoint like the reference? | decision accuracy |
+| **RQ2** | Which of **22 SNR definitions** predicts decision accuracy, per language — and does it survive a seed swap? | SNR × DA |
+| **RQ3** | Does our SNR agree with AllenAI DataDecide on the shared English tasks? | cross-corpus |
+| **RQ4** | Can a language or subject **subset** beat the full benchmark's SNR? | subtask sweeps |
+| **RQ5** | Which **design features** (curation, format, option count, length) predict SNR? | benchmark metadata |
+| **RQ6** | Which **proxy size** ranks an intervention like the reference, and how does that move with L? | *new — the plan's question* |
+
+
+<!--
+One entry point: `cd src/signal-and-noise && bash run_all_predictivity.sh`
+
+Source of truth is one file: the wide per-checkpoint ladder_report.csv published to
+msnr-data/ladder-report. Every number in this deck regenerates from it.
+-->
+
+---
+title: Research questions
+---
+
+RQs about statistics and general analysis as the first section:
+1. Which benchmarks scale predictably? (Simple fit of scaling laws formula and measure R^2 and Spearman rho)
+2. Which benchmarks are stable? (Noise is the metric for this)
+3. Which languages benefit most from increasing model scale? We have 3 potential patterns: (1) high baseline + strong scaling, (2) low baseline + strong scaling, (3) low baseline + weak scaling.
+4. Does the benchmark distinguish the things we want to compare? (Signal is the metric here)
+
+RQs about the decision accuracy and the surrogates of it:
+1. How early can we predict final multilingual performance?
+2. What is the smallest evaluation suite that reliably predicts full multilingual model quality?
+3. Which is the most informative surrogate? (this is the plot that we said we want ot have with the min model size and the number of languages).
 
 
 ---
@@ -345,570 +394,635 @@ layout: section
 
 # Experimental Setup
 
-Models and benchmarks
+The predictivity ladder
 
 ---
-title: Experimental Setup — Models
-subtitle: "Controlled custom pretraining suite (36 models)"
+title: Experimental Setup — The ladder
+subtitle: "Two axes, two interventions, one outcome metric"
 ---
-
-**36 Apertus pretrains** = 4 sizes × 3 data mixtures × 3 seeds, each trained on **100B tokens** (50k iterations).
 
 | Axis | Values |
 | ---- | ------ |
-| **Sizes** | 175M, 350M, 600M, 1B |
-| **Mixtures** (FineWeb-Edu / FineWeb2) | 30 / 70, 60 / 40, 90 / 10 |
-| **Seeds** | 28, 1797, 1904 |
+| **Size** (non-embedding) | 90M · 175M · 350M · 600M · 1B · 1.7B — each at **5 × Chinchilla** (D = 100·N) |
+| **Languages** L | 1 · 2 · 8 · 15 · 30 · 50 · 100 — English share fixed at 50 %, only the *count* varies |
+| **Intervention 1** | model **depth** — deep vs shallow at equal non-embedding size |
+| **Intervention 2** | data **scheme** — A resource-ranked vs B diversity-first (differ at L ∈ {8, 15, 30}) |
+| **Seeds** | 1904 everywhere; ×3 (64 / 313 / 1904) on the replicate cells |
 
-| Label    | Layers | d_model | Head dim | Heads | KV Heads | FFW Mult | Non-emb Params |
-| -------- | ------ | ------- | -------- | ----- | -------- | ---- | --------- |
-| **175M** | 16     | 1024    | 64 | 16    | 4        | 4 | 0.176B         |
-| **350M** | 20     | 1280    | 64 | 20    | 5        | 4 | 0.344B         |
-| **600M** | 24     | 1536    | 64 | 24    | 6        | 4 | 0.595B         |
-| **1B**   | 28     | 1792    | 64 | 28    | 7        | 4 | 0.944B         |
-
----
-layout: image-right
-image: /fineweb2_languages_cropped.png
-ratio: "3:1"
-fit: contain
-title: Experimental Setup — Data Mixtures
-subtitle: "FineWeb-Edu (EN) + FineWeb2 (multilingual)"
----
-
-### Data Mixtures
-
-- **English**: FineWeb-Edu (DCLM)
-- **Multilingual**: FineWeb2
-  - Apertus' high-quality filter
-  - Top 200 languages
-  - Original naturally-occurring language distribution
-- Mixtures: **30/70, 60/40, 90/10**
-- Tokens: **100B** in total
-
-Differences with Apertus: tied embeddings (128k vocab), no goldfish loss, no cross-document attention masking.
-
----
-title: Experimental Setup — Models
-subtitle: "Scaling beyond 1B: open-source families"
----
-
-The custom suite caps at 1B. Open-source families extend the compute axis to **70B** and cover the mid-/post-training stages.
-
-| Size | Pretraining | Midtraining | Post-training |
-|------|-------------|-------------|---------------|
-| **≤ 1B** | Custom 175M–1B (3 mixes × 3 seeds); Apertus3 1B; distilled 0.6B/1B | — | distilled Apertus 1.7B SFT |
-| **3B** | Apertus3 3B | SmolLM3-3B base | SmolLM3-3B |
-| **7–9B** | — | Apertus-8B base; OLMo-3-7B base | Apertus-8B Instruct; OLMo-3-7B SFT/DPO/Instruct |
-| **≥ 12B** | — | gemma-3 12–27B; OLMo-3 13–32B; Qwen3 14B+ | Apertus 70B Instruct |
-
----
-title: Experimental Setup — Models
-subtitle: "Families spanning >=2 buckets"
----
-
-Families spanning >=2 buckets:
-  Apertus-2509                                  ['7-9B', '70B']
-  OLMo-2-base                                   ['1B', '7-9B', '12-14B', '27-32B']
-  Olmo-3-base                                   ['7-9B', '27-32B']
-  Qwen3-Base                                    ['600M', '1.7B', '4B', '7-9B', '12-14B']
-  ap-from8b-TOP256                              ['600M', '1B']
-  apertus-fwEdu30-fw270-seed1797                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu30-fw270-seed1904                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu30-fw270-seed28                  ['175M', '350M', '600M', '1B']
-  apertus-fwEdu60-fw240-seed1797                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu60-fw240-seed1904                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu60-fw240-seed28                  ['175M', '350M', '600M', '1B']
-  apertus-fwEdu90-fw210-seed1797                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu90-fw210-seed1904                ['175M', '350M', '600M', '1B']
-  apertus-fwEdu90-fw210-seed28                  ['175M', '350M', '600M', '1B']
-  apertus3-a06                                  ['1B', '3B']
-  gemma-3-pt                                    ['270M', '1B', '4B', '12-14B', '27-32B']
-
-Buckets present: ['175M', '270M', '350M', '600M', '1B', '1.7B', '3B', '4B', '7-9B', '12-14B', '27-32B', '70B']
-
-
----
-title: Experimental Setup — Benchmarks
-subtitle: "Pretraining suite: 22 benchmark families, 12+ languages"
----
-
-| Category | Pretraining (base suite) | + Midtraining | + Post-training |
-|----------|--------------------------|---------------|-----------------|
-| **LM & Completion** | hellaswag, piqa, global_piqa, xstorycloze, xwinograd, xcopa, xnli, paws, multiblimp | — | — |
-| **Commonsense & Reasoning** | arc, commonsense_qa, openbookqa, winogrande | mgsm_direct | bbh, drop, gsm8k_cot, hendrycks_math, mathqa, mgsm |
-| **Knowledge & QA** | mmlu, global_mmlu_full, belebele, triviaqa, squad, include_base_44, agieval, arabic_leaderboard, truthfulqa | — | global_mmlu (gen), blend, cultural_bench, mmlu_flan_cot |
-| **Code** | — | — | humaneval, mbpp |
-| **Instruction & Safety** | — | — | ifeval, multi-if, acp_bench, bbq, toxigen, harmbench, aya_redteaming, polyglotoxicity |
-
-- **Languages**: en, es, ar, zh, ru, hi, vi, eu, ja, sw, tr, th, te
-- **Evaluation**: log-prob 0-shot (pretraining), generative (post-training)
-
----
-layout: section
----
-
-# Results
-
-Accuracy vs. compute
-
----
-layout: bullets
-title: Results
-subtitle: Accuracy vs Compute curves
-icon: "📈"
----
-
-For each benchmark we plot **accuracy vs. compute (FLOPs)**, one training curve per data mixture, across the four model sizes.
-
-- **Signal** = $(\max-\min)/\text{mean}$ of the per-mixture final scores at 1B
-- **Noise** = variance of each curve over its late checkpoints
-- The benchmarks that **separate the mixtures most** (top Signal at 1B): `agieval_sat` (0.27), `belebele` (0.24), `arabic_leaderboard`
-
-A benchmark is only useful if its mixtures separate by **more than the noise**.
-
----
-layout: figure
-image: /results/acc_vs_flops_regimes.png
-fit: contain
-height: 80vh
-title: Results
-subtitle: Accuracy vs Compute curves
----
-
----
-layout: figure
-image: /results/acc_vs_flops_belebele.png
-fit: contain
-height: 80vh
-title: Results
-subtitle: Accuracy vs Compute (Belebele)
----
-
----
-title: Results
-subtitle: Are the models even above chance?
----
-
-A benchmark only carries signal if the models clear **chance** (`1 / #options`) by a margin. Per (benchmark, size) we average the score over all models; **above random** iff `mean > chance + 0.05`. Only **44 of 118 benchmarks** clear chance at any size — and it's an **answer-count** effect:
-
-| MCQA options | Random chance | Benchmarks above random |
-| :----------: | :-----------: | :---------------------: |
-| **2** (completion / minimal pair) | 0.50 | **28 / 42** |
-| **3** (`xnli`) | 0.33 | **7 / 11** |
-| **4** (knowledge MCQA) | 0.25 | **9 / 63** |
-| **5** | 0.20 | **0 / 2** |
-
-- The only 4-option survivors: **`hellaswag`** (contentful completions) and English **`arc_easy` / `arc_challenge`**
-- Translated knowledge MCQA sit **at chance**: `belebele` 0/12, `global_mmlu(_full)` 0/16, `truthfulqa` 0/8, `arc_<lang>` 0/9
-- **The gate is enforced**: random (benchmark, size) cells are dropped from SNR and every downstream RQ
+**Outcome metric**: per-language bits-per-byte on a fixed 100-language validation set.
+Benchmarks are the secondary signal.
 
 <!--
-Reproducible: src/signal-and-noise/multilingual/above_random.py --pool custom_swissai_hf
-→ above_random_scores.csv (mean score per benchmark×size) + above_random_mask.csv (0/1).
-Per (benchmark, size): mean primary_score over all models at that size (final ckpt) >
-1/n_options + 0.05. n_options is intrinsic benchmark metadata (above_random.N_OPTIONS) — the
-gate reads NO RQ output, so RQs depend on it, not the reverse. run_apertus_snr_variants.py
-imports scores_and_mask and NaN-s random SNR cells. Above chance ≠ reliable (xnli clears
-chance yet has DA-size = 0). Foreshadows RQ3: fewer options → higher SNR.
+62 cells per intervention level; 162 counting both architectures and scheme B where its
+language set differs. Grid + counts: plan/small-to-large-predictivity-training-plan.md,
+generated from launch_trainings.py so the table cannot drift.
+-->
+
+---
+layout: figure
+image: /ladder/pretrain_progress_plan.png
+fit: contain
+height: 56vh
+title: Experimental Setup
+subtitle: The planned grid
+---
+
+---
+layout: figure
+image: /ladder/pretrain_progress_simple.png
+fit: contain
+height: 56vh
+title: Experimental Setup
+subtitle: The planned grid
+---
+
+---
+layout: figure
+image: /ladder/pretrain_progress_detailed.png
+fit: contain
+height: 56vh
+title: Experimental Setup
+subtitle: The planned grid
+---
+
+---
+title: Experimental Setup — What exists today
+subtitle: "66 of 106 cells finished, and the top of the ladder has started to arrive"
+---
+
+| | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| **complete cells** | 10 | 17 | 15 | 20 | 2 | **2** |
+
+- **L ∈ {1, 2, 8, 15, 30, 50}**, and **L = 100 has no finished cell at any size**
+- 1B is finished at **L8 and L50**, 1.7B at **L1 and L30**. All four are deep, scheme A, seed 1904
+- After the loader drops diverged and unfinished runs, **57 models** enter the analysis and 54 of them are also on trend
+- Seed replicates: 175M and 600M at L ∈ {1, 2, 50}, six ×3 cells, the whole noise estimate
+
+<!--
+Counts from ladder_report.csv (msnr-data/ladder-report, branch data/ladder-report).
+106 cells in the report, 66 complete, 57 complete-and-not-diverged, 54 also on-trend.
+Every cell above 600M is deep and scheme A, so none of them can host an intervention
+comparison yet. That is why every RQ6 decision still resolves against 600M.
 -->
 
 ---
 layout: bullets
-title: Results
-subtitle: Signal ≠ Reliability
+title: Which languages we report on
+subtitle: "All 50 the ladder trains on, not the 12 we started with"
+icon: "🌐"
+---
+
+- The deck used to show 12 hand-picked languages. Every per-language figure now covers **all 50 languages of the L50 mixture**
+- Validation is wider than training: **100 subsets across 95 languages**. All 50 trained languages are in it, and the other **45 are zero-shot**
+- We stop at 50 because the 100-language distribution is not decided. `configs/languages.json` has the list as `groups.trained`
+- Widening the view changed one reading: with only 12 languages the benchmark coverage looked thin. Across 50 it is worse
+
+<!--
+todo: lists a b, l1-l50
+groups.main is kept for the historical decks. groups.trained is the 49 FineWeb-2
+tags of FW_L50 in src/pretrain/data/language_sets_schemeA.json, plus English,
+which comes from DCLM rather than FineWeb-2. Add the L100 list the same way once
+the distribution is decided.
+-->
+
+---
+layout: section
+---
+layout: section
+---
+
+# How good are our instruments?
+
+Four questions about the benchmarks themselves, before any result
+
+---
+layout: figure
+image: /ladder/rq_a1_scaling.png
+fit: contain
+height: 70vh
+title: "1. Which benchmarks scale predictably?"
+subtitle: "Completion tasks do. Knowledge tasks do not move with size at all."
+---
+
+<!--
+Each task's score is fitted against log parameters from 175M to 1B. R² says how much
+of the movement a straight line explains, Spearman ρ says whether it moves the right
+way. hellaswag 0.98, xwinograd 0.98, xstorycloze 0.97, bits per byte 0.96. At the
+bottom global_mmlu_full and global_piqa sit near 0.07, which means their scores are
+essentially unrelated to model size. truthfulqa is the odd one: a tight fit with
+ρ = −0.9, so it reliably gets worse as models grow.
+Read bits per byte and loss with the sign in mind. They fall as models improve, so
+ρ = −1 is the ideal for them, not a failure.
+-->
+---
+layout: figure
+image: /ladder/rq_a2_stability.png
+fit: contain
+height: 70vh
+title: "2. Which benchmarks are stable?"
+subtitle: "Noise over a run's late checkpoints, relative to the score itself"
+---
+
+<!--
+This is the denominator of every SNR we quote. Small means you get the same number if
+you evaluate a slightly different checkpoint of the same run. multiblimp and bits per
+byte are the steadiest. The four-option knowledge benchmarks are the noisiest, which
+compounds the previous slide: they neither move with size nor sit still.
+-->
+---
+layout: figure
+image: /ladder/rq_a3_languages.png
+fit: contain
+height: 68vh
+title: "3. Which languages benefit most from a bigger model?"
+subtitle: "All 100 gain. The ones that start hardest gain the most, ρ = 0.63."
+---
+
+<!--
+Baseline is bits per byte at 175M, gain is what a 1B model saves, both on the
+50-language mixture. Every one of the 100 validation languages improves, median 0.39
+bits per byte. The three patterns the team asked about are all present but the split
+is by the median, not by an absolute floor: nothing gets worse. The correlation is
+the headline. Scale helps hardest where the model is currently worst, which is the
+opposite of what a rich-get-richer story would predict.
+-->
+---
+layout: figure
+image: /ladder/rq_a4_signal.png
+fit: contain
+height: 68vh
+title: "4. Does the benchmark separate the things we compare?"
+subtitle: "Only bits per byte clears its own noise. Every benchmark family but two does not."
+---
+
+<!--
+Signal is the spread across the models we want to tell apart, noise is the spread
+within one run. The ratio is the number on the right. Bits per byte 7.1x, hellaswag
+5.1x, multiblimp 2.3x, arc 1.6x, lambada 1.4x, training loss 1.3x, and then
+everything else is under 1x, meaning the benchmark varies more between checkpoints
+of one model than between the models themselves. This is the clearest gain from the
+new evals: hellaswag on 15 tasks and multiblimp on 57 have crossed the line, so bits
+per byte is no longer the only well-powered row above it.
+-->
+---
+layout: section
+---
+
+# Can a cheap measurement stand in for the real one?
+
+Three questions about decision accuracy and its surrogates
+
+---
+layout: figure
+image: /ladder/rq_b1_early.png
+fit: contain
+height: 68vh
+title: "5. How early can we predict final multilingual performance?"
+subtitle: "Bits per byte calls it at 20 % of training. Benchmarks never settle."
+---
+
+<!--
+Decision accuracy of an early checkpoint against the same run's final ranking, at 1B.
+Bits per byte is at 0.91 by 20 percent of the run and stays there, so four fifths of
+each run adds nothing to the ranking. Hellaswag at 0.90 and arc at 0.88 are almost as
+early, multiblimp starts at 0.81 and reaches 0.91, and the at-chance families crawl up
+from 0.41. Averaged over everything the suite goes 0.70, 0.71, 0.74, 0.84 across the
+four fractions. The practical read: we could evaluate at 20 percent and free most of
+the eval budget.
+-->
+---
+layout: figure
+image: /ladder/rq_b2_suite_size.png
+fit: contain
+height: 68vh
+title: "6. What is the smallest suite that predicts full model quality?"
+subtitle: "Four tasks. Adding the other 2,893 makes the answer worse, not better."
+---
+
+<!--
+Tasks are added best first, by how well each alone tracks the ranking that
+per-language bits per byte gives. Four tasks reach rho = 0.98, and one task already
+gets within 5 percent of that. The whole suite of 2,897 reaches 0.53. 2,893 of the
+2,897 suite sizes beat the whole suite, because the tail is at-chance tasks whose
+scores are noise and dilute the average.
+This is the strongest practical result in the deck: a small curated suite is not a
+compromise, it is better than running everything.
+-->
+---
+layout: figure
+image: /ladder/rq_b3_surrogate.png
+fit: contain
+height: 58vh
+title: "7. Which is the most informative surrogate?"
+subtitle: "Per-language bits per byte works on 73 % of 500 comparisons. Benchmarks, on 47 % of 8,449."
+---
+
+<!--
+This is the min-model-size question in aggregate. A surrogate counts as working when
+some proxy size picks the same winner as the reference and every larger size keeps
+picking it. Per-language bits per byte 73 percent of 500, and 175M alone is enough
+for 32 percent of those. Benchmarks 47 percent of 8,449, up from 0 percent on the
+thinner ladder, with 175M alone enough for 23 percent. Read the benchmark row against
+the coin-flip result later in the deck: agreeing at two rungs by chance is close to
+what 47 percent looks like.
+Read the top two rows with care: training loss and macro bits per byte are single
+measurements, so they rest on 5 comparisons each. The two well-powered rows are
+per-language bits per byte and the benchmarks, and they are the two that matter.
+The next slides break this out by language count, which is the shape the team drew.
+-->
+
+---
+
+# Findings
+
+What the ladder says so far
+
+---
+layout: figure
+image: /aromanou.png
+fit: contain
+height: 66vh
+title: Benchmark scaling predictability
+---
+
+---
+layout: figure
+image: /ladder/ladder_report_scaling.png
+fit: contain
+height: 66vh
+title: Finding 1 — Above 90M, the ladder is a ladder
+subtitle: "Power-law fit per language setting; red ring = off trend"
+---
+
+---
+layout: bullets
+title: Finding 1 — Above 90M, the ladder is a ladder
+subtitle: "Scaling holds, and the exponent barely moves with L"
+icon: "📐"
+---
+
+- Final loss falls monotonically with size at **every** language setting
+- Fitted exponent **α = 0.16 – 0.20** across L (deep, scheme A) — the language count does *not* change how the model scales
+- Residuals of the healthy rungs stay within **±0.07 nats**
+- The fit is deliberately made **without** the smallest rung, then asked to predict it
+
+<!--
+alpha per L (deep/A): L1 0.164, L2 0.192, L8 0.163, L15 0.179, L30 0.185, L50 0.156.
+run__resid over healthy deep/A/seed1904 cells: max |resid| 0.073.
+Fits are per (L, arch, scheme) on the larger rungs — ladder_report.check_scaling.
+-->
+
+---
+layout: figure
+image: /ladder/ladder_report_loss.png
+fit: contain
+height: 72vh
+title: Finding 2 — The 90M rung is not on the ladder
+subtitle: "Nine of ten 90M runs peak early and then get worse"
+---
+
+---
+title: Finding 2 — The 90M rung is not on the ladder
+subtitle: "An optimizer timescale fixed in steps, on runs that differ 18×"
+layout: figure
+image: /ladder/optimizer_timescale.png
+fit: contain
+height: 52vh
+---
+
+---
+layout: bullets
+title: Why the 90M rung broke
+subtitle: "One number explains it"
+icon: "🔧"
+---
+
+- We train with AdEMAMix, which keeps a slow average of past gradients over 10,000 steps
+- Each rung trains on its own budget, so run length spans 18 times across the ladder
+- The 90M run finishes at 4,500 steps. It never reaches the regime the optimizer was set up for
+- Retraining 90M with the averaging window tied to run length fixes it completely. Final loss goes from 5.762 to 2.778 and the drift falls from 1.365 to 0.011
+- The corrected 90M then beats the uncomplete 175M, which suggests 175M is held back too
+
+<!--
+Improved version of the two tables. Same numbers, one picture and five sentences.
+The lesson for future ladders is in the last two points: write every optimizer
+timescale as a fraction of the run, never as a step count. plan/90M-rung-anomaly.md
+carries the three learning rates we ruled out and the held out BPB evidence.
+-->
+---
+
+Nine of ten 90M runs reach their **best loss at 15–19 % of training** and degrade for the rest.
+Not overfitting (single epoch), not capacity (they get *worse*), not the LR (three rates spanning 5× all diverge).
+
+AdEMAMix β₃ was held fixed at a **10,000-step** timescale while run length spans 18× across the ladder:
+
+| rung | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| steps ÷ optimizer timescale | **0.45** | 0.85 | 1.7 | 2.9 | 4.6 | 8.1 |
+
+| 90M, 2 languages | best loss | final loss | drift |
+| --- | ---: | ---: | ---: |
+| β₃ fixed at 10,000 steps | 4.397 | 5.762 | +1.365 |
+| β₃ = 0.2 × run (900 steps) | 2.767 | **2.778** | **+0.011** |
+
+The corrected 90M (2.778) beats the *uncorrected* 175M (2.904) — so 175M is likely depressed too.
+
+<!--
+plan/90M-rung-anomaly.md. The control changed nothing but beta3. Recommendation for future
+ladders: express every optimizer timescale as a fraction of the run, never as a step count.
+A 175M control at the same correction was running as of 09-03.
+-->
+
+---
+layout: bullets
+title: Finding 3 — One 90M cell slips through the filter
+subtitle: "And it is the only 90M model in every analysis"
 icon: "⚠️"
 ---
 
-The top-Signal families (`belebele`, `agieval_sat`, `arabic_leaderboard`) are exactly the ones the **above-random gate removes** — they sit *at chance*, so they never enter the SNR analysis at all.
-
-- They swing a lot with the data mixture (**high signal**) **but are also high-noise**, and the models can't even clear chance on them
-- Raw mixture sensitivity **is not** reliability → high Signal ≠ usable SNR
-- SNR (signal **÷** noise) instead ranks `multiblimp` / `hellaswag` (low absolute swing, very low noise) at the **top**
-
-
----
-layout: default
-title: Results - Improvement
-subtitle: Pretrain models with fewer languages
----
-
-- Currently: 200 languages
-- **ATLAS**: Adaptive Transfer Scaling Laws for Multilingual Pretraining (arXiv 2510.22037)
-  - For similar loss to a 1B model on 100B English tokens, over $n$ languages:
-  - Model size $= 1\text{B} \times n^{0.243}$
-  - Dataset size $= 100\text{B} \times n^{0.728}$
-
-
----
-layout: section
----
-
-# Analysis
-
-Four research questions
-
----
-layout: default
-title: Analysis
-subtitle: Research Questions
----
-
-<Block type="info" title="RQ1 — SNR Definition">
-
-Which SNR definition best correlates with decision accuracy across languages? Does it hold across seeds?
-
-</Block>
-
-<Block type="info" title="RQ2 — Framework Generalization">
-
-Do our Apertus-derived SNR rankings transfer to the AllenAI DataDecide corpus on shared benchmarks?
-
-</Block>
-
-<Block type="info" title="RQ3 — Subsampling">
-
-Can subsets of subtasks or individual items give higher SNR than the full benchmark?
-
-</Block>
-
-<Block type="info" title="RQ4 — Benchmark Creation">
-
-What benchmark design features (curation, format, option count, length) predict high SNR?
-
-</Block>
-
-
-
-<!-- The four sections below each follow: research question → methodology → highlighted
-results → proposed methodology improvements. -->
-
----
-layout: section
----
-
-# RQ1 — SNR Definition
-
-Which SNR variant best predicts decision accuracy? Does it hold across seeds?
-
-<!-- 
-layout: bullets
-title: RQ1 — SNR Definition
-subtitle: Methodology
-icon: "⚙️"
-
-- **22 SNR variants** × sizes × ~115 multilingual parent tasks
-- Pools: pure custom 1 / 2 / 3 seeds, and **`custom_swissai_hf`** (3 seeds + external pretraining models, spanning 175M → 32B)
-- **DA-size**: small-last-ckpt → 1B-last-ckpt rank agreement
-- **DA-ckpt**: within-size early → late ckpt agreement (relative-fraction early ckpts let external trajectories enter)
-- Per-language correlation: Pearson r between $\log_{10}(\text{SNR})$ and DA
-- Generalization check: pick best variant on 2 seeds, evaluate on held-out seed 1904
--->
-
----
-layout: figure
-image: /results/top_variants_overall.png
-fit: contain
-height: 33vh
-title: RQ1 — SNR Definition
-subtitle: "Top variants across languages (DA-size & DA-ckpt)"
----
-
----
-layout: bullets
-title: RQ1 — SNR Definition
-subtitle: Highlighted results
-icon: "✅"
----
-
-- **The dispersion family wins.** On `custom_swissai_hf`, `dist_std` is the global best — DA-size r **0.32** (far ahead of the next variant at 0.14), DA-ckpt r **0.43**, overall **0.38**
-- **DA-ckpt is led by the mean-pairwise-distance / relative-spread cluster** (`rel_mpd`, `mpd`, `mpsd` ≈ **0.51**) — all dispersion-family members
-- **Better results with more seeds**: top DA-size r climbs **0.31 → 0.33 → 0.39** (1 → 2 → 3 seeds)
-- `tukey`, `projection` (depth): **r ≤ 0** with DA → useless at this pool size
-- **Variant ranking transfers to a held-out seed** — Spearman ρ **+0.80** (DA-size), **+0.93** (DA-ckpt); the exact per-language argmax does **not** (family-level agreement 14% / 36%)
-
-<!-- BEGIN auto:rq1-results (snr_definition_postprocess.py) -->
----
-title: RQ1 — SNR Definition
-subtitle: "Results (auto) — most reliable benchmark per language (`dist_std` @ 1B)"
----
-
-| lang | top benchmark | SNR | DA-ckpt@1B |
-|---|---|---|---|
-| ar | `multiblimp_arb` | 2.6 | 0.87 |
-| en | `xwinograd_en` | 2.4 | 0.83 |
-| es | `multiblimp_spa` | 3.4 | 0.85 |
-| eu | `multiblimp_eus` | 1.3 | 0.64 |
-| hi | `multiblimp_hin` | 4.9 | 0.85 |
-| ja | `xwinograd_jp` | 2.3 | 0.76 |
-| ru | `multiblimp_rus` | 7.1 | 0.86 |
-| th | `xnli_th` | 1.3 | 0.75 |
-| tr | `multiblimp_tur` | 2.7 | 0.79 |
-| vi | `xcopa_vi` | 1.6 | 0.76 |
-| zh | `xcopa_zh` | 1.6 | 0.61 |
-
-<style>
-.slidev-layout table { font-size: 0.7em; }
-</style>
-<!-- END auto:rq1-results -->
-
----
-layout: figure
-image: /results/top_benchmarks_per_language.png
-fit: contain
-height: 80vh
-title: RQ1 — SNR Definition
-subtitle: "Top-5 benchmarks per language by SNR (dist_std @ 1B)"
----
-
----
-layout: bullets
-title: RQ1 — SNR Definition
-subtitle: Proposed methodology improvements
-icon: "💡"
----
-
-- **Bootstrap CIs** on per-language Pearson r and cross-pool Spearman ρ
-- Recommend a **family** (dispersion / relative-spread), not an exact variant — only the family transfers
-- Use a **larger DA-size target** (e.g. Apertus-8B) instead of the not-fully-converged 1B custom model
-
----
-layout: section
----
-
-# RQ2 — Framework Generalization
-
-Do the SNR variants we recommend correlate with other benchmark reliability frameworks? In particular with AllenAI and FineTasks?
-
+- The divergence test is `final > best + 0.25 nats`. **`90M-L2-shallow` ends 0.234 above its best** — 0.016 under the line
+- So it is flagged healthy, while its scaling residual is **+1.29 nats**
+- It is therefore the **only** 90M model that reaches the pools — every "90M" column is that one run
+- It anchors **101 of RQ6's 505** scaling fits, the shallow scheme-A L2 chain, the only ladder that starts below 175M
+- `run__off_trend` is already published in the ladder report; the loader ignores it
 
 <!--
-layout: bullets
-title: RQ2 — Framework Generalization
-subtitle: Methodology
-icon: "⚙️"
-
-
-- **Our side**: 22 SNR variants × sizes × 7 shared English tasks (`custom_swissai_hf` pool)
-- **AllenAI side**: same 22 variants on the DataDecide ladder (25 mixes × 5 ckpts, 150M–1B)
-- **Headline axis**: $\log_{10}(\text{SNR}_{1B})$ on each corpus, Pearson r over the 7 shared tasks
-- Top-K agreement: intersection / Jaccard at K ∈ {5, 10, 20}
+Verified on the real report: run__diverged = 0, run__off_trend = 1, run__resid = +1.291.
+Fix is one line in snr/download/ladder.py (gate on off_trend alongside diverged) but it
+changes what enters every pool, so it is a call for the team, not a patch.
 -->
 
 ---
 layout: figure
-image: /results/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png
+image: /ladder/english_vs_rest.png
 fit: contain
-height: 30vh
-title: RQ2 — Framework Generalization
-subtitle: "Apertus vs AllenAI SNR — pure 3-seed pool, best variant (star_discrepancy_shifted)"
+height: 62vh
+title: Finding 4 — More languages is nearly free for English
+subtitle: "Held-out bits-per-byte, deep / scheme A / seed 1904"
 ---
 
 ---
-layout: bullets
-title: RQ2 — Framework Generalization
-subtitle: Highlighted results
-icon: "✅"
+layout: figure
+image: /ladder/bpb_gain_per_language.png
+fit: contain
+height: 46vh
+title: What more languages buys, language by language
+subtitle: "Bits per byte saved by training on 50 languages instead of 2"
 ---
 
-- On the pure 3-seed pool the SNR **values *and* rank order agree** across corpora over the 7 shared English tasks: **Pearson r = 0.92, Spearman ρ = 0.93** (best variant `star_discrepancy_shifted`)
-- Value correlation rises with seeds: **0.75** (1 seed) → **0.92** (3 seeds)
-- **Dispersion + discrepancy families transfer**; the relative-spread family (incl. AllenAI's own default `rel_std`) does **not**
-- Only **7** English tasks overlap → top-K set overlap is uninformative (K ≥ 7 = whole universe ⇒ Jaccard trivially 1.0); **the correlation, not the overlap, is the result**
 <!--
-- n = 7 shared (arc_challenge, arc_easy, csqa, hellaswag, mmlu, openbookqa, piqa): report Pearson r (values) + Spearman ρ (rank), NOT top-K Jaccard. The pure 3-seed pool is the like-for-like comparison; on the externals pool the above-random gate drops the at-chance MCQA, shrinking the shared set to 4 (mpsd r=0.996, ρ=1.0 over those 4) — use the pure pool for the cross-corpus claim.
+Improved version: no aggregate, every validation language is a column. Blue means
+the language gained, red means it lost. 84 of the 100 gain on average across
+sizes. The gain shrinks as the model grows, which is the top row being darker
+than the bottom one. The losers on the right are Belarusian, Dhivehi and
+Armenian, all of which sit in the 2 language mixture already.
+-->
+
+---
+layout: figure
+image: /ladder/english_vs_rest.png
+fit: contain
+height: 56vh
+title: English pays once, everyone else keeps gaining
+subtitle: "Dotted is English, solid is the median of the other 99 languages"
+---
+
+<!--
+English costs 0.038 bits per byte going from 1 to 2 languages at 600M, then
+0.007 for the next 48. The solid lines never flatten. This is the strongest
+result the ladder has so far, and it holds at every size we have finished.
+-->
+---
+
+- **English**: 600M pays **+0.038 bits/byte** going 1 → 2 languages, then **+0.007** for the next 48
+- **Everything else**: non-English median falls **1.650 → 1.139** at 600M, **1.484 → 1.063** at 1B
+- L50 beats L2 on **89 / 81 / 78 of the 99** non-English languages at 175M / 350M / 600M,
+  median gain **+0.44 / +0.34 / +0.35 bits/byte**
+- Against a seed noise of **0.011 bits/byte** on macro BPB — a 30× effect
+
+<!--
+From ladder_report.csv final checkpoints. English = bpb__dclm; non-English median over the
+99 FineWeb-2 subsets. Seed std from the six x3 cells.
+-->
+
+---
+layout: figure
+image: /ladder/effect_vs_seed_noise.png
+fit: contain
+height: 58vh
+title: Finding 5 — Only one of our three axes clears the noise floor
+subtitle: "Median |Δ final loss| in units of the seed standard deviation"
+---
+
+---
+layout: bullets
+title: Finding 5 — Only one of our three axes clears the noise floor
+subtitle: "Depth is currently indistinguishable from re-rolling the seed"
+icon: "📉"
+---
+
+- Seed noise: **0.021 nats** on final loss, measured on the six ×3 cells
+- **Language count**: 11.5× the seed noise, a real axis
+- **Data scheme** (A vs B): 2.2× on loss, marginal
+- **Model depth** (deep vs shallow): **1.0×** on the aggregate loss, the same model measured twice
+- Per *individual* task the depth effect is larger, median **1.43×** with 35 % of 853 cells above 2×, so it separates *somewhere*, just not on the headline metric
+- Depth is **half the grid**, and it buys a per-task effect we would have to hunt for
+
+<!--
+Matched pairs on healthy complete cells only: depth n=9, scheme n=7. Language axis is the
+across-L range at fixed size (n=14 cells). Regenerated by documents/figures/fig_setup.py
+from ladder_report.csv, so the figure and these numbers move together from now on.
 -->
 
 
-<!-- BEGIN auto:rq2-results (allenai_comparison/analyze.py) -->
 ---
-title: RQ2 — Framework Generalization
-subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
+layout: figure
+image: /ladder/fig1_gate.png
+fit: contain
+height: 52vh
+title: Finding 6 — Emerged, or at chance
+subtitle: "Same seven language settings, same sizes; one benchmark learns and one never leaves the line"
 ---
 
-| pool | best variant | Pearson r | Spearman ρ | n_shared |
+---
+title: Finding 6 — Three quarters of the suite is at chance
+subtitle: "A benchmark must beat 1/#options by +0.05 to enter any analysis"
+---
+
+Of the **461** tasks that have a chance level, **113 clear it at any size**.
+
+| answer options | chance | clears chance | at 1B |
+| :---: | :---: | :---: | :---: |
+| **2** (completion, minimal pair) | 0.50 | **80 / 191** | 76 / 191 |
+| **3** (XNLI) | 0.33 | **12 / 18** | 9 / 18 |
+| **4** (knowledge MCQA) | 0.25 | **21 / 252** | 18 / 252 |
+
+- Clearing chance at 1B: `multiblimp` (57), `hellaswag` (15), `xnli` (9), `xwinograd` (6), `xcopa` (6), `xstorycloze` (5), `arc` (2), `paws` (2), `include_base_44` (1)
+- **Never clearing chance anywhere**: `global_mmlu_full`, `global_piqa_parallel_cloze`, `global_piqa_nonparallel_cloze`, `truthfulqa-multi_mc1`
+- Strongly an **answer-count effect**: 42 % of 2-option tasks clear chance, **8 % of 4-option** ones do
+- On the 36-model sweep the same families cleared chance for external 270M–70B models (122 of 124), a capability floor of the small rungs rather than a property of the benchmarks
+
+<!--
+above_random.py --only predictivity on the 14 September report: 568 tasks, 461 with a chance
+level. The other 107 are per-language BPB, the training loss and the generative tasks, which
+have none and are never gated. Per size: 90M 3/22, 175M 62/461, 350M 71/461, 600M 85/461,
+1B 103/461, 1.7B 110/461. The 1.7B rung brings the first belebele task ever to clear chance.
+-->
+
+---
+layout: figure
+image: /ladder/first_clearing_size.png
+fit: contain
+height: 54vh
+title: Which benchmark works, in which language
+subtitle: "The smallest model that beats chance. Grey means it never does."
+---
+
+<!--
+Improved version of the option count table, resolved per language. Read it row by
+row. MultiBLiMP works earliest and in the most languages. XNLI, XStoryCloze,
+HellaSwag, XWinograd and XCOPA need 350M or 600M and only work in some languages.
+The bottom five families are grey everywhere, so they carry no signal at any size
+we have trained. Blank means there is no task in that language at all. 90M is
+excluded because its one surviving cell is off trend.
+-->
+---
+layout: focus
+color: blue
+icon: "📏"
+---
+
+## In 55 of the 68 languages we can score at 1B, the most reliable measurement is now **MultiBLiMP**, not bits per byte
+
+<!--
+top_benchmarks_per_language.csv on the canonical pool, 14 September run: the rank-1 task is
+a benchmark in 59 of 68 languages and multiblimp in 55 of them. Bits per byte is rank 1 in
+only 9: bn, bo, ja, kn, ml, mr, ne, te, th. This reverses the reading of the previous deck,
+and the eval coverage added since is what changed it. Say the caveat out loud: multiblimp is
+a minimal-pair grammaticality test, so it separates models on morphosyntax, not on the
+knowledge or reasoning the rest of the suite is meant to measure.
+-->
+
+---
+layout: figure
+image: /ladder/fig3_reliability_map.png
+fit: contain
+height: 70vh
+title: Finding 7 — Reliability is a (family × language) map
+subtitle: "Checkpoint decision accuracy at 1B; grey = removed by the gate, × = no task"
+---
+
+---
+title: Finding 7 — One benchmark family now out-SNRs bits per byte
+subtitle: "Highest-SNR above-random measurement per language (`discrepancy` @ 1B)"
+---
+
+| | rank-1 measurement | typical SNR |
+|---|---|---|
+| **59 languages** | a harness benchmark, `multiblimp` in 55 of them | median 13.2, up to 200.5 (sv 200.5, fr 164.2, es 122.5, ru 116.8) |
+| **9 languages** | `bpb_<language>` | median 6.4 (bn, bo, ja, kn, ml, mr, ne, te, th) |
+
+- The gate is still part of the story: most benchmarks are removed before SNR is computed, bits per byte never is
+- The whole result rests on **one family**. Drop `multiblimp` and bits per byte leads again in most languages
+- `multiblimp` tests minimal-pair grammaticality, so this says our models separate on morphosyntax, not on knowledge
+
+<!--
+This flips the previous deck. It is a coverage result as much as a quality one: multiblimp
+covers 57 languages and clears the gate in all of them, while the knowledge benchmarks clear
+it almost nowhere. Present it as "the suite now has one instrument that works" rather than
+"the benchmarks work".
+-->
+
+---
+layout: figure
+image: /ladder/snr_bpb_vs_benchmark.png
+fit: contain
+height: 60vh
+title: Finding 7, read again
+subtitle: "Almost every language keeps a benchmark, and it usually wins the head to head"
+---
+
+<!--
+Left bar: of the 68 languages with any measurable SNR at 1B, 62 still have a benchmark once the above-random
+gate has run and 6 have none. Right: the 14 languages where both a benchmark and a bits per
+byte SNR exist at 1B, best against best. The benchmark wins 11 of the 14. The comparison
+needs a language to be trained in at least two of the settings finished at 1B, which is why
+it is 14 languages and not 62.
+-->
+---
+layout: bullets
+title: We measure best where our choices matter least
+subtitle: "What that number is really counting"
+icon: "🔁"
+---
+
+- In **62 of the 68** validation languages a benchmark now survives the gate. Six months of the deck said the opposite, and the new evals are the reason
+- Where **both** measurements exist, 14 languages, the benchmark wins **11**. The margins are large, not tiny: `multiblimp_fra` 164 against 13.6 for French bits per byte
+- The catch is concentration. **55 of the 62** are won by `multiblimp` alone, so the suite has one working instrument rather than a working suite
+- And it is a grammaticality instrument. Nothing here says the knowledge and reasoning benchmarks have started to work
+
+<!--
+Numbers from top_benchmarks_per_language.csv on the canonical pool, 14 September run,
+variant discrepancy at 1B. SNR here is spread across design variants over the mean, so a
+low score means the variants land on top of each other. The honest framing for the room:
+coverage improved a lot, the diagnosis did not change much, because one family carries it.
+-->
+
+<!-- BEGIN auto:rq4-results (snr_definition_postprocess.py) -->
+---
+title: RQ4 — Surrogates: SNR definition
+subtitle: "Results (auto) — most reliable benchmark per language (`rel_star_discrepancy` @ 1.7B)"
+---
+
+| lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| `seeds_1904` | `projection` | 0.90 | 0.80 | 4 |
-| `seeds_28_1797` | `dispersion_shifted` | 1.00 | 1.00 | 4 |
-| `seeds_28_1797_1904` | `dispersion_shifted` | 0.98 | 1.00 | 4 |
-| `custom_swissai_hf` | `mpsd` | 1.00 | 1.00 | 4 |
-
-Pure pools share all 7 English tasks; `custom_swissai_hf` shares fewer after the above-random gate — the pure 3-seed pool is the like-for-like fit.
-
-<style>
-.slidev-layout table { font-size: 0.7em; }
-</style>
-<!-- END auto:rq2-results -->
-
----
-layout: bullets
-title: RQ2 — Framework Generalization
-subtitle: Proposed improvements
-icon: "💡"
----
-
-- **Increase the shared tasks**: add `mmlu` + `mmlu_pro`, BBH, AGI-Eval
-- **Bootstrap CIs** on the cross-corpus r (n=7 is fragile)
-- Compare with other frameworks:
-  - **FineTasks**
-  - **SMART** filtering (Gupta et al., 2024)
-  - How to Select Datapoints for Efficient Human Evaluation of NLG Models? (arXiv 2501.18251)
-  - **Chen et al. (2024)** — scaling behavior of downstream tasks
-  - **Zhou et al. (2025)** — item response theory for benchmark reliability
-
-
----
-layout: section
----
-
-# RQ3 — Subsampling
-
-Can a subset of subtasks (languages, subjects) or individual items give higher SNR than the full benchmark?
-
----
-layout: bullets
-title: RQ3 — Subsampling
-subtitle: Methodology
-icon: "⚙️"
----
-
-- Model pool: 36 Apertus + external pretraining models (`custom_swissai_hf`), last-5 ckpts per model
-- **Subtask level,** three cases: language subset, MMLU subject subset, subject × language
-- **Per-sample level:** rank by sample SNR, remove the ones with signal = 0, add samples greedily, record cumulative SNR; best subset = argmax of the curve (random-order baseline alongside)
-
----
-layout: figure
-image: /results/subtask_belebele_languages.png
-fit: contain
-height: 120vh
-title: RQ3 — Subsampling
-subtitle: "Subtask · per language — language subset within a family (Belebele)"
----
-
----
-layout: figure
-image: /results/global_mmlu_full_subjects.png
-fit: contain
-height: 30vh
-title: RQ3 — Subsampling
-subtitle: "Subtask · per subject — MMLU subject subset curves per size"
----
-
----
-layout: figure
-image: /results/per_sample_xcopa_sw.png
-fit: contain
-height: 30vh
-title: RQ3 — Subsampling
-subtitle: "Per-sample — cumulative SNR over ranked items (xcopa_sw)"
----
-
----
-layout: bullets
-title: RQ3 — Subsampling
-subtitle: Highlighted results
-icon: "✅"
----
-
-- **Best subset usually beats the full set substantially** — Global-MMLU 175M `+1.52` SNR (`medical_genetics` alone, full 2.12 → 3.65); per-language GMF-tr 1B `+1.56`; Belebele 350M `+1.16`
-- **Subject subsets beat language subsets** — MMLU subject (mean over 10 langs) gives the most reliable gains
-- **Stability is uneven**: MMLU **subject** picks recur across pools; **language** and **subject × language** picks often flip
-- **Per-item (per-sample) ranking is mostly noise** (cross-size Spearman ≈ 0.05) → tiny argmax (2.5%) subsets overfit and collapse out-of-sample
-
-<!-- BEGIN auto:rq3-results (smooth_subtasks.py) -->
----
-title: RQ3 — Subsampling
-subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
----
-
-| case | task | size | full → best SNR | +gain |
-|---|---|---|---|---|
-| global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 |
-| global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 |
-| per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 |
-| global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 |
-| global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 |
-| global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 |
-| per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 |
-| per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 |
-
-<style>
-.slidev-layout table { font-size: 0.7em; }
-</style>
-<!-- END auto:rq3-results -->
-
----
-layout: bullets
-title: RQ3 — Subsampling
-subtitle: Proposed improvements to make subset selection trustworthy
-
-icon: "💡"
----
-
-- **Pick a safer subset.** The single best subset is often a fluke. Instead, take the *largest* subset that ties with the peak and still beats the full benchmark. Bigger subsets are more stable.
-- **Average out the noise.** Per-item scores are too noisy to trust. Pool them across seeds and sizes — or pick whole topics, not single items. Coarser units are stabler.
-- **Measure the trust.** Test each pick on a held-out seed, and report how often it survives.
-
-We will do a thorough subsampling analysis on INCLUDE-v2.
-
----
-layout: section
----
-
-# RQ4 — Benchmark Creation
-
-What makes a benchmark high-SNR? What benchmark design features (curation, format, option count, item length) predict SNR?
-
----
-layout: bullets
-title: RQ4 — Benchmark Creation
-subtitle: Methodology
-icon: "⚙️"
----
-
-- **9 above-random benchmark families** (the gate already drops every at-chance 4-option MCQA); SNR signal = per-family median SNR @ 1B from the `custom_swissai_hf` pool
-- Per-family aggregate: median across the family's per-language aggregate tasks
-- Three phases: **curation** (Phase 0), **task format** (Phase A), **item lengths** (Phase B)
-- Statistical tests: Kruskal-Wallis (categorical), Spearman ρ (continuous)
-- Length features: 100 items/family sampled from each HF dataset
-
----
-layout: figure
-image: /results/snr_per_family_ranked.png
-height: 30vh
-title: RQ4 — Benchmark Creation
-subtitle: Per-family median SNR — 9 above-random families (custom_swissai_hf)
----
-
----
-layout: bullets
-title: RQ4 — Benchmark Creation
-subtitle: Highlighted results
-icon: "✅"
----
-
-- **The answer-count penalty is now upstream, in the gate.** It drops every 4-option translated knowledge MCQA (`belebele`, `global_mmlu_full`, `truthfulqa`) before SNR is even computed
-- Top SNR (all 2-option): **multiblimp** (3.9), **paws** (2.5), **xwinograd** (2.5), **xstorycloze** (2.3), **xcopa** (2.1)
-- The only 4-option survivors are **`hellaswag`** (2.1) and English **`arc`** (2.0) — contentful; bottom: **global_piqa** (1.5), **xnli** (1.2)
-- **Among the 9 survivors no single design feature is significant** (n_options KW H = 1.8, p = 0.18; format H = 0, p = 1.0) — and **curation still explains nothing** (H = 0.5, **p = 0.78**)
-- Mechanism: each option adds another noisy log-likelihood estimate to rank → 2-option comparisons are sharper
-
-<!-- BEGIN auto:rq4-results (benchmark_creation/analyze.py) -->
----
-title: RQ4 — Benchmark Creation
-subtitle: "Results (auto) — per-family SNR, above-random survivors"
----
-
-| family | median SNR | n_opts | format |
-|---|---|---|---|
-| `multiblimp` | 3.85 | 2 | minimal_pair |
-| `paws` | 2.55 | 2 | classification |
-| `xwinograd` | 2.48 | 2 | completion |
-| `xstorycloze` | 2.27 | 2 | completion |
-| `xcopa` | 2.06 | 2 | completion |
-| `hellaswag` | 2.05 | 4 | completion |
-| `arc` | 2.05 | 4 | mcq_question_only |
-| `global_piqa_completions` | 1.45 | 2 | completion |
-| `xnli` | 1.15 | 3 | classification |
+| ar | `multiblimp_arb` | 61.8 | 0.42 |  |
+| az | `belebele_azj_Latn` | 23.9 |  |  |
+| bg | `multiblimp_bul` | 46.9 | 0.59 |  |
+| bn | `hellaswag_bn` | 230.1 | 0.72 |  |
+| bs | `global_piqa_nonparallel_cloze_bos_latn` | 11.1 |  |  |
+| ca | `hellaswag_ca` | 35.9 |  |  |
+| cs | `multiblimp_ces` | 44.0 | 0.67 |  |
+| da | `multiblimp_dan` | 125.6 | 0.50 |  |
+| de | `multiblimp_deu` | 208.6 | 0.58 |  |
+| el | `multiblimp_ell` | 158.3 | 0.62 |  |
+| en | `multiblimp_eng` | 205.9 | 0.47 |  |
+| es | `multiblimp_spa` | 129.0 | 0.65 |  |
+| et | `xcopa_et` | 42.5 |  |  |
+| fa | `belebele_pes_Arab` | 24.5 | 0.62 |  |
+| fi | `multiblimp_fin` | 39.9 | 0.72 |  |
+| fr | `multiblimp_fra` | 204.8 | 0.55 |  |
+| he | `multiblimp_heb` | 30.4 | 0.63 |  |
+| hi | `multiblimp_hin` | 91.2 | 0.53 |  |
+| hr | `hellaswag_hr` | 62.8 |  |  |
+| hu | `multiblimp_hun` | 61.9 | 0.55 |  |
+| id | `arc_id` | 38.9 | 0.71 |  |
+| it | `multiblimp_ita` | 91.3 | 0.64 |  |
+| ja | `xwinograd_jp` | 24.2 | 0.69 |  |
+| ka | `multiblimp_kat` | 44.8 | 0.53 |  |
+| kk | `multiblimp_kaz` | 6.6 |  |  |
+| lt | `multiblimp_lit` | 27.8 |  |  |
+| mr | `hellaswag_mr` | 278.9 |  |  |
+| ne | `hellaswag_ne` | 368.0 |  |  |
+| nl | `multiblimp_nld` | 59.1 | 0.63 |  |
+| no | `belebele_nob_Latn` | 29.0 | 0.37 |  |
+| pl | `multiblimp_pol` | 60.2 | 0.60 |  |
+| pt | `multiblimp_por` | 91.3 | 0.58 |  |
+| ro | `multiblimp_ron` | 76.3 | 0.53 |  |
+| ru | `multiblimp_rus` | 155.3 | 0.72 |  |
+| sk | `hellaswag_sk` | 54.1 |  |  |
+| sl | `multiblimp_slv` | 23.2 |  |  |
+| sq | `belebele_als_Latn` | 48.7 |  |  |
+| sr | `hellaswag_sr` | 40.5 |  |  |
+| sv | `multiblimp_swe` | 456.9 | 0.62 |  |
+| ta | `hellaswag_ta` | 247.8 | 0.58 |  |
+| th | `xnli_th` | 39.4 | 0.63 |  |
+| tr | `multiblimp_tur` | 34.2 | 0.59 |  |
+| uk | `multiblimp_ukr` | 81.1 | 0.53 |  |
+| ur | `multiblimp_urd` | 37.0 |  |  |
+| vi | `hellaswag_vi` | 45.1 | 0.73 |  |
+| zh | `xstorycloze_zh` | 54.8 | 0.65 |  |
 
 <style>
 .slidev-layout table { font-size: 0.7em; }
@@ -917,35 +1031,477 @@ subtitle: "Results (auto) — per-family SNR, above-random survivors"
 
 ---
 layout: bullets
-title: RQ4 — Benchmark Creation
-subtitle: Proposed methodology improvements
-icon: "💡"
+title: Finding 8 — SNR barely predicts decision accuracy here
+subtitle: "R = 0.79 in Heineman et al., 0.06 on this ladder"
+icon: "❓"
 ---
 
-- **Controlled comparison**: hold format constant, vary curation (HellaSwag MT vs XStoryCloze human translation)
-- Replace marginal KW tests with a **single regression** on (format + n_options + curation)
-- **Add more families** (truthfulqa, mgsm, agieval, …) — n=9 survivors is underpowered
-- Re-sample **length features from the full multilingual splits**, not just English
+- Best of the 22 variants on the canonical pool is `discrepancy`: mean Pearson r of log₁₀(SNR) vs DA
+  = **+0.06** (DA-size), **−0.05** (DA-ckpt), **0.00** overall
+- Checkpoint decisions have a different leader, `dist_std` at **+0.20**, with `mad` and `rel_mpsd` beside it. No variant is best on both
+- More eval coverage made this **worse**, not better. The thinner ladder gave +0.32 on DA-ckpt, this one gives +0.20 at best
+- With 41 models in the canonical pool and a two-level intervention, DA is coarse. **The variant question may simply not be answerable at this pool size**
+
+<!--
+Compare Heineman et al. (2025): R = 0.791 between SNR and DA on the English DataDecide
+ladder. Ours is over 68 languages with 41 models in the canonical pool. Do not oversell the
+earlier +0.32: three successive runs of this pipeline have put the leader at +0.20, +0.32
+and now +0.20, on different variants each time, which is what an estimate dominated by
+noise looks like. The claim to make is the negative one.
+-->
+
+---
+layout: bullets
+title: SNR predicts much less here than in English
+subtitle: "Plain version of the slide before"
+icon: "❓"
+---
+
+- Heineman et al. report a correlation of 0.79 between SNR and decision accuracy on the English ladder
+- Our best of 22 definitions reaches 0.20, when decisions are read across checkpoints
+- Read across sizes the best is 0.06, and the overall winner sits at 0.00
+- No definition is best on both kinds of decision, which is itself a sign the ranking is noise
+- More evaluation data made this number smaller, not larger. The pool size is the thing holding us back
+---
+title: Finding 9 — No SNR choice survives a seed swap cleanly
+subtitle: "Train on seeds 64/313, test on seed 1904"
+---
+
+| | DA-size | DA-ckpt |
+| --- | ---: | ---: |
+| Spearman ρ on the global variant ranking | **−0.20** | **+0.01** |
+| Pearson r between splits (all cells) | +0.27 (n = 22) | −0.06 (n = 1,104) |
+| Per-language family agreement | 1 % | 11 % |
+| Per-language exact-variant agreement | 1 % | 5 % |
+
+- Recommend an SNR **family**, never an exact variant
+- The **per-language argmax never transfers**. 11 % of the 122 language cells agree even at family level
+- Three runs of this holdout have given ρ = +0.70, +0.29 and now +0.01 on DA-ckpt. The estimate is noise
+
+<!--
+compare_seed_splits.py, predictivity_seeds_train -> predictivity_seeds_test. The x3 cells
+are 175M/600M at L in {1,2,50} only, so this holdout is thinner than the 36-sweep's.
+Retention reads 100 % under DA-size but on a single cell, so it is left off the table.
+Same qualitative conclusion as the 36-sweep, which is itself reassuring.
+-->
+
+---
+layout: figure
+image: /ladder/seed_holdout.png
+fit: contain
+height: 52vh
+title: Does the SNR ranking survive a seed swap
+subtitle: "Pick the best variant on seeds 64 and 313, test it on seed 1904"
+---
+
+<!--
+Improved version of the table. Blue is the checkpoint based ranking, orange is
+the size based one. Only the checkpoint bars are usable. The last row is the one
+that matters for the paper: the per language argmax agrees on 11 percent of
+languages at family level and 5 percent exactly, so we recommend a family of SNR
+definitions and never a single one. Numbers refreshed on the 14 September run.
+-->
+---
+layout: bullets
+title: Finding 10 — Late-checkpoint noise understates the real noise 2×
+subtitle: "The standard S&N noise definition is optimistic on this ladder"
+icon: "🔬"
+---
+
+- Signal-and-Noise measures noise as the spread over the **last few checkpoints** of one run
+- We can measure it the other way too, over **seed replicates** of the same cell
+- Median ratio **seed noise ÷ detrended checkpoint noise = 2.04**, over 5,546 (size, L, task) cells
+- So an SNR computed the standard way is roughly **2× too optimistic** here
+- An effect that looks like 2× checkpoint noise is about the size of **one seed re-roll**
+
+<!--
+rq03 effect_vs_noise.csv. Checkpoint noise is detrended first — under WSD the final window
+is still descending, so the raw std would be smaller still. A methodological result about
+the framework rather than about our models; worth reporting in the paper.
+-->
+
+---
+title: Finding 11 — Bits per byte answers the question, benchmarks do not
+subtitle: "RQ6 now scores both, and every comparison still resolves against 600M"
+---
+
+All **36 intervention comparisons** resolve against **600M**. Every finished cell above 600M is
+deep and scheme A, so none of them has a matched twin to compare against.
+
+Data-scheme decision, bits per byte over the languages both schemes train:
+
+| proxy | L8 | L15 | L30 |
+|---|---:|---:|---:|
+| **175M** | 1.00 | 0.00 | **0.04** |
+| **350M** | 1.00 | 0.83 | 1.00 |
+
+175M gets the scheme decision **backwards** at L15 and L30, and 350M is reliable wherever it is measured.
+
+- The encouraging half: the **scaling fits now reach the top of the ladder** (202 predict 1B, 202 predict 1.7B),
+  and per-language BPB at the reference is predicted from the proxy rungs to within **4–8 %**
+
+<!--
+rq05 (with rq01 and rq03) on predictivity_seeds, 14 September: 36 intervention-DA cells, 505 scaling fits,
+reference_size = 600M throughout. The depth rows exist only at L1/L2 and swing 0.13-0.77,
+which is what "not enough matched pairs" looks like. Scaling error by reference: 0.076 for
+1.7B at L1, 0.051 for 1B at L8, 0.058 for 1.7B at L30, 0.043 for 1B at L50, with L2 the one
+outlier at 0.244. This slide is still the argument for finishing a matched pair above 600M.
+-->
+
+---
+layout: figure
+image: /ladder/benchmark_predictivity.png
+fit: contain
+height: 56vh
+title: The benchmark suite can be scored, and it reads as a coin flip
+subtitle: "Two schemes, 2,896 shared benchmark tasks per setting, one clear answer"
+---
+
+<!--
+Left: the benchmark bars sit on the coin-flip line at both proxy rungs, 0.46 and 0.45 at
+8 languages, 0.50 and 0.55 at 15, 0.57 and 0.48 at 30. Going from 175M to 350M does not
+help and at 30 languages it hurts. Bits per byte behaves completely differently: wrong at
+175M, right at 350M. Right: the strict test, a proxy that agrees and keeps agreeing at
+every larger size. 365 of 500 bits per byte comparisons pass it, 3,995 of 8,449 benchmark
+comparisons do. That 47 percent was 0 percent on the thinner ladder, but it is also about
+what agreeing twice by chance would give, so read it as unreliable rather than as working.
+-->
+---
+layout: bullets
+title: What that means for the benchmark suite
+subtitle: "The first direct answer to the question the ladder was built for"
+icon: "🎯"
+---
+
+- The suite now has **2,896 shared task comparisons per language setting**. A month ago it had none
+- The suite reads the scheme decision as a **coin flip at both proxy rungs**: 0.46 and 0.45 at 8 languages, 0.50 and 0.55 at 15, 0.57 and 0.48 at 30
+- A bigger proxy does not help it. Bits per byte, by contrast, goes from wrong at 175M to right at 350M
+- Under the strict test, a proxy that agrees **and keeps agreeing** as models grow, **3,995 of 8,449** benchmark comparisons pass against **365 of 500** for bits per byte. Two coin flips would give about the same 47 %
+- We are not saying benchmarks cannot work. We are saying that at the sizes we can afford, **they do not carry the decision and bits per byte does**
+
+<!--
+Say this plainly to the room. The project's premise is that a cheap small model plus a
+benchmark can stand in for an expensive large one. On the one decision we can now test at
+scale, the benchmark half of that premise does not hold and the bits per byte half does.
+That is a result, not a setback, and it is what makes the per-language BPB outcome metric
+the right thing to have built the plan around.
+-->
+
+---
+layout: figure
+image: /ladder/min_predictive_size.png
+fit: contain
+height: 58vh
+title: How small a proxy can we get away with
+subtitle: "Every dot is one language. Lines are the aggregate measures."
+---
+
+---
+layout: figure
+image: /ladder/min_predictive_per_language.png
+fit: contain
+height: 46vh
+title: The same question, language by language
+subtitle: "Smallest proxy that picks the same winner as 600M"
+---
+
+---
+layout: bullets
+title: How small a proxy can we get away with
+subtitle: "What the two plots say"
+icon: "🪜"
+---
+
+- At **1 language** the depth decision is the hardest. 50 of the 100 validation subsets have no proxy size that gets it right
+- At **8 and 15 languages** a 175M model is enough for most languages. The scheme decision is easier to predict than the depth one
+- **Macro bits per byte is not a shortcut.** It fails outright at 1 and 8 languages, where the per language answers are mostly fine
+- Training loss agrees with 600M at every language count except 1
+- Benchmarks now appear at every language count, and **3,995 of 8,449** reach a proxy size that agrees and keeps agreeing. Per setting that is 38 of 73 at L1, 81 of 141 at L2, 1,160 of 2,740 at L8, 1,458 of 2,749 at L15 and 1,258 of 2,746 at L30
+
+<!--
+The reference here is 600M, not 1B, because no cell above 600M has a finished matched
+shallow or scheme B twin. So this is a small to 600M read, not a small to large one. Two
+messages for the room: the aggregate metric we planned to decide on is worse than the per
+language ones it averages, and the benchmark line has moved off the floor but sits close to
+what chance would give.
+-->
+---
+layout: figure
+image: /ladder/rq6_whiteboard.png
+fit: contain
+height: 58vh
+title: The figure we actually want
+subtitle: "Smallest model reaching each decision accuracy, against the number of languages"
+---
+
+---
+layout: figure
+image: /ladder/rq6_da_vs_size.png
+fit: contain
+height: 54vh
+title: All the measurement behind it
+subtitle: "Two proxy sizes, one reference. That is the whole thing."
+---
+
+---
+layout: bullets
+title: Why the curve is not there yet
+subtitle: "Three things have to change before that figure can be drawn"
+icon: "🧱"
+---
+
+- We have **two** usable proxy sizes, 175M and 350M. 90M diverged and 600M is the reference, so it scores 1.0 by construction
+- The expected shape needs a size axis with four or five rungs and a reference above them. Today the whole plot is two columns wide
+- At **1 language** the decision accuracy falls from 0.84 to 0.57 as the model grows. That is not a trend, it is the depth effect sitting inside the noise
+- The scheme decision behaves as expected. At 8, 15 and 30 languages accuracy rises with size, and 350M clears 0.75 at all three
+- Nothing reaches 0.9 anywhere. **Finish 1B with matched pairs and the picture becomes drawable**
+---
+layout: bullets
+title: Not run — RQ3, agreement with DataDecide
+subtitle: "The AllenAI SNR table is a git-lfs pointer in this clone"
+icon: "⏸️"
+---
+
+- Everything else in this deck regenerates from the published ladder report
+- RQ3 additionally needs the DataDecide-side SNR table — `git lfs pull` first, then re-run
+- The shared universe is small either way: only the English tasks both corpora evaluate
+
+<!-- BEGIN auto:rq7-results (rq07_external_frameworks/analyze.py) -->
+---
+title: RQ7 — External frameworks
+subtitle: "Results (auto) — cross-corpus agreement with AllenAI by pool"
+---
+
+| pool | best variant | Pearson r | Spearman ρ | n_shared |
+|---|---|---|---|---|
+| `predictivity` | `rel_star_discrepancy` | 0.85 | 0.50 | 3 |
+| `predictivity_seeds` | `rel_star_discrepancy` | 0.68 | 0.50 | 3 |
+
+The shared universe is the English tasks both corpora evaluate, after the above-random gate.
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq7-results -->
+
+---
+layout: figure
+image: /ladder/fig4_subset_sweep.png
+fit: contain
+height: 56vh
+title: Finding 12 — A subject subset beats the full Global-MMLU at every size
+subtitle: "Cumulative SNR as subjects are added in standalone-SNR order; dashed = the full set"
+---
+
+<!-- BEGIN auto:rq8-results (smooth_subtasks.py) -->
+---
+title: RQ8 — Subset selection
+subtitle: "Results (auto) — top subset gains (SNR: full → best subset)"
+---
+
+| case | task | size | full → best SNR | +gain |
+|---|---|---|---|---|
+| per_benchmark | `multiblimp` | 350M | 2.99 → 4.40 | +1.42 |
+| per_benchmark | `arc` | 1B | 2.61 → 3.83 | +1.22 |
+| global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 |
+| per_benchmark | `multiblimp` | 175M | 3.22 → 4.24 | +1.02 |
+| global_mmlu_full_per_language | `global_mmlu_full_sr` | 350M | 2.66 → 3.65 | +0.99 |
+| per_benchmark | `bpb` | 175M | 3.11 → 4.09 | +0.99 |
+| per_benchmark | `multiblimp` | 1.7B | 3.03 → 3.94 | +0.91 |
+| global_mmlu_full_per_language | `global_mmlu_full_ms` | 350M | 2.53 → 3.43 | +0.91 |
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq8-results -->
+
+<!-- BEGIN auto:rq9-results (rq09_benchmark_design/analyze.py) -->
+---
+title: RQ9 — Benchmark design
+subtitle: "Results (auto) — per-family SNR, above-random survivors"
+---
+
+| family | median SNR | n_opts | format |
+|---|---|---|---|
+| `xwinograd` | 1.44 | 2 | completion |
+| `paws` | 1.26 | 2 | classification |
+| `multiblimp` | 1.24 | 2 | minimal_pair |
+| `xstorycloze` | 1.24 | 2 | completion |
+| `xnli` | 0.91 | 3 | classification |
+| `xcopa` | 0.82 | 2 | completion |
+| `include_base_44` | 0.58 | 4 | mcq_question_only |
+| `belebele` | 0.52 | 4 | mrc_passage |
+| `global_piqa_parallel_cloze` | 0.51 | 2 | completion |
+| `arc` | 0.48 | 4 | mcq_question_only |
+| `hellaswag` | 0.35 | 4 | completion |
+
+<style>
+.slidev-layout table { font-size: 0.7em; }
+</style>
+<!-- END auto:rq9-results -->
 
 ---
 layout: section
 ---
 
-# Conclusions
+# Open discussion
+
+---
+layout: default
+color: amber
+icon: "🔧"
+---
+
+## 1. The 90M rung — retrain corrected, drop it, or report both?
+
+Correcting β₃ changes the optimizer at **every** rung, so a corrected 90M is not on the same ladder as the rest.
+
+<!--
+plan/90M-rung-anomaly.md settles the diagnosis, not the treatment. Options:
+(a) report with and without the rung (current plan, cheapest);
+(b) retrain 90M alone with the fraction-of-run beta3 and mark it as a different ladder;
+(c) retrain every rung — outside the compute budget.
+Whatever we pick, gate the loader on run__off_trend so 90M-L2-shallow stops being the
+one 90M model in the pools.
+-->
+
+---
+layout: default
+color: red
+icon: "🌡️"
+---
+
+## 2. Sampling temperature — T = 1 is not training 100 languages
+
+At L100 with T = 1, **66 of 99 languages get under 10 M tokens** at 90M; the smallest gets 80 K.
+
+**Recommendation: T = 2 sweep-wide.** Lifts the floor 40× (0.8 M → 33 M at 1B) and repeats nothing (≤ 0.3 epochs).
+
+<!--
+Head/tail share ratio at L100, T=1: 16,581:1. Eight languages were swapped INTO L100
+because they have benchmarks; at T=1 they get ~100K tokens at 90M. A per-language SNR of
+zero there measures the mixture, not the benchmark. T must never vary with L — that
+confounds the intervention. plan/small-to-large-predictivity-training-plan.md.
+-->
+
+---
+layout: default
+color: amber
+icon: "🪜"
+---
+
+## 4. 1.7B — 40 % of the sweep, zero finished cells
+
+Dropping it frees **15,086 of 37,860 node-hours** and makes 1B the reference at every L.
+
+But 1B is finished at **two** language settings, so the reference rung is thin either way.
+
+<!--
+Corollary from the temperature table: with 1B as the reference, the "66 of 99 languages
+under 100M tokens" row IS the reference model, not a small rung. Dropping 1.7B makes the
+temperature decision more urgent, not less.
+-->
+
+---
+layout: default
+color: blue
+icon: "📊"
+---
+
+## 5. Is 5 × C the right budget at L ≥ 30?
+
+ATLAS puts the compute-optimal ratio at **137 tokens/param at L50** and 193 at L100; we train **100**.
+
+Cheap falsification first: check whether the languages bending the loss are the ones with negligible token share.
+
+<!--
+Full test needs annealed endpoints, not intermediate checkpoints (WSD leaves the LR
+undecayed). 12 WSD cooldown branches (350M/600M x L in {1,30,100} x f in {0.25,0.5}) is
+~6% of one level. But the temperature table suggests the tail is data-starved rather than
+under-trained — that check is a spreadsheet, not a sweep.
+-->
+
+---
+layout: default
+color: amber
+icon: "📐"
+---
+
+## 6. Model depth sits at the seed-noise floor
+
+Depth is **half the grid** and its effect on final loss is **1.0× a seed re-roll** (n = 9 matched pairs).
+
+Keep it, replace it with sampling temperature, or spend the compute on the missing reference rungs?
+
+<!--
+Finding 5. The scheme axis is 2.2x on loss and 1.2x on macro BPB — also marginal. The
+intervention was one of three candidates (tokenizer, depth, temperature); temperature is
+the one the plan calls "most likely to show a ranking that flips with scale".
+-->
+
+---
+layout: default
+color: blue
+icon: "🎯"
+---
+
+## 7. Six benchmark families never clear chance
+
+`belebele`, `global_mmlu_full`, `global_piqa` ×2, `paws`, `truthfulqa-multi` — no size, no language.
+
+Do we drop them from the during-training suite, or keep them as the negative control the gate needs?
+
+<!--
+Dropping them buys eval walltime (discussion point 3) at the cost of the gate's evidence.
+Related: INCLUDE v2 is the best single addition available (89 languages) but ships as
+generative CoT — unusable for base models at these sizes until an MC variant exists.
+LAMBADA-MT is marked legacy upstream: switch or drop. plan/benchmark_selection.md.
+-->
+
+---
+layout: section
+---
+
+# Where this leaves us
 
 ---
 layout: bullets
-title: Conclusions
-subtitle: "Answer to the research question"
-icon: "→"
+title: Summary
+subtitle: "What the ladder has established, and what it cannot yet answer"
+icon: "✅"
 ---
 
-- **RQ1:** The **dispersion** family (`dist_std`) tracks decision accuracy best (overall r **≈ 0.38**). The *family* ranking holds across seeds (Spearman ρ **+0.80 / +0.93**); the per-language argmax does not.
-- **RQ2:** SNR **transfers to AllenAI DataDecide** on the 7 shared English benchmarks — cross-corpus Pearson r **0.92**, Spearman ρ **0.93** (pure 3-seed pool); dispersion + discrepancy families transfer, relative-spread does not.
-- **RQ3:** **Subtask subsets beat full benchmarks** (MMLU subjects most stable); per-item selection overfits across scale.
-- **RQ4:** The **above-random gate encodes the answer-count penalty** (drops 4-option knowledge MCQA); among survivors **curation has no measurable effect**.
+- **Established**: scaling holds above 90M (α ≈ 0.13–0.19, residuals ≤ 0.10 nats); more languages is nearly free for English and worth ~0.4 bits/byte to everything else; three quarters of the multilingual suite sits at chance at these sizes; no per-language SNR choice survives a seed swap, so recommend a *family*
+- **Answered, for one decision**: on data scheme, per-language bits per byte transfers from a 350M proxy and the benchmark suite reads a coin flip at both proxy rungs, on 2,896 shared tasks per setting. Still small-to-600M, because nothing above 600M has a finished matched pair
+- **Changed this run**: 62 of 68 languages now keep a benchmark after the gate, and `multiblimp` out-SNRs bits per byte in 55 of them. One family carries the whole improvement
+- **Uncomfortable**: two of our three axes, depth and data scheme, are at or near the seed-noise floor, and SNR itself barely predicts decision accuracy (best +0.20 on checkpoint decisions)
 
-<!-- BEGIN generated signal slides (multilingual/da_per_benchmark.py) -->
+---
+layout: bullets
+title: Where this leaves us
+subtitle: "Plain version of the slide before"
+icon: "✅"
+---
+
+- **Solid.** Scaling works above 90M. More languages costs English once and keeps paying everyone else. Three quarters of the benchmark suite sits at chance
+- **Better than we thought.** 62 of 68 languages keep a benchmark after the gate, and it beats bits per byte in 11 of the 14 languages where both can be measured
+- **Awkward.** All of that improvement is `multiblimp`, a grammaticality test. Our noise estimate is twice too small. Depth and scheme sit at or near the noise floor. SNR still does not predict decision accuracy
+- **Open.** The question the ladder was built for. Every proxy comparison we can make today lands on 600M, because every finished cell above it is deep and scheme A
+---
+layout: bullets
+title: Next
+subtitle: "In the order things unblock each other"
+icon: "➡️"
+---
+
+1. Decide **T** — it gates every remaining data build
+2. Fix the **eval walltime** — it is why L = 100 is empty
+3. Settle the **90M** treatment and gate the loader on `run__off_trend`
+4. Finish a **matched pair above 600M**: a shallow or scheme-B twin of one of the four finished 1B/1.7B cells is what unblocks every small-to-large claim
+5. Re-run `run_all_predictivity.sh` — every number in this deck refreshes from the published report
+
+
+<!-- BEGIN generated signal slides (analysis/rq02_decision_accuracy/da_per_benchmark.py) -->
 
 ---
 layout: section
@@ -956,7 +1512,40 @@ layout: section
 
 ---
 title: Appendix — Above-random signal
-subtitle: "Custom Apertus pretrains only · mean score per family × size (bold = beats chance + 0.05)"
+subtitle: "Predictivity ladder (175M–1.7B, seed 1904) · mean score per family × size (bold = above chance in most of its tasks)"
+---
+
+| benchmark | rand | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| `loss` |  | 3.15 | 2.66 | 2.47 | 2.36 | 2.22 |
+| `bpb` |  | 1.96 | 1.66 | 1.56 | 1.48 | 1.42 |
+| `multiblimp` | 0.50 | **0.77** | **0.82** | **0.84** | **0.85** | **0.87** |
+| `xwinograd` | 0.50 | 0.54 | **0.59** | **0.64** | **0.67** | **0.72** |
+| `xcopa` | 0.50 | 0.53 | **0.54** | **0.55** | **0.57** | **0.59** |
+| `xstorycloze` | 0.50 | 0.49 | **0.52** | **0.54** | **0.56** | **0.58** |
+| `global_piqa_nonparallel_cloze` | 0.50 | 0.48 | 0.49 | 0.51 | 0.52 | 0.55 |
+| `paws` | 0.50 | 0.49 | 0.50 | 0.50 | **0.52** | **0.54** |
+| `xnli` | 0.33 | 0.35 | **0.39** | **0.41** | **0.42** | **0.44** |
+| `lambada_openai_mt` |  | 0.17 | 0.27 | 0.33 | 0.37 | 0.42 |
+| `hellaswag` | 0.25 | **0.26** | **0.28** | **0.30** | **0.32** | **0.35** |
+| `rf_belebele` | 0.25 | **0.28** | **0.29** | **0.29** | **0.30** | **0.31** |
+| `rf_include_base_44` | 0.25 | 0.26 | 0.26 | 0.27 | 0.28 | **0.29** |
+| `rf_global_mmlu_full` | 0.25 | 0.26 | **0.26** | **0.26** | **0.27** | **0.28** |
+| `include_base_44` | 0.25 | 0.25 | 0.25 | 0.25 | 0.26 | 0.25 |
+| `belebele` | 0.25 | 0.25 | 0.24 | 0.24 | 0.24 | 0.25 |
+| `global_mmlu_full` | 0.25 | 0.24 | 0.25 | 0.24 | 0.24 | 0.25 |
+| `arc` | 0.25 | 0.20 | 0.22 | 0.23 | 0.25 | 0.27 |
+| `truthfulqa-multi_mc1` | 0.25 | 0.25 | 0.23 | 0.23 | 0.23 | 0.22 |
+| `global_piqa_parallel_cloze` | 0.25 | 0.20 | 0.21 | 0.21 | 0.22 | 0.23 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+title: Appendix — Above-random signal
+subtitle: "Custom Apertus pretrains only · mean score per family × size (bold = above chance in most of its tasks)"
 ---
 
 | benchmark | rand | 175M | 350M | 600M | 1B |
@@ -964,13 +1553,13 @@ subtitle: "Custom Apertus pretrains only · mean score per family × size (bold 
 | `multiblimp` | 0.50 | **0.90** | **0.91** | **0.92** | **0.93** |
 | `piqa` | 0.50 | **0.67** | **0.70** | **0.71** | **0.73** |
 | `xwinograd` | 0.50 | **0.60** | **0.64** | **0.67** | **0.70** |
-| `xstorycloze` | 0.50 | 0.54 | **0.55** | **0.57** | **0.58** |
+| `xstorycloze` | 0.50 | 0.54 | 0.55 | **0.57** | **0.58** |
 | `xcopa` | 0.50 | 0.54 | **0.55** | **0.56** | **0.56** |
 | `global_piqa_completions` | 0.50 | 0.50 | 0.52 | 0.53 | 0.54 |
 | `paws` | 0.50 | 0.51 | 0.51 | 0.51 | 0.52 |
 | `xnli` | 0.33 | 0.38 | **0.39** | **0.40** | **0.40** |
 | `hellaswag` | 0.25 | 0.29 | **0.31** | **0.33** | **0.34** |
-| `arc` | 0.25 | 0.26 | 0.27 | 0.29 | **0.30** |
+| `arc` | 0.25 | 0.26 | 0.27 | 0.29 | 0.30 |
 | `truthfulqa` | 0.25 | 0.26 | 0.26 | 0.26 | 0.26 |
 | `agieval_sat` | 0.25 | 0.26 | 0.25 | 0.26 | 0.24 |
 | `mmlu` | 0.25 | 0.25 | 0.25 | 0.25 | 0.25 |
@@ -992,7 +1581,7 @@ subtitle: "Custom Apertus pretrains only · mean score per family × size (bold 
 
 ---
 title: Appendix — Above-random signal
-subtitle: "All models (custom + Swiss-AI/HF refs) · mean score per family × size (bold = beats chance + 0.05)"
+subtitle: "All models (custom + Swiss-AI/HF refs) · mean score per family × size (bold = above chance in most of its tasks)"
 ---
 
 | benchmark | rand | 175M | 270M | 350M | 600M | 1B | 1.7B | 3B | 4B | 7-9B | 12-14B | 27-32B | 70B |
@@ -1000,9 +1589,9 @@ subtitle: "All models (custom + Swiss-AI/HF refs) · mean score per family × si
 | `multiblimp` | 0.50 | **0.90** | **0.91** | **0.91** | **0.92** | **0.93** | **0.94** | **0.92** | **0.96** | **0.91** | **0.94** | **0.94** | **0.98** |
 | `piqa` | 0.50 | **0.67** | **0.68** | **0.70** | **0.71** | **0.73** | **0.76** | **0.77** | **0.79** | **0.79** | **0.81** | **0.81** | **0.83** |
 | `xwinograd` | 0.50 | **0.60** | **0.63** | **0.64** | **0.67** | **0.70** | **0.72** | **0.76** | **0.77** | **0.76** | **0.79** | **0.79** | **0.82** |
-| `xstorycloze` | 0.50 | 0.54 | 0.54 | **0.55** | **0.56** | **0.58** | **0.59** | **0.62** | **0.64** | **0.63** | **0.67** | **0.68** | **0.71** |
+| `xstorycloze` | 0.50 | 0.54 | 0.54 | 0.55 | **0.56** | **0.58** | **0.59** | **0.62** | **0.64** | **0.63** | **0.67** | **0.68** | **0.71** |
 | `xcopa` | 0.50 | 0.54 | **0.56** | **0.55** | **0.56** | **0.57** | **0.59** | **0.60** | **0.64** | **0.60** | **0.65** | **0.64** | **0.70** |
-| `global_piqa_completions` | 0.50 | 0.50 | 0.51 | 0.52 | 0.53 | 0.55 | **0.57** | **0.61** | **0.63** | **0.60** | **0.65** | **0.65** | **0.74** |
+| `global_piqa_completions` | 0.50 | 0.50 | 0.51 | 0.52 | 0.53 | 0.55 | **0.57** | **0.61** | **0.63** | 0.60 | **0.65** | **0.65** | **0.74** |
 | `paws` | 0.50 | 0.51 | 0.52 | 0.51 | 0.51 | 0.53 | **0.58** | **0.57** | **0.60** | **0.57** | **0.60** | **0.61** | **0.60** |
 | `agieval_sat` | 0.25 | 0.26 | 0.30 | 0.25 | 0.29 | 0.25 | **0.64** | **0.41** | **0.78** | **0.65** | **0.83** | **0.83** | **0.74** |
 | `commonsense_qa` | 0.20 | 0.20 | 0.21 | 0.21 | 0.24 | 0.22 | **0.73** | **0.48** | **0.70** | **0.69** | **0.77** | **0.76** | **0.54** |
@@ -1012,10 +1601,10 @@ subtitle: "All models (custom + Swiss-AI/HF refs) · mean score per family × si
 | `global_mmlu_full` | 0.25 | 0.25 | 0.26 | 0.25 | 0.26 | 0.25 | **0.46** | **0.38** | **0.52** | **0.46** | **0.56** | **0.56** | **0.53** |
 | `hellaswag` | 0.25 | 0.29 | 0.29 | **0.31** | **0.33** | **0.34** | **0.36** | **0.40** | **0.41** | **0.40** | **0.44** | **0.45** | **0.49** |
 | `global_mmlu` | 0.25 |  |  | 0.25 |  |  |  | **0.49** |  |  |  |  |  |
-| `arc` | 0.25 | 0.26 | 0.25 | 0.27 | 0.29 | **0.30** | **0.36** | **0.37** | **0.43** | **0.40** | **0.46** | **0.46** | **0.47** |
-| `truthfulqa` | 0.25 | 0.26 | **0.35** | 0.26 | **0.35** | **0.35** | **0.38** | **0.35** | **0.38** | **0.38** | **0.38** | **0.37** | **0.40** |
+| `arc` | 0.25 | 0.26 | 0.25 | 0.27 | 0.29 | 0.30 | **0.36** | **0.37** | **0.43** | **0.40** | **0.46** | **0.46** | **0.47** |
+| `truthfulqa` | 0.25 | 0.26 | 0.35 | 0.26 | 0.35 | 0.35 | **0.38** | **0.35** | **0.38** | **0.38** | **0.38** | **0.37** | **0.40** |
 | `arabic_leaderboard_alghafa_mcq_exams_test` | 0.25 | 0.24 | 0.25 | 0.25 | 0.24 | 0.24 | **0.37** | **0.36** | **0.43** | **0.36** | **0.45** | **0.45** | **0.48** |
-| `agieval_logiqa` | 0.25 | 0.22 | 0.21 | 0.22 | 0.23 | 0.23 | **0.32** | 0.26 | **0.39** | **0.35** | **0.42** | **0.39** | **0.36** |
+| `agieval_logiqa` | 0.25 | 0.22 | 0.21 | 0.22 | 0.23 | 0.23 | 0.32 | 0.26 | **0.39** | **0.35** | **0.42** | **0.39** | **0.36** |
 | `agieval` | 0.25 | 0.18 | 0.18 | 0.18 | 0.19 | 0.18 | **0.35** | 0.25 | **0.41** | **0.36** | **0.46** | **0.46** | **0.36** |
 | `openbookqa` | 0.25 | 0.20 | 0.21 | 0.22 | 0.24 | 0.26 | **0.30** | **0.30** | **0.33** | **0.34** | **0.36** | **0.36** | **0.38** |
 | `truthfulqa_mc1` | 0.25 | 0.23 | 0.24 | 0.22 | 0.23 | 0.23 | **0.32** | 0.27 | **0.32** | **0.31** | **0.35** | **0.34** | **0.36** |
@@ -1027,274 +1616,1057 @@ subtitle: "All models (custom + Swiss-AI/HF refs) · mean score per family × si
 </style>
 
 ---
+layout: figure
+image: /ladder/appendix/da_by_benchmark.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy, all languages at once
+subtitle: "Benchmark × size pair, averaged over every language it covers"
+---
+
+---
+layout: figure
+image: /ladder/appendix/da_by_language.png
+fit: contain
+height: 78vh
+title: Appendix — Decision accuracy, all benchmarks at once
+subtitle: "Language × size pair, averaged over every benchmark it has"
+---
+
+---
 title: Appendix — Decision accuracy across sizes
 subtitle: "English (en) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `hellaswag` | **0.92** | **0.86** | **0.83** | **0.89** | **0.86** | **0.80** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | **0.75** | **0.83** | **0.81** | **0.81** | **0.83** | **0.76** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `openbookqa` | **0.78** | **0.75** | 0.67 | **0.81** | 0.72 | **0.84** | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `piqa` | **0.86** | **0.89** | **0.89** | **0.86** | **0.86** | **0.76** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** | 0.00 |
-| `xwinograd` | **0.86** | **0.81** | 0.72 | **0.78** | **0.81** | 0.73 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `commonsense_qa` | 0.58 | 0.42 | 0.36 | 0.33 | 0.44 | 0.53 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `agieval_logiqa` | 0.56 | 0.61 | 0.67 | 0.44 | 0.56 | 0.44 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `arc_easy` | **0.78** | **0.81** | **0.89** | **0.86** | **0.83** | **0.78** | 0.00 | 0.00 | **1.00** | 0.00 | **1.00** | **1.00** |
-| `arc_challenge` | 0.69 | 0.72 | **0.83** | **0.92** | **0.86** | **0.80** | 0.00 | 0.00 | **1.00** | 0.00 | **1.00** | **1.00** |
-| `belebele` | 0.64 | 0.69 | **0.75** | 0.72 | **0.78** | **0.78** | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
-| `paws` | 0.50 | 0.47 | 0.42 | 0.58 | 0.53 | **0.78** | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** | **1.00** |
-| `xnli` | 0.64 | 0.53 | 0.33 | **0.78** | 0.42 | 0.51 | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** | **1.00** |
-| `agieval_sat` | 0.31 | 0.36 | 0.42 | 0.61 | 0.50 | 0.73 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.39 | 0.33 | 0.64 | 0.44 | 0.36 | 0.58 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `truthfulqa_mc1` | 0.33 | 0.53 | 0.33 | 0.36 | **0.78** | 0.33 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 |
-| `mmlu` | 0.50 | 0.06 | 0.58 | 0.50 | 0.47 | 0.42 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.61 | 0.50 | 0.67 | 0.72 | 0.28 | 0.40 | 0.00 | 0.00 | **1.00** | 0.00 | **1.00** | **1.00** |
-| `multiblimp` | 0.61 | 0.50 | **0.78** | **0.83** | 0.61 | 0.71 | **1.00** | 0.00 | 0.00 | **1.00** | 0.00 | 0.00 |
-| `agieval` | 0.25 | 0.44 | 0.61 | 0.36 | 0.47 | 0.53 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.63 | 0.50 | 0.72 | 0.71 | 0.71 | 0.71 | **0.77** | 0.72 | **0.76** | **0.87** |
+| `bpb` | 0.65 | 0.44 | **0.76** | **0.81** | 0.68 | 0.64 | 0.72 | 0.65 | **0.75** | **0.82** |
+| `xstorycloze` | 0.56 | 0.53 | 0.62 | 0.61 | 0.73 | 0.72 | 0.69 | **0.76** | **0.75** | 0.68 |
+| `arc_challenge` | 0.58 | 0.58 | 0.51 | 0.54 | **0.87** | 0.71 | 0.68 | 0.74 | 0.74 | 0.66 |
+| `xwinograd` | 0.68 | 0.58 | 0.64 | 0.50 | 0.61 | **0.76** | 0.70 | 0.72 | 0.54 | 0.69 |
+| `lambada_openai_mt` | 0.62 | 0.67 | 0.65 | 0.71 | 0.46 | 0.48 | 0.46 | **0.77** | 0.68 | **0.82** |
+| `arc_easy` | 0.56 | 0.43 | 0.68 | 0.67 | 0.71 | 0.51 | 0.69 | 0.54 | 0.49 | 0.53 |
+| `xnli` | 0.59 | 0.59 | 0.51 | 0.56 | 0.65 | 0.64 | 0.47 | 0.36 | 0.58 | 0.42 |
+| `global_mmlu_full` | 0.49 | 0.55 | 0.55 | 0.58 | 0.42 | 0.46 | 0.45 | 0.54 | 0.53 | 0.50 |
+| `multiblimp` | 0.70 | 0.50 | 0.44 | 0.60 | 0.40 | 0.51 | 0.59 | 0.41 | 0.42 | 0.33 |
+| `belebele` | 0.48 | 0.71 | 0.51 | 0.43 | 0.44 | 0.46 | 0.37 | 0.56 | 0.49 | 0.43 |
+| `global_piqa_parallel_cloze` | 0.41 | **0.77** | 0.55 | 0.48 | 0.43 | 0.41 | 0.44 | 0.41 | 0.50 | 0.44 |
+| `paws` | 0.59 | 0.42 | 0.47 | 0.35 | 0.42 | 0.42 | 0.64 | 0.41 | 0.43 | 0.50 |
+| `truthfulqa-multi_mc1` | 0.35 | 0.17 | 0.64 | 0.38 | 0.52 | 0.48 | 0.41 | 0.47 | 0.61 | 0.33 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_en.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "English (en) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Arabic (ar) · small→large size pair (bold ≥ 0.75)"
+subtitle: "Modern Std. Arabic (ar) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `hellaswag` | **0.78** | **0.78** | 0.72 | **0.83** | **0.89** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | **0.75** | **0.89** | **0.83** | 0.69 | **0.75** | **0.78** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `multiblimp` | 0.69 | **0.83** | **0.83** | **0.86** | **0.75** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_ar_mc1` | **0.86** | 0.58 | 0.50 | 0.61 | 0.58 | 0.67 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.69 | 0.42 | 0.64 | 0.61 | 0.56 | 0.53 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_ar_mc2` |  |  |  |  |  |  | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.58 | 0.39 | 0.44 | 0.47 | 0.53 | 0.49 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xnli` | 0.69 | 0.17 | 0.42 | 0.36 | 0.50 | 0.62 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `arabic_leaderboard_alghafa_mcq_exams_test` | 0.33 | 0.61 | 0.36 | 0.44 | 0.69 | 0.31 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `global_mmlu_full` | 0.47 | 0.61 | 0.50 | 0.53 | 0.53 | **0.80** | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.31 | 0.72 | 0.69 | 0.42 | 0.44 | 0.64 | **1.00** | **1.00** | 0.00 | **1.00** | 0.00 | **1.00** |
-| `agieval_lsat` | 0.61 | 0.36 | 0.50 | 0.53 | 0.61 | 0.64 | 0.00 | **1.00** | **1.00** | **1.00** | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.57 | 0.43 | 0.67 | 0.67 | **0.76** | **0.87** | **1.00** | 0.60 | 0.33 | **1.00** |
+| `hellaswag` | 0.48 | 0.48 | 0.57 | 0.67 | 0.52 | 0.71 | 0.62 | 0.71 | 0.52 | 0.68 |
+| `multiblimp` | **0.81** | 0.43 | **0.81** | 0.48 | 0.38 | 0.67 | 0.43 | 0.48 | **0.76** | 0.50 |
+| `arc` | 0.43 | 0.67 | 0.48 | 0.38 | 0.48 | 0.67 | 0.67 | 0.33 | 0.29 | 0.43 |
+| `belebele_arb_Arab` | 0.10 | 0.38 | 0.57 | 0.33 | 0.52 | 0.29 | 0.52 | **0.76** | **0.76** | 0.57 |
+| `global_mmlu_full` | 0.48 | 0.48 | 0.43 | 0.52 | 0.52 | 0.48 | 0.29 | 0.48 | 0.48 | 0.57 |
+| `xstorycloze` | 0.43 | 0.57 | 0.48 | 0.38 | 0.71 | 0.52 | 0.29 | 0.48 | 0.24 | 0.43 |
+| `belebele_ars_Arab` | 0.38 | 0.43 | **0.86** | 0.33 | 0.24 | 0.33 | 0.43 | 0.43 | 0.57 | 0.50 |
+| `belebele_ary_Arab` | 0.24 | 0.33 | 0.71 | 0.48 | 0.71 | 0.29 | 0.38 | 0.43 | 0.52 | 0.39 |
+| `xnli` | 0.48 | 0.38 | 0.71 | 0.52 | 0.48 | 0.38 | 0.29 | 0.33 | 0.19 | 0.61 |
+| `belebele_apc_Arab` | 0.43 | 0.24 | 0.57 | 0.52 | 0.33 | 0.33 | 0.33 | 0.62 | 0.52 | 0.43 |
+| `global_piqa_parallel_cloze_apc_arab_leba` | 0.38 | 0.52 | 0.19 | 0.57 | 0.24 | 0.67 | 0.48 | 0.33 | 0.43 | 0.46 |
+| `include_base_44` | 0.24 | 0.29 | 0.38 | 0.57 | 0.43 | 0.52 | 0.48 | 0.38 | 0.52 | 0.43 |
+| `belebele_arb_Latn` | 0.71 | 0.43 | 0.43 | 0.38 | 0.48 | 0.29 | 0.29 | 0.24 | 0.48 | 0.43 |
+| `belebele_arz_Arab` | 0.29 | 0.48 | 0.67 | 0.10 | 0.19 | 0.24 | 0.62 | 0.71 | 0.52 | 0.29 |
+| `global_piqa_parallel_cloze_arb_arab` | 0.24 | 0.43 | 0.38 | 0.48 | 0.29 | 0.57 | 0.19 | 0.29 | 0.48 | 0.36 |
+| `global_piqa_parallel_cloze_ary_arab` | 0.48 | 0.43 | 0.29 | 0.43 | 0.43 | 0.19 | 0.33 | 0.33 | 0.29 | 0.50 |
+| `global_piqa_parallel_cloze_apc_arab_syri` | 0.33 | 0.48 | 0.33 | 0.57 | 0.29 | 0.48 | 0.29 | 0.29 | 0.43 | 0.14 |
+| `global_piqa_parallel_cloze_arz_arab` | 0.24 | 0.14 | 0.24 | 0.38 | 0.33 | 0.38 | 0.24 | 0.52 | 0.52 | 0.57 |
+| `global_piqa_parallel_cloze_ars_arab` | 0.43 | 0.43 | 0.38 | 0.24 | 0.10 | 0.52 | 0.33 | 0.43 | 0.24 | 0.36 |
+| `global_piqa_parallel_cloze_apc_arab_pale` | 0.05 | 0.57 | 0.05 | 0.62 | 0.38 | 0.62 | 0.19 | 0.19 | 0.33 | 0.29 |
+| `global_piqa_parallel_cloze_apc_arab_jord` | 0.48 | 0.10 | 0.24 | 0.52 | 0.14 | 0.14 | 0.38 | 0.29 | 0.05 | 0.32 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ar.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Modern Std. Arabic (ar) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "bg (bg) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.83** | 0.50 | 0.33 | 0.50 | 0.67 | 0.50 | 0.67 | 0.50 | **1.00** | 0.50 |
+| `xnli` | 0.67 | 0.67 | 0.33 | 0.50 | **1.00** | 0.33 | 0.50 | 0.33 | 0.50 | 0.17 |
+| `bpb` | **1.00** | 0.17 | 0.67 |  | 0.17 | 0.67 |  | 0.00 |  |  |
+| `include_base_44` | 0.33 | 0.67 | 0.17 | 0.50 | 0.33 | 0.50 | **0.83** | 0.50 | 0.17 | 0.33 |
+| `belebele` | 0.17 | 0.67 | 0.67 | 0.50 | 0.00 | 0.50 | 0.33 | 0.33 | 0.50 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.17 | 0.00 | 0.50 | 0.67 | 0.50 | 0.50 | 0.50 | 0.17 | 0.50 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_bg.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "bg (bg) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "bn (bn) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.47 | **0.80** | 0.67 | **0.80** | **0.90** | **1.00** | 0.70 | 0.33 | **1.00** |
+| `include_base_44` | 0.33 | **0.87** | 0.53 | 0.47 | 0.33 | 0.40 | 0.33 | 0.53 | 0.47 | 0.64 |
+| `global_piqa_parallel_cloze_ben_latn` | 0.47 | **0.87** | 0.53 | 0.47 | 0.47 | 0.33 | 0.60 | 0.47 | 0.47 | 0.21 |
+| `global_mmlu_full` | 0.40 | 0.33 | 0.60 | 0.47 | 0.40 | 0.67 | 0.67 | 0.33 | 0.20 | 0.71 |
+| `belebele_ben_Beng` | 0.27 | 0.60 | 0.60 | **0.87** | 0.33 | 0.07 | 0.33 | 0.47 | 0.60 | 0.50 |
+| `belebele_ben_Latn` | 0.27 | 0.60 | 0.47 | 0.27 | 0.27 | 0.53 | 0.60 | 0.20 | 0.20 | **0.75** |
+| `global_piqa_parallel_cloze_ben_beng` | 0.40 | 0.27 | 0.33 | 0.20 | 0.73 | 0.27 | 0.40 | 0.27 | 0.60 | 0.54 |
+| `hellaswag` | 0.33 | 0.20 | 0.60 | 0.60 | 0.40 | 0.40 | 0.40 | 0.40 | 0.27 | 0.39 |
+| `arc` | 0.20 | 0.27 | 0.53 | 0.67 | 0.47 | 0.47 | 0.27 | 0.13 | 0.47 | 0.46 |
+| `multiblimp` | 0.40 | 0.53 | 0.33 | 0.27 | 0.40 | 0.20 | 0.13 | 0.20 | 0.40 | 0.25 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_bn.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "bn (bn) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "cs (cs) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.70 | 0.40 | **1.00** | 0.67 | 0.70 | **0.83** | **1.00** | 0.50 | 0.33 | 0.67 |
+| `multiblimp` | **0.80** | 0.50 | 0.50 | 0.60 | 0.70 | 0.50 | 0.40 | 0.20 | 0.30 | 0.67 |
+| `belebele` | 0.60 | 0.60 | 0.30 | 0.40 | 0.60 | 0.30 | 0.30 | 0.30 | 0.60 | 0.40 |
+| `global_mmlu_full` | 0.30 | 0.60 | 0.40 | 0.50 | 0.10 | 0.30 | 0.40 | 0.60 | 0.50 | 0.60 |
+| `global_piqa_parallel_cloze` | 0.20 | 0.60 | 0.50 | 0.10 | 0.40 | 0.50 | 0.30 | 0.40 | 0.30 | 0.07 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_cs.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "cs (cs) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "da (da) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | **0.83** | **0.83** | **0.83** | **0.83** | 0.67 | 0.67 | 0.67 | **1.00** | **1.00** | **1.00** |
+| `bpb` | 0.67 | 0.17 | 0.67 |  | 0.50 | **1.00** |  | 0.33 |  |  |
+| `belebele` | 0.50 | 0.50 | **0.83** | 0.33 | 0.33 | 0.50 | 0.67 | 0.50 | 0.00 | 0.50 |
+| `multiblimp` | 0.50 | 0.33 | **1.00** | 0.50 | 0.17 | 0.50 | 0.17 | 0.33 | 0.50 | 0.50 |
+| `arc` | 0.00 | 0.17 | 0.50 | **0.83** | 0.67 | 0.50 | 0.00 | 0.17 | 0.33 | 0.50 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_da.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "da (da) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "German (de) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.58 | **0.78** | **0.90** | **0.91** | **0.92** | **1.00** | **0.81** | **0.80** | **0.90** |
+| `hellaswag` | 0.62 | 0.55 | 0.71 | 0.56 | **0.78** | 0.69 | **0.80** | **0.82** | **0.87** | **0.79** |
+| `lambada_openai_mt` | 0.62 | 0.60 | **0.80** | 0.73 | 0.55 | 0.62 | 0.67 | 0.73 | 0.55 | 0.71 |
+| `xnli` | 0.49 | 0.67 | 0.73 | 0.58 | 0.44 | 0.40 | 0.67 | **0.84** | 0.51 | 0.50 |
+| `arc` | 0.38 | 0.62 | 0.53 | 0.45 | 0.58 | 0.47 | 0.55 | 0.60 | 0.67 | 0.68 |
+| `multiblimp` | 0.58 | 0.67 | 0.58 | 0.45 | 0.53 | 0.51 | 0.45 | 0.62 | 0.55 | 0.55 |
+| `paws` | 0.29 | 0.67 | 0.42 | 0.40 | 0.51 | 0.56 | 0.51 | 0.56 | 0.47 | **0.77** |
+| `global_piqa_parallel_cloze` | 0.29 | 0.36 | 0.53 | 0.44 | 0.67 | 0.51 | 0.38 | 0.42 | 0.47 | 0.50 |
+| `include_base_44` | 0.20 | 0.64 | 0.53 | 0.64 | 0.38 | 0.27 | 0.47 | 0.31 | 0.51 | 0.50 |
+| `global_mmlu_full` | 0.29 | 0.45 | 0.40 | 0.35 | 0.29 | 0.64 | 0.58 | 0.38 | 0.56 | 0.40 |
+| `belebele` | 0.35 | 0.27 | 0.49 | 0.73 | 0.47 | 0.20 | 0.22 | 0.49 | 0.31 | 0.58 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_de.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "German (de) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "el (el) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.76** | 0.57 | **0.87** | **0.83** | **0.81** | **0.93** | **1.00** | 0.73 | 0.67 | **0.83** |
+| `belebele` | 0.24 | 0.62 | 0.43 | **0.90** | 0.33 | 0.52 | 0.33 | 0.71 | 0.62 | 0.56 |
+| `multiblimp` | 0.62 | 0.62 | 0.29 | 0.52 | 0.52 | 0.38 | 0.52 | 0.38 | 0.62 | 0.60 |
+| `xnli` | **0.81** | 0.24 | 0.62 | 0.67 | 0.05 | 0.52 | **0.76** | 0.43 | 0.19 | 0.58 |
+| `include_base_44` | 0.33 | 0.33 | 0.57 | 0.38 | 0.48 | 0.43 | 0.57 | 0.52 | 0.43 | 0.42 |
+| `global_mmlu_full` | **0.76** | 0.48 | 0.43 | 0.29 | 0.24 | 0.48 | 0.14 | 0.33 | 0.57 | 0.53 |
+| `global_piqa_parallel_cloze` | 0.57 | 0.38 | 0.48 | 0.19 | 0.38 | 0.43 | 0.24 | 0.67 | 0.38 | 0.31 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_el.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "el (el) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Spanish (es) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `hellaswag` | **0.97** | **0.81** | **0.86** | **0.83** | **0.83** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `multiblimp` | **0.78** | **0.81** | **0.89** | 0.64 | 0.67 | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | 0.58 | **0.75** | 0.72 | 0.72 | **0.86** | 0.71 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | **0.81** | 0.64 | 0.67 | 0.61 | 0.69 | 0.38 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.53 | 0.67 | 0.67 | 0.47 | 0.47 | 0.58 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `paws` | 0.56 | 0.33 | 0.42 | 0.56 | 0.53 | 0.60 | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.50 | 0.36 | 0.47 | 0.47 | 0.64 | 0.73 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xnli` | 0.39 | 0.47 | 0.44 | 0.64 | 0.61 | 0.51 | **1.00** | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** |
-| `truthfulqa_es_mc1` | **0.75** | 0.42 | 0.53 | 0.28 | 0.56 | 0.53 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.50 | 0.22 | 0.53 | 0.56 | 0.36 | 0.62 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `truthfulqa_es_mc2` |  |  |  |  |  |  | **1.00** | 0.00 | **1.00** | **1.00** | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.64 | 0.64 | **0.75** | 0.67 | **0.89** | **0.93** | **0.92** | **0.79** | **0.81** | **0.89** |
+| `bpb` | 0.56 | 0.42 | **0.76** | **0.83** | **0.81** | **0.86** | **1.00** | 0.62 | 0.67 | **0.83** |
+| `xstorycloze` | 0.33 | 0.39 | 0.46 | 0.33 | 0.67 | 0.61 | **0.78** | 0.64 | **0.89** | 0.67 |
+| `arc` | 0.42 | 0.28 | 0.54 | 0.50 | 0.58 | 0.57 | **0.75** | 0.39 | 0.61 | 0.69 |
+| `multiblimp` | 0.47 | 0.53 | 0.46 | **0.81** | 0.25 | 0.43 | 0.64 | 0.61 | 0.42 | 0.56 |
+| `lambada_openai_mt` | 0.33 | 0.50 | 0.43 | 0.61 | 0.31 | 0.50 | 0.61 | 0.57 | 0.47 | **0.75** |
+| `paws` | 0.36 | 0.44 | 0.39 | 0.39 | 0.53 | 0.68 | 0.72 | **0.75** | 0.25 | 0.50 |
+| `xnli` | 0.42 | 0.36 | 0.57 | **0.81** | 0.44 | 0.46 | 0.33 | 0.54 | 0.39 | 0.50 |
+| `global_piqa_parallel_cloze_spa_latn_mexi` | 0.47 | 0.33 | 0.43 | 0.33 | 0.44 | 0.39 | 0.50 | 0.43 | 0.72 | 0.58 |
+| `belebele` | 0.50 | 0.50 | 0.29 | 0.67 | 0.28 | 0.21 | 0.42 | **0.79** | 0.56 | 0.36 |
+| `truthfulqa-multi_mc1` | 0.33 | 0.56 | 0.32 | 0.69 | 0.56 | 0.50 | 0.42 | 0.29 | 0.64 | 0.25 |
+| `global_mmlu_full` | 0.36 | 0.67 | 0.21 | 0.44 | 0.56 | 0.71 | 0.47 | 0.29 | 0.33 | 0.47 |
+| `global_piqa_parallel_cloze_spa_latn_spai` | 0.36 | 0.11 | 0.46 | 0.53 | 0.53 | 0.39 | 0.58 | 0.46 | 0.42 | 0.64 |
+| `include_base_44` | 0.33 | 0.53 | 0.43 | 0.69 | 0.39 | 0.57 | 0.33 | 0.36 | 0.42 | 0.33 |
+| `global_piqa_parallel_cloze_spa_latn_peru` | 0.47 | 0.47 | 0.32 | 0.36 | 0.58 | 0.14 | 0.19 | 0.32 | 0.47 | 0.64 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_es.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Spanish (es) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Basque (eu) · small→large size pair (bold ≥ 0.75)"
+subtitle: "fa (fa) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `truthfulqa_eu_mc2` |  |  |  |  |  |  | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xstorycloze` | **0.92** | 0.69 | **0.75** | 0.72 | 0.72 | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `hellaswag` | **0.75** | 0.56 | 0.61 | 0.47 | 0.58 | 0.58 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `multiblimp` | 0.64 | 0.44 | 0.69 | 0.53 | 0.61 | 0.60 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.69 | **0.75** | 0.72 | **0.78** | 0.69 | **0.76** | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xnli` | 0.47 | 0.44 | 0.56 | **0.75** | 0.64 | **0.76** | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `paws` | 0.39 | 0.50 | 0.36 | 0.67 | 0.58 | 0.56 | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** | **1.00** |
-| `belebele` | 0.50 | 0.56 | 0.53 | 0.56 | 0.47 | 0.67 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_eu_mc1` | 0.36 | 0.44 | 0.56 | 0.42 | 0.64 | 0.60 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xcopa` | 0.39 | 0.44 | 0.44 | 0.50 | 0.50 | **0.76** | 0.00 | 0.00 | **1.00** | 0.00 | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.75** | 0.61 | **0.79** | **0.83** | **0.86** | **0.89** | **1.00** | **0.75** | 0.67 | **1.00** |
+| `multiblimp` | **0.78** | 0.61 | 0.53 | 0.64 | 0.72 | 0.50 | 0.58 | 0.53 | 0.50 | 0.55 |
+| `include_base_44` | 0.58 | 0.56 | 0.64 | 0.56 | 0.33 | 0.33 | 0.14 | 0.69 | 0.58 | 0.65 |
+| `belebele` | 0.33 | 0.50 | 0.50 | 0.44 | 0.33 | 0.36 | 0.44 | 0.69 | 0.61 | 0.56 |
+| `global_mmlu_full` | 0.61 | 0.31 | 0.72 | 0.31 | 0.31 | 0.44 | 0.42 | 0.47 | 0.72 | 0.42 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.11 | 0.56 | 0.22 | 0.50 | 0.53 | 0.31 | 0.36 | 0.53 | 0.45 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_fa.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "fa (fa) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "fi (fi) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `multiblimp` | **0.83** | **0.83** | 0.33 | **0.83** | 0.67 | 0.17 | 0.67 | 0.50 | 0.67 | 0.50 |
+| `belebele` | 0.33 | **0.83** | 0.33 | 0.50 | 0.50 | **1.00** | 0.50 | 0.50 | 0.67 | 0.50 |
+| `include_base_44` | **1.00** | 0.50 | 0.33 | 0.33 | 0.50 | 0.33 | 0.33 | 0.50 | **0.83** | 0.67 |
+| `bpb` | **0.83** | 0.33 | 0.67 |  | 0.17 | **1.00** |  | 0.00 |  |  |
+| `global_piqa_parallel_cloze` | 0.67 | 0.33 | 0.33 | 0.17 | 0.33 | 0.67 | 0.33 | 0.00 | 0.67 | 0.17 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_fi.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "fi (fi) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "French (fr) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.64 | 0.67 | 0.61 | 0.47 | **0.92** | **0.82** | **0.78** | **0.86** | **0.81** | **0.86** |
+| `bpb` | 0.58 | 0.42 | **0.81** | **0.83** | **0.83** | **0.81** | **1.00** | 0.62 | 0.67 | **0.83** |
+| `lambada_openai_mt` | 0.67 | 0.72 | 0.71 | **0.81** | 0.50 | 0.57 | 0.58 | **0.86** | **0.75** | **0.78** |
+| `arc` | 0.69 | 0.64 | 0.46 | 0.72 | 0.44 | **0.75** | 0.69 | 0.46 | 0.53 | 0.67 |
+| `multiblimp` | 0.56 | 0.50 | 0.57 | 0.33 | 0.47 | 0.46 | 0.50 | 0.50 | 0.67 | 0.53 |
+| `xnli` | 0.36 | 0.42 | 0.71 | 0.64 | 0.50 | 0.46 | 0.44 | 0.46 | 0.39 | 0.50 |
+| `paws` | 0.33 | 0.33 | 0.68 | 0.58 | 0.42 | 0.39 | 0.61 | 0.68 | 0.25 | 0.53 |
+| `belebele` | 0.50 | 0.58 | 0.50 | 0.58 | 0.25 | 0.36 | 0.50 | 0.54 | 0.28 | 0.53 |
+| `global_piqa_parallel_cloze_fra_latn_cana` | 0.33 | 0.47 | 0.25 | 0.53 | 0.69 | 0.50 | 0.39 | 0.39 | 0.53 | 0.42 |
+| `xwinograd` | 0.31 | 0.56 | 0.36 | 0.64 | 0.47 | 0.64 | 0.25 | 0.61 | 0.44 | 0.22 |
+| `include_base_44` | 0.47 | 0.42 | 0.68 | 0.25 | 0.56 | 0.46 | 0.33 | 0.32 | 0.61 | 0.33 |
+| `global_mmlu_full` | 0.11 | 0.53 | 0.36 | 0.58 | 0.53 | 0.57 | 0.53 | 0.36 | 0.39 | 0.47 |
+| `global_piqa_parallel_cloze_fra_latn_fran` | 0.42 | 0.36 | 0.36 | 0.22 | 0.64 | 0.54 | 0.36 | 0.32 | 0.39 | 0.28 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_fr.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "French (fr) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "he (he) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.83** | 0.67 | 0.67 |  | **0.83** | **1.00** |  | **1.00** |  |  |
+| `global_mmlu_full` | 0.17 | **0.83** | 0.67 | 0.67 | 0.00 | 0.50 | 0.50 | 0.50 | 0.50 | 0.73 |
+| `multiblimp` | **0.83** | 0.33 | 0.33 | 0.33 | 0.17 | 0.50 | 0.50 | 0.67 | 0.67 | 0.73 |
+| `include_base_44` | 0.00 | 0.67 | 0.50 | 0.50 | 0.33 | 0.50 | 0.50 | 0.17 | **0.83** | 0.47 |
+| `belebele` | 0.00 | 0.50 | 0.67 | 0.50 | 0.50 | 0.17 | 0.50 | 0.67 | 0.00 | 0.60 |
+| `global_piqa_parallel_cloze` | 0.17 | 0.33 | 0.50 | 0.67 | 0.33 | 0.17 | 0.17 | 0.17 | 0.17 | 0.73 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_he.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "he (he) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Hindi (hi) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `multiblimp` | **0.89** | **0.86** | **0.83** | **0.86** | **0.78** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `hellaswag` | **0.75** | **0.81** | **0.78** | **0.83** | **0.81** | **0.89** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | 0.61 | 0.58 | 0.64 | 0.64 | **0.81** | 0.71 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.39 | 0.53 | 0.53 | 0.64 | 0.53 | 0.38 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.33 | 0.58 | 0.31 | 0.42 | 0.58 | 0.67 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.39 | 0.53 | 0.42 | 0.36 | 0.36 | **0.76** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.53 | 0.39 | 0.61 | 0.69 | 0.53 | 0.51 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_hi_mc2` |  |  |  |  |  |  | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xnli` | **0.78** | 0.56 | 0.72 | 0.56 | 0.72 | 0.64 | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** | **1.00** |
-| `truthfulqa_hi_mc1` | 0.58 | 0.67 | 0.47 | 0.53 | 0.61 | 0.49 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.47 | **0.80** | 0.67 | **0.80** | 0.70 | 0.67 | 0.60 | 0.33 | **1.00** |
+| `hellaswag` | 0.53 | 0.60 | 0.47 | 0.73 | 0.53 | 0.40 | **0.80** | 0.20 | 0.60 | 0.43 |
+| `xnli` | 0.27 | 0.53 | 0.47 | 0.53 | 0.60 | 0.53 | 0.73 | 0.53 | 0.33 | 0.57 |
+| `include_base_44` | 0.40 | 0.60 | 0.33 | 0.40 | 0.67 | 0.53 | 0.73 | 0.33 | 0.40 | 0.64 |
+| `multiblimp` | 0.53 | 0.67 | 0.73 | 0.53 | 0.47 | 0.47 | 0.33 | 0.53 | 0.40 | 0.29 |
+| `xstorycloze` | 0.40 | 0.60 | 0.53 | 0.47 | 0.27 | 0.60 | 0.73 | 0.47 | 0.20 | 0.43 |
+| `global_mmlu_full` | **0.80** | 0.27 | 0.73 | 0.20 | 0.20 | 0.67 | 0.27 | 0.40 | 0.53 | 0.39 |
+| `arc` | 0.67 | 0.53 | 0.47 | 0.20 | 0.27 | 0.20 | 0.27 | **0.93** | 0.53 | 0.32 |
+| `belebele_hin_Deva` | 0.40 | 0.13 | 0.67 | 0.47 | 0.53 | 0.40 | 0.47 | 0.13 | 0.60 | 0.39 |
+| `belebele_hin_Latn` | 0.33 | 0.53 | 0.33 | 0.53 | 0.60 | 0.53 | 0.13 | 0.27 | 0.33 | 0.43 |
+| `global_piqa_parallel_cloze` | 0.27 | 0.27 | 0.40 | 0.20 | 0.67 | 0.27 | 0.20 | 0.20 | 0.33 | 0.57 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_hi.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Hindi (hi) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "hu (hu) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.60 | 0.10 | **0.83** | 0.67 | 0.50 | **0.83** | **1.00** | 0.17 | 0.33 | 0.67 |
+| `hellaswag` | 0.60 | 0.50 | 0.30 | 0.50 | 0.30 | 0.50 | 0.50 | 0.60 | **0.80** | 0.73 |
+| `arc` | 0.20 | 0.60 | 0.60 | 0.50 | 0.00 | 0.10 | 0.20 | **0.80** | 0.60 | 0.67 |
+| `include_base_44` | 0.50 | 0.50 | 0.20 | 0.10 | 0.20 | 0.70 | 0.60 | 0.30 | 0.60 | 0.53 |
+| `belebele` | 0.70 | 0.30 | 0.70 | 0.10 | 0.10 | **0.80** | 0.30 | 0.30 | 0.50 | 0.33 |
+| `global_piqa_parallel_cloze` | 0.20 | 0.40 | 0.40 | 0.50 | 0.60 | 0.30 | 0.50 | 0.20 | 0.40 | 0.53 |
+| `multiblimp` | 0.50 | 0.40 | 0.60 | 0.40 | 0.30 | 0.70 | 0.00 | 0.00 | 0.30 | 0.40 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_hu.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "hu (hu) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "id (id) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.71 | 0.52 | **0.81** | 0.71 | 0.71 | **0.81** | **0.90** | 0.71 | **0.81** | **0.82** |
+| `bpb` | 0.62 | 0.38 | 0.73 | 0.67 | **0.76** | **0.93** | **1.00** | 0.67 | 0.33 | **1.00** |
+| `xcopa` | 0.71 | 0.48 | **0.81** | 0.52 | 0.38 | **0.81** | 0.33 | 0.48 | 0.57 | 0.50 |
+| `belebele` | 0.52 | 0.57 | 0.67 | 0.52 | 0.29 | 0.19 | 0.62 | **0.76** | 0.67 | 0.57 |
+| `xstorycloze` | 0.43 | 0.52 | 0.62 | 0.67 | 0.62 | 0.43 | 0.52 | 0.52 | 0.43 | 0.57 |
+| `arc` | 0.57 | 0.48 | 0.57 | 0.71 | 0.43 | 0.43 | **0.86** | 0.24 | 0.43 | 0.57 |
+| `include_base_44` | 0.48 | 0.57 | 0.67 | 0.52 | 0.29 | 0.33 | 0.19 | 0.52 | 0.71 | 0.57 |
+| `global_mmlu_full` | 0.52 | 0.52 | 0.43 | 0.43 | 0.43 | 0.52 | 0.29 | 0.43 | 0.52 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.38 | 0.29 | 0.48 | 0.19 | 0.14 | 0.62 | 0.57 | 0.19 | 0.48 | 0.54 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_id.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "id (id) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "it (it) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.64 | 0.50 | **0.76** | **0.83** | **0.81** | **0.86** | **1.00** | 0.67 | 0.67 | **0.83** |
+| `lambada_openai_mt` | 0.72 | 0.72 | 0.64 | **0.75** | 0.67 | 0.71 | 0.61 | **0.86** | 0.67 | 0.69 |
+| `hellaswag` | 0.64 | 0.56 | 0.61 | 0.67 | **0.75** | 0.71 | **0.78** | 0.71 | 0.69 | **0.89** |
+| `multiblimp` | 0.47 | 0.39 | 0.46 | 0.50 | **0.75** | **0.75** | **0.83** | 0.68 | 0.69 | 0.44 |
+| `belebele` | 0.67 | 0.39 | 0.36 | 0.61 | 0.47 | 0.43 | 0.44 | 0.57 | 0.44 | 0.50 |
+| `xcopa` | 0.31 | 0.39 | 0.21 | 0.44 | 0.31 | 0.71 | 0.61 | 0.57 | 0.50 | 0.64 |
+| `global_mmlu_full` | 0.36 | 0.64 | 0.46 | 0.53 | 0.36 | 0.50 | 0.33 | 0.39 | 0.39 | 0.69 |
+| `arc` | 0.50 | 0.53 | 0.25 | 0.47 | 0.42 | 0.46 | 0.58 | 0.43 | 0.56 | 0.44 |
+| `include_base_44` | 0.39 | 0.31 | 0.64 | 0.36 | 0.33 | 0.25 | 0.56 | 0.29 | 0.33 | 0.50 |
+| `global_piqa_parallel_cloze` | 0.47 | 0.25 | 0.39 | 0.39 | 0.11 | 0.07 | 0.31 | 0.61 | 0.50 | 0.53 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_it.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "it (it) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Japanese (ja) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `xwinograd` | 0.61 | **0.78** | 0.67 | 0.61 | 0.67 | 0.56 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.42 | 0.72 | 0.64 | 0.53 | 0.56 | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `paws` | 0.44 | **0.89** | 0.56 | 0.50 | 0.56 | 0.64 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.61 | 0.58 | 0.58 | 0.53 | 0.53 | 0.53 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.56 | 0.58 | 0.56 | 0.69 | **0.78** | 0.62 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.58 | **0.81** | **0.90** | **0.91** | **0.92** | **1.00** | **0.81** | **0.80** | **0.90** |
+| `paws` | 0.51 | 0.67 | 0.49 | 0.60 | 0.55 | **0.78** | 0.58 | 0.44 | 0.38 | 0.51 |
+| `xwinograd` | 0.55 | 0.55 | 0.44 | 0.71 | 0.33 | 0.40 | 0.44 | 0.64 | 0.69 | 0.67 |
+| `include_base_44` | 0.47 | 0.42 | 0.64 | 0.60 | 0.53 | 0.53 | 0.40 | 0.38 | 0.51 | 0.53 |
+| `belebele` | 0.38 | 0.56 | 0.51 | 0.51 | 0.36 | 0.42 | 0.29 | 0.53 | 0.60 | 0.55 |
+| `global_mmlu_full` | 0.45 | 0.47 | 0.53 | 0.65 | 0.44 | 0.33 | 0.35 | 0.56 | 0.44 | 0.38 |
+| `global_piqa_parallel_cloze` | 0.40 | 0.31 | 0.22 | 0.33 | 0.75 | 0.24 | 0.31 | 0.36 | 0.40 | 0.55 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ja.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Japanese (ja) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ka (ka) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.50 | 0.50 | **1.00** |  | **1.00** | 0.67 |  | 0.67 |  |  |
+| `include_base_44` | 0.17 | 0.33 | 0.67 | **0.83** | **0.83** | 0.50 | 0.33 | 0.67 | 0.50 | 0.67 |
+| `belebele` | 0.67 | 0.67 | 0.50 | 0.67 | 0.33 | 0.17 | 0.33 | 0.50 | 0.67 | 0.53 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.67 | 0.33 | 0.33 | 0.00 | **0.83** | 0.33 | 0.00 | 0.33 | 0.53 |
+| `multiblimp` | 0.00 | 0.33 | **0.83** | 0.00 | 0.33 | 0.17 | 0.50 | 0.17 | 0.67 | 0.33 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ka.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "ka (ka) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Korean (ko) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.47 | **0.80** | 0.67 | **0.80** | **0.90** | **1.00** | 0.70 | 0.33 | **1.00** |
+| `paws` | **0.80** | **0.80** | 0.33 | 0.60 | 0.60 | 0.47 | 0.67 | 0.27 | 0.53 | 0.43 |
+| `belebele` | 0.33 | 0.40 | 0.60 | 0.60 | 0.73 | 0.33 | 0.60 | 0.53 | 0.67 | 0.54 |
+| `include_base_44` | 0.47 | **0.80** | 0.53 | 0.47 | 0.27 | 0.53 | **0.80** | 0.40 | 0.40 | 0.64 |
+| `global_piqa_parallel_cloze` | 0.67 | 0.40 | 0.53 | 0.33 | 0.40 | 0.67 | 0.20 | 0.40 | 0.53 | 0.57 |
+| `global_mmlu_full` | 0.53 | 0.27 | 0.73 | 0.47 | 0.33 | 0.40 | 0.27 | 0.53 | 0.40 | 0.46 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ko.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Korean (ko) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ml (ml) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.50 | 0.67 | 0.67 |  | **0.83** | **1.00** |  | **1.00** |  |  |
+| `belebele` | **1.00** | 0.33 | 0.50 | **1.00** | 0.33 | 0.50 | **1.00** | **0.83** | 0.33 | 0.27 |
+| `arc` | 0.17 | 0.33 | 0.17 | 0.17 | **0.83** | **1.00** | 0.67 | **0.83** | 0.50 | 0.67 |
+| `hellaswag` | **1.00** | 0.33 | 0.50 | 0.33 | 0.33 | 0.50 | 0.33 | **0.83** | 0.67 | 0.40 |
+| `include_base_44` | **0.83** | 0.50 | 0.17 | 0.50 | 0.33 | 0.33 | 0.33 | 0.17 | **0.83** | 0.60 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.17 | 0.33 | 0.00 | **0.83** | 0.33 | 0.33 | 0.33 | 0.50 | 0.40 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ml.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "ml (ml) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "nl (nl) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.57 | 0.43 | 0.57 | 0.67 | **0.86** | **0.81** | **0.90** | 0.67 | **0.76** | **0.89** |
+| `bpb` | 0.62 | 0.43 | 0.73 | 0.67 | 0.71 | **0.80** | **1.00** | 0.53 | 0.33 | 0.67 |
+| `multiblimp` | 0.48 | 0.48 | 0.38 | 0.48 | 0.71 | 0.71 | 0.52 | 0.71 | **0.76** | 0.57 |
+| `belebele` | 0.52 | 0.38 | 0.52 | 0.48 | 0.57 | 0.62 | 0.67 | 0.57 | **0.86** | 0.61 |
+| `arc` | 0.48 | 0.57 | 0.48 | 0.62 | 0.38 | 0.71 | 0.52 | 0.57 | 0.38 | 0.54 |
+| `global_mmlu_full` | 0.24 | 0.71 | 0.38 | 0.48 | 0.43 | 0.33 | 0.38 | 0.38 | 0.38 | 0.64 |
+| `global_piqa_parallel_cloze` | 0.52 | 0.43 | 0.52 | 0.48 | 0.48 | 0.29 | 0.24 | 0.24 | 0.38 | 0.46 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_nl.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "nl (nl) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "no (no) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **1.00** | 0.17 | **1.00** |  | 0.17 | **1.00** |  | 0.33 |  |  |
+| `global_piqa_parallel_cloze` | 0.33 | 0.33 | 0.33 | 0.33 | 0.67 | 0.50 | 0.67 | 0.67 | **0.83** | **0.83** |
+| `belebele` | 0.33 | 0.00 | 0.00 | 0.50 | 0.67 | 0.67 | **0.83** | **1.00** | 0.50 | 0.50 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_no.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "no (no) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "pl (pl) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.62 | 0.38 | 0.73 | 0.67 | 0.67 | **0.87** | **1.00** | 0.53 | 0.33 | 0.67 |
+| `multiblimp` | 0.48 | 0.43 | 0.43 | 0.48 | 0.43 | 0.67 | 0.43 | 0.57 | 0.62 | 0.46 |
+| `include_base_44` | 0.52 | 0.62 | 0.52 | 0.14 | 0.43 | 0.57 | 0.52 | 0.67 | 0.43 | 0.50 |
+| `belebele` | 0.29 | 0.33 | 0.38 | 0.57 | 0.33 | 0.29 | 0.38 | **0.81** | 0.67 | 0.64 |
+| `global_mmlu_full` | 0.29 | 0.52 | 0.62 | 0.33 | 0.29 | 0.38 | 0.48 | 0.52 | 0.52 | 0.43 |
+| `global_piqa_parallel_cloze` | 0.52 | 0.52 | 0.29 | 0.29 | 0.48 | 0.29 | 0.29 | 0.29 | 0.19 | 0.71 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_pl.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "pl (pl) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Portuguese (pt) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.62 | 0.62 | 0.67 | 0.71 | 0.67 | **0.76** | 0.71 | **0.86** | **0.81** | **0.93** |
+| `bpb` | 0.71 | 0.43 | 0.73 | 0.67 | 0.71 | 0.73 | **1.00** | 0.53 | 0.33 | 0.67 |
+| `multiblimp` | **0.76** | 0.52 | 0.62 | 0.67 | 0.57 | 0.67 | 0.62 | 0.71 | 0.71 | 0.61 |
+| `arc` | **0.81** | **0.76** | 0.62 | 0.43 | 0.57 | **0.76** | 0.52 | 0.48 | 0.38 | 0.46 |
+| `belebele` | 0.48 | 0.43 | 0.48 | 0.48 | 0.57 | 0.48 | 0.33 | 0.48 | 0.38 | **0.79** |
+| `global_mmlu_full` | 0.38 | 0.62 | 0.52 | 0.48 | 0.57 | 0.38 | 0.43 | 0.24 | 0.19 | 0.61 |
+| `global_piqa_parallel_cloze_por_latn_braz` | 0.67 | 0.29 | 0.52 | 0.38 | 0.29 | 0.57 | 0.43 | 0.48 | 0.24 | 0.43 |
+| `include_base_44` | 0.62 | 0.52 | 0.43 | 0.29 | 0.29 | 0.43 | 0.38 | 0.52 | 0.29 | 0.43 |
+| `xwinograd` | 0.33 | 0.57 | 0.38 | 0.62 | 0.24 | 0.33 | 0.38 | 0.48 | 0.43 | 0.39 |
+| `global_piqa_parallel_cloze_por_latn_port` | 0.62 | 0.38 | 0.43 | 0.52 | 0.62 | 0.33 | 0.33 | 0.29 | 0.19 | 0.36 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_pt.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Portuguese (pt) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ro (ro) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | 0.70 | 0.70 | 0.70 | **0.80** | 0.60 | 0.60 | 0.70 | 0.70 | 0.70 | **0.87** |
+| `bpb` | 0.70 | 0.20 | **0.83** | 0.67 | 0.50 | **0.83** | **1.00** | 0.33 | 0.33 | 0.67 |
+| `belebele` | 0.60 | 0.20 | 0.60 | 0.20 | 0.60 | 0.40 | 0.40 | 0.60 | **0.80** | 0.47 |
+| `global_mmlu_full` | 0.70 | 0.40 | 0.30 | 0.40 | 0.30 | 0.20 | 0.50 | 0.50 | 0.60 | 0.40 |
+| `arc` | 0.40 | 0.20 | 0.30 | 0.60 | 0.30 | 0.50 | 0.70 | 0.50 | 0.40 | 0.33 |
+| `multiblimp` | 0.70 | 0.30 | 0.20 | 0.60 | 0.30 | 0.30 | 0.30 | 0.40 | 0.70 | 0.40 |
+| `global_piqa_parallel_cloze` | 0.40 | 0.20 | 0.70 | 0.60 | 0.30 | 0.50 | 0.40 | 0.00 | 0.50 | 0.47 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ro.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "ro (ro) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Russian (ru) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `truthfulqa_ru_mc2` |  |  |  |  |  |  | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `hellaswag` | **0.92** | **0.92** | **0.92** | **0.89** | **0.89** | 0.73 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | 0.72 | **0.81** | **0.81** | **0.86** | **0.81** | **0.84** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `multiblimp` | **0.89** | **0.89** | **0.81** | **0.89** | **0.86** | **0.82** | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `global_piqa_completions` | **0.81** | 0.72 | **0.75** | **0.86** | **0.83** | **0.84** | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.61 | 0.47 | **0.75** | 0.58 | 0.64 | 0.47 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xwinograd` | 0.61 | 0.69 | 0.53 | 0.58 | 0.58 | 0.42 | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `xnli` | 0.47 | 0.50 | 0.25 | 0.36 | 0.44 | 0.64 | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.39 | 0.56 | 0.69 | 0.56 | 0.47 | 0.44 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.33 | 0.58 | 0.44 | 0.47 | 0.72 | 0.49 | **1.00** | **1.00** | 0.00 | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_ru_mc1` | 0.33 | 0.47 | 0.31 | 0.69 | 0.47 | 0.36 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.81** | 0.71 | **0.84** | **0.95** | **0.90** | **0.91** | **0.95** | **0.82** | **0.86** | **0.93** |
+| `hellaswag` | 0.68 | 0.63 | 0.67 | 0.71 | **0.82** | **0.91** | **0.90** | **0.80** | **0.82** | **0.84** |
+| `xstorycloze` | **0.78** | 0.65 | 0.60 | 0.67 | 0.65 | 0.58 | 0.72 | 0.73 | **0.78** | 0.62 |
+| `multiblimp` | **0.77** | **0.76** | 0.51 | 0.59 | **0.86** | 0.53 | 0.69 | 0.55 | 0.63 | 0.56 |
+| `arc` | 0.65 | 0.56 | 0.47 | 0.68 | 0.62 | 0.55 | 0.59 | **0.82** | 0.59 | 0.58 |
+| `xnli` | 0.51 | 0.53 | 0.56 | 0.55 | 0.46 | 0.47 | 0.32 | 0.56 | 0.71 | 0.56 |
+| `belebele` | 0.46 | 0.71 | 0.65 | 0.59 | 0.44 | 0.44 | 0.36 | 0.51 | 0.63 | 0.37 |
+| `include_base_44` | 0.51 | 0.33 | 0.44 | 0.51 | 0.56 | 0.58 | 0.47 | 0.55 | 0.50 | 0.43 |
+| `global_mmlu_full` | 0.49 | 0.46 | 0.31 | 0.63 | 0.46 | 0.40 | 0.50 | 0.49 | 0.58 | 0.49 |
+| `xwinograd` | 0.41 | 0.38 | 0.60 | 0.36 | 0.42 | 0.42 | 0.50 | 0.31 | 0.53 | 0.59 |
+| `global_piqa_parallel_cloze` | 0.35 | 0.25 | 0.44 | 0.44 | 0.38 | 0.49 | 0.41 | 0.44 | 0.47 | 0.64 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ru.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Russian (ru) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Swahili (sw) · small→large size pair (bold ≥ 0.75)"
+subtitle: "sv (sv) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `xcopa` | 0.56 | 0.64 | **0.78** | 0.42 | 0.67 | 0.56 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | 0.58 | 0.72 | 0.67 | 0.53 | **0.75** | 0.69 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xnli` | 0.39 | 0.39 | 0.33 | 0.50 | 0.67 | 0.64 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.47 | 0.47 | 0.56 | **0.78** | 0.58 | 0.49 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.39 | 0.50 | 0.72 | 0.44 | 0.50 | 0.40 | **1.00** | **1.00** | **1.00** | 0.00 | 0.00 | **1.00** |
-| `belebele` | 0.47 | 0.50 | 0.64 | 0.69 | 0.44 | 0.51 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.60 | 0.40 | 0.67 | 0.67 | 0.60 | **1.00** | **1.00** | 0.50 | 0.67 | **1.00** |
+| `global_piqa_parallel_cloze` | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 | 0.60 | 0.50 | 0.67 |
+| `hellaswag` | 0.60 | 0.30 | 0.40 | 0.60 | 0.70 | 0.60 | 0.60 | 0.50 | 0.50 | 0.60 |
+| `arc` | 0.50 | 0.30 | **0.80** | 0.60 | 0.20 | 0.40 | 0.50 | 0.40 | 0.70 | 0.67 |
+| `belebele` | 0.50 | 0.20 | 0.40 | 0.40 | 0.50 | 0.60 | 0.60 | 0.50 | 0.30 | 0.53 |
+| `global_mmlu_full` | 0.40 | 0.60 | 0.50 | 0.40 | 0.60 | 0.30 | 0.20 | 0.50 | 0.40 | 0.40 |
+| `multiblimp` | 0.30 | 0.60 | 0.20 | 0.40 | 0.60 | 0.10 | 0.30 | 0.30 | 0.60 | 0.67 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_sv.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "sv (sv) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "ta (ta) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.67 | 0.50 | 0.67 |  | **0.83** | **1.00** |  | **1.00** |  |  |
+| `belebele` | 0.17 | 0.50 | 0.67 | 0.50 | 0.67 | 0.17 | 0.33 | 0.50 | 0.67 | 0.53 |
+| `multiblimp` | 0.50 | 0.50 | 0.67 | 0.67 | 0.17 | 0.17 | 0.33 | 0.67 | 0.33 | 0.53 |
+| `hellaswag` | 0.50 | 0.00 | 0.17 | **1.00** | 0.50 | 0.67 | 0.50 | **0.83** | 0.00 | 0.27 |
+| `global_piqa_parallel_cloze` | 0.33 | 0.00 | 0.67 | 0.33 | 0.67 | 0.50 | **0.83** | 0.17 | 0.50 | 0.40 |
+| `arc` | 0.67 | 0.33 | 0.50 | 0.33 | 0.67 | 0.17 | 0.67 | 0.00 | **0.83** | 0.13 |
+| `include_base_44` | 0.33 | 0.33 | 0.50 | 0.17 | 0.33 | 0.67 | 0.67 | 0.00 | 0.33 | 0.67 |
+| `xcopa` | 0.17 | 0.17 | 0.50 | 0.33 | 0.67 | 0.33 | 0.33 | 0.33 | 0.67 | 0.33 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_ta.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "ta (ta) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Thai (th) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `xnli` | 0.72 | 0.67 | **0.81** | 0.56 | 0.69 | 0.69 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.61 | 0.67 | 0.64 | 0.72 | 0.64 | **0.78** | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xcopa` | 0.31 | 0.64 | 0.69 | 0.39 | 0.11 | 0.53 | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.56 | 0.67 | 0.47 | 0.44 | 0.42 | 0.67 | **1.00** | **1.00** | 0.00 | **1.00** | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | **0.76** | 0.57 | **0.80** | **0.83** | **0.81** | **0.93** | **1.00** | **0.80** | 0.67 | **1.00** |
+| `xnli` | 0.38 | 0.62 | 0.52 | 0.38 | 0.48 | 0.48 | 0.33 | 0.62 | 0.57 | 0.62 |
+| `belebele` | 0.38 | 0.48 | 0.52 | 0.38 | 0.48 | 0.29 | **0.76** | 0.71 | 0.43 | 0.44 |
+| `global_piqa_parallel_cloze` | 0.57 | 0.57 | 0.43 | 0.43 | 0.43 | 0.43 | 0.38 | 0.48 | 0.43 | 0.33 |
+| `xcopa` | 0.14 | 0.71 | 0.48 | 0.33 | 0.29 | 0.33 | 0.52 | 0.67 | 0.33 | 0.42 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_th.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Thai (th) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Turkish (tr) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `multiblimp` | **0.89** | 0.69 | **0.89** | **0.75** | **0.94** | **0.80** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | **0.78** | 0.69 | 0.64 | 0.64 | 0.64 | 0.69 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_mmlu_full` | 0.56 | 0.39 | 0.64 | 0.50 | 0.42 | 0.44 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | **0.86** | 0.47 | 0.61 | 0.61 | 0.58 | 0.62 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xnli` | 0.72 | 0.61 | 0.64 | 0.72 | 0.53 | 0.44 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xcopa` | 0.42 | 0.53 | 0.25 | 0.33 | 0.50 | 0.56 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `belebele` | **0.80** | 0.50 | **0.90** | **1.00** | 0.60 | **0.90** | **0.80** | 0.60 | 0.50 | **0.80** |
+| `xnli` | 0.30 | **0.80** | 0.60 | 0.50 | 0.40 | 0.50 | 0.70 | 0.70 | 0.70 | 0.67 |
+| `bpb` | 0.60 | 0.10 | **0.83** | 0.67 | 0.50 | **0.83** | **1.00** | 0.17 | 0.33 | 0.67 |
+| `include_base_44` | 0.50 | 0.70 | **0.90** | 0.50 | 0.20 | 0.40 | **0.80** | 0.60 | 0.40 | 0.47 |
+| `global_mmlu_full` | 0.40 | 0.60 | 0.70 | 0.60 | 0.20 | 0.30 | 0.00 | **0.90** | **0.80** | 0.67 |
+| `xcopa` | 0.50 | 0.40 | 0.40 | 0.40 | 0.10 | 0.10 | 0.50 | **0.80** | 0.60 | 0.60 |
+| `multiblimp` | 0.60 | 0.00 | 0.30 | 0.40 | 0.30 | 0.10 | 0.70 | 0.60 | 0.60 | 0.33 |
+| `global_piqa_parallel_cloze` | 0.30 | 0.40 | 0.30 | 0.60 | 0.10 | 0.70 | 0.40 | 0.40 | 0.00 | 0.53 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_tr.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Turkish (tr) · the table before, as a heatmap"
+---
+
+---
+title: Appendix — Decision accuracy across sizes
+subtitle: "Ukrainian (uk) · small→large size pair (bold ≥ 0.75)"
+---
+
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `hellaswag` | **0.90** | 0.50 | 0.60 | **0.80** | 0.60 | 0.70 | 0.70 | **0.90** | 0.70 | **0.80** |
+| `belebele` | **0.80** | 0.70 | **0.90** | 0.20 | 0.70 | 0.70 | 0.20 | **0.80** | 0.50 | 0.27 |
+| `multiblimp` | **0.90** | 0.50 | 0.40 | 0.60 | 0.40 | 0.30 | 0.50 | 0.70 | 0.50 | 0.73 |
+| `bpb` | **0.80** | 0.20 | **0.83** | 0.67 | 0.40 | 0.50 | **1.00** | 0.00 | 0.33 | 0.67 |
+| `global_mmlu_full` | 0.60 | 0.50 | **0.80** | 0.20 | 0.30 | 0.60 | 0.20 | 0.70 | 0.50 | 0.47 |
+| `global_piqa_parallel_cloze` | 0.10 | 0.50 | 0.50 | **0.80** | 0.20 | 0.50 | 0.10 | 0.70 | 0.70 | 0.53 |
+| `include_base_44` | 0.20 | **0.80** | 0.60 | 0.40 | 0.00 | 0.20 | 0.60 | 0.70 | 0.40 | 0.47 |
+| `arc` | 0.50 | 0.60 | 0.40 | 0.20 | 0.30 | 0.50 | 0.60 | 0.60 | 0.20 | 0.33 |
+
+<style>
+.slidev-layout table { font-size: 0.52em; line-height: 1.15; }
+.slidev-layout th, .slidev-layout td { padding: 1px 6px; }
+</style>
+
+---
+layout: figure
+image: /ladder/appendix/da_uk.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Ukrainian (uk) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
 subtitle: "Vietnamese (vi) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `hellaswag` | **0.83** | **0.81** | **0.92** | **0.86** | **0.75** | **0.78** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `truthfulqa_vi_mc1` | 0.72 | **0.86** | 0.33 | 0.58 | 0.56 | 0.24 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `arc` | 0.64 | 0.69 | 0.53 | 0.72 | 0.56 | 0.71 | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `xnli` | 0.39 | 0.61 | 0.53 | 0.61 | 0.64 | 0.71 | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.53 | 0.47 | **0.75** | 0.50 | 0.50 | 0.62 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xcopa` | 0.53 | 0.69 | 0.67 | **0.78** | **0.81** | **0.84** | **1.00** | **1.00** | 0.00 | **1.00** | 0.00 | **1.00** |
-| `global_mmlu_full` | **0.86** | 0.58 | 0.72 | 0.50 | 0.58 | 0.40 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `belebele` | 0.58 | 0.56 | 0.50 | 0.47 | 0.42 | 0.64 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
-| `truthfulqa_vi_mc2` |  |  |  |  |  |  | 0.00 | **1.00** | **1.00** | **1.00** | 0.00 | 0.00 |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.62 | 0.43 | **0.80** | 0.67 | **0.81** | 0.73 | **1.00** | 0.60 | 0.33 | 0.67 |
+| `xcopa` | 0.48 | **0.76** | 0.52 | 0.71 | 0.29 | 0.57 | 0.71 | 0.38 | 0.57 | 0.71 |
+| `hellaswag` | 0.57 | 0.43 | 0.57 | 0.52 | 0.29 | 0.52 | 0.52 | 0.67 | 0.62 | **0.86** |
+| `xnli` | 0.71 | 0.29 | 0.48 | 0.33 | 0.57 | 0.57 | 0.43 | 0.52 | 0.57 | 0.46 |
+| `global_mmlu_full` | 0.57 | 0.33 | **0.76** | 0.52 | 0.38 | 0.43 | 0.29 | 0.48 | 0.43 | 0.43 |
+| `include_base_44` | 0.48 | 0.38 | 0.52 | 0.48 | 0.62 | 0.48 | 0.52 | 0.10 | 0.62 | 0.39 |
+| `belebele` | 0.24 | 0.52 | 0.48 | 0.57 | 0.43 | 0.71 | 0.43 | 0.48 | 0.19 | 0.43 |
+| `arc` | 0.33 | 0.38 | 0.52 | 0.62 | 0.52 | 0.62 | 0.14 | 0.19 | 0.33 | 0.39 |
+| `global_piqa_parallel_cloze` | 0.57 | 0.29 | 0.24 | 0.29 | 0.24 | 0.38 | 0.38 | 0.24 | 0.29 | 0.46 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_vi.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Vietnamese (vi) · the table before, as a heatmap"
+---
 
 ---
 title: Appendix — Decision accuracy across sizes
-subtitle: "Chinese (zh) · small→large size pair (bold ≥ 0.75)"
+subtitle: "Mandarin Chinese (zh) · small→large size pair (bold ≥ 0.75)"
 ---
 
-| benchmark | 175M→350M | 175M→600M | 175M→1B | 350M→600M | 350M→1B | 600M→1B | 1B→12-14B | 1B→27-32B | 4B→12-14B | 7-9B→12-14B | 7-9B→27-32B | 12-14B→27-32B |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `truthfulqa_zh_mc2` |  |  |  |  |  |  | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `agieval_logiqa` | 0.47 | 0.64 | 0.39 | 0.44 | 0.58 | 0.67 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `global_piqa_completions` | 0.67 | 0.67 | 0.39 | 0.50 | 0.56 | 0.40 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xwinograd` | 0.36 | 0.56 | 0.42 | 0.64 | 0.50 | 0.36 | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** | **1.00** |
-| `xstorycloze` | 0.44 | 0.50 | 0.67 | 0.61 | 0.61 | 0.71 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xcopa` | 0.50 | 0.33 | 0.42 | 0.67 | 0.64 | 0.67 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 | **1.00** |
-| `arc` | 0.44 | 0.47 | 0.39 | 0.42 | 0.50 | 0.60 | **1.00** | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** |
-| `paws` | 0.39 | 0.56 | 0.58 | 0.44 | 0.58 | 0.51 | **1.00** | 0.00 | **1.00** | **1.00** | **1.00** | 0.00 |
-| `global_mmlu_full` | 0.36 | 0.56 | 0.64 | 0.42 | 0.28 | 0.51 | 0.00 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** |
-| `truthfulqa_zh_mc1` | 0.28 | 0.58 | 0.53 | 0.42 | 0.36 | 0.47 | 0.00 | **1.00** | **1.00** | **1.00** | **1.00** | 0.00 |
-| `belebele` | 0.67 | 0.25 | 0.50 | 0.58 | 0.72 | 0.60 | 0.00 | 0.00 | **1.00** | **1.00** | 0.00 | **1.00** |
-| `xnli` | 0.47 | 0.58 | 0.67 | 0.44 | 0.47 | 0.67 | **1.00** | **1.00** | 0.00 | 0.00 | 0.00 | **1.00** |
+| benchmark | 175M→350M | 175M→600M | 175M→1B | 175M→1.7B | 350M→600M | 350M→1B | 350M→1.7B | 600M→1B | 600M→1.7B | 1B→1.7B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `bpb` | 0.69 | 0.55 | **0.83** | **0.90** | **0.85** | **0.92** | **1.00** | **0.78** | **0.80** | **0.90** |
+| `xstorycloze` | 0.75 | 0.53 | 0.69 | 0.64 | 0.53 | 0.71 | 0.64 | 0.60 | 0.60 | 0.59 |
+| `arc` | 0.45 | 0.55 | 0.58 | 0.49 | 0.49 | 0.73 | 0.38 | 0.53 | 0.67 | 0.51 |
+| `belebele_zho_Hant` | 0.65 | 0.47 | 0.53 | 0.53 | 0.56 | 0.49 | 0.60 | 0.69 | 0.44 | 0.35 |
+| `paws` | 0.47 | 0.69 | 0.38 | 0.55 | 0.65 | 0.49 | 0.44 | 0.51 | 0.42 | 0.42 |
+| `xnli` | 0.35 | 0.55 | 0.60 | 0.22 | 0.60 | 0.51 | 0.42 | **0.76** | 0.31 | 0.53 |
+| `global_mmlu_full` | 0.44 | 0.53 | 0.49 | 0.60 | 0.51 | 0.36 | 0.55 | 0.44 | 0.42 | 0.50 |
+| `belebele_zho_Hans` | 0.58 | 0.60 | 0.51 | 0.40 | 0.31 | 0.29 | 0.33 | 0.56 | 0.53 | 0.56 |
+| `include_base_44` | 0.55 | 0.40 | 0.71 | 0.27 | 0.51 | 0.60 | 0.36 | 0.47 | 0.33 | 0.33 |
+| `xwinograd` | 0.38 | 0.35 | 0.20 | 0.22 | 0.36 | 0.62 | 0.45 | 0.64 | 0.60 | 0.55 |
+| `xcopa` | 0.38 | 0.38 | 0.40 | 0.51 | 0.25 | 0.58 | 0.35 | 0.40 | 0.53 | 0.45 |
+| `global_piqa_parallel_cloze_cmn_hant` | 0.47 | 0.44 | 0.47 | 0.42 | 0.25 | 0.49 | 0.47 | 0.29 | 0.42 | 0.46 |
+| `global_piqa_parallel_cloze_cmn_hans` | 0.45 | 0.55 | 0.56 | 0.36 | 0.36 | 0.53 | 0.38 | 0.29 | 0.42 | 0.27 |
 
 <style>
 .slidev-layout table { font-size: 0.52em; line-height: 1.15; }
 .slidev-layout th, .slidev-layout td { padding: 1px 6px; }
 </style>
+
+---
+layout: figure
+image: /ladder/appendix/da_zh.png
+fit: contain
+height: 72vh
+title: Appendix — Decision accuracy across sizes
+subtitle: "Mandarin Chinese (zh) · the table before, as a heatmap"
+---
 
 <!-- END generated signal slides -->

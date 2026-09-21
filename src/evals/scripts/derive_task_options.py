@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record each task's answer-option count in configs/tasks.json.
+"""Record each task's answer-option count and item count in configs/tasks.json.
 
 `n_options` is what turns a raw accuracy into "above chance": a 0.31 means
 something different on 3-way xnli (chance 0.333, i.e. BELOW it) than on 4-way
@@ -11,6 +11,13 @@ It is DERIVED, not asserted: each samples_<task>_*.jsonl record holds one
 `arguments` entry per candidate continuation, so the option count is read off
 a real evaluated document. Multiple-choice tasks only; generative ones
 (exact_match) have no fixed option count and are left without the field.
+
+`n_items` is the number of scored examples, read from the harness results
+files (`n-samples.effective`, the count after the task's own filtering): with
+it a reported accuracy is a count of correct answers again, which is what a
+binomial confidence bound on "above chance" needs. One results file per task
+is enough (every checkpoint scores the same test set), so the walk over
+eval_logs stops as soon as every listed task has a count.
 
 Idempotent — re-run after adding benchmarks; existing values are overwritten
 only when the samples disagree, and that disagreement is printed.
@@ -58,6 +65,38 @@ def observed_options() -> dict[str, Counter]:
     return seen
 
 
+def observed_items(listed: dict) -> dict[str, int]:
+    """task -> number of scored items, from the newest results file of each
+    task (per_task/<task>/<model>/results_*.json, or the older one-file-per-job
+    layout). Stops once every listed task is covered."""
+    seen: dict[str, int] = {}
+    want = set(listed)
+    runs = sorted(EVAL_LOGS.glob("*/harness/eval_*"), key=lambda d: d.stat().st_mtime, reverse=True)
+    for run in runs:
+        for f in list(run.glob("per_task/*/*/results_*.json")) + list(run.glob("results_*.json")):
+            try:
+                r = json.loads(f.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            # A group task (global_mmlu_full_ar) reports n-samples for its
+            # subject facets only; its own count is their sum within the file.
+            parts: dict[str, int] = {}
+            for task, n in r.get("n-samples", {}).items():
+                if not n.get("effective"):
+                    continue
+                if task in want:
+                    seen.setdefault(task, int(n["effective"]))
+                else:
+                    parent = max((k for k in want if task.startswith(k + "_")), key=len, default=None)
+                    if parent is not None and parent not in r["n-samples"]:
+                        parts[parent] = parts.get(parent, 0) + int(n["effective"])
+            for parent, n in parts.items():
+                seen.setdefault(parent, n)
+        if want <= set(seen):
+            break
+    return seen
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -94,6 +133,19 @@ def main() -> None:
         entry["n_options"] = n
 
     print(f"{len(seen)} tasks have samples; +{added} new, ~{changed} changed")
+    items = observed_items(listed)
+    added = changed = 0
+    for task, n in sorted(items.items()):
+        old = listed[task].get("n_items")
+        if old == n:
+            continue
+        added += old is None
+        changed += old is not None
+        if old is not None:
+            print(f"  {task}: n_items {old} -> {n}")
+        listed[task]["n_items"] = n
+    print(f"{len(items)} tasks have results; n_items +{added} new, ~{changed} changed; "
+          f"{len([t for t in listed if 'n_items' not in listed[t]])} listed tasks without")
     by_n = Counter(e["n_options"] for e in tasks["tasks"].values()
                    if "n_options" in e)
     print("distribution:", dict(sorted(by_n.items())))

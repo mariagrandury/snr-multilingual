@@ -5,12 +5,53 @@
 #
 #   ./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
 #   ./launch_builds.sh             # submit
+#   BUILD_PARTITION=preemptable ./launch_builds.sh    # see below
 set -euo pipefail
 DIR=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
 ONE=$DIR/submit_build_one.sh
 OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data  # persistent capstor store
 LOGS=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data/logs   # logs live with the data on capstor (they carry the per-language plan); matches submit_build_one.sh's #SBATCH --output
 DRY=${1:-}
+
+# Where the builds run. `normal` is capped by its QOS at 480 nodes for the
+# WHOLE cluster and allows 12h; `preemptable` has all 1343 nodes, no group cap
+# and 24h. A build is one of the few things that loses almost nothing to a
+# preemption: submit_build_one.sh queues its singleton successor BEFORE the
+# work starts and the build resumes from its checkpoint, so the chain survives
+# being killed. A time limit cannot be raised after submission (scontrol
+# refuses it for a non-operator), so the longer wall is asked for here, and
+# only `preemptable` would accept it — `normal` rejects a 24h request outright.
+# Both are exported: --export=ALL carries them into the job, where the
+# self-chain reuses them for the successor.
+export BUILD_PARTITION=${BUILD_PARTITION:-}
+if [ -z "${BUILD_TIME:-}" ]; then
+  if [ "$BUILD_PARTITION" = preemptable ]; then BUILD_TIME=23:59:00
+  else BUILD_TIME=11:59:59; fi
+fi
+export BUILD_TIME
+
+# --exclusive, always. `normal` is an OverSubscribe=EXCLUSIVE partition, so a
+# build has always been given a whole node there (AllocCPUS=288 for a job that
+# asks for 32) — the "~9 builds pack per node" in submit_build_one.sh's header
+# describes an intent the cluster never honoured. `preemptable` is
+# OverSubscribe=FORCE:1, so there the same request really is packed: on
+# 2026-09-20 six builds moved there landed on ONE node beside another user's
+# job and were cancelled by the system 16s in, before writing a line, taking
+# six chains with them. Asking for the node reproduces exactly the allocation
+# every finished build has had.
+export BUILD_EXCLUSIVE=${BUILD_EXCLUSIVE:---exclusive}
+
+# How many segments to queue per mixture up front. They are singletons, so
+# they run one after another and the idempotency guard no-ops the extras once
+# the mixture is built; the point is that the chain cannot die from a kill
+# that lands before the script reaches its self-chain line — which is how the
+# six above were lost. Two on a preemptable queue, one where a job that starts
+# is not taken away again.
+if [ -z "${BUILD_SEGMENTS:-}" ]; then
+  if [ "$BUILD_PARTITION" = preemptable ]; then BUILD_SEGMENTS=2
+  else BUILD_SEGMENTS=1; fi
+fi
+export BUILD_SEGMENTS
 
 # ---- the 92B rebuilds -------------------------------------------------------
 # The 1.7B rung gained L15 and L50 on 2026-09-10, so those two scheme-A builds
@@ -30,6 +71,16 @@ DRY=${1:-}
 REBUILD=(A:15 A:50 B:15)
 REBUILD_ROOT=$OUT/rebuild-92B
 REBUILD_DST=/iopsstor/scratch/cscs/mariagrandury/data-92B   # = launch_trainings.CSCS_REBUILD_DATA_DIR
+# The 3B rung (2026-09-19, A and B at L8 and L15) draws 150B from the
+# multilingual half, so those four builds are now sized 165B, against 92B
+# finished on capstor and, for the two L15s, in rebuild-92B. Same mechanism,
+# a second tier: rebuild-165B, staged to data-165B, read by the launcher only
+# for cells the 92B copies cannot feed (CSCS_REBUILD_DATA_DIRS). A 165B T=1
+# build exhausts no language at any of the four (measured on the builder's
+# own estimates: A-L8 240B, A-L15 287B, B-L8 199B, B-L15 209B available).
+REBUILD_165=(A:8 A:15 B:8 B:15)
+REBUILD_165_ROOT=$OUT/rebuild-165B
+REBUILD_165_DST=/iopsstor/scratch/cscs/mariagrandury/data-165B
 
 mkdir -p "$OUT" "$LOGS"
 
@@ -78,8 +129,14 @@ submit() { # name exportvars [--dependency=afterany:ID]
   # the same prefix concurrently — both resume from one checkpoint and append to
   # one .bin. An afterany gate, when given, is combined with it.
   for a in "$@"; do if [[ $a == --dependency=* ]]; then dep="${a#--dependency=},singleton"; fi; done
-  local cmd=(sbatch --job-name="$name" --dependency="$dep" --export=ALL,"$vars" "$ONE")
-  if [ "$DRY" = --dry-run ]; then echo "DRY: ${cmd[*]}"; else echo "  $("${cmd[@]}")  [$name]"; fi
+  local cmd=(sbatch --job-name="$name" --dependency="$dep" --time="$BUILD_TIME"
+             $BUILD_EXCLUSIVE
+             ${BUILD_PARTITION:+--partition="$BUILD_PARTITION"}
+             --export=ALL,"$vars" "$ONE")
+  local s
+  for ((s = 0; s < BUILD_SEGMENTS; s++)); do
+    if [ "$DRY" = --dry-run ]; then echo "DRY: ${cmd[*]}"; else echo "  $("${cmd[@]}")  [$name]"; fi
+  done
 }
 
 # L2 (Russian, sized for its largest run, the 1.7B) goes through the same
@@ -101,6 +158,14 @@ while IFS=: read -r scheme subdir L; do
   # reusing the finished 52B build's name would chain onto its history.
   if [[ " ${REBUILD[*]} " == *" $scheme:$L "* ]]; then
     root=$REBUILD_ROOT; name="$name-92b"; extra=",BUILD_DST=$REBUILD_DST"
+  fi
+  # A setting in both tiers submits both names; the finished 92B one no-ops
+  # on its idempotency guard and the 165B one builds. The grid-derived target
+  # (165B) reaches both, which is harmless for a finished build and exactly
+  # right for the new root.
+  if [[ " ${REBUILD_165[*]} " == *" $scheme:$L "* ]]; then
+    vdir=$(variant_dir "$REBUILD_165_ROOT" "$subdir") || { echo "cannot prepare $REBUILD_165_ROOT/$subdir" >&2; exit 1; }
+    submit "build-${scheme,,}-L$L-165b" "BUILD_SCHEME=$scheme,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$vdir,BUILD_DST=$REBUILD_165_DST"
   fi
   dep=()
   if [ "$scheme:$L" = A:2 ]; then dep=("${L2_DEP[@]}"); fi

@@ -1,0 +1,61 @@
+# The sweep's training image, pinned to the copy in the local EDF image store
+# instead of the a139 capstor toml, so jobs can start while /capstor is down
+# (2026-09-16 outage: the whole filesystem is unmounted, so pyxis cannot even
+# read the toml and every job dies in ~15 s with exit 0). Same image:
+# ngc-nemo 25.11.01-alps3, which is what ngc_25-11-nemo-alps3.toml names.
+# launch_pretraining_cscs.sh falls back to this file when the capstor toml is
+# missing, so nothing has to change again when capstor returns.
+image = "/iopsstor/scratch/cscs/mariagrandury/.edf_imagestore/jfrog.svc.cscs.ch+docker-group-csstaff+alps-images+ngc-nemo+25.11.01-alps3.aarch64.sqsh"
+
+# No /capstor here: everything training reads and writes (Megatron, the data
+# mixes, the checkpoints, the index cache, the W&B save dir) is on iopsstor,
+# and mounting an unavailable filesystem fails the container outright.
+mounts = ["/iopsstor", "/users"]
+
+writable = true
+
+# The network stack comes from the image, not from the node.
+#
+# The CXI and AWS-OFI-NCCL hooks inject libfabric and the NCCL plugin from
+# /capstor/store/cscs/cscs/public/containers/netstack (10-netstack.sh defaults
+# to source "artifact") — unavailable. Their "host" mode is no good either: it
+# mounts /opt/cray/libfabric/host over the image's libfabric, and that build
+# stops at FABRIC_1.8 while the image's MPI needs 1.9, so `import torch` dies
+# with "version `FABRIC_1.9' not found". Disabling aws_ofi_nccl also disables
+# the CXI hook (89-libfabric-cxi.sh exits only when BOTH are off).
+#
+# This is an -alps3 image, so it already carries what the hooks would inject:
+# /usr/lib/libnccl-net-ofi.so and a libfabric with FABRIC_1.9 and the cxi
+# provider. [env] below is the hook's own variable list, verbatim from
+# /etc/enroot/hooks.d/90-aws-ofi-nccl.sh, so NCCL is tuned identically to a
+# normal capstor-side run — NCCL_NET_PLUGIN=ofi selects the image's plugin.
+[annotations]
+com.hooks.netstack.source = "host"
+com.hooks.aws_ofi_nccl.enabled = "false"
+com.hooks.cxi.enabled = "false"
+
+[env]
+NCCL_NET = "AWS Libfabric"
+NCCL_NET_PLUGIN = "ofi"
+CUDA_CACHE_DISABLE = "1"
+FI_CXI_DEFAULT_CQ_SIZE = "131072"
+FI_CXI_DEFAULT_TX_SIZE = "16384"
+FI_CXI_DISABLE_HOST_REGISTER = "1"
+FI_CXI_RDZV_EAGER_SIZE = "0"
+FI_CXI_RDZV_GET_MIN = "0"
+FI_CXI_RDZV_PROTO = "alt_read"
+FI_CXI_RDZV_THRESHOLD = "0"
+FI_CXI_RX_MATCH_MODE = "software"
+FI_CXI_SAFE_DEVMEM_COPY_THRESHOLD = "16777216"
+FI_MR_CACHE_MAX_COUNT = "524288"
+FI_MR_CACHE_MAX_SIZE = "-1"
+FI_MR_CACHE_MONITOR = "userfaultfd"
+NCCL_CROSS_NIC = "0"
+NCCL_NCHANNELS_PER_NET_PEER = "4"
+NCCL_NET_GDR_C2C = "1"
+NCCL_NET_GDR_LEVEL = "PHB"
+NCCL_NET_GDR_READ = "1"
+NCCL_P2P_LEVEL = "NVL"
+NCCL_PROTO = "^LL128"
+NCCL_PXN_DISABLE = "1"
+NCCL_SOCKET_IFNAME = "hsn"

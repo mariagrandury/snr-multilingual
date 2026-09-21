@@ -1,0 +1,35 @@
+\section{Signal and Noise Definitions}
+\label{app:snr-definitions}
+
+We adapt the signal-and-noise framework of \citet{heineman_signal_2025}. This appendix describes the definitions used to interpret our surrogate analysis; it does not claim additional experiments beyond those reported in the main text.
+
+\subsection{Scaling Fits}
+\label{app:scaling-law-prediction-error}
+
+The scaling figure uses linear fits of task score against log model size and log training tokens. The reported $R^2$ values describe in-sample fit quality. We do not use a two-stage loss-to-accuracy scaling model or treat $R^2$ as held-out prediction accuracy in the present analysis.
+
+\subsection{Decision Accuracy and Ties}
+\label{app:decision-acc-details}
+
+We use the sign-agreement definition in Equation~\ref{eq:da}. With no ties, if $C$ pairs are concordant and $D$ are discordant, then $\mathrm{DA}=C/(C+D)$ and Kendall's $\tau=2\mathrm{DA}-1$. Our actual evaluations allow ties: a tie on both sides agrees, while a tie on only one side does not. The no-tie identity therefore does not directly apply to all reported results. We retain this rule for consistency across accuracy and BPB measurements.
+
+\subsection{Noise Estimates}
+\label{app:measuring-noise}
+
+\textbf{Checkpoint noise.} The surrogate export estimates variability over each model's last five available checkpoints on its shared grid and aggregates it across the model population. For the leading variants, the implementation divides mean checkpoint standard deviation by the mean late-checkpoint score. BPB uses a finer shared grid than benchmarks in this export; comparisons of absolute SNR magnitudes across these measurement types therefore need care.
+
+\textbf{Seed variability.} Runs with different seeds change initialization and data order together. Their score variability measures the combined effect; these runs do not identify the two sources separately. Seed variability is distinct from uncertainty due to the finite number of evaluation items.
+
+\textbf{Other possible estimates.}
+\label{app:total-variation}
+Total variation across a training curve and dispersion across disjoint evaluation folds are alternative noise diagnostics. They are not substituted for checkpoint noise in the reported 22-definition comparison. In particular, the present results do not establish that fold-based noise is a better surrogate than checkpoint noise.
+
+\subsection{Signal Variants}
+
+\textbf{Pairwise distances.} For model scores $u_1,\ldots,u_m$, mean pairwise distance averages $|u_i-u_j|$ over unordered pairs; MPSD averages $(u_i-u_j)^2$. Their relative variants divide the signal by the mean late-checkpoint score before forming SNR. Relative dispersion uses the largest pairwise distance with the analogous normalization.
+
+\textbf{Robust spread.} Interquartile range is the upper score quartile minus the lower quartile; quartile deviation is half this range. Other variants use median or mean absolute deviations. These definitions measure different aspects of separation and can rank task--size cells differently.
+
+\textbf{Discrepancy and shifted variants.} The implementation also provides discrepancy, star discrepancy, and shifted versions of the discrepancy and dispersion measures. These are separate transformations of the score distribution; their names in the results identify the corresponding repository implementations. A leading shifted variant should not be interpreted as equivalent to its unshifted counterpart.
+
+\textbf{Language-specific comparison.} We retain finite, positive SNR values and correlate their logarithms with DA within a language. Size correlations use only comparisons with the 1.7B reference; checkpoint correlations pool the nine pre-final fractions across the five analyzed sizes. We require at least two task entries for a language and at least five finite observations for a reported correlation. Checkpoints and tasks share models, so the observations are dependent. We do not attach independent-sample significance claims to the selected best variants.

@@ -76,8 +76,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, TOKENIZER_MODEL, cell_languages, due_iters,
-    exp_name, job_name, predictivity_cells, schedule_for)
+    DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
+    arches_for, due_iters, exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import load_tasks, tasks_for_benchmarks  # noqa: E402
@@ -99,7 +99,7 @@ PROJECT_NAME = json.loads(
 # Converted HF checkpoints are the durable copy — persist them on capstor store
 # (push-snr.py mirrors this tree to the public msnr Hub org). Not iopsstor
 # scratch, which is auto-purged.
-DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
+DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
 def convert_job_name(cell: str) -> str:
@@ -107,7 +107,7 @@ def convert_job_name(cell: str) -> str:
     Keep the two in step: this string is the only dedupe against submitting a
     second conversion for a cell that already has one in flight."""
     return f"convert-snr-{cell}"
-# The auto group spans 13 tasks (L=1) to 446 (L=100), so a fixed walltime can't
+# The auto group spans 13 tasks (L=1) to 329 (L=50), so a fixed walltime can't
 # fit both. The ladder's KV-head counts force TP=1, so evaluate.sbatch runs
 # EVAL_WORKERS independent workers per job — one per GPU of the node, each
 # with its own model copy — sharing the task queue (../evals/scripts/
@@ -144,7 +144,8 @@ def convert_job_name(cell: str) -> str:
 # is a resume point, not a loss. SAFETY and the fixed overhead only buy fewer
 # resubmissions.
 MIN_PER_TASK = {"90M": 0.39, "175M": 0.48, "350M": 0.54,   # per worker-task, 583 jobs
-                "600M": 0.55, "1B": 0.59, "1.7B": 0.68}
+                "600M": 0.55, "1B": 0.59, "1.7B": 0.68,
+                "3B": 0.85}   # not fitted: 1.7B x 1.25, the 1B->1.7B step
 OVERHEAD_MIN = 10   # max fitted intercept 1.9; the rest is cold-start headroom
 SAFETY = 1.15       # worst observed requirement 0.91 -> 26% margin
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
@@ -177,11 +178,14 @@ def eval_walltime(size: str, n_tasks: int) -> str:
     return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
 
 
-def auto_benchmarks() -> list[str]:
+def auto_benchmarks(group: str = "auto") -> list[str]:
     """The `auto` group in configs/tasks.json — BENCHMARK names; each cell
     is evaluated on every benchmark's tasks in the languages it trains on
-    (tasks_for_benchmarks x cell_languages)."""
-    return json.loads(TASKS_JSON.read_text())["groups"]["auto"]
+    (tasks_for_benchmarks x cell_languages). `auto_rf` / `auto_rfgm` are the
+    reformulated sets: the letter-format families rewritten as cloze tasks
+    / as Gemini statements (../evals/scripts/make_rf_tasks.py), distinct task
+    names, so all sets coexist on disk and in W&B."""
+    return json.loads(TASKS_JSON.read_text())["groups"][group]
 
 
 def saved_valid_iters(cell: str, root: Path) -> list[int]:
@@ -196,15 +200,17 @@ def saved_valid_iters(cell: str, root: Path) -> list[int]:
     )
 
 
-def active_jobs() -> set[str]:
-    """All queued/running Slurm job names, ANY user — collaborators share the
-    trees, so their in-flight converts/evals count as ours."""
+def active_jobs() -> set[str] | None:
+    """All queued/running Slurm job names and job ids, ANY user — collaborators
+    share the trees, so their in-flight converts/evals count as ours. None when
+    squeue fails: an unreachable controller must not read as an empty queue,
+    or the pass resubmits every eval and convert that is already running."""
     try:
-        out = subprocess.run(["squeue", "-h", "--format=%j"],
+        out = subprocess.run(["squeue", "-h", "--format=%j %i"],
                              capture_output=True, text=True, timeout=30)
-        return set(out.stdout.split()) if out.returncode == 0 else set()
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        return set()
+        return None
+    return set(out.stdout.split()) if out.returncode == 0 else None
 
 
 def remaining_tasks(name: str, logs_root: Path, tasks: list[str]) -> list[str]:
@@ -243,6 +249,29 @@ def attempted_nothing(run: Path) -> bool:
     j = job_facts(run)
     return (j.get("status") == "finished"
             and not j.get("tasks_done") and not j.get("tasks_failed"))
+
+
+_JOB_STATE: dict[str, str] = {}
+
+
+def interrupted(run: Path) -> bool:
+    """True when this run's job was cancelled, preempted or lost its node before
+    it saved anything. Its job.json still says `started` and the directory is
+    empty, exactly what a crash leaves, but it says nothing about the tasks:
+    counted as failures, two quick scancels plus one real error held back a
+    whole checkpoint. sacct is asked only about such barren runs, once per job
+    per pass."""
+    if job_facts(run).get("status") != "started" or wrote_results(run):
+        return False
+    job = run.name.rsplit("_", 1)[-1]
+    if job not in _JOB_STATE:
+        try:
+            out = subprocess.run(["sacct", "-j", job, "-X", "-n", "-o", "State"],
+                                 capture_output=True, text=True, timeout=30)
+            _JOB_STATE[job] = out.stdout.strip() if out.returncode == 0 else ""
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            _JOB_STATE[job] = ""
+    return _JOB_STATE[job].startswith(("CANCELLED", "PREEMPTED", "NODE_FAIL"))
 
 
 def eval_runs(name: str, logs_root: Path) -> list[Path]:
@@ -310,7 +339,9 @@ def task_attempts(name: str, logs_root: Path,
     reason: dict[str, str] = {}
     open_ = set(tasks)
     for run in eval_runs(name, logs_root):
-        if attempted_nothing(run):
+        # Neither a strike nor a reset: a no-op duplicate (above), or a job
+        # someone cancelled before it saved anything (interrupted()).
+        if attempted_nothing(run) or interrupted(run):
             continue
         failed, barren = failed_in(run), not wrote_results(run)
         for t in list(open_):
@@ -342,10 +373,10 @@ def classify(reason: str) -> tuple[str, str]:
     return ("dataset", hit.group(1)) if hit else ("other", reason[:200])
 
 
-_EVAL_ERROR: dict[str, tuple[str, str]] = {}
+_EVAL_ERROR: dict[tuple[str, str], tuple[str, str]] = {}
 
 
-def eval_error(name: str) -> tuple[str, str]:
+def eval_error(name: str, logs_root: Path, suffix: str = "") -> tuple[str, str]:
     """Why NAME's most recent eval job wrote nothing — for runs that died
     before any task could be recorded in failed_tasks.log, and as the second
     opinion when a per-task reason is not self-explanatory.
@@ -355,19 +386,34 @@ def eval_error(name: str) -> tuple[str, str]:
     in the errors file rather than retried into the ground.
 
     Memoised for the pass: the answer is a property of NAME's job logs, and
-    an L100 checkpoint asks it once per held-back task — up to ~290 scans of
+    an L50 checkpoint asks it once per held-back task — up to ~290 scans of
     the same 400 KB log tails.
+
+    The logs read are those of the runs being explained: NAME's two newest
+    runs that count as attempts (task_attempts' rule), found by the job id
+    their eval_* dir ends in, in THIS watcher's job family (SUFFIX, e.g. -rf).
+    Until 2026-09-19 it read the two newest `eval-<cell>-iter<N>_*.err` by
+    mtime instead — the plain family only, so for -rf jobs it read another
+    family's logs, and a Sep 11 xstorycloze_gl line relabelled a week of
+    lock-file PermissionErrors as that dataset missing (308 tasks held on 22
+    checkpoints behind a "repair" of a dataset that was already cached).
     """
-    if name in _EVAL_ERROR:
-        return _EVAL_ERROR[name]
-    _EVAL_ERROR[name] = _eval_error_uncached(name)
-    return _EVAL_ERROR[name]
+    key = (name, suffix)
+    if key not in _EVAL_ERROR:
+        _EVAL_ERROR[key] = _eval_error_uncached(name, logs_root, suffix)
+    return _EVAL_ERROR[key]
 
 
-def _eval_error_uncached(name: str) -> tuple[str, str]:
-    logs = sorted(EVAL_JOB_LOGS.glob(f"{job_name('eval', name)}_*.err"),
-                  key=lambda p: p.stat().st_mtime, reverse=True)
-    for log in logs[:2]:                     # the two most recent attempts
+def _eval_error_uncached(name: str, logs_root: Path, suffix: str) -> tuple[str, str]:
+    job = job_name("eval", name) + suffix
+    # The two newest attempts FIRST, then their logs: filtering on "has a log
+    # in this family" before slicing would skip past a newer run of the other
+    # family and reach back to a stale log — the very bug this replaced.
+    runs = [r for r in eval_runs(name, logs_root)
+            if not (attempted_nothing(r) or interrupted(r))][:2]
+    logs = [EVAL_JOB_LOGS / f"{job}_{r.name.rsplit('_', 1)[-1]}.err" for r in runs]
+    logs = [p for p in logs if p.exists() or p.with_suffix(".out").exists()]
+    for log in logs:
         for path in (log, log.with_suffix(".out")):   # srun splits the two
             try:
                 with open(path, errors="ignore") as f:
@@ -381,7 +427,8 @@ def _eval_error_uncached(name: str) -> tuple[str, str]:
             lines = ERROR_LINE_RE.findall(text)
             if lines:
                 return "other", f"{lines[-1][0]}: {lines[-1][1][:160]}"
-    return "unknown", "no eval job log found"
+    return "unknown", ("no error line in the job log" if logs
+                       else "no eval job log found")
 
 
 _DATASET_FIXED: dict[str, bool] = {}
@@ -396,7 +443,12 @@ def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
     parks its checkpoints in the errors file."""
     if repo in _DATASET_FIXED:
         return _DATASET_FIXED[repo]
-    listed = repo in DATASET_MANIFEST.read_text().split()
+    # The manifest may pin a revision (`repo@commit`, see eval_datasets.txt):
+    # build THAT entry, never the bare repo — a pin exists because the tip no
+    # longer loads, and appending an unpinned duplicate would rebuild from it.
+    entry = next((e for e in DATASET_MANIFEST.read_text().split()
+                  if e.partition("@")[0] == repo), None)
+    listed = entry is not None
     print(f"  missing offline dataset {repo}"
           f"{'' if listed else ' (also absent from eval_datasets.txt)'}"
           f" — building it into the cache")
@@ -409,7 +461,7 @@ def fix_missing_dataset(repo: str, dry_run: bool) -> bool:
             f.write(f"{repo}\n")
         print(f"  ({DATASET_MANIFEST.name} updated — commit the diff)")
     with tempfile.NamedTemporaryFile("w", suffix=".txt") as manifest:
-        manifest.write(f"{repo}\n")
+        manifest.write(f"{entry or repo}\n")
         manifest.flush()
         out = subprocess.run([sys.executable, str(DOWNLOAD_DATASETS),
                               manifest.name], capture_output=True, text=True)
@@ -430,8 +482,9 @@ def hf_staged(cell: str, it: int, staging: Path) -> bool:
 
 def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
                 task_list: list[str], size: str, dry_run: bool,
-                exclude: set[str] = frozenset()) -> None:
+                exclude: set[str] = frozenset(), suffix: str = "") -> None:
     name = f"{cell}-iter{it}"
+    job = job_name("eval", name) + suffix
     hf_dir = staging / cell / f"iter_{it:07d}"
     # Size the request on what is LEFT to run, not the full list — the inner
     # runner skips completed tasks anyway (debug_loop.sh's narrowing trick),
@@ -440,7 +493,12 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     remaining = [t for t in remaining_tasks(name, logs_root, task_list)
                  if t not in exclude]
     tasks = ",".join(remaining)
-    n_tasks = len(remaining)
+    # The rf / rfgm Global-MMLU twins are one task over the whole 14k-row split
+    # with four answer strings to score per item: 2.7-3.3 min per worker-task
+    # on the 2026-09-18 pilots against the ~0.5 the fit assumes, so each
+    # counts as six tasks in the walltime.
+    n_tasks = sum(6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1
+                  for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
     # comma-joined TASKS list would be truncated at its first comma and the
@@ -457,11 +515,12 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
            "WANDB_ENTITY": WANDB_ENTITY,
            "WANDB_PROJECT": PROJECT_NAME,
            "LOGS_ROOT": str(logs_root),
+           "HARNESS_INCLUDE_PATH": str(EVALS_DIR / "tasks"),   # the rf_* / rfgm_* YAMLs
            "TASKS": tasks}
-    cmd = ["sbatch", f"--job-name={job_name('eval', name)}",
+    cmd = ["sbatch", f"--job-name={job}",
            f"--time={eval_walltime(size, n_tasks)}",
            "--export=ALL", "scripts/evaluate.sbatch", str(hf_dir), name]
-    print(f"  submit: {job_name('eval', name)}")
+    print(f"  submit: {job}")
     if dry_run:
         print(f"    (cd {EVALS_DIR} && TASKS=<{n_tasks} tasks> ... {' '.join(cmd)})")
     else:
@@ -486,8 +545,69 @@ def submit_convert(cell: str, iters: list[int], staging: Path,
         subprocess.run(cmd, env=env, check=True)
 
 
+def merge_unmerged(name: str, logs_root: Path, running: set[str],
+                   dry_run: bool) -> None:
+    """Fold a run's per_task/<task>/ results into one results_*.json when the
+    run never did so itself: a walltime-killed job dies before
+    _run_per_task.sh reaches its merge step, leaving its results only under
+    per_task/. The done-test and every reader cope with that layout, but the
+    merged file is what downstream tools and people look for. Same call the
+    job makes; a run whose job is still in the queue is left to do it."""
+    for run in eval_runs(name, logs_root):
+        if run.name.rsplit("_", 1)[-1] in running or any(run.glob("results_*.json")):
+            continue
+        splits = sorted(d for d in run.glob("per_task/*") if d.is_dir())
+        if not splits:
+            continue
+        print(f"  merge: {len(splits)} per-task result(s) into {name}/{run.name}")
+        if dry_run:
+            continue
+        out = subprocess.run(
+            [sys.executable, "-m", "scripts.alignment.merge_split_results",
+             "--split_dirs", *map(str, splits), "--output_dir", str(run),
+             "--move-samples"], cwd=EVALS_DIR, capture_output=True, text=True)
+        if out.returncode:
+            print(f"    merge failed: {(out.stderr or out.stdout).strip()[-300:]}",
+                  file=sys.stderr)
+
+
+# The shared offline dataset cache (evaluate.sbatch hard-sets HF_HOME to it for
+# every user). `datasets` takes a FileLock next to each dataset it loads and
+# creates the lock file 0644, so the directory's default ACL (rwx for the
+# named collaborators) is masked down to r-- on it — and the OTHER user's
+# jobs then die on that dataset with PermissionError at the lock, every task,
+# every job (2026-09-15..18: 22k of aromanou's task attempts failed on locks
+# I created, 800 of mine on hers). eval_worker.py now evaluates under umask
+# 002, so new locks are 0664 (mask rw-); this pass repairs the ones that are
+# still closed. A lock file's mask is its owner's to raise, so each watcher
+# widens the locks its user owns; the other user's watcher does the same.
+DATASETS_CACHE = Path("/iopsstor/scratch/cscs/mariagrandury/hf_home/datasets")
+
+
+def share_dataset_locks() -> None:
+    # Create the lock of every cached config up front (the path is the
+    # config dir with "/" -> "_"): a lock that already exists with an open
+    # mask is what everyone's jobs then take, and nobody creates a closed one.
+    for cfg in DATASETS_CACHE.glob("*/*/*/*"):     # <ns>___<name>/<config>/<version>/<hash>
+        lock = DATASETS_CACHE / (str(cfg).replace("/", "_") + ".lock")
+        if cfg.is_dir() and not lock.exists():
+            lock.touch()
+    mine = [p for p in DATASETS_CACHE.glob("*.lock")
+            if (st := p.stat()).st_uid == os.getuid() and st.st_mode & 0o070 != 0o070]
+    if mine:
+        subprocess.run(["setfacl", "-m", "m::rwx", *map(str, mine)], check=False)
+        print(f"({len(mine)} dataset lock file(s) opened to the collaborators)")
+
+
 def one_pass(args, root: Path, staging: Path, logs_root: Path,
              benchmarks: list[str]) -> None:
+    # The memos live for ONE pass. Under --watch a single process runs every
+    # pass, and a diagnosis cached from an old job log kept answering for good:
+    # a task misread as a missing dataset was retried every pass, never held.
+    for memo in (_EVAL_ERROR, _DATASET_FIXED, _JOB_STATE):
+        memo.clear()
+    if not args.dry_run:
+        share_dataset_locks()
     # Keep configs/models.json following the grid — conversion and the W&B
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync
@@ -502,6 +622,12 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               f"— commit the diff)")
 
     running = active_jobs() if not args.dry_run else set()
+    if running is None:
+        # Without the queue there is no dedupe: every running eval and convert
+        # would be submitted again, and their fresh, empty eval dirs counted as
+        # strikes. Skip the pass; the errors file keeps its last snapshot.
+        print("squeue failed — skipping this pass, nothing submitted", file=sys.stderr)
+        return
     errors: dict[str, dict] = {}   # checkpoints held back, written out below
     submitted = {"evals": 0}       # against --max-submit, across all cells
 
@@ -515,21 +641,25 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
         for c in predictivity_cells(args.schemes):
             scheme = c["scheme"]
-            if arch not in DATA_SCHEMES[scheme]["arches"]:
+            if arch not in arches_for(scheme, c["size"], c["L"]):
                 continue
             cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
-            if (args.name and cell != args.name) or (args.seed and c["seed"] != args.seed):
+            if args.name:
+                if cell != args.name:
+                    continue
+            elif c["size"] not in args.sizes or (args.seed and c["seed"] != args.seed):
                 continue
             # capstor intermittently faults a read outright (Errno 5 / 108 —
             # the same blips data_progress.py works around, hit here on a
-            # .hf_complete probe). The watcher runs unattended behind every
+            # .hf_complete probe), and sbatch or convert-snr.sh can fail on a
+            # controller timeout. The watcher runs unattended behind every
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
             try:
                 one_cell(args, {**c, "arch": arch}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
-            except OSError as e:
-                print(f"{cell}: skipped this pass — {e.strerror or e}",
+            except (OSError, subprocess.SubprocessError) as e:
+                print(f"{cell}: skipped this pass — {getattr(e, 'strerror', None) or e}",
                       file=sys.stderr)
 
     # One place to look for what is stuck and why. A snapshot, not a log: a
@@ -589,6 +719,10 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # evaluate only the due ones — conversion is the durability step, eval
     # is the expensive one we sample at 1/N.
     to_convert = [it for it in saved if not hf_staged(cell, it, staging)]
+    # A killed job's per-task results, merged the way its own last step would
+    # have. Nothing is re-run: the done-test already counts them.
+    for it in due:
+        merge_unmerged(f"{cell}-iter{it}", logs_root, running, args.dry_run)
     # Report what's still OUTSTANDING, not what's due: a due checkpoint
     # whose results are already on disk needs no action, and printing it
     # every pass reads as work the watcher is failing to submit.
@@ -605,22 +739,29 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         # writes something — don't let the running attempt itself push the
         # checkpoint over the threshold.
         if not args.max_attempts or args.retry_held \
-                or job_name("eval", name) in running:
+                or job_name("eval", name) + args.job_suffix in running:
             continue
         remaining = remaining_tasks(name, logs_root, task_list)
         for t, (n, why) in task_attempts(name, logs_root, remaining).items():
             if n < args.max_attempts:
                 continue
-            kind, detail = classify(why) if why else eval_error(name)
+            kind, detail = (classify(why) if why
+                            else eval_error(name, logs_root, args.job_suffix))
             if kind == "other":
                 # The per-task reason is one truncated line; the job log may
                 # still name a missing dataset, and that is the one cause
                 # this watcher can repair itself. Memoised, so at most one
                 # log scan per checkpoint per pass.
-                log_kind, log_detail = eval_error(name)
+                log_kind, log_detail = eval_error(name, logs_root, args.job_suffix)
                 if log_kind == "dataset":
                     kind, detail = log_kind, log_detail
-            if kind == "dataset" and fix_missing_dataset(detail, args.dry_run):
+            # A repair is trusted for a bounded number of runs: a task whose
+            # "missing dataset" was built and that still fails is failing for
+            # another reason (the log can name ANOTHER task's dataset, or the
+            # build can land in a cache the job never reads), so past twice
+            # the threshold it is held like any other failure.
+            if (kind == "dataset" and n < 2 * args.max_attempts
+                    and fix_missing_dataset(detail, args.dry_run)):
                 continue                 # cache repaired — retry this pass
             held.setdefault(it, {})[t] = {"attempts": n, "kind": kind,
                                           "detail": detail}
@@ -652,9 +793,11 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
         if args.max_submit is not None and submitted["evals"] >= args.max_submit:
             return
         name = f"{cell}-iter{it}"
-        if hf_staged(cell, it, staging) and job_name("eval", name) not in running:
+        if hf_staged(cell, it, staging) \
+                and job_name("eval", name) + args.job_suffix not in running:
             submit_eval(cell, it, staging, logs_root, task_list, c["size"],
-                        args.dry_run, exclude=set(held.get(it, {})))
+                        args.dry_run, exclude=set(held.get(it, {})),
+                        suffix=args.job_suffix)
             submitted["evals"] += 1
 
 
@@ -676,9 +819,21 @@ def main() -> None:
                         "makes a single-job integration test possible")
     p.add_argument("--name", help="watch a single cell (its full name)")
     p.add_argument("--seed", type=int, help="only cells with this seed")
+    p.add_argument("--size", metavar="SIZES",
+                   help="only these sizes, comma-separated (e.g. '600M' or "
+                        f"'1B,1.7B'); default {','.join(EVAL_SIZES)} — 90M is "
+                        "off the ladder and not evaluated unless named")
     p.add_argument("--all-languages", action="store_true",
                    help="evaluate every auto benchmark in every language, not "
                         "only the languages the cell trains on")
+    p.add_argument("--reformulated", nargs="?", const="rf", choices=["rf", "rfgm"],
+                   help="evaluate a reformulated group instead of `auto`: the "
+                        "letter-format families (belebele, global_mmlu_full, "
+                        "include_base_44) as `rf` cloze tasks scored on the "
+                        "answer strings (the default when no value is given, "
+                        "group auto_rf) or as the `rfgm` Gemini-rewritten "
+                        "statements (group auto_rfgm) — prefixed task names, "
+                        "so nothing already evaluated is touched")
     p.add_argument("--every", type=int, default=2,
                    help="evaluate every N saved checkpoints (the final "
                         "checkpoint is always evaluated on top)")
@@ -720,13 +875,29 @@ def main() -> None:
     # The pass iterates over these; a flag narrows the default "everything".
     args.archs = [args.arch] if args.arch else list(HYPERPARAMS)
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
+    args.sizes = args.size.split(",") if args.size else EVAL_SIZES
+    if bad := set(args.sizes) - set(LADDER):
+        p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
-    benchmarks = auto_benchmarks()
+    benchmarks = auto_benchmarks(f"auto_{args.reformulated}" if args.reformulated else "auto")
+    # The reformulated evals get their own job name (`eval-<cell>-iter<N>-rf`
+    # / `-rfgm`): the original and each reformulated set of one checkpoint are
+    # different work, so no watcher may read another's job as its own and skip it.
+    args.job_suffix = f"-{args.reformulated}" if args.reformulated else ""
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:
-        one_pass(args, Path(args.root), Path(args.staging),
-                 Path(args.logs_root), benchmarks)
+        try:
+            one_pass(args, Path(args.root), Path(args.staging),
+                     Path(args.logs_root), benchmarks)
+        except Exception:
+            # Nothing restarts the watcher, so under --watch an unexpected
+            # error must cost one pass, not stop the sweep's evals until
+            # someone notices. A one-shot run still fails loudly.
+            if not args.watch:
+                raise
+            import traceback
+            traceback.print_exc()
         # One shot, whatever --watch says: the point is to let a fixed root
         # cause prove itself once, not to disable the gate for the session.
         args.retry_held = False
@@ -742,6 +913,13 @@ def main() -> None:
                               all_languages=True)
             except Exception as e:
                 print(f"(eval progress plot not refreshed: {e})", file=sys.stderr)
+            # The 1B/1.7B status table rides along: its job states go stale
+            # within a pass, and nothing else redraws it between launches.
+            try:
+                from pretrain_progress import large_rung_status
+                large_rung_status(root=Path(args.root))
+            except Exception as e:
+                print(f"(1B/1.7B status not refreshed: {e})", file=sys.stderr)
         if not args.watch:
             break
         time.sleep(args.watch)

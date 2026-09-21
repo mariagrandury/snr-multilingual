@@ -44,6 +44,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent / "utils"))
 from configs import (  # noqa: E402
     family_of,
+    flops_for,
+    flops_params,
     get_model,
     load_hf_wandb_config,
     split_for_source,
@@ -269,7 +271,8 @@ def build_rows(project_dir: Path) -> list[dict]:
             continue
         eval_meta = collect_eval_metadata(name_dir)
 
-        flops = (6 * meta["params"] * meta["tokens"]) if (meta["params"] and meta["tokens"]) else None
+        flops = flops_for(meta["model"], meta["tokens"])
+        flops_basis = flops_params(meta["model"])[1]
 
         for task, raw_metrics in scores.items():
             if not isinstance(raw_metrics, dict):
@@ -292,6 +295,7 @@ def build_rows(project_dir: Path) -> list[dict]:
                 "model_params": float(meta["params"]) if meta["params"] else None,
                 "model_tokens": meta["tokens"],
                 "flops": float(flops) if flops is not None else None,
+                "flops_basis": flops_basis,
                 "step": meta["step"],
                 "size": meta["size"],
                 "mix": meta["mix"],
@@ -542,7 +546,7 @@ def fetch_multilingual_evals_rows(
 
         params = entry.get("params")
         tokens = ckpt_meta["tokens"]
-        flops = (6 * params * tokens) if (params and tokens) else None
+        flops = flops_for(model, tokens)
         full_name = f"{model}-{ckpt_meta['model_revision']}"
         src = entry.get("source")
         split = split_for_source(src) if src else None
@@ -569,6 +573,7 @@ def fetch_multilingual_evals_rows(
                 "model_params": float(params) if params else None,
                 "model_tokens": float(tokens) if tokens else None,
                 "flops": float(flops) if flops else None,
+                "flops_basis": flops_params(model)[1],
                 # Predictivity-only axes; reference models have none, but the
                 # column must exist on every row or the parquet schema splits.
                 "L": entry.get("L"),
@@ -800,6 +805,10 @@ def _arrow_schema():
         ("model_params", pa.float64()),
         ("model_tokens", pa.float64()),
         ("flops", pa.float64()),
+        # Which footing `flops` stands on: `non_emb+dV` (the ladder convention,
+        # shape fields recorded) or `declared_total` (an external model's
+        # nominal count) — see configs.flops_params.
+        ("flops_basis", pa.large_string()),
         ("step", pa.int64()),
         ("size", pa.large_string()),
         ("mix", pa.large_string()),
@@ -903,7 +912,7 @@ per-instance predictions.
 
 | Split | Models | Description |
 |---|---|---|
-| `pretraining_predictivity` | lm-{{90M…1.7B}}-L{{1,2,8,15,30,50,100}}[{{-AT3,-schemeB,-ZH,-ES}}]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. A data scheme is one build of the FineWeb-2 half — its language list plus the per-language sampling temperature: unlabelled = resource-ranked at T=1 (the baseline), `AT3` = the same lists at T=3 (and the only source of L100), `schemeB` = diversity-first, `ZH`/`ES` = L2 with Chinese / Spanish in place of Russian. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
+| `pretraining_predictivity` | lm-{{90M…3B}}-L{{1,2,8,15,30,50}}[{{-AT3,-schemeB,-ZH,-ES}}]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. A data scheme is one build of the FineWeb-2 half — its language list plus the per-language sampling temperature: unlabelled = resource-ranked at T=1 (the baseline), `AT3` = the same lists at T=3 (L15, L30 and L50), `schemeB` = diversity-first, `ZH`/`ES` = L2 with Chinese / Spanish in place of Russian. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
 | `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
 | `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
 | `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
@@ -924,7 +933,8 @@ per-instance predictions.
 | `model_source` | str | lm-eval backend — `megatron_lm` or `vllm` |
 | `model_params` | float | Approximate total parameter count |
 | `model_tokens` | float | Cumulative training tokens at this checkpoint |
-| `flops` | float | ≈ 6 × params × tokens |
+| `flops` | float | 6 × (N_non_emb + d_model × vocab) × tokens — the output projection counts, the embedding lookup does not |
+| `flops_basis` | str | `non_emb+dV` when the model's shape is recorded, `declared_total` when `flops` fell back to a nominal parameter count (external models) |
 | `step` | int | Training iteration / step |
 | `size` | str | Parameter-count tag (e.g. `175M`, `8B`) |
 | `mix` | str | Data-mix tag (e.g. `fwEdu30-fw270`, `L8-schemeA`, `stage2`, `main`) |

@@ -38,8 +38,8 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from ladder_report import LOSS_RE, NON_EMB, TRAIN_LOGS, _fit  # noqa: E402
-from pretrain_progress import CKPT_ROOT  # noqa: E402
+from ladder_report import LOSS_RE, NON_EMB, _fit  # noqa: E402
+from pretrain_progress import CKPT_ROOT, TRAIN_LOGS  # noqa: E402
 
 GRID_LOGS = {s: f"pretrain-{s}-L2-deep-seed1904-[0-9]*.out"
              for s in ("90M", "175M", "350M", "600M", "1.7B")}

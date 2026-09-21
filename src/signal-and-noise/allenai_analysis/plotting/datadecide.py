@@ -23,13 +23,19 @@ def plot_task_curves(ax: plt.Axes, task, signal_label, plotted_sizes, plotted_mi
     final_values_signal = []
     lines = []
 
+    max_compute = 0.0
     for mix_idx, mix in enumerate(plotted_mixes):
+        line = []
         for size in plotted_sizes:
             curve_data = get_slice(df, mix=mix, task=task, size=size, seed=SEED)
 
             # Remove first X% of rows
             curve_data = curve_data[curve_data['compute'] > 0].sort_values('compute') # remove compute=0
             curve_data = curve_data.iloc[int(0.05*len(curve_data)):]
+            if curve_data.empty:
+                # a (mix, size) the ladder has not trained yet, or a task this
+                # cell was not evaluated on (its languages are not in the mix)
+                continue
 
             line = ax.plot(
                 curve_data['compute'], curve_data[metric], linewidth=0.5,
@@ -43,6 +49,7 @@ def plot_task_curves(ax: plt.Axes, task, signal_label, plotted_sizes, plotted_mi
             # Keep final values for rank correlation
             if size == signal_size:
                 final_values_signal.append((mix, curve_data[metric].iloc[-1]))
+                max_compute = max(max_compute, curve_data['compute'].iloc[-1])
             
             # Keep track of best performing mix
             final_value = curve_data[metric].iloc[-1]
@@ -66,7 +73,6 @@ def plot_task_curves(ax: plt.Axes, task, signal_label, plotted_sizes, plotted_mi
     # Add bracket
     ############
     if final_values_signal:
-        max_compute = curve_data['compute'].iloc[-1]
         values = [score for (mix, score) in final_values_signal]
         y_min = min(values)
         y_max = max(values)

@@ -1,0 +1,109 @@
+{
+ "grid": {
+  "cells": 113,
+  "by_size": {
+   "1.7B": 19,
+   "175M": 24,
+   "1B": 28,
+   "350M": 18,
+   "600M": 24
+  }
+ },
+ "rq1": {
+  "n_fits": 410,
+  "n_tasks": 156,
+  "gated_series": 533,
+  "gated_rungs": 102,
+  "families": [
+   {
+    "family": "include_base_44",
+    "r2": 0.552,
+    "rho": 0.25,
+    "n": 4,
+    "n_options": 4.0
+   },
+   {
+    "family": "multiblimp",
+    "r2": 0.879,
+    "rho": 1.0,
+    "n": 76,
+    "n_options": 2.0
+   },
+   {
+    "family": "xcopa",
+    "r2": 0.886,
+    "rho": 1.0,
+    "n": 19,
+    "n_options": 2.0
+   },
+   {
+    "family": "paws",
+    "r2": 0.894,
+    "rho": 1.0,
+    "n": 11,
+    "n_options": 2.0
+   },
+   {
+    "family": "xnli",
+    "r2": 0.906,
+    "rho": 0.9,
+    "n": 37,
+    "n_options": 3.0
+   },
+   {
+    "family": "loss",
+    "r2": 0.94,
+    "rho": -1.0,
+    "n": 6,
+    "n_options": NaN
+   },
+   {
+    "family": "xwinograd",
+    "r2": 0.953,
+    "rho": 1.0,
+    "n": 26,
+    "n_options": 2.0
+   },
+   {
+    "family": "bpb",
+    "r2": 0.955,
+    "rho": -1.0,
+    "n": 106,
+    "n_options": NaN
+   },
+   {
+    "family": "hellaswag",
+    "r2": 0.969,
+    "rho": 1.0,
+    "n": 62,
+    "n_options": 4.0
+   },
+   {
+    "family": "xstorycloze",
+    "r2": 0.987,
+    "rho": 1.0,
+    "n": 28,
+    "n_options": 2.0
+   },
+   {
+    "family": "arc",
+    "r2": 0.988,
+    "rho": 1.0,
+    "n": 12,
+    "n_options": 4.0
+   },
+   {
+    "family": "lambada_openai_mt",
+    "r2": 0.989,
+    "rho": 1.0,
+    "n": 22,
+    "n_options": NaN
+   }
+  ],
+  "by_options": {
+   "2.0": 0.923,
+   "3.0": 0.906,
+   "4.0": 0.97
+  }
+ }
+}
