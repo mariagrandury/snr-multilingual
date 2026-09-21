@@ -3,7 +3,7 @@
 Training multilingual language models requires repeated decisions about data mixtures and architectures, often based on evaluations of small proxy models.
 Yet these evaluations are useful only if they can tell us whether a decision made at small scale will remain valid as model parameters or compute increase, a challenge compounded in multilingual settings where many language–benchmark pairs exhibit little measurable signal at small scales.
 We therefore ask when multilingual evaluations become predictive, how early reliable training decisions can be made, which cheap measurements anticipate their reliability, and how these patterns vary across model design interventions and languages.
-We design a controlled ladder of 163 runs spanning five sizes from 175M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates, and analyse the 97 completed, non-diverged runs of that grid. 
+We design a controlled ladder of 163 runs spanning five sizes from 175M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates, and analyse the 113 completed, non-diverged runs of that grid. 
 We evaluate ten aligned fractions of training on per-language bits per byte in 100 languages and task performance on 14 multilingual benchmark families.
 % REVIEWED - END
 % RQ1
