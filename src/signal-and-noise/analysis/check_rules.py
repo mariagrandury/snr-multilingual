@@ -152,10 +152,14 @@ def check_png_csv(folder: Path) -> list[str]:
     for png in folder.rglob("*.png"):
         if _exempt(png, 12):
             continue
+        # The CSV of the same name first. Only if there is none, allow the
+        # shared table grids._csv_path writes for a _by_benchmark/_by_language
+        # pair — stripping first meant a panel could point at a table computed
+        # for the OTHER facet and still pass (rq05's _early panels did).
         stem = png.stem
-        for suffix in ("_by_benchmark", "_by_language"):    # grids._csv_path: one CSV serves both panels
+        for suffix in ("_by_benchmark", "_by_language"):
             stem = stem.removesuffix(suffix)
-        if not png.with_name(stem + ".csv").is_file():
+        if not (png.with_suffix(".csv").is_file() or png.with_name(stem + ".csv").is_file()):
             out.append(f"{png.relative_to(folder)}: rule 12: no CSV of the same name")
     return out
 
@@ -167,9 +171,20 @@ def main() -> int:
     a = p.parse_args()
     root = Path(a.root)
     findings = []
-    for csv in sorted(root.glob("rq*/pretraining/**/*.csv")):
+    # The analysis tables, plus the paper-local ones. `documents/paper/` was
+    # outside every glob until 2026-09-21, so a table the paper cites could
+    # break any rule in silence — which is how a re-derived audit table came
+    # to carry pair counts rule 2 forbids. The paper quotes these numbers, so
+    # they are held to the same rules as the tables they come from.
+    # analysis/ -> src/signal-and-noise -> src -> the repo root
+    repo = root.resolve().parents[2]
+    paper = repo / "documents" / "paper"
+    checked = sorted(root.glob("rq*/pretraining/**/*.csv"))
+    checked += sorted(paper.rglob("*.csv")) if paper.is_dir() else []
+    for csv in checked:
+        base = root if root.resolve() in csv.resolve().parents else repo
         for f in check_csv(csv):
-            findings.append(f"{csv.relative_to(root)}: {f}")
+            findings.append(f"{csv.relative_to(base)}: {f}")
     findings += check_wide_pairs(root) + check_png_csv(root)
     if not a.quiet:
         for f in findings:

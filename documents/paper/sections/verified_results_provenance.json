@@ -1,41 +1,32 @@
 {
-  "source": "src/signal-and-noise/data/ladder-report/ladder_report.csv",
-  "sha256": "07e063597c32d82d316b6177a52a25fb073a6567ab57eba5fcbe66f5a4fd2844",
-  "all_runs": 120,
-  "healthy_175M_to_1_7B": 97,
-  "headline_seed1904_A_B_runs": 65,
-  "sizes": {
-    "175M": 24,
-    "600M": 24,
-    "1B": 19,
-    "350M": 18,
-    "1.7B": 12
+  "constants": {
+    "ANALYSIS_SIZES": [
+      "175M",
+      "350M",
+      "600M",
+      "1B",
+      "1.7B"
+    ],
+    "MIN_LANG_TASKS": 3,
+    "MIN_PAIRS": 3,
+    "TARGET_SIZE": "1.7B"
   },
-  "fractions": [
-    0.1,
-    0.2,
-    0.3,
-    0.4,
-    0.5,
-    0.6,
-    0.7,
-    0.8,
-    0.9,
-    1.0
-  ],
-  "min_pairs": 3,
-  "checkpoint_matching_tolerance": 0.001,
-  "surrogate_size_reference": "1.7B",
-  "surrogate_checkpoint_fractions": [
-    0.1,
-    0.2,
-    0.3,
-    0.4,
-    0.5,
-    0.6,
-    0.7,
-    0.8,
-    0.9
-  ],
-  "snr_source": "rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv"
+  "da_rows": 28212,
+  "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
+  "headline_seed1904_A_B_runs": 79,
+  "healthy_175M_to_1_7B": 113,
+  "sizes": {
+    "1.7B": 19,
+    "175M": 24,
+    "1B": 28,
+    "350M": 18,
+    "600M": 24
+  },
+  "sources": {
+    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "197cf3120d02e6e487ca1478d810ccdcb9c39ffff12d298785de59e54863bc65",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.csv": "43966a59144eaaa98afc3f5b842841d79d2592b494113a2ff64cbad5de16d170",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.csv": "0e0f3199626beed4dd3a0fa0fbdf4b145b30cf4a8b15a1b57160b89d061371ec",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_pooled_per_task.csv": "f5df9b4e334c6ce4cc6c4efc7ab710b87d96680eb7bb09ed65d654f3dd619d71",
+    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "e058c018af35f98c5516fdec54e1ec48c44e81bc7f227654dde1c61de0ff4858"
+  }
 }

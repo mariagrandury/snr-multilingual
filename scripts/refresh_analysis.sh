@@ -76,6 +76,11 @@ step "analysis pipeline"
 step "paper figures"
 ( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
 
+# 2c. The paper's audit tables: a reshape of the same rqNN tables, so the
+#     numbers section 4 quotes cannot drift from the ones the figures show.
+step "paper tables"
+( cd documents/paper/sections && $PY verify_paper_results.py ) || FAILED+=("verify_paper_results.py")
+
 # 3. The deck figures, then the two report figures the deck reuses.
 step "figures"
 for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch \

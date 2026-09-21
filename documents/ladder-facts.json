@@ -28,6 +28,24 @@
       "ZH"
     ]
   },
+  "paper_population": {
+    "analysis_sizes": [
+      "175M",
+      "350M",
+      "600M",
+      "1B",
+      "1.7B"
+    ],
+    "healthy_runs": 113,
+    "headline_seed1904_A_B_runs": 79,
+    "healthy_by_size": {
+      "1.7B": 19,
+      "175M": 24,
+      "1B": 28,
+      "350M": 18,
+      "600M": 24
+    }
+  },
   "gate": {
     "gated_tasks": 647,
     "clear_any_size": 331,

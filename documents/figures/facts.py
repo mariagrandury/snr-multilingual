@@ -44,6 +44,26 @@ def collect():
         "schemes_present": sorted(c["scheme"].dropna().unique().tolist()),
     }
 
+    # The population sentence in documents/paper/sections/04_analysis.tex and
+    # the abstract. It is not the `grid` block above: that counts every cell in
+    # the report, 90M and 3B included, while the paper's sentence counts the
+    # runs the analysis actually reads — the ladder from 175M to the reference
+    # (rule 10), complete, non-diverged, with a final checkpoint scored. It sat
+    # 16 runs stale because nothing diffed it; now it moves here on every
+    # refresh, and verify_paper_results.py writes the same two numbers into
+    # verified_results_provenance.json from the same loader.
+    from snr.download.ladder import load_predictivity_eval_results
+    from analysis.utils import ANALYSIS_SIZES
+    a = load_predictivity_eval_results()
+    a = a[a["size"].isin(ANALYSIS_SIZES)]
+    head = a[(a["seed"] == 1904) & (a["scheme"].isin(["A", "B"]))]
+    f["paper_population"] = {
+        "analysis_sizes": list(ANALYSIS_SIZES),
+        "healthy_runs": int(a["model"].nunique()),
+        "headline_seed1904_A_B_runs": int(head["model"].nunique()),
+        "healthy_by_size": {k: int(v) for k, v in a.groupby("size")["model"].nunique().items()},
+    }
+
     g = pd.read_csv(ANALYSIS / f"rq00_gate_and_curves/{P}/above_random_mask.csv")
     g = g[g["n_options"].notna()]
     sizes = [s for s in ["90M", "175M", "350M", "600M", "1B", "1.7B"] if s in g.columns]

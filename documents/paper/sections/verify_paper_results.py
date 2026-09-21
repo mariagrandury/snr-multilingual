@@ -1,162 +1,215 @@
-"""Read-only analysis of repo inputs; write paper-local audit tables only.
-Uses the report snapshot underlying the requested figures. No repo pipelines run.
-"""
-from pathlib import Path
-import csv, json, math, statistics, collections, itertools, hashlib
-HERE=Path(__file__).resolve().parent
-ROOT=HERE.parents[2]
-A=ROOT/'src/signal-and-noise/analysis'
-def read(p):
-    with p.open() as f: return list(csv.DictReader(f))
-def write(name,rows):
-    with (HERE/name).open('w') as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
-def num(v):
-    try: return float(v)
-    except (ValueError,TypeError): return float('nan')
-def corr(xs,ys):
-    if len(xs)<5: return float('nan')
-    mx,my=statistics.mean(xs),statistics.mean(ys)
-    a=sum((x-mx)**2 for x in xs);b=sum((y-my)**2 for y in ys)
-    return sum((x-mx)*(y-my) for x,y in zip(xs,ys))/math.sqrt(a*b) if a*b>0 else float('nan')
-SIZES=['175M','350M','600M','1B','1.7B']
-mask={r['task']:r for r in read(A/'rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv')}
-tasks={r['task'] for r in read(A/'rq02_decision_accuracy/pretraining/predictivity/da_early_small_per_task.csv')}
-tasks.discard('bpb_macro');tasks.discard('train_loss')
-report=ROOT/'src/signal-and-noise/data/ladder-report/ladder_report.csv'
-raw=read(report)
-cells={r['cell']:r for r in raw if r['cell']}
-valid={c for c,r in cells.items() if r['size'] in SIZES and num(r['run__complete'])==1 and num(r['run__diverged'])==0}
-headline={c for c in valid if cells[c]['seed']=='1904' and cells[c]['scheme'] in ('A','B')}
-print('snapshot cells:',len(cells),'healthy analysis runs:',len(valid),'headline runs:',len(headline))
-print('analysis sizes:',dict(collections.Counter(cells[c]['size'] for c in valid)))
-bycell=collections.defaultdict(list)
-for r in raw:
-    if r['cell'] in headline: bycell[r['cell']].append(r)
-# task -> size -> variant -> {checkpoint percentage: score}; exact shared tenths.
-data=collections.defaultdict(lambda:collections.defaultdict(dict))
-for c,rs in bycell.items():
-    rs.sort(key=lambda r:int(r['iter']))
-    meta=rs[-1];target=int(float(meta['run__target_iters']))
-    final=next((r for r in rs if int(r['iter'])==target),None)
-    if final is None: continue
-    variant=(meta['L'],meta['arch'],meta['scheme'],meta['seed'])
-    for t in tasks:
-        col='bpb__'+t[4:] if t.startswith('bpb_') else 'bench__'+t
-        if not math.isfinite(num(final.get(col))): continue
-        curve={}
-        for k in range(1,11):
-            row=min(rs,key=lambda r:abs(int(r['iter'])/target-k/10))
-            if abs(int(row['iter'])/target-k/10)>.001: continue
-            value=num(row.get(col))
-            if math.isfinite(value):curve[k*10]=value
-        data[t][meta['size']][variant]=curve
+"""Paper-local audit tables, RESHAPED from the pipeline's own tables.
 
-def da(left,right):
-    common=sorted(left.keys()&right.keys());n=len(common)*(len(common)-1)//2
-    if n<3:return None
-    agree=sum(((left[a]>left[b])-(left[a]<left[b]))==((right[a]>right[b])-(right[a]<right[b])) for a,b in itertools.combinations(common,2))
-    return agree/n,n
-rows=[];bytask={}
-for t,sizes in sorted(data.items()):
-    ref={v:c[100] for v,c in sizes.get('1.7B',{}).items() if 100 in c}
-    for size,variants in sizes.items():
-        final={v:c[100] for v,c in variants.items() if 100 in c}
-        for pct in range(10,101,10):
-            early={v:c[pct] for v,c in variants.items() if pct in c}
-            for kind,target in [('reference',ref),('checkpoint',final)]:
-                ans=da(early,target)
-                if ans is None:continue
-                value,n=ans
-                bytask[(t,size,pct,kind)]=value
-                m=mask.get(t,{})
-                # A missing chance baseline (BPB, LAMBADA) is not a failed gate.
-                gate=math.isfinite(num(m.get('random_baseline')))
-                passes=not gate or (m.get(size)=='1' and (kind=='checkpoint' or m.get('1.7B')=='1'))
-                rows.append(dict(task=t,size=size,percent=pct,kind=kind,da=value,n_pairs=n,passes_gate=passes))
-write('verified_da_ten_checkpoints.csv',rows)
-summary=[]
-for kind in ['reference','checkpoint']:
- for size in SIZES:
-  for pct in range(10,101,10):
-   for group in ['bpb','benchmarks']:
-    sub=[r for r in rows if r['kind']==kind and r['size']==size and r['percent']==pct and r['passes_gate'] and (r['task'].startswith('bpb_'))==(group=='bpb')]
-    if sub:summary.append(dict(kind=kind,size=size,percent=pct,group=group,mean_da=statistics.mean(r['da'] for r in sub),tasks=len(sub)))
-write('verified_da_summary.csv',summary)
-# Repository RQ4 SNR measurements; restrict size DA to the canonical 1.7B target
-# and replace sparse checkpoint DA with all nine pre-final tenths.
-snr=read(A/'rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv')
-variants=sorted({c[len('snr_'):-len('_175M')] for c in snr[0] if c.startswith('snr_') and c.endswith('_175M')})
-language_tasks=collections.defaultdict(set)
-for row in snr:
-    task=row['task']; language=mask.get(task,{}).get('language')
-    if language and task in tasks: language_tasks[language].add(task)
-eligible={(r['task'],r['size'],r['percent'],r['kind']) for r in rows if r['passes_gate']}
-points=collections.defaultdict(lambda:([],[]))
-for r in snr:
- t=r['task'];lang=mask.get(t,{}).get('language')
- if not lang or lang in ('multi','??') or t not in tasks or len(language_tasks[lang])<2:continue
- for v in variants:
-  for size in SIZES:
-   x=num(r.get('snr_'+v+'_'+size))
-   if not math.isfinite(x) or x<=0:continue
-   for kind,pcts in [('size',[100]),('checkpoint',range(10,100,10))]:
-    if kind=='size' and size=='1.7B':continue
-    for pct in pcts:
-     key=(t,size,pct,'reference' if kind=='size' else 'checkpoint')
-     y=bytask.get(key) if key in eligible else None
-     if y is not None:
-      xs,ys=points[(lang,kind,v)];xs.append(math.log10(x));ys.append(y)
-correlations=[]
-for (lang,kind,v),(xs,ys) in sorted(points.items()):
- value=corr(xs,ys)
- if math.isfinite(value):correlations.append(dict(language=lang,kind=kind,variant=v,pearson_r=value,n=len(xs)))
-write('verified_surrogates_by_language.csv',correlations)
-print('DA full-grid summary:')
-for size in SIZES:
- for group in ['bpb','benchmarks']:
-  sub=[r for r in summary if r['kind']=='reference' and r['size']==size and r['group']==group]
-  print(size,group,[(r['percent'],round(r['mean_da'],3),r['tasks']) for r in sub])
-print('Surrogate leaders:')
-for lang in ['en','de','es','fr','ru','zh','ar','th','tr','vi','eu']:
- print(lang,[(kind,[(r['variant'],round(r['pearson_r'],3),r['n']) for r in sorted([r for r in correlations if r['language']==lang and r['kind']==kind],key=lambda r:r['pearson_r'],reverse=True)[:1]]) for kind in ['size','checkpoint']])
-audit={'source':str(report.relative_to(ROOT)),'sha256':hashlib.sha256(report.read_bytes()).hexdigest(),'all_runs':len(cells),'healthy_175M_to_1_7B':len(valid),'headline_seed1904_A_B_runs':len(headline),'sizes':dict(collections.Counter(cells[c]['size'] for c in valid)),'fractions':[i/10 for i in range(1,11)],'min_pairs':3,'checkpoint_matching_tolerance':0.001,'surrogate_size_reference':'1.7B','surrogate_checkpoint_fractions':[i/10 for i in range(1,10)],'snr_source':'rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv'}
-(HERE/'verified_results_provenance.json').write_text(json.dumps(audit,indent=2)+'\n')
-# Cross-task comparisons between accuracy families (no mixed loss/accuracy signs).
-def scores(task,size,pct):
- return {v:c[pct] for v,c in data[task].get(size,{}).items() if pct in c}
-def gated(task,size):
- m=mask.get(task,{});return math.isfinite(num(m.get('random_baseline'))) and m.get(size)!='1'
-def sustained(values):
- good=[(k,v) for k,v in values if v is not None]
- return next((k for i,(k,v) in enumerate(good) if all(w>=.75 for _,w in good[i:])),None)
-cross=[]
-for pf,tf in [('hellaswag','multiblimp'),('multiblimp','hellaswag')]:
- pts=[t for t in tasks if mask.get(t,{}).get('family')==pf]
- tts=[t for t in tasks if mask.get(t,{}).get('family')==tf]
- for kind in ['size','checkpoint']:
-  counters=collections.Counter()
-  for pt in pts:
-   for tt in tts:
-    vals=[];informed=False
-    levels=SIZES[:-1] if kind=='size' else list(range(10,101,10))
-    for level in levels:
-     if kind=='size':
-      ans=da(scores(pt,level,100),scores(tt,'1.7B',100))
-      informed |= ans is not None
-      value=ans[0] if ans and not gated(pt,level) and not gated(tt,'1.7B') else None
-     else:
-      hits=0.;n=0
-      for size in SIZES:
-       ans=da(scores(pt,size,level),scores(tt,size,100))
-       informed |= ans is not None
-       if ans and not gated(pt,size) and not gated(tt,size):hits+=ans[0]*ans[1];n+=ans[1]
-      value=hits/n if n>=3 else None
-     vals.append((level,value))
-    if not informed: counters['missing']+=1
-    elif not any(v is not None for _,v in vals):counters['gated']+=1
-    elif sustained(vals) is None:counters['never']+=1
-    else:counters['reached']+=1
-  out=dict(proxy_family=pf,target_family=tf,kind=kind,total=len(pts)*len(tts),**{k:counters[k] for k in ['reached','never','gated','missing']})
-  cross.append(out);print('cross',out)
-write('verified_cross_task_summary.csv',cross)
+The paper quotes numbers that must equal what `analysis/` computes. Until
+2026-09-21 this script re-implemented the decision-accuracy kernel in plain
+`csv`/`statistics` to produce them independently — 162 lines that read the
+ladder report directly and applied neither `trained_only` (rule 2) nor
+`MIN_PAIRS` (rule 5), and invented two per-language floors of its own (a
+task count of 2 where rule 8 says `MIN_LANG_TASKS`, and a 5-point minimum
+inside its own `corr`). RULES.md says the helpers named there are the only
+implementation of each rule: use them, do not re-derive. A second kernel
+cannot help but drift, and it did — re-run against a newer report snapshot
+it disagreed with the pipeline on 10,419 of 26,485 shared rows, with pair
+counts of 45 where the pipeline had 15 (C(10,2) against C(6,2): it counted
+families whose mixture never trains the task's language).
+
+So this script no longer computes anything. It reads the tables the pipeline
+already wrote, reshapes them into the five paper-local files, and records the
+sha256 of every input. The one quantity it derives is `passes_gate`, and it
+derives that with `utils.passes_gate` — the shared helper — because the old
+table used a `== 1` test that made NA (a task with no chance level: BPB, the
+loss, the generative tasks) read as gated, wrong on 620 rows.
+
+Run it after `refresh_analysis.sh`; it is cheap and reads only committed CSVs.
+
+    python3 verify_paper_results.py            # rewrite the five tables
+    python3 verify_paper_results.py --check    # exit 1 if any would change
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
+ANALYSIS = ROOT / "src" / "signal-and-noise" / "analysis"
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
+
+from analysis.utils import (  # noqa: E402
+    ANALYSIS_SIZES, MIN_LANG_TASKS, MIN_PAIRS, TARGET_SIZE, passes_gate)
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
+from analysis.rq04_surrogates.snr_definition_postprocess import _table  # noqa: E402
+
+POOL = "predictivity"
+P = f"pretraining/{POOL}"
+RQ00 = ANALYSIS / "rq00_gate_and_curves" / P
+RQ02 = ANALYSIS / "rq02_decision_accuracy" / P
+RQ03 = ANALYSIS / "rq03_noise_and_snr" / P
+# The cross-task pair section 4 names; the by_family tables hold every pair.
+CROSS_PAIR = ("hellaswag", "multiblimp")
+SOURCES: list[Path] = []
+
+
+def read(path: Path) -> pd.DataFrame:
+    """Read a pipeline table and remember it for the provenance record."""
+    SOURCES.append(path)
+    return pd.read_csv(path)
+
+
+def da_ten_checkpoints() -> pd.DataFrame:
+    """Per-task DA on the ten checkpoints, melted from rq02's live table.
+
+    `da_pooled_per_task.csv` carries both flavours side by side — `da_ref` /
+    `n_pairs_ref` against the reference, `da_own` / `n_pairs_own` within the
+    proxy's own size — so the two `kind` values of this table are one melt of
+    it, not a second computation.
+
+    NOT read: `ten_checkpoints.csv`, which this script used until 2026-09-21.
+    Nothing has written that file since 2026-09-19 (`paper_ten_checkpoints.py`
+    writes rq2.csv/png/svg; no code path produces it), so it is an orphan
+    under rule 14, and `documents/paper/figures/ten_checkpoints.csv` is a
+    3.3 MB copy of the same orphan. Its gate column disagreed with
+    `utils.passes_gate` in both directions on 320 rows, which is what an
+    output frozen two days behind its code looks like.
+    """
+    d = read(RQ02 / "da_pooled_per_task.csv")
+    SOURCES.append(RQ00 / "above_random_mask.csv")
+    parts = []
+    for kind, da, n in (("reference", "da_ref", "n_pairs_ref"),
+                        ("checkpoint", "da_own", "n_pairs_own")):
+        part = d[["task", "proxy_size", "frac", da, n]].rename(
+            columns={"proxy_size": "size", da: "da", n: "n_pairs"})
+        part.insert(3, "kind", kind)
+        parts.append(part)
+    t = pd.concat(parts, ignore_index=True)
+    t["percent"] = (t["frac"] * 100).round().astype(int)
+    t = t[["task", "size", "percent", "kind", "da", "n_pairs"]]
+    # rule 1 through the shared helper, the way rq02 applies it: above chance
+    # at the proxy size AND at the reference. 0 rejects, 1 passes, NA (no
+    # chance level: BPB, the loss, the generative tasks) passes.
+    mask = load_mask(POOL)
+    ok = pd.Series(False, index=t.index)
+    for size in t["size"].unique():
+        rows = t["size"] == size
+        ok[rows] = passes_gate(mask, t.loc[rows, "task"], size, TARGET_SIZE).to_numpy()
+    t["passes_gate"] = ok.to_numpy()
+    return t.sort_values(["task", "size", "percent", "kind"]).reset_index(drop=True)
+
+
+def da_summary(ten: pd.DataFrame) -> pd.DataFrame:
+    """Mean DA per (kind, size, checkpoint percent, population)."""
+    g = ten.copy()
+    g["group"] = ["bpb" if str(t).startswith("bpb_") else "benchmarks" for t in g["task"]]
+    out = (g.dropna(subset=["da"]).groupby(["kind", "size", "percent", "group"])
+            .agg(mean_da=("da", "mean"), tasks=("task", "nunique")).reset_index())
+    return out.sort_values(["kind", "size", "percent", "group"])
+
+
+def cross_task_summary() -> pd.DataFrame:
+    """Reach counts for the pair the paper names, from rq02's by_family tables.
+
+    Those tables carry shares over `n_cells`; the paper quotes counts, so the
+    shares are multiplied back out here rather than counted a second time.
+    """
+    rows = []
+    for kind, name in (("size", "cross_task_size_by_family"),
+                       ("checkpoint", "cross_task_ckpt_by_family")):
+        d = read(RQ02 / f"{name}.csv")
+        for proxy, target in (CROSS_PAIR, CROSS_PAIR[::-1]):
+            cell = d[(d["proxy"] == proxy) & (d["target"] == target)]
+            if cell.empty:
+                continue
+            r = cell.iloc[0]
+            n = int(r["n_cells"])
+            reached = round(r["share_reached"] * n)
+            never = round(r["share_never"] * n)
+            gated = round(r["share_gated"] * n)
+            rows.append({"proxy_family": proxy, "target_family": target, "kind": kind,
+                         "total": n, "reached": int(reached), "never": int(never),
+                         "gated": int(gated), "missing": int(n - reached - never - gated)})
+    return pd.DataFrame(rows)
+
+
+def surrogates_by_language() -> pd.DataFrame:
+    """Per-language Pearson r per SNR variant, from rq04's own kernel.
+
+    `_table` is what `top_variants_overall` ranks on, so this table and the
+    paper's ranking cannot disagree: rule 8's `MIN_LANG_TASKS` floor and the
+    trained-language and parent-task filters are applied inside it.
+    """
+    df = read(RQ03 / "snr_variants_per_task.csv").set_index("task")
+    rows = []
+    for kind, label in (("size", "size"), ("ckpt", "checkpoint")):
+        t = _table(df, kind)
+        for variant in t.index:
+            for language, r in t.loc[variant].dropna().items():
+                rows.append({"language": language, "kind": label,
+                             "variant": variant, "pearson_r": float(r)})
+    out = pd.DataFrame(rows)
+    # `n` is the population behind each mean a reader might take over this
+    # table: the languages the variant covers (rule 13 — the count travels).
+    out["n"] = out.groupby(["kind", "variant"])["language"].transform("nunique")
+    return out.sort_values(["language", "kind", "variant"])
+
+
+def provenance(ten: pd.DataFrame) -> dict:
+    """What was read, and the population the paper's prose must quote."""
+    from snr.download.ladder import load_predictivity_eval_results
+    d = load_predictivity_eval_results()
+    d = d[d["size"].isin(ANALYSIS_SIZES)]
+    head = d[(d["seed"] == 1904) & (d["scheme"].isin(["A", "B"]))]
+    return {
+        "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
+        "sources": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in sorted(set(SOURCES))},
+        "constants": {"MIN_PAIRS": MIN_PAIRS, "MIN_LANG_TASKS": MIN_LANG_TASKS,
+                      "TARGET_SIZE": TARGET_SIZE, "ANALYSIS_SIZES": list(ANALYSIS_SIZES)},
+        "healthy_175M_to_1_7B": int(d["model"].nunique()),
+        "headline_seed1904_A_B_runs": int(head["model"].nunique()),
+        "sizes": {k: int(v) for k, v in d.groupby("size")["model"].nunique().items()},
+        "da_rows": int(len(ten)),
+    }
+
+
+def main(check: bool) -> int:
+    ten = da_ten_checkpoints()
+    tables = {
+        "verified_da_ten_checkpoints.csv": ten,
+        "verified_da_summary.csv": da_summary(ten),
+        "verified_cross_task_summary.csv": cross_task_summary(),
+        "verified_surrogates_by_language.csv": surrogates_by_language(),
+    }
+    moved = []
+    for name, df in tables.items():
+        path = HERE / name
+        new = df.to_csv(index=False)
+        stale = not path.exists() or path.read_text() != new
+        if stale:
+            moved.append(name)
+            if not check:
+                path.write_text(new)
+        print(f"{'would change' if check and stale else 'wrote':>12}  {name}  ({len(df)} rows)")
+    text = json.dumps(provenance(ten), indent=2, sort_keys=True) + "\n"
+    prov = HERE / "verified_results_provenance.json"
+    if not check:
+        prov.write_text(text)
+    p = json.loads(text)
+    print(f"{'wrote':>12}  {prov.name}")
+    print(f"\npopulation: {p['healthy_175M_to_1_7B']} healthy runs 175M-{TARGET_SIZE}, "
+          f"{p['headline_seed1904_A_B_runs']} headline (seed 1904, schemes A/B)")
+    print(f"            per size {p['sizes']}")
+    print("            the same two counts live in documents/ladder-facts.json, which\n"
+          "            facts.py diffs on every refresh — the paper's prose quotes them.")
+    if check and moved:
+        print("\n!!! stale: " + ", ".join(moved))
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main("--check" in sys.argv))
