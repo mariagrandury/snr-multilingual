@@ -234,9 +234,10 @@ queues two segments (../pretrain/README.md).
 
 Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
 only when they carry `--requeue`**, which is what
-`launch_trainings.py --partition preemptable` adds: the wrapper then traps
-Slurm's SIGTERM and forwards SIGUSR2, so Megatron checkpoints inside the 4 min
-grace and the requeued job resumes from that save. The drainer asks the
+`launch_trainings.py --partition preemptable` adds: it also sets
+`MEGATRON_EXIT_ON_SIGTERM=1`, so the patched handler catches the preemption
+signal itself and Megatron checkpoints inside the 4 min grace, and the
+requeued job resumes from that save. The drainer asks the
 controller per job (`squeue -O Requeue`) and skips the ones submitted without
 it — for those a preemption really would cost a save interval on 21 nodes.
 

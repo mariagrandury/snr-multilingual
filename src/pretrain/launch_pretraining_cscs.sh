@@ -139,18 +139,23 @@ cp $SCRIPT_PATH $DEBUG_DIR
 } > $COMPUTE_ENVIRONMENT_DIR
 
 # Preemption (only on `preemptable`) arrives as SIGTERM with GraceTime=240s
-# before the kill, but Megatron's --exit-signal-handler listens for SIGUSR2
-# alone (DistributedSignalHandler(sig=signal.SIGUSR2)), so a preemption would
-# otherwise drop everything since the last save. Forward it: `scancel
-# --signal` reaches every rank on every node, and without --full it leaves
-# this batch shell alone (SIGUSR2's default action would kill it). Megatron
-# checkpoints at the next iteration boundary and exits; with --requeue
-# (launch_trainings.py adds it for `preemptable`) the job comes back with the
-# same jobid and partition and resumes from that checkpoint. Such a save is
-# off the checkpoint grid, which `run_interval`/`due_iters` already expect
-# from the walltime SIGUSR2 — an off-grid save is never due for eval.
+# before the kill. The ranks handle it themselves: EXIT_ON_SIGTERM (set by
+# launch_trainings.py --partition preemptable) becomes MEGATRON_EXIT_ON_SIGTERM
+# on the srun line below, and the patched DistributedSignalHandler then adds
+# SIGTERM to what --exit-signal-handler catches, so Megatron checkpoints at the
+# next iteration boundary and exits. With --requeue the job comes back with the
+# same jobid and partition and resumes from that save, which is off the
+# checkpoint grid — `run_interval`/`due_iters` already expect that from the
+# walltime SIGUSR2, and an off-grid save is never due for eval.
+#
+# This trap is NOT that mechanism, and on its own it does not work: SLURM
+# signals the step's tasks directly, so by the time a batch-shell trap runs the
+# ranks are already gone (2026-09-21: it fired only during checkpoint loading,
+# and a 1.7B lost 334 iterations to a preemption it could not reach). It is
+# kept for the log line, which is the cheapest record of when a preemption
+# landed, and because a USR2 during startup is harmless.
 term_handler() {
-	echo "[$(date)] SIGTERM (preemption or scancel) — sending SIGUSR2 so Megatron checkpoints and exits"
+	echo "[$(date)] SIGTERM (preemption or scancel) — ranks handle it via MEGATRON_EXIT_ON_SIGTERM; nudging USR2 too"
 	scancel --signal=USR2 "$SLURM_JOB_ID"
 }
 trap term_handler TERM
@@ -163,7 +168,7 @@ srun --mpi=pmix \
 	--cpus-per-task $SLURM_CPUS_PER_TASK \
 	--environment=$CONTAINER_TOML \
 	-lu bash \
-	-c "RANK=\$SLURM_PROCID LOCAL_RANK=\$SLURM_LOCALID $CMD_PREFIX $TRAINING_CMD" &
+	-c "RANK=\$SLURM_PROCID LOCAL_RANK=\$SLURM_LOCALID ${EXIT_ON_SIGTERM:+MEGATRON_EXIT_ON_SIGTERM=1 }$CMD_PREFIX $TRAINING_CMD" &
 SRUN_PID=$!
 while :; do
 	wait "$SRUN_PID"; SRUN_RC=$?

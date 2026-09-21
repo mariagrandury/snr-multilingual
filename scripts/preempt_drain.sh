@@ -28,9 +28,9 @@
 #              resubmits with only the tasks still missing.
 #   pretrain-* ONLY the runs listed in the ladder below, and only when they
 #              were submitted by launch_trainings.py --partition preemptable:
-#              that adds --requeue, and the wrapper's SIGTERM trap forwards
-#              SIGUSR2 so Megatron checkpoints inside the 240s grace and
-#              resumes when the job comes back. A pretrain job submitted
+#              that adds --requeue and MEGATRON_EXIT_ON_SIGTERM, so the
+#              patched handler checkpoints inside the 240s grace and the job
+#              resumes when it comes back. A pretrain job submitted
 #              WITHOUT those (the `normal` default) loses everything back to
 #              its last save and never returns — moving one here is a loss,
 #              which is why the filter takes only the named sizes.
@@ -55,8 +55,8 @@
 #
 # Order — the priority ladder (2026-09-20):
 #
-#   (build-* would head this list; it is excluded above until the 09-20
-#    cancellations are explained)
+#   (build-* would head this list; they are submitted here instead, never
+#    moved — see the note above)
 #   1  convert-*                     the gate on every eval downstream
 #   2  eval-* of the FINAL ckpt      the headline number for each model
 #   3  pretrain-3B-*                 the extrapolation rung
@@ -193,7 +193,7 @@ drain_once() {
             fi
             # A pretrain job is only preemption-safe if it can come back:
             # --requeue (launch_trainings.py --partition preemptable) plus the
-            # wrapper's SIGTERM trap. Without it a preemption is a cancelled
+            # patched exit-signal handler. Without it a preemption is a cancelled
             # run and a lost save interval on 21 nodes, so ask the controller
             # rather than assume — Requeue is 0/1 per job.
             if [[ $name == pretrain-* ]] \

@@ -32,7 +32,7 @@ reintroduces the drift this design removed.
 | File | Role |
 |---|---|
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger (and the SIGTERM→SIGUSR2 trap that makes preemption checkpoint — #4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
@@ -232,16 +232,36 @@ under the walltime with no new checkpoint is the tell.
 before walltime. `launch_trainings.py::auto_time()` adds a 2h30m margin
 (grace + cold-start + buffer), rounds up to 15 min, caps at 11:59:59.
 
-**SIGUSR2 is the only signal Megatron listens for** —
+**Stock Megatron listens for SIGUSR2 only** —
 `DistributedSignalHandler(sig=signal.SIGUSR2)` — while Slurm preempts with
-SIGTERM. A preemption would therefore drop everything back to the last save,
-so `launch_pretraining_cscs.sh` traps TERM and re-emits USR2 to the step
-(`scancel --signal=USR2 $SLURM_JOB_ID`; without `--full`, so the batch shell,
-which has no USR2 handler, survives). srun runs in the background with a
-`wait` loop, or the trap would only fire after srun returned — which is after
-the kill. The save is off the checkpoint grid, and that is already expected:
-`run_interval()` takes the modal gap and `due_iters()` never marks an off-grid
-save due, so preemption saves add disk, not eval work.
+SIGTERM, so a preemption dropped everything back to the last save.
+
+**A batch-shell trap cannot fix that** (tried 2026-09-20, wrong, corrected
+09-21). `launch_pretraining_cscs.sh` trapped TERM and re-emitted USR2 to the
+step; it never once reached a training loop. Slurm signals the step's *tasks*
+directly, so the ranks — which have no SIGTERM handler — are gone before a
+shell trap runs. In the logs the trap only ever fired while a checkpoint was
+still loading, and a 1.7B lost 334 iterations x 21 nodes to a preemption at
+19:43:50 that shows `srun exited 143` with no save. The trap is still there,
+for its log line, but it is not the mechanism.
+
+**The mechanism is a patched handler** (`patches/training_dist_signal_handler.py`,
+copied into the shared checkout and onto Azure by `azure/get_megatron.sh`):
+with `MEGATRON_EXIT_ON_SIGTERM=1` in the rank's environment,
+`DistributedSignalHandler` catches SIGTERM as well as SIGUSR2, so the rank
+that owns the state handles its own signal and the existing
+`--exit-signal-handler` path saves and exits. `launch_trainings.py
+--partition preemptable` exports `EXIT_ON_SIGTERM=1`, which
+`launch_pretraining_cscs.sh` puts on the srun line beside `RANK`/`LOCAL_RANK`
+(host env does not cross into the container — evals CLAUDE #5). It is opt-in
+because it also makes `scancel` save before stopping, and `KillWait` is 30 s
+against 240 s of preemption grace, so a killed job may not get its async save
+down. Rank 0 prints `[exit-signal-handler] catching SIGUSR2, SIGTERM` —
+**grep for that line before trusting a preemption to checkpoint**, since an
+unpatched checkout ignores the variable silently. The save is off the
+checkpoint grid, and that is already expected: `run_interval()` takes the
+modal gap and `due_iters()` never marks an off-grid save due, so preemption
+saves add disk, not eval work.
 
 That, `--requeue` and a 23:59:00 wall are what
 `launch_trainings.py --partition preemptable` sets up (2026-09-20): a

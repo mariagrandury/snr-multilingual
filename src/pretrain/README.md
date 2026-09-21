@@ -322,9 +322,10 @@ CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
 `--partition preemptable` starts a run now instead of queueing behind the
 480-node QOS cap on `normal`, at the price of preemption. It is safe here
 because the three pieces travel together: `--requeue` (so a preempted run
-comes back with the same jobid and partition), the wrapper's SIGTERM→SIGUSR2
-trap (so Megatron checkpoints inside the 4 min grace and the requeued job
-resumes from it), and a walltime cap of 23:59:00 instead of 11:59:59 —
+comes back with the same jobid and partition), `MEGATRON_EXIT_ON_SIGTERM=1`
+on the srun line (so the patched handler catches the preemption signal and
+Megatron checkpoints inside the 4 min grace, and the requeued job resumes
+from that save), and a walltime cap of 23:59:00 instead of 11:59:59 —
 `preemptable` allows 24h, and a limit cannot be raised after submission, so it
 has to be asked for here. `scripts/preempt_drain.sh` moves *pending* runs
 there too, but only the top rungs and only if they already carry `--requeue`.

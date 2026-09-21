@@ -817,6 +817,13 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
                 time: Optional[str] = None, account: Optional[str] = None,
                 dependency: Optional[str] = None,
                 partition: Optional[str] = None) -> None:
+    if partition == PREEMPT_PARTITION:
+        # The wrapper turns this into MEGATRON_EXIT_ON_SIGTERM on the srun
+        # line, and the patched DistributedSignalHandler then checkpoints on
+        # the preemption signal instead of dying on it. Only here: it also
+        # makes `scancel` save before stopping, which is not what you want on
+        # a job you are killing.
+        env = {**env, "EXIT_ON_SIGTERM": "1"}
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
     # from $0 — pass the real checkout dir here.
