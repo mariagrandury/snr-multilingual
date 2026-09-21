@@ -35,7 +35,7 @@ PY=${PY:-python3}
 # so git sees no diff (PNGs are already deterministic).
 export SOURCE_DATE_EPOCH=0
 FETCH=1; DECK=1
-export CURVES=${CURVES:-0}
+CURVES=${CURVES:-0}
 for a in "$@"; do
   case "$a" in
     --no-fetch) FETCH=0 ;;
@@ -154,8 +154,17 @@ EOF
 
 if [ "$DECK" = 1 ]; then
   step "slidev build"
-  ( cd documents && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npx slidev build --out /tmp/slidev-refresh \
-      2>&1 | grep -E "✓ built|error" ) || FAILED+=("slidev build")
+  # The grep keeps the output to one line, but it also swallowed the reason the
+  # step failed: on a node without npx the only message is "npx: command not
+  # found", which matches neither pattern, so the step failed in silence. Say
+  # what is missing, and treat "no node here" as a skip rather than a failure —
+  # the deck builds where node is installed, and --no-deck silences the notice.
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "  npx not found on this node — deck not built (install node, or pass --no-deck)"
+  else
+    ( cd documents && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npx slidev build --out /tmp/slidev-refresh \
+        2>&1 | grep -E "✓ built|error|not found|No such file" ) || FAILED+=("slidev build")
+  fi
 fi
 
 # 7. The numbers the prose quotes.

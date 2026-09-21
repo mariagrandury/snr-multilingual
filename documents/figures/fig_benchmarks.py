@@ -13,6 +13,9 @@ ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 OUT = REPO / "documents" / "public" / "ladder"
 sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 from analysis.utils import assign_language, benchmark_family  # noqa: E402
+from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
+    DISCREPANCY_UNIT_INTERVAL,
+)
 
 
 def first_clearing_size(out):
@@ -88,7 +91,15 @@ def snr_bpb_vs_benchmark(out):
     """
     P = ANALYSIS / "rq03_noise_and_snr/pretraining/predictivity"          # the per-task table
     R = ANALYSIS / "rq04_surrogates/pretraining/predictivity"             # the variant ranking and anchor
-    variant = pd.read_csv(R / "top_variants_overall.csv")["variant"].iloc[0]
+    # This panel ranks bits per byte against a benchmark, so it needs a variant
+    # that BOTH sides have. The discrepancy family reads the scores as points of
+    # [0, 1] and is NaN on BPB by construction (run_apertus_snr_variants.
+    # DISCREPANCY_UNIT_INTERVAL), so the overall top variant — rel_star_discrepancy
+    # — would leave this panel permanently empty at every size, not just where the
+    # gate bites. Take the best-ranked variant BPB is defined on.
+    ranking = pd.read_csv(R / "top_variants_overall.csv")
+    usable = ranking[~ranking["variant"].isin(DISCREPANCY_UNIT_INTERVAL)]
+    variant = usable["variant"].iloc[0]
     size = pd.read_csv(R / "top_benchmarks_per_language.csv")["size"].iloc[0]
     col = f"snr_{variant}_{size}"
     t = pd.read_csv(P / "snr_variants_per_task.csv", index_col=0)
@@ -134,11 +145,22 @@ def snr_bpb_vs_benchmark(out):
                     textcoords="offset points", xytext=(10, 0), fontsize=7.5,
                     color=S.MUTED, va="center")
     a1.set_yticks(y); a1.set_yticklabels(both, fontsize=10, color=S.INK)
-    a1.set_xlabel(f"signal to noise ratio at {size}, log scale", fontsize=9, color=S.MUTED)
+    a1.set_xlabel(f"signal to noise ratio ({variant}) at {size}, log scale",
+                  fontsize=9, color=S.MUTED)
     a1.set_xscale("log")
-    lo = min(bpb[l] for l in both) * 0.7
-    a1.set_xlim(lo, max(bench[l] for l in both) * 4.0)
-    a1.set_ylim(-.8, len(both) - .2)
+    if both:
+        a1.set_xlim(min(bpb[l] for l in both) * 0.7,
+                    max(bench[l] for l in both) * 4.0)
+        a1.set_ylim(-.8, len(both) - .2)
+    else:
+        # No language has an SNR on both sides — the gate can empty the benchmark
+        # side at a size. Say so on the panel and in the run's output rather than
+        # dying on min() of an empty sequence, and never draw a blank panel
+        # that reads as "no difference".
+        print(f"!!! no language has both a BPB and a benchmark SNR on "
+              f"{variant} at {size}: the head-to-head panel is empty")
+        a1.text(.5, .5, f"no language has both\nat {size}", ha="center", va="center",
+                transform=a1.transAxes, fontsize=10, color=S.MUTED)
     a1.grid(axis="x", color=S.GRID, lw=0.8); a1.set_axisbelow(True)
     S.clean(a1, spines=("bottom",)); a1.tick_params(length=0)
     a1.set_title(f"it wins in {n_wins} of the {len(both)} languages that have both",

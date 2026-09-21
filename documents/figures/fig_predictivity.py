@@ -12,7 +12,12 @@ from predictivity import min_predictive_size, kind
 OUT = Path(__file__).resolve().parents[1] / "public" / "ladder"
 PROXIES = ["175M", "350M"]
 NEVER = len(PROXIES)                       # the "no size works" column
-DECISION = {1: "depth", 2: "depth", 8: "scheme", 15: "scheme", 30: "scheme"}
+# The design decision each language count can read: L1/L2 vary only the
+# architecture, L8-L30 carry scheme A vs B, L50 the sampling temperature
+# (A vs AT3). Read with .get so a language count added to the grid labels
+# itself plainly instead of raising (L50 did).
+DECISION = {1: "depth", 2: "depth", 8: "scheme", 15: "scheme", 30: "scheme",
+            50: "temperature"}
 
 
 def _slot(v):
@@ -36,11 +41,17 @@ def line_plot(d, out):
     med = per_lang.groupby("L")["slot"].median()
     # three different KINDS of measurement, so categorical slots in fixed order,
     # each with its own marker shape so identity never rests on colour alone
-    ax.plot([med[L] for L in Ls], [ypos[L] for L in Ls], marker="o", ms=9, lw=2.4,
+    # .get, like the two kinds below: an L with no per-language BPB row (L15 has
+    # no 1.7B cell, so nothing is scored to its final) leaves a gap in the line
+    # rather than raising.
+    ax.plot([med.get(L, np.nan) for L in Ls], [ypos[L] for L in Ls], marker="o", ms=9, lw=2.4,
             color=S.SERIES[0], zorder=5, label="one language's bits per byte (median)")
     for name, colour, marker in (("macro bits per byte", S.SERIES[1], "s"),
                                  ("training loss", S.SERIES[2], "^")):
-        g = d[d["kind"] == name].set_index("L")["slot"]
+        # median per L, like the per-language line: set_index("L") keeps every
+        # row, and a kind with two rows at one L (macro BPB has two at L30)
+        # then makes g.get(L) a Series, which matplotlib cannot plot.
+        g = d[d["kind"] == name].groupby("L")["slot"].median()
         ax.plot([g.get(L, np.nan) for L in Ls], [ypos[L] for L in Ls], marker=marker,
                 ms=7, lw=1.8, color=colour, zorder=4, label=name)
     # The benchmark tasks are a whole population with one answer, so they get a
@@ -55,7 +66,8 @@ def line_plot(d, out):
 
     ax.set_xticks(range(NEVER + 1)); ax.set_xticklabels(PROXIES + ["no size\nworks"], fontsize=9)
     ax.set_yticks(list(ypos.values()))
-    ax.set_yticklabels([f"{L} language{'s' if L > 1 else ''}   ·   {DECISION[L]}" for L in Ls],
+    ax.set_yticklabels([f"{L} language{'s' if L > 1 else ''}"
+                        + (f"   ·   {DECISION[L]}" if L in DECISION else "") for L in Ls],
                        fontsize=9, color=S.INK)
     ax.set_xlabel("smallest model that picks the same winner as 600M", fontsize=9.5, color=S.MUTED)
     ax.set_xlim(-.45, NEVER + .45); ax.set_ylim(-.6, len(Ls) - .4)

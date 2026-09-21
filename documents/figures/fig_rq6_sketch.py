@@ -19,18 +19,36 @@ OUT = Path(__file__).resolve().parents[1] / "public" / "ladder"
 GUTTER = 5.3e8          # x position of the "no trained size reaches this" column
 NPARAMS = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8, "600M": 6.0e8,
            "1B": 1.0e9, "1.7B": 1.7e9}
-DECISION = {1: "depth", 2: "depth", 8: "scheme", 15: "scheme", 30: "scheme"}
-LSHADE = {1: "#cde2fb", 2: "#9ec5f4", 8: "#5598e7", 15: "#2a78d6", 30: "#154a8a"}
+# The design decision each language count can actually read: at L1 and L2 only
+# the architecture varies, L8-L30 carry the scheme-A-vs-B contrast, and L50 is
+# where the sampling temperature (A vs AT3) is read. `.get` on both, and a
+# ramp rather than a fixed key set: a language count added to the grid gets a
+# shade and an unlabelled line instead of crashing the figure (L50 did).
+DECISION = {1: "depth", 2: "depth", 8: "scheme", 15: "scheme", 30: "scheme",
+            50: "temperature"}
+_RAMP = ["#cde2fb", "#9ec5f4", "#5598e7", "#2a78d6", "#154a8a", "#0b2d55"]
+
+
+def lshade(L, present) -> str:
+    """Colour for a language count, ramped over the counts the data has."""
+    order = sorted(present)
+    return _RAMP[min(order.index(L), len(_RAMP) - 1)] if L in order else _RAMP[-1]
+
+
+def llabel(L) -> str:
+    what = DECISION.get(L)
+    return f"{L} language{'s' if L > 1 else ''}" + (f"  ({what})" if what else "")
 
 
 def da_vs_size(d, out):
     """What we can measure today: accuracy against size, one line per L."""
     fig, ax = plt.subplots(figsize=(7.4, 4.0))
+    present = sorted(d["L"].unique())
     for L, g in d.groupby("L"):
         g = g[g["size"] != g["reference_size"]].sort_values(
             "size", key=lambda s: s.map(NPARAMS))
         ax.plot([NPARAMS[s] for s in g["size"]], g["agree"], marker="o", ms=8, lw=2.2,
-                color=LSHADE[L], label=f"{L} language{'s' if L > 1 else ''}  ({DECISION[L]})")
+                color=lshade(L, present), label=llabel(L))
     for t, lab in ((0.5, "coin flip"), (0.75, "usable")):
         ax.axhline(t, color=S.MUTED, ls="--", lw=1)
         ax.annotate(lab, (1.02e8, t), textcoords="offset points", xytext=(0, 4),

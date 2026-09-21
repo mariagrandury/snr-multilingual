@@ -12,3 +12,4 @@ tabulate
 statsmodels>=0.14
 scikit-learn>=1.3
 google-genai>=2.24    # rewrite_items_gemini.py (the rfgm twins), login node only
+pymupdf>=1.24         # documents/build_report.py and figures/fig_from_analysis.py (the report PDF)
