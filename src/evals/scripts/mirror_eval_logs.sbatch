@@ -36,8 +36,8 @@
 #SBATCH --time=12:00:00
 # Logs go to capstor beside the data they describe: Slurm opens them before the
 # script runs, so a swept scratch dir would mean no log at all.
-#SBATCH --output=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
-#SBATCH --error=/capstor/store/cscs/swissai/infra01/msnr-eval-logs/logs/%x-%j.out
+#SBATCH --output=/capstor/store/cscs/swissai/infra01/msnr/msnr-eval-logs/logs/%x-%j.out
+#SBATCH --error=/capstor/store/cscs/swissai/infra01/msnr/msnr-eval-logs/logs/%x-%j.out
 set -uo pipefail
 
 LOGS=${LOGS:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs}

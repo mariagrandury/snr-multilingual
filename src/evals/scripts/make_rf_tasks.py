@@ -46,7 +46,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[3]
 TASKS_JSON = ROOT / "configs" / "tasks.json"
 OUT_DIR = ROOT / "src" / "evals" / "tasks" / "rf"
-HARNESS = Path("/capstor/store/cscs/swissai/infra01/msnr-harness/"
+HARNESS = Path("/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/"
                "lm-evaluation-harness/lm_eval/tasks")
 
 # family -> (doc_to_text, doc_to_choice, doc_to_target); the prompt keeps the
@@ -79,7 +79,7 @@ FORMAT = {
 # Tier 2: the items rewritten by Gemini (rewrite_items_gemini.py) into a
 # statement stem with four short continuations, one JSONL per task with
 # `text` / `choices` / `gold` columns, so one YAML template covers every family.
-RFGM_DATA = Path("/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm")
+RFGM_DATA = Path("/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm")
 RFGM_DIR = ROOT / "src" / "evals" / "tasks" / "rfgm"
 FORMAT_RFGM = {f: f"Gemini statement rewrite of {f}: stem + four short continuations, scored as continuations "
                   "(rf-data/rfgm/<task>.jsonl)" for f in TEMPLATES}

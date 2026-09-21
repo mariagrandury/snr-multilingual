@@ -59,7 +59,7 @@ from urllib.parse import quote
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_rf_tasks import HARNESS, TASKS_JSON, TEMPLATES, source_config  # noqa: E402
 
-DATA_DIR = Path("/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm")
+DATA_DIR = Path("/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm")
 PILOT_DIR = Path(__file__).resolve().parents[3] / "src" / "signal-and-noise" / "analysis" / "rq00_task_reformulation"
 MODEL = "gemini-3.8-flash"
 # Vertex AI (ADC) rather than an API key; its batch jobs are Cloud Storage in

@@ -104,7 +104,7 @@ Eval results are NOT in the repo: they live on the cluster at
 
 - **lm_eval** (lm-evaluation-harness): the swiss-ai fork, installed per eval
   job from a pinned shared checkout at
-  `/capstor/store/cscs/swissai/infra01/msnr-harness/` (prebuilt wheel first) —
+  `/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/` (prebuilt wheel first) —
   never a per-job GitHub clone; see `src/evals/README.md` for why and how to
   refresh it
 - **signal-and-noise** (Allen AI): reference implementation at `src/signal-and-noise/`

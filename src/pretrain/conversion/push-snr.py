@@ -3,7 +3,7 @@
 
 Run MANUALLY from the login node (needs HF_TOKEN + outbound network). The
 auto-eval watcher converts every checkpoint to HF and persists it on capstor
-(`/capstor/store/cscs/swissai/infra01/msnr-hf-models/`); this script mirrors
+(`/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models/`); this script mirrors
 that capstor tree to the Hub.
 
 Layout:
@@ -33,7 +33,7 @@ from huggingface_hub import HfApi
 from huggingface_hub.utils import HfHubHTTPError
 
 ORG = "msnr"  # single PUBLIC org — public repos have no storage limit
-DEFAULT_STAGING = Path("/capstor/store/cscs/swissai/infra01/msnr-hf-models")
+DEFAULT_STAGING = Path("/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models")
 
 # A converted iter dir is ready once it has the .hf_complete marker the
 # convert scripts touch LAST (it implies config + weights; those alone can

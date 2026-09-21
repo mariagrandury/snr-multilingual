@@ -14,7 +14,7 @@ explicit `LM_EVAL_HARNESS_BRANCH`, or if the shared tree is missing). Each
 job logs and records in `job.json` which one it used.
 
 ```bash
-HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+HARNESS_SRC=/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness
 git -C $HARNESS_SRC pull                       # refresh deliberately, then rebuild:
 rsync -a --exclude .git --exclude build --exclude '*.egg-info' \
       $HARNESS_SRC/ /iopsstor/scratch/cscs/$USER/tmp-harness-build/src/
@@ -95,7 +95,7 @@ the three families; it is idempotent. The second twin, `rfgm_<task>`
 same item rewritten by Gemini into a statement stem with four short
 continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
 runs the Batch API from the login node and leaves one JSONL per task under
-`/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/`, which the
+`/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/`, which the
 YAMLs read through `dataset_path: json` (offline; never published, it
 carries the gold labels). Design, the step-by-step guide, the prompt and
 the cost: [`analysis/rq00_task_reformulation/`](../signal-and-noise/analysis/rq00_task_reformulation/README.md).

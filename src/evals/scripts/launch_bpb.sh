@@ -17,7 +17,7 @@
 #     without chaining when nothing is left.
 set -uo pipefail
 
-STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
+STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models}
 OUT_ROOT=${OUT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr}
 SBATCH=${SBATCH:-$(dirname "${BASH_SOURCE[0]}")/score_bpb.sbatch}
 DRY=0; FILTER='.'

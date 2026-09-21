@@ -34,7 +34,7 @@ registered task automatically).
   `compare.py` maps a twin to its original with `removeprefix`, so `rf_gm_`
   would collide with the `rf_` strip.
 - **Data.** One JSONL per task at
-  `/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/<task>.jsonl`
+  `/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/<task>.jsonl`
   (the dir is `infra01` group-rws with default ACLs; aromanou's jobs read it).
   Never pushed publicly — gold labels. Row schema, uniform across families:
   ```json
@@ -50,7 +50,7 @@ registered task automatically).
   dataset_path: json
   dataset_kwargs:
     data_files:
-      test: /capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/belebele_deu_Latn.jsonl
+      test: /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/belebele_deu_Latn.jsonl
   test_split: test
   output_type: multiple_choice
   num_fewshot: 0
@@ -135,7 +135,7 @@ already picks `acc_norm` for any task whose entry says so), `above_random.py`
    first `RESOURCE_EXHAUSTED` and is re-run later. The ADC account also
    needs `storage.buckets.create` (`roles/storage.admin`), or an admin
    creates the bucket and grants object access (`RFGM_GCS_BUCKET`).
-5. `mkdir -p /capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm`
+5. `mkdir -p /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm`
    (inherits the infra01 group ACL). The Cloud Storage bucket
    (`$RFGM_GCS_BUCKET`, else `<project>-msnr-rfgm`) is created by the driver.
 

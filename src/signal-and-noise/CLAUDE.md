@@ -52,7 +52,7 @@ bash scripts/refresh_analysis.sh              # from the repo root: this plus ev
 
 cd src/signal-and-noise
 bash run_all_predictivity.sh                  # everything, from the published ladder report
-SNR_LADDER_DIR=/capstor/store/cscs/swissai/infra01/msnr-ladder-report bash run_all_predictivity.sh   # cluster copy
+SNR_LADDER_DIR=/capstor/store/cscs/swissai/infra01/msnr/msnr-ladder-report bash run_all_predictivity.sh   # cluster copy
 python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds   # one RQ
 ```
 

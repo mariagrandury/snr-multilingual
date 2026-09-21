@@ -55,7 +55,7 @@ SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/
 MAX_CHAIN=${MAX_CHAIN:-32}
 
 REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
-STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
+STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models}
 # Results live beside the harness results, under the same cell-iter name, so
 # the eval tooling and the analysis find them in one place.
 OUT_ROOT=${OUT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr}

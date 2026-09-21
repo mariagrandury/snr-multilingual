@@ -99,7 +99,7 @@ PROJECT_NAME = json.loads(
 # Converted HF checkpoints are the durable copy — persist them on capstor store
 # (push-snr.py mirrors this tree to the public msnr Hub org). Not iopsstor
 # scratch, which is auto-purged.
-DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr-hf-models"
+DEFAULT_STAGING = "/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models"
 DEFAULT_LOGS_ROOT = "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs"
 
 def convert_job_name(cell: str) -> str:

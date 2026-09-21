@@ -184,7 +184,7 @@ hellaswag, global_piqa) are not rewritten.
 The set is a third family prefix — `rfgm_` — on the exact `rf_` plumbing:
 [`rewrite_items_gemini.py`](../../../evals/scripts/rewrite_items_gemini.py)
 produces one JSONL per task under
-`/capstor/store/cscs/swissai/infra01/msnr-harness/rf-data/rfgm/` (never
+`/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/` (never
 pushed publicly: gold labels), `make_rf_tasks.py --set rfgm` writes one
 `dataset_path: json` YAML per task under `src/evals/tasks/rfgm/` and the
 tasks.json entries (`benchmark: rfgm_<family>`, `metric: acc_norm`, group

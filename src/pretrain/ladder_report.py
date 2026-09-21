@@ -1250,7 +1250,7 @@ def write_artifacts(curves, tgts, out_dir: Path, tol: float) -> None:
     print(f"[docs] wrote {doc}", file=sys.stderr)
 
 
-CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr-ladder-report")
+CAPSTOR_REPORTS = Path("/capstor/store/cscs/swissai/infra01/msnr/msnr-ladder-report")
 # Org policy (plan/storage-map.md): msnr = model repos only; msnr-data = every
 # published data artifact (this report, CSVs, future eval-results datasets).
 # The earlier pushes live at multilingual-snr/msnr-ladder-report — left in
