@@ -17,7 +17,10 @@
 #
 # Wired in ~/.claude/settings.json (user scope, because sessions are often
 # started from the parent directory, where project settings do not load).
-REPO=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+# Derived from this script's own location, not hardcoded: the same file has to
+# work from the cluster checkout, a laptop clone and a remote sandbox, and a
+# hardcoded path makes --mark fail and the hook silently pass everywhere else.
+REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 MARK=$REPO/.git/review-snr.ok
 
 fingerprint() {

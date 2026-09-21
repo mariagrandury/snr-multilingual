@@ -202,12 +202,21 @@ def main() -> None:
             # different text — worth knowing before trusting any of this.
             print(f"    WARNING: {lang} decoded {nbytes} bytes, manifest says "
                   f"{entry['bytes']}", flush=True)
+        # A diverged checkpoint can average more than ~709.8 nats/token, past
+        # what a double can exponentiate: lm-90M-L8-deep-seed1904 raised
+        # OverflowError here on every attempt (84 jobs), and its BPB — the
+        # metric that matters, and finite — was never written. Catch the
+        # overflow itself, not a threshold, so a NaN loss stays NaN.
+        try:
+            ppl = math.exp(nll / n)
+        except OverflowError:
+            ppl = float("inf")
         out[lang] = {
             "tokens_scored": n,
             "bytes": nbytes,
             "nll_nats": nll,
             "bpb": nll / math.log(2) / nbytes,
-            "ppl": math.exp(nll / n),
+            "ppl": ppl,
         }
         print(f"  {lang:24} bpb={out[lang]['bpb']:.4f}  ppl={out[lang]['ppl']:.2f}",
               flush=True)

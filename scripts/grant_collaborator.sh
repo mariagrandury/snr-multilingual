@@ -29,6 +29,11 @@ id "$U" >/dev/null 2>&1 || { echo "no such user: $U" >&2; exit 2; }
 S=/iopsstor/scratch/cscs/mariagrandury
 M=$S/data-mix-small/Megatron-LM/logs
 
+# Whoever owns the shared tree. Named explicitly in the ACLs below: a
+# directory a collaborator creates makes THEM user::rwx and leaves the owner
+# on group::r-x -- read-only inside their own tree.
+OWNER=$(stat -c '%U' "$S")
+
 # Dirs they must be able to create entries in. Non-recursive on purpose: the
 # default ACL makes anything they create inherit the grant, while the 300k+
 # existing files underneath stay untouched -- recursing is slow on Lustre and
@@ -74,6 +79,16 @@ apply)
     [[ -d $d ]] || { echo "skip (missing): $d" >&2; continue; }
     setfacl -m "u:$U:rwx" "$d"      # can create entries here
     setfacl -d -m "u:$U:rwx" "$d"   # ...and in everything created under it
+    # ...and OWNER keeps write access to whatever they create under it.
+    # Without this the grant is ONE-WAY: a directory the collaborator makes
+    # has user::rwx = THEM, and the owner falls through to group::r-x, so
+    # the owner's own jobs fail with `mkdir: Permission denied` inside their
+    # own tree. Not hypothetical -- aromanou's 2026-09-02 eval run left 190
+    # checkpoint dirs under eval_logs/<entity>/msnr that mariagrandury could
+    # not write into, and every eval that touched one failed: 238 jobs on
+    # 2026-09-09 alone. A path's ACL can only be changed by its owner, so
+    # repairing dirs already created this way needs THEM to run it.
+    setfacl -m "u:$OWNER:rwx" -d -m "u:$OWNER:rwx" "$d"
     chmod +t "$d"                   # ...but can only delete what they own
     echo "write  $d"
   done

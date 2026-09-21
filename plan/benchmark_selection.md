@@ -109,7 +109,7 @@ isolated it exactly — **184 tasks succeeded, 4 failed**, and the 4 were
 directory, then rebuild the shared wheel:
 
 ```bash
-H=/capstor/store/cscs/swissai/infra01/msnr-harness/lm-evaluation-harness
+H=/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness
 for d in $H/lm_eval/tasks/afri{xnli,mmlu}/direct/prompt_*/; do
   grep -q weighted_f1_score $d/utils.py ||
     echo 'from lm_eval.utils import weighted_f1_score  # noqa: F401' >> $d/utils.py

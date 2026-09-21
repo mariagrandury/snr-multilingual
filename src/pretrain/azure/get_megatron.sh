@@ -18,5 +18,11 @@ fi
 # is false by construction. BASH_SOURCE, not $0: this file is `source`d.
 cp "$(dirname "${BASH_SOURCE[0]}")/../patches/dist_checkpointing_strategies_torch.py" \
    "$MEGATRON_LM_DIR/megatron/core/dist_checkpointing/strategies/torch.py"
+# Lets MEGATRON_EXIT_ON_SIGTERM=1 add SIGTERM to the signals --exit-signal-handler
+# catches, so a preempted run checkpoints instead of dying where it stands. Inert
+# unless that variable is set, and nothing on Azure sets it today — it is copied
+# for parity, so a low-priority preemption here can use the same mechanism.
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/training_dist_signal_handler.py" \
+   "$MEGATRON_LM_DIR/megatron/training/dist_signal_handler.py"
 export MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR${PYTHONPATH:+:$PYTHONPATH}

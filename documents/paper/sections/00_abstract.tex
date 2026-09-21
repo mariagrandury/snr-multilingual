@@ -1,0 +1,21 @@
+\begin{abstract}
+% REVIEWED - START
+Training multilingual language models requires repeated decisions about data mixtures and architectures, often based on evaluations of small proxy models.
+Yet these evaluations are useful only if they can tell us whether a decision made at small scale will remain valid as model parameters or compute increase, a challenge compounded in multilingual settings where many language–benchmark pairs exhibit little measurable signal at small scales.
+We therefore ask when multilingual evaluations become predictive, how early reliable training decisions can be made, which cheap measurements anticipate their reliability, and how these patterns vary across model design interventions and languages.
+We design a controlled ladder of 163 runs spanning five sizes from 175M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates, and analyse the 113 completed, non-diverged runs of that grid. 
+We evaluate ten aligned fractions of training on per-language bits per byte in 100 languages and task performance on 14 multilingual benchmark families.
+% REVIEWED - END
+% RQ1
+We characterize which benchmark families exhibit predictable scaling across model size and training, and distinguish benchmarks whose performance improves consistently from those whose scaling is weak, noisy, or non-monotonic. 
+% RQ2
+We then quantify how early small-scale evaluations recover the decisions made at full scale for both data-mixture and architecture interventions. 
+% RQ3
+Finally, to determine whether this reliability can itself be anticipated cheaply, we compare decision-accuracy proxies across model scales and levels of multilingual coverage, identifying the regimes in which each proxy becomes informative. 
+% RQ4
+% Finally, we test whether scaling behavior learned from observed languages transfers to held-out languages, and how this transfer depends on the underlying design intervention. 
+% We find that likelihood-based measurements scale predictably while four-option knowledge benchmarks sit at chance up to 1.7B; that a 350M proxy at 20\% of its run already reads a data decision the way the 1.7B reference does on bits per byte, while the benchmark suite reads every decision as a coin flip; that the reliability of a proxy is set by the size of the intervention's effect relative to seed noise rather than by the intervention itself; and that scaling exponents transfer across languages, so that one small measurement predicts a never-trained language's bits per byte at 1.7B within 7\%. 
+% REVIEWED - START
+We release the ladder and the per-checkpoint measurements to support cheaper, better-informed multilingual model development.
+% REVIEWED - END
+\end{abstract}

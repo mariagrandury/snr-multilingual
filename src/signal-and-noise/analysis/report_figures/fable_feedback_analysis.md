@@ -273,7 +273,7 @@ Figure 1: fig1_gate.pdf, full width, 1x2 panels sharing the y-axis label
 "Accuracy".
 
 Data: the per-task accuracy trajectories used by
-analysis/rq00_acc_vs_flops (pool seeds_28_1797_1904). Reuse its loading
+analysis/rq00_gate_and_curves (pool seeds_28_1797_1904). Reuse its loading
 code (run_apertus.py) to get accuracy vs FLOPs per data mixture for the
 custom models, seed 1904 only.
 
@@ -286,7 +286,7 @@ belebele_eng_Latn). For each panel:
 - Mark final checkpoints of each model size with an "x" marker and annotate
   sizes 175M and 1B only.
 - Horizontal dashed grey line at the task's random baseline. Read the
-  baseline from rq00_acc_vs_flops/pretraining/seeds_28_1797_1904/
+  baseline from rq00_gate_and_curves/pretraining/seeds_28_1797_1904/
   above_random_scores.csv (columns n_options, random_baseline).
 - Identical y-limits across panels so the gap above baseline is comparable.
 Sanity check before saving: multiblimp_rus mean final score must be well
@@ -299,7 +299,7 @@ the seed-1904 trajectories, fall back to agieval_sat_en and tell me.
 ```
 Figure 2: fig2_snr_vs_da.pdf, single column size.
 
-Data: rq02_snr_definition/pretraining/custom_swissai_hf/
+Data: rq03_noise_and_snr/pretraining/custom_swissai_hf/
 snr_variants_per_task.csv (single source of truth, per-task SNR for every
 variant and size bucket plus DA columns).
 
@@ -357,7 +357,7 @@ custom-model-only families, and multiblimp rows should be among the top.
 Figure 4: fig4_subset_sweep.pdf, single column size, slightly wider
 (4.2 x 2.8 in).
 
-Data: rq04_smooth_subtasks outputs for case "global_mmlu_full_subjects"
+Data: rq08_subset_selection outputs for case "global_mmlu_full_subjects"
 (MMLU subject subsets, scores averaged over the 10 global_mmlu languages),
 pool custom_swissai_hf. Reuse the sweep logic from smooth_subtasks.py
 rather than re-deriving it, the cumulative subset SNR must match the
@@ -539,7 +539,7 @@ Figure 3 changes substantively, and one new prompt makes the DA table reproducib
 Figure 3: fig3_reliability_map.pdf, full width, DA-based on the external
 suite (this replaces the SNR-based heatmap spec).
 
-Data: analysis/rq01_decision_accuracy/all/external/da_per_task.csv.
+Data: analysis/rq02_decision_accuracy/all/external/da_per_task.csv.
 
 Aggregation (must match make_da_reliability.py if it exists already, else
 implement here and factor it out so both use it):
@@ -564,7 +564,7 @@ intermediate dataframe instead of saving.
 **New prompt, DA aggregation script (run before Figure 3):**
 
 ```
-Create analysis/rq01_decision_accuracy/da_reliability_map.py.
+Create analysis/rq02_decision_accuracy/da_reliability_map.py.
 
 Input: all/external/da_per_task.csv. Implement the aggregation exactly as
 specified in the Figure 3 prompt (language parsing, family stripping,

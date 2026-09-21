@@ -11,9 +11,9 @@
 #
 # With no iters it scores every checkpoint converted for the cell.
 #
-# A cell does not fit one debug slot. Scoring costs a flat ~448 s/ckpt at 90M
-# and ~816 s at 350M (measured off the bpb.json mtimes), so debug's 1:30 wall
-# gets through ~11 or ~6 of the 20 planned checkpoints. The first round of
+# A cell does not fit one debug slot. Scoring costs a flat ~444 s/ckpt at 90M
+# and ~2,141 s at 1.7B (medians over 1,023 jobs), so debug's 1:30 wall gets
+# through ~11 of a 90M cell's 20 checkpoints and 2 of a 1.7B cell's 60. The first round of
 # these therefore ended 8 TIMEOUTs with 81/780 scored and nothing left in the
 # queue: per-checkpoint idempotency kept the work, but nothing ever asked for
 # the rest. Two additions fix that, both borrowed from
@@ -50,10 +50,12 @@ ITERS=("$@")
 # successor cannot find this file by a path relative to it (../CLAUDE.md, the
 # SCRIPT_PATH gotcha). Absolute, like submit_build_one.sh.
 SCRIPT=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/scripts/score_bpb.sbatch
-MAX_CHAIN=${MAX_CHAIN:-12}
+# 32: debug_drain moves these jobs to 1:30 slots, where a 1.7B link scores
+# only 2 checkpoints (2,141 s each), so a 60-save cell needs ~30 links.
+MAX_CHAIN=${MAX_CHAIN:-32}
 
 REPO_DIR=${REPO_DIR:-$(dirname "$(dirname "$SCRIPT")")}
-STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr-hf-models}
+STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models}
 # Results live beside the harness results, under the same cell-iter name, so
 # the eval tooling and the analysis find them in one place.
 OUT_ROOT=${OUT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr}
@@ -79,6 +81,22 @@ done
 echo "due=${#DUE[@]}: ${DUE[*]:-none}"
 [ ${#DUE[@]} -eq 0 ] && { echo "$CELL fully scored — chain ends here."; exit 0; }
 
+# Stop a chain that is not moving. PREV_DUE is what the previous link had due;
+# a link always attempts its first checkpoint, so if none of those landed, the
+# cause (a checkpoint that always fails, a write that is always refused) will
+# fail this link too, and MAX_CHAIN more after it: one cell ran 108 links and
+# 22.9 node-hours this way, every one of them COMPLETED.
+if [ -n "${PREV_DUE:-}" ]; then
+    progressed=0
+    for it in ${PREV_DUE//:/ }; do
+        [ -s "$OUT_ROOT/$CELL-iter$it/bpb/bpb.json" ] && { progressed=1; break; }
+    done
+    if [ "$progressed" -eq 0 ]; then
+        echo "ERROR: the previous link scored none of iters ${PREV_DUE//:/ } — not chaining again"
+        exit 1
+    fi
+fi
+
 # Queue the successor NOW, before any scoring: at the wall Slurm kills the
 # batch script outright, so anything submitted after the srun would never run.
 # --dependency=singleton + the shared job name keep exactly one alive.
@@ -90,7 +108,8 @@ CHAIN_DEPTH=${CHAIN_DEPTH:-0}
 if [ "$CHAIN_DEPTH" -lt "$MAX_CHAIN" ]; then
     echo "queuing singleton successor (chain depth $CHAIN_DEPTH/$MAX_CHAIN)"
     sbatch --dependency=singleton --job-name="${SLURM_JOB_NAME:-bpb-$CELL}" \
-           --chdir="$REPO_DIR" --export=ALL,CHAIN_DEPTH=$((CHAIN_DEPTH + 1)) \
+           --chdir="$REPO_DIR" \
+           --export=ALL,CHAIN_DEPTH=$((CHAIN_DEPTH + 1)),PREV_DUE=$(IFS=:; echo "${DUE[*]}") \
            "$SCRIPT" "${ORIG_ARGS[@]}"
 else
     echo "WARN: chain cap $MAX_CHAIN reached for $CELL — not queuing a successor"
@@ -108,8 +127,10 @@ fi
 echo "deadline=$DEADLINE ($([ "$DEADLINE" -gt 0 ] && date -d "@$DEADLINE" || echo unknown))"
 
 # Same container as the harness: it already carries torch + transformers, and
-# reusing it keeps the numerics identical to what lm_eval sees.
-srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml \
+# reusing it keeps the numerics identical to what lm_eval sees. Absolute:
+# launch_bpb.sh submits from wherever it is run, so a relative toml path
+# failed in seconds whenever that was not src/evals (203 jobs).
+srun -n 1 --mpi=pmix -ul --environment="$REPO_DIR/containers/env_vllm.toml" \
      --export=ALL,HF_TOKEN,HF_HOME,HF_HUB_CACHE bash -lc "
     cd '$REPO_DIR'
     set -uo pipefail
@@ -134,8 +155,8 @@ srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml \
         if [ -s \"\$dest/bpb.json\" ]; then
             echo \"== \$padded already scored, skipping\"; continue
         fi
-        # Per-checkpoint cost is flat within a cell (448 s at 90M, 816 s at
-        # 350M, <2% spread), so the previous checkpoint is a good predictor.
+        # Per-checkpoint cost is flat within a cell (444 s at 90M to 2,141 s
+        # at 1.7B, <6% spread), so the previous checkpoint is a good predictor.
         # +20% margin. The first one always runs: no measurement yet, and even
         # the slowest size fits a fresh debug slot.
         left=\$(( $DEADLINE - \$(date +%s) ))
@@ -151,4 +172,8 @@ srun -n 1 --mpi=pmix -ul --environment=./containers/env_vllm.toml \
     done
     exit \$rc
 "
-echo "END: $(date)"
+# The step's exit code is the job's: a link whose scoring failed must show as
+# FAILED, not COMPLETED.
+rc=$?
+echo "END: $(date) rc=$rc"
+exit $rc

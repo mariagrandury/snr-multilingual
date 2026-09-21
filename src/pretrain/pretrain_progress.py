@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Predictivity-sweep pretraining progress on CSCS: per-cell status + plots.
 
-Prints one tab-separated status line per cell of the selected variant
+Prints one tab-separated status line per cell of the selected scheme
 (`--arch`/`--scheme`). Each cell's target is its size's own 5xC budget (the
 "predictivity" block in hyperparams/hyperparams_{deep,shallow}.json):
 
@@ -18,18 +18,23 @@ this output is exactly what a (re-)launch would do.
 
 With --plot, renders a plan table plus two heatmaps over the sweep grid (x = model size,
 y = number of languages), aggregated over EVERY run found on disk regardless
-of variant:
+of scheme:
 
-  pretrain_progress_plan.png      what the grid PLANS per (size, L): the
+  pretrain_progress_plan.png      what the grid PLANS per (size, L): the data
                                   scheme / architecture / seed(s) of every
                                   run, not just a count.
   pretrain_progress_simple.png    cell value = how many finished models exist
                                   at (size, L) across all variants (seeds,
-                                  deep/shallow, scheme A/B, tokenizers).
+                                  deep/shallow, every data scheme, tokenizers).
   pretrain_progress_detailed.png  one row of binary heatmaps per
-                                  transformation — SEED (the SEED_TRIPLE set),
-                                  ARCH (deep/shallow), SCHEME (A/B),
-                                  TOKENIZER (v1) — yellow 0 / blue 1.
+                                  transformation — SEED (every seed the sweep
+                                  uses), ARCH (deep/shallow), DATA (the
+                                  DATA_SCHEMES keys), TOKENIZER (v1) —
+                                  yellow 0 / blue 1.
+
+and writes pretrain_progress_1b_17b.md: one row per planned 1B and 1.7B run —
+the data it reads, its checkpoint, its job (any account) and the 12h jobs that
+still have to start — then the launch commands that resume them.
 
 Azure cells are not visible here (their checkpoints live in blob storage —
 auto_evals.py watches those); this tool covers the CSCS half of the sweep.
@@ -43,17 +48,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
+from collections import Counter
+from datetime import datetime, timedelta
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    HYPERPARAMS, LANG_SETTINGS, SCHEME_B_LANGS, SEED_SINGLE, SEED_TRIPLE,
-    SIZE_LANG_SETTINGS,
-    TRIPLE_LANGS, TRIPLE_SIZES, exp_name, predictivity_cells, schedule_for,
-    seeds_for)
+    CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
+    LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
+    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name,
+    fineweb_source, job_name,
+    predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
 # (launch_pretraining_cscs.sh); PROJECT_NAME for the predictivity sweep is
@@ -61,14 +71,49 @@ from launch_trainings import (  # noqa: E402
 CKPT_ROOT = Path(
     "/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr"
 )
+TRAIN_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
+                  "Megatron-LM/logs/slurm/training")
+# Every account that trains sweep cells: each one's Slurm logs land under its
+# own scratch (`%u` in --output), while checkpoints share CKPT_ROOT. Reading
+# only the first dropped aromanou's 1B cells from every loss curve and from the
+# 1B point of the scaling fits.
+TRAIN_LOG_DIRS = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/"))
+                  for u in ("mariagrandury", "aromanou")]
 ITER_RE = re.compile(r"^iter_(\d+)$")
-# The canonical cell name (see launch_trainings.exp_name).
+# The canonical cell name (see launch_trainings.exp_name). The scheme
+# alternation is built from DATA_SCHEMES rather than spelled out, so a
+# scheme added to the grid cannot go unrecognised on disk — which would look
+# exactly like "that run was never trained". Longest label first: the
+# alternation is ordered, and a short label that prefixes a longer one would
+# otherwise win and leave the remainder unmatched.
+SCHEME_OF_LABEL = {v["label"]: name for name, v in DATA_SCHEMES.items()}
 NAME_RE = re.compile(
-    r"^lm-(?P<size>90M|175M|350M|600M|1B|1\.7B)-L(?P<L>\d+)"
-    r"(?P<scheme>-schemeB)?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    r"^lm-(?P<size>" + "|".join(re.escape(s) for s in LADDER) + r")-L(?P<L>\d+)"
+    r"(?P<scheme>"
+    + "|".join(re.escape(lab) for lab in
+               sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
+    + r")?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
+
+# Every seed the sweep uses anywhere. Two people fill the x3 columns with
+# different triples (SEED_TRIPLES), so this is a union, not one triple.
+ALL_SEEDS = sorted(set(SEED_SINGLE)
+                   | {s for triple, _ in SEED_TRIPLES.values() for s in triple})
+
+
+def cell_in_scheme(scheme: str, size: str, L: int) -> bool:
+    """Does the grid plan this (size, L) under this data scheme? Both halves
+    matter: a scheme defines only some settings, and within a setting only
+    the rungs up to its cap."""
+    return L in DATA_SCHEMES[scheme]["langs"] and size in scheme_sizes(scheme, L)
+
+
+def planned_seeds(size: str, L: int) -> set[int]:
+    """Every seed the grid plans at this (size, L), across all schemes."""
+    return {s for v in DATA_SCHEMES if cell_in_scheme(v, size, L)
+            for s in seeds_for(size, L, v)}
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -142,15 +187,18 @@ def cell_action(model_dir: Path, target: int) -> tuple[str, int, int]:
 
 
 def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
-    """(exp_name, target_iters) for every cell of one variant, in grid order.
-    Scheme B only exists at SCHEME_B_LANGS — other settings are always the
-    scheme-A cell (same normalization as the launcher)."""
+    """(exp_name, target_iters) for every cell of one data scheme trained in
+    `arch`, in grid order. predictivity_cells() already restricts a scheme to
+    the settings and rungs it defines, and arches_for drops the cells this
+    arch does not train — a scheme not trained in `arch` yields nothing, and
+    so does a rung its hyperparams file has no config for (the 3B is deep
+    only, and indexing `configs` with it would raise)."""
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
     return [
-        (exp_name(c["size"], c["L"], arch, c["seed"],
-                  scheme if c["L"] in SCHEME_B_LANGS else "A"),
+        (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
          schedule_for(configs[c["size"]])[0])
-        for c in predictivity_cells()
+        for c in predictivity_cells([scheme])
+        if arch in arches_for(scheme, c["size"], c["L"])
     ]
 
 
@@ -205,7 +253,7 @@ def scan_runs(root: Path) -> list[dict]:
             "L": int(m["L"]),
             "seed": int(m["seed"]),
             "arch": arch,
-            "scheme": "B" if m["scheme"] else "A",
+            "scheme": SCHEME_OF_LABEL[m["scheme"] or ""],
             "tokenizer": "v1",
             "done": (max_valid or 0) >= target,
         })
@@ -276,9 +324,9 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
 
     # --- detailed: one row of binary heatmaps per transformation ------------
     rows = [
-        ("SEED", "seed", SEED_TRIPLE),
+        ("SEED", "seed", ALL_SEEDS),
         ("ARCH", "arch", ["deep", "shallow"]),
-        ("SCHEME", "scheme", ["A", "B"]),
+        ("DATA", "scheme", list(DATA_SCHEMES)),
         ("TOKENIZER", "tokenizer", ["v1"]),
     ]
     ncols = max(len(values) for _, _, values in rows)
@@ -296,17 +344,20 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
             matrix = _grid_matrix(done, lambda r, k=key, v=value: r[k] == v)
             # Binary: 1 if any finished run with this factor value.
             matrix = [[min(v, 1) if v == v else v for v in row] for row in matrix]
-            if key == "scheme" and value == "B":
-                # Scheme B only exists where its language sets differ from A
-                # ({8, 15, 30}) — grey the rest out like off-grid cells.
-                matrix = [[v if L in SCHEME_B_LANGS else float("nan")
-                           for v in row]
+            if key == "scheme":
+                # A scheme covers only the settings and rungs it defines —
+                # AT3 is L15/L30/L50, ZH/ES are L2 alone (ES stops at 1B) — so grey
+                # the rest out like off-grid cells rather than drawing a run
+                # that was never planned as permanently missing.
+                matrix = [[v if cell_in_scheme(value, size, L) else float("nan")
+                           for size, v in zip(SIZES, row)]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             if key == "seed":
-                # The extra seeds exist only on the x3 cells (seeds_for); the
-                # single-seed cells would otherwise read as permanently
-                # missing runs.
-                matrix = [[v if value in seeds_for(size, L) else float("nan")
+                # The extra seeds exist only on the x3 cells, and the triple
+                # differs by size (SEED_TRIPLES: 64/313 at 175M and 600M,
+                # 28/1797 at 1B) — every other cell would otherwise read as a
+                # permanently missing run.
+                matrix = [[v if value in planned_seeds(size, L) else float("nan")
                            for size, v in zip(SIZES, row)]
                           for L, row in zip(LANG_SETTINGS, matrix)]
             _draw_grid(ax, matrix, binary_cmap.copy(), 1, annotate=False)
@@ -323,8 +374,8 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     print(f"[plot] saved {detailed_path}", file=sys.stderr)
 
 
-def eval_counts(root: Path, logs_root: Path | None = None
-                ) -> dict[tuple[str, int], dict]:
+def eval_counts(root: Path, logs_root: Path | None = None,
+                all_languages: bool = False) -> dict[tuple[str, int], dict]:
     """Per (size, L) cell: benchmark results banked, and the two totals.
 
     The unit is one (checkpoint, benchmark-result) pair, because that is what
@@ -341,8 +392,11 @@ def eval_counts(root: Path, logs_root: Path | None = None
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
-    per language the cell trains on, 9 at L=1 and 290 at L=100. That is why
+    per language the cell trains on, 13 at L=1 and 329 at L=50. That is why
     the eval cost of a cell is a property of L, not of the model size.
+
+    all_languages counts only auto_evals_cscs.ALL_LANGUAGES_RUNS (one run per
+    cell), each against every language — exactly what the watcher runs there.
 
     Due checkpoints and the benchmark list come from auto_evals_cscs itself
     (imported lazily: it imports this module, so a top-level import would
@@ -351,17 +405,18 @@ def eval_counts(root: Path, logs_root: Path | None = None
     import auto_evals_cscs as ae
     from evals.scripts._eval_status import completed_tasks
     from evals.scripts.utils.configs import tasks_for_benchmarks
-    from launch_trainings import cell_languages, save_interval
+    from launch_trainings import due_iters, save_interval
 
     logs_root = Path(logs_root or ae.DEFAULT_LOGS_ROOT)
     benchmarks = ae.auto_benchmarks()
     targets = _targets()
 
     def benches(L: int, scheme: str) -> int:
-        return len(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+        return len(tasks_for_benchmarks(benchmarks,
+                                        ae.eval_languages(L, scheme, all_languages)))
 
     cells: dict[tuple[str, int], dict] = {}
-    for size in SIZES:
+    for size in EVAL_SIZES:              # 90M trains but is not evaluated: a blank column
         for L in SIZE_LANG_SETTINGS[size]:
             # Due checkpoints are a property of the schedule, not of what is on
             # disk, so every cell gets a planned budget — including the ones
@@ -370,39 +425,59 @@ def eval_counts(root: Path, logs_root: Path | None = None
             si = save_interval(target)
             n_due = len({i for i in range(si, target + 1, si)
                          if i % (2 * si) == 0} | {target})
-            schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
-            # Per scheme the grid plans seeds x {deep, shallow}.
-            runs_per_scheme = len(seeds_for(size, L)) * 2
+            schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
+            # Per scheme the grid plans seeds x the architectures that scheme
+            # is trained in — not always both: ZH and ES are deep only.
+            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size, L))
+                    for v in schemes}
+            if all_languages:
+                s, _, seed = ae.ALL_LANGUAGES_RUNS
+                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s) else {}
+                if not runs:
+                    continue
             cells[(size, L)] = {
                 "done": 0, "models": 0, "ckpts": n_due,
-                # Scheme B evaluates a different language set, so its benchmark
-                # count differs (L=8: A 60, B 47). Keep them separate rather
-                # than pretending the cell is uniform.
-                "benches": {s: benches(L, s) for s in schemes},
-                "planned_runs": runs_per_scheme * len(schemes),
-                "planned": sum(runs_per_scheme * n_due * benches(L, s)
-                               for s in schemes),
+                # Schemes can evaluate different language sets, so their
+                # benchmark counts differ (L=8: A 60, B 47). Keep them separate
+                # rather than pretending the cell is uniform.
+                "benches": {v: benches(L, v) for v in runs},
+                "planned_runs": sum(runs.values()),
+                "planned": sum(runs[v] * n_due * benches(L, v) for v in runs),
                 # `seen*` describe what is on disk NOW, which for a
                 # mid-training run is fewer checkpoints than the schedule.
                 "avail": 0, "seen": {}, "seen_ckpts": set(),
             }
 
+    # Only runs the grid names: the watcher walks predictivity_cells(), so a
+    # run on disk outside the grid (lm-175M-L30-schemeB-deep-seed28, a
+    # combination no triple covers) is work it will never do — counting it
+    # here painted the cell as permanently under-evaluated.
+    grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
+            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"], c["L"])
+            if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:
             continue
+        if entry.name not in grid:
+            if m["size"] not in EVAL_SIZES:
+                continue
+            print(f"[eval_counts] {entry.name}: on disk but not a grid cell — "
+                  "not counted (the watcher does not evaluate it)", file=sys.stderr)
+            continue
         size, L = m["size"], int(m["L"])
         c = cells.get((size, L))
-        if c is None:
+        scheme = SCHEME_OF_LABEL[m["scheme"] or ""]
+        if c is None or (all_languages and (scheme, m["arch"], int(m["seed"]))
+                         != ae.ALL_LANGUAGES_RUNS):
             continue
         saved = ae.saved_valid_iters(entry.name, root)
         if not saved:
             continue
-        scheme = "B" if m["scheme"] else "A"
         target = targets[(m["arch"], size)]
-        due = [i for i in saved
-               if i % (2 * save_interval(target)) == 0 or i == target]
-        want = set(tasks_for_benchmarks(benchmarks, cell_languages(L, scheme)))
+        due = due_iters(saved, target)   # on the run's own grid, like the watcher
+        want = set(tasks_for_benchmarks(benchmarks,
+                                        ae.eval_languages(L, scheme, all_languages)))
         c["models"] += 1
         c["seen"][scheme] = len(want)
         c["seen_ckpts"].add(len(due))
@@ -425,8 +500,11 @@ def _bench_str(counts) -> str:
 
 
 def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
-                  out_dir: Path = SCRIPT_DIR) -> None:
+                  out_dir: Path = SCRIPT_DIR, all_languages: bool = False) -> None:
     """Heatmap of eval progress per grid cell, three numbers deep.
+
+    all_languages=True draws eval_progress_all_languages.png instead: only the
+    auto_evals_cscs.ALL_LANGUAGES_RUNS, each against every language.
 
     Each cell reads:
 
@@ -442,7 +520,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     Colour is the FRACTION of the middle row complete, not the absolute count
     missing, so a finished cell reads the same whether it is 180/180 or
     1080/1080 — yellow at 0%, blue at 100%. Absolute counts already vary
-    ~30x across the grid (9 benchmarks at L=1, 290 at L=100), so colouring by
+    ~25x across the grid (13 benchmarks at L=1, 329 at L=50), so colouring by
     them would say little more than "this row has many languages". Cells with
     no trained run are grey like the off-grid ones: there is no fraction to
     show because there is nothing to evaluate yet.
@@ -450,7 +528,7 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
 
-    cells = eval_counts(root, logs_root)
+    cells = eval_counts(root, logs_root, all_languages)
     matrix, labels = [], []
     done_total = now_total = plan_total = 0
     for L in LANG_SETTINGS:
@@ -503,7 +581,8 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
     ax.set_xlabel("model size (non-embedding)")
     ax.set_ylabel("number of languages")
     ax.set_title(
-        "Eval progress per grid cell — benchmark results banked (bold)\n"
+        ("ALL languages — deep scheme-A seed-1904 runs only\n" if all_languages else "")
+        + "Eval progress per grid cell — benchmark results banked (bold)\n"
         "models x checkpoints x benchmarks: trained so far (middle), "
         "planned (bottom)\n"
         f"{done_total:,} done of {now_total:,} available "
@@ -512,7 +591,8 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
         "colour = % of available done (yellow 0 → blue 100)",
         fontsize=9)
     fig.tight_layout()
-    path = out_dir / "eval_progress.png"
+    path = out_dir / ("eval_progress_all_languages.png" if all_languages
+                      else "eval_progress.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"[plot] saved {path}", file=sys.stderr)
@@ -521,23 +601,22 @@ def eval_progress(root: Path = CKPT_ROOT, logs_root: Path | None = None,
 def planned_variants(size: str, L: int) -> list[str]:
     """Every run the grid plans for one (size, L) cell, as display lines.
 
-    A cell is not one run: it multiplies out over seed (1 or 3, per
-    seeds_for), architecture (deep/shallow), and data scheme (A always, plus B
-    only where B's language set actually differs — elsewhere a scheme-B sweep
-    resolves to the scheme-A cell and would be a duplicate).
+    A cell is not one run: it multiplies out over seed (1 or 3, per seeds_for,
+    and the triple differs by size), architecture, and data scheme — each
+    scheme covering only the settings and rungs it defines, and only the
+    architectures it is trained in.
 
-    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell stays
-    readable; the characteristics, not just the count, are what the table is
-    for.
+    Seeds are collapsed onto one line per (scheme, arch) so a 12-run cell
+    stays readable; the characteristics, not just the count, are what the
+    table is for.
     """
-    if L not in SIZE_LANG_SETTINGS[size]:
-        return []
-    seeds = seeds_for(size, L)
-    schemes = ["A", "B"] if L in SCHEME_B_LANGS else ["A"]
     lines = []
-    for scheme in schemes:
-        for arch in ("deep", "shallow"):
-            lines.append(f"{scheme} {arch} " + "/".join(str(x) for x in seeds))
+    for scheme in DATA_SCHEMES:
+        if not cell_in_scheme(scheme, size, L):
+            continue
+        seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
+        for arch in arches_for(scheme, size, L):
+            lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
 
@@ -545,8 +624,9 @@ def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
     """pretrain_progress_plan.png — what the grid PLANS (not what is done).
 
     Rows are language settings, columns model sizes, and each cell spells out
-    the planned variants. Blank cells are settings a size does not train at
-    (only the 1.7B row is sparse).
+    the planned schemes. Blank cells are (size, L) pairs no scheme covers —
+    since the 1.7B row gained L15 and L50 there are none left in scheme A,
+    but ZH/ES stop at 1B.
     """
     import matplotlib.pyplot as plt
 
@@ -588,6 +668,231 @@ def plan_table(out_dir: Path = SCRIPT_DIR) -> None:
     print(f"[plot] saved {path}", file=sys.stderr)
 
 
+# ---------------------------------------------------------------------------
+# pretrain_progress_1b_17b.md — where every run of the two largest rungs
+# stands. Those runs take days and several resubmissions, so the questions a
+# heatmap cannot answer (which data, which job, how many more jobs) get a table.
+# ---------------------------------------------------------------------------
+
+STATUS_SIZES = ("1B", "1.7B", "3B")
+# A 12h job trains until the SIGUSR2 exit an hour before its limit, minus a
+# cold start and the final save.
+JOB_TRAIN_SEC = TIME_MAX_SEC - 3600 - 600
+LOG_NAME_RE = re.compile(r"^pretrain-(?P<cell>.+-seed\d+)-(?P<jid>\d+)\.out$")
+DATA_PATH_RE = re.compile(r"^\s*0:\s+data_path \.+ (\[.*\])\s*$", re.M)
+
+
+def _read(path: Path, n: int, tail: bool = False) -> str:
+    """The first or last n bytes of a (multi-GB) training log."""
+    try:
+        with open(path, "rb") as f:
+            if tail:
+                f.seek(max(0, f.seek(0, 2) - n))
+            return f.read(n).decode(errors="replace")
+    except OSError:  # a log its owner has not shared
+        return ""
+
+
+def _queue() -> dict[str, list[dict]] | None:
+    """Job name -> its queued/running jobs, of every user: aromanou's jobs train
+    into the same checkpoint tree. None when squeue fails."""
+    try:
+        out = subprocess.run(
+            ["squeue", "-h", "-o", "%i|%j|%T|%S|%e|%r|%u"], capture_output=True,
+            text=True, timeout=60,
+            env={**os.environ, "SLURM_TIME_FORMAT": "%Y-%m-%dT%H:%M:%S"})
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode:
+        return None
+
+    def when(s: str) -> datetime | None:
+        try:
+            return datetime.fromisoformat(s)
+        except ValueError:  # N/A, Unknown
+            return None
+
+    jobs: dict[str, list[dict]] = {}
+    for line in out.stdout.splitlines():
+        jid, name, state, start, end, reason, user = line.split("|")
+        jobs.setdefault(name, []).append(dict(id=jid, state=state, reason=reason,
+                                              user=user, start=when(start),
+                                              end=when(end)))
+    return jobs
+
+
+def _data_cell(c: dict, target: int, head: str) -> tuple[str, bool]:
+    """The FineWeb-2 file the run's newest log read (what a launch would pass,
+    for a run not started), flagged when off iopsstor or when the two differ;
+    and whether there is data to train on at all."""
+    subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
+    cell_dir = CSCS_DEFAULT_DATA_DIR + (f"/{subdir}" if subdir else "")
+    prefixes = [f"{cell_dir}/english_dclm"] + (
+        [f"{cell_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
+    planned, why = None, "not staged"
+    if all(Path(f"{p}.{ext}").is_file() for p in prefixes for ext in ("bin", "idx")):
+        fw_dir, why = fineweb_source(c, CSCS_DEFAULT_DATA_DIR, target * GBS * SEQ_LEN)
+        planned = prefixes[:1] + ([f"{fw_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
+    m = DATA_PATH_RE.search(head)
+    read = [p for p in re.findall(r"'([^']+)'", m[1]) if "/" in p] if m else None
+    shown = read or planned
+    if not shown:
+        return f"— ({why})", False
+    rel = lambda p: p.removeprefix(str(Path(CSCS_DEFAULT_DATA_DIR).parent) + "/")
+    text = "English only" if c["L"] == 1 else f"`{rel(shown[-1])}`"
+    off = [p for p in shown if not str(Path(f"{p}.bin").resolve()).startswith("/iopsstor/")]
+    if off:
+        text += f" ⚠ not on iopsstor: {', '.join(str(Path(f'{p}.bin').resolve()) for p in off)}"
+    if read and planned and read != planned:
+        text += f" ⚠ a launch now reads `{rel(planned[-1])}`"
+    elif not read and why:
+        text += f" ⚠ {why}"
+    return text, True
+
+
+def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
+    """pretrain_progress_1b_17b.md — one table per rung, one row per planned run."""
+    now = datetime.now().replace(second=0, microsecond=0)
+    fmt = lambda t: t.strftime("%a %d %b %H:%M")
+    queue = _queue()
+    logs: dict[str, tuple[int, Path]] = {}  # cell -> its newest job's log
+    for d in TRAIN_LOG_DIRS:
+        for size in STATUS_SIZES:
+            for f in d.glob(f"pretrain-{size}-*.out"):
+                m = LOG_NAME_RE.match(f.name)
+                if m and int(m["jid"]) > logs.get(f"lm-{m['cell']}", (0,))[0]:
+                    logs[f"lm-{m['cell']}"] = (int(m["jid"]), f)
+
+    sections, commands = [], []
+    for size in STATUS_SIZES:
+        rows, tally, node_h = [], Counter(), 0.0
+        groups: dict[tuple[str, str], dict] = {}  # (scheme, arch) -> its incomplete runs
+        for arch, path in HYPERPARAMS.items():
+            if size not in SIZES_BY_ARCH[arch]:   # the 3B rung is deep only
+                continue
+            target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
+            ms = ITER_MS[arch][size]
+            per_job = JOB_TRAIN_SEC * 1000 // ms
+            for c in predictivity_cells():
+                if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
+                    continue
+                exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
+                jid, log = logs.get(exp, (None, None))
+                n_dirs, ckpt = model_progress(root / exp)
+                jobs = (queue or {}).get(job_name("pretrain", exp), [])
+                run = next((j for j in jobs if j["state"] == "RUNNING"), None)
+                live = None
+                if run and str(jid) == run["id"]:
+                    its = re.findall(r"iteration +(\d+)/", _read(log, 200_000, tail=True))
+                    live = int(its[-1]) if its else None
+                left = max(0, target - max(ckpt or 0, live or 0))
+                node_h += left * ms / 3.6e6 * NODES_BY_SIZE[size]
+                # A running job trains on until its SIGUSR2 exit, an hour
+                # before its limit; only what it cannot reach needs new jobs.
+                to_start = left
+                if run and run["end"]:
+                    until = run["end"] - timedelta(seconds=3600)
+                    to_start -= min(left, int(max(0, (until - now).total_seconds()) * 1000 // ms))
+                if ckpt is not None and ckpt >= target:
+                    key, state = "done", "done"
+                elif queue is None:
+                    key, state = "unknown", "queue unknown (squeue failed)"
+                elif run:
+                    key = "running"
+                    state = (f"running `{run['id']}` ({run['user']})"
+                             + (f", iter {live:,}" if live else "")
+                             + (f", job ends {fmt(run['end'])}" if run["end"] else ""))
+                elif jobs:
+                    key, q = "queued", jobs[0]
+                    state = f"queued `{q['id']}` ({q['user']}, {q['reason']})" + (
+                        f", starts ~{fmt(q['start'])}" if q["start"] else "")
+                elif n_dirs and ckpt is None:
+                    key, state = "corrupt", f"⚠ corrupt: {n_dirs} iter dirs, none valid"
+                elif ckpt is None:
+                    key, state = "not started", "not started"
+                else:
+                    key, state = "idle", "⚠ idle: nothing queued"
+                tally[key] += 1
+                data, staged = _data_cell(c, target, _read(log, 400_000) if log else "")
+                if key != "done":
+                    g = groups.setdefault((c["scheme"], arch),
+                                          {"states": Counter(), "unstaged": []})
+                    g["states"][key] += 1
+                    if not staged:
+                        g["unstaged"].append(f"L{c['L']}")
+                rows.append(
+                    f"| `{exp}` | {data} "
+                    f"| {ckpt or 0:,} / {target:,} | {min(100, 100 * (target - left) // target)}% "
+                    f"| {state} | {'—' if key == 'done' else -(-to_start // per_job)} |")
+        counts = " · ".join(f"{tally[k]} {k}" for k in
+                            ("done", "running", "queued", "idle", "not started",
+                             "corrupt", "unknown") if tally[k])
+        sections.append(
+            f"## {size} — {len(rows)} runs: {counts} · ≈ {node_h:,.0f} node-hours "
+            f"of training left\n\n"
+            "| run | data (FineWeb-2) | ckpt / target | % | state | jobs left |\n"
+            "|---|---|---|---:|---|---:|\n" + "\n".join(rows))
+        # One launch per (scheme, arch) with anything left: the launcher's own
+        # filters, so each line covers exactly that group's runs of this size.
+        lines = []
+        for (scheme, arch), g in groups.items():
+            n = sum(g["states"].values())
+            note = f"{n} incomplete: " + ", ".join(f"{v} {k}" for k, v in g["states"].items())
+            if g["unstaged"]:
+                note += f"; data not staged for {', '.join(g['unstaged'])}"
+            lines.append(("# " if len(g["unstaged"]) == n else "")
+                         + f"python3.11 pretrain/launch_trainings.py cscs --size {size}"
+                         + (f" --scheme {scheme}" if scheme != "A" else "")
+                         + (" --arch shallow" if arch == "shallow" else "")
+                         + f"  # {note}")
+        if lines:
+            commands.append(f"# {size}\n" + "\n".join(lines))
+
+    path = out_dir / "pretrain_progress_1b_17b.md"
+    launches = "\n\n".join(commands) or "# nothing left to launch"
+    path.write_text(f"""# 1B and 1.7B pretraining progress
+
+<!-- Generated by pretrain_progress.py (--plot, every `launch_trainings.py cscs`
+launch, every auto-eval watcher pass) — do not edit. -->
+
+Snapshot {now:%Y-%m-%d %H:%M}. One row per planned run, deep then shallow, of
+every account: the queue is read for all users, the training logs from both
+mariagrandury's and aromanou's log dirs, the checkpoints from the shared
+`Meg-Runs/msnr` tree.
+
+- **data** — the FineWeb-2 file the run's newest training log read (for a run
+  not started, what a launch would pass), relative to
+  `{Path(CSCS_DEFAULT_DATA_DIR).parent}/`; English is `english_dclm` next to it.
+  ⚠ marks a file that does not resolve onto iopsstor, or a log that disagrees
+  with what a launch would pick now.
+- **ckpt** — the latest valid checkpoint; a running job also shows its live
+  iteration, which `%` counts.
+- **state** — the run's running or queued job and its owner; otherwise done,
+  not started, or ⚠ idle (unfinished with nothing queued: launch it below).
+- **jobs left** — 12h jobs that still have to start: a queued job counts, a
+  running one does not (what it trains before its exit is subtracted first).
+  At `ITER_MS` with {JOB_TRAIN_SEC / 3600:.1f}h of training per job.
+
+""" + "\n\n".join(sections) + f"""
+
+## Launch / resume
+
+One command per size × scheme × architecture with incomplete runs, derived
+from the tables above. Each launch is idempotent: it skips runs that are done
+or already queued or running (any account), resumes the rest from their latest
+valid checkpoint and starts the ones never trained. A commented-out line has
+nothing to launch until its data is staged. Append `--dry-run` to any line to
+see its plan without submitting.
+
+```bash
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && conda activate snr
+
+{launches}
+```
+""")
+    print(f"[status] saved {path}", file=sys.stderr)
+
+
 # Docs that describe the grid. Everything between the markers is generated
 # from the constants in launch_trainings, so editing the grid there (a size, a
 # language setting, the seeded columns) and re-running --plot keeps every doc
@@ -605,28 +910,50 @@ def _fmt(xs) -> str:
     return ", ".join(str(x) for x in xs)
 
 
+def _scheme_desc(name: str, d: dict) -> str:
+    """One data scheme as a phrase: where it applies and how it differs."""
+    bits = [f"L ∈ {{{_fmt(sorted(d['langs']))}}}"]
+    if d["temp"] != 1.0:
+        bits.append(f"T={d['temp']:g}")
+    if d["max_size"]:
+        bits.append(", ".join(f"L{L} stops at {s}"
+                              for L, s in sorted(d["max_size"].items())))
+    if tuple(d["arches"]) != ("deep", "shallow"):
+        bits.append(" + ".join(d["arches"]) + " only")
+    # A scheme can also be single-architecture at only SOME of its settings
+    # (AT3 is deep only at L15 and L30, both architectures at L50), which the
+    # scheme-wide list above cannot say.
+    for L, arches in sorted(d.get("arches_by_L", {}).items()):
+        if tuple(arches) != tuple(d["arches"]):
+            bits.append(f"L{L} is {' + '.join(arches)} only")
+    return f"**{name}** ({'; '.join(bits)})"
+
+
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
-    sparse = {size: ls for size, ls in SIZE_LANG_SETTINGS.items()
-              if set(ls) != set(LANG_SETTINGS)}
-    size_note = "; ".join(f"{s} at L ∈ {{{_fmt(ls)}}}" for s, ls in sparse.items())
-    baseline = len(predictivity_cells())
-    # Every run the grid plans: seeds x architectures x schemes, per cell.
-    full = sum(len(seeds_for(size, L)) * 2 * (2 if L in SCHEME_B_LANGS else 1)
-               for L in LANG_SETTINGS for size in SIZES
-               if L in SIZE_LANG_SETTINGS[size])
+    baseline = len(predictivity_cells(["A"]))
+    # Every run the grid plans: per scheme, its cells x the architectures that
+    # scheme is actually trained in (ZH and ES are deep only, so multiplying
+    # the whole grid by 2 would over-count them).
+    full = sum(len(arches_for(v, c["size"], c["L"]))
+               for v in DATA_SCHEMES for c in predictivity_cells([v]))
+    # Sizes that do not train at every setting (the 3B extrapolation check).
+    partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
+                        for s in SIZES if SIZE_LANG_SETTINGS[s] != LANG_SETTINGS)
+    seeds = " · ".join(f"{_fmt(triple)} at {size}, L ∈ {{{_fmt(sorted(langs))}}}"
+                       for size, (triple, langs) in SEED_TRIPLES.items())
 
     return f"""{DOC_BEGIN}
 | Axis | Values |
 | ---- | ------ |
-| Size (non-embedding) | {_fmt(SIZES)} ({size_note}) |
+| Size (non-embedding) | {_fmt(SIZES)}, every size at every setting{" except " + partial if partial else ""} |
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
-| Seed | {_fmt(SEED_SINGLE)}; ×{len(SEED_TRIPLE)} seeds ({_fmt(SEED_TRIPLE)}) on the {_fmt(sorted(TRIPLE_SIZES))} columns at L ∈ {{{_fmt(sorted(TRIPLE_LANGS))}}} |
-| Data scheme | A everywhere; B only where its language set differs — L ∈ {{{_fmt(sorted(SCHEME_B_LANGS))}}} |
+| Seed | {_fmt(SEED_SINGLE)} everywhere; ×3 on the marked columns — {seeds} |
+| Data scheme | {" · ".join(_scheme_desc(v, d) for v, d in DATA_SCHEMES.items())} |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **{baseline} runs** at one intervention level (scheme A, deep — the plan grid).
-Counting both architectures and scheme B where it differs: **{full} runs**.
+Counting every scheme and the architectures each is trained in: **{full} runs**.
 
 ![Planned runs per grid cell]({png_dir}/pretrain_progress_plan.png)
 
@@ -667,12 +994,12 @@ def main() -> None:
                    help=f"Megatron run root (default: {CKPT_ROOT})")
     p.add_argument("--arch", choices=["deep", "shallow"], default="deep",
                    help="Which architecture family's cells to report")
-    p.add_argument("--scheme", choices=["A", "B"], default="A",
-                   help="Which language-scheme variant's cells to report")
+    p.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
+                   help="Which data scheme's cells to report")
     p.add_argument("--filter", default=None, help="Substring filter on cell name.")
     p.add_argument("--plot", action="store_true",
                    help="Also render pretrain_progress_{simple,detailed}.png "
-                        "(these aggregate over ALL variants, not just "
+                        "(these aggregate over ALL schemes, not just "
                         "--arch/--scheme)")
     args = p.parse_args()
 
@@ -686,9 +1013,11 @@ def main() -> None:
         # the training plots that already succeeded.
         try:
             eval_progress(root=Path(args.root))
+            eval_progress(root=Path(args.root), all_languages=True)
         except Exception as e:
             print(f"[plot] eval progress skipped: {e}", file=sys.stderr)
         sync_docs()
+        large_rung_status(root=Path(args.root))
 
 
 if __name__ == "__main__":

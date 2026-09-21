@@ -1,0 +1,89 @@
+\providecommand{\citeneeded}[1]{\textbf{[Reference needed: #1]}}
+\section{Methodology}
+\label{sec:methodology}
+
+We extend the Signal and Noise framework of \citet{heineman_signal_2025} to multilingual pretraining. We define decision accuracy and its SNR surrogates, then describe the experimental design (\S\ref{subsec:design}), models (\S\ref{subsec:models}), data (\S\ref{subsec:data}), and evaluation (\S\ref{subsec:evaluation}).
+
+\subsection{Decision Accuracy}
+\label{subsec:methodology-da}
+
+Decision accuracy (DA) measures whether a proxy preserves the ordering of model variants observed at a reference. For a task score $B$ and the set $\mathcal{P}$ of model-variant pairs evaluated at both scales, we compute
+\begin{equation}
+\mathrm{DA}=\frac{1}{|\mathcal{P}|}\sum_{(a,b)\in\mathcal{P}}
+\mathbb{1}\!\left[\mathrm{sign}\big(B(s_a)-B(s_b)\big)
+=\mathrm{sign}\big(B(m_a)-B(m_b)\big)\right].
+\label{eq:da}
+\end{equation}
+Here, $s_a$ and $m_a$ are the proxy and reference trained with variant $a$. DA is the fraction of pairwise orderings that agree, with a tie counted as agreement only when both sides tie.
+
+\textbf{Size and checkpoint decisions.} DA-size compares final checkpoints at a proxy size and the 1.7B reference. Comparisons involving the $L=2$ ZH or ES variants use a 1B reference. DA-checkpoint compares an earlier checkpoint with the final checkpoint at the same size. We use all ten evaluated fractions, from 10\% through 100\%; the final self-comparison equals one and is excluded from surrogate correlations. The joint size--progress analysis compares each proxy checkpoint directly with the final 1.7B ranking. We require at least three evaluated model pairs for the reported task-level DA values.
+
+\textbf{Evaluation populations.} We compute rankings separately for each benchmark task or validation language. Each comparison uses the intersection of model variants with available scores, and macro summaries give each task equal weight. Cross-task DA uses the same shared model pairs but compares scores from different tasks; for loss-like scores, preference direction must be oriented consistently. This distinguishes predicting a task's own ranking from substituting another measurement for it.
+
+\subsection{Signal and Noise}
+\label{subsec:methodology-snr}
+
+We test whether score separation relative to variability anticipates decision accuracy:
+\begin{equation}
+\mathrm{SNR}=\frac{\mathrm{Signal}}{\mathrm{Noise}}.
+\label{eq:snr}
+\end{equation}
+A large ratio means that the chosen measure of separation is large relative to its noise estimate; it does not by itself establish agreement with the reference.
+
+\textbf{Candidate definitions.} We compare 22 SNR definitions from the repository's surrogate analysis. They include dispersion and relative-spread measures, discrepancy measures, robust spread measures, and depth-based measures. Mean pairwise squared distance (MPSD) averages squared score differences between model variants; relative MPSD additionally divides this signal by the mean late-checkpoint score. Interquartile-range SNR uses the difference between the upper and lower score quartiles. Appendix~\ref{app:snr-definitions} specifies the interpretation of these variants and the scope of the comparison.
+
+\textbf{Noise and validation.} The reported surrogate measurements use variability over the last five available shared checkpoints. The underlying export uses a 20-point shared grid for BPB and a ten-point grid for benchmarks, so these windows need not span the same training fraction. Seed replicates provide a separate estimate of combined initialization and data-order variability. We correlate $\log_{10}\mathrm{SNR}$ with DA within each language, restricting DA-size to the 1.7B target and using all nine pre-final checkpoints for DA-checkpoint. We report the strongest observed associations descriptively; selecting a definition on the same observations is not a held-out validation.
+
+\subsection{Experimental Design}
+\label{subsec:design}
+
+We test whether design decisions made with small multilingual models transfer to larger models as the number of training languages increases. We describe the comparisons below, followed by the models (\S\ref{subsec:models}), pretraining data (\S\ref{subsec:data}), and evaluation (\S\ref{subsec:evaluation}). Appendix~\ref{app:methodology} gives the full configurations and implementation details.
+
+\textbf{Scale and multilinguality.} Our analysis design comprises 163 runs at five model sizes, measured in non-embedding parameters: 175M, 350M, 600M, 1B, and 1.7B. We vary the number of training languages over $L \in \{1, 2, 8, 15, 30, 50\}$. The $L=1$ setting is English only; multilingual settings allocate half the training tokens to English and half to the other $L-1$ languages. Holding the English share fixed lets us study how distributing the remaining budget across more languages affects the reliability of small-scale decisions.
+
+\textbf{Design decisions.} We compare four interventions: resource-ranked versus diversity-first language selection at $L \in \{8, 15, 30\}$; proportional versus flattened sampling at $L \in \{15, 30, 50\}$; Russian, Chinese, or Spanish as the second language at $L=2$; and deep versus shallow-wide architectures. At a given size, data interventions share the same model configuration, token budget, and tokenizer; the depth intervention approximately matches non-embedding size (\S\ref{subsec:models}). We measure decision accuracy on the languages or benchmark tasks shared by the compared levels. The reference size is 1.7B, except for comparisons involving Spanish (ES) at $L=2$, which use 1B. Missing reference evaluations leave a comparison unavailable; we do not substitute a smaller reference.
+
+\textbf{Training budget.} We allocate tokens in proportion to each model's exact non-embedding parameter count $N$:
+\begin{equation}
+D(N) = 100N.
+\label{eq:training-budget}
+\end{equation}
+This gives every model five times the $20N$ Chinchilla token-budget convention. We hold the token-to-parameter ratio fixed across sizes, following the model-ladder approach of \citet{magnusson_datadecide_2025}. We evaluate ten aligned fractions of training, including the final checkpoint, to compare decisions across both model size and training progress.
+
+\textbf{Repeated runs.} We use seed 1904 throughout and three seeds for selected settings at 175M, 600M, and 1B. These runs vary both initialization and data order, so their variability estimates the combined effect of training randomness. We also measure checkpoint noise over the last five evaluated checkpoints. The full seed grid and checkpoint schedules are in Appendix~\ref{app:training-grid}.
+
+\subsection{Pretrained Models}
+\label{subsec:models}
+
+\textbf{Shared architecture.} We train decoder-only transformers using the Apertus recipe \citep{apertus_apertus_2025}, with grouped-query attention, rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and xIELU activations \citep{huang_xielu_2025}. All models use the same 131,072-token Apertus tokenizer, tied input and output embeddings, and a context length of 4,096 tokens. We count transformer-block parameters as model size, excluding the tied embedding matrix, following \citet{heineman_signal_2025}. We include the output projection when estimating training compute, since its cost is substantial at small sizes.
+
+\textbf{Depth intervention.} We compare a deep baseline with a shallow-wide architecture at each nominal size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the query-to-key-value head ratio. Their non-embedding counts differ from the deep models by 0.4\% to 3.7\% at the five analysis sizes, and each receives its own $D=100N$ budget. This comparison therefore tests the architecture choice at approximately matched size; it does not hold parameter count, token budget, or projection cost exactly constant. Table~\ref{tab:ladder} gives both ladders.
+
+\textbf{Optimization.} We use AdEMAMix and a warmup-stable-decay learning-rate schedule \citep{apertus_apertus_2025}, with a global batch of 504 sequences at every size. We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width. This shared recipe limits differences in training procedure across the ladder; Appendix~\ref{app:model-configurations} specifies the hyperparameters.
+
+\textbf{Smallest diagnostic models.} The additional 90M runs did not provide reliable signal, and we exclude them from all analyses. Appendix~\ref{app:90m-rung} documents their training instability and optimizer diagnostics.
+
+\subsection{Pretraining Data}
+\label{subsec:data}
+
+\textbf{Corpora.} We draw English from DCLM-edu \citep{li_datacomp-lm_2025} and the remaining languages from the quality-filtered FineWeb-2 data used for Apertus \citep{penedo_fineweb2_2025, messmer_enhancing_2026, apertus_apertus_2025}. All corpora use the shared Apertus tokenizer.
+
+\textbf{Language selection and sampling.} Scheme A selects languages by corpus size; scheme B prioritizes script and language-family diversity. Within the non-English half of each mixture, language $i$ receives a share proportional to $p_i^{1/T}$, where $p_i$ is its estimated corpus token proportion. We use $T=1$ for proportional sampling and $T=3$ for the flattened scheme AT3. Comparing both temperatures at $L \in \{15, 30, 50\}$ helps distinguish the effect of sampling from that of adding languages. Appendix~\ref{app:languages} lists the languages, and Appendix~\ref{app:data-construction} documents selection and data repetition when a source is exhausted.
+
+\textbf{Held-out data.} We construct one fixed validation set covering English and the 99 non-English languages. Training builds exclude the rows assigned to validation. We use the same validation text for a given language across model sizes, mixtures, and interventions, so within-language score differences reflect model differences on shared data.
+
+\subsection{Evaluation}
+\label{subsec:evaluation}
+
+We use per-language bits-per-byte as the primary outcome and downstream benchmarks to test whether task scores support the same development decisions. Evaluating both throughout training lets us compare their ability to distinguish design choices from score variability.
+
+\textbf{Bits-per-byte.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count. For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be its validation token prefix, $c_t$ the preceding context available within the scoring block, and $b_\ell$ the prefix's byte count:
+\begin{equation}
+\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
+\label{eq:bpb}
+\end{equation}
+Lower BPB indicates better prediction of the held-out text. We score the same deterministic prefix of approximately 1M tokens per language for every model. Byte normalization avoids dependence on token counts, but does not make texts in different languages equally predictable. We therefore compare interventions within each language and give languages equal weight in macro averages. Such averages still depend on the language set; intervention-specific language averages must use a fixed shared language set. Task-level ranking comparisons use variants scored on that task at both scales.
+
+\textbf{Downstream tasks.} We evaluate 14 benchmark families spanning reading comprehension, commonsense, knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. Their varied construction and coverage let us examine where benchmark scores provide reliable decisions. We retain tasks with near-chance performance, since whether they distinguish small models is itself part of the study. Appendix~\ref{app:evaluation-protocol} gives the families, task counts, and scoring settings.
+
+\textbf{Evaluation protocol.} We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} with the vLLM backend, zero-shot task prompts and no chat template. For the reformulated tasks we score full answer continuations with length normalization (\S\ref{subsec:rq1}). By default, we evaluate BPB and downstream tasks for languages in the training mixture. For the seed-1904 deep scheme-A ladder, we additionally evaluate all validation languages and all registered benchmark languages, allowing us to study cross-lingual transfer to languages absent from training.

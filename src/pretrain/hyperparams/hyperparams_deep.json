@@ -127,6 +127,26 @@
         "lr_warmup_iters": 3200,
         "lr_wsd_decay_iters": 16200
       }
+    },
+    "3B": {
+      "n_layers": 36,
+      "hidden_size": 2816,
+      "ffn_hidden_size": 11264,
+      "num_attention_heads": 44,
+      "num_query_groups": 11,
+      "n_non_emb_params": 2997485568.0,
+      "nodes": 21,
+      "micro_batch_size": 1,
+      "global_batch_size": 504,
+      "seq_len": 4096,
+      "train_iters": 50000,
+      "lr": 0.00059899,
+      "predictivity": {
+        "train_tokens": 299748556800,
+        "train_iters": 145200,
+        "lr_warmup_iters": 5800,
+        "lr_wsd_decay_iters": 29000
+      }
     }
   }
 }
