@@ -131,8 +131,8 @@
    {
     "population": "bpb_trained",
     "proxy_size": "1B",
-    "da": 0.769,
-    "cells": 3
+    "da": 0.827,
+    "cells": 4
    }
   ]
  }

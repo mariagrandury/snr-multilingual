@@ -1,6 +1,15 @@
 task,family,language,label,r2_size,rho_size,r2_trajectory,regime,regime_majority,other_regime,dist_a,dist_b
-multiblimp_ben,multiblimp,bn,multiblimp:bn,0.5785332291303169,0.6708203932499368,0.47625495151219777,predictable across size only,predictable across both,True,0.442162856509579,0.48745120088046817
-multiblimp_dan,multiblimp,da,multiblimp:da,0.5491546251123303,0.7216878364870322,0.11204412747385362,predictable across size only,predictable across both,True,0.4275689883304016,0.8191554425063302
-xcopa_th,xcopa,th,xcopa:th,0.20544934531618364,0.3551956704170308,0.06214105847144524,weak / unpredictable in both,predictable across both,True,0.8887445357704923,0.9971065380981692
-xcopa_tr,xcopa,tr,xcopa:tr,0.4021167307283148,0.5999999999999999,0.25735953677261436,weak / unpredictable in both,predictable across both,True,0.587828043216603,0.7200110959538645
-xwinograd_ru,xwinograd,ru,xwinograd:ru,0.8427927393419853,0.7999999999999999,0.4771684730967956,predictable across size only,predictable across both,True,0.22196650030227902,0.28030377341842644
+multiblimp_ben,multiblimp,bn,multiblimp:bn,0.5785332291303169,0.6708203932499368,0.47625495151219777,predictable across size only,predictable across both,True,0.442162856509579,0.4900517607025496
+multiblimp_dan,multiblimp,da,multiblimp:da,0.5491546251123303,0.7216878364870322,0.1548527859523574,predictable across size only,predictable across both,True,0.4275689883304016,0.7830036884943667
+rf_belebele_apc_Arab,rf_belebele,ar,rf_belebele:apc_Arab,0.5992450122462594,0.7,0.26778934979120306,predictable across size only,predictable across both,True,0.4514508972217977,0.5411165036206576
+rf_belebele_ary_Arab,rf_belebele,ar,rf_belebele:ary_Arab,0.7108171140978485,0.8720815992723809,0.16507401659995768,predictable across size only,predictable across both,True,0.259500887857871,0.5722249535575724
+rf_belebele_ben_Beng,rf_belebele,bn,rf_belebele:ben_Beng,0.3942304854949169,0.7,0.16920901457793797,weak / unpredictable in both,predictable across both,True,0.619809588780309,0.7525267297828273
+rf_belebele_ben_Latn,rf_belebele,bn,rf_belebele:ben_Latn,0.28021527461846474,0.43176156917368247,0.1761686967740942,weak / unpredictable in both,predictable across both,True,0.8681790699346694,0.8341221446069984
+rf_belebele_hin_Latn,rf_belebele,hi,rf_belebele:hi,0.7641988431477456,0.75,0.3220991367029021,predictable across size only,predictable across both,True,0.3036806152185693,0.40708173669539927
+rf_global_mmlu_full_ko,rf_global_mmlu_full,ko,rf_global_mmlu_full:ko,0.7659987085426994,0.95,0.4978815707005251,predictable across size only,predictable across both,True,0.15650053067409142,0.4243501712080152
+rf_include_base_44_hindi,rf_include_base_44,hi,rf_include_base_44:hi,0.2744048797478659,0.5,0.17425023845253212,weak / unpredictable in both,predictable across both,True,0.8166604612471278,0.7723466260584623
+rfgm_include_base_44_vietnamese,rfgm_include_base_44,vi,rfgm_include_base_44:vi,0.8460702153611176,0.948683298050514,0.43795705582157535,predictable across size only,predictable across both,True,0.12120154407495363,0.3210325101457133
+xcopa_th,xcopa,th,xcopa:th,0.20544934531618364,0.3551956704170308,0.07834415522692495,weak / unpredictable in both,predictable across both,True,0.8887445357704923,0.9588762019908069
+xcopa_tr,xcopa,tr,xcopa:tr,0.4021167307283148,0.5999999999999999,0.26083230640054167,weak / unpredictable in both,predictable across both,True,0.587828043216603,0.6905855643930648
+xwinograd_fr,xwinograd,fr,xwinograd:fr,0.8230055770743379,0.75,0.49189266045156527,predictable across size only,predictable across both,True,0.2756278811341828,0.2827617445457112
+xwinograd_ru,xwinograd,ru,xwinograd:ru,0.8427927393419853,0.7999999999999999,0.49687024660317675,predictable across size only,predictable across both,True,0.22196650030227902,0.2705743862904539

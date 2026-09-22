@@ -10,23 +10,16 @@
   }
  },
  "rq1": {
-  "n_fits": 729,
-  "n_tasks": 291,
-  "gated_series": 581,
-  "gated_rungs": 219,
+  "n_fits": 701,
+  "n_tasks": 276,
+  "gated_series": 609,
+  "gated_rungs": 268,
   "families": [
    {
     "family": "include_base_44",
     "r2": 0.552,
     "rho": 0.25,
     "n": 4,
-    "n_options": 4.0
-   },
-   {
-    "family": "rfgm_include_base_44",
-    "r2": 0.874,
-    "rho": 0.975,
-    "n": 79,
     "n_options": 4.0
    },
    {
@@ -86,6 +79,13 @@
     "n_options": 4.0
    },
    {
+    "family": "rfgm_include_base_44",
+    "r2": 0.946,
+    "rho": 1.0,
+    "n": 51,
+    "n_options": 4.0
+   },
+   {
     "family": "xwinograd",
     "r2": 0.953,
     "rho": 1.0,
@@ -131,7 +131,7 @@
   "by_options": {
    "2.0": 0.923,
    "3.0": 0.906,
-   "4.0": 0.943
+   "4.0": 0.948
   }
  }
 }

@@ -297,6 +297,113 @@ LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
 # moving the reference moves this with it.
 ANALYSIS_SIZES = [s for s in EVAL_SIZES if NON_EMB[s] <= NON_EMB[TARGET_SIZE]]
 GRID_SEED = 1904                      # the plan grid's seed
+# `scheme` is not one design axis: it encodes the language LIST, the sampling
+# TEMPERATURE and, at L = 2, the SECOND LANGUAGE. `DATA_SCHEMES` in
+# pretrain.launch_trainings is the source of truth for the first two (`sets`,
+# `temp`); the third is the substitution below. Split this way AT3 is list A at
+# T=3, BT3 is list B at T=3, and ZH/ES are scheme A's list with Chinese or
+# Spanish in the second slot — so at L = 2 every setting is "English + one other
+# language" and A's own second language, Russian, is the axis's default level.
+SECOND_LANG = {"ZH": "zh", "ES": "es"}
+# What a cell is, apart from its size. The order is the one figures read in.
+DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "seed"]
+# The three pair sets a decision-accuracy table can be computed over (rule 15).
+#   multi-axis  every pair of design variants: rq02's convention to date, and
+#               two thirds of its pairs move more than one axis at once.
+#   mono-axis   the pairs that move exactly ONE of L/arch/list/T/lang2, the seed
+#               held: the decision a practitioner actually makes, and what
+#               upstream's "every pair" is by construction (DataDecide's recipes
+#               differ in the data mix alone).
+#   seed        two draws of ONE design. There is no right ordering, so this is
+#               not a decision set but the null: what a benchmark with no signal
+#               reads. Empty in a single-seed pool.
+PAIR_AXES = ("multi-axis", "mono-axis", "seed")
+# What a figure or table drawn over each pair set is called. The multi-axis
+# outputs keep their bare names so every existing reference to them resolves;
+# the mono-axis twins sit beside them under `_one_axis`, in the same folder, so
+# the two readings can be compared without opening two directories.
+AXES_SUFFIX = {"multi-axis": "", "mono-axis": "_one_axis", "seed": "_seed_null"}
+
+
+def design_axes(df: pd.DataFrame) -> pd.DataFrame:
+    """family -> its design axes, `scheme` unpacked into `list`, `T` and
+    `lang2` through the registry that defines the grid (see SECOND_LANG).
+
+    `family` is the cell name with only the size token stripped, so the axes
+    are a function of it; the assertion is what guarantees that.
+    """
+    from pretrain.launch_trainings import DATA_SCHEMES
+    a = df[["family", "L", "arch", "scheme", "seed"]].drop_duplicates().set_index("family")
+    a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
+    a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
+    a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
+    assert not a.index.duplicated().any(), "family does not determine its design axes"
+    return a
+
+
+def pair_sets(attrs: pd.DataFrame, seed: int | None = GRID_SEED) -> dict[str, list]:
+    """The three pair sets of PAIR_AXES over `attrs`'s families.
+
+    `seed` holds the design pairs at one seed, so a replicate never enters a
+    decision set (it is a draw of one design, not a second design); pass None
+    to let every seed in. The `seed` set is the complement: pairs identical on
+    every axis but the seed.
+
+    A pool holding no cell at `seed` — the holdout's train split is seeds
+    64/313 by definition — would otherwise have no design pair at all, and
+    every table built from it comes out empty (its SNR join, and the seed
+    holdout downstream of that). The seed is then held at each seed the pool
+    does have; a pair spanning two seeds is still the null's, as everywhere.
+    """
+    if seed is not None and seed not in set(attrs["seed"]):
+        seed = None
+    fams = sorted(attrs.index)
+    multi, mono, null = [], [], []
+    for i, a in enumerate(fams):
+        ra = attrs.loc[a]
+        for b in fams[i + 1:]:
+            rb = attrs.loc[b]
+            differ = [k for k in DESIGN_AXES if ra[k] != rb[k]]
+            if differ == ["seed"]:
+                null.append((a, b))
+                continue
+            if "seed" in differ or (seed is not None and ra["seed"] != seed):
+                continue          # mixes a replicate into a design decision
+            multi.append((a, b))
+            if len(differ) == 1:
+                mono.append((a, b))
+    return {"multi-axis": multi, "mono-axis": mono, "seed": null}
+
+
+def one_axes(df: pd.DataFrame, axes: str = PAIR_AXES[0]) -> pd.DataFrame:
+    """One pair set of a decision-accuracy table (rule 15), with the `axes`
+    column dropped so the frame has the shape it had before that column
+    existed. The default is the multi-axis reading, so a consumer that does not
+    ask keeps the numbers it had; a table written before rule 15 has no such
+    column and passes straight through.
+    """
+    return df if "axes" not in df.columns else df[df["axes"] == axes].drop(columns="axes")
+
+
+def pair_agreement(proxy: dict, ref: dict, pairs=None) -> tuple[float, int]:
+    """(decision accuracy, pairs) over the families `proxy` and `ref` share.
+
+    The rule of `snr.metrics.decision_acc_fast`, applied to an explicit pair
+    list rather than to two aligned vectors: the sign of the score difference
+    on both sides, so a pair tied in both agrees and a pair tied in one is a
+    miss, order-invariantly. That kernel cannot take a pair list, so the rule
+    is stated twice — `tests/test_metrics.py::TestPairAgreement` is what keeps
+    the two from drifting apart. `pairs` restricts the set (the mono-axis
+    reading); None is every pair, which reproduces the kernel exactly.
+    Returns (NaN, n) below MIN_PAIRS, as rule 5 requires.
+    """
+    common = set(proxy) & set(ref)
+    pl = [(a, b) for a, b in pairs if a in common and b in common] if pairs is not None \
+        else [(a, b) for i, a in enumerate(sorted(common)) for b in sorted(common)[i + 1:]]
+    if len(pl) < MIN_PAIRS:                                   # rule 5
+        return float("nan"), len(pl)
+    agree = sum(np.sign(proxy[a] - proxy[b]) == np.sign(ref[a] - ref[b]) for a, b in pl)
+    return agree / len(pl), len(pl)
 
 
 def size_order(sizes) -> list[str]:

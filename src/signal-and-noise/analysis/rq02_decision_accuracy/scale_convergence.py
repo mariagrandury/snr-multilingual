@@ -89,15 +89,14 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    CKPT_DA_EARLY_FRACS, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE, at_fraction, finals,
-    ladder_frame, size_order)
+    AXES_SUFFIX, CKPT_DA_EARLY_FRACS, DESIGN_AXES, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
+    at_fraction, design_axes, finals, ladder_frame, pair_sets, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
 POOL = "predictivity_all"     # the transformation axes need every scheme and seed
@@ -105,28 +104,21 @@ TAU = 0.90                    # "recovers 90 % of the full-scale decisions"
 BY_LINE = {"overall": "one pooled line over every pair at the grid seed",
            "L": "one line per language-count regime",
            "transformation": "one line per design axis the pair differs on"}
-# The pair's one differing axis -> its label. The `scheme` token is NOT an axis:
-# it glues two independent design choices together, the language LIST and the
-# sampling TEMPERATURE, and `DATA_SCHEMES` is the source of truth for both
-# (`sets` and `temp`). Split that way AT3 is list A at T=3 and BT3 is list B at
-# T=3, so an A-vs-AT3 pair moves the temperature alone, while a B-vs-AT3 pair
-# moves the list AND the temperature and is a decision about neither — dropped
-# for that reason now, rather than for want of a label. The split also lets
-# B-vs-BT3 join the temperature axis and AT3-vs-BT3 join the list axis with no
-# code change, once BT3 is trained (it is built but not launched, 2026-09-21).
-# ZH and ES are NOT a third and a fourth list design: they are scheme A's list
-# with the second language swapped. At L = 2 every one of A, ZH and ES is
-# "English + one other language" — A's is Russian — so they differ on that one
-# axis alone, and A's L2 cell is the `ru` level of it rather than a scheme of
-# its own. `list` therefore holds the list DESIGN (A resource-ranked, B
-# diversity-first) and `lang2` the substitution, default `ru`.
-SECOND_LANG = {"ZH": "zh", "ES": "es"}
-# One label per axis, and every axis has one: a pair whose axis has no name is
-# the bug that silently swallowed B-vs-AT3 and ZH-vs-ES before the split.
+# The pair's one differing axis -> its label, one label per axis. `scheme` is
+# NOT an axis: it glues the language LIST, the sampling TEMPERATURE and the
+# SECOND LANGUAGE together, so an A-vs-AT3 pair moves the temperature alone
+# while a B-vs-AT3 pair moves the list AND the temperature and is a decision
+# about neither. That split, and the pair sets built on it, live in
+# `analysis.utils` (DESIGN_AXES, design_axes, pair_sets) because a rule belongs
+# in the shared layer, not in one figure — `compute_da` reads the same
+# decomposition for its `axes` column (rule 15). Before the split, a pair whose
+# level combination had no label was dropped silently, which is what hid
+# B-vs-AT3 and ZH-vs-ES; now B-vs-BT3 joins the temperature axis and AT3-vs-BT3
+# the list axis with no code change, once BT3 trains.
 AXIS_LABEL = {"L": "language count", "arch": "depth (deep vs shallow)",
               "list": "language list (A vs B)", "T": "temperature (T=1 vs T=3)",
               "lang2": "2nd language (ru vs zh vs es)", "seed": "seed"}
-KEYS = ["L", "arch", "list", "T", "lang2", "seed"]   # a family, apart from its size
+KEYS = DESIGN_AXES
 # The pooled line every grouping carries, drawn in black: every pair at the grid
 # seed, cross-L and cross-scheme included — the same population as by_L's first
 # panel, so the black line means one thing in every rq02 figure. The scheme is NOT
@@ -160,20 +152,7 @@ FLOPS_VARIANTS = ("above_66_both", "above_66_size")
 mpl.rcParams.update(S.RC)
 
 
-def family_attrs(df: pd.DataFrame) -> pd.DataFrame:
-    """family -> its design axes. `family` is the cell name with only the size
-    token stripped, so the axes are a function of it. The `scheme` token is
-    unpacked into the design choices it encodes — the list, the temperature and
-    the second language — through the registry that defines them."""
-    a = df[["family", "L", "arch", "scheme", "seed"]].drop_duplicates().set_index("family")
-    a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
-    a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
-    a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
-    assert not a.index.duplicated().any(), "family does not determine its design axes"
-    return a
-
-
-def pairs_by_group(attrs: pd.DataFrame, by: str) -> dict[str, list[tuple[str, str]]]:
+def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> dict[str, list[tuple[str, str]]]:
     """group -> the unordered family pairs that are a decision in it.
 
     Every grouping carries `OVERALL`, the pooled line: every pair at the grid
@@ -185,14 +164,15 @@ def pairs_by_group(attrs: pd.DataFrame, by: str) -> dict[str, list[tuple[str, st
     the language count, and letting it into an L regime would mix two axes.
     """
     fams = sorted(attrs.index)
-    groups: dict[str, list] = {}
+    # The pooled line IS `utils.pair_sets`'s multi-axis set, so the black line of
+    # every rq02 figure and the `multi-axis` rows of `da_per_task.csv` are one
+    # population by construction rather than by two definitions agreeing.
+    groups: dict[str, list] = {OVERALL: list(pair_sets(attrs)[axes])}
+    if by == "overall":                       # the pooled line is the whole figure
+        return groups
     for i, a in enumerate(fams):
         for b in fams[i + 1:]:
             ra, rb = attrs.loc[a], attrs.loc[b]
-            if ra["seed"] == rb["seed"] == GRID_SEED:      # the pooled line, every grouping
-                groups.setdefault(OVERALL, []).append((a, b))
-            if by == "overall":               # the pooled line is the whole figure
-                continue
             if by == "L":
                 if ra["L"] == rb["L"] and ra["seed"] == rb["seed"] == GRID_SEED:
                     groups.setdefault(f"L{int(ra['L'])}", []).append((a, b))
@@ -211,10 +191,10 @@ def grid_frame(df: pd.DataFrame, fracs: list) -> pd.DataFrame:
     return pd.concat([at_fraction(df, f).assign(frac=f) for f in fracs], ignore_index=True)
 
 
-def stem_for(by: str, variant: str = "") -> str:
+def stem_for(by: str, variant: str = "", axes: str = "multi-axis") -> str:
     """`overall` is the plain figure, so it carries no `_by` token."""
     return ("scale_convergence" + (f"_{by}" if by != "overall" else "")
-            + (f"_{variant}" if variant else ""))
+            + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes])
 
 
 def reliability(df: pd.DataFrame, groups: dict, sizes: list, fin: pd.DataFrame,
@@ -425,16 +405,16 @@ def generate_readme(pool: str, out_dir: Path, tables: dict) -> None:
 
 def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
         cells: pd.DataFrame | None = None, groups: dict | None = None,
-        fin: pd.DataFrame | None = None, x: str = "non_emb") -> pd.DataFrame | None:
+        fin: pd.DataFrame | None = None, x: str = "non_emb", axes: str = "multi-axis") -> pd.DataFrame | None:
     """`cells` / `groups` / `fin` are passed in when a second variant reuses the
     first one's decisions: the pair sets and the per-task counts do not depend
     on which tasks are kept, so the pool is loaded and scored once. `x` picks
     the axis, and with it which `cells` table was handed in."""
-    stem = stem_for(by, variant) + ("_flops" if x == "compute" else "")
+    stem = stem_for(by, variant, axes) + ("_flops" if x == "compute" else "")
     populations, note = POPULATIONS, ""
     if variant:
         red, thresh, crit = FILTERS[variant]
-        keep = load_reliable(out_dir, variant)
+        keep = load_reliable(out_dir, variant, axes)
         if keep is None:
             return None
         cells = cells[cells["task"].isin(set(keep["task"]))]
@@ -453,21 +433,21 @@ def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
     return out
 
 
-def run_all(by: str, pool: str, tau: float, out_dir: Path) -> dict:
+def run_all(by: str, pool: str, tau: float, out_dir: Path, axes: str = "multi-axis") -> dict:
     df = ladder_frame(POOL)
     fin = finals(df)
-    groups = pairs_by_group(family_attrs(df), by)
+    groups = pairs_by_group(design_axes(df), by, axes)
     sizes = size_order(fin["size"].unique())
-    print(f"\n=== --by {by}: {len(groups)} groups, {sum(map(len, groups.values()))} family pairs, sizes {sizes} ===")
+    print(f"\n=== --by {by} [{axes}]: {len(groups)} groups, {sum(map(len, groups.values()))} family pairs, sizes {sizes} ===")
     cells = reliability(fin.assign(frac=1.0), groups, sizes, fin)
-    out = {v: run(by, pool, tau, out_dir, v, cells, groups, fin) for v in VARIANTS}
+    out = {v: run(by, pool, tau, out_dir, v, cells, groups, fin, axes=axes) for v in VARIANTS}
     # The ten-point grid costs ten times the size axis, so only score it when a
     # reliable-task table exists for at least one _flops variant to filter on.
-    todo = [v for v in FLOPS_VARIANTS if load_reliable(out_dir, v) is not None]
+    todo = [v for v in FLOPS_VARIANTS if load_reliable(out_dir, v, axes) is not None]
     if todo:
         grid = reliability(grid_frame(df, FRACS), groups, sizes, fin, FRACS)
         for v in todo:
-            run(by, pool, tau, out_dir, v, grid, groups, fin, x="compute")
+            run(by, pool, tau, out_dir, v, grid, groups, fin, x="compute", axes=axes)
     return out
 
 
@@ -478,11 +458,13 @@ if __name__ == "__main__":
                    help="how the decisions are grouped into lines")
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose above-random gate applies")
     p.add_argument("--tau", type=float, default=TAU, help="the reliability threshold N_min is read at")
+    p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
+                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     tables = {}
     for by in args.by:
-        t = run_all(by, args.pool, args.tau, out)[""]
+        t = run_all(by, args.pool, args.tau, out, args.axes)[""]
         b = t[t["population"] == "all benchmarks"]
         tables[by] = (b.pivot_table(index="group", columns="size", values="reliability")
                       .reindex(columns=size_order(b["size"].unique())).round(2)
@@ -490,7 +472,7 @@ if __name__ == "__main__":
                       .fillna("—").reset_index())
     # The block names all three groupings, so a partial run must not rewrite it
     # with a subset — that silently drops the other two tables from the README.
-    if set(args.by) == set(BY_LINE):
+    if set(args.by) == set(BY_LINE) and args.axes == "multi-axis":
         generate_readme(args.pool, out, tables)
     else:
         print(f"  (README block left alone: --by {' '.join(args.by)} is a subset of {sorted(BY_LINE)})")

@@ -1,21 +1,22 @@
 intervention,label,L,reference_size,population,median_effect_over_seed_sd,share_above_2,n
-arch,depth (deep vs shallow),1,1.7B,benchmarks,1.7839046716767746,0.46153846153846156,13
-arch,depth (deep vs shallow),2,1.7B,benchmarks,1.0982957961332835,0.34782608695652173,23
-arch,depth (deep vs shallow),8,600M,bits per byte,0.3115862179913393,0.0,8
-arch,depth (deep vs shallow),8,1.7B,benchmarks,1.1151873321053407,0.22093023255813954,86
+arch,depth (deep vs shallow),1,1.7B,benchmarks,1.7790829453158266,0.4,15
+arch,depth (deep vs shallow),2,1.7B,benchmarks,0.9253609000098683,0.32142857142857145,28
+arch,depth (deep vs shallow),8,1.7B,bits per byte,1.0385585353682827,0.0,8
+arch,depth (deep vs shallow),8,1.7B,benchmarks,1.2860866655659575,0.24545454545454545,110
 arch,depth (deep vs shallow),15,1B,bits per byte,0.6548038453935048,0.0,15
-arch,depth (deep vs shallow),15,1.7B,benchmarks,1.2313051486588011,0.28378378378378377,148
+arch,depth (deep vs shallow),15,1.7B,benchmarks,1.311667613015872,0.3299492385786802,197
 arch,depth (deep vs shallow),30,1.7B,bits per byte,0.9382286719023526,0.0,30
-arch,depth (deep vs shallow),30,1.7B,benchmarks,1.280911828076391,0.30042918454935624,233
-arch,depth (deep vs shallow),50,600M,bits per byte,1.6001175628531485,0.2,50
-arch,depth (deep vs shallow),50,1.7B,benchmarks,1.2159581455061599,0.3009118541033435,329
+arch,depth (deep vs shallow),30,1.7B,benchmarks,1.2596339498044649,0.2807570977917981,317
+arch,depth (deep vs shallow),50,1B,bits per byte,0.5699486538416725,0.0,50
+arch,depth (deep vs shallow),50,1.7B,benchmarks,1.302085236503294,0.31346578366445915,453
 scheme,language lists (A vs B),8,1.7B,bits per byte,1.1319688190781483,0.0,5
-scheme,language lists (A vs B),8,1.7B,benchmarks,1.719902299265391,0.4117647058823529,51
+scheme,language lists (A vs B),8,1.7B,benchmarks,1.5653859135878574,0.3787878787878788,66
 scheme,language lists (A vs B),15,1B,bits per byte,1.641160991516144,0.3333333333333333,6
-scheme,language lists (A vs B),15,1.7B,benchmarks,1.0344495909535927,0.30357142857142855,56
+scheme,language lists (A vs B),15,1.7B,benchmarks,1.015287060439125,0.32432432432432434,74
 scheme,language lists (A vs B),30,1.7B,bits per byte,0.5101476874167741,0.0,26
-scheme,language lists (A vs B),30,1.7B,benchmarks,1.1920036941156735,0.2706422018348624,218
+scheme,language lists (A vs B),30,1.7B,benchmarks,1.1920036941156735,0.2635135135135135,296
+temperature,temperature (T=1 vs T=3),15,1B,benchmarks,1.355596722792849,0.29292929292929293,198
 temperature,temperature (T=1 vs T=3),50,1B,bits per byte,6.644176499419718,0.8,50
-temperature,temperature (T=1 vs T=3),50,1.7B,benchmarks,1.528580497693825,0.3890577507598784,329
-zh,2nd language (ru vs zh),2,1B,benchmarks,1.609015472344347,0.38461538461538464,13
-es,2nd language (ru vs es),2,1B,benchmarks,0.7559527479244036,0.15384615384615385,13
+temperature,temperature (T=1 vs T=3),50,1.7B,benchmarks,1.574607389160868,0.39072847682119205,453
+zh,2nd language (ru vs zh),2,1B,benchmarks,1.7278642263563977,0.4666666666666667,15
+es,2nd language (ru vs es),2,1B,benchmarks,0.7559527479244036,0.2,15

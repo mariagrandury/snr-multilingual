@@ -28,6 +28,7 @@ implementation of each rule: use them, do not re-derive.
 | 12 | **Figures.** A CSV of the same name next to every PNG; white = no value, grey = gated; a line under the title saying how a cell is computed; the population (tasks, pairs, languages) stated wherever a mean is shown. | `grids`, `style.save_figure` |
 | 13 | **Populations move; say so.** When the set of tasks or pairs behind a cell differs across a row (the gate keeps different tasks at different sizes), the figure or table carries the count, and the README says the populations differ. | `grids` count overlays |
 | 14 | **Outputs follow the code.** After a change to the loader, `configs/models.json` → `snr`, or a helper above, the pipeline is re-run before any table is read or cited; `check_rules.py` is the test that the tables on disk obey the rules. | `run_all_predictivity.sh`, `check_rules.py` |
+| 15 | **Say which pairs a decision accuracy is over.** A DA table carries an `axes` column naming its pair set: `multi-axis` (every pair of design variants at the pool's seed — the convention to 2026-09-22, in which two thirds of the pairs move more than one axis at once), `mono-axis` (the pairs moving exactly one of L, arch, list, T, lang2, the seed held — the decision a practitioner makes, and what upstream's "every pair" is by construction) and `seed` (the null: two draws of ONE design, emitted only where the pool has replicate seeds). `scheme` is never an axis: it encodes the language list, the sampling temperature and the second language, and `DATA_SCHEMES` is the source of truth for the first two. A consumer that does not ask reads `multi-axis`, so a table written before this rule needs no migration; a figure drawn over one pair set is filtered by a reliability computed on the same one, and its twin sits beside it under `AXES_SUFFIX`. | `utils.DESIGN_AXES`, `utils.design_axes`, `utils.pair_sets`, `utils.pair_agreement`, `utils.one_axes`, `utils.AXES_SUFFIX` |
 
 ## The reformulated twins are in the populations
 
@@ -140,4 +141,5 @@ The review skill reads this file, runs `python analysis/check_rules.py`, and
 treats every rule above as a review criterion for the changed scripts: a new
 per-language table without `languages_only`, a new DA computation without
 `MIN_PAIRS`, a new checkpoint axis on the twentieths, a new mean over an
-unstated population, are each a finding.
+unstated population, a table that reads `da_per_task.csv` without `one_axes`,
+are each a finding.

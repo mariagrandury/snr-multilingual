@@ -126,6 +126,12 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# the scheme-inclusive DA table: every data scheme at the grid seed (AT3/BT3 =
+# a temperature, ZH/ES = a second language), which is the population by_L and
+# scale_convergence actually pair over. The headline `predictivity` pool keeps
+# its A/B filter because its SNR signal would widen; decision accuracy is a rank
+# agreement and has no such problem (plan/decision_accuracy.md).
+run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
 # which (benchmark, language) cells rank reliably at all: the population every
 # `above_*` figure below averages over. Reads rq02's da_per_task.csv, so it comes
 # after compute_da and BEFORE everything that filters on it — by_L and
@@ -144,6 +150,12 @@ run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # the paper's RQ2 figure: composes the three panels from the CSVs above, so it
 # runs LAST of the rq02 block — it derives nothing of its own
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
+# the mono-axis twins (`_one_axis`): the same three definitions over the pairs
+# that move ONE design axis, which is what upstream's "every pair" is by
+# construction. Same folder, so the two readings compare without opening two.
+run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --axes mono-axis
+run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --axes mono-axis
+run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity --axes mono-axis
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity

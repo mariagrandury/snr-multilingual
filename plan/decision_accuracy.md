@@ -1,10 +1,12 @@
 # Decision accuracy: definitions, pairs, pools, and the RQ0–RQ2 figures
 
-*2026-09-22. Status: proposal. Every number below was recomputed from the
-tables on disk this day; the two exploratory figures it introduces are written
-by `analysis/rq02_decision_accuracy/pair_axes.py` and
-`analysis/rq01_scaling_predictability/regimes_survivorship.py` and do not
-replace anything. Nothing here is implemented in the pipeline yet.*
+*2026-09-22. Status: **§7 steps 1, 2 and the rq02 half of 5 are implemented**
+(see §9 for what landed and what the new tables say); steps 3 and 4 are not.
+Everything below §1 was written against the tables of 2026-09-21 and its
+§5–§6 numbers are superseded — see §9. The two exploratory figures it
+introduces are written by `analysis/rq02_decision_accuracy/pair_axes.py` and
+`analysis/rq01_scaling_predictability/regimes_survivorship.py` and replace
+nothing.*
 
 ## 0. Recommendations, in one screen
 
@@ -444,3 +446,90 @@ review of this session's rq02 work is committed (`2f6c05c`).
 7. **The 600M dip** (two of four DA-size axes; language count peaks there and
    falls at 1B): a 1B-rung effect or a population effect? The balanced-panel
    check on the pooled line did not remove it.
+
+
+---
+
+## 9. Implementation log — 2026-09-22
+
+**Landed.** `analysis/utils.py` now owns the decomposition and the pair sets
+(`DESIGN_AXES`, `SECOND_LANG`, `HEADLINE_SCHEMES`, `AXES_SUFFIX`,
+`design_axes`, `pair_sets`, `pair_agreement`, `one_axes`); `compute_da.py`
+computes every table once per pair set and tags it `axes`, and adds the DA-goal
+wide columns; `reliable_tasks.py` gates the three kinds separately, carries
+both pair sets and reads its DA from `--da-pool predictivity_schemes` while the
+gate and the outputs stay with `predictivity` (option C, so #9 is fixed without
+renaming a directory); `by_L`, `scale_convergence` and `paper_rq2` take
+`--axes` and write `_one_axis` twins beside the existing names; the driver runs
+both passes. Every other consumer calls `one_axes()` and so still reads the
+multi-axis table it always read.
+
+**Two checks worth keeping.** `pair_agreement` reproduces
+`snr.metrics.decision_acc_fast` exactly on a full pair set, ties included, so
+the mono-axis reading is the same kernel on fewer pairs and not a second
+implementation. And `compute_da` asserts DA-size == DA-goal@f100 on every run:
+two independent code paths, max |diff| = 0.00e+00.
+
+**Not landed.** §7.3 (two pools) renames output directories, which is a file
+relocation and needs the owner's go-ahead; §7.4 (rq01 rerun, survivorship in
+the paper figure); the `rq2.*` filename (#4).
+
+### What the recomputed tables say
+
+The ladder report refreshed at 06:13 on 2026-09-22: the reformulated twins
+entered the pool (**541 parent tasks against 382**) and AT3 gained L15-deep and
+L30-deep (38 families, the temperature axis 2 -> 4 mono-axis pairs). So the
+§5-§6 numbers were stale twice over.
+
+| population (`above_66_both`) | cells | languages | benchmark families |
+|---|---|---|---|
+| 2026-09-21 (stale) | 23 | 14 | 5 |
+| multi-axis | **59** | 31 | 15 |
+| mono-axis | 43 | 31 | 9 |
+
+**The reformulation works.** `rf_belebele`, `rf_global_mmlu_full`,
+`rf_include_base_44` and `rfgm_include_base_44` are all in the reliable set,
+and `belebele`, `arc`, `include_base_44`, `xcopa` and
+`global_piqa_nonparallel_cloze` reappear beside their twins. These are exactly
+the four-option families §4 found the gate removing wholesale.
+
+**Open question #2 is answered: mono-axis survives `MIN_PAIRS`.** 268
+reliable-eligible tasks against 289 multi-axis (93 %), and 43 against 59 in
+`above_66_both` (73 %). The pair minimum is not the binding constraint, so the
+mono-axis reading is viable as a headline.
+
+**DA-size on the paper population** (`rq2_above_66_both_transformation`):
+
+| line | | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| all pairs | multi | 0.645 | 0.762 | 0.752 | 0.770 |
+| | mono | 0.600 | 0.742 | 0.785 | 0.766 |
+| language count | multi | 0.590 | 0.764 | 0.802 | 0.747 |
+| | mono | 0.579 | 0.787 | **0.855** | 0.788 |
+| language list (A vs B) | multi | 0.619 | 0.556 | 0.467 | 0.517 |
+| | mono | 0.583 | 0.600 | 0.533 | 0.600 |
+| depth | multi | 0.771 | 0.643 | 0.489 | 0.721 |
+| | mono | 0.783 | 0.655 | 0.509 | 0.796 |
+
+Three things changed against §6, and two of them change a claim:
+
+- **The language-list decision is no longer below chance.** On the fresh
+  tables it reads 0.583-0.600 under mono-axis and 0.467-0.619 under
+  multi-axis, against 0.417-0.479 before. §6's sharpest sentence — "a fully
+  trained proxy smaller than the reference is uninformative about which list
+  to train on" — does not survive; the honest reading is now "weakly
+  informative, and the weakest of the four axes".
+- **Mono-axis is no longer uniformly lower.** §2.3 measured it 0.04-0.05 below
+  multi-axis everywhere. On the fresh population it is *higher* at 600M
+  (0.785 vs 0.752) and on three of the four axis lines. The "multi-axis pairs
+  are easier" effect was partly an artefact of the old, thinner population.
+- **The 600M dip survives** on depth and the language list, and language count
+  still peaks at 600M and falls at 1B. Still unexplained (§8.7).
+
+### What to do next, in order
+
+1. Rerun rq01 (§7.4) — it is the only chain still on pre-twin tables, and §5's
+   survivorship finding is the one the twins were built to change.
+2. Rewrite §5 and §6 from the regenerated tables; the three claims above are
+   the ones that moved.
+3. Decide #1 (mono-axis as the headline), #3 (pools) and #4 (`rq2.*`).

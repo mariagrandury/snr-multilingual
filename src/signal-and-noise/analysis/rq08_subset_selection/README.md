@@ -13,8 +13,8 @@
 - **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.98 → 4.29** (**+1.31**) with `multiblimp_eng|multiblimp_deu|multiblimp_rus|multiblimp_fra`.
 - **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.57 → 3.86** (**+1.30**) with `arc_challenge`.
 - **`global_mmlu_full` 600M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.14 → 3.33** (**+1.18**) with `human_aging`.
-- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.34 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **31 of 69** swept cells beat the null's 95th percentile: `multiblimp` 350M, `global_mmlu_full` 600M, `rf_belebele` 350M, `global_mmlu_full_sr` 350M, `global_mmlu_full_ms` 350M.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.30 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **31 of 73** swept cells beat the null's 95th percentile: `multiblimp` 350M, `global_mmlu_full` 600M, `rf_belebele` 350M, `global_mmlu_full_sr` 350M, `global_mmlu_full_ms` 350M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -81,9 +81,9 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 | global_mmlu_full_per_language | `global_mmlu_full_ms` | 350M | 2.53 → 3.43 | +0.91 | 2.96 | `prehistory` \| `professional_psychology` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 350M | 3.23 → 4.09 | +0.87 | 3.91 | `nutrition` |
 | per_benchmark | `multiblimp` | 175M | 3.23 → 4.09 | +0.86 | 3.49 | `multiblimp_rus` |
+| per_benchmark | `bpb` | 1B | 3.34 → 4.19 | +0.85 | 3.15 | `bpb_rus_Cyrl` \| `bpb_jpn_Jpan` |
 | per_benchmark | `rf_belebele` | 1.7B | 2.91 → 3.73 | +0.82 | 3.42 | `rf_belebele_rus_Cyrl` \| `rf_belebele_jpn_Jpan` \| `rf_belebele_tha_Thai` |
 | per_benchmark | `multiblimp` | 600M | 2.94 → 3.74 | +0.80 | 3.29 | `multiblimp_eng` \| `multiblimp_deu` |
-| per_benchmark | `bpb` | 1B | 3.13 → 3.90 | +0.77 | 3.71 | `bpb_rus_Cyrl` \| `bpb_jpn_Jpan` \| `bpb_tha_Thai` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

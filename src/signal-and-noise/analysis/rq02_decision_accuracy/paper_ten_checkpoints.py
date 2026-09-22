@@ -41,7 +41,8 @@ if str(_REPO) not in sys.path:
 
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.utils import SMALL_SIZES, TARGET_SIZE, passes_gate, size_order  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    SMALL_SIZES, TARGET_SIZE, one_axes, passes_gate, size_order)
 
 POOL, STAGE = "predictivity", "pretraining"
 OUT = DECISION_ACCURACY / STAGE / POOL
@@ -53,7 +54,9 @@ GROUPS = [("bpb", "", "per-language BPB"), ("benchmarks", 'stroke-dasharray="9,6
 
 def summary() -> pd.DataFrame:
     """(size, frac, group) -> mean DA and task count over the gated tasks."""
-    d = pd.read_csv(OUT / "da_early_small_per_task.csv").dropna(subset=["da"])
+    # `one_axes`: the table carries one row per (task, pair set) since rule 15,
+    # and a mean over both sets at once is a mean over two populations.
+    d = one_axes(pd.read_csv(OUT / "da_early_small_per_task.csv")).dropna(subset=["da"])
     d = d[~d["task"].isin(["bpb_macro", "train_loss"])]                       # whole-mixture aggregates, not tasks (rule 7)
     d["group"] = d["task"].str.startswith("bpb_").map({True: "bpb", False: "benchmarks"})
     mask = load_mask(POOL)

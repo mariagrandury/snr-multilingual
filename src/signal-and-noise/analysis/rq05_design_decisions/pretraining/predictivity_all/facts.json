@@ -164,6 +164,16 @@
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
+    "L": 15,
+    "reference_size": "1B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.356,
+    "share_above_2": 0.293,
+    "n": 198
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
     "L": 50,
     "reference_size": "1B",
     "population": "bits per byte",
@@ -253,8 +263,8 @@
     "label": "depth (deep vs shallow)",
     "population": "bpb_macro",
     "proxy_size": "1B",
-    "decision_acc": 0.5,
-    "cells": 2,
+    "decision_acc": 0.333,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -290,7 +300,7 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "decision_acc": 1.0,
-    "cells": 1,
+    "cells": 2,
     "refs": "1.7B"
    },
    {
@@ -668,8 +678,8 @@
     "population": "loss",
     "proxy_size": "175M",
     "decision_acc": 0.0,
-    "cells": 1,
-    "refs": "1.7B"
+    "cells": 3,
+    "refs": "1.7B,1B"
    },
    {
     "intervention": "temperature",

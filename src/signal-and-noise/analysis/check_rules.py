@@ -30,6 +30,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 _REPO = Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
@@ -164,8 +165,16 @@ def check_wide_pairs(folder: Path) -> list[str]:
         n_path = da_path.with_name("da_n_pairs_per_task.csv")
         if not n_path.is_file():
             continue
-        da = pd.read_csv(da_path, index_col="task"); n = pd.read_csv(n_path, index_col="task")
-        common = [c for c in da.columns if c in n.columns]
+        da = pd.read_csv(da_path); n = pd.read_csv(n_path)
+        # Since rule 15 a task has one row per pair set, so `task` alone is not a
+        # key: joining on it pairs a DA cell with another set's pair count as
+        # soon as the two files are written in different orders.
+        key = ["task", "axes"] if "axes" in da.columns and "axes" in n.columns else ["task"]
+        da = da.set_index(key); n = n.set_index(key)
+        # numeric only: the tables carry descriptive columns too, and comparing
+        # one of those against MIN_PAIRS raises rather than reporting
+        common = [c for c in da.columns if c in n.columns
+                  and is_numeric_dtype(da[c]) and is_numeric_dtype(n[c])]
         n_al = n[common].reindex(da.index)
         # NaN < MIN_PAIRS is False, so an absent pair count would pass silently
         bad = int((da[common].notna() & ~(n_al >= MIN_PAIRS)).sum().sum())

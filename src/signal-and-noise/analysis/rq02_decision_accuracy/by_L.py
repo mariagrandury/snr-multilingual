@@ -86,7 +86,8 @@ from analysis.rq02_decision_accuracy.compute_da import (  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, SMALL_SIZES, TARGET_SIZE, _is_parent_task, build_snr_pool)
+    AXES_SUFFIX, GRID_SEED, SMALL_SIZES, TARGET_SIZE, _is_parent_task, build_snr_pool, design_axes,
+    pair_sets)
 
 OUT_ROOT = DECISION_ACCURACY
 L_POOL = "predictivity_all"      # every scheme; the grid seed keeps replicate seeds out of the pairs
@@ -94,7 +95,7 @@ FRACS = [k / 10 for k in range(1, 11)]     # the ten evaluated checkpoints of ev
 mpl.rcParams.update(S.RC)
 
 
-def _da_table(df: pd.DataFrame, label) -> list[dict]:
+def _da_table(df: pd.DataFrame, label, pairs=None) -> list[dict]:
     """Per task, proxy size and fraction: DA vs the reference's final ranking
     and vs the size's own final ranking, over the pairs of `df`."""
     buckets = [b for b in bucket_order() if b in set(df["bucket"])]
@@ -103,8 +104,8 @@ def _da_table(df: pd.DataFrame, label) -> list[dict]:
     for t, dft in tqdm(df.groupby("task", sort=False), desc=str(label)):
         if not _is_parent_task(t):
             continue
-        ref = {(r["proxy_size"], r["frac"]): r for r in compute_early_small_decision_accuracy(dft, fracs=FRACS)}
-        own = {(b, f): compute_ckpt_decision_accuracy(dft, t, b, f, return_n=True) for b in buckets for f in FRACS[:-1]}
+        ref = {(r["proxy_size"], r["frac"]): r for r in compute_early_small_decision_accuracy(dft, fracs=FRACS, pairs=pairs)}
+        own = {(b, f): compute_ckpt_decision_accuracy(dft, t, b, f, return_n=True, pairs=pairs) for b in buckets for f in FRACS[:-1]}
         own = {k: v if isinstance(v, tuple) else (np.nan, 0) for k, v in own.items()}   # a bare NaN when the bucket is absent
         for b in buckets:
             for f in FRACS:
@@ -122,15 +123,18 @@ def _da_table(df: pd.DataFrame, label) -> list[dict]:
 COLS = ["task", "L", "proxy_size", "frac", "da_ref", "n_pairs_ref", "da_own", "n_pairs_own", "compute", "compute_share"]
 
 
-def da_by_L() -> tuple[pd.DataFrame, pd.DataFrame]:
+def da_by_L(axes: str = "multi-axis") -> tuple[pd.DataFrame, pd.DataFrame]:
     """(per L, pooled): both over the grid seed of every scheme — the per-L one
     within a language count, the pooled one across every pair."""
     df = build_snr_pool(L_POOL)
     df = df[df["seed"] == GRID_SEED].copy()
     df["bucket"] = df["size"].map(size_bucket)
-    by_L = pd.DataFrame([r for L, dl in df.groupby("L") for r in _da_table(dl, f"L{L}")], columns=COLS)
+    # The pair set (rule 15): None is every pair, which is what the multi-axis
+    # reading means; mono-axis hands the kernels the explicit one-axis list.
+    pairs = None if axes == "multi-axis" else pair_sets(design_axes(df))[axes]
+    by_L = pd.DataFrame([r for L, dl in df.groupby("L") for r in _da_table(dl, f"L{L}", pairs)], columns=COLS)
     by_L["L"] = by_L["L"].str[1:].astype(int)
-    pooled = pd.DataFrame(_da_table(df, "pooled"), columns=COLS).drop(columns="L")
+    pooled = pd.DataFrame(_da_table(df, "pooled", pairs), columns=COLS).drop(columns="L")
     return by_L, pooled
 
 
@@ -252,15 +256,15 @@ def _reliable_panel(ax, keep: pd.DataFrame, red: str, thresh: float, crit: str) 
 
 
 def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
-           name: str = "goal", variant: str = "") -> pd.DataFrame | None:
+           name: str = "goal", variant: str = "", axes: str = "multi-axis") -> pd.DataFrame | None:
     reading, value = READINGS[name], READINGS[name]["value"]
     groups, filt, _ = VARIANTS[variant]
-    stem = f"early_small_by_L_{name}" + (f"_{variant}" if variant else "")
+    stem = f"early_small_by_L_{name}" + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes]
     keep = red = crit = None
     thresh = 0.0
     if filt:
         red, thresh, crit = FILTERS[filt]
-        keep = load_reliable(out_dir, filt)
+        keep = load_reliable(out_dir, filt, axes)
         if keep is None:
             return None
         names = set(keep["task"])
@@ -353,16 +357,19 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose early_small_summary.csv is the first panel and whose gate applies")
+    p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
+                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    table, pooled = da_by_L()
-    table.to_csv(out / "da_by_L_per_task.csv", index=False)
-    pooled.to_csv(out / "da_pooled_per_task.csv", index=False)
-    print(f"Wrote {out / 'da_by_L_per_task.csv'} ({len(table)} rows) and da_pooled_per_task.csv ({len(pooled)} rows)")
+    table, pooled = da_by_L(args.axes)
+    sfx = AXES_SUFFIX[args.axes]
+    table.to_csv(out / f"da_by_L_per_task{sfx}.csv", index=False)
+    pooled.to_csv(out / f"da_pooled_per_task{sfx}.csv", index=False)
+    print(f"[{args.axes}] {len(table)} by-L rows, {len(pooled)} pooled rows")
     for name in READINGS:
         for variant, (_, _, readings) in VARIANTS.items():
             if name in readings:
-                figure(args.pool, out, table, pooled, name, variant)
+                figure(args.pool, out, table, pooled, name, variant, args.axes)
     pairs = pairs_by_L(table)
     pairs.to_csv(out / "pairs_by_L.csv", index=False)
     print(pairs.to_string(index=False))

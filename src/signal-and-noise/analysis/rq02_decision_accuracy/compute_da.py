@@ -6,14 +6,36 @@ the rest of the pipeline (rq03_noise_and_snr) searches for cheap *proxies* —
 SNR variants — that correlate with DA. So DA is computed first, here, and the
 SNR step reads this CSV and appends its variant columns.
 
-Two DA definitions (the cluster's two flavours):
+Three DA definitions, by what the ranking is compared against:
 
-  DA-size — (mix, seed) ranking at <small>'s last ckpt vs the ranking at
-            TARGET_SIZE's last ckpt. ``decision_acc_size_<small>`` for every ``snr.small_sizes`` entry
-            plus the cross-bucket scaling pairs ``decision_acc_size_<a>_to_<b>``.
+  DA-size — ranking at <small>'s last ckpt vs the ranking at TARGET_SIZE's last
+            ckpt. ``decision_acc_size_<small>`` for every ``snr.small_sizes``
+            entry plus the cross-bucket scaling pairs
+            ``decision_acc_size_<a>_to_<b>``.
   DA-ckpt — within a bucket, ranking at an early ckpt (a relative fraction of
             each model's own max step) vs the bucket's last ckpt.
             ``decision_acc_ckpt_<frac>_<bucket>``.
+  DA-goal — ranking at an early ckpt of <bucket> vs TARGET_SIZE's last ckpt:
+            early AND small at once. ``decision_acc_goal_<frac>_<bucket>``, the
+            wide form of ``da_early_small_per_task.csv``. DA-size is its
+            ``f100`` column by construction, which is a free consistency check.
+
+...and TWO PAIR SETS, the `axes` column (rule 15). Every table here carries one
+row per (task, axes):
+
+  multi-axis — every pair of design variants: the convention to 2026-09-22, in
+               which two thirds of the pairs move more than one axis at once.
+  mono-axis  — the pairs that move exactly one of L, arch, list, T, lang2, the
+               seed held. The decision a practitioner makes, and what upstream's
+               "every pair" is by construction (DataDecide's recipes differ in
+               the data mix alone).
+  seed       — the null: two draws of ONE design, which decide nothing, so a
+               benchmark's DA over them is what no signal reads like. Emitted
+               only where the pool has replicate seeds.
+
+Consumers that do not ask read `multi-axis`, so no number moved when this was
+added. `analysis/utils.py` owns the axis decomposition and the pair sets
+(`design_axes`, `pair_sets`, `pair_agreement`); see plan/decision_accuracy.md.
 
 DA is computed on every above-random-or-not (task, size) cell — it is the truth,
 not a proxy, so it is NOT gated (the above-random gate only NaN-s SNR cells).
@@ -45,11 +67,10 @@ from evals.scripts.utils.configs import (  # noqa: E402
     add_family_column, bucket_order, load_pools, pool_include_external,
     size_bucket,
 )
-from snr.metrics import decision_acc_fast  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    CKPT_DA_EARLY_FRACS, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, _is_parent_task,
-    build_snr_pool, pool_models,
+    CKPT_DA_EARLY_FRACS, MIN_PAIRS, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, _is_parent_task,
+    build_snr_pool, design_axes, pair_agreement, pair_sets, pool_models,
 )
 
 OUT_ROOT = DECISION_ACCURACY
@@ -83,7 +104,7 @@ CKPT_TOL = 0.06
 
 
 def compute_size_decision_accuracy(
-    df, task, small_size, target_size=TARGET_SIZE, model_filter=None, return_n=False
+    df, task, small_size, target_size=TARGET_SIZE, model_filter=None, return_n=False, pairs=None
 ):
     """DA across size buckets: small_bucket@last vs target_bucket@last.
 
@@ -93,8 +114,10 @@ def compute_size_decision_accuracy(
     stripped), so a family present at both buckets contributes one pair.
 
     ``model_filter`` (optional) restricts the rows to a set of model
-    names. Returns NaN below MIN_PAIRS design-variant pairs (rule 5); with
-    `return_n` the pair count comes back either way.
+    names; ``pairs`` (optional) restricts the DECISIONS to an explicit list of
+    family pairs (the mono-axis reading) instead of every pair. Returns NaN
+    below MIN_PAIRS design-variant pairs (rule 5); with `return_n` the pair
+    count comes back either way.
     """
     df = add_family_column(df)
     if model_filter is not None:
@@ -102,24 +125,18 @@ def compute_size_decision_accuracy(
     scores_small = df[(df["bucket"] == small_size) & (df["task"] == task)]
     scores_target = df[(df["bucket"] == target_size) & (df["task"] == task)]
     if scores_small.empty or scores_target.empty:
-        return float("nan")
+        return (float("nan"), 0) if return_n else float("nan")
     scores_small = scores_small.loc[scores_small.groupby("family")["step"].idxmax()]
     scores_target = scores_target.loc[scores_target.groupby("family")["step"].idxmax()]
-    keys_small = set(scores_small["family"])
-    keys_target = set(scores_target["family"])
-    common = sorted(keys_small & keys_target)
-    n_pairs = len(common) * (len(common) - 1) // 2
+    da, n_pairs = pair_agreement(dict(zip(scores_small["family"], scores_small["primary_score"])),
+                                 dict(zip(scores_target["family"], scores_target["primary_score"])), pairs)
     if n_pairs < MIN_PAIRS:          # rule 5: fewer pairs than this is not a ranking; the count is still reported
         _FEW_PAIRS.append((task, small_size, target_size, n_pairs))
-        return (float("nan"), n_pairs) if return_n else float("nan")
-    s = scores_small.set_index("family").loc[common, "primary_score"]
-    t = scores_target.set_index("family").loc[common, "primary_score"]
-    da = decision_acc_fast(s.to_numpy(), t.to_numpy())
     return (da, n_pairs) if return_n else da
 
 
 def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=None,
-                                   return_n=False):
+                                   return_n=False, pairs=None):
     """DA within a size bucket: ``family`` ranking at an *early* ckpt vs the
     same family's max-step ckpt.
 
@@ -131,7 +148,8 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
     has no distinct early ckpt and is logged once per ``(bucket, frac,
     family)`` and skipped. Below MIN_PAIRS pairs the cell is NaN (rule 5).
 
-    ``model_filter`` (optional) restricts the rows to a set of model names.
+    ``model_filter`` (optional) restricts the rows to a set of model names;
+    ``pairs`` (optional) restricts the decisions to an explicit family-pair list.
     """
     df = add_family_column(df)
     if model_filter is not None:
@@ -161,11 +179,9 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
         early.append(float(early_row["primary_score"]))
         late.append(float(max_row["primary_score"]))
         keys.append(fam)
-    n_pairs = len(keys) * (len(keys) - 1) // 2
+    da, n_pairs = pair_agreement(dict(zip(keys, early)), dict(zip(keys, late)), pairs)
     if n_pairs < MIN_PAIRS:          # rule 5
         _FEW_PAIRS.append((task, bucket, f"ckpt@{early_frac}", n_pairs))
-        return (float("nan"), n_pairs) if return_n else float("nan")
-    da = decision_acc_fast(np.asarray(early), np.asarray(late))
     return (da, n_pairs) if return_n else da
 
 
@@ -193,7 +209,8 @@ def _scores_at(dft, bucket, frac) -> dict:
     return out
 
 
-def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EARLY_SMALL_FRACS) -> list[dict]:
+def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EARLY_SMALL_FRACS,
+                                          pairs=None) -> list[dict]:
     """Early AND small, as a ranking: every design variant at a proxy bucket,
     read at 20-100 % of its own run, ranked against the same variants at the
     reference bucket's final checkpoint. The cross of DA-size (the 100 %
@@ -214,14 +231,13 @@ def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EA
             if b == target_size and frac >= 1.0:
                 continue                    # the reference against itself
             got = _scores_at(dft, b, frac)
-            common = sorted(set(got) & set(ref))
-            if len(common) * (len(common) - 1) // 2 < MIN_PAIRS:   # rule 5, as the two kernels above
-                _FEW_PAIRS.append((None, b, f"early-small@{frac}", len(common) * (len(common) - 1) // 2))
+            da, n_pairs = pair_agreement({f: v[0] for f, v in got.items()},
+                                         {f: v[0] for f, v in ref.items()}, pairs)
+            if n_pairs < MIN_PAIRS:                 # rule 5, as the two kernels above
+                _FEW_PAIRS.append((None, b, f"early-small@{frac}", n_pairs))
                 continue
-            da = decision_acc_fast(np.asarray([got[f][0] for f in common]),
-                                   np.asarray([ref[f][0] for f in common]))
-            rows.append({"proxy_size": b, "frac": frac, "da": float(da),
-                         "n_pairs": len(common) * (len(common) - 1) // 2,
+            common = sorted(set(got) & set(ref))
+            rows.append({"proxy_size": b, "frac": frac, "da": float(da), "n_pairs": n_pairs,
                          "compute": float(np.mean([got[f][1] for f in common])),
                          "ref_compute": float(np.mean([ref[f][1] for f in common]))})
     return rows
@@ -264,48 +280,65 @@ def run(pool: str, out_dir: Path):
     if scaling_pairs:
         print(f"  Scaling-DA pairs (≥2 shared families): {scaling_pairs}")
 
+    # The pair sets the `axes` column names (rule 15). `pair_sets` holds the
+    # design pairs at the grid seed, so a replicate never enters a decision set;
+    # the `seed` set is exactly those replicate pairs and is the null. A set the
+    # pool cannot populate is dropped rather than written as a row of NaN.
+    psets = pair_sets(design_axes(df_pool))
+    axes_sets = [a for a in PAIR_AXES if psets[a]]
+    print("  Pair sets: " + ", ".join(f"{a} {len(psets[a])}" for a in axes_sets))
+
     # Pre-slice by task once — each compute_*_decision_accuracy call filters by
     # task, so grouping avoids re-scanning the whole pool per call.
     df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
 
     rows, n_rows, early_rows = [], [], []
-    for task in tqdm(tasks, desc="DA tasks"):
-        row, nrow = {"task": task}, {"task": task}
-        dft = df_by_task[task]
-        # Core size-DA: small bucket@last → reference bucket@last.
-        for s in SMALL_SIZES:
-            row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
-                compute_size_decision_accuracy, dft, task, s,
-            )
-        # Scaling-DA: every other cross-bucket pair with ≥2 shared families.
-        for sb, tb in scaling_pairs:
-            row[f"decision_acc_size_{sb}_to_{tb}"], nrow[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
-                compute_size_decision_accuracy, dft, task, sb, tb,
-            )
-        # ckpt-DA: relative-fraction early ckpt vs max, per bucket.
-        for frac in CKPT_DA_EARLY_FRACS:
-            fl = _frac_label(frac)
-            for b in pool_buckets:
-                row[f"decision_acc_ckpt_{fl}_{b}"], nrow[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
-                    compute_ckpt_decision_accuracy, dft, task, b, frac,
+    for axes in axes_sets:
+        pairs = psets[axes]
+        for task in tqdm(tasks, desc=f"DA tasks ({axes})"):
+            row, nrow = {"task": task, "axes": axes}, {"task": task, "axes": axes}
+            dft = df_by_task[task]
+            # Core size-DA: small bucket@last → reference bucket@last.
+            for s in SMALL_SIZES:
+                row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
+                    compute_size_decision_accuracy, dft, task, s, pairs=pairs,
                 )
-        rows.append(row)
-        n_rows.append(nrow)
-        if TARGET_SIZE in pool_buckets:
-            early_rows += [{"task": task, **r} for r in compute_early_small_decision_accuracy(dft)]
+            # Scaling-DA: every other cross-bucket pair with ≥2 shared families.
+            for sb, tb in scaling_pairs:
+                row[f"decision_acc_size_{sb}_to_{tb}"], nrow[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
+                    compute_size_decision_accuracy, dft, task, sb, tb, pairs=pairs,
+                )
+            # ckpt-DA: relative-fraction early ckpt vs max, per bucket.
+            for frac in CKPT_DA_EARLY_FRACS:
+                fl = _frac_label(frac)
+                for b in pool_buckets:
+                    row[f"decision_acc_ckpt_{fl}_{b}"], nrow[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
+                        compute_ckpt_decision_accuracy, dft, task, b, frac, pairs=pairs,
+                    )
+            # goal-DA: early AND small, the long table and its wide columns from
+            # ONE computation, so the two shapes cannot disagree.
+            if TARGET_SIZE in pool_buckets:
+                early = compute_early_small_decision_accuracy(dft, pairs=pairs)
+                for r in early:
+                    col = f"decision_acc_goal_{_frac_label(r['frac'])}_{r['proxy_size']}"
+                    row[col], nrow[col] = r["da"], r["n_pairs"]
+                early_rows += [{"task": task, "axes": axes, **r} for r in early]
+            rows.append(row)
+            n_rows.append(nrow)
 
-    out = pd.DataFrame(rows).set_index("task").sort_index()
+    out = pd.DataFrame(rows).set_index(["task", "axes"]).sort_index()
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / "da_per_task.csv"
     out.to_csv(csv_path)
     # The same shape, holding the number of model pairs behind every cell: a
     # one-pair 1.00 and a 28-pair 0.96 must not read alike downstream.
-    pd.DataFrame(n_rows).set_index("task").sort_index().to_csv(out_dir / "da_n_pairs_per_task.csv")
-    # Early and small, as a ranking: long, one row per (task, proxy bucket, fraction).
-    pd.DataFrame(early_rows, columns=["task", "proxy_size", "frac", "da", "n_pairs", "compute", "ref_compute"]
+    pd.DataFrame(n_rows).set_index(["task", "axes"]).sort_index().to_csv(out_dir / "da_n_pairs_per_task.csv")
+    # Early and small, as a ranking: long, one row per (task, axes, proxy bucket, fraction).
+    pd.DataFrame(early_rows, columns=["task", "axes", "proxy_size", "frac", "da", "n_pairs", "compute", "ref_compute"]
                  ).to_csv(out_dir / "da_early_small_per_task.csv", index=False)
     n_size = len(SMALL_SIZES) + len(scaling_pairs)
     n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
+    n_goal = sum(c.startswith("decision_acc_goal_") for c in out.columns)
     if _FEW_PAIRS:
         few = pd.DataFrame(_FEW_PAIRS, columns=["task", "proxy", "target", "pairs"])
         by = few.groupby(["proxy", "target"]).size().sort_values(ascending=False)
@@ -313,8 +346,21 @@ def run(pool: str, out_dir: Path):
               f"{MIN_PAIRS} pairs and are NaN (their pair counts are in da_n_pairs_per_task.csv). By comparison:\n"
               + by.head(12).to_string())
     print(f"\nWrote DA CSV → {csv_path}")
-    print(f"  {len(out)} tasks × {len(out.columns)} DA columns "
-          f"({n_size} size-DA + {n_ckpt} ckpt-DA)")
+    print(f"  {out.index.get_level_values('task').nunique()} tasks × {len(axes_sets)} pair sets "
+          f"× {len(out.columns)} DA columns ({n_size} size-DA + {n_ckpt} ckpt-DA + {n_goal} goal-DA)")
+    # DA-size is DA-goal read at the proxy's own final checkpoint: the same
+    # decisions, computed by two different code paths. They must agree.
+    same = [(f"decision_acc_size_{s}", f"decision_acc_goal_f100_{s}") for s in SMALL_SIZES
+            if f"decision_acc_goal_f100_{s}" in out.columns]
+    if not same:
+        # a pool without the reference bucket has no goal-DA, so there is nothing
+        # to check — "0.00e+00 over 0 sizes" would read as a check that passed
+        print("  DA-size == DA-goal@f100: not checked (no goal-DA in this pool)")
+    else:
+        bad = {a: float((out[a] - out[b]).abs().max()) for a, b in same}
+        worst = max(bad.values())
+        print(f"  DA-size == DA-goal@f100: max |diff| = {worst:.2e} over {len(same)} sizes"
+              + ("" if worst < 1e-9 else f"  !!! {bad}"))
 
 
 def main():

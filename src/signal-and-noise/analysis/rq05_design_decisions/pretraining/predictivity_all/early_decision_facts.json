@@ -755,9 +755,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.8,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -766,9 +766,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -777,9 +777,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.3,
-    "da": 0.25,
-    "cells": 4,
-    "items": 4,
+    "da": 0.2,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -788,9 +788,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -799,9 +799,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -810,9 +810,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -821,9 +821,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -832,9 +832,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.25,
-    "cells": 4,
-    "items": 4,
+    "da": 0.2,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -843,9 +843,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B/1B"
    },
    {
@@ -854,9 +854,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.5,
-    "cells": 2,
-    "items": 2,
+    "da": 0.333,
+    "cells": 3,
+    "items": 3,
     "refs": "1.7B"
    },
    {
@@ -1294,9 +1294,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.429,
-    "cells": 3,
-    "items": 95,
+    "da": 0.322,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1305,9 +1305,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.409,
-    "cells": 3,
-    "items": 95,
+    "da": 0.338,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1316,9 +1316,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.3,
-    "da": 0.631,
-    "cells": 3,
-    "items": 95,
+    "da": 0.598,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1327,9 +1327,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.851,
-    "cells": 3,
-    "items": 95,
+    "da": 0.888,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1338,9 +1338,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.878,
-    "cells": 3,
-    "items": 95,
+    "da": 0.908,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1349,9 +1349,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 0.898,
-    "cells": 3,
-    "items": 95,
+    "da": 0.923,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1360,9 +1360,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.938,
-    "cells": 3,
-    "items": 95,
+    "da": 0.953,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1371,9 +1371,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.958,
-    "cells": 3,
-    "items": 95,
+    "da": 0.968,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1382,9 +1382,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 0.987,
-    "cells": 3,
-    "items": 95,
+    "da": 0.99,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1394,8 +1394,8 @@
     "proxy_size": "1B",
     "frac": 1.0,
     "da": 1.0,
-    "cells": 1,
-    "items": 30,
+    "cells": 2,
+    "items": 38,
     "refs": "1.7B"
    },
    {

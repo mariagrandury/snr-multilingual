@@ -109,5 +109,47 @@ class Ladder(unittest.TestCase):
         print(f"\n  ladder 600M->1B: {checked} tasks checked, {differ} differ between kernels because of ties")
 
 
+class TestPairAgreement(unittest.TestCase):
+    """`utils.pair_agreement` states the kernel's tie rule a second time, over
+    an explicit pair list (rule 15's mono-axis reading). `decision_acc_fast`
+    cannot take one, so nothing but this test keeps the two definitions equal:
+    change one without the other and the mono-axis numbers drift from the
+    multi-axis ones with no error anywhere.
+    """
+
+    def _pair_agreement(self):
+        sys.path.insert(0, str(_SND.parent))          # analysis imports `pretrain`
+        from analysis.utils import pair_agreement
+        return pair_agreement
+
+    def test_matches_the_kernel_over_every_pair(self):
+        pair_agreement = self._pair_agreement()
+        rng = np.random.default_rng(1904)
+        fams = [f"f{i}" for i in range(6)]
+        for trial in range(200):
+            # a third of the draws are integers, so ties are common — the whole
+            # point of the departure the kernel documents
+            s, t = (rng.integers(0, 3, 6).astype(float) if trial % 3 else rng.normal(size=6)
+                    for _ in range(2))
+            self.assertAlmostEqual(pair_agreement(dict(zip(fams, s)), dict(zip(fams, t)))[0],
+                                   decision_acc_fast(s, t),
+                                   msg=f"pair_agreement != decision_acc_fast on {s} vs {t}")
+
+    def test_min_pairs_and_restriction(self):
+        pair_agreement = self._pair_agreement()
+        fams = [f"f{i}" for i in range(4)]
+        s = dict(zip(fams, [1.0, 2.0, 3.0, 4.0]))
+        t = dict(zip(fams, [4.0, 3.0, 2.0, 1.0]))
+        self.assertEqual(pair_agreement(s, t), (0.0, 6))          # every pair reversed
+        # a pair list is honoured, and rule 5 NaNs a cell below MIN_PAIRS
+        da, n = pair_agreement(s, t, [("f0", "f1"), ("f0", "f2"), ("f1", "f2")])
+        self.assertEqual((da, n), (0.0, 3))
+        da, n = pair_agreement(s, t, [("f0", "f1"), ("f0", "f2")])
+        self.assertTrue(np.isnan(da))
+        self.assertEqual(n, 2)
+        # pairs naming a family the proxy does not have are dropped, not counted
+        self.assertEqual(pair_agreement(s, t, [("f0", "f1"), ("f0", "gone")])[1], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

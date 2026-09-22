@@ -81,17 +81,29 @@ from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E4
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.cross_task import resource_order  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    CKPT_DA_EARLY_FRACS, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family)
+    CKPT_DA_EARLY_FRACS, MIN_PAIRS, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, assign_language,
+    benchmark_family)
 
 OUT_ROOT = DECISION_ACCURACY
 THRESHOLDS = (0.80, 0.75, 0.66)        # the cuts drawn; the first is the default
 THRESH = THRESHOLDS[0]
+DEFAULT_AXES = PAIR_AXES[0]            # "multi-axis": what a caller that does not ask gets
+KINDS = ("size", "ckpt", "goal")       # the three references a DA column can rank against
+# The DA table this reads by default. `predictivity_schemes` is every data
+# scheme at the grid seed — the population `by_L` and `scale_convergence`
+# actually pair over — while the gate and the outputs stay with the headline
+# pool, whose A/B filter exists to protect an SNR *signal* and has no business
+# selecting decisions. Reading `predictivity`'s table instead made a cell
+# "reliable" on A/B decisions and then used that verdict to filter all-scheme
+# ones (plan/decision_accuracy.md §3.2).
+DA_POOL = "predictivity_schemes"
 REDUCTIONS = ("late", "mean", "median", "max")
 DEFAULT_REDUCTION = "late"             # what the `above_80` filters use
 LATE_SIZE = SMALL_SIZES[-1]            # the largest proxy: the rung just below the reference
 LATE_FRAC = CKPT_DA_EARLY_FRACS[-1]    # the last checkpoint before the final (90 %)
 LATE_COL = {"size": f"decision_acc_size_{LATE_SIZE}",
-            "ckpt": f"decision_acc_ckpt_f{int(round(LATE_FRAC * 100))}_{LATE_SIZE}"}
+            "ckpt": f"decision_acc_ckpt_f{int(round(LATE_FRAC * 100))}_{LATE_SIZE}",
+            "goal": f"decision_acc_goal_f{int(round(LATE_FRAC * 100))}_{LATE_SIZE}"}
 # variant suffix -> (reduction, threshold, which test a task must pass).
 # `size` / `ckpt` keep the tasks reliable on that ONE axis, which is what a
 # per-panel filter wants: the DA-size panel should be read over the tasks whose
@@ -117,63 +129,80 @@ def passes(tasks: pd.DataFrame, red: str, thresh: float) -> pd.DataFrame:
     return pd.DataFrame({"size": s, "ckpt": c, "both": s & c, "either": s | c}, index=tasks.index)
 
 
-def load_reliable(out_dir: Path, variant: str) -> pd.DataFrame | None:
+def load_reliable(out_dir: Path, variant: str, axes: str = DEFAULT_AXES) -> pd.DataFrame | None:
     """The (benchmark, language) cells a named variant keeps, with their DA
     values — the population that figure averages over. None when this script has
     not been run for the pool yet, so a caller can skip the variant instead of
-    drawing an empty panel."""
+    drawing an empty panel. `axes` selects the pair set the verdict was reached
+    on, so a figure drawn over mono-axis decisions is filtered by a mono-axis
+    reliability."""
     red, thresh, crit = FILTERS[variant]
     f = out_dir / "da_reliable_tasks.csv"
     if not f.exists():
         print(f"  (no {f.name}: run reliable_tasks.py first — skipping {variant})")
         return None
     d = pd.read_csv(f)
+    if "axes" in d.columns:
+        d = d[d["axes"] == axes]
     return d[passes(d, red, thresh)[crit]]
 
 
-def long_da(out_dir: Path, pool: str) -> pd.DataFrame:
+# Which reference each DA kind ranks against, and so which gate rule 1 asks for:
+# DA-size and DA-goal rank a proxy against the REFERENCE, so the task must be
+# above chance there as well; DA-ckpt ranks a proxy against its OWN final, so the
+# proxy's gate is the whole gate. `early_small.py` splits them the same way
+# (lines 89/90); gating all of them without the reference let three cells that
+# are at chance at 1.7B into the reliable population (fixed 2026-09-22).
+GATE_REF = {"size": TARGET_SIZE, "goal": TARGET_SIZE, "ckpt": None}
+
+
+def long_da(out_dir: Path, pool: str, axes: str = DEFAULT_AXES) -> pd.DataFrame:
     """da_per_task.csv melted to (task, kind, level, da), with the pair
-    minimum and the above-random gate applied. `kind` is `size` or `ckpt`."""
-    da = pd.read_csv(out_dir / "da_per_task.csv", index_col="task")
-    n = pd.read_csv(out_dir / "da_n_pairs_per_task.csv", index_col="task").reindex_like(da)
+    minimum and the above-random gate applied. `kind` is `size`, `ckpt` or
+    `goal`; `axes` picks the pair set (`compute_da`'s `axes` column, rule 15)
+    and defaults to the multi-axis reading, so this table did not move when the
+    mono-axis one was added."""
+    da = pd.read_csv(out_dir / "da_per_task.csv")
+    n = pd.read_csv(out_dir / "da_n_pairs_per_task.csv")
+    if "axes" in da.columns:                 # a table written before rule 15 has one pair set
+        da, n = da[da["axes"] == axes], n[n["axes"] == axes]
+    da = da.set_index("task").drop(columns="axes", errors="ignore")
+    n = n.set_index("task").drop(columns="axes", errors="ignore").reindex_like(da)
     # `decision_acc_size_<a>_to_<b>` is agreement with a NON-reference target, so it
     # is not DA-size in rule 9's sense and is left out; DA-size here is proxy -> reference.
     keep = [c for c in da.columns
-            if (c.startswith("decision_acc_size_") and "_to_" not in c) or c.startswith("decision_acc_ckpt_")]
+            if (c.startswith("decision_acc_size_") and "_to_" not in c)
+            or c.startswith(("decision_acc_ckpt_", "decision_acc_goal_"))]
     long = (da[keep].stack(future_stack=True).rename("da").reset_index()
             .rename(columns={"level_1": "col"}))
     long["n_pairs"] = n[keep].stack(future_stack=True).to_numpy()
-    long["kind"] = np.where(long["col"].str.startswith("decision_acc_size_"), "size", "ckpt")
-    # the size a cell is READ at: the proxy for DA-size, the bucket for DA-ckpt
+    long["kind"] = long["col"].str.split("_").str[2]                # size | ckpt | goal
+    # the size a cell is READ at: the proxy throughout (DA-size names it last too)
     long["size"] = np.where(long["kind"] == "size",
                             long["col"].str.replace("decision_acc_size_", "", regex=False),
                             long["col"].str.rsplit("_", n=1).str[-1])
     long = long[long["n_pairs"] >= MIN_PAIRS]                       # rule 5
-    # rule 1 + rule 7, and the two kinds need DIFFERENT gates. DA-size ranks a
-    # proxy against the reference, so rule 1 asks for the task above chance at the
-    # reference as well; DA-ckpt ranks a proxy against its OWN final, so the
-    # proxy's gate is the whole gate. `early_small.py` splits them the same way
-    # (lines 89/90); gating both without the reference let three cells that are at
-    # chance at 1.7B into the reliable population.
     long = pd.concat([G.mark_gated(G.add_meta(long[long["kind"] == k]), pool, "size", "da", ref)
-                      for k, ref in (("size", TARGET_SIZE), ("ckpt", None))], ignore_index=True)
+                      for k, ref in GATE_REF.items() if (long["kind"] == k).any()], ignore_index=True)
     return long.dropna(subset=["da"])
 
 
 def per_task(long: pd.DataFrame) -> pd.DataFrame:
-    """One row per benchmark task: DA-size and DA-ckpt under each reduction.
-    Threshold-free — the cuts are applied by `passes`."""
+    """One row per benchmark task: each DA kind under each reduction.
+    Threshold-free — the cuts are applied by `passes`. DA-goal is carried for
+    information; the FILTERS cut on DA-size and DA-ckpt, which are the two
+    independent questions (how small, how early)."""
     long = long[~long["family"].isin(["bpb", "loss"])]              # benchmarks only
     t = long.pivot_table(index="task", columns="kind", values="da", aggfunc=list)
     late = {k: long[long["col"] == c].set_index("task")["da"] for k, c in LATE_COL.items()}
     rows = []
     for task, r in t.iterrows():
         row = {"task": task, "language": assign_language(task), "benchmark": benchmark_family(task)}
-        for kind in ("size", "ckpt"):
+        for kind in KINDS:
             v = r.get(kind)
             v = np.asarray(v, dtype=float) if isinstance(v, list) else np.array([])
             row[f"n_cells_{kind}"] = len(v)
-            row[f"da_{kind}_late"] = late[kind].get(task, np.nan)
+            row[f"da_{kind}_late"] = late.get(kind, pd.Series(dtype=float)).get(task, np.nan)
             for red in ("mean", "median", "max"):
                 row[f"da_{kind}_{red}"] = getattr(np, red)(v) if len(v) else np.nan
         rows.append(row)
@@ -229,8 +258,10 @@ def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float) -> pd.DataF
                     f"DA-size = agreement of a proxy size's final ranking with the reference's; DA-ckpt = agreement of an "
                     f"earlier checkpoint with the same size's final. Each is the {red} over that task's cells with "
                     f"≥ {MIN_PAIRS} pairs (rule 5) that the above-random gate keeps (rule 1); a benchmark at chance can "
-                    f"never pass. Benchmarks only — BPB and the loss have no chance level. Values in "
-                    f"`da_reliable_tasks.csv`; this figure is one (threshold, reduction) view of it.")
+                    f"never pass. Benchmarks only — BPB and the loss have no chance level. Decisions from the "
+                    f"`{DA_POOL}` pool over its {DEFAULT_AXES} pairs (rule 15); the gate is the figure's own pool. "
+                    f"Values in `da_reliable_tasks.csv`, which carries every pair set; this figure is one "
+                    f"(threshold, reduction) view of it.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
     return by_lang
@@ -250,7 +281,10 @@ def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.D
         f"Per language, how many benchmarks clear DA ≥ {THRESH:g} on DA-size (a proxy size's final ranking vs the "
         f"reference's) and on DA-ckpt (an earlier checkpoint vs the same size's final), reducing each task's cells "
         f"with `{DEFAULT_REDUCTION}` (one fixed cell per axis, so no cell is chosen by its value). Cells need ≥ "
-        f"{MIN_PAIRS} pairs (rule 5) and must survive the above-random gate (rule 1). "
+        f"{MIN_PAIRS} pairs (rule 5) and must survive the above-random gate (rule 1). The decisions come from the "
+        f"`{DA_POOL}` pool — every data scheme at the grid seed, which is the population `by_L` and "
+        f"`scale_convergence` pair over — while the gate and this folder stay with `{pool}`; the table carries one "
+        f"row per pair set (rule 15) and the figures show `{DEFAULT_AXES}`. "
         f"`da_reliable_tasks.csv` holds the per-task values for every reduction and is threshold-free — each figure "
         f"is one view of it. Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool {pool}`.",
         md_table(list(t.columns), t.values.tolist()),
@@ -260,28 +294,54 @@ def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.D
     replace_block(OUT_ROOT / "README.md", "reliable-tasks", body, f"reliable_tasks.py --pool {pool}")
 
 
-def run(pool: str, out_dir: Path) -> pd.DataFrame:
-    tasks = per_task(long_da(out_dir, pool))
+def available_axes(out_dir: Path) -> list[str]:
+    """The pair sets `compute_da` wrote for this pool, in PAIR_AXES order."""
+    da = pd.read_csv(out_dir / "da_per_task.csv", nrows=2000)
+    got = set(da["axes"]) if "axes" in da.columns else {DEFAULT_AXES}
+    return [a for a in PAIR_AXES if a in got]
+
+
+def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
+    """One table for every pair set (the `axes` column), and figures for the
+    default one only: the figures are a view of the table, and drawing each of
+    the twelve twice would double the folder to say the same thing.
+
+    `da_dir` is where the DA table is read from (DA_POOL's folder by default);
+    `pool` still names the gate and `out_dir` the folder written to.
+    """
+    da_dir = da_dir or out_dir
+    axes_sets = available_axes(da_dir)
+    print(f"DA table: {da_dir.name} | gate: {pool} | pair sets: {', '.join(axes_sets)}")
+    tasks = pd.concat([per_task(long_da(da_dir, pool, axes=a)).assign(axes=a) for a in axes_sets],
+                      ignore_index=True)
+    tasks = tasks[["axes"] + [c for c in tasks.columns if c != "axes"]]
     tasks.to_csv(out_dir / "da_reliable_tasks.csv", index=False)
-    print(f"\n{len(tasks)} benchmark tasks over {tasks['language'].nunique()} languages "
-          f"({tasks['benchmark'].nunique()} benchmarks) -> da_reliable_tasks.csv")
-    rows = []
-    for thresh in THRESHOLDS:
-        for red in REDUCTIONS:
-            rows.append(figure(tasks, out_dir / f"da_reliable_tasks_{pct(thresh)}_{red}.png", red, thresh))
-            p = passes(tasks, red, thresh)
-            print(f"  cut {thresh:g} / {red:6}: DA-size {int(p['size'].sum()):3d} | DA-ckpt {int(p['ckpt'].sum()):3d} | "
-                  f"either {int(p['either'].sum()):3d} | both {int(p['both'].sum()):3d} tasks over "
-                  f"{tasks.loc[p['both'], 'language'].nunique():2d} languages "
-                  f"[{', '.join(sorted(tasks.loc[p['both'], 'benchmark'].unique())) or '—'}]")
-    by_lang = pd.concat(rows, ignore_index=True)
+    for a in axes_sets:
+        d = tasks[tasks["axes"] == a]
+        print(f"\n[{a}] {len(d)} benchmark tasks over {d['language'].nunique()} languages "
+              f"({d['benchmark'].nunique()} benchmarks)")
+        for thresh in THRESHOLDS:
+            for red in REDUCTIONS:
+                q = passes(d, red, thresh)
+                print(f"  cut {thresh:g} / {red:6}: DA-size {int(q['size'].sum()):3d} | DA-ckpt {int(q['ckpt'].sum()):3d} | "
+                      f"either {int(q['either'].sum()):3d} | both {int(q['both'].sum()):3d} tasks over "
+                      f"{d.loc[q['both'], 'language'].nunique():2d} languages "
+                      f"[{', '.join(sorted(d.loc[q['both'], 'benchmark'].unique())) or '—'}]")
+    head = tasks[tasks["axes"] == axes_sets[0]].reset_index(drop=True)
+    rows = [figure(head, out_dir / f"da_reliable_tasks_{pct(thresh)}_{red}.png", red, thresh)
+            for thresh in THRESHOLDS for red in REDUCTIONS]
+    by_lang = pd.concat(rows, ignore_index=True).assign(axes=axes_sets[0])
     by_lang.to_csv(out_dir / "da_reliable_by_language.csv", index=False)
-    generate_readme(pool, out_dir, tasks, by_lang)
+    generate_readme(pool, out_dir, head, by_lang)
     return tasks
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--pool", default=CANONICAL_POOL)
+    p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose gate applies and whose folder is written")
+    p.add_argument("--da-pool", default=DA_POOL,
+                   help="the pool whose da_per_task.csv the decisions come from (default: %(default)s)")
     args = p.parse_args()
-    run(args.pool, OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool)
+    stage = load_pools()[args.pool].get("stage", "pretraining")
+    run(args.pool, OUT_ROOT / stage / args.pool,
+        OUT_ROOT / load_pools()[args.da_pool].get("stage", "pretraining") / args.da_pool)

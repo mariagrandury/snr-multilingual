@@ -65,7 +65,7 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import CKPT_TOL, add_family_column  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
-from analysis.utils import (LANGUAGE_AGGREGATES,  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, one_axes,  # noqa: E402
     SMALL_SIZES, TARGET_SIZE, _is_parent_task, assign_language, benchmark_family, build_snr_pool)
 from evals.scripts.utils.configs import fineweb_language  # noqa: E402
 from pretrain.launch_trainings import cell_fineweb_subsets  # noqa: E402
@@ -333,7 +333,7 @@ def run(pool: str, out_dir: Path) -> None:
     # the diagonal is rq02's per-task DA-size: check it against the committed table
     per_task = out_dir / "da_per_task.csv"
     if per_task.exists():
-        da = pd.read_csv(per_task, index_col="task")
+        da = one_axes(pd.read_csv(per_task)).set_index("task")
         for b in sizes:
             col = f"decision_acc_size_{b}"
             if col in da.columns and b in size_da:

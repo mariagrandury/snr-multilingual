@@ -48,6 +48,13 @@ and the y axis is shared so the three panels are read against one scale.
                                  population seen three ways — read it as "how well
                                  does each definition do on the tasks it is
                                  trustworthy for", not as a like-for-like comparison.
+    rq2_above_66_either_transformation.*
+                                 the per-panel populations of rq2_above_66_one with the
+                                 DA-size panel broken out by design axis, as
+                                 rq2_above_66_both_transformation does for the shared
+                                 population. The left panel therefore reads over the
+                                 DA-size passers only, so its axes are not the same
+                                 cells as the middle and right panels.
 
 This module reads CSVs and draws them. It derives nothing, so a change to how a
 panel's own figure is computed reaches rq2 the moment that script reruns — the
@@ -83,7 +90,7 @@ from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import GROUP_COLOURS, OVERALL, TAU  # noqa: E402
-from analysis.utils import NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order  # noqa: E402
+from analysis.utils import AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
 YLIM = (0.25, 1.0)            # one scale for the three panels
@@ -98,6 +105,8 @@ RQ2_VARIANTS = {
     "above_66_one": ("scale_convergence_above_66_size", "_above_66_ckpt", "_above_66_either"),
     "above_66_both_transformation": ("scale_convergence_transformation_above_66_both",
                                      "_above_66_both", "_above_66_both"),
+    "above_66_either_transformation": ("scale_convergence_transformation_above_66_size",
+                                       "_above_66_ckpt", "_above_66_either"),
 }
 mpl.rcParams.update(S.RC)
 
@@ -150,20 +159,24 @@ def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: 
     return d.assign(panel=ylabel.split(" —")[0])
 
 
-def figure(out_dir: Path, variant: str = "") -> None:
-    suffix = f"_{variant}" if variant else ""
+def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
+    """`axes` picks the pair set (rule 15): every panel reads the table drawn
+    over it, and the figure carries the same suffix, so `rq2.png` and
+    `rq2_one_axis.png` sit side by side over the same three definitions."""
+    a = AXES_SUFFIX[axes]
+    suffix = (f"_{variant}" if variant else "") + a
     sz, ck, gl = RQ2_VARIANTS[variant]
-    need = [f"{sz}.csv", f"early_small_by_L_ckpt{ck}.csv",
-            f"early_small_by_L_goal{gl}.csv"]
+    need = [f"{sz}{a}.csv", f"early_small_by_L_ckpt{ck}{a}.csv",
+            f"early_small_by_L_goal{gl}{a}.csv"]
     missing = [f for f in need if not (out_dir / f).is_file()]
     if missing:
         print(f"  (rq2{suffix}: missing {', '.join(missing)} — skipped)")
         return
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.0), sharey=True)
-    rows = [_scale_panel(axes[0], out_dir, sz),
-            _run_panel(axes[1], out_dir, "ckpt", "DA-ckpt — vs its own size's final", True, ck),
-            _run_panel(axes[2], out_dir, "goal", f"DA-goal — vs {TARGET_SIZE} final", False, gl)]
-    for ax in axes:
+    fig, ax3 = plt.subplots(1, 3, figsize=(13.5, 4.0), sharey=True)
+    rows = [_scale_panel(ax3[0], out_dir, sz + a),
+            _run_panel(ax3[1], out_dir, "ckpt", "DA-ckpt — vs its own size's final", True, ck + a),
+            _run_panel(ax3[2], out_dir, "goal", f"DA-goal — vs {TARGET_SIZE} final", False, gl + a)]
+    for ax in ax3:
         ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.tight_layout()
     pd.concat(rows, ignore_index=True).to_csv(out_dir / f"rq2{suffix}.csv", index=False)
@@ -174,7 +187,9 @@ def figure(out_dir: Path, variant: str = "") -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
+    p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
+                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     for variant in RQ2_VARIANTS:
-        figure(out, variant)
+        figure(out, variant, args.axes)

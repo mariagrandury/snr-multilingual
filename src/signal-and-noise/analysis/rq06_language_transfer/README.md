@@ -67,7 +67,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 | bpb_trained | 175M | 0.74 | 8 |
 | bpb_trained | 350M | 0.76 | 8 |
 | bpb_trained | 600M | 0.50 | 8 |
-| bpb_trained | 1B | 0.77 | 3 |
+| bpb_trained | 1B | 0.83 | 4 |
 
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->
