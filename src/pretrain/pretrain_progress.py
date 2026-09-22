@@ -1041,4 +1041,22 @@ if __name__ == "__main__":
             print("usage: pretrain_progress.py --is-valid <iter_dir>", file=sys.stderr)
             sys.exit(2)
         sys.exit(0 if is_valid_iter_dir(Path(sys.argv[2])) else 1)
+    # The same for the whole-cell decision:
+    #   python3.11 pretrain_progress.py --cell-action <model_dir> <target_iters>
+    # prints "<done|fresh|resume|corrupt> <latest valid iter, 0 if none>".
+    # launch_pretraining_cscs.sh reads the word to decide whether to queue a
+    # chain successor and the iteration to tell a chain that is surviving
+    # preemptions from one that is retrying a failure. It reads the WORD, not
+    # the exit status: an ImportError and a legitimate "not done" both exit
+    # non-zero, and the difference decides between ending a chain and burning
+    # its whole budget on links that allocate 21 nodes and die.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--cell-action":
+        if len(sys.argv) != 4:
+            print("usage: pretrain_progress.py --cell-action <model_dir> "
+                  "<target_iters>", file=sys.stderr)
+            sys.exit(2)
+        model_dir = Path(sys.argv[2])
+        print(cell_action(model_dir, int(sys.argv[3]))[0],
+              model_progress(model_dir)[1] or 0)
+        sys.exit(0)
     main()

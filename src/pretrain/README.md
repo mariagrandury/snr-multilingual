@@ -158,7 +158,7 @@ launcher — the core design):
 | File | Role |
 | ---- | ---- |
 | [`megatron_args.sh`](megatron_args.sh) | **The single source of the training logic.** Builds every Megatron argument (architecture, AdEMAMix, WSD schedule, torch_dist checkpointing, data blend, W&B) from env vars. Both platforms produce an identical command; the only delta is the SLURM graceful-exit trigger, added when `TRIGGER_PATH` is set. |
-| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
+| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. With `PRETRAIN_CHAIN=1` it also queues a singleton successor before training and cancels it once the cell is `done`. The chain also stops on a `corrupt` cell, once `CHAIN_MAX_STALLS` (4) links in a row have ended without the checkpoint advancing (the fifth still runs, it just queues no sixth), if it cannot record that count, and at `CHAIN_MAX_ATTEMPTS` (200) links total; `CHAIN_PARTITION`/`CHAIN_WALLTIME` override what the successor inherits. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
 | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
@@ -321,14 +321,17 @@ CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
 
 `--partition preemptable` starts a run now instead of queueing behind the
 480-node QOS cap on `normal`, at the price of preemption. It is safe here
-because the three pieces travel together: `--requeue` (so a preempted run
-comes back with the same jobid and partition), `MEGATRON_EXIT_ON_SIGTERM=1`
-on the srun line (so the patched handler catches the preemption signal and
-Megatron checkpoints inside the 4 min grace, and the requeued job resumes
-from that save), and a walltime cap of 23:59:00 instead of 11:59:59 —
-`preemptable` allows 24h, and a limit cannot be raised after submission, so it
-has to be asked for here. `scripts/preempt_drain.sh` moves *pending* runs
-there too, but only the top rungs and only if they already carry `--requeue`.
+because the three pieces travel together: `MEGATRON_EXIT_ON_SIGTERM=1` on the
+srun line (so the patched handler catches the preemption signal and Megatron
+checkpoints inside the 4 min grace), `PRETRAIN_CHAIN=1` (so the wrapper queues
+a singleton successor *before* it starts training, which resumes from that
+save), and a walltime cap of 23:59:00 instead of 11:59:59 — `preemptable`
+allows 24h, and a limit cannot be raised after submission, so it has to be
+asked for here. The chain replaced `--requeue` on 2026-09-21: Clariden holds a
+job on its sixth requeue (`MaxBatchRequeue=5`) and a preemption spends one, so
+three runs stopped dead after five clean preemptions. Each chain link is a new
+jobid, so no cap applies. `scripts/preempt_drain.sh` moves *pending* runs
+there too, but only the top rungs and only those that can come back.
 
 Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
 each forces a `diag-` name, so neither can touch a grid cell):

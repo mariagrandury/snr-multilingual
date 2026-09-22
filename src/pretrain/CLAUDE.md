@@ -32,7 +32,7 @@ reintroduces the drift this design removed.
 | File | Role |
 |---|---|
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints and the singleton self-chain that brings the run back (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
@@ -264,15 +264,66 @@ checkpoint grid, and that is already expected: `run_interval()` takes the
 modal gap and `due_iters()` never marks an off-grid save due, so preemption
 saves add disk, not eval work.
 
-That, `--requeue` and a 23:59:00 wall are what
-`launch_trainings.py --partition preemptable` sets up (2026-09-20): a
-preempted run checkpoints, is requeued with the same jobid *and partition*,
-and resumes. Two constraints it works around, both verified: a job's time
-limit can only be LOWERED after submission (so no drainer can stretch a job it
-moves — ask for 24h at submit), and `normal` refuses a 23:59:00 request
-outright ("Requested time limit is invalid"), so the long wall and the
-partition have to travel together. A requeue reopens the same `%x-%j` log,
-hence `#SBATCH --open-mode=append`.
+**Coming back is a chain, not a requeue** (2026-09-21). `--requeue` was the
+first answer and it does not survive a busy day: Clariden sets
+`MaxBatchRequeue=5`, a preemption spends one, and on the sixth Slurm holds the
+job — reporting `launch_failure_limit_exceeded_requeued_held` even when all
+five attempts ended in clean preemptions. Two 3B and one 1B run stopped that
+way after 4h43m at 96.7% node-time efficiency; nothing had failed to launch.
+`scontrol update Restarts=` is refused, and `MaxBatchRequeue` is cluster-wide
+and admin-only.
+
+So `--partition preemptable` sets `PRETRAIN_CHAIN=1` instead, and the wrapper
+queues a singleton successor (`--dependency=singleton`, same job name) BEFORE
+it starts training — exactly what `data/submit_build_one.sh` has always done,
+and what carried `build-a-L8-165b` to completion across 29 links and 36 hours
+(24 PREEMPTED, 3 FAILED, 1 CANCELLED). Each link is a new jobid, so no requeue
+cap applies, and queuing it up front is what makes it preemption-safe: a killed
+attempt leaves its successor already pending, holding a queue position a
+resubmit would forfeit.
+
+**What stops a chain**, in the order the wrapper checks it:
+
+- `done` — `pretrain_progress.py --cell-action` on entry or after training;
+  the pending successor is cancelled. The check reads the printed WORD, not an
+  exit status: an ImportError and a legitimate "not done" both exit non-zero.
+  State unreadable → do NOT chain, and say so.
+- `corrupt` — iter dirs on disk, none loadable. `launch_trainings.py` refuses
+  these for manual review; the chain must too, or it re-runs on 21 nodes
+  exactly what the launcher will not touch.
+- **no progress four times running** (`CHAIN_MAX_STALLS`). Each link records
+  the iteration it started from in `.chain-<jobname>.progress` beside its
+  Slurm logs; unchanged means the previous link achieved nothing. Progress
+  resets the counter, so ordinary preemptions do not cap a chain — though a
+  run preempted before its first save does count as a stall, which is the
+  intended conservatism at 21 nodes a link. This is the
+  real bound — 2026-09-22, `lm-1B-L2-shallow-seed1904` burned 14 links x 21
+  nodes because its `logging/` and `debug/` belonged to a collaborator: rank 83
+  (Megatron's tensorboard writer is the LAST rank) died of `PermissionError`
+  ~70 s in, Slurm killed the step for TASK FAILURE, and the wrapper still
+  exited 0, so nothing downstream could tell a spin from a preemption. The
+  counter file is per-user for the same reason the incident happened: these
+  trees are shared, and a file a collaborator creates is one this user cannot
+  rewrite. A counter that cannot be recorded also stops the chain.
+- attempt count (`CHAIN_MAX_ATTEMPTS`, default 200) — only a backstop now, so
+  it is generous: a 3-day 3B at ~1 preemption/hour needs 30-70 links, and 29
+  were needed for a one-node build. Counted in the directory the controller
+  says this job's `StdOut` is in, never a hard-coded path — a collaborator's
+  logs land in their own scratch, and counting where there are none reads 0
+  forever and never caps. Uncountable → do NOT chain.
+
+A chained job advertises itself with `--comment=selfchain`, because
+`PRETRAIN_CHAIN` lives in the job environment and neither `squeue` nor
+`scontrol` exposes that — `scripts/preempt_drain.sh` has to know before it
+moves a 21-node run onto a partition that will preempt it.
+
+Two constraints this works around, both verified: a job's time limit can only
+be LOWERED after submission (so no drainer can stretch a job it moves — ask for
+24h at submit, and a successor inherits the wall of the attempt that queued
+it), and `normal` refuses a 23:59:00 request outright ("Requested time limit is
+invalid"), so the long wall and the partition have to travel together.
+`#SBATCH --open-mode=append` is now belt-and-braces: a requeue reopened the
+same `%x-%j` log, and a chain link never does.
 
 ### 5. `OptimizerParamScheduler` train_iters mismatch on capped resumes
 Megatron asserts the CLI schedule total equals the checkpoint's. When a

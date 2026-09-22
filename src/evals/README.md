@@ -233,13 +233,15 @@ so builds belong on `preemptable` only by being *submitted* there —
 queues two segments (../pretrain/README.md).
 
 Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
-only when they carry `--requeue`**, which is what
-`launch_trainings.py --partition preemptable` adds: it also sets
+only when they can come back from a preemption**, which is what
+`launch_trainings.py --partition preemptable` arranges: it sets
 `MEGATRON_EXIT_ON_SIGTERM=1`, so the patched handler catches the preemption
-signal itself and Megatron checkpoints inside the 4 min grace, and the
-requeued job resumes from that save. The drainer asks the
-controller per job (`squeue -O Requeue`) and skips the ones submitted without
-it — for those a preemption really would cost a save interval on 21 nodes.
+signal itself and Megatron checkpoints inside the 4 min grace, and
+`PRETRAIN_CHAIN=1`, so the wrapper has already queued a singleton successor to
+resume from that save. The drainer asks the controller per job
+(`squeue -O Comment,Requeue`: `selfchain`, or `--requeue` for jobs still in
+flight from before 2026-09-21) and skips the rest — for those a preemption
+really would cost a save interval on 21 nodes.
 
 Nothing is truncated (preemptable allows 24 h), so this one is simpler than
 the debug drainer. It cannot *raise* a walltime either — a limit can only be

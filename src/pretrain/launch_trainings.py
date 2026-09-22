@@ -888,12 +888,19 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
                 dependency: Optional[str] = None,
                 partition: Optional[str] = None) -> None:
     if partition == PREEMPT_PARTITION:
-        # The wrapper turns this into MEGATRON_EXIT_ON_SIGTERM on the srun
-        # line, and the patched DistributedSignalHandler then checkpoints on
-        # the preemption signal instead of dying on it. Only here: it also
-        # makes `scancel` save before stopping, which is not what you want on
-        # a job you are killing.
-        env = {**env, "EXIT_ON_SIGTERM": "1"}
+        # EXIT_ON_SIGTERM: the wrapper turns this into MEGATRON_EXIT_ON_SIGTERM
+        # on the srun line, and the patched DistributedSignalHandler then
+        # checkpoints on the preemption signal instead of dying on it. Only
+        # here: it also makes `scancel` save before stopping, which is not what
+        # you want on a job you are killing.
+        #
+        # PRETRAIN_CHAIN: the wrapper queues a singleton successor before it
+        # starts training, so a preempted run comes back as a NEW job. Not
+        # --requeue, which is what this used to pass: Clariden caps a job at
+        # MaxBatchRequeue=5 requeues and a preemption spends one, so on the
+        # sixth Slurm holds the run and calls it a launch failure. A chain has
+        # no such cap (data/submit_build_one.sh has always worked this way).
+        env = {**env, "EXIT_ON_SIGTERM": "1", "PRETRAIN_CHAIN": "1"}
     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
     # from $0 — pass the real checkout dir here.
@@ -910,13 +917,12 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
     if partition is not None:
         cmd.append(f"--partition={partition}")
         if partition == PREEMPT_PARTITION:
-            # The wrapper's #SBATCH --no-requeue exists so a node failure does
-            # not overwrite the logs; on `preemptable` coming back is the whole
-            # point, and the command line outranks the directive. A requeued
-            # job keeps its jobid AND its partition, so it returns straight to
-            # `preemptable` — see the wrapper's SIGTERM trap for the
-            # checkpoint it saves on the way out.
-            cmd.append("--requeue")
+            # The wrapper's #SBATCH --no-requeue stands: coming back is the
+            # chain's job, not Slurm's. --comment is how a job advertises that
+            # it chains — the env that carries PRETRAIN_CHAIN is invisible to
+            # squeue, and scripts/preempt_drain.sh has to know before it moves
+            # a 21-node run onto a partition that will preempt it.
+            cmd.append("--comment=selfchain")
     cmd.append(str(CSCS_SUBMIT_SCRIPT))
 
     print(f"  job:    {job_name('pretrain', env['EXP_NAME'])}"
@@ -1067,10 +1073,11 @@ def main() -> None:
                         help=f"CSCS only: submit to this partition. "
                              f"`{PREEMPT_PARTITION}` starts immediately "
                              f"instead of queueing behind the 480-node cap on "
-                             f"`normal`, and also adds --requeue and lets the "
+                             f"`normal`, and also self-chains and lets the "
                              f"auto walltime reach 23:59:00 — the run "
-                             f"checkpoints on preemption and resumes when it "
-                             f"is requeued (../pretrain/CLAUDE.md)")
+                             f"checkpoints on preemption and a successor "
+                             f"queued before it started resumes from that "
+                             f"save (../pretrain/CLAUDE.md)")
     parser.add_argument("--dependency", metavar="DEP",
                         help="CSCS only: pass-through to sbatch --dependency")
     parser.add_argument("--training-steps", metavar="N", type=int,
