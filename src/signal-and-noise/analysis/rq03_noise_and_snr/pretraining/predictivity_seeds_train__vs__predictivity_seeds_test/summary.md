@@ -6,11 +6,11 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 
 |  | DA-size | DA-ckpt |
 |---|---:|---:|
-| Exact-variant agreement (lang-level) | 0% (0/1) | 100% (1/1) |
+| Exact-variant agreement (lang-level) | 0% (0/1) | 0% (0/1) |
 | **Family-level agreement** (lang-level) | 100% (1/1) | 100% (1/1) |
-| Pearson r between splits (over all variant cells) | +0.031 (n = 22) | +0.896 (n = 22) |
-| **Spearman ρ on global variant ranking** | -0.446 | +0.807 |
-| Retention of train-best (r_test / r_test_best, mean across langs) | 0% (n = 1) | 100% (n = 1) |
+| Pearson r between splits (over all variant cells) | -0.677 (n = 22) | +0.881 (n = 22) |
+| **Spearman ρ on global variant ranking** | -0.451 | +0.790 |
+| Retention of train-best (r_test / r_test_best, mean across langs) | 0% (n = 1) | 99% (n = 1) |
 
 **Family** groups together algebraically near-equivalent variants (e.g. the dispersion cluster: `dispersion`/`mpd`/`range`/`quartile_deviation`/`rms_deviation`/`aad`). At n_mixes=3, members of a family correlate at r ≥ 0.999 so exact-variant equality is overly strict.
 
@@ -30,7 +30,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | da | `` () | +nan | +nan | `` () | +nan |  |  |
 | de | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `star_discrepancy_shifted` (discrepancy) | -0.079 | -0.299 | `discrepancy` (discrepancy) | +0.129 |  | ✅ |
+| en | `star_discrepancy_shifted` (discrepancy) | +0.148 | -0.299 | `discrepancy` (discrepancy) | +0.129 |  | ✅ |
 | es | `` () | +nan | +nan | `` () | +nan |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
 | fa | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -57,7 +57,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | pl | `` () | +nan | +nan | `` () | +nan |  |  |
 | pt | `` () | +nan | +nan | `` () | +nan |  |  |
 | ro | `` () | +nan | +nan | `` () | +nan |  |  |
-| ru | `rel_star_discrepancy` (discrepancy) | +0.999 | +nan | `` () | +nan |  |  |
+| ru | `dispersion_shifted` (discrepancy) | +0.896 | +nan | `` () | +nan |  |  |
 | sk | `` () | +nan | +nan | `` () | +nan |  |  |
 | sl | `` () | +nan | +nan | `` () | +nan |  |  |
 | sq | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -85,7 +85,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | da | `` () | +nan | +nan | `` () | +nan |  |  |
 | de | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `rel_mpsd` (rel_spread) | +0.417 | +0.286 | `rel_mpsd` (rel_spread) | +0.286 | ✅ | ✅ |
+| en | `rel_mpsd` (rel_spread) | +0.384 | +0.270 | `rel_dispersion` (rel_spread) | +0.272 |  | ✅ |
 | es | `` () | +nan | +nan | `` () | +nan |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
 | fa | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -112,7 +112,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | pl | `` () | +nan | +nan | `` () | +nan |  |  |
 | pt | `` () | +nan | +nan | `` () | +nan |  |  |
 | ro | `` () | +nan | +nan | `` () | +nan |  |  |
-| ru | `rel_std` (rel_spread) | +0.412 | +nan | `` () | +nan |  |  |
+| ru | `dist_std` (dispersion) | +0.413 | +nan | `` () | +nan |  |  |
 | sk | `` () | +nan | +nan | `` () | +nan |  |  |
 | sl | `` () | +nan | +nan | `` () | +nan |  |  |
 | sq | `` () | +nan | +nan | `` () | +nan |  |  |

@@ -14,7 +14,7 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `global_piqa_parallel_cloze`, `truthfulqa-multi_mc1`, `include_base_44`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **647 benchmarks, 331 clear chance at ≥1 size** and 307 at 1.7B (316 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **647 benchmarks, 339 clear chance at ≥1 size** and 314 at 1.7B (308 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -106,7 +106,7 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 |---|---|---|---|
 | 2 | 0.50 | 90 / 101 | 90 / 101 |
 | 3 | 0.33 | 16 / 18 | 15 / 18 |
-| 4 | 0.25 | 225 / 528 | 202 / 528 |
+| 4 | 0.25 | 233 / 528 | 209 / 528 |
 <!-- END auto:results -->
 
 <!-- BEGIN auto:curves (curves.py --pool predictivity_all) -->

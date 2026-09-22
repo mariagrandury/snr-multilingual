@@ -75,46 +75,46 @@ tasks cover all three.
 Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all`.
 
 - **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 3037 of 5370 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
-- **Seed noise vs detrended checkpoint noise** — median ratio 1.75 over 501 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.57; 38% of 482 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Gate.** 3430 of 7036 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Seed noise vs detrended checkpoint noise** — median ratio 1.80 over 747 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.49; 36% of 723 cells above 2× (a distinct model for SNR, not a re-roll).
 
 **Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.29 | 329 |
-| benchmark | arch / ckpt | 2.38 | 1460 |
-| benchmark | scheme / seed | 0.96 | 81 |
-| benchmark | scheme / ckpt | 2.20 | 603 |
-| benchmark | temperature / seed | 1.88 | 196 |
-| benchmark | temperature / ckpt | 3.12 | 553 |
-| benchmark | zh / seed | 1.52 | 24 |
-| benchmark | zh / ckpt | 3.21 | 32 |
-| benchmark | es / seed | 1.77 | 24 |
-| benchmark | es / ckpt | 3.84 | 32 |
+| benchmark | arch / seed | 1.30 | 570 |
+| benchmark | arch / ckpt | 2.23 | 2627 |
+| benchmark | scheme / seed | 0.98 | 151 |
+| benchmark | scheme / ckpt | 1.94 | 1047 |
+| benchmark | temperature / seed | 1.46 | 353 |
+| benchmark | temperature / ckpt | 2.46 | 1021 |
+| benchmark | zh / seed | 1.52 | 28 |
+| benchmark | zh / ckpt | 2.91 | 38 |
+| benchmark | es / seed | 1.77 | 28 |
+| benchmark | es / ckpt | 3.78 | 38 |
 | bpb | arch / seed | 1.90 | 137 |
-| bpb | arch / ckpt | 2.52 | 397 |
+| bpb | arch / ckpt | 2.14 | 455 |
 | bpb | scheme / seed | 0.21 | 26 |
 | bpb | scheme / ckpt | 2.04 | 179 |
 | bpb | temperature / seed | 8.72 | 100 |
 | bpb | temperature / ckpt | 16.31 | 200 |
 | bpb | zh / seed | 1.37 | 3 |
 | bpb | zh / ckpt | 4.75 | 4 |
-| bpb | es / seed | 3.04 | 2 |
-| bpb | es / ckpt | 8.45 | 3 |
+| bpb | es / seed | 4.44 | 3 |
+| bpb | es / ckpt | 7.63 | 4 |
 | bpb_macro | arch / seed | 1.97 | 8 |
-| bpb_macro | arch / ckpt | 2.91 | 24 |
+| bpb_macro | arch / ckpt | 2.64 | 26 |
 | bpb_macro | scheme / seed | 3.80 | 1 |
 | bpb_macro | scheme / ckpt | 3.22 | 14 |
 | bpb_macro | temperature / seed | 2.48 | 2 |
 | bpb_macro | temperature / ckpt | 4.92 | 4 |
 | bpb_macro | zh / seed | 9.48 | 3 |
 | bpb_macro | zh / ckpt | 16.01 | 4 |
-| bpb_macro | es / seed | 7.32 | 2 |
-| bpb_macro | es / ckpt | 15.50 | 3 |
+| bpb_macro | es / seed | 8.22 | 3 |
+| bpb_macro | es / ckpt | 12.81 | 4 |
 | loss | arch / seed | 2.09 | 8 |
-| loss | arch / ckpt | 1.60 | 28 |
+| loss | arch / ckpt | 1.62 | 29 |
 | loss | scheme / seed | 11.14 | 1 |
 | loss | scheme / ckpt | 2.70 | 15 |
 | loss | temperature / seed | 4.99 | 2 |
@@ -218,5 +218,5 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
 | DA | languages | same variant | same family | Spearman ρ of the variant ranking |
 |---|---|---|---|---|
 | DA-size | 1 | 0 | 1 | -0.45 |
-| DA-ckpt | 1 | 1 | 1 | 0.81 |
+| DA-ckpt | 1 | 0 | 1 | 0.79 |
 <!-- END auto:seed-holdout -->

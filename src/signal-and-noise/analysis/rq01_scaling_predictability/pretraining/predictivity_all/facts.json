@@ -1,25 +1,32 @@
 {
  "grid": {
-  "cells": 113,
+  "cells": 126,
   "by_size": {
-   "1.7B": 19,
-   "175M": 24,
-   "1B": 28,
-   "350M": 18,
-   "600M": 24
+   "1.7B": 20,
+   "175M": 29,
+   "1B": 31,
+   "350M": 21,
+   "600M": 25
   }
  },
  "rq1": {
-  "n_fits": 410,
-  "n_tasks": 156,
-  "gated_series": 533,
-  "gated_rungs": 102,
+  "n_fits": 729,
+  "n_tasks": 291,
+  "gated_series": 581,
+  "gated_rungs": 219,
   "families": [
    {
     "family": "include_base_44",
     "r2": 0.552,
     "rho": 0.25,
     "n": 4,
+    "n_options": 4.0
+   },
+   {
+    "family": "rfgm_include_base_44",
+    "r2": 0.874,
+    "rho": 0.975,
+    "n": 79,
     "n_options": 4.0
    },
    {
@@ -51,11 +58,32 @@
     "n_options": 3.0
    },
    {
+    "family": "rf_include_base_44",
+    "r2": 0.921,
+    "rho": 1.0,
+    "n": 45,
+    "n_options": 4.0
+   },
+   {
+    "family": "rf_global_mmlu_full",
+    "r2": 0.925,
+    "rho": 1.0,
+    "n": 71,
+    "n_options": 4.0
+   },
+   {
     "family": "loss",
     "r2": 0.94,
     "rho": -1.0,
     "n": 6,
     "n_options": NaN
+   },
+   {
+    "family": "rf_belebele",
+    "r2": 0.944,
+    "rho": 1.0,
+    "n": 124,
+    "n_options": 4.0
    },
    {
     "family": "xwinograd",
@@ -103,7 +131,7 @@
   "by_options": {
    "2.0": 0.923,
    "3.0": 0.906,
-   "4.0": 0.97
+   "4.0": 0.943
   }
  }
 }

@@ -7,9 +7,9 @@
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.1,
-    "da": 0.481,
+    "da": 0.452,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -18,9 +18,9 @@
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.2,
-    "da": 0.499,
+    "da": 0.472,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -29,9 +29,9 @@
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.3,
-    "da": 0.576,
+    "da": 0.556,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -40,174 +40,174 @@
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.4,
-    "da": 0.563,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.5,
-    "da": 0.563,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.6,
-    "da": 0.587,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.7,
-    "da": 0.627,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.8,
-    "da": 0.574,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.9,
-    "da": 0.712,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.1,
-    "da": 0.521,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.2,
-    "da": 0.439,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.3,
-    "da": 0.464,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.4,
-    "da": 0.505,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.5,
-    "da": 0.54,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.6,
-    "da": 0.456,
-    "cells": 5,
-    "items": 568,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.7,
-    "da": 0.523,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.8,
-    "da": 0.519,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.9,
-    "da": 0.558,
-    "cells": 6,
-    "items": 790,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 1.0,
     "da": 0.544,
     "cells": 6,
-    "items": 790,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.5,
+    "da": 0.588,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 0.592,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.7,
+    "da": 0.622,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 0.582,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.9,
+    "da": 0.737,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.1,
+    "da": 0.533,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.426,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.3,
+    "da": 0.47,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 0.485,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.5,
+    "da": 0.525,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 0.461,
+    "cells": 6,
+    "items": 842,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.7,
+    "da": 0.53,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.8,
+    "da": 0.508,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.9,
+    "da": 0.543,
+    "cells": 6,
+    "items": 1064,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 0.535,
+    "cells": 6,
+    "items": 1064,
     "refs": "1.7B"
    },
    {
@@ -216,9 +216,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.493,
-    "cells": 4,
-    "items": 690,
+    "da": 0.516,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -227,9 +227,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.557,
-    "cells": 4,
-    "items": 690,
+    "da": 0.533,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -238,9 +238,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.3,
-    "da": 0.471,
-    "cells": 4,
-    "items": 690,
+    "da": 0.478,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -249,9 +249,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.492,
-    "cells": 4,
-    "items": 690,
+    "da": 0.5,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -260,9 +260,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.546,
-    "cells": 4,
-    "items": 690,
+    "da": 0.519,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -271,9 +271,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 0.494,
-    "cells": 4,
-    "items": 690,
+    "da": 0.493,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -282,9 +282,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.55,
-    "cells": 4,
-    "items": 690,
+    "da": 0.544,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -293,9 +293,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.532,
-    "cells": 4,
-    "items": 690,
+    "da": 0.552,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -304,9 +304,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 0.565,
-    "cells": 4,
-    "items": 690,
+    "da": 0.554,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -315,9 +315,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.59,
-    "cells": 4,
-    "items": 690,
+    "da": 0.56,
+    "cells": 5,
+    "items": 1051,
     "refs": "1.7B"
    },
    {
@@ -326,9 +326,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.1,
-    "da": 0.431,
+    "da": 0.429,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -339,7 +339,7 @@
     "frac": 0.2,
     "da": 0.52,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -350,7 +350,7 @@
     "frac": 0.3,
     "da": 0.472,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -359,9 +359,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.4,
-    "da": 0.506,
+    "da": 0.503,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -370,9 +370,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.5,
-    "da": 0.52,
+    "da": 0.518,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -381,9 +381,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.6,
-    "da": 0.418,
+    "da": 0.413,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -392,9 +392,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.7,
-    "da": 0.524,
+    "da": 0.522,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -403,9 +403,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.8,
-    "da": 0.487,
+    "da": 0.48,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -414,9 +414,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.9,
-    "da": 0.502,
+    "da": 0.504,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -425,9 +425,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 1.0,
-    "da": 0.489,
+    "da": 0.503,
     "cells": 6,
-    "items": 795,
+    "items": 1074,
     "refs": "1.7B"
    },
    {
@@ -436,9 +436,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.1,
-    "da": 0.418,
+    "da": 0.42,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -447,9 +447,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.2,
-    "da": 0.456,
+    "da": 0.453,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -458,9 +458,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.3,
-    "da": 0.426,
+    "da": 0.432,
     "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -469,75 +469,75 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
+    "da": 0.461,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.5,
+    "da": 0.473,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 0.484,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.7,
+    "da": 0.484,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 0.485,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.9,
+    "da": 0.488,
+    "cells": 6,
+    "items": 1079,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 1.0,
     "da": 0.446,
     "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.5,
-    "da": 0.468,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.6,
-    "da": 0.47,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.7,
-    "da": 0.493,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.8,
-    "da": 0.499,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.9,
-    "da": 0.482,
-    "cells": 6,
-    "items": 798,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 1.0,
-    "da": 0.448,
-    "cells": 6,
-    "items": 798,
+    "items": 1079,
     "refs": "1.7B"
    },
    {
@@ -546,9 +546,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.1,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -557,9 +557,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.2,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.5,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -568,9 +568,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.3,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.25,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -579,9 +579,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.4,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -591,8 +591,8 @@
     "proxy_size": "1.7B",
     "frac": 0.5,
     "da": 1.0,
-    "cells": 3,
-    "items": 3,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -601,9 +601,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.6,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.5,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -613,8 +613,8 @@
     "proxy_size": "1.7B",
     "frac": 0.7,
     "da": 1.0,
-    "cells": 3,
-    "items": 3,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -624,8 +624,8 @@
     "proxy_size": "1.7B",
     "frac": 0.8,
     "da": 1.0,
-    "cells": 3,
-    "items": 3,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -634,9 +634,9 @@
     "population": "bpb_macro",
     "proxy_size": "1.7B",
     "frac": 0.9,
-    "da": 1.0,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B"
    },
    {
@@ -645,10 +645,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.1,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -656,10 +656,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.2,
-    "da": 0.5,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -667,10 +667,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.3,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -678,10 +678,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.4,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -689,10 +689,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.5,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -700,10 +700,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.6,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -711,10 +711,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.7,
-    "da": 0.5,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -722,10 +722,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.8,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -733,10 +733,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 0.9,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -744,10 +744,10 @@
     "population": "bpb_macro",
     "proxy_size": "175M",
     "frac": 1.0,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -755,9 +755,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -766,9 +766,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.5,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -777,9 +777,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.3,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.25,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -788,9 +788,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -799,9 +799,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.5,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -810,9 +810,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.5,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -821,9 +821,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.667,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -832,9 +832,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.333,
-    "cells": 3,
-    "items": 3,
+    "da": 0.25,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -843,9 +843,9 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 1.0,
-    "cells": 3,
-    "items": 3,
+    "da": 0.75,
+    "cells": 4,
+    "items": 4,
     "refs": "1.7B/1B"
    },
    {
@@ -865,10 +865,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.1,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -876,10 +876,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.2,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -887,10 +887,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.3,
-    "da": 0.5,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -898,10 +898,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.4,
-    "da": 0.167,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -909,10 +909,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.5,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -920,10 +920,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.6,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -931,10 +931,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.7,
-    "da": 0.167,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -942,10 +942,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.8,
-    "da": 0.167,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -953,10 +953,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 0.9,
-    "da": 0.167,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -964,10 +964,10 @@
     "population": "bpb_macro",
     "proxy_size": "350M",
     "frac": 1.0,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -975,10 +975,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.1,
-    "da": 0.333,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -986,10 +986,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.2,
-    "da": 0.167,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -997,10 +997,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.3,
-    "da": 0.5,
+    "da": 0.333,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1008,10 +1008,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.4,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1019,10 +1019,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.5,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1030,10 +1030,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.6,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1041,10 +1041,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.7,
-    "da": 0.833,
+    "da": 0.667,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1052,10 +1052,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.8,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1063,10 +1063,10 @@
     "population": "bpb_macro",
     "proxy_size": "600M",
     "frac": 0.9,
-    "da": 0.667,
+    "da": 0.5,
     "cells": 6,
     "items": 6,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1075,8 +1075,8 @@
     "proxy_size": "600M",
     "frac": 1.0,
     "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "cells": 6,
+    "items": 6,
     "refs": "1.7B/1B"
    },
    {
@@ -1085,175 +1085,175 @@
     "population": "bpb_trained",
     "proxy_size": "1.7B",
     "frac": 0.1,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.2,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.3,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.4,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.5,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.6,
-    "da": 0.967,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.7,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.8,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1.7B",
-    "frac": 0.9,
-    "da": 1.0,
-    "cells": 1,
-    "items": 30,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.1,
-    "da": 0.59,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.2,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.3,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.4,
-    "da": 0.505,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.5,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.6,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "frac": 0.7,
     "da": 0.75,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.3,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.5,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 0.983,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.7,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1.7B",
+    "frac": 0.9,
+    "da": 1.0,
+    "cells": 2,
+    "items": 38,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.1,
+    "da": 0.925,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.2,
+    "da": 0.445,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.3,
+    "da": 0.945,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.4,
+    "da": 0.94,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.5,
+    "da": 0.945,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.6,
+    "da": 0.945,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "175M",
+    "frac": 0.7,
+    "da": 0.695,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1261,10 +1261,10 @@
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.8,
-    "da": 0.5,
+    "da": 0.945,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1272,10 +1272,10 @@
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 0.9,
-    "da": 0.5,
+    "da": 0.945,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1283,10 +1283,10 @@
     "population": "bpb_trained",
     "proxy_size": "175M",
     "frac": 1.0,
-    "da": 0.5,
+    "da": 0.945,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1294,9 +1294,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.533,
-    "cells": 2,
-    "items": 45,
+    "da": 0.429,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1305,9 +1305,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.483,
-    "cells": 2,
-    "items": 45,
+    "da": 0.409,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1316,9 +1316,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.3,
-    "da": 0.767,
-    "cells": 2,
-    "items": 45,
+    "da": 0.631,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1327,9 +1327,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.967,
-    "cells": 2,
-    "items": 45,
+    "da": 0.851,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1338,9 +1338,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.967,
-    "cells": 2,
-    "items": 45,
+    "da": 0.878,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1349,9 +1349,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 0.867,
-    "cells": 2,
-    "items": 45,
+    "da": 0.898,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1360,9 +1360,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.967,
-    "cells": 2,
-    "items": 45,
+    "da": 0.938,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1371,9 +1371,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.967,
-    "cells": 2,
-    "items": 45,
+    "da": 0.958,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1382,9 +1382,9 @@
     "population": "bpb_trained",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 1.0,
-    "cells": 2,
-    "items": 45,
+    "da": 0.987,
+    "cells": 3,
+    "items": 95,
     "refs": "1.7B/1B"
    },
    {
@@ -1404,10 +1404,10 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.1,
-    "da": 0.737,
+    "da": 0.302,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1415,10 +1415,10 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.2,
-    "da": 0.727,
+    "da": 0.302,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1426,10 +1426,10 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.3,
-    "da": 0.687,
+    "da": 0.252,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1437,10 +1437,10 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.4,
-    "da": 0.58,
+    "da": 0.215,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1448,10 +1448,10 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.5,
-    "da": 0.577,
+    "da": 0.392,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1459,142 +1459,142 @@
     "population": "bpb_trained",
     "proxy_size": "350M",
     "frac": 0.6,
-    "da": 0.617,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "frac": 0.7,
-    "da": 0.628,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "frac": 0.8,
-    "da": 0.603,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "frac": 0.9,
-    "da": 0.512,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "350M",
-    "frac": 1.0,
-    "da": 0.494,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.1,
-    "da": 0.312,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.2,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.3,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.4,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.5,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.6,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.7,
-    "da": 0.5,
-    "cells": 4,
-    "items": 103,
-    "refs": "1.7B/1B/600M"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
-    "frac": 0.8,
     "da": 0.495,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "frac": 0.7,
+    "da": 0.343,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 0.358,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "frac": 0.9,
+    "da": 0.473,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.524,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.1,
+    "da": 0.242,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.3,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.4,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.5,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.6,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.7,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "frac": 0.8,
+    "da": 0.06,
+    "cells": 4,
+    "items": 103,
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1602,10 +1602,10 @@
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 0.9,
-    "da": 0.5,
+    "da": 0.055,
     "cells": 4,
     "items": 103,
-    "refs": "1.7B/1B/600M"
+    "refs": "1.7B/1B"
    },
    {
     "intervention": "arch",
@@ -1613,9 +1613,9 @@
     "population": "bpb_trained",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.0,
-    "cells": 2,
-    "items": 45,
+    "da": 0.055,
+    "cells": 4,
+    "items": 103,
     "refs": "1.7B/1B"
    },
    {
@@ -1833,9 +1833,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.1,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1844,9 +1844,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.2,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.8,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1856,8 +1856,8 @@
     "proxy_size": "1B",
     "frac": 0.3,
     "da": 1.0,
-    "cells": 4,
-    "items": 4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1866,9 +1866,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.4,
-    "da": 0.25,
-    "cells": 4,
-    "items": 4,
+    "da": 0.4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1877,9 +1877,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.5,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.8,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1888,9 +1888,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.6,
-    "da": 1.0,
-    "cells": 4,
-    "items": 4,
+    "da": 0.8,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1899,9 +1899,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.7,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1910,9 +1910,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.8,
-    "da": 0.75,
-    "cells": 4,
-    "items": 4,
+    "da": 0.6,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1921,9 +1921,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 0.25,
-    "cells": 4,
-    "items": 4,
+    "da": 0.2,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -1932,9 +1932,9 @@
     "population": "loss",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.5,
-    "cells": 4,
-    "items": 4,
+    "da": 0.4,
+    "cells": 5,
+    "items": 5,
     "refs": "1.7B"
    },
    {
@@ -2163,9 +2163,9 @@
     "population": "benchmark",
     "proxy_size": "1.7B",
     "frac": 0.1,
-    "da": 0.501,
+    "da": 0.474,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2173,109 +2173,109 @@
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1.7B",
+    "frac": 0.2,
+    "da": 0.489,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.3,
+    "da": 0.492,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.4,
+    "da": 0.613,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.5,
+    "da": 0.519,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.6,
+    "da": 0.587,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.7,
+    "da": 0.583,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.8,
+    "da": 0.62,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1.7B",
+    "frac": 0.9,
+    "da": 0.762,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 0.1,
+    "da": 0.477,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "175M",
     "frac": 0.2,
     "da": 0.459,
     "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.3,
-    "da": 0.463,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.4,
-    "da": 0.624,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.5,
-    "da": 0.495,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.6,
-    "da": 0.567,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.7,
-    "da": 0.599,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.8,
-    "da": 0.629,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1.7B",
-    "frac": 0.9,
-    "da": 0.785,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.1,
-    "da": 0.489,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 0.2,
-    "da": 0.467,
-    "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2284,9 +2284,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.3,
-    "da": 0.472,
+    "da": 0.468,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2295,9 +2295,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.4,
-    "da": 0.516,
+    "da": 0.487,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2306,9 +2306,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.5,
-    "da": 0.484,
+    "da": 0.492,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2317,9 +2317,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.6,
-    "da": 0.546,
+    "da": 0.56,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2328,9 +2328,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.7,
-    "da": 0.511,
+    "da": 0.517,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2339,9 +2339,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.8,
-    "da": 0.445,
+    "da": 0.456,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2350,108 +2350,108 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 0.9,
-    "da": 0.513,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "frac": 1.0,
-    "da": 0.47,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.1,
-    "da": 0.527,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.2,
-    "da": 0.547,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.3,
-    "da": 0.482,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.4,
-    "da": 0.495,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.5,
-    "da": 0.461,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.6,
-    "da": 0.504,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.7,
-    "da": 0.493,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "frac": 0.8,
     "da": 0.514,
     "cells": 3,
-    "items": 314,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "frac": 1.0,
+    "da": 0.477,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.1,
+    "da": 0.533,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.2,
+    "da": 0.513,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.3,
+    "da": 0.494,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.4,
+    "da": 0.479,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.5,
+    "da": 0.468,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.6,
+    "da": 0.488,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.7,
+    "da": 0.498,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "frac": 0.8,
+    "da": 0.513,
+    "cells": 3,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2460,9 +2460,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 0.9,
-    "da": 0.491,
+    "da": 0.484,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2471,9 +2471,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.469,
+    "da": 0.478,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2482,9 +2482,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 0.1,
-    "da": 0.479,
+    "da": 0.475,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2495,7 +2495,7 @@
     "frac": 0.2,
     "da": 0.47,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2503,120 +2503,120 @@
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "frac": 0.3,
-    "da": 0.454,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.4,
-    "da": 0.412,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.5,
-    "da": 0.432,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.6,
-    "da": 0.448,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.7,
-    "da": 0.51,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.8,
-    "da": 0.455,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 0.9,
-    "da": 0.478,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "frac": 1.0,
-    "da": 0.478,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.1,
-    "da": 0.447,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "frac": 0.2,
-    "da": 0.489,
-    "cells": 3,
-    "items": 314,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "benchmark",
-    "proxy_size": "600M",
     "frac": 0.3,
     "da": 0.464,
     "cells": 3,
-    "items": 314,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.4,
+    "da": 0.431,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.5,
+    "da": 0.457,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.6,
+    "da": 0.457,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.7,
+    "da": 0.503,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.8,
+    "da": 0.462,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 0.9,
+    "da": 0.493,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "frac": 1.0,
+    "da": 0.48,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.1,
+    "da": 0.482,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.2,
+    "da": 0.491,
+    "cells": 3,
+    "items": 422,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "frac": 0.3,
+    "da": 0.462,
+    "cells": 3,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2625,9 +2625,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.4,
-    "da": 0.423,
+    "da": 0.442,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2636,9 +2636,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.5,
-    "da": 0.56,
+    "da": 0.543,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2647,9 +2647,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.6,
-    "da": 0.493,
+    "da": 0.501,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2658,9 +2658,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.7,
-    "da": 0.483,
+    "da": 0.467,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2669,9 +2669,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.8,
-    "da": 0.471,
+    "da": 0.466,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2680,9 +2680,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 0.9,
-    "da": 0.446,
+    "da": 0.454,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -2691,9 +2691,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.402,
+    "da": 0.406,
     "cells": 3,
-    "items": 314,
+    "items": 422,
     "refs": "1.7B"
    },
    {
@@ -4323,14 +4323,14 @@
    "arch|benchmark|L50": "1.7B",
    "arch|bpb_macro|L1": "1.7B",
    "arch|bpb_macro|L2": "1.7B",
-   "arch|bpb_macro|L8": "600M",
+   "arch|bpb_macro|L8": "1.7B",
    "arch|bpb_macro|L15": "1B",
    "arch|bpb_macro|L30": "1.7B",
-   "arch|bpb_macro|L50": "600M",
-   "arch|bpb_trained|L8": "600M",
+   "arch|bpb_macro|L50": "1B",
+   "arch|bpb_trained|L8": "1.7B",
    "arch|bpb_trained|L15": "1B",
    "arch|bpb_trained|L30": "1.7B",
-   "arch|bpb_trained|L50": "600M",
+   "arch|bpb_trained|L50": "1B",
    "arch|loss|L1": "1.7B",
    "arch|loss|L2": "1.7B",
    "arch|loss|L8": "1.7B",

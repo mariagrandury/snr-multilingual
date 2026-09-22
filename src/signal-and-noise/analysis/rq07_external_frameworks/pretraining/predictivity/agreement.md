@@ -1,7 +1,7 @@
 # Top-K reliability agreement
 
-Variant used: **Star Rel. Discrepancy** (`rel_star_discrepancy`)
-Apertus SNR column: `snr_rel_star_discrepancy_1B`  ·  AllenAI SNR column: `snr_rel_star_discrepancy_1B`
+Variant used: **Average Absolute Deviation** (`aad`)
+Apertus SNR column: `snr_aad_1B`  ·  AllenAI SNR column: `snr_aad_1B`
 Shared-task universe: **4** tasks.
 
 ## ⚠️ Methodological caveat — MMLU aliasing
@@ -14,12 +14,12 @@ Other Apertus → AllenAI aliases that hit the shared set: _none_.
 
 ## Cross-corpus agreement over the shared tasks (the result)
 
-Best variant `rel_star_discrepancy`, n = 3 shared tasks:
+Best variant `aad`, n = 3 shared tasks:
 
 | metric | value |
 |---|---:|
-| **Pearson r** (log₁₀ SNR values) | **+0.854** |
-| **Spearman ρ** (rank order) | **+0.500** |
+| **Pearson r** (log₁₀ SNR values) | **+0.993** |
+| **Spearman ρ** (rank order) | **+1.000** |
 
 > With only 4 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 4 spans the whole universe, so Jaccard is trivially 1.0. Only K < 4 is reported below.
 
@@ -33,17 +33,17 @@ Best variant `rel_star_discrepancy`, n = 3 shared tasks:
 
 ### Apertus
 
-| task          |    snr |
-|:--------------|-------:|
-| hellaswag     | 44.339 |
-| arc_challenge | 35.596 |
-| arc_easy      | 33.446 |
+| task          |   snr |
+|:--------------|------:|
+| arc_easy      | 0.841 |
+| hellaswag     | 0.608 |
+| arc_challenge | 0.517 |
 
 ### AllenAI
 
-| task          |     snr |
-|:--------------|--------:|
-| mmlu          | 155.287 |
-| hellaswag     |  86.073 |
-| arc_easy      |  62.626 |
-| arc_challenge |  53.364 |
+| task          |   snr |
+|:--------------|------:|
+| arc_easy      | 9.76  |
+| hellaswag     | 5.039 |
+| mmlu          | 5.011 |
+| arc_challenge | 4.157 |
