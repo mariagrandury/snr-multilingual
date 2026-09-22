@@ -324,6 +324,45 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py build --dry-run
 python3.11 src/evals/scripts/rewrite_items_gemini.py build
 ```
 
+**3a. No bucket? Run it online instead.** `online` uses the same prompt and
+the same validation but calls `generate_content` directly, so it needs
+nothing but ADC — no Cloud Storage, no `build`/`submit`/`fetch`. It costs
+**double** the batch price and takes wall-clock time instead of a queue,
+so it is the fallback while `storage.buckets.create` is missing, not the
+default.
+
+```bash
+python3.11 src/evals/scripts/rewrite_items_gemini.py online --family include_base_44 --L 50
+python3.11 src/evals/scripts/rewrite_items_gemini.py online --family belebele --L 50
+```
+
+**`--L 50` is not an optimisation, it is the right task set.** The ladder
+only scores a task on models that trained its language (rule 2,
+`utils.trained_only`), so a twin outside the L-cell's languages is paid for
+and never read — the rq00 gate's own task counts are exactly this set. L50
+keeps 124 of the 185 tasks:
+
+| family | all | L50 | items (L50) |
+|---|---:|---:|---:|
+| belebele | 105 | 59 | 53,100 |
+| global_mmlu_full | 37 | 29 | 407,192 |
+| include_base_44 | 43 | 36 | 18,337 |
+
+On belebele that is $38 and ~3 hours saved online; on Global-MMLU, 112k
+items. `--scheme` picks the scheme `--L` refers to (default A).
+
+Run one family at a time. Two concurrent runs at the default concurrency
+put 24 requests in flight, which is where the shared quota collapses — the
+aggregate is slower than running them in sequence.
+
+Every answer is appended and flushed as it lands and a re-run skips the ids
+already written, so a killed login-node process loses at most the requests
+in flight — re-run the same command to continue. `--limit N` caps new items
+per task, `--concurrency` defaults to 12: Gemini 3.x online runs on Vertex's
+dynamic shared quota, where 12 threads sustain ~2.9 items/s while 24 trips
+429s and collapses throughput to 0.3 (measured 2026-09-20). It prints rate,
+ETA and running cost every 200 items.
+
 **3. Submit.** One batch job per task (185 files of 1–20 MB): each is
 uploaded to `gs://<bucket>/rfgm/requests/<task>.jsonl` and becomes the
 job's source, and the answers land in `…/<task>/dest`. Both URIs and the
@@ -339,13 +378,25 @@ python3.11 src/evals/scripts/rewrite_items_gemini.py status
 in Cloud Storage, matches each answer back to its item — Vertex drops
 everything outside `request` and echoes the request instead of a key, so
 the match is on the prompt text, and any line that matches nothing is
-counted and skipped rather than written — validates each item — JSON with a non-empty stem that ends
-without whitespace or a colon, exactly four non-empty pairwise-distinct
+counted and skipped rather than written — validates each item — JSON with a non-empty stem (a
+trailing colon, dash or ellipsis is trimmed rather than rejected: five of
+the six pilot rejects were a colon, and they fell on Basque 3/10 and
+Persian 2/20 against 0 of 180 elsewhere, a per-language item loss this
+comparison cannot absorb), exactly four non-empty pairwise-distinct
 choices, no choice appearing as a word in the stem (answer leak), the
-majority Unicode script unchanged (the cheap "still in its language" check;
-it cannot tell Spanish from English, step 5 covers the Latin-script
-languages) — and writes `<task>.jsonl` (accepted) and
-`_rejects/<task>.jsonl` (with reasons). A task file is written only from a
+majority Unicode script unchanged, plus a per-choice script check for the
+options the source wrote in the item's own script (the per-item majority was
+blind to a Greek item whose four numerals came back in Latin; options that
+were already off-script, such as a bare `"a, b"`, are skipped). Kana,
+katakana, hangul and han count as one script: Japanese mixes kanji and kana
+within a sentence, and comparing the per-choice majority without folding
+them rejected 30.9 % of Japanese INCLUDE items against 0-2 % elsewhere — an
+uneven item loss across languages is the one bias this comparison cannot
+absorb. Script is the cheap "still in its language" check and cannot tell
+Spanish from English; step 5 covers the Latin-script languages. Writes
+`<task>.jsonl` (accepted) and `_rejects/<task>.jsonl` (with the reason and
+what the model produced, so a reject can be re-judged without paying for the
+call again; `online --retry-rejects` re-runs them). A task file is written only from a
 SUCCEEDED job, so a partial run never leaves a half file; FAILED / EXPIRED
 jobs are cleared and `submit` resubmits them (from the object already in
 the bucket); rejected items get one more
