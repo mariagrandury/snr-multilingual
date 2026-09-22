@@ -87,15 +87,20 @@ mkdir -p "$OUT" "$LOGS"
 # The scheme registry in ../launch_trainings.py owns which data schemes exist,
 # where each one builds and which settings it defines — read it here rather than
 # restating it, so a scheme added there gets its build jobs for free. One line
-# per (scheme, setting) FineWeb-2 build; L=1 is 100% English and has none.
+# per (scheme, setting) FineWeb-2 build. L=1 is 100% English: normally that is
+# the one shared english build and there is no job, but a scheme whose registry
+# entry names its own `english` corpus (the edu-filter axis) builds an English
+# dataset of its own instead. The fourth field carries that fact to
+# variant_dir, so the suppression below cannot be forgotten on a later run.
 PLAN=$(python3.11 - <<'PY'
 import sys
 sys.path.insert(0, "/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain")
 from launch_trainings import DATA_SCHEMES
 for name, v in DATA_SCHEMES.items():
+    own = "1" if v.get("english") else "0"
     for L in sorted(v["langs"]):
-        if L != 1:
-            print(f"{name}:{v['subdir']}:{L}")
+        if L != 1 or v.get("english"):
+            print(f"{name}:{v['subdir']}:{L}:{own}")
 PY
 )
 
@@ -103,12 +108,34 @@ PY
 # name is a fixed fineweb_L{L}). Symlink the shared english build + validation
 # manifest into it so each scheme dir is a complete data_dir; english may
 # dangle until built (a fineweb build needs only the manifest, which exists).
-variant_dir() { # <root> <subdir> -> the scheme's data_dir, made complete
-  local dir=$1${2:+/$2}
+variant_dir() { # <root> <subdir> [owns_english] -> the scheme's data_dir, made complete
+  local dir=$1${2:+/$2} own=${3:-0} f
+  local links="english_dclm.bin english_dclm.idx validation.manifest.json"
+  # A scheme that builds its OWN English gets only the manifest linked in.
+  # Linking the shared english there would be silent and expensive both ways:
+  # before its build, its cells would read scheme A's English and be identical
+  # to scheme A with no error; after it, `ln -sfn` REPLACES a regular file, so
+  # the link would destroy a finished 736 GB build.
+  [ "$own" = 1 ] && links=validation.manifest.json
+  # Second, independent test of the same fact, so the suppression does not rest
+  # on the PLAN's 4th field surviving a future edit: a directory that already
+  # holds an english build of its own owns its English, whatever $own says. It
+  # matters because the per-file guard below cannot protect english_dclm.idx —
+  # create_data_mixture writes the .idx only in finalize(), so for the ~15h a
+  # build takes that name does not exist, and a link created into that gap
+  # would have finalize() write straight through it onto the shared index.
+  for f in english_dclm.plan.json english_dclm.source english_dclm.checkpoint.json; do
+    [ -e "$dir/$f" ] && links=validation.manifest.json
+  done
   if [ "$DRY" != --dry-run ]; then   # a dry run prints, it does not touch the store
     mkdir -p "$dir" || return 1
     if [ "$dir" != "$OUT" ]; then    # the master root IS where those two live
-      for f in english_dclm.bin english_dclm.idx validation.manifest.json; do
+      for f in $links; do
+        # Belt and braces for the same hazard: never turn a real file into a link.
+        if [ -f "$dir/$f" ] && [ ! -L "$dir/$f" ]; then
+          echo "  $dir/$f is a real file — leaving it alone" >&2
+          continue
+        fi
         ln -sfn "$OUT/$f" "$dir/$f" || return 1
       done
     fi
@@ -150,7 +177,13 @@ L2_DEP=(); [ -n "$OLD_L2" ] && L2_DEP=(--dependency=afterany:"$OLD_L2")
 echo "english gated after: ${MAIN:-<none running>}; L2 gated after: ${OLD_L2:-<none running>}"
 submit build-en "BUILD_SCHEME=A,BUILD_STAGE=english,BUILD_OUT=$OUT" "${EN_DEP[@]}"
 
-while IFS=: read -r scheme subdir L; do
+while IFS=: read -r scheme subdir L own; do
+  # L=1 reaches this loop only for a scheme with its own English corpus.
+  if [ "$L" = 1 ]; then
+    vdir=$(variant_dir "$OUT" "$subdir" "$own") || { echo "cannot prepare $OUT/$subdir" >&2; exit 1; }
+    submit "build-en-${scheme,,}" "BUILD_SCHEME=$scheme,BUILD_STAGE=english,BUILD_OUT=$vdir"
+    continue
+  fi
   name="build-${scheme,,}-L$L"
   root=$OUT extra=
   # A rebuild keeps a name of its own: same-name jobs are a singleton chain
@@ -164,12 +197,12 @@ while IFS=: read -r scheme subdir L; do
   # (165B) reaches both, which is harmless for a finished build and exactly
   # right for the new root.
   if [[ " ${REBUILD_165[*]} " == *" $scheme:$L "* ]]; then
-    vdir=$(variant_dir "$REBUILD_165_ROOT" "$subdir") || { echo "cannot prepare $REBUILD_165_ROOT/$subdir" >&2; exit 1; }
+    vdir=$(variant_dir "$REBUILD_165_ROOT" "$subdir" "$own") || { echo "cannot prepare $REBUILD_165_ROOT/$subdir" >&2; exit 1; }
     submit "build-${scheme,,}-L$L-165b" "BUILD_SCHEME=$scheme,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$vdir,BUILD_DST=$REBUILD_165_DST"
   fi
   dep=()
   if [ "$scheme:$L" = A:2 ]; then dep=("${L2_DEP[@]}"); fi
   # On its own line: a failure inside $(...) used as an argument is lost.
-  vdir=$(variant_dir "$root" "$subdir") || { echo "cannot prepare $root/$subdir" >&2; exit 1; }
+  vdir=$(variant_dir "$root" "$subdir" "$own") || { echo "cannot prepare $root/$subdir" >&2; exit 1; }
   submit "$name" "BUILD_SCHEME=$scheme,BUILD_STAGE=fineweb,BUILD_SETTING=$L,BUILD_OUT=$vdir$extra" "${dep[@]}"
 done <<< "$PLAN"

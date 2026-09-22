@@ -66,16 +66,19 @@ Assumptions and behaviors:
     proportions are proportional to p^(1/T), where p is the estimated-token
     proportion. T=1 reproduces proportional-to-tokens; larger T flattens
     toward uniform (T = 1/alpha, so the common alpha=0.3 is T~3.3).
-  - DCLM is treated as a single monolingual (English) source with a flat
-    parquet directory.
+  - DCLM is treated as a single monolingual (English) source. Its directory
+    is normally flat; a corpus laid out one directory per Common Crawl
+    snapshot (plain FineWeb) is read one file per crawl in rotation instead
+    (see discover_dclm_files).
   - FineWeb-2 language folders follow {lang}_{script} naming (e.g. deu_Latn).
   - When --validation_manifest is given, training skips the leading
     val_doc_count rows of each source's first file (the validation rows). With
     no manifest, training uses all rows and may overlap the validation set.
   - Sources are written sequentially (all of language A, then B, then DCLM).
     No cross-source shuffling; Megatron's data loader shuffles at training time.
-  - Parquet files within each source are processed in sorted filename order
-    for deterministic, resumable iteration.
+  - Parquet files within each source are processed in a deterministic,
+    resumable order: sorted filename for a flat source, one file per
+    subdirectory in rotation for a nested one.
   - Each source stops after the document that meets or first exceeds its token
     target (overshoot is at most one document, typically a few thousand tokens).
   - Empty or null text rows are filtered out before tokenization and are not
@@ -92,9 +95,11 @@ Assumptions and behaviors:
 import argparse
 import json
 import os
+import re
 import struct
+import sys
 import time
-from itertools import accumulate
+from itertools import accumulate, zip_longest
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -411,13 +416,33 @@ def discover_fineweb_languages(fineweb_dir: str) -> Dict[str, List[str]]:
     return languages
 
 
-def discover_dclm_files(dclm_dir: str) -> List[str]:
-    """Return sorted list of DCLM parquet file paths."""
-    return sorted(
-        os.path.join(dclm_dir, f)
-        for f in os.listdir(dclm_dir)
-        if f.endswith(".parquet")
-    )
+def discover_dclm_files(dclm_dir: str, max_year: Optional[int] = None) -> List[str]:
+    """Return the English source's parquet files, in the order the build reads.
+
+    A flat directory — every DCLM corpus, including the one every trained cell
+    read — is sorted by filename, unchanged. A corpus laid out one directory
+    per Common Crawl snapshot (plain FineWeb, 104 of them) is read one file per
+    crawl in rotation instead: the build is a deterministic prefix walk that
+    stops at its token target, so a plain sort would spend the whole budget
+    inside the earliest crawl. max_year drops the crawls after a given year
+    (FineWeb runs to 2024 where DCLM stops at 2022).
+    """
+    flat = sorted(f for f in os.listdir(dclm_dir) if f.endswith(".parquet"))
+    if flat:
+        return [os.path.join(dclm_dir, f) for f in flat]
+
+    per_crawl = []
+    for sub in sorted(os.listdir(dclm_dir)):
+        path = os.path.join(dclm_dir, sub)
+        if not os.path.isdir(path):
+            continue
+        year = re.search(r"(\d{4})", sub)
+        if max_year is not None and (not year or int(year.group(1)) > max_year):
+            continue
+        files = sorted(f for f in os.listdir(path) if f.endswith(".parquet"))
+        if files:
+            per_crawl.append([os.path.join(path, f) for f in files])
+    return [f for rank in zip_longest(*per_crawl) for f in rank if f is not None]
 
 
 # ---------------------------------------------------------------------------
@@ -526,6 +551,11 @@ def build_plan(
             "files": dclm_files,
             "target_tokens": dclm_target,
             "estimated_tokens": dclm_est,
+            # Which English corpus this build read. Recorded in the plan and
+            # the checkpoint so <prefix>.plan.json says what is in the .bin and
+            # a resume cannot append a different corpus to it.
+            "dir": args.dclm_dir,
+            "max_year": args.dclm_max_year,
         })
 
     if not sources:
@@ -542,7 +572,8 @@ def write_plan(output_prefix: str, sources: List[dict], target_tokens: int):
 
     Durable companion to print_plan's stdout. `files` is a count, not the
     list — the paths are long, reconstructible, and not what the analysis
-    wants.
+    wants. The English source also records which corpus it read: that is not
+    recoverable from the .bin, and at L=1 it IS the experimental condition.
     """
     plan = {
         "target_tokens": target_tokens,
@@ -551,6 +582,8 @@ def write_plan(output_prefix: str, sources: List[dict], target_tokens: int):
                 "target_tokens": s["target_tokens"],
                 "estimated_tokens": s["estimated_tokens"],
                 "n_files": len(s["files"]),
+                **({"dir": s["dir"], "max_year": s["max_year"]}
+                   if "dir" in s else {}),
             }
             for s in sources
         },
@@ -698,11 +731,18 @@ def process_sources(
     total_toks: int,
     args,
     val_skip_by_source: Optional[Dict[str, int]] = None,
+    exclude_ids: Optional[set] = None,
 ) -> Tuple[int, int]:
     """Stream through sources, tokenize, and write to the dataset.
 
     If val_skip_by_source is given, the first val_skip_by_source[name] rows of
     each source's first file are skipped (they belong to the validation set).
+
+    exclude_ids drops those documents from the English source by document id
+    instead. The positional skip only works for the corpus the validation set
+    was carved from; a different English corpus holds the same documents in
+    different files, and they carry the same Common Crawl `<urn:uuid:...>` id
+    in every corpus built from it.
 
     Returns updated (total_docs, total_toks).
     """
@@ -717,6 +757,8 @@ def process_sources(
         target = source["target_tokens"]
         files = source["files"]
         val_skip = val_skip_by_source.get(name, 0)
+        drop_ids = exclude_ids if (exclude_ids and name == "dclm") else None
+        n_dropped = 0
 
         # Check if this source is already complete
         prog = source_progress.get(name, {"file_idx": 0, "source_toks": 0})
@@ -733,6 +775,8 @@ def process_sources(
             f"{len(files)} files"
             + (f", skipping {val_skip} validation rows in first file"
                if val_skip else "")
+            + (f", excluding {len(drop_ids):,} validation documents by id"
+               if drop_ids else "")
         )
         if start_file_idx > 0:
             print(f"  Resuming from file {start_file_idx}, {source_toks/1e9:.4f}B tokens already written")
@@ -754,18 +798,27 @@ def process_sources(
             row_idx = 0
 
             for batch in pq.ParquetFile(parquet_path).iter_batches(
-                batch_size=args.batch_size, columns=["text"]
+                batch_size=args.batch_size,
+                columns=["text", "id"] if drop_ids else ["text"],
             ):
                 if source_toks >= target:
                     break
 
                 n_rows = batch.num_rows
                 texts = batch.column("text").to_pylist()
+                doc_ids = batch.column("id").to_pylist() if drop_ids else None
                 # Exclude the validation rows from the first file of this source.
                 # The boundary is by row index, so this is consistent on resume.
                 if row_idx < skip:
                     texts = texts[skip - row_idx:]
+                    if doc_ids is not None:
+                        doc_ids = doc_ids[skip - row_idx:]
                 row_idx += n_rows
+
+                if doc_ids is not None:
+                    kept = [t for t, i in zip(texts, doc_ids) if i not in drop_ids]
+                    n_dropped += len(texts) - len(kept)
+                    texts = kept
 
                 batch_texts = [t for t in texts if t is not None and len(t) > 0]
                 if not batch_texts:
@@ -827,6 +880,11 @@ def process_sources(
                     f"{source_docs:,} docs, {source_toks / 1e9:.4f}B tokens"
                 )
 
+        if drop_ids:
+            print(f"  excluded {n_dropped:,} of the {len(drop_ids):,} held-out "
+                  f"validation documents by id (this segment; a resumed build "
+                  f"counts from zero again)")
+
         if source_toks < target:
             print(
                 f"  WARNING: {name} exhausted before target! "
@@ -870,6 +928,26 @@ def main():
     parser.add_argument(
         "--top_k_languages", type=int, default=None,
         help="Select the top K languages by estimated token count",
+    )
+    parser.add_argument(
+        "--dclm_dir", type=str, default=DCLM_DIR,
+        help="Directory holding the English source's parquet files (default: "
+             "the DCLM-edu corpus every trained cell reads). A scheme that "
+             "varies the English corpus passes its own here; the build records "
+             "it in <prefix>.plan.json and refuses to resume against another.",
+    )
+    parser.add_argument(
+        "--dclm_max_year", type=int, default=None,
+        help="For an English corpus laid out one directory per Common Crawl "
+             "snapshot: ignore the crawls after this year (e.g. 2022, DCLM's "
+             "own window). Ignored for a flat corpus.",
+    )
+    parser.add_argument(
+        "--exclude_ids", type=str, default=None,
+        help="JSON list of document ids to drop from the English source — the "
+             "documents the shared validation set holds out. Use it instead of "
+             "the manifest's positional row skip whenever the English corpus "
+             "is not the one the validation set was carved from.",
     )
     parser.add_argument(
         "--temperature", type=float, default=1.0,
@@ -929,7 +1007,7 @@ def main():
     if args.build_validation:
         print("Discovering data sources (validation build)...")
         languages = discover_fineweb_languages(FINEWEB_DIR)
-        dclm_files = discover_dclm_files(DCLM_DIR)
+        dclm_files = discover_dclm_files(args.dclm_dir, args.dclm_max_year)
         print(f"  FineWeb-2: {len(languages)} languages")
         print(f"  DCLM: {len(dclm_files)} files")
         out_dir = os.path.dirname(os.path.abspath(args.output_prefix))
@@ -974,9 +1052,21 @@ def main():
     # Discover data
     print("Discovering data sources...")
     languages = discover_fineweb_languages(FINEWEB_DIR)
-    dclm_files = discover_dclm_files(DCLM_DIR)
+    dclm_files = discover_dclm_files(args.dclm_dir, args.dclm_max_year)
     print(f"  FineWeb-2: {len(languages)} languages")
-    print(f"  DCLM: {len(dclm_files)} files")
+    print(f"  DCLM ({args.dclm_dir}"
+          + (f", crawls <= {args.dclm_max_year}" if args.dclm_max_year else "")
+          + f"): {len(dclm_files)} files")
+
+    exclude_ids = None
+    if args.exclude_ids:
+        exclude_ids = set(json.loads(Path(args.exclude_ids).read_text()))
+        if not exclude_ids:
+            sys.exit(f"{args.exclude_ids} holds no ids; an empty list would "
+                     f"silently disable the exclusion and train on the "
+                     f"documents English BPB is measured on.")
+        print(f"Loaded {len(exclude_ids):,} validation document ids to exclude "
+              f"({args.exclude_ids})")
 
     # Build or reload plan
     if ckpt is not None:
@@ -988,6 +1078,16 @@ def main():
                 lang = sp["name"][len("fineweb_"):]
                 files = languages.get(lang, [])
             elif sp["name"] == "dclm":
+                if (sp.get("dir", DCLM_DIR) != args.dclm_dir
+                        or sp.get("max_year") != args.dclm_max_year):
+                    sys.exit(
+                        f"Checkpoint at {args.output_prefix} was built from "
+                        f"{sp.get('dir', DCLM_DIR)} (max_year "
+                        f"{sp.get('max_year')}), not {args.dclm_dir} (max_year "
+                        f"{args.dclm_max_year}). Resuming would append a "
+                        f"different corpus to the same .bin — build the new "
+                        f"corpus under its own --output_prefix."
+                    )
                 files = dclm_files
             else:
                 files = []
@@ -1030,7 +1130,7 @@ def main():
 
     total_docs, total_toks = process_sources(
         tokenizer, writer, sources, source_progress,
-        total_docs, total_toks, args, val_skip_by_source,
+        total_docs, total_toks, args, val_skip_by_source, exclude_ids,
     )
 
     writer.finalize()

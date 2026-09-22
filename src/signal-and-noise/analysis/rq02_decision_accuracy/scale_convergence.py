@@ -117,7 +117,8 @@ BY_LINE = {"overall": "one pooled line over every pair at the grid seed",
 # the list axis with no code change, once BT3 trains.
 AXIS_LABEL = {"L": "language count", "arch": "depth (deep vs shallow)",
               "list": "language list (A vs B)", "T": "temperature (T=1 vs T=3)",
-              "lang2": "2nd language (ru vs zh vs es)", "seed": "seed"}
+              "lang2": "2nd language (ru vs zh vs es)",
+              "en": "English corpus (edu filter on vs off)", "seed": "seed"}
 KEYS = DESIGN_AXES
 # The pooled line every grouping carries, drawn in black: every pair at the grid
 # seed, cross-L and cross-scheme included — the same population as by_L's first

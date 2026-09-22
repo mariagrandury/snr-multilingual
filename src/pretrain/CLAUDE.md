@@ -47,7 +47,7 @@ file defines it (`launch_trainings.arches_for`): the 3B exists in
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES|-dclmP|-fweb]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
@@ -55,12 +55,15 @@ names drop the `lm-` for a kind prefix instead
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
 Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 
-**The data axis is `DATA_SCHEMES`** (2026-09-10, five entries, `--scheme` on
+**The data axis is `DATA_SCHEMES`** (2026-09-10, eight entries, `--scheme` on
 `launch_trainings.py`, `pretrain_progress.py`, `sync_models_json.py`,
 `auto_evals_cscs.py` and `data/build_data_mixtures.py`): **A** resource-ranked
 at T=1 — the baseline, and the only one with no name label; **AT3** the same
 language lists at T=3; **B** diversity-first at L ∈ {8, 15, 30}; **ZH**/**ES**
-L2 with Chinese / Spanish instead of Russian, deep only. Each entry owns its
+L2 with Chinese / Spanish instead of Russian, deep only; **DCLMP**/**FWEB**
+the only two that vary the ENGLISH half instead (`english` in the registry) —
+`dclm_processed` and plain FineWeb, the edu-filter axis at L=1, where there is
+no FineWeb-2 half to vary (2026-09-22, `plan/l1_third_family.md`). Each entry owns its
 label, its data subdir, the settings it defines and its per-setting size cap,
 so a cell's scheme *is* its data and two schemes can never collide in a
 checkpoint dir, a W&B run id or a models.json key (which keeps the key

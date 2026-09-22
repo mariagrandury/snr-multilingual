@@ -62,11 +62,11 @@ as well as L100 (the flattened L50 build covers the 1.7B draw, see
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **173 runs**.
+Counting every scheme and the architectures each is trained in: **185 runs**.
 
 ![Planned runs per grid cell](../src/pretrain/pretrain_progress_plan.png)
 
@@ -81,7 +81,7 @@ the 1.7B row gained L=2, taking the grid from 52 to 56. The 2026-09-10 changes
 above kept the scheme-A deep grid at 56 cells — L100's ×3 rows came out, the
 1.7B row gained L15 and L50, the 1B column gained ×3 at L50 — and took the
 whole sweep, over every scheme and the architectures each is trained in, to
-191 runs. It is 173 since 2026-09-22, when the untrained shallow replicates
+191 runs. It is 185 since 2026-09-22 — 173 after the untrained shallow replicates
 and the 1B ×3 at L50 were dropped again.)
 
 ## Intervention axis (the design choice under test)

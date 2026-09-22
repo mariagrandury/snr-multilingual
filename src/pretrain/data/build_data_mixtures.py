@@ -94,6 +94,12 @@ HEADROOM = 0.10  # extra build margin so a build is never the binding constraint
 
 VALIDATION_PREFIX = "validation"
 ENGLISH_PREFIX = "english_dclm"
+# The ids of the documents English BPB is measured on, carved out of the
+# validation manifest's own `dclm` entry. A scheme whose English corpus is not
+# the one that entry was taken from cannot use the manifest's positional row
+# skip — the same documents sit in different files there — so it excludes them
+# by Common Crawl id instead.
+ENGLISH_VAL_IDS = "validation.dclm.ids.json"
 FINEWEB_PREFIX_FMT = "fineweb_L{L}"  # e.g. fineweb_L8
 
 
@@ -197,19 +203,94 @@ def build_validation(out: Path, all_langs: str, args) -> None:
     ], args.dry_run)
 
 
+def english_source(scheme: str) -> tuple:
+    """(corpus directory, crawl-year cap) this scheme's English is built from,
+    or (None, None) for the schemes that share scheme A's — create_data_mixture
+    owns that default, so it is named in exactly one place."""
+    cfg = DATA_SCHEMES[scheme]
+    return cfg.get("english"), cfg.get("english_max_year")
+
+
+def english_val_ids(out: Path, manifest: Path, args) -> Path:
+    """The ids of the held-out English validation documents, derived once from
+    the manifest's `dclm` entry (its first file and the row count carved out of
+    it) and cached beside the manifest. Reading them is a few thousand rows of
+    one parquet file."""
+    # Beside the REAL manifest: a scheme dir only symlinks it, and the ids are
+    # a property of the shared validation set, not of one scheme.
+    #
+    # KNOWN LIMITATION: the cache is not keyed on the manifest, so extending the
+    # validation set (build_validation does rebuild it when a language is added)
+    # leaves a stale ids file that excludes the wrong documents. Keying it means
+    # changing this file's format, and a build reads it on every resume — doing
+    # that while one is running is exactly the silent-wrong-data change this
+    # guard exists to prevent. Fix it between builds, not during one.
+    ids_path = manifest.resolve().parent / ENGLISH_VAL_IDS
+    if ids_path.exists() or args.dry_run:
+        return ids_path
+    entry = json.loads(manifest.read_text())["dclm"]
+    n = int(entry["val_doc_count"])
+    import pyarrow.parquet as pq  # only this path needs it
+    ids, first = [], entry["first_file"]
+    for batch in pq.ParquetFile(first).iter_batches(batch_size=4096, columns=["id"]):
+        ids.extend(batch.column("id").to_pylist())
+        if len(ids) >= n:
+            break
+    if len(ids) < n:
+        sys.exit(f"[{ENGLISH_VAL_IDS}] {first} holds {len(ids)} rows, fewer than "
+                 f"the {n} the manifest carved out of it")
+    ids_path.write_text(json.dumps(ids[:n]))
+    print(f"\n[{ENGLISH_VAL_IDS}] wrote {n:,} validation document ids from {first}")
+    return ids_path
+
+
 def build_english(out: Path, manifest: Path, args) -> None:
-    """Step 2: the single English (DCLM) dataset, validation rows excluded."""
+    """Step 2: the English (DCLM) dataset, validation documents excluded.
+
+    Most schemes share scheme A's build by symlink and never reach this. A
+    scheme that varies the English corpus (the edu-filter axis at L=1) builds
+    its own here, into its own directory, under the same 184B target.
+    """
     prefix = out / ENGLISH_PREFIX
+    source, max_year = english_source(args.scheme)
+    # Which corpus a finished english_dclm.bin came from is not recoverable
+    # from the file, so record it — the same guard build_fineweb applies to its
+    # language list. A build with no record predates this and is the default
+    # corpus's, which is why a missing record is fatal only for a scheme that
+    # overrides it.
+    sidecar = out / f"{ENGLISH_PREFIX}.source"
+    want = f"{source or 'default'}\nmax_year={max_year}"
     if already_built(prefix):
+        built = sidecar.read_text().strip() if sidecar.exists() else ""
+        if built != want and (built or source):
+            sys.exit(f"[{ENGLISH_PREFIX}] {prefix}.idx records "
+                     f"{built or '<no record, i.e. the default corpus>'}, but "
+                     f"scheme {args.scheme} wants {want.splitlines()[0]}; build "
+                     f"it in its own --output_dir instead of overwriting.")
         print(f"\n[{ENGLISH_PREFIX}] already built ({prefix}.idx present) — skipping.")
         return
-    run([
+    cmd = [
         sys.executable, str(CREATE_SCRIPT),
         "--target_tokens", str(english_target_tokens()),
         "--fineweb_pct", "0", "--dclm_pct", "100",
-        "--validation_manifest", str(manifest),
-        "--output_prefix", str(prefix),
-    ], args.dry_run)
+    ]
+    if source:
+        cmd += ["--dclm_dir", source]
+        if max_year:
+            cmd += ["--dclm_max_year", str(max_year)]
+        # A different corpus holds the validation documents in different files,
+        # so the manifest's positional row skip would carve out the wrong rows.
+        cmd += ["--exclude_ids", str(english_val_ids(out, manifest, args))]
+    else:
+        # The corpus the validation set was carved from: skip its leading rows,
+        # exactly as every finished build did — this branch reproduces the
+        # command the 184B build on capstor was made with, argument for
+        # argument.
+        cmd += ["--validation_manifest", str(manifest)]
+    cmd += ["--output_prefix", str(prefix)]
+    run(cmd, args.dry_run)
+    if not args.dry_run:
+        sidecar.write_text(want + "\n")
 
 
 def build_fineweb(out: Path, manifest: Path, sets: dict, setting: int, args) -> None:

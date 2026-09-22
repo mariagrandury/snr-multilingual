@@ -11,7 +11,7 @@ Two generations of models have gone through it:
 | grid | models | languages | status |
 |---|---|---|---|
 | **36-model sweep** (2026-04…06) | 4 sizes (175M–1B) × 3 FineWeb-Edu/FineWeb2 mixtures × 3 seeds, 86 tasks, plus a06 / HF references to 70B | 12 | complete; results kept as history in the RQ READMEs |
-| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 6 language settings (L = 1 … 50) × deep/shallow × six data schemes (A, AT3, B, BT3, ZH, ES) × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 50 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
+| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 6 language settings (L = 1 … 50) × deep/shallow × eight data schemes (A, AT3, B, BT3, ZH, ES, DCLMP, FWEB) × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 50 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
 
 ## The question, in the ladder's terms
 

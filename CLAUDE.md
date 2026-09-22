@@ -59,8 +59,8 @@ Two sweeps, in this order:
    `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
    in place into the predictivity scripts.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow × six data schemes
-   (A, AT3, B, BT3, ZH, ES — the `DATA_SCHEMES` registry in
+   90M–3B × 6 language settings × deep/shallow × eight data schemes
+   (A, AT3, B, BT3, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).

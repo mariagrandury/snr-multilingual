@@ -24,7 +24,8 @@ SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
 # data scheme the dash pattern, so colour stays free for the size.
 ARCH_WIDTH = {"deep": 1.4, "shallow": 0.8}
 SCHEME_DASH = {"A": "-", "B": "--", "AT3": ":", "BT3": (0, (5, 2)), "ZH": "-.",
-               "ES": (0, (3, 1, 1, 1))}
+               "ES": (0, (3, 1, 1, 1)), "DCLMP": (0, (6, 2, 2, 2)),
+               "FWEB": (0, (1, 1))}
 
 SEQ = LinearSegmentedColormap.from_list("snr_seq", ["#eaf2fd", "#0d366b"])
 DIV = LinearSegmentedColormap.from_list(

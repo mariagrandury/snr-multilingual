@@ -396,12 +396,19 @@ size × language-setting × seed, scratch → full D = 100·N budget).
 - Steady-state compute only; excludes cold-start, save-iter overhead, and queue
   wait. 56 runs: the grid gained the 1.7B@L2 cell and ×3 seeds at L2 on the
   175M and 600M columns.
-- **The grid is now 173 runs** (2026-09-22: both architectures, six data
+- **The grid is now 185 runs** (2026-09-22: both architectures, eight data
   schemes, per-size seed triples, replicates deep only — `launch_trainings.py`;
-  it peaked at 191 before the untrained shallow replicates were dropped). At the
-  rates above that is **~25,150 node-hours** steady-state and ~26,600 by wall
-  clock, 81% of it at 1B and 1.7B. The cost table below is computed on that
-  grid.
+  it peaked at 191 before the untrained shallow replicates were dropped). The
+  **first 173** of those are the **~25,150 node-hours** steady-state (~26,600 by
+  wall clock, 81% of it at 1B and 1.7B) that the cost table below is computed
+  on.
+- The **last 12** are the **DCLMP and FWEB** cells registered the same day (the
+  edu-filter axis at L=1, `plan/l1_third_family.md`): their data is being built,
+  none is launched, and they would add **~2,070 node-hours** if the training
+  decision goes ahead. That figure is on the `ITER_MS` basis (the table's own
+  `iters x ITER_MS x nodes`), which runs ~11% above measured wall time, where
+  the 25,150 above is on the measured-rate basis — so the two are not strictly
+  additive, and 2,070 is the conservative end.
 
 ## Checkpointing, conversion and eval cost
 

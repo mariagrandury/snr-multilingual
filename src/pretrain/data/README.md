@@ -9,11 +9,20 @@ which settings each one builds and at what sampling temperature all come from
   availability); `--check` verifies they are current. Never edit the JSONs by hand.
   AT3 has no file of its own: it is scheme A's lists sampled at T=3.
 - `build_data_mixtures.py` — drives `create_data_mixture.py` over one scheme
-  (`--scheme {A,AT3,B,ZH,ES}` and its own `--output_dir`): the shared
-  validation set, the English build, and one FineWeb-2 build per setting that
-  scheme defines. The temperature and every token target are derived from the
+  (`--scheme {A,AT3,B,BT3,ZH,ES,DCLMP,FWEB}` and its own `--output_dir`): the
+  shared validation set, the English build, and one FineWeb-2 build per setting
+  that scheme defines. A scheme with an `english` corpus in the registry
+  (DCLMP, FWEB — the edu-filter axis at L=1) builds its own English instead of
+  sharing scheme A's, and records which corpus in `<prefix>.source`. The temperature and every token target are derived from the
   grid (92 B where a 1.7B trains, 52 B where the largest rung is 1B), so there
   is no `--temperature` flag. A finished build records its language list and
   temperature in `<prefix>.languages` and is refused if either has since
   changed — give the new scheme its own `--output_dir` instead of overwriting.
 - `create_data_mixture.py` — tokenization + Megatron .bin/.idx writer.
+- `build_status.sh` — one line per build: DONE / building / STALLED / pending,
+  with the token count as it grows and, for a STALLED chain, the one `sbatch`
+  that resumes it. For an English build it also checks the realized size
+  against the largest run's draw, which nothing else does (`undersized_build`
+  never sees an English build — `fineweb_source` short-circuits at L=1).
+  Complements `data_progress.py`, which answers the other question: which
+  languages and how many tokens, as a heatmap.

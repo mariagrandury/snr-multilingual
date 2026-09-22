@@ -305,8 +305,17 @@ GRID_SEED = 1904                      # the plan grid's seed
 # Spanish in the second slot — so at L = 2 every setting is "English + one other
 # language" and A's own second language, Russian, is the axis's default level.
 SECOND_LANG = {"ZH": "zh", "ES": "es"}
+# ... and it encodes the ENGLISH corpus too, for the two schemes that vary it
+# (`english` in the registry). That axis exists because at L = 1 none of the
+# three above do: the mixture is 100 % English, so the only thing a second
+# family can differ by is which English. Without this column DCLMP, FWEB and A
+# are one row at L = 1, their pairs differ on NOTHING, and the mono-axis set
+# silently fills with (x-deep, shallow) pairs that report the DEPTH decision
+# three times over. Short level names for the schemes we have; any future one
+# falls back to its corpus path, which is ugly in a table but never wrong.
+ENGLISH_CORPUS = {"DCLMP": "dclm-noedu", "FWEB": "fineweb"}
 # What a cell is, apart from its size. The order is the one figures read in.
-DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "seed"]
+DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "en", "seed"]
 # The three pair sets a decision-accuracy table can be computed over (rule 15).
 #   multi-axis  every pair of design variants: rq02's convention to date, and
 #               two thirds of its pairs move more than one axis at once.
@@ -337,6 +346,8 @@ def design_axes(df: pd.DataFrame) -> pd.DataFrame:
     a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
     a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
     a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
+    a["en"] = a["scheme"].map(
+        lambda s: ENGLISH_CORPUS.get(s) or DATA_SCHEMES[s].get("english", "dclm-edu"))
     assert not a.index.duplicated().any(), "family does not determine its design axes"
     return a
 

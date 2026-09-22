@@ -79,11 +79,11 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **173 runs**.
+Counting every scheme and the architectures each is trained in: **185 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -94,7 +94,7 @@ Counting every scheme and the architectures each is trained in: **173 runs**.
 
 The intervention levels are suffix-marked in the run name: `--arch shallow`
 (width/depth 128, the model-depth intervention) and `--scheme` — the data
-axis, one of the five entries of `DATA_SCHEMES` in
+axis, one of the eight entries of `DATA_SCHEMES` in
 [`launch_trainings.py`](launch_trainings.py):
 
 | `--scheme` | What it changes | Where it applies |
@@ -102,7 +102,9 @@ axis, one of the five entries of `DATA_SCHEMES` in
 | `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
 | `AT3` | the same lists at T=3 — the temperature intervention | L ∈ {15, 30, 50}: L50 the whole ladder, L15 and L30 deep only (2026-09-20); seed 1904 only |
 | `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
+| `BT3` | B's L30 list at T=3 — the scheme x temperature pair | L=30 only, deep only, seed 1904 only, to the 1.7B rung |
 | `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, deep only, seed 1904 only; ZH to the 1.7B rung, ES to the 1B rung |
+| `DCLMP` / `FWEB` | the ENGLISH half, not the FineWeb-2 half: `dclm_processed` (DCLM without the educational-quality filter) and plain FineWeb (crawls <= 2022). The edu-filter axis at L=1 | L=1 only, deep only, seed 1904 only, to the 1.7B rung |
 
 Every scheme defines only the settings it covers and reads its own data
 directory, so a `--scheme` sweep submits exactly its own cells — there is no
@@ -174,7 +176,7 @@ launcher — the core design):
 | Dir | Contents |
 | --- | -------- |
 | [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
-| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B,ZH,ES}.json`](data/language_sets_schemeA.json) (the nested language lists; AT3 reuses A's), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per (scheme, setting) mixture, fanned out from `DATA_SCHEMES`), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap). |
+| [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B,ZH,ES}.json`](data/language_sets_schemeA.json) (the nested language lists; AT3 reuses A's), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per (scheme, setting) mixture, fanned out from `DATA_SCHEMES`), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap), [`build_status.sh`](data/build_status.sh) (is each build done, running or stalled — and the one sbatch to resume a dead chain). |
 | [`hyperparams/`](hyperparams/) | The reviewed architecture ladders: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
 
@@ -199,6 +201,7 @@ cd data
 ./launch_builds.sh --dry-run   # print the sbatch commands, submit nothing
 ./launch_builds.sh
 BUILD_PARTITION=preemptable ./launch_builds.sh   # start now, 24h segments
+bash build_status.sh                             # done / building / STALLED
 ```
 
 `BUILD_PARTITION` (with `BUILD_TIME`, which defaults to 23:59:00 there and

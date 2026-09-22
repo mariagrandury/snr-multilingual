@@ -16,8 +16,10 @@
 # Build ONE data mixture (english, or one FineWeb-2 setting of one scheme),
 # then self-chain past the 12h wall. Driven by --export vars so a single script
 # backs every per-mix job launched by launch_builds.sh:
-#   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES (A|AT3|B|ZH|ES) —
-#                 it carries the language lists, the temperature and the subdir
+#   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES
+#                 (A|AT3|B|BT3|ZH|ES|DCLMP|FWEB) — it carries the language
+#                 lists, the temperature, the subdir and, for DCLMP/FWEB, the
+#                 English corpus
 #   BUILD_STAGE   english|fineweb
 #   BUILD_SETTING L value (fineweb only)
 #   BUILD_OUT     output --data_dir (the scheme's dir, i.e. <root>/<subdir>)
@@ -87,7 +89,10 @@ if [ -n "${BUILD_DST:-}" ]; then export DST="$BUILD_DST"; fi
 # rebuilds: their english link points outside SRC, where the stager would copy
 # the 736 GB target instead of linking it.
 TO_STAGE=("${PREFIX#$DATA_ROOT/}")
-if [ -n "$SUBDIR" ] && [ -z "${BUILD_DST:-}" ]; then TO_STAGE+=("$SUBDIR/english_dclm"); fi
+# (not for an english build: its own PREFIX is already that path)
+if [ -n "$SUBDIR" ] && [ -z "${BUILD_DST:-}" ] && [ "$BUILD_STAGE" != english ]; then
+  TO_STAGE+=("$SUBDIR/english_dclm")
+fi
 
 # Complete already? (.idx present, checkpoint gone.) Skip and DON'T requeue —
 # this ends the singleton chain and prevents rebuilding a finished dataset.

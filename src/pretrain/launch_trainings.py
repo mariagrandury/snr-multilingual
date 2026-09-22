@@ -203,6 +203,13 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15]
 #   sets      which language_sets_scheme<X>.json supplies its language lists
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
 #   arches    architecture families the scheme is trained in
+#   english   the corpus the ENGLISH half is built from, when the scheme
+#             varies it (the edu-filter axis at L=1). Absent = the DCLM-edu
+#             corpus every other cell reads; data/launch_builds.sh gives a
+#             scheme that sets it its own english build instead of a symlink
+#             to the shared one
+#   english_max_year  for an English corpus laid out one directory per Common
+#             Crawl snapshot: ignore the crawls after this year
 #   allow_undersized  cells that deliberately train on a build smaller than
 #             the grid sizes, repeating data (see the ZH note below). Full
 #             cell names, never a wildcard — the launcher is re-run to drive
@@ -258,8 +265,13 @@ DATA_SCHEMES = {
                arches=("deep",),
                allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
     # BT3 is the scheme x temperature interaction, registered 2026-09-21.
-    # Neither built nor launched yet: the build is a separate job and the
-    # training is gated on the AT3 L15/L30 evals. L30 is the
+    # Built 2026-09-22 (88.5B, staged); not launched. Its gate — the AT3
+    # L15/L30 evals — opened that morning, and it opened AGAINST launching:
+    # with AT3 L15-deep and L30-deep at the 1.7B reference the temperature
+    # axis has four mono-axis pairs (A vs AT3 at L15-deep, L30-deep, L50-deep,
+    # L50-shallow) where MIN_PAIRS is three, so BT3 would add a fifth pair
+    # rather than unblock the axis, and its 1.7B is 28.8 h on 21 nodes against
+    # a 2026-09-25 deadline. Deferred to the revision. L30 is the
     # only setting where it can be read: B is defined at L in {8, 15, 30}
     # only (at L50 its list IS scheme A's), and the temperature effect needs
     # a tail with room — the per-language floor a 1.7B draws is 7.5B at L8
@@ -278,6 +290,31 @@ DATA_SCHEMES = {
     "ES": dict(label="-ES", subdir="ES", langs={2},
                max_size={2: "1B"}, temp=1.0, sets="ES", seeds="single",
                arches=("deep",)),
+    # The L=1 rung has no language axis, so its only family contrast is depth —
+    # one pair, where rule 5 needs three. These two schemes are the third and
+    # fourth families, and what they vary is the EDUCATIONAL-QUALITY FILTER:
+    # the English every other cell trains on is DCLM put through an edu
+    # classifier, so the contrast worth measuring is the same web text without
+    # it (plan/l1_third_family.md, 2026-09-22).
+    #   DCLMP  dclm_processed — the same pipeline minus the classifier. Its
+    #          per-document metadata is the edu corpus's minus exactly
+    #          edu_int_score and edu_score, so the filter is the only knob.
+    #          ~3,282B tokens available against a 184B target.
+    #   FWEB   plain FineWeb, crawls <= 2022 (DCLM's own Common Crawl window,
+    #          so recency is not a second difference). ~10,105B tokens over 89
+    #          crawl directories, read one file per crawl in rotation.
+    # temp/sets are inert here: L=1 has no FineWeb-2 half.
+    "DCLMP": dict(label="-dclmP", subdir="DCLMP", langs={1},
+                  max_size={}, temp=1.0, sets="A", seeds="single",
+                  arches=("deep",),
+                  english="/capstor/store/cscs/swissai/infra01/datasets/"
+                          "dclm_processed/output"),
+    "FWEB": dict(label="-fweb", subdir="FWEB", langs={1},
+                 max_size={}, temp=1.0, sets="A", seeds="single",
+                 arches=("deep",),
+                 english="/capstor/store/cscs/swissai/infra01/datasets/"
+                         "HuggingFaceFW/fineweb/data",
+                 english_max_year=2022),
 }
 
 # Seeds. Every cell runs 1904; the columns below run three. The triple is
