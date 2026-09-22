@@ -126,12 +126,24 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# which (benchmark, language) cells rank reliably at all: the population every
+# `above_*` figure below averages over. Reads rq02's da_per_task.csv, so it comes
+# after compute_da and BEFORE everything that filters on it — by_L and
+# scale_convergence both skip their filtered variants when it has not run yet,
+# which silently costs the paper's rq2 figures.
+run $PY analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity
 # per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
 # cross-task predictability: every parent task as the proxy for every other one (DA-size and DA-ckpt level maps)
 run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
-# the paper's RQ2 figure: DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
+# scale convergence: how small a FULLY TRAINED model still decides like the
+# reference, by language count and by design axis (+ their above_80 variants)
+run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
+# DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
 run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
+# the paper's RQ2 figure: composes the three panels from the CSVs above, so it
+# runs LAST of the rq02 block — it derives nothing of its own
+run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
 # surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity

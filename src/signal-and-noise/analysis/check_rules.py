@@ -36,7 +36,7 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from analysis.utils import (ANALYSIS_SIZES, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGREGATES,  # noqa: E402
-                            MIN_PAIRS, NOISE_WINDOW, SHARED_FRACS,
+                            MIN_PAIRS, NOISE_WINDOW, CKPT_DA_EARLY_FRACS, SHARED_FRACS,
                             _is_parent_task, is_trained)
 
 # Rule 10 has two halves and the checker has to test both. Derived from the
@@ -48,6 +48,9 @@ from analysis.utils import (ANALYSIS_SIZES, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGRE
 FORBIDDEN_SIZES = tuple(["90M"] + [s for s in EVAL_SIZES if s not in ANALYSIS_SIZES])
 
 SIZE_COLS = ("size", "proxy_size", "bucket", "reference", "reference_size", "small", "target")
+# Figure families that are views of one table (rule 12, below): <stem>_*.png is
+# covered by <stem>.csv. Keep this list short and justified.
+SHARED_TABLES = ("da_reliable_tasks",)
 # folders allowed to break a rule, by rule number, each with its reason:
 #  6  rq08 reads the sub-benchmarks by design; rq07 compares against AllenAI's own task names
 #  2  rq06 is the untrained-language question; the rq00 gate must cover every task
@@ -126,6 +129,11 @@ def check_csv(path: Path) -> list[str]:
         fr = df["frac"].dropna().astype(float)
         have = set((fr * 10).round().astype(int) / 10)
         missing = [f for f in SHARED_FRACS if f not in have]
+        # A within-run DA-ckpt table is read against its own final checkpoint, so
+        # the final is not a row of it: rule 3 names that axis itself,
+        # `da_early_fracs`, the nine tenths before the final.
+        if have == set(CKPT_DA_EARLY_FRACS):
+            missing = []
         if missing and len(have) > 1:
             out.append(f"rule 3: frac axis lacks {missing}")
         # the hazard rule 3 names: a checkpoint axis drawn on the twentieths.
@@ -178,7 +186,15 @@ def check_png_csv(folder: Path) -> list[str]:
         stem = png.stem
         for suffix in ("_by_benchmark", "_by_language"):
             stem = stem.removesuffix(suffix)
-        if not (png.with_suffix(".csv").is_file() or png.with_name(stem + ".csv").is_file()):
+        # A family of figures that are VIEWS of one table shares it rather than
+        # writing near-identical copies: reliable_tasks.py draws every
+        # (threshold x reduction) cut of `da_reliable_tasks.csv`, whose values do
+        # not depend on either, so 12 CSVs would be 12 copies of one. The stem is
+        # named explicitly — a prefix rule would let any figure point at a table
+        # computed for something else, which is the failure rule 12 exists for.
+        shared = next((t for t in SHARED_TABLES if png.stem.startswith(t + "_")), None)
+        if not (png.with_suffix(".csv").is_file() or png.with_name(stem + ".csv").is_file()
+                or (shared and png.with_name(shared + ".csv").is_file())):
             out.append(f"{png.relative_to(folder)}: rule 12: no CSV of the same name")
     return out
 

@@ -94,7 +94,7 @@ Measurement issues
 
 ### rq02, per language count
 
-![Early and small per L](rq02_decision_accuracy/pretraining/predictivity/early_small_by_L.png)
+![Early and small per L](rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal.png)
 
 How it is computed
 - Same DA, but the pairs are restricted to the design variants that share the L (`predictivity_all`, seed 1904, every scheme), on the ten evaluated checkpoints (0.5C–5C). A panel needs ≥ 3 pairs; the first panel pools every pair of schemes A and B.
@@ -271,7 +271,7 @@ Measurement issues
 
 ## Appendix candidates
 - rq00 `first_size_above_random.png` and the rq02 `safe_size.png` maps (language × benchmark).
-- rq02 `pairs_by_L.csv` (why per-L DA is coarse) and `early_small_by_L.png` once the 6-pair L's are complete.
+- rq02 `pairs_by_L.csv` (why per-L DA is coarse) and `early_small_by_L_goal.png` (with `early_small_by_L_own.png` to separate the size's cost from the checkpoint's) once the 6-pair L's are complete.
 - The per-benchmark / per-language long grids (`*_by_benchmark.png`, `*_by_language.png`) of rq02 and rq03.
 - rq04 `snr_variant_min_size_by_L_flops.png`: ρ of each definition with the cell's DA against compute (rises from ≈ 0.2 to ≈ 0.5; every size restarts the curve because SNR is a property of the size).
 - rq05 `depth_crossover.png` (which depth wins per size × L, in seed sds) and `da_lines_decided.png`, if the main text keeps only `da_lines`.

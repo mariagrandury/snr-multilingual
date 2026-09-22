@@ -151,7 +151,7 @@ is at chance on every task, i.e. those languages contribute BPB only.
 
 ## What the DA results say
 
-**Per L, benchmarks, mean DA at the proxy's final checkpoint (`early_small_by_L.csv`):**
+**Per L, benchmarks, mean DA at the proxy's final checkpoint (`early_small_by_L_goal.csv`):**
 
 | pairs | 175M | 350M | 600M | 1B | 1.7B@0.9 |
 | --- | ---: | ---: | ---: | ---: | ---: |

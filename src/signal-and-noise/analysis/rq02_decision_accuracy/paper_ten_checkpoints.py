@@ -18,10 +18,12 @@ gated. The mean per (size, fraction) is over the tasks that remain, and the
 task count is written next to it (rule 13). The loader has already reduced the
 tasks to parents in trained languages (rules 2 and 6).
 
-    rq2.csv               size x fraction x group: mean DA, tasks
-    rq2.png / .svg        the figure the paper includes: no title, the x axis in
-                          Chinchilla multiples (every half-C point drawn, the
-                          whole ones labelled), one boxed key inside the axes
+    rq2_ten_checkpoints.csv       size x fraction x group: mean DA, tasks
+    rq2_ten_checkpoints.png/.svg  no title, the x axis in Chinchilla multiples
+                          (every half-C point drawn, the whole ones labelled),
+                          one boxed key inside the axes. `paper_rq2.py` owns the
+                          name `rq2.*` — the three-panel figure the paper embeds —
+                          so this one keeps its own, and the two never race.
 
     python analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 """
@@ -111,10 +113,10 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
 
 def main() -> None:
     s = summary()
-    s.to_csv(OUT / "rq2.csv", index=False)
-    draw("rq2", s)
+    s.to_csv(OUT / "rq2_ten_checkpoints.csv", index=False)
+    draw("rq2_ten_checkpoints", s)
     final = s[s["frac"] >= 1.0].pivot(index="size", columns="group", values="mean_da").round(3)
-    print("mean DA at the proxies' final checkpoint (tasks in rq2.csv):\n" + final.to_string())
+    print("mean DA at the proxies' final checkpoint (tasks in rq2_ten_checkpoints.csv):\n" + final.to_string())
     for size in SMALL_SIZES:
         g = s[(s["size"] == size) & (s["group"] == "benchmarks")]
         if g["tasks"].nunique() > 1:
