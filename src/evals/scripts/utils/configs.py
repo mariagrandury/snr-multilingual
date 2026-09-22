@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -459,6 +460,35 @@ def tokens_for(model_name: str, ckpt_id,
 @lru_cache(maxsize=4)
 def load_tasks(path: str | Path = DEFAULT_TASKS_JSON) -> dict[str, Any]:
     return json.loads(Path(path).read_text())["tasks"]
+
+
+def read_tasks_json(path: str | Path = DEFAULT_TASKS_JSON) -> tuple[dict[str, Any], str]:
+    """The whole tasks.json plus the exact text it was read from, for
+    `write_tasks_json` to check against. Key order is preserved so a
+    regenerated file diffs against the old one line by line."""
+    text = Path(path).read_text()
+    return json.loads(text, object_pairs_hook=OrderedDict), text
+
+
+def write_tasks_json(data: dict[str, Any], before: str,
+                     path: str | Path = DEFAULT_TASKS_JSON) -> None:
+    """Write `data` back, refusing if the file changed since `before`.
+
+    The task generators (make_rf_tasks, make_include_v2_tasks,
+    make_cloze_tasks) each read the whole file and write the whole file back,
+    so two of them overlapping silently loses one's work -- the second writer
+    has none of the first's tasks in the copy it holds. On 2026-09-22 a
+    background make_rf_tasks pass did exactly that to all 154 INCLUDE v2
+    registrations, leaving their YAMLs on disk with nothing pointing at them
+    and no error anywhere. Refusing to write is recoverable; a lost update is
+    not visible until an eval asks for a task that is no longer registered.
+    """
+    p = Path(path)
+    if p.read_text() != before:
+        raise SystemExit(
+            f"{p} changed while this script was running -- another generator wrote it. "
+            "Nothing written here, so that script's work is intact; re-run this one now.")
+    p.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
 @lru_cache(maxsize=4)

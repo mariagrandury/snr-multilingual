@@ -83,6 +83,9 @@ skg/toxigen-data
 swiss-ai/blend-sample
 swiss-ai/harmbench
 swiss-ai/math_qa
+# the pinned harness reads regisss/math_qa, not the swiss-ai fork above:
+# without it `mathqa` dies in load_dataset() under HF_DATASETS_OFFLINE=1
+regisss/math_qa
 swiss-ai/polyglotoxicityprompts
 tau/commonsense_qa
 truthfulqa/truthful_qa

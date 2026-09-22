@@ -1,0 +1,22 @@
+task: bbh_cloze_sports_understanding
+dataset_path: SaylorTwift/bbh
+dataset_name: sports_understanding
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{input}}
+
+  Answer:'
+doc_to_choice:
+- 'no'
+- 'yes'
+doc_to_target: '{{["no", "yes"].index(target.strip())}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0

@@ -712,6 +712,12 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # 60-save one every 6th — the same fractions), plus the 85 % / 95 %
     # noise points and its final one — same rule as Azure. 12 per run.
     due = due_iters(saved, target, args.every)
+    if args.final_only:
+        # A screening pass over a new benchmark group: the gate and the signal
+        # at each size, without the noise window. `--every` cannot express it
+        # (its noise-window clause ignores `every`, so the floor is 5) and
+        # --max-submit takes the EARLIEST outstanding checkpoint, not the last.
+        due = due[-1:]
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
     # under --all-languages and for the ALL_LANGUAGES_RUNS.
@@ -842,6 +848,18 @@ def main() -> None:
                         "tenths of training. The default 1 is the grid the "
                         "analysis reads (12 checkpoints/run: the tenths plus "
                         "85%% and 95%%); raise it only for one-off passes")
+    p.add_argument("--final-only", action="store_true",
+                   help="evaluate only each cell's last due checkpoint, not "
+                        "all twelve — a screening pass over a new benchmark "
+                        "group, where the noise window is not yet worth its "
+                        "node-hours. No SNR and no DA-ckpt come out of it")
+    p.add_argument("--group", default="auto", metavar="NAME",
+                   help="the configs/tasks.json benchmark group to evaluate "
+                        "(default auto). A probe group keeps candidate "
+                        "benchmarks out of the watchers' way, which read auto "
+                        "every pass; the jobs take the group's name (minus "
+                        "auto_) as a suffix so neither reads the other's job "
+                        "as its own")
     p.add_argument("--convert-only", action="store_true",
                    help="submit conversions but no eval jobs — for driving the "
                         "convert half forward while the eval half is blocked "
@@ -884,11 +902,15 @@ def main() -> None:
     if bad := set(args.sizes) - set(LADDER):
         p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
-    benchmarks = auto_benchmarks(f"auto_{args.reformulated}" if args.reformulated else "auto")
+    if args.reformulated and args.group != "auto":
+        p.error("--group and --reformulated both choose the benchmark group; pass one")
+    group = f"auto_{args.reformulated}" if args.reformulated else args.group
+    benchmarks = auto_benchmarks(group)
     # The reformulated evals get their own job name (`eval-<cell>-iter<N>-rf`
     # / `-rfgm`): the original and each reformulated set of one checkpoint are
     # different work, so no watcher may read another's job as its own and skip it.
-    args.job_suffix = f"-{args.reformulated}" if args.reformulated else ""
+    args.job_suffix = f"-{args.reformulated}" if args.reformulated else (
+        "" if group == "auto" else f"-{group.removeprefix('auto_')}")
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:

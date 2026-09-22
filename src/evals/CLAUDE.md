@@ -169,7 +169,8 @@ more chance (first pass only, even under `--watch`).
 
 **Reformulated twins** (2026-09-18). `scripts/make_rf_tasks.py` writes
 `tasks/rf/<family>/rf_<task>.yaml` for belebele / global_mmlu_full /
-include_base_44 — the letter-MCF families — as cloze tasks (answer strings
+include_base_44 — the letter-MCF families — (and, since 2026-09-23, the
+lettered probe families, see below) as cloze tasks (answer strings
 as choices, no letters), and registers them in tasks.json with an `rf_`
 PREFIX: `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix
 would be swept into the original family. They ship via
@@ -213,6 +214,71 @@ run (KeyError). The rewritten set drops a few more items than `rf_`
 (rejected rewrites), so `derive_task_options.py` must run before the
 significance test reads `n_items`
 (`compute_cost.kind_of` strips the suffix).
+
+**Probe benchmarks and mixed families** (2026-09-23). `groups.auto_probe`
+screens candidate benchmarks at the last checkpoint only
+(`auto_evals_cscs.py --group auto_probe --final-only`); it is deliberately
+separate from `auto`, because a watcher re-reads tasks.json every pass and
+would top up every checkpoint of every cell.
+
+BBH and ACP-Bench are *mixed*: `scripts/make_cloze_tasks.py` measures each
+subtask against the cached data and splits them by what they actually are.
+Of BBH's 27, seventeen print an `(A)`–`(R)` option block, six are two-way
+(True/False, Yes/No, valid/invalid) and four are free-form and are not
+written at all. One benchmark name per arm, because `results.json` carries
+task names and nothing else — the arm a task belongs to lives only in the
+`benchmark` field, which is what both `tasks_for_benchmarks` and
+`benchmark_family` read:
+
+| benchmark | what it is |
+|---|---|
+| `bbh` / `acp_bench` | unchanged: the published `generate_until` benchmark, posttraining |
+| `bbh_mcq`, `acp_bench_mcq` | the lettered subtasks, published formulation, scored over the letters |
+| `rf_bbh_mcq`, `rf_acp_bench_mcq` | their cloze twins — **this is the pair that measures reformulation** |
+| `bbh_cloze`, `acp_bench_cloze` | the two-way subtasks; already cloze, so **no twin exists** — a twin would be the identical task |
+
+Since the `benchmark` field is matched by prefix, a group listing plain
+`bbh` at the pretraining stage selects `bbh_mcq` + `bbh_cloze` and not the
+posttraining original, which is the intended reading.
+
+Three things that only fail inside the eval job, all found by loading every
+task through a real `TaskManager` before launching — do that:
+
+- **Option counts are measured, never assumed.** `cultural_bench_hard` was
+  registered 4-way; the harness scores it over `["False", "True"]`, so the
+  gate would have passed all 19 tasks on coin-flip scores. Several BBH
+  subtasks vary the count per item (`reasoning_about_colored_objects` runs
+  2 to 18), so `n_options` is the item-weighted `round(1 / mean(1/n_i))` —
+  the integer whose `1/n` is the real chance level — and `n_items` is
+  written at generation time so the gate has both inputs immediately.
+- **A twin cannot be built by copying a few keys** from the original's
+  YAML. `process_docs` copied that way becomes the literal string
+  `utils.process_argentina` (`TypeError: 'str' object is not callable`),
+  and a family scored on `validation_split` (commonsense_qa) loses its
+  split. The probe families' twins `include:` the original leaf YAML by
+  **absolute path** instead: `load_yaml` accepts an absolute include and
+  builds its loader per file, so a `!function` inside the included file
+  resolves against the harness's own directory. The three original
+  families keep the copied-keys form on purpose — their YAMLs are already
+  evaluated on a thousand-odd checkpoints. Where the twin must also filter
+  rows (cultural_bench_easy has one `None` option), it *replaces* the
+  inherited `process_docs` rather than adding one, or the 19 countries
+  merge into a single task.
+- **INCLUDE v2 reads its parquet directly.** `include-results/include-128`
+  has four cached revisions here, two of them partial; the hub resolves to
+  one revision while the prepared dataset cache sits under another, so all
+  154 tasks died offline on `FileNotFoundError: .../dataset_info.json`, and
+  `revision=` does not help because the offline path ignores it.
+  `make_include_v2_tasks.py` picks the most complete snapshot and writes
+  `dataset_path: parquet` + absolute `data_files`, which skips hub
+  resolution and pins the data version.
+
+**Never run two task generators at once.** Each reads all of tasks.json and
+writes all of it back, so an overlap silently drops one's work — a
+background `make_rf_tasks.py` pass did exactly that to all 154 INCLUDE v2
+registrations, leaving their YAMLs on disk with nothing pointing at them.
+`utils.configs.read_tasks_json` / `write_tasks_json` now refuse a write when
+the file changed underneath; use them in any new generator.
 
 ---
 

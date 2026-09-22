@@ -1,0 +1,24 @@
+task: include_v2_en_urdu_india
+dataset_path: parquet
+dataset_kwargs:
+  data_files:
+    test:
+    - /capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models/datasets--include-results--include-128/snapshots/d0d7aa8807b03b8adfc90ab3ac4e5e575ae67bd2/urdu_india/test-00000-of-00001.parquet
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{question_en.strip()}}
+
+  Answer:'
+doc_to_choice: '{{choices_en}}'
+doc_to_target: '{{[''A'', ''B'', ''C'', ''D''].index(answer)}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_docs

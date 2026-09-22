@@ -90,7 +90,9 @@ continuations, zero-shot, `acc` + `acc_norm`) under
 reach the harness through `eval_worker.py --include_path`, which
 `evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
 wheel is untouched. Re-run the generator after adding a language to any of
-the three families; it is idempotent. The second twin, `rfgm_<task>`
+the three families; it is idempotent. The lettered probe families (below)
+get twins from the same script, through an absolute `include:` of the
+original YAML. The second twin, `rfgm_<task>`
 (`--set rfgm`, group `auto_rfgm`, [`tasks/rfgm/`](tasks/rfgm/)), is the
 same item rewritten by Gemini into a statement stem with four short
 continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
@@ -106,6 +108,31 @@ figures and the generated table in that README (`rf_gate.png`, per
 language `rf_gate_by_language.png`, a CSV each): the rq00 gate cell —
 median task margin over chance, trained languages — original, rf, rfgm,
 and each set's difference.
+
+### Probe benchmarks (`groups.auto_probe`, `tasks/cloze/`, `tasks/include_v2/`)
+
+A screening pass over candidate benchmarks at each cell's last checkpoint:
+`auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only`.
+The group is kept out of `auto` so the watchers never top up every
+checkpoint with it. Two generators feed it, both idempotent and both
+registering in `configs/tasks.json`:
+
+- [`scripts/make_cloze_tasks.py`](scripts/make_cloze_tasks.py) turns the
+  closed-form subtasks of BBH and ACP-Bench into logprob tasks under
+  [`tasks/cloze/`](tasks/cloze/), one benchmark per arm so the arms stay
+  separable by name: `bbh_mcq` / `rf_bbh_mcq` (the reformulation pair),
+  `bbh_cloze` (two-way, no twin), and the same three for `acp_bench`.
+  Option and item counts are measured from the data and written as
+  `n_options` / `n_items`.
+- [`scripts/make_include_v2_tasks.py`](scripts/make_include_v2_tasks.py)
+  writes INCLUDE v2 (`include-results/include-128`, the L50 pairs, OG and EN
+  variants) as cloze tasks under [`tasks/include_v2/`](tasks/include_v2/),
+  group `auto_include_v2`, read straight from the cached parquet.
+
+Run the generators one at a time: each rewrites all of `tasks.json`, and
+`utils.configs.write_tasks_json` refuses to write over a file that changed
+underneath it. Load every new task through a `TaskManager` before launching;
+`src/evals/CLAUDE.md` lists what only fails inside the job.
 
 ## How to run
 
