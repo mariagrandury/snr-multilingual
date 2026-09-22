@@ -178,9 +178,17 @@ would be swept into the original family. They ship via
 tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
 honours through `configs.metric_for` — the W&B series is
 `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
-`auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
-and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
-watcher never mistake each other's in-flight job for their own. The
+**Since 2026-09-22 the twins are in the `auto` group itself** — the three
+`rf_*` benchmarks and `rfgm_include_base_44` — so an ordinary watcher pass
+evaluates them alongside the originals and tops up every existing
+checkpoint with the tasks it is missing (the watcher is per-task
+idempotent, and walltime is priced from the missing tasks). That also
+resolves rule 2 for them: `utils.trained_only` asks `auto_benchmarks()`
+whether a task is trained, so before this every `rf_*` row was "untrained"
+and the analysis pool came back without a single twin.
+`--reformulated` still works and still swaps in `auto_rf` / `auto_rfgm`
+with `-rf` / `-rfgm` job names, but it is now redundant for new runs: use
+it only to evaluate a twin set on its own. The
 `rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
 `auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
 families rewritten by Gemini into statement stems: `dataset_path: json`

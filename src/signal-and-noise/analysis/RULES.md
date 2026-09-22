@@ -29,6 +29,30 @@ implementation of each rule: use them, do not re-derive.
 | 13 | **Populations move; say so.** When the set of tasks or pairs behind a cell differs across a row (the gate keeps different tasks at different sizes), the figure or table carries the count, and the README says the populations differ. | `grids` count overlays |
 | 14 | **Outputs follow the code.** After a change to the loader, `configs/models.json` → `snr`, or a helper above, the pipeline is re-run before any table is read or cited; `check_rules.py` is the test that the tables on disk obey the rules. | `run_all_predictivity.sh`, `check_rules.py` |
 
+## The reformulated twins are in the populations
+
+Since 2026-09-22 the `rf_*` twins of the three letter-format families, and
+`rfgm_include_base_44`, are ordinary benchmarks in the `auto` group: they are
+gated, plotted and counted like any other. Two consequences a reader has to
+be told (rule 13):
+
+- **Benchmark populations grew.** Any unqualified "over the benchmarks" mean
+  — rq02's per-benchmark DA, rq03's SNR table, rq04's per-language r, rq09's
+  family aggregate — now includes the twins. Figures carry their task counts,
+  as rule 12 requires, and a twin reads as `belebele-rf`.
+- **A twin is not an independent task.** It is the same items in another
+  formulation, so a language can clear rule 8's three-task floor with twins of
+  one benchmark. That floor is a stability floor, not a significance one, and
+  per-language correlations stay descriptive — but it is a weaker three than
+  three unrelated benchmarks, and a per-language panel that rests on twins
+  alone should say so.
+
+This matters because the originals barely survive the gate: at 1.7B the gate
+keeps 0 of 37 Global-MMLU tasks and 11 of 105 belebele tasks, against 35 and
+86 of their `rf_` twins, and 4 of 43 INCLUDE tasks against 31 of the `rf_`
+twins and 34 of the Gemini-rewritten ones. Before the twins entered the pool
+those families contributed almost nothing to any RQ.
+
 ## Why three tasks per language
 
 `MIN_LANG_TASKS` trades coverage against stability, and it is worth being

@@ -160,6 +160,9 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--set", choices=["rf", "rfgm"], default="rf",
                    help="rf: the cloze twins (default); rfgm: the Gemini-rewritten twins")
+    p.add_argument("--family", choices=list(TEMPLATES),
+                   help="register only this family; for rfgm, whose families are rewritten one at a "
+                        "time, so a family still mid-rewrite is not registered with a partial item set")
     p.add_argument("--harness", type=Path, default=HARNESS)
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
@@ -167,8 +170,9 @@ def main() -> None:
 
     data = json.loads(TASKS_JSON.read_text())
     tasks = data["tasks"]
+    families = [args.family] if args.family else list(TEMPLATES)
     originals = [(n, e) for n, e in tasks.items()
-                 if e["benchmark"] in TEMPLATES and "pretraining" in e["stages"]
+                 if e["benchmark"] in families and "pretraining" in e["stages"]
                  and e["language"] not in ("multi", "??")]
     written, missing = 0, []
     for name, e in originals:
@@ -180,8 +184,14 @@ def main() -> None:
         out = out_dir / fam / f"{twin}.yaml"
         body = (rf_yaml(name, fam, source_config(name, fam, args.harness)) if pre == "rf"
                 else rfgm_yaml(name))
+        prev = tasks.get(twin, {})
         tasks[twin] = {"language": e["language"], "benchmark": f"{pre}_{fam}",
                        "stages": ["pretraining"], "n_options": 4, "metric": "acc_norm"}
+        # `n_items` is derived from the harness results by derive_task_options.py,
+        # and the above-random gate needs it: rewriting the entry without it drops
+        # the task out of the gate silently, as if it had stopped clearing chance.
+        if "n_items" in prev:
+            tasks[twin]["n_items"] = prev["n_items"]
         if not args.dry_run:
             out.parent.mkdir(parents=True, exist_ok=True)
             if pre == "rf" and fam in FILTERED:
@@ -189,9 +199,13 @@ def main() -> None:
             if not out.exists() or out.read_text() != body:
                 out.write_text(body)
                 written += 1
-    data["groups"][f"auto_{pre}"] = sorted(f"{pre}_{f}" for f in TEMPLATES)
+    # the group lists the families that actually have registered tasks, so a
+    # family still being rewritten is not advertised to the watcher
+    have = sorted({f"{pre}_{e['benchmark']}" for n, e in originals
+                   if f"{pre}_{n}" in tasks} | set(data["groups"].get(f"auto_{pre}", [])))
+    data["groups"][f"auto_{pre}"] = have
     fmt = FORMAT if pre == "rf" else FORMAT_RFGM
-    for fam in TEMPLATES:
+    for fam in families:
         data["benchmarks"][f"{pre}_{fam}"] = {**data["benchmarks"][fam], "format": fmt[fam]}
     print(f"{len(originals) - len(missing)} {pre} tasks ({written} yaml files written) under {out_dir}; "
           f"auto_{pre} = {data['groups'][f'auto_{pre}']}"

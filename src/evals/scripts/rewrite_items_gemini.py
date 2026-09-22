@@ -367,6 +367,15 @@ def save_state(d: Path, state: dict) -> None:
 
 def client():
     from google import genai
+    if not VERTEX and not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
+        # Without GOOGLE_GENAI_USE_VERTEXAI the SDK takes the API-key route and
+        # dies several frames down with "No API key was provided", which reads
+        # like a credentials problem rather than a missing export. Two launches
+        # were lost to it; say which variable is missing.
+        sys.exit("GOOGLE_GENAI_USE_VERTEXAI is not set, so this would call the Gemini API with an API "
+                 "key rather than Vertex with ADC. Export it with the other two:\n"
+                 "  export GOOGLE_GENAI_USE_VERTEXAI=true GOOGLE_CLOUD_PROJECT=silin-482809 "
+                 "GOOGLE_CLOUD_LOCATION=global")
     if VERTEX:
         # With no project/location the SDK reads a GEMINI_API_KEY left in the
         # shell and calls Vertex in express mode with it, instead of ADC — the

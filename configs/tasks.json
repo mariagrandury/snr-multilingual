@@ -7437,6 +7437,436 @@
       "n_options": 4,
       "metric": "acc_norm",
       "n_items": 900
+    },
+    "rfgm_include_base_44_albanian": {
+      "language": "sq",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 551
+    },
+    "rfgm_include_base_44_arabic": {
+      "language": "ar",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_armenian": {
+      "language": "hy",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_azerbaijani": {
+      "language": "az",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "rfgm_include_base_44_basque": {
+      "language": "eu",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 497
+    },
+    "rfgm_include_base_44_belarusian": {
+      "language": "be",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 544
+    },
+    "rfgm_include_base_44_bengali": {
+      "language": "bn",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_bulgarian": {
+      "language": "bg",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 548
+    },
+    "rfgm_include_base_44_chinese": {
+      "language": "zh",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 545
+    },
+    "rfgm_include_base_44_croatian": {
+      "language": "hr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_estonian": {
+      "language": "et",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 224
+    },
+    "rfgm_include_base_44_finnish": {
+      "language": "fi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_french": {
+      "language": "fr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 419
+    },
+    "rfgm_include_base_44_georgian": {
+      "language": "ka",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 499
+    },
+    "rfgm_include_base_44_german": {
+      "language": "de",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 139
+    },
+    "rfgm_include_base_44_greek": {
+      "language": "el",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 548
+    },
+    "rfgm_include_base_44_hebrew": {
+      "language": "he",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_hindi": {
+      "language": "hi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 540
+    },
+    "rfgm_include_base_44_hungarian": {
+      "language": "hu",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_indonesian": {
+      "language": "id",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_italian": {
+      "language": "it",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_japanese": {
+      "language": "jp",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 495
+    },
+    "rfgm_include_base_44_kazakh": {
+      "language": "kk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 500
+    },
+    "rfgm_include_base_44_korean": {
+      "language": "ko",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 481
+    },
+    "rfgm_include_base_44_lithuanian": {
+      "language": "lt",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 534
+    },
+    "rfgm_include_base_44_malay": {
+      "language": "ms",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 500
+    },
+    "rfgm_include_base_44_malayalam": {
+      "language": "ml",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 468
+    },
+    "rfgm_include_base_44_nepali": {
+      "language": "ne",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 497
+    },
+    "rfgm_include_base_44_north_macedonian": {
+      "language": "mk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 551
+    },
+    "rfgm_include_base_44_persian": {
+      "language": "fa",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "rfgm_include_base_44_polish": {
+      "language": "pl",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_portuguese": {
+      "language": "pt",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_russian": {
+      "language": "ru",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 542
+    },
+    "rfgm_include_base_44_serbian": {
+      "language": "sr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_spanish": {
+      "language": "es",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_tagalog": {
+      "language": "tl",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 498
+    },
+    "rfgm_include_base_44_tamil": {
+      "language": "ta",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_telugu": {
+      "language": "te",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 527
+    },
+    "rfgm_include_base_44_turkish": {
+      "language": "tr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_ukrainian": {
+      "language": "uk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_urdu": {
+      "language": "ur",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 348
+    },
+    "rfgm_include_base_44_uzbek": {
+      "language": "uz",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_vietnamese": {
+      "language": "vi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
     }
   },
   "groups": {
@@ -8075,6 +8505,10 @@
       "lambada_openai_mt",
       "multiblimp",
       "paws",
+      "rf_belebele",
+      "rf_global_mmlu_full",
+      "rf_include_base_44",
+      "rfgm_include_base_44",
       "truthfulqa-multi_mc1",
       "xcopa",
       "xnli",
@@ -8085,6 +8519,9 @@
       "rf_belebele",
       "rf_global_mmlu_full",
       "rf_include_base_44"
+    ],
+    "auto_rfgm": [
+      "rfgm_include_base_44"
     ]
   },
   "benchmarks": {
@@ -8234,6 +8671,13 @@
       "name": "INCLUDE (Romanou et al.)",
       "languages": 44,
       "format": "cloze reformulation of include_base_44: question only, the four options scored as continuations"
+    },
+    "rfgm_include_base_44": {
+      "paper": "https://openreview.net/forum?id=k3gCieTXeY",
+      "venue": "ICLR 2025",
+      "name": "INCLUDE (Romanou et al.)",
+      "languages": 44,
+      "format": "Gemini statement rewrite of include_base_44: stem + four short continuations, scored as continuations (rf-data/rfgm/<task>.jsonl)"
     }
   }
 }

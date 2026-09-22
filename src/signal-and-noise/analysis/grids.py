@@ -28,6 +28,7 @@ under the title that says how a cell is computed.
 
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
@@ -39,6 +40,16 @@ from matplotlib.colors import BoundaryNorm, ListedColormap, TwoSlopeNorm
 from analysis import style as S
 
 FIRST = ("bpb", "loss")          # panels drawn before the alphabetical benchmarks
+# The reformulated twins are ordinary benchmarks (`rf_belebele`), but reading
+# them as `belebele-rf` keeps a twin next to its original instead of stranding
+# every one of them under "r", and says which of the three sets a panel is.
+_TWIN = re.compile(r"^(rfgm|rf)_(.+)$")
+
+
+def display(key) -> str:
+    """A benchmark family as a figure reads it: `rf_belebele` -> `belebele-rf`."""
+    m = _TWIN.match(str(key))
+    return f"{m.group(2)}-{m.group(1)}" if m else str(key)
 NEVER = "#d6a29e"                # a level map's "never reached" (grey is kept for "filtered out")
 GATED, NEVER_CODE = -2.0, -1.0   # a level map's codes below the levels' own indices
 # Every run trains D(N) = 100 N tokens, five times the Chinchilla-optimal 20 N:
@@ -84,7 +95,7 @@ def add_meta(df: pd.DataFrame, task_col: str = "task") -> pd.DataFrame:
 def panel_order(keys, first=FIRST) -> list:
     keys = [k for k in pd.unique(pd.Series(list(keys))) if k not in ("??", "", None) and k == k]
     head = [k for k in first if k in keys]
-    return head + sorted((k for k in keys if k not in head), key=str)
+    return head + sorted((k for k in keys if k not in head), key=display)
 
 
 def _draw(ax, mat: pd.DataFrame, cnt: pd.DataFrame | None, *, vmin, vmax, cmap, fmt, fontsize, center=None,
@@ -116,7 +127,7 @@ def _draw(ax, mat: pd.DataFrame, cnt: pd.DataFrame | None, *, vmin, vmax, cmap, 
                     color="white" if _dark(v) else S.INK)
     ax.set_xticks(range(mat.shape[1]))
     ax.set_xticklabels([str(c) for c in mat.columns], fontsize=fontsize + .5, rotation=90 if rotate else 0)
-    ax.set_yticks(range(mat.shape[0])); ax.set_yticklabels([str(r) for r in mat.index], fontsize=fontsize + .5)
+    ax.set_yticks(range(mat.shape[0])); ax.set_yticklabels([display(r) for r in mat.index], fontsize=fontsize + .5)
     S.clean(ax, spines=()); ax.tick_params(length=0)
     return im
 
@@ -180,7 +191,8 @@ def panel_grid(cells: pd.DataFrame, path: Path, *, by: str, row: str, col: str, 
         mat.columns = [col_label(c) for c in mat.columns]
         im = _draw(ax, mat, cnt, vmin=vmin, vmax=vmax, cmap=cmap or S.SEQ, fmt=fmt, fontsize=5.5 if cell_w >= 0.5 else 4.6,
                    rotate=cell_w < 0.5, center=center, gated=gated)
-        ax.set_title(f"{key}  ({have['task'].nunique()} tasks)" if "task" in g else str(key), loc="left", fontsize=8)
+        ax.set_title(f"{display(key)}  ({have['task'].nunique()} tasks)" if "task" in g else display(key),
+                     loc="left", fontsize=8)
     for ax in flat[:len(keys)]:
         ax.set_xlabel(xlabel, fontsize=7); ax.set_ylabel(ylabel, fontsize=7)
     legend = "white = no value" + (", grey = filtered out by the above-random gate" if cells["gated"].any() else "")
@@ -246,7 +258,7 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
                     ax.text(j, i, never if v < 0 else level_label(levels[int(v)]), ha="center", va="center",
                             fontsize=4.4, rotation=90, color="white" if v >= 0.6 * len(levels) else S.INK)
         ax.set_xticks(range(len(cols))); ax.set_xticklabels(cols, fontsize=6, rotation=90)
-        ax.set_yticks(range(len(rows))); ax.set_yticklabels(rows, fontsize=6.5)
+        ax.set_yticks(range(len(rows))); ax.set_yticklabels([display(r) for r in rows], fontsize=6.5)
         ax.set_xlabel(xlabel, fontsize=7); ax.set_ylabel(ylabel, fontsize=7)
         if label:
             ax.set_title(str(label), loc="left", fontsize=9)
