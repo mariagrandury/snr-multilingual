@@ -17,9 +17,9 @@
     "L": 2,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 0.925,
-    "share_above_2": 0.321,
-    "n": 28
+    "median_effect_over_seed_sd": 0.926,
+    "share_above_2": 0.345,
+    "n": 29
    },
    {
     "intervention": "arch",
@@ -37,17 +37,17 @@
     "L": 8,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.286,
-    "share_above_2": 0.245,
-    "n": 110
+    "median_effect_over_seed_sd": 1.27,
+    "share_above_2": 0.248,
+    "n": 117
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 15,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 0.655,
+    "median_effect_over_seed_sd": 1.125,
     "share_above_2": 0.0,
     "n": 15
    },
@@ -57,9 +57,9 @@
     "L": 15,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.312,
-    "share_above_2": 0.33,
-    "n": 197
+    "median_effect_over_seed_sd": 1.326,
+    "share_above_2": 0.333,
+    "n": 210
    },
    {
     "intervention": "arch",
@@ -77,17 +77,17 @@
     "L": 30,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.26,
-    "share_above_2": 0.281,
-    "n": 317
+    "median_effect_over_seed_sd": 1.213,
+    "share_above_2": 0.283,
+    "n": 339
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "L": 50,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 0.57,
+    "median_effect_over_seed_sd": 1.045,
     "share_above_2": 0.0,
     "n": 50
    },
@@ -97,9 +97,9 @@
     "L": 50,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.302,
+    "median_effect_over_seed_sd": 1.299,
     "share_above_2": 0.313,
-    "n": 453
+    "n": 489
    },
    {
     "intervention": "scheme",
@@ -117,17 +117,17 @@
     "L": 8,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.565,
-    "share_above_2": 0.379,
-    "n": 66
+    "median_effect_over_seed_sd": 1.55,
+    "share_above_2": 0.371,
+    "n": 70
    },
    {
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "L": 15,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 1.641,
+    "median_effect_over_seed_sd": 1.652,
     "share_above_2": 0.333,
     "n": 6
    },
@@ -137,9 +137,9 @@
     "L": 15,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.015,
-    "share_above_2": 0.324,
-    "n": 74
+    "median_effect_over_seed_sd": 1.045,
+    "share_above_2": 0.329,
+    "n": 79
    },
    {
     "intervention": "scheme",
@@ -158,27 +158,57 @@
     "reference_size": "1.7B",
     "population": "benchmarks",
     "median_effect_over_seed_sd": 1.192,
-    "share_above_2": 0.264,
-    "n": 296
+    "share_above_2": 0.263,
+    "n": 316
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "L": 15,
     "reference_size": "1B",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 3.826,
+    "share_above_2": 0.667,
+    "n": 15
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 15,
+    "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.356,
-    "share_above_2": 0.293,
-    "n": 198
+    "median_effect_over_seed_sd": 1.309,
+    "share_above_2": 0.276,
+    "n": 210
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 30,
+    "reference_size": "600M",
+    "population": "bits per byte",
+    "median_effect_over_seed_sd": 6.896,
+    "share_above_2": 0.833,
+    "n": 30
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "L": 30,
+    "reference_size": "1.7B",
+    "population": "benchmarks",
+    "median_effect_over_seed_sd": 1.416,
+    "share_above_2": 0.339,
+    "n": 339
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "L": 50,
-    "reference_size": "1B",
+    "reference_size": "1.7B",
     "population": "bits per byte",
-    "median_effect_over_seed_sd": 6.644,
-    "share_above_2": 0.8,
+    "median_effect_over_seed_sd": 5.895,
+    "share_above_2": 0.84,
     "n": 50
    },
    {
@@ -187,9 +217,9 @@
     "L": 50,
     "reference_size": "1.7B",
     "population": "benchmarks",
-    "median_effect_over_seed_sd": 1.575,
+    "median_effect_over_seed_sd": 1.578,
     "share_above_2": 0.391,
-    "n": 453
+    "n": 489
    },
    {
     "intervention": "zh",
@@ -218,7 +248,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "175M",
-    "decision_acc": 0.535,
+    "decision_acc": 0.531,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -227,8 +257,8 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.56,
-    "cells": 5,
+    "decision_acc": 0.53,
+    "cells": 6,
     "refs": "1.7B"
    },
    {
@@ -236,7 +266,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.503,
+    "decision_acc": 0.501,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -245,7 +275,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.446,
+    "decision_acc": 0.453,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -254,53 +284,53 @@
     "label": "depth (deep vs shallow)",
     "population": "bpb_macro",
     "proxy_size": "175M",
+    "decision_acc": 0.833,
+    "cells": 6,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 0.5,
+    "cells": 6,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 6,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_macro",
-    "proxy_size": "1B",
-    "decision_acc": 0.333,
-    "cells": 3,
     "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "bpb_macro",
-    "proxy_size": "350M",
-    "decision_acc": 0.5,
-    "cells": 6,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_macro",
     "proxy_size": "600M",
-    "decision_acc": 0.5,
+    "decision_acc": 0.333,
     "cells": 6,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "175M",
+    "decision_acc": 1.0,
+    "cells": 4,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "arch",
+    "label": "depth (deep vs shallow)",
+    "population": "bpb_trained",
+    "proxy_size": "1B",
     "decision_acc": 0.945,
     "cells": 4,
-    "refs": "1.7B,1B"
-   },
-   {
-    "intervention": "arch",
-    "label": "depth (deep vs shallow)",
-    "population": "bpb_trained",
-    "proxy_size": "1B",
-    "decision_acc": 1.0,
-    "cells": 2,
     "refs": "1.7B"
    },
    {
@@ -308,18 +338,18 @@
     "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "350M",
-    "decision_acc": 0.524,
+    "decision_acc": 0.489,
     "cells": 4,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
     "label": "depth (deep vs shallow)",
     "population": "bpb_trained",
     "proxy_size": "600M",
-    "decision_acc": 0.055,
+    "decision_acc": 0.0,
     "cells": 4,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "arch",
@@ -335,8 +365,8 @@
     "label": "depth (deep vs shallow)",
     "population": "loss",
     "proxy_size": "1B",
-    "decision_acc": 0.4,
-    "cells": 5,
+    "decision_acc": 0.333,
+    "cells": 6,
     "refs": "1.7B"
    },
    {
@@ -452,7 +482,7 @@
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "1B",
-    "decision_acc": 0.478,
+    "decision_acc": 0.484,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -461,7 +491,7 @@
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.48,
+    "decision_acc": 0.482,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -470,7 +500,7 @@
     "label": "language lists (A vs B)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.406,
+    "decision_acc": 0.409,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -481,7 +511,7 @@
     "proxy_size": "175M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -489,7 +519,7 @@
     "population": "bpb_macro",
     "proxy_size": "1B",
     "decision_acc": 1.0,
-    "cells": 2,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -499,7 +529,7 @@
     "proxy_size": "350M",
     "decision_acc": 0.667,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -508,7 +538,7 @@
     "proxy_size": "600M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -517,15 +547,15 @@
     "proxy_size": "175M",
     "decision_acc": 0.402,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
     "label": "language lists (A vs B)",
     "population": "bpb_trained",
     "proxy_size": "1B",
-    "decision_acc": 0.654,
-    "cells": 2,
+    "decision_acc": 0.769,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -535,7 +565,7 @@
     "proxy_size": "350M",
     "decision_acc": 1.0,
     "cells": 3,
-    "refs": "1.7B,1B"
+    "refs": "1.7B"
    },
    {
     "intervention": "scheme",
@@ -544,150 +574,168 @@
     "proxy_size": "600M",
     "decision_acc": 0.944,
     "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "1B",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "350M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "scheme",
+    "label": "language lists (A vs B)",
+    "population": "loss",
+    "proxy_size": "600M",
+    "decision_acc": 0.667,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "175M",
+    "decision_acc": 0.45,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "1B",
+    "decision_acc": 0.598,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "350M",
+    "decision_acc": 0.523,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "benchmark",
+    "proxy_size": "600M",
+    "decision_acc": 0.572,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "175M",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "1B",
+    "decision_acc": 1.0,
+    "cells": 1,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "350M",
+    "decision_acc": 1.0,
+    "cells": 3,
+    "refs": "1.7B,1B,600M"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_macro",
+    "proxy_size": "600M",
+    "decision_acc": 1.0,
+    "cells": 2,
     "refs": "1.7B,1B"
    },
    {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "loss",
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
     "proxy_size": "175M",
-    "decision_acc": 0.667,
+    "decision_acc": 0.889,
     "cells": 3,
-    "refs": "1.7B"
+    "refs": "1.7B,1B,600M"
    },
    {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "loss",
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "bpb_trained",
     "proxy_size": "1B",
-    "decision_acc": 0.667,
-    "cells": 3,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "loss",
-    "proxy_size": "350M",
-    "decision_acc": 0.667,
-    "cells": 3,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "scheme",
-    "label": "language lists (A vs B)",
-    "population": "loss",
-    "proxy_size": "600M",
-    "decision_acc": 0.667,
-    "cells": 3,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "175M",
-    "decision_acc": 0.396,
+    "decision_acc": 0.98,
     "cells": 1,
     "refs": "1.7B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "1B",
-    "decision_acc": 0.637,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "350M",
-    "decision_acc": 0.482,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "benchmark",
-    "proxy_size": "600M",
-    "decision_acc": 0.556,
-    "cells": 1,
-    "refs": "1.7B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "bpb_macro",
-    "proxy_size": "175M",
-    "decision_acc": 1.0,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "bpb_macro",
-    "proxy_size": "350M",
-    "decision_acc": 1.0,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "bpb_macro",
-    "proxy_size": "600M",
-    "decision_acc": 1.0,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "bpb_trained",
-    "proxy_size": "175M",
-    "decision_acc": 0.92,
-    "cells": 1,
-    "refs": "1B"
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "bpb_trained",
     "proxy_size": "350M",
-    "decision_acc": 1.0,
-    "cells": 1,
-    "refs": "1B"
-   },
-   {
-    "intervention": "temperature",
-    "label": "temperature (T=1 vs T=3)",
-    "population": "bpb_trained",
-    "proxy_size": "600M",
     "decision_acc": 0.96,
-    "cells": 1,
-    "refs": "1B"
+    "cells": 3,
+    "refs": "1.7B,1B,600M"
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
-    "population": "loss",
-    "proxy_size": "175M",
-    "decision_acc": 0.0,
-    "cells": 3,
+    "population": "bpb_trained",
+    "proxy_size": "600M",
+    "decision_acc": 0.957,
+    "cells": 2,
     "refs": "1.7B,1B"
    },
    {
     "intervention": "temperature",
     "label": "temperature (T=1 vs T=3)",
     "population": "loss",
+    "proxy_size": "175M",
+    "decision_acc": 0.333,
+    "cells": 3,
+    "refs": "1.7B"
+   },
+   {
+    "intervention": "temperature",
+    "label": "temperature (T=1 vs T=3)",
+    "population": "loss",
     "proxy_size": "1B",
-    "decision_acc": 1.0,
-    "cells": 1,
+    "decision_acc": 0.667,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -695,8 +743,8 @@
     "label": "temperature (T=1 vs T=3)",
     "population": "loss",
     "proxy_size": "350M",
-    "decision_acc": 1.0,
-    "cells": 1,
+    "decision_acc": 0.333,
+    "cells": 3,
     "refs": "1.7B"
    },
    {
@@ -704,8 +752,8 @@
     "label": "temperature (T=1 vs T=3)",
     "population": "loss",
     "proxy_size": "600M",
-    "decision_acc": 1.0,
-    "cells": 1,
+    "decision_acc": 0.667,
+    "cells": 3,
     "refs": "1.7B"
    },
    {

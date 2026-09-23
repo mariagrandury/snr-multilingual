@@ -352,14 +352,19 @@ def run(pool: str, out_dir: Path):
     # decisions, computed by two different code paths. They must agree.
     same = [(f"decision_acc_size_{s}", f"decision_acc_goal_f100_{s}") for s in SMALL_SIZES
             if f"decision_acc_goal_f100_{s}" in out.columns]
-    if not same:
-        # a pool without the reference bucket has no goal-DA, so there is nothing
-        # to check — "0.00e+00 over 0 sizes" would read as a check that passed
-        print("  DA-size == DA-goal@f100: not checked (no goal-DA in this pool)")
-    else:
-        bad = {a: float((out[a] - out[b]).abs().max()) for a, b in same}
+    # ... and DA-ckpt at the reference is DA-goal at the reference: the
+    # reference's own trajectory read against its own final, by both paths.
+    same_ref = [(f"decision_acc_ckpt_{_frac_label(f)}_{TARGET_SIZE}", f"decision_acc_goal_{_frac_label(f)}_{TARGET_SIZE}")
+                for f in CKPT_DA_EARLY_FRACS if f"decision_acc_goal_{_frac_label(f)}_{TARGET_SIZE}" in out.columns]
+    for label, cols in (("DA-size == DA-goal@f100", same), (f"DA-ckpt@{TARGET_SIZE} == DA-goal@{TARGET_SIZE}", same_ref)):
+        if not cols:
+            # a pool without the reference bucket has no goal-DA, so there is nothing
+            # to check — "0.00e+00 over 0 columns" would read as a check that passed
+            print(f"  {label}: not checked (no goal-DA in this pool)")
+            continue
+        bad = {a: float((out[a] - out[b]).abs().max()) for a, b in cols}
         worst = max(bad.values())
-        print(f"  DA-size == DA-goal@f100: max |diff| = {worst:.2e} over {len(same)} sizes"
+        print(f"  {label}: max |diff| = {worst:.2e} over {len(cols)} columns"
               + ("" if worst < 1e-9 else f"  !!! {bad}"))
 
 

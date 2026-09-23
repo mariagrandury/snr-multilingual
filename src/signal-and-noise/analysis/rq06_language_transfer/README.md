@@ -12,9 +12,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
 ## Highlighted result
 
-- **trained languages (106 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 3.4 % (median); with every proxy rung, transferred 2.1 % vs own fit 4.5 % vs largest proxy as is 7.3 %.
-- **never-trained languages (494 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 6.7 % (median); with every proxy rung, transferred 5.1 % vs own fit 3.2 % vs largest proxy as is 6.5 %.
-- **Pooled exponent α by L**: L1 0.141, L2 0.163, L8 0.163, L15 0.165, L30 0.160, L50 0.203.
+- **trained languages (106 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 4.0 % (median); with every proxy rung, transferred 2.1 % vs own fit 4.6 % vs largest proxy as is 7.6 %.
+- **never-trained languages (494 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 7.0 % (median); with every proxy rung, transferred 5.2 % vs own fit 3.0 % vs largest proxy as is 6.6 %.
+- **Pooled exponent α by L**: L1 0.141, L2 0.163, L8 0.163, L15 0.153, L30 0.160, L50 0.181.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -49,14 +49,14 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 | languages | k | transferred α | own fit | largest proxy | n |
 |---|---|---|---|---|---|
-| never trained | 1 | 0.067 |  | 0.358 | 494 |
-| never trained | 2 | 0.065 |  | 0.163 | 494 |
-| never trained | 3 | 0.058 | 0.058 | 0.102 | 494 |
-| never trained | 4 | 0.051 | 0.032 | 0.065 | 359 |
-| trained | 1 | 0.034 |  | 0.454 | 106 |
-| trained | 2 | 0.024 |  | 0.194 | 106 |
-| trained | 3 | 0.021 | 0.051 | 0.094 | 106 |
-| trained | 4 | 0.021 | 0.045 | 0.073 | 41 |
+| never trained | 1 | 0.070 |  | 0.384 | 494 |
+| never trained | 2 | 0.068 |  | 0.188 | 494 |
+| never trained | 3 | 0.061 | 0.063 | 0.121 | 494 |
+| never trained | 4 | 0.052 | 0.030 | 0.066 | 494 |
+| trained | 1 | 0.040 |  | 0.497 | 106 |
+| trained | 2 | 0.027 |  | 0.257 | 106 |
+| trained | 3 | 0.024 | 0.088 | 0.161 | 106 |
+| trained | 4 | 0.021 | 0.046 | 0.076 | 106 |
 
 ![Transfer](pretraining/predictivity_all/rq5_transfer.png)
 
@@ -64,10 +64,10 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 | population | proxy | agreement | cells |
 |---|---|---|---|
-| bpb_trained | 175M | 0.74 | 8 |
-| bpb_trained | 350M | 0.76 | 8 |
-| bpb_trained | 600M | 0.50 | 8 |
-| bpb_trained | 1B | 0.83 | 4 |
+| bpb_trained | 175M | 0.79 | 10 |
+| bpb_trained | 350M | 0.78 | 10 |
+| bpb_trained | 600M | 0.53 | 9 |
+| bpb_trained | 1B | 0.88 | 8 |
 
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->

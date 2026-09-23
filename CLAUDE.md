@@ -76,7 +76,8 @@ configs/          # tasks.json, models.json, languages.json, hf_wandb.json
 documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
 scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh,
-                  # reservation_drain.sh, preempt_drain.sh (queue drainers)
+                  # reservation_drain.sh, preempt_drain.sh (queue drainers),
+                  # nightly_ladder.sh (the 06:00 publish + refresh, see below)
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -170,6 +171,13 @@ cd documents && npx slidev build                # the deck the job skipped
 # 2c. only analysis/ — no figures, PDF, compendium or deck. It does NOT fetch,
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
+
+# 2d. all of 2b, unattended at 06:00 Europe/Zurich. Arm it once, on the login
+#     node you want it pinned to; it needs no session and no Claude.
+loginctl enable-linger                              # or it dies at logout
+systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd/user/
+systemctl --user list-timers ladder-nightly         # confirm the next 06:00
+cat /iopsstor/scratch/cscs/$USER/logs/nightly-ladder/last-run.txt   # OK or FAILED
 ```
 
 `scripts/refresh_analysis.sh` is the only thing to run after new results:
@@ -178,6 +186,15 @@ re-runs the analysis, the figures, the report PDF, the compendium and the
 deck, and fails if a slide points at a figure that no longer exists. Prose it
 cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
 numbers against `documents/ladder-facts.json` and prints the ones that moved.
+
+`scripts/nightly_ladder.sh` is that recipe automated, and it exists because
+of one trap: `ladder_report.publish()` catches its own push failures and still
+exits 0, so after a failed `--push-git` the fetch below *succeeds* and hands
+the analysis yesterday's report. The script reads publish()'s stderr, installs
+the freshly generated CSVs from disk when a push did not land, and then proves
+with `cmp` that what the analysis will read is byte-identical to what was just
+generated — refusing to spend two hours otherwise. `nightly_ladder_setsid.sh`
+is the fallback when `loginctl enable-linger` is refused.
 
 Three things it cannot guess:
 

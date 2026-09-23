@@ -453,8 +453,10 @@ review of this session's rq02 work is committed (`2f6c05c`).
 ## 9. Implementation log — 2026-09-22
 
 **Landed.** `analysis/utils.py` now owns the decomposition and the pair sets
-(`DESIGN_AXES`, `SECOND_LANG`, `HEADLINE_SCHEMES`, `AXES_SUFFIX`,
-`design_axes`, `pair_sets`, `pair_agreement`, `one_axes`); `compute_da.py`
+(`DESIGN_AXES`, `SECOND_LANG`, `AXES_SUFFIX`, `design_axes`, `pair_sets`,
+`pair_agreement`, `one_axes`; the `HEADLINE_SCHEMES` constant §3.3 proposed
+was written and then removed in review — nothing read it, the A/B filter
+stays in `models.json`'s pool definitions until §7.3 happens); `compute_da.py`
 computes every table once per pair set and tags it `axes`, and adds the DA-goal
 wide columns; `reliable_tasks.py` gates the three kinds separately, carries
 both pair sets and reads its DA from `--da-pool predictivity_schemes` while the

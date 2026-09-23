@@ -23,7 +23,15 @@ Three groupings of the same decisions, `--by`:
                      grid seed, one point per trained size.
     L                the language-count regimes (L1 … L50) plus `all pairs`:
                      within a regime a decision is any pair of design variants
-                     that share the L, as `by_L.py` defines it
+                     that share the L, as `by_L.py` defines it. Under
+                     `--axes mono-axis` a regime keeps only its pairs that move
+                     ONE other axis, and rule 5 then empties every proxy size
+                     but 1B (4-5 pairs per regime, three needed per task): the
+                     `_one_axis` L figure shows that fact rather than hiding it.
+                     The multi-axis L lines therefore pool arch, list and
+                     temperature decisions at once, and their mix is written
+                     next to every point (`share_*` columns) because it differs
+                     between regimes and cannot be held fixed.
     transformation   the axis the pair differs on, and nothing else: language
                      count, depth, language list (A vs B), temperature (T = 1 vs
                      T = 3), second language (ru vs zh vs es at L = 2), seed. The
@@ -37,6 +45,19 @@ Three groupings of the same decisions, `--by`:
 Every grouping also carries `OVERALL`, the pooled black line: every pair at the
 grid seed, every data scheme included (A, B, AT3, ZH, ES), so it is the same
 population as by_L's first panel and means the same thing in every rq02 figure.
+It carries a leave-one-family-out jackknife band (`lo`/`hi`, 90 %): the unit
+resampled is the design variant, since pairs and tasks both share them.
+
+Two restrictions make the L lines comparable with each other, which by
+default they are not (an L50 line pools 52 tasks, an L8 line 7):
+
+    --langs L8       only tasks in the eight languages of the L8 setting
+                     ({en, ru, zh, de, ja, es, fr, it}), which every L >= 8
+                     trains — the lists are nested. Stem token `L8`.
+    --common-tasks   only tasks with >= MIN_PAIRS pairs in EVERY drawn regime at
+                     EVERY proxy size: one task set for the whole figure, so a
+                     gap between two lines is a gap on the same benchmarks.
+                     Stem token `common`. What it cannot fix is the decision mix.
 
     scale_convergence.png        the pooled line alone (`--by overall`)
     scale_convergence_<by>.png   one line per group, x = non-embedding parameters
@@ -68,6 +89,7 @@ population as by_L's first panel and means the same thing in every rq02 figure.
                                  clears tau.
 
     python analysis/rq02_decision_accuracy/scale_convergence.py --by L --pool predictivity
+    python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks
 """
 
 from __future__ import annotations
@@ -96,14 +118,19 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
 from analysis.utils import (  # noqa: E402
     AXES_SUFFIX, CKPT_DA_EARLY_FRACS, DESIGN_AXES, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
-    at_fraction, design_axes, finals, ladder_frame, pair_sets, size_order)
+    assign_language, at_fraction, design_axes, finals, jackknife_ratio, ladder_frame, pair_sets,
+    size_order)
+from pretrain.launch_trainings import cell_languages  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
 POOL = "predictivity_all"     # the transformation axes need every scheme and seed
 TAU = 0.90                    # "recovers 90 % of the full-scale decisions"
 BY_LINE = {"overall": "one pooled line over every pair at the grid seed",
-           "L": "one line per language-count regime",
+           "L": "one line per language-count regime (pairs sharing the L; any other axis may move)",
            "transformation": "one line per design axis the pair differs on"}
+# The task restrictions a run can ask for, by name: the language set of an L
+# setting (scheme A's, the nested lists), or none.
+LANG_SETS = {"all": None, "L8": frozenset(cell_languages(8, "A"))}
 # The pair's one differing axis -> its label, one label per axis. `scheme` is
 # NOT an axis: it glues the language LIST, the sampling TEMPERATURE and the
 # SECOND LANGUAGE together, so an A-vs-AT3 pair moves the temperature alone
@@ -138,6 +165,16 @@ OVERALL = "all pairs"
 # other, so two different near-black curves each looked like `all pairs`. With
 # OVERALL out of the cycle only `--by L` reaches the dark step, on L8.
 GROUP_COLOURS = S.RAMP + [S.SERIES[1], S.SERIES[2], "#8c1d18", "#7a5195"]
+# The L regimes are ORDINAL, so they take the ramp in L order — light at L8,
+# dark at L50 — the same colour in every figure that draws them, whichever
+# regimes happen to have a line. L1 and L2 draw no line today (rule 5) and sit
+# outside the ramp so that, when they do, they do not shift the other four.
+L_COLOUR = {"L1": "#8c1d18", "L2": "#7a5195", "L8": S.RAMP[0], "L15": S.RAMP[1], "L30": S.RAMP[2], "L50": S.RAMP[3]}
+
+
+def group_order(groups) -> list:
+    """L regimes by their number, anything else as it comes."""
+    return sorted(groups, key=lambda g: (0, int(g[1:])) if g[1:].isdigit() and g.startswith("L") else (1, 0))
 POPULATIONS = ("all benchmarks", "bpb")
 # every population, then one per named filter this figure is asked for.
 # `above_66_size` exists because rq2_above_66_one reads its DA-size panel over
@@ -165,17 +202,19 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
     the language count, and letting it into an L regime would mix two axes.
     """
     fams = sorted(attrs.index)
-    # The pooled line IS `utils.pair_sets`'s multi-axis set, so the black line of
-    # every rq02 figure and the `multi-axis` rows of `da_per_task.csv` are one
-    # population by construction rather than by two definitions agreeing.
-    groups: dict[str, list] = {OVERALL: list(pair_sets(attrs)[axes])}
+    # The pooled line IS `utils.pair_sets`'s set for this `axes`, so the black
+    # line of every rq02 figure and the matching rows of `da_per_task.csv` are
+    # one population by construction rather than by two definitions agreeing.
+    sets = pair_sets(attrs)
+    groups: dict[str, list] = {OVERALL: list(sets[axes])}
     if by == "overall":                       # the pooled line is the whole figure
         return groups
+    allowed = set(sets[axes])                 # an L regime keeps the pair set it is named for
     for i, a in enumerate(fams):
         for b in fams[i + 1:]:
             ra, rb = attrs.loc[a], attrs.loc[b]
             if by == "L":
-                if ra["L"] == rb["L"] and ra["seed"] == rb["seed"] == GRID_SEED:
+                if ra["L"] == rb["L"] and ra["seed"] == rb["seed"] == GRID_SEED and (a, b) in allowed:
                     groups.setdefault(f"L{int(ra['L'])}", []).append((a, b))
                 continue
             differ = [k for k in KEYS if ra[k] != rb[k]]
@@ -186,23 +225,43 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
     return groups
 
 
+def pair_axis(attrs: pd.DataFrame) -> dict[tuple[str, str], str]:
+    """(family_a, family_b) -> the ONE design axis the pair moves, or `multi`
+    when it moves several: the decision mix a pooled line is made of."""
+    fams = sorted(attrs.index)
+    out = {}
+    for i, a in enumerate(fams):
+        for b in fams[i + 1:]:
+            differ = [k for k in KEYS if attrs.loc[a, k] != attrs.loc[b, k]]
+            out[(a, b)] = differ[0] if len(differ) == 1 else "multi"
+    return out
+
+
 def grid_frame(df: pd.DataFrame, fracs: list) -> pd.DataFrame:
     """The pool at each evaluated tenth of every run, `frac` snapped to the grid
     point the row was taken for, so a fraction is an exact dictionary key."""
     return pd.concat([at_fraction(df, f).assign(frac=f) for f in fracs], ignore_index=True)
 
 
-def stem_for(by: str, variant: str = "", axes: str = "multi-axis") -> str:
-    """`overall` is the plain figure, so it carries no `_by` token."""
-    return ("scale_convergence" + (f"_{by}" if by != "overall" else "")
+def stem_for(by: str, variant: str = "", axes: str = "multi-axis", langs: str = "all",
+             common: bool = False) -> str:
+    """`overall` is the plain figure, so it carries no `_by` token; a language
+    restriction replaces the `L` token (`scale_convergence_L8_...`), the
+    common-task set appends `common` to it."""
+    token = (langs if langs != "all" else by) + ("common" if common else "")
+    return ("scale_convergence" + (f"_{token}" if by != "overall" or langs != "all" else "")
             + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes])
 
 
-def reliability(df: pd.DataFrame, groups: dict, sizes: list, fin: pd.DataFrame,
-                fracs: list = (1.0,), ref: str = TARGET_SIZE) -> pd.DataFrame:
-    """Per (task, group, size, frac): how many of the group's decisions that
-    proxy makes the same way the reference's FINAL checkpoint does, how many
-    were comparable, and the compute the proxies spent reaching it.
+DECISION_COLS = ["task", "group", "size", "frac", "family_a", "family_b", "match", "compute"]
+
+
+def decisions(df: pd.DataFrame, groups: dict, sizes: list, fin: pd.DataFrame,
+              fracs: list = (1.0,), ref: str = TARGET_SIZE) -> pd.DataFrame:
+    """One row per comparable decision: (task, group, size, frac, the two
+    families, whether the proxy ordered them like the reference's FINAL, and
+    the mean compute the two proxies spent). `reliability` sums these per cell;
+    the jackknife and the decision-mix columns need the rows themselves.
 
     A decision is comparable when both families have a score at the proxy
     (size, frac) AND a final score at the reference. Agreement is the sign of
@@ -228,20 +287,38 @@ def reliability(df: pd.DataFrame, groups: dict, sizes: list, fin: pd.DataFrame,
         for grp, pl in groups.items():
             for size in sizes:
                 for fr in fracs:
-                    n_match = n_total = 0
-                    spent = 0.0
                     for a, b in pl:
                         ka, kb = (a, size, fr), (b, size, fr)
                         if ka in sc and kb in sc and a in R and b in R:
-                            n_total += 1
-                            n_match += np.sign(sc[ka] - sc[kb]) == np.sign(R[a] - R[b])
-                            spent += fl[ka] + fl[kb]
-                    if n_total:
-                        rows.append({"task": task, "group": grp, "size": size, "frac": fr,
-                                     "n_matching": int(n_match), "n_comparable": n_total,
-                                     "compute": spent / (2 * n_total), "da": n_match / n_total})
-    return pd.DataFrame(rows, columns=["task", "group", "size", "frac", "n_matching",
-                                       "n_comparable", "compute", "da"])
+                            rows.append((task, grp, size, fr, a, b,
+                                         int(np.sign(sc[ka] - sc[kb]) == np.sign(R[a] - R[b])),
+                                         (fl[ka] + fl[kb]) / 2))
+    out = pd.DataFrame(rows, columns=DECISION_COLS)
+    for c in ("task", "group", "size", "family_a", "family_b"):
+        out[c] = out[c].astype("category")          # ten fracs x every pair: keep the strings small
+    return out
+
+
+def reliability(dec: pd.DataFrame) -> pd.DataFrame:
+    """Per (task, group, size, frac): the decisions of `decisions()` summed —
+    how many matched, how many were comparable, the mean compute, the ratio."""
+    out = (dec.groupby(["task", "group", "size", "frac"], observed=True)
+           .agg(n_matching=("match", "sum"), n_comparable=("match", "size"), compute=("compute", "mean"))
+           .reset_index())
+    for c in ("task", "group", "size"):
+        out[c] = out[c].astype(str)
+    out["da"] = out["n_matching"] / out["n_comparable"]
+    return out
+
+
+def keep_cells(cells: pd.DataFrame, pool: str) -> pd.DataFrame:
+    """The cells a figure may read: rule 5 (the pair minimum) and rule 1 (the
+    above-random gate at the proxy and at the reference), with the task's
+    family and language attached and the two populations named."""
+    cells = cells[cells["n_comparable"] >= MIN_PAIRS]        # rule 5
+    cells = G.mark_gated(G.add_meta(cells), pool, "size", "da", TARGET_SIZE).dropna(subset=["da"])
+    cells["population"] = np.where(cells["family"] == "bpb", "bpb", "all benchmarks")
+    return cells
 
 
 def aggregate(cells: pd.DataFrame, pool: str, tau: float, x: str = "non_emb") -> pd.DataFrame:
@@ -251,9 +328,7 @@ def aggregate(cells: pd.DataFrame, pool: str, tau: float, x: str = "non_emb") ->
     `reliability_macro` is rq02's mean over tasks, carried next to it so the
     two conventions can be compared rather than silently swapped.
     """
-    cells = cells[cells["n_comparable"] >= MIN_PAIRS]        # rule 5
-    cells = G.mark_gated(G.add_meta(cells), pool, "size", "da", TARGET_SIZE).dropna(subset=["da"])
-    cells["population"] = np.where(cells["family"] == "bpb", "bpb", "all benchmarks")
+    cells = keep_cells(cells, pool)
     keys = ["population", "group", "size"] + (["frac"] if x == "compute" else [])
     out = (cells.groupby(keys)
            .agg(n_matching=("n_matching", "sum"), n_comparable=("n_comparable", "sum"),
@@ -280,6 +355,23 @@ def aggregate(cells: pd.DataFrame, pool: str, tau: float, x: str = "non_emb") ->
     if x == "compute":
         out["n_min_compute"] = list(map(hit["compute"].first().get, key))
     return out.sort_values(["population", "group", x])
+
+
+def decorate(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool: str, keys: list,
+             axis_of: dict | None = None) -> pd.DataFrame:
+    """Per point of `out`: which axis the pooled decisions moved (`share_<axis>`,
+    the mix a regime line is made of) and the leave-one-family-out band
+    (`se`, `n_families`, `lo`, `hi`). Both are read from the decision rows
+    behind exactly the cells `aggregate` kept, so they join on the cell key."""
+    kept = keep_cells(cells, pool)
+    d = dec.astype({c: str for c in ("task", "group", "size", "family_a", "family_b")})
+    d = d.merge(kept[["task", "group", "size", "frac", "population"]], on=["task", "group", "size", "frac"])
+    if axis_of is not None:
+        d["axis"] = [axis_of.get((a, b), "multi") for a, b in zip(d["family_a"], d["family_b"])]
+        mix = d.groupby(keys + ["axis"], observed=True).size().unstack("axis", fill_value=0)
+        mix = mix.div(mix.sum(axis=1), axis=0).add_prefix("share_").reset_index()
+        out = out.merge(mix, on=keys, how="left")
+    return out.merge(jackknife_ratio(d, keys)[keys + ["se", "n_families", "lo", "hi"]], on=keys, how="left")
 
 
 def diagnostics(out: pd.DataFrame, groups: dict, fin: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -314,46 +406,68 @@ def diagnostics(out: pd.DataFrame, groups: dict, fin: pd.DataFrame) -> tuple[pd.
     return pd.DataFrame(rows), pd.DataFrame(gone)
 
 
+def draw_lines(ax, out: pd.DataFrame, groups: list, colours: dict, x: str = "non_emb",
+               counts: bool = False, band: tuple = (OVERALL,), labels: dict | None = None) -> None:
+    """One population's lines into `ax`: solid up to the last real proxy, faint
+    dashed into the hollow reference point, the first point clearing tau ringed,
+    the jackknife band on the groups in `band`, and (`counts`) the task count
+    under every point. `labels` renames a group in the legend."""
+    for grp in groups:
+        g = out[out["group"] == grp].sort_values(x)
+        if not len(g):
+            continue
+        c, lw, z = (S.INK, 2.0, 6) if grp == OVERALL else (colours[grp], 1.3, 3)
+        # The reference point is 1.0 because it is compared with itself, so the
+        # segment into it is not evidence of convergence. Solid up to the last
+        # real proxy, faint dashed into the reference, which is drawn hollow.
+        # Only the reference's OWN FINAL is 1.0 by construction; on the compute
+        # axis its earlier checkpoints are ordinary proxies and stay on the line.
+        is_ref = (g["size"] == TARGET_SIZE) & (g["frac"] == 1.0)
+        real, ref_pt = g[~is_ref], g[is_ref]
+        if not len(real):        # only the reference: nothing to draw, so no legend entry
+            continue
+        ms = 4 if x != "compute" else 2.5
+        ax.plot(real[x], real["reliability"], color=c, marker="o", ms=ms, lw=lw,
+                label=(labels or {}).get(grp, grp), zorder=z)
+        # The jackknife band is drawn on the pooled line alone by default: a regime
+        # line rests on 4-5 families, where a leave-one-out interval is four
+        # numbers and says nothing. The CSV carries every group's `lo`/`hi`.
+        if grp in band and "lo" in real:
+            b = real.dropna(subset=["lo", "hi"])
+            if len(b):
+                ax.fill_between(b[x], b["lo"].clip(0, 1), b["hi"].clip(0, 1), color=c, alpha=.10, lw=0, zorder=1)
+        if counts:               # rule 13: the population moves along a line, so say so at every point
+            for _, r in real.iterrows():
+                ax.annotate(f"{int(r['n_tasks'])}", (r[x], r["reliability"]), textcoords="offset points",
+                            xytext=(0, -9), ha="center", va="top", fontsize=5, color=c, alpha=.8)
+        if len(ref_pt):
+            ax.plot([real[x].iloc[-1], ref_pt[x].iloc[0]],
+                    [real["reliability"].iloc[-1], ref_pt["reliability"].iloc[0]],
+                    color=c, lw=lw * .7, ls=(0, (2, 2)), alpha=.45, zorder=2)
+            ax.plot(ref_pt[x], ref_pt["reliability"], marker="o", ms=4.5,
+                    mfc=S.SURFACE, mec=c, mew=1.2, ls="none", zorder=z)
+        hit = real[real["reaches_tau"]]
+        if len(hit):                      # N_min(tau), the claim the figure exists for
+            r = hit.iloc[0]
+            lbl = r["size"] if x != "compute" else f"{r['size']} @ {G.chinchilla(r['frac'])}"
+            ax.plot(r[x], r["reliability"], marker="o", ms=11, mfc="none", mec=c, mew=1.6, zorder=z + 1)
+            high = r["reliability"] > .88
+            ax.annotate(lbl, (r[x], r["reliability"]), textcoords="offset points",
+                        xytext=(0, -15 if high else 10), ha="center",
+                        va="top" if high else "bottom", fontsize=6.5, color=c, zorder=5)
+
+
 def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
-           populations: tuple = POPULATIONS, note: str = "", x: str = "non_emb") -> None:
+           populations: tuple = POPULATIONS, note: str = "", x: str = "non_emb",
+           counts: bool = False) -> None:
     # OVERALL first, so it heads the legend; its zorder keeps it above the rest.
-    rest = [g for g in out["group"].unique() if g != OVERALL]
+    rest = group_order(g for g in out["group"].unique() if g != OVERALL)
     groups = [OVERALL] + rest
-    colours = dict(zip(rest, GROUP_COLOURS * 3))
+    colours = {g: L_COLOUR.get(g, c) for g, c in zip(rest, GROUP_COLOURS * 3)}
     fig, axes = plt.subplots(1, len(populations), figsize=(5.9 * len(populations), 4.6), sharey=True, squeeze=False)
     axes = axes.ravel()
     for ax, pop in zip(axes, populations):
-        for grp in groups:
-            g = out[(out["population"] == pop) & (out["group"] == grp)].sort_values(x)
-            if not len(g):
-                continue
-            c, lw, z = (S.INK, 2.0, 6) if grp == OVERALL else (colours[grp], 1.3, 3)
-            # The reference point is 1.0 because it is compared with itself, so the
-            # segment into it is not evidence of convergence. Solid up to the last
-            # real proxy, faint dashed into the reference, which is drawn hollow.
-            # Only the reference's OWN FINAL is 1.0 by construction; on the compute
-            # axis its earlier checkpoints are ordinary proxies and stay on the line.
-            is_ref = (g["size"] == TARGET_SIZE) & (g["frac"] == 1.0)
-            real, ref_pt = g[~is_ref], g[is_ref]
-            if not len(real):        # only the reference: nothing to draw, so no legend entry
-                continue
-            ms = 4 if x == "non_emb" else 2.5
-            ax.plot(real[x], real["reliability"], color=c, marker="o", ms=ms, lw=lw, label=grp, zorder=z)
-            if len(ref_pt) and len(real):
-                ax.plot([real[x].iloc[-1], ref_pt[x].iloc[0]],
-                        [real["reliability"].iloc[-1], ref_pt["reliability"].iloc[0]],
-                        color=c, lw=lw * .7, ls=(0, (2, 2)), alpha=.45, zorder=2)
-                ax.plot(ref_pt[x], ref_pt["reliability"], marker="o", ms=4.5,
-                        mfc=S.SURFACE, mec=c, mew=1.2, ls="none", zorder=z)
-            hit = real[real["reaches_tau"]]
-            if len(hit):                      # N_min(tau), the claim the figure exists for
-                r = hit.iloc[0]
-                lbl = r["size"] if x == "non_emb" else f"{r['size']} @ {G.chinchilla(r['frac'])}"
-                ax.plot(r[x], r["reliability"], marker="o", ms=11, mfc="none", mec=c, mew=1.6, zorder=z + 1)
-                high = r["reliability"] > .88
-                ax.annotate(lbl, (r[x], r["reliability"]), textcoords="offset points",
-                            xytext=(0, -15 if high else 10), ha="center",
-                            va="top" if high else "bottom", fontsize=6.5, color=c, zorder=5)
+        draw_lines(ax, out[out["population"] == pop], groups, colours, x, counts)
         ax.axhline(tau, color=S.MUTED, lw=.8, ls=":")
         ax.set_xscale("log"); ax.set_ylim(0, 1.0)
         if x == "non_emb":
@@ -377,7 +491,9 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
                     + f"R = matching decisions / comparable decisions, pooled over the "
                     f"gated tasks with ≥ {MIN_PAIRS} pairs; dotted line = τ = {tau:g}, the ring = N_min(τ), the smallest "
                     f"size clearing it. The hollow {TARGET_SIZE} point is 1.0 by construction (compared with itself) and "
-                    f"the dashed segment into it is not evidence of convergence. Gate and pair "
+                    f"the dashed segment into it is not evidence of convergence. The shaded band on `{OVERALL}` is a "
+                    f"leave-one-design-variant-out jackknife (90 %): how much the line depends on which variants are "
+                    f"in the grid, not on seed noise (no replicate exists at {TARGET_SIZE}). Gate and pair "
                     f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note)
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
@@ -404,15 +520,28 @@ def generate_readme(pool: str, out_dir: Path, tables: dict) -> None:
                   "scale_convergence.py")
 
 
+def common_tasks(kept: pd.DataFrame) -> set[str]:
+    """The tasks with a cell in EVERY drawn regime at EVERY proxy size: one task
+    set for the whole figure, so both the across-L and the across-size readings
+    are paired. Empty when no task manages it, which is itself a result."""
+    regimes = [g for g in kept["group"].unique() if g != OVERALL]
+    proxies = [s for s in kept["size"].unique() if s != TARGET_SIZE]
+    sets = [set(kept.loc[(kept["group"] == g) & (kept["size"] == s), "task"]) for g in regimes for s in proxies]
+    return set.intersection(*sets) if sets else set()
+
+
 def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
-        cells: pd.DataFrame | None = None, groups: dict | None = None,
-        fin: pd.DataFrame | None = None, x: str = "non_emb", axes: str = "multi-axis") -> pd.DataFrame | None:
-    """`cells` / `groups` / `fin` are passed in when a second variant reuses the
-    first one's decisions: the pair sets and the per-task counts do not depend
+        dec: pd.DataFrame | None = None, groups: dict | None = None,
+        fin: pd.DataFrame | None = None, x: str = "non_emb", axes: str = "multi-axis",
+        langs: str = "all", common: bool = False, axis_of: dict | None = None) -> pd.DataFrame | None:
+    """`dec` / `groups` / `fin` are passed in when a second variant reuses the
+    first one's decisions: the pair sets and the per-decision rows do not depend
     on which tasks are kept, so the pool is loaded and scored once. `x` picks
-    the axis, and with it which `cells` table was handed in."""
-    stem = stem_for(by, variant, axes) + ("_flops" if x == "compute" else "")
+    the axis, and with it which `dec` table was handed in. `langs` and `common`
+    are the two task restrictions the module docstring describes."""
+    stem = stem_for(by, variant, axes, langs, common) + ("_flops" if x == "compute" else "")
     populations, note = POPULATIONS, ""
+    cells = reliability(dec)
     if variant:
         red, thresh, crit = FILTERS[variant]
         keep = load_reliable(out_dir, variant, axes)
@@ -423,32 +552,55 @@ def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
         note = (f" Restricted to the {len(keep)} (benchmark, language) cells reliable on {crit} "
                 f"(DA ≥ {thresh:g}, {red} reduction, reliable_tasks.py), over "
                 f"{keep['benchmark'].nunique()} benchmark(s) and {keep['language'].nunique()} languages.")
-    out = aggregate(cells, pool, tau, x)
+    if LANG_SETS[langs] is not None:
+        cells = cells[cells["task"].map(assign_language).isin(LANG_SETS[langs])]
+        note += (f" Tasks in the {len(LANG_SETS[langs])} languages of the {langs} setting only "
+                 f"({', '.join(sorted(LANG_SETS[langs]))}), which every regime from {langs} up trains.")
+    if common:
+        kept = keep_cells(cells, pool)
+        shared = common_tasks(kept)
+        if not shared:
+            print(f"\n--- {stem} --- !!! no task has ≥ {MIN_PAIRS} pairs in every regime at every proxy size: no figure")
+            return None
+        cells = cells[cells["task"].isin(shared)]
+        note += (f" Common-task set: the {len(shared)} tasks with ≥ {MIN_PAIRS} pairs in every regime at every "
+                 f"proxy size, so every line is read over the same benchmarks. The decision MIX still differs "
+                 f"between regimes (`share_*` in the CSV) and cannot be held fixed under rule 5.")
+    keys = ["population", "group", "size"] + (["frac"] if x == "compute" else [])
+    out = decorate(aggregate(cells, pool, tau, x), dec, cells, pool, keys, axis_of)
     diag, gone = diagnostics(out, groups, fin)
     print(f"\n--- {stem} ---")
     print(diag.to_string(index=False))
     if len(gone):
         print(f"  {len(gone)} group(s) with no line: {', '.join(gone['group'])}")
     out.to_csv(out_dir / f"{stem}.csv", index=False)
-    figure(out, out_dir / f"{stem}.png", by, pool, tau, populations, note, x)
+    # Per-point counts where they vary and fit: the one-panel restricted figures.
+    # The common-task figure has one count everywhere (the caption says it) and
+    # the two-panel one has ring labels in the same place.
+    figure(out, out_dir / f"{stem}.png", by, pool, tau, populations, note, x,
+           counts=langs != "all" and not common and bool(variant))
     return out
 
 
-def run_all(by: str, pool: str, tau: float, out_dir: Path, axes: str = "multi-axis") -> dict:
+def run_all(by: str, pool: str, tau: float, out_dir: Path, axes: str = "multi-axis",
+            langs: str = "all", common: bool = False) -> dict:
     df = ladder_frame(POOL)
     fin = finals(df)
-    groups = pairs_by_group(design_axes(df), by, axes)
+    attrs = design_axes(df)
+    groups, axis_of = pairs_by_group(attrs, by, axes), pair_axis(attrs)
     sizes = size_order(fin["size"].unique())
-    print(f"\n=== --by {by} [{axes}]: {len(groups)} groups, {sum(map(len, groups.values()))} family pairs, sizes {sizes} ===")
-    cells = reliability(fin.assign(frac=1.0), groups, sizes, fin)
-    out = {v: run(by, pool, tau, out_dir, v, cells, groups, fin, axes=axes) for v in VARIANTS}
+    print(f"\n=== --by {by} [{axes}, langs {langs}{', common tasks' if common else ''}]: {len(groups)} groups, "
+          f"{sum(map(len, groups.values()))} family pairs, sizes {sizes} ===")
+    dec = decisions(fin.assign(frac=1.0), groups, sizes, fin)
+    kw = dict(axes=axes, langs=langs, common=common, axis_of=axis_of)
+    out = {v: run(by, pool, tau, out_dir, v, dec, groups, fin, **kw) for v in VARIANTS}
     # The ten-point grid costs ten times the size axis, so only score it when a
     # reliable-task table exists for at least one _flops variant to filter on.
     todo = [v for v in FLOPS_VARIANTS if load_reliable(out_dir, v, axes) is not None]
     if todo:
-        grid = reliability(grid_frame(df, FRACS), groups, sizes, fin, FRACS)
+        grid = decisions(grid_frame(df, FRACS), groups, sizes, fin, FRACS)
         for v in todo:
-            run(by, pool, tau, out_dir, v, grid, groups, fin, x="compute", axes=axes)
+            run(by, pool, tau, out_dir, v, grid, groups, fin, x="compute", **kw)
     return out
 
 
@@ -461,11 +613,17 @@ if __name__ == "__main__":
     p.add_argument("--tau", type=float, default=TAU, help="the reliability threshold N_min is read at")
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
                    help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+    p.add_argument("--langs", default="all", choices=list(LANG_SETS),
+                   help="restrict the tasks to the languages of one L setting (stem token replaces `L`)")
+    p.add_argument("--common-tasks", action="store_true",
+                   help="restrict to the tasks with ≥ MIN_PAIRS pairs in every regime at every proxy size")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     tables = {}
     for by in args.by:
-        t = run_all(by, args.pool, args.tau, out, args.axes)[""]
+        t = run_all(by, args.pool, args.tau, out, args.axes, args.langs, args.common_tasks)[""]
+        if t is None:
+            continue
         b = t[t["population"] == "all benchmarks"]
         tables[by] = (b.pivot_table(index="group", columns="size", values="reliability")
                       .reindex(columns=size_order(b["size"].unique())).round(2)
@@ -473,7 +631,30 @@ if __name__ == "__main__":
                       .fillna("—").reset_index())
     # The block names all three groupings, so a partial run must not rewrite it
     # with a subset — that silently drops the other two tables from the README.
-    if set(args.by) == set(BY_LINE) and args.axes == "multi-axis":
+    if set(args.by) == set(BY_LINE) and args.axes == "multi-axis" and args.langs == "all" and not args.common_tasks:
         generate_readme(args.pool, out, tables)
+    elif args.langs != "all" and args.pool == CANONICAL_POOL and args.axes == "multi-axis" and "L" in tables:
+        # the restricted L figures get their own block, so a reader finds them
+        stage = load_pools()[args.pool].get("stage", "pretraining")
+        stem = stem_for("L", "above_66_size", args.axes, args.langs, args.common_tasks)
+        body = "\n\n".join([
+            f"## Scale convergence by language count, on the {args.langs} languages"
+            + (", common tasks" if args.common_tasks else ""),
+            f"The `--by L` lines read over the tasks in the {len(LANG_SETS[args.langs])} languages of the {args.langs} "
+            f"setting ({', '.join(sorted(LANG_SETS[args.langs]))}), which every regime from {args.langs} up trains"
+            + (f", and further over the tasks with ≥ {MIN_PAIRS} pairs in every regime at every proxy size — one task set "
+               f"for the whole figure, so a gap between lines is a gap on the same benchmarks" if args.common_tasks else "")
+            + f". What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs "
+            f"by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes "
+            f"keep only their one-axis pairs and rule 5 empties every proxy size but 1B, so the `_one_axis` L figures "
+            f"draw the pooled line alone. Numbers below are the unfiltered population; the `above_66_size` twin "
+            f"(`{stem}.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/"
+            f"scale_convergence.py --by L --langs {args.langs}{' --common-tasks' if args.common_tasks else ''}`.",
+            md_table(list(tables["L"].columns), tables["L"].values.tolist()),
+            f"![Scale convergence, {args.langs}{' common tasks' if args.common_tasks else ''}]"
+            f"({stage}/{args.pool}/{stem_for('L', '', args.axes, args.langs, args.common_tasks)}.png)"])
+        replace_block(OUT_ROOT / "README.md", f"scale-convergence-{args.langs}{'-common' if args.common_tasks else ''}",
+                      body, f"scale_convergence.py --by L --langs {args.langs}{' --common-tasks' if args.common_tasks else ''}")
     else:
-        print(f"  (README block left alone: --by {' '.join(args.by)} is a subset of {sorted(BY_LINE)})")
+        print(f"  (README block left alone: --by {' '.join(args.by)} is a subset of {sorted(BY_LINE)}, "
+              f"or a restricted run)")

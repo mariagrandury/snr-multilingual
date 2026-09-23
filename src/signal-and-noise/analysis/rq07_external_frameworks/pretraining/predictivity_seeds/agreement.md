@@ -18,7 +18,7 @@ Best variant `dist_std`, n = 3 shared tasks:
 
 | metric | value |
 |---|---:|
-| **Pearson r** (log₁₀ SNR values) | **+0.997** |
+| **Pearson r** (log₁₀ SNR values) | **+1.000** |
 | **Spearman ρ** (rank order) | **+1.000** |
 
 > With only 4 shared tasks, **top-K set overlap is NOT a result** — any K ≥ 4 spans the whole universe, so Jaccard is trivially 1.0. Only K < 4 is reported below.
@@ -35,9 +35,9 @@ Best variant `dist_std`, n = 3 shared tasks:
 
 | task          |   snr |
 |:--------------|------:|
-| arc_easy      | 1.12  |
-| hellaswag     | 1.042 |
-| arc_challenge | 0.814 |
+| arc_easy      | 1.133 |
+| hellaswag     | 1.03  |
+| arc_challenge | 0.821 |
 
 ### AllenAI
 

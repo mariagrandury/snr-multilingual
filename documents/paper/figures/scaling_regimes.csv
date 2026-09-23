@@ -1,36 +1,36 @@
 task,family,language,n_size_fits,r2_size,rho_size,n_trajectory_fits,r2_trajectory,regime
 arc_challenge,arc,en,6,0.9958805894202372,1.0,18,0.9111837333810253,predictable across both
 arc_easy,arc,en,6,0.9834599621053712,1.0,30,0.9473175787076897,predictable across both
-bpb_arb_Arab,bpb,ar,3,0.9624811475788098,1.0,13,0.9063918057001503,predictable across both
-bpb_ben_Beng,bpb,bn,2,0.9665021557790663,1.0,9,0.9339525445801136,predictable across both
-bpb_bul_Cyrl,bpb,bg,2,0.946471404020365,1.0,9,0.8980648820892027,predictable across both
-bpb_ces_Latn,bpb,cs,2,0.9481664530220164,1.0,9,0.8866520361578925,predictable across both
-bpb_cmn_Hani,bpb,zh,4,0.9546998798387611,1.0,18,0.8708394209731797,predictable across both
-bpb_dan_Latn,bpb,da,2,0.9569094517251786,1.0,9,0.8979631176288706,predictable across both
-bpb_dclm,bpb,en,6,0.9548494950485173,1.0,28,0.866397477284782,predictable across both
-bpb_deu_Latn,bpb,de,4,0.9533283240318109,1.0,18,0.8770364198484504,predictable across both
-bpb_ell_Grek,bpb,el,2,0.9532476992531118,1.0,9,0.907411001027256,predictable across both
-bpb_fas_Arab,bpb,fa,3,0.953965309793598,1.0,13,0.8921094833727637,predictable across both
-bpb_fin_Latn,bpb,fi,2,0.963086525364826,1.0,9,0.9213954516610937,predictable across both
-bpb_fra_Latn,bpb,fr,4,0.9514455579319474,1.0,18,0.8682859866333159,predictable across both
-bpb_hin_Deva,bpb,hi,2,0.9671663334840376,1.0,9,0.9333940924703369,predictable across both
-bpb_hun_Latn,bpb,hu,2,0.9616826106219056,1.0,9,0.9115973480621126,predictable across both
-bpb_ind_Latn,bpb,id,3,0.9533915873880934,1.0,13,0.8646566939391251,predictable across both
-bpb_ita_Latn,bpb,it,4,0.9515290061395694,1.0,18,0.8695933050055284,predictable across both
-bpb_jpn_Jpan,bpb,ja,4,0.9594216573483538,1.0,18,0.896846182446646,predictable across both
-bpb_kor_Hang,bpb,ko,2,0.957523758326429,1.0,9,0.9226600505020546,predictable across both
-bpb_nld_Latn,bpb,nl,3,0.953905814403314,1.0,13,0.8748690108835779,predictable across both
-bpb_nob_Latn,bpb,no,2,0.9559397951758153,1.0,9,0.8958252832346811,predictable across both
-bpb_pol_Latn,bpb,pl,3,0.946392249152501,1.0,13,0.8643564775201146,predictable across both
-bpb_por_Latn,bpb,pt,3,0.9525193286584372,1.0,13,0.85783417323434,predictable across both
-bpb_ron_Latn,bpb,ro,2,0.9449674289315502,1.0,9,0.8865914791469318,predictable across both
-bpb_rus_Cyrl,bpb,ru,5,0.946695637246816,1.0,23,0.8575090108036088,predictable across both
-bpb_spa_Latn,bpb,es,4,0.9498618865288245,1.0,18,0.8629555328883691,predictable across both
-bpb_swe_Latn,bpb,sv,2,0.9531899023324846,1.0,9,0.8898869380535301,predictable across both
-bpb_tha_Thai,bpb,th,2,0.955193959976691,1.0,9,0.9206776960294597,predictable across both
-bpb_tur_Latn,bpb,tr,2,0.9612518806207434,1.0,9,0.9096799092680855,predictable across both
-bpb_ukr_Cyrl,bpb,uk,2,0.9388862507295115,1.0,9,0.8883029263543116,predictable across both
-bpb_vie_Latn,bpb,vi,3,0.959549949148831,1.0,13,0.893994699586311,predictable across both
+bpb_arb_Arab,bpb,ar,3,0.957456665543704,1.0,15,0.9179538209436238,predictable across both
+bpb_ben_Beng,bpb,bn,2,0.9663391424469874,1.0,10,0.9335112498457045,predictable across both
+bpb_bul_Cyrl,bpb,bg,2,0.943399269806287,1.0,10,0.900660052762652,predictable across both
+bpb_ces_Latn,bpb,cs,2,0.9431296591334497,1.0,10,0.8919935772604063,predictable across both
+bpb_cmn_Hani,bpb,zh,4,0.9467484022155668,1.0,20,0.8768959495609071,predictable across both
+bpb_dan_Latn,bpb,da,2,0.9527458046679709,1.0,10,0.8987371473785308,predictable across both
+bpb_dclm,bpb,en,6,0.9548446020607676,1.0,30,0.8676336320380795,predictable across both
+bpb_deu_Latn,bpb,de,4,0.9447978468661518,1.0,20,0.8844422740732513,predictable across both
+bpb_ell_Grek,bpb,el,2,0.9481747463056172,1.0,10,0.9077431475524836,predictable across both
+bpb_fas_Arab,bpb,fa,3,0.9502182136483188,1.0,15,0.9036465623726628,predictable across both
+bpb_fin_Latn,bpb,fi,2,0.960989451795027,1.0,10,0.919258807293727,predictable across both
+bpb_fra_Latn,bpb,fr,4,0.9430443877202364,1.0,20,0.8742980754841734,predictable across both
+bpb_hin_Deva,bpb,hi,2,0.9671514050674114,1.0,10,0.9318993160102307,predictable across both
+bpb_hun_Latn,bpb,hu,2,0.957738357685606,1.0,10,0.9136481805481502,predictable across both
+bpb_ind_Latn,bpb,id,3,0.9474580112309868,1.0,15,0.8811043739794554,predictable across both
+bpb_ita_Latn,bpb,it,4,0.9461754897186496,1.0,20,0.8793018030686932,predictable across both
+bpb_jpn_Jpan,bpb,ja,4,0.9521007666207879,1.0,20,0.9033698773477429,predictable across both
+bpb_kor_Hang,bpb,ko,2,0.955981800176313,1.0,10,0.9221038548962491,predictable across both
+bpb_nld_Latn,bpb,nl,3,0.944759907136129,1.0,15,0.890091595402335,predictable across both
+bpb_nob_Latn,bpb,no,2,0.9529991648232848,1.0,10,0.8977782162073713,predictable across both
+bpb_pol_Latn,bpb,pl,3,0.935869368514242,1.0,15,0.880512621137507,predictable across both
+bpb_por_Latn,bpb,pt,3,0.9449647423642158,1.0,15,0.868118040583896,predictable across both
+bpb_ron_Latn,bpb,ro,2,0.9411593008549544,1.0,10,0.8918004889167908,predictable across both
+bpb_rus_Cyrl,bpb,ru,5,0.9442969978328958,1.0,25,0.8765138328225894,predictable across both
+bpb_spa_Latn,bpb,es,4,0.9425316369108516,1.0,20,0.8698693014504828,predictable across both
+bpb_swe_Latn,bpb,sv,2,0.9489749558797129,1.0,10,0.8946435496083742,predictable across both
+bpb_tha_Thai,bpb,th,2,0.952932940201155,1.0,10,0.9200511484607148,predictable across both
+bpb_tur_Latn,bpb,tr,2,0.9575429716144918,1.0,10,0.9108820156739406,predictable across both
+bpb_ukr_Cyrl,bpb,uk,2,0.9336045788403404,1.0,10,0.8903191124302402,predictable across both
+bpb_vie_Latn,bpb,vi,3,0.9547220812539274,1.0,15,0.9007592749165565,predictable across both
 hellaswag,hellaswag,en,6,0.9967012977022972,1.0,30,0.9891749722518215,predictable across both
 hellaswag_ar,hellaswag,ar,3,0.95197391110442,1.0,15,0.9751454339669878,predictable across both
 hellaswag_bn,hellaswag,bn,2,0.8278131956959744,1.0,10,0.5649467466642254,predictable across both
@@ -49,7 +49,7 @@ hellaswag_ru,hellaswag,ru,5,0.9877506244486132,1.0,25,0.986153615350032,predicta
 hellaswag_sv,hellaswag,sv,2,0.9579651362329575,1.0,10,0.9856063813665055,predictable across both
 hellaswag_uk,hellaswag,uk,2,0.9605751015991362,1.0,10,0.9775604367919614,predictable across both
 hellaswag_vi,hellaswag,vi,3,0.9706947997305492,1.0,15,0.983724104419893,predictable across both
-include_base_44_ukrainian,include_base_44,uk,2,0.5017905680305667,0.25,6,0.11916704105821507,predictable across size only
+include_base_44_ukrainian,include_base_44,uk,2,0.5268946539713764,-0.2,8,0.15495513649857512,declines with size
 lambada_openai_mt_de,lambada_openai_mt,de,4,0.9815379451910737,1.0,20,0.9397046164064391,predictable across both
 lambada_openai_mt_en,lambada_openai_mt,en,6,0.9923507469000108,1.0,27,0.9576509654467295,predictable across both
 lambada_openai_mt_es,lambada_openai_mt,es,4,0.9660168794128013,1.0,20,0.8869818240337511,predictable across both
@@ -84,7 +84,7 @@ rf_belebele_arb_Arab,rf_belebele,ar,3,0.8764110961362322,1.0,15,0.48142547109517
 rf_belebele_ars_Arab,rf_belebele,ar,3,0.8758824885012313,0.8999999999999998,15,0.5156824506471134,predictable across both
 rf_belebele_ary_Arab,rf_belebele,ar,3,0.7108171140978485,0.8720815992723809,15,0.16507401659995768,predictable across size only
 rf_belebele_arz_Arab,rf_belebele,ar,3,0.9447668138938486,1.0,15,0.4548821265313502,predictable across size only
-rf_belebele_ben_Beng,rf_belebele,bn,2,0.3942304854949169,0.7,8,0.16920901457793797,weak / unpredictable in both
+rf_belebele_ben_Beng,rf_belebele,bn,2,0.3568119845290956,0.5,6,0.35926246655000316,weak / unpredictable in both
 rf_belebele_ben_Latn,rf_belebele,bn,2,0.28021527461846474,0.43176156917368247,10,0.1761686967740942,weak / unpredictable in both
 rf_belebele_bul_Cyrl,rf_belebele,bg,2,0.9096996924743936,1.0,10,0.6469858938551045,predictable across both
 rf_belebele_ces_Latn,rf_belebele,cs,2,0.9353321660487854,1.0,8,0.8043286077581846,predictable across both
@@ -94,7 +94,6 @@ rf_belebele_ell_Grek,rf_belebele,el,2,0.9641142270290638,1.0,10,0.81753316324155
 rf_belebele_eng_Latn,rf_belebele,en,6,0.9755030949240594,1.0,27,0.8925445761807815,predictable across both
 rf_belebele_fin_Latn,rf_belebele,fi,2,0.857030141190755,1.0,10,0.673226118221235,predictable across both
 rf_belebele_fra_Latn,rf_belebele,fr,4,0.9750036850335178,1.0,20,0.7784151792772533,predictable across both
-rf_belebele_hin_Latn,rf_belebele,hi,2,0.7641988431477456,0.75,6,0.3220991367029021,predictable across size only
 rf_belebele_hun_Latn,rf_belebele,hu,2,0.9843202512592998,1.0,8,0.7052427914007626,predictable across both
 rf_belebele_ind_Latn,rf_belebele,id,3,0.9871805084494788,1.0,15,0.7760092680333401,predictable across both
 rf_belebele_ita_Latn,rf_belebele,it,4,0.9166812132222929,0.9873397172404482,20,0.6935619922748049,predictable across both
@@ -129,7 +128,7 @@ rf_global_mmlu_full_ko,rf_global_mmlu_full,ko,2,0.7659987085426994,0.95,10,0.497
 rf_global_mmlu_full_nl,rf_global_mmlu_full,nl,3,0.931110051129238,1.0,12,0.9066412840592005,predictable across both
 rf_global_mmlu_full_pl,rf_global_mmlu_full,pl,3,0.9630267371437242,1.0,12,0.8236421795090907,predictable across both
 rf_global_mmlu_full_pt,rf_global_mmlu_full,pt,3,0.9446590299547064,1.0,12,0.9078775299441855,predictable across both
-rf_global_mmlu_full_ro,rf_global_mmlu_full,ro,2,0.9142971107636007,1.0,8,0.9223874181114111,predictable across both
+rf_global_mmlu_full_ro,rf_global_mmlu_full,ro,2,0.8873173783978973,1.0,10,0.9068723373185623,predictable across both
 rf_global_mmlu_full_ru,rf_global_mmlu_full,ru,5,0.9649520035170388,1.0,20,0.9412489116253611,predictable across both
 rf_global_mmlu_full_sv,rf_global_mmlu_full,sv,2,0.897012974495345,1.0,10,0.863482788914884,predictable across both
 rf_global_mmlu_full_tr,rf_global_mmlu_full,tr,2,0.8497218433651785,0.9873397172404482,10,0.5753816709972833,predictable across both
@@ -139,7 +138,8 @@ rf_global_mmlu_full_zh,rf_global_mmlu_full,zh,4,0.9084209630936276,1.0,20,0.9072
 rf_include_base_44_bulgarian,rf_include_base_44,bg,2,0.9619128631521983,1.0,8,0.6126977848416361,predictable across both
 rf_include_base_44_chinese,rf_include_base_44,zh,4,0.9195463847287446,0.8999999999999999,16,0.5833521049462843,predictable across both
 rf_include_base_44_french,rf_include_base_44,fr,4,0.8802420502563493,0.9746794344808964,20,0.8449891292137146,predictable across both
-rf_include_base_44_hindi,rf_include_base_44,hi,2,0.2744048797478659,0.5,6,0.17425023845253212,weak / unpredictable in both
+rf_include_base_44_hindi,rf_include_base_44,hi,2,0.23683584768086696,0.4,8,0.18090567943654184,weak / unpredictable in both
+rf_include_base_44_hungarian,rf_include_base_44,hu,2,0.6203551534025666,0.75,6,0.2602386671953186,predictable across size only
 rf_include_base_44_indonesian,rf_include_base_44,id,3,0.9206723866054078,1.0,12,0.5453899037783557,predictable across both
 rf_include_base_44_italian,rf_include_base_44,it,4,0.971945588130608,1.0,12,0.7893871763781122,predictable across both
 rf_include_base_44_japanese,rf_include_base_44,ja,4,0.7719284396832284,0.8743416490252569,16,0.5282957289599616,predictable across both
@@ -148,19 +148,20 @@ rf_include_base_44_portuguese,rf_include_base_44,pt,3,0.9358926790553062,1.0,12,
 rf_include_base_44_russian,rf_include_base_44,ru,5,0.9128102607365703,1.0,24,0.41121435431377085,predictable across size only
 rf_include_base_44_spanish,rf_include_base_44,es,4,0.9909379554305238,1.0,16,0.7990818783732094,predictable across both
 rf_include_base_44_ukrainian,rf_include_base_44,uk,2,0.9341222130741141,1.0,6,0.7264121119302083,predictable across both
+rfgm_include_base_44_arabic,rfgm_include_base_44,ar,3,0.984298406829019,1.0,9,0.39024190421253746,predictable across size only
 rfgm_include_base_44_bulgarian,rfgm_include_base_44,bg,2,0.9394298899231184,1.0,8,0.7396281717463138,predictable across both
 rfgm_include_base_44_chinese,rfgm_include_base_44,zh,4,0.7153904383688747,0.7999999999999999,16,0.6410033396489883,predictable across both
 rfgm_include_base_44_french,rfgm_include_base_44,fr,4,0.9750129771392164,1.0,20,0.8619383139402849,predictable across both
 rfgm_include_base_44_indonesian,rfgm_include_base_44,id,3,0.9558719019928836,1.0,15,0.7399854951086782,predictable across both
 rfgm_include_base_44_italian,rfgm_include_base_44,it,4,0.9964522897205517,1.0,12,0.8849942544020915,predictable across both
-rfgm_include_base_44_japanese,rfgm_include_base_44,ja,4,0.9718649914098156,1.0,12,0.5907207164836198,predictable across both
+rfgm_include_base_44_japanese,rfgm_include_base_44,ja,4,0.954356808658168,1.0,16,0.5517505324518761,predictable across both
 rfgm_include_base_44_korean,rfgm_include_base_44,ko,2,0.9177079161011472,0.8999999999999999,8,0.7255265771597779,predictable across both
 rfgm_include_base_44_polish,rfgm_include_base_44,pl,3,0.8697236418002119,1.0,9,0.6017881929550546,predictable across both
 rfgm_include_base_44_portuguese,rfgm_include_base_44,pt,3,0.7542012002102435,0.7999999999999999,12,0.6231990947454377,predictable across both
-rfgm_include_base_44_russian,rfgm_include_base_44,ru,5,0.9673299039461304,1.0,24,0.7685440868852592,predictable across both
+rfgm_include_base_44_russian,rfgm_include_base_44,ru,5,0.939602225658886,1.0,20,0.7919265811412948,predictable across both
 rfgm_include_base_44_spanish,rfgm_include_base_44,es,4,0.9922175667304773,1.0,16,0.8609788348245084,predictable across both
 rfgm_include_base_44_ukrainian,rfgm_include_base_44,uk,2,0.9716201966129465,1.0,8,0.8330380987488717,predictable across both
-rfgm_include_base_44_vietnamese,rfgm_include_base_44,vi,3,0.8460702153611176,0.948683298050514,12,0.43795705582157535,predictable across size only
+rfgm_include_base_44_vietnamese,rfgm_include_base_44,vi,3,0.9370706505823552,1.0,9,0.4988829688077039,predictable across size only
 xcopa_id,xcopa,id,3,0.9609836390566816,1.0,15,0.6922828640587981,predictable across both
 xcopa_it,xcopa,it,4,0.9618463718745482,1.0,16,0.7767550390075308,predictable across both
 xcopa_th,xcopa,th,2,0.20544934531618364,0.3551956704170308,10,0.07834415522692495,weak / unpredictable in both

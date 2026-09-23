@@ -1,24 +1,24 @@
 {
  "grid": {
-  "cells": 126,
+  "cells": 138,
   "by_size": {
-   "1.7B": 20,
-   "175M": 29,
-   "1B": 31,
-   "350M": 21,
-   "600M": 25
+   "1.7B": 22,
+   "175M": 30,
+   "1B": 32,
+   "350M": 24,
+   "600M": 30
   }
  },
  "rq1": {
-  "n_fits": 701,
-  "n_tasks": 276,
-  "gated_series": 609,
-  "gated_rungs": 268,
+  "n_fits": 704,
+  "n_tasks": 277,
+  "gated_series": 606,
+  "gated_rungs": 270,
   "families": [
    {
     "family": "include_base_44",
-    "r2": 0.552,
-    "rho": 0.25,
+    "r2": 0.527,
+    "rho": -0.2,
     "n": 4,
     "n_options": 4.0
    },
@@ -51,17 +51,24 @@
     "n_options": 3.0
    },
    {
-    "family": "rf_include_base_44",
-    "r2": 0.921,
+    "family": "rf_global_mmlu_full",
+    "r2": 0.918,
     "rho": 1.0,
-    "n": 45,
+    "n": 71,
     "n_options": 4.0
    },
    {
-    "family": "rf_global_mmlu_full",
-    "r2": 0.925,
+    "family": "rf_include_base_44",
+    "r2": 0.921,
     "rho": 1.0,
-    "n": 71,
+    "n": 47,
+    "n_options": 4.0
+   },
+   {
+    "family": "rfgm_include_base_44",
+    "r2": 0.937,
+    "rho": 1.0,
+    "n": 54,
     "n_options": 4.0
    },
    {
@@ -75,15 +82,15 @@
     "family": "rf_belebele",
     "r2": 0.944,
     "rho": 1.0,
-    "n": 124,
+    "n": 122,
     "n_options": 4.0
    },
    {
-    "family": "rfgm_include_base_44",
-    "r2": 0.946,
-    "rho": 1.0,
-    "n": 51,
-    "n_options": 4.0
+    "family": "bpb",
+    "r2": 0.95,
+    "rho": -1.0,
+    "n": 106,
+    "n_options": NaN
    },
    {
     "family": "xwinograd",
@@ -91,13 +98,6 @@
     "rho": 1.0,
     "n": 26,
     "n_options": 2.0
-   },
-   {
-    "family": "bpb",
-    "r2": 0.955,
-    "rho": -1.0,
-    "n": 106,
-    "n_options": NaN
    },
    {
     "family": "hellaswag",
@@ -131,7 +131,7 @@
   "by_options": {
    "2.0": 0.923,
    "3.0": 0.906,
-   "4.0": 0.948
+   "4.0": 0.946
   }
  }
 }

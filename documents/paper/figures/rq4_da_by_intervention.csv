@@ -1,18 +1,18 @@
 intervention,label,population,proxy_size,decision_acc,cells,refs
-arch,depth (deep vs shallow),benchmark,175M,0.5353266362007264,6,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.5597799714034696,5,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.5031987307491391,6,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.44586358786829106,6,1.7B
-arch,depth (deep vs shallow),bpb_macro,175M,0.6666666666666666,6,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_macro,1B,0.3333333333333333,3,1.7B
-arch,depth (deep vs shallow),bpb_macro,350M,0.5,6,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_macro,600M,0.5,6,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_trained,175M,0.9450000000000001,4,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_trained,1B,1.0,2,1.7B
-arch,depth (deep vs shallow),bpb_trained,350M,0.5241666666666667,4,"1.7B,1B"
-arch,depth (deep vs shallow),bpb_trained,600M,0.055,4,"1.7B,1B"
+arch,depth (deep vs shallow),benchmark,175M,0.5314138338481148,6,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.5298822036070931,6,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.5011837423645137,6,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.4527786266249976,6,1.7B
+arch,depth (deep vs shallow),bpb_macro,175M,0.8333333333333334,6,1.7B
+arch,depth (deep vs shallow),bpb_macro,1B,0.5,6,1.7B
+arch,depth (deep vs shallow),bpb_macro,350M,0.6666666666666666,6,1.7B
+arch,depth (deep vs shallow),bpb_macro,600M,0.3333333333333333,6,1.7B
+arch,depth (deep vs shallow),bpb_trained,175M,1.0,4,1.7B
+arch,depth (deep vs shallow),bpb_trained,1B,0.9450000000000001,4,1.7B
+arch,depth (deep vs shallow),bpb_trained,350M,0.48916666666666664,4,1.7B
+arch,depth (deep vs shallow),bpb_trained,600M,0.0,4,1.7B
 arch,depth (deep vs shallow),loss,175M,1.0,6,1.7B
-arch,depth (deep vs shallow),loss,1B,0.4,5,1.7B
+arch,depth (deep vs shallow),loss,1B,0.3333333333333333,6,1.7B
 arch,depth (deep vs shallow),loss,350M,0.6666666666666666,6,1.7B
 arch,depth (deep vs shallow),loss,600M,0.16666666666666666,6,1.7B
 es,2nd language (ru vs es),benchmark,175M,0.4444444444444444,1,1B
@@ -24,36 +24,38 @@ es,2nd language (ru vs es),bpb_macro,600M,1.0,1,1B
 es,2nd language (ru vs es),loss,175M,1.0,1,1B
 es,2nd language (ru vs es),loss,350M,1.0,1,1B
 es,2nd language (ru vs es),loss,600M,1.0,1,1B
-scheme,language lists (A vs B),benchmark,175M,0.4772465553152287,3,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.4784161459585035,3,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.48033750901225664,3,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.405769596651446,3,1.7B
-scheme,language lists (A vs B),bpb_macro,175M,1.0,3,"1.7B,1B"
-scheme,language lists (A vs B),bpb_macro,1B,1.0,2,1.7B
-scheme,language lists (A vs B),bpb_macro,350M,0.6666666666666666,3,"1.7B,1B"
-scheme,language lists (A vs B),bpb_macro,600M,1.0,3,"1.7B,1B"
-scheme,language lists (A vs B),bpb_trained,175M,0.40170940170940167,3,"1.7B,1B"
-scheme,language lists (A vs B),bpb_trained,1B,0.6538461538461539,2,1.7B
-scheme,language lists (A vs B),bpb_trained,350M,1.0,3,"1.7B,1B"
-scheme,language lists (A vs B),bpb_trained,600M,0.9444444444444445,3,"1.7B,1B"
+scheme,language lists (A vs B),benchmark,175M,0.47695104531878973,3,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.48391900485784395,3,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.4819828593689131,3,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.40937240917762924,3,1.7B
+scheme,language lists (A vs B),bpb_macro,175M,1.0,3,1.7B
+scheme,language lists (A vs B),bpb_macro,1B,1.0,3,1.7B
+scheme,language lists (A vs B),bpb_macro,350M,0.6666666666666666,3,1.7B
+scheme,language lists (A vs B),bpb_macro,600M,1.0,3,1.7B
+scheme,language lists (A vs B),bpb_trained,175M,0.40170940170940167,3,1.7B
+scheme,language lists (A vs B),bpb_trained,1B,0.7692307692307692,3,1.7B
+scheme,language lists (A vs B),bpb_trained,350M,1.0,3,1.7B
+scheme,language lists (A vs B),bpb_trained,600M,0.9444444444444445,3,1.7B
 scheme,language lists (A vs B),loss,175M,0.6666666666666666,3,1.7B
 scheme,language lists (A vs B),loss,1B,0.6666666666666666,3,1.7B
 scheme,language lists (A vs B),loss,350M,0.6666666666666666,3,1.7B
 scheme,language lists (A vs B),loss,600M,0.6666666666666666,3,1.7B
-temperature,temperature (T=1 vs T=3),benchmark,175M,0.3963963963963964,1,1.7B
-temperature,temperature (T=1 vs T=3),benchmark,1B,0.6373873873873874,1,1.7B
-temperature,temperature (T=1 vs T=3),benchmark,350M,0.481981981981982,1,1.7B
-temperature,temperature (T=1 vs T=3),benchmark,600M,0.5563063063063063,1,1.7B
-temperature,temperature (T=1 vs T=3),bpb_macro,175M,1.0,1,1B
-temperature,temperature (T=1 vs T=3),bpb_macro,350M,1.0,1,1B
-temperature,temperature (T=1 vs T=3),bpb_macro,600M,1.0,1,1B
-temperature,temperature (T=1 vs T=3),bpb_trained,175M,0.92,1,1B
-temperature,temperature (T=1 vs T=3),bpb_trained,350M,1.0,1,1B
-temperature,temperature (T=1 vs T=3),bpb_trained,600M,0.96,1,1B
-temperature,temperature (T=1 vs T=3),loss,175M,0.0,3,"1.7B,1B"
-temperature,temperature (T=1 vs T=3),loss,1B,1.0,1,1.7B
-temperature,temperature (T=1 vs T=3),loss,350M,1.0,1,1.7B
-temperature,temperature (T=1 vs T=3),loss,600M,1.0,1,1.7B
+temperature,temperature (T=1 vs T=3),benchmark,175M,0.4504649527038124,3,1.7B
+temperature,temperature (T=1 vs T=3),benchmark,1B,0.598299770123253,3,1.7B
+temperature,temperature (T=1 vs T=3),benchmark,350M,0.5231262406555762,3,1.7B
+temperature,temperature (T=1 vs T=3),benchmark,600M,0.5723618737224668,3,1.7B
+temperature,temperature (T=1 vs T=3),bpb_macro,175M,0.3333333333333333,3,"1.7B,1B,600M"
+temperature,temperature (T=1 vs T=3),bpb_macro,1B,1.0,1,1.7B
+temperature,temperature (T=1 vs T=3),bpb_macro,350M,1.0,3,"1.7B,1B,600M"
+temperature,temperature (T=1 vs T=3),bpb_macro,600M,1.0,2,"1.7B,1B"
+temperature,temperature (T=1 vs T=3),bpb_trained,175M,0.888888888888889,3,"1.7B,1B,600M"
+temperature,temperature (T=1 vs T=3),bpb_trained,1B,0.98,1,1.7B
+temperature,temperature (T=1 vs T=3),bpb_trained,350M,0.96,3,"1.7B,1B,600M"
+temperature,temperature (T=1 vs T=3),bpb_trained,600M,0.9566666666666667,2,"1.7B,1B"
+temperature,temperature (T=1 vs T=3),loss,175M,0.3333333333333333,3,1.7B
+temperature,temperature (T=1 vs T=3),loss,1B,0.6666666666666666,3,1.7B
+temperature,temperature (T=1 vs T=3),loss,350M,0.3333333333333333,3,1.7B
+temperature,temperature (T=1 vs T=3),loss,600M,0.6666666666666666,3,1.7B
 zh,2nd language (ru vs zh),benchmark,175M,0.2222222222222222,1,1B
 zh,2nd language (ru vs zh),benchmark,350M,0.2857142857142857,1,1B
 zh,2nd language (ru vs zh),benchmark,600M,0.5714285714285714,1,1B

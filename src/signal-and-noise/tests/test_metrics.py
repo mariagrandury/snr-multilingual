@@ -151,5 +151,51 @@ class TestPairAgreement(unittest.TestCase):
         self.assertEqual(pair_agreement(s, t, [("f0", "f1"), ("f0", "gone")])[1], 1)
 
 
+class TestAgreementMeasures(unittest.TestCase):
+    """`utils.agreement_measures`: the kernel's DA and every rank statistic it
+    is a relative of, with the closed-form relation between them."""
+
+    def _fn(self):
+        sys.path.insert(0, str(_SND.parent))
+        from analysis.utils import agreement_measures, jackknife_ratio
+        return agreement_measures, jackknife_ratio
+
+    def test_da_is_the_kernel_and_tau_is_its_closed_form(self):
+        agreement_measures, _ = self._fn()
+        rng = np.random.default_rng(7)
+        for trial in range(300):
+            n = int(rng.integers(4, 12))
+            s = rng.integers(0, 3, n).astype(float) if trial % 2 else rng.normal(size=n)
+            t = rng.integers(0, 3, n).astype(float) if trial % 3 else rng.normal(size=n)
+            m = agreement_measures(s, t)
+            if np.isnan(m["da"]):
+                self.assertTrue(np.std(s) == 0 or np.std(t) == 0)
+                continue
+            self.assertAlmostEqual(m["da"], decision_acc_fast(s, t))
+            # 2·DA − 1 = τ_a + (T_both − T_one) / n_pairs, ties included
+            self.assertAlmostEqual(2 * m["da"] - 1, m["tau_a"] + (m["tied_both"] - m["tied_one"]) / m["n_pairs"], places=12)
+            self.assertEqual(m["concordant"] + m["discordant"] + m["tied_both"] + m["tied_one"], m["n_pairs"])
+        # without ties every convention is the same number
+        m = agreement_measures([1, 2, 3, 4, 5], [1, 3, 2, 5, 4])
+        self.assertAlmostEqual(m["tau_a"], m["tau_b"]); self.assertAlmostEqual(m["tau_a"], m["gamma"])
+        self.assertAlmostEqual(m["da"], m["da_drop_ref_ties"]); self.assertAlmostEqual(2 * m["da"] - 1, m["tau_a"])
+
+    def test_jackknife_is_zero_width_when_every_family_agrees(self):
+        import pandas as pd
+        _, jackknife_ratio = self._fn()
+        fams = list("abcde")
+        pairs = [(x, y) for i, x in enumerate(fams) for y in fams[i + 1:]]
+        d = pd.DataFrame({"g": "x", "family_a": [p[0] for p in pairs], "family_b": [p[1] for p in pairs], "match": 1})
+        out = jackknife_ratio(d, ["g"]).iloc[0]
+        self.assertEqual((out["reliability"], out["se"], out["n_families"]), (1.0, 0.0, 5))
+        # one bad family: leaving it out moves the ratio, so the band opens
+        d.loc[d["family_a"] == "a", "match"] = 0
+        out = jackknife_ratio(d, ["g"]).iloc[0]
+        self.assertGreater(out["se"], 0); self.assertLess(out["lo"], out["reliability"])
+        # below MIN_PAIRS + 1 families: no band, the count still reported
+        out = jackknife_ratio(d[d["family_a"].isin(list("ab")) & d["family_b"].isin(list("bc"))], ["g"]).iloc[0]
+        self.assertTrue(np.isnan(out["se"])); self.assertEqual(out["n_families"], 3)
+
+
 if __name__ == "__main__":
     unittest.main()

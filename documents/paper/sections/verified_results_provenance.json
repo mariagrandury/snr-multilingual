@@ -11,22 +11,22 @@
     "MIN_PAIRS": 3,
     "TARGET_SIZE": "1.7B"
   },
-  "da_rows": 51316,
+  "da_rows": 53018,
   "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
-  "headline_seed1904_A_B_runs": 87,
-  "healthy_175M_to_1_7B": 126,
+  "headline_seed1904_A_B_runs": 90,
+  "healthy_175M_to_1_7B": 138,
   "sizes": {
-    "1.7B": 20,
-    "175M": 29,
-    "1B": 31,
-    "350M": 21,
-    "600M": 25
+    "1.7B": 22,
+    "175M": 30,
+    "1B": 32,
+    "350M": 24,
+    "600M": 30
   },
   "sources": {
-    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "d9d3361498aac11803d7f5da2ee819b6d9cff55e38ee51b05df3866ecd7aa014",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.csv": "7c449dd8f6629ab7494b19670201be2d70d44c6a8a273f32e59f84742030b50b",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.csv": "58abe85677b4794996a2c1726f6d8457e344c63a0c9b4d1718b335fe5ecb42a0",
-    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_pooled_per_task.csv": "3e03fa0c6d06472844c88b82d918acf36d517b66e63ed63fbbe8a3f8a849396f",
-    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "922057dcd455d34cd83fd825e6e2020057af092c7ec93fc990f88d6077a78949"
+    "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "43fb45fe25dc485257beda4bed924dd4f2f4caa0650625aab0da55c38ae6ca05",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.csv": "1d6ebb11e40c9c91535e42d64d8e5b640d23fc6e3536e9aab45270f034aa40ac",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.csv": "3e7e9e9d476321222151587948839e091d61892666333e56fcfca11124720f30",
+    "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_pooled_per_task.csv": "235c38e8b266a784ff24f26aea82316e5e6736a27b4dc3e5abdb7e9fff7bc704",
+    "src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv": "a245984161197e0cc569762094d75cfb8a09f93578e2793ad6cbc88da6802d0d"
   }
 }

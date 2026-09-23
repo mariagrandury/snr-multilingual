@@ -56,7 +56,7 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import load_reliable  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import (  # noqa: E402
-    FRACS, POOL, TAU, grid_frame, reliability)
+    FRACS, POOL, TAU, decisions, grid_frame, reliability)
 from analysis.utils import (  # noqa: E402
     DESIGN_AXES, MIN_PAIRS, NON_EMB, TARGET_SIZE, design_axes, finals, ladder_frame,
     pair_sets, size_order)
@@ -78,10 +78,10 @@ def cells(df: pd.DataFrame, fin: pd.DataFrame, pairs: dict, sizes: list) -> pd.D
     """Per (panel, axes, task, size, frac): matching and comparable decisions."""
     grid = grid_frame(df, FRACS)
     out = []
-    out.append(reliability(fin.assign(frac=1.0), pairs, sizes, fin).assign(panel="DA-size"))
-    out.append(reliability(grid, pairs, sizes, fin, FRACS).assign(panel="DA-goal"))
+    out.append(reliability(decisions(fin.assign(frac=1.0), pairs, sizes, fin)).assign(panel="DA-size"))
+    out.append(reliability(decisions(grid, pairs, sizes, fin, FRACS)).assign(panel="DA-goal"))
     for s in sizes:              # DA-ckpt: the reference is the proxy's OWN final
-        out.append(reliability(grid, pairs, [s], fin, FRACS[:-1], ref=s).assign(panel="DA-ckpt"))
+        out.append(reliability(decisions(grid, pairs, [s], fin, FRACS[:-1], ref=s)).assign(panel="DA-ckpt"))
     return pd.concat(out, ignore_index=True).rename(columns={"group": "axes"})
 
 

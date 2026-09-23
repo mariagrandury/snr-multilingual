@@ -417,6 +417,133 @@ def pair_agreement(proxy: dict, ref: dict, pairs=None) -> tuple[float, int]:
     return agree / len(pl), len(pl)
 
 
+def agreement_measures(proxy, ref) -> dict:
+    """Every rank-agreement statistic of two aligned score vectors, with the
+    pair counts they are all functions of — so a table can show WHY two of
+    them differ rather than that they do.
+
+    Over the n(n-1)/2 unordered pairs: C concordant (decided the same way on
+    both sides), D discordant, T_both tied on both, T_one tied on one side.
+    Then, with n_pairs = C + D + T_both + T_one:
+
+        da              (C + T_both) / n_pairs      `decision_acc_fast`'s convention
+        tau_a           (C - D) / n_pairs           Kendall, ties count for neither
+        gamma           (C - D) / (C + D)           Goodman-Kruskal, ties dropped
+        da_drop_ref_ties  C / (C + D + T_one_proxy) rq05's convention: a pair the
+                                                    REFERENCE ties is no decision
+        tau_b           scipy's Kendall, the tie-corrected denominator
+        rho, pearson_r  Spearman on ranks, Pearson on the raw scores
+
+    and the exact relation the pipeline's DA has to Kendall's tau, ties
+    included, which `tests/test_metrics.py` pins:
+
+        2 * da - 1 == tau_a + (T_both - T_one) / n_pairs
+
+    Rank statistics are NaN below MIN_PAIRS (rule 5) or when a side is
+    constant; the counts are always returned.
+    """
+    from scipy.stats import kendalltau, pearsonr, spearmanr
+    s, t = np.asarray(proxy, float), np.asarray(ref, float)
+    i, j = np.triu_indices(len(s), 1)
+    ds, dt = np.sign(s[i] - s[j]), np.sign(t[i] - t[j])
+    C = int(((ds == dt) & (ds != 0)).sum())
+    D = int(((ds == -dt) & (ds != 0)).sum())
+    T_both = int(((ds == 0) & (dt == 0)).sum())
+    T_proxy, T_ref = int(((ds == 0) & (dt != 0)).sum()), int(((ds != 0) & (dt == 0)).sum())
+    n = len(i)
+    out = {"n_models": len(s), "n_pairs": n, "concordant": C, "discordant": D,
+           "tied_both": T_both, "tied_one": T_proxy + T_ref}
+    nan = float("nan")
+    if n < MIN_PAIRS or np.std(s) == 0 or np.std(t) == 0:            # rule 5
+        return out | {k: nan for k in ("da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r")}
+    return out | {"da": (C + T_both) / n, "tau_a": (C - D) / n,
+                  "tau_b": float(kendalltau(s, t).statistic),
+                  "gamma": (C - D) / (C + D) if C + D else nan,
+                  "da_drop_ref_ties": C / (C + D + T_proxy) if C + D + T_proxy else nan,
+                  "rho": float(spearmanr(s, t).statistic), "pearson_r": float(pearsonr(s, t).statistic)}
+
+
+JACKKNIFE_Z = 1.645          # the two-sided 90 % band every jackknife interval here is drawn at
+
+
+def jackknife_ratio(decisions: pd.DataFrame, keys: list, a: str = "family_a", b: str = "family_b",
+                    match: str = "match") -> pd.DataFrame:
+    """A pooled decision ratio per group of `keys`, with its leave-one-FAMILY-out
+    jackknife standard error and 90 % band.
+
+    Decision accuracy pooled over pairs is a degree-2 U-statistic of the
+    families, so the unit that gets resampled is the family, never the pair
+    and never the task: pairs share families, tasks share families. The
+    jackknife is used rather than a bootstrap because a family drawn twice
+    forms a pair tied on both sides, which the kernel scores as an agreement —
+    a resample that inflates the very number it estimates. Leave-one-out has
+    no such pair. With m families in a group the interval is over m values;
+    below MIN_PAIRS + 1 families it is reported as NaN rather than drawn, and
+    `n_families` is carried so a reader can see how much the band rests on.
+    """
+    rows = []
+    for key, g in decisions.groupby(keys, sort=False):
+        fams = sorted(set(g[a]) | set(g[b]))
+        theta = g[match].mean()
+        m = len(fams)
+        if m <= MIN_PAIRS:
+            rows.append(dict(zip(keys, key), reliability=theta, se=float("nan"), n_families=m))
+            continue
+        loo = np.array([g.loc[(g[a] != f) & (g[b] != f), match].mean() for f in fams])
+        se = np.sqrt((m - 1) / m * ((loo - loo.mean()) ** 2).sum())
+        rows.append(dict(zip(keys, key), reliability=theta, se=se, n_families=m))
+    out = pd.DataFrame(rows)
+    out["lo"], out["hi"] = out["reliability"] - JACKKNIFE_Z * out["se"], out["reliability"] + JACKKNIFE_Z * out["se"]
+    return out
+
+
+@lru_cache(maxsize=None)
+def language_token_share(L: int, scheme: str) -> dict[str, float] | None:
+    """language -> share of a cell's training tokens, for the mixture (L, scheme).
+
+    English is the DCLM half, `EN_SHARE` % of every token (all of them at
+    L = 1); the FineWeb-2 half is split by the builder's own plan
+    (`<prefix>.plan.json` on DATA_MASTER, via data_progress.exact_tokens — the
+    same record data_progress.py reports coverage from), so the share is the
+    temperature-allocated one and not a byte estimate. None when the build's
+    record is not reachable (capstor), so a caller can degrade and say so.
+    The shares are the same at every size — only the token budget scales.
+    """
+    from pretrain.data.data_progress import exact_tokens, mixture_paths
+    from pretrain.launch_trainings import DATA_MASTER, EN_SHARE, cell_fineweb_subsets
+    en = EN_SHARE / 100
+    if L == 1:
+        return {"en": 1.0}
+    subsets = cell_fineweb_subsets(L, scheme)
+    if len(subsets) == 1:              # one language takes the whole half; scheme A's L2 predates plan files
+        return {"en": en, fineweb_language(subsets[0]): 1 - en}
+    got = exact_tokens(mixture_paths(DATA_MASTER, L, scheme))
+    if got is None:
+        return None
+    tokens, _ = got
+    total = sum(tokens.values())
+    out = {"en": en}
+    for subset, n in tokens.items():
+        lang = fineweb_language(subset)
+        out[lang] = out.get(lang, 0.0) + (1 - en) * n / total      # dialects fold into one tag
+    return out
+
+
+@lru_cache(maxsize=None)
+def train_tokens(size: str, arch: str) -> int:
+    """The token budget D(N) a cell of `size` and `arch` trains for."""
+    import json
+    from pretrain.launch_trainings import HYPERPARAMS
+    return json.loads(Path(HYPERPARAMS[arch]).read_text())["configs"][size]["predictivity"]["train_tokens"]
+
+
+def language_tokens(L: int, scheme: str, size: str, arch: str) -> dict[str, float] | None:
+    """language -> training tokens of it a cell (size, L, arch, scheme) saw:
+    `language_token_share` times the cell's budget. None where the share is."""
+    share = language_token_share(L, scheme)
+    return None if share is None else {k: v * train_tokens(size, arch) for k, v in share.items()}
+
+
 def size_order(sizes) -> list[str]:
     """The given sizes in ladder order (unknown sizes last, alphabetically)."""
     present = set(sizes)
