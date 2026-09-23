@@ -17,3 +17,5 @@ olmo-repos/
 release
 venv
 workspace/
+# rq08 per-item store: data extracted from the eval logs by build_per_item_store.py, not a figure
+analysis/rq08_subset_selection/per_item_store/

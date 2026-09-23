@@ -21,9 +21,9 @@
 
 Curves under `pretraining/<pool>/{per_benchmark,per_language}/`: accuracy vs
 FLOPs (log-x, `6 × (N_non_emb + d·V) × D`), one curve per language setting
-(`plotted_mixes` in the `snr` config: L1 … L100, deep, scheme A, seed 1904)
-and per size 90M–1.7B. Tasks are parent-aggregated (subjects collapse into the
-parent; languages stay distinct); each task's **Signal** = (max−min)/mean of
+(`plotted_mixes` in the `snr` config: L1 … L50, deep, scheme A, seed 1904)
+and per size 175M–1.7B (the 90M rung is dropped at load, rule 10). Tasks are
+parent-aggregated (subjects collapse into the parent; languages stay distinct); each task's **Signal** = (max−min)/mean of
 the per-setting final scores at the reference size (1.7B, or the largest size with
 data); only the top-3 families by Signal get curve grids. The 36-sweep pools
 still draw their three data mixtures and overlay the external models to 70B.
@@ -32,31 +32,45 @@ The **above-random gate** ([`above_random.py`](above_random.py)) is
 foundational and depends **only** on raw eval scores and the answer-option
 counts — `n_options` in `configs/tasks.json` where it was derived from the
 evaluated samples, the per-family table in that file otherwise — it reads no
-RQ output, so every RQ depends on the gate, never the reverse. A
-`(benchmark, size)` cell is above random iff `mean score > 1/n_options + 0.05`;
+RQ output, so every RQ depends on the gate, never the reverse. A run is above
+chance on a task when the one-sided 95 % Wilson lower bound of its accuracy
+over the task's `n_items` clears `1/n_options`, and a `(benchmark, size)` cell
+is above random when at least half of the size's runs that train the language
+are (`MIN_SHARE`). There is no fixed margin: the earlier
+`mean score > 1/n_options + 0.05` rule is gone, so a 2-option task with 500
+items and a 4-option task with 100 are held to the same evidence.
 `run_apertus_snr_variants.py` NaN-s every at-chance cell so the gate propagates
 to all downstream RQs. Per-language BPB and generative tasks have no chance
 level and are never gated.
 
-## Preliminary findings (ladder snapshot, 2026-09-01)
+## Findings (ladder snapshot 2026-09-23 06:16)
 
-From the ≤ 600M ladder's eval results (`plan/status-09-01.md`, §3; 90M
-excluded as diverged):
+Read from the `predictivity` tables next to the figures (the ≤ 600M snapshot
+of 2026-09-01 that stood here is superseded); the write-up is
+[`../rq02_decision_accuracy/pretraining/predictivity/README.md`](../rq02_decision_accuracy/pretraining/predictivity/README.md), §1.
 
-- Real signal already at these sizes: MultiBLiMP (0.65 → 0.92 from 90M →
-  600M, chance 0.5) and clear size-monotone growth on HellaSwag (0.25 → 0.30),
-  XNLI (0.33 → 0.42), XStoryCloze (0.48 → 0.57), XWinograd (0.51 → 0.64),
-  XCOPA.
-- Still at chance even at 600M: Belebele, Global-MMLU, INCLUDE and
-  ARC-multilingual all sit at 0.24–0.26 (chance 0.25) — the knowledge-heavy
-  4-option benchmarks have not emerged at this compute, which is the gate's
-  domain.
-- BPB (the plan's outcome metric): non-English macro BPB falls monotonically
-  with size (L50: 7.03 → 1.61 → 1.38 across 90M/175M/350M) and over training
-  within each healthy run; English BPB is identical between L2 and L50 at every
-  size (0.947 vs 0.946 at 350M) while L50 beats L2 on 81–89 of 99 non-English
-  languages by ~0.4–0.5 bits/byte — enormous against a checkpoint noise of
-  ~0.002.
+- **Half of the evaluation is at chance somewhere on the ladder.** Of the 975
+  benchmark-language tasks with a chance level in `above_random_mask.csv`,
+  297 / 378 / 408 / 448 / 499 are above chance at 175M / 350M / 600M / 1B /
+  1.7B; 543 clear the gate at ≥ 1 size, 432 nowhere, and 44 are above chance
+  at a smaller size but at chance at 1.7B. Of the 775 (family, language)
+  cells of `first_size_above_random.csv` (38 families), 220 hold from 175M
+  on, 80 from 350M, 30 from 600M, 39 from 1B, 55 only at 1.7B and 351 never.
+- **The gate is an option-count effect, and the reformulation undoes it.** At
+  1.7B the letter-answer four-option families are absent — `global_mmlu_full`
+  0 / 37 languages, `global_piqa_parallel_cloze` 1 / 91, `include_base_44`
+  4 / 43, `belebele` 11 / 105 — against `multiblimp` 57 / 57, `xwinograd`
+  6 / 6, `hellaswag` 26 / 31, `xnli` 15 / 18; the reformulated twins pass
+  where the originals fail (`rf_global_mmlu_full` 35 / 37, `rf_belebele`
+  86 / 105, `rf_include_base_44` 31 / 43, `rfgm_include_base_44` 33 / 43).
+- **What the Wilson bound asks** (`above_random_thresholds.csv`, median task
+  per family): the margin over chance a single run needs is +0.04 on
+  `xwinograd` (409 items), +0.05–0.08 on the 130–250-item `bbh` / `acp_bench`
+  probes, +0.09 on the 100-item cloze probes and +0.16 on `cultural_bench_easy`
+  (25 items) — which a model below 1B rarely delivers on a four-option task in
+  a non-English language.
+- BPB and the training loss have no chance level and are never gated; how
+  they scale is rq01's question (`scaling_law_error.csv`).
 
 ## Methodology — scaling beyond 1B (36-sweep pools)
 
@@ -126,6 +140,10 @@ Every cell the `predictivity_all` pool holds (all seeds and schemes), after the 
 <!-- END auto:curves -->
 
 ## Custom vs. external: the at-chance problem is a capability artifact
+
+*36-sweep numbers (pools `custom` and `external`, 2026-06, custom sizes
+175M–1B, RQ numbers of that layout); the ladder's counterpart is the
+benchmark-floor block below.*
 
 This is the foundational result the rest of the paper rests on. The
 above-random gate is identical for every model set, but what it removes depends
@@ -201,19 +219,25 @@ Headline numbers from the `custom_swissai_hf` pool (Signal) and the `custom` abo
 | 5 | 0.20 | 0 / 2 | 0 / 2 |
 ## TODO
 
-- [ ] Per-language curve panels for the gated-out families to visualise *how far*
-      below chance they sit (not just that they fail the gate).
-- [ ] Annotate the scale at which late-blooming benchmarks (`arc_challenge`,
-      `xnli_th`, `paws_en`) cross chance.
+- [x] How far below chance the gated-out families sit:
+      `gate_margin_by_benchmark.png` / `gate_margin_by_language.png` (panels block).
+- [x] The scale at which late-blooming benchmarks cross chance:
+      `first_size_above_random.png` / `.csv` and `benchmark_floor.png` (blocks below).
 
 ## Files
 
 - `pretraining/<pool>/acc_vs_flops_signal.csv` — per-task mixture-Signal (full
   ranking; all parent tasks).
+- `pretraining/predictivity/above_random_{scores,share,mask,runs,thresholds}.csv`
+  — the ladder's gate (`above_random.py`): mean score, share of runs above
+  chance, the 1/0/blank mask every RQ reads, the per-run Wilson bounds, and
+  the margin each rule implies. `first_size_above_random.csv`,
+  `gate_margin.csv`, `highlights.csv`, `score_curves.csv`, `benchmark_floor.csv`
+  sit next to the panels of the same name.
 - `pretraining/seeds_28_1797_1904/`, `pretraining/custom_swissai_hf/`,
-  `all/external/` — `above_random_scores.csv` / `above_random_mask.csv` (the
-  gate; pure-custom, all-models, and non-custom reports, pool-named). From
-  `analysis/rq00_gate_and_curves/above_random.py`.
+  `all/external/` — the 36-sweep's `above_random_scores.csv` /
+  `above_random_mask.csv` (pure-custom, all-models, and non-custom reports,
+  pool-named).
 - `…/per_benchmark/<family>.png` — top-3 families, subplots per language,
   external scaling markers overlaid.
 - `…/per_language/<lang>.png` — per language, subplots = top-3 families.

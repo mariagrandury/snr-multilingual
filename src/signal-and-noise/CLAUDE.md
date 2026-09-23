@@ -149,19 +149,23 @@ read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
 The paper-style write-up of rq00–rq02 is
 `analysis/rq02_decision_accuracy/pretraining/predictivity/README.md`; the
 per-RQ READMEs carry the auto blocks. Three facts every rq02 reading must
-respect: (1) on the full gated population DA-size is 0.55 (175M) → 0.61 (1B),
+respect (numbers of the 06:16 snapshot; every snapshot moves them, re-read the CSVs): (1) on the full gated population DA-size is 0.53 (175M) → 0.56 (1B),
 jackknife ±0.03 — the 0.60 → 0.76 of the `above_66_*` figures is a cut on DA
 itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
 `above_66_ckpt`, `above_66_either`) are the ones to quote, never
-`above_66_both`. (2) DA-ckpt over design pairs (0.84 at 90 % of a 175M run) is
-within 0.02–0.03 of the seed null (two seeds of ONE design, 0.82): it measures
+`above_66_both`. (2) DA-ckpt over design pairs (0.83 at 90 % of a 175M run) is
+within 0.01–0.03 of the seed null (two seeds of ONE design, 0.81): it measures
 within-run persistence, and a checkpoint-axis figure is read against
 `seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
-statistic (r ≥ 0.965 over 820 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
-exactly), and the tie convention moves the reliable-task verdict on 3–7 % of
+statistic (r ≥ 0.961 over 1,286 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 2.5–6 % of
 cells. Restricting to the L8 languages, to common tasks, to one language or
 one language tier does not order the per-L lines, and a language's token
-share does not predict its benchmarks' reliability (ρ 0.03–0.19).
+share does not predict its benchmarks' reliability (ρ −0.07–0.20). The twins
+pass the gate (McNemar p < 0.001) but rank no better than the originals
+(`rq00_task_reformulation/twins_gate.py` carries every headline reading with
+and without them); English alone is the worst single-language proxy of the
+multilingual decision (`rq06_language_transfer/language_panel.py`).
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,

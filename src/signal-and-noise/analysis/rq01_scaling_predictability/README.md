@@ -170,8 +170,15 @@ Named variants of the same points: `scaling_regimes_families.png` (one label per
 
 `regimes_survivorship.py` reads `scaling_regimes.csv` and `rq1_fits.csv` and writes
 `scaling_regimes_survivorship.png/.csv`: per family, the tasks the regimes figure
-draws against the tasks rule 1 removed before it could, and panel (b) with every
-label carrying kept/total. It exists because the paper figure shows the 110 tasks
-that survive the gate and not the 269 that do not — five families lose every task.
+draws against the two ways a task loses its point — at chance at every size where
+a fit was possible (rule 1, `gated`) or fitted at a single L and so without a
+median (`below_min_fits`) — and panel (b) with every label carrying kept/total.
+It exists because the paper figure shows the 306 tasks that have a regime and
+not the 520 of 826 that do not (417 gated, 103 below the two-fit minimum): 15 of
+the 40 families lose every task, five of them with ≥ 17 tasks
+(`global_piqa_parallel_cloze` 0/63, `belebele` 0/59, `global_mmlu_full` 0/29,
+`cultural_bench_hard` 0/19, `bbh_mcq` 0/17), and the reformulated twins are what
+put those families back (`rf_belebele` 35/59, `rf_global_mmlu_full` 21/29,
+`rf_include_base_44` 13/36, `rfgm_include_base_44` 14/36, `rf_bbh_mcq` 9/17).
 Discussion and the recommendation for the paper figure: `plan/decision_accuracy.md`
 (§5). It does not replace `regimes.py`, whose table it reads.

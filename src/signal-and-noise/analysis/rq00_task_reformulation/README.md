@@ -737,3 +737,29 @@ Probe survivors: which of the 16 candidate benchmarks in `auto_probe` clear the 
 | vi | — | — | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
 | zh | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 <!-- END auto:probe-survivors -->
+
+<!-- BEGIN auto:twins-gate (twins_gate.py --pool predictivity) -->
+## The twins and the gate, with significance
+
+Per family at 1.7B: the share of languages above the gate for the original and the twin, paired on the language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the gate's pass share per size on every task, the originals alone and the twins alone (`twins_gate.csv` carries the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with `python analysis/rq00_task_reformulation/twins_gate.py --pool predictivity`.
+
+| family | twin | languages | original | twin | twin only / original only | p (McNemar) |
+|---|---|---|---|---|---|---|
+| acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
+| bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
+| belebele | rf | 105 | 0.10 | 0.82 | 76 / 1 | 1.03e-21 |
+| commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+| cultural_bench_easy | rf | 19 | 0.05 | 0.37 | 7 / 1 | 0.0703 |
+| global_mmlu_full | rf | 37 | 0.00 | 0.95 | 35 / 0 | 5.82e-11 |
+| include_base_44 | rf | 43 | 0.09 | 0.72 | 29 / 2 | 4.63e-07 |
+| include_base_44 | rfgm | 43 | 0.09 | 0.77 | 29 / 0 | 3.73e-09 |
+| mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
+
+| population | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|
+| every task | 0.30 | 0.39 | 0.42 | 0.46 | 0.51 |
+| originals only | 0.28 | 0.32 | 0.34 | 0.37 | 0.41 |
+| twins only | 0.38 | 0.56 | 0.62 | 0.70 | 0.77 |
+
+![The twins and the gate](twins_gate.png)
+<!-- END auto:twins-gate -->

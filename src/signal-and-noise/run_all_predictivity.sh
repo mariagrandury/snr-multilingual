@@ -79,6 +79,8 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# the twins' effect on the gate (McNemar) and on every headline reading with / without them
+run $PY analysis/rq00_task_reformulation/twins_gate.py --pool predictivity
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
 run $PY analysis/rq00_gate_and_curves/benchmark_floor.py --pool predictivity
 
@@ -146,6 +148,8 @@ run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8 --common-tasks
 run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/agreement.py --pool predictivity
+# rq01's scaling statistics against rq02's ranking statistics, per task
+run $PY analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
 # do the high-resource languages rank more reliably: one pooled line per language tier, and per language against its share
 run $PY analysis/rq02_decision_accuracy/language_tier.py --pool predictivity
@@ -212,6 +216,9 @@ done
 pass "rq08 — subset selection"
 run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
+# per-item view: reads the per-item store; the store is built by the sbatch
+# (analysis/rq08_subset_selection/build_per_item_store.sbatch), not here
+run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do

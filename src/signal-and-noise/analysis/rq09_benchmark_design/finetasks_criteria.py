@@ -28,11 +28,14 @@ carried so the two verdicts can be compared.
     finetasks_criteria.csv   one row per (task, size): the four statistics, their
                              verdicts at FineTasks' thresholds, our gate, DA-size
     finetasks_criteria.png   (a) share of tasks passing each criterion per size;
-                             (b) DA-size at each proxy for tasks passing / failing
-                             the composite; (c) Spearman of each statistic with
-                             DA-size per size, the way rq04 scores SNR variants;
-                             (d) the 45 FineTasks picks present in our registry:
-                             their verdict under our criteria and our gate
+                             (b) Spearman of each statistic with DA-size per size,
+                             the way rq04 scores SNR variants; (c) DA-size at each
+                             proxy for tasks passing / failing the composite;
+                             (d) = (a) with our above_66_either / above_66_both
+                             shares beside it; (e) = (b) with rq03's 22 SNR
+                             definitions behind it; (f) the FineTasks picks present
+                             in our registry: their verdict under our criteria and
+                             our gate, originals and cloze twins
     python analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity
 """
 
@@ -130,50 +133,109 @@ def join_ours(out: pd.DataFrame, pool: str) -> pd.DataFrame:
     return out
 
 
+def our_snr(pool: str, sizes: list) -> pd.DataFrame:
+    """rq03's 22 SNR definitions per (task, size), long: task, size, variant, snr."""
+    from analysis.paths import NOISE_AND_SNR
+    stage = load_pools()[pool].get("stage", "pretraining")
+    t = pd.read_csv(NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv")
+    rows = []
+    for s in sizes:
+        cols = [c for c in t.columns if c.startswith("snr_") and c.endswith(f"_{s}")]
+        for c in cols:
+            rows.append(pd.DataFrame({"task": t["task"], "size": s, "variant": c[len("snr_"):-len(f"_{s}") - 1], "snr": t[c]}))
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["task", "size", "variant", "snr"])
+
+
+def reliable_shares(pool: str, sizes: list, out: pd.DataFrame) -> dict:
+    """Share of the tasks in `out` (per size) that pass our above_66_either /
+    above_66_both cuts (median DA over the proxy cells, multi-axis)."""
+    stage = load_pools()[pool].get("stage", "pretraining")
+    r = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_reliable_tasks.csv")
+    r = r[r["axes"] == "multi-axis"] if "axes" in r.columns else r
+    ok_s, ok_c = r["da_size_median"] >= 0.66, r["da_ckpt_median"] >= 0.66
+    either, both = set(r.loc[ok_s | ok_c, "task"]), set(r.loc[ok_s & ok_c, "task"])
+    return {s: (out.loc[out["size"] == s, "task"].isin(either).mean(), out.loc[out["size"] == s, "task"].isin(both).mean())
+            for s in sizes}
+
+
+def rho_by_size(out: pd.DataFrame, st: str, proxies: list) -> list:
+    return [out[out["size"] == s][[st, "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().corr(method="spearman").iloc[0, 1]
+            for s in proxies]
+
+
 def figure(out: pd.DataFrame, overlap: pd.DataFrame | None, path: Path, pool: str) -> None:
     sizes = size_order(out["size"].unique())
     proxies = [s for s in sizes if s != TARGET_SIZE]
-    fig, axes = plt.subplots(1, 4, figsize=(15.2, 4.2))
-    # (a) pass shares per size
-    a = axes[0]
-    share = out.groupby("size")[["pass_mono", "pass_snr", "pass_nonrandom", "pass_finetasks"]].mean().reindex(sizes)
+    xs, xp = np.arange(len(sizes)), np.arange(len(proxies))
+    fig, axes = plt.subplots(2, 3, figsize=(15.4, 8.4))
+    crit = [("pass_mono", "monotone (ρ ≥ 0.5)", S.RAMP[0]), ("pass_snr", "SNR > 20", S.RAMP[1]),
+            ("pass_nonrandom", "non-random (> 3 std)", S.RAMP[2]), ("pass_finetasks", "all three", S.INK)]
+    share = out.groupby("size")[[c for c, _, _ in crit]].mean().reindex(sizes)
     gate = out.groupby("size")["gate"].mean().reindex(sizes)
-    x = np.arange(len(sizes))
-    for k, (col, lab, c) in enumerate([("pass_mono", "monotone (ρ ≥ 0.5)", S.RAMP[0]), ("pass_snr", "SNR > 20", S.RAMP[1]),
-                                       ("pass_nonrandom", "non-random (> 3 std)", S.RAMP[2]), ("pass_finetasks", "all three", S.INK)]):
-        a.bar(x + (k - 1.5) * .19, share[col], .18, color=c, label=lab)
-    a.plot(x, gate, color=S.SERIES[1], marker="o", ms=4, lw=1.2, label="our gate (Wilson, ≥ ½ of runs)")
-    a.set_xticks(x); a.set_xticklabels(sizes); a.set_ylim(0, 1); a.set_ylabel("share of benchmark tasks")
-    a.set_title("(a) who passes FineTasks' criteria, per size", loc="left", fontsize=8.5)
-    a.legend(fontsize=6, frameon=False); a.grid(color=S.GRID, lw=.6, axis="y"); S.clean(a)
-    # (b) DA-size for passers / failers of the composite
-    b = axes[1]
-    for k, (flag, lab, c) in enumerate([(True, "passes all three", S.INK), (False, "fails one", S.MUTED)]):
-        vals = [out[(out["size"] == s) & (out["pass_finetasks"] == flag)]["da_size"].dropna() for s in proxies]
-        pos = np.arange(len(proxies)) + (k - .5) * .32
-        bp = b.boxplot(vals, positions=pos, widths=.28, patch_artist=True, showfliers=False,
-                       medianprops=dict(color=S.SURFACE, lw=1.2), boxprops=dict(fc=c, ec=c, alpha=.85), whiskerprops=dict(color=c), capprops=dict(color=c))
-        for p, v in zip(pos, vals):
-            b.text(p, 0.12, str(len(v)), ha="center", fontsize=6, color=c)
-        b.plot([], [], color=c, lw=6, label=lab)
-    b.axhline(0.5, color=S.MUTED, lw=.8, ls=":")
-    b.set_xticks(np.arange(len(proxies))); b.set_xticklabels(proxies); b.set_ylim(0.1, 1)
-    b.set_ylabel(f"DA-size, proxy → {TARGET_SIZE} (multi-axis)")
-    b.set_title("(b) does passing predict the reference ranking?", loc="left", fontsize=8.5)
-    b.legend(fontsize=6, frameon=False, loc="upper left"); b.grid(color=S.GRID, lw=.6, axis="y"); S.clean(b)
-    # (c) Spearman of each statistic with DA-size, per size
-    c = axes[2]
+
+    def pass_bars(ax, title):
+        for k, (col, lab, c) in enumerate(crit):
+            ax.bar(xs + (k - 1.5) * .19, share[col], .18, color=c, label=lab)
+        ax.plot(xs, gate, color=S.SERIES[1], marker="o", ms=4, lw=1.2, label="our gate (Wilson, ≥ ½ of runs)")
+        ax.set_xticks(xs); ax.set_xticklabels(sizes); ax.set_ylim(0, 1); ax.set_ylabel("share of benchmark tasks")
+        ax.set_title(title, loc="left", fontsize=8.5); ax.grid(color=S.GRID, lw=.6, axis="y"); S.clean(ax)
+
+    # (a) pass shares per size
+    pass_bars(axes[0, 0], "(a) who passes FineTasks' criteria, per size")
+    axes[0, 0].legend(fontsize=6, frameon=False)
+    # (b) each criterion as a surrogate of DA-size
+    b = axes[0, 1]
     for st, col in zip(STATS, S.RAMP):
-        rho = [out[(out["size"] == s)][[st, "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().corr(method="spearman").iloc[0, 1]
-               for s in proxies]
-        c.plot(np.arange(len(proxies)), rho, marker="o", ms=4, color=col, label=LABEL[st].split(" (")[0])
-    c.axhline(0, color=S.MUTED, lw=.8, ls=":")
-    c.set_xticks(np.arange(len(proxies))); c.set_xticklabels(proxies); c.set_ylim(-0.5, 0.8)
-    c.set_ylabel("Spearman ρ with DA-size, across tasks")
-    c.set_title("(c) each criterion as a surrogate of DA-size", loc="left", fontsize=8.5)
-    c.legend(fontsize=6, frameon=False); c.grid(color=S.GRID, lw=.6); S.clean(c)
-    # (d) FineTasks' own picks under our criteria at 1B
-    d = axes[3]
+        b.plot(xp, rho_by_size(out, st, proxies), marker="o", ms=4, color=col, label=LABEL[st].split(" (")[0])
+    b.axhline(0, color=S.MUTED, lw=.8, ls=":")
+    b.set_xticks(xp); b.set_xticklabels(proxies); b.set_ylim(-0.5, 0.8); b.set_ylabel("Spearman ρ with DA-size, across tasks")
+    b.set_title("(b) each criterion as a surrogate of DA-size", loc="left", fontsize=8.5)
+    b.legend(fontsize=6, frameon=False); b.grid(color=S.GRID, lw=.6); S.clean(b)
+    # (c) DA-size for passers / failers of the composite
+    c = axes[0, 2]
+    for k, (flag, lab, col) in enumerate([(True, "passes all three", S.INK), (False, "fails one", S.MUTED)]):
+        vals = [out[(out["size"] == s) & (out["pass_finetasks"] == flag)]["da_size"].dropna() for s in proxies]
+        pos = xp + (k - .5) * .32
+        c.boxplot(vals, positions=pos, widths=.28, patch_artist=True, showfliers=False, medianprops=dict(color=S.SURFACE, lw=1.2),
+                  boxprops=dict(fc=col, ec=col, alpha=.85), whiskerprops=dict(color=col), capprops=dict(color=col))
+        for p_, v in zip(pos, vals):
+            c.text(p_, 0.12, str(len(v)), ha="center", fontsize=6, color=col)
+        c.plot([], [], color=col, lw=6, label=lab)
+    c.axhline(0.5, color=S.MUTED, lw=.8, ls=":")
+    c.set_xticks(xp); c.set_xticklabels(proxies); c.set_ylim(0.1, 1); c.set_ylabel(f"DA-size, proxy → {TARGET_SIZE} (multi-axis)")
+    c.set_title("(c) does passing predict the reference ranking?", loc="left", fontsize=8.5)
+    c.legend(fontsize=6, frameon=False, loc="upper left"); c.grid(color=S.GRID, lw=.6, axis="y"); S.clean(c)
+    # (d) the pass shares again, with our reliable-task cuts beside them
+    d = axes[1, 0]
+    pass_bars(d, "(d) FineTasks' criteria against our DA cuts (needs the reference)")
+    rs = reliable_shares(pool, sizes, out)
+    d.plot(xs, [rs[s][0] for s in sizes], color="#b3261e", marker="s", ms=4, lw=1.4, label="our above_66_either (DA-size or DA-ckpt)")
+    d.plot(xs, [rs[s][1] for s in sizes], color="#b3261e", marker="s", ms=4, lw=1.4, ls="--", label="our above_66_both")
+    d.legend(fontsize=6, frameon=False)
+    # (e) the surrogates again, with rq03's 22 SNR definitions behind them
+    e = axes[1, 1]
+    snr = our_snr(pool, proxies)
+    if len(snr):
+        m = snr.merge(out[["task", "size", "da_size"]], on=["task", "size"])
+        best = {}
+        for v, g in m.groupby("variant"):
+            rho = [g[g["size"] == s][["snr", "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().corr(method="spearman").iloc[0, 1]
+                   for s in proxies]
+            e.plot(xp, rho, color=S.GRID, lw=.8, zorder=1)
+            best[v] = np.nanmean(rho)
+        top = max(best, key=best.get)
+        g = m[m["variant"] == top]
+        e.plot(xp, [g[g["size"] == s][["snr", "da_size"]].replace([np.inf, -np.inf], np.nan).dropna().corr(method="spearman").iloc[0, 1]
+                    for s in proxies], color=S.SERIES[2], lw=1.6, marker="o", ms=4, zorder=4, label=f"best of our 22 SNR definitions ({top})")
+        e.plot([], [], color=S.GRID, lw=.8, label=f"the other {len(best) - 1} SNR definitions (rq03)")
+    for st, col in zip(STATS, S.RAMP):
+        e.plot(xp, rho_by_size(out, st, proxies), marker="o", ms=4, color=col, label=LABEL[st].split(" (")[0], zorder=3)
+    e.axhline(0, color=S.MUTED, lw=.8, ls=":")
+    e.set_xticks(xp); e.set_xticklabels(proxies); e.set_ylim(-0.5, 0.8); e.set_ylabel("Spearman ρ with DA-size, across tasks")
+    e.set_title("(e) FineTasks' criteria and our SNR definitions as surrogates", loc="left", fontsize=8.5)
+    e.legend(fontsize=6, frameon=False, ncol=2); e.grid(color=S.GRID, lw=.6); S.clean(e)
+    # (f) FineTasks' own picks under our criteria at 1B
+    f = axes[1, 2]
     if overlap is not None and len(overlap):
         at = out[out["size"] == "1B"].set_index("task")
         rows = []
@@ -186,24 +248,28 @@ def figure(out: pd.DataFrame, overlap: pd.DataFrame | None, path: Path, pool: st
         if len(o):
             summ = o.groupby("which").agg(n=("pass", "size"), finetasks=("pass", "mean"), gate=("gate", "mean"),
                                           da=("da", "mean")).reindex(["original", "rf twin"]).dropna(how="all")
-            x = np.arange(len(summ))
-            d.bar(x - .2, summ["finetasks"], .38, color=S.INK, label="pass FineTasks' three criteria (ours, 1B)")
-            d.bar(x + .2, summ["gate"], .38, color=S.SERIES[1], label="pass our gate at 1B")
-            for i, (n, v) in enumerate(zip(summ["n"], summ["da"])):
-                d.text(i, 0.95, f"{int(n)} tasks\nmean DA-size {v:.2f}", ha="center", va="top", fontsize=6.5)
-            d.set_xticks(x); d.set_xticklabels([f"FineTasks picks,\n{w}" for w in summ.index], fontsize=7.5)
-    d.set_ylim(0, 1); d.set_ylabel("share")
-    d.set_title("(d) FineTasks' 96 picks that exist here, at 1B", loc="left", fontsize=8.5)
-    d.legend(fontsize=6, frameon=False, loc="lower left"); d.grid(color=S.GRID, lw=.6, axis="y"); S.clean(d)
+            xf = np.arange(len(summ))
+            f.bar(xf - .2, summ["finetasks"], .38, color=S.RAMP[3], label="pass FineTasks' three criteria (our ladder, 1B)")
+            f.bar(xf + .2, summ["gate"], .38, color=S.SERIES[1], label="pass our gate at 1B")
+            for i, (n, v, fs, gs) in enumerate(zip(summ["n"], summ["da"], summ["finetasks"], summ["gate"])):
+                f.text(i - .2, fs + .02, f"{fs:.0%}", ha="center", va="bottom", fontsize=7, color=S.RAMP[3])
+                f.text(i + .2, gs + .02, f"{gs:.0%}", ha="center", va="bottom", fontsize=7, color=S.SERIES[1])
+            f.set_xticks(xf)
+            f.set_xticklabels([f"FineTasks picks, {w}\n{int(n)} tasks · mean DA-size {v:.2f}"
+                               for w, n, v in zip(summ.index, summ["n"], summ["da"])], fontsize=7.5)
+    f.set_ylim(0, 1.3); f.set_yticks([0, .25, .5, .75, 1]); f.set_ylabel("share")
+    f.set_title("(f) FineTasks' 96 picks that exist here, at 1B", loc="left", fontsize=8.5)
+    f.legend(fontsize=7, frameon=False, loc="upper left"); f.grid(color=S.GRID, lw=.6, axis="y"); S.clean(f)
     top = G._header(fig, "FineTasks' selection criteria on the ladder, judged by the reference they cannot see",
                     f"Per (benchmark task, size), the {out['runs'].max()} design variants of `{pool}` along the ten "
                     f"evaluated tenths: monotonicity = mean over runs of Spearman ρ(tenth, score); SNR = mean final "
                     f"score / mean over tenths of the score's std ACROSS runs (their noise is our signal); non-random = "
                     f"(best final − 1/n_options) / final std; ordering = mean Kendall τ_a between consecutive tenths "
                     f"from {ORDER_FROM:.0%} on. Thresholds ρ ≥ {MONO_MIN}, SNR > {SNR_MIN:.0f}, margin > {NSTD_MIN:.0f} std, "
-                    f"as published. (b)–(c) judge the criteria by DA-size against the {TARGET_SIZE} final, which needs "
-                    f"the reference; (d) the FineTasks picks with a counterpart in our registry (`finetasks_overlap.csv`), "
-                    f"originals and their cloze twins. No gate applied except where named.")
+                    f"as published. (b), (c), (e) judge the criteria by DA-size against the {TARGET_SIZE} final, which needs "
+                    f"the reference; (d) adds our reliable-task cuts (median DA ≥ 0.66, which also need it); (e) adds "
+                    f"rq03's 22 SNR definitions scored the same way; (f) the FineTasks picks with a counterpart in our "
+                    f"registry (`finetasks_overlap.csv`), originals and their cloze twins. No gate applied except where named.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 

@@ -31,6 +31,7 @@ comparable, so the floor is a MODEL floor, not a parameters-at-5C floor.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -80,8 +81,42 @@ def floors(pool: str) -> pd.DataFrame:
     return t.dropna(subset=["ladder_floor", "external_floor"])
 
 
+def external_models() -> pd.DataFrame:
+    """The public models behind the external buckets: one row per model with
+    its family (the model line), its parameter count and whether it is a base
+    or a post-trained release — so the reader knows what "1B–1.7B" holds."""
+    from analysis.utils import build_snr_pool
+    df = build_snr_pool("external")
+    m = df.groupby("model").agg(size=("size", "first"), family=("family", "first")).reset_index()
+
+    def params(size: str) -> float:
+        head = size.split("-")[0]                              # 30B-A3B counts its total
+        return float(head[:-1]) * (1e9 if head.endswith("B") else 1e6)
+    m["params"] = m["size"].map(params)
+    m["line"] = m["family"].str.replace(r"-(it|pt|base|Base|Instruct.*|Think.*|SFT|DPO|checkpoints|2509)$", "", regex=True)
+    m["post_trained"] = ~m["family"].str.contains(r"-pt$|-base$|-Base$|Base|checkpoints|a06|from8b|-2509$", regex=True) \
+        | m["family"].str.contains("Instruct|Think|-it$|-SFT|-DPO", regex=True)
+    return m.sort_values(["line", "params"])
+
+
 def figure(t: pd.DataFrame, path: Path, pool: str, ladder_levels: list, ext_levels: list) -> None:
-    fig, (a, b) = plt.subplots(1, 2, figsize=(12.4, 4.8), gridspec_kw={"width_ratios": (1, 1.15)})
+    fig, (m_ax, a, b) = plt.subplots(1, 3, figsize=(15.6, 4.9), gridspec_kw={"width_ratios": (0.95, 0.9, 1.05)})
+    # (0) the public models behind the buckets
+    m = external_models()
+    lines = list(dict.fromkeys(m["line"]))
+    for i, line in enumerate(lines):
+        g = m[m["line"] == line]
+        base, post = g[~g["post_trained"]], g[g["post_trained"]]
+        m_ax.scatter(base["params"], [i] * len(base), s=26, color=S.RAMP[2], zorder=3, label="base / pretrained" if i == 0 else None)
+        m_ax.scatter(post["params"], [i] * len(post), s=26, facecolor=S.SURFACE, edgecolor=S.RAMP[2], lw=.9, zorder=2,
+                     label="post-trained (SFT / DPO / instruct / think)" if i == 0 else None)
+    m_ax.set_yticks(range(len(lines))); m_ax.set_yticklabels(lines, fontsize=7)
+    m_ax.set_xscale("log"); m_ax.set_xlabel("parameters (log)")
+    for lvl in ext_levels:                                   # "7-9B": the bucket's lower edge
+        num = re.findall(r"[\d.]+", lvl)[0]
+        m_ax.axvline(float(num) * (1e9 if lvl.endswith("B") else 1e6), color=S.GRID, lw=.6, zorder=1)
+    m_ax.set_title(f"(0) the {len(m)} public models behind the buckets", loc="left", fontsize=8.5)
+    m_ax.legend(fontsize=6, frameon=False, loc="upper left"); S.clean(m_ax)
     rows, cols = ladder_levels + [NEVER], ext_levels + [NEVER]
     ct = pd.crosstab(t["ladder_floor"], t["external_floor"]).reindex(index=rows, columns=cols, fill_value=0)
     im = a.imshow(ct.to_numpy(), cmap="Blues", aspect="auto")
@@ -94,6 +129,7 @@ def figure(t: pd.DataFrame, path: Path, pool: str, ladder_levels: list, ext_leve
     a.set_yticks(range(len(rows))); a.set_yticklabels(rows, fontsize=7)
     a.set_xlabel("smallest public-model bucket that reads the task"); a.set_ylabel("smallest ladder size that reads the task")
     a.set_title(f"(a) {len(t)} tasks scored by both tiers", loc="left", fontsize=8.5)
+    a.tick_params(axis="x", labelsize=6.5)
     # (b) the tasks gated on the ladder, per family, by where the public models read them
     g = t[t["ladder_gated_at_ref"]]
     order = [n for n, _ in BINS]
@@ -106,13 +142,14 @@ def figure(t: pd.DataFrame, path: Path, pool: str, ladder_levels: list, ext_leve
         left += tab[name].to_numpy()
     b.set_yticks(range(len(tab))[::-1]); b.set_yticklabels(tab.index, fontsize=7)
     b.set_xlabel("tasks gated at every ladder size"); b.legend(fontsize=6.5, frameon=False, title="public models first read it at", title_fontsize=6.5)
-    b.set_title(f"(b) the {len(g)} tasks the ladder never reads: a size floor or a benchmark floor?", loc="left", fontsize=8.5)
+    b.set_title(f"(b) the {len(g)} tasks the ladder never reads: size floor or benchmark floor?", loc="left", fontsize=8.5)
     b.grid(color=S.GRID, lw=.6, axis="x"); S.clean(b)
     n_size = int(g["external_bin"].isin(["≤ 600M", "1B–1.7B"]).sum())
     top = G._header(fig, "Benchmark floors: what the ladder cannot read, the public models can — mostly",
                     f"Every task scored by both the ladder (`{pool}`, gate = one-sided 95 % Wilson lower bound over "
                     f"chance for at least half of the size's runs, final checkpoint) and the external tier (public base "
-                    f"models 270M–70B, same task, same gate, `all/external/`). A floor is the smallest level from which "
+                    f"models 270M–70B, same task, same gate, `all/external/`; panel (0) lists them, grid lines at the bucket sizes). A floor "
+                    f"is the smallest level from which "
                     f"the gate holds at every larger informed level. (a) the joint distribution; (b) the tasks the "
                     f"ladder never reads, by the public bucket that first reads them: {n_size} of {len(g)} are readable "
                     f"at ≤ 1.7B by a public model — a size/recipe floor the 5×-Chinchilla ladder does not clear — and the "
