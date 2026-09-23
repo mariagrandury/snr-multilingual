@@ -1,0 +1,20 @@
+task: rfgm_belebele_urd_Arab
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/belebele_urd_Arab.jsonl
+test_split: test
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: text
+doc_to_choice: choices
+doc_to_target: gold
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0

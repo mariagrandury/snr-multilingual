@@ -216,10 +216,27 @@ significance test reads `n_items`
 (`compute_cost.kind_of` strips the suffix).
 
 **Probe benchmarks and mixed families** (2026-09-23). `groups.auto_probe`
-screens candidate benchmarks at the last checkpoint only
+screens candidate benchmarks — INCLUDE v2 included; one group, because a
+second group is a second job per cell — at the last checkpoint only
 (`auto_evals_cscs.py --group auto_probe --final-only`); it is deliberately
-separate from `auto`, because a watcher re-reads tasks.json every pass and
-would top up every checkpoint of every cell.
+separate from `auto`, whose benchmarks are topped up on every checkpoint of
+every cell. The verdict comes from
+`analysis/rq00_task_reformulation/probe.sh` (gate per language, original vs
+`rf_` on the pairs); a candidate that passes is promoted into `auto`. Twenty
+of the twenty-one were promoted on 2026-09-23; `bbq` stays a candidate,
+because it is 23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
+`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially. A
+promoted benchmark stays listed in `auto_probe` as the record of what was
+screened, which costs nothing: the watcher's idempotency is per task, so a
+later `--group auto_probe` pass finds the work done and submits only gaps.
+
+**A running watcher does not see a tasks.json edit.** `auto_evals_cscs.py`
+reads the group once, before the `--watch` loop (`benchmarks =
+auto_benchmarks(group)`), and `configs.load_tasks` is `lru_cache`d, so a
+process started yesterday holds yesterday's benchmark list *and* yesterday's
+task table. Promoting a benchmark into `auto` therefore takes effect only
+when the watcher is restarted (or a one-shot pass is run alongside it) — the
+restart is the launch, and it is what submits the top-ups.
 
 BBH and ACP-Bench are *mixed*: `scripts/make_cloze_tasks.py` measures each
 subtask against the cached data and splits them by what they actually are.

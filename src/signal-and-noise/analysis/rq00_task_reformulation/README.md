@@ -566,6 +566,78 @@ User content per item: `Language:`, `Subject:` (Global-MMLU, INCLUDE),
 `Passage:` (belebele), `Question:`, `Options:` numbered 1–4. The response
 schema pins `{"stem": string, "choices": [4 strings]}`.
 
+## The probe (2026-09-23)
+
+The same question, asked of new candidates: `configs/tasks.json` →
+`groups.auto_probe` (BBH and ACP-Bench as cloze arms, mmlu, commonsense_qa,
+cultural_bench, INCLUDE v2, …, and the `rf_` twins of the ones that ask for a
+letter), evaluated at the last checkpoint of the 600M–1.7B cells. `probe.sh`
+runs the chain — `derive_task_options` → `ladder_report --plot` →
+`above_random` → `compare.py --tag probe` → `probe_survivors.py` →
+`check_rules` — and leaves `rf_gate_probe.*` (the pairs, this README's
+`rf-compare-probe` block) and `probe_survivors.csv` (the gate per language,
+the `probe-survivors` block). `compare.py` subtracts each task's own chance
+level, so the 2- to 10-way probe pairs read on the same scale as the 4-way
+families above (whose numbers this does not change).
+
+**Outcome (2026-09-23).** Twenty of the twenty-one candidates were promoted
+into `groups.auto`, so every checkpoint is topped up with them and they enter
+every RQ — a population change, stated in `RULES.md`. `bbq` stays a candidate:
+it clears a 1/12 chance at 0.44 without telling us much, and it costs 23 min
+per checkpoint against 2.9 for mmlu and 0.3 for a belebele task.
+
+### The length tell, and where it actually is
+
+Replacing letters with answer strings hands the model a lever the lettered
+form does not have: the options now differ in length. If the gold answer is
+systematically the shortest (or longest) of its set, a model scores above
+chance by preferring short (raw log-likelihood) or long (`acc_norm`, which
+divides by length) strings without reading the stem — and the
+original→`rf_` difference is then partly that artefact rather than the format
+change. `acc_norm` normalises a candidate by its own length; it does not
+remove a dataset-level correlation between *being the gold* and *being short*.
+
+Measured off the cached items, not the model: how often the gold is the
+**strictly** shortest (or longest) option, ties excluded, over every task of a
+family (8 sampled where a family has more).
+
+| family | chance | gold shortest | gold longest | items |
+|---|---:|---:|---:|---:|
+| rf_acp_bench_mcq | 25.0 % | **35.4 %** | 15.1 % | 900 |
+| rf_bbh_mcq | 23.5 % | 13.1 % | 10.9 % | 1,896 |
+| rf_belebele | 25.0 % | 23.7 % | 20.8 % | 7,200 |
+| rf_commonsense_qa | 20.0 % | 11.1 % | 19.0 % | 1,221 |
+| rf_cultural_bench_easy | 25.0 % | 24.0 % | 27.1 % | 221 |
+| rf_global_mmlu_full | 25.0 % | 17.8 % | 23.3 % | 112,332 |
+| rf_include_base_44 | 25.0 % | 15.8 % | 22.2 % | 4,328 |
+| rf_mmlu | 25.0 % | 17.8 % | 23.7 % | 14,042 |
+| rfgm_include_base_44 | 25.0 % | 17.6 % | 21.9 % | 4,243 |
+
+So this is not a property of the reformulation: every family the study
+already relies on sits at or below chance on both tells, the Gemini rewrite
+included (17.6 %, which is what the driver's own length report is there to
+keep). It is a property of ACP-Bench's published distractor sets — its items
+are plans, and a wrong plan tends to be stated at greater length — and it
+only becomes reachable once the strings are scored. Three of its seven
+subtasks carry it:
+
+| task | chance | gold shortest |
+|---|---:|---:|
+| rf_acp_bench_mcq_areach | 25 % | 50.0 % |
+| rf_acp_bench_mcq_val | 25 % | 47.7 % |
+| rf_acp_bench_mcq_prog | 25 % | 46.9 % |
+| rf_acp_bench_mcq_land | 25 % | 30.0 % |
+| rf_acp_bench_mcq_app | 25 % | 28.5 % |
+| rf_acp_bench_mcq_reach | 25 % | 26.9 % |
+| rf_acp_bench_mcq_just | 25 % | 19.2 % |
+
+For those three, the reference a score has to beat is the pick-shortest rate
+(0.50 / 0.48 / 0.47), not the 0.25 the gate uses, and the gate's verdict on
+them should be read with that substitution — which is why the probe reports
+`rf_acp_bench_mcq` as a family and not as one number. `rf_bbh_mcq_snarks`,
+the two-way task where a tell would be cheapest, measures 54.8 % against its
+50 % chance on 177 items, inside its own sampling error.
+
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
 Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
 
@@ -579,3 +651,89 @@ Gate cells (median task margin over chance 0.25, trained languages, deep scheme-
 
 ![per language](rf_gate_by_language.png)
 <!-- END auto:rf-compare -->
+
+<!-- BEGIN auto:rf-compare-probe (analysis/rq00_task_reformulation/compare.py --tag probe) -->
+Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05).
+
+| family | 600M | 1B | 1.7B |
+|---|---:|---:|---:|
+| mmlu | +0.001 · rf +0.057 (**+0.057**, n=1, sig=1) · rfgm — | -0.004 · rf +0.082 (**+0.086**, n=1, sig=1) · rfgm — | +0.017 · rf +0.111 (**+0.093**, n=1, sig=1) · rfgm — |
+| commonsense_qa | +0.002 · rf +0.188 (**+0.186**, n=1, sig=1) · rfgm — | +0.001 · rf +0.214 (**+0.213**, n=1, sig=1) · rfgm — | +0.009 · rf +0.265 (**+0.256**, n=1, sig=1) · rfgm — |
+| cultural_bench_easy | -0.015 · rf +0.025 (**+0.039**, n=19, sig=7) · rfgm — | +0.021 · rf +0.065 (**+0.044**, n=19, sig=5) · rfgm — | +0.043 · rf +0.092 (**+0.049**, n=19, sig=7) · rfgm — |
+| bbh_mcq | +0.006 · rf +0.060 (**+0.054**, n=17, sig=8) · rfgm — | +0.000 · rf +0.075 (**+0.075**, n=17, sig=10) · rfgm — | -0.003 · rf +0.084 (**+0.087**, n=17, sig=12) · rfgm — |
+| acp_bench_mcq | +0.000 · rf +0.087 (**+0.087**, n=7, sig=5) · rfgm — | +0.006 · rf +0.105 (**+0.099**, n=7, sig=5) · rfgm — | +0.010 · rf +0.132 (**+0.122**, n=7, sig=5) · rfgm — |
+
+![family x size](rf_gate_probe.png)
+
+![per language](rf_gate_by_language_probe.png)
+<!-- END auto:rf-compare-probe -->
+
+<!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
+Probe survivors: which of the 16 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 44 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
+
+| benchmark | 175M | 350M | 600M | 1B | 1.7B |
+|---|---:|---:|---:|---:|---:|
+| acp_bench_cloze | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| acp_bench_mcq | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| bbh_cloze | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| bbh_mcq | orig — | orig — | orig 0/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| bbq | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| blend_sample | orig — | orig — | orig 0/4 | orig 0/4 | orig 0/4 |
+| commonsense_qa | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| cultural_bench_easy | orig — | orig — | orig 2/8 · rf 4/8 | orig 0/8 · rf 4/8 | orig 1/8 · rf 5/8 |
+| cultural_bench_hard | orig — | orig — | orig 0/8 | orig 0/8 | orig 0/8 |
+| include_v2_en | orig — | orig — | orig 38/42 | orig 41/42 | orig 42/42 |
+| include_v2_og | orig — | orig — | orig 26/42 | orig 31/42 | orig 35/42 |
+| mathqa | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
+| mmlu | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| openbookqa | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
+| toxigen | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| truthfulqa_mc2 | orig — | orig — | orig — | orig — | orig — |
+
+| language | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|
+| ar | — | — | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy, include_v2_en, include_v2_og |
+| az | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| bg | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| bn | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| cs | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| da | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| de | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| el | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| en | — | — | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa |
+| es | — | — | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| et | — | — | — | — | include_v2_en, include_v2_og |
+| fa | — | — | — | include_v2_en | include_v2_en |
+| fi | — | — | include_v2_en | include_v2_en | include_v2_en |
+| fr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| he | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
+| hi | — | — | cultural_bench_easy, include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| hr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| hu | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| id | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| it | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ja | — | — | cultural_bench_easy-rf | cultural_bench_easy-rf | cultural_bench_easy-rf |
+| jp | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ka | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| kk | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ko | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| lt | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ml | — | — | include_v2_en | include_v2_en | include_v2_en |
+| mr | — | — | — | include_v2_en | include_v2_en |
+| ms | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ne | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| nl | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| pl | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| pt | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ru | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| sk | — | — | — | include_v2_en | include_v2_en |
+| sq | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| sr | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
+| sv | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ta | — | — | include_v2_en | include_v2_en | include_v2_en |
+| tr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| uk | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ur | — | — | include_v2_en | include_v2_en | include_v2_en |
+| vi | — | — | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| zh | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+<!-- END auto:probe-survivors -->

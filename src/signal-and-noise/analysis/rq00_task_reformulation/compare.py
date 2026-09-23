@@ -43,6 +43,7 @@ family x size table).
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -63,18 +64,19 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.utils import build_snr_pool, size_order  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import scores_and_mask, task_n_items  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import scores_and_mask, task_n_items, task_n_options  # noqa: E402
 from pretrain.auto_evals_cscs import DEFAULT_LOGS_ROOT  # noqa: E402
 from analysis.utils import finals  # noqa: E402
 from statsmodels.stats.proportion import proportions_ztest  # noqa: E402
 
 DOC = HERE / "README.md"
 TASKS = json.loads((ROOT / "configs" / "tasks.json").read_text())["tasks"]
+# the default set; `--families` names another (the probe pairs), `--tag` keeps
+# its outputs and README block apart from these
 FAMILIES = ["belebele", "global_mmlu_full", "include_base_44"]
 # the reformulated sets, prefix -> panel title (make_rf_tasks.py --set)
 SETS = {"rf": "reformulated (answer strings)", "rfgm": "rewritten (Gemini statements)"}
 PREFIX = re.compile(r"^(rfgm|rf)_")
-CHANCE = 0.25
 P_SIG = 0.05      # two-proportion z-test level for "the reformulation moved the score"
 # The harness writes both metrics; the report keeps only each task's primary
 # one (tasks.json `metric`), so the twins' plain `acc` is read from here.
@@ -94,9 +96,9 @@ def set_of(task: str) -> str:
     return m.group(1) if m else "orig"
 
 
-def pool() -> pd.DataFrame:
-    """The deep scheme-A seed-1904 rows of the three families, originals and
-    every twin, trained languages only; `set` and `base` columns."""
+def pool(families: list[str]) -> pd.DataFrame:
+    """The deep scheme-A seed-1904 rows of `families`, originals and every
+    twin, trained languages only; `set` and `base` columns."""
     # untrained=True because utils' trained_only() resolves a task against
     # auto_benchmarks(), which knows only the originals — every rf_*/rfgm_*
     # row is "untrained" there and the pool would come back without a single
@@ -105,7 +107,7 @@ def pool() -> pd.DataFrame:
     df = df[(df["arch"] == "deep") & (df["scheme"] == "A")]
     fam = df["task"].map(lambda t: base(TASKS.get(t, {}).get("benchmark", "")))
     trained = [base(t) in _trained_tasks(L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]
-    df = df[fam.isin(FAMILIES) & pd.Series(trained, index=df.index)]
+    df = df[fam.isin(families) & pd.Series(trained, index=df.index)]
     return df.assign(set=df["task"].map(set_of), base=df["task"].map(base))
 
 
@@ -176,7 +178,8 @@ def cells(df: pd.DataFrame, sig: pd.DataFrame, s: str, by: list[str]) -> tuple[p
     if df.empty:
         return empty, empty, pd.DataFrame(columns=by + ["size", "n_sig"])
     scores, _, _ = scores_and_mask(df)
-    per_task = (scores - CHANCE).stack().dropna().rename("margin").reset_index()   # stack() keeps NaN cells since pandas 2.1
+    chance = pd.Series({t: 1 / task_n_options(t) for t in scores.index})   # per task: the probe pairs are 2- to 10-way
+    per_task = scores.sub(chance, axis=0).stack().dropna().rename("margin").reset_index()   # stack() keeps NaN cells since pandas 2.1
     per_task.columns = ["task", "size", "margin"]
     per_task["family"] = per_task["task"].map(lambda t: base(TASKS[t]["benchmark"]))
     per_task["language"] = per_task["task"].map(lambda t: TASKS[t]["language"])
@@ -207,7 +210,15 @@ def panels(axes, orig: pd.DataFrame, twins: dict, index: str, sizes: list, ylabe
 
 
 def main() -> None:
-    df = pool()
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--families", default=",".join(FAMILIES),
+                    help="comma-separated benchmark families to pair with their twins (default: the three letter-format families)")
+    ap.add_argument("--tag", default="",
+                    help="suffix for every output file and the README block, so another family set (the probe) does not overwrite the default one's")
+    args = ap.parse_args()
+    families = [f for f in args.families.split(",") if f]
+    sfx = f"_{args.tag}" if args.tag else ""
+    df = pool(families)
     have = [s for s in SETS if (df["set"] == s).any()]
     if not have:
         # a report without the twin columns (the published one, until their evals
@@ -215,14 +226,15 @@ def main() -> None:
         sys.exit("no rf_* / rfgm_* results in this ladder report: point SNR_LADDER_DIR at one that has them")
     pairs = {s: paired(df, s) for s in SETS}
     sig = pd.concat([significance(pairs[s], s) for s in SETS], ignore_index=True)
-    sig.to_csv(HERE / "rf_significance.csv", index=False)
+    sig.to_csv(HERE / f"rf_significance{sfx}.csv", index=False)
     fam = {s: cells(pairs[s], sig[sig["set"] == s], s, ["family"]) for s in SETS}      # set -> (orig, twin, n_sig)
     fam_o = fam[have[0]][0]
     sizes = size_order({sz for o, t, _ in fam.values() for sz in set(o["size"]) | set(t["size"])})
     cell = ("cell = median over the {unit}'s tasks of (mean final-checkpoint score of the size's deep scheme-A seed-1904 "
-            "models that trained the language and have the original and the twin scored) − chance 0.25; original = acc, "
-            "twins = acc_norm, and part of every twin cell is that metric choice (`norm_offset` in rf_significance.csv: "
-            "rf median +0.005, belebele −0.016 / Global-MMLU +0.016 / INCLUDE +0.018 on average)")
+            "models that trained the language and have the original and the twin scored) − the task's chance level "
+            "(1 / n_options); original = acc, twins = acc_norm, and part of every twin cell is that metric choice "
+            f"(`norm_offset` in rf_significance{sfx}.csv"
+            + (": rf median +0.005, belebele −0.016 / Global-MMLU +0.016 / INCLUDE +0.018 on average)" if not sfx else ")"))
     sig_note = ("the z-test compares the original's acc with the twin run's own acc, so the formulation is the only "
                 f"difference (p < {P_SIG})")
     note = f"{cell.format(unit='family')}; small number = tasks, and on a difference panel the tasks significant for at " \
@@ -233,26 +245,28 @@ def main() -> None:
 
     fig, axes = plt.subplots(1, ncol, figsize=(4.3 * ncol, 3.2))
     tables = panels(axes, fam_o, fam, "family", sizes, "benchmark")
-    G.save_highlights(fig, HERE, "The three letter-format families, before and after the reformulations", note, tables, name="rf_gate")
+    what = "The three letter-format families" if not args.tag else f"The {args.tag} families ({', '.join(families)})"
+    G.save_highlights(fig, HERE, f"{what}, before and after the reformulations", note, tables, name=f"rf_gate{sfx}")
 
     lang = {s: cells(pairs[s], sig[sig["set"] == s], s, ["family", "language"]) for s in SETS}
-    fig, axes = plt.subplots(len(FAMILIES), ncol, figsize=(4.3 * ncol, 2.6 * len(FAMILIES) + 0.8), squeeze=False)
+    fig, axes = plt.subplots(len(families), ncol, figsize=(4.3 * ncol, 2.6 * len(families) + 0.8), squeeze=False)
     tables = []
-    for row, f in zip(axes, FAMILIES):
+    for row, f in zip(axes, families):
         sub = lambda t: t[t["family"] == f] if len(t) else t
         tables += panels(row, sub(lang[have[0]][0]), {s: tuple(map(sub, lang[s])) for s in SETS},
                          "language", sizes, f, prefix=f"{f}: ")
-    G.save_highlights(fig, HERE, "Per language, before and after the reformulations", note_lang, tables, name="rf_gate_by_language")
+    G.save_highlights(fig, HERE, "Per language, before and after the reformulations", note_lang, tables, name=f"rf_gate_by_language{sfx}")
 
     # the markdown block: family x size, original / per set: twin, Δ, sig
-    lines = [f"Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, "
+    lines = [f"Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, "
              f"from the ladder report; each set on the models that have the original and that twin scored — the original "
              f"shown is the {have[0]} pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, "
              f"n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models "
-             f"(two-proportion z-test of the original's acc against the twin run's own acc, p < {P_SIG}; the acc_norm−acc "
-             f"offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).", "",
+             f"(two-proportion z-test of the original's acc against the twin run's own acc, p < {P_SIG}"
+             + ("; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in "
+                "36 % of the pairs" if not sfx else "") + ").", "",
              "| family | " + " | ".join(sizes) + " |", "|---|" + "---:|" * len(sizes)]
-    for f in FAMILIES:
+    for f in families:
         out = []
         for sz in sizes:
             o = fam_o[(fam_o["family"] == f) & (fam_o["size"] == sz)]
@@ -270,9 +284,10 @@ def main() -> None:
                              f"n={int(r['n'].iloc[0])}, sig={int(ks.iloc[0]) if len(ks) else 0})")
             out.append(" · ".join(parts))
         lines.append(f"| {f} | " + " | ".join(out) + " |")
-    lines += ["", "![family x size](rf_gate.png)", "", "![per language](rf_gate_by_language.png)"]
-    replace_block(DOC, "rf-compare", "\n".join(lines), "analysis/rq00_task_reformulation/compare.py")
-    print("\n".join(lines[:4 + len(FAMILIES)]))
+    lines += ["", f"![family x size](rf_gate{sfx}.png)", "", f"![per language](rf_gate_by_language{sfx}.png)"]
+    replace_block(DOC, "rf-compare" + (f"-{args.tag}" if args.tag else ""), "\n".join(lines),
+                  "analysis/rq00_task_reformulation/compare.py" + (f" --tag {args.tag}" if args.tag else ""))
+    print("\n".join(lines[:4 + len(families)]))
     print(f"updated {DOC}")
 
 

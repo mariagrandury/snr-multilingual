@@ -106,7 +106,15 @@ N_OPTIONS = {
 }
 _APPROX = {"truthfulqa", "truthfulqa_mc1", "truthfulqa-multi_mc1", "agieval",
            "agieval_logiqa", "agieval_sat", "agieval_lsat",
-           "arabic_leaderboard_alghafa_mcq_exams_test"}
+           "arabic_leaderboard_alghafa_mcq_exams_test",
+           # mc2 is in here for a second reason, and has no N_OPTIONS entry on
+           # purpose: its score is the probability mass on ALL true answers,
+           # not a pick-one accuracy, so its baseline is the average share of
+           # true options per item (~0.4) and not 1/n. Without this line the
+           # count derive_task_options reads off the samples (4, or 5 for the
+           # vi/zh siblings) would become a 0.25 chance level that every model
+           # clears at once.
+           "truthfulqa_mc2"}
 
 
 def task_n_options(task: str) -> float:

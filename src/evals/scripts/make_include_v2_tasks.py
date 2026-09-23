@@ -27,7 +27,7 @@ What it writes, idempotently:
         be rebuilt
   configs/tasks.json
         one entry per task (language, benchmark include_v2_<variant>,
-        n_options 4, metric acc_norm) plus the `auto_include_v2` group
+        n_options 4, metric acc_norm) and their membership in `auto_probe`
 
 Only the pairs whose language the ladder trains (`languages.json` ->
 groups.trained, the L50 set) are written: rule 2 drops every other row from
@@ -207,8 +207,11 @@ def main() -> None:
                 [("language", code), ("benchmark", f"include_v2_{variant}"),
                  ("stages", ["pretraining"]), ("n_options", 4), ("metric", "acc_norm")])
 
-    group = sorted(f"include_v2_{v}" for v in VARIANTS)
-    data["groups"]["auto_include_v2"] = group
+    # One probe group, not two: a second group is a second job per cell, each
+    # paying the fixed overhead. `auto_include_v2` (2026-09-22) is retired.
+    data["groups"]["auto_probe"] = sorted(set(data["groups"].get("auto_probe", []))
+                                          | {f"include_v2_{v}" for v in VARIANTS})
+    data["groups"].pop("auto_include_v2", None)
     for variant in VARIANTS:
         data["benchmarks"][f"include_v2_{variant}"] = OrderedDict(
             [("name", "INCLUDE v2 (Romanou et al.)"), ("languages", len(kept)),

@@ -36,6 +36,7 @@ import argparse
 import itertools
 import json
 import math
+import os
 import re
 import sys
 from pathlib import Path
@@ -982,11 +983,23 @@ _TRAINED_TASKS: dict[tuple, frozenset] = {}
 
 def _trained_tasks(L, scheme: str) -> frozenset:
     """The tasks a cell is evaluated on in the languages it TRAINS on — the
-    watcher's default list, whatever extra languages the cell also carries."""
-    key = (int(L), scheme)
+    watcher's default list, whatever extra languages the cell also carries.
+
+    The list is drawn from the `auto` group, so a benchmark outside it (the
+    probe candidates, `auto_probe`) is "untrained" everywhere: rule 2 drops it
+    from every pool and the gate reads it on the wrong population. The probe
+    pass opts in by naming its groups in SNR_TRAINED_GROUPS (comma-separated,
+    default `auto`); nothing else sets it, so the populations of every other
+    RQ do not move until a candidate is promoted into `auto`."""
+    groups = os.environ.get("SNR_TRAINED_GROUPS", "auto")
+    # groups in the key: one process holds one setting, but a test may change it.
+    # eval_languages() is called by name, not `*key` — its third parameter is
+    # `all_languages`, and a truthy one returns every language of every task.
+    key = (int(L), scheme, groups)
     if key not in _TRAINED_TASKS:
+        benchmarks = [b for g in groups.split(",") for b in auto_benchmarks(g.strip())]
         _TRAINED_TASKS[key] = frozenset(
-            tasks_for_benchmarks(auto_benchmarks(), eval_languages(*key)))
+            tasks_for_benchmarks(benchmarks, eval_languages(int(L), scheme)))
     return _TRAINED_TASKS[key]
 
 

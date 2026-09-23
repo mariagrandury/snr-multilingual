@@ -127,12 +127,15 @@ registering in `configs/tasks.json`:
 - [`scripts/make_include_v2_tasks.py`](scripts/make_include_v2_tasks.py)
   writes INCLUDE v2 (`include-results/include-128`, the L50 pairs, OG and EN
   variants) as cloze tasks under [`tasks/include_v2/`](tasks/include_v2/),
-  group `auto_include_v2`, read straight from the cached parquet.
+  in the same group, read straight from the cached parquet.
 
 Run the generators one at a time: each rewrites all of `tasks.json`, and
 `utils.configs.write_tasks_json` refuses to write over a file that changed
 underneath it. Load every new task through a `TaskManager` before launching;
-`src/evals/CLAUDE.md` lists what only fails inside the job.
+`src/evals/CLAUDE.md` lists what only fails inside the job. Once the
+results are in, `src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh`
+produces the verdict: the gate per language and original-vs-`rf_` on the
+pairs. A candidate that earns its place is then added to `groups.auto`.
 
 ## How to run
 

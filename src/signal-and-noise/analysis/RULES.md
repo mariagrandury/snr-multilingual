@@ -54,6 +54,30 @@ keeps 0 of 37 Global-MMLU tasks and 11 of 105 belebele tasks, against 35 and
 twins and 34 of the Gemini-rewritten ones. Before the twins entered the pool
 those families contributed almost nothing to any RQ.
 
+## The probe candidates are not in the populations
+
+`groups.auto_probe` (2026-09-23) holds benchmarks being screened — BBH and
+ACP-Bench as cloze arms, mmlu, INCLUDE v2, and the `rf_` twins of the ones
+that ask for a letter — at the last checkpoint of the 600M–1.7B cells only.
+A screened benchmark is outside `auto`, so rule 2's trained set does not know
+it: every pool built without `untrained=True` drops it, and no RQ's population
+moves while it is only a candidate. The one pass that reads them,
+`rq00_task_reformulation/probe.sh`, opts in with `SNR_TRAINED_GROUPS=auto,auto_probe`
+(`pretrain.ladder_report._trained_tasks`), which only widens the trained set
+for that process; the gate it rewrites differs from the committed one in the
+probe rows alone.
+
+**Promoted 2026-09-23**, and this moves every population: twenty of the
+twenty-one candidates are now in `auto` — the BBH / ACP-Bench cloze arms and
+their `rf_` twins, mmlu + rf_mmlu, commonsense_qa + rf_commonsense_qa,
+cultural_bench easy/hard + rf_cultural_bench_easy, INCLUDE v2 (OG and EN),
+blend_sample, mathqa, openbookqa, toxigen and truthfulqa_mc2. Every
+unqualified "benchmark" mean is over a wider set from the first checkpoint
+they land on, so a table regenerated after that point is not comparable with
+one regenerated before it; say which side of the promotion a number comes
+from. `bbq` alone stays a candidate (23 min per checkpoint, a third of the
+top-up bill, and it clears a 1/12 chance trivially).
+
 ## Why three tasks per language
 
 `MIN_LANG_TASKS` trades coverage against stability, and it is worth being

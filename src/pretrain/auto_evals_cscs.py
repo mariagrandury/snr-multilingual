@@ -498,8 +498,15 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     # The rf / rfgm Global-MMLU twins are one task over the whole 14k-row split
     # with four answer strings to score per item: 2.7-3.3 min per worker-task
     # on the 2026-09-18 pilots against the ~0.5 the fit assumes, so each
-    # counts as six tasks in the walltime.
-    n_tasks = sum(6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1
+    # counts as six tasks in the walltime. `bbq` (auto_probe) is 58,492 items
+    # x 12 choices = 702k requests, ~17 min at 600M's ~700 req/s plus ~4 min
+    # of context building (job 3485222, 2026-09-23): 36 task-minutes that no
+    # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
+    # count across the workers. Without this the solo top-up job the watcher
+    # gives it is 15 min, the kill is not a recorded failure, and it is
+    # resubmitted every pass forever.
+    TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
+    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
                   for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
