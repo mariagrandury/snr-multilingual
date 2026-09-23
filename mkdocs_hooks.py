@@ -78,4 +78,10 @@ def on_files(files, config):
             )
             f.abs_src_path = str(img)
             files.append(f)
+
+    # The benchmark catalogue lives in configs/; the Benchmarks tab reads it.
+    f = File(path="interactive/data/benchmarks.csv", src_dir=docs_dir,
+             dest_dir=site_dir, use_directory_urls=use_directory_urls)
+    f.abs_src_path = str(REPO_ROOT / "configs/multilingual_benchmarks.csv")
+    files.append(f)
     return files

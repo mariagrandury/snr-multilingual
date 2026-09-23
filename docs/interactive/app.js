@@ -96,6 +96,7 @@
       });
       return h("label", {}, h("span", {}, c.label, " ", val), inp);
     }
+    if (c.type === "text") return h("label", {}, c.label, h("input", { type: "text", placeholder: "name, task, note…", oninput: (e) => set(e.target.value) }));
     const sel = h("select", { onchange: (e) => set(isNaN(e.target.value) || c.string ? e.target.value : +e.target.value) },
       c.options.map((o) => h("option", { value: optValue(o) }, optLabel(o))));
     if (c.value != null) sel.value = c.value;
@@ -612,6 +613,62 @@
           Plot.text(rows, { x: s.x, y: "snr_median", text: "family", dx: 9, textAnchor: "start", fontSize: 10 }),
         ],
       }), note("Only the families that clear chance are here — most are two-option. Too few remain to separate curation, format or length effects.")];
+    });
+  };
+
+  // ---------- benchmark catalogue (configs/multilingual_benchmarks.csv) ----------
+  VIEWS.benchmarks = async (el) => {
+    await languages();
+    const rows = (await d3.csv(new URL("benchmarks.csv", DATA).href)).map((r) => ({
+      ...r, langs: r.languages ? r.languages.split(";") : [], n_languages: +r.n_languages || null,
+      n_items: r.n_items === "" ? null : +r.n_items, cats: r.categories ? r.categories.split(";").map((c) => c.trim()) : [],
+      sources: r.data_source ? r.data_source.split(";").map((c) => c.trim()) : [],
+    }));
+    const split = (key) => uniq(rows.flatMap((r) => r[key])).filter(Boolean).sort();
+    const langs = split("langs").sort((a, b) => langName(a).localeCompare(langName(b)));
+    const all = (label, values, fmtv = (v) => v) => [{ value: "", label: `all ${label}` }, ...values.map((v) => ({ value: v, label: fmtv(v) }))];
+    const link = (url, text) => (url ? h("a", { href: url, target: "_blank", rel: "noopener" }, text) : "–");
+    const csvOf = (list) => d3.csvFormat(list.map(({ langs: _l, cats: _c, sources: _s, ...r }) => r));
+    mount(el, [
+      { key: "q", label: "Search", type: "text", value: "" },
+      { key: "lang", label: "Language", options: all("languages", langs, (l) => `${langName(l)} (${l})`), string: true },
+      { key: "fw", label: "Framework", type: "seg", options: [{ value: "", label: "all" }, { value: "harness", label: "lm-eval-harness" }, { value: "lighteval", label: "lighteval" }] },
+      { key: "format", label: "Format", type: "seg", options: [{ value: "", label: "all" }, { value: "mcqa", label: "MCQA" }, { value: "generative", label: "generative" }] },
+      { key: "cat", label: "Category", options: all("categories", split("cats")), string: true },
+      { key: "src", label: "Data source", options: all("sources", split("sources")), string: true },
+    ], (s) => {
+      const q = (s.q ?? "").toLowerCase();
+      const sel = rows.filter((r) => (!q || `${r.name} ${r.id} ${r.suite} ${r.harness_tasks} ${r.lighteval_tasks} ${r.notes}`.toLowerCase().includes(q))
+        && (!s.lang || r.langs.includes(s.lang)) && (!s.fw || r.frameworks.includes(s.fw))
+        && (!s.format || r.format.includes(s.format)) && (!s.cat || r.cats.includes(s.cat)) && (!s.src || r.sources.includes(s.src)));
+      const perLang = d3.rollups(sel.flatMap((r) => r.langs), (v) => v.length, (l) => l).sort((a, b) => b[1] - a[1]).slice(0, 40)
+        .map(([l, n]) => ({ l, n, name: langName(l) }));
+      return [
+        tiles([[sel.length, `of ${rows.length} benchmarks`], [uniq(sel.flatMap((r) => r.langs)).length, "languages covered"],
+          [d3.format(".3s")(d3.sum(sel, (r) => r.n_items) || 0).replace("G", "B"), "evaluation items"],
+          [sel.filter((r) => r.frameworks.includes("harness") && r.frameworks.includes("lighteval")).length, "in both frameworks"]]),
+        perLang.length > 1 ? plot({
+          height: 200, marginBottom: 40, marginTop: 24,
+          x: { domain: perLang.map((d) => d.l), label: null, tickRotate: -45 },
+          y: { label: "benchmarks covering the language", grid: true },
+          marks: [Plot.barY(perLang, { x: "l", y: "n", fill: css("--viz-s1"), rx: 3, tip: true, title: (d) => `${d.name} (${d.l}): ${d.n} benchmarks` })],
+        }) : null,
+        h("div", { class: "viz-controls", style: "margin-top:.6em" }, h("span", { class: "viz-seg" },
+          h("button", { type: "button", onclick: () => { const a = h("a", { href: URL.createObjectURL(new Blob([csvOf(sel)], { type: "text/csv" })), download: "multilingual_benchmarks.csv" }); a.click(); } }, `download these ${sel.length} rows`))),
+        table(sel, [
+          { key: "name", label: "Benchmark", render: (r) => [h("b", {}, r.name), r.suite ? h("div", { class: "viz-note" }, r.suite) : null] },
+          { key: "n_languages", label: "Languages", num: true, render: (r) => h("span", { title: r.langs.map((l) => `${langName(l)} (${l})`).join(", ") },
+            r.langs.length <= 4 ? r.langs.join(", ") : `${r.langs.length} (${r.langs.slice(0, 3).join(", ")}, …)`) },
+          { key: "frameworks", label: "Framework", render: (r) => h("span", { title: [r.harness_tasks && `harness: ${r.harness_tasks}`, r.lighteval_tasks && `lighteval: ${r.lighteval_tasks}`].filter(Boolean).join("\n") }, r.frameworks) },
+          { key: "format", label: "Format" },
+          { key: "n_options", label: "Options" },
+          { key: "n_items", label: "Items", num: true, render: (r) => (r.n_items == null ? "–" : d3.format(",")(r.n_items)) },
+          { key: "categories", label: "Categories" },
+          { key: "data_source", label: "Data source" },
+          { key: "hf_dataset", label: "Links", render: (r) => [...r.hf_dataset.split(";").filter(Boolean).flatMap((u, i) => [i ? " " : "", link(u.trim(), i ? `HF${i + 1}` : "HF")]), " · ", link(r.paper, "paper")] },
+          { key: "notes", label: "Notes", render: (r) => h("span", { class: "viz-note" }, r.notes || "") },
+        ], { sort: "n_languages" }),
+      ];
     });
   };
 

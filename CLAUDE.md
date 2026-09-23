@@ -123,6 +123,10 @@ Eval results are NOT in the repo: they live on the cluster at
   matching keys off, plus the `groups` the report and deck slice by —
   `trained` is the 50 languages of the L50 mixture and is what every
   per-language figure covers, `main` the older 12-language set
+- `configs/multilingual_benchmarks.csv`: one row per multilingual benchmark
+  implemented in lm-evaluation-harness or lighteval (languages, framework,
+  HF and paper links, items, categories, data source, format, options);
+  hand-curated, read by the site's Benchmarks tab
 - Architectures live in `src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`
 
 ## Development

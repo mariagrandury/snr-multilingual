@@ -177,14 +177,17 @@ them can be found instead of quietly going stale.
 
 - [`configs/`](configs/) — `models.json` (every cell, pools, the `snr`
   parameters), `tasks.json` (tasks, groups, benchmark provenance),
-  `languages.json`, `hf_wandb.json` (dataset repos, W&B)
+  `languages.json`, `hf_wandb.json` (dataset repos, W&B),
+  `multilingual_benchmarks.csv` (every multilingual benchmark in
+  lm-evaluation-harness and lighteval; the site's Benchmarks tab)
 - [`plan/`](plan/) — the training plan, the grid sheet, budget, decisions
   and status notes
 - [`src/`](src/) — `pretrain/`, `evals/`, `signal-and-noise/`
 - [`documents/`](documents/) — report, proposals, slides
 - [`docs/`](docs/) — the project site (`bash build.sh`): a landing page with
   the contributions and findings, the model ladder, one interactive page per RQ
-  (`docs/findings/`), a benchmark recommender with CSV upload, and the repo
+  (`docs/findings/`), a filterable catalogue of multilingual benchmarks
+  (`configs/multilingual_benchmarks.csv`), a benchmark recommender with CSV upload, and the repo
   docs, which include the RQ READMEs. The views read
   `docs/interactive/data/*.json`, exported from the analysis tables by
   `scripts/build_site_data.py` (step 8 of `refresh_analysis.sh`)

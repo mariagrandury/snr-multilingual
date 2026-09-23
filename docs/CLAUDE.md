@@ -10,7 +10,8 @@ Two-part static site, deployed by Netlify:
 
 Tabs of the MkDocs side:
 - **Home** (`index.md`), **Model ladder** (`ladder.md`), **Findings**
-  (`findings/*.md`, one page per RQ) and **Recommender** (`recommend.md`) are
+  (`findings/*.md`, one page per RQ), **Benchmarks** (`benchmarks.md`) and
+  **Recommender** (`recommend.md`) are
   hand-written showcase pages. Their charts are `<div class="viz"
   data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
   function each, Observable Plot + d3 from jsdelivr) from
@@ -18,7 +19,9 @@ Tabs of the MkDocs side:
   `python3 scripts/build_site_data.py` (it only filters committed rqNN_ tables;
   needs `git lfs pull` for the CSVs). A findings page quotes its RQ README's
   "Highlighted result" block with `<!-- highlight: rqNN_name -->`, expanded by
-  `mkdocs_hooks.py` at build time — so its numbers follow the pipeline.
+  `mkdocs_hooks.py` at build time — so its numbers follow the pipeline. The
+  Benchmarks table reads `configs/multilingual_benchmarks.csv`, which the
+  same hook publishes as `interactive/data/benchmarks.csv`.
 - **Docs** — thin stubs that `--8<--` include a README from elsewhere in the
   repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
   `docs/repo.md` the root README). Edit the original READMEs, not the stubs.

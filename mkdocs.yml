@@ -55,6 +55,7 @@ nav:
       - "D · Can benchmarks be improved?":
           - "RQ8 · Subsets": findings/subsets.md
           - "RQ9 · Benchmark design": findings/benchmark-design.md
+  - Benchmarks: benchmarks.md
   - Recommender: recommend.md
   - Docs:
       - Overview: repo.md
