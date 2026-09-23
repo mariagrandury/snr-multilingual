@@ -5,48 +5,25 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scan
 
 ## Pretraining
 
-pretrain-1B-L2-shallow-seed1904 # aromanou
-
-python3.11 pretrain/launch_trainings.py cscs --size 1B --arch shallow --seed 1904 --partition preemptable
-python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme ZH --seed 1904 --partition preemptable
-
-python3.11 pretrain/launch_trainings.py cscs --size 1.7B --scheme AT3 --partition preemptable --time 23:59:00 
-
 python3.11 pretrain/launch_trainings.py cscs --size 3B  --partition preemptable --time 23:59:00
 python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B  --partition preemptable --time 23:59:00
 
-
-python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M --arch shallow --scheme B --seed 1904 --partition preemptable
-python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M --scheme AT3 --seed 1904 --partition preemptable
-python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M --scheme AT3 --seed 1904 --arch shallow --partition preemptable
-squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /90M/ {print $1}' | xargs -r scancel
-
+python3.11 launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable --time 23:59:00
 
 python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M,1B,1.7B --scheme BT3 --partition preemptable --dry-run
-
-Even if we dont need this sweep anymore to reach the minimum of pairs of T intervention, would the computational cost be worth it to have denser plots?
-
 
 ## Convert and eval new ckpts
 
 ✅ eval new ckpts:
 bash evals/scripts/launch_bpb.sh
-python3.11 pretrain/auto_evals_cscs.py --watch 1200
-python3.11 pretrain/auto_evals_cscs.py --retry-held
 SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1200
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --reformulated rf
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --retry-held
 
+✅ probe new benchmarks:
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --seed 1904 --final-only
 
-## Build data
-
-sbatch --job-name=build-bt3-L30 --dependency=singleton --time=23:59:00 --exclusive \
-   --partition=preemptable \
-   --export=ALL,BUILD_SCHEME=BT3,BUILD_STAGE=fineweb,BUILD_SETTING=30,BUILD_OUT=$OUT/BT3 \
-   /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data/submit_build_one.sh
-  
-Submitted batch job 3471038
-
-
+✅ compare probe benchmarks and decide which to keep:
+bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh
 
 ## Update analysis with new evals
 
@@ -73,39 +50,88 @@ sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
 ✅ fetch new data to cache and rebuild every derived artefact (only analysis/ figures):
 FORCE=1 bash run_all_predictivity.sh
 
+# Scheduled update
 
-# Figures
+loginctl enable-linger
 
-- final-final-final-review, commit and push, merge into main
+systemctl --user enable --now ladder-nightly.timer
+>> Created symlink /users/mariagrandury/.config/systemd/user/timers.target.wants/ladder-nightly.timer → /users/mariagrandury/.config/systemd/user/ladder-nightly.timer.
 
+systemctl --user list-timers ladder-nightly
+>> NEXT                             LEFT LAST PASSED UNIT                 ACTIVATES             
+>> Wed 2026-09-23 06:00:00 CEST 3h 41min -         - ladder-nightly.timer ladder-nightly.service
+>> 1 timers listed.
+>> Pass --all to see loaded but inactive timers, too.
+
+To see how it went:
+
+cat /iopsstor/scratch/cscs/mariagrandury/logs/nightly-ladder/last-run.txt
+systemctl --user status ladder-nightly.service     # exit status of the last run
+
+
+# Build L1 & L2
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
+BUILD_PARTITION=preemptable ./launch_builds.sh     # adds build-en-dclmp + build-en-fweb
+
+monitor build:
+bash /iopsstor/scratch/cscs/mariagrandury/buildwatch.sh 
+
+- DCLMp -> 17h -> Wed 12h
+- FineWeb -> 25h -> Wed 21h
+- 1.7B EN pretraining done -> Thu 23h
+- 1.7B ZH pretraining done -> Wed 00h
+- 1.7B ES pretraining done -> Thu 23h
+
+# 3B ETA
+
+T=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training
+for j in $(squeue --me -h -o "%i|%j" | grep "pretrain-3B" | cut -d'|' -f1); do
+  f=$(ls -t $T/*-${j}.out 2>/dev/null | head -1); [ -z "$f" ] && continue
+  l=$(grep -h "iteration " "$f" 2>/dev/null | tail -1)
+  printf "%-40s %s | eta %s\n" "$(basename ${f%-$j.out})" \
+    "$(sed -E 's/.*iteration +([0-9]+)\/ *([0-9]+).*/\1\/\2/'<<<"$l")" \
+    "$(sed -E 's/.*eta: ([^|]+)\|.*/\1/'<<<"$l" | tr -s ' ')"
+done
+
+Friday midday
+
+# L2 ES?
+
+- checking data availability to pretrain 1.7B
 
 # Evals
 
-BPB:
-- calculate BPB with final L100 validation -> L50 so all good
-- calculate absolute BPB (see details below) -> nah
-
 Update tasks list and reeval:
 - Add language-specific tasks
+    - Check the results from La Leaderboard, see which benchmarks give signal at small scales for ES, CA, GL, EU
 - Add INCLUDE v2
-- Switch or drop LAMBADA-MT
-- Reeval after worker implementation
+- 🛑 (Switch or drop LAMBADA-MT -> what was this about?
+- 🛑 Reeval after worker implementation -> what was this about? are the current values above or below before implementing the eval workers
+- mmlu, openbookqa, commonsense_qa, blend, cultural_bench, truthfulqa_mc2? triviaqa, squadv2, agieval, bbh, toxigen, multi-if, mbpp_instruct, mathqa, ifeval, humaneval_instruct, hendrycks_math, drop, bbq, acp_bench
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+
+# probe: originals + their rf_ twins, 84 jobs, ~48 node-h
+SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
+  auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only --seed 1904
+
+# INCLUDE v2 (OG + EN, L50), 77 jobs, ~39 node-h
+SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
+  auto_evals_cscs.py --group auto_include_v2 --size 600M,1B,1.7B --final-only --seed 1904
 
 
 # Task reformulation
 
 ## Programatically
 
-- ✅ eval reformulations
-- ✅ fix comparison metrics
-- ✅ calculate statistical significance
+- ✅ probe eval reformulations
 
 ## Gemini
 
-- ✅ write plan and implement
-- ✅ need API key
 - [BLOCKED] admin access to create bucket
 
+✅ launch bucket reformulation:
 
 (snr) mariagrandury@clariden-ln004:/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual> gcloud storage buckets create gs://silin-482809-msnr-rfgm \
 >     --project=silin-482809 --location=US --uniform-bucket-level-access
@@ -113,11 +139,23 @@ Update tasks list and reeval:
 Creating gs://silin-482809-msnr-rfgm/...
 ERROR: (gcloud.storage.buckets.create) HTTPError 403: maria.grandury@epfl.ch does not have storage.buckets.create access to the Google Cloud project. Permission 'storage.buckets.create' denied on resource '//storage.googleapis.com/projects/_/buckets/silin-482809-msnr-rfgm' (or it may not exist). This command is authenticated as maria.grandury@epfl.ch which is the active account specified by the [core/account] property.
 
-
+✅ launch online reformulation:
 
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
-nohup python3.11 src/evals/scripts/rewrite_items_gemini.py online --family belebele --L 50 --retry-rejects \
-  >> /iopsstor/scratch/cscs/mariagrandury/rfgm_online.log 2>&1 &
+
+nohup env GOOGLE_GENAI_USE_VERTEXAI=true GOOGLE_CLOUD_PROJECT=silin-482809 GOOGLE_CLOUD_LOCATION=global \
+   /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
+   src/evals/scripts/rewrite_items_gemini.py online \
+   --family belebele --L 50 --retry-rejects \
+   >> /iopsstor/scratch/cscs/mariagrandury/rfgm_online.log 2>&1 &
+
+
+
+python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm --family belebele   # registers 59 tasks + YAMLs
+# validate them through a real TaskManager, then:
+python3.11 src/pretrain/auto_evals_cscs.py --dry-run                          # price the top-up FIRST
+# only then add rfgm_belebele to groups.auto
+
 
 
 
@@ -128,47 +166,13 @@ The multilingual snr is a huge project with many experiments, and even has 2 per
 1. Review the CLAUDE.md files and add any information relevant so all sessions are up-to-date
 2. Review the old custom grid of models and think whether we could somehow include the evaluations as a rq or sub-rq to complement our results
 3. Review also the external reference models evaluated (olmo, apertus, etc) to see if they could compliment our results and conclusions or they could be included as interesting sub-rqs
+4. check whether we could compare our results with the ones from FineTasks (https://huggingface.co/spaces/HuggingFaceFW/blogpost-fine-tasks) or get any insight from their analysis and replicate/extend it with our data
 
-
-# Update model grid
-- due_iters returns exactly 12 at every size — 247 future checkpoint-evals saved, 128 at 1B / 71 at 3B / 48 at 1.7B
-- 24 never-launched seed replicates dropped (3,782 node-h); nothing on disk touched
-- BT3 registered — and your job 3471038 is now building it
-- ZH undersized exception lives in the registry; the launcher is idempotent again
-- plan/l1_third_family.md
 
 # Backlog
 
-- plan/l1_third_family.md
-- FineTasks
-- what do we do with the seeds?
+- what do we do with the seeds? -> error bars for DA
 - notes from 09-16
-
-
-
-
-
-Reliable benchmark-language cells (DA ≥ 0.8)
-I had to make a call you should check. Reducing each task's DA to one number per axis, at your 0.8 cut:
-
-reduction	DA-size ≥0.8	DA-ckpt ≥0.8	both	languages
-mean over all cells	6	5	2	2
-median	6	13	3	3
-max over all cells	25	99	25	19
-late (fixed cells)	13	47	12	11
-mean is unusable (2 tasks). max is worse than unusable — a task has ~4 DA-size cells but ~45 DA-ckpt cells, so max-over-45 clears 0.8 for 99/113 tasks and the "both" test silently collapses to DA-size alone (0 tasks pass size but fail ckpt). I made the default late: DA-size at the largest proxy (1B→1.7B) and DA-ckpt at 90% of that same run — one fixed cell per axis, nothing chosen by its value. All three are still written to the CSV.
-
-The 12 passing cells are HellaSwag in 11 languages, plus lambada_openai_mt_en:
-
-da, en, es, fr, it, nl, pt, ro, ru, uk, vi
-hellaswag	0.80–1.00 DA-size, 0.80–0.97 DA-ckpt
-Per language, benchmarks passing both: en 2; da/es/fr/it/nl/pt/ro/ru/uk/vi 1 each; and 0 for all 21 others — ar, bg, bn, cs, de, el, fa, fi, he, hi, hu, id, ja, ka, no, pl, sv, ta, th, tr, zh.
-
-Key findings:
-
-One benchmark family carries the entire result. HellaSwag is the only benchmark that passes in more than one language. This independently reproduces your README's 2026-09-01 note that HellaSwag is the most decision-reliable family — computed from a different pipeline on different pairs.
-The binding constraint is size, not checkpoint. 47 tasks clear DA-ckpt but only 13 clear DA-size. Reading a benchmark early is cheap; reading it small is what breaks.
-Reliability tracks script/family, not resource rank. Every passing language is Latin or Cyrillic. German fails despite 7 benchmarks and high resource; zh, ja, el, ar, he, ta, ka — all non-Latin — pass nothing. That's a stronger pattern than the resource ordering and worth a sentence in the paper.
 
 
 # Definition pool of DA
@@ -192,47 +196,3 @@ So there's a third option that gives you exactly the side-by-side you want.
 - *Cons:* one more distinction to hold in your head ("the DA table I read" vs "the pool I'm reported under"), `compute_da` has to run for `predictivity_schemes` as an extra step, and `predictivity/da_reliable_tasks.csv` needs a column or note saying which pool its DA came from, or a future reader will assume `predictivity`.
 
 I'd go with **C**: it's the only one that gets you ES/ZH/AT3/BT3 in the pairs *and* the two suffixed plots in one directory *and* leaves the SNR numbers alone. The only real cost is documenting the provenance, which the `axes` column gives me a natural place to do.
-
-
-
-# Build L1
-
-cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
-BUILD_PARTITION=preemptable ./launch_builds.sh     # adds build-en-dclmp + build-en-fweb
-
-
-scancel other data build jobs:
-
-squeue -u $USER -h -o "%i %j" \
-  | awk '$2 ~ /^build-/ && $2 != "build-en-dclmp" && $2 != "build-en-fweb" {print $1}' \
-  | xargs -r scancel
-
-
-monitor build:
-bash /iopsstor/scratch/cscs/mariagrandury/buildwatch.sh 
-
-- DCLMp -> 17h -> Wed 12h
-- FineWeb -> 25h -> Wed 21h
-
-# 3B ETA
-
-T=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training
-for j in $(squeue --me -h -o "%i|%j" | grep "pretrain-3B" | cut -d'|' -f1); do
-  f=$(ls -t $T/*-${j}.out 2>/dev/null | head -1); [ -z "$f" ] && continue
-  l=$(grep -h "iteration " "$f" 2>/dev/null | tail -1)
-  printf "%-40s %s | eta %s\n" "$(basename ${f%-$j.out})" \
-    "$(sed -E 's/.*iteration +([0-9]+)\/ *([0-9]+).*/\1\/\2/'<<<"$l")" \
-    "$(sed -E 's/.*eta: ([^|]+)\|.*/\1/'<<<"$l" | tr -s ' ')"
-done
-
-Friday midday
-
-
-# Probe more tasks
-
-- Include v2
-- mmlu, openbookqa, commonsense_qa, blend, cultural_bench, truthfulqa_mc2? triviaqa, squadv2, agieval, bbh, toxigen, multi-if, mbpp_instruct, mathqa, ifeval, humaneval_instruct, hendrycks_math, drop, bbq, acp_bench
-
-cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
-SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
-  auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only
