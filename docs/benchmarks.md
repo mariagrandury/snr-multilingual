@@ -30,10 +30,11 @@ benchmarks of our suite per language and proxy size.
 | Format | `mcqa`: scored by comparing the answer options; `generative`: free generation, exact match, or next-word / perplexity scoring |
 | Options | number of answer options (MCQA only) |
 | Items | evaluation items summed over languages, on the split the framework evaluates |
-| Data source | how the non-English items were produced: `crawled` (collected from existing text, e.g. exams), `manual annotation` (written or translated by humans), `machine translation reviewed` (MT checked or post-edited by humans), `machine translation`, `synthetic` (templates or model-generated) |
+| Data source | how the non-English items were produced: `crawled` (collected from existing text, e.g. exams), `manual annotation` (written or annotated by humans), `human translation` (an existing dataset translated by people), `machine translation reviewed` (MT checked or post-edited by humans), `machine translation`, `synthetic` (templates or model-generated) |
 
 The table is read from
 [`configs/multilingual_benchmarks.csv`](https://github.com/swiss-ai/snr-multilingual/blob/main/configs/multilingual_benchmarks.csv).
 To add or correct a benchmark, edit that file (same columns) and open a pull
-request. Counts were collected from the framework code, the Hugging Face
-dataset cards and the papers; they can lag behind both frameworks.
+request. Every value was read from the framework code, the Hugging Face dataset card
+or the paper; a field we could not verify is left empty rather than
+estimated. The table can lag behind both frameworks.
