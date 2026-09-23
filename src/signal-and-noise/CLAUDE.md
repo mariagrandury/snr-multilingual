@@ -115,24 +115,53 @@ so a script never decides by model name.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
 
-**Pipeline order** (`run_all_predictivity.sh`): rq00 `above_random.py` (the
-gate) → rq02 `compute_da.py` (the truth) → rq03 `run_apertus_snr_variants.py`
-(22 SNR variants × bucket, joined to the DA table) → rq03
-`compare_seed_splits.py` (holdout) → per pool rq04 `analyze_snr_variants.py`
-and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py` and `early_small.py`, rq09
-`analyze.py`, rq07 `analyze.py` → on `predictivity_all` (every seed and
-scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
-`scaling_law_error.py`, rq03 `effect_vs_noise.py`, rq06 → rq08, the rq00
-curves (`run_apertus.py`, `curves.py`), rq02 `by_L.py` (decision accuracy
-per language count, on `predictivity_all` at the grid seed), rq04 `analyze.py`
-(reads rq03's table, rq00's scores, rq01's fits) and its per-L panels,
-`report_figures/make_figures.py`. Themes: A
-predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C generalisation
-(rq05–rq07), D benchmark improvement (rq08–rq09); `analysis/paths.py` is the
-one map from constant to folder. The
-canonical pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) runs last so
-its README generators see every other pool's CSVs; generators no-op on other
-pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
+**Pipeline order** (`run_all_predictivity.sh`, reorganised 2026-09-23): the
+passes run in research-question order so the early questions' tables land
+first — rq00 (`above_random.py`, the gate every later step reads; then
+`run_apertus.py`, `curves.py`, `panels.py`, the rf-twin comparison) → rq01
+(`analyze.py`, `panels.py`, `regimes.py`, `regimes_survivorship.py`,
+`scaling_law_error.py`, all on `predictivity_all`) → rq02 (`compute_da.py` per
+pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
+`reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
+`paper_ten_checkpoints.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then
+the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
+`by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
+`pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
+rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 → rq05 (+ rq03's
+`effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
+ranking) → rq08 → rq09 → `report_figures/make_figures.py` → `check_rules.py`.
+Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
+`analysis/paths.py` is the one map from constant to folder. The canonical
+pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README
+generators write; generators no-op on other pools. Outputs:
+`analysis/<rq>/<stage>/<pool>/`.
+
+**Regenerating one figure without the driver** (the normal way to iterate;
+the driver is ~2 h): from `src/signal-and-noise`,
+`export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH; PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0 python analysis/rqNN_*/<script>.py --pool predictivity`.
+The thread caps are not optional: without them OpenBLAS spawns one thread
+per core and the login node's 1000-pid slice kills the process. Scripts that
+read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
+`reliable_tasks.py` to have run on the current DA tables first.
+
+**What the tables say (2026-09-23), so a session does not re-derive it.**
+The paper-style write-up of rq00–rq02 is
+`analysis/rq02_decision_accuracy/pretraining/predictivity/README.md`; the
+per-RQ READMEs carry the auto blocks. Three facts every rq02 reading must
+respect: (1) on the full gated population DA-size is 0.55 (175M) → 0.61 (1B),
+jackknife ±0.03 — the 0.60 → 0.76 of the `above_66_*` figures is a cut on DA
+itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
+`above_66_ckpt`, `above_66_either`) are the ones to quote, never
+`above_66_both`. (2) DA-ckpt over design pairs (0.84 at 90 % of a 175M run) is
+within 0.02–0.03 of the seed null (two seeds of ONE design, 0.82): it measures
+within-run persistence, and a checkpoint-axis figure is read against
+`seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
+statistic (r ≥ 0.965 over 820 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 3–7 % of
+cells. Restricting to the L8 languages, to common tasks, to one language or
+one language tier does not order the per-L lines, and a language's token
+share does not predict its benchmarks' reliability (ρ 0.03–0.19).
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
@@ -188,8 +217,11 @@ The four `predictivity*` pools above filter on `scheme ∈ {A, B}`. AT3, ES and
 ZH are a different intervention (a sampling temperature, a swapped second
 language), so letting them into the headline pool would widen every signal
 without widening the decision the pool exists to measure. They live in
-`predictivity_schemes` instead, which no driver runs — invoke a script with
-`--pool predictivity_schemes` when the scheme axis itself is the question.
+`predictivity_schemes` instead. The driver runs `compute_da.py` on it because
+`reliable_tasks.py`, `by_L.py` and `scale_convergence.py` pair over every
+scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
+the gate and the output folder stay `predictivity`; the `axes` column of
+`da_per_task.csv` names the pair set, rule 15).
 
 The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
@@ -448,6 +480,25 @@ kernels apply `MIN_PAIRS`, and `analysis/check_rules.py` fails the pipeline
 when a table on disk breaks a rule. Add a new rule to `analysis/RULES.md`,
 implement it in the shared layer, and teach the checker — never in a single
 rqNN script.
+
+### 16. A figure drawn before its input is a stale figure with a fresh timestamp
+On 2026-09-23 the rq00 panels (`first_size_above_random`, `highlights`) were
+drawn at 02:32 and the gate mask rewritten at 02:41 by a later step: 649
+cells on disk against 775 recomputed, and nothing complained. The driver now
+runs each RQ's panels right after the table they read (RQ order), and
+`check_rules.py` cannot see this class of error — when a table is
+regenerated by hand, regenerate the panels that read it in the same breath.
+Same family: `scale_convergence.py --langs L8` once wrote its three `--by`
+groupings to ONE stem, so the per-L L8 figure on disk was the transformation
+figure; `stem_for` now carries `by`, and the driver passes `--by L`.
+
+### 17. Filtering on the quantity drawn
+Every `above_*` variant keeps the tasks whose DA cleared a cut and then
+plots DA on them; the rise it shows is partly the cut (passers 0.80 against
+0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
+cell by its value but still selects tasks by it. Quote the unfiltered
+figure (`scale_convergence.png`, `rq2_ten_checkpoints`) beside any filtered
+one, and never call a filtered figure "free of selection bias".
 ---
 
 ## Legacy code (upstream DataDecide / OLMo path)

@@ -92,3 +92,29 @@ The summary above, per language (`predictivity_all` pool). Regenerate with `pyth
 
 ![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_by_L.png)
 <!-- END auto:panels -->
+
+<!-- BEGIN auto:language-panel (language_panel.py --pool predictivity) -->
+## The minimal language panel
+
+Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO ranking of the design variants (mean over the L8 panel languages above chance at 1.7B), when the proxy reads one language, English, or its own macro over the languages readable at that size. Grid-seed pairs of every scheme (multi-axis), ≥ 3 pairs, gate `predictivity`. A macro above every single language says the languages' errors are independent and the panel is worth evaluating; a single language at the macro says it suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool predictivity`.
+
+| benchmark | languages readable at 1.7B | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| arc | 7 | macro 0.43 / en 0.43 / best lang 0.43 (en) | macro 0.52 / en 0.52 / best lang 0.52 (en) | macro 0.68 / en 0.68 / best lang 0.68 (en) | macro 0.62 / en 0.52 / best lang 0.66 (it) |
+| hellaswag | 6 | macro 0.75 / en 0.65 / best lang 0.75 (es) | macro 0.88 / en 0.69 / best lang 0.92 (es) | macro 0.84 / en 0.69 / best lang 0.87 (fr) | macro 0.93 / en 0.87 / best lang 0.92 (es) |
+| include_v2_en | 6 | macro 0.46 / best lang 0.60 (ja) | macro 0.35 / best lang 0.66 (fr) | macro 0.55 / best lang 0.60 (ru) | macro 0.53 / best lang 0.67 (de) |
+| include_v2_og | 6 | macro 0.69 / best lang 0.69 (ru) | macro 0.57 / best lang 0.60 (ru) | macro 0.64 / best lang 0.74 (it) | macro 0.66 / best lang 0.68 (it) |
+| lambada_openai_mt | 5 | macro 0.62 / en 0.53 / best lang 0.76 (de) | macro 0.70 / en 0.59 / best lang 0.70 (es) | macro 0.78 / en 0.75 / best lang 0.84 (it) | macro 0.89 / en 0.78 / best lang 0.89 (de) |
+| multiblimp | 6 | macro 0.67 / en 0.51 / best lang 0.68 (es) | macro 0.80 / en 0.53 / best lang 0.79 (de) | macro 0.70 / en 0.58 / best lang 0.71 (ru) | macro 0.68 / en 0.40 / best lang 0.67 (de) |
+| paws | 4 | — | macro 0.69 / en 0.69 / best lang 0.69 (en) | macro 0.41 / en 0.60 / best lang 0.60 (en) | macro 0.52 / en 0.48 / best lang 0.56 (de) |
+| rf_belebele | 8 | macro 0.64 / en 0.46 / best lang 0.70 (fr) | macro 0.57 / en 0.48 / best lang 0.63 (zh) | macro 0.55 / en 0.53 / best lang 0.66 (fr) | macro 0.62 / en 0.59 / best lang 0.64 (ru) |
+| rf_global_mmlu_full | 8 | macro 0.58 / en 0.58 / best lang 0.68 (es) | macro 0.71 / en 0.52 / best lang 0.77 (it) | macro 0.75 / en 0.55 / best lang 0.79 (ja) | macro 0.81 / en 0.69 / best lang 0.81 (de) |
+| rf_include_base_44 | 7 | macro 0.48 / best lang 0.45 (fr) | macro 0.70 / best lang 0.66 (es) | macro 0.79 / best lang 0.74 (es) | macro 0.69 / best lang 0.73 (ru) |
+| rfgm_include_base_44 | 6 | macro 0.33 / best lang 0.33 (fr) | macro 0.70 / best lang 0.70 (ru) | macro 0.82 / best lang 0.76 (fr) | macro 0.89 / best lang 0.75 (zh) |
+| xnli | 6 | macro 0.60 / en 0.63 / best lang 0.63 (en) | macro 0.48 / en 0.44 / best lang 0.68 (de) | macro 0.55 / en 0.55 / best lang 0.67 (ru) | macro 0.33 / en 0.45 / best lang 0.54 (de) |
+| xstorycloze | 4 | macro 0.62 / en 0.62 / best lang 0.62 (en) | macro 0.90 / en 0.68 / best lang 0.80 (es) | macro 0.76 / en 0.68 / best lang 0.77 (es) | macro 0.77 / en 0.64 / best lang 0.75 (es) |
+| xwinograd | 5 | macro 0.48 / en 0.58 / best lang 0.58 (en) | macro 0.67 / en 0.63 / best lang 0.63 (en) | macro 0.53 / en 0.42 / best lang 0.56 (ja) | macro 0.26 / en 0.48 / best lang 0.51 (zh) |
+| all benchmarks | 8 | macro 0.57 / en 0.55 / one lang 0.55 | macro 0.66 / en 0.58 / one lang 0.58 | macro 0.67 / en 0.60 / one lang 0.60 | macro 0.66 / en 0.59 / one lang 0.59 |
+
+![The minimal language panel](pretraining/predictivity/language_panel.png)
+<!-- END auto:language-panel -->

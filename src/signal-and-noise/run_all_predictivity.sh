@@ -79,6 +79,8 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
+run $PY analysis/rq00_gate_and_curves/benchmark_floor.py --pool predictivity
 
 pass "rq01 — scaling predictability"
 # The ladder-frame reads take every seed and scheme (`predictivity_all`); the
@@ -188,6 +190,8 @@ run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
 pass "rq06 — language transfer"
 run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
 run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
+# the minimal language panel: one language / English / the panel macro at the proxy against the 1.7B macro ranking
+run $PY analysis/rq06_language_transfer/language_panel.py --pool predictivity
 
 pass "rq07 — external frameworks"
 # rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
@@ -214,6 +218,8 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
 done
 run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
+# FineTasks' four selection criteria computed on the ladder and judged by DA-size against the reference
+run $PY analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity
 
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py

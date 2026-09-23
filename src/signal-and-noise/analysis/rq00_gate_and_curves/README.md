@@ -13,8 +13,8 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `global_piqa_parallel_cloze`, `truthfulqa-multi_mc1`, `include_base_44`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **975 benchmarks, 525 clear chance at ≥1 size** and 499 at 1.7B (450 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **The benchmarks that separate the language settings most: `cultural_bench_easy`, `cultural_bench_hard`, `acp_bench_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
+- **Above-random gate.** Of **975 benchmarks, 543 clear chance at ≥1 size** and 499 at 1.7B (432 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -92,25 +92,25 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 
 | task | family | lang | Signal |
 |---|---|---|---|
-| `global_piqa_parallel_cloze_spa_latn_peru` | global_piqa_parallel_cloze | es | 0.400 |
-| `global_piqa_parallel_cloze_apc_arab_pale` | global_piqa_parallel_cloze | ar | 0.369 |
-| `global_piqa_parallel_cloze_arz_arab` | global_piqa_parallel_cloze | ar | 0.364 |
-| `global_piqa_parallel_cloze_apc_arab_jord` | global_piqa_parallel_cloze | ar | 0.338 |
-| `global_piqa_parallel_cloze_hun_latn` | global_piqa_parallel_cloze | hu | 0.308 |
+| `rf_bbh_mcq_temporal_sequences` | rf_bbh_mcq | en | 3.391 |
+| `cultural_bench_easy_australia` | cultural_bench_easy | en | 2.526 |
+| `cultural_bench_easy_canada` | cultural_bench_easy | en | 2.308 |
+| `cultural_bench_easy_united_states` | cultural_bench_easy | en | 2.143 |
+| `cultural_bench_easy_south_africa` | cultural_bench_easy | en | 2.113 |
 
-![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/global_piqa_parallel_cloze.png)
+![top-Signal family accuracy vs FLOPs](pretraining/predictivity/per_benchmark/cultural_bench_easy.png)
 
 **Above-random gate** — a (benchmark, size) cell is kept when at least 50% of the size's runs clear chance (`1/n_options`) with the Wilson 90% lower bound of their accuracy over the task's items; `run_apertus_snr_variants.py` NaN-s every at-chance `(benchmark, size)` SNR cell, so the gate propagates to all RQs:
 
 | options | chance | above ≥1 size | above @1.7B |
 |---|---|---|---|
-| 2 | 0.50 | 91 / 138 | 91 / 138 |
+| 2 | 0.50 | 92 / 138 | 91 / 138 |
 | 3 | 0.33 | 19 / 24 | 17 / 24 |
-| 4 | 0.25 | 407 / 791 | 383 / 791 |
+| 4 | 0.25 | 423 / 791 | 383 / 791 |
 | 5 | 0.20 | 4 / 9 | 4 / 9 |
 | 6 | 0.17 | 1 / 4 | 1 / 4 |
 | 7 | 0.14 | 1 / 4 | 1 / 4 |
-| 8 | 0.12 | 1 / 2 | 1 / 2 |
+| 8 | 0.12 | 2 / 2 | 1 / 2 |
 | 10 | 0.10 | 0 / 2 | 0 / 2 |
 | 12 | 0.08 | 1 / 1 | 1 / 1 |
 <!-- END auto:results -->
@@ -239,3 +239,23 @@ Score along the run, one figure per language (50 languages, one subplot per benc
 
 ![Score curves, German](pretraining/predictivity/score_curves/de.png)
 <!-- END auto:panels -->
+
+<!-- BEGIN auto:benchmark-floor (benchmark_floor.py --pool predictivity) -->
+## Benchmark floors: the ladder's gate against the public models'
+
+Of the 84 tasks both tiers score, 35 are at chance at every ladder size. Where the public base models (270M–70B, same gate) first read them: ≤ 600M 6, 1B–1.7B 19, 3B–4B 0, 7B–14B 5, ≥ 27B 2, never 3. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. Overlap is the 36-sweep's 86-task list only. Regenerate with `python analysis/rq00_gate_and_curves/benchmark_floor.py --pool predictivity`.
+
+| family | ≤ 600M | 1B–1.7B | 3B–4B | 7B–14B | ≥ 27B | never |
+|---|---|---|---|---|---|---|
+| belebele | 3 | 8 | 0 | 0 | 0 | 0 |
+| global_mmlu_full | 1 | 9 | 0 | 0 | 0 | 0 |
+| arc | 0 | 1 | 0 | 2 | 0 | 1 |
+| xnli | 0 | 0 | 0 | 2 | 0 | 1 |
+| paws | 0 | 1 | 0 | 0 | 0 | 1 |
+| xstorycloze | 0 | 0 | 0 | 1 | 1 | 0 |
+| commonsense_qa | 1 | 0 | 0 | 0 | 0 | 0 |
+| mmlu | 1 | 0 | 0 | 0 | 0 | 0 |
+| xcopa | 0 | 0 | 0 | 0 | 1 | 0 |
+
+![Benchmark floors](pretraining/predictivity/benchmark_floor.png)
+<!-- END auto:benchmark-floor -->

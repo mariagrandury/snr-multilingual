@@ -238,3 +238,19 @@ The family medians above, per language (`predictivity` pool). Regenerate with `p
 
 ![SNR per benchmark and language](pretraining/predictivity/snr_family_by_language.png)
 <!-- END auto:panels -->
+
+<!-- BEGIN auto:finetasks-criteria (finetasks_criteria.py --pool predictivity) -->
+## FineTasks' criteria on the ladder
+
+FineTasks selects tasks with four statistics computed on single-seed runs at one size (monotonicity, a cross-run SNR, a non-random margin, consecutive-step ordering). Computed here per (task, size) on the `predictivity` variants and judged by DA-size against 1.7B, which the criteria never see. Columns: share passing each criterion, all three, and our gate; mean DA-size of passers vs failers; Spearman of each statistic with DA-size (monotonicity / SNR / non-random / ordering). Regenerate with `python analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity`.
+
+| size | tasks | monotone | SNR > 20 | non-random | all three | our gate | DA-size pass vs fail | ρ with DA-size |
+|---|---|---|---|---|---|---|---|---|
+| 175M | 632 | 18% | 57% | 41% | 13% | 31% | 0.52 [82] vs 0.47 [550] | +0.17 / +0.26 / +0.13 / +0.13 |
+| 350M | 632 | 34% | 60% | 46% | 27% | 41% | 0.53 [170] vs 0.45 [462] | +0.23 / +0.30 / +0.23 / +0.08 |
+| 600M | 632 | 41% | 59% | 49% | 33% | 46% | 0.53 [210] vs 0.46 [422] | +0.18 / +0.28 / +0.19 / +0.10 |
+| 1B | 632 | 46% | 59% | 53% | 38% | 49% | 0.54 [243] vs 0.45 [389] | +0.33 / +0.39 / +0.23 / +0.17 |
+| 1.7B | 632 | 50% | 59% | 59% | 43% | 54% | — | +nan / +nan / +nan / +nan |
+
+![FineTasks criteria](pretraining/predictivity/finetasks_criteria.png)
+<!-- END auto:finetasks-criteria -->

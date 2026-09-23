@@ -639,7 +639,7 @@ the two-way task where a tell would be cheapest, measures 54.8 % against its
 50 % chance on 177 items, inside its own sampling error.
 
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
-Gate cells (median task margin over chance 0.25, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
+Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
 
 | family | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|

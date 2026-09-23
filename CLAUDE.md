@@ -55,9 +55,14 @@ This project extends the Signal-and-Noise (SNR) framework (Heineman et al., 2025
 
 Two sweeps, in this order:
 
-1. **The finished 36-model sweep** (4 sizes × 3 data mixtures × 3 seeds,
-   `apertus-*`, W&B project `snr-experiments`) — done; its tooling evolved
-   in place into the predictivity scripts.
+1. **The finished 36-model sweep** (pre-July 2026: 4 sizes × 3 data mixtures ×
+   3 seeds, `apertus-*`, W&B project `snr-experiments`, results in the
+   `multilingual-snr/multilingual-snr-eval-results` parquet, pools
+   `custom_swissai_hf` / `seeds_*`) — done; its tooling evolved in place into
+   the predictivity scripts. Its numbers and the ladder's are two periods of
+   one project, not one table: the harness, task set and reference size (1B
+   against 1.7B) differ, so they are compared as replications of a finding,
+   never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
    90M–3B × 6 language settings × deep/shallow × eight data schemes
    (A, AT3, B, BT3, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
@@ -179,6 +184,11 @@ systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd
 systemctl --user list-timers ladder-nightly         # confirm the next 06:00
 cat /iopsstor/scratch/cscs/$USER/logs/nightly-ladder/last-run.txt   # OK or FAILED
 ```
+
+The current state of the analysis, in prose, is
+`src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/README.md`
+(rq00–rq02, 2026-09-23); to regenerate one figure without the two-hour driver
+see "Regenerating one figure" in `src/signal-and-noise/CLAUDE.md`.
 
 `scripts/refresh_analysis.sh` is the only thing to run after new results:
 it fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,

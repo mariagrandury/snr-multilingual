@@ -7,10 +7,10 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 |  | DA-size | DA-ckpt |
 |---|---:|---:|
 | Exact-variant agreement (lang-level) | 0% (0/1) | 0% (0/1) |
-| **Family-level agreement** (lang-level) | 0% (0/1) | 100% (1/1) |
-| Pearson r between splits (over all variant cells) | -0.734 (n = 22) | +0.876 (n = 22) |
-| **Spearman ρ on global variant ranking** | -0.706 | +0.827 |
-| Retention of train-best (r_test / r_test_best, mean across langs) | 0% (n = 1) | 99% (n = 1) |
+| **Family-level agreement** (lang-level) | 0% (0/1) | 0% (0/1) |
+| Pearson r between splits (over all variant cells) | -0.653 (n = 22) | +0.225 (n = 22) |
+| **Spearman ρ on global variant ranking** | -0.769 | +0.276 |
+| Retention of train-best (r_test / r_test_best, mean across langs) | 0% (n = 1) | 56% (n = 1) |
 
 **Family** groups together algebraically near-equivalent variants (e.g. the dispersion cluster: `dispersion`/`mpd`/`range`/`quartile_deviation`/`rms_deviation`/`aad`). At n_mixes=3, members of a family correlate at r ≥ 0.999 so exact-variant equality is overly strict.
 
@@ -30,7 +30,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | da | `` () | +nan | +nan | `` () | +nan |  |  |
 | de | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `tukey` (depth) | +0.227 | -0.172 | `discrepancy` (discrepancy) | +0.129 |  |  |
+| en | `tukey` (depth) | +0.493 | -0.172 | `discrepancy` (discrepancy) | +0.129 |  |  |
 | es | `` () | +nan | +nan | `` () | +nan |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
 | fa | `` () | +nan | +nan | `` () | +nan |  |  |
@@ -85,7 +85,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | da | `` () | +nan | +nan | `` () | +nan |  |  |
 | de | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `rel_mpsd` (rel_spread) | +0.397 | +0.270 | `rel_dispersion` (rel_spread) | +0.272 |  | ✅ |
+| en | `gini` (discrepancy) | +0.475 | +0.267 | `quartile_deviation` (dispersion) | +0.473 |  |  |
 | es | `` () | +nan | +nan | `` () | +nan |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
 | fa | `` () | +nan | +nan | `` () | +nan |  |  |
