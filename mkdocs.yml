@@ -11,6 +11,7 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections
+    - navigation.footer
     - navigation.indexes
     - navigation.top
     - navigation.tracking
@@ -37,27 +38,47 @@ theme:
 
 nav:
   - Home: index.md
-  - Pretraining:
-      - Overview: pretraining.md
-      - Conversion: pretraining/conversion.md
-      - Azure: pretraining/azure.md
-  - Evaluation:
-      - Overview: evaluation/index.md
-      - Signal-to-Ratio Configs: evaluation/configs.md
-  - Signal & Noise:
-      - Overview: signal-noise/index.md
-      - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
-      - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
-      - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
-      - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
-      - "RQ4 · Surrogates": signal-noise/surrogates.md
-      - "RQ5 · Design decisions": signal-noise/design_decisions.md
-      - "RQ6 · Language transfer": signal-noise/language_transfer.md
-      - "RQ7 · External frameworks": signal-noise/external_frameworks.md
-      - "RQ8 · Subset selection": signal-noise/subset_selection.md
-      - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
-  - Documents: documents.md
-  - Slides: /slides/
+  - Model ladder: ladder.md
+  - Findings:
+      - findings/index.md
+      - "A · Is the evaluation predictable?":
+          - "RQ0 · Above chance": findings/gate.md
+          - "RQ1 · Scaling": findings/scaling.md
+          - "RQ2 · Decision accuracy": findings/decision-accuracy.md
+      - "B · Can it be measured cheaply?":
+          - "RQ3 · Noise and SNR": findings/noise-snr.md
+          - "RQ4 · Cheap predictors": findings/surrogates.md
+      - "C · Does it generalise?":
+          - "RQ5 · Design decisions": findings/design-decisions.md
+          - "RQ6 · Language transfer": findings/language-transfer.md
+          - "RQ7 · External frameworks": findings/external.md
+      - "D · Can benchmarks be improved?":
+          - "RQ8 · Subsets": findings/subsets.md
+          - "RQ9 · Benchmark design": findings/benchmark-design.md
+  - Recommender: recommend.md
+  - Docs:
+      - Overview: repo.md
+      - Pretraining:
+          - Overview: pretraining.md
+          - Conversion: pretraining/conversion.md
+          - Azure: pretraining/azure.md
+      - Evaluation:
+          - Overview: evaluation/index.md
+          - Signal-to-Ratio Configs: evaluation/configs.md
+      - Signal & Noise:
+          - Overview: signal-noise/index.md
+          - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
+          - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
+          - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
+          - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
+          - "RQ4 · Surrogates": signal-noise/surrogates.md
+          - "RQ5 · Design decisions": signal-noise/design_decisions.md
+          - "RQ6 · Language transfer": signal-noise/language_transfer.md
+          - "RQ7 · External frameworks": signal-noise/external_frameworks.md
+          - "RQ8 · Subset selection": signal-noise/subset_selection.md
+          - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
+      - Documents: documents.md
+      - Slides: /slides/
 
 markdown_extensions:
   - admonition
@@ -91,5 +112,10 @@ hooks:
   - mkdocs_hooks.py
 
 extra_javascript:
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js
+  - https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js
+  - interactive/app.js
+
+extra_css:
+  - interactive/app.css

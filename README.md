@@ -182,8 +182,12 @@ them can be found instead of quietly going stale.
   and status notes
 - [`src/`](src/) — `pretrain/`, `evals/`, `signal-and-noise/`
 - [`documents/`](documents/) — report, proposals, slides
-- [`docs/`](docs/) — the MkDocs site (`bash build.sh`), which includes the RQ
-  READMEs
+- [`docs/`](docs/) — the project site (`bash build.sh`): a landing page with
+  the contributions and findings, the model ladder, one interactive page per RQ
+  (`docs/findings/`), a benchmark recommender with CSV upload, and the repo
+  docs, which include the RQ READMEs. The views read
+  `docs/interactive/data/*.json`, exported from the analysis tables by
+  `scripts/build_site_data.py` (step 8 of `refresh_analysis.sh`)
 
 ## Legacy code
 

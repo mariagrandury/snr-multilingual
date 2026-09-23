@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from mkdocs.structure.files import File
@@ -37,6 +38,22 @@ def on_pre_build(config):
         if not readme.is_file():
             readme.parent.mkdir(parents=True, exist_ok=True)
             readme.write_text(_PLACEHOLDER)
+
+
+ANALYSIS = REPO_ROOT / "src/signal-and-noise/analysis"
+_HIGHLIGHT = re.compile(r"<!-- highlight: (\w+) -->")
+_BLOCK = re.compile(r"<!-- BEGIN auto:highlight[^>]*-->\s*## Highlighted result\s*(.*?)<!-- END auto:highlight -->", re.S)
+
+
+def on_page_markdown(markdown, page, config, files):
+    """Showcase pages quote an RQ's regenerated "Highlighted result" with
+    `<!-- highlight: rqNN_name -->`, so their headline numbers follow the
+    pipeline instead of being copied by hand."""
+    def quote(m):
+        readme = ANALYSIS / m.group(1) / "README.md"
+        found = _BLOCK.search(readme.read_text()) if readme.is_file() else None
+        return found.group(1).strip() if found else "*No highlighted result in this checkout.*"
+    return _HIGHLIGHT.sub(quote, markdown)
 
 
 def on_files(files, config):
