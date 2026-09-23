@@ -3,16 +3,17 @@ the above-random gate removed before a point was drawn, per family.
 
 Exploratory: this feeds plan/decision_accuracy.md and does not replace
 `regimes.py`, whose table it reads. The paper figure
-(`scaling_regimes_outliers_paper.png`) shows the 110 tasks that survive rule 1
-and reads "predictable across both" for 102 of them; it does not show that 224
-tasks were gated out first, among them three whole families (global_piqa
-parallel, belebele, global_mmlu) with no survivor at all. A reader of the
+(`scaling_regimes_outliers_paper.png`) shows only the tasks that survive rule 1
+and the fit minimum, and reads "predictable across both" for most of them; it
+does not show how many tasks were removed first, among them whole families
+(global_piqa parallel, belebele, global_mmlu) with no survivor at all. A reader of the
 figure alone concludes that scaling is predictable; the population it is
 predictable on is the finding this figure adds.
 
-  (a) per family: tasks with a point in the regimes figure against tasks the
-      gate removed (a task with a size fit somewhere but at chance wherever a
-      fit was possible, `rq1_fits.csv`), sorted by the total
+  (a) per family: tasks with a point in the regimes figure against the two
+      ways a task of `rq1_fits.csv` loses it — at chance at every size where a
+      log-N fit was possible (rule 1: no fit at any L), or fitted at fewer than
+      `MIN_FITS` language settings (no median to draw) — sorted by the total
   (b) regimes.py's panel (b) — median R² of the log-N fit against median R² of
       the training-trajectory fit — with every family label carrying kept/total
       and the families with no survivor listed in the panel
@@ -43,36 +44,45 @@ from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.rq01_scaling_predictability.regimes import (  # noqa: E402
-    LABEL_DARK, OUT_ROOT, R2_SPLIT, _colours, _labels, _quadrants, darken, family_table, short)
+    LABEL_DARK, MIN_FITS, OUT_ROOT, R2_SPLIT, _colours, _labels, _quadrants, darken, family_table, short)
 
 mpl.rcParams.update(S.RC)
 
 
 def survivorship(t: pd.DataFrame, fits: pd.DataFrame) -> pd.DataFrame:
-    """Per family: tasks with any size fit, tasks with a point, and the gap."""
+    """Per family: every task of the pool, the tasks with a point, and where
+    the rest went — `gated` (no log-N fit at any L: at chance wherever a fit
+    was possible) or `below_min_fits` (a fit, but at fewer than `MIN_FITS`
+    language settings, so no median). `removed` is their sum."""
     fits = fits[fits["kind"] != "loss"]                               # rule 7
-    total = fits.groupby("family")["task"].nunique().rename("tasks_with_fit")
+    total = fits.groupby("family")["task"].nunique().rename("tasks")
+    fitted = fits.dropna(subset=["r2"]).groupby("family")["task"].nunique().rename("tasks_with_fit")
     kept = t.groupby("family")["task"].nunique().rename("in_figure")
-    s = pd.concat([total, kept], axis=1).fillna(0).astype(int)
-    s["removed"] = s["tasks_with_fit"] - s["in_figure"]
-    s["share_kept"] = (s["in_figure"] / s["tasks_with_fit"]).round(3)
+    s = pd.concat([total, fitted, kept], axis=1).fillna(0).astype(int)
+    s["gated"] = s["tasks"] - s["tasks_with_fit"]
+    s["below_min_fits"] = s["tasks_with_fit"] - s["in_figure"]
+    s["removed"] = s["gated"] + s["below_min_fits"]
+    s["share_kept"] = (s["in_figure"] / s["tasks"]).round(3)
     fam = family_table(t).set_index("family")
     s = s.join(fam[["r2_size", "r2_trajectory", "regime_majority"]])
-    return s.sort_values("tasks_with_fit", ascending=False).reset_index()
+    return s.sort_values("tasks", ascending=False).reset_index()
 
 
-def figure(t: pd.DataFrame, s: pd.DataFrame, path: Path, n_twins: int) -> None:
+def figure(t: pd.DataFrame, s: pd.DataFrame, path: Path) -> None:
     colours = _colours(t)
     fig, (a, b) = plt.subplots(1, 2, figsize=(12.4, 5.2), gridspec_kw={"width_ratios": (1, 1.25)})
-    # (a) survivorship, one bar per family
+    # (a) survivorship, one bar per family: kept, then lost to the gate, then lost to MIN_FITS
     y = range(len(s))[::-1]
-    a.barh(y, s["in_figure"], color=[colours.get(f, S.MUTED) for f in s["family"]], label="has a point (survives rule 1)")
-    a.barh(y, s["removed"], left=s["in_figure"], color=S.GRID, hatch="///", edgecolor=S.MUTED, lw=0, label="removed by the gate")
+    a.barh(y, s["in_figure"], color=[colours.get(f, S.MUTED) for f in s["family"]], label="has a point")
+    a.barh(y, s["gated"], left=s["in_figure"], color=S.GRID, hatch="///", edgecolor=S.MUTED, lw=0,
+           label="at chance wherever a fit was possible (rule 1)")
+    a.barh(y, s["below_min_fits"], left=s["in_figure"] + s["gated"], color=S.SURFACE, hatch="...", edgecolor=S.MUTED, lw=.4,
+           label=f"fit at < {MIN_FITS} language settings (no median)")
     a.set_yticks(list(y)); a.set_yticklabels([short(f) for f in s["family"]], fontsize=7.5)
-    for yi, (k, n) in zip(y, zip(s["in_figure"], s["tasks_with_fit"])):
+    for yi, (k, n) in zip(y, zip(s["in_figure"], s["tasks"])):
         a.text(n + 0.8, yi, f"{k}/{n}", va="center", fontsize=6.8, color=S.INK if k else "#8c1d18")
-    a.set_xlabel("benchmark-language tasks with a size fit")
-    a.set_xlim(0, s["tasks_with_fit"].max() * 1.16)
+    a.set_xlabel("benchmark-language tasks in the pool")
+    a.set_xlim(0, s["tasks"].max() * 1.16)
     a.legend(fontsize=7, frameon=False, loc="lower right")
     a.grid(color=S.GRID, lw=.6, axis="x"); S.clean(a)
     # (b) the regimes panel, family labels carrying kept/total
@@ -81,24 +91,24 @@ def figure(t: pd.DataFrame, s: pd.DataFrame, path: Path, n_twins: int) -> None:
     fam = s[s["in_figure"] > 0]
     b.scatter(fam["r2_size"], fam["r2_trajectory"], s=46, c=[colours[f] for f in fam["family"]], edgecolor=S.INK, lw=.8, zorder=3)
     _labels(b, fam["r2_size"], fam["r2_trajectory"],
-            [f"{short(f)} ({k}/{n})" for f, k, n in zip(fam["family"], fam["in_figure"], fam["tasks_with_fit"])],
+            [f"{short(f)} ({k}/{n})" for f, k, n in zip(fam["family"], fam["in_figure"], fam["tasks"])],
             [darken(colours[f], LABEL_DARK) for f in fam["family"]], fontsize=6.8, weight="bold")
     gone = s[s["in_figure"] == 0]
     if len(gone):
-        b.text(0.02, 0.03, "no survivor at any size:\n" + "\n".join(f"{short(f)}  (0/{n})" for f, n in zip(gone["family"], gone["tasks_with_fit"])),
+        b.text(0.02, 0.03, "no survivor at any size:\n" + "\n".join(f"{short(f)}  (0/{n})" for f, n in zip(gone["family"], gone["tasks"])),
                transform=b.transAxes, fontsize=6.8, color="#8c1d18", va="bottom", ha="left",
                bbox=dict(boxstyle="round,pad=0.35", fc=S.SURFACE, ec="#8c1d18", lw=.6, alpha=.92), zorder=5)
     b.set_xlim(-0.02, 1.02); b.set_ylim(-0.02, 1.02); b.set_aspect("equal")
     b.set_xlabel("median R² across model-size scaling fits"); b.set_ylabel("median R² across training-trajectory fits")
     b.grid(color=S.GRID, lw=.6); S.clean(b)
-    twins = (f"The {n_twins} rf_/rfgm_ twin tasks now in the pool are not in this table yet — rerun regimes.py first. "
-             if n_twins else "")
     top = G._header(fig, "Scaling regimes, with the gate's survivorship",
-                    f"(a) per family, the tasks the regimes figure draws against the tasks rule 1 removed before it could "
-                    f"(at chance at every size where a log-N fit was possible; `rq1_fits.csv`). (b) `regimes.py`'s panel (b) — "
-                    f"one point per surviving task, the family at its median point, labelled kept/total; quadrants split at "
-                    f"R² = {R2_SPLIT}. {int(s['in_figure'].sum())} of {int(s['tasks_with_fit'].sum())} tasks survive; "
-                    f"{len(gone)} families lose every task. {twins}Same population and medians as `scaling_regimes.csv`.")
+                    f"(a) per family, the tasks the regimes figure draws against the two ways a task of `rq1_fits.csv` loses "
+                    f"its point: at chance at every size where a log-N fit was possible (rule 1), or fitted at fewer than "
+                    f"{MIN_FITS} language settings, so no median. (b) `regimes.py`'s panel (b) — one point per surviving task, "
+                    f"the family at its median point, labelled kept/total; quadrants split at R² = {R2_SPLIT}. "
+                    f"{int(s['in_figure'].sum())} of {int(s['tasks'].sum())} tasks survive ({int(s['gated'].sum())} gated, "
+                    f"{int(s['below_min_fits'].sum())} below the fit minimum); {len(gone)} families lose every task. "
+                    f"Same population and medians as `scaling_regimes.csv`.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -111,9 +121,8 @@ if __name__ == "__main__":
     t = pd.read_csv(out_dir / "scaling_regimes.csv")
     fits = pd.read_csv(out_dir / "rq1_fits.csv")
     twin = lambda d: int(d["task"][d["task"].str.startswith(("rf_", "rfgm_"))].nunique())
-    n_twins = twin(fits) - twin(t)           # twins with a fit but no point yet
     print(f"rf_/rfgm_ twins: {twin(fits)} in rq1_fits.csv, {twin(t)} in scaling_regimes.csv")
     s = survivorship(t, fits)
     s.to_csv(out_dir / "scaling_regimes_survivorship.csv", index=False)
     print(s.to_string(index=False))
-    figure(t, s, out_dir / "scaling_regimes_survivorship.png", n_twins)
+    figure(t, s, out_dir / "scaling_regimes_survivorship.png")

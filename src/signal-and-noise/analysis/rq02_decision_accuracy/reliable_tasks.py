@@ -16,8 +16,10 @@ tasks clear a cut:
 
     late     ONE fixed cell per axis — DA-size at the largest proxy (the last
              rung below the reference) and DA-ckpt at the last early checkpoint
-             (90 %) of that same size. No cell is chosen by its value, so this
-             is the only reduction free of selection bias, and it is the default.
+             (90 %) of that same size. No cell is chosen by its value, so the
+             reduction adds no selection of its own — the cut on that cell's
+             DA still selects tasks by the quantity the figures then draw, so
+             every filtered figure is a conditional reading. The default.
     mean     the average cell — "does this task rank reliably across the ladder".
     median   the typical cell; between `mean` and `max`.
     max      the best cell — "is there ANY size/checkpoint where it ranks

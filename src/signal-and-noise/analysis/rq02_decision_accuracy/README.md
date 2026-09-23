@@ -507,18 +507,19 @@ third of the decisions. The proposal that follows from it (an `axes` column in
 <!-- BEGIN auto:agreement-measures (agreement.py --pool predictivity) -->
 ## Decision accuracy is Kendall's τ under another tie convention
 
-Over the 820 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 2,781 of 55,381 pairs (5.0%), 95% of them one-sided, and touch 70% of the cells — so the two statistics correlate at r = 0.976 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
+Over the 821 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 2,802 of 55,402 pairs (5.1%), 95% of them one-sided, and touch 70% of the cells — so the two statistics correlate at r = 0.976 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
 
 | statistic | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|
 | da | 0.0 | 0.0 | 0.0 | 0.0 |
-| da_drop_ref_ties | 4.0 | 2.4 | 3.2 | 2.9 |
+| da_drop_ref_ties | 4.0 | 2.4 | 3.2 | 2.8 |
 | gamma | 6.0 | 5.9 | 7.2 | 6.5 |
-| rho | 10.1 | 10.7 | 14.0 | 13.9 |
 | tau_a | 4.7 | 2.9 | 5.4 | 3.3 |
 | tau_b | 5.4 | 5.4 | 6.8 | 4.5 |
 
 Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair by its displacement — and sit at r = 0.965 and 0.909 against DA. Median 11 models per cell. Values in `agreement_per_cell.csv`; regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
+
+![DA, Kendall tau and Spearman rho against each other](pretraining/predictivity/agreement_correlation.png)
 
 ![DA against Kendall's tau](pretraining/predictivity/agreement_identity.png)
 
@@ -528,18 +529,18 @@ Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT 
 <!-- BEGIN auto:scale-convergence-by-language (by_language.py --pool predictivity) -->
 ## Scale convergence per language
 
-For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (share × 0.50 × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_lang_all_coverage.csv` says why a cell is empty.
+For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_lang_all_coverage.csv` says why a cell is empty.
 
 | language | L1 | L2 | L8 | L15 | L30 | L50 | R² size / tokens |
 |---|---|---|---|---|---|---|---|
-| en | — | — | 0.50→1.00 [11] | 0.57→1.00 [11] | 0.58→0.83 [11] | 0.43→1.00 [11] | 0.00 / 0.01 |
-| ru | — | — | 0.47→1.00 [9] | 0.70→1.00 [9] | 0.62→0.83 [9] | 0.67→1.00 [9] | 0.00 / 0.01 |
-| zh | — | — | 0.42→0.83 [8] | 0.55→1.00 [8] | 0.45→0.83 [8] | 0.42→1.00 [8] | 0.00 / 0.00 |
-| de | — | — | 0.50→1.00 [7] | 0.62→1.00 [7] | 0.48→0.83 [7] | 0.67→1.00 [7] | 0.00 / 0.01 |
-| ja | — | — | 0.00→1.00 [5] | 0.70→1.00 [5] | 0.40→0.83 [5] | 0.33→1.00 [5] | 0.03 / 0.02 |
-| es | — | — | — | 0.60→0.64 [11] | 0.64→0.83 [11] | 0.63→1.00 [11] | 0.04 / 0.07 |
-| fr | — | — | — | 0.67→0.47 [10] | 0.45→0.83 [10] | 0.56→1.00 [10] | 0.02 / 0.06 |
-| it | — | — | — | 0.67→0.74 [9] | 0.65→0.83 [9] | 0.71→0.83 [9] | 0.09 / 0.09 |
+| en | — | — | 0.50→0.58 [11] | 0.57→0.52 [11] | 0.58→0.44 [11] | 0.43→0.64 [11] | 0.00 / 0.00 |
+| ru | — | — | 0.47→0.50 [9] | 0.70→0.56 [9] | 0.62→0.58 [9] | 0.67→0.76 [9] | 0.00 / 0.17 |
+| zh | — | — | 0.42→0.58 [8] | 0.55→0.49 [8] | 0.45→0.55 [8] | 0.42→0.58 [8] | 0.30 / 0.16 |
+| de | — | — | 0.50→0.57 [7] | 0.62→0.61 [7] | 0.48→0.63 [7] | 0.67→0.62 [7] | 0.02 / 0.00 |
+| ja | — | — | 0.00→0.83 [5] | 0.70→0.42 [5] | 0.40→0.44 [5] | 0.33→0.60 [5] | 0.15 / 0.14 |
+| es | — | — | — | 0.60→0.64 [11] | 0.64→0.41 [11] | 0.63→0.59 [11] | 0.14 / 0.08 |
+| fr | — | — | — | 0.67→0.47 [10] | 0.45→0.51 [10] | 0.56→0.57 [10] | 0.04 / 0.02 |
+| it | — | — | — | 0.67→0.74 [9] | 0.65→0.53 [9] | 0.71→0.56 [9] | 0.17 / 0.08 |
 
 ![Scale convergence per language](pretraining/predictivity/scale_convergence_lang_all.png)
 
@@ -549,24 +550,38 @@ For each language of the L8 setting, the `--by L` lines read on that language's 
 <!-- BEGIN auto:seed-uncertainty (seed_uncertainty.py --pool predictivity) -->
 ## Seed uncertainty
 
-What the replicate seeds say about decision accuracy — English at three proxy sizes and Russian at 1B, the only (size, language) cells where three replicated designs give ≥ 3 cross-L pairs under rule 2. Per row: DA of those decisions against the 1.7B final with the proxy at each of its three seeds (proxy-side noise), and the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). Three pairs put a DA on {0, ⅓, ⅔, 1}: read the spread, not a mean. The seed null (DA-ckpt over pairs of two seeds of one design, mean over fractions and gated tasks) is 175M: 0.62 vs real 0.69; 600M: 0.58 vs real 0.60; 1B: 0.59 vs real 0.61. Regenerate with `python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity`.
+What the replicate seeds say about decision accuracy — English at three proxy sizes and Russian at 1B, the only (size, language) cells where three replicated designs give ≥ 3 cross-L pairs under rule 2. Per row: DA of those decisions against the 1.7B final with the proxy at each of its three seeds (proxy-side noise), and the DA between two seeds' rankings of the same designs at that size (the reference-side ceiling). Three pairs put a DA on {0, ⅓, ⅔, 1}: read the spread, not a mean. The seed null (DA-ckpt over pairs of two seeds of one design, mean over fractions and gated tasks) is 175M: 0.62 vs real 0.68; 600M: 0.57 vs real 0.60; 1B: 0.59 vs real 0.60. Regenerate with `python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity`.
 
 | size | language | designs | DA at the 3 proxy seeds | test-retest (3 seed pairs) | tasks |
 |---|---|---|---|---|---|
-| 175M | en | 3 | 0.74, 0.70, 0.83 | 0.83–0.89 | 9 |
-| 175M | ru | 3 | nan, nan, nan | — | 0 |
+| 175M | en | 3 | 0.78, 0.72, 0.83 | 0.83–0.94 | 6 |
 | 600M | en | 3 | 0.85, 0.85, 0.85 | 0.82–0.85 | 11 |
-| 600M | ru | 3 | nan, nan, nan | — | 0 |
 | 1B | en | 4 | 0.80, 0.73, 0.68 | 0.77–0.80 | 11 |
 | 1B | ru | 4 | 0.81, 0.85, 0.78 | 0.78–0.89 | 9 |
 
 ![Seed uncertainty](pretraining/predictivity/seed_uncertainty.png)
 <!-- END auto:seed-uncertainty -->
 
+<!-- BEGIN auto:scale-convergence-L8 (scale_convergence.py --by L --langs L8) -->
+## Scale convergence by language count, on the L8 languages
+
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8`.
+
+| group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
+|---|---|---|---|---|---|---|
+| L15 | 0.62 | 0.55 | 0.52 | 0.54 | 1.0 | — |
+| L30 | 0.55 | 0.55 | 0.55 | 0.51 | 1.0 | — |
+| L50 | 0.57 | 0.59 | 0.55 | 0.61 | 1.0 | — |
+| L8 | 0.46 | 0.52 | 0.49 | 0.59 | 1.0 | — |
+| all pairs | 0.57 | 0.61 | 0.61 | 0.62 | 1.0 | — |
+
+![Scale convergence, L8](pretraining/predictivity/scale_convergence_L8.png)
+<!-- END auto:scale-convergence-L8 -->
+
 <!-- BEGIN auto:scale-convergence-L8-common (scale_convergence.py --by L --langs L8 --common-tasks) -->
 ## Scale convergence by language count, on the L8 languages, common tasks
 
-The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs and rule 5 empties every proxy size but 1B, so the `_one_axis` L figures draw the pooled line alone. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8common_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8common_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
@@ -578,3 +593,20 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 
 ![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_L8common.png)
 <!-- END auto:scale-convergence-L8-common -->
+
+<!-- BEGIN auto:language-tier (language_tier.py --pool predictivity) -->
+## Decision reliability by language tier
+
+The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks of one language TIER — the smallest scheme-A regime that trains the language (L8: the eight high-resource languages every regime trains; L50: the twenty only the L50 mixture trains). Reliability at the smallest → largest proxy [task count]. `reliability_vs_language_share.png` is the per-language version: reliability against the language's share of the L50 mixture, Spearman ρ over languages 175M 0.18, 1B 0.03, 350M 0.19, 600M 0.13. Both are unfiltered; a tier also differs in benchmark mix. Regenerate with `python analysis/rq02_decision_accuracy/language_tier.py --pool predictivity`.
+
+| tier | all gated tasks | above_66_size |
+|---|---|---|
+| L8 languages (in every regime) | 0.57 → 0.62 [39–70 tasks] | 0.63 → 0.77 [16–22 tasks] |
+| L15-only languages | 0.53 → 0.61 [26–43 tasks] | 0.65 → 0.84 [5–7 tasks] |
+| L30-only languages | 0.53 → 0.57 [41–63 tasks] | 0.66 → 0.77 [9–10 tasks] |
+| L50-only languages | 0.50 → 0.60 [43–70 tasks] | 0.60 → 0.81 [19–28 tasks] |
+
+![Reliability by language tier](pretraining/predictivity/reliability_by_language_tier.png)
+
+![Reliability against language share](pretraining/predictivity/reliability_vs_language_share.png)
+<!-- END auto:language-tier -->

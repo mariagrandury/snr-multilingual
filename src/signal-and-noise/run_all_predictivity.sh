@@ -12,17 +12,23 @@
 # and which cost about an hour; the default leaves the ones on disk. Output layout:
 # analysis/<rqNN_name>/pretraining/<pool>/
 #
-#   A. The above-random gate (rq00), then DA (rq02, the truth) and the 22 SNR
-#      variants (rq03) per pool.
-#   B. Seed holdout (rq03) — needs the train/test pool CSVs from A.
-#   C. Per-pool analysis + docs: the variant ranking (rq04), the DA slides
-#      (rq02), benchmark design (rq09), DataDecide (rq07); the canonical pool
-#      last so it sees the holdout.
-#   D. The ladder-frame reads on every seed and scheme — design decisions
-#      (rq05), scaling predictability (rq01), noise (rq03), transfer (rq06) —
-#      then subset selection (rq08), the curves (rq00), surrogates (rq04), figures.
-#      Each folder's panels.py redraws its aggregate per benchmark and per
-#      language (analysis/grids.py: one long figure, one subplot per page).
+# The passes run IN RESEARCH-QUESTION ORDER, so rq00's tables and figures are
+# final minutes into the run and rq01's and rq02's within the first hour,
+# instead of at the end. The order is also the dependency order, with two
+# exceptions kept next to their inputs and marked below: rq03's effect-vs-noise
+# reads rq05's decision table, and rq07 reads rq04's variant ranking.
+#
+#   rq00  the above-random gate (every later step reads its mask), the curves
+#   rq01  scaling predictability on every seed and scheme
+#   rq02  decision accuracy: the per-pool tables, then every figure that reads them
+#   rq03  the 22 SNR variants per pool (read rq02's DA), the seed holdout
+#   rq04  surrogates: the variant ranking per pool (reads rq03), then the
+#         analysis that reads rq00, rq01, rq02 and rq03 at once
+#   rq05  design decisions on every seed and scheme; then rq03's effect-vs-noise
+#   rq06  language transfer (reads rq05)
+#   rq07  DataDecide agreement (reads rq03 and rq04)
+#   rq08  subset selection; rq09 benchmark design (reads rq03 code)
+#   then the report figures and the rules check over every table on disk.
 #
 # Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
 # (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09).
@@ -39,12 +45,16 @@ FAILED=()
 # all-seeds pool feeds the seed-noise estimates (rq03, rq05); the two holdout pools are
 # the ×3 cells split by seed.
 POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predictivity)
+# The pools whose per-pool analysis and docs are written (the canonical one
+# last, so it sees the holdout).
+DOC_POOLS=(predictivity_seeds predictivity)
 
 # Per-step wall time, so the next person can see where the hours go instead
 # of inferring it from output timestamps.
 run() { local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
        [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*")
        printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${2##*/}"; }
+pass() { echo; echo "############################## $* ##############################"; }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
 # The ladder report is the only input, so a cached table older than it was built
 # from data we no longer have. Reusing it lets a whole run finish on last
@@ -60,8 +70,29 @@ fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ];
 CURVES=${CURVES:-0}
 GRIDS=(--no-grids); [ "$CURVES" = 1 ] && GRIDS=()
 
-echo "############################## PASS A — gate, DA, SNR compute ##############################"
+pass "rq00 — the above-random gate and the curves"
+# The gate first: every later step reads its mask, and the rq00 panels read
+# it too, so they follow it here rather than at the end of the run.
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
+run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
+run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
+run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
+# the reformulated twins (rf_*) against the letter originals, through the rq00 gate
+run $PY analysis/rq00_task_reformulation/compare.py
+
+pass "rq01 — scaling predictability"
+# The ladder-frame reads take every seed and scheme (`predictivity_all`); the
+# scaling-law error reads every scheme.
+run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
+# the same table with what the gate and the fit minimum removed put back, per family
+run $PY analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
+
+pass "rq02 — decision accuracy"
+# The per-pool DA tables (the truth every later RQ reads), cached until the
+# report is newer than them.
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
   if fresh "analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv"; then
@@ -69,69 +100,17 @@ for t in "${POOLS[@]}"; do
   else
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
-  if fresh "analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv"; then
-    echo "  (SNR cached: analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv)"
-  else
-    run $PY analysis/rq03_noise_and_snr/run_apertus_snr_variants.py --pool "$t"
-  fi
 done
-
-echo "############################## PASS B — seed holdout ##############################"
-run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
-    --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
-
-echo "############################## PASS C — analysis + docs ##############################"
-# rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
-# split on HF; a git-lfs pointer here means `git lfs pull` first).
-ALLENAI_CSV=analysis/rq07_external_frameworks/allenai_snr_variants_per_task.csv
-if [ ! -f "$ALLENAI_CSV" ]; then
-  run $PY analysis/rq07_external_frameworks/build_allenai_variants.py
-fi
-for t in predictivity_seeds predictivity; do
-  echo "############################## POOL $t ##############################"
-  run $PY analysis/rq04_surrogates/analyze_snr_variants.py --pool "$t"
-  run $PY analysis/rq04_surrogates/snr_definition_postprocess.py --pool "$t"
-  run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
-  run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
-  run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
-  if grep -q "^version https://git-lfs" "$ALLENAI_CSV" 2>/dev/null; then
-    echo "  (rq07 skipped: $ALLENAI_CSV is a git-lfs pointer — run git lfs pull)"
-  else
-    run $PY analysis/rq07_external_frameworks/analyze.py --pool "$t"
-  fi
-done
-
-echo "############################## PASS D — ladder-frame reads, subsets, curves, surrogates, figures ##############################"
-# The ladder-frame reads take every seed and scheme (`predictivity_all`): rq05
-# needs the five interventions and its early-decision read follows from its
-# decision table; rq01's scaling-law error reads every scheme and rq03's
-# effect-vs-noise the seed replicates; rq06 reads rq05's table for the never-trained languages.
-run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
-run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
-run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
-run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
-run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
-run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
-run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
-run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
-run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
-run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
-run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
-# the reformulated twins (rf_*) against the letter originals, through the rq00 gate
-run $PY analysis/rq00_task_reformulation/compare.py
 # the scheme-inclusive DA table: every data scheme at the grid seed (AT3/BT3 =
 # a temperature, ZH/ES = a second language), which is the population by_L and
 # scale_convergence actually pair over. The headline `predictivity` pool keeps
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
 # agreement and has no such problem (plan/decision_accuracy.md).
 run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
+for t in "${DOC_POOLS[@]}"; do
+  run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
+  run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
+done
 # which (benchmark, language) cells rank reliably at all: the population every
 # `above_*` figure below averages over. Reads rq02's da_per_task.csv, so it comes
 # after compute_da and BEFORE everything that filters on it — by_L and
@@ -156,9 +135,87 @@ run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --axes mono-axis
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --axes mono-axis
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity --axes mono-axis
-# surrogates read the headline pool's rq03 table, rq00's scores and rq01's fits
+# rq02 extensions (plan/decision_accuracy.md): the per-L lines on the L8
+# languages only and on the tasks every regime shares, one panel per L8
+# language with a tokens-of-that-language axis, the DA ↔ Kendall τ identity and
+# the tie-convention flip rates, and the seed-replicate uncertainty. All read
+# da_reliable_tasks.csv, so they come after reliable_tasks.py.
+run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8
+run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8 --common-tasks
+run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity
+run $PY analysis/rq02_decision_accuracy/agreement.py --pool predictivity
+run $PY analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
+# do the high-resource languages rank more reliably: one pooled line per language tier, and per language against its share
+run $PY analysis/rq02_decision_accuracy/language_tier.py --pool predictivity
+# the three definitions on multi-axis against mono-axis pairs, same cells (exploratory)
+run $PY analysis/rq02_decision_accuracy/pair_axes.py --pool predictivity
+
+pass "rq03 — noise and the SNR variants"
+# The 22 SNR variants per pool (they read rq02's DA), cached like the DA tables.
+for t in "${POOLS[@]}"; do
+  st=$(stage_of "$t")
+  if fresh "analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv"; then
+    echo "  (SNR cached: analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv)"
+  else
+    run $PY analysis/rq03_noise_and_snr/run_apertus_snr_variants.py --pool "$t"
+  fi
+done
+# seed holdout — needs the train/test pool CSVs above
+run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
+    --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
+run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
+# effect_vs_noise reads rq05's decision table: it runs in the rq05 block below.
+
+pass "rq04 — surrogates"
+for t in "${DOC_POOLS[@]}"; do
+  run $PY analysis/rq04_surrogates/analyze_snr_variants.py --pool "$t"
+  run $PY analysis/rq04_surrogates/snr_definition_postprocess.py --pool "$t"
+done
+# surrogates read the headline pool's rq03 table, rq00's scores, rq01's fits and rq02's by_L
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
+
+pass "rq05 — design decisions"
+# rq05 needs the five interventions and its early-decision read follows from
+# its decision table; rq06 reads its table for the never-trained languages.
+run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_all
+# rq03's effect-vs-noise reads rq05's interventions and the seed replicates
+run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+
+pass "rq06 — language transfer"
+run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
+run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
+
+pass "rq07 — external frameworks"
+# rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
+# split on HF; a git-lfs pointer here means `git lfs pull` first) and rq04's
+# variant ranking per pool.
+ALLENAI_CSV=analysis/rq07_external_frameworks/allenai_snr_variants_per_task.csv
+if [ ! -f "$ALLENAI_CSV" ]; then
+  run $PY analysis/rq07_external_frameworks/build_allenai_variants.py
+fi
+for t in "${DOC_POOLS[@]}"; do
+  if grep -q "^version https://git-lfs" "$ALLENAI_CSV" 2>/dev/null; then
+    echo "  (rq07 skipped: $ALLENAI_CSV is a git-lfs pointer — run git lfs pull)"
+  else
+    run $PY analysis/rq07_external_frameworks/analyze.py --pool "$t"
+  fi
+done
+
+pass "rq08 — subset selection"
+run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
+run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
+
+pass "rq09 — benchmark design"
+for t in "${DOC_POOLS[@]}"; do
+  run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
+done
+run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
+
+pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py
 # every table on disk against analysis/RULES.md (rule 14)
 run $PY analysis/check_rules.py --quiet

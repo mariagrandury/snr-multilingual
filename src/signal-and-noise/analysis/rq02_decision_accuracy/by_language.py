@@ -11,7 +11,8 @@ function of L alone (the lists are nested; ru is 15.0 % of every token at L8,
 10.2 % at L30), so the legend carries the share and the tokens at the reference
 size. Two things the reader must know:
 
-  * tokens of a language = share(L, scheme) × 0.50 × D(N): a RELABELLING of the
+  * tokens of a language = share(L, scheme) × D(N), the share being of ALL
+    tokens (English is the other 50 %): a RELABELLING of the
     (L, size) grid, not a new measurement. Its one honest test is the collapse
     test of `_tokens` below.
   * an L regime pools arch, list and temperature decisions at once and the mix
@@ -133,7 +134,8 @@ def collapse_r2(out: pd.DataFrame, x: str) -> float:
     """R² of one straight line R ~ log10(x) through every regime's proxy points
     at once. If exposure is what matters, the L lines fall onto one curve under
     x = tokens and the R² rises against x = size."""
-    pts = out[(out["group"] != OVERALL) & (out["size"] != TARGET_SIZE)].dropna(subset=[x, "reliability"])
+    pts = out[(out["population"] == "all benchmarks") & (out["group"] != OVERALL) & (out["size"] != TARGET_SIZE)]
+    pts = pts.dropna(subset=[x, "reliability"])
     pts = pts[pts[x] > 0]
     if len(pts) < 3 or pts["group"].nunique() < 2:
         return float("nan")
@@ -207,7 +209,7 @@ def figure(per_lang: dict, cov: pd.DataFrame, path: Path, pool: str, variant: st
                        f"AT3 (T=3) and B lines in the same regime saw less or more. Shaded band on `{OVERALL}` = "
                        f"leave-one-family-out jackknife, 90 %. " if x == "non_emb" else
                        f"x = mean over a decision's two members of the tokens of this language they trained on "
-                       f"(share × 0.50 × D(N)) — a relabelling of (L, size), not a new axis; the test is whether the "
+                       f"(share of all tokens × D(N)) — a relabelling of (L, size), not a new axis; the test is whether the "
                        f"regime lines collapse onto one curve, which the R² in each title measures. ")
                     + f"A regime pools arch, list and temperature decisions at once (`share_*` in the CSV). A regime "
                     f"with no line here is one whose members are not trained on this language or fall below "
@@ -226,7 +228,8 @@ def generate_readme(pool: str, out_dir: Path, per_lang: dict, r2: dict, stem: st
         out = per_lang.get(lang)
         rec = {"language": lang}
         for grp in REGIMES:
-            g = None if out is None else out[(out["group"] == grp) & (out["size"] != TARGET_SIZE)]
+            g = None if out is None else out[(out["population"] == "all benchmarks") & (out["group"] == grp)
+                                             & (out["size"] != TARGET_SIZE)]
             rec[grp] = ("—" if g is None or not len(g) else
                         f"{g.sort_values('non_emb')['reliability'].iloc[0]:.2f}→{g.sort_values('non_emb')['reliability'].iloc[-1]:.2f} "
                         f"[{int(g['n_tasks'].max())}]")
@@ -240,7 +243,7 @@ def generate_readme(pool: str, out_dir: Path, per_lang: dict, r2: dict, stem: st
         f"R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no "
         f"selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is "
         f"the collapse test: R² of one log-linear line through every regime's points with x = model size, then with "
-        f"x = tokens of the language (share × 0.50 × D(N)); a rise under tokens says exposure explains what language "
+        f"x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language "
         f"count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/by_language.py --pool {pool}`; `{stem}_coverage.csv` says why a "
         f"cell is empty.",
@@ -285,7 +288,8 @@ if __name__ == "__main__":
             out = tokens_axis(out, dec, c, args.pool, attrs, lang)
             per_lang[lang] = out
             r2[lang] = (collapse_r2(out, "non_emb"), collapse_r2(out, "tokens"))
-            tables.append(out.assign(language=lang))
+            # the panel title's two numbers, so the CSV carries what the PNG shows (rule 12)
+            tables.append(out.assign(language=lang, collapse_r2_size=r2[lang][0], collapse_r2_tokens=r2[lang][1]))
         table = pd.concat(tables, ignore_index=True) if tables else pd.DataFrame()
         table.to_csv(out_dir / f"{stem}.csv", index=False)
         table.drop(columns=["lo", "hi", "se"], errors="ignore").to_csv(out_dir / f"{stem}_tokens.csv", index=False)

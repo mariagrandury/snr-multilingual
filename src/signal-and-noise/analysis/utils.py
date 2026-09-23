@@ -454,8 +454,15 @@ def agreement_measures(proxy, ref) -> dict:
     out = {"n_models": len(s), "n_pairs": n, "concordant": C, "discordant": D,
            "tied_both": T_both, "tied_one": T_proxy + T_ref}
     nan = float("nan")
-    if n < MIN_PAIRS or np.std(s) == 0 or np.std(t) == 0:            # rule 5
+    if n < MIN_PAIRS:                                                 # rule 5
         return out | {k: nan for k in ("da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r")}
+    if np.std(s) == 0 or np.std(t) == 0:
+        # a constant side has no rank correlation, but the pair counts are
+        # still what the kernel reads: DA and tau_a stay, as decision_acc_fast has them
+        return out | {"da": (C + T_both) / n, "tau_a": (C - D) / n,
+                      "gamma": (C - D) / (C + D) if C + D else nan,
+                      "da_drop_ref_ties": C / (C + D + T_proxy) if C + D + T_proxy else nan,
+                      "tau_b": nan, "rho": nan, "pearson_r": nan}
     return out | {"da": (C + T_both) / n, "tau_a": (C - D) / n,
                   "tau_b": float(kendalltau(s, t).statistic),
                   "gamma": (C - D) / (C + D) if C + D else nan,

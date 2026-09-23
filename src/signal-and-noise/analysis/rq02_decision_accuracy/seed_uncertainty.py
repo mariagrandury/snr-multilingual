@@ -112,6 +112,11 @@ def seed_views(fin: pd.DataFrame, pool: str) -> pd.DataFrame:
             tasks = set(at.loc[(at["language"] == lang) & ~at["task"].str.startswith("bpb_"), "task"])
             # rule 1: above chance at the proxy and at the reference
             tasks = set(pd.Index(sorted(tasks))[passes_gate(mask, sorted(tasks), size, TARGET_SIZE).to_numpy()]) if tasks else set()
+            # one task set for every marker of a cell: a task counts only when
+            # EVERY seed's proxy scores >= MIN_PAIRS of its pairs against the
+            # reference, so three markers differ by the seed alone (rule 13)
+            tasks = set.intersection(*[
+                {t for t in tasks if pooled_da(scores(fin, size, s), ref, designs, {t})[1] > 0} for s in seeds]) if tasks else set()
             for s in seeds:
                 da, n, nt = pooled_da(scores(fin, size, s), ref, designs, tasks)
                 rows.append({"view": "proxy seed", "size": size, "language": lang, "seed": s, "seed_b": np.nan,
@@ -203,7 +208,8 @@ def generate_readme(pool: str, out_dir: Path, sv: pd.DataFrame, nv: pd.DataFrame
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     rows = []
-    for (size, lang), g in sv[sv["view"] == "proxy seed"].groupby(["size", "language"], sort=False):
+    seen = sv[(sv["view"] == "proxy seed")].dropna(subset=["da"])     # a cell without a marker has no row
+    for (size, lang), g in seen.groupby(["size", "language"], sort=False):
         tr = sv[(sv["view"] == "test-retest") & (sv["size"] == size) & (sv["language"] == lang)]["da"]
         vals = ", ".join(f"{v:.2f}" for v in g.sort_values("seed")["da"])
         rows.append([size, lang, int(g["designs"].iloc[0]), vals,

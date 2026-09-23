@@ -22,6 +22,9 @@ the share of cells that clear the reliability cut under one statistic and not
 another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
 
     agreement_per_cell.csv          one row per (task, size): the counts and every statistic
+    agreement_correlation.png / .csv   DA, Kendall tau_b and Spearman rho against each other,
+                                    one point per cell, Pearson r and Spearman rho in the corner —
+                                    the plain reading; the two below say WHY they differ
     agreement_identity.png / .csv   DA against tau_a; the tie-free cells lie on the line, the
                                     tied cells sit off it by exactly (T_both − T_one)/n
     agreement_cut_sensitivity.png / .csv   per size, the share of cells whose reliability verdict
@@ -63,8 +66,11 @@ STATS = ["da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r"
 # The reliability cut every rq02 `above_66_*` figure uses, and its image under
 # the identity for the tau-scaled statistics: DA ≥ 0.66 <=> 2·DA − 1 ≥ 0.32.
 CUT = FILTERS["above_66_size"][1]
+# Only the statistics the identity rescales get a mapped cut; Spearman ρ is a
+# different statistic and any cut on it would be arbitrary, so it stays out of
+# the verdict comparison (it is in `agreement_correlation.png`).
 CUT_OF = {"da": CUT, "da_drop_ref_ties": CUT, "tau_a": 2 * CUT - 1, "tau_b": 2 * CUT - 1,
-          "gamma": 2 * CUT - 1, "rho": 2 * CUT - 1}
+          "gamma": 2 * CUT - 1}
 mpl.rcParams.update(S.RC)
 
 
@@ -133,6 +139,55 @@ def figure_identity(d: pd.DataFrame, path: Path) -> None:
     S.save(fig, path, dpi=150)
 
 
+CORR_PAIRS = [("da", "tau_b"), ("da", "rho"), ("tau_b", "rho")]
+CORR_LABEL = {"da": "decision accuracy", "tau_b": "Kendall τ_b", "rho": "Spearman ρ"}
+
+
+def correlations(d: pd.DataFrame) -> pd.DataFrame:
+    """Per proxy size and pooled: Pearson r and Spearman ρ between each pair
+    of rank-agreement statistics over the (task, size) cells."""
+    rows = []
+    for size, g in [("all", d)] + [(s, d[d["size"] == s]) for s in size_order(d["size"].unique())]:
+        for x, y in CORR_PAIRS:
+            v = g[[x, y]].dropna()
+            rows.append({"size": size, "x": x, "y": y, "cells": len(v),
+                         "pearson_r": v[x].corr(v[y]), "spearman_rho": v[x].corr(v[y], method="spearman")})
+    return pd.DataFrame(rows)
+
+
+def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
+    """The three statistics against each other, one point per cell, the
+    correlation in the corner: the plain version of `agreement_identity`."""
+    sizes = size_order(d["size"].unique())
+    colour = dict(zip(sizes, S.RAMP))
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.3))
+    for ax, (x, y) in zip(axes, CORR_PAIRS):
+        for s in sizes:
+            g = d[d["size"] == s]
+            ax.scatter(g[x], g[y], s=8, color=colour[s], alpha=.55, lw=0, label=f"{s} proxy ({len(g)} cells)")
+        if x == "da":   # τ and ρ live on [−1, 1]; DA on [0, 1] — the identity's rescaling is the reference line
+            ax.plot([0, 1], [-1, 1], color=S.MUTED, lw=.8, ls=":", zorder=1)
+        else:
+            ax.plot([-1, 1], [-1, 1], color=S.MUTED, lw=.8, ls=":", zorder=1)
+        c = corr[(corr["size"] == "all") & (corr["x"] == x) & (corr["y"] == y)].iloc[0]
+        ax.text(0.03, 0.97, f"Pearson r = {c['pearson_r']:.3f}\nSpearman ρ = {c['spearman_rho']:.3f}\n{int(c['cells'])} cells",
+                transform=ax.transAxes, va="top", ha="left", fontsize=7.5,
+                bbox=dict(boxstyle="round,pad=0.3", fc=S.SURFACE, ec=S.GRID, lw=.6))
+        ax.set_xlabel(CORR_LABEL[x]); ax.set_ylabel(CORR_LABEL[y])
+        ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    axes[-1].legend(fontsize=6.5, frameon=False, loc="lower right")
+    top = G._header(fig, "Three rank-agreement statistics on the same cells",
+                    f"One point per (benchmark task, proxy size): the proxy's final ranking of the {GRID_SEED}-seed design "
+                    f"variants against the {TARGET_SIZE} final's over every pair (≥ {MIN_PAIRS}, rule 5; above chance at both "
+                    f"sizes, rule 1). Decision accuracy is the share of pairs ordered alike; Kendall τ_b and Spearman ρ are "
+                    f"the rank correlations of the same two rankings. Dotted: τ = 2·DA − 1 (left, middle) and the diagonal "
+                    f"(right). Median {int(d['n_models'].median())} models per cell, so a single cell's ρ or τ is coarse; "
+                    f"the correlations are over cells, not within one. `agreement_identity.png` shows why DA and τ differ "
+                    f"at all (ties), `agreement_cut_sensitivity.png` what that does to the reliable-task cut.")
+    fig.tight_layout(rect=(0, 0, 1, top))
+    S.save(fig, path, dpi=150)
+
+
 def figure_cuts(sens: pd.DataFrame, d: pd.DataFrame, path: Path) -> None:
     sizes = size_order(sens["size"].unique())
     stats = [s for s in STATS if s in set(sens["statistic"]) and s != "da"]
@@ -186,6 +241,7 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
         f"by its displacement — and sit at r = {d['da'].corr(d['rho']):.3f} and {d['da'].corr(d['pearson_r']):.3f} against DA. "
         f"Median {int(d['n_models'].median())} models per cell. Values in `agreement_per_cell.csv`; regenerate with "
         f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`.",
+        f"![DA, Kendall tau and Spearman rho against each other]({stage}/{pool}/agreement_correlation.png)",
         f"![DA against Kendall's tau]({stage}/{pool}/agreement_identity.png)",
         f"![Cut sensitivity]({stage}/{pool}/agreement_cut_sensitivity.png)"])
     replace_block(OUT_ROOT / "README.md", "agreement-measures", body, f"agreement.py --pool {pool}")
@@ -205,6 +261,9 @@ if __name__ == "__main__":
     sens.to_csv(out_dir / "agreement_cut_sensitivity.csv", index=False)
     print(sens.pivot_table(index="statistic", columns="size", values="flip_share").round(3).to_string())
     d[["task", "size", "da", "tau_a", "gap_pairs", "tied_both", "tied_one", "n_pairs"]].to_csv(out_dir / "agreement_identity.csv", index=False)
+    corr = correlations(d)
+    corr.to_csv(out_dir / "agreement_correlation.csv", index=False)
+    figure_correlation(d, corr, out_dir / "agreement_correlation.png")
     figure_identity(d, out_dir / "agreement_identity.png")
     figure_cuts(sens, d, out_dir / "agreement_cut_sensitivity.png")
     generate_readme(args.pool, out_dir, d, sens)

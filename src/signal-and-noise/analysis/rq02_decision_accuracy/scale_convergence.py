@@ -25,10 +25,10 @@ Three groupings of the same decisions, `--by`:
                      within a regime a decision is any pair of design variants
                      that share the L, as `by_L.py` defines it. Under
                      `--axes mono-axis` a regime keeps only its pairs that move
-                     ONE other axis, and rule 5 then empties every proxy size
-                     but 1B (4-5 pairs per regime, three needed per task): the
-                     `_one_axis` L figure shows that fact rather than hiding it.
-                     The multi-axis L lines therefore pool arch, list and
+                     ONE other axis (L8 6 → 4 pairs, L30 10 → 5), so the
+                     `_one_axis` L lines rest on fewer decisions and fewer tasks
+                     (L15 loses the tasks only its scheme-A list trains).
+                     The multi-axis L lines pool arch, list and
                      temperature decisions at once, and their mix is written
                      next to every point (`share_*` columns) because it differs
                      between regimes and cannot be held fixed.
@@ -246,9 +246,17 @@ def grid_frame(df: pd.DataFrame, fracs: list) -> pd.DataFrame:
 def stem_for(by: str, variant: str = "", axes: str = "multi-axis", langs: str = "all",
              common: bool = False) -> str:
     """`overall` is the plain figure, so it carries no `_by` token; a language
-    restriction replaces the `L` token (`scale_convergence_L8_...`), the
-    common-task set appends `common` to it."""
-    token = (langs if langs != "all" else by) + ("common" if common else "")
+    restriction replaces the `L` token of the per-L figure
+    (`scale_convergence_L8_...`) and is appended to any other `by`
+    (`scale_convergence_transformation_L8_...`), so the three `--by` runs of
+    one `--langs` never share a stem; the common-task set appends `common`."""
+    if langs == "all":
+        token = by
+    elif by == "L":
+        token = langs
+    else:
+        token = f"{by}_{langs}"
+    token += "common" if common else ""
     return ("scale_convergence" + (f"_{token}" if by != "overall" or langs != "all" else "")
             + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes])
 
@@ -524,8 +532,14 @@ def common_tasks(kept: pd.DataFrame) -> set[str]:
     """The tasks with a cell in EVERY drawn regime at EVERY proxy size: one task
     set for the whole figure, so both the across-L and the across-size readings
     are paired. Empty when no task manages it, which is itself a result."""
-    regimes = [g for g in kept["group"].unique() if g != OVERALL]
     proxies = [s for s in kept["size"].unique() if s != TARGET_SIZE]
+    # only the L regimes, and only those with a cell at every proxy size: a
+    # regime drawn at one size alone would empty the intersection for all
+    regimes = [g for g in kept["group"].unique() if g != OVERALL and str(g).startswith("L")
+               and set(kept.loc[kept["group"] == g, "size"]) >= set(proxies)]
+    dropped = sorted(set(kept["group"].unique()) - set(regimes) - {OVERALL})
+    if dropped:
+        print(f"  common tasks: regimes without a cell at every proxy size are left out: {dropped}")
     sets = [set(kept.loc[(kept["group"] == g) & (kept["size"] == s), "task"]) for g in regimes for s in proxies]
     return set.intersection(*sets) if sets else set()
 
@@ -646,8 +660,8 @@ if __name__ == "__main__":
                f"for the whole figure, so a gap between lines is a gap on the same benchmarks" if args.common_tasks else "")
             + f". What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs "
             f"by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes "
-            f"keep only their one-axis pairs and rule 5 empties every proxy size but 1B, so the `_one_axis` L figures "
-            f"draw the pooled line alone. Numbers below are the unfiltered population; the `above_66_size` twin "
+            f"keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. "
+            f"Numbers below are the unfiltered population; the `above_66_size` twin "
             f"(`{stem}.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/"
             f"scale_convergence.py --by L --langs {args.langs}{' --common-tasks' if args.common_tasks else ''}`.",
             md_table(list(tables["L"].columns), tables["L"].values.tolist()),
