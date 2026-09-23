@@ -5,24 +5,38 @@ The user wants to preview the project site locally on their laptop.
 ## What the site is
 
 Two-part static site, deployed by Netlify:
-- **MkDocs Material** at `/` — renders the project READMEs
+- **MkDocs Material** at `/` — the project showcase plus the repo docs
 - **Slidev** at `/slides/` — renders `documents/slides.md`
 
-The MkDocs side reads from `docs/` (8 thin stub pages, one per nav entry).
-Each stub uses `--8<--` to include a README from elsewhere in the repo
-(e.g. `docs/pretraining.md` includes `src/pretrain/README.md`). So edits
-happen in the original READMEs, not in `docs/`.
+Tabs of the MkDocs side:
+- **Home** (`index.md`), **Model ladder** (`ladder.md`), **Findings**
+  (`findings/*.md`, one page per RQ), **Benchmarks** (`benchmarks.md`) and
+  **Recommender** (`recommend.md`) are
+  hand-written showcase pages. Their charts are `<div class="viz"
+  data-viz="NAME">` blocks drawn by `interactive/app.js` (one `VIEWS.NAME`
+  function each, Observable Plot + d3 from jsdelivr) from
+  `interactive/data/*.json`. Regenerate the JSON with
+  `python3 scripts/build_site_data.py` (it only filters committed rqNN_ tables;
+  needs `git lfs pull` for the CSVs). A findings page quotes its RQ README's
+  "Highlighted result" block with `<!-- highlight: rqNN_name -->`, expanded by
+  `mkdocs_hooks.py` at build time — so its numbers follow the pipeline. The
+  Benchmarks table reads `configs/multilingual_benchmarks.csv`, which the
+  same hook publishes as `interactive/data/benchmarks.csv`.
+- **Docs** — thin stubs that `--8<--` include a README from elsewhere in the
+  repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
+  `docs/repo.md` the root README). Edit the original READMEs, not the stubs.
 
 ## Files
 
 - `mkdocs.yml` — Material theme config, nav, snippets extension wired
   to include READMEs from repo root
-- `docs/` — stub pages
+- `docs/` — showcase pages, stub pages, `interactive/` (app.js, app.css, data/)
+- `scripts/build_site_data.py` — analysis tables → `docs/interactive/data/`
 - `requirements-docs.txt` — `mkdocs`, `mkdocs-material`, `pymdown-extensions`
 - `documents/package.json` — Slidev (pnpm)
 - `build.sh` — full build: mkdocs → `site/`, slidev → `site/slides/`
 - `netlify.toml` — runs `bash build.sh`, publishes `site/`,
-  ignores rebuilds when no `.md` changed
+  ignores rebuilds when no `.md`, `docs/` or MkDocs config file changed
 
 ## Preview locally
 

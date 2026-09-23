@@ -176,6 +176,10 @@ fi
 step "headline numbers"
 ( cd documents/figures && HF_HUB_OFFLINE=1 $PY facts.py ) || FAILED+=("facts.py")
 
+# 8. The site's interactive views read the tables above as JSON.
+step "site data"
+run $PY scripts/build_site_data.py
+
 echo
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "############ FAILED ############"

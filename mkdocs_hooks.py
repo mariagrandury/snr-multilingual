@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from mkdocs.structure.files import File
@@ -39,6 +40,22 @@ def on_pre_build(config):
             readme.write_text(_PLACEHOLDER)
 
 
+ANALYSIS = REPO_ROOT / "src/signal-and-noise/analysis"
+_HIGHLIGHT = re.compile(r"<!-- highlight: (\w+) -->")
+_BLOCK = re.compile(r"<!-- BEGIN auto:highlight[^>]*-->\s*## Highlighted result\s*(.*?)<!-- END auto:highlight -->", re.S)
+
+
+def on_page_markdown(markdown, page, config, files):
+    """Showcase pages quote an RQ's regenerated "Highlighted result" with
+    `<!-- highlight: rqNN_name -->`, so their headline numbers follow the
+    pipeline instead of being copied by hand."""
+    def quote(m):
+        readme = ANALYSIS / m.group(1) / "README.md"
+        found = _BLOCK.search(readme.read_text()) if readme.is_file() else None
+        return found.group(1).strip() if found else "*No highlighted result in this checkout.*"
+    return _HIGHLIGHT.sub(quote, markdown)
+
+
 def on_files(files, config):
     docs_dir = config["docs_dir"]
     site_dir = config["site_dir"]
@@ -61,4 +78,10 @@ def on_files(files, config):
             )
             f.abs_src_path = str(img)
             files.append(f)
+
+    # The benchmark catalogue lives in configs/; the Benchmarks tab reads it.
+    f = File(path="interactive/data/benchmarks.csv", src_dir=docs_dir,
+             dest_dir=site_dir, use_directory_urls=use_directory_urls)
+    f.abs_src_path = str(REPO_ROOT / "configs/multilingual_benchmarks.csv")
+    files.append(f)
     return files
