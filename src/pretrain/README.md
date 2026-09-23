@@ -79,11 +79,11 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **BT3** (L ∈ {30}; T=3; L30 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
 | Architecture | deep (baseline) and shallow (the model-depth intervention) |
 
 **56 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **186 runs**.
+Counting every scheme and the architectures each is trained in: **180 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -102,7 +102,6 @@ axis, one of the eight entries of `DATA_SCHEMES` in
 | `A` | the baseline: resource-ranked language lists at temperature T=1 (no name label) | L ∈ {1, 2, 8, 15, 30, 50}, the whole ladder |
 | `AT3` | the same lists at T=3 — the temperature intervention | L ∈ {15, 30, 50}: L50 the whole ladder, L15 and L30 deep only (2026-09-20); seed 1904 only |
 | `B` | diversity-first language lists (`data/language_sets_schemeB.json`) | L ∈ {8, 15, 30}, the whole ladder |
-| `BT3` | B's L30 list at T=3 — the scheme x temperature pair | L=30 only, deep only, seed 1904 only, to the 1.7B rung |
 | `ZH` / `ES` | L2's second language is Chinese / Spanish instead of Russian | L=2 only, deep only, seed 1904 only; both to the 1.7B rung. Their builds are all the Chinese / Spanish there is, so the 1.7B repeats 1.61x (ZH) and 3.51x (ES) against Russian's 1.15x — the launcher prints the epoch count for any cell that repeats |
 | `DCLMP` / `FWEB` | the ENGLISH half, not the FineWeb-2 half: `dclm_processed` (DCLM without the educational-quality filter) and plain FineWeb (crawls <= 2022). The edu-filter axis at L=1 | L=1 only, deep only, seed 1904 only, to the 1.7B rung |
 

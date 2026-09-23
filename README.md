@@ -11,7 +11,7 @@ Two generations of models have gone through it:
 | grid | models | languages | status |
 |---|---|---|---|
 | **36-model sweep** (2026-04…06) | 4 sizes (175M–1B) × 3 FineWeb-Edu/FineWeb2 mixtures × 3 seeds, 86 tasks, plus a06 / HF references to 70B | 12 | complete; results kept as history in the RQ READMEs |
-| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 6 language settings (L = 1 … 50) × deep/shallow × eight data schemes (A, AT3, B, BT3, ZH, ES, DCLMP, FWEB) × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 50 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
+| **Predictivity ladder** (current) | 7 sizes (90M–3B non-embedding; 3B at L8/L15 only) × 6 language settings (L = 1 … 50) × deep/shallow × seven data schemes (A, AT3, B, ZH, ES, DCLMP, FWEB) × seeds, each size at 5× Chinchilla, per-language BPB + the `auto` benchmark group (16 benchmarks, 494 registered tasks; each cell is evaluated on the tasks in the languages it trains on) | 50 | ≤ 600M trained and evaluated; 1B/1.7B training ([`plan/`](plan/)) |
 
 ## The question, in the ladder's terms
 
@@ -191,8 +191,9 @@ The fork carries the upstream DataDecide / OLMo path that nothing here runs:
 `allenai_analysis/` (notebooks, LFS pointers), `snr/ladder_wrapper.py`
 (needs `olmo-ladder`), `snr/metaanalysis.py`, `snr/mask_analysis.py`,
 `snr/stats.py`, `snr/snr_simple.py`, `snr/autobencher/`, `snr/scripts/`,
-most of `snr/constants/`; the pre-refactor `INSTRUCTIONS.md` /
-`PARALLEL_SESSIONS.md` / `ANALYSIS_new_vs_previous.md` notes; the 36-sweep
+most of `snr/constants/` (the pre-refactor `INSTRUCTIONS.md` /
+`PARALLEL_SESSIONS.md` / `ANALYSIS_new_vs_previous.md` notes were folded into
+the RQ READMEs and removed on 2026-09-23); the 36-sweep
 per-sample outputs (`rq08_subset_selection/per_sample/`), `posttraining.ipynb`
 and `notebook_guidelines.md`; the 36-sweep eval runners under
 `src/evals/configs/signal_to_ratio/` and `src/evals/runners/`; and

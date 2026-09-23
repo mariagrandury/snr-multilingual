@@ -47,7 +47,7 @@ file defines it (`launch_trainings.arches_for`): the 3B exists in
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES|-dclmP|-fweb]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
@@ -55,7 +55,7 @@ names drop the `lm-` for a kind prefix instead
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
 Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 
-**The data axis is `DATA_SCHEMES`** (2026-09-10, eight entries, `--scheme` on
+**The data axis is `DATA_SCHEMES`** (2026-09-10, seven entries, `--scheme` on
 `launch_trainings.py`, `pretrain_progress.py`, `sync_models_json.py`,
 `auto_evals_cscs.py` and `data/build_data_mixtures.py`): **A** resource-ranked
 at T=1 — the baseline, and the only one with no name label; **AT3** the same
@@ -199,7 +199,13 @@ then never log again without a code-side id suffix.
   one rung means re-running every rung. `launch_trainings.py` has exactly three
   config-perturbing flags, `--lr`, `--ademamix-beta3-factor` and `--gbs`; all
   are opt-in, all require a `--size/--langs/--seed` filter, and all **force a
-  `diag-` EXP_NAME**. That rename is the enforcement, not a convention:
+  `diag-` EXP_NAME**. The one standing exception is `GBS_BY_SIZE` (2026-09-23):
+  the 90M and 175M rungs carry a grid batch of 84 and 168 because at 504 they
+  diverge, and those cells are named `-b84`/`-b168` rather than `diag-`. That
+  is the same enforcement, not a hole in it — the batch is part of the cell's
+  NAME, so the retrained rung is a new set of cells and the diverged
+  batch-504 runs keep their own checkpoint dirs, models.json entries and W&B
+  ids. Nothing was reconfigured in place. See `plan/90M-175M-batch-retrain.md`. That rename is the enforcement, not a convention:
   `diag-` matches neither `pretrain_progress.NAME_RE` nor
   `ladder_report.LOG_RE`, and `sync_models_json` derives its keys from
   `exp_name()`, so a perturbed run cannot occupy a cell's checkpoint dir,

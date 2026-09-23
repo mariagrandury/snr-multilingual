@@ -17,8 +17,7 @@ The grid (see plan/small-to-large-predictivity-training-plan.md):
            resource-ranked T=1 baseline; AT3 is the same lists at T=3 and
            supplies the temperature intervention at L15, L30 and L50, which
            exists ONLY at T=3; B is diversity-first at L in {8, 15, 30};
-           BT3 is B's L30 list at T=3 (the scheme x temperature pair); ZH
-           and ES swap L2's Russian for Chinese / Spanish.
+           ZH and ES swap L2's Russian for Chinese / Spanish.
   * seed — 1904 by default; three seeds on the columns the plan marks x3, and
            the triple differs by size — (64, 313, 1904) at 175M and 600M for
            L in {1, 2, 50}, (28, 1797, 1904) at 1B for L in {1, 2, 30}
@@ -264,25 +263,21 @@ DATA_SCHEMES = {
                max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
                arches=("deep",),
                allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
-    # BT3 is the scheme x temperature interaction, registered 2026-09-21.
-    # Built 2026-09-22 (88.5B, staged); not launched. Its gate — the AT3
-    # L15/L30 evals — opened that morning, and it opened AGAINST launching:
-    # with AT3 L15-deep and L30-deep at the 1.7B reference the temperature
-    # axis has four mono-axis pairs (A vs AT3 at L15-deep, L30-deep, L50-deep,
-    # L50-shallow) where MIN_PAIRS is three, so BT3 would add a fifth pair
-    # rather than unblock the axis, and its 1.7B is 28.8 h on 21 nodes against
-    # a 2026-09-25 deadline. Deferred to the revision. L30 is the
-    # only setting where it can be read: B is defined at L in {8, 15, 30}
-    # only (at L50 its list IS scheme A's), and the temperature effect needs
-    # a tail with room — the per-language floor a 1.7B draws is 7.5B at L8
-    # and 3.5B at L15, where T=3 changes nothing, against 1.6B at L30.
-    # Sizing: a 92B target realizes 88.5B against the 83.6B a 1.7B draws
-    # (0.94 epochs, no repetition), with 6 of the 29 languages exhausted
-    # (mal_Mlym, kat_Geor, tam_Taml, ben_Beng, hin_Deva, heb_Hebr) — scheme
-    # B's tail is thinner than A's, which is what makes the pair worth having.
-    "BT3": dict(label="-BT3", subdir="BT3", langs={30},
-                max_size={30: "1.7B"}, temp=3.0, sets="B", seeds="single",
-                arches=("deep",)),
+    # BT3 — the scheme x temperature interaction — was registered 2026-09-21
+    # and RETIRED 2026-09-23 without ever being trained. Its gate (the AT3
+    # L15/L30 evals) opened on 09-22 and opened AGAINST it: with AT3 L15-deep
+    # and L30-deep at the 1.7B reference the temperature axis already has four
+    # mono-axis pairs (A vs AT3 at L15-deep, L30-deep, L50-deep, L50-shallow)
+    # where MIN_PAIRS is three, so BT3 would have added a fifth pair to a
+    # served axis rather than unblock anything — at 28.8 h on 21 nodes for its
+    # 1.7B alone. Removed from the registry rather than left deferred, because
+    # a registered-but-unlaunched scheme is 6 cells of permanent "not started"
+    # in every progress view and 6 models.json entries for runs that will
+    # never exist.
+    # ITS DATA BUILD IS NOT DELETED: BT3/fineweb_L30 (88.5B, built 2026-09-22
+    # and staged) stays on disk. Nothing references it any more — build_status.sh
+    # reads DATA_SCHEMES, so it stops listing it — and re-adding the entry
+    # above is all that is needed to bring both back.
     # Spanish is the thinnest L2 source by far: the build realizes 23.9B, so
     # the 1.7B draws 83.6B = 3.51 epochs, against Russian's 1.15 and Chinese's
     # 1.61. Capped at the 1B rung on 2026-09-10 for exactly that reason;
@@ -581,20 +576,35 @@ def due_iters(saved: list[int], target: int, every: int = 1) -> list[int]:
     return [i for i in saved if _due(i)]
 
 
-def mix_label(L: int, arch: str = "deep", scheme: str = "A") -> str:
+def mix_label(L: int, arch: str = "deep", scheme: str = "A",
+              size: Optional[str] = None) -> str:
     """Scheme label for EXP_NAME: language setting, data scheme (empty for
-    the scheme-A baseline) and the arch — always explicit, e.g. `L8-deep`,
-    `L8-schemeB-deep`, `L50-AT3-shallow`, `L2-ZH-deep`."""
-    return f"L{L}{DATA_SCHEMES[scheme]['label']}-{arch}"
+    the scheme-A baseline), the batch when the rung has its own, and the arch
+    — always explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L50-AT3-shallow`,
+    `L2-ZH-deep`, `L2-b168-deep`.
+
+    `size` is optional only so the callers that label a FAMILY rather than a
+    cell (sync_models_json, ladder_report) can keep asking for the size-free
+    form; a cell must always pass it, or two runs with different batches —
+    and different losses — collide on one name."""
+    batch = "" if size is None or cell_gbs(size) == GBS else f"-b{cell_gbs(size)}"
+    return f"L{L}{DATA_SCHEMES[scheme]['label']}{batch}-{arch}"
 
 
 def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
-    """Canonical model/cell name (e.g. `lm-90M-L8-deep-seed1904`) — the
+    """Canonical model/cell name (e.g. `lm-90M-L8-b84-deep-seed1904`) — the
     checkpoint dir under Meg-Runs/<project>/, the W&B run id/name, and the
     prefix of eval result ids. `lm` not `apertus`: the architecture has
     diverged from Apertus. pretrain_progress.py parses this format; job
-    names derive from it via job_name()."""
-    return f"lm-{size}-{mix_label(L, arch, scheme)}-seed{seed}"
+    names derive from it via job_name().
+
+    The `-b<N>` part is what keeps the 2026-09-23 retrains of the two smallest
+    rungs off the diverged runs already on disk: a new name means a new
+    checkpoint dir, so the launcher can neither overwrite them nor — the real
+    hazard — RESUME one, which it would otherwise do, silently continuing a
+    batch-504 checkpoint into a batch-84 run (iters go 4,500 -> 27,000, so the
+    old final checkpoint reads as a mid-run one)."""
+    return f"lm-{size}-{mix_label(L, arch, scheme, size)}-seed{seed}"
 
 
 def job_name(kind: str, exp: str) -> str:
@@ -620,6 +630,20 @@ def fineweb_epochs(prefix: str, run_tokens: int) -> float:
         return 0.0
     draw = run_tokens * (100 - EN_SHARE) // 100
     return draw / have if have else 0.0
+
+
+def cell_schedule(cfg: dict, size: str) -> tuple[int, int, int]:
+    """`schedule_for` at the rung's OWN batch — the schedule the cell trains.
+
+    `schedule_for(cfg)` reads the hyperparams file, which is written for GBS
+    504. Any caller that asks "how many iterations does this cell run?" and
+    does not go through here gets 4,500 for a 90M that actually runs 27,000:
+    the run reads as complete at 17% of training, and `due_iters` returns 7
+    checkpoints instead of 12, quietly breaking the ten-checkpoints rule
+    (RULES.md). Use this everywhere a TARGET is needed; `schedule_for` alone
+    is only correct for a rung with no batch of its own.
+    """
+    return schedule_for(scale_for_gbs(cfg, cell_gbs(size)))
 
 
 def data_blend(english: str, fineweb: str, L: int) -> str:
@@ -752,10 +776,17 @@ def cell_env(
     """The env-var dict megatron_args.sh consumes — the platform-independent
     description of one run. Identical on CSCS and Azure by construction.
 
-    `lr`, `beta3_factor` and `gbs` are DIAGNOSTIC overrides and default to None, in
+    `lr` and `beta3_factor` are DIAGNOSTIC overrides and default to None, in
     which case this returns exactly what the already-pretrained cells used —
     the ladder's comparability rests on that. Callers that pass either get a
-    `diag-` run name forced on them (see main())."""
+    `diag-` run name forced on them (see main()).
+
+    `gbs` is no longer purely diagnostic: since 2026-09-23 the 90M and 175M
+    rungs carry their own grid batch (GBS_BY_SIZE), and those cells pass it
+    here and are named `-b<N>` rather than `diag-`. It still defaults to None,
+    so a default-batch cell's dict stays byte-identical to what the trained
+    cells used — which is what makes "unchanged by default" checkable with a
+    diff."""
     iters, warmup, decay = schedule_for(cfg)
     # Out-of-range factors do not fail loudly, they train garbage for hours:
     # F * iters <= 1 gives beta3 <= 0, and a negative F gives beta3 > 1.
@@ -806,7 +837,62 @@ def cell_env(
 
 # --- CSCS (sbatch) -----------------------------------------------------------
 
-GBS = 504  # global batch size (megatron_args.sh) — fixed across the sweep
+GBS = 504  # global batch size (megatron_args.sh) — the ladder's default
+
+# The two smallest rungs train at their own batch, and it is not a tuning
+# choice: at GBS 504 they DIVERGE. AdEMAMix's slow EMA averages over a fixed
+# 1/(1-beta3) = 10,000 optimizer steps, while a rung's length scales with its
+# own token budget — 4,500 steps at 90M, 8,540 at 175M. Below ~1x the run the
+# slow average never leaves its warmup regime and the run degrades
+# monotonically after ~17% of training (90M ends 1.4 nats above its own best;
+# 175M takes a recovered spike and lands +0.26 off the 350M-1.7B power law).
+#
+# Holding the TOKEN budget and cutting the batch multiplies the step count by
+# the same factor, which shrinks that fixed 10,000-step memory to a fraction
+# of the run and removes the divergence without touching a single optimizer
+# constant: 90M reaches 0.37x its run at batch 84 (27,000 steps, final 2.715
+# against 5.781) and 175M 0.39x at batch 168 (25,620 steps, final 2.565
+# against 2.912). Note it is the STEPS that fix it, not the smaller batch per
+# se — the step-MATCHED batch cuts (`diag-90M-gbs252`/`-gbs84`, same 4,500
+# steps) diverge exactly like the original. See plan/90M-rung-anomaly.md.
+#
+# 168, not 84, at 175M: it runs on 6 nodes (DP 24) and Megatron needs
+# GBS % DP == 0, so 84 is not a valid layout there. 168 is the nearest.
+GBS_BY_SIZE = {"90M": 84, "175M": 168}
+
+
+def cell_gbs(size: str) -> int:
+    """The global batch this rung trains at. Everything downstream — the step
+    count, warmup, decay, save interval, micro-batch, walltime and the cell's
+    own name — is derived from this, so it is the only place the exception
+    lives."""
+    return GBS_BY_SIZE.get(size, GBS)
+
+
+def scale_for_gbs(cfg: dict, gbs: int) -> dict:
+    """`cfg` with its predictivity schedule rescaled to `gbs`, holding the
+    token budget D = 100 x N: a batch k times smaller takes k times the steps.
+
+    Scaling the predictivity block itself carries the change to everything
+    derived from it — the target and the done-check, ADEMAMIX_WARMUP,
+    save_interval (20 saves at 90M; n_checkpoints reads the SCALED iters, so a
+    rung can cross its 30k/60k thresholds and get 40 or 60), a beta3 factor,
+    the walltime and the undersized-data check.
+
+    Both the launcher and sync_models_json call this, and they must: the
+    schedule is what models.json records as num_iters and the checkpoint list,
+    and a cell whose recorded schedule disagrees with what it trained is a
+    cell the eval watcher looks for checkpoints of at iterations that do not
+    exist. (The first --gbs pair, 2026-09-09, kept 4,500 steps instead and so
+    saw 1/2 and 1/6 of the tokens — the bug this holds the budget against.)
+    """
+    if gbs == GBS:
+        return cfg
+    k = GBS // gbs
+    p = cfg["predictivity"]
+    return {**cfg, "predictivity": {**p, **{
+        key: p[key] * k for key in
+        ("train_iters", "lr_warmup_iters", "lr_wsd_decay_iters")}}}
 
 # Cluster scale (nodes) lives in the deep hyperparams file; the shallow ladder
 # shares the same non-embedding sizes, so it uses the same node counts.
@@ -814,6 +900,17 @@ NODES_BY_SIZE = {
     size: cfg["nodes"]
     for size, cfg in json.loads(HYPERPARAMS["deep"].read_text())["configs"].items()
 }
+
+# The same two constraints --gbs is checked against, applied to the grid's own
+# batches at import: GBS % gbs == 0 or the scaled warmup/decay/save_interval
+# stop being integers, and gbs % DP == 0 or Megatron rejects the layout after
+# the nodes are allocated. A typo here would otherwise surface as 60 failed
+# jobs rather than a traceback.
+for _size, _gbs in GBS_BY_SIZE.items():
+    assert GBS % _gbs == 0, f"GBS_BY_SIZE[{_size}]={_gbs} must divide {GBS}"
+    assert _gbs % (4 * NODES_BY_SIZE[_size]) == 0, (
+        f"GBS_BY_SIZE[{_size}]={_gbs} is not a multiple of DP="
+        f"{4 * NODES_BY_SIZE[_size]} ({_size} runs on {NODES_BY_SIZE[_size]} nodes)")
 
 
 def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
@@ -894,10 +991,43 @@ TIME_MAX_PREEMPT_SEC = 86340   # 23:59:00
 PREEMPT_PARTITION = "preemptable"
 
 
+def iter_ms(size: str, arch: str, gbs: int = GBS) -> int:
+    """Steady-state ms per iteration at a given global batch.
+
+    ITER_MS is measured at GBS 504. A smaller batch does NOT scale the step
+    time down proportionally: a fixed per-step cost (optimizer, all-reduce,
+    the dataloader's own floor) survives it, so the form is
+    t(gbs) = t(504) * (gbs/504 + C).
+
+    C = 0.02 is REFITTED (2026-09-23) from the grid runs themselves, and it
+    replaces a 0.20 fitted from two diagnostics at batch 252 and 168 — the
+    only data there was before the retrain launched, and an extrapolation to
+    batch 84 that missed by 3.5x:
+
+        rung            measured        gbs/504   implied C vs ITER_MS's [m]
+        90M  @ gbs 84   229 ms/iter     0.1667    0.017   (median 1248)
+        175M @ gbs 168  297 ms/iter     0.3333    0.019   (median  844)
+
+    C multiplies ITER_MS, which already carries ~20% over its measured median,
+    so the requests land ~20% long — 90M 2.1h against a real 1.72h, 175M 2.5h
+    against 2.11h — which is the margin ITER_MS's own convention asks for. The
+    old 0.20 asked for 6:45 and 6:30 for those jobs: safe, but 3.5x the real
+    runtime, and across 58 jobs that is queue latency bought for nothing.
+
+    Normalised by (1 + C) so that a default-batch rung returns ITER_MS
+    EXACTLY. Without that the factor is 1.02 at gbs 504 and every rung the
+    retrain never touched silently asks for a longer wall than it did before
+    this function existed — 350M, 600M and 1B all moved when C was 0.20.
+    """
+    per_iter = ITER_MS[arch].get(size, 2400)
+    return per_iter if gbs == GBS else round(
+        per_iter * (gbs / GBS + 0.02) / 1.02)
+
+
 def auto_time(size: str, remaining_iters: int, arch: str = "deep",
-              cap: int = TIME_MAX_SEC) -> str:
+              cap: int = TIME_MAX_SEC, gbs: int = GBS) -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
-    total = remaining_iters * ITER_MS[arch].get(size, 2400) // 1000 + TIME_MARGIN_SEC
+    total = remaining_iters * iter_ms(size, arch, gbs) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
     total = min(max(total, TIME_MIN_SEC), cap)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
@@ -1293,20 +1423,11 @@ def main() -> None:
 
     for c in cells:
         cfg = data["configs"][c["size"]]
-        if args.gbs:
-            # Hold D = 100 x N: a smaller batch takes proportionally more steps.
-            # Scaling the predictivity block itself carries the change to
-            # everything derived from it — target/done-check, ADEMAMIX_WARMUP,
-            # save_interval (20 saves at 90M — n_checkpoints reads the scaled
-            # iters, so a larger size can cross its 30k/60k thresholds and
-            # get 40 or 60), a beta3 factor, the walltime and
-            # the undersized-data check. The first --gbs pair (2026-09-09) kept
-            # 4500 steps and so saw 1/2 and 1/6 of the tokens.
-            k = GBS // args.gbs
-            p = cfg["predictivity"]
-            cfg = {**cfg, "predictivity": {**p, **{
-                key: p[key] * k for key in
-                ("train_iters", "lr_warmup_iters", "lr_wsd_decay_iters")}}}
+        # The cell's own batch, unless a diagnostic --gbs overrides it. Both
+        # go through the same scaling below, so a rung with a grid batch and
+        # a one-off --gbs run are described identically.
+        gbs = args.gbs or cell_gbs(c["size"])
+        cfg = scale_for_gbs(cfg, gbs)
         # Every non-baseline scheme keeps its FineWeb-2 build in its own
         # subdir of the same layout (the english build and the validation
         # manifest are symlinked in — see data/launch_builds.sh).
@@ -1433,15 +1554,18 @@ def main() -> None:
             submit_cscs(
                 cell_env(cfg, c["size"], c["seed"], exp, blend,
                          training_steps=args.training_steps or tgt,
-                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"],
-                                      args.gbs or GBS),
+                         mbs=cscs_mbs(nodes, cfg["micro_batch_size"], gbs),
                          lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
-                         gbs=args.gbs),
+                         # Emit GBS whenever it is not the ladder default,
+                         # whether that came from the grid or from --gbs; a
+                         # default-batch cell still emits nothing, so its env
+                         # stays byte-identical to what the trained cells used.
+                         gbs=None if gbs == GBS else gbs),
                 dry_run=args.dry_run, nodes=nodes,
                 time=args.time or auto_time(
                     c["size"], tgt - load_iter, args.arch,
                     TIME_MAX_PREEMPT_SEC if args.partition == PREEMPT_PARTITION
-                    else TIME_MAX_SEC),
+                    else TIME_MAX_SEC, gbs),
                 account=args.account, dependency=args.dependency,
                 partition=args.partition,
             )

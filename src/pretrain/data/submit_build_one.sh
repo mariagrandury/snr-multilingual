@@ -17,7 +17,7 @@
 # then self-chain past the 12h wall. Driven by --export vars so a single script
 # backs every per-mix job launched by launch_builds.sh:
 #   BUILD_SCHEME  one of launch_trainings.DATA_SCHEMES
-#                 (A|AT3|B|BT3|ZH|ES|DCLMP|FWEB) — it carries the language
+#                 (A|AT3|B|ZH|ES|DCLMP|FWEB) — it carries the language
 #                 lists, the temperature, the subdir and, for DCLMP/FWEB, the
 #                 English corpus
 #   BUILD_STAGE   english|fineweb

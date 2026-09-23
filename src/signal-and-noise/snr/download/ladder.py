@@ -37,10 +37,16 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 from evals.scripts.utils.configs import load_hf_wandb_config  # noqa: E402
-from pretrain.launch_trainings import NOISE_GRID, NOISE_WINDOW, mix_label  # noqa: E402
+from pretrain.launch_trainings import (  # noqa: E402
+    NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
 
 LADDER_FILES = ("ladder_report.csv", "ladder_report_curve.csv", "ladder_report.md")
-TOKENS_PER_ITER = 504 * 4096            # GBS x seq, fixed across the sweep
+# Tokens per optimizer step = the RUNG'S OWN global batch x seq. It was a
+# constant 504 x 4096 until 2026-09-23, when the 90M and 175M rungs moved to
+# batch 84 and 168 (GBS_BY_SIZE; plan/90M-175M-batch-retrain.md). Holding the
+# old constant would inflate their tokens — and so their compute, and so every
+# point they contribute to a scaling fit — by 6x and 3x. 175M is in
+# ANALYSIS_SIZES, so that is not a cosmetic error.
 _HYPERPARAMS = _SRC / "pretrain" / "hyperparams"
 _META = ["cell", "size", "L", "arch", "scheme", "seed", "iter"]
 
@@ -181,7 +187,7 @@ def load_predictivity_eval_results(
     df["family"] = "lm-" + df["mix"] + "-seed" + df["seed"].astype(str)
     df = df.rename(columns={"cell": "model", "iter": "step"})
     df["step"] = df["step"].astype(int)
-    df["tokens"] = df["step"] * float(TOKENS_PER_ITER)
+    df["tokens"] = df["step"] * [float(cell_gbs(sz) * SEQ_LEN) for sz in df["size"]]
     params = {k: cell_params(*k) for k in set(zip(df["size"], df["arch"]))}
     df["compute"] = 6.0 * df["tokens"] * [params[k] for k in zip(df["size"], df["arch"])]
     return (df.sort_values(["size", "L", "arch", "scheme", "seed", "step", "task"])

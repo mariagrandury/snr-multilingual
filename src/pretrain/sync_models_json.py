@@ -41,13 +41,12 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, arches_for, exp_name, mix_label, predictivity_cells,
-    save_interval, schedule_for)
+    DATA_SCHEMES, HYPERPARAMS, SEQ_LEN, arches_for, cell_gbs, exp_name, mix_label,
+    predictivity_cells, save_interval, scale_for_gbs, schedule_for)
 
 MODELS_JSON = SCRIPT_DIR.parent.parent / "configs" / "models.json"
 
 SOURCE = "snr-pretraining-predictivity"
-TOKENS_PER_ITER = 504 * 4096
 VOCAB_SIZE = 131072
 
 # Where the CSCS artifacts live (Azure cells keep the same entry shape; their
@@ -72,6 +71,15 @@ def save_points(target: int) -> list[int]:
 
 def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
     name = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
+    # The two smallest rungs train at their own batch, so their schedule is
+    # not the hyperparams file's: read it through the same scaling the
+    # launcher applies, or models.json records a step count and a checkpoint
+    # list the run never had. `tokens` is invariant — that is what holding
+    # D = 100 x N means — but num_iters, tokens_per_iter and every entry of
+    # `all` change.
+    gbs = cell_gbs(c["size"])
+    cfg = scale_for_gbs(cfg, gbs)
+    tokens_per_iter = gbs * SEQ_LEN
     target = schedule_for(cfg)[0]
     return name, {
         "source": SOURCE,
@@ -104,9 +112,9 @@ def cell_entry(cfg: dict, c: dict, arch: str, scheme: str) -> tuple[str, dict]:
         },
         "stages": {
             "pretraining": {
-                "tokens": target * TOKENS_PER_ITER,
+                "tokens": target * tokens_per_iter,
                 "num_iters": target,
-                "tokens_per_iter": TOKENS_PER_ITER,
+                "tokens_per_iter": tokens_per_iter,
                 "checkpoints": {"final": target, "all": save_points(target)},
             },
         },

@@ -77,6 +77,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
+    cell_schedule,
     arches_for, due_iters, exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
@@ -716,7 +717,9 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
              staging: Path, logs_root: Path, benchmarks: list[str],
              running: set[str], errors: dict, submitted: dict) -> None:
     """One cell of a pass: convert what is missing, evaluate what is due."""
-    target = schedule_for(configs[c["size"]])[0]
+    # The rung's own batch, not the hyperparams file's: at 175M/b168 the
+    # unscaled 8540 makes due_iters return 3 checkpoints instead of 12.
+    target = cell_schedule(configs[c["size"]], c["size"])[0]
     saved = saved_valid_iters(cell, root)
     if not saved:
         return

@@ -45,8 +45,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES, TRAIN_LOG_DIRS  # noqa: E402
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, cell_fineweb_subsets, exp_name, mix_label, run_interval,
-    save_interval)
+    DATA_SCHEMES, GBS, cell_fineweb_subsets, cell_gbs, exp_name, mix_label,
+    run_interval, save_interval)
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
 from evals.scripts.utils.configs import metric_for, tasks_for_benchmarks  # noqa: E402
@@ -68,15 +68,15 @@ SCHEME_OF = {v["label"]: k for k, v in DATA_SCHEMES.items()}
 _LABELS = "|".join(re.escape(lab) for lab in
                    sorted((lab for lab in SCHEME_OF if lab), key=len, reverse=True))
 LOG_RE = re.compile(r"pretrain-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
-                    rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
-                    r"-seed(?P<seed>\d+)-\d+\.out")
+                    rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
+                    r"-(?P<arch>deep|shallow)-seed(?P<seed>\d+)-\d+\.out")
 # The same name without the job-id suffix — the checkpoint / eval-dir form.
 # Requiring `lm-` and a seed is load-bearing: it keeps the hyperparameter
 # diagnostics (`diag-90M-L2-deep-lr0.0006`) out of the ladder, where their
 # short runs would sit nats off every scaling fit.
 CELL_RE = re.compile(r"lm-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
-                     rf"(?P<scheme>{_LABELS})?-(?P<arch>deep|shallow)"
-                     r"-seed(?P<seed>\d+)")
+                     rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
+                     r"-(?P<arch>deep|shallow)-seed(?P<seed>\d+)")
 
 # Non-embedding parameters — the x of the scaling fit. The ladder is defined by
 # these targets, so they are the right abscissa even though the realised counts
@@ -85,9 +85,24 @@ NON_EMB = {"90M": 9.0e7, "175M": 1.75e8, "350M": 3.5e8,
            "600M": 6.0e8, "1B": 1.0e9, "1.7B": 1.7e9, "3B": 3.0e9}
 
 
+def on_grid(m: re.Match) -> bool:
+    """Was this run trained at the batch its rung uses NOW?
+
+    The two smallest rungs were retrained at their own batch on 2026-09-23
+    (GBS_BY_SIZE), and the diverged batch-504 runs they replace are still on
+    disk — 90M ends 1.4 nats above its own best, 175M +0.26 off the power law.
+    Those are exactly the points that would wreck a scaling fit, and `_key`
+    does not separate them: it has no batch field, so both versions of a cell
+    land on one key and "newest log wins" would decide the ladder by job id.
+    Reading the batch back out of the name and comparing it against the grid
+    keeps the report on the current rung, and needs no new key field."""
+    return int(m["gbs"] or GBS) == cell_gbs(m["size"])
+
+
 def _key(m: re.Match) -> tuple:
     """(size, L, arch, scheme, seed) from a LOG_RE/CELL_RE match — the tuple
-    every table in this file is keyed by."""
+    every table in this file is keyed by. The batch is deliberately NOT in it
+    (see on_grid), so every call site MUST filter with on_grid first."""
     return (m["size"], int(m["L"]), m["arch"],
             SCHEME_OF[m["scheme"] or ""], int(m["seed"]))
 
@@ -98,7 +113,7 @@ def _train_logs() -> list[tuple[Path, str]]:
     newest segment win, and a path sort would make that depend on which user
     name sorts first."""
     logs = sorted((f for d in TRAIN_LOG_DIRS for f in d.glob("pretrain-*.out")
-                   if LOG_RE.match(f.name)),
+                   if LOG_RE.match(f.name) and on_grid(LOG_RE.match(f.name))),
                   key=lambda f: int(f.stem.rsplit("-", 1)[1]))
     out = []
     for f in logs:
@@ -470,8 +485,19 @@ def _meta_for(task: str, meta: dict) -> dict:
 
 
 def _cell_parts(cell: str):
+    """The eval side's entry point — and it must apply `on_grid` too.
+
+    The loss side gets this for free in `_train_logs()`, but eval dirs are
+    globbed as `lm-*-iter*` and parsed here, so without the filter the
+    diverged batch-504 90M/175M runs reach `ladder_report_wide.csv` and both
+    plots. The worst of it is `plot_benchmarks`, which groups by
+    (size, arch, scheme, L) — no batch — and then averages per iteration: the
+    old 175M checkpoints (427..8540) and the new -b168 ones (1281..25620)
+    would be averaged into ONE line. That is two incomparable model families
+    in one figure, not merely some extra rows.
+    """
     m = CELL_RE.match(cell)
-    if not m:
+    if not m or not on_grid(m):
         return None
     size, L, arch, scheme, seed = _key(m)
     return {"size": size, "L": L, "scheme": scheme, "arch": arch, "seed": seed}

@@ -64,8 +64,8 @@ Two sweeps, in this order:
    against 1.7B) differ, so they are compared as replications of a finding,
    never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow × eight data schemes
-   (A, AT3, B, BT3, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
+   90M–3B × 6 language settings × deep/shallow × seven data schemes
+   (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
@@ -185,10 +185,11 @@ systemctl --user list-timers ladder-nightly         # confirm the next 06:00
 cat /iopsstor/scratch/cscs/$USER/logs/nightly-ladder/last-run.txt   # OK or FAILED
 ```
 
-The current state of the analysis, in prose, is
-`src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/README.md`
-(rq00–rq02, 2026-09-23); to regenerate one figure without the two-hour driver
-see "Regenerating one figure" in `src/signal-and-noise/CLAUDE.md`.
+The current state of the analysis, in prose, is the RQ READMEs under
+`src/signal-and-noise/analysis/` (`README.md` there lists the RQs; each
+`rqNN_*/README.md` follows the README rules at the end of `analysis/RULES.md`);
+to regenerate one figure without the two-hour driver see "Regenerating one
+figure" in `src/signal-and-noise/CLAUDE.md`.
 
 `scripts/refresh_analysis.sh` is the only thing to run after new results:
 it fetches `ladder_report.csv` from the orphan branch `data/ladder-report`,
@@ -243,10 +244,13 @@ are retired — do not carry them into new work):
   not the English ratio.
 - Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
   unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
-  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), BT3 (B's L30 list at
-  T=3 — the scheme × temperature pair; registered 2026-09-21, not built or
-  trained yet), ZH / ES (L2 with Chinese / Spanish instead of Russian). "Variant" is the older, looser word for any
+  only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}),
+  ZH / ES (L2 with Chinese / Spanish instead of Russian). BT3 (B's L30 list
+  at T=3) was registered 2026-09-21 and retired 2026-09-23 without training:
+  the AT3 L15/L30 evals gave the temperature axis four mono-axis pairs
+  against a MIN_PAIRS of three, so it would have added a fifth to a served
+  axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

@@ -61,8 +61,8 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
     LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
-    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name,
-    fineweb_source, job_name,
+    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, cell_gbs,
+    cell_schedule, exp_name, fineweb_source, iter_ms, job_name,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
@@ -92,7 +92,13 @@ NAME_RE = re.compile(
     r"(?P<scheme>"
     + "|".join(re.escape(lab) for lab in
                sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
-    + r")?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    # `-b<N>`: the rung's own global batch, present only where the grid gives
+    # one (GBS_BY_SIZE — 90M and 175M since 2026-09-23). Optional and captured
+    # rather than skipped, because the diverged batch-504 runs of those two
+    # rungs are still on disk under the name WITHOUT it: the group is what
+    # tells the two apart, and a pattern that merely tolerated the suffix
+    # would read both as the same cell.
+    + r")?(?:-b(?P<gbs>\d+))?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
@@ -199,7 +205,7 @@ def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
     return [
         (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
-         schedule_for(configs[c["size"]])[0])
+         cell_schedule(configs[c["size"]], c["size"])[0])
         for c in predictivity_cells([scheme], arch)
         if arch in arches_for(scheme, c["size"], c["L"])
     ]
@@ -232,7 +238,10 @@ def _targets() -> dict[tuple[str, str], int]:
     for arch, path in HYPERPARAMS.items():
         configs = json.loads(path.read_text())["configs"]
         for size, cfg in configs.items():
-            out[(arch, size)] = schedule_for(cfg)[0]
+            # cell_schedule, not schedule_for: the 90M/175M rungs train at
+            # their own batch, so the file's iters are 1/6 and 1/3 of the
+            # real target. scan_runs would call a 90M done at 4,500 of 27,000.
+            out[(arch, size)] = cell_schedule(cfg, size)[0]
     return out
 
 
@@ -781,8 +790,9 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
         for arch, path in HYPERPARAMS.items():
             if size not in SIZES_BY_ARCH[arch]:   # the 3B rung is deep only
                 continue
-            target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
-            ms = ITER_MS[arch][size]
+            target = cell_schedule(
+                json.loads(path.read_text())["configs"][size], size)[0]
+            ms = iter_ms(size, arch, cell_gbs(size))
             per_job = JOB_TRAIN_SEC * 1000 // ms
             for c in predictivity_cells(arch=arch):
                 if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
@@ -944,7 +954,7 @@ def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
     baseline = len(predictivity_cells(["A"]))
     # Every run the grid plans, counted by enumerating rather than multiplying:
-    # not every scheme trains both architectures (ZH, BT3 and ES are deep only)
+    # not every scheme trains both architectures (ZH and ES are deep only)
     # and the replicate seeds are deep only, so the two axes do not factor.
     full = sum(1 for a in HYPERPARAMS for v in DATA_SCHEMES
                for c in predictivity_cells([v], a)
