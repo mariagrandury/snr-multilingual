@@ -81,9 +81,23 @@ the temperature change is calibrated against the T=1 curve, and AT3 adds
 L15 and L30 (deep only, 1B and 1.7B launched first) where no language is
 starved (T=1 floors 1.2B and 343M tokens). AT3 runs the whole ladder at L50: a 92B L50 build at
 T=3 realizes 87.1B on the filtered subset, enough for the 83.6B a 1.7B draws
-(0.96 epochs). ES stops at the 1B rung: Spanish would repeat 2.0x at 1B and
-3.6x at 1.7B, a swing across the ladder that would confound a rank flip with
-the repetition, so its reference is 1B. ZH runs to the 1.7B reference
+(0.96 epochs). ES stopped at the 1B rung until 2026-09-23, because Spanish
+repeats 3.51x at 1.7B (23.9B realized, against Russian's 1.15x and Chinese's
+1.61x) and a repetition that grows across the ladder can be mistaken for a
+rank flip. It now runs to 1.7B anyway: the repetition stays under the ~4-epoch
+point where the data-constrained scaling results find repeated tokens still
+worth close to fresh ones, so the SCORE a decision reads should land where a
+less-repeated run would — and the cell is what takes the SECOND-LANGUAGE axis
+from one mono-axis pair to the three rule 5 needs, making it reportable for
+the first time. (That is a different count from ZH's below: ZH fixed how many
+FAMILIES L2 has at the reference, this fixes how many pairs differ in the
+second language ALONE — 1 -> 3, every other axis unmoved.) The epoch counts
+are not comparable across the three L2 schemes: record 3.51x wherever L2-ES
+is. `undersized_build` says nothing here — it reports a build smaller than its
+SOURCE could give, and ES exhausts every Spanish token there is, so it passes
+in silence; the launcher prints `repeats its multilingual half N.NNx` for any
+cell drawing more than one epoch (`fineweb_epochs`), which is the only signal
+this cell is unusual. ZH runs to the 1.7B reference
 (2026-09-20): that third family is what takes L2 at 1.7B from one DA pair to
 three, the minimum rule 5 accepts (`signal-and-noise/analysis/RULES.md`).
 **Its build holds 52.0B, not the 59.9B of Chinese there is** — it was sized

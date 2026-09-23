@@ -283,12 +283,27 @@ DATA_SCHEMES = {
     "BT3": dict(label="-BT3", subdir="BT3", langs={30},
                 max_size={30: "1.7B"}, temp=3.0, sets="B", seeds="single",
                 arches=("deep",)),
-    # Spanish is clean only through 350M and repeats 2.0x at 1B and 3.6x at
-    # 1.7B; capped at 1B (decided 2026-09-10) because that swing across the
-    # ladder would confound a rank flip with the repetition itself — record
-    # the epoch count wherever L2-ES is compared against the other L2 schemes.
+    # Spanish is the thinnest L2 source by far: the build realizes 23.9B, so
+    # the 1.7B draws 83.6B = 3.51 epochs, against Russian's 1.15 and Chinese's
+    # 1.61. Capped at the 1B rung on 2026-09-10 for exactly that reason;
+    # UNCAPPED 2026-09-23. Two things changed the answer. The repetition sits
+    # under the ~4-epoch point where the data-constrained scaling results find
+    # repeated tokens still worth close to fresh ones, so the 1.7B's SCORE —
+    # which is all decision accuracy reads — should land where a less-repeated
+    # run would. And the cell buys the whole second-language axis: with ES at
+    # the reference, L2 holds A, ZH and ES there, and `lang2` goes from ONE
+    # mono-axis pair to the three rule 5 needs, so that axis becomes
+    # reportable for the first time.
+    # The three epoch counts are NOT comparable, and that is the cost: record
+    # 3.51x wherever L2-ES is compared with the other L2 schemes, because it is
+    # the one cell in the grid whose data a reader is entitled to ask about.
+    # No `allow_undersized` here, unlike ZH: this build already holds all the
+    # Spanish the source has, so `undersized_build` never fires on it and an
+    # entry would be dead — and worse, would mask the refusal if ES were ever
+    # rebuilt SHORT of its source. The repetition is reported by
+    # `fineweb_epochs` instead, which is a different question.
     "ES": dict(label="-ES", subdir="ES", langs={2},
-               max_size={2: "1B"}, temp=1.0, sets="ES", seeds="single",
+               max_size={2: "1.7B"}, temp=1.0, sets="ES", seeds="single",
                arches=("deep",)),
     # The L=1 rung has no language axis, so its only family contrast is depth —
     # one pair, where rule 5 needs three. These two schemes are the third and
@@ -588,6 +603,23 @@ def job_name(kind: str, exp: str) -> str:
     The model name keeps its `lm-` prefix everywhere else (dirs, W&B,
     models.json); jobs drop it for the kind prefix instead."""
     return f"{kind}-{exp.removeprefix('lm-')}"
+
+
+def fineweb_epochs(prefix: str, run_tokens: int) -> float:
+    """How many times a cell reads its multilingual build, or 0 if unreadable.
+
+    `undersized_build` asks whether a build is smaller than its SOURCE could
+    give — a build-completeness question. It says nothing about repetition: a
+    cell that exhausts a thin source passes it in silence, which is exactly
+    L2-ES (3.51 epochs from all the Spanish that exists). This is the number a
+    reader asks about, so the launcher prints it.
+    """
+    try:
+        have = Path(f"{prefix}.bin").stat().st_size // BYTES_PER_TOKEN
+    except OSError:
+        return 0.0
+    draw = run_tokens * (100 - EN_SHARE) // 100
+    return draw / have if have else 0.0
 
 
 def data_blend(english: str, fineweb: str, L: int) -> str:
@@ -1330,8 +1362,8 @@ def main() -> None:
             # settings) must not feed a cell that draws more than it holds:
             # Megatron silently repeats it. fineweb_source() reads such a cell's
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
-            fineweb_dir, short = fineweb_source(c, args.data_dir,
-                                                target * (args.gbs or GBS) * SEQ_LEN)
+            run_tokens = target * (args.gbs or GBS) * SEQ_LEN
+            fineweb_dir, short = fineweb_source(c, args.data_dir, run_tokens)
             # The exception is the registry's or the flag's, never a wildcard:
             # a filter that happens to match several undersized cells must not
             # train them all on repeated data.
@@ -1347,6 +1379,14 @@ def main() -> None:
                       f"for this cell — add it to the scheme's "
                       f"`allow_undersized` (--allow-undersized for a one-off)")
                 continue
+            # Repetition is worth saying out loud even when nothing is wrong:
+            # it is the one property of a cell's data that differs across the
+            # L2 schemes (1.15x for Russian, 1.61x Chinese, 3.51x Spanish) and
+            # the one a reader is entitled to ask about.
+            if c["L"] > 1:
+                ep = fineweb_epochs(f"{fineweb_dir}/fineweb_L{c['L']}", run_tokens)
+                if ep > 1.0:
+                    print(f"  repeats its multilingual half {ep:.2f}x: {exp}")
             if short:
                 # The cell trains on the build it has and repeats what it
                 # repeats. Deliberate for L2-ZH at 1.7B, where the alternative
