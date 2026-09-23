@@ -187,7 +187,13 @@ def auto_benchmarks(group: str = "auto") -> list[str]:
     reformulated sets: the letter-format families rewritten as cloze tasks
     / as Gemini statements (../evals/scripts/make_rf_tasks.py), distinct task
     names, so all sets coexist on disk and in W&B."""
-    return json.loads(TASKS_JSON.read_text())["groups"][group]
+    groups = json.loads(TASKS_JSON.read_text())["groups"]
+    if group not in groups:
+        # `auto_rf` / `auto_rfgm` were retired on 2026-09-23: the twins live in
+        # `auto`, the candidates in `auto_probe`, and nothing else is a group.
+        raise SystemExit(f"no group {group!r} in configs/tasks.json; it has "
+                         f"{', '.join(sorted(groups))}")
+    return groups[group]
 
 
 def saved_valid_iters(cell: str, root: Path) -> list[int]:

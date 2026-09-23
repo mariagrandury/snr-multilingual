@@ -86,14 +86,14 @@ generates a cloze twin of each (`rf_<task>`: same dataset, config and
 split, no lettered option list, the four answer strings scored as
 continuations, zero-shot, `acc` + `acc_norm`) under
 [`tasks/rf/`](tasks/rf/) and registers them in `configs/tasks.json`
-(`benchmark: rf_<family>`, `metric: acc_norm`, group `auto_rf`). The YAMLs
+(`benchmark: rf_<family>`, `metric: acc_norm`, in `auto`). The YAMLs
 reach the harness through `eval_worker.py --include_path`, which
 `evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
 wheel is untouched. Re-run the generator after adding a language to any of
 the three families; it is idempotent. The lettered probe families (below)
 get twins from the same script, through an absolute `include:` of the
 original YAML. The second twin, `rfgm_<task>`
-(`--set rfgm`, group `auto_rfgm`, [`tasks/rfgm/`](tasks/rfgm/)), is the
+(`--set rfgm`, [`tasks/rfgm/`](tasks/rfgm/), also in `auto`), is the
 same item rewritten by Gemini into a statement stem with four short
 continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
 runs the Batch API from the login node and leaves one JSONL per task under
@@ -128,6 +128,28 @@ registering in `configs/tasks.json`:
   writes INCLUDE v2 (`include-results/include-128`, the L50 pairs, OG and EN
   variants) as cloze tasks under [`tasks/include_v2/`](tasks/include_v2/),
   in the same group, read straight from the cached parquet.
+- [`scripts/add_harness_tasks.py`](scripts/add_harness_tasks.py) writes no
+  YAML at all: it registers benchmarks the pinned wheel already ships and
+  that this project simply never evaluated — the IberoBench multiple-choice
+  tasks (es, ca, and the eu/gl ones that no mixture trains), TokSuite, and
+  the language-specific leaderboards a 2026-09-23 survey of the harness
+  turned up (C-Eval, KMMLU, HAE-RAE, TurkishMMLU, TurBLiMP, ZhoBLiMP,
+  BLiMP-NL, EVALITA, NorEval, FrenchBench, the Bangla set, ARC-MT, MELA).
+  `--set ibero|toksuite|leaderboards` picks a list; every task is loaded
+  through a real `TaskManager`, and `n_options` / `n_items` are read off the
+  documents, so a name that does not resolve or a dataset that is not cached
+  fails here rather than inside an eval job. Its datasets must be built
+  first: add the repo to [`configs/eval_datasets.txt`](configs/eval_datasets.txt)
+  and run `scripts/download_eval_datasets.py` (it takes a manifest path, so
+  a subset builds on its own). A script-format dataset (cmmlu, BasqueGLUE)
+  cannot be built at all — `datasets` v3 refuses it.
+
+Two things the gate makes non-negotiable when picking candidates: a task
+needs enough items for the Wilson bound to clear chance (40 items over four
+options needs 36 % accuracy, 71 items over two needs 60 %, which is why the
+WNLI translations are not registered), and a language no mixture trains is
+selected by no cell — Basque and Galician are in no `L`, so their tasks sit
+inert unless a pass is run with `--all-languages`.
 
 Run the generators one at a time: each rewrites all of `tasks.json`, and
 `utils.configs.write_tasks_json` refuses to write over a file that changed

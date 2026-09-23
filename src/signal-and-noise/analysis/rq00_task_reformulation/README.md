@@ -652,6 +652,10 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 ![per language](rf_gate_by_language.png)
 <!-- END auto:rf-compare -->
 
+GitHub: [rf_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate.png) · [rf_gate.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate.csv) ·
+GitHub: [rf_gate_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.png) · [rf_gate_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.csv) ·
+[rf_significance.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance.csv)
+
 <!-- BEGIN auto:rf-compare-probe (analysis/rq00_task_reformulation/compare.py --tag probe) -->
 Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05).
 
@@ -668,80 +672,85 @@ Gate cells (median task margin over the task's chance level, trained languages, 
 ![per language](rf_gate_by_language_probe.png)
 <!-- END auto:rf-compare-probe -->
 
+GitHub: [rf_gate_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.png) · [rf_gate_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.csv) ·
+GitHub: [rf_gate_by_language_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.png) · [rf_gate_by_language_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.csv) ·
+[rf_significance_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance_probe.csv)
+
 <!-- BEGIN auto:probe-survivors (analysis/rq00_task_reformulation/probe_survivors.py) -->
-Probe survivors: which of the 16 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 44 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
+Probe survivors: which of the 16 candidate benchmarks in `auto_probe` clear the above-random gate (rule 1, read from the committed `predictivity` mask, cells that trained the language), over 43 languages. A cell counts languages (original | rf twin where one exists) — the population differs per cell (rule 13) — and the second table names the surviving benchmarks per language, the twin as `-rf`. Same items as `rf_gate_probe` (`compare.py --tag probe`), which measures how far above chance; this table is only the gate.
 
 | benchmark | 175M | 350M | 600M | 1B | 1.7B |
 |---|---:|---:|---:|---:|---:|
-| acp_bench_cloze | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
-| acp_bench_mcq | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
-| bbh_cloze | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
-| bbh_mcq | orig — | orig — | orig 0/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| acp_bench_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| acp_bench_mcq | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| bbh_cloze | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
+| bbh_mcq | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 1/1 · rf 1/1 | orig 0/1 · rf 1/1 |
 | bbq | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
-| blend_sample | orig — | orig — | orig 0/4 | orig 0/4 | orig 0/4 |
-| commonsense_qa | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
-| cultural_bench_easy | orig — | orig — | orig 2/8 · rf 4/8 | orig 0/8 · rf 4/8 | orig 1/8 · rf 5/8 |
-| cultural_bench_hard | orig — | orig — | orig 0/8 | orig 0/8 | orig 0/8 |
-| include_v2_en | orig — | orig — | orig 38/42 | orig 41/42 | orig 42/42 |
-| include_v2_og | orig — | orig — | orig 26/42 | orig 31/42 | orig 35/42 |
-| mathqa | orig — | orig — | orig 1/1 | orig 1/1 | orig 1/1 |
-| mmlu | orig — | orig — | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
-| openbookqa | orig — | orig — | orig 0/1 | orig 0/1 | orig 1/1 |
-| toxigen | orig — | orig — | orig 0/1 | orig 0/1 | orig 0/1 |
+| blend_sample | orig 1/4 | orig 0/4 | orig 0/4 | orig 0/4 | orig 0/4 |
+| commonsense_qa | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| cultural_bench_easy | orig 7/8 · rf 1/8 | orig 0/8 · rf 2/8 | orig 2/8 · rf 4/8 | orig 0/8 · rf 4/8 | orig 1/8 · rf 5/8 |
+| cultural_bench_hard | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 | orig 0/8 |
+| include_v2_en | orig 29/42 | orig 36/42 | orig 38/42 | orig 41/42 | orig 42/42 |
+| include_v2_og | orig 11/42 | orig 22/42 | orig 26/42 | orig 31/42 | orig 35/42 |
+| mathqa | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 | orig 1/1 |
+| mmlu | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 | orig 0/1 · rf 1/1 |
+| openbookqa | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 1/1 |
+| toxigen | orig 1/1 | orig 0/1 | orig 0/1 | orig 0/1 | orig 0/1 |
 | truthfulqa_mc2 | orig — | orig — | orig — | orig — | orig — |
 
 | language | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|
-| ar | — | — | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy, include_v2_en, include_v2_og |
-| az | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| bg | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| bn | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| cs | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ar | cultural_bench_easy, include_v2_en | include_v2_en, include_v2_og | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy, include_v2_en, include_v2_og |
+| az | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| bg | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| bn | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| cs | include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | da | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| de | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| el | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| en | — | — | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa |
-| es | — | — | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| de | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| el | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| en | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, blend_sample, commonsense_qa-rf, cultural_bench_easy, cultural_bench_easy-rf, mathqa, mmlu-rf, toxigen | acp_bench_mcq-rf, bbh_mcq-rf, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf | acp_bench_mcq-rf, bbh_mcq-rf, bbq, commonsense_qa-rf, cultural_bench_easy-rf, mathqa, mmlu-rf, openbookqa |
+| es | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
 | et | — | — | — | — | include_v2_en, include_v2_og |
 | fa | — | — | — | include_v2_en | include_v2_en |
-| fi | — | — | include_v2_en | include_v2_en | include_v2_en |
-| fr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| he | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| hi | — | — | cultural_bench_easy, include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| hr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| hu | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| id | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| it | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ja | — | — | cultural_bench_easy-rf | cultural_bench_easy-rf | cultural_bench_easy-rf |
-| jp | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ka | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| kk | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ko | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| lt | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ml | — | — | include_v2_en | include_v2_en | include_v2_en |
+| fi | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
+| fr | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| he | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
+| hi | cultural_bench_easy, include_v2_en | include_v2_en | cultural_bench_easy, include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| hr | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| hu | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| id | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| it | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ja | cultural_bench_easy, include_v2_en | include_v2_en | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| ka | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| kk | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ko | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| lt | — | include_v2_en, include_v2_og | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ml | — | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
 | mr | — | — | — | include_v2_en | include_v2_en |
-| ms | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ne | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| nl | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| pl | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| pt | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ru | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ms | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ne | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| nl | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| pl | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| pt | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ru | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | sk | — | — | — | include_v2_en | include_v2_en |
-| sq | — | — | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| sr | — | — | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
-| sv | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| ta | — | — | include_v2_en | include_v2_en | include_v2_en |
-| tr | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
-| uk | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| sq | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| sr | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en, include_v2_og |
+| sv | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| ta | include_v2_en | include_v2_en | include_v2_en | include_v2_en | include_v2_en |
+| tr | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| uk | include_v2_en | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 | ur | — | — | include_v2_en | include_v2_en | include_v2_en |
-| vi | — | — | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
-| zh | — | — | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
+| vi | include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og | cultural_bench_easy-rf, include_v2_en, include_v2_og |
+| zh | cultural_bench_easy, include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og | include_v2_en, include_v2_og |
 <!-- END auto:probe-survivors -->
 
-<!-- BEGIN auto:twins-gate (twins_gate.py --pool predictivity) -->
+[probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
+
+<!-- BEGIN auto:reformulations-gate (reformulations_gate.py --pool predictivity) -->
 ## The twins and the gate, with significance
 
-Per family at 1.7B: the share of languages above the gate for the original and the twin, paired on the language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the gate's pass share per size on every task, the originals alone and the twins alone (`twins_gate.csv` carries the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with `python analysis/rq00_task_reformulation/twins_gate.py --pool predictivity`.
+Per family at 1.7B: the share of languages above the gate for the original and the twin, paired on the language; `twin only / original only` are the discordant languages McNemar's exact test is run on. Below, the gate's pass share per size on every task, the originals alone and the twins alone (`reformulations_gate.csv` carries the same three populations for mean DA-size, the reliable share and rq01's median R²). Regenerate with `python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity`.
 
 | family | twin | languages | original | twin | twin only / original only | p (McNemar) |
 |---|---|---|---|---|---|---|
@@ -761,5 +770,21 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | originals only | 0.28 | 0.32 | 0.34 | 0.37 | 0.41 |
 | twins only | 0.38 | 0.56 | 0.62 | 0.70 | 0.77 |
 
-![The twins and the gate](twins_gate.png)
-<!-- END auto:twins-gate -->
+![The reformulations and the gate](reformulations_gate.png)
+<!-- END auto:reformulations-gate -->
+
+GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.png) · [reformulations_gate.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.csv) ·
+[reformulations_gate_mcnemar.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_mcnemar.csv)
+
+The reading of this figure — what the twins do to the gate, to DA-size, to
+the reliable share and to rq01's fits, with the key findings and follow-ups —
+is [rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate);
+the former `twins_gate.*` name of these outputs is retired.
+
+## Extensions from other sweeps
+
+None. The reformulation exists on the ladder only (`predictivity`, the deep
+scheme-A seed-1904 cells for the twin comparison): the 36-model sweep never
+evaluated the `rf_` or `rfgm_` twins, and its numbers would not be pooled
+with the ladder's in any case (a different harness, task set and reference
+size).

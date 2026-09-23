@@ -24,6 +24,7 @@ What lives where:
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import OrderedDict
 from functools import lru_cache
@@ -488,7 +489,12 @@ def write_tasks_json(data: dict[str, Any], before: str,
         raise SystemExit(
             f"{p} changed while this script was running -- another generator wrote it. "
             "Nothing written here, so that script's work is intact; re-run this one now.")
-    p.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    # Atomic: a watcher pass reads this file while a generator writes it, and
+    # a partial read is a JSONDecodeError that costs the pass. os.replace is
+    # atomic within a directory, so a reader sees either version, never half.
+    tmp = p.with_name(p.name + f".tmp{os.getpid()}")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    os.replace(tmp, p)
 
 
 @lru_cache(maxsize=4)

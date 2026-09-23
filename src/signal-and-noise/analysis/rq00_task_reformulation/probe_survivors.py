@@ -30,7 +30,7 @@ ROOT = HERE.parents[3]
 sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.utils import ANALYSIS_SIZES, languages_only  # noqa: E402
+from analysis.utils import ANALYSIS_SIZES, assign_language, languages_only  # noqa: E402
 
 TASKS_JSON = ROOT / "configs" / "tasks.json"
 POOL = "predictivity"
@@ -59,7 +59,10 @@ def main() -> None:
     if mask is None:
         sys.exit(f"no gate mask for pool {POOL}: run above_random.py --only {POOL} first")
     sizes = [s for s in ANALYSIS_SIZES if s in mask.columns]
-    rows = [{"benchmark": e["benchmark"], "task": t, "language": e["language"], "size": s,
+    # assign_language, not the raw tasks.json tag: INCLUDE writes Japanese as
+    # `jp` and Chinese as `cn`, which the analysis folds to ja/zh — reading the
+    # tag straight would split Japanese across two rows here and nowhere else.
+    rows = [{"benchmark": e["benchmark"], "task": t, "language": assign_language(t), "size": s,
              "above": mask.at[t, s]}
             for t, e in tasks.items()
             if e.get("benchmark") in probe and "pretraining" in e.get("stages", []) and t in mask.index

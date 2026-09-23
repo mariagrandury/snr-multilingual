@@ -97,3 +97,32 @@ proxectonos/xnli_gl
 proxectonos/PAWS-gl
 proxectonos/belebele_gl
 proxectonos/xstorycloze_gl@8ff06548c41e77b1e9dd5401e884b9fc556bb328
+
+# probe 2026-09-23: TokSuite (tokenisation robustness, multiple choice)
+toksuite/toksuite_english
+toksuite/toksuite_farsi
+toksuite/toksuite_italian
+toksuite/toksuite_chinese
+toksuite/toksuite_turkish
+toksuite/toksuite_math
+toksuite/toksuite_stem
+
+# probe 2026-09-23: IberoBench multiple-choice tasks (es, ca, eu, gl)
+nbel/EsCoLA
+BSC-LT/openbookqa-es
+projecte-aina/arc_ca
+nbel/CatCoLA
+projecte-aina/openbookqa_ca
+projecte-aina/piqa_ca
+projecte-aina/siqa_ca
+projecte-aina/wnli-ca
+HiTZ/ARC-eu
+HiTZ/PIQA-eu
+HiTZ/wnli-eu
+orai-nlp/basqueGLUE
+proxectonos/galcola
+proxectonos/openbookqa_gl
+proxectonos/truthfulqa_gl
+
+# probe 2026-09-23: Spanish extractive QA (generative, no chance level)
+google/xquad

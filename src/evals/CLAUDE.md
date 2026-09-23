@@ -187,11 +187,11 @@ idempotent, and walltime is priced from the missing tasks). That also
 resolves rule 2 for them: `utils.trained_only` asks `auto_benchmarks()`
 whether a task is trained, so before this every `rf_*` row was "untrained"
 and the analysis pool came back without a single twin.
-`--reformulated` still works and still swaps in `auto_rf` / `auto_rfgm`
-with `-rf` / `-rfgm` job names, but it is now redundant for new runs: use
-it only to evaluate a twin set on its own. The
-`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
-`auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
+**`auto_rf` and `auto_rfgm` were retired on 2026-09-23**: every twin is in
+`auto`, the candidates are in `auto_probe`, and those are the only two
+groups a run may name. `--reformulated` therefore has no group to resolve
+and exits saying so. The
+`rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`) are the same three
 families rewritten by Gemini into statement stems: `dataset_path: json`
 YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never
 published), produced by `scripts/rewrite_items_gemini.py` on the login
@@ -209,8 +209,8 @@ outside `request`, so the request lines carry no `key` and `fetch` matches
 answers to items on the echoed prompt text; `GOOGLE_GENAI_USE_VERTEXAI`
 therefore decides the file format and the driver refuses to run when the
 SDK resolves the other backend. a task whose JSONL is missing gets no YAML and no tasks.json entry,
-so the watcher's `auto_rfgm` group is absent until the first `--set rfgm`
-run (KeyError). The rewritten set drops a few more items than `rf_`
+so a benchmark named in `auto` before its first `--set rfgm` run resolves
+to no tasks. The rewritten set drops a few more items than `rf_`
 (rejected rewrites), so `derive_task_options.py` must run before the
 significance test reads `n_items`
 (`compute_cost.kind_of` strips the suffix).
