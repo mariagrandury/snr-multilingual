@@ -184,7 +184,8 @@ files under their own directory.
 - **Intention.** Before training the reference, which statistic computed on the
   proxy alone tells us its decision will hold? First among the 22 SNR
   definitions, then against simpler candidates: signal alone, noise alone,
-  early-checkpoint agreement, scaling-fit R², margin above chance.
+  early-checkpoint agreement, scaling-fit R², margin above chance; then a
+  catalogue of ~50 statistics from the literature (`literature.md`).
 - **Setup.** `predictivity`; reads rq03's table (SNR and DA columns), rq00's
   scores, rq01's fits, and the rq03 holdout metrics. Per language, Pearson r of
   log₁₀(SNR) vs DA; for the wider candidate list, Spearman ρ with DA-size per
@@ -192,7 +193,11 @@ files under their own directory.
 - **Scripts.** `analyze_snr_variants.py` (per-variant correlations and grids),
   `snr_definition_postprocess.py` (global ranking, best variant per language,
   per-language anchor benchmark, README and slide), `analyze.py` (statistics
-  beyond SNR).
+  beyond SNR), `catalogue.py` (the literature catalogue, the AllenAI signal ×
+  noise grid with the k-fold benchmark noise, and the truths: DA / Kendall τ /
+  Spearman ρ for DA-size, -goal, -ckpt, both pair sets, per L), `search.py`
+  (every truth × subset × surrogate and two-surrogate threshold filters,
+  validated on a held-out half of the benchmarks).
 - **Tables.** `snr_variant_ranking.csv`, `top_variants_overall.csv`,
   `best_variant_per_language.csv`, `best_variant_family_per_language.csv`,
   `variant_clusters.csv`, `top_benchmarks_per_language.csv`,
