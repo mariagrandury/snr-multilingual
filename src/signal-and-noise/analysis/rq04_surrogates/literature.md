@@ -100,15 +100,23 @@ name in `catalogue.py`. A dash means the statistic needs data we do not have.
   exactly (hypergeometric sampling). We use its root with k = 5. Changing k
   multiplies every task's noise by the same factor, so no ranking moves.
 
-### How the search is kept honest
+### How the search is scored
 
-Scoring ~250 statistics against 30 truths in ~50 subsets and ~7,500 filters
-would surface large correlations by chance alone. `search.py` therefore
-splits the (benchmark, language) clusters into two halves. It ranks every
-configuration on one half and tests the best once on the other half: a
-one-sided cluster permutation test, with Benjamini–Hochberg over everything
-tested. Correlations are taken within each (proxy size, fraction) stratum, so
-a statistic that only grows with training or size cannot score.
+The main analysis in `search.py` uses all the data. For every configuration
+(truth × subset × statistic, and two-statistic threshold filters) it gives
+three numbers:
+- a Spearman ρ over one point per (benchmark, language) cluster, the cluster's
+  mean statistic against its mean truth. DA-ckpt and DA-goal points are pooled
+  over every early checkpoint and DA-size points over every proxy. One point
+  per cluster keeps the points independent, so the p-value is valid, and
+  Benjamini–Hochberg runs over all configurations;
+- a Spearman over every cell, with no grouping;
+- a within-(proxy, checkpoint) Spearman, for reference.
+
+The best of many significant correlations is still optimistic. As an extra,
+the search is repeated on one half of the clusters and the best
+configurations are tested once on the other half. That measures the
+shrinkage.
 
 ## 3. Why every surrogate might stay weak
 
