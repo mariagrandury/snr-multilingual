@@ -11,10 +11,10 @@
 ## Highlighted result
 
 - **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.66** (**+1.50**) with `multiblimp_deu|multiblimp_eng|multiblimp_rus|multiblimp_fra`.
+- **`cultural_bench_easy` 175M (per_benchmark)** — a subset beats the full set: SNR **2.47 → 3.92** (**+1.45**) with `cultural_bench_easy_australia`.
 - **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.57 → 3.97** (**+1.40**) with `arc_challenge`.
-- **`rf_belebele` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.41** (**+1.25**) with `rf_belebele_zho_Hans`.
-- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.28 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **33 of 75** swept cells beat the null's 95th percentile: `multiblimp` 350M, `rf_belebele` 350M, `global_mmlu_full` 600M, `multiblimp` 175M, `global_mmlu_full_sr` 350M.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.31 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **40 of 102** swept cells beat the null's 95th percentile: `multiblimp` 350M, `rf_belebele` 350M, `global_mmlu_full` 600M, `multiblimp` 175M, `global_mmlu_full_sr` 350M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -73,17 +73,17 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
 | per_benchmark | `multiblimp` | 350M | 3.16 → 4.66 | +1.50 | 3.61 | `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_rus` \| `multiblimp_fra` |
+| per_benchmark | `cultural_bench_easy` | 175M | 2.47 → 3.92 | +1.45 | 3.92 | `cultural_bench_easy_australia` |
 | per_benchmark | `arc` | 1B | 2.57 → 3.97 | +1.40 | 3.97 | `arc_challenge` |
 | per_benchmark | `rf_belebele` | 350M | 3.16 → 4.41 | +1.25 | 3.81 | `rf_belebele_zho_Hans` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 | 3.22 | `human_aging` |
 | per_benchmark | `bpb` | 175M | 3.27 → 4.37 | +1.10 | 4.37 | `bpb_rus_Cyrl` |
 | per_benchmark | `multiblimp` | 175M | 3.44 → 4.49 | +1.04 | 3.91 | `multiblimp_rus` |
 | global_mmlu_full_per_language | `global_mmlu_full_sr` | 350M | 2.66 → 3.65 | +0.99 | 3.48 | `formal_logic` |
+| per_benchmark | `rf_acp_bench_mcq` | 1B | 2.63 → 3.62 | +0.99 | 3.62 | `rf_acp_bench_mcq_land` |
 | global_mmlu_full_per_language | `global_mmlu_full_ms` | 350M | 2.53 → 3.43 | +0.91 | 2.96 | `prehistory` \| `professional_psychology` |
+| per_benchmark | `include_v2_en` | 600M | 3.10 → 3.99 | +0.89 | 3.65 | `include_v2_en_spanish_chile` \| `include_v2_en_german_germany` \| `include_v2_en_spanish_el_salvador` \| `include_v2_en_russian_russia` \| `… (+1)` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 350M | 3.23 → 4.09 | +0.87 | 3.91 | `nutrition` |
-| per_benchmark | `rf_belebele` | 1.7B | 2.91 → 3.73 | +0.82 | 3.42 | `rf_belebele_rus_Cyrl` \| `rf_belebele_jpn_Jpan` \| `rf_belebele_tha_Thai` |
-| per_benchmark | `rf_include_base_44` | 1B | 3.68 → 4.49 | +0.82 | 3.63 | `rf_include_base_44_russian` \| `rf_include_base_44_chinese` |
-| global_mmlu_full_per_language | `global_mmlu_full_lt` | 350M | 2.69 → 3.44 | +0.75 | 3.00 | `anatomy` \| `international_law` \| `professional_psychology` \| `formal_logic` \| `… (+4)` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->

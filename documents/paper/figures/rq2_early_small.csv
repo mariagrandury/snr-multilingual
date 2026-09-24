@@ -1,53 +1,53 @@
 intervention,label,population,proxy_size,frac,da,cells,items,refs
-arch,depth (deep vs shallow),benchmark,1.7B,0.1,0.44837951011531957,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.2,0.46148528405157313,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.3,0.5575637054589774,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.4,0.5401612728633831,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.5,0.5850552255295481,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.6,0.5884124036147557,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.7,0.6223094207315988,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.8,0.5811171112483167,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1.7B,0.9,0.7352755974892599,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.1,0.531041574222559,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.2,0.4230660684227956,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.3,0.4660994576634873,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.4,0.4827937798570396,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.5,0.5207695819509371,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.6,0.4558668487656919,6,893,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.7,0.5311040899198979,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.8,0.5073716679832667,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,0.9,0.540335884537318,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,175M,1.0,0.5314138338481148,6,1137,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.1,0.4749003341149533,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.2,0.514537892496457,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.3,0.4815115015938636,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.4,0.47230505414566554,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.5,0.4674728474588316,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.6,0.48974831502559923,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.7,0.5292280160587849,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.8,0.5600740341016353,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,0.9,0.5297357682311316,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,1B,1.0,0.5298822036070931,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.1,0.4264771656212585,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.2,0.5194661386144367,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.3,0.47617674887697087,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.4,0.5004297531879999,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.5,0.5100949185184375,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.6,0.4188573445437249,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.7,0.5230177660598009,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.8,0.46686005602357866,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,0.9,0.5049624216602702,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,350M,1.0,0.5011837423645137,6,1148,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.1,0.4185039416338298,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.2,0.45939668659854055,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.3,0.4338036974959579,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.4,0.47091771888247713,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.5,0.4712020638780808,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.6,0.49022599194367605,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.7,0.4862339420186889,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.8,0.4858988030189974,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,0.9,0.4921143410888069,6,1153,1.7B
-arch,depth (deep vs shallow),benchmark,600M,1.0,0.45277862662499757,6,1153,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.1,0.4698404156130831,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.2,0.4930434426827981,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.3,0.5008806316264578,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.4,0.5264315280513968,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.5,0.5247023150977012,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.6,0.539247975709492,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.7,0.5800245693763427,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.8,0.5858512355040102,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1.7B,0.9,0.7125553605380097,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.1,0.5000117766517452,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.2,0.39864730667782244,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.3,0.46840518483453836,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.4,0.45286780452416703,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.5,0.4975114597648877,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.6,0.449894202076444,6,1495,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.7,0.4985523417775461,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.8,0.4975735934430942,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,0.9,0.5248131877515402,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,175M,1.0,0.5107485344242862,6,1966,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.1,0.4832075235779689,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.2,0.4726747516216636,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.3,0.4846936446679427,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.4,0.48131739862884954,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.5,0.45615994209191224,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.6,0.4493707855268105,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.7,0.5074080259965275,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.8,0.5107894361922695,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,0.9,0.4890635772319107,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,1B,1.0,0.49251857353832973,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.1,0.42969272900434524,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.2,0.525889060093607,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.3,0.467303098916009,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.4,0.49785895609187075,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.5,0.49516928657891857,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.6,0.4220191993477866,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.7,0.5130277361762884,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.8,0.4667185222822019,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,0.9,0.48626706464856256,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,350M,1.0,0.4861338760782268,6,2055,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.1,0.41857055395094195,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.2,0.4590004813831585,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.3,0.4390971424682226,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.4,0.4576478417517449,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.5,0.4571709616274617,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.6,0.4589309080343842,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.7,0.4722770619620871,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.8,0.46885422996030085,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,0.9,0.47971133335751454,6,2135,1.7B
+arch,depth (deep vs shallow),benchmark,600M,1.0,0.4592924991255394,6,2135,1.7B
 arch,depth (deep vs shallow),bpb_macro,1.7B,0.1,0.5,6,6,1.7B
 arch,depth (deep vs shallow),bpb_macro,1.7B,0.2,0.5,6,6,1.7B
 arch,depth (deep vs shallow),bpb_macro,1.7B,0.3,0.5,6,6,1.7B
@@ -195,55 +195,55 @@ arch,depth (deep vs shallow),loss,600M,0.7,0.16666666666666666,6,6,1.7B
 arch,depth (deep vs shallow),loss,600M,0.8,0.16666666666666666,6,6,1.7B
 arch,depth (deep vs shallow),loss,600M,0.9,0.5,6,6,1.7B
 arch,depth (deep vs shallow),loss,600M,1.0,0.16666666666666666,6,6,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.1,0.4768095385547664,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.2,0.4791935113321946,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.3,0.4802972640915765,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.4,0.6061542124066471,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.5,0.5107153916074835,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.6,0.5791938442892864,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.7,0.5774732885173087,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.8,0.6144073863201249,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1.7B,0.9,0.7584346355285194,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.1,0.4875923539733434,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.2,0.4730579445226894,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.3,0.4687103572962552,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.4,0.4843435251499139,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.5,0.4943006069807783,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.6,0.5546282700548381,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.7,0.5117400670575583,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.8,0.4514515264417874,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,0.9,0.5250475296248572,3,448,1.7B
-scheme,language lists (A vs B),benchmark,175M,1.0,0.47695104531878973,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.1,0.5211361161887068,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.2,0.5052865262253653,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.3,0.4863978704064407,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.4,0.485085187071942,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.5,0.47932336459800423,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.6,0.4695868668404703,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.7,0.5069954284991293,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.8,0.5098430440269163,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,0.9,0.4910168176627077,3,448,1.7B
-scheme,language lists (A vs B),benchmark,1B,1.0,0.48391900485784395,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.1,0.4685180745757294,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.2,0.4750656757863614,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.3,0.482254219398746,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.4,0.4413529378468996,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.5,0.45788176027755306,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.6,0.46457835978677425,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.7,0.500911470038856,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.8,0.4675716440422322,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,0.9,0.49246601340485247,3,448,1.7B
-scheme,language lists (A vs B),benchmark,350M,1.0,0.4819828593689131,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.1,0.4867274979273421,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.2,0.4883856242446036,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.3,0.47538364980904907,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.4,0.45751966944019923,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.5,0.5403194390338917,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.6,0.4958796559887327,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.7,0.46028571048049044,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.8,0.45508492070626855,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,0.9,0.4440199241523745,3,448,1.7B
-scheme,language lists (A vs B),benchmark,600M,1.0,0.40937240917762924,3,448,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.1,0.46651523987045845,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.2,0.4487136966188002,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.3,0.48853191504132343,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.4,0.594804802615822,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.5,0.5282278639189428,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.6,0.5849821932500964,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.7,0.5383621781855165,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.8,0.5682290961599206,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1.7B,0.9,0.7116405119180266,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.1,0.41524993665240045,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.2,0.4348460392998094,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.3,0.44618005296900654,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.4,0.44385085718847733,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.5,0.46853785062462466,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.6,0.519505767234886,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.7,0.4589170858021541,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.8,0.45330040993706894,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,0.9,0.4806842755637937,3,864,1.7B
+scheme,language lists (A vs B),benchmark,175M,1.0,0.4700535070272447,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.1,0.49711603544688693,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.2,0.49966165439632343,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.3,0.4999986983369953,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.4,0.47920055329355443,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.5,0.4655159097930182,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.6,0.46141341511248096,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.7,0.4785912882298424,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.8,0.4587671342240179,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,0.9,0.47622885665392767,3,864,1.7B
+scheme,language lists (A vs B),benchmark,1B,1.0,0.45773994855827804,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.1,0.4546328789661671,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.2,0.45245233310076954,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.3,0.4704555473406156,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.4,0.4328326269642095,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.5,0.432154286983717,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.6,0.4664236027949307,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.7,0.49620426390089306,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.8,0.48164108464974853,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,0.9,0.5035781848222622,3,864,1.7B
+scheme,language lists (A vs B),benchmark,350M,1.0,0.4879558857729969,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.1,0.47847717577310106,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.2,0.4699020802310365,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.3,0.4738213875380519,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.4,0.4956363917207291,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.5,0.4785434738088048,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.6,0.47187705011923226,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.7,0.45186302686979546,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.8,0.4403458258270767,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,0.9,0.42951060942126323,3,864,1.7B
+scheme,language lists (A vs B),benchmark,600M,1.0,0.410712339418174,3,864,1.7B
 scheme,language lists (A vs B),bpb_macro,1.7B,0.1,1.0,3,3,1.7B
 scheme,language lists (A vs B),bpb_macro,1.7B,0.2,0.6666666666666666,3,3,1.7B
 scheme,language lists (A vs B),bpb_macro,1.7B,0.3,0.6666666666666666,3,3,1.7B
