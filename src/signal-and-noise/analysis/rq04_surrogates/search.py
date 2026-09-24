@@ -11,10 +11,11 @@ The main analysis uses every cell, with no restriction beyond MIN_UNITS
   rho        Spearman over one point per (benchmark, language) cluster (a task
              and its `rf_` twins): the cluster's mean surrogate against its
              mean truth, pooled over proxies and checkpoints. One point per
-             cluster makes the points independent, so its p is a valid test
-             (reported from MIN_P_UNITS units, below which the t approximation
-             of Spearman's p is unreliable); `q` is Benjamini-Hochberg over
-             every configuration of the main analysis.
+             cluster makes the points independent, so its p is a valid test:
+             from MIN_P_UNITS units, a permutation test below PERM_BELOW units
+             (where Spearman's t approximation fails in the tails) and the t
+             approximation above; `q` is Benjamini-Hochberg over every
+             configuration of the main analysis.
   rho_cells  Spearman over every cell, no grouping.
   rho_w      within-(proxy size, fraction) Spearman: ranks inside each stratum,
              so a statistic that differs by proxy size cannot track a DA that
@@ -97,6 +98,7 @@ RELIABLE_CUTS = (0.66, 0.75)
 RELIABLE_RED = "median"                 # the reduction of rq02's above_66_* filters
 MIN_UNITS = MIN_LANG_TASKS              # main analysis: rule 8's floor, three clusters
 MIN_P_UNITS = 10                        # ... and a p-value from ten
+PERM_BELOW, N_PERM_P = 30, 20000        # below 30 units the p is a permutation test, not the t approximation
 MIN_CELLS, MIN_TASKS = 20, 8            # extra: a half-split correlation needs this many cells and tasks
 MIN_VALID_TASKS = 10                    # ... and this many tasks in EACH half to be validated
 TOP_K = 8                               # surrogates a threshold filter is built from
@@ -144,13 +146,31 @@ def full_stats(x: np.ndarray, y: np.ndarray, strata: np.ndarray, unit: np.ndarra
     mx, my = np.bincount(inv, x) / cnt, np.bincount(inv, y) / cnt
     if np.ptp(mx) and np.ptp(my):
         r = spearmanr(mx, my)
-        out["rho"], out["p"] = r.statistic, r.pvalue if nu >= MIN_P_UNITS else np.nan
+        out["rho"] = r.statistic
+        if nu >= MIN_P_UNITS:
+            out["p"] = r.pvalue if nu >= PERM_BELOW else perm_p(rankdata(mx), rankdata(my))
     if np.ptp(x) and np.ptp(y):
         out["rho_cells"] = spearmanr(x, y).statistic
         px, py = strat_ranks(x, strata), strat_ranks(y, strata)
         if px.std() and py.std():
             out["rho_w"] = float(np.corrcoef(px, py)[0, 1])
     return out
+
+
+_PERMS: dict = {}
+
+
+def perm_p(rx: np.ndarray, ry: np.ndarray) -> float:
+    """Two-sided permutation p of the rank correlation of `rx` and `ry`
+    (N_PERM_P shuffles of `ry`, (b + 1) / (B + 1)). Spearman's t approximation
+    is unreliable on few points: at |rho| = 1 it returns p = 0, below the 2/n!
+    that any rank test on n points can reach."""
+    n = len(rx)
+    if n not in _PERMS:
+        _PERMS[n] = np.argsort(np.random.default_rng(n).random((N_PERM_P, n)), axis=1)
+    rx, ry = rx - rx.mean(), ry - ry.mean()
+    null = ry[_PERMS[n]] @ rx
+    return float((1 + np.sum(np.abs(null) >= abs(rx @ ry) - 1e-9)) / (N_PERM_P + 1))
 
 
 def _blocks(cluster: np.ndarray, key: np.ndarray) -> list[np.ndarray]:

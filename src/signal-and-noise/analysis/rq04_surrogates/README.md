@@ -214,44 +214,42 @@ Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analy
 
 It scores them against 30 truths from rq02: DA / Kendall τ-b / Spearman ρ for DA-size, DA-goal and DA-ckpt (every early checkpoint of the proxy), on both pair sets, over every pair or the pairs sharing one L.
 
-`search.py` scores every (truth × subset × statistic) and two-statistic threshold filter on **all the data**. The main ρ is a Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints. One point per cluster gives a valid p, and Benjamini–Hochberg runs over all ~310,000 configurations. A split-half confirmation is an extra. What we find (numbers below):
+`search.py` scores every (truth × subset × statistic) and two-statistic threshold filter on **all the data**. The main ρ is a Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; one point per cluster gives a valid p. Below 30 units the p comes from a permutation test, because the t approximation fails in the tails. Benjamini–Hochberg runs over all ~390,000 configurations, and a split-half confirmation is an extra. Numbers are from ladder report `396ff3b`:
 
-- **The ceiling.** A truth re-read at 90 % keeps ρ ≈ 0.68 (DA-size), 0.78
-  (DA-goal) and 0.86 (DA-ckpt) with itself on the benchmarks.
-- **Over all benchmarks, every benchmark-language one point:**
-  - DA-ckpt: rank stability in the noise window, ρ ≈ 0.83 (sign consistency; Kendall τ / Spearman truths ≈ 0.80).
-  - DA-goal: the proxy's own early-vs-final agreement, ρ ≈ 0.63.
-  - DA-size: the same statistic, ρ ≈ 0.57. Cronbach's α reaches ≈ 0.46 for Kendall τ / Spearman.
-  - All at q < 10⁻¹².
+- **The ceiling.** A truth re-read at 90 % keeps ρ = 0.68 (DA-size), 0.79
+  (DA-goal) and 0.88 (DA-ckpt) with itself on the benchmarks.
+- **Over all benchmarks** (232–239 benchmark-language units):
+  - DA-ckpt: rank stability in the noise window, ρ = 0.78 (sign consistency; Kendall τ / Spearman truths 0.78–0.79).
+  - DA-goal: the proxy's sign persistence, ρ = 0.58.
+  - DA-size: the same statistic, ρ = 0.52.
+  - All at q < 10⁻¹⁵, and 73–89 % of the ceiling.
 - **The k-fold benchmark noise is the better noise.** For every AllenAI signal
-  it beats the checkpoint noise, for example gini / k-fold ρ ≈ 0.47 against
-  AllenAI's `rel_std` / checkpoint ρ ≈ 0.26 on DA-size, and ≈ 0.60 against 0.55
-  on DA-ckpt.
-- **Particular cases (all the data, ≥ 15 benchmark-language units, q < 0.05), DA-size:**
-  - HellaSwag across languages, DA against the 1B rung: ρ ≈ 0.84.
-  - Per-language BPB, same statistic: ρ ≈ 0.81.
-  - `rf_include_base_44`, relative-dispersion / projection SNR: ρ ≈ 0.91.
-  - MultiBLiMP, item count: ρ ≈ 0.72.
-  - Benchmarks with high Cronbach's α and high ladder DA, tracking of BPB during training: ρ ≈ 0.83.
-- **Particular cases, DA-goal and DA-ckpt:** reach ρ ≈ 0.75–0.96 on HellaSwag,
+  it beats the checkpoint noise, for example gini / k-fold ρ = 0.45 against
+  AllenAI's `rel_std` / checkpoint ρ = 0.23 on DA-size; the best SNR reaches
+  0.49 on DA-goal and 0.63 on DA-ckpt.
+- **Particular cases, DA-size, significant after correction:**
+  - `rf_include_base_44`, relative-dispersion / projection SNR: 0.91 (15 units).
+  - HellaSwag across languages, DA against the 1B rung: 0.84 (18).
+  - Per-language BPB, same statistic: 0.81 (34).
+  - The L8 tier: 0.66 (86).
+- **Particular cases, DA-goal and DA-ckpt:** reach 0.73–0.96 on HellaSwag,
   MultiBLiMP, Global-MMLU, the L8 tier and the late checkpoints.
 - **Filtered subsets.** rq02's reliable subsets (DA ≥ 0.66 / 0.75) give similar
   numbers, but those subsets are selected on the truth, so their ρ is
   conditional on it.
-- **Language count.** Over pairs of variants sharing L (L8, L15 and L30, the
-  only L with ≥ 3 pairs in this pool), mean DA does not move with L (DA-size
-  0.50 / 0.49 / 0.48, similar spread). With six pairs per L this is a coarse
-  test.
-- **Extra, the split-half check.** The best configurations shrink on data they
-  were not chosen on (DA-size benchmark-wide ≈ 0.41 → 0.38 within stratum), and
-  381 of 1,580 still hold at q < 0.05.
+- **Language count.** Over pairs of variants sharing L (L8, L15 and L30), mean
+  DA does not move with L (DA-size 0.50 / 0.49 / 0.48, similar spread). With
+  six pairs per L this is a coarse test.
+- **Extra, the split-half check.** 445 of 1,730 configurations hold on the
+  held-out half at q < 0.05. The benchmark-wide winners shrink little: DA-ckpt
+  0.44 → 0.48, DA-size 0.38 → 0.33, DA-goal 0.31 → 0.29 (within-stratum ρ).
 
 <!-- BEGIN auto:catalogue (search.py --pool predictivity) -->
 ## A catalogue of surrogates beyond SNR
 
 Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool predictivity` then `search.py --pool predictivity`. Surrogates are read on the proxy alone (rule 11); the truths are rq02's DA (DA-size; DA-goal and DA-ckpt at every early checkpoint of the proxy; both pair sets; every pair or the pairs sharing L) and Kendall τ-b / Spearman ρ on the same rankings, over cells above chance (rule 1). ρ is a Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; populations differ per configuration (rule 13) and n is in the CSVs. Definitions and sources: [`literature.md`](literature.md); method: `search.py`'s docstring.
 
-**Main analysis (all the data).** 394,016 configurations (truths × subsets × surrogates, the threshold filters included); 221,887 have a p-value (≥ 10 units); **69,626 hold at BH q < 0.05**. A best-of-many ρ is optimistic even when it is significant; the extra below measures by how much.
+**Main analysis (all the data).** 394,016 configurations (truths × subsets × surrogates, the threshold filters included); 221,887 have a p-value (≥ 10 units); **68,679 hold at BH q < 0.05**. A best-of-many ρ is optimistic even when it is significant; the extra below measures by how much.
 
 **The ceiling** — each truth against itself re-read at 90 % (benchmarks):
 
@@ -271,19 +269,19 @@ Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surr
 
 | truth | surrogate | ρ | q | ρ over cells | ρ within stratum | units |
 |---|---|---|---|---|---|---|
-| DA-ckpt da (mono-axis, pairs within L15) | `noise__kfold_rel` | -0.47 | 8.6e-04 | -0.16 | -0.18 | 61 |
+| DA-ckpt da (mono-axis, pairs within L15) | `noise__kfold_rel` | -0.47 | 8.7e-04 | -0.16 | -0.18 | 61 |
 | DA-ckpt da (mono-axis, pairs within L30) | `sign_consistency_window` | 0.61 | 2.4e-20 | 0.24 | 0.21 | 208 |
-| DA-ckpt da (mono-axis, pairs within L8) | `sign_consistency_window` | 0.58 | 2.2e-05 | 0.18 | 0.18 | 57 |
-| DA-ckpt da (mono-axis) | `sign_consistency_window` | 0.75 | 1.9e-40 | 0.37 | 0.38 | 239 |
+| DA-ckpt da (mono-axis, pairs within L8) | `sign_consistency_window` | 0.58 | 2.3e-05 | 0.18 | 0.18 | 57 |
+| DA-ckpt da (mono-axis) | `sign_consistency_window` | 0.75 | 2.0e-40 | 0.37 | 0.38 | 239 |
 | DA-ckpt da (multi-axis, pairs within L15) | `mde_resolved` | 0.57 | 1.6e-05 | 0.20 | 0.18 | 61 |
 | DA-ckpt da (multi-axis, pairs within L30) | `sign_consistency_window` | 0.61 | 2.1e-20 | 0.27 | 0.23 | 208 |
 | DA-ckpt da (multi-axis, pairs within L8) | `sign_consistency_window` | 0.58 | 2.1e-05 | 0.21 | 0.20 | 57 |
-| DA-ckpt da (multi-axis) | `sign_consistency_window` | 0.78 | 7.7e-46 | 0.43 | 0.46 | 239 |
-| DA-ckpt rho (multi-axis) | `consecutive_kendall` | 0.78 | 8.5e-47 | 0.36 | 0.38 | 239 |
-| DA-ckpt tau_b (multi-axis) | `consecutive_kendall` | 0.79 | 4.3e-48 | 0.35 | 0.37 | 239 |
+| DA-ckpt da (multi-axis) | `sign_consistency_window` | 0.78 | 8.4e-46 | 0.43 | 0.46 | 239 |
+| DA-ckpt rho (multi-axis) | `consecutive_kendall` | 0.78 | 9.4e-47 | 0.36 | 0.38 | 239 |
+| DA-ckpt tau_b (multi-axis) | `consecutive_kendall` | 0.79 | 4.8e-48 | 0.35 | 0.37 | 239 |
 | DA-goal da (mono-axis, pairs within L15) | `settling_time` | 0.25 | 1.6e-01 | 0.05 | 0.06 | 56 |
 | DA-goal da (mono-axis, pairs within L30) | `n_items` | 0.37 | 1.1e-06 | 0.13 | 0.12 | 193 |
-| DA-goal da (mono-axis, pairs within L8) | `kendall_w_window` | 0.42 | 9.2e-03 | 0.06 | 0.09 | 52 |
+| DA-goal da (mono-axis, pairs within L8) | `kendall_w_window` | 0.42 | 9.3e-03 | 0.06 | 0.09 | 52 |
 | DA-goal da (mono-axis) | `autocorr` | 0.51 | 2.8e-15 | 0.21 | 0.23 | 232 |
 | DA-goal da (multi-axis, pairs within L15) | `da_ckpt_half` | 0.20 | 2.7e-01 | 0.02 | 0.02 | 56 |
 | DA-goal da (multi-axis, pairs within L30) | `autocorr` | 0.41 | 1.9e-08 | 0.07 | 0.10 | 201 |
@@ -296,7 +294,7 @@ Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surr
 | DA-size da (mono-axis, pairs within L8) | `pseudo_ref_da` | 0.39 | 1.9e-02 | 0.16 | 0.17 | 51 |
 | DA-size da (mono-axis) | `cronbach_alpha` | 0.45 | 2.7e-11 | 0.23 | 0.22 | 232 |
 | DA-size da (multi-axis, pairs within L15) | `chance` | 0.27 | 1.4e-01 | 0.16 | 0.17 | 52 |
-| DA-size da (multi-axis, pairs within L30) | `tie_rate_items` | -0.33 | 2.6e-05 | -0.15 | -0.16 | 193 |
+| DA-size da (multi-axis, pairs within L30) | `tie_rate_items` | -0.33 | 2.7e-05 | -0.15 | -0.16 | 193 |
 | DA-size da (multi-axis, pairs within L8) | `pseudo_ref_da` | 0.29 | 1.0e-01 | 0.22 | 0.24 | 51 |
 | DA-size da (multi-axis) | `sign_persistence` | 0.52 | 5.0e-16 | 0.32 | 0.32 | 232 |
 | DA-size rho (multi-axis) | `cronbach_alpha` | 0.45 | 1.5e-11 | 0.23 | 0.24 | 231 |
@@ -314,36 +312,36 @@ Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surr
 
 | truth | subset | surrogate | ρ | q | ρ over cells | units |
 |---|---|---|---|---|---|---|
-| DA-ckpt da (multi-axis) | language: vi | `snr__discrepancy__ckpt_rel` | 1.00 | 2.5e-59 | 0.35 | 10 |
-| DA-ckpt da (multi-axis) | language: vi | `noise__ckpt_abs` | -1.00 | 2.5e-59 | -0.35 | 10 |
-| DA-ckpt rho (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.99 | 5.2e-08 | 0.45 | 11 |
-| DA-ckpt rho (multi-axis) | language: ru | `snr__range__ckpt_abs` | 0.99 | 5.2e-08 | 0.45 | 11 |
-| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.99 | 5.2e-08 | -0.51 | 11 |
-| DA-ckpt tau_b (multi-axis) | language: ru | `snr__range__ckpt_abs` | 0.98 | 9.1e-07 | 0.45 | 11 |
-| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.98 | 9.1e-07 | -0.50 | 11 |
-| DA-ckpt tau_b (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.98 | 9.1e-07 | 0.45 | 11 |
-| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.98 | 9.1e-07 | -0.49 | 11 |
-| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.98 | 9.1e-07 | 0.50 | 11 |
-| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.97 | 4.9e-06 | 0.49 | 11 |
-| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.97 | 4.9e-06 | 0.48 | 11 |
-| DA-ckpt rho (multi-axis) | benchmark: hellaswag | `cronbach_alpha` | 0.97 | 3.6e-10 | 0.52 | 19 |
-| DA-goal rho (multi-axis) | benchmark: hellaswag | `da_ckpt_mean` | 0.96 | 7.8e-10 | 0.46 | 19 |
-| DA-goal rho (multi-axis) | benchmark: hellaswag | `sign_persistence` | 0.96 | 7.8e-10 | 0.46 | 19 |
-| DA-ckpt rho (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.96 | 1.6e-09 | 0.46 | 19 |
-| DA-ckpt da (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.96 | 1.6e-09 | 0.47 | 19 |
-| DA-ckpt da (multi-axis) | benchmark: hellaswag | `snr__mpd__kfold_rel` | 0.96 | 1.6e-09 | 0.48 | 19 |
-| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.95 | 4.0e-05 | 0.13 | 11 |
-| DA-size da (mono-axis) | language: ru | `pseudo_ref_da` | 0.95 | 1.6e-04 | 0.59 | 10 |
-| DA-goal tau_b (multi-axis) | benchmark: hellaswag | `sign_persistence` | 0.95 | 7.2e-09 | 0.45 | 19 |
-| DA-goal tau_b (multi-axis) | benchmark: hellaswag | `da_ckpt_mean` | 0.95 | 7.2e-09 | 0.45 | 19 |
-| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `cronbach_alpha` | 0.95 | 7.2e-09 | 0.52 | 19 |
-| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.95 | 7.2e-09 | 0.45 | 19 |
-| DA-size da (multi-axis) | language: es | `total_variation` | -0.94 | 1.6e-05 | -0.44 | 13 |
-| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.94 | 1.6e-04 | 0.10 | 11 |
-| DA-goal da (multi-axis) | language: fr | `snr__projection__tukey_depth` | 0.94 | 1.6e-04 | 0.14 | 11 |
-| DA-goal da (multi-axis, pairs within L30) | language: vi | `signal__rel_std` | -0.93 | 5.1e-04 | -0.30 | 10 |
-| DA-size rho (multi-axis) | language: es | `monotonicity` | 0.93 | 3.7e-05 | 0.34 | 13 |
-| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.93 | 2.7e-04 | 0.13 | 11 |
+| DA-ckpt da (multi-axis) | language: vi | `noise__ckpt_abs` | -1.00 | 3.3e-04 | -0.35 | 10 |
+| DA-ckpt da (multi-axis) | language: vi | `snr__discrepancy__ckpt_rel` | 1.00 | 3.3e-04 | 0.35 | 10 |
+| DA-ckpt rho (multi-axis) | language: ru | `snr__range__ckpt_abs` | 0.99 | 3.3e-04 | 0.45 | 11 |
+| DA-ckpt rho (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.99 | 3.3e-04 | 0.45 | 11 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.99 | 3.3e-04 | -0.51 | 11 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.98 | 3.3e-04 | -0.50 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `snr__dispersion__ckpt_abs` | 0.98 | 3.3e-04 | 0.45 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.98 | 3.3e-04 | 0.45 | 11 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.98 | 3.3e-04 | -0.49 | 11 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.98 | 3.3e-04 | 0.50 | 11 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.97 | 3.3e-04 | 0.48 | 11 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.97 | 3.3e-04 | 0.49 | 11 |
+| DA-ckpt rho (multi-axis) | benchmark: hellaswag | `cronbach_alpha` | 0.97 | 3.3e-04 | 0.52 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `da_ckpt_mean` | 0.96 | 3.3e-04 | 0.46 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `sign_persistence` | 0.96 | 3.3e-04 | 0.46 | 19 |
+| DA-ckpt da (multi-axis) | benchmark: hellaswag | `snr__mpd__kfold_rel` | 0.96 | 3.3e-04 | 0.48 | 19 |
+| DA-ckpt rho (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.96 | 3.3e-04 | 0.46 | 19 |
+| DA-ckpt da (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.96 | 3.3e-04 | 0.47 | 19 |
+| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.95 | 6.2e-04 | 0.13 | 11 |
+| DA-size da (mono-axis) | language: ru | `pseudo_ref_da` | 0.95 | 1.4e-03 | 0.59 | 10 |
+| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `cronbach_alpha` | 0.95 | 3.3e-04 | 0.52 | 19 |
+| DA-goal tau_b (multi-axis) | benchmark: hellaswag | `da_ckpt_mean` | 0.95 | 3.3e-04 | 0.45 | 19 |
+| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `snr__rms_deviation__kfold_rel` | 0.95 | 3.3e-04 | 0.45 | 19 |
+| DA-goal tau_b (multi-axis) | benchmark: hellaswag | `sign_persistence` | 0.95 | 3.3e-04 | 0.45 | 19 |
+| DA-size da (multi-axis) | language: es | `total_variation` | -0.94 | 3.3e-04 | -0.44 | 13 |
+| DA-goal da (multi-axis) | language: fr | `snr__projection__tukey_depth` | 0.94 | 6.2e-04 | 0.14 | 11 |
+| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.94 | 6.2e-04 | 0.10 | 11 |
+| DA-goal da (multi-axis, pairs within L30) | language: vi | `signal__rel_mpd` | -0.93 | 1.4e-03 | -0.29 | 10 |
+| DA-size rho (multi-axis) | language: es | `monotonicity` | 0.93 | 3.3e-04 | 0.34 | 13 |
+| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `scale_gain_over_noise` | 0.93 | 6.2e-04 | 0.13 | 11 |
 
 **Per language count** (pairs of variants sharing L; benchmarks):
 
