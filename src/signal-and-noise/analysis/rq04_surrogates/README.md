@@ -10,6 +10,8 @@
 > [`documents/paper/sections/04_analysis.tex`](../../../../documents/paper/sections/04_analysis.tex)):
 > its signal or noise part alone, the proxy's early-checkpoint agreement, how
 > well its scores fit a scaling trend (rq01), its margin above chance (rq00).
+> Finally, a catalogue of ~50 statistics from the literature (`catalogue.py`,
+> [`literature.md`](literature.md)), per language, tier and benchmark.
 
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
@@ -203,6 +205,222 @@ Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analy
 ![Surrogates](pretraining/predictivity/rq3_surrogates.png)
 <!-- END auto:surrogates -->
 
+## Surrogates from the literature — summary
+
+Neither the 22 SNR definitions nor the FineTasks criteria track DA-size well
+(ρ ≈ 0.1–0.15 on the benchmarks), so `catalogue.py` scores about 50 more
+statistics from the literature ([`literature.md`](literature.md): IR
+discriminative power and swap rates, psychometric reliability, rank stability,
+curve shape, the small ladder below the proxy, agreement with the loss and
+with other benchmarks). Three findings stand out (numbers in the block below):
+
+- **DA-size is itself noisy.** Read the reference one checkpoint earlier
+  (90 % instead of 100 %) and the benchmarks' DA-size keeps only ρ ≈ 0.65–0.70
+  with itself; BPB keeps ≈ 0.95. That is the ceiling for any surrogate on the
+  benchmarks, and it explains most of the "no correlation" we saw.
+- **Noise-based statistics are the weakest family.** Every statistic of
+  separation against checkpoint noise (the SNR family, ICC, discriminative
+  power, DIoR, minimum detectable effect) sits at ρ ≈ 0.1. The proxy's noise
+  says little about whether its ranking survives scale.
+- **What works is agreement and stability.** The best single statistics reach
+  about half the ceiling: whether the task ranks the variants like the
+  language's BPB, whether its ranking stays put along the proxy's own run, and
+  whether the small rungs agree with each other. The item count alone does as
+  well, but the agreement with BPB keeps ρ ≈ 0.25 once the item count is
+  controlled for. All statistics together, fitted leave-one-language-out,
+  reach ρ ≈ 0.4. Per language the winner changes, and no per-language ρ is
+  significant (rule 8), so there is no language-specific surrogate to report.
+
+<!-- BEGIN auto:catalogue (catalogue.py --pool predictivity) -->
+## A catalogue of surrogates beyond SNR
+
+Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool predictivity`. Every statistic is read on the proxy alone (rule 11): its ten tenths, its noise window and the rungs below it. The truth is DA-size, proxy final → 1.7B final, over the same pair set. Population: the tasks above chance at the proxy and at 1.7B (rule 1), so n differs per statistic and proxy (rule 13). Definitions and sources: [`literature.md`](literature.md).
+
+**multi-axis pairs** — Spearman ρ with DA-size over the (task, proxy) cells, proxies pooled, 90 % task-bootstrap band, n cells; `partial` = the benchmark ρ with the item count's ranks regressed out (does the statistic say more than the benchmark's size?):
+
+| statistic | family | benchmarks ρ [90 %] (n) | partial | BPB ρ (n) |
+|---|---|---|---|---|
+| `n_items` | control | 0.36 [0.29, 0.41] (1102) | -0.01 |  |
+| `bpb_rank_agreement` | agreement | 0.35 [0.30, 0.40] (1135) | 0.25 |  |
+| `bpb_corr_training` | agreement | 0.34 [0.30, 0.40] (1135) | 0.18 |  |
+| `sign_persistence` | rank stability | 0.33 [0.26, 0.37] (1135) | 0.18 | -0.23 (136) |
+| `da_ckpt_mean` | rank stability | 0.32 [0.27, 0.38] (1135) | 0.18 | -0.23 (136) |
+| `ladder_da` | small ladder | 0.32 [0.27, 0.39] (890) | 0.19 | 0.57 (102) |
+| `autocorr` | curve shape | 0.32 [0.27, 0.38] (1135) | 0.16 | 0.05 (136) |
+| `monotonicity` | curve shape | 0.31 [0.25, 0.36] (1135) | 0.15 | -0.02 (136) |
+| `gain_over_noise` | curve shape | 0.31 [0.24, 0.36] (1134) | 0.14 | 0.05 (136) |
+| `monotonicity_steps` | curve shape | 0.31 [0.26, 0.36] (1135) | 0.15 | -0.01 (136) |
+| `language_consensus` | agreement | 0.30 [0.24, 0.35] (1131) | 0.21 |  |
+| `benchmark_consensus` | agreement | 0.29 [0.24, 0.35] (1056) | 0.16 |  |
+| `scale_gain_over_noise` | small ladder | 0.29 [0.22, 0.35] (890) | 0.12 | 0.07 (102) |
+| `late_slope_to_noise` | curve shape | 0.28 [0.23, 0.33] (1135) | 0.13 | -0.34 (136) |
+| `prev_rung_da` | small ladder | 0.27 [0.21, 0.33] (890) | 0.17 | 0.21 (102) |
+| `item_total_corr` | agreement | 0.27 [0.22, 0.33] (1133) | 0.20 |  |
+| `size_monotonicity` | small ladder | 0.27 [0.20, 0.31] (890) | 0.11 |  |
+| `sign_consistency_window` | rank stability | 0.27 [0.21, 0.31] (1135) | 0.15 | -0.17 (136) |
+| `pseudo_ref_da` | pseudo-reference (reads 1B) | 0.25 [0.19, 0.32] (824) | 0.16 | 0.57 (102) |
+| `z_above_chance` | curve shape | 0.25 [0.18, 0.30] (1102) | 0.12 |  |
+| `cronbach_alpha` | separation | 0.25 [0.19, 0.30] (1135) | 0.17 | -0.08 (136) |
+| `da_ckpt_half` | rank stability | 0.24 [0.19, 0.30] (1135) | 0.14 | -0.20 (136) |
+| `kendall_w_window` | rank stability | 0.24 [0.19, 0.29] (1135) | 0.14 | -0.15 (136) |
+| `binomial_snr` | separation | 0.21 [0.16, 0.26] (1102) | 0.14 |  |
+| `rung_gap_corr` | small ladder | 0.19 [0.13, 0.25] (888) | 0.14 | 0.10 (102) |
+| `emerged_share` | curve shape | 0.19 [0.13, 0.23] (1102) | 0.08 |  |
+| `resolved_pairs_binomial` | separation | 0.18 [0.13, 0.23] (1102) | 0.12 |  |
+| `window_kendall` | rank stability | 0.16 [0.12, 0.22] (1133) | 0.11 | -0.13 (136) |
+| `consecutive_kendall` | rank stability | 0.15 [0.09, 0.20] (1135) | 0.09 | -0.08 (136) |
+| `consecutive_kendall_late` | rank stability | 0.15 [0.09, 0.21] (1134) | 0.09 | -0.02 (136) |
+| `snr_rel_std` | SNR (rq03) | 0.14 [0.07, 0.20] (630) | 0.12 | 0.16 (136) |
+| `rung_sign_consistency` | small ladder | 0.14 [0.08, 0.19] (886) | 0.09 | 0.48 (102) |
+| `g_coefficient` | separation | 0.13 [0.08, 0.18] (1135) | 0.11 | 0.15 (136) |
+| `icc_window` | separation | 0.13 [0.07, 0.18] (1135) | 0.11 | 0.15 (136) |
+| `eta2_window` | separation | 0.13 [0.08, 0.18] (1135) | 0.11 | 0.15 (136) |
+| `mde_resolved` | separation | 0.13 [0.07, 0.18] (1134) | 0.12 | 0.14 (136) |
+| `split_half` | rank stability | 0.12 [0.07, 0.17] (1135) | 0.07 | 0.06 (136) |
+| `dior` | separation | 0.11 [0.07, 0.16] (1133) | 0.11 | 0.18 (136) |
+| `prob_outperform` | separation | 0.11 [0.07, 0.16] (1135) | 0.07 | 0.16 (136) |
+| `noise_to_binomial` | separation | 0.11 [0.05, 0.15] (1102) | 0.05 |  |
+| `resolved_pairs_noise` | separation | 0.09 [0.05, 0.14] (1135) | 0.10 | 0.15 (136) |
+| `retest_agreement` | separation | 0.08 [0.03, 0.13] (1135) | 0.09 | 0.17 (136) |
+| `chance` | control | 0.08 [0.02, 0.13] (1102) | 0.06 |  |
+| `gap_over_noise` | separation | 0.08 [0.03, 0.12] (1135) | 0.08 | 0.14 (136) |
+| `snr_dist_std` | SNR (rq03) | 0.08 [-0.00, 0.16] (630) | 0.13 | 0.14 (136) |
+| `snr_aad` | SNR (rq03) | 0.07 [-0.02, 0.15] (630) | 0.12 | 0.16 (136) |
+| `n_pairs` | control | 0.06 [-0.01, 0.13] (1135) | 0.09 | 0.08 (136) |
+| `nonrandom` | curve shape | -0.02 [-0.08, 0.03] (1102) | 0.09 |  |
+| `item_information` | curve shape | -0.03 [-0.08, 0.03] (1102) | 0.09 |  |
+| `projected_flip_rate` | small ladder | -0.04 [-0.11, 0.01] (889) | -0.09 | 0.52 (102) |
+| `crossings` | rank stability | -0.06 [-0.12, 0.01] (1135) | -0.08 | 0.08 (136) |
+| `settling_time` | rank stability | -0.07 [-0.13, -0.02] (1135) | -0.03 | 0.10 (136) |
+| `tie_rate_items` | separation | -0.31 [-0.37, -0.26] (1102) | -0.10 |  |
+| `total_variation` | curve shape | -0.33 [-0.38, -0.27] (1135) | -0.16 | 0.04 (136) |
+
+**mono-axis pairs** — Spearman ρ with DA-size over the (task, proxy) cells, proxies pooled, 90 % task-bootstrap band, n cells; `partial` = the benchmark ρ with the item count's ranks regressed out (does the statistic say more than the benchmark's size?):
+
+| statistic | family | benchmarks ρ [90 %] (n) | partial | BPB ρ (n) |
+|---|---|---|---|---|
+| `n_items` | control | 0.29 [0.24, 0.34] (1102) | -0.01 |  |
+| `sign_persistence` | rank stability | 0.27 [0.22, 0.32] (1135) | 0.17 | -0.40 (136) |
+| `da_ckpt_mean` | rank stability | 0.27 [0.22, 0.32] (1135) | 0.17 | -0.40 (136) |
+| `bpb_rank_agreement` | agreement | 0.26 [0.20, 0.31] (1135) | 0.17 |  |
+| `ladder_da` | small ladder | 0.26 [0.20, 0.31] (890) | 0.14 | 0.63 (102) |
+| `bpb_corr_training` | agreement | 0.25 [0.20, 0.31] (1135) | 0.10 |  |
+| `benchmark_consensus` | agreement | 0.24 [0.19, 0.29] (1055) | 0.15 |  |
+| `autocorr` | curve shape | 0.24 [0.19, 0.29] (1135) | 0.09 | -0.19 (136) |
+| `monotonicity_steps` | curve shape | 0.23 [0.17, 0.28] (1135) | 0.10 | -0.26 (136) |
+| `language_consensus` | agreement | 0.23 [0.18, 0.28] (1131) | 0.17 |  |
+| `gain_over_noise` | curve shape | 0.23 [0.17, 0.29] (1134) | 0.08 | 0.21 (136) |
+| `monotonicity` | curve shape | 0.23 [0.17, 0.28] (1135) | 0.08 | -0.22 (136) |
+| `kendall_w_window` | rank stability | 0.22 [0.16, 0.27] (1135) | 0.14 | -0.25 (136) |
+| `sign_consistency_window` | rank stability | 0.22 [0.16, 0.27] (1135) | 0.13 | -0.11 (136) |
+| `scale_gain_over_noise` | small ladder | 0.21 [0.15, 0.27] (890) | 0.06 | 0.10 (102) |
+| `cronbach_alpha` | separation | 0.21 [0.16, 0.26] (1135) | 0.14 | -0.21 (136) |
+| `prev_rung_da` | small ladder | 0.21 [0.16, 0.26] (890) | 0.13 | 0.08 (102) |
+| `item_total_corr` | agreement | 0.21 [0.16, 0.26] (1133) | 0.15 |  |
+| `z_above_chance` | curve shape | 0.21 [0.15, 0.27] (1102) | 0.10 |  |
+| `size_monotonicity` | small ladder | 0.20 [0.14, 0.26] (890) | 0.06 |  |
+| `late_slope_to_noise` | curve shape | 0.20 [0.14, 0.25] (1135) | 0.06 | -0.48 (136) |
+| `binomial_snr` | separation | 0.18 [0.13, 0.25] (1102) | 0.13 |  |
+| `pseudo_ref_da` | pseudo-reference (reads 1B) | 0.18 [0.13, 0.24] (824) | 0.12 | 0.47 (102) |
+| `da_ckpt_half` | rank stability | 0.17 [0.12, 0.23] (1135) | 0.10 | -0.15 (136) |
+| `window_kendall` | rank stability | 0.16 [0.11, 0.21] (1133) | 0.11 | -0.22 (136) |
+| `emerged_share` | curve shape | 0.15 [0.09, 0.20] (1102) | 0.06 |  |
+| `rung_gap_corr` | small ladder | 0.14 [0.08, 0.20] (888) | 0.10 | -0.06 (102) |
+| `resolved_pairs_binomial` | separation | 0.13 [0.08, 0.19] (1102) | 0.08 |  |
+| `rung_sign_consistency` | small ladder | 0.13 [0.07, 0.20] (882) | 0.08 | 0.48 (102) |
+| `consecutive_kendall_late` | rank stability | 0.13 [0.07, 0.18] (1134) | 0.08 | -0.23 (136) |
+| `split_half` | rank stability | 0.13 [0.08, 0.18] (1135) | 0.09 | 0.03 (136) |
+| `consecutive_kendall` | rank stability | 0.12 [0.06, 0.17] (1135) | 0.07 | -0.31 (136) |
+| `g_coefficient` | separation | 0.12 [0.07, 0.17] (1135) | 0.09 | 0.17 (136) |
+| `icc_window` | separation | 0.12 [0.07, 0.16] (1135) | 0.09 | 0.17 (136) |
+| `eta2_window` | separation | 0.12 [0.07, 0.16] (1135) | 0.09 | 0.17 (136) |
+| `snr_rel_std` | SNR (rq03) | 0.11 [0.05, 0.18] (630) | 0.09 | 0.18 (136) |
+| `mde_resolved` | separation | 0.11 [0.06, 0.15] (1134) | 0.11 | 0.21 (136) |
+| `noise_to_binomial` | separation | 0.08 [0.04, 0.14] (1102) | 0.04 |  |
+| `prob_outperform` | separation | 0.08 [0.03, 0.12] (1135) | 0.06 | 0.20 (136) |
+| `dior` | separation | 0.07 [0.03, 0.12] (1133) | 0.07 | 0.22 (136) |
+| `resolved_pairs_noise` | separation | 0.06 [0.02, 0.12] (1135) | 0.08 | 0.22 (136) |
+| `chance` | control | 0.06 [-0.00, 0.11] (1102) | 0.04 |  |
+| `snr_dist_std` | SNR (rq03) | 0.05 [-0.02, 0.12] (630) | 0.09 | 0.20 (136) |
+| `snr_aad` | SNR (rq03) | 0.05 [-0.03, 0.12] (630) | 0.09 | 0.23 (136) |
+| `retest_agreement` | separation | 0.04 [0.00, 0.09] (1135) | 0.06 | 0.21 (136) |
+| `gap_over_noise` | separation | 0.04 [0.01, 0.09] (1135) | 0.06 | 0.24 (136) |
+| `n_pairs` | control | 0.02 [-0.03, 0.08] (1135) | 0.05 | 0.13 (136) |
+| `nonrandom` | curve shape | -0.02 [-0.07, 0.03] (1102) | 0.08 |  |
+| `item_information` | curve shape | -0.02 [-0.08, 0.04] (1102) | 0.08 |  |
+| `crossings` | rank stability | -0.02 [-0.08, 0.03] (1135) | -0.05 | 0.34 (136) |
+| `projected_flip_rate` | small ladder | -0.02 [-0.09, 0.03] (886) | -0.04 | 0.68 (102) |
+| `settling_time` | rank stability | -0.10 [-0.15, -0.06] (1135) | -0.07 | 0.31 (136) |
+| `total_variation` | curve shape | -0.24 [-0.29, -0.19] (1135) | -0.08 | 0.18 (136) |
+| `tie_rate_items` | separation | -0.25 [-0.31, -0.20] (1102) | -0.11 |  |
+
+**The ceiling** — Spearman ρ of DA-size with itself when the reference is read at 90 % instead of 100 % of its run (multi-axis). No surrogate can track DA better than DA tracks itself:
+
+| kind | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|
+| benchmark | 0.66 | 0.70 | 0.65 | 0.69 |
+| bpb | 0.96 | 0.94 | 0.98 | 0.96 |
+
+**All statistics together** (gradient-boosted trees, leave-one-language-out; ρ of the held-out prediction with DA-size):
+
+| pairs | kind | ρ | n | languages |
+|---|---|---|---|---|
+| mono-axis | benchmark | 0.29 | 1135 | 34 |
+| mono-axis | bpb | 0.66 | 136 | 34 |
+| multi-axis | benchmark | 0.41 | 1135 | 34 |
+| multi-axis | bpb | 0.63 | 136 | 34 |
+
+**Per language** (descriptive, rule 8: ≥ 3 tasks; multi-axis). Best statistic per language, 32 languages; most frequent winners: `n_items` 4, `pseudo_ref_da` 4, `item_total_corr` 3, `ladder_da` 3, `language_consensus` 2. Mean ρ over languages, top 8:
+
+| statistic | mean ρ | languages | languages with ρ > 0.3 |
+|---|---|---|---|
+| `n_items` | 0.26 | 32 | 15 |
+| `bpb_rank_agreement` | 0.25 | 32 | 19 |
+| `ladder_da` | 0.25 | 32 | 15 |
+| `sign_persistence` | 0.24 | 32 | 13 |
+| `da_ckpt_mean` | 0.24 | 32 | 12 |
+| `bpb_corr_training` | 0.24 | 32 | 15 |
+| `autocorr` | 0.23 | 32 | 15 |
+| `monotonicity_steps` | 0.23 | 32 | 14 |
+
+**Per language tier (smallest L that trains it)** — the best statistic of each group (multi-axis, ≥ 3 tasks):
+
+| tier | best statistic | ρ | n cells | tasks |
+|---|---|---|---|---|
+| L15 | `gain_over_noise` | 0.30 | 246 | 71 |
+| L30 | `n_items` | 0.26 | 306 | 89 |
+| L50 | `binomial_snr` | 0.24 | 59 | 18 |
+| L8 | `bpb_rank_agreement` | 0.53 | 523 | 143 |
+
+**Per benchmark family** — the best statistic of each group (multi-axis, ≥ 3 tasks):
+
+| benchmark | best statistic | ρ | n cells | tasks |
+|---|---|---|---|---|
+| arc | `size_monotonicity` | 0.73 | 8 | 5 |
+| hellaswag | `pseudo_ref_da` | 0.79 | 54 | 18 |
+| include_v2_en | `bpb_rank_agreement` | 0.26 | 219 | 56 |
+| include_v2_og | `n_items` | 0.40 | 172 | 46 |
+| lambada_openai_mt | `language_consensus` | 0.63 | 20 | 5 |
+| multiblimp | `n_items` | 0.47 | 103 | 26 |
+| paws | `resolved_pairs_binomial` | 0.94 | 7 | 4 |
+| rf_acp_bench_mcq | `rung_gap_corr` | 0.55 | 15 | 5 |
+| rf_bbh_mcq | `mde_resolved` | 0.59 | 38 | 10 |
+| rf_belebele | `item_total_corr` | 0.25 | 147 | 41 |
+| rf_cultural_bench_easy | `noise_to_binomial` | 0.58 | 26 | 7 |
+| rf_global_mmlu_full | `resolved_pairs_binomial` | 0.40 | 77 | 24 |
+| rf_include_base_44 | `binomial_snr` | 0.33 | 40 | 15 |
+| rfgm_include_base_44 | `bpb_rank_agreement` | 0.33 | 46 | 17 |
+| truthfulqa_mc2 | `retest_agreement` | 0.78 | 12 | 3 |
+| xcopa | `benchmark_consensus` | 0.53 | 25 | 7 |
+| xnli | `bpb_rank_agreement` | 0.35 | 39 | 11 |
+| xstorycloze | `da_ckpt_mean` | 0.66 | 21 | 7 |
+| xwinograd | `pseudo_ref_da` | 0.79 | 13 | 6 |
+
+![Surrogate catalogue](pretraining/predictivity/surrogates_catalogue.png)
+
+![Surrogate catalogue per language](pretraining/predictivity/surrogates_catalogue_by_language.png)
+<!-- END auto:catalogue -->
+
 ## External model-set tier (`all/external`, 36-sweep)
 
 The `external` tier pools every non-custom model (reference HF, a06,
@@ -377,6 +595,10 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `{da_size,da_ckpt}/…` — supporting figures.
 - `…/rq3_surrogates.csv`, `rq3_surrogates.png/.pdf`, `facts.json` — the
   statistics beyond SNR (`analyze.py`; the paper's RQ3 figure).
+- `…/surrogate_values.csv`, `surrogate_correlations.csv`, `surrogate_by_language.csv`,
+  `surrogate_by_group.csv`, `surrogate_combined.csv`, `surrogate_definitions.csv`,
+  `da_retest.csv`, `surrogates_catalogue{,_by_language}.png` — the surrogate
+  catalogue (`catalogue.py`; sources in `literature.md`).
 - Inputs: rq03's `snr_variants_per_task.csv` and holdout
   `headline_metrics.csv`, rq00's `above_random_scores.csv`, rq01's `rq1_fits.csv`.
 
