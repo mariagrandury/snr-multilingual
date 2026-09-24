@@ -126,7 +126,8 @@ scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
 curves (`run_apertus.py`, `curves.py`), rq02 `by_L.py` (decision accuracy
 per language count, on `predictivity_all` at the grid seed), rq04 `analyze.py`
 (reads rq03's table, rq00's scores, rq01's fits) and its per-L panels, rq04
-`catalogue.py` (~50 proxy-only surrogates from the literature, `literature.md`),
+`catalogue.py` (~50 proxy-only surrogates from the literature, `literature.md`, and the
+AllenAI signal × noise grid) + `search.py` (the held-out-validated search against every DA),
 `report_figures/make_figures.py`. Themes: A
 predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C generalisation
 (rq05–rq07), D benchmark improvement (rq08–rq09); `analysis/paths.py` is the

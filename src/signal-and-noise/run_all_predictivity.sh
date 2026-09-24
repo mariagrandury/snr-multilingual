@@ -174,8 +174,9 @@ done
 # surrogates read the headline pool's rq03 table, rq00's scores, rq01's fits and rq02's by_L
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
-# the catalogue of ~50 surrogates from the literature (literature.md); reads the pool, rq00's mask and rq03's SNR
+# the surrogate catalogue (literature.md) and the truths (rq02's DA, tau, rho), then the validated search
 run $PY analysis/rq04_surrogates/catalogue.py --pool predictivity
+run $PY analysis/rq04_surrogates/search.py --pool predictivity
 
 pass "rq05 — design decisions"
 # rq05 needs the five interventions and its early-decision read follows from

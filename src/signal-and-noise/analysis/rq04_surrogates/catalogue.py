@@ -1,30 +1,47 @@
-"""A catalogue of surrogates of decision accuracy beyond SNR and FineTasks.
+"""A catalogue of surrogates of decision accuracy, and the truths they are scored against.
 
-Every statistic here is read on the PROXY alone (rule 11): its ten tenths, its
-noise window (rule 4), and the smaller rungs of the ladder, never the 1.7B
-reference. Each is scored against DA-size (proxy final -> 1.7B final, rule 9)
-over the same pair set it was computed on (rule 15: `multi-axis` and
-`mono-axis`). The catalogue and its sources are `SURROGATES` below and
-`literature.md` next to this file.
+Surrogates, one row per (task, proxy size, pair set), all read on the PROXY
+alone (rule 11: its final checkpoint, its ten tenths, its noise window (rule
+4) and the rungs below it, never the reference):
 
-Populations: the tasks above chance at the proxy and at the reference (rule 1);
-benchmarks and per-language BPB separately; `bpb_macro` / `train_loss` in
-neither (rule 7). Per language, a Spearman rho over the language's (task,
-proxy) cells, at least MIN_LANG_TASKS tasks (rule 8), descriptive only.
+  * ~50 statistics from the literature (`SURROGATES`, sources in `literature.md`);
+  * the SNR grid: every AllenAI signal (the 22 aggregators of
+    `snr/snr_variants.py`) against every noise in `NOISES`, from rq03's own
+    per-model arrays and aggregators (`per_model_inputs`,
+    `variant_signal_noise_snr`) so the (`rel_std`, `ckpt_rel`) cell IS rq03's
+    `snr_rel_std`. The noises: the AllenAI checkpoint noise (relative, as
+    AllenAI; and absolute), the two depth noises of `tukey` / `projection`,
+    and the benchmark (k-fold) noise, relative and absolute.
 
-It also measures the ceiling any surrogate faces: DA-size recomputed with the
-reference read at 90 % instead of 100 % of its run (the checkpoint noise of
-the truth itself). A surrogate cannot correlate with DA better than DA
-correlates with itself.
+    The k-fold benchmark noise needs per-item outputs, which the ladder report
+    does not carry. For n binary items at accuracy p, the fold accuracies of a
+    random k-fold partition have expected variance p(1-p)(k-1)/(n-1) exactly
+    (hypergeometric; E over partitions of (1/k) sum_i (m_i - p)^2), so its
+    root is used: the noise the k-fold estimator measures on average, with
+    k = K_FOLDS. Its ranking across tasks does not depend on k.
 
-    surrogate_values.csv          one row per (task, proxy, axes): every statistic + DA-size
-    surrogate_correlations.csv    rho / r / p / n and a task-bootstrap 90 % band per (axes, kind, proxy, surrogate)
-    surrogate_by_language.csv     rho per (axes, language, surrogate), benchmarks
-    surrogate_by_group.csv        rho per language tier and per benchmark family
-    surrogate_combined.csv        every statistic together, leave-one-language-out
-    surrogate_definitions.csv     name, family, expected sign, formula, source
-    da_retest.csv                 the ceiling: DA-size vs itself at a 90 % reference
-    surrogates_catalogue.png, surrogates_catalogue_by_language.png (+ .csv)
+Truths, one long row per (task, proxy, fraction, kind, metric, pair set, L),
+gated (rule 1: DA-size / DA-goal at the proxy and the reference, DA-ckpt at
+the proxy, `reliable_tasks.GATE_REF`) and at >= MIN_PAIRS pairs (rule 5):
+
+  kind    size (proxy final vs reference final), goal (proxy at 10-90 % vs
+          reference final), ckpt (proxy at 10-90 % vs its own final)
+  metric  da: rq02's own table (`reliable_tasks.long_da`), both pair sets;
+          tau_b, rho: `utils.agreement_measures` on rq02's checkpoint choice
+          (`compute_da._scores_at`), every pair (multi-axis) only — Spearman is
+          not defined on a pair subset, and on a subset tau is DA under another
+          tie convention (`agreement_measures`' identity)
+  L       all, or one language count: DA over the pairs of variants that share
+          the L (`by_L._da_table` on this pool; an L with < MIN_PAIRS pairs
+          is left out)
+  retest  the same truth with the reference (the proxy's own final for ckpt)
+          read at 90 % of its run: the ceiling any surrogate faces
+
+    surrogate_values.csv       surrogates per (task, proxy_size, axes)
+    surrogate_targets.csv      truths, long
+    surrogate_definitions.csv  every surrogate: family, expected sign, formula, source
+
+`search.py` scores the surrogates against the truths.
 
     python analysis/rq04_surrogates/catalogue.py --pool predictivity
 """
@@ -33,10 +50,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+import zlib
+from multiprocessing import Pool
 from pathlib import Path
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import kendalltau, norm, pearsonr, rankdata, spearmanr
@@ -48,27 +65,35 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools  # noqa: E402
+from evals.scripts.utils.configs import load_pools, size_bucket  # noqa: E402
+from snr.snr_variants import AGGREGATION_FUNCTIONS  # noqa: E402
 from snr.stats import calc_monotonicity, calc_total_variation  # noqa: E402
 from analysis import grids as G  # noqa: E402
-from analysis import style as S  # noqa: E402
-from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
-from analysis.paths import NOISE_AND_SNR, SURROGATES  # noqa: E402
+from analysis.autodoc import CANONICAL_POOL  # noqa: E402
+from analysis.paths import DECISION_ACCURACY, SURROGATES  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_items, task_n_options  # noqa: E402
+from analysis.rq02_decision_accuracy.by_L import _da_table  # noqa: E402
+from analysis.rq02_decision_accuracy.compute_da import _scores_at  # noqa: E402
 from analysis.rq02_decision_accuracy.language_tier import tier_of_language  # noqa: E402
+from analysis.rq02_decision_accuracy.reliable_tasks import GATE_REF, long_da  # noqa: E402
+from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
+    DISCREPANCY_UNIT_INTERVAL, per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.utils import (  # noqa: E402
-    EVAL_SIZES, MIN_LANG_TASKS, MIN_PAIRS, NOISE_GRID, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, assign_language,
-    benchmark_family, design_axes, ladder_frame, languages_only, noise_checkpoints, on_shared_grid,
-    pair_agreement, pair_sets, passes_gate)
+    CKPT_DA_EARLY_FRACS, MIN_PAIRS, NOISE_GRID, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, agreement_measures,
+    assign_language, benchmark_family, design_axes, ladder_frame, languages_only, noise_checkpoints,
+    on_shared_grid, pair_agreement, pair_sets, passes_gate)
 
 OUT_ROOT = SURROGATES
-AXES = PAIR_AXES[:2]                   # the design pair sets; the seed null has no DA-size to predict
-KINDS = ("benchmark", "bpb")
-N_BOOT = 200
-MIN_TASKS = 8                          # a pooled rho needs this many tasks, as analyze.py
+AXES = PAIR_AXES[:2]                   # the design pair sets; the seed null has no decision to predict
+FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
+RETEST_FRAC = 0.9                      # the reference re-read one tenth earlier for the ceiling
+K_FOLDS = 5                            # the benchmark noise's folds (the value of the 2026-04 slides)
 Z_CAP = 50.0                           # a gap over noise past this is "separated"; keeps the median finite
-REF_RETEST = 18                        # the reference read at 18/NOISE_GRID = 90 % for the ceiling
-mpl.rcParams.update(S.RC)
+DEPTH = ("tukey", "projection")        # the two aggregators whose noise is their own
+NOISES = ("ckpt_rel", "ckpt_abs", "tukey_depth", "projection_depth", "kfold_rel", "kfold_abs")
+SIGNALS = [variant_key(fd) for fd in AGGREGATION_FUNCTIONS]
+N_JOBS = 4
+_DF: pd.DataFrame | None = None        # the pool, shared with the workers by fork
 
 # name -> (family, expected sign, formula, source). Sign: +1 = higher should mean higher DA.
 SURROGATES = {
@@ -169,8 +194,6 @@ SURROGATES = {
     "n_items": ("control", +1, "scored examples", "Card 2020"),
     "chance": ("control", -1, "1 / number of options", "-"),
 }
-# rq03's SNR, for reference on the same populations
-SNR_REF = {"snr_aad": "aad", "snr_rel_std": "rel_std", "snr_dist_std": "dist_std"}
 
 
 def _pairs_ij(fams: list[str], pairs: list) -> tuple[np.ndarray, np.ndarray]:
@@ -339,8 +362,9 @@ def _ladder_stats(fams: list, lad: np.ndarray, sizes: list, pairs: list) -> dict
     return out
 
 
-def compute(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
-    """One row per (task, proxy, axes): every statistic, DA-size and the retest DA."""
+def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd.DataFrame:
+    """One row per (task, proxy, axes) of `tasks`: every catalogue statistic, read on
+    the proxy's final checkpoint, its ten tenths, its window and the rungs below it."""
     # Oriented so higher is better for every kind: BPB and loss flip sign. DA is
     # sign-invariant; the curve and ladder statistics that read a direction are not.
     df = df.assign(score=np.where(df["kind"].isin(["bpb", "loss"]), -df["primary_score"], df["primary_score"]))
@@ -352,18 +376,16 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
                .reindex(columns=range(NOISE_GRID - 4, NOISE_GRID + 1)) for s, g in win.groupby("size")}
     finals = {s: c[10].unstack("task") for s, c in curves.items()}          # family x task
     psets = pair_sets(design_axes(df))
-    tasks = sorted(set(df["task"]) - {"bpb_macro", "train_loss"})
-    lang = {t: assign_language(t) for t in tasks}
-    bpb_of = pd.Series({lang[t]: t for t in tasks if t.startswith("bpb_")})
-    bench = {t: benchmark_family(t) for t in tasks}
-    ref, ref_w = finals[TARGET_SIZE], windows[TARGET_SIZE]
+    every = sorted(set(df["task"]) - {"bpb_macro", "train_loss"})
+    lang = {t: assign_language(t) for t in every}
+    bpb_of = pd.Series({lang[t]: t for t in every if t.startswith("bpb_")})
+    bench = {t: benchmark_family(t) for t in every}
     pseudo = SMALL_SIZES[-1]                                        # the largest rung below the reference
-    rng = np.random.default_rng(0)
     rows = []
     for si, s in enumerate(SMALL_SIZES):
         C_s, W_s, F_s = curves[s], windows[s], finals[s]
         Z_s = _zscore(F_s)
-        gate_s = passes_gate(mask, tasks, s)
+        gate_s = passes_gate(mask, every, s)
         for t in tasks:
             if t not in F_s.columns or F_s[t].notna().sum() < 3:
                 continue
@@ -371,15 +393,11 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
             C = C_s.loc[t].reindex(fams).to_numpy()
             W = W_s.loc[t].reindex(fams).to_numpy() if t in W_s.index.get_level_values(0) else np.full((len(fams), 5), np.nan)
             x = C[:, -1]
-            yr = ref[t].reindex(fams).to_numpy() if t in ref.columns else np.full(len(fams), np.nan)
-            yr90 = (ref_w.loc[t][REF_RETEST].reindex(fams).to_numpy()
-                    if t in ref_w.index.get_level_values(0) else np.full(len(fams), np.nan))
             for axes in AXES:
                 pairs = psets[axes]
                 r = {"task": t, "language": lang[t], "benchmark": bench[t],
-                     "kind": "bpb" if t.startswith("bpb_") else "benchmark", "proxy_size": s, "axes": axes,
-                     "gated_in": bool(gate_s[t] and passes_gate(mask, [t], TARGET_SIZE).iloc[0]),
-                     "da_size": _da(fams, x, yr, pairs), "da_size_ref90": _da(fams, x, yr90, pairs)}
+                     "kind": "bpb" if t.startswith("bpb_") else "benchmark", "proxy_size": s, "axes": axes}
+                rng = np.random.default_rng(zlib.crc32(f"{t}|{s}|{axes}".encode()))   # DIoR's draws: fixed per cell
                 r |= _curve_stats(t, fams, C, W, pairs, rng)
                 pooled = r.pop("_pooled_sd", np.nan)
                 rungs = SMALL_SIZES[:si + 1]
@@ -421,253 +439,181 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFrame:
                     if peers:
                         r["benchmark_consensus"] = _da(fams, x, Z_s[peers].mean(axis=1).reindex(fams).to_numpy(), pairs)
                 rows.append(r)
-        print(f"  {s}: {sum(r['proxy_size'] == s for r in rows)} (task, axes) rows")
     return pd.DataFrame(rows)
 
 
-def _rho(x, y) -> tuple[float, float, int]:
-    ok = np.isfinite(x) & np.isfinite(y)
-    if ok.sum() < 3 or np.ptp(x[ok]) == 0 or np.ptp(y[ok]) == 0:
-        return np.nan, np.nan, int(ok.sum())
-    r = spearmanr(x[ok], y[ok])
-    return r.statistic, r.pvalue, int(ok.sum())
+def kfold_noise(p: np.ndarray, n_items: float) -> dict:
+    """The benchmark (k-fold) noise of models at accuracies `p` on `n_items`
+    binary items, in closed form (module docstring): per model the root of
+    the expected fold-accuracy variance p(1-p)(K-1)/(n-1); relative (over p,
+    averaged over models, as the k-fold definition) and absolute."""
+    if not (np.isfinite(n_items) and n_items > 1) or not ((p > 0) & (p < 1)).all():
+        return {"kfold_rel": np.nan, "kfold_abs": np.nan}
+    sd = np.sqrt(p * (1 - p) * (K_FOLDS - 1) / (n_items - 1))
+    return {"kfold_rel": float(np.mean(sd / p)), "kfold_abs": float(np.mean(sd))}
 
 
-def _partial_rho(x, y, z) -> float:
-    """Spearman rho of x and y with the ranks of z regressed out of both."""
-    ok = np.isfinite(x) & np.isfinite(y) & np.isfinite(z)
-    if ok.sum() < MIN_TASKS or np.ptp(z[ok]) == 0:
-        return np.nan
-    rx, ry, rz = (rankdata(a[ok]) for a in (x, y, z))
-    res = [a - np.polyval(np.polyfit(rz, a, 1), rz) for a in (rx, ry)]
-    return float(np.corrcoef(*res)[0, 1])
-
-
-def correlations(v: pd.DataFrame, names: list[str], rng) -> pd.DataFrame:
-    """Spearman rho (and Pearson r) of each statistic with DA-size, per (axes,
-    kind, proxy) and pooled over the proxies; the pooled row carries a 90 %
-    band from resampling TASKS (a task sits at several proxies)."""
+def snr_grid(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per (task, proxy): every AllenAI signal, every noise in NOISES
+    and every signal / noise ratio, from rq03's per-model arrays and
+    aggregators. The discrepancy signals are NaN off the benchmarks, as in rq03."""
+    df = df.assign(bucket=df["size"].map(size_bucket))
     rows = []
-    for (axes, kind), g in v[v["gated_in"]].groupby(["axes", "kind"]):
-        for proxy, h in [*g.groupby("proxy_size"), ("all", g)]:
-            if h["task"].nunique() < MIN_TASKS:
-                continue
-            y = h["da_size"].to_numpy(float)
-            for m in names:
-                x = h[m].to_numpy(float)
-                rho, p, n = _rho(x, y)
-                if not np.isfinite(rho):
-                    continue
-                ok = np.isfinite(x) & np.isfinite(y)
-                row = {"axes": axes, "kind": kind, "proxy_size": proxy, "surrogate": m, "rho": rho, "p": p, "n": n,
-                       "n_tasks": h.loc[ok, "task"].nunique(), "pearson_r": pearsonr(x[ok], y[ok]).statistic}
-                if proxy == "all":
-                    row["rho_partial_items"] = _partial_rho(x, y, h["n_items"].to_numpy(float))
-                    tk = h.loc[ok, "task"].to_numpy()
-                    ut = np.unique(tk)
-                    idx = {u: np.flatnonzero(tk == u) for u in ut}
-                    xs, ys = x[ok], y[ok]
-                    boot = []
-                    for _ in range(N_BOOT):
-                        sel = np.concatenate([idx[u] for u in rng.choice(ut, len(ut))])
-                        boot.append(_rho(xs[sel], ys[sel])[0])
-                    row["rho_lo"], row["rho_hi"] = np.nanpercentile(boot, [5, 95])
-                rows.append(row)
+    for (t, s), g in df[df["size"].isin(SMALL_SIZES)].groupby(["task", "size"], sort=False):
+        inputs = per_model_inputs(g, t, s)
+        if inputs is None or t in ("bpb_macro", "train_loss"):
+            continue
+        bench = benchmark_family(t) not in ("bpb", "loss")
+        sig, noi = {}, {}
+        for fd in AGGREGATION_FUNCTIONS:
+            k = variant_key(fd)
+            a, b, _ = variant_signal_noise_snr(inputs, fd["func"])
+            sig[k] = np.nan if k in DISCREPANCY_UNIT_INTERVAL and not bench else a
+            if k == "rel_std":
+                noi["ckpt_rel"] = b                                  # AllenAI's: mean step std / mean window score
+            if k in DEPTH:
+                noi[f"{k}_depth"] = b
+        noi["ckpt_abs"] = float(np.mean(inputs[0]))
+        noi |= kfold_noise(inputs[1], task_n_items(t) if bench else np.nan)
+        row = {"task": t, "proxy_size": s}
+        row |= {f"signal__{k}": v for k, v in sig.items()} | {f"noise__{k}": noi[k] for k in NOISES}
+        row |= {f"snr__{a}__{b}": sig[a] / noi[b] if noi[b] and np.isfinite(noi[b]) else np.nan
+                for a in SIGNALS for b in NOISES}
+        rows.append(row)
     return pd.DataFrame(rows)
 
 
-def by_group(v: pd.DataFrame, names: list[str], col: str, min_tasks: int) -> pd.DataFrame:
-    """Spearman rho per value of `col` over its (task, proxy) cells, benchmarks only."""
+def _frac(col: pd.Series, kind: pd.Series) -> np.ndarray:
+    """rq02's column name -> the proxy's fraction of its run (1.0 for DA-size)."""
+    f = col.str.extract(r"_f(\d+)_")[0].astype(float) / 100
+    return np.where(kind == "size", 1.0, f)
+
+
+def _agreement_task(t: str) -> list[dict]:
+    """tau_b, rho and DA of one task, every (proxy, fraction), as
+    `agreement_measures` reads rq02's checkpoint choice; `retest` = the same
+    with the reference (DA-ckpt: the proxy's own final) at RETEST_FRAC."""
+    dft = _DF[_DF["task"] == t]
+    ref, ref_rt = _scores_at(dft, TARGET_SIZE, 1.0), _scores_at(dft, TARGET_SIZE, RETEST_FRAC)
     rows = []
-    g0 = v[v["gated_in"] & (v["kind"] == "benchmark")]
-    for (axes, key), g in g0.groupby(["axes", col]):
-        y = g["da_size"].to_numpy(float)
-        for m in names:
-            x = g[m].to_numpy(float)
-            ok = np.isfinite(x) & np.isfinite(y)
-            if g.loc[ok, "task"].nunique() < min_tasks:                # rule 8
-                continue
-            rho, p, n = _rho(x, y)
-            if np.isfinite(rho):
-                rows.append({"axes": axes, col: key, "surrogate": m, "rho": rho, "p": p, "n": n,
-                             "n_tasks": g.loc[ok, "task"].nunique()})
-    return pd.DataFrame(rows)
+    for b in SMALL_SIZES:
+        own, own_rt = _scores_at(dft, b, 1.0), _scores_at(dft, b, RETEST_FRAC)
+        for f in FRACS:
+            got = _scores_at(dft, b, f)
+            refs = [("size" if f == 1.0 else "goal", ref, ref_rt)]
+            if f < 1.0:
+                refs.append(("ckpt", own, own_rt if f < RETEST_FRAC else {}))
+            for kind, y, y_rt in refs:
+                m, rt = (_measures(got, z) for z in (y, y_rt))
+                for metric in ("da", "tau_b", "rho"):
+                    rows.append({"task": t, "proxy_size": b, "frac": f, "kind": kind, "metric": metric,
+                                 "value": m.get(metric, np.nan), "retest": rt.get(metric, np.nan),
+                                 "n_pairs": m.get("n_pairs", 0)})
+    return rows
 
 
-def retest(v: pd.DataFrame) -> pd.DataFrame:
-    """The ceiling: Spearman of DA-size with the same DA read against the
-    reference at 90 % of its run, per (axes, kind, proxy)."""
-    rows = []
-    for (axes, kind, proxy), g in v[v["gated_in"]].groupby(["axes", "kind", "proxy_size"]):
-        rho, p, n = _rho(g["da_size"].to_numpy(float), g["da_size_ref90"].to_numpy(float))
-        rows.append({"axes": axes, "kind": kind, "proxy_size": proxy, "rho": rho, "n": n,
-                     "mean_abs_diff": (g["da_size"] - g["da_size_ref90"]).abs().mean()})
-    return pd.DataFrame(rows)
+def _measures(got: dict, ref: dict) -> dict:
+    common = sorted(set(got) & set(ref))
+    if len(common) < 2:
+        return {}
+    return agreement_measures([got[c][0] for c in common], [ref[c][0] for c in common])
 
 
-def combined(v: pd.DataFrame, names: list[str]) -> pd.DataFrame:
-    """Every statistic (plus the proxy size) in one gradient-boosted model,
-    fitted leave-one-language-out: the Spearman rho of its out-of-language
-    prediction with DA-size, per (axes, kind)."""
-    from sklearn.ensemble import HistGradientBoostingRegressor
-    rows = []
-    for (axes, kind), g in v[v["gated_in"] & v["da_size"].notna()].groupby(["axes", "kind"]):
-        X = g[names].assign(proxy=g["proxy_size"].map(EVAL_SIZES.index)).to_numpy(float)
-        X = np.where(np.isfinite(X), X, np.nan)
-        X = X[:, (np.isfinite(X).sum(axis=0) >= MIN_TASKS)]                # BPB has no item count, no consensus
-        y, groups = g["da_size"].to_numpy(float), g["language"].to_numpy()
-        pred = np.full(len(y), np.nan)
-        for lg in np.unique(groups):
-            te = groups == lg
-            model = HistGradientBoostingRegressor(max_depth=3, max_iter=200, learning_rate=.05, random_state=0)
-            pred[te] = model.fit(X[~te], y[~te]).predict(X[te])
-        rho, p, n = _rho(pred, y)
-        rows.append({"axes": axes, "kind": kind, "rho": rho, "p": p, "n": n, "n_languages": len(np.unique(groups))})
-    return pd.DataFrame(rows)
+def _by_L_job(job: tuple) -> pd.DataFrame:
+    L, axes, pairs = job
+    d = pd.DataFrame(_da_table(_DF[_DF["L"] == L], L, pairs))
+    if d.empty:
+        return d
+    return pd.concat([
+        d[d["frac"] == 1.0].assign(kind="size", value=d["da_ref"], n_pairs=d["n_pairs_ref"]),
+        d[d["frac"] < 1.0].assign(kind="goal", value=d["da_ref"], n_pairs=d["n_pairs_ref"]),
+        d[d["frac"] < 1.0].assign(kind="ckpt", value=d["da_own"], n_pairs=d["n_pairs_own"])])[
+        ["task", "proxy_size", "frac", "kind", "value", "n_pairs"]].assign(metric="da", axes=axes, L=str(L))
 
 
-def plot(corr: pd.DataFrame, ceiling: pd.DataFrame, out_dir: Path, names: list[str]) -> None:
-    c = corr[(corr["proxy_size"] == "all")]
-    fig, axes = plt.subplots(1, 2, figsize=(10, 9), sharey=True)
-    order = (c[(c["kind"] == "benchmark") & (c["axes"] == AXES[0])].set_index("surrogate")["rho"]
-             .reindex(names).sort_values().index.tolist())
-    y = np.arange(len(order))
-    for ax, kind in zip(axes, KINDS):
-        for k, (axes_name, col) in enumerate(zip(AXES, S.SERIES)):
-            g = c[(c["kind"] == kind) & (c["axes"] == axes_name)].set_index("surrogate").reindex(order)
-            off = (k - .5) * .3
-            ax.errorbar(g["rho"], y + off, xerr=[g["rho"] - g["rho_lo"], g["rho_hi"] - g["rho"]], fmt="o", ms=3.5,
-                        color=col, lw=.8, label=axes_name)
-        ceil = ceiling[(ceiling["kind"] == kind) & (ceiling["axes"] == AXES[0])]["rho"].mean()
-        if np.isfinite(ceil):
-            ax.axvline(ceil, color=S.MUTED, ls="--", lw=.8)
-            ax.text(ceil, len(order) - .5, " DA retest", fontsize=6.5, color=S.MUTED, va="bottom")
-        ax.axvline(0, color=S.MUTED, lw=.8)
-        ax.set_yticks(y); ax.set_yticklabels([f"{m} ({SURROGATES[m][0] if m in SURROGATES else 'SNR, rq03'})"
-                                              for m in order], fontsize=6.8)
-        ax.set_xlabel("Spearman ρ with DA-size (proxy → 1.7B)"); ax.set_title(kind, loc="left")
-        ax.grid(axis="x", color=S.GRID, lw=.6); ax.set_axisbelow(True); S.clean(ax); ax.tick_params(length=0)
-    axes[0].legend(frameon=False, loc="lower right")
-    top = G._header(fig, "Which proxy-only statistic predicts decision accuracy?",
-                    f"point = Spearman ρ over the (task, proxy) cells above chance at the proxy and at {TARGET_SIZE}, proxies "
-                    f"{', '.join(SMALL_SIZES)} pooled; bar = 90 % band from resampling tasks; dashed = DA-size against "
-                    f"itself with the reference read at 90 % (the ceiling); n per point in the CSV")
-    fig.tight_layout(rect=(0, 0, 1, top))
-    c.to_csv(out_dir / "surrogates_catalogue.csv", index=False)
-    S.save_figure(fig, out_dir, "surrogates_catalogue")
+def _gate(t: pd.DataFrame, pool: str, cols=("value",)) -> pd.DataFrame:
+    """Rule 1 per kind (`GATE_REF`), rule 5 on `n_pairs`; rows left with no value are dropped."""
+    parts = []
+    for kind, ref in GATE_REF.items():
+        g = t[t["kind"] == kind]
+        for c in cols:
+            g = G.mark_gated(g, pool, "proxy_size", c, ref)
+        parts.append(g)
+    t = pd.concat(parts).drop(columns="gated")
+    t.loc[t["n_pairs"] < MIN_PAIRS, list(cols)] = np.nan              # rule 5
+    return t.dropna(subset=["value"])
 
 
-def plot_languages(bl: pd.DataFrame, out_dir: Path, names: list[str]) -> None:
-    g = bl[bl["axes"] == AXES[0]]
-    mat = g.pivot_table(index="surrogate", columns="language", values="rho").reindex(names).dropna(how="all")
-    cnt = g.pivot_table(index="surrogate", columns="language", values="n_tasks").reindex(mat.index)
-    mat = mat[mat.mean().sort_values(ascending=False).index]
-    fig, ax = plt.subplots(figsize=(max(8, .32 * mat.shape[1] + 3), .28 * mat.shape[0] + 2))
-    cmap = S.DIV.copy()
-    cmap.set_bad("white")                                          # rule 12: white = no value
-    im = ax.imshow(mat.to_numpy(float), cmap=cmap, vmin=-1, vmax=1, aspect="auto")
-    ax.set_xticks(range(mat.shape[1])); ax.set_xticklabels(mat.columns, fontsize=7)
-    ax.set_yticks(range(mat.shape[0])); ax.set_yticklabels(mat.index, fontsize=7)
-    fig.colorbar(im, ax=ax, fraction=.02, pad=.01, label="Spearman ρ")
-    top = G._header(fig, "Surrogates of decision accuracy, per language (descriptive)",
-                    f"cell = Spearman ρ of the statistic with DA-size over the language's (benchmark, proxy) cells above "
-                    f"chance, multi-axis pairs; white = fewer than {MIN_LANG_TASKS} tasks (rule 8); task counts in the CSV")
-    fig.tight_layout(rect=(0, 0, 1, top))
-    mat.join(cnt.add_prefix("n_tasks_")).to_csv(out_dir / "surrogates_catalogue_by_language.csv")
-    S.save_figure(fig, out_dir, "surrogates_catalogue_by_language")
-
-
-def generate_readme(pool: str, corr, bl, bg, ceil, comb) -> None:
-    if pool != CANONICAL_POOL:
-        return
+def targets(df: pd.DataFrame, pool: str) -> pd.DataFrame:
+    """The long truth table (module docstring)."""
+    global _DF
+    _DF = df.assign(bucket=df["size"].map(size_bucket))
     stage = load_pools()[pool].get("stage", "pretraining")
-    blocks = []
-    for axes in AXES:
-        c = corr[(corr["axes"] == axes) & (corr["proxy_size"] == "all")]
-        rows = []
-        for m, g in c.groupby("surrogate"):
-            b, p = g[g["kind"] == "benchmark"], g[g["kind"] == "bpb"]
-            fam = SURROGATES[m][0] if m in SURROGATES else "SNR (rq03)"
-            rows.append([f"`{m}`", fam,
-                         f"{fmt(b['rho'].iloc[0])} [{fmt(b['rho_lo'].iloc[0])}, {fmt(b['rho_hi'].iloc[0])}] ({int(b['n'].iloc[0])})" if len(b) else "",
-                         fmt(b["rho_partial_items"].iloc[0]) if len(b) else "",
-                         f"{fmt(p['rho'].iloc[0])} ({int(p['n'].iloc[0])})" if len(p) else "",
-                         b["rho"].iloc[0] if len(b) else -9])
-        rows.sort(key=lambda r: -r[-1])
-        blocks.append(f"**{axes} pairs** — Spearman ρ with DA-size over the (task, proxy) cells, proxies pooled, "
-                      "90 % task-bootstrap band, n cells; `partial` = the benchmark ρ with the item count's ranks regressed out "
-                      "(does the statistic say more than the benchmark's size?):")
-        blocks.append(md_table(["statistic", "family", "benchmarks ρ [90 %] (n)", "partial", "BPB ρ (n)"],
-                               [r[:-1] for r in rows]))
-    ce = ceil[ceil["axes"] == AXES[0]].pivot_table(index="kind", columns="proxy_size", values="rho")
-    blocks.append("**The ceiling** — Spearman ρ of DA-size with itself when the reference is read at 90 % instead of "
-                  "100 % of its run (multi-axis). No surrogate can track DA better than DA tracks itself:")
-    blocks.append(md_table(["kind"] + [s for s in SMALL_SIZES if s in ce.columns],
-                           [[k] + [fmt(ce.loc[k, s]) for s in SMALL_SIZES if s in ce.columns] for k in ce.index]))
-    blocks.append("**All statistics together** (gradient-boosted trees, leave-one-language-out; ρ of the held-out "
-                  "prediction with DA-size):")
-    blocks.append(md_table(["pairs", "kind", "ρ", "n", "languages"],
-                           [[r.axes, r.kind, fmt(r.rho), r.n, r.n_languages] for r in comb.itertuples()]))
-    g = bl[bl["axes"] == AXES[0]]
-    best = g.loc[g.groupby("language")["rho"].idxmax()].sort_values("rho", ascending=False)
-    wins = best["surrogate"].value_counts()
-    blocks.append(f"**Per language** (descriptive, rule 8: ≥ {MIN_LANG_TASKS} tasks; multi-axis). Best statistic per "
-                  f"language, {len(best)} languages; most frequent winners: "
-                  + ", ".join(f"`{m}` {n}" for m, n in wins.head(5).items()) + ". Mean ρ over languages, top 8:")
-    mean = g.groupby("surrogate").agg(rho=("rho", "mean"), langs=("language", "nunique"),
-                                      pos=("rho", lambda r: int((r > .3).sum()))).sort_values("rho", ascending=False)
-    blocks.append(md_table(["statistic", "mean ρ", "languages", "languages with ρ > 0.3"],
-                           [[f"`{m}`", fmt(r.rho), int(r.langs), int(r.pos)] for m, r in mean.head(8).iterrows()]))
-    for col, label in (("tier", "language tier (smallest L that trains it)"), ("benchmark", "benchmark family")):
-        h = bg[(bg["axes"] == AXES[0]) & bg[col].notna()]
-        top = h.loc[h.groupby(col)["rho"].idxmax()].sort_values(col)
-        blocks.append(f"**Per {label}** — the best statistic of each group (multi-axis, ≥ {MIN_LANG_TASKS} tasks):")
-        blocks.append(md_table([col, "best statistic", "ρ", "n cells", "tasks"],
-                               [[r[col], f"`{r.surrogate}`", fmt(r.rho), int(r.n), int(r.n_tasks)] for _, r in top.iterrows()]))
-    blocks += [f"![Surrogate catalogue]({stage}/{pool}/surrogates_catalogue.png)",
-               f"![Surrogate catalogue per language]({stage}/{pool}/surrogates_catalogue_by_language.png)"]
-    body = "\n\n".join([
-        "## A catalogue of surrogates beyond SNR",
-        f"Numbers from the `{pool}` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool {pool}`. "
-        f"Every statistic is read on the proxy alone (rule 11): its ten tenths, its noise window and the rungs below it. "
-        f"The truth is DA-size, proxy final → {TARGET_SIZE} final, over the same pair set. Population: the tasks above "
-        f"chance at the proxy and at {TARGET_SIZE} (rule 1), so n differs per statistic and proxy (rule 13). "
-        "Definitions and sources: [`literature.md`](literature.md).",
-        *blocks])
-    replace_block(OUT_ROOT / "README.md", "catalogue", body, f"catalogue.py --pool {pool}")
+    da = []
+    for a in AXES:
+        d = long_da(DECISION_ACCURACY / stage / pool, pool, axes=a)
+        da.append(pd.DataFrame({"task": d["task"], "proxy_size": d["size"], "frac": _frac(d["col"], d["kind"]),
+                                "kind": d["kind"], "metric": "da", "axes": a, "L": "all",
+                                "value": d["da"], "n_pairs": d["n_pairs"]}))
+    da = pd.concat(da)
+    da = da[da["proxy_size"].isin(SMALL_SIZES)]                      # DA-ckpt of the reference itself is not a proxy's
+    tasks = sorted(set(df["task"]) - {"bpb_macro", "train_loss"})
+    with Pool(N_JOBS) as p:
+        ag = pd.DataFrame([r for rows in p.map(_agreement_task, tasks) for r in rows]).assign(axes=AXES[0], L="all")
+    ag = _gate(ag, pool, ("value", "retest"))
+    # DA is rq02's; the DA agreement_measures recomputes must be the same number, or the
+    # two tables do not describe the same decisions.
+    chk = da[da["axes"] == AXES[0]].merge(ag[ag["metric"] == "da"], on=["task", "proxy_size", "frac", "kind"])
+    bad = (chk["value_x"] - chk["value_y"]).abs() > 1e-9
+    print(f"  DA check against rq02: {len(chk) - bad.sum()} of {len(chk)} cells identical")
+    assert not bad.any(), chk[bad].head()
+    da = da.merge(ag.loc[ag["metric"] == "da", ["task", "proxy_size", "frac", "kind", "retest"]].assign(axes=AXES[0]),
+                  on=["task", "proxy_size", "frac", "kind", "axes"], how="left")
+    mono = pair_sets(design_axes(df))[AXES[1]]
+    jobs = [(L, a, p) for L, dl in df.groupby("L") if dl["family"].nunique() * (dl["family"].nunique() - 1) // 2 >= MIN_PAIRS
+            for a, p in ((AXES[0], None), (AXES[1], mono))]
+    with Pool(N_JOBS) as p:
+        byl = _gate(pd.concat(p.map(_by_L_job, jobs)), pool)
+    byl = byl[byl["proxy_size"].isin(SMALL_SIZES)]
+    out = pd.concat([da, ag[ag["metric"] != "da"], byl], ignore_index=True)
+    out["language"] = out["task"].map(assign_language)
+    return languages_only(out)                                       # rule 7
+
+
+def _compute_chunk(tasks: list[str]) -> pd.DataFrame:
+    return compute(_DF, load_mask(_POOL), tasks)
 
 
 def main(pool: str, out_dir: Path) -> None:
-    stage = load_pools()[pool].get("stage", "pretraining")
+    global _DF, _POOL
     df = ladder_frame(pool)
     print(f"{pool}: {df['model'].nunique()} models, {df['task'].nunique()} tasks")
-    v = compute(df, load_mask(pool))
-    snr = pd.read_csv(NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv", index_col=0)
-    for col, var in SNR_REF.items():
-        v[col] = [snr.at[t, f"snr_{var}_{s}"] if t in snr.index and f"snr_{var}_{s}" in snr.columns else np.nan
-                  for t, s in zip(v["task"], v["proxy_size"])]
-    v = languages_only(v)                                                      # rule 7
-    v["tier"] = v["language"].map(tier_of_language())
-    names = [m for m in [*SURROGATES, *SNR_REF] if m in v.columns]
     out_dir.mkdir(parents=True, exist_ok=True)
+    t = targets(df, pool)
+    t.to_csv(out_dir / "surrogate_targets.csv", index=False)
+    print(f"  truths: {len(t)} rows → surrogate_targets.csv")
+    _DF, _POOL = df, pool
+    tasks = sorted(set(df["task"]) - {"bpb_macro", "train_loss"})
+    with Pool(N_JOBS) as p:
+        v = pd.concat(p.map(_compute_chunk, [tasks[i::N_JOBS] for i in range(N_JOBS)]), ignore_index=True)
+    v = v.merge(snr_grid(df), on=["task", "proxy_size"], how="left")
+    v = languages_only(v)                                            # rule 7
+    v["tier"] = v["language"].map(tier_of_language())
     v.to_csv(out_dir / "surrogate_values.csv", index=False)
-    corr = correlations(v, names, np.random.default_rng(0))
-    corr.to_csv(out_dir / "surrogate_correlations.csv", index=False)
-    bl = languages_only(by_group(v, names, "language", MIN_LANG_TASKS))
-    bl.to_csv(out_dir / "surrogate_by_language.csv", index=False)
-    bg = pd.concat([by_group(v, names, "tier", MIN_LANG_TASKS), by_group(v, names, "benchmark", MIN_LANG_TASKS)])
-    bg.to_csv(out_dir / "surrogate_by_group.csv", index=False)
-    ceil = retest(v)
-    ceil.to_csv(out_dir / "da_retest.csv", index=False)
-    comb = combined(v, [m for m in names if m != "n_pairs"])
-    comb.to_csv(out_dir / "surrogate_combined.csv", index=False)
-    pd.DataFrame([{"surrogate": m, "family": f, "expected_sign": sg, "formula": fo, "source": so}
-                  for m, (f, sg, fo, so) in SURROGATES.items()]).to_csv(out_dir / "surrogate_definitions.csv", index=False)
-    plot(corr, ceil, out_dir, names)
-    plot_languages(bl, out_dir, names)
-    generate_readme(pool, corr, bl, bg, ceil, comb)
-    print(f"Wrote → {out_dir}")
+    print(f"  surrogates: {len(v)} rows x {v.shape[1]} columns → surrogate_values.csv")
+    defs = [{"surrogate": m, "family": f, "expected_sign": sg, "formula": fo, "source": so}
+            for m, (f, sg, fo, so) in SURROGATES.items()]
+    defs += [{"surrogate": f"signal__{a}", "family": "AllenAI signal", "expected_sign": 1,
+              "formula": f"snr_variants.{a}_snr, signal part", "source": "Heineman 2025"} for a in SIGNALS]
+    defs += [{"surrogate": f"noise__{b}", "family": "noise", "expected_sign": -1, "formula": b,
+              "source": "Heineman 2025" if not b.startswith("kfold") else "benchmark noise (closed form, K_FOLDS)"}
+             for b in NOISES]
+    defs += [{"surrogate": f"snr__{a}__{b}", "family": "SNR grid", "expected_sign": 1,
+              "formula": f"signal {a} / noise {b}", "source": "Heineman 2025"} for a in SIGNALS for b in NOISES]
+    pd.DataFrame(defs).to_csv(out_dir / "surrogate_definitions.csv", index=False)
 
+
+_POOL = CANONICAL_POOL
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

@@ -77,11 +77,38 @@ name in `catalogue.py`. A dash means the statistic needs data we do not have.
 | 36 | agreement | DA vs the language's other benchmarks; vs the same benchmark in other languages | `language_consensus`, `benchmark_consensus` | Perlitz et al. 2024, BenchBench, [arXiv:2407.13696](https://arxiv.org/abs/2407.13696) |
 | 37 | agreement | corrected item-total correlation (common factor) | `item_total_corr` | Ruan et al. 2024, [arXiv:2405.10938](https://arxiv.org/abs/2405.10938) |
 | 38 | control | pairs, items, chance level | `n_pairs`, `n_items`, `chance` | – |
+| 39 | SNR grid | each of AllenAI's 22 signals over each of 6 noises (132 ratios), and each signal and noise alone | `snr__<signal>__<noise>`, `signal__*`, `noise__*` | Heineman 2025 (`snr/snr_variants.py`) |
+| 40 | noise | benchmark (k-fold) noise, relative and absolute, closed form | `noise__kfold_rel`, `noise__kfold_abs` | the 2026-04 slides (Benchmark noise) |
 | – | separation | almost stochastic dominance ε | – (5 samples per variant is too few) | Dror, Shlomov & Reichart 2019, ACL |
 | – | needs log-probs | CORRECT_PROB, NORM_CORRECT_PROB, margin | – | DataDecide App. B; Schaeffer 2024 |
 | – | needs items | IRT discrimination/difficulty, tinyBenchmarks, metabench | – | Polo et al. 2024, [arXiv:2402.14992](https://arxiv.org/abs/2402.14992); Kipnis et al. 2024, [arXiv:2407.12844](https://arxiv.org/abs/2407.12844) |
 | – | needs formats | prompt/format sensitivity | – (rq00's `rf_` twins could serve) | Alzahrani et al. 2024, [arXiv:2402.01781](https://arxiv.org/abs/2402.01781) |
 | – | needs extra evals | expert-trace token proxies, rBridge | – | Patel 2026; Koh et al. 2025, [arXiv:2509.21013](https://arxiv.org/abs/2509.21013) |
+
+### The noises of the SNR grid
+
+- `ckpt_rel`: AllenAI's checkpoint noise, the mean over models of the std over
+  the noise window, over the mean window score (rule 4's window). `ckpt_abs`:
+  the same without the division.
+- `tukey_depth`, `projection_depth`: the noises that AllenAI's two depth
+  aggregators pair with their signals.
+- `kfold_rel`, `kfold_abs`: the benchmark noise, i.e. the relative std of a
+  model's accuracy across k folds of the items, averaged over models. The
+  ladder report has no per-item outputs, so the noise is taken in closed form.
+  For n binary items with accuracy p, a random partition into k folds of n/k
+  items gives fold accuracies m_i with E[(1/k) Σ (m_i − p)²] = p(1−p)(k−1)/(n−1)
+  exactly (hypergeometric sampling). We use its root with k = 5. Changing k
+  multiplies every task's noise by the same factor, so no ranking moves.
+
+### How the search is kept honest
+
+Scoring ~250 statistics against 30 truths in ~50 subsets and ~7,500 filters
+would surface large correlations by chance alone. `search.py` therefore
+splits the (benchmark, language) clusters into two halves. It ranks every
+configuration on one half and tests the best once on the other half: a
+one-sided cluster permutation test, with Benjamini–Hochberg over everything
+tested. Correlations are taken within each (proxy size, fraction) stratum, so
+a statistic that only grows with training or size cannot score.
 
 ## 3. Why every surrogate might stay weak
 

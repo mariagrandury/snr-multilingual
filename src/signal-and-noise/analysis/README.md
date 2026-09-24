@@ -193,8 +193,11 @@ files under their own directory.
 - **Scripts.** `analyze_snr_variants.py` (per-variant correlations and grids),
   `snr_definition_postprocess.py` (global ranking, best variant per language,
   per-language anchor benchmark, README and slide), `analyze.py` (statistics
-  beyond SNR), `catalogue.py` (the literature catalogue against DA-size, per
-  language, tier and benchmark, with DA's own retest ceiling).
+  beyond SNR), `catalogue.py` (the literature catalogue, the AllenAI signal ×
+  noise grid with the k-fold benchmark noise, and the truths: DA / Kendall τ /
+  Spearman ρ for DA-size, -goal, -ckpt, both pair sets, per L), `search.py`
+  (every truth × subset × surrogate and two-surrogate threshold filters,
+  validated on a held-out half of the benchmarks).
 - **Tables.** `snr_variant_ranking.csv`, `top_variants_overall.csv`,
   `best_variant_per_language.csv`, `best_variant_family_per_language.csv`,
   `variant_clusters.csv`, `top_benchmarks_per_language.csv`,
