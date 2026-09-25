@@ -1,44 +1,39 @@
 \section{Introduction}
 \label{sec:introduction}
 
-
-% RQ1: For multilingual language models, at what model size do evaluations become sufficiently predictive of larger models? 
-
-% RQ2: How early during pretraining can you evaluate a model and still reliably identify the effects that would be observed at the end of training?
-
-% RQ3: Can we determine before doing the expensive evaluation whether a particular small-scale evaluation is likely to be informative? In other words, are there cheap measurements that tell you whether a benchmark evaluated at a small size has enough signal to support decisions?
-
-% RQ4: How do all of these relationships change as the training mixture changes, from monolingual to increasingly multilingual settings, including differences in language coverage and/or balance?
-
-Modern language model development increasingly relies on smaller proxy models and intermediate training checkpoints to guide decisions before full-scale training is complete. 
-These decisions span data mixtures, sampling strategies, architectures, tokenizers, and other training choices, and are typically evaluated with benchmark suites that differ substantially in their diagnostic value and variance. 
-For these evaluations to be useful, they must provide signals that are predictive not only across model sizes and stages of training, but, in multilingual settings, also across languages. 
-This requirement is particularly challenging because many multilingual language–benchmark pairs exhibit little measurable signal at small scales, with performance often remaining near chance or floor levels. 
-Multilingual development also introduces cross-language transfer, uneven benchmark coverage across languages, capabilities, and evaluation formats, and a rapidly expanding space of possible data-mixture configurations as the number of languages grows. 
+Modern language model development increasingly relies on smaller proxy models and intermediate training checkpoints to guide decisions about data mixtures, sampling strategies, architectures, tokenizers, and other training choices. 
+%and are typically evaluated with benchmark suites that differ substantially in their diagnostic value and variance. 
+For these training runs and evaluations to be useful, their results must lead to the same decisions as ablations with a fully-trained larger model. 
+In other words, results need to be predictive across either model sizes or stages of training. 
+This has been studied in the monolingual setting \cite{magnusson_datadecide_2025}, but multilingual language model development introduces a host of other factors that could cause proxy model results to become noisy: cross-language transfer and interference, uneven benchmark coverage across languages, a rapidly expanding space of possible data-mixture configurations as the number of languages grows... 
+We see empirical evidence of this already: many multilingual language–benchmark are known to exhibit little measurable signal at small scales, with performance often remaining near chance or floor levels. 
 These factors make the language dimension a substantial expansion of the experimental space.
+
 
 % why multilingual evaluation makes decision reliability harder.
 
 Recent work has begun to examine the diagnostic value and efficiency of language model benchmarks, recognizing that not all benchmarks provide equally informative signals for guiding model development.
-Benchmark-discrimination analyses such as SNR \citep{heineman_signal_2025}, MetaEval \citep{wang2026metaeval} and \citet{chen_scaling_2025, gupta_improving_2025, zhou_lost_2026} characterize whether an evaluation contains enough reliable signal, and have largely been developed in settings where evaluation signal is already measurable. It is unclear whether their conclusions transfer to multilingual model development, where downstream performance can remain near floor at small scales and decision accuracy may differ substantially across languages. 
+Benchmark-discrimination analyses such as SNR \citep{heineman_signal_2025}, MetaEval \citep{wang2026metaeval} and \citet{chen_scaling_2025, gupta_improving_2025, zhou_lost_2026} characterize whether an evaluation contains enough reliable signal, and have largely been developed in settings where evaluation signal is already measurable. It is unclear whether their conclusions transfer to multilingual model development, where downstream performance can remain near floor at small scales and ranking agreement may differ substantially across languages. 
 Languages vary in data availability, tokenization cost, and scaling behavior \citep{petrov_language_2023, ahia_all_2023}, while cross-lingual transfer further couples decisions across languages, meaning that adding data for one language can help or hurt others depending on model capacity and language similarity \citep{chang_when_2023, longpre_atlas_2026}. As a result, a benchmark that provides a reliable training signal for one language or scale may be uninformative for another.
 
 % why existing multilingual scaling work is not sufficient.
 
 Multilingual scaling laws address a complementary part of this problem by modeling how performance changes with model size, data allocation, and language mixture, and by accounting for cross-language transfer \citep{he2025scaling}. 
 However, existing work has focused primarily on training loss or likelihood-based objectives, where scaling behavior is often smoother and measurable earlier in training. 
-It remains unclear whether the same conclusions hold for downstream multilingual evaluations, whose signals may emerge later, scale irregularly, or be dominated by run-to-run variation at small scales. This makes it important to understand when downstream benchmark performance becomes predictable, when the decisions it supports stabilize across scale, and whether cheap measurements can tell us when to trust them.
+It remains unclear whether the same conclusions hold for downstream multilingual evaluations, whose signals may emerge later and scale irregularly. This makes it important to understand when downstream benchmark performance becomes predictable, when the decisions it supports stabilize across scale, and whether cheap measurements can tell us when to trust them.
 
-% our approach
+
 
 To study these questions, we pretrain a controlled multilingual model ladder that varies model size, model architecture and language coverage.
-We evaluate models throughout training using per-language bits per byte (BPB) and 14 families of multilingual downstream benchmarks.
-This setup allows us to (i) characterize the predictability of multilingual evaluations across model size and training, (ii) determine how early small-scale evaluations recover full-scale training decisions, (iii) assess whether cheaper surrogate measurements can anticipate the reliability of those decisions, and (iv) study how scaling and decision patterns transfer across languages.
-This works makes the following main contributions:
+We evaluate models throughout training using per-language bits per byte (BPB) and \nbenchmarks multilingual benchmarks.
+This setup allows us to (i) characterize the predictability of multilingual evaluations across model size and training, (ii) determine how early small-scale evaluations recover full-scale training decisions, and (iii) assess whether cheaper surrogate measurements can anticipate the reliability of those decisions.
+% , and (iv) study how scaling and decision patterns transfer across languages.
+We find that... \AR{mention here findings about Clara's proposed direction: - per-language minimum requirements (model size, and tokens seen in that language) below which an evaluation should not be used for decisions, - checks for whether an evaluation that meets those requirements can be expected to reproduce full-scale decisions (DA).}
+This work makes the following main contributions:
 
 \begin{itemize}
-    \item A controlled \textbf{multilingual scaling ladder} and open model release, spanning model sizes, training checkpoints, language mixtures, design interventions, and seed replicates. We release all pretrained models and intermediate checkpoints in the ladder, together with all the evaluation results.
+    \item A controlled \textbf{multilingual scaling ladder} and open model release, spanning model sizes, training checkpoints, language mixtures, design interventions, and seed replicates. We release all \nmodels pretrained models and a total of \nckpts intermediate checkpoints, together with their evaluation results on \nbenchmarktasks benchmark-language tasks.
     \item A methodological \textbf{framework for characterizing multilingual evaluations} for model-development decisions, measuring how predictably benchmarks scale across model size and training progress, and how early they recover the decisions made at larger scale.
-    \item An \textbf{analysis of decision reliability} and cross-language generalization, comparing cheap surrogates for decision accuracy across multilingual regimes and testing when scaling and decision patterns transfer across languages.
+    \item An \textbf{analysis of decision reliability} and cross-language generalization, comparing cheap surrogates for ranking agreement across multilingual regimes and testing when scaling and decision patterns transfer across languages.
 \end{itemize}
 

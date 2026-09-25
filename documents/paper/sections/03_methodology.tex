@@ -1,114 +1,166 @@
-\section{Methodology}
+\section{Experimental Setup}
 \label{sec:methodology}
 
-We first define decision accuracy (DA) as whether a design decision read on a small proxy model transfers to a larger reference model. We propose the signal-to-noise ratio (SNR) as a proxy for decision accuracy, and present multiple possible definitions for signal and noise. We then describe the ladder of models we pretrain to compute both, the data they train on, and the two evaluation paths, per-language bits per byte and downstream benchmarks (\S\ref{subsec:design} to \S\ref{subsec:evaluation}).
+Consider a model trained with non-embedding parameter count $N$, architecture $A$, number of training languages $K$, language-selection scheme $M$ (\ie{} the way of choosing the pretraining languages), and data sampling temperature $T$ (\ie{} the way of sampling across languages).
+We define \emph{model configuration} as
+\[
+\theta=(N,A,K,M,T).
+\]
+For each configuration, we train one or more runs with random seed $S$ and save checkpoints at training fractions $f$.
+Our evaluation suite contains benchmarks $b$, each comprising language tasks $b_\ell$. For example, the HellaSwag benchmark contains tasks such as HellaSwag-es, HellaSwag-hi, and HellaSwag-gr. Evaluating checkpoint $(\theta,S,f)$ on task $b_\ell$ produces the score
+$Y_{b_\ell}(\theta,S,f)$.
+We use these scores to test whether rankings obtained at smaller sizes or earlier training fractions agree with rankings at a reference point.
+We first describe the model ladder (\S\ref{subsec:models}) and evaluation protocol (\S\ref{subsec:evaluation}), we then define ranking agreement (RA) across model size and training progress (\S\ref{subsec:methodology-da}). We finally introduce statistics that may predict this agreement without evaluating the target models (\S\ref{subsec:methodology-snr}). 
 
-\subsection{Decision Accuracy}
-\label{subsec:methodology-da}
+\subsection{Model Ladder}
+\label{subsec:models}
 
-Decision accuracy (DA) measures whether the ranking induced by small proxy models matches the ranking of larger target models on a benchmark. We define it as
-\begin{equation}
-\text{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b) \in \mathcal{P}} \mathbb{1}\big[\text{sign}(B(s_a) - B(s_b)) = \text{sign}(B(m_a) - B(m_b))\big]
-\end{equation}
-where $\mathcal{P}$ is a set of model pairs, $s_a$ is the small proxy model trained with characteristic $a$, $m_a$ is the corresponding target model, and $B(\cdot)$ returns the benchmark score. A higher DA means rankings observed at small scale transfer reliably to large scale, and therefore that the benchmark can guide development decisions.
+We construct a controlled multilingual ladder of \nmodels models to measure ranking agreement across model size, training progress, and training design interventions. 
+All runs share the same training recipe described below, except for the factor varied by each intervention. 
+Appendix~\ref{app:methodology} provides the complete grid and hyperparameters.
 
-\textbf{DA by size and by checkpoint.} We use two variants. DA by size compares the ranking of the design variants trained at a proxy size, at their final checkpoints, with the ranking of the same variants at the reference size, the largest size trained at that language setting. DA by checkpoint compares the ranking at the checkpoint nearest 20, 40, 60 or 80\% of a run with the ranking at its end, within one size.
+\subsubsection{Shared Configuration}
 
-\textbf{Intervention DA.} A design intervention with two levels, for example two language lists, gives one pair per item of a population. The pairwise definition then reduces to sign agreement: over the population, the share of items on which the proxy prefers the same level as the reference. We use two populations, the per-language bits per byte of the languages both levels train on, and the benchmark tasks both levels were evaluated on, and report the number of items with every value.
-
-\textbf{From DA to SNR.} Decision accuracy is expensive to compute, since it requires evaluating the larger target models. We therefore search for cheaper benchmark statistics whose values correlate with DA, computed at the benchmark level, for each language. The next subsection introduces the candidates.
-
-\subsection{Signal and Noise}
-\label{subsec:methodology-snr}
-
-The signal-to-noise ratio (SNR) summarizes a benchmark's reliability as the ratio between signal, how well a benchmark separates models of similar compute, and noise, the variability in scores across training checkpoints or stochastic runs.
-We define it as
-\begin{equation}
-\text{SNR} = \frac{\text{Signal}}{\text{Noise}}.
-\end{equation}
-A higher SNR means score differences across models are large relative to the benchmark's intrinsic variability. The framework is not tied to a particular signal or noise definition, so we evaluate several candidates and select the pair with the strongest empirical correlation to DA.
-
-\textbf{Signal candidates.} Given the final checkpoints of training runs at similar compute $C_\text{final}$, we consider five candidate signal definitions to capture a different notion of how spread out model scores are. Variance is the average squared distance from the mean. Mean distance is the average pairwise distance between points. Relative standard deviation is the standard deviation divided by the mean. Star discrepancy is the largest difference between any point and the uniform distribution. Dispersion is the largest pairwise distance,
-\begin{equation}
-\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|.
-\end{equation}
-
-\textbf{Noise candidates.} We consider four sources of noise that the framework can in principle account for. Seed noise is the standard deviation of the final checkpoint across training runs with different random seeds. Data order noise is the equivalent across runs that vary the order of training documents. Total variation is the average change in metric score across training checkpoints minus an improvement term. Checkpoint-to-checkpoint noise is proposed by \citet{heineman_signal_2025} as a proxy when the first three are too expensive to estimate at large scale and depends only on the final $n$ training checkpoints:
-\begin{equation}
-\text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
-\end{equation}
-On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and \S\ref{subsec:rq4} reports every intervention's effect against the seed noise.
-We also consider a fifth noise definition, computable from a single evaluation run on any model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
-\begin{equation}
-\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
-\end{equation}
-where $m_1, \dots, m_k$ are the per-fold scores of model $m$. The fold scores are obtained by partitioning the stored per-question outputs of a single evaluation run, so no inference is repeated and no intermediate checkpoints are needed.
-
-
-
-% Methodology and experimental setup; included from 03_methodology.tex.
-% Reproducibility details and source/citation notes: app_methodology.tex.
-\providecommand{\citeneeded}[1]{\textcolor{red}{[CITE: #1]}}
-\providecommand{\checknum}[1]{\textcolor{orange}{#1}}
-
-\subsection{Experimental Design}
-\label{subsec:design}
-
-We test whether design decisions made with small multilingual models transfer to larger models as the number of training languages increases. We describe the comparisons below, followed by the models (\S\ref{subsec:models}), pretraining data (\S\ref{subsec:data}), and evaluation (\S\ref{subsec:evaluation}). Appendix~\ref{app:methodology} gives the full configurations and implementation details.
-
-\textbf{Scale and multilinguality.} We train six model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, and 1.7B. We vary the number of training languages over $L \in \{1, 2, 8, 15, 30, 50, 100\}$. The $L=1$ setting is English only; multilingual settings allocate half the training tokens to English and half to the other $L-1$ languages. Holding the English share fixed lets us study how distributing the remaining budget across more languages affects the reliability of small-scale decisions.
-
-\textbf{Design decisions.} We compare four interventions: resource-ranked versus diversity-first language selection at $L \in \{8, 15, 30\}$; proportional versus flattened sampling at $L=50$; Russian, Chinese, or Spanish as the second language at $L=2$; and deep versus shallow-wide architectures. The $L=100$ setting uses flattened sampling only. Data interventions share the same model configuration, token budget, and tokenizer; the depth intervention approximately matches non-embedding size (\S\ref{subsec:models}). We measure decision accuracy on the languages or benchmark tasks shared by the compared levels. The reference is the largest available size shared by those levels: up to 1.7B, or 1B for comparisons involving Chinese or Spanish at $L=2$.
-
-\textbf{Training budget.} We allocate tokens in proportion to each model's exact non-embedding parameter count $N$:
-\begin{equation}
-D(N) = 100N.
-\label{eq:training-budget}
-\end{equation}
-This gives every model five times the $20N$ Chinchilla token-budget convention, %\citep{hoffmann_training_2022},
+\textbf{Training budget.}
+We define model size $N$ as the number of transformer-block parameters, excluding the tied embedding matrix. Each model receives a token budget proportional to its exact non-embedding parameter count:
+$D(N) = 100N.$
+This corresponds to five times the $20N$ Chinchilla token-budget convention, %\citep{hoffmann_training_2022},
 following the fixed-multiple ladder design of 
 %\citet{bhagia_establishing_2024} and 
-\citet{magnusson_datadecide_2025}. We evaluate ten aligned fractions of training, including the final checkpoint, to compare decisions across both model size and training progress.
+\citet{magnusson_datadecide_2025}. 
 
-\textbf{Repeated runs.} We use seed 1904 throughout and three seeds for selected settings at 175M, 600M, and 1B. These runs vary both initialization and data order, so their variability estimates the combined effect of training randomness. We also measure checkpoint noise over the last five evaluated checkpoints. The full seed grid and checkpoint schedules are in Appendix~\ref{app:training-grid}.
-
-\subsection{Pretrained Models}
-\label{subsec:models}
+\textbf{Training corpora.}
+We draw English data from DCLM-edu \citep{li_datacomp-lm_2025} and data for the remaining languages from the quality-filtered FineWeb-2 collection used to train Apertus \citep{penedo_fineweb2_2025,messmer_enhancing_2026,apertus_apertus_2025}. We tokenize all corpora with the shared Apertus tokenizer.
 
 \textbf{Shared architecture.} We train decoder-only transformers using the Apertus recipe \citep{apertus_apertus_2025}, with grouped-query attention,
 %\citep{ainslie_gqa_2023},
-rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and xIELU activations \citep{huang_xielu_2025}. All models use the same 131,072-token Apertus tokenizer, tied input and output embeddings, and a context length of 4,096 tokens. We count transformer-block parameters as model size, excluding the tied embedding matrix, following 
-%\citet{bhagia_establishing_2024} and 
-\citet{heineman_signal_2025}. We include the output projection when estimating training compute, since its cost is substantial at small sizes.
+rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and xIELU activations \citep{huang_xielu_2025}. All models use the same 131,072-token Apertus tokenizer, tied input and output embeddings, and a context length of 4,096 tokens. 
 
-\textbf{Depth intervention.} We compare a deep baseline with a shallow-wide architecture at each nominal size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the query-to-key-value head ratio. Their non-embedding counts differ from the deep models by 0.4\% to 5.2\%, and each receives its own $D=100N$ budget. This comparison therefore tests the architecture choice at approximately matched size; it does not hold parameter count, token budget, or projection cost exactly constant. Table~\ref{tab:ladder} gives both ladders.
-
-\textbf{Optimization.} We use AdEMAMix
+\textbf{Optimization.}
+We use AdEMAMix as optimizer
 %\citep{pagliardini_ademamix_2024}
 and a warmup-stable-decay learning-rate schedule, %\citep{hagele_scaling_2024},
-with a global batch of 504 sequences at every size. We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width. This shared recipe limits differences in training procedure across the ladder; Appendix~\ref{app:model-configurations} specifies the hyperparameters.
+using a global batch of 504 sequences. We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
 
-\subsection{Pretraining Data}
-\label{subsec:data}
+\textbf{Seeds.} Every configuration is trained with seed 1904. Selected configurations at sizes 175M, 350M and 1B use two additional seeds. These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
 
-\textbf{Corpora.} We draw English from DCLM-edu \citep{li_datacomp-lm_2025} and the remaining languages from the quality-filtered FineWeb-2 data used for Apertus \citep{penedo_fineweb2_2025, messmer_enhancing_2026, apertus_apertus_2025}. All corpora use the shared Apertus tokenizer.
 
-\textbf{Language selection and sampling.} Scheme A selects languages by corpus size; scheme B prioritizes script and language-family diversity. Within the non-English half of each mixture, language $i$ receives a share proportional to $p_i^{1/T}$, where $p_i$ is its estimated corpus token proportion. We use $T=1$ for proportional sampling and $T=3$ for the flattened scheme AT3. Comparing both temperatures at $L=50$ helps distinguish the effect of sampling from that of adding languages at $L=100$. Appendix~\ref{app:languages} lists the languages, and Appendix~\ref{app:data-construction} documents selection and data repetition when a source is exhausted.
+\subsubsection{Intervention Axes}
 
-\textbf{Held-out data.} We construct one fixed validation set covering English and the 99 non-English languages. Training builds exclude the rows assigned to validation. We use the same validation text for a given language across model sizes, mixtures, and interventions, so within-language score differences reflect model differences on shared data.
+\textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B.
+
+\textbf{Architecture $A$.} We compare a deep with a shallow-wide architecture at each size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the ratio of query heads to key-value heads. Their non-embedding counts differ from the corresponding deep models by 0.4\% to 5.2\% \AR{Point to a table in the appendix for the specific architecture aspect ratios and details}.
+
+\textbf{Number of training languages $K$.} We vary the number of training languages over $K \in \{1, 2, 8, 15, 30, 50\}$. The $K=1$ setting is English only; multilingual settings allocate half the training tokens to English and half to the other $L-1$ languages.
+
+\textbf{Language selection scheme $M$.}
+We compare two rules for choosing the non-English languages. Scheme $M_1$ ranks languages by available corpus size, whereas scheme $M_2$ prioritizes diversity in script and language family. Appendix~\ref{app:methodology} lists the languages selected by each scheme at every value of $L$.
+
+\textbf{Sampling temperature $T$.}
+Within the non-English half of the training mixture, language $i$ receives a sampling probability proportional to
+$q_i \propto p_i^{1/T}$,
+where $p_i$ is the language's estimated proportion of the available corpus. We use $T=1$ for proportional sampling and $T=3$ for flattened sampling.
+
+%\textbf{Held-out data.} We construct one fixed validation set covering English and the 99 non-English languages. Training builds exclude the rows assigned to validation. We use the same validation text for a given language across model sizes, mixtures, and interventions, so within-language score differences reflect model differences on shared data.
+
 
 \subsection{Evaluation}
 \label{subsec:evaluation}
 
-We use per-language bits-per-byte as the primary outcome and downstream benchmarks to test whether task scores support the same development decisions. Evaluating both throughout training lets us compare their ability to distinguish design choices from score variability.
+We use the following evaluations:
+\begin{itemize}[leftmargin=15pt,noitemsep,topsep=0pt]
 
-\textbf{Bits-per-byte.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count. For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be its validation token prefix, $c_t$ the preceding context available within the scoring block, and $b_\ell$ the prefix's byte count:
+\item \textbf{Downstream tasks.} We evaluate \nbenchmarks benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} using the vLLM backend \citep{kwon2023efficient}. We use each task's documented prompt and number of in-context examples, without a chat template. By default, we evaluate each model only on the languages included in its training mixture.
+% For the seed-1904, deep, scheme-A ladder, we additionally evaluate all validation languages and all benchmark languages registered in the harness. This extended evaluation supports our analysis of transfer to languages absent from a model's training mixture.
+Appendix~\ref{app:evaluation-protocol} gives the families, task counts, and scoring settings.
+
+\item \textbf{Bits-per-byte.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count.
+Lower BPB indicates better prediction of the held-out text. \AR{We include BPB as a reference signal, connecting our analysis to established loss-based scaling laws and providing a point of comparison for the scaling behavior of downstream benchmarks.}
+
+\end{itemize}
+
+We evaluate both at the same aligned training fractions for every model size, allowing us to compare rankings across size and training progress.
+Specifically, we evaluate the ten deciles from 10\% to 100\% of training and two additional checkpoints at 85\% and 95\%, for a total of twelve aligned fractions.
+
+An evaluation run is considered above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds this level.
+We retain a benchmark--language--size cell when at least half of its evaluation runs satisfy this condition.
+This prevents near-random variation from being interpreted as evidence for or against scaling.
+Because the threshold depends on the number of evaluation examples, it adapts to the size of each task rather than using a fixed margin above chance.
+Measurements without a meaningful chance level, such as bits per byte, are not filtered out by this procedure.
+We report the filtering detailed implementation and statistics in Appendix~\ref{app:results-filtering}.
+
+
+
+
+\subsection{Compute}
+
+All models are trained on nodes of four NVIDIA GH200 GPUs, using 3 to 21 nodes per run depending on size. Pretraining the model ladder consumed \checknum{15,300} node-hours, plus \checknum{3,500} node-hours of data preparation, Megatron-to-HuggingFace checkpoint conversion, benchmark evaluation, and bits-per-byte scoring.
+% TODO: Update from \texttt{plan/compute-costs.md} when the sweep is complete.
+
+
+
+\subsection{Ranking Agreement}
+\label{subsec:methodology-da}
+
+Ranking agreement (RA) measures whether a set of model variants is ranked in the same order at a cheaper \emph{proxy point} and at the  \emph{reference point}. 
+A proxy point is defined by a model size and training fraction $(N,f)$, while the reference point is the final checkpoint ($f=1$) at the same size $N$ or the largest size shared by all compared variants, $N_{\mathrm{ref}}$.
+RA ranges from 0 to 1, where 1 indicates perfect agreement with the reference ranking and 0 indicates no agreement.
+Therefore, higher RA means that evaluation at the proxy point is more likely to support the same development decision as the full reference evaluation.
+We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
+
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{llll}
+        \toprule
+        Setting & Proxy & Reference & Research question \\
+        \midrule
+        RA-size
+            & ($N$, $f=1$)
+            & ($N_{\mathrm{ref}}$, $f=1$)
+            & How small can the proxy model be? \\
+        RA-checkpoint
+            & ($N$, $f<1$)
+            & ($N$, \quad $f=1$)
+            & How early does the ranking stabilize? \\
+        RA-end-to-end
+            & ($N$, $f<1$)
+            & ($N_{\mathrm{ref}}$, $f=1$)
+            & How small and early can the proxy be? \\
+        \bottomrule
+    \end{tabular}
+        \caption{\textbf{Ranking-agreement (RA) settings.} The proxy and reference contain the same model variants but differ in model size, training progress, or both. $N$ is the non-embedding parameter count, $N_{\mathrm{ref}}$ is the largest size shared by all compared variants (usually 1.7B), and $f$ is the fraction of the training.}
+    \label{tab:ra_defs}
+\end{table}
+
+
+We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings. Kendall's $\tau$ ... Decision accuracy (DA; \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them. For a set $\mathcal{P}$ of model-variant pairs,
 \begin{equation}
-\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
-\label{eq:bpb}
+\mathrm{DA}
+=
+\frac{1}{|\mathcal{P}|}
+\sum_{(a,b)\in\mathcal{P}}
+\mathbb{1}
+\left[
+\operatorname{sign}\!\left(U(s_a)-U(s_b)\right)
+=
+\operatorname{sign}\!\left(U(m_a)-U(m_b)\right)
+\right],
+\label{eq:decision-accuracy}
 \end{equation}
-Lower BPB indicates better prediction of the held-out text. We score the same deterministic prefix of approximately 1M tokens per language for every model. Byte normalization avoids dependence on token counts, but does not make texts in different languages equally predictable. We therefore compare interventions within each language and give languages equal weight in macro averages. Such averages still depend on the language set; decision accuracy uses only languages shared by the compared levels.
+% TODO: rewrite equation using our definition of model configuration
+where $s_a$ and $m_a$ denote variant $a$ at the small proxy and reference points, respectively, and $U(\cdot)$ returns the benchmark score. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. % TODO: specify how we treat ties
 
-\textbf{Downstream tasks.} We evaluate 14 benchmark families spanning reading comprehension, commonsense, knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. Their varied construction and coverage let us examine where benchmark scores provide reliable decisions. We retain tasks with near-chance performance, since whether they distinguish small models is itself part of the study. Appendix~\ref{app:evaluation-protocol} gives the families, task counts, and scoring settings.
+\textbf{Ranking comparison axes.}
+When computing RA, we distinguish between two types of model comparisons based on which design choices vary.
+In \emph{single-axis} comparisons, models differ in only one model design choice while all others are held fixed. 
+For example, we compare deep and shallow architectures ($A$), while keeping the language count, language scheme, and sampling temperature unchanged
+($\theta' = (A_\mathrm{deep},K,M,T) \rightarrow \theta'' = (A_\mathrm{shallow},K,M,T)$).
+This setting reflects a typical controlled development ablation where we test whether a cheaper proxy leads to the same choice between two alternatives as the reference evaluation.
+In \emph{multi-axis} comparisons, models may differ in two or more design choices. This tests whether a benchmark preserves rankings across heterogeneous model configurations, similar to how benchmarks are used to rank independently developed models on a leaderboard.
+We report results for the two settings separately.
 
-\textbf{Evaluation protocol.} We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} with the vLLM backend \citep{kwon_efficient_2023}, each task's default prompt and number of in-context examples, and no chat template. By default, we evaluate BPB and downstream tasks for languages in the training mixture. For the seed-1904 deep scheme-A ladder, we additionally evaluate all validation languages and all registered benchmark languages, allowing us to study cross-lingual transfer to languages absent from training.
+%\textbf{Predicting Ranking Agreement.}
+%Computing RA requires evaluating the model variants at the reference point, which is precisely the cost that proxy experiments aim to avoid. We therefore test whether statistics available from the proxy runs predict RA. We define the signal-to-noise ratio as
+%$\mathrm{SNR} = \mathrm{Signal} / \mathrm{Noise}$.
+%Signal measures how strongly a benchmark separates comparable models, whereas noise measures score variation across training checkpoints or stochastic runs. A high SNR indicates that differences between models are large relative to the benchmark's intrinsic variability. We compare several signal and noise estimators and measure how strongly each predicts RA.

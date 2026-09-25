@@ -27,10 +27,11 @@
 \providecommand{\checknum}[1]{\textcolor{orange}{#1}}
 
 
-\section{Methodology Details}
+\section{Model Ladder Details}
 \label{app:methodology}
 
 We give the training grid and checkpoint schedule (\S\ref{app:training-grid}), model configurations (\S\ref{app:model-configurations}), data construction (\S\ref{app:data-construction}), and evaluation protocol (\S\ref{app:evaluation-protocol}).
+
 
 \subsection{Training Grid and Checkpoints}
 \label{app:training-grid}
@@ -122,7 +123,6 @@ shallow & 1.7B & 20 & 2,816 & 11,264 & 44/11 & 1,665.3 & 166.5 & 80,640 & 0.69 &
 
 \textbf{The 90M rung.} Nine of the ten completed 90M runs diverge: each reaches its best training loss between 15\% and 19\% of the way through training and degrades for the rest of the run, ending 1.2 to 1.9 nats above its own best. No larger rung shows this. Held-out bits-per-byte rises with training on every language we checked, so the degradation is real rather than an artefact of the training objective. Retraining the rung at three learning rates spanning a factor of five and at one half and one sixth of the batch size reproduces the failure at the same fraction of the optimizer steps, which points to the interaction between the fixed $\beta_3$ timescale of AdEMAMix, about 10,000 steps, and a run that is only 4,500 steps long. We keep the rung in the grid and report its results, but exclude it from the scaling fits. Appendix~\ref{app:90m-rung} documents the investigation.
 
-\textbf{Compute.} All models are trained on the Clariden partition of the CSCS Alps supercomputer on nodes of four NVIDIA GH200 GPUs, using 3 to 21 nodes per run depending on size. As of 2026-09-14 the sweep has consumed \checknum{15,300} node-hours of pretraining on CSCS, about \checknum{61,000} GPU-hours, plus \checknum{3,500} node-hours of conversion, benchmark evaluation, bits-per-byte scoring, and data preparation.\footnote{Update from \texttt{plan/compute-costs.md} when the sweep is complete.}
 
 \subsection{Data Construction}
 \label{app:data-construction}
@@ -138,7 +138,14 @@ shallow & 1.7B & 20 & 2,816 & 11,264 & 44/11 & 1,665.3 & 166.5 & 80,640 & 0.69 &
 \subsection{Evaluation Protocol}
 \label{app:evaluation-protocol}
 
-\textbf{Bits-per-byte implementation.} We concatenate validation documents without end-of-document separators and score them in blocks with 4,096 input tokens and one-token overlap between successive blocks. Each token except the first of the stream is scored once; context resets at block boundaries. We select a deterministic prefix ending at the document boundary that reaches 1M tokens, or the full stream if it is shorter. We measure the denominator by decoding the entire selected prefix and counting its UTF-8 bytes, including the initial conditioning token. Thus, the implementation omits the first token's likelihood but retains its bytes. We also compute token-level perplexity from the same forward passes.
+\textbf{Bits-per-byte implementation.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count.
+For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be the evaluated token sequence, $c_t$ the context preceding token $x_t$ within the scoring block, and $b_\ell$ the number of bytes in the evaluated text. We compute
+\begin{equation}
+\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
+\label{eq:bpb}
+\end{equation}
+
+We concatenate validation documents without end-of-document separators and score them in blocks with 4,096 input tokens and one-token overlap between successive blocks. Each token except the first of the stream is scored once; context resets at block boundaries. We select a deterministic prefix ending at the document boundary that reaches 1M tokens, or the full stream if it is shorter. We measure the denominator by decoding the entire selected prefix and counting its UTF-8 bytes, including the initial conditioning token. Thus, the implementation omits the first token's likelihood but retains its bytes. We also compute token-level perplexity from the same forward passes.
 
 % The original draft reports a standard error of about 0.003 bits for this
 % prefix. Add the estimation procedure before presenting it as uncertainty.

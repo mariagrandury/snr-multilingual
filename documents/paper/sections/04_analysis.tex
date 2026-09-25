@@ -1,46 +1,9 @@
-% Numerical draft based on the ladder report of 16 September 2026
-% (120 cells, 107 complete, 98 healthy after dropping diverged runs).
-% REVIEW: RQ3 values/populations do not fully match the checked-in figure data.
-% Preserve the draft values pending reconciliation; see review_analysis.md.
-% Supporting artifacts: per-figure CSVs and rq_facts.json in ../figures/.
 \section{Analysis}
 \label{sec:results}
 
-Consider a model trained with a particular size $N$, architecture $A$, language mixture $M$, and random seed $S$; we call this a \emph{model configuration}. 
-Each configuration is saved at several training checkpoints $C$. 
-At every checkpoint, we evaluate the model on multiple multilingual benchmarks $B$, each of which can contain several language subsets $L$. 
-An \emph{evaluation run} is therefore one model checkpoint evaluated on one benchmark--language subset, producing a performance score $Y$. 
-Concretely, each run is identified by
-$$
-(N, A, M, S, C, B, L) \rightarrow Y.
-$$
+We analyze the task scores $Y_{b_\ell}(\theta,S,f)$ as defined in §3.
 Throughout the analysis, we use these evaluation runs as the basic observations and aggregate them differently depending on the question: across model sizes to study scaling with size, across checkpoints to study training trajectories, and across architectures, mixtures, and seeds to assess robustness.
 Using these views, we ask which multilingual measurements track learning, when the rankings they induce transfer to larger models, and whether cheaper statistics can anticipate that transfer.
-
-\subsection{RQ1: Which benchmarks scale predictably?}
-\label{subsec:rq1}
-
-We first ask whether each benchmark provides measurable signal at the model scales considered.
-For each benchmark--language subset $B,L$ and model size $N$, we compare performance against the corresponding chance level.
-An evaluation run is considered above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds this level.
-We retain a benchmark--language--size cell when at least half of its evaluation runs satisfy this condition.
-This prevents near-random variation from being interpreted as evidence for or against scaling.
-Because the threshold depends on the number of evaluation examples, it adapts to the size of each task rather than using a fixed margin above chance.
-Measurements without a meaningful chance level, such as bits per byte, are not filtered by this procedure.
-We report the filtering detailed implementation and statistics in Appendix~\ref{app:results-filtering}.
-
-
-For the remaining pairs after filtering, we measure how predictably benchmark performance changes with model size and training progress.
-For model-size scaling, we fit final-checkpoint performance against $\log_{10}N$ across model sizes, holding architecture, language mixture, and seed fixed, and require at least three model sizes.
-For training scaling, we fit performance against log training tokens within each model, requiring at least five checkpoints.
-For each task, we summarize the resulting fits across mixtures that train its language, requiring at least two fits on each axis.
-We report $R^2$ as a measure of scaling predictability and Spearman's $\rho$ as a measure of monotonicity and direction.
-For BPB and training loss, we reverse the sign of $\rho$ so that positive values consistently indicate improvement.
-
-
-Figure~\ref{fig:rq1}(a) shows that benchmarks differ substantially in how predictably they scale with model size. HellaSwag, LAMBADA, and BPB have median size-fit $R^2$ values of 0.97, 0.99, and 0.95, respectively, whereas Global-MMLU, INCLUDE, and Belebele provide weak fits on the scaling ladder considered here. The direction of scaling also matters, since high predictability does not necessarily correspond to improvement. For example, TruthfulQA has a median size-fit $R^2$ of 0.73 but $\rho=-0.83$, indicating a strong and consistent decrease with model size and showing why $R^2$ alone is insufficient.
-Figure~\ref{fig:rq1}(b) compares scaling predictability across model size and training. Some benchmark evaluations can be well predicted along both dimensions, while others can be predicted across model size but not across training checkpoints. We find no cases where performance is predictable across training checkpoints but not across model size.
-This suggests that, for the measurements that exhibit predictable scaling in our setting, varying model size may provide useful signal without requiring long training trajectories.
 
 \begin{figure}[t]
 \centering
@@ -48,51 +11,86 @@ This suggests that, for the measurements that exhibit predictable scaling in our
 \caption{\textbf{Benchmark scaling predictability.}
 \textbf{(a)} Median $R^2$ versus Spearman $\rho$ across model-size fits, showing scaling predictability and direction.
 \textbf{(b)} Median $R^2$ across model-size and training-trajectory fits, comparing predictability across the two dimensions.
-Detailed scaling curves are provided in Appendix~\ref{fig:app_size_scaling} and Appendix~\ref{fig:app_training_scaling}.}
+Detailed scaling curves are provided in Appendix~\ref{fig:app_size_scaling} and Appendix~\ref{fig:app_training_scaling}. % TODO Figures
+}
 \label{fig:rq1}
 \end{figure}
 
-A remaining concern is that weak scaling may reflect the evaluation protocol rather than the underlying capability measured by the benchmark. Open-generation tasks, for example, introduce additional variability through decoding and exact-match evaluation that may obscure an otherwise systematic change in model competence \citep{}. 
-To isolate this effect, we reformulate compatible generation-based benchmarks into more constrained evaluation protocols, such as... \AR{Add details about the task reformulation.}
+\subsection{RQ1: Which multilingual benchmark tasks scale predictably?}
+\label{subsec:rq1}
+
+We first ask whether each benchmark provides measurable signal at the model scales considered.
+For each benchmark--language task $b_\ell$ and model size $N$, we compare performance against the corresponding chance level.
+For the proxy-reference pairs above the chance gate, we measure how predictably benchmark performance changes with model size and training progress.
+For model size scaling, we fit final-checkpoint performance against $\log_{10}N$ across model sizes, holding model configuration and seed fixed, and require at least three model sizes.
+For training scaling, we fit performance against log training tokens within each model, requiring at least five checkpoints.
+For each task, we summarize the resulting fits across mixtures that train its language, requiring at least two fits on each axis. % REVIEW
+We report $R^2$ as a measure of scaling predictability and Spearman's $\rho$ as a measure of monotonicity and direction.
+For BPB and training loss, we reverse the sign of $\rho$ so that positive values consistently indicate improvement.
+% We fit scaling curves to individual language-specific tasks and aggregate their predictability within benchmark families.
+
+% Main findings:
+% - Figure 1(a) Some benchmarks track model scaling well. Others are too noisy or inconsistent to be useful for scaling analysis.
+% - Figure 1(a) Most benchmark-language pairs improve with size, but some show weak or negative Spearman rho. We need both metrics to profile  how predictable the benchmark trend is, and know its direction.
+% - Figure 1(b) In our ladder, model-size comparisons capture the useful scaling signal more consistently than training trajectories.
+% Figure 1(b) scaling behavior should be analyzed at the benchmark-language level (not only at the benchmark-family level).
+
+% TODO: specify hellaswag (X/total tasks)... I think we should remove globalmmlu, include and belebele, they do not pass random gate. TruthfulQA?
+Figure~\ref{fig:rq1}(a) shows that benchmarks differ substantially in how predictably they scale with model size. HellaSwag, LAMBADA, and BPB have median size-fit $R^2$ values of 0.97, 0.99, and 0.95, respectively, whereas Global-MMLU, INCLUDE, and Belebele provide weak fits on the scaling ladder considered here. The direction of scaling also matters, since high predictability does not necessarily correspond to improvement. For example, TruthfulQA has a median size-fit $R^2$ of 0.73 but $\rho=-0.83$, indicating a strong and consistent decrease with model size and showing why $R^2$ alone is insufficient.
+Figure~\ref{fig:rq1}(b) compares scaling predictability across model size and training. Some benchmark evaluations can be well predicted along both dimensions, while others can be predicted across model size but not across training checkpoints. We find no cases where performance is predictable across training checkpoints but not across model size.
+This suggests that, for the measurements that exhibit predictable scaling in our setting, varying model size may provide useful signal without requiring long training trajectories.
+In other words, in our setting, comparing larger models earlier in training appears more informative than training smaller models for longer.
+
+A remaining concern is that weak scaling may reflect the evaluation protocol rather than the underlying capability measured by the benchmark.
+Multiple-choice tasks that present their options as lettered alternatives require the model to map an answer label onto its content, an ability that small models may lack independently of whether they know the answer \citep{}.
+To isolate this effect, we reformulate the three benchmarks of Belebele, Global-MMLU, and INCLUDE so that the model scores the full answer options directly, rather than predicting their corresponding letter labels. 
+We apply two reformulations. The first is programmatic: we remove the answer labels and score the four options directly, leaving the text of every item unchanged. 
+The second is model-based: we prompt \texttt{gemini-3.8-flash} [CITE] to restate each question as a declarative stem and each option as a statement completing it, without revealing which option is correct. 
+\AR{Do we have detailed results somewhere? A figure or a table?}
+Both reformulations substantially increase the number of benchmark--language subsets that pass the above-chance filter at 1.7B, from 11 to 86 of 105 for Belebele, from 0 to 35 of 37 for Global-MMLU, and from 4 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, which we have so far completed for INCLUDE, is stronger still: 34 of 43 subsets pass the filter and accuracy rises by 0.075. Gains widen with model size, from 0.007 at 175M to 0.075 at 1.7B, and the rewrite introduces no length cue, as the correct option is the single longest in 23.2\% of original items and 23.3\% of rewritten ones against 25\% by chance. These results indicate that the weak scaling of these benchmarks is in large part a property of their answer format rather than of the capability they target: once the answer is scored as text, the same items separate models across the ladder.
 
 
-\subsection{RQ2: How early can we make reliable decisions?}
+
+%\subsection{RQ2: How early can we make reliable decisions?}
+\subsection{RQ2: How small and early can a proxy be while preserving the reference decision?}
 \label{subsec:rq2}
 
-We next ask how early in model development we can recover the decisions that would be obtained from a full evaluation. We study decision reliability along two dimensions of model development: training progress and model scale, and analyze it from three complementary perspectives. First, we measure within-model training convergence by comparing the decision at each intermediate checkpoint to the decision made by the final checkpoint of the same model size, testing how early a model’s eventual decision stabilizes during training (Figure~\ref{fig:rq2}a). Second, we measure full-scale decision prediction by comparing every intermediate checkpoint, across model sizes, to the fully trained largest model, testing how early smaller and partially trained models can recover the decision of the final reference model (Figure~\ref{fig:rq2}b). Third, we study scale convergence by comparing the final checkpoint of each model size to the final checkpoint of the largest model, quantifying how small a model can be while still reproducing decisions made at full scale (Figure~\ref{fig:rq2}c).
-
-\textbf{Within-model training convergence.}
-% We first examine how early during training a model’s eventual decision becomes stable by comparing each intermediate checkpoint to the final checkpoint of the same model size (Figure Xa). Across model sizes, decision reliability generally increases with training progress, with [BENCHMARKS / SETTINGS] stabilizing particularly early. By approximately [X\%] of training, models recover [Y\%] of the decisions made at their final checkpoint, while [OTHER SETTINGS] require substantially more training before reaching comparable reliability. The degree of early stabilization also varies with model size, with [FINDING ABOUT SMALLER/LARGER MODELS]. These results show that, for [CONDITIONS], the decision associated with a model can often be inferred well before training is complete.
-
-\textbf{Predicting full-scale decisions from cheaper models.}
-% We next ask a stricter question: how early can a partially trained or smaller model recover the decisions made by the fully trained largest model? Figure Xb measures this across training checkpoints and model sizes, while Figure Xc isolates the effect of scale by comparing the final checkpoint of each model size to the final largest model. We find that [MAIN FINDING ABOUT TRAINING + SCALE], with models of size [N] reaching [Y\%] agreement with the full-scale reference after only [X\%] of training. Similarly, the scale analysis shows that [MINIMUM MODEL SIZE / RELIABILITY FINDING], indicating that [INTERPRETATION ABOUT HOW MUCH SCALE CAN BE SAVED]. However, reliability varies across [LANGUAGE REGIMES / BENCHMARKS / INTERVENTIONS], with [IMPORTANT EXCEPTION]. Together, these results quantify the training and scale required before a cheaper evaluation becomes a reliable proxy for the final full-scale decision.
-
-% \textbf{Finding.} On per-language BPB, a 350M proxy matches the available reference's language-list ranking at 8, 15 and 30 languages. The reference is 1.7B at 8 and 30 languages and 1B at 15 languages. Its ranking already matches the final ranking at 20\% of training. Benchmark agreement remains close to one half across the evaluated sizes and checkpoints.
-
-% \textbf{Setup.} For an intervention with two levels, decision accuracy reduces to sign agreement: over a population of items, the share on which the proxy prefers the same level as the reference. The reference is the largest size trained at both levels, read at its final checkpoint. The proxy is every smaller size, read at the checkpoint nearest 20, 40, 60, 80 and 100\% of its own run, so that one grid answers both halves of the question, how small and how early. Two populations are used: the per-language bits per byte of the languages both levels train on, and the benchmark tasks both levels were evaluated on. A cell needs at least three items. We report the mean over language settings of the per-setting agreement, so that settings with more evaluated items do not dominate the result.
-% REVIEW: The original examples were 2,250 versus 500 benchmark tasks; verify
-% whether these counts denote unique tasks or repeated task/seed comparisons.
-Figure~\ref{fig:rq2} shows the two interventions, language lists (scheme A against B at $L \in \{8, 15, 30\}$) and depth (deep against shallow at every $L$).
-
+% FINDINGS:
+% - Within-model training convergence (Fig. 2b): As training progresses, checkpoints become more similar to the final version of the same model.
+% - Full-scale decision prediction (Fig. 2c): Training smaller models longer does not make them much better at matching the final 1.7B model.
+% - Scale convergence (Fig. 2a): Larger small models do not consistently make the same decisions as the 1.7B model.
 
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/rq2.png}
-\caption{How small and how early a proxy can read a decision. Each cell is the agreement between the proxy's decision, at the given size and fraction of its own run, and the reference's final decision, averaged over language settings (number of settings in brackets). Rows: the two interventions. Columns: per-language bits per byte over the languages both levels train, and the benchmark tasks both levels were evaluated on. For BPB, the reference is 1.7B at $L \in \{8, 30\}$ and 1B at $L = 15$ for the language-list decision, and 600M for the depth decision at $L \geq 2$; the bottom row of each panel is the reference read at its own earlier checkpoints.}
+\caption{\textbf{Decision reliability across training and scale.}
+\textbf{(a)} Scale convergence: decision accuracy of the final checkpoint at each model size relative to the final 1.7B reference model. 
+\textbf{(b)} Within-model training convergence: decision accuracy of each intermediate checkpoint relative to the final checkpoint of the same model size. 
+\textbf{(c)} Full-scale decision prediction: decision accuracy of each intermediate checkpoint relative to the final 1.7B reference model, measuring how early partially trained and smaller models recover the full-scale decision.}
 \label{fig:rq2}
 \end{figure}
 
-\textbf{Results.} Figure~\ref{fig:rq2} shows that a 350M proxy recovers the observed language-list ranking across the three settings. The 350M proxy agrees with the reference on 100\% of the shared languages at $L = 8$, 15 and 30, and the 600M proxy on 100, 83 and 100\%. The 175M proxy agrees at $L = 8$ but gets the decision backwards at $L = 15$ (17\%) and $L = 30$ (4\%). The 1B proxy, which exists only against the 1.7B reference at $L = 8$ and 30, agrees on 100\% at $L = 8$ but only 31\% at $L = 30$. The disagreement at $L = 30$ warrants caution: the effect of the list decision on bits per byte at the 1.7B reference is 0.58 seed standard deviations relative to the pooled baseline seed variability (\S\ref{subsec:rq4}). This small effect makes its sign potentially sensitive to training randomness. At $L = 8$ (1.6 seed standard deviations) and $L = 15$ (2.7), 350M also matches the reference, but repeated reference runs would be needed to establish the stability of those rankings.
 
-\textbf{Training progress.} Within the available reference runs, BPB rankings stabilize early. The reference's ranking at 20\% of its run already matches its final ranking on 100\% of the languages for the list decision and on 100\% for the depth decision, and agreement remains high through 80\%. The later checkpoints preserve these observed rankings; this does not establish that the same stopping point would suffice in a new run. The one exception is the smallest proxy, which reverses its answer over its own run: at 175M the list decision agrees with the reference on 86\% of languages at 20\% of training and on 40\% at the end, so the 175M final checkpoint is a worse proxy than its own early checkpoint. We hypothesize that this is the optimizer-timescale effect of \S\ref{subsec:models} reaching the 175M rung, whose run is shorter than the optimizer's memory.
+We next ask how early in model development we can recover the decisions that would be obtained from a full evaluation. 
+To isolate this question from benchmark quality itself, we restrict the analysis to benchmarks that already exhibit high decision reliability under full evaluation. The selection procedure and per-benchmark results are reported in Appendix~\ref{app:rq2_benchmarks}. 
+We study decision reliability along two dimensions of model development: training progress and model scale, and analyze it from three complementary perspectives. First, we measure within-model training convergence by comparing the decision at each intermediate checkpoint to the decision made by the final checkpoint of the same model size, testing how early a model’s eventual decision stabilizes during training (Figure~\ref{fig:rq2}b). Second, we measure full-scale decision prediction by comparing every intermediate checkpoint, across model sizes, to the fully trained largest model, testing how early smaller and partially trained models can recover the decision of the final reference model (Figure~\ref{fig:rq2}c). Third, we study scale convergence by comparing the final checkpoint of each model size to the final checkpoint of the largest model, quantifying how small a model can be while still reproducing decisions made at full scale (Figure~\ref{fig:rq2}a).
 
-\textbf{Architecture and benchmark decisions.} The depth intervention has an effect of 1.1 to 2.4 pooled baseline seed standard deviations at the reference. The 175M proxy has 0\% agreement and the 350M proxy 51\%, but these agreement scores alone cannot distinguish a systematic rank reversal from an unstable reference ranking. Benchmark agreement ranges from 0.37 to 0.58 across the reported comparisons, including comparisons of earlier reference checkpoints with their final checkpoints. We find no consistent improvement with proxy size or training progress in these aggregate results. \S\ref{subsec:rq3} asks whether task-level statistics can nevertheless identify more reliable comparisons.
+\textbf{Within-model training convergence.}
+Figure~\ref{fig:rq2}b shows that decision reliability increases steadily over training when each checkpoint is compared to the final checkpoint of the same model. 
+Early checkpoints recover only around 50--60\% of the final decisions, while agreement rises substantially later in training, with smaller models generally stabilizing earlier than larger ones.
 
-\subsection{RQ3: Is predictability correlated with cheaper metrics?}
+\textbf{Predicting full-scale decisions from cheaper models.}
+Figures~\ref{fig:rq2}a and~\ref{fig:rq2}c show that this within-model convergence does not translate into reliable prediction of the final 1.7B decisions. 
+Across fully trained smaller models, agreement with the 1.7B reference remains modest and non-monotonic with scale (Figure~\ref{fig:rq2}a), and additional training of smaller models yields only limited improvement in full-scale decision reliability (Figure~\ref{fig:rq2}c). 
+Together, these results suggest that the cross-scale gap cannot be closed by training cheaper proxy models longer alone.
+
+
+\subsection{RQ3: Can cheap proxy statistics predict decision accuracy?}
 \label{subsec:rq3}
 
-\textbf{Finding.} Proxy statistics correlate with decision accuracy, but do not certify an individual decision. The relative-standard-deviation SNR has a Spearman correlation of 0.4 to 0.6 on benchmarks and 0.5 to 0.7 on per-language BPB. Agreement between early and final proxy rankings performs similarly. The signal term accounts for most of the association observed for SNR.
+
+\textbf{Finding.} Proxy statistics correlate with ranking agreement, but do not certify an individual decision. The relative-standard-deviation SNR has a Spearman correlation of 0.4 to 0.6 on benchmarks and 0.5 to 0.7 on per-language BPB. Agreement between early and final proxy rankings performs similarly. The signal term accounts for most of the association observed for SNR.
 
 \textbf{Setup.} Decision accuracy needs the reference model. We ask which statistics predict it, distinguishing statistics of a single proxy size from those requiring a scaling curve. For every task and proxy size we compute the signal-to-noise ratio under three of the definitions of \S\ref{subsec:methodology-snr} (relative standard deviation, discrepancy, and the standard deviation of pairwise distances), the signal and the noise on their own, the margin above chance, the coefficient of determination of the scaling fit of \S\ref{subsec:rq1}, and the agreement between the proxy's ranking at 20\% of its run and at its end. Each candidate is correlated (Spearman $\rho$) with the task's decision accuracy by size, the agreement between the ranking of all design variants at the proxy size and at the reference, computed by the pipeline of \citet{heineman_signal_2025} on the same cells. We report the correlation separately for benchmark tasks and for the per-language bits-per-byte tasks, at the 175M, 350M and 600M proxies.
 

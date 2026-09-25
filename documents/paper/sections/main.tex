@@ -1,0 +1,115 @@
+
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2027_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{enumitem}
+
+\newcommand{\ie}{i.e.}\xspace
+\newcommand{\eg}{e.g.}\xspace
+
+\definecolor{pink}{RGB}{204, 0, 102}
+\newcommand{\AR}[1]{\textcolor{pink}{\textit{(Angie: #1)}}}
+
+
+% \title{Signal-Aware Framework for Multilingual Language Model Evaluation}
+\title{Decision Reliability in Multilingual Model Development}
+
+% Alternative titles:
+% Predicting Reliable Decisions in Multilingual Model Scaling
+% Decision Reliability in Multilingual Model Development/Scaling
+
+% Evaluating Multilingual Evaluations: In Search for Benchmarks that Enable Reliable Decisions
+
+% MAIN RESEARCH QUESTION
+% People use evaluations of cheaper, small/partially trained models to make expensive training decisions. When is that practice actually reliable in multilingual model development?
+
+
+
+% Authors must not appear in the submitted version. They should be hidden
+% as long as the \iclrfinalcopy macro remains commented out below.
+% Non-anonymous submissions will be rejected without review.
+
+\author{María Grandury
+EPFL\\
+\And
+Angelika Romanou
+EPFL\\
+\And
+Clara Meister
+EPFL
+\And
+Éléonore Hasler
+\And
+Antoine Bosselut
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+\newcommand{\update}{\marginpar{UPDATE}}
+\newcommand{\citeneeded}[1]{\textcolor{red}{[CITE: #1]}}
+\newcommand{\checknum}[1]{\textcolor{orange}{#1}}
+
+% TODO: Update constants
+\newcommand{\nbenchmarks}{14 }
+\newcommand{\nbenchmarktasks}{XX }
+\newcommand{\nmodels}{162 }
+\newcommand{\nckpts}{3000 }
+
+
+%\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
+\begin{document}
+\maketitle
+\begin{abstract}
+Training multilingual language models requires repeated decisions about data mixtures and architectures, typically guided by evaluations of small proxy models.
+Such evaluations are useful, however, only if results from small-scale models reliably follow the same trends as their larger-scale counterparts. 
+While the conditions under which small-scale evaluations are predictive have been studied extensively in monolingual settings, these findings do not necessarily transfer to multilingual training, where model capacity is shared across languages and scaling behavior can depend strongly on the composition of the training mixture. 
+%a challenge compounded in multilingual settings where many language–specific tasks exhibit little measurable signal at small scales.
+This work asks four foundational questions around this practice: (1) for multilingual language models, at what model size do evaluations become sufficiently predictive of larger models? (2) how early during pretraining can decisions be taken? (3) can we determine before doing many expensive evaluations whether a particular evaluation is likely to be informative at small-scale? and (4) how do these patterns change as multilingual training data varies in composition? 
+We pretrain a controlled ladder of \nmodels models spanning six sizes from 90M to 1.7B non-embedding parameters and six language settings from 1 to 50 languages, with four design interventions and seed replicates. 
+We evaluate 12 aligned checkpoints from each run using per-language bits per byte over 100 languages and tasks from \nbenchmarks multilingual benchmark families.
+% RQ1
+We characterize which benchmark families exhibit predictable scaling across model size and training, and distinguish benchmarks whose performance improves consistently from those whose scaling is weak, noisy, or non-monotonic. 
+% RQ2
+For each benchmark, we quantify how well performance at smaller model sizes predicts performance at larger sizes, and how early in training this correspondence emerges. We then test whether these small-scale evaluations recover the relative effects of our data-mixture and architecture interventions observed at full scale.
+% RQ3
+Finally, we ask whether the reliability of a small-scale evaluation can itself be anticipated cheaply, comparing measurements that assess whether a benchmark has sufficient signal to recover full-scale results across model scales and as a function of the number and composition of training languages.
+% RQ4
+% Finally, we test whether scaling behavior learned from observed languages transfers to held-out languages, and how this transfer depends on the underlying design intervention. 
+% We find that likelihood-based measurements scale predictably while four-option knowledge benchmarks sit at chance up to 1.7B; that a 350M proxy at 20\% of its run already reads a data decision the way the 1.7B reference does on bits per byte, while the benchmark suite reads every decision as a coin flip; that the reliability of a proxy is set by the size of the intervention's effect relative to seed noise rather than by the intervention itself; and that scaling exponents transfer across languages, so that one small measurement predicts a never-trained language's bits per byte at 1.7B within 7\%. 
+We release the ladder and the per-checkpoint measurements to support cheaper, better-informed multilingual model development.
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_methodology}
+\input{sections/04_analysis}
+%\input{sections/04_analysis_b} % RQ4 & 5
+\input{sections/05_conclusions}
+
+\bibliography{zotero,custom}
+\bibliographystyle{iclr2027_conference}
+
+\appendix
+\input{sections/app_terminology}
+\input{sections/app_methodology}
+\input{sections/app_random_gate}
+\input{sections/app_languages}
+\input{sections/app_snr}
+
+\end{document}

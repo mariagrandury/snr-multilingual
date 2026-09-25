@@ -1,0 +1,84 @@
+\section{Terminology}
+
+\begin{itemize}
+    \item Benchmark \(b\): HellaSwag.
+    \item Language task \(b_\ell\): HellaSwag-es, HellaSwag-en, HellaSwag-fr.
+    \item Sample/example: one question or instance inside HellaSwag-es.
+    \item Evaluation suite: the complete collection of benchmark families and tasks.
+\end{itemize}
+
+\begin{table}[h]
+    \centering
+    \caption{Terminology}
+    \label{tab:placeholder_label}
+    \begin{tabular}{lll}
+        \hline
+        \textbf{Symbol} & \textbf{Meaning} & \textbf{Example} \\
+        \hline
+        \(N\) & Non-embedding parameter count & 350M \\
+        \hline
+        \(A\) & Architecture & deep \\
+        \hline
+        \(K\) & Number of training languages & 15 \\
+        \hline
+        \(M\) & Language-selection scheme or mixture & scheme A \\
+        \hline
+        \(T\) & Sampling temperature & 1 or 3 \\
+        \hline
+        \(S\) & Random seed & 1904 \\
+        \hline
+        \(f\) & Fraction of training completed & 0.20 \\
+        \hline
+        \(b\) & Benchmark family & HellaSwag \\
+        \hline
+        \(\ell\) & Evaluation language & Spanish \\
+        \hline
+        \(b_\ell\) & Language task & HellaSwag-es \\
+        \hline
+        \(Y_{b_\ell}\) & Raw task score & accuracy or BPB \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+% Requires: \usepackage{booktabs}
+\begin{table}[h]
+    \caption{Placeholder Caption}
+    \label{tab:placeholder_label}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Term & Use it for & Do not use it for \\
+        \midrule
+        \textbf{Model configuration} & $\theta$: \((N,A,K,M,T)\) & A seed replicate \\
+        \textbf{Training run} & One configuration trained with seed \(S\) & One task evaluation \\
+        \textbf{Checkpoint} & Saved model state at fraction \(f\) & The fraction itself \\
+        \textbf{Training fraction} & \(f\in\{0.1,\ldots,1.0,0.85,0.95\}\) & A model artifact \\
+        \textbf{Model variant} & One level of an intervention being ranked & A proxy/reference checkpoint \\
+        \textbf{Proxy point} & Size and training fraction used for the inexpensive ranking & The model variant \\
+        \textbf{Reference point} & Size and fraction defining the target ranking & Necessarily 1.7B \\
+        \textbf{Benchmark} & HellaSwag & HellaSwag-es \\
+        \textbf{Language task} & HellaSwag-es & The complete HellaSwag family \\
+        \textbf{Sample/example} & One question & A task \\
+        \textbf{Score observation} & One checkpoint evaluated on one task & ``Evaluation run'' \\
+        \textbf{Ranking agreement} & General concept & A numerical metric \\
+        \textbf{Decision accuracy} & Pairwise ranking-agreement metric & General reliability \\
+        \textbf{Scaling predictability} & \(R^2\) of a scaling fit & Decision accuracy \\
+        \textbf{Scaling monotonicity} & Spearman correlation along a scaling curve & Rank transfer \\
+        \textbf{Reliability} & Broad interpretive concept & A metric unless explicitly defined \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[h]
+    \caption{Placeholder Caption}
+    \label{tab:placeholder_label}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        Quantity & Recommended notation \\ \hline
+        Proxy/reference rank agreement & \(\rho_{\mathrm{RA}}\) \\ \hline
+        Scaling monotonicity & \(\rho_{\mathrm{scale}}\) \\ \hline
+        Association between surrogate and DA & \(\rho_{\mathrm{assoc}}\) \\ \hline
+    \end{tabular}
+\end{table}
