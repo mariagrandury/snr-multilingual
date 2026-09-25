@@ -94,11 +94,11 @@ Measurement issues
 
 ### rq02, per language count
 
-![Early and small per L](rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal.png)
+![Early and small per L](rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_multi_axes.png)
 
 How it is computed
 - Same DA, but the pairs are restricted to the design variants that share the L (`predictivity_all`, seed 1904, every scheme), on the ten evaluated checkpoints (0.5C–5C). A panel needs ≥ 3 pairs; the first panel pools every pair of schemes A and B.
-- `pairs_by_L.csv`: planned pairs against 1.7B per L and size, vs pairs with data today (BPB / benchmarks / loss).
+- `pairs_by_L_multi_axes.csv`: planned pairs against 1.7B per L and size, vs pairs with data today (BPB / benchmarks / loss).
 
 Key finding
 - Only L30 has ≥ 3 usable pairs today (3 of 6 planned), and there the benchmarks stay at 0.4–0.6 while 1.7B's own early BPB checkpoints climb to 0.77 at 4.5C. L1, L2 and L100 will never have more than one pair against 1.7B (ZH/ES stop at 1B); L8, L15, L30 reach 6 pairs when scheme-B shallow finishes at 1.7B, L50 with AT3.
@@ -271,7 +271,7 @@ Measurement issues
 
 ## Appendix candidates
 - rq00 `first_size_above_random.png` and the rq02 `safe_size.png` maps (language × benchmark).
-- rq02 `pairs_by_L.csv` (why per-L DA is coarse) and `early_small_by_L_goal.png` (with `early_small_by_L_own.png` to separate the size's cost from the checkpoint's) once the 6-pair L's are complete.
+- rq02 `pairs_by_L_multi_axes.csv` (why per-L DA is coarse) and `early_small_by_L_goal_multi_axes.png` (with `early_small_by_L_own.png` to separate the size's cost from the checkpoint's) once the 6-pair L's are complete.
 - The per-benchmark / per-language long grids (`*_by_benchmark.png`, `*_by_language.png`) of rq02 and rq03.
 - rq04 `snr_variant_min_size_by_L_flops.png`: ρ of each definition with the cell's DA against compute (rises from ≈ 0.2 to ≈ 0.5; every size restarts the curve because SNR is a property of the size).
 - rq05 `depth_crossover.png` (which depth wins per size × L, in seed sds) and `da_lines_decided.png`, if the main text keeps only `da_lines`.

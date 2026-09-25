@@ -29,14 +29,14 @@ The first reads `snr_variant_ranking.csv` (the per-language pooled r that
 one benchmark's, or one language's, tasks; a subplot needs MIN_TASKS tasks
 at a proxy size, so most languages stay blank, and a cell the gate emptied
 (tasks at chance at the proxy or at the reference) is grey (rule 1).
-The per-L figures read rq02's `da_by_L_per_task.csv` (pairs of design
+The per-L figures read rq02's `da_by_L_per_task_multi_axes.csv` (pairs of design
 variants that share the L): a measurement is `train_loss`, `bpb_macro`, the
 per-language BPB (mean) or a benchmark family (mean over its gated tasks);
 a level is safe when it holds at every larger level with a value. Rule 9:
 the L2 ES setting stops at 1B (ZH now runs to 1.7B); this pool excludes
 ZH/ES and L2 has too few pairs against 1.7B, so it is blank in the
 DA-size panel — a 1B reference is not implemented, and the script says so.
-Version B and the FLOPs version read `da_pooled_per_task.csv`: every pair
+Version B and the FLOPs version read `da_pooled_per_task_multi_axes.csv`: every pair
 of the pool, on the tasks of the languages each cell trains (rule 2) and
 parent tasks only (rule 6); the benchmark mean's task count per size is in
 the caption and on the DA-at-1C panel (rule 13).
@@ -161,9 +161,9 @@ def main(pool: str) -> None:
         f"The rankings above, without the aggregation (`{pool}` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq04 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('SNR definition per language', 'snr_definition_by_language.png'), ('Surrogates per benchmark', 'surrogates_by_benchmark.png'), ('Surrogates per language', 'surrogates_by_language.png')]]
-        + [f"**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}). Rule 9: {RULE9_NOTE}:"]
+        + [f"**Per language count** (rq02's `da_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}). Rule 9: {RULE9_NOTE}:"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Smallest safe level per measurement and L', 'min_level_by_L.png'), ('the same as lines', 'min_level_by_L_lines.png'), ('Smallest size at which an SNR definition tracks DA, per L', 'snr_variant_min_size_by_L.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines.png')]]
-        + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at {TARGET_SIZE}; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):"]
+        + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at {TARGET_SIZE}; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Earliest checkpoint per proxy size and DA at 1C', 'min_level_by_L_b.png'), ('the same as lines', 'min_level_by_L_lines_b.png'), ('Spearman rho of each SNR definition with DA per proxy size', 'snr_variant_min_size_by_L_b.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines_b.png')]]
         + ["**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('DA of every cell against compute', 'min_level_by_L_flops.png'), ('rho of each SNR definition against compute', 'snr_variant_min_size_by_L_flops.png')]])
@@ -235,7 +235,7 @@ TRAINED_NOTE = "tasks in the languages every variant at the L trains on (the int
 
 
 def by_L(pool: str, out_dir: Path, stage: str) -> None:
-    src = DECISION_ACCURACY / stage / pool / "da_by_L_per_task.csv"
+    src = DECISION_ACCURACY / stage / pool / "da_by_L_per_task_multi_axes.csv"
     if not src.is_file():
         return
     t = pd.read_csv(src)
@@ -315,7 +315,7 @@ def pooled_b(pool: str, out_dir: Path, stage: str, v: pd.DataFrame, variants: li
     checkpoint of each proxy size that reads the reference's ranking at
     SAFE_DA, and the DA at 1C itself. SNR definitions: their Spearman rho with
     DA-size and DA-ckpt at each proxy size."""
-    e = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_pooled_per_task.csv")
+    e = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_pooled_per_task_multi_axes.csv")
     e["measurement"] = _measurement(e["task"])
     e = _with_mean_benchmarks(G.mark_gated(e, pool, "proxy_size", "da_ref", TARGET_SIZE))
     own_pooled = e[(e["frac"] < 1.0) & (e["measurement"] != BENCH_MEAN)].groupby(["task", "proxy_size"])["da_own"].mean()

@@ -36,7 +36,7 @@ reintroduces the drift this design removed.
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, which `every` alone misses at every size but the 40-save one, and + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated [rf|rfgm]` evaluates the `auto_rf` group — belebele / global_mmlu_full / include_base_44 as cloze `rf_*` tasks — or `auto_rfgm`, the Gemini-rewritten `rfgm_*` twins (`-rfgm` job names), see ../evals/CLAUDE.md "Reformulated twins"; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (the ten tenths of training, on the run's own save grid — `due_iters` — plus 85 % and 95 %: 12 per run; `--every N` (default 1) coarsens the tenths only, `--final-only` keeps each cell's last due checkpoint, `--group` picks another configs/tasks.json group than `auto`; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated [rf|rfgm]` evaluates the `auto_rf` group — belebele / global_mmlu_full / include_base_44 as cloze `rf_*` tasks — or `auto_rfgm`, the Gemini-rewritten `rfgm_*` twins (`-rfgm` job names), see ../evals/CLAUDE.md "Reformulated twins"; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
@@ -115,7 +115,7 @@ Spanish), deep only.
 Seed triples are **per size** (`SEED_TRIPLES`): 175M and 600M run
 (64, 313, 1904) at L ∈ {1, 2, 50}, 1B runs (28, 1797, 1904) at
 L ∈ {1, 2, 30} — the 1B column is aromanou's already-trained runs (L50 was
-added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-22,
+added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-21,
 never having been launched), and naming the wrong triple would submit two
 more runs per cell while the watcher ignored the ones on disk. Replicates are
 **deep only**: no analysis reads a shallow seed std. **Her 1B runs follow the old 20-checkpoint regime**
@@ -127,14 +127,13 @@ on that grid, so until 2026-09-10 the watcher reported `eval DONE (0/0)` for
 all of them — nothing ever fell due — and the launcher counts them done
 (45740 ≥ 45720). **Due checkpoints are now read on the run's own grid**
 (`launch_trainings.due_iters`, used by both watchers, `eval_counts` and the
-ladder report): `run_interval()` takes the modal gap between saves, and every
-Nth point of the SIZE's grid is mapped onto it, so a 20-save 1B run yields
-every save and a 40-save one every 2nd — the same k/20 fractions, comparable
-checkpoint for checkpoint; the final save is due whatever its iter. Since
-2026-09-20 the k/20 points inside the noise window (the last 20 %: 85 % and
-95 %) are due at every size as well, so the analysis reads checkpoint noise
-over five points instead of three — two extra evals per run on the 20-save
-and 60-save sizes, none on the 40-save 1B. models.json
+ladder report): `run_interval()` takes the modal gap between saves, and the
+ten tenths of training are mapped onto it, so a 20-save run yields every 2nd
+save, a 40-save one every 4th and a 60-save one every 6th — the same
+fractions, comparable checkpoint for checkpoint; the final save is due
+whatever its iter. 85 % and 95 % are due at every size as well, so the
+analysis reads checkpoint noise over five points instead of three: 12 evals
+per run at every size. models.json
 still lists the size grid under `checkpoints.all`, which is wrong for her
 2287-spaced cells: the watcher is unaffected (it passes `--iters`), but
 `convert-snr.sh --models` without `--iters`, `snr_progress.py` and

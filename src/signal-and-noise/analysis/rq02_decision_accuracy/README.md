@@ -43,8 +43,8 @@ never gated: it is the truth the SNR proxies of rq03 and rq04 are scored against
 ## Methodology
 
 [`compute_da.py`](compute_da.py) writes `pretraining/<pool>/da_per_task.csv`
-(one row per parent task, one column per DA definition) from
-`snr.metrics.decision_acc_fast`; [`da_per_benchmark.py`](da_per_benchmark.py)
+(one row per (parent task, pair set `axes`), one column per DA definition) from
+`utils.pair_agreement`; [`da_per_benchmark.py`](da_per_benchmark.py)
 melts it into a long (language, benchmark, comparison) table and the wide
 `_size` / `_ckpt` pivots, and rewrites the deck's appendix slides for the
 canonical pool. rq03 joins the SNR variants onto this table; rq05 asks the
@@ -228,7 +228,7 @@ on, and drops any pair that moves two at once — such a pair is a decision abou
 neither. That only works if the axes are actually independent, and the `scheme`
 token is not: it encodes **three** design choices at once. It is unpacked through
 `DATA_SCHEMES` (`sets`, `temp`), the registry that defines the grid, so the axes
-are `L`, `arch`, `list`, `T`, `lang2`, `seed`:
+are `L`, `arch`, `list`, `T`, `lang2`, `en` (the English corpus of the L = 1 DCLMP/FWEB cells), `seed`:
 
 | scheme | `list` | `T` | `lang2` | reading |
 |---|---|---|---|---|
@@ -264,34 +264,34 @@ drawable with no code change — and `AT3 vs BT3` joins the language-list axis.
 <!-- BEGIN auto:by-L (by_L.py --pool predictivity) -->
 ## Per language count
 
-**Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ES stops at 1B, so it never pairs against the reference; ZH runs to 1.7B (2026-09-20) and is the third L2 family. A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.
+**Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ZH and ES run to 1.7B and are the second and third L2 families. A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.
 
 | L | variants | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|
 | 1 | L1-dclmP-deep, L1-deep, L1-fweb-deep, L1-shallow | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 |
-| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 |
-| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 |
-| 15 | L15-AT3-deep, L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 10 / 4/5/5 | 10 / 4/5/5 | 10 / 4/5/5 | 10 / 4/5/5 |
-| 30 | L30-AT3-deep, L30-BT3-deep, L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 15 / 4/5/5 | 15 / 4/5/5 | 15 / 4/5/5 | 15 / 4/5/5 |
-| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 |
+| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 6 / 0/3/3 | 6 / 0/3/3 | 6 / 0/3/3 | 6 / 0/3/3 |
+| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 |
+| 15 | L15-AT3-deep, L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 10 / 6/10/10 | 10 / 6/10/10 | 10 / 6/10/10 | 10 / 6/10/10 |
+| 30 | L30-AT3-deep, L30-BT3-deep, L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 15 / 6/10/10 | 15 / 6/10/10 | 15 / 6/10/10 | 15 / 6/10/10 |
+| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 |
 
-The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair at that seed, every scheme included (`da_pooled_per_task.csv`). `da_by_L_per_task.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity`.
+The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair at that seed, every scheme included (`da_pooled_per_task_multi_axes.csv`). `da_by_L_per_task_multi_axes.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. The `_mono_axis` twins of every table and figure are the same over the one-axis pairs (rule 15). Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity [--axes mono-axis]`.
 
 Two of rq02's three decision accuracies have a checkpoint axis and so a figure here. **DA-goal** ranks the proxy at any checkpoint against the 1.7B final checkpoint; **DA-ckpt** ranks it against its own size's final checkpoint, so the 175M line asks what 175M would have decided early and what it misses is the checkpoint alone. The distance between the two is what the proxy *size* costs, and the 1.7B line is the same curve in both — at the reference the definitions coincide. DA-ckpt has no 5C column: a run's final checkpoint is its own reference. The third, **DA-size**, is DA-goal read at 5C alone and lives in `da_per_task.csv`. Each figure comes in a benchmarks-only version and a `_with_bpb` one that adds the solid per-size BPB lines; all four share the y axis, so any two overlay.
 
-![DA-goal per L](pretraining/predictivity/early_small_by_L_goal.png)
+![DA-goal per L](pretraining/predictivity/early_small_by_L_goal_multi_axes.png)
 
-![DA-goal per L, with BPB](pretraining/predictivity/early_small_by_L_goal_with_bpb.png)
+![DA-goal per L, with BPB](pretraining/predictivity/early_small_by_L_goal_with_bpb_multi_axes.png)
 
-![DA-ckpt per L](pretraining/predictivity/early_small_by_L_ckpt.png)
+![DA-ckpt per L](pretraining/predictivity/early_small_by_L_ckpt_multi_axes.png)
 
-![DA-ckpt per L, with BPB](pretraining/predictivity/early_small_by_L_ckpt_with_bpb.png)
+![DA-ckpt per L, with BPB](pretraining/predictivity/early_small_by_L_ckpt_with_bpb_multi_axes.png)
 
 A third variant of each restricts the mean to the (benchmark, language) cells that rank reliably on BOTH axes (DA-size and DA-ckpt each ≥ 0.8, `reliable_tasks.py`): the plain panels average over every gated benchmark, these average over the benchmarks that work.
 
-![DA-goal per L, reliable cells only](pretraining/predictivity/early_small_by_L_goal_above_80.png)
+![DA-goal per L, reliable cells only](pretraining/predictivity/early_small_by_L_goal_above_80_multi_axes.png)
 
-![DA-ckpt per L, reliable cells only](pretraining/predictivity/early_small_by_L_ckpt_above_80.png)
+![DA-ckpt per L, reliable cells only](pretraining/predictivity/early_small_by_L_ckpt_above_80_multi_axes.png)
 <!-- END auto:by-L -->
 
 <!-- BEGIN auto:cross-task (cross_task.py --pool predictivity) -->
@@ -317,15 +317,15 @@ Full task-level maps: [`cross_task_size.png`](pretraining/predictivity/cross_tas
 
 How small a **fully trained** model may be and still decide the way the 1.7B final checkpoint does: R_size(N) = matching decisions / comparable decisions over the gated tasks, and N_min(τ) = the smallest size with R ≥ τ (τ = 0.9). Same kernel, gate and pair minimum as the rest of rq02 — this is DA-size pooled over decisions rather than averaged over tasks, so the counts behind a point are in the CSV. The 1.7B point is 1.0 by construction. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py` (all three groupings).
 
-**Pooled over every pair** (benchmarks; `scale_convergence.csv` carries BPB and the decision counts):
+**Pooled over every pair** (benchmarks; `scale_convergence_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
 | all pairs | 0.53 | 0.54 | 0.54 | 0.56 | 1.0 | — |
 
-![Scale convergence, overall](pretraining/predictivity/scale_convergence.png)
+![Scale convergence, overall](pretraining/predictivity/scale_convergence_multi_axes.png)
 
-**By language count** (benchmarks; `scale_convergence_L.csv` carries BPB and the decision counts):
+**By language count** (benchmarks; `scale_convergence_L_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
@@ -336,9 +336,9 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 | L8 | 0.47 | 0.49 | 0.46 | 0.57 | 1.0 | — |
 | all pairs | 0.53 | 0.54 | 0.54 | 0.56 | 1.0 | — |
 
-![Scale convergence, L](pretraining/predictivity/scale_convergence_L.png)
+![Scale convergence, L](pretraining/predictivity/scale_convergence_L_multi_axes.png)
 
-**By design axis** (benchmarks; `scale_convergence_transformation.csv` carries BPB and the decision counts):
+**By design axis** (benchmarks; `scale_convergence_transformation_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
@@ -348,7 +348,7 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 | language list (A vs B) | 0.49 | 0.49 | 0.48 | 0.49 | 1.0 | — |
 | temperature (T=1 vs T=3) | 0.49 | 0.55 | 0.57 | 0.57 | 1.0 | — |
 
-![Scale convergence, transformation](pretraining/predictivity/scale_convergence_transformation.png)
+![Scale convergence, transformation](pretraining/predictivity/scale_convergence_transformation_multi_axes.png)
 <!-- END auto:scale-convergence -->
 
 <!-- BEGIN auto:reliable-tasks (reliable_tasks.py --pool predictivity) -->
@@ -431,7 +431,7 @@ Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's fi
 
 ## The RQ2 figure
 
-`rq2_above_66_both_transformation.png` is the figure RQ2 reports. It reads the three
+`rq2_above_66_both_transformation_multi_axes.png` is the figure RQ2 reports (`_mono_axis` beside it over the one-axis pairs). It reads the three
 decision accuracies over a single population: the 23 (benchmark, language) cells whose
 median decision accuracy clears 0.66 on both DA-size and DA-ckpt, covering 14 languages
 and 5 benchmark families (`arc`, `hellaswag`, `lambada_openai_mt`, `multiblimp`,
@@ -441,12 +441,12 @@ all. (Before 2026-09-22 this read 26 cells over 17 languages: `reliable_tasks.py
 DA-size without the reference, so three cells at chance at 1.7B — `belebele_ben_Beng`,
 `include_base_44_georgian`, `include_base_44_tamil` — counted as reliable. Rule 1.)
 
-`rq2_above_66_either_transformation.png` is the same axis breakdown over the per-panel
+`rq2_above_66_either_transformation_multi_axes.png` is the same axis breakdown over the per-panel
 populations of `rq2_above_66_one` — each definition read on the cells reliable for it.
 Its left panel is therefore not the same cells as its middle and right, so it is three
 claims rather than one population seen three ways.
 
-![RQ2](pretraining/predictivity/rq2_above_66_both_transformation.png)
+![RQ2](pretraining/predictivity/rq2_above_66_both_transformation_multi_axes.png)
 
 **Figure.** Decision accuracy of a cheap proxy against the 1.7B reference, under the
 three definitions, on the cells reliable on both axes. **Left (DA-size):** a fully
@@ -497,13 +497,13 @@ both to future work.
 
 `pair_axes.py` computes the three decision accuracies on the `above_66_both` cells
 twice — over every pair at the grid seed (multi-axis, rq02's convention) and over
-the pairs that move exactly one of L, depth, list, temperature, second language
+the pairs that move exactly one of L, depth, list, temperature, second language, English corpus
 (mono-axis, which is what DataDecide's "all pairs" are by construction) — and
 writes `rq2_above_66_both_axes.png/.csv`. DA-ckpt is indifferent to the pair set;
 DA-size and DA-goal read 0.04–0.05 lower under mono-axis with the same trend, on a
-third of the decisions. The proposal that follows from it (an `axes` column in
-`da_per_task.csv`, mono-axis as the headline for decisions) is in
-`plan/decision_accuracy.md` (§2, §6).
+third of the decisions. Every rq02 table now carries both readings (the `axes` column of
+`da_per_task.csv`, and the `_multi_axes` / `_mono_axis` suffix on every figure); the
+design is `plan/decision_accuracy.md` (§2, §6).
 
 <!-- BEGIN auto:agreement-measures (agreement.py --pool predictivity) -->
 ## Decision accuracy is Kendall's τ under another tie convention
@@ -530,7 +530,7 @@ Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT 
 <!-- BEGIN auto:scale-convergence-by-language (by_language.py --pool predictivity) -->
 ## Scale convergence per language
 
-For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_lang_all_coverage.csv` says why a cell is empty.
+For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_lang_all_multi_axes_coverage.csv` says why a cell is empty.
 
 | language | L1 | L2 | L8 | L15 | L30 | L50 | R² size / tokens |
 |---|---|---|---|---|---|---|---|
@@ -543,9 +543,9 @@ For each language of the L8 setting, the `--by L` lines read on that language's 
 | fr | — | — | — | 0.67→0.47 [10] | 0.45→0.51 [10] | 0.56→0.57 [10] | 0.04 / 0.02 |
 | it | — | — | — | 0.67→0.74 [9] | 0.65→0.53 [9] | 0.71→0.56 [9] | 0.17 / 0.08 |
 
-![Scale convergence per language](pretraining/predictivity/scale_convergence_lang_all.png)
+![Scale convergence per language](pretraining/predictivity/scale_convergence_lang_all_multi_axes.png)
 
-![Scale convergence per language, tokens axis](pretraining/predictivity/scale_convergence_lang_all_tokens.png)
+![Scale convergence per language, tokens axis](pretraining/predictivity/scale_convergence_lang_all_multi_axes_tokens.png)
 <!-- END auto:scale-convergence-by-language -->
 
 <!-- BEGIN auto:seed-uncertainty (seed_uncertainty.py --pool predictivity) -->
@@ -566,7 +566,7 @@ What the replicate seeds say about decision accuracy — English at three proxy 
 <!-- BEGIN auto:scale-convergence-L8 (scale_convergence.py --by L --langs L8) -->
 ## Scale convergence by language count, on the L8 languages
 
-The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8`.
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8_above_66_size_multi_axes.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8`.
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
@@ -577,13 +577,13 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 | L8 | 0.47 | 0.49 | 0.46 | 0.57 | 1.0 | — |
 | all pairs | 0.54 | 0.54 | 0.54 | 0.55 | 1.0 | — |
 
-![Scale convergence, L8](pretraining/predictivity/scale_convergence_L8.png)
+![Scale convergence, L8](pretraining/predictivity/scale_convergence_L8_multi_axes.png)
 <!-- END auto:scale-convergence-L8 -->
 
 <!-- BEGIN auto:scale-convergence-L8-common (scale_convergence.py --by L --langs L8 --common-tasks) -->
 ## Scale convergence by language count, on the L8 languages, common tasks
 
-The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8common_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8common_above_66_size_multi_axes.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
 
 | group | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|
@@ -594,7 +594,7 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 | L8 | 0.47 | 0.53 | 0.36 | 0.44 | 1.0 | — |
 | all pairs | 0.57 | 0.61 | 0.59 | 0.57 | 1.0 | — |
 
-![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_L8common.png)
+![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_L8common_multi_axes.png)
 <!-- END auto:scale-convergence-L8-common -->
 
 <!-- BEGIN auto:language-tier (language_tier.py --pool predictivity) -->

@@ -66,6 +66,14 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. `global_mmlu` (Lite, one Apertus model) and `arc_de/fr` /
 `hellaswag_de/fr` were NaN at the reference when this was written and excluded.
 
+**Families without metadata are left out.** `load_per_task_snr` keeps a family only if it
+has a `FAMILY_META` entry, so the benchmarks added to `auto` since (as of 2026-09-25:
+`acp_bench_*`, `bbh_*`, `blend_sample`, `commonsense_qa`, `cultural_bench_*`, `global_piqa`,
+`include_v2_*`, `lambada_openai_mt`, `mathqa`, `mmlu`, `openbookqa`, `toxigen`,
+`truthfulqa_mc2` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy
+and mmlu) are not in any rq09 table. Tagging them in `data_info.md` and `FAMILY_META`
+brings them in.
+
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 

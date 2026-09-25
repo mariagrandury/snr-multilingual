@@ -393,7 +393,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
 
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
+**Per language count** (rq02's `da_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
 
 ![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
 
@@ -403,7 +403,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
 
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
+**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
 
 ![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
 

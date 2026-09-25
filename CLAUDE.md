@@ -172,7 +172,7 @@ cd documents && npx slidev build                # the deck the job skipped
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 
-# 2d. all of 2b, unattended at 06:00 Europe/Zurich. Arm it once, on the login
+# 2d. 2b without --curves, unattended at 06:00 Europe/Zurich. Arm it once, on the login
 #     node you want it pinned to; it needs no session and no Claude.
 loginctl enable-linger                              # or it dies at logout
 systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd/user/
@@ -234,9 +234,10 @@ are retired — do not carry them into new work):
 - Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
   unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
   only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}), BT3 (B's L30 list at
-  T=3 — the scheme × temperature pair; registered 2026-09-21, not built or
-  trained yet), ZH / ES (L2 with Chinese / Spanish instead of Russian). "Variant" is the older, looser word for any
+  T=3 — the scheme × temperature pair; registered 2026-09-21, built 2026-09-22,
+  not launched), ZH / ES (L2 with Chinese / Spanish instead of Russian),
+  DCLMP / FWEB (L1 with English from DCLM without the edu filter / FineWeb). "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-BT3|-ZH|-ES|-dclmP|-fweb]-<deep|shallow>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)
