@@ -8,11 +8,13 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scan
 python3.11 pretrain/launch_trainings.py cscs --size 3B  --partition preemptable --time 23:59:00
 python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B  --partition preemptable --time 23:59:00
 
-python3.11 launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable --time 23:59:00
 
 python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M,1B,1.7B --scheme BT3 --partition preemptable --dry-run
 
 ## Convert and eval new ckpts
+
+cd Projects/snr-multilingual/src/ && conda activate snr
 
 ✅ eval new ckpts:
 bash evals/scripts/launch_bpb.sh
@@ -196,3 +198,42 @@ So there's a third option that gives you exactly the side-by-side you want.
 - *Cons:* one more distinction to hold in your head ("the DA table I read" vs "the pool I'm reported under"), `compute_da` has to run for `predictivity_schemes` as an extra step, and `predictivity/da_reliable_tasks.csv` needs a column or note saying which pool its DA came from, or a future reader will assume `predictivity`.
 
 I'd go with **C**: it's the only one that gets you ES/ZH/AT3/BT3 in the pairs *and* the two suffixed plots in one directory *and* leaves the SNR numbers alone. The only real cost is documenting the provenance, which the `axes` column gives me a natural place to do.
+
+
+
+Files to delete (nothing removed; all folded or superseded)
+
+analysis/ANALYSIS_new_vs_previous.md, analysis/PARALLEL_SESSIONS.md, analysis/paper_figures.md
+analysis/rq03_noise_and_snr/INSTRUCTIONS.md, rq07_external_frameworks/INSTRUCTIONS.md, rq08_subset_selection/INSTRUCTIONS.md, rq09_benchmark_design/INSTRUCTIONS.md
+analysis/rq02_decision_accuracy/pretraining/predictivity/README.md (now a pointer)
+rq00_gate_and_curves/pretraining/predictivity/benchmark_floor.png and .csv
+rq00_task_reformulation/twins_gate.png, twins_gate.csv, twins_gate_mcnemar.csv, __pycache__/twins_gate.cpython-311.pyc
+rq09_benchmark_design/pretraining/predictivity/finetasks_criteria.{csv,png}, finetasks_surrogates_rank.csv, finetasks_surrogates_scatter.{csv,png}
+
+
+
+
+# 90m and 175M
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
+sbatch refetch_fineweb.sh
+Submitted batch job 3496755
+
+i removed BT3 from the ladder since we're not going to train them finally and launched all pretrainings
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+for f in "" "--arch shallow" "--scheme AT3" "--scheme AT3 --arch shallow" \
+         "--scheme B" "--scheme B --arch shallow" \
+         "--scheme ZH" "--scheme ES" "--scheme DCLMP" "--scheme FWEB"; do
+  for s in 90M 175M; do
+    python3.11 launch_trainings.py cscs --size $s $f --partition preemptable
+  done
+done
+
+
+# New eval probe
+
+cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && \
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py \
+    --group auto_probe --size 600M,1B,1.7B --final-only
+

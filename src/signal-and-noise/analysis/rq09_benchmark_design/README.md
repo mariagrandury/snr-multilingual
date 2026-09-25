@@ -66,6 +66,12 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. `global_mmlu` (Lite, one Apertus model) and `arc_de/fr` /
 `hellaswag_de/fr` were NaN at the reference when this was written and excluded.
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-23 06:16**. FineTasks' selection criteria, judged on this ladder,
+moved to [rq04](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)
+on 2026-09-23 (`finetasks_criteria.py` and its `finetasks_*` outputs; the
+copies left under `pretraining/predictivity/` here are stale).
+
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
@@ -103,6 +109,56 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 | curation method | 3.39 | 0.18 |
 | reading passage | 0.84 | 0.36 |
 <!-- END auto:results -->
+
+[snr_per_family_ranked.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) ·
+[snr_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_family.csv) ·
+[group_stats.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/group_stats.csv) ·
+[snr_by_n_options.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_n_options.png) ·
+[snr_by_format.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_format.png) ·
+[snr_by_curation_process.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_curation_process.png) ·
+[snr_by_data_source.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_data_source.png) ·
+[snr_by_passage.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_by_passage.png) ·
+[snr_vs_length_features.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_vs_length_features.png)
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+The family medians above, per language (`predictivity` pool). Regenerate with `python analysis/rq09_benchmark_design/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq09 in one figure](pretraining/predictivity/highlights.png)
+
+![SNR per benchmark and language](pretraining/predictivity/snr_family_by_language.png)
+<!-- END auto:panels -->
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.csv) ·
+[snr_family_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_family_by_language.png)
+
+## TODO
+
+- [ ] Bootstrap CIs on the per-family SNR medians and on each Kruskal–Wallis H.
+- [ ] Recover statistical power: bring back the gated high-option families as a
+      *separate* above-random-vs-gated contrast, rather than testing option
+      count only among the (mostly 2-option) survivors.
+- [ ] Disentangle the task-level curation confound (curation method is tied to
+      format/option count) with a controlled within-format comparison.
+- [ ] Finish Phase B length features (context/option length, ratio) and fold
+      them into the design-axis significance table.
+- [ ] Controlled within-format curation contrasts to nail the "curation doesn't
+      matter" claim: HellaSwag (MT) vs XStoryCloze (human translation) — both
+      completion; ARC (MT) vs Global-MMLU-Full (MT + post-edit) — both 4-option
+      MCQ from the same source family (would also expose the subject-fragmentation
+      effect: ARC's single domain vs MMLU's ~57 subjects).
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pool `custom_swissai_hf`; reference **1B**, twelve
+families on the 86-task old list) or from the **external tier**
+(`all/external`: the public and reference models, 270M–70B, cross-model
+dispersion with no mixture axis). Its SNR is a three-mixture dispersion at
+1B under the sweep's fixed-margin gate, on families without the reformulated
+twins, so its Kruskal–Wallis tests are a replication of the mechanism on a
+different survivor set, never rows of the ladder's table.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -164,6 +220,8 @@ artifact of the capability-driven above-random gate (RQ0), not a property of
 benchmark design. Once capable models clear the gate, answer-option count carries
 no signal and the sharpest benchmarks span both 2- and 4-option formats.
 
+[snr_per_family_ranked.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/all/external/snr_per_family_ranked.png) ·
+[snr_by_n_options.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/all/external/snr_by_n_options.png)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -204,21 +262,8 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | data source | 0.60 | 0.44 |
 | curation method | 0.50 | 0.78 |
 | reading passage | 0.00 | 1.00 |
-## TODO
 
-- [ ] Bootstrap CIs on the per-family SNR medians and on each Kruskal–Wallis H.
-- [ ] Recover statistical power: bring back the gated high-option families as a
-      *separate* above-random-vs-gated contrast, rather than testing option
-      count only among the (mostly 2-option) survivors.
-- [ ] Disentangle the task-level curation confound (curation method is tied to
-      format/option count) with a controlled within-format comparison.
-- [ ] Finish Phase B length features (context/option length, ratio) and fold
-      them into the design-axis significance table.
-- [ ] Controlled within-format curation contrasts to nail the "curation doesn't
-      matter" claim: HellaSwag (MT) vs XStoryCloze (human translation) — both
-      completion; ARC (MT) vs Global-MMLU-Full (MT + post-edit) — both 4-option
-      MCQ from the same source family (would also expose the subject-fragmentation
-      effect: ARC's single domain vs MMLU's ~57 subjects).
+[snr_per_family_ranked.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/custom_swissai_hf/snr_per_family_ranked.png)
 
 ## Files
 
@@ -228,29 +273,3 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 - `…/snr_by_*.png` — SNR distribution by curation, format, option count,
   passage, data source; `snr_per_family_ranked.png`; `snr_vs_random_baseline.png`;
   `snr_vs_length_features.png`.
-
-<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
-## Per benchmark and per language
-
-The family medians above, per language (`predictivity` pool). Regenerate with `python analysis/rq09_benchmark_design/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
-
-![rq09 in one figure](pretraining/predictivity/highlights.png)
-
-![SNR per benchmark and language](pretraining/predictivity/snr_family_by_language.png)
-<!-- END auto:panels -->
-
-<!-- BEGIN auto:finetasks-criteria (finetasks_criteria.py --pool predictivity) -->
-## FineTasks' criteria on the ladder
-
-FineTasks selects tasks with four statistics computed on single-seed runs at one size (monotonicity, a cross-run SNR, a non-random margin, consecutive-step ordering). Computed here per (task, size) on the `predictivity` variants and judged by DA-size against 1.7B, which the criteria never see. Columns: share passing each criterion, all three, and our gate; mean DA-size of passers vs failers; Spearman of each statistic with DA-size (monotonicity / SNR / non-random / ordering). Regenerate with `python analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity`.
-
-| size | tasks | monotone | SNR > 20 | non-random | all three | our gate | DA-size pass vs fail | ρ with DA-size |
-|---|---|---|---|---|---|---|---|---|
-| 175M | 632 | 18% | 57% | 41% | 13% | 31% | 0.52 [82] vs 0.47 [550] | +0.17 / +0.26 / +0.13 / +0.13 |
-| 350M | 632 | 34% | 60% | 46% | 27% | 41% | 0.53 [170] vs 0.45 [462] | +0.23 / +0.30 / +0.23 / +0.08 |
-| 600M | 632 | 41% | 59% | 49% | 33% | 46% | 0.53 [210] vs 0.46 [422] | +0.18 / +0.28 / +0.19 / +0.10 |
-| 1B | 632 | 46% | 59% | 53% | 38% | 49% | 0.54 [243] vs 0.45 [389] | +0.33 / +0.39 / +0.23 / +0.17 |
-| 1.7B | 632 | 50% | 59% | 59% | 43% | 54% | — | +nan / +nan / +nan / +nan |
-
-![FineTasks criteria](pretraining/predictivity/finetasks_criteria.png)
-<!-- END auto:finetasks-criteria -->

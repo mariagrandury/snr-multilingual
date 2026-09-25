@@ -70,7 +70,7 @@ research proposal.
 ## What is already known (cluster snapshots, 2026-09-01/03)
 
 Computed on the ≤ 600M ladder before this pipeline existed
-([`plan/status-09-01.md`](plan/status-09-01.md),
+([`plan/todos/status-09-01.md`](plan/todos/status-09-01.md),
 [`src/pretrain/ladder_report.md`](src/pretrain/ladder_report.md)):
 
 - **The 90M rung diverges** (9 of 10 runs peak at 15–19 % of training and

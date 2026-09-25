@@ -49,7 +49,7 @@ comparison, and the subset-search outputs all start from it.
 [`../pretrain/`](../pretrain/)), plus reference HF models (Qwen3, Gemma-3,
 SmolLM3, Olmo-3, Apertus-8B/70B) and the a06 main runs (`apertus3-{1b,3b}-*-nodes`).
 
-The full list lives in [`configs/models.json`](configs/models.json) (the
+The full list lives in [`configs/models.json`](../../configs/models.json) (the
 shared source of truth, read via
 [`scripts/utils/configs.py`](scripts/utils/configs.py)). Pools group them
 for downstream SNR analysis — see
@@ -57,9 +57,9 @@ for downstream SNR analysis — see
 
 ## Tasks in scope
 
-86 tasks per checkpoint — the deduplicated union of
-[`configs/signal_to_ratio/tasks_pretraining.txt`](configs/signal_to_ratio/tasks_pretraining.txt)
-and `tasks_pretraining_b.txt`, exposed as the launcher mode
+86 tasks per checkpoint —
+[`configs/signal_to_ratio/tasks_pretraining_full.txt`](configs/signal_to_ratio/tasks_pretraining_full.txt)
+(the deduplicated union of `tasks_pretraining.txt` and `tasks_pretraining_b.txt`), exposed as the launcher mode
 `snr-pretraining-full`. Coverage includes per-language benchmarks
 (`multiblimp_<lang>`, `xstorycloze_<lang>`, `xwinograd_<lang>`,
 `hellaswag_<lang>`, `xnli_<lang>`, `xcopa_<lang>`, `paws_<lang>`,

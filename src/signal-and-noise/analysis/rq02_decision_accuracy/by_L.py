@@ -54,11 +54,26 @@ them overlay. The variants differ only in which tasks the mean runs over:
                            figures — at the reference the two definitions coincide.
 
     python analysis/rq02_decision_accuracy/by_L.py --pool predictivity
+
+`--by transformation` reads the same two decision accuracies one DESIGN AXIS
+at a time instead of one L at a time: the MONO-AXIS pairs at the grid seed
+(`utils.pair_sets`), split by the one axis each pair moves
+(`scale_convergence.pairs_by_group`) — language count, depth, language list,
+temperature, second language, English corpus — one panel per axis and a first
+panel over every mono-axis pair. Same gate, pair minimum and filter variants;
+the reliability filter is the mono-axis one (rule 15). Task counts sit at the
+end of every line.
+
+    da_by_transformation_per_task.csv                    per task, axis, proxy size and fraction
+    early_small_by_transformation_{goal,ckpt}[_<variant>].png / .csv
+
+    python analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation
 """
 
 from __future__ import annotations
 
 import argparse
+import multiprocessing as mp
 import sys
 from pathlib import Path
 
@@ -85,11 +100,13 @@ from analysis.rq02_decision_accuracy.compute_da import (  # noqa: E402
     compute_ckpt_decision_accuracy, compute_early_small_decision_accuracy)
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
+from analysis.rq02_decision_accuracy.scale_convergence import AXIS_LABEL, OVERALL, pairs_by_group  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, GRID_SEED, SMALL_SIZES, TARGET_SIZE, _is_parent_task, build_snr_pool, design_axes,
+    AXES_SUFFIX, DESIGN_AXES, GRID_SEED, SMALL_SIZES, TARGET_SIZE, _is_parent_task, build_snr_pool, design_axes,
     pair_sets)
 
 OUT_ROOT = DECISION_ACCURACY
+GITHUB = "https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis"
 L_POOL = "predictivity_all"      # every scheme; the grid seed keeps replicate seeds out of the pairs
 FRACS = [k / 10 for k in range(1, 11)]     # the ten evaluated checkpoints of every run (0.5C ... 5C)
 mpl.rcParams.update(S.RC)
@@ -103,6 +120,10 @@ def _da_table(df: pd.DataFrame, label, pairs=None) -> list[dict]:
     rows = []
     for t, dft in tqdm(df.groupby("task", sort=False), desc=str(label)):
         if not _is_parent_task(t):
+            continue
+        # rule 5 up front: a task with fewer than MIN_PAIRS of the explicit pairs in its rows is NaN at every cell
+        # (the kernels return exactly that), so the 45 kernel calls below are skipped
+        if pairs is not None and sum(a in set(dft["family"]) and b in set(dft["family"]) for a, b in pairs) < MIN_PAIRS:
             continue
         ref = {(r["proxy_size"], r["frac"]): r for r in compute_early_small_decision_accuracy(dft, fracs=FRACS, pairs=pairs)}
         own = {(b, f): compute_ckpt_decision_accuracy(dft, t, b, f, return_n=True, pairs=pairs) for b in buckets for f in FRACS[:-1]}
@@ -138,6 +159,23 @@ def da_by_L(axes: str = "multi-axis") -> tuple[pd.DataFrame, pd.DataFrame]:
     return by_L, pooled
 
 
+def da_by_transformation() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(per design axis, pooled): the mono-axis pairs at the grid seed, split
+    by the one axis each pair moves; the pooled table is every mono-axis pair
+    (the `_one_axis` pooled panel of the per-L figure)."""
+    df = build_snr_pool(L_POOL)
+    df = df[df["seed"] == GRID_SEED].copy()
+    df["bucket"] = df["size"].map(size_bucket)
+    groups = pairs_by_group(design_axes(df), "transformation", "mono-axis")
+    # one process per axis, each on the rows of the families its pairs use (the kernels read nothing else)
+    with mp.get_context("fork").Pool(len(groups)) as pool:
+        tables = pool.starmap(_da_table, [(df[df["family"].isin({f for pr in pl for f in pr})], g, pl) for g, pl in groups.items()])
+    by_axis = pd.DataFrame([r for g, rows in zip(groups, tables) if g != OVERALL for r in rows],
+                           columns=COLS).rename(columns={"L": "axis"})
+    pooled = pd.DataFrame(tables[list(groups).index(OVERALL)], columns=COLS).drop(columns="L")
+    return by_axis, pooled
+
+
 def pairs_by_L(t: pd.DataFrame) -> pd.DataFrame:
     """Per L: the variants the grid plans at the grid seed, and the pairs
     usable for DA-size(proxy -> reference) — both members planned at the
@@ -171,12 +209,17 @@ def pairs_by_L(t: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _lines(ax, summary: pd.DataFrame, sizes: list, title: str, groups: tuple) -> None:
+def _lines(ax, summary: pd.DataFrame, sizes: list, title: str, groups: tuple, counts: bool = False) -> None:
     for group, ls in groups:
         for s_ in sizes:
             g = summary[(summary["group"] == group) & (summary["proxy_size"] == s_)].sort_values("chinchilla")
             if len(g):
                 ax.plot(g["chinchilla"], g["da"], color=S.SIZE_COLOR.get(s_, S.MUTED), ls=ls, marker="o", ms=3, lw=1.3)
+                if counts:            # rule 13: the tasks behind the line, at its end (a range when the gate moves it)
+                    lo, hi = int(g["tasks"].min()), int(g["tasks"].max())
+                    ax.annotate(str(lo) if lo == hi else f"{lo}–{hi}", (g["chinchilla"].iloc[-1], g["da"].iloc[-1]),
+                                textcoords="offset points", xytext=(4, 0), va="center", fontsize=5.5,
+                                color=S.SIZE_COLOR.get(s_, S.MUTED))
     ax.axhline(SAFE_DA, color=S.MUTED, lw=.8, ls=":")
     ax.set_ylim(0.25, 1.0); ax.set_xticks([1, 2, 3, 4, 5]); ax.set_xticklabels([G.chinchilla(f) for f in (.2, .4, .6, .8, 1.0)])
     ax.set_xlim(0.3, 5.2)
@@ -200,6 +243,11 @@ READINGS = {
 # The L panels the grid draws. L100 was planned and dropped (plan/l100_data_mixture.md),
 # so it is not a cell of this grid; an L with data but too few pairs still gets its panel.
 PANEL_LS = [1, 2, 8, 15, 30, 50]
+# The panels of `--by transformation`: one per design axis (the seed is the null, not a decision).
+PANEL_AXES = [AXIS_LABEL[k] for k in DESIGN_AXES if k != "seed"]
+# grouping -> (its column in the table, the panel list, how a panel is labelled, the first panel's title)
+BY = {"L": ("L", PANEL_LS, "L{}".format, "all pairs (every scheme)"),
+      "transformation": ("axis", PANEL_AXES, str, "all mono-axis pairs")}
 # variant -> (filename suffix, the groups drawn, whether the reliable-task filter applies)
 BENCH, WITH_BPB = ((("all benchmarks", "--"),), (("bpb", "-"), ("all benchmarks", "--")))
 BOTH_READINGS = ("goal", "ckpt")
@@ -256,10 +304,12 @@ def _reliable_panel(ax, keep: pd.DataFrame, red: str, thresh: float, crit: str) 
 
 
 def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
-           name: str = "goal", variant: str = "", axes: str = "multi-axis") -> pd.DataFrame | None:
+           name: str = "goal", variant: str = "", axes: str = "multi-axis", by: str = "L") -> pd.DataFrame | None:
     reading, value = READINGS[name], READINGS[name]["value"]
     groups, filt, _ = VARIANTS[variant]
-    stem = f"early_small_by_L_{name}" + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes]
+    col, panel_keys, lab, first = BY[by]
+    # the transformation panels are mono-axis by construction, so the stem carries no pair-set suffix
+    stem = f"early_small_by_{by}_{name}" + (f"_{variant}" if variant else "") + (AXES_SUFFIX[axes] if by == "L" else "")
     keep = red = crit = None
     thresh = 0.0
     if filt:
@@ -271,20 +321,23 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
         t, pooled = t[t["task"].isin(names)], pooled[pooled["task"].isin(names)]
     sizes = SMALL_SIZES + [TARGET_SIZE]
     drawn = [g for g, _ in groups]
-    summary, head = _summary(pool, t, ["L"], reading), _summary(pool, pooled, [], reading)
+    summary, head = _summary(pool, t, [col], reading), _summary(pool, pooled, [], reading)
     summary, head = summary[summary["group"].isin(drawn)], head[head["group"].isin(drawn)]
-    Ls = sorted(set(summary["L"]) | set(PANEL_LS))
+    Ls = sorted(set(summary[col]) | set(panel_keys)) if by == "L" else panel_keys + [p for p in summary[col].unique() if p not in panel_keys]
     # "too few pairs" vs "no pairs yet" is a statement about the tasks this figure
     # draws, so ask it of the kinds in `groups` — an L with only BPB data has no
     # pairs at all in a benchmarks-only figure, it does not have too few.
     drawable = t[t["task"].str.startswith("bpb_") == ("bpb" in drawn)] if len(drawn) == 1 else t
-    few = [L for L in Ls if L not in set(summary["L"]) and L in set(drawable.loc[drawable[value].notna(), "L"])]
+    few = [L for L in Ls if L not in set(summary[col]) and L in set(drawable.loc[drawable[value].notna(), col])]
+    counts = by == "transformation"
     fig, axes = plt.subplots(2, 4, figsize=(17, 7.4), sharey=True)
     flat = axes.ravel()
-    _lines(flat[0], head, sizes, "all pairs (every scheme)", groups)
+    n_all = pooled[reading["n_col"]].max()
+    _lines(flat[0], head, sizes, first + (f"  ({int(n_all)} pairs)" if pd.notna(n_all) else ""), groups, counts)
     for ax, L in zip(flat[1:], Ls):
-        g = summary[summary["L"] == L]
-        _lines(ax, g, sizes, f"L{L}" + ("" if len(g) else f"  (< {MIN_PAIRS} pairs)" if L in few else "  (no pairs yet)"), groups)
+        g = summary[summary[col] == L]
+        n = int(t.loc[t[col] == L, reading["n_col"]].max()) if (t[col] == L).any() else 0
+        _lines(ax, g, sizes, lab(L) + (f"  ({n} pairs)" if len(g) else f"  (< {MIN_PAIRS} pairs)" if L in few else "  (no pairs yet)"), groups, counts)
     spare = list(range(len(Ls) + 1, len(flat)))
     for i in spare:
         flat[i].axis("off")
@@ -297,13 +350,16 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
                        plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")] if variant == "with_bpb" else
                       [plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")]),
                    fontsize=6.5, frameon=False, ncol=2)
-    top = G._header(fig, reading["title"],
-                    f"cell panel = pairs of design variants sharing that L (seed {GRID_SEED}, every scheme); first panel = every pair "
-                    f"at that seed, every scheme (A, B, AT3, ZH, ES). DA = share of pairs the proxy orders like {reading['what']}, mean over "
+    population = (f"cell panel = pairs of design variants sharing that L (seed {GRID_SEED}, every scheme); first panel = every pair "
+                  f"at that seed, every scheme (A, B, AT3, ZH, ES)" if by == "L" else
+                  f"cell panel = the mono-axis pairs that move that ONE design axis (seed {GRID_SEED}, every scheme, `{L_POOL}`; "
+                  f"the pairs behind it in brackets); first panel = every mono-axis pair; the number at the end of a line = tasks behind it")
+    top = G._header(fig, reading["title"].replace("per language count", "per design axis" if by == "transformation" else "per language count"),
+                    f"{population}. DA = share of pairs the proxy orders like {reading['what']}, mean over "
                     f"the gated {'tasks' if variant == 'with_bpb' else 'benchmark tasks'}"
-                    + (f" reliable on {crit} (DA ≥ {thresh:g}, {red} reduction, reliable_tasks.py)" if filt else "")
+                    + (f" reliable on {crit} (DA ≥ {thresh:g}, {red} reduction, reliable_tasks.py, {axes} pairs)" if filt else "")
                     + f" with ≥ {MIN_PAIRS} pairs; dotted line = {SAFE_DA}"
-                    + (f". Left out for having fewer than {MIN_PAIRS} pairs: L{', L'.join(map(str, few))}" if few else ""))
+                    + (f". Left out for having fewer than {MIN_PAIRS} pairs: {', '.join(map(lab, few))}" if few else ""))
     # the first empty cell becomes the reliable-cell inventory. It cannot share the
     # grid's y axis (a task index, not a DA), so the placeholder is replaced by a
     # fresh subplot in the same grid slot, which tight_layout still manages.
@@ -311,7 +367,8 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
         flat[spare[0]].remove()
         _reliable_panel(fig.add_subplot(2, 4, spare[0] + 1), keep, red, thresh, crit)
     fig.tight_layout(rect=(0, 0, 1, top))
-    pd.concat([head.assign(L="all"), summary]).to_csv(out_dir / f"{stem}.csv", index=False)
+    summary = pd.concat([head.assign(**{col: "all"}), summary])
+    summary.to_csv(out_dir / f"{stem}.csv", index=False)
     S.save(fig, out_dir / f"{stem}.png", dpi=150)
     return summary
 
@@ -354,13 +411,93 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
     replace_block(OUT_ROOT / "README.md", "by-L", body, f"by_L.py --pool {pool}")
 
 
+def generate_readme_transformation(pool: str, out_dir: Path, summaries: dict) -> None:
+    """`summaries[(reading, variant)]` = the per-axis mean lines the figure drew."""
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    rel, gh = f"{stage}/{pool}", f"{GITHUB}/rq02_decision_accuracy/{stage}/{pool}"
+    stem = lambda r, v: f"early_small_by_transformation_{r}" + (f"_{v}" if v else "")
+    sizes = SMALL_SIZES + [TARGET_SIZE]
+
+    def cell(s: pd.DataFrame, axis: str, size: str) -> str:
+        g = s[(s["axis"] == axis) & (s["proxy_size"] == size) & (s["group"] == "all benchmarks")].sort_values("chinchilla")
+        lo, hi = (int(g["tasks"].min()), int(g["tasks"].max())) if len(g) else (0, 0)
+        return f"{g['da'].iloc[0]:.2f} → {g['da'].iloc[-1]:.2f} ({lo if lo == hi else f'{lo}–{hi}'})" if len(g) else "—"
+
+    def table(r: str, v: str) -> str:
+        s = summaries[(r, v)]
+        axes_ = ["all"] + [a for a in PANEL_AXES if a in set(s["axis"])]
+        c1, c2 = (G.chinchilla(s["frac"].min()), G.chinchilla(s["frac"].max())) if len(s) else ("", "")
+        return md_table([f"axis (DA-{r}, {c1} → {c2}, tasks)"] + sizes, [[a] + [cell(s, a, z) for z in sizes] for a in axes_])
+
+    def early(r: str) -> list[str]:
+        """Per axis at the smallest proxy: the checkpoint from which the line stays ≥ SAFE_DA, or never."""
+        s = summaries[(r, "")]
+        out = []
+        for a in [a for a in PANEL_AXES if a in set(s["axis"])]:
+            g = s[(s["axis"] == a) & (s["proxy_size"] == SMALL_SIZES[0]) & (s["group"] == "all benchmarks")].sort_values("chinchilla")
+            if not len(g):
+                continue
+            ok = (g["da"] >= SAFE_DA).to_numpy()[::-1]
+            k = int(ok.cumprod().sum())            # trailing run of safe checkpoints
+            out.append(f"{a}: " + (f"from {G.chinchilla(g['frac'].iloc[-k])} ({g['da'].iloc[-k]:.2f})" if k else
+                                   f"never (max {g['da'].max():.2f})"))
+        return out
+
+    axes_ = [a for a in PANEL_AXES if a in set(summaries[("ckpt", "")]["axis"])]
+    body = "\n\n".join([
+        "## Early and small per design axis",
+        f"The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed {GRID_SEED} "
+        f"(`{L_POOL}`, every scheme) by the one axis each pair moves — {', '.join(axes_)} — one panel per axis and a first panel "
+        f"over every mono-axis pair (median pairs per cell up to {int(summaries[('ckpt', '')]['median_pairs'].max())}). Same gate (rule 1), "
+        f"pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and "
+        f"`above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line "
+        f"and the populations differ between panels and sizes (rule 13). Regenerate with "
+        f"`python analysis/rq02_decision_accuracy/by_L.py --pool {pool} --by transformation`.",
+        f"![DA-ckpt per design axis]({rel}/{stem('ckpt', '')}.png)",
+        f"**DA-ckpt** (against the proxy size's own final; cell = mean DA at the first → last drawn checkpoint, tasks behind the line in brackets):",
+        table("ckpt", ""),
+        "Key findings:",
+        "\n".join([f"- At {SMALL_SIZES[0]} the DA-ckpt line clears {SAFE_DA} and stays there — " + "; ".join(early("ckpt")) + ".",
+                    f"- At {TARGET_SIZE} — " + "; ".join(f"{a}: {cell(summaries[('ckpt', '')], a, TARGET_SIZE)}" for a in axes_) + "."]),
+        "Follow-ups:",
+        "\n".join(["- A `_with_bpb` variant per axis, to see whether BPB decides the temperature and the second language earlier than the benchmarks do.",
+                    "- The same panels on the L8 languages only (`scale_convergence.py --langs L8` does it for DA-size), so the language-count panel is read on one task set.",
+                    "- Once BT3 trains, the temperature panel gains the B-vs-BT3 pairs and the list panel AT3-vs-BT3 with no code change."]),
+        f"![DA-goal per design axis]({rel}/{stem('goal', '')}.png)",
+        f"**DA-goal** (against the {TARGET_SIZE} final):",
+        table("goal", ""),
+        "Key findings:",
+        "\n".join([f"- At {SMALL_SIZES[0]} the DA-goal line clears {SAFE_DA} and stays there — " + "; ".join(early("goal")) + ".",
+                    f"- The distance between the DA-goal and DA-ckpt cell of an axis at a proxy size is what the size costs; the "
+                    f"{TARGET_SIZE} column is the same line in both."]),
+        "Follow-ups:",
+        "\n".join(["- The size axis of the same split is `scale_convergence_transformation_panels.png` (DA-size pooled over decisions).",
+                    "- A jackknife band per axis line (leave one family out), as the scale-convergence panels carry."]),
+        "Filtered twins (reliable cells only): "
+        + ", ".join(f"[`{stem(r, v)}.png`]({rel}/{stem(r, v)}.png)" for r, v in summaries if v),
+        "Files: " + ", ".join(f"[`{stem(r, v)}.{e}`]({gh}/{stem(r, v)}.{e})" for r, v in summaries for e in ("png", "csv"))
+        + f", [`da_by_transformation_per_task.csv`]({gh}/da_by_transformation_per_task.csv)."])
+    replace_block(OUT_ROOT / "README.md", "early-small-by-transformation", body, f"by_L.py --pool {pool} --by transformation")
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose early_small_summary.csv is the first panel and whose gate applies")
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
                    help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+    p.add_argument("--by", default="L", choices=list(BY), help="one panel per language count, or per design axis (mono-axis pairs)")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if args.by == "transformation":
+        table, pooled = da_by_transformation()
+        table.to_csv(out / "da_by_transformation_per_task.csv", index=False)
+        print(f"[transformation] {len(table)} by-axis rows, {len(pooled)} pooled rows")
+        summaries = {(name, v): figure(args.pool, out, table, pooled, name, v, "mono-axis", "transformation")
+                     for name in READINGS for v, (_, _, readings) in VARIANTS.items() if name in readings and v != "with_bpb"}
+        generate_readme_transformation(args.pool, out, {k: v for k, v in summaries.items() if v is not None})
+        sys.exit(0)
     table, pooled = da_by_L(args.axes)
     sfx = AXES_SUFFIX[args.axes]
     table.to_csv(out / f"da_by_L_per_task{sfx}.csv", index=False)

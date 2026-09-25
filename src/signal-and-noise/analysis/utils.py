@@ -319,7 +319,7 @@ DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "en", "seed"]
 # The three pair sets a decision-accuracy table can be computed over (rule 15).
 #   multi-axis  every pair of design variants: rq02's convention to date, and
 #               two thirds of its pairs move more than one axis at once.
-#   mono-axis   the pairs that move exactly ONE of L/arch/list/T/lang2, the seed
+#   mono-axis   the pairs that move exactly ONE of L/arch/list/T/lang2/en, the seed
 #               held: the decision a practitioner actually makes, and what
 #               upstream's "every pair" is by construction (DataDecide's recipes
 #               differ in the data mix alone).

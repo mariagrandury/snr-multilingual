@@ -70,6 +70,18 @@ The above-random gate is the largest effect in the study and it is, for most gat
 
 `analysis/rq00_task_reformulation/twins_gate.py` (the twins' effect on the gate with McNemar's exact test, and every headline reading with / without the twins: originals 0.50 → 0.52 mean DA-size against twins 0.47 → 0.48; 21 % against 10 % reliable) and `analysis/rq02_decision_accuracy/scaling_vs_ranking.py` (rq01's scaling statistics against rq02's ranking statistics per task: Spearman across tasks 0.12 → 0.37 for ρ against ρ, 0.38 → 0.62 for the trajectory R² against DA-size). Both are in the driver and in the write-up (§1, §2b). Proposed for rq01's crowded paper figure: a second panel for the twins, family labels from five tasks up, or one marker per family at its median with the task count as area.
 
+## 7c. Generalising rq00–rq02 above the reference with the floors and the public ladders
+
+What the ladder cannot say is what happens above 1.7B. Three things the external tier makes possible, in order of how much they add per hour:
+
+1. **Between-lab DA one rung up (done, `rq02_decision_accuracy/public_ladders.py`) — and its baseline.** gemma-3, Qwen3-Base and OLMo-2 have base models near 1B and near 13B: on the 54 gated tasks the 1B–1.7B models order the three lines like their 12–14B siblings at 0.73 (Qwen3 vs OLMo-2 0.87, gemma-3 vs OLMo-2 0.76, gemma-3 vs Qwen3 0.57). A proxy that always names the line that usually wins at 13B scores 0.80 / 0.82 / 0.56 on the same pairs, so the agreement is the lab ordering, not task-level prediction; on the 10–24 minority tasks the small models read the exceptions at 0.55–0.80, too few to be a finding. Extending it needs more lines with a small and a large base release on the same task list (Qwen2.5 0.5B–14B, Pythia 160M–12B, OLMo-1, Llama-3.2 1B/3B → 3.1 8B, SmolLM2 135M–1.7B with SmolLM3 3B) AND lines close enough in level that the majority baseline is near 0.5: every added line multiplies the pairs, and with five lines the per-task lattice becomes ten pairs. That is an eval launch (the `auto` list on ~15 public checkpoints), not analysis code.
+
+2. **A floor-conditioned reading of DA (analysis only, half a day).** The floor of a task is where it leaves chance. On the ladder, tasks with a 175M floor, a 350M floor and a 600M floor have DA-size at each proxy; if DA collapses onto one curve when x is re-expressed as the proxy's distance above the task's floor (in doublings), then the external floors of Figure 2c predict, for a task the ladder never reads, how far above its floor a proxy must sit to reach a given DA — Belebele's floor is 1B–1.7B on the public models, so a proxy two doublings above it would be 4–7B. Test on the ladder first: per task, `first_size_above_random` gives the floor and `da_per_task.csv` the DA at each proxy; plot DA against log2(proxy / floor) with one line per floor; if the lines coincide the extrapolation is licensed, if they fan out the floor is not the whole story. Pitfall: the floor is a model floor (5× Chinchilla) on the ladder and a recipe floor on the public models, so the doubling count is approximate.
+
+3. **DA-ckpt and the FineTasks criteria at 3–8B from the external step series (analysis only, a day).** SmolLM3-3B (26 checkpoints), Olmo-3-7B (16) and Apertus-8B (14) are single runs, so no ranking of variants exists, but everything that needs one run does: monotonicity, the consecutive-checkpoint τ, the token at which each task leaves chance (B2), and the seed-null-like persistence of a run's own ranking of TASKS (which tasks look hardest early does it match late). It tells whether the "DA-ckpt is persistence" reading holds at sizes the ladder does not reach.
+
+4. **The 3B rung as a reference above 1.7B (when its evals land).** The ladder's 3B cells (deep, L8/L15, A/B: four families) give DA-size 1.7B → 3B on four families, six pairs: the one within-recipe generalisation above the current reference, and the direct test of whether the 1.7B reference was itself too small to be a reference (`above_reference=True` in `build_snr_pool`). Rule 9 keeps it out of every other figure.
+
 ## 8. What was implemented today, and how to run it
 
 ```
@@ -78,7 +90,10 @@ export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH
 export PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0
 python analysis/rq00_gate_and_curves/benchmark_floor.py --pool predictivity      # §2 B1
 python analysis/rq06_language_transfer/language_panel.py --pool predictivity      # §6
-python analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity   # §4
+python analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity   # §4 (3x2 grid + the per-surrogate scatter)
+python analysis/rq00_task_reformulation/twins_gate.py --pool predictivity          # §7b
+python analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool predictivity   # §7b
+python analysis/rq02_decision_accuracy/public_ladders.py --pool predictivity       # §7c
 ```
 
 All three are in `run_all_predictivity.sh` in their RQ's block, write a CSV beside every PNG and an auto block in their RQ's README, and pass `check_rules.py` (0 findings). Nothing here was committed.

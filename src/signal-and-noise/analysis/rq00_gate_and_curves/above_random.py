@@ -86,42 +86,68 @@ MIN_SHARE = 0.5     # a cell is above random when at least this share of its run
 # result. Together they are the ONLY source of the random baseline
 # (= 1 / n_options); the gate depends only on raw eval scores + these counts,
 # so the RQs depend on the gate and never the other way around. Families in
-# `_APPROX` have a variable number of options per item, so their baseline is
-# an approximation. A task with no option count anywhere (per-language BPB,
-# generative tasks) has no chance level and is never gated.
+# `_APPROX` have a variable number of options per item; their N_OPTIONS entry
+# is the nominal (rounded mean) count the option-count features read, and
+# their chance level is CHANCE, the exact E[1/n_i] over the items — not
+# 1/mean (TruthfulQA mc1: 817 items with 2–13 options, mean 5.06, E[1/n] =
+# 0.2253, the same items in every language; measured on the harness samples
+# of lm-1B-L50-deep-seed1904 on 2026-09-23). `task_chance` is the ONE reader
+# of both tables. A task with no option count anywhere (per-language BPB, the
+# loss, generative tasks) has no chance level and is never gated.
+# The chance level is UNIFORM guessing. With unbalanced gold labels a constant
+# answer scores the majority label's share, which can exceed 1/n (hellaswag_ta:
+# 2,175 of 8,413 golds are option 2, 0.2585 against 0.25); the gate does not
+# test for that, and rule 1 says so.
 N_OPTIONS = {
     # multilingual families (cf. lm-eval task specs)
     "arc": 4, "belebele": 4, "global_mmlu": 4, "global_mmlu_full": 4,
     "global_piqa_completions": 2, "global_piqa_parallel_cloze": 4,  # solution0..3 in the harness template
     "global_piqa_nonparallel_cloze": 2, "hellaswag": 4, "multiblimp": 2, "paws": 2,
     "xcopa": 2, "xnli": 3, "xstorycloze": 2, "xwinograd": 2,
-    "afrimmlu": 4, "afrixnli": 3, "include_base_44": 4, "truthfulqa-multi_mc1": 4,
+    "afrimmlu": 4, "afrixnli": 3, "include_base_44": 4,
+    "truthfulqa-multi_mc1": 5,   # nominal (the mean of 2–13 options is 5.06); the chance level is CHANCE's
     # standalone-English + extra MCQA families
     "mmlu": 4, "piqa": 2, "openbookqa": 4, "commonsense_qa": 5, "social_iqa": 3,
     "winogrande": 2, "ai2_arc": 4, "m_arc": 4, "m_hellaswag": 4,
     "include_base_44": 4,
     "agieval": 4, "agieval_logiqa": 4, "agieval_sat": 4, "agieval_lsat": 5,
-    "truthfulqa": 4, "truthfulqa_mc1": 4,
+    "truthfulqa": 5, "truthfulqa_mc1": 5,   # the same 817 items as the multilingual mc1; chance in CHANCE
+    "truthfulqa_mc2": 7,                    # nominal (mean 7.2 options); chance = the mean true-option share, CHANCE
     "arabic_leaderboard_alghafa_mcq_exams_test": 4,
 }
 _APPROX = {"truthfulqa", "truthfulqa_mc1", "truthfulqa-multi_mc1", "agieval",
            "agieval_logiqa", "agieval_sat", "agieval_lsat",
            "arabic_leaderboard_alghafa_mcq_exams_test",
-           # mc2 is in here for a second reason, and has no N_OPTIONS entry on
-           # purpose: its score is the probability mass on ALL true answers,
-           # not a pick-one accuracy, so its baseline is the average share of
-           # true options per item (~0.4) and not 1/n. Without this line the
-           # count derive_task_options reads off the samples (4, or 5 for the
-           # vi/zh siblings) would become a 0.25 chance level that every model
-           # clears at once.
+           # mc2 is in here for a second reason: its score is the probability
+           # mass on ALL true answers, not a pick-one accuracy, so its chance
+           # level is the mean share of true options per item (CHANCE, 0.449)
+           # and not 1/n. Without this line the count derive_task_options reads
+           # off the samples (4, or 5 for the vi/zh siblings) would become a
+           # 0.25 chance level that every model clears at once. The Wilson
+           # bound still applies: a [0, 1]-valued per-item score has variance
+           # at most p(1 - p), so the binomial bound is conservative for it.
            "truthfulqa_mc2"}
+
+
+# Chance level of the variable-option families: E[1/n_i] over the items.
+# mc2: the mean share of true options per item (uniform probability mass
+# scores exactly that): en 0.4484 (817 items), vi 0.4500 (785), zh 0.4488 (788).
+CHANCE = {"truthfulqa": 0.2253, "truthfulqa_mc1": 0.2253, "truthfulqa-multi_mc1": 0.2253, "truthfulqa_mc2": 0.449}
+
+
+def task_chance(task: str) -> float:
+    """The chance level of uniform guessing: CHANCE for a variable-option family,
+    else 1 / task_n_options, NaN when the task has no option count."""
+    c = CHANCE.get(benchmark_family(task))
+    return float(c) if c is not None else 1 / task_n_options(task)
 
 
 def task_n_options(task: str) -> float:
     """Option count of a task: tasks.json's derived value, else the family
     table, else NaN (no chance level). An `_APPROX` family keeps the table:
-    its items have different option counts (TruthfulQA mc1 4–13), and the
-    derived value is one item's count, not the mean the chance level needs."""
+    its items have different option counts (TruthfulQA mc1 2–13), and the
+    derived value is one item's count. The chance level is `task_chance`,
+    never 1 / this value for an `_APPROX` family."""
     fam = benchmark_family(task)
     n = None if fam in _APPROX else load_tasks().get(task, {}).get("n_options")
     return float(n) if n else float(N_OPTIONS.get(fam, float("nan")))
@@ -148,7 +174,7 @@ def above_chance(score, task) -> pd.Series:
     """Per element: 1.0 when the run's one-sided 95 % LCB clears chance, 0.0 when it
     does not, NaN when the task has no chance level or no item count."""
     task = pd.Series(task)
-    chance = 1 / task.map(task_n_options).astype(float)
+    chance = task.map(task_chance).astype(float)
     lcb = wilson_lcb(score, task.map(task_n_items))
     out = pd.Series((lcb > chance.to_numpy()).astype(float), index=task.index)
     return out.mask(~np.isfinite(lcb) | chance.isna())
@@ -211,7 +237,7 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     fam = df.groupby("task")["family"].first()
     lang = df.groupby("task")["language"].first()
     n_opt = pd.Series({t: task_n_options(t) for t in fam.index})   # NaN if unknown
-    base_s = (1.0 / n_opt).round(3)
+    base_s = pd.Series({t: task_chance(t) for t in fam.index}).round(4)
 
     mask = share.ge(MIN_SHARE).where(share.notna()).astype("Int64")  # 1 = above chance
     meta = pd.DataFrame({"family": fam, "language": lang,

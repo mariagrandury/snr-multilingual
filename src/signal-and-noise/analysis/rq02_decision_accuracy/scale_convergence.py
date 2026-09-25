@@ -72,6 +72,11 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  Only the reference's own final is 1.0 by construction;
                                  its earlier checkpoints are ordinary proxies. Drawn for
                                  the reliable populations only.
+    scale_convergence_transformation_panels[_<variant>][_flops].png   the `--by transformation`
+                                 figure as a grid, one panel per design axis: the axis's own
+                                 line with its leave-one-family-out band, the pooled `all pairs`
+                                 line faint in each for reference, task counts under the points
+                                 (size axis). Same table as the one-panel figure, written beside it.
     scale_convergence_<by>_above_80.png   the same, restricted to the (benchmark,
                                  language) cells that rank reliably on both axes
                                  (`reliable_tasks.py`). One panel, not two: the
@@ -507,6 +512,85 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
     S.save(fig, path, dpi=150)
 
 
+def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populations: tuple = POPULATIONS,
+                 note: str = "", x: str = "non_emb", counts: bool = True) -> None:
+    """The `--by transformation` figure one axis per panel: the axis's line with
+    its jackknife band, the pooled line faint behind it, one row per population."""
+    rest = group_order(g for g in out["group"].unique() if g != OVERALL)
+    colours = {g: L_COLOUR.get(g, c) for g, c in zip(rest, GROUP_COLOURS * 3)}
+    fig, axes = plt.subplots(len(populations), len(rest), figsize=(3.3 * len(rest), 3.8 * len(populations)),
+                             sharey=True, squeeze=False)
+    for row, pop in zip(axes, populations):
+        sub = out[out["population"] == pop]
+        for ax, grp in zip(row, rest):
+            g = sub[(sub["group"] == OVERALL) & ~((sub["size"] == TARGET_SIZE) & (sub["frac"] == 1.0))].sort_values(x)
+            ax.plot(g[x], g["reliability"], color=S.INK, lw=1.2, ls="--", alpha=.3, zorder=1, label=f"{OVERALL} (for reference)")
+            draw_lines(ax, sub, [grp], colours, x, counts, band=(grp,))
+            ax.axhline(tau, color=S.MUTED, lw=.8, ls=":")
+            ax.set_xscale("log"); ax.set_ylim(0, 1.0)
+            if x == "non_emb":
+                ax.set_xticks([NON_EMB[s] for s in size_order(out["size"].unique())])
+                ax.set_xticklabels(size_order(out["size"].unique()))
+            fams = sub.loc[sub["group"] == grp, "n_families"].max()
+            ax.set_title(f"{pop}: {grp}" + (f"  ({int(fams)} families)" if np.isfinite(fams) else ""), loc="left", fontsize=8)
+            ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+        row[0].set_ylabel(f"decision reliability vs {TARGET_SIZE} final")
+        row[0].legend(fontsize=6, frameon=False, loc="lower right")
+    for ax in axes[-1]:
+        ax.set_xlabel("non-embedding parameters (log)" if x == "non_emb" else "training FLOPs spent by the proxies (log)")
+    top = G._header(fig, f"Scale convergence per design axis: how small a fully trained model still decides like {TARGET_SIZE}",
+                    f"one panel per design axis the pair differs on, its {OVERALL} line (every pair at the grid seed) faint in each "
+                    f"for reference; a decision = one pair of design variants at both models' FINAL checkpoint, R = matching / "
+                    f"comparable decisions pooled over the gated tasks with ≥ {MIN_PAIRS} pairs; the shaded band = the panel's own "
+                    f"leave-one-design-variant-out jackknife (90 %; families in the title, so a 4-family band is four numbers); "
+                    f"dotted line = τ = {tau:g}, the ring = N_min(τ); the hollow {TARGET_SIZE} point is 1.0 by construction"
+                    + ("; the number under a point = tasks behind it" if counts else "")
+                    + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note)
+    fig.tight_layout(rect=(0, 0, 1, top))
+    S.save(fig, path, dpi=150)
+
+
+def generate_readme_panels(pool: str, out_dir: Path, out: pd.DataFrame) -> None:
+    """README block of the per-axis panel grid: R per size with its jackknife band, from the unfiltered table."""
+    if pool != CANONICAL_POOL:
+        return
+    stage = load_pools()[pool].get("stage", "pretraining")
+    rel = f"{stage}/{pool}"
+    gh = f"https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/{rel}"
+    stem = stem_for("transformation_panels")
+    b = out[(out["population"] == "all benchmarks") & (out["size"] != TARGET_SIZE)]
+    sizes = size_order(b["size"].unique())
+    rows, bullets = [], []
+    for grp in [OVERALL] + group_order(g for g in b["group"].unique() if g != OVERALL):
+        g = b[b["group"] == grp].set_index("size")
+        rows.append([grp, int(g["n_families"].max())] + [f"{g.at[s, 'reliability']:.2f} [{g.at[s, 'lo']:.2f}, {g.at[s, 'hi']:.2f}] ({int(g.at[s, 'n_tasks'])})"
+                                                          if s in g.index else "—" for s in sizes]
+                    + [g["n_min_size"].iloc[0] if pd.notna(g["n_min_size"].iloc[0]) else "never"])
+        if grp != OVERALL and len(g):
+            last = g.loc[sizes[-1]] if sizes[-1] in g.index else g.iloc[-1]
+            bullets.append(f"- **{grp}** ({int(last['n_families'])} families): R = {last['reliability']:.2f} at {last.name} "
+                           f"[{last['lo']:.2f}, {last['hi']:.2f}] over {int(last['n_tasks'])} tasks; "
+                           + (f"N_min(τ) = {g['n_min_size'].iloc[0]}." if pd.notna(g["n_min_size"].iloc[0]) else "no proxy reaches τ."))
+    body = "\n\n".join([
+        "## Scale convergence per design axis, one panel each",
+        f"The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-family-out band and the "
+        f"pooled `{OVERALL}` line faint behind it. DA-size pooled over decisions, every pair at seed {GRID_SEED} (`{POOL}`), "
+        f"gated with `{pool}`'s mask, ≥ {MIN_PAIRS} pairs per task; task counts under the points. Same table as "
+        f"`{stem_for('transformation')}.csv`. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by transformation`.",
+        f"![Scale convergence per design axis]({rel}/{stem}.png)",
+        md_table(["axis", "families"] + [f"{s} R [lo, hi] (tasks)" for s in sizes] + [f"N_min(τ={TAU:g})"], rows),
+        "Key findings:",
+        "\n".join(bullets + [f"- The bands are leave-one-design-variant-out over the families in the column, not seed noise; a band "
+                              f"on 4 families is four numbers and only says which variant the line hinges on."]),
+        "Follow-ups:",
+        "\n".join(["- The `above_66_size` twin per panel (`" + stem_for("transformation_panels", "above_66_size") + ".png`): the same split on the cells that rank reliably.",
+                    "- A per-axis panel grid on the L8 languages only (`--langs L8`), so the language-count panel is read on one task set.",
+                    "- The second-language and English-corpus panels fill in once their 1.7B cells are in the report (rule 9)."]),
+        f"Files: [`{stem}.png`]({gh}/{stem}.png), [`{stem}.csv`]({gh}/{stem}.csv)."])
+    replace_block(OUT_ROOT / "README.md", "scale-convergence-transformation-panels", body,
+                  "scale_convergence.py --by transformation")
+
+
 def generate_readme(pool: str, out_dir: Path, tables: dict) -> None:
     if pool != CANONICAL_POOL:
         return
@@ -593,6 +677,10 @@ def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
     # the two-panel one has ring labels in the same place.
     figure(out, out_dir / f"{stem}.png", by, pool, tau, populations, note, x,
            counts=langs != "all" and not common and bool(variant))
+    if by == "transformation":            # the one-panel-per-axis twin, over the same table (rule 12: written beside it)
+        pstem = stem_for("transformation_panels", variant, axes, langs, common) + ("_flops" if x == "compute" else "")
+        out.to_csv(out_dir / f"{pstem}.csv", index=False)
+        panel_figure(out, out_dir / f"{pstem}.png", pool, tau, populations, note, x, counts=x != "compute")
     return out
 
 
@@ -638,6 +726,8 @@ if __name__ == "__main__":
         t = run_all(by, args.pool, args.tau, out, args.axes, args.langs, args.common_tasks)[""]
         if t is None:
             continue
+        if by == "transformation" and args.axes == "multi-axis" and args.langs == "all" and not args.common_tasks:
+            generate_readme_panels(args.pool, out, t)
         b = t[t["population"] == "all benchmarks"]
         tables[by] = (b.pivot_table(index="group", columns="size", values="reliability")
                       .reindex(columns=size_order(b["size"].unique())).round(2)

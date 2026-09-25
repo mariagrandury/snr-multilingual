@@ -64,7 +64,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.utils import build_snr_pool, size_order  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import scores_and_mask, task_n_items, task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import scores_and_mask, task_chance, task_n_items  # noqa: E402
 from pretrain.auto_evals_cscs import DEFAULT_LOGS_ROOT  # noqa: E402
 from analysis.utils import finals  # noqa: E402
 from statsmodels.stats.proportion import proportions_ztest  # noqa: E402
@@ -178,7 +178,7 @@ def cells(df: pd.DataFrame, sig: pd.DataFrame, s: str, by: list[str]) -> tuple[p
     if df.empty:
         return empty, empty, pd.DataFrame(columns=by + ["size", "n_sig"])
     scores, _, _ = scores_and_mask(df)
-    chance = pd.Series({t: 1 / task_n_options(t) for t in scores.index})   # per task: the probe pairs are 2- to 10-way
+    chance = pd.Series({t: task_chance(t) for t in scores.index})   # per task: the probe pairs are 2- to 10-way
     per_task = scores.sub(chance, axis=0).stack().dropna().rename("margin").reset_index()   # stack() keeps NaN cells since pandas 2.1
     per_task.columns = ["task", "size", "margin"]
     per_task["family"] = per_task["task"].map(lambda t: base(TASKS[t]["benchmark"]))

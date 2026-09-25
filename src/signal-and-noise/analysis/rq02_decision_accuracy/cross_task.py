@@ -356,7 +356,8 @@ def run(pool: str, out_dir: Path) -> None:
     # The benchmarks-only sub-map: drop BPB / the loss (no chance level) and every
     # benchmark the gate finds at chance at every size — neither side of such a
     # pair can ever be valid, so those rows and columns are structurally empty.
-    scored = set(mask.index[(mask == 1).any(axis=1)]) if mask is not None else set(tasks)
+    # NA (no chance level: lambada, mc2) passes the gate, as everywhere (rule 1)
+    scored = set(mask.index[(mask == 1).any(axis=1) | mask.isna().all(axis=1)]) if mask is not None else set(tasks)
     bench = [t for t in tasks if benchmark_family(t) not in ("bpb", "loss") and t in scored]
     dropped = len(tasks) - len(bench)
     b_note = (f"Pool `{pool}`, the {len(bench)} benchmark tasks above chance at >= 1 size ({dropped} of {len(tasks)} "

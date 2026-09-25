@@ -277,12 +277,12 @@ appear in W&B under `mariagrandury-epflnlp/msnr`.
 `/capstor` — and tokenized *there*; nothing is downloaded from the HF Hub.
 Two scripts under `data/` own the pipeline:
 
-- [`data/create_data_mixture.py`](data/create_data_mixture.py) — the worker:
+- [`data/create_data_mixture.py`](../data/create_data_mixture.py) — the worker:
   streams the parquet sources, tokenizes with `swiss-ai/Apertus-70B-2509`,
   writes Megatron `.bin`/`.idx`, builds the fixed validation set, and
   excludes its rows from training via a manifest. Resumable after
   preemption.
-- [`data/build_data_mixtures.py`](data/build_data_mixtures.py) — the driver:
+- [`data/build_data_mixtures.py`](../data/build_data_mixtures.py) — the driver:
   turns the language schemes (`data/language_sets_scheme{A,B}.json`) into
   per-build `create_data_mixture.py` calls with the right token targets.
 

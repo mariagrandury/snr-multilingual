@@ -31,7 +31,8 @@
 #   then the report figures and the rules check over every table on disk.
 #
 # Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
-# (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09).
+# (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09),
+# then rq10, the one question past the reference (the 3B rung).
 set -uo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-python3}
@@ -74,15 +75,17 @@ pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
+# the gate on one task, run by run (hellaswag_ta: at chance to 600M, above from 1B)
+run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
 # the twins' effect on the gate (McNemar) and on every headline reading with / without them
-run $PY analysis/rq00_task_reformulation/twins_gate.py --pool predictivity
+run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
-run $PY analysis/rq00_gate_and_curves/benchmark_floor.py --pool predictivity
+run $PY analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 
 pass "rq01 — scaling predictability"
 # The ladder-frame reads take every seed and scheme (`predictivity_all`); the
@@ -121,12 +124,17 @@ done
 # scale_convergence both skip their filtered variants when it has not run yet,
 # which silently costs the paper's rq2 figures.
 run $PY analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity
+# the toy explainer of the three DA kinds, the pair sets and the value lattice (no measured number; README block)
+run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
 # per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
+# per design axis: the mono-axis pairs split by the one axis they move, one panel per axis (DA-ckpt and DA-goal)
+run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation
 # cross-task predictability: every parent task as the proxy for every other one (DA-size and DA-ckpt level maps)
 run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
 # scale convergence: how small a FULLY TRAINED model still decides like the
-# reference, by language count and by design axis (+ their above_80 variants)
+# reference, by language count and by design axis (+ their above_80 variants);
+# `--by transformation` also writes the one-panel-per-axis twin (`_transformation_panels`)
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
 # DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
 run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
@@ -150,6 +158,8 @@ run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/agreement.py --pool predictivity
 # rq01's scaling statistics against rq02's ranking statistics, per task
 run $PY analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool predictivity
+# DA one rung above the ladder: the public model lines at 1B-1.7B against their 12-14B siblings (external gate)
+run $PY analysis/rq02_decision_accuracy/public_ladders.py --pool predictivity
 run $PY analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
 # do the high-resource languages rank more reliably: one pooled line per language tier, and per language against its share
 run $PY analysis/rq02_decision_accuracy/language_tier.py --pool predictivity
@@ -180,6 +190,8 @@ done
 # surrogates read the headline pool's rq03 table, rq00's scores, rq01's fits and rq02's by_L
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
+# FineTasks' four selection criteria on the ladder, judged by DA-size, plus every surrogate against DA-size
+run $PY analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity
 
 pass "rq05 — design decisions"
 # rq05 needs the five interventions and its early-decision read follows from
@@ -225,8 +237,14 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
 done
 run $PY analysis/rq09_benchmark_design/panels.py --pool predictivity
-# FineTasks' four selection criteria computed on the ladder and judged by DA-size against the reference
-run $PY analysis/rq09_benchmark_design/finetasks_criteria.py --pool predictivity
+
+pass "rq10 — size generalisation (the 3B rung as the reference)"
+# the one reader of above_reference=True: every family with a 3B final, read from
+# every smaller rung; writes header-only tables and a placeholder figure until the
+# 3B evaluations are in the report, so the block fills in by itself
+run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
+# today's preview: the same four families read to 1.7B (the comparison line of panel (a))
+run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B
 
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py

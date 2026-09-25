@@ -7,7 +7,8 @@ names live in exactly one module.
 
 The numbering follows the four themes of the study: A, is the evaluation
 predictable (rq00–rq02); B, can it be measured cheaply (rq03–rq04); C, does the
-framework generalise (rq05–rq07); D, can the benchmarks be improved (rq08–rq09).
+framework generalise (rq05–rq07); D, can the benchmarks be improved (rq08–rq09);
+and the one question that looks past the reference, size generalisation (rq10).
 """
 
 from pathlib import Path
@@ -28,3 +29,5 @@ EXTERNAL_FRAMEWORKS = _ANALYSIS / "rq07_external_frameworks"    # agreement with
 # D. benchmark improvement
 SUBSET_SELECTION = _ANALYSIS / "rq08_subset_selection"          # can a subset beat the full set
 BENCHMARK_DESIGN = _ANALYSIS / "rq09_benchmark_design"          # which design features predict reliability
+# E. past the reference
+SIZE_GENERALISATION = _ANALYSIS / "rq10_size_generalisation"    # the 3B rung as the reference: the only reader of above_reference=True

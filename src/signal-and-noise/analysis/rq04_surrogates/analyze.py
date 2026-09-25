@@ -43,7 +43,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES, NOISE_AND_SNR, SURROGATES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask, task_chance  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import MIN_RUNGS, fit_table  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _frac_label  # noqa: E402
 from analysis.utils import (  # noqa: E402
@@ -89,7 +89,7 @@ def candidates(v: pd.DataFrame, s: str, scores: pd.DataFrame, fits_r2: pd.DataFr
         R2_NAME: v["task"].map(fits_r2[s]) if s in fits_r2.columns else None,
     }
     if s in scores.columns:
-        margin = scores[s] - 1 / scores["task"].map(task_n_options)
+        margin = scores[s] - scores["task"].map(task_chance)
         margin.index = scores["task"]
         c["margin above chance"] = v["task"].map(margin)
     return c

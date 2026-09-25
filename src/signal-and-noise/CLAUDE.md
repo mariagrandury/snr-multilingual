@@ -129,7 +129,10 @@ the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
 rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
-ranking) → rq08 → rq09 → `report_figures/make_figures.py` → `check_rules.py`.
+ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+reference, the only reader of `above_reference=True`; header-only tables
+until the 3B evaluations land) → `report_figures/make_figures.py` →
+`check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
 generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
 `analysis/paths.py` is the one map from constant to folder. The canonical
@@ -146,9 +149,7 @@ read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
 `reliable_tasks.py` to have run on the current DA tables first.
 
 **What the tables say (2026-09-23), so a session does not re-derive it.**
-The paper-style write-up of rq00–rq02 is
-`analysis/rq02_decision_accuracy/pretraining/predictivity/README.md`; the
-per-RQ READMEs carry the auto blocks. Three facts every rq02 reading must
+The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with the auto blocks. Three facts every rq02 reading must
 respect (numbers of the 06:16 snapshot; every snapshot moves them, re-read the CSVs): (1) on the full gated population DA-size is 0.53 (175M) → 0.56 (1B),
 jackknife ±0.03 — the 0.60 → 0.76 of the `above_66_*` figures is a cut on DA
 itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
@@ -163,9 +164,18 @@ cells. Restricting to the L8 languages, to common tasks, to one language or
 one language tier does not order the per-L lines, and a language's token
 share does not predict its benchmarks' reliability (ρ −0.07–0.20). The twins
 pass the gate (McNemar p < 0.001) but rank no better than the originals
-(`rq00_task_reformulation/twins_gate.py` carries every headline reading with
+(`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
 and without them); English alone is the worst single-language proxy of the
 multilingual decision (`rq06_language_transfer/language_panel.py`).
+
+**README rules.** `analysis/RULES.md` ends with the README rules: one README
+per level (`analysis/README.md` for the RQs, one per `rqNN_*/`, none under a
+pool folder), the current sweep first and other sweeps in a final
+"Extensions from other sweeps" section, every rq02-family figure stating its
+DA kind / filter / pair set / gate pool, storyline order with cross-links,
+Key findings and Follow-ups bullets after every figure, a GitHub link on
+`main` after every figure, auto blocks untouched, the snapshot date stated.
+A session that edits a README follows them.
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
@@ -521,13 +531,13 @@ masks), `snr/stats.py` (total variation / monotonicity of training curves),
 is quoted by rq08's docstring only), `snr/autobencher/`, `snr/scripts/`,
 `snr/constants/{datadecide,ladder,ladder_config.json,models,signal,smooth}.py`,
 `allenai_analysis/*.ipynb` (LFS pointers) and `allenai_analysis/plotting/scaling.py`,
-`analysis/PARALLEL_SESSIONS.md`, the `INSTRUCTIONS.md` files (pre-refactor
-`results/` layout), `analysis/ANALYSIS_new_vs_previous.md`,
 `analysis/rq08_subset_selection/per_sample/` (cluster-only per-item outputs
 of the 36-sweep), `posttraining.ipynb`, `notebook_guidelines.md`,
 `run_all_pretraining.sh` (36-sweep driver). See the root README's
 "Legacy code" for the removal proposal; nothing is deleted without the
-owner's call.
+owner's call. (The pre-refactor `INSTRUCTIONS.md` / `PARALLEL_SESSIONS.md` /
+`ANALYSIS_new_vs_previous.md` notes were folded into the RQ READMEs and
+removed on 2026-09-23.)
 
 ---
 

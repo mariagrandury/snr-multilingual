@@ -60,9 +60,9 @@ SHARED_TABLES = ("da_reliable_tasks",)
 #     not yet converted (listed in RULES.md as open work); the 36-sweep pools are frozen (CLAUDE.md)
 # 10  the EXTERNAL model pools have their own size axis (270M, 4B, 7-9B, ... 70B): their "3B"
 #     is somebody else's model, not this ladder's rung, and the rule is about this ladder.
-#     The size-generalization RQ joins this list when it lands — it is the one analysis of
-#     OUR sweep that may pass above_reference=True.
-EXEMPT = {10: ("custom_swissai_hf", "external"),
+#     rq10 is the size-generalization RQ — the one analysis of OUR sweep that passes
+#     above_reference=True, so its tables carry the 3B rung by design.
+EXEMPT = {10: ("custom_swissai_hf", "external", "rq10_size_generalisation"),
           6: ("rq08_subset_selection", "rq07_external_frameworks"),
           2: ("rq06_language_transfer", "rq00_gate_and_curves"),
           7: ("rq00_gate_and_curves",),

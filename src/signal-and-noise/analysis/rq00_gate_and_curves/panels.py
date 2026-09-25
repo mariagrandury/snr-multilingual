@@ -42,7 +42,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import ALPHA, MIN_SHARE, task_n_options, wilson_lcb  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import ALPHA, MIN_SHARE, task_chance, wilson_lcb  # noqa: E402
 from analysis.utils import LADDER_SIZES, ladder_frame  # noqa: E402
 
 OUT_ROOT = GATE_AND_CURVES
@@ -59,7 +59,7 @@ def gate_panels(out_dir: Path) -> None:
     mask = pd.read_csv(out_dir / "above_random_mask.csv").melt(id_vars=["task"], value_vars=sizes, var_name="size", value_name="above")
     long = long.merge(mask, on=["task", "size"], how="left")
     gate = (f"the gate keeps a cell when at least {MIN_SHARE:.0%} of the size's runs are confidently above chance "
-            f"(Wilson {1 - ALPHA:.0%} lower bound over the task's items > chance)")
+            f"(one-sided {1 - ALPHA / 2:.0%} Wilson lower bound over the task's items > chance)")
     note = ("cell = mean final-checkpoint score of the size's models that trained the language (every model of the size where none did), minus chance (1 / number of "
             f"options); {gate}")
     kw = dict(value="margin", vmin=-0.1, vmax=0.3, center=0.0, cmap=S.DIV, fmt="{:+.2f}", note=note,
@@ -149,7 +149,7 @@ def score_curves(pool: str, out_dir: Path) -> int:
     df = ladder_frame(pool)
     df = df[df["kind"] == "benchmark"]
     df = G.add_meta(df[[t in _trained_tasks(L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]])
-    df["chance"] = 1 / df["task"].map(task_n_options)
+    df["chance"] = df["task"].map(task_chance)
     df["chinchilla"] = df["frac"] * G.CHINCHILLA_AT_FULL
     curve_dir = out_dir / "score_curves"
     curves = df.groupby(["language", "family", "size", "chinchilla"]).agg(

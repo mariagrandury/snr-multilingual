@@ -63,6 +63,9 @@ macro-average):
   subsets of the best size give `null_snr_p95`; `gain_over_null =
   best − null_p95` is the part of the gain that is not selection.
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-23 06:16**.
+
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
 ## Results
 
@@ -87,6 +90,51 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
+
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_subjects.png) ·
+[summary.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/summary.csv) ·
+[per_benchmark.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/per_benchmark.csv) ·
+[global_mmlu_full.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full.csv) ·
+[global_mmlu_full_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_per_language.csv)
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+Every swept cell in one grid (`predictivity` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq08 in one figure](pretraining/predictivity/highlights.png)
+
+![Gain over the null](pretraining/predictivity/gain_over_null.png)
+<!-- END auto:panels -->
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
+GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
+
+## TODO
+
+- [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
+      `human_aging`, `international_law`, world-history), not an exact subset —
+      only subsets that recur in both train and test seed pools transfer.
+- [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
+      train and test seed pools (Case 2 subjects are the safest; per-item picks
+      the least transferable).
+- [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
+      Jaccard / SNR-rank Spearman of the winning subsets.
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pools `seeds_28_1797_1904`, `custom_swissai_hf`;
+reference **1B**, 12 languages, the 86-task old list) or from the **external
+tier** (`all/external`: the public and reference models, 270M–70B,
+cross-model dispersion with no mixture axis). Its SNR is computed over three
+mixtures with the sweep's checkpoint window, on a task list without the
+twins, so its subset gains are a replication of the lever, never rows of the
+ladder's table. The per-item (Option D) pass under `per_sample/` is
+36-sweep-only as well: it needs the per-sample files that live on the
+cluster, and the ladder's per-item store (`build_per_item_store.sbatch`,
+`per_item_ladder.py`; `per_item_snr.csv`, `per_item_summary.csv` above) is
+its successor.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -120,6 +168,8 @@ ladder) for the highest-gain families:
 
 ![TruthfulQA subset sweep (external)](all/external/per_benchmark_plots/truthfulqa.png)
 
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/global_mmlu_full_subjects.png) ·
+[truthfulqa.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/per_benchmark_plots/truthfulqa.png)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -155,16 +205,8 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
 
 ![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
-## TODO
 
-- [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
-      `human_aging`, `international_law`, world-history), not an exact subset —
-      only subsets that recur in both train and test seed pools transfer.
-- [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
-      train and test seed pools (Case 2 subjects are the safest; per-item picks
-      the least transferable).
-- [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
-      Jaccard / SNR-rank Spearman of the winning subsets.
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
 
 ## Files
 
@@ -173,13 +215,3 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `global_mmlu_full_per_language.csv` (Case 3) + their `*_plots/`.
 - `per_sample/variance_prefilter/analysis/` — Option-D size distribution,
   cross-size Jaccard/Spearman, `highlights.md`.
-
-<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
-## Per benchmark and per language
-
-Every swept cell in one grid (`predictivity` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
-
-![rq08 in one figure](pretraining/predictivity/highlights.png)
-
-![Gain over the null](pretraining/predictivity/gain_over_null.png)
-<!-- END auto:panels -->

@@ -40,6 +40,9 @@ cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
   fraction of run: trained languages blue, unseen grey, macro BPB dashed
   (the progress report's `plot_bpb` on the analysis' cells).
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-23 06:16**.
+
 <!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
 ## Results
 
@@ -72,12 +75,10 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->
 
-## Files
-
-- `pretraining/<pool>/rq5_transfer.csv`, `rq5_transfer_summary.csv`,
-  `rq5_transfer.png/.pdf` — the paper's RQ5 table and figure.
-- `…/bpb_curves.png` — per-cell per-language BPB curves.
-- `…/facts.json` — the numbers the paper quotes.
+GitHub: [rq5_transfer.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/rq5_transfer.png) · [rq5_transfer.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/rq5_transfer.csv) ·
+[rq5_transfer_summary.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/rq5_transfer_summary.csv) ·
+GitHub: [bpb_curves.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/bpb_curves.png) · [bpb_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/bpb_curves.csv) ·
+[facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/facts.json)
 
 <!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
 ## Per benchmark and per language
@@ -92,6 +93,50 @@ The summary above, per language (`predictivity_all` pool). Regenerate with `pyth
 
 ![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_by_L.png)
 <!-- END auto:panels -->
+
+**Key findings** (`transfer_da_lines`, `transfer_da_by_L`: rq05's per-item
+agreement on the per-language BPB of all 100 evaluation languages, grouped
+per (intervention, L) by what the two levels' lists do with the language —
+both train it, only one does, neither does but one trains its script, or
+neither trains even the script; the last two groups are the transfer test)
+
+- The "trained languages read the decision at 1.0" reading is the languages
+  only one list trains, where the model that saw the language wins at every
+  size; it is the inclusion decision, not transfer.
+- Script is a coarse proxy for relatedness (Latin covers Welsh and Vietnamese
+  alike), and at L1 only English is trained, so "script trained" is every
+  Latin-script language.
+- `transfer_da_lines.csv` is empty on the 2026-09-23 06:16 tables (the L8 and
+  L30 list decisions against 1.7B do not reach the three items a panel needs
+  at this snapshot), so the per-size numbers of the earlier snapshot
+  (script-trained languages read at 0.61–0.77 from 175M to 1B, unseen scripts
+  0.33–0.73, neither clearing 0.75 below 1B) are not re-read here; they are
+  quoted again once the figure draws.
+
+**Follow-ups**
+
+- Group the untrained languages by the trained tokens of their language
+  family or genus (from the data manifest), or by tokenizer overlap with the
+  trained languages, and plot DA against that exposure instead of three bins.
+- Temperature, ZH and ES have one L each (single points); fold them into a
+  table. The "mean over proxy sizes" of `transfer_da_by_L` averages a proxy
+  that flips with one that agrees into 0.5; one line per proxy size, or the
+  largest proxy below the reference, for the paper version.
+- The same caveats as rq05: items are correlated and the reference is 1.7B
+  only for the lists; bootstrap over L and re-read the other interventions
+  against 1.7B when their cells exist.
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.csv) ·
+GitHub: [transfer_error_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.png) · [transfer_error_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.csv) ·
+GitHub: [transfer_da_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_lines.png) · [transfer_da_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_lines.csv) ·
+GitHub: [transfer_da_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_by_L.png) · [transfer_da_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_by_L.csv)
+
+**The minimal language panel · DA-size against the 1.7B MACRO ranking
+(mean score over the L8 panel languages above chance at 1.7B) · no filter ·
+multi-axis pairs from `predictivity_schemes` at seed 1904 · gate
+`predictivity`.** Which languages does a developer have to evaluate to
+recover the multilingual decision: one language at a time, English alone, or
+the proxy's own macro over the languages readable at its size.
 
 <!-- BEGIN auto:language-panel (language_panel.py --pool predictivity) -->
 ## The minimal language panel
@@ -118,3 +163,49 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 
 ![The minimal language panel](pretraining/predictivity/language_panel.png)
 <!-- END auto:language-panel -->
+
+**Key findings**
+
+- English alone is the worst single-language proxy of the multilingual
+  decision: pooled over twelve benchmarks at 1B English reads 0.59 against
+  0.61–0.67 for the other panel languages (de 0.67, ru 0.65, zh 0.64, it 0.64,
+  es 0.62, fr 0.61; ja 0.54) and 0.66 for the panel macro; at 600M English is
+  again the lowest at 0.60.
+- Per benchmark the proxy's macro reaches 0.93 on hellaswag, 0.89 on LAMBADA
+  and INCLUDE-rfgm and 0.81 on Global-MMLU-rf at 1B, where English alone reads
+  0.87, 0.78, — and 0.69; on `multiblimp` English reads 0.40 against 0.68 for
+  the macro. Where the macro lies above every single language (hellaswag,
+  Global-MMLU-rf, INCLUDE-rf/rfgm, xstorycloze) the languages' errors are
+  partly independent and the panel is worth evaluating; on `xnli` and
+  `xwinograd` nothing reads the reference at 1B.
+- A developer who evaluates a multilingual recipe on English benchmarks
+  alone misreads the multilingual decision more often than one who evaluates
+  any other single panel language; the macro over the readable panel is the
+  safest proxy at every size.
+
+**Follow-ups** (`plan/next_analyses.md` §6)
+
+- Greedy k-language panels: which two or three languages recover the macro.
+- The same against the macro over ALL trained languages per L (requires
+  per-L pairs, rule 2).
+- The seed null of [rq02 figure 7](../rq02_decision_accuracy/README.md#7-seed-uncertainty-and-the-da-ckpt-null)
+  as the floor of every panel.
+
+GitHub: [language_panel.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/language_panel.png) · [language_panel.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/language_panel.csv)
+
+## Extensions from other sweeps
+
+None. rq06 exists on the ladder only (`predictivity_all`, `predictivity`):
+the 36-model sweep evaluated 12 languages with no per-language BPB and no
+never-trained language, so neither the leave-language-out fit nor the panel
+question could be asked of it, and its numbers would not be pooled with the
+ladder's in any case (a different harness, task set and reference size).
+
+## Files
+
+- `pretraining/<pool>/rq5_transfer.csv`, `rq5_transfer_summary.csv`,
+  `rq5_transfer.png/.pdf` — the paper's RQ5 table and figure.
+- `…/bpb_curves.png` — per-cell per-language BPB curves.
+- `…/facts.json` — the numbers the paper quotes.
+- `pretraining/predictivity/language_panel.{png,csv}` — the minimal language
+  panel (`language_panel.py`).

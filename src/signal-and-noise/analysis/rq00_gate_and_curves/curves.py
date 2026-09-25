@@ -33,7 +33,7 @@ from snr.download.ladder import ladder_dir  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import GATE_AND_CURVES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import task_chance  # noqa: E402
 from analysis.utils import LADDER_SIZES, benchmark_family, ladder_frame, on_shared_grid  # noqa: E402
 
 OUT_ROOT = GATE_AND_CURVES
@@ -93,7 +93,7 @@ def plot_benchmark_curves(df: pd.DataFrame, out_dir: Path) -> None:
     if b.empty:
         return
     b["family"] = b["task"].map(benchmark_family)
-    b["chance"] = 1 / b["task"].map(task_n_options)
+    b["chance"] = b["task"].map(task_chance)
     fams = sorted(b["family"].unique())
     cols = min(4, len(fams)); rows = (len(fams) + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(3.4 * cols, 2.8 * rows), squeeze=False)

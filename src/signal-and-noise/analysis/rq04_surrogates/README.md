@@ -55,6 +55,9 @@ seed, while English and the BPB tasks cover all four.
   (64/313) and on seed 1904 of the same cells; agreement is counted over
   the languages that have a best variant on both splits.
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-23 06:16**.
+
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
 
@@ -152,6 +155,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 | Retention of train-best r on test | 0% | 56% |
 <!-- END auto:results -->
 
+GitHub: [top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.png) · [top_variants_overall.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.csv) ·
+GitHub: [top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_benchmarks_per_language.png) · [top_benchmarks_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_benchmarks_per_language.csv) ·
+[snr_variant_ranking.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_ranking.csv) ·
+[best_variant_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/best_variant_per_language.csv)
+
 ### Statistics beyond SNR — setup
 
 The truth is DA-size from [`rq02_decision_accuracy/`](../rq02_decision_accuracy/):
@@ -202,6 +210,239 @@ Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analy
 
 ![Surrogates](pretraining/predictivity/rq3_surrogates.png)
 <!-- END auto:surrogates -->
+
+GitHub: [rq3_surrogates.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates.png) · [rq3_surrogates.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates.csv) ·
+[facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/facts.json)
+
+### FineTasks' criteria — setup
+
+A selection rule computed on one size, with no larger model in sight, is the
+practical alternative to SNR: FineTasks (Kydlíček, Penedo et al., 2024)
+selects tasks per language with four such statistics. `finetasks_criteria.py`
+(moved here from rq09 on 2026-09-23; its outputs are
+`pretraining/predictivity/finetasks_*`) computes them per (task, size) on the
+`predictivity` pool — the 18 design variants at each size, grid seed, schemes
+A/B, on the ten evaluated tenths — and judges them by DA-size against the
+1.7B reference, which the criteria never see. The gate is not applied (non-random
+is one of the criteria under test) but the mask is carried; every candidate is
+scored as Spearman ρ with DA-size across tasks, the way the SNR definitions
+above are. Their "noise" is the spread across recipes at one step, which this
+framework calls signal, so their SNR is the inverse of ours and the two should
+not be expected to agree.
+
+<!-- BEGIN auto:finetasks-criteria (finetasks_criteria.py --pool predictivity) -->
+## FineTasks' criteria on the ladder
+
+FineTasks selects tasks with four statistics computed on single-seed runs at one size (monotonicity, a cross-run SNR, a non-random margin, consecutive-step ordering). Computed here per (task, size) on the `predictivity` variants and judged by DA-size against 1.7B, which the criteria never see. Columns: share passing each criterion, all three, and our gate; mean DA-size of passers vs failers; Spearman of each statistic with DA-size (monotonicity / SNR / non-random / ordering). Regenerate with `python analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity`.
+
+| size | tasks | monotone | SNR > 20 | non-random | all three | our gate | DA-size pass vs fail | ρ with DA-size |
+|---|---|---|---|---|---|---|---|---|
+| 175M | 632 | 18% | 57% | 41% | 13% | 31% | 0.52 [82] vs 0.47 [550] | +0.17 / +0.26 / +0.13 / +0.13 |
+| 350M | 632 | 34% | 60% | 46% | 27% | 41% | 0.53 [170] vs 0.45 [462] | +0.23 / +0.30 / +0.23 / +0.08 |
+| 600M | 632 | 41% | 59% | 49% | 33% | 46% | 0.53 [210] vs 0.46 [422] | +0.18 / +0.28 / +0.19 / +0.10 |
+| 1B | 632 | 46% | 59% | 53% | 38% | 49% | 0.54 [243] vs 0.45 [389] | +0.33 / +0.39 / +0.23 / +0.17 |
+| 1.7B | 632 | 50% | 59% | 59% | 43% | 54% | — | +nan / +nan / +nan / +nan |
+
+![FineTasks criteria](pretraining/predictivity/finetasks_criteria.png)
+
+![DA against each surrogate](pretraining/predictivity/finetasks_surrogates_scatter.png)
+<!-- END auto:finetasks-criteria -->
+
+*`finetasks_criteria.png`: (a) the share of tasks passing each criterion and
+all three, with our gate; (b) each criterion's Spearman correlation with
+DA-size across tasks; (c) DA-size of the tasks passing all three against the
+rest; (d) panel (a) with the share of tasks clearing rq02's two DA cuts at that
+size (DA-size against the reference ≥ 0.66; median DA-ckpt of the size's own
+run ≥ 0.66); (e) panel (b) with rq03's 22 SNR definitions behind it and, for
+scale, rq02's own ρ and τ_b of the proxy ranking against the reference's (an
+oracle) and rq01's ρ of score with size; (f) the FineTasks picks with a
+counterpart in our registry, originals and cloze twins.
+`finetasks_surrogates_scatter.png`: DA-size against each surrogate, one point
+per (task, proxy size) coloured by the proxy — FineTasks' four criteria, our
+gate, rq01's ρ, the three rq03 SNR definitions with the largest |Spearman|
+here, rq02's own ρ (the ceiling), and ten further reference-free candidates
+(ordering in the noise window, the 10 % and 50 % rankings against the final,
+the proxy's own DA-ckpt, DA between the two rungs below the proxy, relative
+signal and noise, cross-variant std, margin over chance, item count); Pearson
+r, Spearman ρ and the cell count in each corner. Pooled ranking in
+`finetasks_surrogates_rank.csv`, the FineTasks picks in `finetasks_overlap.csv`
+(folder root).*
+
+**Key findings**
+
+- A selection rule that never sees a larger model recovers about a third of
+  the chance-to-reference gap: the composite (monotonicity ≥ 0.5, cross-run
+  SNR > 20, best margin > 3 std) passes 13 % of tasks at 175M and 38 % at 1B,
+  close to our gate's 31 % and 49 %, and the passers read DA-size 0.52–0.54
+  at every proxy against 0.45–0.47 for the tasks that fail. Their SNR
+  criterion passes about 60 % of tasks at every size and does not
+  discriminate; monotonicity is the size-sensitive one.
+- As surrogates of DA-size the four statistics correlate at Spearman
+  0.10–0.39 across tasks, the same range as our 22 SNR definitions (best
+  `dispersion_shifted`, 0.28–0.38) and as rq01's ρ of score with size
+  (0.15–0.38).
+- Pooled over the four proxies (`finetasks_surrogates_rank.csv`) the best
+  reference-free statistics are the task's item count (0.32), FineTasks' SNR
+  (0.31), the proxy's own median DA-ckpt (0.28), `dispersion_shifted` (0.28)
+  and the DA between the two rungs below the proxy (0.27); the gate reads
+  0.15 and the ordering statistics 0.04–0.12; the cross-variant std of the
+  final score, the relative noise and the relative signal correlate
+  negatively (−0.27, −0.28, −0.23), so more spread across variants at the
+  proxy goes with less agreement with the reference — against the
+  framework's premise; rq02's own ρ, which needs the reference, reads 0.76.
+  No reference-free statistic exceeds 0.33.
+- rq02's two DA cuts move in opposite directions with size (panel d): the
+  DA-size cut passes 12 % of tasks at 175M and 16 % at 1B, the DA-ckpt cut
+  46 % at 175M falling to 19 % at 1.7B — the within-run persistence of
+  [rq02 figure 7](../rq02_decision_accuracy/README.md#7-seed-uncertainty-and-the-da-ckpt-null)
+  in another guise.
+- Of their 96 picks, 45 exist in our registry; 49 % of the originals pass
+  their own criteria on our ladder against 100 % of the cloze twins, with the
+  same mean DA-size (0.56 against 0.57). The format choice they make
+  implicitly (cloze for selection) is the one decision that moves the
+  population; the thresholds move it little.
+
+**Follow-ups**
+
+- Bootstrap the ρ over tasks (a 90 % interval per statistic): the top
+  candidates are within 0.05 of each other, and the seed holdout above says
+  the exact ranking does not transfer — claim the family ("relative
+  dispersion over checkpoint noise", or here "item count and persistence"),
+  not a winner.
+- The negative correlation of the cross-variant spread with DA-size deserves
+  its own figure: signal at the proxy against the reference's agreement, per
+  family, to see whether it is the twins (large spread, re-sorting with
+  scale; [rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate))
+  or general.
+- A per-size and per-population version of the pooled ranking, as the `_b`
+  panels do for the SNR definitions: the pooled Spearman mixes BPB with
+  benchmarks and small with large proxies.
+
+GitHub: [finetasks_criteria.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_criteria.png) · [finetasks_criteria.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_criteria.csv) ·
+GitHub: [finetasks_surrogates_scatter.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_scatter.png) · [finetasks_surrogates_scatter.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_scatter.csv) ·
+[finetasks_surrogates_rank.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_rank.csv) ·
+[finetasks_overlap.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/finetasks_overlap.csv)
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+The rankings above, without the aggregation (`predictivity` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq04 in one figure](pretraining/predictivity/highlights.png)
+
+![SNR definition per language](pretraining/predictivity/snr_definition_by_language.png)
+
+![Surrogates per benchmark](pretraining/predictivity/surrogates_by_benchmark.png)
+
+![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
+
+**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
+
+![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines.png)
+
+![Smallest size at which an SNR definition tracks DA, per L](pretraining/predictivity/snr_variant_min_size_by_L.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
+
+**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
+
+![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines_b.png)
+
+![Spearman rho of each SNR definition with DA per proxy size](pretraining/predictivity/snr_variant_min_size_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
+
+**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:
+
+![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
+
+![rho of each SNR definition against compute](pretraining/predictivity/snr_variant_min_size_by_L_flops.png)
+<!-- END auto:panels -->
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/highlights.csv) ·
+[snr_definition_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_definition_by_language.png) ·
+[snr_definition.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_definition.csv) ·
+[surrogates_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates_by_benchmark.png) ·
+[surrogates_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates_by_language.png) ·
+[surrogates.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates.csv) ·
+GitHub: [min_level_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L.png) · [min_level_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L.csv) ·
+GitHub: [min_level_by_L_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines.png) · [min_level_by_L_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines.csv) ·
+GitHub: [snr_variant_min_size_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L.png) · [snr_variant_min_size_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L.csv) ·
+GitHub: [snr_variant_min_size_by_L_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines.png) · [snr_variant_min_size_by_L_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines.csv) ·
+GitHub: [min_level_by_L_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_b.png) · [min_level_by_L_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_b.csv) ·
+GitHub: [min_level_by_L_lines_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines_b.png) · [min_level_by_L_lines_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines_b.csv) ·
+GitHub: [snr_variant_min_size_by_L_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_b.png) · [snr_variant_min_size_by_L_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_b.csv) ·
+GitHub: [snr_variant_min_size_by_L_lines_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png) · [snr_variant_min_size_by_L_lines_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines_b.csv) ·
+GitHub: [min_level_by_L_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_flops.png) · [min_level_by_L_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_flops.csv) ·
+GitHub: [snr_variant_min_size_by_L_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_flops.png) · [snr_variant_min_size_by_L_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_flops.csv)
+
+Two readings of the version-B and per-FLOPs panels carried over from the
+2026-09-18 figure review, still true on today's tables: the per-L SNR
+correlations (`snr_variant_min_size_by_L`) are "never" for DA-size almost
+everywhere because per-L DA is a lattice with ≤ 3 pairs, so the L-dependence
+of SNR needs SNR computed over the L's own variants (degenerate below three);
+and the per-FLOPs line joins a bigger model's first (peak-LR) checkpoint to a
+smaller model's annealed final, which explains the zigzags near 10⁻² — one
+line per proxy size with the annealed points marked, plus the compute
+frontier (the best DA reachable at or below each compute), is the version to
+draw for the paper.
+
+## TODO
+
+- [ ] **The seed holdout ranks most tasks on a single model pair (open, 2026-09-17).**
+      *What it is.* rq04 claims one SNR definition tracks decision accuracy
+      best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
+      in rq04's highlight and "Seed generalization" table) asks whether that
+      ranking of definitions survives a change of seed: it is computed on
+      `predictivity_seeds_train` (seeds 64, 313) and again on
+      `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
+      compared.
+      *The problem.* Replicate seeds exist only at 175M and 600M, so both
+      splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
+      reference never enters). English tasks and BPB rest on 15 model pairs.
+      A non-English benchmark is trained only in the L50 cell, so its train
+      split holds one pair — the two seeds of the same cell — and its
+      "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
+      The median task has one pair.
+      *Implications.* The per-language agreement numbers (29 % / 57 %) and the
+      low DA-ckpt ρ (0.07) are dominated by those one-pair tasks, so "the
+      ranking does not survive a seed swap" may say more about the holdout
+      than about the definitions; the DA-size ρ (0.75) leans on English + BPB.
+      Nothing in the main `predictivity` tables is affected.
+      *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
+      check, but English + BPB only. (B) treat replicate seeds as replicates,
+      not as models: average them before ranking, and use the holdout only
+      for the noise estimate — changes what the holdout means. (C) report the
+      holdout for DA-ckpt only, whose pairs are checkpoints × variants within
+      a size and do not shrink to one. (D) drop the holdout numbers from the
+      highlight until more sizes have replicate seeds.
+      *Recommendation.* A now (small change, honest scope, say "English and
+      BPB" in the highlight), and revisit once the 90M / 1.7B-L15 cells and
+      any further replicate seeds exist. Not implemented yet.
+- [ ] Bootstrap CIs on per-language Pearson r and cross-pool Spearman ρ.
+- [ ] Recommend a *family* (dispersion / relative-spread), not an exact variant
+      — only the family transfers across seeds.
+- [ ] Use a larger DA-size target (e.g. Apertus-8B) instead of the
+      not-fully-converged 1B custom model.
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pools `seeds_1904`, `seeds_28_1797`,
+`seeds_28_1797_1904`, `custom_swissai_hf`; 12 languages, reference **1B**)
+or from the **external tier** (`all/external`: the public and reference
+models, 270M–70B, no data-mixture axis). Its harness, task set, checkpoint
+window and reference differ from the ladder's, and its 36-sweep DA-size is
+a 3-mixture ranking against 1B, so its numbers are replications of the
+family-level recommendation above, never rows of the same table. The dated
+comparison note that once tracked these tiers (`ANALYSIS_new_vs_previous.md`, removed 2026-09-23:
+`rel_mpd` on top in every tier, DA-ckpt r 0.379 → 0.519 with the externals
+folded in, holdout ρ 0.80 / 0.93) predates the tie fix in `decision_acc_fast`
+and the parent-only filter and is superseded by the blocks below.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -257,6 +498,8 @@ The exact per-language argmax still does not transfer across tiers — only the
 dispersion/relative-spread *family* does — so the paper-level claim is the family
 recommendation, with HellaSwag and MultiBLiMP as the durable multilingual anchors.
 
+[top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/all/external/top_variants_overall.png) ·
+[top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/all/external/top_benchmarks_per_language.png)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -325,43 +568,9 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | Exact-variant agreement (per lang) | 7% | 7% |
 | Family-level agreement (per lang) | 21% | 29% |
 | Retention of train-best r on test | 61% | 79% |
-## TODO
 
-- [ ] **The seed holdout ranks most tasks on a single model pair (open, 2026-09-17).**
-      *What it is.* rq04 claims one SNR definition tracks decision accuracy
-      best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
-      in rq04's highlight and "Seed generalization" table) asks whether that
-      ranking of definitions survives a change of seed: it is computed on
-      `predictivity_seeds_train` (seeds 64, 313) and again on
-      `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
-      compared.
-      *The problem.* Replicate seeds exist only at 175M and 600M, so both
-      splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
-      reference never enters). English tasks and BPB rest on 15 model pairs.
-      A non-English benchmark is trained only in the L50 cell, so its train
-      split holds one pair — the two seeds of the same cell — and its
-      "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
-      The median task has one pair.
-      *Implications.* The per-language agreement numbers (29 % / 57 %) and the
-      low DA-ckpt ρ (0.07) are dominated by those one-pair tasks, so "the
-      ranking does not survive a seed swap" may say more about the holdout
-      than about the definitions; the DA-size ρ (0.75) leans on English + BPB.
-      Nothing in the main `predictivity` tables is affected.
-      *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
-      check, but English + BPB only. (B) treat replicate seeds as replicates,
-      not as models: average them before ranking, and use the holdout only
-      for the noise estimate — changes what the holdout means. (C) report the
-      holdout for DA-ckpt only, whose pairs are checkpoints × variants within
-      a size and do not shrink to one. (D) drop the holdout numbers from the
-      highlight until more sizes have replicate seeds.
-      *Recommendation.* A now (small change, honest scope, say "English and
-      BPB" in the highlight), and revisit once the 90M / 1.7B-L15 cells and
-      any further replicate seeds exist. Not implemented yet.
-- [ ] Bootstrap CIs on per-language Pearson r and cross-pool Spearman ρ.
-- [ ] Recommend a *family* (dispersion / relative-spread), not an exact variant
-      — only the family transfers across seeds.
-- [ ] Use a larger DA-size target (e.g. Apertus-8B) instead of the
-      not-fully-converged 1B custom model.
+[top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/custom_swissai_hf/top_variants_overall.png) ·
+[top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/custom_swissai_hf/top_benchmarks_per_language.png)
 
 ## Files
 
@@ -379,43 +588,8 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   statistics beyond SNR (`analyze.py`; the paper's RQ3 figure).
 - Inputs: rq03's `snr_variants_per_task.csv` and holdout
   `headline_metrics.csv`, rq00's `above_random_scores.csv`, rq01's `rq1_fits.csv`.
-
-<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
-## Per benchmark and per language
-
-The rankings above, without the aggregation (`predictivity` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
-
-![rq04 in one figure](pretraining/predictivity/highlights.png)
-
-![SNR definition per language](pretraining/predictivity/snr_definition_by_language.png)
-
-![Surrogates per benchmark](pretraining/predictivity/surrogates_by_benchmark.png)
-
-![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
-
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
-
-![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
-
-![the same as lines](pretraining/predictivity/min_level_by_L_lines.png)
-
-![Smallest size at which an SNR definition tracks DA, per L](pretraining/predictivity/snr_variant_min_size_by_L.png)
-
-![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
-
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
-
-![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
-
-![the same as lines](pretraining/predictivity/min_level_by_L_lines_b.png)
-
-![Spearman rho of each SNR definition with DA per proxy size](pretraining/predictivity/snr_variant_min_size_by_L_b.png)
-
-![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
-
-**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:
-
-![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
-
-![rho of each SNR definition against compute](pretraining/predictivity/snr_variant_min_size_by_L_flops.png)
-<!-- END auto:panels -->
+- `…/finetasks_criteria.{csv,png}`, `finetasks_surrogates_scatter.{csv,png}`,
+  `finetasks_surrogates_rank.csv`, `../finetasks_overlap.csv` — FineTasks'
+  criteria on the ladder and every surrogate against DA-size
+  (`finetasks_criteria.py`; moved from rq09 on 2026-09-23, the copies left
+  under `rq09_benchmark_design/pretraining/predictivity/` are stale).
