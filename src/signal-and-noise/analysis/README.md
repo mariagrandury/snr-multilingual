@@ -74,8 +74,8 @@ axis in Chinchilla multiples 1C–5C, one noise window (the k/20 points in the
 last 20 % of a run), at least three design-variant pairs per decision cell,
 parent tasks only (rq08 opts out), `multi` is not a language, three tasks per
 language for a per-language correlation, one reference (1.7B; L2 ES stops at
-1B), sizes 175M–1.7B (no 90M, the 3B rung only for the size-generalisation
-question), no leakage from the reference into a proxy statistic, a CSV beside
+1B), sizes 90M–1.7B at each rung's own batch (the 3B rung only for the
+size-generalisation question), no leakage from the reference into a proxy statistic, a CSV beside
 every PNG, and — since 2026-09-22 — an `axes` column naming a decision
 table's pair set (`multi-axis`, `mono-axis`, `seed`). The reformulated twins
 are ordinary benchmarks in every population since 2026-09-22 and the twenty

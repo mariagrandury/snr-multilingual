@@ -267,7 +267,7 @@ def load_mask(pool: str) -> pd.DataFrame | None:
 #   custom_swissai_hf   = custom + a06 + distill + Swiss-AI/HF refs (full ladder)
 #   external            = every non-custom model (all parquets, incl posttraining)
 REPORTS = [
-    ("predictivity", "Predictivity ladder (175M–1.7B, seed 1904)"),
+    ("predictivity", "Predictivity ladder (90M–1.7B, seed 1904)"),
     ("seeds_28_1797_1904", "Custom Apertus pretrains only"),
     ("custom_swissai_hf", "All models (custom + Swiss-AI/HF refs)"),
     ("external", "All non-custom models (refs + a06 + distill + posttraining)"),

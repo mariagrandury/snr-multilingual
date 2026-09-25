@@ -176,7 +176,7 @@ def figure(sv: pd.DataFrame, nv: pd.DataFrame, path: Path, pool: str) -> None:
         ax.axhline(.5, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0, 1.0); ax.set_xscale("log")
         ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes)
         ax.xaxis.set_minor_locator(mpl.ticker.NullLocator())      # three sizes on a log axis: no 2×10⁸ labels
-        ax.set_xlim(NON_EMB["175M"] / 1.6, NON_EMB["1B"] * 1.6)
+        ax.set_xlim(NON_EMB[sizes[0]] / 1.6, NON_EMB[sizes[-1]] * 1.6)
         ax.set_xlabel("non-embedding parameters (log)"); ax.set_title(ttl, loc="left", fontsize=7.5)
         ax.legend(fontsize=6, frameon=False, loc="lower right"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     a.set_ylabel(f"DA vs {TARGET_SIZE} final, pooled over tasks"); b.set_ylabel("DA between the two seeds' rankings")

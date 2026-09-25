@@ -78,11 +78,13 @@ so a script never decides by model name.
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
 - Diverged runs (`run__diverged`) and runs short of their target are dropped
   by default; the pool flag `include_diverged` keeps them. `build_snr_pool`
-  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 175M
-  up to the reference (rule 10): the 90M rung trains but is off the ladder
-  (nine of its ten runs diverge), and the 3B rung sits ABOVE the reference and
-  belongs to the size-generalization question alone, which opts in with
-  `above_reference=True`. Neither carries into any other pool, table or
+  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 90M
+  up to the reference (rule 10). The loader keeps only the runs at the batch a
+  rung uses now (`ladder_report.on_grid`): the 90M and 175M rungs were
+  retrained at batch 84 / 168 on 2026-09-23 and their diverged batch-504
+  predecessors, still on disk, would otherwise share a `family` with them. The
+  3B rung sits ABOVE the reference and belongs to the size-generalization
+  question alone, which opts in with `above_reference=True`. Neither carries into any other pool, table or
   figure. `ANALYSIS_SIZES` derives from `TARGET_SIZE`, so moving the reference
   moves the ladder with it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
@@ -102,8 +104,9 @@ so a script never decides by model name.
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
-  only, `multi` is not a language, three tasks per language, one reference, no
-  90M and no size above the reference, no leakage, the figure conventions.
+  only, `multi` is not a language, three tasks per language, one reference,
+  sizes 90M–1.7B at each rung's own batch and no size above the reference, no
+  leakage, the figure conventions.
   `build_snr_pool` applies the
   population rules at load (parents only, trained languages only; rq06 and
   rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
@@ -254,7 +257,7 @@ committed outputs are the 1B-reference ones and are not regenerated. Sizes and c
 `noise_window` / `noise_grid` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
 them, and `analysis/utils.py` fails at import without them).
 
-- **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes
+- **size** = `90M`…`1.7B` (the ladder, each rung at its own batch), `175M`…`1B` (36-sweep), native sizes
   for externals; **bucket** = `size_bucket(size)`.
 - **family** = cross-size identity (`lm-L8-deep-seed1904` /
   `apertus-fwEdu30-fw270-seed1904`), attached at load; DA groups on it so the

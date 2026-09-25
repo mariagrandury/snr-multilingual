@@ -218,7 +218,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
     language its mixture does not train is dropped (`untrained=True` keeps
     it, for rq06 alone and for the gate, which has to cover every task).
 
-    Sizes are ANALYSIS_SIZES, 175M to the reference (rule 10);
+    Sizes are ANALYSIS_SIZES, 90M to the reference (rule 10);
     `above_reference=True` widens that to every evaluated size and belongs to
     the size-generalization question alone, which is what the 3B rung is for.
     """
@@ -289,9 +289,10 @@ from pretrain.ladder_report import NON_EMB  # noqa: E402
 from pretrain.launch_trainings import EVAL_SIZES  # noqa: E402
 
 LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
-# Rule 10: every analysis reads the ladder from 175M up to the reference. 90M
-# trains but diverges, and the 3B rung sits ABOVE the reference — it exists for
-# the size-generalization question, which opts in with `above_reference=True`.
+# Rule 10: every analysis reads the ladder from 90M up to the reference (the
+# 90M and 175M rungs at their own batch, 2026-09-23; the loader keeps the
+# diverged batch-504 runs out). The 3B rung sits ABOVE the reference — it exists
+# for the size-generalization question, which opts in with `above_reference=True`.
 # Everywhere else a size above the reference would quietly become one more
 # column in a table whose reference is 1.7B. Derived from TARGET_SIZE, so
 # moving the reference moves this with it.

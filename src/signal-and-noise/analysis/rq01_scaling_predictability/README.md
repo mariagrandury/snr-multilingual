@@ -29,7 +29,8 @@ ladder-report snapshot **2026-09-23 06:16**.
 ## Experimental setup
 
 The fits read the plan grid — deep, scheme A, seed 1904 — at each cell's
-final checkpoint, from 175M up (the 90M rung diverged and is dropped at load,
+final checkpoint, from 90M up (each rung at its own batch since the
+2026-09-23 retrain; the diverged batch-504 90M/175M runs are dropped at load,
 [`plan/90M-rung-anomaly.md`](../../../../plan/90M-rung-anomaly.md)); the
 loader keeps parent tasks and trained languages only
 ([`RULES.md`](../RULES.md), rules 6 and 2). Every task is one series per

@@ -46,7 +46,7 @@ from analysis.utils import (  # noqa: E402
 
 POOL, STAGE = "predictivity", "pretraining"
 OUT = DECISION_ACCURACY / STAGE / POOL
-COLORS = {"175M": "#86b6eb", "350M": "#438cdd", "600M": "#2464aa", "1B": "#123f78", "1.7B": "#061f3e"}
+COLORS = {"90M": "#cde2fb", "175M": "#86b6eb", "350M": "#438cdd", "600M": "#2464aa", "1B": "#123f78", "1.7B": "#061f3e"}
 KEY = "#5c6066"             # neutral ink for the line-style samples: the style carries the meaning, not the colour
 FULL = 5.0                  # every cell trains 5x Chinchilla, so 100% of training is 5C and the ten points are half-C steps
 GROUPS = [("bpb", "", "per-language BPB"), ("benchmarks", 'stroke-dasharray="9,6"', "benchmark tasks")]

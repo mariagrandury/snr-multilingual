@@ -4,9 +4,8 @@ Reads every CSV under analysis/rq*/pretraining/ and reports each violation it
 can detect from the tables alone; exits non-zero when it finds one. What it
 checks, by rule:
 
-  10  no size outside ANALYSIS_SIZES anywhere — neither 90M (below the
-      ladder) nor a size ABOVE the reference (3B): not a value in a
-      size-like column, not a column name
+  10  no size outside ANALYSIS_SIZES anywhere — no size ABOVE the
+      reference (3B): not a value in a size-like column, not a column name
    7  no `multi` / `??` row in a table that has a language column
    5  no finite decision accuracy where the pair count is below MIN_PAIRS
       (long tables with an n_pairs column; the wide da_per_task against its
@@ -40,13 +39,13 @@ from analysis.utils import (ANALYSIS_SIZES, EVAL_SIZES, FRAC_TOL, LANGUAGE_AGGRE
                             MIN_PAIRS, NOISE_WINDOW, CKPT_DA_EARLY_FRACS, SHARED_FRACS,
                             _is_parent_task, is_trained)
 
-# Rule 10 has two halves and the checker has to test both. Derived from the
-# constants, never spelled out, so that moving TARGET_SIZE moves the check:
-#   below  90M, which is trained but never evaluated (not in EVAL_SIZES)
-#   above  every evaluated size past the reference — 3B today. The loader
-#          drops it at utils.py:249 unless a caller passes above_reference,
-#          which only the size-generalization RQ may do.
-FORBIDDEN_SIZES = tuple(["90M"] + [s for s in EVAL_SIZES if s not in ANALYSIS_SIZES])
+# Rule 10, derived from the constants, never spelled out, so that moving
+# TARGET_SIZE moves the check: every evaluated size past the reference — 3B
+# today. The loader drops it at utils.py:249 unless a caller passes
+# above_reference, which only the size-generalization RQ may do. (90M was in
+# this list while its batch-504 runs diverged; since the 2026-09-23 retrain
+# at batch 84 it is the ladder's first rung.)
+FORBIDDEN_SIZES = tuple(s for s in EVAL_SIZES if s not in ANALYSIS_SIZES)
 
 SIZE_COLS = ("size", "proxy_size", "bucket", "reference", "reference_size", "small", "target")
 # Figure families that are views of one table (rule 12, below): <stem>_*.png is
