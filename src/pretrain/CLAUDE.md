@@ -502,6 +502,19 @@ chain. `scontrol` cannot add `--exclusive` to a queued job, so builds are
 submitted to `preemptable`, never moved there — `scripts/preempt_drain.sh`
 skips `build-*` for exactly that reason.
 
+### 13. A run a few iterations old plans a row per iteration (2026-09-25)
+`ladder_report.write_csv` reads each cell's checkpoint grid off its own saves
+(`run_interval`), so a run that has one save at iteration 1, or a test run
+saving every 22, was read as a grid of 1 or 22 and planned 27,000 rows for
+one 90M cell — 79k bogus rows over four cells, on a wide table that the
+benchmark melt in `plot_benchmarks` then blew past pyarrow's 2 GiB string
+limit (`ArrowInvalid: Negative buffer resize`), and `publish()` never ran.
+A run's own grid now needs two saves and may plan at most twice the rung's
+checkpoint count (`n_checkpoints`), else the rung's rule applies; `_melt`
+strips the family prefix off the column names before melting, never off the
+long key column. `--push-git` after a crash is the trap `nightly_ladder.sh`
+guards: the fetch succeeds and hands the analysis yesterday's report.
+
 ---
 
 ## Live state (read, don't trust snapshots)

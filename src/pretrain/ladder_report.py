@@ -46,7 +46,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES, TRAIN_LOG_DIRS  # noqa: E402
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, GBS, cell_fineweb_subsets, cell_gbs, exp_name, mix_label,
-    run_interval, save_interval)
+    n_checkpoints, run_interval, save_interval)
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
 from evals.scripts.utils.configs import metric_for, tasks_for_benchmarks  # noqa: E402
@@ -549,8 +549,15 @@ def write_csv(curves, tgts, out_dir: Path, tol: float) -> Path:
         # cells saved 20 checkpoints every 2287 iters, and every per-checkpoint
         # row below has to land on THOSE iters or the table plans 40 rows the
         # run can never fill. Carried as a summary so the wide table sees it.
+        # A run's own grid needs two saves to have a gap, and it counts only
+        # while it plans no more rows than twice the rung's checkpoint count:
+        # a run a few iterations old has one save at iter 1 (or a test save
+        # every 22), and read as the grid that planned 27,000 rows for one
+        # 90M cell, 79k bogus rows in all, which is what overflowed the
+        # benchmark melt in plot_benchmarks (2026-09-25).
         saved = saved_valid_iters(cell, CKPT_ROOT)
-        si = run_interval(saved) if saved else save_interval(target)
+        ri = run_interval(saved) if len(saved) >= 2 else 0
+        si = ri if ri and target // ri <= 2 * n_checkpoints(target) else save_interval(target)
         summaries[k] = {
             "cell": cell, "parts": parts, "n_params": NON_EMB[size],
             "target_iters": target, "last_iter": last_it, "save_interval": si,
@@ -784,8 +791,12 @@ def _melt(wide_csv: Path, prefix: str, name: str):
     if not cols:
         return pd.DataFrame()
     idv = ["cell", "size", "L", "arch", "scheme", "seed", "iter"]
-    out = df.melt(id_vars=idv, value_vars=cols, var_name=name, value_name="value")
-    out[name] = out[name].str.slice(len(prefix))
+    # The prefix comes off the COLUMN names, not the melted key column: over
+    # 4,000 columns the latter is hundreds of millions of strings, past the
+    # 2 GiB limit of pyarrow's string offsets (ArrowInvalid: negative buffer
+    # resize, 2026-09-25).
+    out = (df[idv + cols].rename(columns={c: c[len(prefix):] for c in cols})
+           .melt(id_vars=idv, var_name=name, value_name="value"))
     return out.dropna(subset=["value"])
 
 
