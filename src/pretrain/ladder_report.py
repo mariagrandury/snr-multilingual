@@ -289,7 +289,8 @@ def check_benchmarks() -> list[str]:
     cells: dict[str, dict[int, dict]] = {}
     for d in sorted(EVAL_LOGS.glob("lm-*-iter*")):
         m = re.match(r"(.+)-iter(\d+)$", d.name)
-        if m:
+        c = m and CELL_RE.match(m.group(1))
+        if c and on_grid(c):          # the rung's current batch only, as the table itself
             cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
     for cell, iters in sorted(cells.items()):
         # Only iters that carry harness scores. score_bpb.py writes
