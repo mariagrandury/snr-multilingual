@@ -26,7 +26,7 @@ Three groupings of the same decisions, `--by`:
                      that share the L, as `by_L.py` defines it. Under
                      `--axes mono-axis` a regime keeps only its pairs that move
                      ONE other axis (L8 6 → 4 pairs, L30 10 → 5), so the
-                     `_one_axis` L lines rest on fewer decisions and fewer tasks
+                     `_mono_axis` L lines rest on fewer decisions and fewer tasks
                      (L15 loses the tasks only its scheme-A list trains).
                      The multi-axis L lines pool arch, list and
                      temperature decisions at once, and their mix is written
@@ -87,6 +87,9 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  reaches_tau, n_min_size (and n_min_compute on the
                                  compute axis). n_min_* is NA when no real proxy
                                  clears tau.
+
+Every name above carries the pair set's AXES_SUFFIX (rule 15): `_multi_axes`, or
+`_mono_axis` with --axes mono-axis, before any `_flops`.
 
     python analysis/rq02_decision_accuracy/scale_convergence.py --by L --pool predictivity
     python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks
@@ -626,7 +629,7 @@ if __name__ == "__main__":
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose above-random gate applies")
     p.add_argument("--tau", type=float, default=TAU, help="the reliability threshold N_min is read at")
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
-                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+                   help="the pair set (rule 15); mono-axis writes the `_mono_axis` twins")
     p.add_argument("--langs", default="all", choices=list(LANG_SETS),
                    help="restrict the tasks to the languages of one L setting (stem token replaces `L`)")
     p.add_argument("--common-tasks", action="store_true",

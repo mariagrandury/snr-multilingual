@@ -58,9 +58,9 @@ Decision accuracy (DA) is the share of design-variant pairs that a proxy orders 
 
 ### 3.2 The full population: a smaller model is close to a coin flip
 
-![Scale convergence, pooled](scale_convergence.png)
+![Scale convergence, pooled](scale_convergence_multi_axes.png)
 
-*Figure 5. Every grid-seed design-variant pair of every scheme, read at both models' final checkpoint against the 1.7B final, pooled over the gated benchmark tasks with at least three pairs (149 tasks at 175M, 246 at 1B; the BPB panel over the trained per-language BPB tasks). The band is the 90 % leave-one-family-out jackknife. Dotted: τ = 0.9. CSV: `scale_convergence.csv`; the mono-axis twin is `scale_convergence_one_axis.*`.*
+*Figure 5. Every grid-seed design-variant pair of every scheme, read at both models' final checkpoint against the 1.7B final, pooled over the gated benchmark tasks with at least three pairs (149 tasks at 175M, 246 at 1B; the BPB panel over the trained per-language BPB tasks). The band is the 90 % leave-one-family-out jackknife. Dotted: τ = 0.9. CSV: `scale_convergence_multi_axes.csv`; the mono-axis twin is `scale_convergence_one_axis.*`.*
 
 **On every gated task, DA-size is 0.55 at 175M and 0.61 at 1B.** The pooled multi-axis reliability reads 0.552 [0.523, 0.581], 0.578 [0.548, 0.609], 0.592 [0.559, 0.625] and 0.609 [0.570, 0.649] at 175M, 350M, 600M and 1B; the mono-axis pairs read 0.530, 0.552, 0.563 and 0.567 with bands of the same width. The mean-over-tasks reading of `rq2_ten_checkpoints.csv` (A/B pool, 113–188 tasks) is 0.47–0.55 at every proxy size and checkpoint. Per-language BPB does better (0.58–0.82 on Figure 5's right panel) and the two aggregates best of all: `bpb_macro` ranks the variants at 0.91–0.97 and `train_loss` at 0.81–0.86 from any size.
 
@@ -68,9 +68,9 @@ Decision accuracy (DA) is the share of design-variant pairs that a proxy orders 
 
 ### 3.3 The paper figure is a conditional statement
 
-![Paper RQ2 figure, per-panel filters, mono-axis](rq2_above_66_either_transformation_one_axis.png)
+![Paper RQ2 figure, per-panel filters, mono-axis](rq2_above_66_either_transformation_mono_axis.png)
 
-*Figure 6. Left: DA-size per design axis (mono-axis pairs) and pooled, over the tasks whose median DA-size over the proxy sizes is ≥ 0.66 (37 tasks at 175M, 55 at 1.7B). Middle: DA-ckpt over the tasks whose median DA-ckpt is ≥ 0.66 (73–100 tasks). Right: DA-goal over the tasks passing either cut (74–113 tasks). The middle and right x axes are the proxy's own run in Chinchilla multiples. CSVs: `rq2_above_66_either_transformation_one_axis.csv`, `early_small_by_L_ckpt_above_66_ckpt_one_axis.csv`, `early_small_by_L_goal_above_66_either_one_axis.csv`.*
+*Figure 6. Left: DA-size per design axis (mono-axis pairs) and pooled, over the tasks whose median DA-size over the proxy sizes is ≥ 0.66 (37 tasks at 175M, 55 at 1.7B). Middle: DA-ckpt over the tasks whose median DA-ckpt is ≥ 0.66 (73–100 tasks). Right: DA-goal over the tasks passing either cut (74–113 tasks). The middle and right x axes are the proxy's own run in Chinchilla multiples. CSVs: `rq2_above_66_either_transformation_mono_axis.csv`, `early_small_by_L_ckpt_above_66_ckpt_mono_axis.csv`, `early_small_by_L_goal_above_66_either_mono_axis.csv`.*
 
 | line (mono-axis, `above_66_size` tasks) | 175M | 350M | 600M | 1B | tasks |
 |---|---|---|---|---|---|
@@ -88,9 +88,9 @@ Decision accuracy (DA) is the share of design-variant pairs that a proxy orders 
 
 ### 3.4 Language count: unordered, on any task set
 
-![Per-L lines on the L8 languages](scale_convergence_L8.png)
+![Per-L lines on the L8 languages](scale_convergence_L8_multi_axes.png)
 
-*Figure 7. One line per language-count regime (pairs of design variants sharing the L; a regime pools depth, list and temperature decisions, `share_*` in the CSV), on the tasks in the eight L8 languages, every gated task. CSV: `scale_convergence_L8.csv`; `scale_convergence_L8common.*` keeps the 22 tasks with a cell in every regime at every proxy size, `scale_convergence_L_one_axis.*` the mono-axis pairs on every language.*
+*Figure 7. One line per language-count regime (pairs of design variants sharing the L; a regime pools depth, list and temperature decisions, `share_*` in the CSV), on the tasks in the eight L8 languages, every gated task. CSV: `scale_convergence_L8_multi_axes.csv`; `scale_convergence_L8common.*` keeps the 22 tasks with a cell in every regime at every proxy size, `scale_convergence_L_one_axis.*` the mono-axis pairs on every language.*
 
 | regime, L8-language tasks (unfiltered) | 175M | 350M | 600M | 1B | tasks | decision mix at 1B |
 |---|---|---|---|---|---|---|
@@ -106,9 +106,9 @@ Decision accuracy (DA) is the share of design-variant pairs that a proxy orders 
 
 ### 3.5 One language at a time, and the tokens axis
 
-![Per-language panels](scale_convergence_lang_all.png)
+![Per-language panels](scale_convergence_lang_all_multi_axes.png)
 
-*Figure 8. One panel per L8 language, one line per regime that trains it plus the pooled line, on every gated task of the language; each point carries its task count, the legend the language's share of the regime's tokens and the tokens at 1.7B. The panel title carries the collapse test: R² of one log-linear line through every regime's points with x = size, then with x = tokens of the language. CSV: `scale_convergence_lang_all.csv`; the tokens-axis figure is `scale_convergence_lang_all_tokens.png`, the coverage table `scale_convergence_lang_all_coverage.csv`.*
+*Figure 8. One panel per L8 language, one line per regime that trains it plus the pooled line, on every gated task of the language; each point carries its task count, the legend the language's share of the regime's tokens and the tokens at 1.7B. The panel title carries the collapse test: R² of one log-linear line through every regime's points with x = size, then with x = tokens of the language. CSV: `scale_convergence_lang_all_multi_axes.csv`; the tokens-axis figure is `scale_convergence_lang_all_multi_axes_tokens.png`, the coverage table `scale_convergence_lang_all_multi_axes_coverage.csv`.*
 
 **Every one of the eight languages draws a panel and none is ordered by L.** Per language the pooled line at 1B reads en 0.61, ru 0.69, zh 0.58, de 0.67, ja 0.57, es 0.61, fr 0.59, it 0.59, on 5–12 tasks; the regime lines within a panel cross each other at every size. Spanish, French and Italian have no L8 line: scheme B's L8 list does not contain them, so their L8 cells have two families and one pair.
 

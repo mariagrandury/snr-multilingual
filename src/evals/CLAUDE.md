@@ -179,8 +179,9 @@ would be swept into the original family. They ship via
 tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
 honours through `configs.metric_for` — the W&B series is
 `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
-**Since 2026-09-22 the twins are in the `auto` group itself** — the three
-`rf_*` benchmarks and `rfgm_include_base_44` — so an ordinary watcher pass
+**Since 2026-09-22 the twins are in the `auto` group itself** — the eight
+`rf_*` benchmarks (the first three plus five promoted from `auto_probe`
+on 2026-09-23) and `rfgm_include_base_44` — so an ordinary watcher pass
 evaluates them alongside the originals and tops up every existing
 checkpoint with the tasks it is missing (the watcher is per-task
 idempotent, and walltime is priced from the missing tasks). That also

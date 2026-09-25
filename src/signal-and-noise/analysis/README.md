@@ -225,7 +225,7 @@ files under their own directory.
   `intervention_da_by_benchmark_early.png`, `intervention_da_by_language_early.png`
   (`panels.py`, from `intervention_da_by_benchmark.csv` / `_by_language.csv`);
   `intervention_da.png`, `rq4_interventions.png/.pdf` (paper),
-  `rq2_early_small.png/.pdf` (the paper's rq2 is rq02's `paper_ten_checkpoints.py` → `rq2.png/.svg/.csv`).
+  `rq2_early_small.png/.pdf` (the paper's rq2 is rq02's `paper_ten_checkpoints.py` → `rq2_ten_checkpoints.png/.svg/.csv`).
 
 ### rq06 — Language transfer (C, paper RQ5)
 

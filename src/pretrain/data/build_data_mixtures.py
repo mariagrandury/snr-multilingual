@@ -31,8 +31,8 @@ Build-token sizing:
   (100% English at ~167B). With the reviewed deep-ladder budgets (read from
   hyperparams_deep.json) this yields a ~184B English build, ~92B FineWeb-2
   builds wherever the 1.7B rung trains — which since 2026-09-10 is every
-  scheme-A setting and both AT3 settings — and ~52B for the schemes capped at
-  the 1B rung (ZH and ES at L2).
+  scheme-A setting and both AT3 settings — and less for ZH and ES at L2 (52B
+  and 23.9B), whose source runs out; both still train to the 1.7B rung.
 
   The builder NEVER repeats data: a source that runs out before its target
   prints a shortfall and processing continues. So a target the corpus cannot

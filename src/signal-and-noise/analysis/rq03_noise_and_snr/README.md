@@ -75,24 +75,24 @@ tasks cover all three.
 Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all`.
 
 - **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 3642 of 7533 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
-- **Seed noise vs detrended checkpoint noise** — median ratio 1.79 over 794 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.46; 35% of 793 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Gate.** 7296 of 13623 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Seed noise vs detrended checkpoint noise** — median ratio 1.79 over 1230 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.39; 31% of 1224 cells above 2× (a distinct model for SNR, not a re-roll).
 
 **Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.27 | 636 |
-| benchmark | arch / ckpt | 2.14 | 2883 |
-| benchmark | scheme / seed | 1.08 | 167 |
-| benchmark | scheme / ckpt | 2.00 | 1131 |
-| benchmark | temperature / seed | 1.40 | 559 |
-| benchmark | temperature / ckpt | 2.39 | 2433 |
-| benchmark | zh / seed | 1.52 | 28 |
-| benchmark | zh / ckpt | 2.91 | 38 |
-| benchmark | es / seed | 1.77 | 28 |
-| benchmark | es / ckpt | 3.78 | 38 |
+| benchmark | arch / seed | 1.23 | 1067 |
+| benchmark | arch / ckpt | 2.07 | 5000 |
+| benchmark | scheme / seed | 1.08 | 281 |
+| benchmark | scheme / ckpt | 1.97 | 1961 |
+| benchmark | temperature / seed | 1.31 | 905 |
+| benchmark | temperature / ckpt | 2.28 | 4063 |
+| benchmark | zh / seed | 1.47 | 68 |
+| benchmark | zh / ckpt | 2.51 | 131 |
+| benchmark | es / seed | 1.41 | 68 |
+| benchmark | es / ckpt | 2.84 | 97 |
 | bpb | arch / seed | 2.13 | 139 |
 | bpb | arch / ckpt | 1.92 | 530 |
 | bpb | scheme / seed | 0.21 | 26 |
@@ -120,7 +120,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_
 | loss | temperature / seed | 7.20 | 3 |
 | loss | temperature / ckpt | 1.61 | 15 |
 | loss | zh / seed | 4.17 | 3 |
-| loss | zh / ckpt | 8.54 | 4 |
+| loss | zh / ckpt | 7.42 | 5 |
 | loss | es / seed | 2.42 | 3 |
 | loss | es / ckpt | 3.91 | 4 |
 
@@ -217,6 +217,6 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
 
 | DA | languages | same variant | same family | Spearman ρ of the variant ranking |
 |---|---|---|---|---|
-| DA-size | 1 | 0 | 0 | -0.71 |
-| DA-ckpt | 1 | 0 | 1 | 0.83 |
+| DA-size | 1 | 0 | 0 | -0.77 |
+| DA-ckpt | 1 | 0 | 0 | 0.28 |
 <!-- END auto:seed-holdout -->

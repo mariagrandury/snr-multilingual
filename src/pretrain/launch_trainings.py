@@ -354,9 +354,8 @@ SEED_TRIPLES = {
 
 def scheme_sizes(scheme: str, L: int) -> list[str]:
     """Ladder rungs a scheme trains at one setting — everything up to its
-    per-setting cap. ES stops at 1B: its 23.4B Spanish source cannot feed a
-    1.7B without repeating ~3.5x (see DATA_SCHEMES), so its reference is the
-    1B rung. ZH runs to 1.7B on its existing build (2026-09-20)."""
+    per-setting cap. ZH and ES stop at the 1.7B reference; ES's 1.7B repeats
+    its 23.9B build 3.51x (see DATA_SCHEMES)."""
     sizes = [s for s in LADDER if L in SIZE_LANG_SETTINGS[s]]
     cap = DATA_SCHEMES[scheme]["max_size"].get(L)
     return sizes[: sizes.index(cap) + 1] if cap else sizes

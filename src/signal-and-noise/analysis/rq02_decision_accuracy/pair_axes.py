@@ -1,17 +1,21 @@
 """Multi-axis vs mono-axis pairs: the same three decision accuracies, on the same
 reliable population, with the PAIR SET as the only thing that changes.
 
-Exploratory: this feeds plan/decision_accuracy.md. The production form — an
-`axes` column in `da_per_task.csv` so every rq02 table carries both readings —
-is that plan's recommendation, not this script.
+Both rows are filtered by the MULTI-AXIS reliable tasks, the one stated exception
+to rule 15: filtering each row by its own pair set would change the task
+population together with the pair set.
+
+The production form — the `axes` column of `da_per_task.csv` (compute_da.py),
+so every rq02 table carries both readings — is in place; this script is the
+side-by-side view of the two on one population (plan/decision_accuracy.md).
 
     multi-axis   every pair of design variants at the grid seed: rq02's convention
                  to date. Two thirds of these pairs move two or three axes at once
                  ("L8-A-deep vs L50-B-shallow"), a comparison nobody makes.
-    mono-axis    the pairs that differ on exactly ONE of L, arch, list, T, lang2.
+    mono-axis    the pairs that differ on exactly ONE of L, arch, list, T, lang2, en.
                  This is the structure upstream had by construction — DataDecide's
                  recipes differ only in the data mix, so every one of its pairs is
-                 a single-axis decision — generalised to a grid with six axes. The
+                 a single-axis decision — generalised to a grid with seven axes. The
                  seed is held at the grid seed in both sets, so a seed pair (two
                  draws of one design, which decide nothing) is in neither.
 

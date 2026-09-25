@@ -11,7 +11,7 @@ path as a comment next to the \includegraphics.
 
     rq1  scaling        <- rq01_scaling_predictability/regimes.py            (pool predictivity_all), scaling_regimes_outliers_paper
     rq1_by_family       <- rq01_scaling_predictability/regimes.py            (pool predictivity_all), scaling_regimes_by_family_paper (appendix)
-    rq2  ten checkpoints<- rq02_decision_accuracy/paper_ten_checkpoints.py   (pool predictivity),     rq2
+    rq2  ten checkpoints<- rq02_decision_accuracy/paper_ten_checkpoints.py   (pool predictivity),     rq2_ten_checkpoints
     rq3  surrogates     <- rq04_surrogates/analyze.py                        (pool predictivity),     rq3_surrogates
     rq4  interventions  <- rq05_design_decisions/analyze.py                  (pool predictivity_all), rq4_interventions
     rq5  transfer       <- rq06_language_transfer/analyze.py                 (pool predictivity_all), rq5_transfer
@@ -45,7 +45,7 @@ SOURCES = [
     (ANALYSIS / "rq01_scaling_predictability" / ALL, [("scaling_regimes_outliers_paper", "rq1"),
                                                       ("scaling_regimes_by_family_paper", "rq1_by_family")],   # the appendix figure
      ["rq1_fits.csv", "scaling_regimes.csv", "scaling_regimes_families.csv", "scaling_regimes_outliers.csv"], "facts.json"),
-    (ANALYSIS / "rq02_decision_accuracy" / HEAD, [("rq2", "rq2")], ["rq2.csv"], None),
+    (ANALYSIS / "rq02_decision_accuracy" / HEAD, [("rq2_ten_checkpoints", "rq2")], ["rq2_ten_checkpoints.csv"], None),
     (ANALYSIS / "rq05_design_decisions" / ALL, [("rq2_early_small", "rq2_early_small")],
      ["rq2_decisions.csv", "rq2_early_small.csv"], "early_decision_facts.json"),
     (ANALYSIS / "rq04_surrogates" / HEAD, [("rq3_surrogates", "rq3")], ["rq3_surrogates.csv"], "facts.json"),

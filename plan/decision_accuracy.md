@@ -179,7 +179,7 @@ interpretation.
   the shared layer)
 - `compute_da.py` gains the explicit-pair kernel for mono-axis; DA-goal
   columns join the table (`decision_acc_goal_f<NN>_<size>`)
-- rq2 figures come in `_multi_axis` / `_one_axis` pairs in one directory (§3)
+- rq2 figures come in `_multi_axes` / `_mono_axis` pairs in one directory (§3)
 
 ---
 
@@ -348,13 +348,13 @@ are above chance somewhere and drawn".
 
 ---
 
-## 6. RQ02 paper figure: `rq2_above_66_both_transformation.png`
+## 6. RQ02 paper figure: `rq2_above_66_both_transformation_multi_axes.png`
 
 **What it shows today.** Three panels on the 23 `above_66_both` cells (14
 languages, 5 families): DA-size by design axis with a pooled black line;
 DA-ckpt and DA-goal per proxy size on the checkpoint axis.
 
-**Findings from the current version** (`rq2_above_66_both_transformation.csv`).
+**Findings from the current version** (`rq2_above_66_both_transformation_multi_axes.csv`).
 
 | panel | line | 175M | 350M | 600M | 1B | reading |
 |---|---|---|---|---|---|---|
@@ -417,8 +417,8 @@ reference's own DA-ckpt at 4.5C (0.871) is a measured ceiling.
    declared filters. One full pipeline run.
 4. rq01 chain rerun (it is stale regardless of 1–3); `regimes.py` gains
    survivorship labels; the paper figure is re-cut.
-5. rq02: `reliable_tasks` on `grid`'s table; rq2 figures in `_multi_axis` /
-   `_one_axis` pairs; the mono-axis version becomes the paper's; the `rq2.*`
+5. rq02: `reliable_tasks` on `grid`'s table; rq2 figures in `_multi_axes` /
+   `_mono_axis` pairs; the mono-axis version becomes the paper's; the `rq2.*`
    name resolved with `make_rq_figures.py` and the tex caption in one change.
 
 Steps 1–2 are the big change discussed on 2026-09-22 and are unstarted; the
@@ -462,8 +462,9 @@ wide columns; `reliable_tasks.py` gates the three kinds separately, carries
 both pair sets and reads its DA from `--da-pool predictivity_schemes` while the
 gate and the outputs stay with `predictivity` (option C, so #9 is fixed without
 renaming a directory); `by_L`, `scale_convergence` and `paper_rq2` take
-`--axes` and write `_one_axis` twins beside the existing names; the driver runs
-both passes. Every other consumer calls `one_axes()` and so still reads the
+`--axes` and write `_mono_axis` twins beside the multi-axis ones, which carry
+`_multi_axes` since 2026-09-25 (no bare names left, so `rq2.*` no longer collides
+with the paper's `fig:rq2`, the ten-checkpoint figure); the driver runs both passes. Every other consumer calls `one_axes()` and so still reads the
 multi-axis table it always read.
 
 **Two checks worth keeping.** `pair_agreement` reproduces

@@ -4,14 +4,14 @@ scheme A vs B, AT3, the second language), at the grid seed of every scheme
 (`predictivity_all`, seed 1904). L1 and L2 have few pairs once
 its 1.7B cells are final; until then its cells stay blank.
 
-    da_by_L_per_task.csv   per task, L, proxy size and fraction of the proxy's own run, on
+    da_by_L_per_task<axes>.csv   per task, L, proxy size and fraction of the proxy's own run, on
                            the ten checkpoints of the shared k/10 grid (0.5C ... 5C): `da_ref`
                            vs the reference's final ranking (the early-and-small reading,
                            `n_pairs_ref` pairs) and `da_own` vs the proxy size's own final
                            ranking (DA-ckpt within the L, `n_pairs_own`); `compute` = the training FLOPs the
                            pair's proxies spent up to that checkpoint (mean over the families in the pair
                            set), `compute_share` = as a share of the reference's full run
-    da_pooled_per_task.csv the same with EVERY pair at the grid seed pooled, schemes
+    da_pooled_per_task<axes>.csv the same with EVERY pair at the grid seed pooled, schemes
                            A, B, AT3, ZH and ES alike: the headline reading on ten
                            checkpoints. The scheme is not held fixed here because a
                            temperature or a second-language swap is a design decision
@@ -19,7 +19,7 @@ its 1.7B cells are final; until then its cells stay blank.
                            pooled the schemes — restricting only this panel made the
                            first panel a different population from the six next to it.
                            See "Why the pooled panel keeps every scheme" in README.md.
-    pairs_by_L.csv         per L: the design variants the grid plans at the grid seed and the pairs
+    pairs_by_L<axes>.csv   per L: the design variants the grid plans at the grid seed and the pairs
                            usable against the reference (both members planned at the proxy size and at
                            the reference), planned vs with data today (README table)
 Three decision accuracies share this table, by what the ranking is compared against:
@@ -33,7 +33,8 @@ Three decision accuracies share this table, by what the ranking is compared agai
               run (`da_own`): what the size would have decided early. A run's final is
               its own reference, so the 5C column is trivially 1.0 and is not drawn.
 
-Six figures, one per (reading, variant). All six share the y axis, so any two of
+Ten figures per pair set, one per (reading, variant); above_66_ckpt draws DA-ckpt
+alone and above_66_either DA-goal alone. All share the y axis, so any two of
 them overlay. The variants differ only in which tasks the mean runs over:
 
     <plain>     every gated benchmark task, dashed, one line per proxy size
@@ -46,8 +47,11 @@ them overlay. The variants differ only in which tasks the mean runs over:
                 actually read. An L whose reliable cells fall below MIN_PAIRS
                 is blank, as everywhere else.
 
-    early_small_by_L_goal.png / _goal_with_bpb.png / _goal_above_80.png
-    early_small_by_L_ckpt.png / _ckpt_with_bpb.png / _ckpt_above_80.png
+    early_small_by_L_goal[_<variant>]<axes>.png
+    early_small_by_L_ckpt[_<variant>]<axes>.png
+
+    <axes> is the pair set's AXES_SUFFIX: `_multi_axes`, or `_mono_axis` with
+    --axes mono-axis. The README block is written from the multi-axis run only.
 
                            Each writes the table it draws under the same name. The
                            reference size's line is identical in the goal and ckpt
@@ -319,21 +323,23 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
 def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
     if pool != CANONICAL_POOL:
         return
+    m = AXES_SUFFIX["multi-axis"]
     stage = load_pools()[pool].get("stage", "pretraining")
     body = "\n\n".join([
         "## Per language count",
         f"**Pairs per L** — the design variants the grid plans at seed {GRID_SEED}, and per proxy size the pairs usable "
         f"against {TARGET_SIZE} (both members planned at that size and at {TARGET_SIZE}): planned / with data today on "
-        "BPB / on the benchmarks / on the training loss. ES stops at 1B, so it never pairs against the reference; ZH runs to "
-        f"{TARGET_SIZE} (2026-09-20) and is the third L2 family. A cell below MIN_PAIRS (3) families is left empty (rule 5), "
+        f"BPB / on the benchmarks / on the training loss. ZH and ES run to {TARGET_SIZE} and are the second and third L2 "
+        "families. A cell below MIN_PAIRS (3) families is left empty (rule 5), "
         "so a thin L shows blanks rather than a 0/1 reading.",
         md_table(list(pairs.columns), pairs.values.tolist()),
         f"The early-and-small reading one L at a time: pairs of design variants that share the L (seed {GRID_SEED} of every "
         f"scheme, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "
         f"needs ≥ {MIN_PAIRS} pairs (rq02's rule), which today leaves out every L with one pair (the table above); the "
-        f"first panel pools every pair at that seed, every scheme included (`da_pooled_per_task.csv`). "
-        f"`da_by_L_per_task.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. "
-        f"Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool {pool}`.",
+        f"first panel pools every pair at that seed, every scheme included (`da_pooled_per_task{m}.csv`). "
+        f"`da_by_L_per_task{m}.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. "
+        f"The `_mono_axis` twins of every table and figure are the same over the one-axis pairs (rule 15). "
+        f"Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool {pool} [--axes mono-axis]`.",
         f"Two of rq02's three decision accuracies have a checkpoint axis and so a figure here. **DA-goal** ranks the "
         f"proxy at any checkpoint against the {TARGET_SIZE} final checkpoint; **DA-ckpt** ranks it against its own "
         f"size's final checkpoint, so the 175M line asks what 175M would have decided early and what it misses is the "
@@ -342,15 +348,15 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
         f"checkpoint is its own reference. The third, **DA-size**, is DA-goal read at 5C alone and lives in "
         f"`da_per_task.csv`. Each figure comes in a benchmarks-only version and a `_with_bpb` one that adds the solid "
         f"per-size BPB lines; all four share the y axis, so any two overlay.",
-        f"![DA-goal per L]({stage}/{pool}/early_small_by_L_goal.png)",
-        f"![DA-goal per L, with BPB]({stage}/{pool}/early_small_by_L_goal_with_bpb.png)",
-        f"![DA-ckpt per L]({stage}/{pool}/early_small_by_L_ckpt.png)",
-        f"![DA-ckpt per L, with BPB]({stage}/{pool}/early_small_by_L_ckpt_with_bpb.png)",
+        f"![DA-goal per L]({stage}/{pool}/early_small_by_L_goal{m}.png)",
+        f"![DA-goal per L, with BPB]({stage}/{pool}/early_small_by_L_goal_with_bpb{m}.png)",
+        f"![DA-ckpt per L]({stage}/{pool}/early_small_by_L_ckpt{m}.png)",
+        f"![DA-ckpt per L, with BPB]({stage}/{pool}/early_small_by_L_ckpt_with_bpb{m}.png)",
         "A third variant of each restricts the mean to the (benchmark, language) cells that rank reliably on BOTH "
         "axes (DA-size and DA-ckpt each ≥ 0.8, `reliable_tasks.py`): the plain panels average over every gated "
         "benchmark, these average over the benchmarks that work.",
-        f"![DA-goal per L, reliable cells only]({stage}/{pool}/early_small_by_L_goal_above_80.png)",
-        f"![DA-ckpt per L, reliable cells only]({stage}/{pool}/early_small_by_L_ckpt_above_80.png)"])
+        f"![DA-goal per L, reliable cells only]({stage}/{pool}/early_small_by_L_goal_above_80{m}.png)",
+        f"![DA-ckpt per L, reliable cells only]({stage}/{pool}/early_small_by_L_ckpt_above_80{m}.png)"])
     replace_block(OUT_ROOT / "README.md", "by-L", body, f"by_L.py --pool {pool}")
 
 
@@ -358,7 +364,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose early_small_summary.csv is the first panel and whose gate applies")
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
-                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+                   help="the pair set (rule 15); mono-axis writes the `_mono_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     table, pooled = da_by_L(args.axes)
@@ -371,6 +377,7 @@ if __name__ == "__main__":
             if name in readings:
                 figure(args.pool, out, table, pooled, name, variant, args.axes)
     pairs = pairs_by_L(table)
-    pairs.to_csv(out / "pairs_by_L.csv", index=False)
+    pairs.to_csv(out / f"pairs_by_L{sfx}.csv", index=False)
     print(pairs.to_string(index=False))
-    generate_readme(args.pool, out, pairs)
+    if args.axes == "multi-axis":
+        generate_readme(args.pool, out, pairs)
