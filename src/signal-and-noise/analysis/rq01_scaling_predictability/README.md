@@ -383,3 +383,39 @@ harness, task set and reference size).
 - `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.{png,csv}`
   — figure 5 (`scaling_vs_ranking.py`, in rq02's folder because it reads
   rq02's per-cell agreement table).
+- `…/da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv`, `_cells.csv` — a
+  language's BPB DA-goal against the tokens of the language the proxies had
+  seen, mean over languages per (proxy size, tenth) with its standard error;
+  the cells table has the per-language cells (`tokens_seen.py`).
+- `…/pass_prob_vs_train_tokens_by_benchmark_<deep_A_1904|1904>[_ckpts].png/.pdf/.csv`,
+  `_points.csv` — per benchmark, the share of (language, L) cells above chance
+  against the tokens of the language, one line per size; the `_ckpts` twins
+  read the same runs at every evaluated tenth; the `.csv` is the cell table,
+  `_points.csv` the binned values drawn (`tokens_seen.py`).
+
+<!-- BEGIN auto:tokens-seen (tokens_seen.py --pool predictivity_all) -->
+## Tokens seen: exposure to a language against its evaluation
+
+`tokens_seen.py`, `predictivity_all` pool: both figures put a language's evaluation against the training tokens of that language the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all`.
+
+**A. DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages of the share of design-variant pairs the proxy's BPB orders like the 1.7B final (rq02's kernel, every pair at seed 1904 of every scheme on the variants that train the language, ≥ 3 pairs; rule 15's multi-axis set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of the language they had seen, and a point's x the geometric mean over languages (50 languages; `da_goal_multi_axes_across_langs_bpb_cells.csv` has the per-language cells with the min and max over variants). The 1.7B line is its own early checkpoints against its final.
+
+| proxy size | tokens of a language at 1C | DA at 1C | tokens at 5C | DA at 5C | languages |
+|---|---|---|---|---|---|
+| 175M | 0.03 B | 0.74 | 0.14 B | 0.88 | 50 |
+| 350M | 0.05 B | 0.83 | 0.27 B | 0.91 | 50 |
+| 600M | 0.10 B | 0.68 | 0.48 B | 0.70 | 50 |
+| 1B | 0.15 B | 0.75 | 0.75 B | 0.91 | 50 |
+
+![DA-goal of BPB vs tokens seen](pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb.png)
+
+**B. Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned 3 per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two populations: `deep_A_1904`, the plan grid, deep / scheme A / seed 1904: one run per cell; `1904`, every seed-1904 run at the (size, L) that trains the language, every scheme and architecture. The `.csv` next to each figure is the cell table (benchmark, task, language, model_size, language_scheme, train_tokens, task_score, above_chance, share_above, n_runs), `_points.csv` the binned values drawn. The `_ckpts` twins read the same runs at every evaluated tenth (a cell = (task, size, L, tenth), x = the tokens seen by that checkpoint): ten times the cells, and a token axis that runs through every training run. Cells above chance: `deep_A_1904` 4936 of 11135 (768 tasks), `deep_A_1904_ckpts` 46054 of 111350 (768 tasks), `1904` 5684 of 12761 (768 tasks), `1904_ckpts` 53176 of 127610 (768 tasks).
+
+![Share above chance vs tokens seen, deep_A_1904](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.png)
+
+![Share above chance vs tokens seen, deep_A_1904_ckpts](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904_ckpts.png)
+
+![Share above chance vs tokens seen, 1904](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904.png)
+
+![Share above chance vs tokens seen, 1904_ckpts](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.png)
+<!-- END auto:tokens-seen -->

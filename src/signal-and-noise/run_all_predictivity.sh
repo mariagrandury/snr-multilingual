@@ -96,6 +96,8 @@ run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
 # the same table with what the gate and the fit minimum removed put back, per family
 run $PY analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_all
 run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
+# a language's evaluation against the tokens of that language the proxy saw (BPB DA-goal; the gate per benchmark)
+run $PY analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all
 
 pass "rq02 — decision accuracy"
 # The per-pool DA tables (the truth every later RQ reads), cached until the

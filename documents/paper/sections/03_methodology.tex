@@ -143,22 +143,22 @@ We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
 \end{table}
 
 
-We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings. Kendall's $\tau$ ... Decision accuracy (DA; \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them. For a set $\mathcal{P}$ of model-variant pairs,
+We quantify ranking agreement with decision accuracy (DA; \citealp{heineman_signal_2025}), the fraction of pairwise preferences that agree between the proxy and the reference. Kendall's $\tau$ and Spearman's $\rho$ are computed on the same cells as a check; DA is a rescaling of Kendall's $\tau_a$ up to the treatment of ties, $2\,\mathrm{DA} - 1 = \tau_a + (T_{\mathrm{both}} - T_{\mathrm{one}})/|\mathcal{P}|$ with $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ the numbers of pairs tied on both or on one side, so we report DA alone.
+For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations that differ only in the design choice under study,
 \begin{equation}
-\mathrm{DA}
+\mathrm{DA}_{b_\ell}(N,f)
 =
 \frac{1}{|\mathcal{P}|}
-\sum_{(a,b)\in\mathcal{P}}
+\sum_{(\theta_a,\theta_b)\in\mathcal{P}}
 \mathbb{1}
 \left[
-\operatorname{sign}\!\left(U(s_a)-U(s_b)\right)
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a,S,f)-Y_{b_\ell}(\theta_b,S,f)\right)
 =
-\operatorname{sign}\!\left(U(m_a)-U(m_b)\right)
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a^{\mathrm{ref}},S,1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},S,1)\right)
 \right],
 \label{eq:decision-accuracy}
 \end{equation}
-% TODO: rewrite equation using our definition of model configuration
-where $s_a$ and $m_a$ denote variant $a$ at the small proxy and reference points, respectively, and $U(\cdot)$ returns the benchmark score. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. % TODO: specify how we treat ties
+where $\theta_a$ has size $N$, $\theta_a^{\mathrm{ref}}$ is the same configuration at $N_{\mathrm{ref}}$ (or at $N$ itself in the RA-checkpoint setting), and $S=1904$ throughout. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. A cell $(b_\ell, N, f)$ needs at least three pairs; with fewer it is undefined rather than reported.
 
 \textbf{Ranking comparison axes.}
 When computing RA, we distinguish between two types of model comparisons based on which design choices vary.
