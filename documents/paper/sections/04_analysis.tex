@@ -7,6 +7,7 @@ Using these views, we ask which multilingual measurements track learning, when t
 
 \begin{figure}[t]
 \centering
+% src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.png
 \includegraphics[width=\textwidth]{figures/rq1.png}
 \caption{\textbf{Benchmark scaling predictability.}
 \textbf{(a)} Median $R^2$ versus Spearman $\rho$ across model-size fits, showing scaling predictability and direction.
@@ -63,11 +64,15 @@ Both reformulations substantially increase the number of benchmark--language sub
 
 \begin{figure}[t]
 \centering
+% src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_either_transformation_one_axis.png
 \includegraphics[width=\textwidth]{figures/rq2.png}
-\caption{\textbf{Decision reliability across training and scale.}
-\textbf{(a)} Scale convergence: decision accuracy of the final checkpoint at each model size relative to the final 1.7B reference model. 
-\textbf{(b)} Within-model training convergence: decision accuracy of each intermediate checkpoint relative to the final checkpoint of the same model size. 
-\textbf{(c)} Full-scale decision prediction: decision accuracy of each intermediate checkpoint relative to the final 1.7B reference model, measuring how early partially trained and smaller models recover the full-scale decision.}
+\caption{\textbf{Decision reliability across scale and training.}
+Decision accuracy of a proxy against the 1.7B reference on single-axis decisions, over the benchmark--language tasks whose median DA under each panel's own definition is at least 0.66.
+\textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, pooled over decisions, one line per design axis and a black line over all pairs; the hollow 1.7B point equals one by construction and the dotted line marks 0.90.
+\textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint against the final checkpoint of the same model size, averaged over tasks, one line per proxy size; the dotted line marks 0.75.
+\textbf{(c)} Full-scale decision prediction: DA of each checkpoint against the final 1.7B ranking.
+% Panels (b) and (c) share their axis in Chinchilla multiples and all three share the vertical axis, so the gap between (b) and (c) is the cost of the proxy's size on top of reading it early.
+}
 \label{fig:rq2}
 \end{figure}
 
