@@ -2,15 +2,15 @@
 
 squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scancel
 
-
 ## Pretraining
 
-python3.11 pretrain/launch_trainings.py cscs --size 3B  --partition preemptable --time 23:59:00
-python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B  --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B --partition preemptable --time 23:59:00
 
 python3.11 pretrain/launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable --time 23:59:00
 
-python3.11 pretrain/launch_trainings.py cscs --size 175M,350M,600M,1B,1.7B --scheme BT3 --partition preemptable --dry-run
+python3.11 pretrain/launch_trainings.py cscs --scheme DCLMP --partition preemptable
+python3.11 pretrain/launch_trainings.py cscs --scheme FWEB --partition preemptable
 
 ## Convert and eval new ckpts
 
@@ -33,21 +33,21 @@ bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-a
 python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git
 
 ✅ mirror eval logs to capstor:
-sbatch evals/scripts/mirror_eval_logs.sbatch 
+sbatch evals/scripts/mirror_eval_logs.sbatch
 
 ✅ fetch to update local cache:
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual \
-  && git fetch origin data/ladder-report \
-  && git archive origin/data/ladder-report | tar -x -C src/signal-and-noise/data/ladder-report
+ && git fetch origin data/ladder-report \
+ && git archive origin/data/ladder-report | tar -x -C src/signal-and-noise/data/ladder-report
 
 ✅ fetch new data to cache and rebuild every derived artefact (inc. documents):
 ✅ a) except the curves (FORCE=1 to force fetch, if the refresh was interrupted haflway just run without FORCE), <2h:
 FORCE=1 bash scripts/refresh_analysis.sh
 ✅ b) with the curves (needs slurm):
 sbatch --account=infra01 --partition=normal --nodes=1 --time=06:00:00 \
-  --job-name=snr-analysis \
-  --output=/iopsstor/scratch/cscs/mariagrandury/snr-analysis-%j.log \
-  --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && FORCE=1 PY=python HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 bash scripts/refresh_analysis.sh --curves'
+ --job-name=snr-analysis \
+ --output=/iopsstor/scratch/cscs/mariagrandury/snr-analysis-%j.log \
+ --wrap='source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && FORCE=1 PY=python HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 bash scripts/refresh_analysis.sh --curves'
 
 ✅ fetch new data to cache and rebuild every derived artefact (only analysis/ figures):
 FORCE=1 bash run_all_predictivity.sh
@@ -57,27 +57,28 @@ FORCE=1 bash run_all_predictivity.sh
 loginctl enable-linger
 
 systemctl --user enable --now ladder-nightly.timer
->> Created symlink /users/mariagrandury/.config/systemd/user/timers.target.wants/ladder-nightly.timer → /users/mariagrandury/.config/systemd/user/ladder-nightly.timer.
+
+> > Created symlink /users/mariagrandury/.config/systemd/user/timers.target.wants/ladder-nightly.timer → /users/mariagrandury/.config/systemd/user/ladder-nightly.timer.
 
 systemctl --user list-timers ladder-nightly
->> NEXT                             LEFT LAST PASSED UNIT                 ACTIVATES             
->> Wed 2026-09-23 06:00:00 CEST 3h 41min -         - ladder-nightly.timer ladder-nightly.service
->> 1 timers listed.
->> Pass --all to see loaded but inactive timers, too.
+
+> > NEXT LEFT LAST PASSED UNIT ACTIVATES  
+> > Wed 2026-09-23 06:00:00 CEST 3h 41min - - ladder-nightly.timer ladder-nightly.service
+> > 1 timers listed.
+> > Pass --all to see loaded but inactive timers, too.
 
 To see how it went:
 
 cat /iopsstor/scratch/cscs/mariagrandury/logs/nightly-ladder/last-run.txt
-systemctl --user status ladder-nightly.service     # exit status of the last run
-
+systemctl --user status ladder-nightly.service # exit status of the last run
 
 # Build L1 & L2
 
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/data
-BUILD_PARTITION=preemptable ./launch_builds.sh     # adds build-en-dclmp + build-en-fweb
+BUILD_PARTITION=preemptable ./launch_builds.sh # adds build-en-dclmp + build-en-fweb
 
 monitor build:
-bash /iopsstor/scratch/cscs/mariagrandury/buildwatch.sh 
+bash /iopsstor/scratch/cscs/mariagrandury/buildwatch.sh
 
 - DCLMp -> 17h -> Wed 12h
 - FineWeb -> 25h -> Wed 21h
@@ -90,10 +91,10 @@ bash /iopsstor/scratch/cscs/mariagrandury/buildwatch.sh
 T=/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training
 for j in $(squeue --me -h -o "%i|%j" | grep "pretrain-3B" | cut -d'|' -f1); do
   f=$(ls -t $T/*-${j}.out 2>/dev/null | head -1); [ -z "$f" ] && continue
-  l=$(grep -h "iteration " "$f" 2>/dev/null | tail -1)
-  printf "%-40s %s | eta %s\n" "$(basename ${f%-$j.out})" \
-    "$(sed -E 's/.*iteration +([0-9]+)\/ *([0-9]+).*/\1\/\2/'<<<"$l")" \
-    "$(sed -E 's/.*eta: ([^|]+)\|.*/\1/'<<<"$l" | tr -s ' ')"
+l=$(grep -h "iteration " "$f" 2>/dev/null | tail -1)
+printf "%-40s %s | eta %s\n" "$(basename ${f%-$j.out})" \
+ "$(sed -E 's/.*iteration +([0-9]+)\/ *([0-9]+).*/\1\/\2/'<<<"$l")" \
+ "$(sed -E 's/.*eta: ([^|]+)\|.*/\1/'<<<"$l" | tr -s ' ')"
 done
 
 Friday midday
@@ -105,8 +106,9 @@ Friday midday
 # Evals
 
 Update tasks list and reeval:
+
 - Add language-specific tasks
-    - Check the results from La Leaderboard, see which benchmarks give signal at small scales for ES, CA, GL, EU
+  - Check the results from La Leaderboard, see which benchmarks give signal at small scales for ES, CA, GL, EU
 - Add INCLUDE v2
 - 🛑 (Switch or drop LAMBADA-MT -> what was this about?
 - 🛑 Reeval after worker implementation -> what was this about? are the current values above or below before implementing the eval workers
@@ -114,14 +116,15 @@ Update tasks list and reeval:
 
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
 
-# probe: originals + their rf_ twins, 84 jobs, ~48 node-h
+# probe: originals + their rf\_ twins, 84 jobs, ~48 node-h
+
 SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
-  auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only --seed 1904
+ auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only --seed 1904
 
 # INCLUDE v2 (OG + EN, L50), 77 jobs, ~39 node-h
-SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
-  auto_evals_cscs.py --group auto_include_v2 --size 600M,1B,1.7B --final-only --seed 1904
 
+SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
+ auto_evals_cscs.py --group auto_include_v2 --size 600M,1B,1.7B --final-only --seed 1904
 
 # Task reformulation
 
@@ -136,30 +139,30 @@ SBATCH_PARTITION=preemptable /users/mariagrandury/miniconda3/envs/snr/bin/python
 ✅ launch bucket reformulation:
 
 (snr) mariagrandury@clariden-ln004:/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual> gcloud storage buckets create gs://silin-482809-msnr-rfgm \
+
 >     --project=silin-482809 --location=US --uniform-bucket-level-access
 
 Creating gs://silin-482809-msnr-rfgm/...
-ERROR: (gcloud.storage.buckets.create) HTTPError 403: maria.grandury@epfl.ch does not have storage.buckets.create access to the Google Cloud project. Permission 'storage.buckets.create' denied on resource '//storage.googleapis.com/projects/_/buckets/silin-482809-msnr-rfgm' (or it may not exist). This command is authenticated as maria.grandury@epfl.ch which is the active account specified by the [core/account] property.
+ERROR: (gcloud.storage.buckets.create) HTTPError 403: maria.grandury@epfl.ch does not have storage.buckets.create access to the Google Cloud project. Permission 'storage.buckets.create' denied on resource '//storage.googleapis.com/projects/\_/buckets/silin-482809-msnr-rfgm' (or it may not exist). This command is authenticated as maria.grandury@epfl.ch which is the active account specified by the [core/account] property.
 
 ✅ launch online reformulation:
 
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
 
 nohup env GOOGLE_GENAI_USE_VERTEXAI=true GOOGLE_CLOUD_PROJECT=silin-482809 GOOGLE_CLOUD_LOCATION=global \
-   /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
-   src/evals/scripts/rewrite_items_gemini.py online \
-   --family belebele --L 50 --retry-rejects \
-   >> /iopsstor/scratch/cscs/mariagrandury/rfgm_online.log 2>&1 &
+ /users/mariagrandury/miniconda3/envs/snr/bin/python3.11 \
+ src/evals/scripts/rewrite_items_gemini.py online \
+ --family belebele --L 50 --retry-rejects \
 
+> > /iopsstor/scratch/cscs/mariagrandury/rfgm_online.log 2>&1 &
 
+python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm --family belebele # registers 59 tasks + YAMLs
 
-python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm --family belebele   # registers 59 tasks + YAMLs
 # validate them through a real TaskManager, then:
-python3.11 src/pretrain/auto_evals_cscs.py --dry-run                          # price the top-up FIRST
+
+python3.11 src/pretrain/auto_evals_cscs.py --dry-run # price the top-up FIRST
+
 # only then add rfgm_belebele to groups.auto
-
-
-
 
 # Update CLAUDE.md and check legacy grid/evals usefulness
 
@@ -170,12 +173,10 @@ The multilingual snr is a huge project with many experiments, and even has 2 per
 3. Review also the external reference models evaluated (olmo, apertus, etc) to see if they could compliment our results and conclusions or they could be included as interesting sub-rqs
 4. check whether we could compare our results with the ones from FineTasks (https://huggingface.co/spaces/HuggingFaceFW/blogpost-fine-tasks) or get any insight from their analysis and replicate/extend it with our data
 
-
 # Backlog
 
 - what do we do with the seeds? -> error bars for DA
 - notes from 09-16
-
 
 # Definition pool of DA
 
@@ -186,16 +187,16 @@ The `_multi_axis` / `_one_axis` suffix is about the **axes mode**, which I'll im
 So there's a third option that gives you exactly the side-by-side you want.
 
 **A. Change the `predictivity` pool to include all six schemes**
-- *Pros:* one pool everywhere; outputs stay in `predictivity/`; no new plumbing; `reliable_tasks` picks up ES/ZH/AT3/BT3 for free.
-- *Cons:* SNR signal is `(max − min) / mean` across the pool's variants, so adding temperature and second-language interventions **inflates dispersion without widening the decision the pool measures** — precisely what that pool's own description warns against. It moves rq03's variant ranking, rq04's surrogates and rq09, i.e. the paper's whole SNR story, not just RQ2. The rq00 gate is also computed `--only predictivity`, so membership changes which (task, size) cells pass.
+
+- _Pros:_ one pool everywhere; outputs stay in `predictivity/`; no new plumbing; `reliable_tasks` picks up ES/ZH/AT3/BT3 for free.
+- _Cons:_ SNR signal is `(max − min) / mean` across the pool's variants, so adding temperature and second-language interventions **inflates dispersion without widening the decision the pool measures** — precisely what that pool's own description warns against. It moves rq03's variant ranking, rq04's surrogates and rq09, i.e. the paper's whole SNR story, not just RQ2. The rq00 gate is also computed `--only predictivity`, so membership changes which (task, size) cells pass.
 
 **B. Run rq2 with `--pool predictivity_schemes`**
-- *Pros:* headline pool untouched; the pool already exists for exactly this.
-- *Cons:* every rq2 output moves to a new directory — the cross-directory comparison you don't want — and the gate would have to be computed for that pool too.
+
+- _Pros:_ headline pool untouched; the pool already exists for exactly this.
+- _Cons:_ every rq2 output moves to a new directory — the cross-directory comparison you don't want — and the gate would have to be computed for that pool too.
 
 **C. Keep `--pool predictivity` for the gate and the output directory; let `reliable_tasks` read the scheme-inclusive DA table (recommended)**
-- *Pros:* all rq2 figures stay in `predictivity/`, so `rq2_above_66_both_multi_axis.png` and `..._one_axis.png` sit next to everything already there. rq03/rq04/rq09 untouched. It mirrors the decoupling `by_L`/`scale_convergence` already use, so it's a precedent, not a new concept. It also fixes the #9 mismatch — reliability would finally be judged on the same population the figures filter.
-- *Cons:* one more distinction to hold in your head ("the DA table I read" vs "the pool I'm reported under"), `compute_da` has to run for `predictivity_schemes` as an extra step, and `predictivity/da_reliable_tasks.csv` needs a column or note saying which pool its DA came from, or a future reader will assume `predictivity`.
 
 I'd go with **C**: it's the only one that gets you ES/ZH/AT3/BT3 in the pairs *and* the two suffixed plots in one directory *and* leaves the SNR numbers alone. The only real cost is documenting the provenance, which the `axes` column gives me a natural place to do.
 
@@ -237,3 +238,44 @@ cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && \
 SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py \
     --group auto_probe --size 600M,1B,1.7B --final-only
 
+
+- _Pros:_ all rq2 figures stay in `predictivity/`, so `rq2_above_66_both_multi_axis.png` and `..._one_axis.png` sit next to everything already there. rq03/rq04/rq09 untouched. It mirrors the decoupling `by_L`/`scale_convergence` already use, so it's a precedent, not a new concept. It also fixes the #9 mismatch — reliability would finally be judged on the same population the figures filter.
+- _Cons:_ one more distinction to hold in your head ("the DA table I read" vs "the pool I'm reported under"), `compute_da` has to run for `predictivity_schemes` as an extra step, and `predictivity/da_reliable_tasks.csv` needs a column or note saying which pool its DA came from, or a future reader will assume `predictivity`.
+
+I'd go with **C**: it's the only one that gets you ES/ZH/AT3/BT3 in the pairs _and_ the two suffixed plots in one directory _and_ leaves the SNR numbers alone. The only real cost is documenting the provenance, which the `axes` column gives me a natural place to do.
+
+# Clariden
+
+## commit and push
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual && git add . && git commit -q -m wip && git push 2>&1 | tail -8 && git status -sb | head -1 && git log --oneline -1"' 2>&1 | tail -20
+
+## BPB
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && bash evals/scripts/launch_bpb.sh"' 2>&1 | tail -30
+
+## Auto evals
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py"' 2>&1 | tail -30
+
+## Check Slurm queue and logs
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'ps -u mariagrandury -o pid,etime,args | grep -v grep | grep -E "auto_evals|launch_bpb|drain|ladder_report" ; echo "--- squeue"; squeue -u mariagrandury -o "%.10i %.12P %.40j %.2t %.10M" | head -25; echo "--- queued: $(squeue -u mariagrandury -h | wc -l)"; echo "--- newest logs"; ls -t /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/evals/logs 2>/dev/null | head -3; ls -t /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain/logs 2>/dev/null | head -3' 2>&1 | tail -45
+
+## Ladder report
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && mkdir -p /iopsstor/scratch/cscs/mariagrandury/logs && LOG=/iopsstor/scratch/cscs/mariagrandury/logs/ladder*report*\$(date +%Y%m%d*%H%M%S).log && nohup python3.11 pretrain/ladder_report.py --plot --publish --push-hf --push-git > \$LOG 2>&1 < /dev/null & sleep 5; ps -u mariagrandury -o pid,etime,args | grep -v grep | grep ladder_report; ls -t /iopsstor/scratch/cscs/mariagrandury/logs/ladder_report*\*.log | head -1"' 2>&1 | tail -5
+
+## Trainings
+
+ssh -o BatchMode=yes -o ConnectTimeout=25 -i ~/.ssh/cscs-key -o IdentitiesOnly=yes -J ela mariagrandury@clariden-ln002.cscs.ch 'bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate snr && cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src && \
+echo \"=== [1] 3B A\" && python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable --time 23:59:00 2>&1 | tail -12; \
+echo \"=== [2] 3B B\" && python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B --partition preemptable --time 23:59:00 2>&1 | tail -12; \
+echo \"=== [3] DCLMP\" && python3.11 pretrain/launch_trainings.py cscs --scheme DCLMP --partition preemptable --time 23:59:00 2>&1 | tail -12; \
+
+job iteration now left s/iter remaining done around
+3B L15 scheme B 133,953 / 145,200 11,247 1.82 5.7 h 23:00 tonight
+3B L8 scheme A 126,907 / 145,200 18,293 1.81 9.2 h 02:30 Sep 26
+1.7B L1 DCLMP 39,980 / 81,000 41,020 1.14 13.0 h 06:20 Sep 26
+3B L8 scheme B 115,814 / 145,200 29,386 1.83 14.9 h 08:15 Sep 26
+3B L15 scheme A 107,757 / 145,200 37,443 1.82 18.9 h 12:15 Sep 26
