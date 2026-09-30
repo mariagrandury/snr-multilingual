@@ -180,12 +180,20 @@ EVAL_SIZES = list(LADDER)
 # Which language settings each size trains at. Every size covers every
 # setting — the 1.7B row gained L=15 and L=50 on 2026-09-10 — except the 3B,
 # added 2026-09-19 as the extrapolation check above the 1.7B reference: the
-# paper's DA-across-size question is asked on benchmarks, and at 3B only the
-# settings whose pairs are still unresolved at 1.7B are worth ~1,900
-# node-hours each (plan/3b_models.md). L8 and L15 in schemes A
-# and B, deep only (arches_for), seed 1904 only (SEED_TRIPLES has no 3B).
+# paper's DA-across-size question is asked on benchmarks, and a 3B cell costs
+# ~1,630 node-hours (measured 2026-09-22), so the rung covers only the
+# settings that earn it (plan/3b_models.md). Deep only (arches_for), seed
+# 1904 only (SEED_TRIPLES has no 3B).
 SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
-SIZE_LANG_SETTINGS["3B"] = [8, 15]
+# The 3B rung: L8 and L15 since 2026-09-19, L30 and L50 added 2026-09-30.
+# WHY the extra two: the finished 2x2 (A/B at L8/L15) yields only 2 mono-axis
+# pairs on `L` and 2 on `list`, and rule 5 needs 3 — so NO design axis is
+# reportable at the 3B reference, and rq10 cannot answer its own question.
+# A-L30 + B-L30 take `L` to 6 and `list` to 3, the minimum that clears both;
+# A-L50 takes `L` to 9 and gives the top rung the full language range.
+# A 165B T=1 build exhausts no language at either setting (the allocation is
+# proportional: every language draws ~47% of its capacity). plan/3b_models.md.
+SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 
 # --- Data schemes -----------------------------------------------------------
 #
@@ -237,7 +245,12 @@ DATA_SCHEMES = {
     # pair replicated where no language is starved (T=1 floors 1.2B / 343M
     # tokens) — deep only, 1.7B reference (no 3B), launched 1B and 1.7B first.
     "AT3": dict(label="-AT3", subdir="AT3", langs={15, 30, 50},
-                max_size={15: "1.7B", 30: "1.7B"}, temp=3.0, sets="A", seeds="single",
+                # L50 capped 2026-09-30 with the same reason the other two
+                # carry: AT3 is the temperature intervention read against the
+                # 1.7B reference, and it was never planned above it. The cap is
+                # explicit because the 3B rung now covers L50 — without it,
+                # opening that setting would create an AT3 3B cell by accident.
+                max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, sets="A", seeds="single",
                 arches=("deep", "shallow"), arches_by_L={15: ("deep",), 30: ("deep",)}),
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
               max_size={}, temp=1.0, sets="B", seeds="grid",

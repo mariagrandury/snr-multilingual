@@ -115,3 +115,114 @@ Then launch A8 and B8 first (the open pair), A15 and B15 second.
 | Verified | every non-3B cell's launch command is byte-identical to before; the 3B cells report `skip [data undersized]` until the 165B copies are staged |
 
 Launch, once the data is staged: `python3.11 src/pretrain/launch_trainings.py cscs --size 3B --dry-run`, then the same per scheme without `--dry-run`. The dry-run is queued as job 3449193 (`dryrun-3B`, `src/pretrain/dryrun_after_build.sbatch`): it follows the `build-a-L8-165b` chain segment by segment and writes its output beside the build logs on capstor.
+
+---
+
+# Which 3B cells next (2026-09-30)
+
+The 2×2 above is **trained**: A8, A15, B8, B15 all reached 145,200 iterations.
+This section is the follow-on decision, and it is driven by a counting fact
+that the options table above never looked at.
+
+## The 2×2 cannot report a single mono-axis decision
+
+Rule 5 needs `MIN_PAIRS = 3` pairs differing on exactly one design axis. Four
+cells in a 2×2 give six pairs, but only four are mono-axis, and they split two
+and two:
+
+| cells at 3B | `L` | `list` | `T` | axes clearing MIN_PAIRS |
+| --- | --: | --: | --: | --- |
+| **A8, A15, B8, B15 (today)** | 2 | 2 | 0 | **NONE** |
+| + A-L30, B-L30 | 6 | **3** | 0 | **L, list** |
+| + A-L50 | 9 | 3 | 0 | L, list |
+| + AT3 at L15, L30, L50 | 12 | 3 | **3** | L, list, T |
+
+So rq10 — *does a ranking that holds at 1.7B still hold at 3B* — cannot be
+answered for any single design axis with what is on disk. That is a property
+of the 2×2's SHAPE, not of the data, and it does not improve with more
+evaluation. It is the thing the next cells have to buy.
+
+**A-L30 + B-L30 is the minimum that buys it**, and the only two-cell move that
+does: one more cell at any third `L` clears `L` alone and leaves `list`
+stranded at 2. A-L50 then takes `L` to 9 and gives the top rung the full
+language range. The temperature axis is poor value at 3B — each AT3 cell
+contributes exactly one `T` pair, so it needs three of them.
+
+## Every setting can feed a 3B
+
+A 3B draws 150B from the multilingual half, and a T=1 allocation is
+**proportional** to what each language has, so every language draws the same
+fraction of its own capacity and none is exhausted while the target is under
+the total. At a 165B target that fraction is 47%:
+
+| build | total available | languages over capacity at 165B |
+| --- | --: | --: |
+| A-L30 | 353.6B | 0 of 29 |
+| B-L30 | 341.4B | 0 of 29 |
+| A-L50 | 373.7B | 0 of 49 |
+
+## First, finish the evaluations — the ranking inputs are stale
+
+`ladder_report.csv` is from **2026-09-28** and predates the 3B finals. On that
+snapshot two of the four trained 3B cells carry **zero** benchmark results,
+and scheme B is under-evaluated one rung down as well:
+
+| cell | benchmark tasks at final ckpt | eval dirs on disk |
+| --- | --: | --: |
+| 3B-L8-deep | 3543 | 82 |
+| 3B-L15-deep | **0** | 75 |
+| 3B-L8-schemeB | **0** | 79 |
+| 3B-L15-schemeB | 1116 | 81 |
+| 1.7B-L8-schemeB | 951 (A: 3898) | 61 |
+
+This is not missing work — every cell has 75–82 checkpoint directories and the
+evals are landing — it is a stale report. But it matters for the choice,
+because the premise this document used to rank the scheme axis first (A8/B8
+*reverses* at 1.7B) currently reads −0.024 on gated families over only **37 of
+202** task columns, the ones where the under-evaluated B cell happens to
+overlap. A reversal measured on a biased task subset is not a basis for 3,260
+node-hours. The recommendation above already gated the 2×2 on "finish the 1.7B
+benchmark evals and re-read the pair table"; that gate was never satisfied,
+and it still is not.
+
+**So: republish the report and re-read before launching any training.** The
+pair-count table is not affected — it is structural — but which cells are worth
+3,260 node-hours does depend on numbers that are two days old and moving.
+
+## What has been changed now (data only)
+
+The builds are long (~1 day each) and nothing depends on the eval outcome, so
+they are started while the report catches up:
+
+- `SIZE_LANG_SETTINGS["3B"]` → `[8, 15, 30, 50]`. This is what makes
+  `fineweb_target_tokens` size the L30/L50 builds at 165B instead of 92B —
+  the target is derived from the grid's largest rung, so the grid has to say
+  the 3B trains there before the build can be made for it.
+- `DATA_SCHEMES["AT3"]["max_size"]` gains `50: "1.7B"`. AT3 was capped at the
+  reference for L15 and L30 but not L50, so opening the 3B rung at L50 would
+  otherwise have created an AT3 3B cell nobody planned.
+- `REBUILD_165` gains `A:30 B:30 A:50`.
+
+Net: the 3B rung goes from 4 planned cells to **7** — the four trained ones
+plus A-L30, B-L30, A-L50. No AT3 cell, no training launched.
+
+Until the builds stage, the three cells are **refused**, not merely skipped:
+
+```
+skip [data undersized]: lm-3B-L30-deep-seed1904 — draws 149.9B (1.63 epochs)
+  from a 92.0B build the grid now sizes at 165.0B
+skip [data undersized]: lm-3B-L50-deep-seed1904 — draws 149.9B (2.88 epochs)
+  from a 52.0B build the grid now sizes at 165.0B
+```
+
+That is `undersized_build` doing its job: registering the cells cannot start a
+3B on repeated data by accident. **Once the builds stage that guard lifts**, and
+a bare `launch_trainings.py cscs --size 3B` would submit them — so launch by
+`--scheme`/`--langs` while the decision is open.
+
+## Cost
+
+~1,630 node-h of training per cell (measured, 2026-09-22) plus ~60 of eval;
+~78 h on 21 nodes ≈ 8 walltime segments ≈ a week queued. A-L30 + B-L30 is
+~3,400 node-h all in; adding A-L50 makes it ~5,100.
+

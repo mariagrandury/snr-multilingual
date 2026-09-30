@@ -25,6 +25,10 @@ set -uo pipefail
 REPO=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
 OUT=/capstor/store/cscs/swissai/infra01/multilingual_data_mixtures/predictivity-data
 STAGE=/iopsstor/scratch/cscs/mariagrandury/data
+# Where submit_build_one.sh writes its logs, and the budget it counts them
+# against (its own BUILD_MAX_ATTEMPTS default). Kept in step with that script.
+LOGDIR=$OUT/logs
+DEFAULT_MAX_ATTEMPTS=25
 
 # The registry owns which builds exist and how big each one is meant to be —
 # read it rather than restating it, exactly as launch_builds.sh does.
@@ -79,11 +83,27 @@ while IFS=: read -r stage scheme sub name target draw; do
   elif [ "$n" -gt 0 ]; then
     printf '%-22s %-9s %s\n' "$label" pending "$n job(s) queued, nothing written yet"
   elif [ "$tok" -gt 0 ]; then
+    # A chain also dies when its ATTEMPT BUDGET is spent, and it dies silently:
+    # submit_build_one.sh counts its own logs against BUILD_MAX_ATTEMPTS
+    # (default 25) and simply does not queue a successor past that. A resubmit
+    # without a raised cap then runs exactly once and stalls again, which is
+    # how FWEB lost a week — 25 attempts went on a corrupt-parquet loop in one
+    # evening, and the healthy build afterwards could not survive its first
+    # preemption. So count the logs here and put the raised cap in the command
+    # we print, rather than printing one that cannot work.
+    used=$(find "$LOGDIR" -name "$job-[0-9]*.out" 2>/dev/null | wc -l)
+    cap=""
+    [ "$used" -ge "$DEFAULT_MAX_ATTEMPTS" ] && cap="BUILD_MAX_ATTEMPTS=$((used + 40)),"
     printf '%-22s %-9s %s\n' "$label" STALLED \
       "$(awk -v t="$tok" 'BEGIN{printf "%.1fB", t/1e9}') written, NO job left — resubmit:"
+    if [ -n "$cap" ]; then
+      printf '    # %s attempts already used (budget %s): the cap below is REQUIRED,\n' \
+        "$used" "$DEFAULT_MAX_ATTEMPTS"
+      printf '    # without it the chain queues no successor and this stalls again.\n'
+    fi
     printf '    sbatch --job-name=%s --dependency=singleton --time=23:59:00 --exclusive \\\n' "$job"
-    printf '      --partition=preemptable --export=ALL,BUILD_SCHEME=%s,BUILD_STAGE=%s%s,BUILD_OUT=%s \\\n' \
-      "$scheme" "$stage" "$([ "$stage" = fineweb ] && echo ",BUILD_SETTING=${name#fineweb_L}")" "$OUT${sub:+/$sub}"
+    printf '      --partition=preemptable --export=ALL,%sBUILD_SCHEME=%s,BUILD_STAGE=%s%s,BUILD_OUT=%s \\\n' \
+      "$cap" "$scheme" "$stage" "$([ "$stage" = fineweb ] && echo ",BUILD_SETTING=${name#fineweb_L}")" "$OUT${sub:+/$sub}"
     printf '      %s/src/pretrain/data/submit_build_one.sh\n' "$REPO"
   else
     printf '%-22s %-9s %s\n' "$label" - "not built, nothing queued"

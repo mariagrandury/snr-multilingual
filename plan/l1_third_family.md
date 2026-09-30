@@ -285,6 +285,49 @@ manifest's own `dclm` entry (its `first_file` and `val_doc_count`) and passes
 it as `--exclude_ids`. Scheme A's command is untouched — byte-identical to the
 one the 184 B build on capstor was made with.
 
+**But the validation set is still drawn from ONE of the two corpora, and that
+is not symmetric.** The manifest's `dclm` entry points at
+`swiss-ai/dclm-edu-filterrobots_fine/data/output/000_00000.parquet`, so English
+BPB is scored on held-out *edu-filtered* text. Scheme A is measured
+in-distribution; DCLMP is not. The contamination asymmetry above is fixed; this
+distribution asymmetry is not, and it is the more likely one to be
+misread — it biases English BPB toward A by construction. Any use of
+`bpb__dclm` to compare the two families has to say so.
+
+### What the first results actually show (2026-09-30)
+
+All six DCLMP rungs trained. The naive reading of the training loss is wrong,
+and the three metrics disagree in a way worth stating before anyone quotes one
+of them. DCLMP minus scheme A at the final checkpoint, L = 1, deep, seed 1904:
+
+| size | train loss | English BPB | macro BPB |
+| --- | --: | --: | --: |
+| 90M | +0.071 | +0.0078 | +0.0247 |
+| 175M | +0.107 | +0.0070 | +0.0007 |
+| 350M | +0.151 | +0.0061 | **−0.0440** |
+| 600M | +0.101 | +0.0087 | **−0.0064** |
+| 1B | +0.132 | +0.0099 | **−0.0146** |
+| 1.7B | +0.120 | +0.0098 | **−0.0142** |
+
+- **Training loss is not a comparison at all.** Each model's loss is computed
+  on its own training distribution, and the non-edu corpus is the more
+  heterogeneous of the two, so it has the higher intrinsic entropy. A near-
+  constant +0.11 offset across a 19x parameter range is the signature of an
+  entropy difference between the corpora, not a capability difference between
+  the models. **Never quote it as an edu-filter effect.**
+- **On identical held-out documents the gap is 15x smaller** (+0.006 to
+  +0.010) — and even that favours A by construction, for the reason above.
+- **On macro BPB, DCLMP is BETTER from 350M up**, and the sign flips between
+  175M and 350M. Whatever the edu filter buys, it is not a uniform win, and a
+  conclusion drawn at one rung does not carry to the others.
+
+None of this threatens what the family is for. DCLMP exists to give L = 1 a
+third design so the edu filter becomes a mono-axis pair for DECISION ACCURACY
+— a rank agreement between a small model and the 1.7B. A constant additive
+offset moves no ranking, so the axis is unaffected. What the table forbids is
+the other claim, the one this sweep was never designed to make: that one
+English corpus is better than the other.
+
 ### Two ways this could have destroyed the existing English build
 
 1. **`variant_dir()` symlinks scheme A's `english_dclm.*` into every scheme

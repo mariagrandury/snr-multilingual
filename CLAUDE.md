@@ -238,7 +238,10 @@ are retired — do not carry them into new work):
 
 - Sizes: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B non-embedding — every size trains
   at every language setting except 3B, the extrapolation check above the 1.7B
-  reference: deep only, L ∈ {8, 15}, schemes A and B ([`plan/3b_models.md`](plan/3b_models.md))
+  reference: deep only, seed 1904, L ∈ {8, 15} in schemes A and B (trained) plus
+  L ∈ {30, 50} added 2026-09-30 — A-L30, B-L30, A-L50, the cells that take the
+  3B reference over `MIN_PAIRS` on the `L` and `list` axes
+  ([`plan/3b_models.md`](plan/3b_models.md))
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
   languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.

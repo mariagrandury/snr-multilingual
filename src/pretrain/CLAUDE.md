@@ -178,8 +178,9 @@ then never log again without a code-side id suffix.
   `/iopsstor/scratch/cscs/mariagrandury/data-92B`. The launcher reads a cell's
   FineWeb-2 half from there only when the stage copy is too small for it (the
   six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. The 3B
-  rung (2026-09-19, A/B at L8/L15, deep only — `plan/3b_models.md`) repeats
-  the pattern as a second tier: those four builds are sized 165B, built into
+  rung (2026-09-19, A/B at L8/L15; L30 and L50 added 2026-09-30, deep only —
+  `plan/3b_models.md`) repeats
+  the pattern as a second tier: those seven builds are sized 165B, built into
   `rebuild-165B`, staged to `data-165B`, and read only by cells the 92B copies
   cannot feed (`CSCS_REBUILD_DATA_DIRS`, smallest fit first). **Do not
   swap the 92B files into the training stage.** Each language section is a

@@ -78,7 +78,15 @@ REBUILD_DST=/iopsstor/scratch/cscs/mariagrandury/data-92B   # = launch_trainings
 # for cells the 92B copies cannot feed (CSCS_REBUILD_DATA_DIRS). A 165B T=1
 # build exhausts no language at any of the four (measured on the builder's
 # own estimates: A-L8 240B, A-L15 287B, B-L8 199B, B-L15 209B available).
-REBUILD_165=(A:8 A:15 B:8 B:15)
+# A:30 B:30 A:50 added 2026-09-30, when the 3B rung gained L30 and L50 — the
+# 2x2 at L8/L15 leaves every design axis below MIN_PAIRS at the 3B reference
+# (plan/3b_models.md). These three are feasible for the same reason the first
+# four were, and it is worth stating how it is checked rather than asserted:
+# a T=1 allocation is PROPORTIONAL to what each language has, so every
+# language draws the same fraction of its own capacity and none is exhausted
+# as long as the target is under the total. At 165B that fraction is 47%
+# (A-L30 353.6B available, B-L30 341.4B, A-L50 373.7B).
+REBUILD_165=(A:8 A:15 B:8 B:15 A:30 B:30 A:50)
 REBUILD_165_ROOT=$OUT/rebuild-165B
 REBUILD_165_DST=/iopsstor/scratch/cscs/mariagrandury/data-165B
 
