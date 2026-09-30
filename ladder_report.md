@@ -187,7 +187,7 @@
 | -------------- | ----: | -----------: | ----------: | ---------------: |
 | seed | 30 | -0.072 .. +0.052 | -0.040 .. +0.037 | -0.015 .. +0.018 |
 | arch | 60 | -0.071 .. +0.088 | -0.032 .. +0.051 | -0.014 .. +0.033 |
-| scheme | 82 | -0.108 .. +0.151 | -0.046 .. +0.109 | -0.024 .. +0.017 |
+| scheme | 82 | -0.108 .. +0.151 | -0.046 .. +0.109 | -0.024 .. +0.022 |
 
 **Read this against the `seed` row.** A transformation whose effect is no larger than re-rolling the seed is not a distinct model for SNR — it is the same model measured twice. An em dash means no matched pair exists yet.
 
