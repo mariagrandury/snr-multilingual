@@ -119,9 +119,17 @@ CHAIN_TIME=${BUILD_TIME:-11:59:59}
 n_attempts=$(find "$LOGDIR" -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
 if [ "$n_attempts" -lt "${BUILD_MAX_ATTEMPTS:-25}" ]; then
   echo "[$(date)] queuing singleton successor (attempt $n_attempts, $CHAIN_PART, $CHAIN_TIME)"
-  sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" \
-         --partition="$CHAIN_PART" --time="$CHAIN_TIME" \
-         ${BUILD_EXCLUSIVE:---exclusive} --export=ALL "$SCRIPT"
+  # set -e would abort the attempt here, BEFORE the build runs, on a transient
+  # sbatch refusal -- and with the successor unqueued the whole chain dies.
+  # That happened on 2026-09-30 20:57 to three chains at once ("invalid
+  # partition 'preemptable' requested", cli_filter), costing a manual
+  # relaunch. Retry once, then build anyway and say the chain ends here.
+  chain=(sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME"
+         --partition="$CHAIN_PART" --time="$CHAIN_TIME"
+         ${BUILD_EXCLUSIVE:---exclusive} --export=ALL "$SCRIPT")
+  "${chain[@]}" || { sleep 30; "${chain[@]}" || echo \
+    "WARNING: sbatch refused the successor twice — this is the LAST attempt of" \
+    "the chain; the build below still runs, then relaunch with ./launch_builds.sh" >&2; }
 fi
 
 python build_data_mixtures.py --scheme "$BUILD_SCHEME" --output_dir "$BUILD_OUT" "${STAGE_ARGS[@]}"

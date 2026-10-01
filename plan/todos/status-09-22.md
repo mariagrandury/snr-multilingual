@@ -4,10 +4,10 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scan
 
 ## Pretraining
 
-python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable --time 23:59:00
-python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable 
+python3.11 pretrain/launch_trainings.py cscs --size 3B --scheme B --partition preemptable
 
-python3.11 pretrain/launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable --time 23:59:00
+python3.11 pretrain/launch_trainings.py cscs --size 1.7B --langs 2 --scheme ES --seed 1904 --partition preemptable
 
 python3.11 pretrain/launch_trainings.py cscs --scheme DCLMP --partition preemptable
 python3.11 pretrain/launch_trainings.py cscs --scheme FWEB --partition preemptable
