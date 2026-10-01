@@ -42,6 +42,9 @@ from scipy.stats import binomtest
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402

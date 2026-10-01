@@ -9,9 +9,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **15 families** that clear the gate — most of them 2-option.
-- **Among survivors, option count reaches p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 3.39, p = 0.184; source origin H = 0.89, p = 0.346; option count H = 5.40, p = 0.020; task format H = 0.89, p = 0.640; passage flag H = 0.84, p = 0.361. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
-- **Per-task curation test** (tasks as observations, 275 tasks of which 57 are `rf_belebele`): H = 72.61, p = 0.000 — nominally significant, but the tasks of one family are not independent observations, so it says which family dominates, not which curation works.
+- **The answer-count penalty lives in the above-random gate, upstream of SNR.** Every family whose tasks sit at chance at the reference size is dropped before SNR is computed, leaving **16 families** that clear the gate — most of them 2-option.
+- **Among survivors, option count reaches p < 0.05 at the family level** — with five uncorrected tests on the same families, one such hit is what chance produces: curation H = 3.47, p = 0.176; source origin H = 0.95, p = 0.329; option count H = 5.56, p = 0.018; task format H = 0.89, p = 0.640; passage flag H = 0.93, p = 0.336. Too little variation is left among the survivors (mostly 2-option) to resolve any axis.
+- **Per-task curation test** (tasks as observations, 334 tasks of which 59 are `rfgm_belebele`): H = 77.71, p = 0.000 — nominally significant, but the tasks of one family are not independent observations, so it says which family dominates, not which curation works.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -89,6 +89,7 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 | `xnli` | 0.80 | 14 | classification | 3 |
 | `rf_include_base_44` | 0.56 | 29 | cloze_completion | 4 |
 | `include_base_44` | 0.56 | 4 | mcq_question_only | 4 |
+| `rfgm_belebele` | 0.56 | 59 | statement_continuation | 4 |
 | `rfgm_include_base_44` | 0.51 | 31 | statement_continuation | 4 |
 | `belebele` | 0.47 | 9 | mrc_passage | 4 |
 | `arc` | 0.47 | 15 | mcq_question_only | 4 |
@@ -103,11 +104,11 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | axis | H | p |
 |---|---|---|
-| n_options | 5.40 | 0.02 |
+| n_options | 5.56 | 0.02 |
 | format | 0.89 | 0.64 |
-| data source | 0.89 | 0.35 |
-| curation method | 3.39 | 0.18 |
-| reading passage | 0.84 | 0.36 |
+| data source | 0.95 | 0.33 |
+| curation method | 3.47 | 0.18 |
+| reading passage | 0.93 | 0.34 |
 <!-- END auto:results -->
 
 [snr_per_family_ranked.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) ·

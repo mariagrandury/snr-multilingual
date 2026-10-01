@@ -641,11 +641,11 @@ the two-way task where a tell would be cheapest, measures 54.8 % against its
 <!-- BEGIN auto:rf-compare (analysis/rq00_task_reformulation/compare.py) -->
 Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, from the ladder report; each set on the models that have the original and that twin scored — the original shown is the rf pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models (two-proportion z-test of the original's acc against the twin run's own acc, p < 0.05; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in 36 % of the pairs).
 
-| family | 175M | 350M | 600M | 1B | 1.7B |
-|---|---:|---:|---:|---:|---:|
-| belebele | -0.007 · rf +0.030 (**+0.037**, n=59, sig=38) · rfgm — | -0.013 · rf +0.046 (**+0.059**, n=59, sig=55) · rfgm — | -0.007 · rf +0.058 (**+0.065**, n=59, sig=54) · rfgm — | +0.000 · rf +0.083 (**+0.083**, n=59, sig=57) · rfgm — | +0.011 · rf +0.109 (**+0.098**, n=59, sig=56) · rfgm — |
-| global_mmlu_full | -0.006 · rf +0.006 (**+0.012**, n=29, sig=10) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=17) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=15) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
-| include_base_44 | +0.004 · rf +0.006 (**+0.002**, n=36, sig=8) · rfgm +0.011 (**+0.007**, n=36, sig=7) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=9) · rfgm +0.023 (**+0.022**, n=36, sig=9) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=10) · rfgm +0.035 (**+0.035**, n=36, sig=16) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=14) · rfgm +0.055 (**+0.053**, n=36, sig=16) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=18) · rfgm +0.080 (**+0.075**, n=36, sig=22) |
+| family | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---:|---:|---:|---:|---:|---:|
+| belebele | +0.004 · rf +0.033 (**+0.030**, n=59, sig=41) · rfgm +0.071 (**+0.067**, n=59, sig=0) | -0.003 · rf +0.039 (**+0.042**, n=59, sig=45) · rfgm +0.081 (**+0.084**, n=59, sig=0) | -0.013 · rf +0.046 (**+0.059**, n=59, sig=55) · rfgm +0.089 (**+0.102**, n=59, sig=0) | -0.007 · rf +0.058 (**+0.065**, n=59, sig=54) · rfgm +0.113 (**+0.120**, n=59, sig=0) | +0.000 · rf +0.083 (**+0.083**, n=59, sig=57) · rfgm +0.139 (**+0.139**, n=59, sig=0) | +0.011 · rf +0.109 (**+0.098**, n=59, sig=56) · rfgm +0.179 (**+0.168**, n=59, sig=0) |
+| global_mmlu_full | -0.012 · rf +0.006 (**+0.017**, n=29, sig=6) · rfgm — | -0.000 · rf +0.009 (**+0.009**, n=29, sig=14) · rfgm — | -0.000 · rf +0.009 (**+0.010**, n=29, sig=17) · rfgm — | -0.004 · rf +0.015 (**+0.019**, n=29, sig=15) · rfgm — | -0.008 · rf +0.029 (**+0.037**, n=29, sig=24) · rfgm — | -0.010 · rf +0.048 (**+0.058**, n=29, sig=26) · rfgm — |
+| include_base_44 | +0.003 · rf +0.007 (**+0.004**, n=36, sig=7) · rfgm +0.009 (**+0.006**, n=36, sig=4) | +0.001 · rf +0.013 (**+0.012**, n=36, sig=3) · rfgm +0.015 (**+0.015**, n=36, sig=6) | +0.001 · rf +0.023 (**+0.022**, n=36, sig=9) · rfgm +0.023 (**+0.022**, n=36, sig=9) | +0.001 · rf +0.027 (**+0.026**, n=36, sig=10) · rfgm +0.035 (**+0.035**, n=36, sig=16) | +0.002 · rf +0.039 (**+0.037**, n=36, sig=14) · rfgm +0.055 (**+0.053**, n=36, sig=16) | +0.005 · rf +0.052 (**+0.047**, n=36, sig=18) · rfgm +0.080 (**+0.075**, n=36, sig=22) |
 
 ![family x size](rf_gate.png)
 
@@ -757,6 +757,7 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
 | bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
 | belebele | rf | 105 | 0.10 | 0.82 | 76 / 1 | 1.03e-21 |
+| belebele | rfgm | 0 | nan | nan | 0 / 0 | — |
 | commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | cultural_bench_easy | rf | 19 | 0.05 | 0.37 | 7 / 1 | 0.0703 |
 | global_mmlu_full | rf | 37 | 0.00 | 0.95 | 35 / 0 | 5.82e-11 |
@@ -764,11 +765,11 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | include_base_44 | rfgm | 43 | 0.09 | 0.77 | 29 / 0 | 3.73e-09 |
 | mmlu | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 
-| population | 175M | 350M | 600M | 1B | 1.7B |
-|---|---|---|---|---|---|
-| every task | 0.30 | 0.39 | 0.42 | 0.46 | 0.51 |
-| originals only | 0.28 | 0.32 | 0.34 | 0.37 | 0.41 |
-| twins only | 0.38 | 0.56 | 0.62 | 0.70 | 0.77 |
+| population | 90M | 175M | 350M | 600M | 1B | 1.7B |
+|---|---|---|---|---|---|---|
+| every task | 0.38 | 0.41 | 0.44 | 0.47 | 0.51 | 0.55 |
+| originals only | 0.37 | 0.39 | 0.41 | 0.43 | 0.46 | 0.50 |
+| twins only | 0.42 | 0.48 | 0.56 | 0.62 | 0.70 | 0.77 |
 
 ![The reformulations and the gate](reformulations_gate.png)
 <!-- END auto:reformulations-gate -->

@@ -43,9 +43,24 @@ pass, so the block fills in when the evaluations land.
 
 **DA-size and DA-goal · reference 3B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 3B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 3B`.
 
-**Status: waiting for the 3B evaluations.** The ladder report holds 0 3B runs with scores, so every table is written with its headers only and the figure says so; the driver reruns this step every pass and the block fills in by itself.
+**Population.** 4 families with a final at 3B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs.
 
 ![Size generalisation to 3B](pretraining/predictivity/above_reference_3B.png)
+
+| axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) |
+|---|---|---|---|---|
+| mono-axis | 90M | 0.50 | 60 | 0.48 |
+| mono-axis | 175M | 0.48 | 58 | 0.47 |
+| mono-axis | 350M | 0.47 | 68 | 0.46 |
+| mono-axis | 600M | 0.52 | 76 | 0.44 |
+| mono-axis | 1B | 0.49 | 78 | 0.48 |
+| mono-axis | 1.7B | 0.43 | 85 | — |
+| multi-axis | 90M | 0.51 | 63 | 0.47 |
+| multi-axis | 175M | 0.49 | 61 | 0.49 |
+| multi-axis | 350M | 0.46 | 71 | 0.47 |
+| multi-axis | 600M | 0.51 | 80 | 0.44 |
+| multi-axis | 1B | 0.49 | 83 | 0.48 |
+| multi-axis | 1.7B | 0.44 | 93 | — |
 
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
 <!-- END auto:above-reference-3B -->
@@ -79,14 +94,16 @@ be read against the day it fills in.
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) |
 |---|---|---|---|---|
-| mono-axis | 175M | 0.49 | 42 | 0.49 |
-| mono-axis | 350M | 0.48 | 64 | 0.48 |
-| mono-axis | 600M | 0.44 | 71 | 0.44 |
-| mono-axis | 1B | 0.49 | 72 | 0.49 |
-| multi-axis | 175M | 0.48 | 44 | 0.48 |
-| multi-axis | 350M | 0.48 | 66 | 0.48 |
-| multi-axis | 600M | 0.43 | 74 | 0.43 |
-| multi-axis | 1B | 0.49 | 76 | 0.49 |
+| mono-axis | 90M | 0.48 | 53 | 0.48 |
+| mono-axis | 175M | 0.47 | 58 | 0.47 |
+| mono-axis | 350M | 0.46 | 68 | 0.46 |
+| mono-axis | 600M | 0.44 | 76 | 0.44 |
+| mono-axis | 1B | 0.48 | 77 | 0.48 |
+| multi-axis | 90M | 0.47 | 56 | 0.47 |
+| multi-axis | 175M | 0.49 | 61 | 0.49 |
+| multi-axis | 350M | 0.47 | 71 | 0.47 |
+| multi-axis | 600M | 0.44 | 80 | 0.44 |
+| multi-axis | 1B | 0.48 | 82 | 0.48 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->

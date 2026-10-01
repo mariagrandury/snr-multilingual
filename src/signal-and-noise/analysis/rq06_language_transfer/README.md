@@ -12,9 +12,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
 ## Highlighted result
 
-- **trained languages (106 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 4.0 % (median); with every proxy rung, transferred 2.1 % vs own fit 4.6 % vs largest proxy as is 7.6 %.
-- **never-trained languages (494 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 7.0 % (median); with every proxy rung, transferred 5.2 % vs own fit 3.0 % vs largest proxy as is 6.6 %.
-- **Pooled exponent α by L**: L1 0.141, L2 0.163, L8 0.163, L15 0.153, L30 0.160, L50 0.181.
+- **trained languages (106 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 4.4 % (median); with every proxy rung, transferred 3.9 % vs own fit 1.5 % vs largest proxy as is 7.6 %.
+- **never-trained languages (494 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 5.0 % (median); with every proxy rung, transferred 3.1 % vs own fit 2.7 % vs largest proxy as is 6.6 %.
+- **Pooled exponent α by L**: L1 0.090, L2 0.096, L8 0.096, L15 0.094, L30 0.106, L50 0.117.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -52,14 +52,14 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 | languages | k | transferred α | own fit | largest proxy | n |
 |---|---|---|---|---|---|
-| never trained | 1 | 0.070 |  | 0.384 | 494 |
-| never trained | 2 | 0.068 |  | 0.188 | 494 |
-| never trained | 3 | 0.061 | 0.063 | 0.121 | 494 |
-| never trained | 4 | 0.052 | 0.030 | 0.066 | 494 |
-| trained | 1 | 0.040 |  | 0.497 | 106 |
-| trained | 2 | 0.027 |  | 0.257 | 106 |
-| trained | 3 | 0.024 | 0.088 | 0.161 | 106 |
-| trained | 4 | 0.021 | 0.046 | 0.076 | 106 |
+| never trained | 1 | 0.050 |  | 0.248 | 494 |
+| never trained | 2 | 0.043 |  | 0.188 | 494 |
+| never trained | 3 | 0.037 | 0.048 | 0.121 | 494 |
+| never trained | 4 | 0.031 | 0.027 | 0.066 | 494 |
+| trained | 1 | 0.044 |  | 0.326 | 106 |
+| trained | 2 | 0.053 |  | 0.257 | 106 |
+| trained | 3 | 0.047 | 0.039 | 0.161 | 106 |
+| trained | 4 | 0.039 | 0.015 | 0.076 | 106 |
 
 ![Transfer](pretraining/predictivity_all/rq5_transfer.png)
 
@@ -67,10 +67,11 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 | population | proxy | agreement | cells |
 |---|---|---|---|
-| bpb_trained | 175M | 0.79 | 10 |
+| bpb_trained | 90M | 0.98 | 10 |
+| bpb_trained | 175M | 0.99 | 10 |
 | bpb_trained | 350M | 0.78 | 10 |
-| bpb_trained | 600M | 0.53 | 9 |
-| bpb_trained | 1B | 0.88 | 8 |
+| bpb_trained | 600M | 0.58 | 10 |
+| bpb_trained | 1B | 0.90 | 10 |
 
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->
@@ -143,23 +144,24 @@ the proxy's own macro over the languages readable at its size.
 
 Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO ranking of the design variants (mean over the L8 panel languages above chance at 1.7B), when the proxy reads one language, English, or its own macro over the languages readable at that size. Grid-seed pairs of every scheme (multi-axis), ≥ 3 pairs, gate `predictivity`. A macro above every single language says the languages' errors are independent and the panel is worth evaluating; a single language at the macro says it suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool predictivity`.
 
-| benchmark | languages readable at 1.7B | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|---|
-| arc | 7 | macro 0.43 / en 0.43 / best lang 0.43 (en) | macro 0.52 / en 0.52 / best lang 0.52 (en) | macro 0.68 / en 0.68 / best lang 0.68 (en) | macro 0.62 / en 0.52 / best lang 0.66 (it) |
-| hellaswag | 6 | macro 0.75 / en 0.65 / best lang 0.75 (es) | macro 0.88 / en 0.69 / best lang 0.92 (es) | macro 0.84 / en 0.69 / best lang 0.87 (fr) | macro 0.93 / en 0.87 / best lang 0.92 (es) |
-| include_v2_en | 6 | macro 0.46 / best lang 0.60 (ja) | macro 0.35 / best lang 0.66 (fr) | macro 0.55 / best lang 0.60 (ru) | macro 0.53 / best lang 0.67 (de) |
-| include_v2_og | 6 | macro 0.69 / best lang 0.69 (ru) | macro 0.57 / best lang 0.60 (ru) | macro 0.64 / best lang 0.74 (it) | macro 0.66 / best lang 0.68 (it) |
-| lambada_openai_mt | 5 | macro 0.62 / en 0.53 / best lang 0.76 (de) | macro 0.70 / en 0.59 / best lang 0.70 (es) | macro 0.78 / en 0.75 / best lang 0.84 (it) | macro 0.89 / en 0.78 / best lang 0.89 (de) |
-| multiblimp | 6 | macro 0.67 / en 0.51 / best lang 0.68 (es) | macro 0.80 / en 0.53 / best lang 0.79 (de) | macro 0.70 / en 0.58 / best lang 0.71 (ru) | macro 0.68 / en 0.40 / best lang 0.67 (de) |
-| paws | 4 | — | macro 0.69 / en 0.69 / best lang 0.69 (en) | macro 0.41 / en 0.60 / best lang 0.60 (en) | macro 0.52 / en 0.48 / best lang 0.56 (de) |
-| rf_belebele | 8 | macro 0.64 / en 0.46 / best lang 0.70 (fr) | macro 0.57 / en 0.48 / best lang 0.63 (zh) | macro 0.55 / en 0.53 / best lang 0.66 (fr) | macro 0.62 / en 0.59 / best lang 0.64 (ru) |
-| rf_global_mmlu_full | 8 | macro 0.58 / en 0.58 / best lang 0.68 (es) | macro 0.71 / en 0.52 / best lang 0.77 (it) | macro 0.75 / en 0.55 / best lang 0.79 (ja) | macro 0.81 / en 0.69 / best lang 0.81 (de) |
-| rf_include_base_44 | 7 | macro 0.48 / best lang 0.45 (fr) | macro 0.70 / best lang 0.66 (es) | macro 0.79 / best lang 0.74 (es) | macro 0.69 / best lang 0.73 (ru) |
-| rfgm_include_base_44 | 6 | macro 0.33 / best lang 0.33 (fr) | macro 0.70 / best lang 0.70 (ru) | macro 0.82 / best lang 0.76 (fr) | macro 0.89 / best lang 0.75 (zh) |
-| xnli | 6 | macro 0.60 / en 0.63 / best lang 0.63 (en) | macro 0.48 / en 0.44 / best lang 0.68 (de) | macro 0.55 / en 0.55 / best lang 0.67 (ru) | macro 0.33 / en 0.45 / best lang 0.54 (de) |
-| xstorycloze | 4 | macro 0.62 / en 0.62 / best lang 0.62 (en) | macro 0.90 / en 0.68 / best lang 0.80 (es) | macro 0.76 / en 0.68 / best lang 0.77 (es) | macro 0.77 / en 0.64 / best lang 0.75 (es) |
-| xwinograd | 5 | macro 0.48 / en 0.58 / best lang 0.58 (en) | macro 0.67 / en 0.63 / best lang 0.63 (en) | macro 0.53 / en 0.42 / best lang 0.56 (ja) | macro 0.26 / en 0.48 / best lang 0.51 (zh) |
-| all benchmarks | 8 | macro 0.57 / en 0.55 / one lang 0.55 | macro 0.66 / en 0.58 / one lang 0.58 | macro 0.67 / en 0.60 / one lang 0.60 | macro 0.66 / en 0.59 / one lang 0.59 |
+| benchmark | languages readable at 1.7B | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|---|
+| arc | 7 | macro 0.55 / en 0.55 / best lang 0.55 (en) | macro 0.43 / en 0.43 / best lang 0.43 (en) | macro 0.52 / en 0.52 / best lang 0.52 (en) | macro 0.68 / en 0.68 / best lang 0.68 (en) | macro 0.62 / en 0.52 / best lang 0.66 (it) |
+| hellaswag | 6 | macro 0.82 / en 0.67 / best lang 0.84 (fr) | macro 0.89 / en 0.85 / best lang 0.89 (de) | macro 0.88 / en 0.69 / best lang 0.92 (es) | macro 0.84 / en 0.69 / best lang 0.87 (fr) | macro 0.93 / en 0.87 / best lang 0.92 (es) |
+| include_v2_en | 6 | macro 0.66 / best lang 0.64 (ja) | macro 0.53 / best lang 0.53 (fr) | macro 0.35 / best lang 0.66 (fr) | macro 0.55 / best lang 0.60 (ru) | macro 0.53 / best lang 0.67 (de) |
+| include_v2_og | 6 | macro 0.51 / best lang 0.52 (ru) | macro 0.54 / best lang 0.56 (ru) | macro 0.57 / best lang 0.60 (ru) | macro 0.64 / best lang 0.74 (it) | macro 0.66 / best lang 0.68 (it) |
+| lambada_openai_mt | 5 | macro 0.78 / en 0.59 / best lang 0.85 (de) | macro 0.81 / en 0.66 / best lang 0.84 (de) | macro 0.70 / en 0.59 / best lang 0.70 (es) | macro 0.78 / en 0.75 / best lang 0.84 (it) | macro 0.89 / en 0.78 / best lang 0.89 (de) |
+| multiblimp | 6 | macro 0.71 / en 0.43 / best lang 0.74 (it) | macro 0.73 / en 0.36 / best lang 0.74 (es) | macro 0.80 / en 0.53 / best lang 0.79 (de) | macro 0.70 / en 0.58 / best lang 0.71 (ru) | macro 0.68 / en 0.40 / best lang 0.67 (de) |
+| paws | 4 | — | — | macro 0.69 / en 0.69 / best lang 0.69 (en) | macro 0.41 / en 0.60 / best lang 0.60 (en) | macro 0.52 / en 0.48 / best lang 0.56 (de) |
+| rf_belebele | 8 | macro 0.66 / en 0.44 / best lang 0.65 (es) | macro 0.62 / en 0.64 / best lang 0.64 (en) | macro 0.57 / en 0.48 / best lang 0.63 (zh) | macro 0.55 / en 0.53 / best lang 0.66 (fr) | macro 0.62 / en 0.59 / best lang 0.64 (ru) |
+| rf_global_mmlu_full | 8 | macro 0.47 / en 0.42 / best lang 0.55 (es) | macro 0.73 / en 0.54 / best lang 0.73 (de) | macro 0.71 / en 0.52 / best lang 0.77 (it) | macro 0.75 / en 0.55 / best lang 0.79 (ja) | macro 0.81 / en 0.69 / best lang 0.81 (de) |
+| rf_include_base_44 | 7 | macro 0.80 / best lang 0.71 (ru) | macro 0.73 / best lang 0.75 (fr) | macro 0.70 / best lang 0.66 (es) | macro 0.79 / best lang 0.74 (es) | macro 0.69 / best lang 0.73 (ru) |
+| rfgm_belebele | 8 | macro 0.82 / en 0.55 / best lang 0.75 (zh) | macro 0.78 / en 0.59 / best lang 0.74 (fr) | macro 0.69 / en 0.54 / best lang 0.68 (ru) | macro 0.60 / en 0.53 / best lang 0.79 (fr) | macro 0.86 / en 0.76 / best lang 0.80 (es) |
+| rfgm_include_base_44 | 6 | macro 0.66 / best lang 0.64 (fr) | macro 0.73 / best lang 0.66 (zh) | macro 0.70 / best lang 0.70 (ru) | macro 0.82 / best lang 0.76 (fr) | macro 0.89 / best lang 0.75 (zh) |
+| xnli | 6 | macro 0.54 / en 0.63 / best lang 0.63 (en) | macro 0.62 / en 0.36 / best lang 0.69 (fr) | macro 0.48 / en 0.44 / best lang 0.68 (de) | macro 0.55 / en 0.55 / best lang 0.67 (ru) | macro 0.33 / en 0.45 / best lang 0.54 (de) |
+| xstorycloze | 4 | macro 0.74 / en 0.58 / best lang 0.69 (es) | macro 0.77 / en 0.67 / best lang 0.67 (en) | macro 0.90 / en 0.68 / best lang 0.80 (es) | macro 0.76 / en 0.68 / best lang 0.77 (es) | macro 0.77 / en 0.64 / best lang 0.75 (es) |
+| xwinograd | 5 | macro 0.45 / en 0.59 / best lang 0.59 (en) | macro 0.35 / en 0.26 / best lang 0.49 (ja) | macro 0.67 / en 0.63 / best lang 0.63 (en) | macro 0.53 / en 0.42 / best lang 0.56 (ja) | macro 0.26 / en 0.48 / best lang 0.51 (zh) |
+| all benchmarks | 8 | macro 0.66 / en 0.55 / one lang 0.55 | macro 0.66 / en 0.54 / one lang 0.54 | macro 0.66 / en 0.57 / one lang 0.57 | macro 0.66 / en 0.60 / one lang 0.60 | macro 0.67 / en 0.61 / one lang 0.61 |
 
 ![The minimal language panel](pretraining/predictivity/language_panel.png)
 <!-- END auto:language-panel -->

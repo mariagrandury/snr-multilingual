@@ -4,15 +4,15 @@
    {
     "trained": false,
     "k": 1,
-    "transfer": 0.07,
+    "transfer": 0.05,
     "own": NaN,
-    "last": 0.384,
+    "last": 0.248,
     "n": 494
    },
    {
     "trained": false,
     "k": 2,
-    "transfer": 0.068,
+    "transfer": 0.043,
     "own": NaN,
     "last": 0.188,
     "n": 494
@@ -20,31 +20,31 @@
    {
     "trained": false,
     "k": 3,
-    "transfer": 0.061,
-    "own": 0.063,
+    "transfer": 0.037,
+    "own": 0.048,
     "last": 0.121,
     "n": 494
    },
    {
     "trained": false,
     "k": 4,
-    "transfer": 0.052,
-    "own": 0.03,
+    "transfer": 0.031,
+    "own": 0.027,
     "last": 0.066,
     "n": 494
    },
    {
     "trained": true,
     "k": 1,
-    "transfer": 0.04,
+    "transfer": 0.044,
     "own": NaN,
-    "last": 0.497,
+    "last": 0.326,
     "n": 106
    },
    {
     "trained": true,
     "k": 2,
-    "transfer": 0.027,
+    "transfer": 0.053,
     "own": NaN,
     "last": 0.257,
     "n": 106
@@ -52,52 +52,52 @@
    {
     "trained": true,
     "k": 3,
-    "transfer": 0.024,
-    "own": 0.088,
+    "transfer": 0.047,
+    "own": 0.039,
     "last": 0.161,
     "n": 106
    },
    {
     "trained": true,
     "k": 4,
-    "transfer": 0.021,
-    "own": 0.046,
+    "transfer": 0.039,
+    "own": 0.015,
     "last": 0.076,
     "n": 106
    }
   ],
   "alpha_pooled_by_L": {
-   "1": 0.141,
-   "2": 0.163,
-   "8": 0.163,
-   "15": 0.153,
-   "30": 0.16,
-   "50": 0.181
+   "1": 0.09,
+   "2": 0.096,
+   "8": 0.096,
+   "15": 0.094,
+   "30": 0.106,
+   "50": 0.117
   },
   "alpha_own_spread_by_L": {
    "1": {
-    "median": 0.141,
-    "std": 0.034
+    "median": 0.09,
+    "std": 0.026
    },
    "2": {
-    "median": 0.164,
-    "std": 0.043
+    "median": 0.097,
+    "std": 0.038
    },
    "8": {
-    "median": 0.163,
-    "std": 0.062
+    "median": 0.097,
+    "std": 0.043
    },
    "15": {
-    "median": 0.156,
-    "std": 0.041
+    "median": 0.096,
+    "std": 0.039
    },
    "30": {
-    "median": 0.161,
-    "std": 0.047
+    "median": 0.106,
+    "std": 0.035
    },
    "50": {
-    "median": 0.181,
-    "std": 0.052
+    "median": 0.117,
+    "std": 0.039
    }
   },
   "n_languages": 100,
@@ -112,27 +112,33 @@
   "decision_transfer": [
    {
     "population": "bpb_trained",
+    "proxy_size": "90M",
+    "da": 0.975,
+    "cells": 10
+   },
+   {
+    "population": "bpb_trained",
     "proxy_size": "175M",
-    "da": 0.787,
+    "da": 0.992,
     "cells": 10
    },
    {
     "population": "bpb_trained",
     "proxy_size": "350M",
-    "da": 0.784,
+    "da": 0.78,
     "cells": 10
    },
    {
     "population": "bpb_trained",
     "proxy_size": "600M",
-    "da": 0.527,
-    "cells": 9
+    "da": 0.578,
+    "cells": 10
    },
    {
     "population": "bpb_trained",
     "proxy_size": "1B",
-    "da": 0.883,
-    "cells": 8
+    "da": 0.9,
+    "cells": 10
    }
   ]
  }
