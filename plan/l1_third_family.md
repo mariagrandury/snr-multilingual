@@ -23,7 +23,7 @@ families — `L1-deep` and `L1-shallow` — and `2·1/2 = 1` pair.
 Rule 5 (`analysis/RULES.md`) needs `MIN_PAIRS = 3`, and because a pair count is
 triangular over `k` families (0, 1, 3, 6, …, never 2), three pairs means
 **three families**. So L = 1 is dropped from every per-L DA table today:
-`da_by_L_per_task.csv` carries L ∈ {2, 8, 15, 30, 50} and no L = 1 row, and the
+`da_by_L_per_task_multi_axes.csv` carries L ∈ {2, 8, 15, 30, 50} and no L = 1 row, and the
 panel is labelled `L1 (no pairs yet)`.
 
 One more family takes L = 1 from 1 pair to 3. This is exactly what ZH did for

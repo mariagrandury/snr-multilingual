@@ -113,8 +113,8 @@ and each set's difference.
 
 A screening pass over candidate benchmarks at each cell's last checkpoint:
 `auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only`.
-The group is kept out of `auto` so the watchers never top up every
-checkpoint with it. Two generators feed it, both idempotent and both
+A candidate that passes is promoted into `auto`: twenty of the
+twenty-one were on 2026-09-23, all but `bbq`. Two generators feed it, both idempotent and both
 registering in `configs/tasks.json`:
 
 - [`scripts/make_cloze_tasks.py`](scripts/make_cloze_tasks.py) turns the

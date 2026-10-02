@@ -115,7 +115,7 @@ Spanish), deep only.
 Seed triples are **per size** (`SEED_TRIPLES`): 175M and 600M run
 (64, 313, 1904) at L ∈ {1, 2, 50}, 1B runs (28, 1797, 1904) at
 L ∈ {1, 2, 30} — the 1B column is aromanou's already-trained runs (L50 was
-added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-22,
+added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-21,
 never having been launched), and naming the wrong triple would submit two
 more runs per cell while the watcher ignored the ones on disk. Replicates are
 **deep only**: no analysis reads a shallow seed std. **Her 1B runs follow the old 20-checkpoint regime**
@@ -127,14 +127,13 @@ on that grid, so until 2026-09-10 the watcher reported `eval DONE (0/0)` for
 all of them — nothing ever fell due — and the launcher counts them done
 (45740 ≥ 45720). **Due checkpoints are now read on the run's own grid**
 (`launch_trainings.due_iters`, used by both watchers, `eval_counts` and the
-ladder report): `run_interval()` takes the modal gap between saves, and every
-Nth point of the SIZE's grid is mapped onto it, so a 20-save 1B run yields
-every save and a 40-save one every 2nd — the same k/20 fractions, comparable
-checkpoint for checkpoint; the final save is due whatever its iter. Since
-2026-09-20 the k/20 points inside the noise window (the last 20 %: 85 % and
-95 %) are due at every size as well, so the analysis reads checkpoint noise
-over five points instead of three — two extra evals per run on the 20-save
-and 60-save sizes, none on the 40-save 1B. models.json
+ladder report): `run_interval()` takes the modal gap between saves, and the
+ten tenths of training are mapped onto it, so a 20-save run yields every 2nd
+save, a 40-save one every 4th and a 60-save one every 6th — the same
+fractions, comparable checkpoint for checkpoint; the final save is due
+whatever its iter. 85 % and 95 % are due at every size as well, so the
+analysis reads checkpoint noise over five points instead of three: 12 evals
+per run at every size. models.json
 still lists the size grid under `checkpoints.all`, which is wrong for her
 2287-spaced cells: the watcher is unaffected (it passes `--iters`), but
 `convert-snr.sh --models` without `--iters`, `snr_progress.py` and

@@ -27,7 +27,8 @@ What it writes, idempotently:
         be rebuilt
   configs/tasks.json
         one entry per task (language, benchmark include_v2_<variant>,
-        n_options 4, metric acc_norm) and their membership in `auto_probe`
+        n_options 4, metric acc_norm, an existing n_items kept) and their
+        membership in `auto_probe`
 
 Only the pairs whose language the ladder trains (`languages.json` ->
 groups.trained, the L50 set) are written: rule 2 drops every other row from
@@ -203,9 +204,14 @@ def main() -> None:
                 if not out.exists() or out.read_text() != body:
                     out.write_text(body)
                     written += 1
+            prev = data["tasks"].get(name, {})
             data["tasks"][name] = OrderedDict(
                 [("language", code), ("benchmark", f"include_v2_{variant}"),
                  ("stages", ["pretraining"]), ("n_options", 4), ("metric", "acc_norm")])
+            # as in make_rf_tasks.py: `n_items` comes from derive_task_options.py
+            # and the gate needs it, so a rewrite must not drop it
+            if "n_items" in prev:
+                data["tasks"][name]["n_items"] = prev["n_items"]
 
     # One probe group, not two: a second group is a second job per cell, each
     # paying the fixed overhead. `auto_include_v2` (2026-09-22) is retired.
