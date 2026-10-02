@@ -21,13 +21,13 @@ only question with content is whether the convention changes a verdict:
 the share of cells that clear the reliability cut under one statistic and not
 another (DA ≥ 0.66 maps to tau ≥ 0.32 through the identity).
 
-    agreement_per_cell.csv          one row per (task, size): the counts and every statistic
-    agreement_correlation.png / .csv   DA, Kendall tau_b and Spearman rho against each other,
+    agreement_da_size_per_cell_multi_axes.csv          one row per (task, size): the counts and every statistic
+    agreement_da_size_correlation_multi_axes.png / .csv   DA, Kendall tau_b and Spearman rho against each other,
                                     one point per cell, Pearson r and Spearman rho in the corner —
                                     the plain reading; the two below say WHY they differ
-    agreement_identity.png / .csv   DA against tau_a; the tie-free cells lie on the line, the
+    agreement_da_size_identity_multi_axes.png / .csv   DA against tau_a; the tie-free cells lie on the line, the
                                     tied cells sit off it by exactly (T_both − T_one)/n
-    agreement_cut_sensitivity.png / .csv   per size, the share of cells whose reliability verdict
+    agreement_da_size_cut_sensitivity_multi_axes.png / .csv   per size, the share of cells whose reliability verdict
                                     depends on the statistic
 
     python analysis/rq02_decision_accuracy/agreement.py --pool predictivity
@@ -68,7 +68,7 @@ STATS = ["da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r"
 CUT = FILTERS["above_66_size"][1]
 # Only the statistics the identity rescales get a mapped cut; Spearman ρ is a
 # different statistic and any cut on it would be arbitrary, so it stays out of
-# the verdict comparison (it is in `agreement_correlation.png`).
+# the verdict comparison (it is in `agreement_da_size_correlation_multi_axes.png`).
 CUT_OF = {"da": CUT, "da_drop_ref_ties": CUT, "tau_a": 2 * CUT - 1, "tau_b": 2 * CUT - 1,
           "gamma": 2 * CUT - 1}
 mpl.rcParams.update(S.RC)
@@ -157,7 +157,7 @@ def correlations(d: pd.DataFrame) -> pd.DataFrame:
 
 def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
     """The three statistics against each other, one point per cell, the
-    correlation in the corner: the plain version of `agreement_identity`."""
+    correlation in the corner: the plain version of `agreement_da_size_identity_multi_axes`."""
     sizes = size_order(d["size"].unique())
     colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
     fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.3))
@@ -182,8 +182,8 @@ def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
                     f"sizes, rule 1). Decision accuracy is the share of pairs ordered alike; Kendall τ_b and Spearman ρ are "
                     f"the rank correlations of the same two rankings. Dotted: τ = 2·DA − 1 (left, middle) and the diagonal "
                     f"(right). Median {int(d['n_models'].median())} models per cell, so a single cell's ρ or τ is coarse; "
-                    f"the correlations are over cells, not within one. `agreement_identity.png` shows why DA and τ differ "
-                    f"at all (ties), `agreement_cut_sensitivity.png` what that does to the reliable-task cut.")
+                    f"the correlations are over cells, not within one. `agreement_da_size_identity_multi_axes.png` shows why DA and τ differ "
+                    f"at all (ties), `agreement_da_size_cut_sensitivity_multi_axes.png` what that does to the reliable-task cut.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -210,7 +210,7 @@ def figure_cuts(sens: pd.DataFrame, d: pd.DataFrame, path: Path) -> None:
     b.legend(fontsize=6.5, frameon=False, loc="upper left"); b.grid(color=S.GRID, lw=.6); S.clean(b)
     b.set_title("the magnitude-weighted statistics against DA", loc="left", fontsize=8.5)
     top = G._header(fig, "Does the choice of statistic change which cells count as reliable?",
-                    f"Same cells as agreement_identity. Left: each tau-scaled statistic's cut is DA's cut through the "
+                    f"Same cells as agreement_da_size_identity_multi_axes. Left: each tau-scaled statistic's cut is DA's cut through the "
                     f"identity, so a flip is the tie convention alone — τ_b corrects the denominator for ties, γ drops "
                     f"tied pairs, DA_drop_ref drops the pairs the reference ties (rq05's convention). Right: ρ and r weight a "
                     f"pair by how far it is displaced, which DA does not; a cell far from the diagonal is one where a few "
@@ -239,11 +239,11 @@ def generate_readme(pool: str, out_dir: Path, d: pd.DataFrame, sens: pd.DataFram
         md_table(list(t.columns), t.values.tolist()),
         f"Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair "
         f"by its displacement — and sit at r = {d['da'].corr(d['rho']):.3f} and {d['da'].corr(d['pearson_r']):.3f} against DA. "
-        f"Median {int(d['n_models'].median())} models per cell. Values in `agreement_per_cell.csv`; regenerate with "
+        f"Median {int(d['n_models'].median())} models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with "
         f"`python analysis/rq02_decision_accuracy/agreement.py --pool {pool}`.",
-        f"![DA, Kendall tau and Spearman rho against each other]({stage}/{pool}/agreement_correlation.png)",
-        f"![DA against Kendall's tau]({stage}/{pool}/agreement_identity.png)",
-        f"![Cut sensitivity]({stage}/{pool}/agreement_cut_sensitivity.png)"])
+        f"![DA, Kendall tau and Spearman rho against each other]({stage}/{pool}/agreement_da_size_correlation_multi_axes.png)",
+        f"![DA against Kendall's tau]({stage}/{pool}/agreement_da_size_identity_multi_axes.png)",
+        f"![Cut sensitivity]({stage}/{pool}/agreement_da_size_cut_sensitivity_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "agreement-measures", body, f"agreement.py --pool {pool}")
 
 
@@ -253,17 +253,17 @@ if __name__ == "__main__":
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     d = per_cell(finals(ladder_frame(POOL)), args.pool)
-    d.to_csv(out_dir / "agreement_per_cell.csv", index=False)
+    d.to_csv(out_dir / "agreement_da_size_per_cell_multi_axes.csv", index=False)
     resid = ((2 * d["da"] - 1) - d["tau_a"] - d["gap_pairs"]).abs().max()
     print(f"{len(d)} cells; identity 2·DA − 1 = τ_a + (T_both − T_one)/n to {resid:.1e}; "
           f"r(DA, τ_b) = {d['da'].corr(d['tau_b']):.4f}, r(DA, ρ) = {d['da'].corr(d['rho']):.4f}")
     sens = cut_sensitivity(d)
-    sens.to_csv(out_dir / "agreement_cut_sensitivity.csv", index=False)
+    sens.to_csv(out_dir / "agreement_da_size_cut_sensitivity_multi_axes.csv", index=False)
     print(sens.pivot_table(index="statistic", columns="size", values="flip_share").round(3).to_string())
-    d[["task", "size", "da", "tau_a", "gap_pairs", "tied_both", "tied_one", "n_pairs"]].to_csv(out_dir / "agreement_identity.csv", index=False)
+    d[["task", "size", "da", "tau_a", "gap_pairs", "tied_both", "tied_one", "n_pairs"]].to_csv(out_dir / "agreement_da_size_identity_multi_axes.csv", index=False)
     corr = correlations(d)
-    corr.to_csv(out_dir / "agreement_correlation.csv", index=False)
-    figure_correlation(d, corr, out_dir / "agreement_correlation.png")
-    figure_identity(d, out_dir / "agreement_identity.png")
-    figure_cuts(sens, d, out_dir / "agreement_cut_sensitivity.png")
+    corr.to_csv(out_dir / "agreement_da_size_correlation_multi_axes.csv", index=False)
+    figure_correlation(d, corr, out_dir / "agreement_da_size_correlation_multi_axes.png")
+    figure_identity(d, out_dir / "agreement_da_size_identity_multi_axes.png")
+    figure_cuts(sens, d, out_dir / "agreement_da_size_cut_sensitivity_multi_axes.png")
     generate_readme(args.pool, out_dir, d, sens)

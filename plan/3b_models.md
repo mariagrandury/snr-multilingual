@@ -2,7 +2,7 @@
 
 *2026-09-19. Decision doc for the extrapolation check above the 1.7B reference.
 Numbers: `src/pretrain/ladder_report.csv` (final checkpoints, deep, seed 1904),
-`src/signal-and-noise/analysis/rq02_decision_accuracy/.../da_per_benchmark_size.csv`
+`src/signal-and-noise/analysis/rq02_decision_accuracy/.../da_size_per_benchmark_multi_axes.csv`
 and `rq00_gate_and_curves/.../above_random_share.csv`, regenerated 2026-09-19 21:04.*
 
 ## The question

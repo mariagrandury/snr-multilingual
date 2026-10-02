@@ -151,7 +151,7 @@ the driver is ~2 h): from `src/signal-and-noise`,
 `export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH; PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0 python analysis/rqNN_*/<script>.py --pool predictivity`.
 The thread caps are not optional: without them OpenBLAS spawns one thread
 per core and the login node's 1000-pid slice kills the process. Scripts that
-read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
+read `da_all_reliable_tasks_both_axes.csv` (everything with an `above_*` variant) need
 `reliable_tasks.py` to have run on the current DA tables first.
 
 **What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
@@ -162,7 +162,7 @@ itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
 `above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
 sits near the seed null (two seeds of ONE design reach up to 0.75): it measures
 within-run persistence, and a checkpoint-axis figure is read against
-`seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
+`seed_uncertainty_da_all_seed_null.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
 statistic (r ≥ 0.96 over 1,883 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
 exactly), and the tie convention moves the reliable-task verdict on 2–7 % of
 cells. Restricting to the L8 languages, to common tasks, to one language or
@@ -240,7 +240,7 @@ without widening the decision the pool exists to measure. They live in
 `reliable_tasks.py`, `by_L.py` and `scale_convergence.py` pair over every
 scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
 the gate and the output folder stay `predictivity`; the `axes` column of
-`da_per_task.csv` names the pair set, rule 15).
+`da_all_per_task_both_axes.csv` names the pair set, rule 15).
 
 The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
@@ -287,7 +287,7 @@ strips the `-fwY` mix complement and numeric-size-sorts.
 ## Outputs
 
 Each RQ writes next to its script: `analysis/<rq>/<stage>/<pool>/`. The
-per-task tables are the persisted truth (`rq02/.../da_per_task.csv`,
+per-task tables are the persisted truth (`rq02/.../da_all_per_task_both_axes.csv`,
 `rq03/.../snr_variants_per_task.csv`); every figure and README block is
 derived from them. `*.csv` / `*.png` under this directory are git-LFS
 tracked (`.gitattributes`): commit regenerated results with `git lfs`
@@ -515,7 +515,7 @@ Every `above_*` variant keeps the tasks whose DA cleared a cut and then
 plots DA on them; the rise it shows is partly the cut (passers 0.80 against
 0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
 cell by its value but still selects tasks by it. Quote the unfiltered
-figure (`scale_convergence.png`, `rq2_ten_checkpoints`) beside any filtered
+figure (`scale_convergence_da_size_multi_axes.png`, `rq2_da_goal_ten_checkpoints_multi_axes`) beside any filtered
 one, and never call a filtered figure "free of selection bias".
 ---
 

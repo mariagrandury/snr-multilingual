@@ -32,7 +32,7 @@ return finite but meaningless values on BPB and the loss.
 `snr_variant_coverage.csv` counts the finite cells per (variant, bucket).
 
 Decision accuracy is not computed here: rq02 `compute_da.py` writes
-`da_per_task.csv` first and this script joins its columns in front of the SNR
+`da_all_per_task_both_axes.csv` first and this script joins its columns in front of the SNR
 ones. The pool's models come from `analysis.utils.build_snr_pool` (parent
 tasks and trained languages only, 90M dropped); there is no seed or external
 model option.
@@ -290,7 +290,7 @@ def run(pool: str, out_dir: Path):
 
     # Copy the DA ground truth (rq02) and append the SNR columns. DA is computed
     # before SNR, so the table must already exist.
-    da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_per_task.csv"
+    da_path = DECISION_ACCURACY / out_dir.parent.name / out_dir.name / "da_all_per_task_both_axes.csv"
     if not da_path.exists():
         raise SystemExit(
             f"DA table missing: {da_path}\n"

@@ -1,4 +1,4 @@
-"""Compute decision accuracy (DA) per task → da_per_task.csv.
+"""Compute decision accuracy (DA) per task → da_all_per_task_both_axes.csv.
 
 DA is the ground truth this project ultimately cares about: does a benchmark
 rank a pair of models the way a larger-model evaluation would? It's costly, so
@@ -17,7 +17,7 @@ Three DA definitions, by what the ranking is compared against:
             ``decision_acc_ckpt_<frac>_<bucket>``.
   DA-goal — ranking at an early ckpt of <bucket> vs TARGET_SIZE's last ckpt:
             early AND small at once. ``decision_acc_goal_<frac>_<bucket>``, the
-            wide form of ``da_early_small_per_task.csv``. DA-size is its
+            wide form of ``da_goal_early_small_per_task_both_axes.csv``. DA-size is its
             ``f100`` column by construction, which is a free consistency check.
 
 ...and TWO PAIR SETS, the `axes` column (rule 15). Every table here carries one
@@ -39,7 +39,7 @@ added. `analysis/utils.py` owns the axis decomposition and the pair sets
 
 DA is computed on every above-random-or-not (task, size) cell — it is the truth,
 not a proxy, so it is NOT gated (the above-random gate only NaN-s SNR cells).
-``da_n_pairs_per_task.csv`` has the same shape and carries the number of model
+``da_all_n_pairs_per_task_both_axes.csv`` has the same shape and carries the number of model
 pairs behind every value; an early checkpoint counts only within CKPT_TOL of
 the fraction asked for.
 
@@ -328,14 +328,14 @@ def run(pool: str, out_dir: Path):
 
     out = pd.DataFrame(rows).set_index(["task", "axes"]).sort_index()
     out_dir.mkdir(parents=True, exist_ok=True)
-    csv_path = out_dir / "da_per_task.csv"
+    csv_path = out_dir / "da_all_per_task_both_axes.csv"
     out.to_csv(csv_path)
     # The same shape, holding the number of model pairs behind every cell: a
     # one-pair 1.00 and a 28-pair 0.96 must not read alike downstream.
-    pd.DataFrame(n_rows).set_index(["task", "axes"]).sort_index().to_csv(out_dir / "da_n_pairs_per_task.csv")
+    pd.DataFrame(n_rows).set_index(["task", "axes"]).sort_index().to_csv(out_dir / "da_all_n_pairs_per_task_both_axes.csv")
     # Early and small, as a ranking: long, one row per (task, axes, proxy bucket, fraction).
     pd.DataFrame(early_rows, columns=["task", "axes", "proxy_size", "frac", "da", "n_pairs", "compute", "ref_compute"]
-                 ).to_csv(out_dir / "da_early_small_per_task.csv", index=False)
+                 ).to_csv(out_dir / "da_goal_early_small_per_task_both_axes.csv", index=False)
     n_size = len(SMALL_SIZES) + len(scaling_pairs)
     n_ckpt = len(CKPT_DA_EARLY_FRACS) * len(pool_buckets)
     n_goal = sum(c.startswith("decision_acc_goal_") for c in out.columns)
@@ -343,7 +343,7 @@ def run(pool: str, out_dir: Path):
         few = pd.DataFrame(_FEW_PAIRS, columns=["task", "proxy", "target", "pairs"])
         by = few.groupby(["proxy", "target"]).size().sort_values(ascending=False)
         print(f"\n!!! RULE 5: {len(few)} decision-accuracy cells over {few['task'].nunique()} tasks had fewer than "
-              f"{MIN_PAIRS} pairs and are NaN (their pair counts are in da_n_pairs_per_task.csv). By comparison:\n"
+              f"{MIN_PAIRS} pairs and are NaN (their pair counts are in da_all_n_pairs_per_task_both_axes.csv). By comparison:\n"
               + by.head(12).to_string())
     print(f"\nWrote DA CSV → {csv_path}")
     print(f"  {out.index.get_level_values('task').nunique()} tasks × {len(axes_sets)} pair sets "

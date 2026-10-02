@@ -3,7 +3,7 @@
 Rewrites the block between `% BEGIN generated: surrogate-tables` and its END
 marker: the catalogue statistics and the signal x noise grid against DA-size,
 DA-goal and DA-ckpt (benchmarks, multi-axis pairs, every L), with the ceiling.
-Reads surrogate_correlations.csv, surrogate_definitions.csv and da_retest.csv,
+Reads surrogate_correlations.csv, surrogate_definitions.csv and da_all_retest_multi_axes.csv,
 which catalogue.py and search.py write; scripts/refresh_analysis.sh runs this
 after the analysis, so the appendix cannot drift from the tables.
 
@@ -20,7 +20,7 @@ c = pd.read_csv(D / "surrogate_correlations.csv", low_memory=False)
 c = c[(c["subset"] == "benchmarks") & (c["subset_type"] == "all") & (c["axes"] == "multi-axis")
       & (c["L"].astype(str) == "all") & (c["metric"] == "da")]
 defs = pd.read_csv(D / "surrogate_definitions.csv")
-ceil = pd.read_csv(D / "da_retest.csv")
+ceil = pd.read_csv(D / "da_all_retest_multi_axes.csv")
 ceil = ceil[(ceil["kind"] == "benchmark") & (ceil["metric"] == "da") & (ceil["axes"] == "multi-axis") & (ceil["L"].astype(str) == "all")].set_index("t_kind")
 KINDS = ["size", "goal", "ckpt"]
 piv = {k: c[c["t_kind"] == k].set_index("surrogate") for k in KINDS}

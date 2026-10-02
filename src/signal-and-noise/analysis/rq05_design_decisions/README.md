@@ -147,7 +147,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 | 600M | 0.43 |
 | 1B | 0.45 |
 
-![Intervention DA grid](pretraining/predictivity_all/intervention_da.png)
+![Intervention DA grid](pretraining/predictivity_all/intervention_da_all_mono_axis.png)
 
 **Effect at the reference in seed standard deviations** (median over items and L):
 
@@ -162,10 +162,10 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 ![Interventions](pretraining/predictivity_all/rq4_interventions.png)
 <!-- END auto:results -->
 
-GitHub: [intervention_da.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da.png) · [intervention_da.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da.csv) ·
+GitHub: [intervention_da_all_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_all_mono_axis.png) · [intervention_da_all_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_all_mono_axis.csv) ·
 GitHub: [rq4_interventions.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_interventions.png) · [rq4_interventions.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_interventions.csv) ·
 [rq4_effect_vs_seed.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_effect_vs_seed.csv) ·
-[rq4_da_by_intervention.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_da_by_intervention.csv)
+[rq4_da_size_by_intervention_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq4_da_size_by_intervention_mono_axis.csv)
 
 ## How small, and how early (paper RQ2)
 
@@ -242,11 +242,11 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 | 1B | 0.50 | 0.50 | 0.50 | 0.47 | 0.47 | 0.46 | 0.47 | 0.46 | 0.47 | 0.46 |
 | 1.7B | 0.47 | 0.45 | 0.49 | 0.59 | 0.53 | 0.59 | 0.54 | 0.58 | 0.71 |  |
 
-![Early and small](pretraining/predictivity_all/rq2_early_small.png)
+![Early and small](pretraining/predictivity_all/rq2_da_goal_early_small_mono_axis.png)
 <!-- END auto:early-decision -->
 
-GitHub: [rq2_early_small.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_early_small.png) · [rq2_early_small.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_early_small.csv) ·
-[rq2_decisions.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_decisions.csv) ·
+GitHub: [rq2_da_goal_early_small_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_da_goal_early_small_mono_axis.png) · [rq2_da_goal_early_small_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_da_goal_early_small_mono_axis.csv) ·
+[rq2_da_all_decisions_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/rq2_da_all_decisions_mono_axis.csv) ·
 [early_decision_facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/early_decision_facts.json)
 
 ## Caveats to carry into the paper
@@ -270,24 +270,24 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 ![rq05 in one figure](pretraining/predictivity_all/highlights.png)
 
-![Decisions by proxy size and checkpoint](pretraining/predictivity_all/da_lines.png)
+![Decisions by proxy size and checkpoint](pretraining/predictivity_all/da_all_lines_mono_axis.png)
 
-![The same on the items decided outside seed noise](pretraining/predictivity_all/da_lines_decided.png)
+![The same on the items decided outside seed noise](pretraining/predictivity_all/da_all_lines_decided_mono_axis.png)
 
 ![Which depth wins, in seed sds](pretraining/predictivity_all/depth_crossover.png)
 
-![Decisions by compute](pretraining/predictivity_all/da_lines_flops.png)
+![Decisions by compute](pretraining/predictivity_all/da_all_lines_flops_mono_axis.png)
 
-![Decisions per benchmark](pretraining/predictivity_all/intervention_da_by_benchmark.png)
+![Decisions per benchmark](pretraining/predictivity_all/intervention_da_size_by_benchmark_mono_axis.png)
 
-![Early and small per benchmark](pretraining/predictivity_all/intervention_da_early_by_benchmark.png)
+![Early and small per benchmark](pretraining/predictivity_all/intervention_da_goal_early_by_benchmark_mono_axis.png)
 
-![Decisions per language](pretraining/predictivity_all/intervention_da_by_language.png)
+![Decisions per language](pretraining/predictivity_all/intervention_da_size_by_language_mono_axis.png)
 
-![Early and small per language](pretraining/predictivity_all/intervention_da_early_by_language.png)
+![Early and small per language](pretraining/predictivity_all/intervention_da_goal_early_by_language_mono_axis.png)
 <!-- END auto:panels -->
 
-**Key findings** (`da_lines`, `da_lines_decided`, `depth_crossover`;
+**Key findings** (`da_all_lines_mono_axis`, `da_all_lines_decided_mono_axis`, `depth_crossover`;
 population, sizes and reference as in the setup above: `predictivity_all`,
 the reference per (intervention, L) the largest size trained at both levels,
 items the reference ties dropped)
@@ -296,7 +296,7 @@ items the reference ties dropped)
   the effect table above puts depth at 1.3 seed sds on BPB (median over L,
   1.15–1.34) and the language lists at 1.6 (0.6–2.9), against temperature
   at 5.4 (4.4–7.5); on the benchmarks every intervention sits at 1.0–1.6.
-  `da_lines_decided` keeps only the items whose reference |Δ|
+  `da_all_lines_decided_mono_axis` keeps only the items whose reference |Δ|
   clears 2 sds of the two-run difference; on the benchmark population that
   restriction does not help — the benchmarks' failure is not noise at the
   reference — while on `bpb_macro` and the loss it leaves one item per L,
@@ -328,23 +328,23 @@ items the reference ties dropped)
   by ~17 %); use the size's own sd where the ×3 cells exist at the
   reference's size and widen the decided cut to cover its sampling error.
 - The training loss is one item per L, so its line is a 0/0.5/1 step
-  function; drop it from the paper version. `da_lines_flops` (5 × 3 lines of
+  function; drop it from the paper version. `da_all_lines_flops_mono_axis` (5 × 3 lines of
   60 cells) is not readable; one line per size, or per-size markers.
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/highlights.csv) ·
-GitHub: [da_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines.png) · [da_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines.csv) ·
-GitHub: [da_lines_decided.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines_decided.png) · [da_lines_decided.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines_decided.csv) ·
+GitHub: [da_all_lines_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_mono_axis.png) · [da_all_lines_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_mono_axis.csv) ·
+GitHub: [da_all_lines_decided_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_decided_mono_axis.png) · [da_all_lines_decided_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_decided_mono_axis.csv) ·
 GitHub: [depth_crossover.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/depth_crossover.png) · [depth_crossover.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/depth_crossover.csv) ·
-GitHub: [da_lines_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines_flops.png) · [da_lines_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_lines_flops.csv) ·
-GitHub: [intervention_da_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_by_benchmark.png) · [intervention_da_by_benchmark.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_by_benchmark.csv) ·
-GitHub: [intervention_da_early_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_early_by_benchmark.png) · [intervention_da_early_by_benchmark.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_early_by_benchmark.csv) ·
-GitHub: [intervention_da_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_by_language.png) · [intervention_da_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_by_language.csv) ·
-GitHub: [intervention_da_early_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_early_by_language.png) · [intervention_da_early_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_early_by_language.csv)
+GitHub: [da_all_lines_flops_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_flops_mono_axis.png) · [da_all_lines_flops_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/da_all_lines_flops_mono_axis.csv) ·
+GitHub: [intervention_da_size_by_benchmark_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_size_by_benchmark_mono_axis.png) · [intervention_da_size_by_benchmark_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_size_by_benchmark_mono_axis.csv) ·
+GitHub: [intervention_da_goal_early_by_benchmark_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_goal_early_by_benchmark_mono_axis.png) · [intervention_da_goal_early_by_benchmark_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_goal_early_by_benchmark_mono_axis.csv) ·
+GitHub: [intervention_da_size_by_language_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_size_by_language_mono_axis.png) · [intervention_da_size_by_language_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_size_by_language_mono_axis.csv) ·
+GitHub: [intervention_da_goal_early_by_language_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_goal_early_by_language_mono_axis.png) · [intervention_da_goal_early_by_language_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/intervention_da_goal_early_by_language_mono_axis.csv)
 
 <!-- BEGIN auto:transformations (transformations.py --pool predictivity_all) -->
 ## Transformations on one item set
 
-Mean decision accuracy over each transformation's pairs, on the items every transformation decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); `transformation_da.csv` has every pair. Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool predictivity_all`.
+Mean decision accuracy over each transformation's pairs, on the items every transformation decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); `transformation_da_size_mono_axis.csv` has every pair. Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool predictivity_all`.
 
 **benchmarks** (rows: transformation; columns: proxy size; mean over pairs, shared items):
 
@@ -364,10 +364,10 @@ Mean decision accuracy over each transformation's pairs, on the items every tran
 | language lists (A vs B) | 3 (3) | 26 | 1.00 | 1.00 | 1.00 | 0.94 | 0.77 |
 | temperature (T=1 vs T=3) | 3 (3) | 26 | 0.96 | 0.99 | 0.94 | 0.97 | 0.96 |
 
-![Transformations](pretraining/predictivity_all/transformation_da.png)
+![Transformations](pretraining/predictivity_all/transformation_da_size_mono_axis.png)
 <!-- END auto:transformations -->
 
-GitHub: [transformation_da.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/transformation_da.png) · [transformation_da.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/transformation_da.csv)
+GitHub: [transformation_da_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/transformation_da_size_mono_axis.png) · [transformation_da_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_all/transformation_da_size_mono_axis.csv)
 
 ## Extensions from other sweeps
 
@@ -379,15 +379,15 @@ any case (a different harness, task set and reference size).
 
 ## Files
 
-- `pretraining/<pool>/intervention_da.csv` — one row per (intervention,
+- `pretraining/<pool>/intervention_da_all_mono_axis.csv` — one row per (intervention,
   population, L, proxy size): `decision_acc`, `n_items`, mean |Δ| at proxy and
   reference, the level the reference prefers.
-- `…/rq4_da_by_intervention.csv`, `rq4_effect_vs_seed.csv`, `rq4_interventions.png/.pdf`,
+- `…/rq4_da_size_by_intervention_mono_axis.csv`, `rq4_effect_vs_seed.csv`, `rq4_interventions.png/.pdf`,
   `facts.json` — the paper's RQ4 figure and the numbers it quotes.
-- `…/rq2_decisions.csv`, `rq2_early_small.csv`, `rq2_early_small.png/.pdf`,
+- `…/rq2_da_all_decisions_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.csv`, `rq2_da_goal_early_small_mono_axis.png/.pdf`,
   `early_decision_facts.json` — the paper's RQ2 figure (`early_decision.py`).
-- `pretraining/<pool>/transformation_da.csv`, `transformation_da.png` — the four
+- `pretraining/<pool>/transformation_da_size_mono_axis.csv`, `transformation_da_size_mono_axis.png` — the four
   transformations (language count, temperature, depth, language lists) on one
   gated item set, so their predictability can be compared (`transformations.py`;
   the block "Transformations on one item set" below).
-- `…/intervention_da.png`.
+- `…/intervention_da_all_mono_axis.png`.

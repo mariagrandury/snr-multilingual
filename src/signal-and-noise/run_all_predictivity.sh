@@ -106,8 +106,8 @@ pass "rq02 — decision accuracy"
 # report is newer than them.
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
-  if fresh "analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv"; then
-    echo "  (DA cached: analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv)"
+  if fresh "analysis/rq02_decision_accuracy/$st/$t/da_all_per_task_both_axes.csv"; then
+    echo "  (DA cached: analysis/rq02_decision_accuracy/$st/$t/da_all_per_task_both_axes.csv)"
   else
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
@@ -123,7 +123,7 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
 done
 # which (benchmark, language) cells rank reliably at all: the population every
-# `above_*` figure below averages over. Reads rq02's da_per_task.csv, so it comes
+# `above_*` figure below averages over. Reads rq02's da_all_per_task_both_axes.csv, so it comes
 # after compute_da and BEFORE everything that filters on it — by_L and
 # scale_convergence both skip their filtered variants when it has not run yet,
 # which silently costs the paper's rq2 figures.
@@ -155,7 +155,7 @@ run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity --axes 
 # languages only and on the tasks every regime shares, one panel per L8
 # language with a tokens-of-that-language axis, the DA ↔ Kendall τ identity and
 # the tie-convention flip rates, and the seed-replicate uncertainty. All read
-# da_reliable_tasks.csv, so they come after reliable_tasks.py.
+# da_all_reliable_tasks_both_axes.csv, so they come after reliable_tasks.py.
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8 --common-tasks
 run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity

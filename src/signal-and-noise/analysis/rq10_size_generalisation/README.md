@@ -32,7 +32,7 @@ the 3B block below is filled in; the 3B L30 and L50 cells opened on
   (`--reference 1.7B --design 3B`) is exactly that comparison line on its own.
 - **Known-answer check.** `--reference 1.7B --check` reproduces rq02's
   `decision_acc_size_<proxy>` per task for both pair sets
-  (`predictivity_schemes/da_per_task.csv`, the pool the rq02 decision figures
+  (`predictivity_schemes/da_all_per_task_both_axes.csv`, the pool the rq02 decision figures
   pair over) — exact on all 3,312 cells on 2026-09-23. The script and rq02
   share the pair sets and the kernel; the `predictivity` folder's table is the
   A/B-only pool and differs by construction.
@@ -84,7 +84,7 @@ Follow-ups:
 
 - When the 3B rows arrive, read panel (c) first: the per-task DA-size
   1.7B → 3B against 1B → 1.7B on the same four families says whether the
-  reliable-task list of rq02 (`da_reliable_tasks.csv`) is reliable one rung
+  reliable-task list of rq02 (`da_all_reliable_tasks_both_axes.csv`) is reliable one rung
   further, which is the claim the paper's rq2 figure implicitly makes.
 - Add the reference's earlier checkpoints as proxies (DA-ckpt at 3B) once
   its k/10 grid is evaluated; `per_task()` already takes any `frac`.

@@ -20,9 +20,9 @@ size. Two things the reader must know:
 
 Two populations, two names — and which one supports inference:
 
-    scale_convergence_lang_all       every gated task of the language (rules 1, 5).
+    scale_convergence_da_size_lang_all       every gated task of the language (rules 1, 5).
                                      THE INFERENCE VERSION: no selection on DA.
-    scale_convergence_lang_above_66_size
+    scale_convergence_da_size_lang_above_66_size
                                      the tasks reliable on DA-size (reliable_tasks.py),
                                      kept for continuity with the pooled paper figure.
                                      A cut on the very quantity drawn, so a line is
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     cells_all = reliability(dec)
     lang_of = pd.Series({t: assign_language(t) for t in cells_all["task"].unique()})
     for variant in VARIANTS:
-        stem = f"scale_convergence_lang_{variant or 'all'}" + AXES_SUFFIX[args.axes]
+        stem = f"scale_convergence_da_size_lang_{variant or 'all'}" + AXES_SUFFIX[args.axes]
         cells = cells_all
         if variant:
             keep = load_reliable(out_dir, variant, args.axes)

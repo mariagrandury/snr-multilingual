@@ -55,7 +55,7 @@ a configuration with q < Q on the validation half.
                                   rho_w on each half for the extra
     surrogate_filters.csv         the threshold filters (basis `full`: main; `disc`: the extra's)
     surrogate_validated.csv       the extra: held-out permutation p, BH q, 90 % cluster-bootstrap band
-    da_retest.csv                 the ceiling: each truth against itself re-read at 90 %
+    da_all_retest_multi_axes.csv                 the ceiling: each truth against itself re-read at 90 %
     surrogates_*.png (+ .csv)
 
     python analysis/rq04_surrogates/search.py --pool predictivity
@@ -666,7 +666,7 @@ def main(pool: str, out_dir: Path) -> None:
     val.to_csv(out_dir / "surrogate_validated.csv", index=False)
     print(f"  extra: {len(val)} tested on the held-out half, {(val['q_val'] < Q).sum()} at q < {Q}")
     ceil = ceiling(d)
-    ceil.to_csv(out_dir / "da_retest.csv", index=False)
+    ceil.to_csv(out_dir / "da_all_retest_multi_axes.csv", index=False)
     fig_significant(main_rows, out_dir)
     fig_snr_grid(corr, out_dir)
     fig_truths(corr, out_dir)

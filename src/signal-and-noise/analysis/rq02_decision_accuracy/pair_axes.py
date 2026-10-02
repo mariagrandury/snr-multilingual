@@ -5,7 +5,7 @@ Both rows are filtered by the MULTI-AXIS reliable tasks, the one stated exceptio
 to rule 15: filtering each row by its own pair set would change the task
 population together with the pair set.
 
-The production form — the `axes` column of `da_per_task.csv` (compute_da.py),
+The production form — the `axes` column of `da_all_per_task_both_axes.csv` (compute_da.py),
 so every rq02 table carries both readings — is in place; this script is the
 side-by-side view of the two on one population (plan/decision_accuracy.md).
 
@@ -28,7 +28,7 @@ final — with MIN_PAIRS per cell (rule 5), pooled over decisions:
     DA-ckpt   proxy at a checkpoint vs the SAME size's final
     DA-goal   proxy at a checkpoint vs the reference's final
 
-    rq2_above_66_both_axes.png / .csv   2 x 3: rows = pair set, columns = the three
+    rq2_da_all_above_66_both_mono_vs_multi_axes.png / .csv   2 x 3: rows = pair set, columns = the three
                                         definitions, over the above_66_both cells
 
     python analysis/rq02_decision_accuracy/pair_axes.py --pool predictivity
@@ -188,6 +188,6 @@ if __name__ == "__main__":
     sizes = size_order(fin["size"].unique())
     print({a: len(pl) for a, pl in pairs.items()}, "family pairs")
     out = pooled(cells(df, fin, pairs, sizes), args.pool, set(keep["task"]))
-    out.to_csv(out_dir / f"rq2_{VARIANT}_axes.csv", index=False)
+    out.to_csv(out_dir / f"rq2_da_all_{VARIANT}_mono_vs_multi_axes.csv", index=False)
     print(table(out).to_string(index=False))
-    figure(out, out_dir / f"rq2_{VARIANT}_axes.png", len(keep))
+    figure(out, out_dir / f"rq2_da_all_{VARIANT}_mono_vs_multi_axes.png", len(keep))

@@ -212,7 +212,7 @@ def main(pool: str, out_dir: Path) -> None:
     plot_bpb_curves(df, out_dir)
     # decision transfer: rq05's agreement on never-trained languages
     stage = load_pools()[pool].get("stage", "pretraining")
-    src = DESIGN_DECISIONS / stage / pool / "intervention_da.csv"
+    src = DESIGN_DECISIONS / stage / pool / "intervention_da_all_mono_axis.csv"
     dd = pd.DataFrame()
     if src.is_file():
         d = pd.read_csv(src)

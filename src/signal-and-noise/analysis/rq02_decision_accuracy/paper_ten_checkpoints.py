@@ -4,7 +4,7 @@ checkpoints, per proxy size, for per-language BPB and for benchmark tasks.
 It lives here, not in the paper folder, because every figure the paper embeds
 has to be produced by the analysis and only copied into
 `documents/paper/figures` (`make_rq_figures.py`). It draws rq02's own table,
-`da_early_small_per_task.csv` (compute_da.py): one row per (task, proxy size,
+`da_goal_early_small_per_task_both_axes.csv` (compute_da.py): one row per (task, proxy size,
 fraction of the proxy's run) with the DA of the proxy's ranking of the design
 variants against the reference's final ranking, over at least MIN_PAIRS pairs
 (rule 5, enforced in the kernel), on the nine evaluated checkpoints before the
@@ -18,8 +18,8 @@ gated. The mean per (size, fraction) is over the tasks that remain, and the
 task count is written next to it (rule 13). The loader has already reduced the
 tasks to parents in trained languages (rules 2 and 6).
 
-    rq2_ten_checkpoints.csv       size x fraction x group: mean DA, tasks
-    rq2_ten_checkpoints.png/.svg  no title, the x axis in Chinchilla multiples
+    rq2_da_goal_ten_checkpoints_multi_axes.csv       size x fraction x group: mean DA, tasks
+    rq2_da_goal_ten_checkpoints_multi_axes.png/.svg  no title, the x axis in Chinchilla multiples
                           (every half-C point drawn, the whole ones labelled),
                           one boxed key inside the axes. `paper_rq2.py` owns the
                           name `rq2.*` — the three-panel figure the paper embeds —
@@ -56,7 +56,7 @@ def summary() -> pd.DataFrame:
     """(size, frac, group) -> mean DA and task count over the gated tasks."""
     # `one_axes`: the table carries one row per (task, pair set) since rule 15,
     # and a mean over both sets at once is a mean over two populations.
-    d = one_axes(pd.read_csv(OUT / "da_early_small_per_task.csv")).dropna(subset=["da"])
+    d = one_axes(pd.read_csv(OUT / "da_goal_early_small_per_task_both_axes.csv")).dropna(subset=["da"])
     d = d[~d["task"].isin(["bpb_macro", "train_loss"])]                       # whole-mixture aggregates, not tasks (rule 7)
     d["group"] = d["task"].str.startswith("bpb_").map({True: "bpb", False: "benchmarks"})
     mask = load_mask(POOL)
@@ -117,10 +117,10 @@ def draw(name: str, s: pd.DataFrame, *, W=1250, H=620, margins=(100, 950, 45, 52
 
 def main() -> None:
     s = summary()
-    s.to_csv(OUT / "rq2_ten_checkpoints.csv", index=False)
-    draw("rq2_ten_checkpoints", s)
+    s.to_csv(OUT / "rq2_da_goal_ten_checkpoints_multi_axes.csv", index=False)
+    draw("rq2_da_goal_ten_checkpoints_multi_axes", s)
     final = s[s["frac"] >= 1.0].pivot(index="size", columns="group", values="mean_da").round(3)
-    print("mean DA at the proxies' final checkpoint (tasks in rq2_ten_checkpoints.csv):\n" + final.to_string())
+    print("mean DA at the proxies' final checkpoint (tasks in rq2_da_goal_ten_checkpoints_multi_axes.csv):\n" + final.to_string())
     for size in SMALL_SIZES:
         g = s[(s["size"] == size) & (s["group"] == "benchmarks")]
         if g["tasks"].nunique() > 1:

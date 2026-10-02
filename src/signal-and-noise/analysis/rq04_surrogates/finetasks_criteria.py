@@ -158,7 +158,7 @@ def join_ours(out: pd.DataFrame, pool: str) -> pd.DataFrame:
     out["gate"] = [float(mask.loc[t, s]) if mask is not None and t in mask.index and s in mask.columns
                    and pd.notna(mask.loc[t, s]) else np.nan for t, s in zip(out["task"], out["size"])]
     stage = load_pools()[pool].get("stage", "pretraining")
-    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv")
     if "axes" in da.columns:
         da = da[da["axes"] == "multi-axis"]
     da = da.set_index("task")
@@ -186,7 +186,7 @@ def reliable_shares(pool: str, sizes: list, out: pd.DataFrame) -> dict:
     proxy's run ≥ 0.66 (`either`), and both (`both`) — the per-size reading of
     `reliable_tasks.py`'s cuts, so the lines can move with the proxy."""
     stage = load_pools()[pool].get("stage", "pretraining")
-    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv")
     da = (da[da["axes"] == "multi-axis"] if "axes" in da.columns else da).set_index("task")
     shares = {}
     for s in sizes:
@@ -202,12 +202,12 @@ def reliable_shares(pool: str, sizes: list, out: pd.DataFrame) -> dict:
 
 def reference_statistics(pool: str, out: pd.DataFrame) -> pd.DataFrame:
     """Per (task, size): rq02's Spearman ρ and Kendall τ_b of the proxy's ranking against the
-    reference's (`agreement_per_cell.csv`) and rq01's ρ of score with size (`scaling_regimes.csv`),
+    reference's (`agreement_da_size_per_cell_multi_axes.csv`) and rq01's ρ of score with size (`scaling_regimes.csv`),
     beside DA-size — the statistics a selection rule cannot compute without the reference (rq02)
     or without the ladder (rq01), drawn for scale."""
     from analysis.paths import SCALING_PREDICTABILITY
     stage = load_pools()[pool].get("stage", "pretraining")
-    cells = pd.read_csv(DECISION_ACCURACY / stage / pool / "agreement_per_cell.csv")[["task", "size", "rho", "tau_b"]]
+    cells = pd.read_csv(DECISION_ACCURACY / stage / pool / "agreement_da_size_per_cell_multi_axes.csv")[["task", "size", "rho", "tau_b"]]
     reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")[["task", "rho_size", "r2_trajectory"]]
     return (out[["task", "size", "da_size"]].merge(cells, on=["task", "size"], how="left").merge(reg, on="task", how="left")
             .rename(columns={"rho": "rho_ranking", "tau_b": "tau_ranking"}))
@@ -360,7 +360,7 @@ def surrogate_table(pool: str, out: pd.DataFrame) -> pd.DataFrame:
     stage = load_pools()[pool].get("stage", "pretraining")
     from analysis.paths import NOISE_AND_SNR
     snr_tab = pd.read_csv(NOISE_AND_SNR / stage / pool / "snr_variants_per_task.csv").set_index("task")
-    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv")
     da = (da[da["axes"] == "multi-axis"] if "axes" in da.columns else da).set_index("task")
     order = size_order(list(proxies))
     extra = []
@@ -382,7 +382,7 @@ def surrogate_table(pool: str, out: pd.DataFrame) -> pd.DataFrame:
 
 
 def figure_scatter(t: pd.DataFrame, path: Path, pool: str) -> None:
-    """DA-size against each surrogate in the style of `agreement_correlation.png`:
+    """DA-size against each surrogate in the style of `agreement_da_size_correlation_multi_axes.png`:
     one point per (task, proxy size) coloured by the proxy, Pearson r, Spearman
     ρ and the cell count in the corner."""
     sizes = size_order(t["size"].unique())

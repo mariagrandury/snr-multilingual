@@ -47,7 +47,7 @@ seed, while English and the BPB tasks cover all four.
 - **SNR per (task, size bucket)** is rq03's table (`snr_variants_per_task.csv`:
   22 variants, gated cells NaN, coverage per variant recorded there).
 - **Decision accuracy** is joined from rq02 (`decision_acc_size_*`,
-  `decision_acc_ckpt_*`; pair counts in `da_n_pairs_per_task.csv`).
+  `decision_acc_ckpt_*`; pair counts in `da_all_n_pairs_per_task_both_axes.csv`).
 - **Ranking.** Per language, Pearson r of log₁₀(SNR) against DA over the
   (task, bucket) cells; the global variant is the highest mean r over
   languages and over both DA kinds (`top_variants_overall.csv`), and the
@@ -339,7 +339,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
 
-**Per language count** (rq02's `da_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
+**Per language count** (rq02's `da_all_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
 
 ![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
 
@@ -349,7 +349,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
 
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
+**Version B — every pair pooled, the size axis instead of the language count** (`da_all_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
 
 ![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
 
@@ -769,14 +769,14 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   anchor (`snr_definition_postprocess.py`).
 - `…/top_variants_overall.png`, `best_variant_per_language.png`,
   `best_variant_family_per_language.png`, `top_benchmarks_per_language.png`,
-  `variant_correlation_matrix.png`, `da_size_vs_da_ckpt.png`,
+  `variant_correlation_matrix.png`, `da_size_vs_da_ckpt_multi_axes.png`,
   `{da_size,da_ckpt}/…` — supporting figures.
 - `…/rq3_surrogates.csv`, `rq3_surrogates.png/.pdf`, `facts.json` — the
   statistics beyond SNR (`analyze.py`; the paper's RQ3 figure).
 - `…/surrogate_values.csv`, `surrogate_targets.csv`, `surrogate_definitions.csv` — the
   surrogates per (task, proxy, pair set) and the truths, long (`catalogue.py`; sources in
   `literature.md`); `surrogate_correlations.csv`, `surrogate_filters.csv`,
-  `surrogate_validated.csv`, `surrogate_by_language.csv`, `da_retest.csv` and
+  `surrogate_validated.csv`, `surrogate_by_language.csv`, `da_all_retest_multi_axes.csv` and
   `surrogates_{validated,snr_grid,catalogue,by_L,catalogue_by_language}.png` — the
   validated search (`search.py`).
 - Inputs: rq03's `snr_variants_per_task.csv` and holdout

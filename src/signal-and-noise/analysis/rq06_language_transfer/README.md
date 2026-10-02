@@ -90,12 +90,12 @@ The summary above, per language (`predictivity_all` pool). Regenerate with `pyth
 
 ![Transfer error per language and L](pretraining/predictivity_all/transfer_error_by_L.png)
 
-![The list decision on untrained languages, by proxy size and checkpoint](pretraining/predictivity_all/transfer_da_lines.png)
+![The list decision on untrained languages, by proxy size and checkpoint](pretraining/predictivity_all/transfer_da_all_lines_mono_axis.png)
 
-![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_by_L.png)
+![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_all_by_L_mono_axis.png)
 <!-- END auto:panels -->
 
-**Key findings** (`transfer_da_lines`, `transfer_da_by_L`: rq05's per-item
+**Key findings** (`transfer_da_all_lines_mono_axis`, `transfer_da_all_by_L_mono_axis`: rq05's per-item
 agreement on the per-language BPB of all 100 evaluation languages, grouped
 per (intervention, L) by what the two levels' lists do with the language —
 both train it, only one does, neither does but one trains its script, or
@@ -107,7 +107,7 @@ neither trains even the script; the last two groups are the transfer test)
 - Script is a coarse proxy for relatedness (Latin covers Welsh and Vietnamese
   alike), and at L1 only English is trained, so "script trained" is every
   Latin-script language.
-- `transfer_da_lines.csv` is still empty on the 2026-09-30 tables (the L8 and
+- `transfer_da_all_lines_mono_axis.csv` is still empty on the 2026-09-30 tables (the L8 and
   L30 list decisions against 1.7B do not reach the three items a panel needs
   at this snapshot either), so the per-size numbers of the earlier snapshot
   (script-trained languages read at 0.61–0.77 from 175M to 1B, unseen scripts
@@ -120,7 +120,7 @@ neither trains even the script; the last two groups are the transfer test)
   family or genus (from the data manifest), or by tokenizer overlap with the
   trained languages, and plot DA against that exposure instead of three bins.
 - Temperature, ZH and ES have one L each (single points); fold them into a
-  table. The "mean over proxy sizes" of `transfer_da_by_L` averages a proxy
+  table. The "mean over proxy sizes" of `transfer_da_all_by_L_mono_axis` averages a proxy
   that flips with one that agrees into 0.5; one line per proxy size, or the
   largest proxy below the reference, for the paper version.
 - The same caveats as rq05: items are correlated and the reference is 1.7B
@@ -129,8 +129,8 @@ neither trains even the script; the last two groups are the transfer test)
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.csv) ·
 GitHub: [transfer_error_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.png) · [transfer_error_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.csv) ·
-GitHub: [transfer_da_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_lines.png) · [transfer_da_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_lines.csv) ·
-GitHub: [transfer_da_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_by_L.png) · [transfer_da_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_by_L.csv)
+GitHub: [transfer_da_all_lines_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_lines_mono_axis.png) · [transfer_da_all_lines_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_lines_mono_axis.csv) ·
+GitHub: [transfer_da_all_by_L_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_by_L_mono_axis.png) · [transfer_da_all_by_L_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_by_L_mono_axis.csv)
 
 **The minimal language panel · DA-size against the 1.7B MACRO ranking
 (mean score over the L8 panel languages above chance at 1.7B) · no filter ·

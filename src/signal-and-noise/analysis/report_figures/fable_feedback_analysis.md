@@ -389,7 +389,7 @@ All three points are answerable from the repo. I computed the external DA table 
 
 ## DA: most reliable benchmarks per language, external suite
 
-I aggregated `rq01/all/external/da_per_task.csv` over the small-to-large size pairs (small in {270M, 600M, 1B, 1.7B}, large in {7-9B, 12-14B, 27-32B}, 9 pairs per task), since that is exactly the decision the framework targets. The winners:
+I aggregated `rq01/all/external/da_all_per_task_both_axes.csv` over the small-to-large size pairs (small in {270M, 600M, 1B, 1.7B}, large in {7-9B, 12-14B, 27-32B}, 9 pairs per task), since that is exactly the decision the framework targets. The winners:
 
 | lang | top benchmark    | DA   | runner-up   | DA   |
 | ---- | ---------------- | ---- | ----------- | ---- |
@@ -539,7 +539,7 @@ Figure 3 changes substantively, and one new prompt makes the DA table reproducib
 Figure 3: fig3_reliability_map.pdf, full width, DA-based on the external
 suite (this replaces the SNR-based heatmap spec).
 
-Data: analysis/rq02_decision_accuracy/all/external/da_per_task.csv.
+Data: analysis/rq02_decision_accuracy/all/external/da_all_per_task_both_axes.csv.
 
 Aggregation (must match make_da_reliability.py if it exists already, else
 implement here and factor it out so both use it):
@@ -566,7 +566,7 @@ intermediate dataframe instead of saving.
 ```
 Create analysis/rq02_decision_accuracy/da_reliability_map.py.
 
-Input: all/external/da_per_task.csv. Implement the aggregation exactly as
+Input: all/external/da_all_per_task_both_axes.csv. Implement the aggregation exactly as
 specified in the Figure 3 prompt (language parsing, family stripping,
 small-to-large pair set, min support 6) and write two outputs next to the
 input: da_reliability_map.csv (full family x language matrix of DA plus a

@@ -122,7 +122,7 @@ shrinkage.
 
 - **DA is itself noisy.** With few pairs per task, DA is coarse, and it moves
   when the reference is read one checkpoint earlier. `catalogue.py` measures
-  this ceiling (`da_retest.csv`): the Spearman ρ between DA-size and DA-size
+  this ceiling (`da_all_retest_multi_axes.csv`): the Spearman ρ between DA-size and DA-size
   with the reference read at 90 % of its run. By Spearman's attenuation
   formula, an observed ρ cannot exceed roughly √(reliability of DA).
 - **Noise cannot see crossovers.** Statistics of separation, stability and

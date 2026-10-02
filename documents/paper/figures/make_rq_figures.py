@@ -14,7 +14,7 @@ comment next to the \\includegraphics.
     rq1  scaling regimes  <- rq01_scaling_predictability/regimes.py  (pool predictivity_all)
                              scaling_regimes_outliers_paper.png
     rq2  decision accuracy<- rq02_decision_accuracy/paper_rq2.py     (pool predictivity, --axes mono-axis)
-                             rq2_above_66_either_transformation_mono_axis.png
+                             rq2_da_all_above_66_either_transformation_mono_axis.png
     app_chance_share      <- rq00_gate_and_curves/panels.py --paper    first_size_share_paper
     app_chance_full       <- the same                                  first_size_above_random_paper
     app_chance_reformulation <- rq00_task_reformulation/reformulations_gate.py --paper  reformulations_gate_paper
@@ -42,7 +42,7 @@ FIGURES = {
     "rq0": (RQ01 / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png", "svg")),
     "rq1": (RQ01 / "scaling_regimes_outliers_paper", ("png",)),
     "rq2": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
-            / "rq2_above_66_either_transformation_mono_axis", ("png",)),
+            / "rq2_da_all_above_66_either_transformation_mono_axis", ("png",)),
     "app_chance_share": (GATE / "first_size_share_paper", ("png", "svg")),
     "app_chance_full": (GATE / "first_size_above_random_paper", ("png", "svg")),
     "app_chance_reformulation": (ANALYSIS / "rq00_task_reformulation" / "reformulations_gate_paper", ("png", "svg")),

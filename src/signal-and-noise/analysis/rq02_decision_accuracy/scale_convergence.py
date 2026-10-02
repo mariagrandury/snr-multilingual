@@ -59,30 +59,30 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                      gap between two lines is a gap on the same benchmarks.
                      Stem token `common`. What it cannot fix is the decision mix.
 
-    scale_convergence.png        the pooled line alone (`--by overall`)
-    scale_convergence_<by>.png   one line per group, x = non-embedding parameters
+    scale_convergence_da_size.png        the pooled line alone (`--by overall`)
+    scale_convergence_da_size_<by>.png   one line per group, x = non-embedding parameters
                                  (log), y = R_size, dotted line at tau, the
                                  smallest size clearing it ringed and labelled;
                                  left panel benchmarks, right panel per-language
                                  BPB, identical axes
-    scale_convergence[_<by>]_above_66_*_flops.png   the same decisions on a COMPUTE
+    scale_convergence_da_size[_<by>]_above_66_*_flops.png   the same decisions on a COMPUTE
                                  axis: each of the ten evaluated checkpoints of every
                                  proxy run against the same reference final, so a line
                                  carries ten points per size and x is the FLOPs spent.
                                  Only the reference's own final is 1.0 by construction;
                                  its earlier checkpoints are ordinary proxies. Drawn for
                                  the reliable populations only.
-    scale_convergence_transformation_panels[_<variant>][_flops].png   the `--by transformation`
+    scale_convergence_da_size_transformation_panels[_<variant>][_flops].png   the `--by transformation`
                                  figure as a grid, one panel per design axis: the axis's own
                                  line with its leave-one-family-out band, the pooled `all pairs`
                                  line faint in each for reference, task counts under the points
                                  (size axis). Same table as the one-panel figure, written beside it.
-    scale_convergence_<by>_above_80.png   the same, restricted to the (benchmark,
+    scale_convergence_da_size_<by>_above_80.png   the same, restricted to the (benchmark,
                                  language) cells that rank reliably on both axes
                                  (`reliable_tasks.py`). One panel, not two: the
                                  reliable set is benchmarks by construction, so a
                                  BPB panel would be empty rather than informative.
-    scale_convergence[_<by>][_<variant>][_flops].csv   one row per (population,
+    scale_convergence_da_size[_<by>][_<variant>][_flops].csv   one row per (population,
                                  group, size[, frac]): population (`all benchmarks` /
                                  `bpb`), group (the line), size, frac, n_matching,
                                  n_comparable, reliability (the pooled ratio),
@@ -185,7 +185,7 @@ def group_order(groups) -> list:
     return sorted(groups, key=lambda g: (0, int(g[1:])) if g[1:].isdigit() and g.startswith("L") else (1, 0))
 POPULATIONS = ("all benchmarks", "bpb")
 # every population, then one per named filter this figure is asked for.
-# `above_66_size` exists because rq2_above_66_one reads its DA-size panel over
+# `above_66_size` exists because rq2_da_all_above_66_one reads its DA-size panel over
 # the tasks whose DA-size is reliable, not over the `both` intersection.
 VARIANTS = ("", "above_80", "above_66_both", "above_66_size")
 # The ten evaluated checkpoints of every run, 0.5C ... 5C (rule 3).
@@ -211,7 +211,7 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
     """
     fams = sorted(attrs.index)
     # The pooled line IS `utils.pair_sets`'s set for this `axes`, so the black
-    # line of every rq02 figure and the matching rows of `da_per_task.csv` are
+    # line of every rq02 figure and the matching rows of `da_all_per_task_both_axes.csv` are
     # one population by construction rather than by two definitions agreeing.
     sets = pair_sets(attrs)
     groups: dict[str, list] = {OVERALL: list(sets[axes])}
@@ -255,8 +255,8 @@ def stem_for(by: str, variant: str = "", axes: str = "multi-axis", langs: str = 
              common: bool = False) -> str:
     """`overall` is the plain figure, so it carries no `_by` token; a language
     restriction replaces the `L` token of the per-L figure
-    (`scale_convergence_L8_...`) and is appended to any other `by`
-    (`scale_convergence_transformation_L8_...`), so the three `--by` runs of
+    (`scale_convergence_da_size_L8_...`) and is appended to any other `by`
+    (`scale_convergence_da_size_transformation_L8_...`), so the three `--by` runs of
     one `--langs` never share a stem; the common-task set appends `common`."""
     if langs == "all":
         token = by
@@ -265,7 +265,7 @@ def stem_for(by: str, variant: str = "", axes: str = "multi-axis", langs: str = 
     else:
         token = f"{by}_{langs}"
     token += "common" if common else ""
-    return ("scale_convergence" + (f"_{token}" if by != "overall" or langs != "all" else "")
+    return ("scale_convergence_da_size" + (f"_{token}" if by != "overall" or langs != "all" else "")
             + (f"_{variant}" if variant else "") + AXES_SUFFIX[axes])
 
 

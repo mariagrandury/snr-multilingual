@@ -1,20 +1,20 @@
 """rq05 per benchmark and per language: the decision table and the
 early-decision read, without pooling the benchmarks.
 
-    intervention_da_by_benchmark.png   agreement with the reference, proxy size x L; one subplot per (intervention, benchmark), intervention by intervention, BPB first
-    intervention_da_by_language.png    the same, one subplot per (intervention, language)
-    intervention_da_early_by_benchmark.png   the two planned decisions, proxy size x share of the run (mean over L), per benchmark
-    intervention_da_early_by_language.png    the same per language
-    da_lines.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
+    intervention_da_size_by_benchmark_mono_axis.png   agreement with the reference, proxy size x L; one subplot per (intervention, benchmark), intervention by intervention, BPB first
+    intervention_da_size_by_language_mono_axis.png    the same, one subplot per (intervention, language)
+    intervention_da_goal_early_by_benchmark_mono_axis.png   the two planned decisions, proxy size x share of the run (mean over L), per benchmark
+    intervention_da_goal_early_by_language_mono_axis.png    the same per language
+    da_all_lines_mono_axis.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
                                        intervention, mean over L; solid per-language BPB, dashed benchmarks, dotted training loss.
-                                       Read on the ten evaluated checkpoints of every run (`intervention_da_ckpt10.csv` and
-                                       `intervention_da_by_group_ckpt10.csv`, the decision table of analyze.py recomputed at
+                                       Read on the ten evaluated checkpoints of every run (`intervention_da_all_ckpt10_mono_axis.csv` and
+                                       `intervention_da_all_by_group_ckpt10_mono_axis.csv`, the decision table of analyze.py recomputed at
                                        every k/10 checkpoint; the rest of the folder stays on 20-100 %)
-    da_lines_decided.png               da_lines on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
+    da_all_lines_decided_mono_axis.png               da_all_lines_mono_axis on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
     depth_crossover.png                deep − shallow final BPB per size x L in seed sds: which depth wins, and by more than noise?
-    da_lines_flops.png                 the same with every (proxy size, checkpoint) cell at its training compute
+    da_all_lines_flops_mono_axis.png                 the same with every (proxy size, checkpoint) cell at its training compute
 
-Reads `intervention_da_by_benchmark.csv` and `intervention_da_by_language.csv`
+Reads `intervention_da_size_by_benchmark_mono_axis.csv` and `intervention_da_size_by_language_mono_axis.csv`
 (the per-item agreement `analyze.py` aggregates: per-language BPB on the
 languages both levels train, and the benchmark tasks). Unlike the pooled
 `benchmark` population of the decision table, these tables leave out the
@@ -79,7 +79,7 @@ def one_reference(da: pd.DataFrame, series: str) -> tuple[pd.DataFrame, str]:
     return pd.concat(keep) if keep else da.iloc[0:0], "; ".join(words)
 
 
-def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_lines", series: str = "intervention", colours: dict = COLOUR,
+def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_axis", series: str = "intervention", colours: dict = COLOUR,
              labels: dict | None = None, populations=LINE_POPULATIONS, title: str, note: str) -> None:
     """Two panels: DA-size (x = proxy size at its final checkpoint) and DA-ckpt
     (x = the reference's own checkpoints), one line per value of `series`
@@ -115,7 +115,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_lines", series:
     G.save_highlights(fig, out_dir, title, note, tables, name=name)
 
 
-def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, name: str = "da_lines_flops",
+def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, name: str = "da_all_lines_flops_mono_axis",
                    series: str = "intervention", colours: dict = COLOUR, labels: dict | None = None,
                    populations=LINE_POPULATIONS, title: str, note: str) -> None:
     """One panel: every (proxy size, fraction) cell at its training compute
@@ -214,15 +214,15 @@ def main(pool: str) -> None:
     note = ("cell = share of the unit's items (a benchmark task or a language's BPB) on which the proxy prefers the same level "
             "of the intervention as the reference at its final checkpoint")
     for by, name, ncols in (("family", "benchmark", 6), ("language", "language", 10)):
-        t = pd.read_csv(out_dir / f"intervention_da_by_{name}.csv")
+        t = pd.read_csv(out_dir / f"intervention_da_size_by_{name}_mono_axis.csv")
         keys = [k for k in INTERVENTIONS if k in set(t["intervention"])]
         fin = t[t["frac"] == 1.0]
-        _panels(fin, by, out_dir / f"intervention_da_by_{name}.png", keys=keys, ncols=ncols, col="L",
+        _panels(fin, by, out_dir / f"intervention_da_size_by_{name}_mono_axis.png", keys=keys, ncols=ncols, col="L",
                 col_order=sorted(fin["L"].unique()), col_label=lambda L: f"L{L}", xlabel="language setting",
                 title=f"Does the proxy prefer the level the reference prefers? Final checkpoints, per {name}", note=note)
         early = t[t["intervention"].isin(DECISIONS)]
-        early.to_csv(out_dir / f"intervention_da_early_by_{name}.csv", index=False)   # rule 12: the CSV beside THIS png (one name for both overwrote the benchmark table with the language one)
-        _panels(early, by, out_dir / f"intervention_da_early_by_{name}.png", keys=[k for k in DECISIONS if k in keys],
+        early.to_csv(out_dir / f"intervention_da_goal_early_by_{name}_mono_axis.csv", index=False)   # rule 12: the CSV beside THIS png (one name for both overwrote the benchmark table with the language one)
+        _panels(early, by, out_dir / f"intervention_da_goal_early_by_{name}_mono_axis.png", keys=[k for k in DECISIONS if k in keys],
                 ncols=ncols, col="frac", col_order=sorted(early["frac"].unique()), col_label=G.chinchilla,
                 xlabel="proxy's training tokens (C = Chinchilla-optimal; 5C = the full run)", note=note,
                 title=f"How small and how early, per {name} (mean over language settings)")
@@ -230,11 +230,11 @@ def main(pool: str) -> None:
             highlights(out_dir, fin, keys)
     frame = ladder_frame(pool)
     da, _, groups = intervention_da(frame, fracs=FRACS10)
-    da.to_csv(out_dir / "intervention_da_ckpt10.csv", index=False)
+    da.to_csv(out_dir / "intervention_da_all_ckpt10_mono_axis.csv", index=False)
     gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
     (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
      if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
-     ).to_csv(out_dir / "intervention_da_by_group_ckpt10.csv", index=False)
+     ).to_csv(out_dir / "intervention_da_all_by_group_ckpt10_mono_axis.csv", index=False)
     if groups.empty:
         print("!!! RULE 2: no per-group BPB items — the never-trained groups are rq06's; only trained languages reach this pool")
     da_lines(da, out_dir, labels={k: v[0] for k, v in INTERVENTIONS.items()},
@@ -244,10 +244,10 @@ def main(pool: str) -> None:
     # a proxy cell's compute: the mean full-run compute of the size's families (deep and shallow differ by up to 13 %)
     depth_crossover(frame, out_dir)
     decided = da.assign(decision_acc=da["decision_acc_decided"])
-    da_lines(decided, out_dir, name="da_lines_decided", labels={k: v[0] for k, v in INTERVENTIONS.items()},
+    da_lines(decided, out_dir, name="da_all_lines_decided_mono_axis", labels={k: v[0] for k, v in INTERVENTIONS.items()},
              populations=LINE_POPULATIONS[:2],                  # the loss is one item: a 0/1 step, not a share
              title="The same, on the items the reference decides outside seed noise",
-             note=f"DA as in da_lines, restricted to the items (languages' BPB, benchmark tasks) whose reference |Δ| between the "
+             note=f"DA as in da_all_lines_mono_axis, restricted to the items (languages' BPB, benchmark tasks) whose reference |Δ| between the "
                   f"two levels is at least {DECIDED:g} sds of that difference (sqrt(2) x the per-run seed sd, a median over the "
                   f"baseline cells with 3 replicates); a cell needs {MIN_ITEMS} such items; missing points = the reference "
                   f"decides too few items")
@@ -265,16 +265,16 @@ def main(pool: str) -> None:
         "aggregates and per-subject facets are left out here (about 60 % of the pooled benchmark items remain), "
         "and a language's subplot averages its BPB item with its benchmark items. Regenerate with "
         f"`python analysis/rq05_design_decisions/panels.py --pool {pool}`. White cells have no value; each figure's table "
-        "sits next to it under the same name (`intervention_da_by_<unit>.csv`).",
+        "sits next to it under the same name (`intervention_da_size_by_<unit>_mono_axis.csv`).",
         f"![rq05 in one figure]({rel}/highlights.png)",
-        f"![Decisions by proxy size and checkpoint]({rel}/da_lines.png)",
-        f"![The same on the items decided outside seed noise]({rel}/da_lines_decided.png)",
+        f"![Decisions by proxy size and checkpoint]({rel}/da_all_lines_mono_axis.png)",
+        f"![The same on the items decided outside seed noise]({rel}/da_all_lines_decided_mono_axis.png)",
         f"![Which depth wins, in seed sds]({rel}/depth_crossover.png)",
-        f"![Decisions by compute]({rel}/da_lines_flops.png)",
-        f"![Decisions per benchmark]({rel}/intervention_da_by_benchmark.png)",
-        f"![Early and small per benchmark]({rel}/intervention_da_early_by_benchmark.png)",
-        f"![Decisions per language]({rel}/intervention_da_by_language.png)",
-        f"![Early and small per language]({rel}/intervention_da_early_by_language.png)"])
+        f"![Decisions by compute]({rel}/da_all_lines_flops_mono_axis.png)",
+        f"![Decisions per benchmark]({rel}/intervention_da_size_by_benchmark_mono_axis.png)",
+        f"![Early and small per benchmark]({rel}/intervention_da_goal_early_by_benchmark_mono_axis.png)",
+        f"![Decisions per language]({rel}/intervention_da_size_by_language_mono_axis.png)",
+        f"![Early and small per language]({rel}/intervention_da_goal_early_by_language_mono_axis.png)"])
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
 

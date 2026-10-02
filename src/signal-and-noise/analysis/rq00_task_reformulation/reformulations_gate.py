@@ -17,7 +17,7 @@ Two questions the paper has to answer once the `rf_` (letters → cloze) and
      contribute without a second copy of the figure.
 
 Everything is read from the tables the other RQs already write (the gate
-mask, `scaling_regimes.csv`, `da_per_task.csv`, `da_reliable_tasks.csv`), so
+mask, `scaling_regimes.csv`, `da_all_per_task_both_axes.csv`, `da_all_reliable_tasks_both_axes.csv`), so
 this runs in seconds after them.
 
     reformulations_gate.png / .csv   (a) gate pass share per family and size, original vs
@@ -60,7 +60,7 @@ SETS = ("rf", "rfgm")
 P_SIG = 0.05
 # A pair tied on one side counts as a miss in the DA kernel, so a proxy with no
 # signal reads 0.5 × (1 − share of one-sided ties), not 0.5: 0.47 on this ladder
-# (mean one-sided tie share 6.5 % per cell, `agreement_per_cell.csv`).
+# (mean one-sided tie share 6.5 % per cell, `agreement_da_size_per_cell_multi_axes.csv`).
 TIE_NULL = 0.47
 mpl.rcParams.update(S.RC)
 
@@ -104,10 +104,10 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     stage = load_pools()[pool].get("stage", "pretraining")
     bench = mask[~mask["family"].isin(["bpb", "loss"])].copy()
     bench["set"] = bench["task"].map(twin_set)
-    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv")
     da = da[da["axes"] == "multi-axis"] if "axes" in da.columns else da
     da["set"] = da["task"].map(twin_set)
-    rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_reliable_tasks.csv")
+    rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_reliable_tasks_both_axes.csv")
     rel = rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel
     rel["set"] = rel["task"].map(twin_set)
     reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")

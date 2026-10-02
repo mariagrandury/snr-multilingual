@@ -20,7 +20,7 @@ size at fixed Chinchilla multiple. The comparison the figure draws is with
 the ladder's own DA-size at the 1B proxy on the same tasks, which is the
 number a reader would otherwise extrapolate.
 
-    public_ladders.png / .csv   (a) per task, DA of the 1B–1.7B models against the 12–14B
+    public_ladders_da_size_multi_axes.png / .csv   (a) per task, DA of the 1B–1.7B models against the 12–14B
                                 models over the three line pairs, beside the ladder's
                                 1B → 1.7B DA-size on the same task; (b) per line pair, the
                                 share of gated tasks where the small-scale order holds at
@@ -110,7 +110,7 @@ def per_task(d: pd.DataFrame, pool: str) -> pd.DataFrame:
     t = d.groupby(["task", "family"]).agg(da_public=("match", "mean"), pairs=("match", "size")).reset_index()
     t = t[t["pairs"] >= MIN_PAIRS]
     stage = load_pools()[pool].get("stage", "pretraining")
-    da = pd.read_csv(OUT_ROOT / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(OUT_ROOT / stage / pool / "da_all_per_task_both_axes.csv")
     da = da[da["axes"] == "multi-axis"] if "axes" in da.columns else da
     return t.merge(da[["task", f"decision_acc_size_{LADDER_PROXY}"]].rename(columns={f"decision_acc_size_{LADDER_PROXY}": "da_ladder"}),
                    on="task", how="left")
@@ -181,7 +181,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, d: pd.DataFrame) 
         md_table(["family", "tasks", "DA public lines (1B–1.7B → 12–14B)", f"DA ladder ({LADDER_PROXY} → 1.7B)"],
                  [[r["family"], int(r["tasks"]), f"{r['da_public']:.2f}", f"{r['da_ladder']:.2f}" if r["da_ladder"] == r["da_ladder"] else "—"]
                   for _, r in fam.iterrows()]),
-        f"![Public ladders]({stage}/{pool}/public_ladders.png)"])
+        f"![Public ladders]({stage}/{pool}/public_ladders_da_size_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "public-ladders", body, f"public_ladders.py --pool {pool}")
 
 
@@ -192,11 +192,11 @@ if __name__ == "__main__":
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     d = decisions(finals())
     t = per_task(d, args.pool)
-    t.to_csv(out_dir / "public_ladders.csv", index=False)
+    t.to_csv(out_dir / "public_ladders_da_size_multi_axes.csv", index=False)
     print(f"{len(t)} gated tasks; pooled DA public lines {t['da_public'].mean():.3f}; ladder {LADDER_PROXY} on the same "
           f"tasks {t['da_ladder'].mean():.3f} ({t['da_ladder'].notna().sum()} tasks)")
-    pp = per_pair(d); pp.to_csv(out_dir / "public_ladders_pairs.csv", index=False); print(pp.round(3).to_string())
+    pp = per_pair(d); pp.to_csv(out_dir / "public_ladders_da_size_pairs_multi_axes.csv", index=False); print(pp.round(3).to_string())
     print(t.groupby("family").agg(tasks=("task", "size"), da_public=("da_public", "mean"), da_ladder=("da_ladder", "mean")).round(2).to_string())
-    figure(t, d, out_dir / "public_ladders.png", args.pool)
+    figure(t, d, out_dir / "public_ladders_da_size_multi_axes.png", args.pool)
     if args.pool == CANONICAL_POOL:
         generate_readme(args.pool, out_dir, t, d)

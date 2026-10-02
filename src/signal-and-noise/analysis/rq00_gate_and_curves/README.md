@@ -282,7 +282,7 @@ from `reformulations_gate.csv`:
 - The twins pass the gate far more often and are read from 90M, but they do
   not rank the design variants better: gated at both sizes the `rf_` twins
   read DA-size 0.47–0.55 across the proxies against 0.54–0.59 for the
-  originals (rq02's `agreement_per_cell.csv`), and half as many clear the
+  originals (rq02's `agreement_da_size_per_cell_multi_axes.csv`), and half as many clear the
   reliability cut. Their spread across variants is larger (relative signal
   0.026 against 0.018 at 1B on the gated tasks, rq03's
   `snr_variants_per_task.csv`) but re-sorts with scale: τ_a ≈ 0 at 175M–600M,

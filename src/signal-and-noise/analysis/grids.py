@@ -159,11 +159,10 @@ def _draw(ax, mat: pd.DataFrame, cnt: pd.DataFrame | None, *, vmin, vmax, cmap, 
 
 
 def _csv_path(png: Path) -> Path:
-    """`<name>.csv` for `<name>.png`, `<name>_by_benchmark.png` and `<name>_by_language.png`."""
-    stem = png.stem
-    for suffix in ("_by_benchmark", "_by_language"):
-        stem = stem.removesuffix(suffix)
-    return png.with_name(stem + ".csv")
+    """The table a facet pair shares: `<name>[_<pair set>].csv` for `<name>.png`,
+    `<name>_by_benchmark[_<pair set>].png` and `<name>_by_language[_<pair set>].png`
+    (rule 16 puts the pair set last, so the facet token is not always the suffix)."""
+    return png.with_name(re.sub(r"_by_(benchmark|language)(?=_|$)", "", png.stem, count=1) + ".csv")
 
 
 def _header(fig, title: str, note: str) -> float:

@@ -13,9 +13,9 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
 ## Highlighted result
 
-- **1156 (task, L) fits over 410 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 510 rungs from the fitted series and left 1276 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 417 tasks without any fit. Best-scaling families (median R²): `lambada_openai_mt` 0.99, `arc` 0.99, `xstorycloze` 0.99, `rf_mmlu` 0.98; worst: `truthfulqa_mc2` 0.60, `include_base_44` 0.53, `cultural_bench_easy` 0.21.
-- **Median R² by answer count** (over the gated benchmark fits): 0.92 over the 2-option fits, 0.88 over the 3-option fits, 0.94 over the 4-option fits, 0.93 over the 5-option fits, 0.94 over the 6-option fits, 0.68 over the 7-option fits, 0.77 over the 8-option fits.
-- **Loss exponent α per (L, arch, scheme)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.125 (5), L1 shallow/A 0.127 (5), L2 deep/A 0.144 (5), L2 deep/ES 0.153 (4), L2 deep/ZH 0.138 (5), L2 shallow/A 0.166 (5), L8 deep/A 0.148 (5), L8 deep/B 0.143 (5), L8 shallow/A 0.158 (5), L8 shallow/B 0.154 (5), L15 deep/A 0.147 (5), L15 deep/AT3 0.144 (5), L15 deep/B 0.153 (5), L15 shallow/A 0.154 (5), L15 shallow/B 0.153 (5), L30 deep/A 0.141 (5), L30 deep/AT3 0.157 (5), L30 deep/B 0.149 (5), L30 shallow/A 0.161 (5), L30 shallow/B 0.155 (5), L50 deep/A 0.145 (5), L50 deep/AT3 0.160 (5), L50 shallow/A 0.154 (5), L50 shallow/AT3 0.158 (5).
+- **1291 (task, L) fits over 472 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 737 rungs from the fitted series and left 1301 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 425 tasks without any fit. Best-scaling families (median R²): `bpb` 1.00, `loss` 0.99, `arc_mt` 0.99, `arc` 0.97; worst: `rf_bbh_mcq` 0.65, `rf_acp_bench_mcq` 0.49, `include_base_44` 0.28.
+- **Median R² by answer count** (over the gated benchmark fits): 0.93 over the 2-option fits, 0.84 over the 3-option fits, 0.87 over the 4-option fits, 0.90 over the 5-option fits, 0.88 over the 6-option fits, 0.75 over the 7-option fits, 0.67 over the 8-option fits.
+- **Loss exponent α per (L, arch, scheme)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.085 (6), L1 deep/DCLMP 0.077 (6), L1 shallow/A 0.089 (6), L2 deep/A 0.094 (6), L2 deep/ES 0.091 (6), L2 deep/ZH 0.093 (6), L2 shallow/A 0.101 (6), L8 deep/A 0.097 (6), L8 deep/B 0.099 (6), L8 shallow/A 0.104 (6), L8 shallow/B 0.096 (6), L15 deep/A 0.100 (6), L15 deep/AT3 0.101 (6), L15 deep/B 0.101 (6), L15 shallow/A 0.093 (6), L15 shallow/B 0.102 (6), L30 deep/A 0.103 (6), L30 deep/AT3 0.103 (6), L30 deep/B 0.100 (6), L30 shallow/A 0.096 (6), L30 shallow/B 0.106 (6), L50 deep/A 0.104 (6), L50 deep/AT3 0.108 (6), L50 shallow/A 0.102 (6), L50 shallow/AT3 0.102 (6).
 <!-- END auto:highlight -->
 
 ## Setup
@@ -189,22 +189,22 @@ R² cannot be.
 <!-- BEGIN auto:scaling-law-error (scaling_law_error.py --pool predictivity_all) -->
 ## Scaling-law error on per-language BPB
 
-Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size: dropped L2 deep/ES, L2 deep/ZH, L15 deep/AT3, L30 deep/AT3. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all`.
+Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size; none dropped. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all`.
 
-- **Scaling-law error** — median |relative error| of the 1.7B per-language BPB predicted from the proxy ladder: L1 0.038, L2 0.052, L8 0.049, L15 0.049, L30 0.043, L50 0.047 (largest proxy ladder at that L).
+- **Scaling-law error** — median |relative error| of the 1.7B per-language BPB predicted from the proxy ladder: L1 0.011, L2 0.015, L8 0.022, L15 0.019, L30 0.024, L50 0.026 (largest proxy ladder at that L).
 
-- **Sign** — `rel_error` in the CSV is signed, (predicted − observed) / observed: 212 of 212 plotted fits are negative, the power law under-predicts the 1.7B BPB; median signed error at the largest proxy ladder: L1 -0.038, L2 -0.052, L8 -0.049, L15 -0.049, L30 -0.043, L50 -0.047.
+- **Sign** — `rel_error` in the CSV is signed, (predicted − observed) / observed: 0 of 318 plotted fits are negative, the power law under-predicts the 1.7B BPB; median signed error at the largest proxy ladder: L1 0.011, L2 0.015, L8 0.022, L15 0.019, L30 0.024, L50 0.026.
 
 **Median |relative error|** (columns: largest proxy rung in the fit; languages = trained languages behind the median):
 
-| L | languages | 600M | 1B |
-|---|---|---|---|
-| L1 | 1 | 0.077 | 0.038 |
-| L2 | 2 | 0.098 | 0.052 |
-| L8 | 8 | 0.100 | 0.049 |
-| L15 | 15 | 0.092 | 0.049 |
-| L30 | 30 | 0.086 | 0.043 |
-| L50 | 50 | 0.087 | 0.047 |
+| L | languages | 350M | 600M | 1B |
+|---|---|---|---|---|
+| L1 | 1 | 0.047 | 0.021 | 0.011 |
+| L2 | 2 | 0.061 | 0.031 | 0.015 |
+| L8 | 8 | 0.077 | 0.038 | 0.022 |
+| L15 | 15 | 0.071 | 0.039 | 0.019 |
+| L30 | 30 | 0.077 | 0.043 | 0.024 |
+| L50 | 50 | 0.083 | 0.051 | 0.026 |
 
 ![Scaling-law error](pretraining/predictivity_all/scaling_law_error.png)
 <!-- END auto:scaling-law-error -->
@@ -246,32 +246,33 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq01_
 
 | family | R² | ρ | fits | options |
 |---|---|---|---|---|
-| cultural_bench_easy | 0.21 | 0.50 | 3 | 4 |
-| include_base_44 | 0.53 | -0.20 | 4 | 4 |
-| truthfulqa_mc2 | 0.60 | -0.60 | 13 |  |
-| rf_acp_bench_mcq | 0.64 | 0.72 | 30 | 4 |
-| rf_bbh_mcq | 0.65 | 0.62 | 54 | 3 |
+| include_base_44 | 0.28 | 0.40 | 5 | 4 |
+| rf_acp_bench_mcq | 0.49 | 0.65 | 30 | 4 |
+| rf_bbh_mcq | 0.65 | 0.80 | 54 | 3 |
 | rf_cultural_bench_easy | 0.77 | 0.87 | 27 | 4 |
-| multiblimp | 0.88 | 1.00 | 76 | 2 |
-| xcopa | 0.89 | 1.00 | 19 | 2 |
+| rf_global_mmlu_full | 0.83 | 1.00 | 71 | 4 |
+| mathqa | 0.84 | 0.97 | 6 | 5 |
+| rf_belebele | 0.84 | 0.94 | 122 | 4 |
+| xnli | 0.86 | 0.94 | 37 | 3 |
+| rf_include_base_44 | 0.87 | 1.00 | 48 | 4 |
+| xcopa | 0.88 | 0.99 | 19 | 2 |
+| hellaswag | 0.89 | 1.00 | 62 | 4 |
+| include_v2_og | 0.89 | 1.00 | 138 | 4 |
+| include_v2_en | 0.89 | 0.94 | 171 | 4 |
 | paws | 0.89 | 1.00 | 11 | 2 |
-| xnli | 0.91 | 0.90 | 37 | 3 |
-| rf_global_mmlu_full | 0.92 | 1.00 | 71 | 4 |
-| rf_include_base_44 | 0.92 | 1.00 | 47 | 4 |
-| include_v2_og | 0.94 | 1.00 | 138 | 4 |
-| rfgm_include_base_44 | 0.94 | 1.00 | 54 | 4 |
-| loss | 0.94 | -1.00 | 6 |  |
-| mathqa | 0.94 | 1.00 | 6 | 5 |
-| include_v2_en | 0.94 | 1.00 | 169 | 4 |
-| rf_belebele | 0.94 | 1.00 | 122 | 4 |
-| bpb | 0.95 | -1.00 | 106 |  |
-| xwinograd | 0.95 | 1.00 | 26 | 2 |
-| hellaswag | 0.97 | 1.00 | 62 | 4 |
-| rf_commonsense_qa | 0.98 | 1.00 | 6 | 5 |
-| rf_mmlu | 0.98 | 1.00 | 6 | 4 |
-| xstorycloze | 0.99 | 1.00 | 28 | 2 |
-| arc | 0.99 | 1.00 | 12 | 4 |
-| lambada_openai_mt | 0.99 | 1.00 | 22 |  |
+| rfgm_belebele | 0.89 | 0.99 | 130 | 4 |
+| xwinograd | 0.90 | 0.97 | 26 | 2 |
+| rf_mmlu | 0.90 | 1.00 | 6 | 4 |
+| rfgm_include_base_44 | 0.92 | 0.96 | 54 | 4 |
+| multiblimp | 0.94 | 1.00 | 77 | 2 |
+| rf_commonsense_qa | 0.96 | 1.00 | 6 | 5 |
+| xstorycloze | 0.96 | 1.00 | 28 | 2 |
+| lambada_openai_mt | 0.96 | 1.00 | 22 |  |
+| truthfulqa-multi_mc1 | 0.97 | -0.75 | 4 | 5 |
+| arc | 0.97 | 1.00 | 12 | 4 |
+| arc_mt | 0.99 | 1.00 | 12 | 4 |
+| loss | 0.99 | -1.00 | 6 |  |
+| bpb | 1.00 | -1.00 | 106 |  |
 
 ![RQ1 scaling](pretraining/predictivity_all/rq1_scaling.png)
 
@@ -323,13 +324,13 @@ GitHub: [fit_r2_median.png](https://github.com/mariagrandury/snr-multilingual/bl
 
 *Per task: figure 1's ρ (score with model size along the ladder, `rho_size`)
 against rq02's ρ (the proxy's ranking of the design variants with the 1.7B
-ranking, `agreement_per_cell.csv`; DA-size, multi-axis pairs from
+ranking, `agreement_da_size_per_cell_multi_axes.csv`; DA-size, multi-axis pairs from
 `predictivity_schemes` at seed 1904, gate `predictivity`). The script and its
 outputs live in rq02's folder
 (`../rq02_decision_accuracy/scaling_vs_ranking.py`; auto block in
 [rq02's README](../rq02_decision_accuracy/README.md#11-read-next-in-the-other-rqs)).*
 
-![Scaling against ranking](../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png)
+![Scaling against ranking](../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png)
 
 *One point per task with both a scaling regime (rq01) and a decision-accuracy
 cell at the proxy (rq02). Top: rq01's ρ (jittered, it lives on a lattice)
@@ -357,7 +358,7 @@ the Spearman correlation across tasks.*
 - The same scatter with the trajectory R² on the x axis, which is the
   stronger surrogate, as the panel the paper quotes.
 
-GitHub: [scaling_vs_ranking.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png) · [scaling_vs_ranking.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.csv)
+GitHub: [scaling_vs_ranking_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png) · [scaling_vs_ranking_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.csv)
 
 ## Extensions from other sweeps
 
@@ -385,7 +386,7 @@ harness, task set and reference size).
 - `…/facts.json` — the numbers the paper quotes (merged into `rq_facts.json`).
 - `…/scaling_regimes_survivorship.csv`, `.png` — per family, kept / gated /
   below the fit minimum (`regimes_survivorship.py`).
-- `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.{png,csv}`
+- `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.{png,csv}`
   — figure 5 (`scaling_vs_ranking.py`, in rq02's folder because it reads
   rq02's per-cell agreement table).
 - `…/da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv`, `_cells.csv` — a

@@ -362,7 +362,7 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
             m = bench.groupby("proxy_size")["decision_acc"].mean()
             bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
                            + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + ".")
-        blocks.append(f"![Intervention DA grid]({rel}/intervention_da.png)")
+        blocks.append(f"![Intervention DA grid]({rel}/intervention_da_all_mono_axis.png)")
     if not ev.empty:
         med = ev.groupby(["intervention", "population"])["median_effect_over_seed_sd"].median().unstack("population")
         bullets.append("- **Is there a decision to make?** median |Δ| at the reference in seed sds — "
@@ -392,7 +392,7 @@ def main(pool: str, out_dir: Path) -> None:
           f"seeds {sorted(df['seed'].unique())}, schemes {sorted(df['scheme'].unique())}")
 
     da, items, groups = intervention_da(df)
-    da.to_csv(out_dir / "intervention_da.csv", index=False)
+    da.to_csv(out_dir / "intervention_da_all_mono_axis.csv", index=False)
     if not items.empty:
         # the same agreement, per benchmark and per language (panels.py draws them);
         # add_meta drops the items with no single language (aggregates, subject facets)
@@ -400,19 +400,19 @@ def main(pool: str, out_dir: Path) -> None:
         keys = ["intervention", "label", "L", "proxy_size", "frac"]
         for by, name in (("family", "benchmark"), ("language", "language")):
             (items.groupby(keys + [by]).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-             .to_csv(out_dir / f"intervention_da_by_{name}.csv", index=False))
+             .to_csv(out_dir / f"intervention_da_size_by_{name}_mono_axis.csv", index=False))
     gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
     (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
      if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
-     ).to_csv(out_dir / "intervention_da_by_group.csv", index=False)     # written empty rather than left stale (rule 14)
-    print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
+     ).to_csv(out_dir / "intervention_da_size_by_group_mono_axis.csv", index=False)     # written empty rather than left stale (rule 14)
+    print(f"Wrote → {out_dir / 'intervention_da_all_mono_axis.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:
-        plot_da_grid(da, out_dir / "intervention_da.png")
+        plot_da_grid(da, out_dir / "intervention_da_all_mono_axis.png")
         dag = (da[da["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
                .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
                     refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
-        dag.to_csv(out_dir / "rq4_da_by_intervention.csv", index=False)
+        dag.to_csv(out_dir / "rq4_da_size_by_intervention_mono_axis.csv", index=False)
 
     ev = effect_at_reference(fin)
     ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)

@@ -8,9 +8,9 @@ the decision match the reference's final one? The heat map is the mean over
 language settings of the per-setting agreement, so a setting with thousands
 of benchmark tasks does not outweigh one with hundreds.
 
-    rq2_decisions.csv     the decision-table rows of the two planned decisions
-    rq2_early_small.csv   agreement per (decision, population, proxy size, fraction)
-    rq2_early_small.png/.pdf
+    rq2_da_all_decisions_mono_axis.csv     the decision-table rows of the two planned decisions
+    rq2_da_goal_early_small_mono_axis.csv   agreement per (decision, population, proxy size, fraction)
+    rq2_da_goal_early_small_mono_axis.png/.pdf
     early_decision_facts.json
 
     python analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
@@ -91,7 +91,7 @@ def plot(agg: pd.DataFrame, out_dir: Path) -> None:
         cb = fig.colorbar(im, ax=axes.ravel().tolist(), fraction=.025, pad=.02)
         cb.set_label("agreement with the reference's final decision (mean over L; settings in brackets)")
         cb.outline.set_visible(False)
-    S.save_figure(fig, out_dir, "rq2_early_small")
+    S.save_figure(fig, out_dir, "rq2_da_goal_early_small_mono_axis")
 
 
 def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
@@ -121,7 +121,7 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
                        "mean over L of the per-L agreement):",
                        md_table(["proxy"] + [G.chinchilla(f) for f in piv.columns],
                                 [[s] + [fmt(piv.loc[s, f]) for f in piv.columns] for s in piv.index])]
-    blocks.append(f"![Early and small]({stage}/{pool}/rq2_early_small.png)")
+    blocks.append(f"![Early and small]({stage}/{pool}/rq2_da_goal_early_small_mono_axis.png)")
     readme = OUT_ROOT / "README.md"
     body = "\n\n".join([
         "## How small, and how early (paper RQ2)",
@@ -134,16 +134,16 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
 
 def main(pool: str, out_dir: Path) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
-    src = DESIGN_DECISIONS / stage / pool / "intervention_da.csv"
+    src = DESIGN_DECISIONS / stage / pool / "intervention_da_all_mono_axis.csv"
     if not src.is_file():
         sys.exit(f"missing {src} — run analysis/rq05_design_decisions/analyze.py --pool {pool} first")
     dt = pd.read_csv(src)
     out_dir.mkdir(parents=True, exist_ok=True)
     core = dt[dt["intervention"].isin(DECISIONS)]
-    core.to_csv(out_dir / "rq2_decisions.csv", index=False)
+    core.to_csv(out_dir / "rq2_da_all_decisions_mono_axis.csv", index=False)
     agg = early_small(dt)
-    agg.to_csv(out_dir / "rq2_early_small.csv", index=False)
-    print(f"Wrote → {out_dir / 'rq2_early_small.csv'} ({len(agg)} cells from {len(core)} rows)")
+    agg.to_csv(out_dir / "rq2_da_goal_early_small_mono_axis.csv", index=False)
+    print(f"Wrote → {out_dir / 'rq2_da_goal_early_small_mono_axis.csv'} ({len(agg)} cells from {len(core)} rows)")
     if not agg.empty:
         plot(agg, out_dir)
     refs = {f"{d}|{p}|L{int(L)}": r for (d, p, L), r in
