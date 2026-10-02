@@ -6,6 +6,8 @@ clears 2:1 against the slide surface, adjacent steps differ enough to read.
 Import this, never redefine a colour in a figure script.
 ``documents/figures/style.py`` re-exports it for the deck.
 """
+from pathlib import Path
+
 import matplotlib as mpl
 from matplotlib.colors import LinearSegmentedColormap
 
@@ -35,7 +37,8 @@ for cm in (SEQ, DIV):
 
 # The paper's rcParams; a script applies them with ``mpl.rcParams.update(RC)``.
 RC = {"font.size": 8.5, "axes.labelsize": 8.5, "axes.titlesize": 9.5, "legend.fontsize": 7.5,
-      "xtick.labelsize": 8, "ytick.labelsize": 8, "pdf.fonttype": 42}
+      "xtick.labelsize": 8, "ytick.labelsize": 8, "pdf.fonttype": 42,
+      "svg.hashsalt": "snr"}   # fixed SVG element ids: an unchanged figure keeps its bytes (the date follows SOURCE_DATE_EPOCH)
 
 
 def clean(ax, spines=("left", "bottom")):
@@ -51,15 +54,17 @@ def title(fig, text, y=1.02, size=12):
     fig.suptitle(text, fontsize=size, color=INK, y=y)
 
 
-def save(fig, path, dpi=200):
-    fig.savefig(path, dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
+def save(fig, path, dpi=200, also=()):
+    """`also`: further suffixes (".svg") written next to `path`."""
+    for p in [Path(path)] + [Path(path).with_suffix(ext) for ext in also]:
+        fig.savefig(p, dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
     mpl.pyplot.close(fig)
-    print(f"wrote {path}")
+    print(f"wrote {path}" + "".join(f" {ext}" for ext in also))
 
 
-def save_figure(fig, out_dir, name, dpi=200):
+def save_figure(fig, out_dir, name, dpi=200, exts=("png", "pdf")):
     """PNG for the READMEs and the site, PDF for the paper; one call."""
-    for ext in ("png", "pdf"):
+    for ext in exts:
         fig.savefig(out_dir / f"{name}.{ext}", dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
     mpl.pyplot.close(fig)
-    print(f"wrote {out_dir / name}.png/.pdf")
+    print(f"wrote {out_dir / name}." + "/.".join(exts))
