@@ -6,6 +6,11 @@ curves of every language.
     gate_margin_by_benchmark.png            score minus chance, language x size, one subplot per benchmark
     gate_margin_by_language.png             score minus chance, benchmark x size, one subplot per language
     first_size_above_random.png / .csv      language x benchmark: smallest size from which the score stays above chance
+    first_size_above_random_paper.png/.svg/.csv  the same for the paper: languages down the side in the scheme-A resource
+                                            order, benchmarks across it from the most to the fewest languages above the
+                                            gate, the trained languages of the L50 list only (rule 2), no header
+    first_size_share_paper.png/.svg/.csv    the paper map condensed: per benchmark the share of its languages at each
+                                            smallest size (highlights' right panel, in the same order and population)
     score_curves.csv                        the curves below
     score_curves/<language>.png             score vs training tokens (Chinchilla multiples, 5C = the full run),
                                             one line per size, one subplot per benchmark
@@ -16,6 +21,7 @@ average, per size, the cells that train the language, on the shared
 checkpoint grid; the dotted line is chance.
 
     python analysis/rq00_gate_and_curves/panels.py --pool predictivity
+    python analysis/rq00_gate_and_curves/panels.py --paper      # the two paper figures alone, from the tables on disk
 """
 
 from __future__ import annotations
@@ -36,8 +42,9 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
+from evals.scripts.utils.configs import bucket_order, load_languages, load_pools  # noqa: E402
 from pretrain.ladder_report import _trained_tasks  # noqa: E402
+from pretrain.launch_trainings import cell_fineweb_subsets  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, replace_block  # noqa: E402
@@ -79,6 +86,34 @@ def gate_panels(out_dir: Path) -> None:
                     note=f"cell = smallest size that clears the gate ({gate}), and so does every larger size with a value")
     highlights(out_dir, long, level, sizes, gate)
     threshold_panels(out_dir)
+    paper_figures(out_dir)
+
+
+def paper_figures(out_dir: Path) -> None:
+    """The paper's rq00 figures, read from `first_size_above_random.csv`: the
+    level map with languages down the side in the scheme-A resource order
+    (English first) and benchmarks across it from the most to the fewest
+    languages above the gate at some size, and the same map condensed to one
+    bar per benchmark. Both cover the trained languages of the L50 list alone
+    (rule 2; the map on disk also carries the transfer-only languages) and
+    carry no header."""
+    t = pd.read_csv(out_dir / "first_size_above_random.csv")
+    sizes = [b for b in bucket_order() if b in pd.read_csv(out_dir / "above_random_mask.csv", nrows=0).columns]
+    level = t.pivot(index="family", columns="language", values="level_index")
+    iso2 = load_languages()["fineweb_iso2"]
+    langs = [l for l in ["en"] + [iso2[s.split("_")[0]] for s in cell_fineweb_subsets(50, "A")] if l in level.columns]
+    level = level[langs]
+    order = list((level >= 0).sum(axis=1).sort_values(ascending=False, kind="stable").index)
+    G.level_heatmap(level.T, out_dir / "first_size_above_random_paper.png", levels=sizes, title="",
+                    cbar="smallest size above chance", xlabel="", ylabel="", rows=langs, cols=order,
+                    names=("language", "benchmark"), also=(".svg",), name=G.paper_name, cell_text=False, cell_w=0.18)
+    fig, ax = plt.subplots(figsize=(5.4, 0.17 * len(order) + 1.3))
+    tab = G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name, legend_cols=3,
+                     xlabel="Share of languages above the chance threshold")
+    fig.tight_layout()
+    tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"}) \
+       .to_csv(out_dir / "first_size_share_paper.csv", index=False)
+    S.save(fig, out_dir / "first_size_share_paper.png", also=(".svg",))
 
 
 def threshold_panels(out_dir: Path) -> None:
@@ -86,6 +121,7 @@ def threshold_panels(out_dir: Path) -> None:
     and how many (task, size) cells it keeps, against fixed margins."""
     runs = pd.read_csv(out_dir / "above_random_runs.csv")
     runs = runs[runs["trained"]] if "trained" in runs else runs
+    runs = runs[runs["n_items"].notna()]   # no item count, no Wilson bound: nothing to draw (rfgm_belebele until derive_task_options runs)
     scores = pd.read_csv(out_dir / "above_random_scores.csv")
     sizes = [b for b in bucket_order() if b in scores.columns]
     scores = scores[scores["language"].isin(["??", "multi"]) == False]
@@ -223,4 +259,9 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
-    main(p.parse_args().pool)
+    p.add_argument("--paper", action="store_true", help="only the paper figures, from the tables on disk")
+    args = p.parse_args()
+    if args.paper:
+        paper_figures(OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool)
+    else:
+        main(args.pool)

@@ -386,7 +386,7 @@ def figure_scatter(t: pd.DataFrame, path: Path, pool: str) -> None:
     one point per (task, proxy size) coloured by the proxy, Pearson r, Spearman
     ρ and the cell count in the corner."""
     sizes = size_order(t["size"].unique())
-    colour = dict(zip(sizes, S.RAMP))
+    colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
 
     def spearman(c):
         g = t[[c, "da_size"]].replace([np.inf, -np.inf], np.nan).dropna()

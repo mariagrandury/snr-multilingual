@@ -159,7 +159,7 @@ def figure_correlation(d: pd.DataFrame, corr: pd.DataFrame, path: Path) -> None:
     """The three statistics against each other, one point per cell, the
     correlation in the corner: the plain version of `agreement_identity`."""
     sizes = size_order(d["size"].unique())
-    colour = dict(zip(sizes, S.RAMP))
+    colour = {s: S.SIZE_COLOR.get(s, S.MUTED) for s in sizes}   # RAMP has four steps; the ladder has more proxies
     fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.3))
     for ax, (x, y) in zip(axes, CORR_PAIRS):
         for s in sizes:

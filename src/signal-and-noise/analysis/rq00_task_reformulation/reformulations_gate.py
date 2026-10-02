@@ -24,7 +24,9 @@ this runs in seconds after them.
                                      twins, stars where McNemar p < P_SIG; (b)–(d) the
                                      headline readings with and without the twins
     reformulations_gate_mcnemar.csv  per (family, twin set, size): shares, discordant counts, p
+    reformulations_gate_paper.png / .svg / .csv   panel (a) alone, no header, for the paper
     python analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
+    python analysis/rq00_task_reformulation/reformulations_gate.py --paper   # the paper panel alone, from the CSV
 """
 
 from __future__ import annotations
@@ -132,9 +134,10 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def figure(mc: pd.DataFrame, head: pd.DataFrame, path: Path, sizes: list) -> None:
-    fig, axes = plt.subplots(1, 4, figsize=(16.4, 4.6), gridspec_kw={"width_ratios": (1.5, 1, 1, 1)})
-    a = axes[0]
+def _twins_ax(a, mc: pd.DataFrame, sizes: list) -> None:
+    """Panel (a): per family with a twin, the share of its languages above the
+    gate for the original (grey) and the `rf_` twin, per size; diamonds the
+    `rfgm_` twin; a star where McNemar's p < P_SIG."""
     fams = sorted(mc["family"].unique(), key=lambda f: -mc[mc["family"] == f]["languages"].max())
     x = np.arange(len(fams))
     w = .8 / (1 + 2 * len(sizes))
@@ -152,8 +155,31 @@ def figure(mc: pd.DataFrame, head: pd.DataFrame, path: Path, sizes: list) -> Non
                 a.text(x[i] + (k - len(sizes) / 2) * w * 2 + w, g.loc[f, "share_twin"] + .02, "*", ha="center", fontsize=8, color=S.INK)
     a.set_xticks(x); a.set_xticklabels(fams, rotation=30, ha="right", fontsize=7)
     a.set_ylim(0, 1.12); a.set_ylabel("share of the family's languages above the gate")
-    a.set_title("(a) originals (grey) against their twins, per size; * McNemar p < 0.05", loc="left", fontsize=8.5)
     a.legend(fontsize=6, frameon=False, ncol=2); a.grid(color=S.GRID, lw=.6, axis="y"); S.clean(a)
+
+
+def figure_paper(mc: pd.DataFrame, path: Path, sizes: list) -> None:
+    """Panel (a) alone, in the paper's words: `rf` is the RF version, `rfgm` the LLM-RF version."""
+    fig, a = plt.subplots(figsize=(6.4, 3.4))
+    _twins_ax(a, mc, sizes)
+    h, labels = a.get_legend_handles_labels()
+    rf = [(x, l.replace("rf twin", "RF version")) for x, l in zip(h, labels) if l.startswith("rf twin")]
+    gm = [(x, "LLM-RF version") for x, l in zip(h, labels) if l == "rfgm twin"]
+    handles = [(plt.Rectangle((0, 0), 1, 1, facecolor=S.GRID, edgecolor=S.MUTED, lw=.4), "original")] + rf + gm \
+        + [(plt.Line2D([], [], marker="$*$", ls="none", color=S.INK, ms=7), f"McNemar p < {P_SIG}")]
+    a.legend([x for x, _ in handles], [l for _, l in handles], fontsize=6, frameon=False, ncol=4,
+             loc="lower center", bbox_to_anchor=(0.5, 1.0))
+    a.set_ylabel("Share of languages above threshold")
+    a.set_xticklabels([G.paper_name(t.get_text()) for t in a.get_xticklabels()], rotation=30, ha="right", fontsize=7)
+    fig.tight_layout()
+    mc.to_csv(path.with_suffix(".csv"), index=False)
+    S.save(fig, path, also=(".svg",))
+
+
+def figure(mc: pd.DataFrame, head: pd.DataFrame, path: Path, sizes: list) -> None:
+    fig, axes = plt.subplots(1, 4, figsize=(16.4, 4.6), gridspec_kw={"width_ratios": (1.5, 1, 1, 1)})
+    _twins_ax(axes[0], mc, sizes)
+    axes[0].set_title("(a) originals (grey) against their twins, per size; * McNemar p < 0.05", loc="left", fontsize=8.5)
     pops = [("every task", S.INK, "-"), ("originals only", S.MUTED, "--"), ("twins only", S.RAMP[1], "-")]
     for ax, col, lab, ttl in ((axes[1], "gate_share", "share of tasks above the gate", "(b) the gate"),
                               (axes[2], "da_size_mean", f"mean DA-size, proxy → {TARGET_SIZE}", "(c) DA-size (multi-axis, gated at proxy and reference)"),
@@ -207,10 +233,14 @@ def generate_readme(pool: str, mc: pd.DataFrame, head: pd.DataFrame, sizes: list
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
+    p.add_argument("--paper", action="store_true", help="only the paper panel, from reformulations_gate_mcnemar.csv")
     args = p.parse_args()
     stage = load_pools()[args.pool].get("stage", "pretraining")
     mask = pd.read_csv(GATE_AND_CURVES / stage / args.pool / "above_random_mask.csv")
     sizes = size_order([c for c in mask.columns if c[0].isdigit()])
+    if args.paper:
+        figure_paper(pd.read_csv(HERE / "reformulations_gate_mcnemar.csv"), HERE / "reformulations_gate_paper.png", sizes)
+        sys.exit()
     mc = mcnemar(mask, sizes)
     mc.to_csv(HERE / "reformulations_gate_mcnemar.csv", index=False)
     head = headline(args.pool, mask, sizes)
@@ -218,5 +248,6 @@ if __name__ == "__main__":
     print(mc[mc["size"] == TARGET_SIZE].round(3).to_string(index=False))
     print(head.round(3).to_string(index=False))
     figure(mc, head, HERE / "reformulations_gate.png", sizes)
+    figure_paper(mc, HERE / "reformulations_gate_paper.png", sizes)
     if args.pool == CANONICAL_POOL:
         generate_readme(args.pool, mc, head, sizes)

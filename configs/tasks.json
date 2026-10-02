@@ -10385,7 +10385,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_eng_Latn": {
       "language": "en",
@@ -10394,7 +10395,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_hin_Deva": {
       "language": "hi",
@@ -10403,7 +10405,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_jpn_Jpan": {
       "language": "ja",
@@ -10412,7 +10415,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_rus_Cyrl": {
       "language": "ru",
@@ -10421,7 +10425,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_spa_Latn": {
       "language": "es",
@@ -10430,7 +10435,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_tha_Thai": {
       "language": "th",
@@ -10439,7 +10445,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 893
     },
     "rfgm_belebele_tur_Latn": {
       "language": "tr",
@@ -10448,7 +10455,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_vie_Latn": {
       "language": "vi",
@@ -10457,7 +10465,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_zho_Hans": {
       "language": "zh",
@@ -10466,7 +10475,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_ars_Arab": {
       "language": "ar",
@@ -10475,7 +10485,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ita_Latn": {
       "language": "it",
@@ -10484,7 +10495,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_kat_Geor": {
       "language": "ka",
@@ -10493,7 +10505,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ben_Latn": {
       "language": "bn",
@@ -10502,7 +10515,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_bul_Cyrl": {
       "language": "bg",
@@ -10511,7 +10525,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_slv_Latn": {
       "language": "sl",
@@ -10520,7 +10535,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_swe_Latn": {
       "language": "sv",
@@ -10529,7 +10545,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_deu_Latn": {
       "language": "de",
@@ -10538,7 +10555,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ukr_Cyrl": {
       "language": "uk",
@@ -10547,7 +10565,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_heb_Hebr": {
       "language": "he",
@@ -10556,7 +10575,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_npi_Deva": {
       "language": "ne",
@@ -10565,7 +10585,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 893
     },
     "rfgm_belebele_por_Latn": {
       "language": "pt",
@@ -10574,7 +10595,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_hun_Latn": {
       "language": "hu",
@@ -10583,7 +10605,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_fin_Latn": {
       "language": "fi",
@@ -10592,7 +10615,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_urd_Latn": {
       "language": "ur",
@@ -10601,7 +10625,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_ces_Latn": {
       "language": "cs",
@@ -10610,7 +10635,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_lvs_Latn": {
       "language": "lv",
@@ -10619,7 +10645,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_slk_Latn": {
       "language": "sk",
@@ -10628,7 +10655,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_nob_Latn": {
       "language": "no",
@@ -10637,7 +10665,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_pol_Latn": {
       "language": "pl",
@@ -10646,7 +10675,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_hin_Latn": {
       "language": "hi",
@@ -10655,7 +10685,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ary_Arab": {
       "language": "ar",
@@ -10664,7 +10695,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_mal_Mlym": {
       "language": "ml",
@@ -10673,7 +10705,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ben_Beng": {
       "language": "bn",
@@ -10682,7 +10715,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_nld_Latn": {
       "language": "nl",
@@ -10691,7 +10725,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_kor_Hang": {
       "language": "ko",
@@ -10700,7 +10735,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 896
     },
     "rfgm_belebele_urd_Arab": {
       "language": "ur",
@@ -10709,7 +10745,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_fra_Latn": {
       "language": "fr",
@@ -10718,7 +10755,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_lit_Latn": {
       "language": "lt",
@@ -10727,7 +10765,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_ron_Latn": {
       "language": "ro",
@@ -10736,7 +10775,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_srp_Cyrl": {
       "language": "sr",
@@ -10745,7 +10785,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_npi_Latn": {
       "language": "ne",
@@ -10754,7 +10795,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_kaz_Cyrl": {
       "language": "kk",
@@ -10763,7 +10805,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 895
     },
     "rfgm_belebele_tam_Taml": {
       "language": "ta",
@@ -10772,7 +10815,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_ind_Latn": {
       "language": "id",
@@ -10781,7 +10825,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_dan_Latn": {
       "language": "da",
@@ -10790,7 +10835,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_cat_Latn": {
       "language": "ca",
@@ -10799,7 +10845,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_azj_Latn": {
       "language": "az",
@@ -10808,7 +10855,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 895
     },
     "rfgm_belebele_hrv_Latn": {
       "language": "hr",
@@ -10817,7 +10865,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_als_Latn": {
       "language": "sq",
@@ -10826,7 +10875,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_arb_Latn": {
       "language": "ar",
@@ -10835,7 +10885,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_mar_Deva": {
       "language": "mr",
@@ -10844,7 +10895,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 896
     },
     "rfgm_belebele_zsm_Latn": {
       "language": "ms",
@@ -10853,7 +10905,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_ell_Grek": {
       "language": "el",
@@ -10862,7 +10915,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 895
     },
     "rfgm_belebele_zho_Hant": {
       "language": "zh",
@@ -10871,7 +10925,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 897
     },
     "rfgm_belebele_arz_Arab": {
       "language": "ar",
@@ -10880,7 +10935,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_apc_Arab": {
       "language": "ar",
@@ -10889,7 +10945,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_est_Latn": {
       "language": "et",
@@ -10898,7 +10955,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 898
     },
     "rfgm_belebele_pes_Arab": {
       "language": "fa",
@@ -10907,7 +10965,8 @@
         "pretraining"
       ],
       "n_options": 4,
-      "metric": "acc_norm"
+      "metric": "acc_norm",
+      "n_items": 895
     },
     "arc_ca_challenge": {
       "language": "ca",

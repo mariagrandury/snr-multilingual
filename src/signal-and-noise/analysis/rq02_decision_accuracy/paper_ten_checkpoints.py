@@ -71,10 +71,11 @@ def summary() -> pd.DataFrame:
     return s.sort_values(["group", "size", "frac"]).reset_index(drop=True)
 
 
-def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 520)) -> None:
+def draw(name: str, s: pd.DataFrame, *, W=1250, H=620, margins=(100, 950, 45, 520)) -> None:
     left, right, top, bottom = margins
+    lo = min(55, int(s["mean_da"].min() * 20) * 5)             # the axis floor, in %: no curve below the frame
     X = lambda f: left + (float(f) - .1) / .9 * (right - left)          # noqa: E731
-    Y = lambda v: bottom - (float(v) - .55) / .45 * (bottom - top)      # noqa: E731
+    Y = lambda v: bottom - (float(v) - lo / 100) / (1 - lo / 100) * (bottom - top)      # noqa: E731
     a = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
          '<rect width="100%" height="100%" fill="white"/>', '<g font-family="DejaVu Sans, sans-serif" fill="#20252a">']
 
@@ -87,7 +88,7 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
     # every measured fraction keeps its point; the labels are the whole Chinchilla multiples (rule 3)
     for f in (0.2, 0.4, 0.6, 0.8, 1.0):
         x = X(f); a.append(f'<line x1="{x}" y1="{top}" x2="{x}" y2="{bottom}" stroke="#edf0f2"/>'); text(x, bottom + 30, f"{round(f * FULL):g}C", 17, "middle")
-    for j in range(55, 101, 5):
+    for j in range(lo, 101, 5):
         y = Y(j / 100); a.append(f'<line x1="{left}" y1="{y}" x2="{right}" y2="{y}" stroke="#e1e5e8"/>'); text(left - 13, y + 6, f"{j / 100:.2f}", 17, "end")
     a.append(f'<line x1="{left}" y1="{Y(.75)}" x2="{right}" y2="{Y(.75)}" stroke="#7e858c" stroke-dasharray="3,5" stroke-width="1.5"/>')
     for group, dash, _ in GROUPS:
@@ -98,8 +99,8 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
             a.append(f'<polyline points="{" ".join(f"{X(f):.2f},{Y(v):.2f}" for f, v in zip(g["frac"], g["mean_da"]))}" fill="none" stroke="{c}" stroke-width="2.6" {dash}/>')
             for f, v in zip(g["frac"], g["mean_da"]):
                 a.append(f'<circle cx="{X(f)}" cy="{Y(v)}" r="3.5" fill="{c}"/>')
-    # the key sits in the empty bottom-right corner, below every curve: size colours left, line styles right
-    bw, bh = 268, 104; bx, by = right - bw - 14, bottom - bh - 12
+    # the key sits right of the frame, clear of every curve: size colours left, line styles right
+    bw, bh = 268, 104; bx, by = right + 16, top
     a.append(f'<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" fill="white" fill-opacity="0.92" stroke="#c8ccd0" stroke-width="1" rx="4"/>')
     text(bx + 12, by + 18, "proxy size", 14, extra='fill="#5c6066"'); text(bx + 128, by + 18, "measurement", 14, extra='fill="#5c6066"')
     for i, (size, c) in enumerate(COLORS.items()):
