@@ -84,6 +84,8 @@ run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 run $PY analysis/rq00_task_reformulation/compare.py
 # the twins' effect on the gate (McNemar) and on every headline reading with / without them
 run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
+# which probe candidates survive the gate, per language: read off the committed mask (README block `probe-survivors`)
+run $PY analysis/rq00_task_reformulation/probe_survivors.py
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
 run $PY analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 

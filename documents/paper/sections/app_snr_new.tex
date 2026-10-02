@@ -310,7 +310,7 @@ Second, the statistics that track decision accuracy best describe whether the pr
 Third, the SNR of \citet{heineman_signal_2025} as released reaches $\rho = 0.23$ with DA-size, against $R = 0.79$ in their setting; replacing the checkpoint noise by the $k$-fold benchmark noise raises every signal.
 Fourth, the benchmark noise is largely a function of the item count, and the item count alone correlates at 0.51, as much as the best ratio: \texttt{dispersion\_shifted} is constant, so its ratios are the inverse noise.
 
-% BEGIN generated: surrogate summary (analysis/rq04_surrogates/.../surrogate_correlations.csv, da_retest.csv)
+% BEGIN generated: surrogate-tables (make_surrogate_tables.py)
 \begin{table}[h]
 \centering
 \scriptsize
@@ -379,7 +379,7 @@ control & \texttt{n\_items} & \textbf{0.51} & \textbf{0.52} & \textbf{0.59} \\
  & \texttt{chance} & $-$0.03 & $-$0.00 & 0.16 \\
 \bottomrule
 \end{tabular}
-\caption{Spearman $\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster (218--239 clusters for DA-size, 218--239 for DA-goal, 223--245 for DA-ckpt), every pair of variants, pooled over the proxy sizes 90M--1B and, for DA-goal and DA-ckpt, over the nine early checkpoints. Bold: Benjamini--Hochberg $q < 0.05$ over every configuration of the search. A dash marks a statistic that is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size. Ladder report of 2026-09-30.}
+\caption{Spearman $\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster (218--239 clusters for DA-size, 218--239 for DA-goal, 223--245 for DA-ckpt), every pair of variants, pooled over the proxy sizes 90M--1B and, for DA-goal and DA-ckpt, over the nine early checkpoints. Bold: Benjamini--Hochberg $q < 0.05$ over every configuration of the search. A dash marks a statistic that is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size. }
 \label{tab:sur-corr-catalogue}
 \end{table}
 
@@ -427,4 +427,4 @@ control & \texttt{n\_items} & \textbf{0.51} & \textbf{0.52} & \textbf{0.59} \\
 \caption{The signal $\times$ noise grid: Spearman $\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt; \texttt{rel\_dispersion} / \texttt{ckpt\_rel} is the SNR of \citet{heineman_signal_2025} as released) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold); then each noise alone. Same population and conventions as Table~\ref{tab:sur-corr-catalogue}; rows ordered by $|\rho|$ of the checkpoint-noise SNR with DA-size. The strongest of the 132 ratios is \texttt{dispersion\_shifted} / \texttt{kfold\_abs}, $\rho = 0.48$ for DA-size, \texttt{tukey} / \texttt{kfold\_rel}, $\rho = 0.51$ for DA-goal and \texttt{gini} / \texttt{kfold\_rel}, $\rho = 0.63$ for DA-ckpt.}
 \label{tab:sur-corr-snr}
 \end{table}
-% END generated: surrogate summary
+% END generated: surrogate-tables
