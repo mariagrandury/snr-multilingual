@@ -27,8 +27,9 @@ its definition in its own y label, the two line legends sit inside the axes
 (design axes on the left, proxy sizes in the middle, shared with the right),
 and the y axis is shared so the three panels are read against one scale.
 
-    rq2.png / .svg / .csv        the figure the paper embeds (the SVG is the vector
-                                 copy the paper build prefers)
+    rq2.png / .svg / .csv        the three panels over every task (the SVG is the
+                                 vector copy; the paper's fig:rq2 is currently
+                                 paper_ten_checkpoints.py's, plan/decision_accuracy.md #8)
     rq2_above_80.*               the same three panels over the cells reliable on
                                  BOTH axes at 0.80 (the `late` reduction)
     rq2_above_66_both.*          the same at 0.66 on the `median` reduction: one
@@ -55,6 +56,9 @@ and the y axis is shared so the three panels are read against one scale.
                                  population. The left panel therefore reads over the
                                  DA-size passers only, so its axes are not the same
                                  cells as the middle and right panels.
+
+Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_multi_axes.*`
+or `rq2_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
 
 This module reads CSVs and draws them. It derives nothing, so a change to how a
 panel's own figure is computed reaches rq2 the moment that script reruns — the
@@ -161,8 +165,8 @@ def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: 
 
 def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     """`axes` picks the pair set (rule 15): every panel reads the table drawn
-    over it, and the figure carries the same suffix, so `rq2.png` and
-    `rq2_one_axis.png` sit side by side over the same three definitions."""
+    over it, and the figure carries the same suffix, so `rq2_multi_axes.png` and
+    `rq2_mono_axis.png` sit side by side over the same three definitions."""
     a = AXES_SUFFIX[axes]
     suffix = (f"_{variant}" if variant else "") + a
     sz, ck, gl = RQ2_VARIANTS[variant]
@@ -188,7 +192,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
-                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+                   help="the pair set (rule 15); mono-axis writes the `_mono_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     for variant in RQ2_VARIANTS:

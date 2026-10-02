@@ -28,6 +28,9 @@ Two populations, two names — and which one supports inference:
                                      A cut on the very quantity drawn, so a line is
                                      biased up by construction; a conditional reading.
 
+Every name here carries the pair set's AXES_SUFFIX (rule 15): `_multi_axes`, or
+`_mono_axis` with --axes mono-axis, after the population.
+
     <stem>.png / .csv        2 × 4 panels, x = non-embedding parameters; every point
                              carries its task count; the pooled `all pairs` line its
                              leave-one-family-out band

@@ -64,20 +64,20 @@ def read(path: Path) -> pd.DataFrame:
 def da_ten_checkpoints() -> pd.DataFrame:
     """Per-task DA on the ten checkpoints, melted from rq02's live table.
 
-    `da_pooled_per_task.csv` carries both flavours side by side — `da_ref` /
+    `da_pooled_per_task_multi_axes.csv` carries both flavours side by side — `da_ref` /
     `n_pairs_ref` against the reference, `da_own` / `n_pairs_own` within the
     proxy's own size — so the two `kind` values of this table are one melt of
     it, not a second computation.
 
     NOT read: `ten_checkpoints.csv`, which this script used until 2026-09-21.
     Nothing has written that file since 2026-09-19 (`paper_ten_checkpoints.py`
-    writes rq2.csv/png/svg; no code path produces it), so it is an orphan
+    writes rq2_ten_checkpoints.csv/png/svg; no code path produces it), so it is an orphan
     under rule 14, and `documents/paper/figures/ten_checkpoints.csv` is a
     3.3 MB copy of the same orphan. Its gate column disagreed with
     `utils.passes_gate` in both directions on 320 rows, which is what an
     output frozen two days behind its code looks like.
     """
-    d = read(RQ02 / "da_pooled_per_task.csv")
+    d = read(RQ02 / "da_pooled_per_task_multi_axes.csv")
     SOURCES.append(RQ00 / "above_random_mask.csv")
     parts = []
     for kind, da, n in (("reference", "da_ref", "n_pairs_ref"),

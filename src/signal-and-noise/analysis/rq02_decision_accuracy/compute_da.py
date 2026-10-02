@@ -25,7 +25,7 @@ row per (task, axes):
 
   multi-axis — every pair of design variants: the convention to 2026-09-22, in
                which two thirds of the pairs move more than one axis at once.
-  mono-axis  — the pairs that move exactly one of L, arch, list, T, lang2, the
+  mono-axis  — the pairs that move exactly one of L, arch, list, T, lang2, en, the
                seed held. The decision a practitioner makes, and what upstream's
                "every pair" is by construction (DataDecide's recipes differ in
                the data mix alone).

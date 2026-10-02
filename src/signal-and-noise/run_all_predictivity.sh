@@ -143,7 +143,7 @@ run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # the paper's RQ2 figure: composes the three panels from the CSVs above, so it
 # runs LAST of the rq02 block — it derives nothing of its own
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
-# the mono-axis twins (`_one_axis`): the same three definitions over the pairs
+# the mono-axis twins (`_mono_axis`): the same three definitions over the pairs
 # that move ONE design axis, which is what upstream's "every pair" is by
 # construction. Same folder, so the two readings compare without opening two.
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --axes mono-axis
@@ -194,6 +194,9 @@ run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 # FineTasks' four selection criteria on the ladder, judged by DA-size, plus every surrogate against DA-size
 run $PY analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity
+# the surrogate catalogue (literature.md) and the truths (rq02's DA, tau, rho), then the validated search
+run $PY analysis/rq04_surrogates/catalogue.py --pool predictivity
+run $PY analysis/rq04_surrogates/search.py --pool predictivity
 
 pass "rq05 — design decisions"
 # rq05 needs the five interventions and its early-decision read follows from
