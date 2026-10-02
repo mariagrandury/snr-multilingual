@@ -123,7 +123,7 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results

@@ -757,7 +757,7 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 | acp_bench_mcq | rf | 7 | 0.00 | 0.71 | 5 / 0 | 0.0625 |
 | bbh_mcq | rf | 17 | 0.00 | 0.59 | 10 / 0 | 0.00195 |
 | belebele | rf | 105 | 0.10 | 0.82 | 76 / 1 | 1.03e-21 |
-| belebele | rfgm | 0 | nan | nan | 0 / 0 | — |
+| belebele | rfgm | 59 | 0.15 | 1.00 | 50 / 0 | 1.78e-15 |
 | commonsense_qa | rf | 1 | 0.00 | 1.00 | 1 / 0 | 1 |
 | cultural_bench_easy | rf | 19 | 0.05 | 0.37 | 7 / 1 | 0.0703 |
 | global_mmlu_full | rf | 37 | 0.00 | 0.95 | 35 / 0 | 5.82e-11 |
@@ -767,9 +767,9 @@ Per family at 1.7B: the share of languages above the gate for the original and t
 
 | population | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| every task | 0.38 | 0.41 | 0.44 | 0.47 | 0.51 | 0.55 |
+| every task | 0.41 | 0.43 | 0.46 | 0.49 | 0.53 | 0.57 |
 | originals only | 0.37 | 0.39 | 0.41 | 0.43 | 0.46 | 0.50 |
-| twins only | 0.42 | 0.48 | 0.56 | 0.62 | 0.70 | 0.77 |
+| twins only | 0.52 | 0.58 | 0.64 | 0.69 | 0.75 | 0.81 |
 
 ![The reformulations and the gate](reformulations_gate.png)
 <!-- END auto:reformulations-gate -->

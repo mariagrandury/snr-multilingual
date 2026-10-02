@@ -177,7 +177,7 @@ cd documents && npx slidev build                # the deck the job skipped
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 
-# 2d. all of 2b, unattended at 06:00 Europe/Zurich. Arm it once, on the login
+# 2d. 2b without --curves, unattended at 06:00 Europe/Zurich. Arm it once, on the login
 #     node you want it pinned to; it needs no session and no Claude.
 loginctl enable-linger                              # or it dies at logout
 systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd/user/

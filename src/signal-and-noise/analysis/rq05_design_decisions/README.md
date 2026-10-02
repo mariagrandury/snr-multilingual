@@ -28,10 +28,11 @@ settings L ∈ {1, 2, 8, 15, 30, 50, 100}, two intervention axes — model depth
 data scheme (A resource-ranked vs B diversity-first language sets, which differ
 only at L ∈ {8, 15, 30}) — and seed replicates on the ×3 cells. Every read uses
 each cell's final checkpoint (D = 100·N tokens, WSD-annealed). The reference at
-each L is the largest size trained there (1.7B where it exists, else 1B); a
-proxy is every smaller size. Diverged runs (the 90M rung, see
-[`plan/90M-rung-anomaly.md`](../../../../plan/90M-rung-anomaly.md)) and runs that
-have not reached their target are excluded by the loader.
+each L is the largest size trained there (1.7B at every L since 2026-09-26); a
+proxy is every smaller size. The diverged batch-504 90M and 175M runs (see
+[`plan/90M-rung-anomaly.md`](../../../../plan/90M-rung-anomaly.md)) are dropped
+at load in favour of their batch-84 / batch-168 retrains (rule 10), and runs
+that have not reached their target are excluded by the loader.
 
 Populations for the decision: per-language BPB on the languages both levels
 train (`bpb_trained`, the plan's primary outcome), on all 100 validation
@@ -59,7 +60,7 @@ per-language one).
   seed and checkpoint noise per cell in rq03 (`effect_vs_noise.py`).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
 ## Results
@@ -258,9 +259,9 @@ GitHub: [rq2_early_small.png](https://github.com/mariagrandury/snr-multilingual/
   (the loader's default): 5 late checkpoints span the final 25 % of a
   20-checkpoint run and 12.5 % of a 40-checkpoint one
   ([`plan/1b-models.md`](../../../../plan/1b-models.md)).
-- The reference is the largest size trained at both levels: 1.7B wherever it
-  exists, 1B where it does not yet (L15, and the temperature and
-  second-language decisions). The `reference_size` column names it per cell.
+- The reference is the largest size trained at both levels: 1.7B for every
+  intervention and L since the L15 AT3, ZH and ES 1.7B cells finished
+  (2026-09-26). The `reference_size` column names it per cell.
 
 <!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
 ## Per benchmark and per language
@@ -292,19 +293,22 @@ the reference per (intervention, L) the largest size trained at both levels,
 items the reference ties dropped)
 
 - Most decisions on the shared languages are not decisions at the reference:
-  the effect table above puts depth at 1.0 seed sds on BPB and the language
-  lists at 1.1, against temperature at 5.9 (benchmarks 1.1–1.4 for every
-  intervention). `da_lines_decided` keeps only the items whose reference |Δ|
+  the effect table above puts depth at 1.3 seed sds on BPB (median over L,
+  1.15–1.34) and the language lists at 1.6 (0.6–2.9), against temperature
+  at 5.4 (4.4–7.5); on the benchmarks every intervention sits at 1.0–1.6.
+  `da_lines_decided` keeps only the items whose reference |Δ|
   clears 2 sds of the two-run difference; on the benchmark population that
   restriction does not help — the benchmarks' failure is not noise at the
   reference — while on `bpb_macro` and the loss it leaves one item per L,
   a 0/1 reading.
-- Depth is a vanishing advantage, not a crossover (`depth_crossover.csv`):
-  deep beats shallow by 4.5–11.0 difference sds at 175M, by |z| ≤ 0.44 at
-  350M, shallow is ahead by ≤ 1.16 sds at 600M, and deep by 0.37–0.89 at 1B
-  and 0.66–0.80 at 1.7B — all inside noise from 350M on. The depth DA of
-  1.00 / 0.49 / 0.00 / 0.95 at 175M / 350M / 600M / 1B on BPB reads a
-  reference that has no real preference.
+- Depth is a vanishing advantage, not a crossover (`depth_crossover.csv`,
+  the batch-84 / batch-168 retrains): deep beats shallow by 1.9–2.1
+  difference sds at 90M and 1.1–1.6 at 175M, by |z| ≤ 0.51 at 350M, shallow
+  is ahead by ≤ 1.46 sds at 600M, and deep by 0.48–1.03 at 1B and 0.81–0.95
+  at 1.7B — all inside noise from 350M on. The depth DA on the trained
+  languages' BPB — 0.88–1.00 at 90M, 0.82–1.00 at 175M, 0.02–0.85 at 350M,
+  0.00–0.08 at 600M, 0.47–0.92 at 1B over L8–L50 — reads a reference that
+  has no real preference.
 - On every language's BPB (`bpb_all`, the languages only one level trains
   included) the decided items are read well, but that population is
   dominated by "the model that saw the language wins" —

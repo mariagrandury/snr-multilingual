@@ -70,7 +70,7 @@ tasks cover all three.
   next to the ranking they test.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16** unless a section names an earlier one.
+**2026-09-30 23:54** unless a section names an earlier one.
 
 <!-- BEGIN auto:effect-vs-noise (effect_vs_noise.py --pool predictivity_all) -->
 ## Intervention effect against noise
@@ -207,10 +207,12 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
       split holds one pair — the two seeds of the same cell — and its
       "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
       The median task has one pair.
-      *Implications.* The per-language agreement numbers (29 % / 57 %) and the
-      low DA-ckpt ρ (0.07) are dominated by those one-pair tasks, so "the
+      *Implications.* The per-language agreement numbers (0 % / 0 % at the
+      family level on the 2026-09-30 tables; 29 % / 57 % when this was
+      written) and the unstable DA-size ρ (−0.28 now, 0.75 then, against
+      0.76 for DA-ckpt) are dominated by those one-pair tasks, so "the
       ranking does not survive a seed swap" may say more about the holdout
-      than about the definitions; the DA-size ρ (0.75) leans on English + BPB.
+      than about the definitions.
       Nothing in the main `predictivity` tables is affected.
       *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
       check, but English + BPB only. (B) treat replicate seeds as replicates,

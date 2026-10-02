@@ -20,7 +20,7 @@
 ## Experimental setup
 
 Per-language BPB of the plan grid (deep, scheme A, seed 1904) at the final
-checkpoint, from 175M up, at every L with at least four sizes (three proxy
+checkpoint, from 90M up, at every L with at least four sizes (three proxy
 rungs and a reference, the largest size at that L). Every one of the 100
 validation languages is a series; "trained" means the language is in the
 cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
@@ -41,7 +41,7 @@ cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
   (the progress report's `plot_bpb` on the analysis' cells).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
 ## Results
@@ -107,9 +107,9 @@ neither trains even the script; the last two groups are the transfer test)
 - Script is a coarse proxy for relatedness (Latin covers Welsh and Vietnamese
   alike), and at L1 only English is trained, so "script trained" is every
   Latin-script language.
-- `transfer_da_lines.csv` is empty on the 2026-09-23 06:16 tables (the L8 and
+- `transfer_da_lines.csv` is still empty on the 2026-09-30 tables (the L8 and
   L30 list decisions against 1.7B do not reach the three items a panel needs
-  at this snapshot), so the per-size numbers of the earlier snapshot
+  at this snapshot either), so the per-size numbers of the earlier snapshot
   (script-trained languages read at 0.61–0.77 from 175M to 1B, unseen scripts
   0.33–0.73, neither clearing 0.75 below 1B) are not re-read here; they are
   quoted again once the figure draws.
@@ -169,10 +169,11 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 **Key findings**
 
 - English alone is the worst single-language proxy of the multilingual
-  decision: pooled over twelve benchmarks at 1B English reads 0.59 against
-  0.61–0.67 for the other panel languages (de 0.67, ru 0.65, zh 0.64, it 0.64,
-  es 0.62, fr 0.61; ja 0.54) and 0.66 for the panel macro; at 600M English is
-  again the lowest at 0.60.
+  decision: pooled over the panel's benchmarks at 1B English reads 0.61
+  against 0.62–0.67 for the other panel languages (de 0.67, it 0.65, zh 0.65,
+  ru 0.64, es 0.63, fr 0.62; ja 0.55) and 0.67 for the panel macro; at 600M
+  English (0.60) sits with Japanese and Chinese (0.56) at the bottom, below
+  the macro's 0.66.
 - Per benchmark the proxy's macro reaches 0.93 on hellaswag, 0.89 on LAMBADA
   and INCLUDE-rfgm and 0.81 on Global-MMLU-rf at 1B, where English alone reads
   0.87, 0.78, — and 0.69; on `multiblimp` English reads 0.40 against 0.68 for

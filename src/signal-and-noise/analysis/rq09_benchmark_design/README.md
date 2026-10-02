@@ -67,10 +67,18 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `hellaswag_de/fr` were NaN at the reference when this was written and excluded.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**. FineTasks' selection criteria, judged on this ladder,
+**2026-09-30 23:54**. FineTasks' selection criteria, judged on this ladder,
 moved to [rq04](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)
 on 2026-09-23 (`finetasks_criteria.py` and its `finetasks_*` outputs; the
 copies left under `pretraining/predictivity/` here are stale).
+
+**Families without metadata are left out.** `load_per_task_snr` keeps a family only if it
+has a `FAMILY_META` entry, so the benchmarks added to `auto` since (as of 2026-09-25:
+`acp_bench_*`, `bbh_*`, `blend_sample`, `commonsense_qa`, `cultural_bench_*`, `global_piqa`,
+`include_v2_*`, `lambada_openai_mt`, `mathqa`, `mmlu`, `openbookqa`, `toxigen`,
+`truthfulqa_mc2` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy
+and mmlu) are not in any rq09 table. Tagging them in `data_info.md` and `FAMILY_META`
+brings them in.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results

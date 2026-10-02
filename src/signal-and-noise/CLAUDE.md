@@ -130,11 +130,14 @@ pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
 `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
-rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 → rq05 (+ rq03's
+rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
+`analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
+proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
+against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
-reference, the only reader of `above_reference=True`; header-only tables
-until the 3B evaluations land) → `report_figures/make_figures.py` →
+reference, the only reader of `above_reference=True`; filled since the
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
 generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
@@ -151,21 +154,20 @@ per core and the login node's 1000-pid slice kills the process. Scripts that
 read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
 `reliable_tasks.py` to have run on the current DA tables first.
 
-**What the tables say (2026-09-23), so a session does not re-derive it.**
-The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with the auto blocks. Three facts every rq02 reading must
-respect (numbers of the 06:16 snapshot; every snapshot moves them, re-read the CSVs): (1) on the full gated population DA-size is 0.53 (175M) → 0.56 (1B),
-jackknife ±0.03 — the 0.60 → 0.76 of the `above_66_*` figures is a cut on DA
+**What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
+The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with Key findings and Follow-ups after each; every snapshot moves the numbers, so re-read the CSVs: (1) on the full gated population DA-size is 0.54 (90M) → 0.56 (1B),
+jackknife ±0.02 — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
 itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
 `above_66_ckpt`, `above_66_either`) are the ones to quote, never
-`above_66_both`. (2) DA-ckpt over design pairs (0.83 at 90 % of a 175M run) is
-within 0.01–0.03 of the seed null (two seeds of ONE design, 0.81): it measures
+`above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
+sits near the seed null (two seeds of ONE design reach up to 0.75): it measures
 within-run persistence, and a checkpoint-axis figure is read against
 `seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
-statistic (r ≥ 0.961 over 1,286 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
-exactly), and the tie convention moves the reliable-task verdict on 2.5–6 % of
+statistic (r ≥ 0.96 over 1,883 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 2–7 % of
 cells. Restricting to the L8 languages, to common tasks, to one language or
 one language tier does not order the per-L lines, and a language's token
-share does not predict its benchmarks' reliability (ρ −0.07–0.20). The twins
+share does not predict its benchmarks' reliability (ρ 0.02–0.27). The twins
 pass the gate (McNemar p < 0.001) but rank no better than the originals
 (`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
 and without them); English alone is the worst single-language proxy of the
@@ -242,8 +244,7 @@ the gate and the output folder stay `predictivity`; the `axes` column of
 
 The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
-largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
-source data and are the one labelled exception), `da_early_fracs` the nine
+largest rung DataDecide has; L2 ZH and ES reach 1.7B too since 2026-09-26), `da_early_fracs` the nine
 evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,
 `min_pairs` 3, `min_lang_tasks` 3 (lowered from 5 on 2026-09-20: it was the
 binding constraint on rq04's per-language panel, 6 languages against 17, and

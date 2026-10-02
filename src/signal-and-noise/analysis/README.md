@@ -9,7 +9,8 @@ research questions in four themes, one folder each; `rqNN_*/README.md` is the
 single document of its question (the README rules at the end of
 [RULES.md](RULES.md)), and the outputs live under `<rq>/<stage>/<pool>/`.
 Every hand-written number in these READMEs comes from the ladder-report
-snapshot **2026-09-23 06:16**, the one the tables on disk were built from; a
+snapshot **2026-09-30 23:54** (every cell of the grid evaluated except FWEB
+and the 3B L30/L50 rungs), the one the tables on disk were built from; a
 refresh regenerates the auto blocks and moves them.
 
 ## The questions
@@ -117,7 +118,7 @@ step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `language_tier.py`, `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per
 pool, `compare_seed_splits.py`, `panels.py`) → rq04 (`analyze_snr_variants.py`,
 `snr_definition_postprocess.py`, `analyze.py`, `finetasks_criteria.py`,
-`panels.py`) → rq05 (`analyze.py`, `early_decision.py`, `transformations.py`,
+`panels.py`, `catalogue.py` + `search.py`) → rq05 (`analyze.py`, `early_decision.py`, `transformations.py`,
 `panels.py`; then rq03's `effect_vs_noise.py`, which reads rq05's table) →
 rq06 (`analyze.py`, `panels.py`, `language_panel.py`) → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung) →

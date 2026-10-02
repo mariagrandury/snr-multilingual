@@ -11,10 +11,11 @@ were trained at 3B for it (deep, L ∈ {8, 15}, schemes A and B;
 `build_snr_pool(above_reference=True)` and the only folder the rule-10 checker
 exempts (`check_rules.EXEMPT`).
 
-Snapshot: the ladder report of **2026-09-23 06:16** holds no 3B evaluation
-yet; the tables below are written with their headers and the figure says so.
-The driver (`run_all_predictivity.sh`, last RQ block) reruns the step every
-pass, so the block fills in when the evaluations land.
+Snapshot: the ladder report of **2026-09-30 23:54** holds the four 3B cells'
+evaluations (L8 and L15, schemes A and B, to their 145,200-step target), so
+the 3B block below is filled in; the 3B L30 and L50 cells opened on
+2026-09-30 are still training and enter on a later pass. The driver
+(`run_all_predictivity.sh`, last RQ block) reruns the step every pass.
 
 ## Setup
 
@@ -65,7 +66,19 @@ pass, so the block fills in when the evaluations land.
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
 <!-- END auto:above-reference-3B -->
 
-Key findings: none until the 3B evaluations land.
+Key findings (`above_reference_3B.csv`, the 2026-09-30 snapshot):
+
+- One rung above the reference the answer is the same coin flip: DA-size to
+  3B reads 0.51 / 0.49 / 0.46 / 0.51 / 0.49 at 90M / 175M / 350M / 600M / 1B
+  over 63–83 gated tasks (multi-axis; mono-axis 0.50 / 0.48 / 0.47 / 0.52 /
+  0.49), against 0.47 / 0.49 / 0.47 / 0.44 / 0.48 for the same families read
+  to 1.7B — nothing moves by more than 0.07, and no proxy clears 0.55.
+- The 1.7B reference itself predicts the 3B ranking at 0.44 (multi-axis, 93
+  tasks; 0.43 mono-axis): on these four families the reference is no better a
+  proxy of the next rung than the smaller sizes are, which is what the
+  preview below already said about them (their 1.7B ranking is unresolved).
+- DA-goal along the run (panel b) stays within 0.35–0.55 at every proxy size
+  and fraction, the early checkpoints included.
 
 Follow-ups:
 
@@ -108,17 +121,17 @@ be read against the day it fills in.
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
 
-Key findings (preview, 06:16 snapshot):
+Key findings (preview, the 2026-09-30 snapshot):
 
 - On these four families alone, DA-size to 1.7B sits at a coin flip from every
-  proxy size (multi-axis 0.48 / 0.48 / 0.43 / 0.49 at 175M / 350M / 600M / 1B
-  over 44–76 gated tasks; mono-axis 0.49 / 0.48 / 0.44 / 0.49), against
-  0.53 → 0.56 on the full 23-family population (rq02, figure 1). Four
+  proxy size (multi-axis 0.47 / 0.49 / 0.47 / 0.44 / 0.48 at 90M / 175M /
+  350M / 600M / 1B over 56–82 gated tasks; mono-axis 0.48 / 0.47 / 0.46 /
+  0.44 / 0.48), against the full population's reading in rq02, figure 1. Four
   families give six pairs, three of them between the two language lists at
   one L — decisions rq02 already reads at chance — so the 3B question starts
   from a population whose 1.7B ranking the ladder does not resolve.
 - DA-goal along the run (panel b) never leaves 0.40–0.60 for any proxy size.
-- The gated task count is 44–76 because the four families train 8 or 15
+- The gated task count is 53–82 because the four families train 8 or 15
   languages (rule 2): the 3B answer will be about those languages' tasks.
 
 Follow-ups: see above; and consider whether the rung's design set should be
