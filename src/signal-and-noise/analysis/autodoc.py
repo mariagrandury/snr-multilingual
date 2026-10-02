@@ -49,7 +49,9 @@ def replace_block(path: Path, key: str, body: str, generator: str = "") -> Path:
     begin = f"<!-- BEGIN auto:{key}{note} -->"
     end = f"<!-- END auto:{key} -->"
     block = f"{begin}\n{body.rstrip()}\n{end}"
-    pat = re.compile(rf"<!-- BEGIN auto:{re.escape(key)}.*?-->.*?<!-- END auto:{re.escape(key)} -->",
+    # the BEGIN marker is matched whole: `auto:KEY.*?-->` also matched a block whose key
+    # merely starts with KEY (`scale-convergence-L8`) and swallowed everything up to KEY's END
+    pat = re.compile(rf"<!-- BEGIN auto:{re.escape(key)}(?: \([^\n]*?\))? -->.*?<!-- END auto:{re.escape(key)} -->",
                      flags=re.DOTALL)
     text = path.read_text()
     if pat.search(text):

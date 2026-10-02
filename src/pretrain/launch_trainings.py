@@ -1496,7 +1496,7 @@ def main() -> None:
             # settings) must not feed a cell that draws more than it holds:
             # Megatron silently repeats it. fineweb_source() reads such a cell's
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
-            run_tokens = target * (args.gbs or GBS) * SEQ_LEN
+            run_tokens = target * gbs * SEQ_LEN        # `target` is already at the rung's own batch
             fineweb_dir, short = fineweb_source(c, args.data_dir, run_tokens)
             # The exception is the registry's or the flag's, never a wildcard:
             # a filter that happens to match several undersized cells must not

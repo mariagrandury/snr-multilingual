@@ -1,0 +1,62 @@
+rq03_noise_and_snr	75	effect-vs-noise	effect_vs_noise.py --pool predictivity_all
+rq03_noise_and_snr	151	panels	panels.py --pool predictivity
+rq03_noise_and_snr	175	seed-holdout	compare_seed_splits.py --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
+rq01_scaling_predictability	13	highlight	analyze.py --pool predictivity_all
+rq01_scaling_predictability	80	regimes	regimes.py --pool predictivity_all
+rq01_scaling_predictability	189	scaling-law-error	scaling_law_error.py --pool predictivity_all
+rq01_scaling_predictability	240	results	analyze.py --pool predictivity_all
+rq01_scaling_predictability	282	panels	panels.py --pool predictivity_all
+rq01_scaling_predictability	402	tokens-seen	tokens_seen.py --pool predictivity_all
+rq04_surrogates	16	highlight	snr_definition_postprocess.py --pool predictivity
+rq04_surrogates	63	results	snr_definition_postprocess.py --pool predictivity
+rq04_surrogates	181	surrogates	analyze.py --pool predictivity
+rq04_surrogates	235	finetasks-criteria	finetasks_criteria.py --pool predictivity
+rq04_surrogates	329	panels	panels.py --pool predictivity
+rq04_surrogates	435	catalogue	search.py --pool predictivity
+rq09_benchmark_design	9	highlight	analyze.py --pool predictivity
+rq09_benchmark_design	83	results	analyze.py --pool predictivity
+rq09_benchmark_design	132	panels	panels.py --pool predictivity
+rq00_gate_and_curves	13	highlight	run_apertus.py --pool predictivity
+rq00_gate_and_curves	58	above-random-example	above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
+rq00_gate_and_curves	94	panels	panels.py --pool predictivity
+rq00_gate_and_curves	184	results	run_apertus.py --pool predictivity
+rq00_gate_and_curves	324	above-random-external	above_random_external.py --pool predictivity
+rq00_gate_and_curves	394	curves	curves.py --pool predictivity_all
+rq08_subset_selection	10	highlight	smooth_subtasks.py --pool predictivity
+rq08_subset_selection	69	results	smooth_subtasks.py --pool predictivity
+rq08_subset_selection	100	panels	panels.py --pool predictivity
+rq05_design_decisions	13	highlight	analyze.py --pool predictivity_all
+rq05_design_decisions	65	results	analyze.py --pool predictivity_all
+rq05_design_decisions	191	early-decision	early_decision.py --pool predictivity_all
+rq05_design_decisions	266	panels	panels.py --pool predictivity_all
+rq05_design_decisions	344	transformations	transformations.py --pool predictivity_all
+rq00_task_reformulation	641	rf-compare	analysis/rq00_task_reformulation/compare.py
+rq00_task_reformulation	659	rf-compare-probe	analysis/rq00_task_reformulation/compare.py --tag probe
+rq00_task_reformulation	679	probe-survivors	analysis/rq00_task_reformulation/probe_survivors.py
+rq00_task_reformulation	771	reformulations-gate	reformulations_gate.py --pool predictivity
+rq02_decision_accuracy	12	highlight	da_per_benchmark.py --pool predictivity
+rq02_decision_accuracy	256	da-explainer	da_explainer.py --pool predictivity
+rq02_decision_accuracy	288	scale-convergence	scale_convergence.py
+rq02_decision_accuracy	329	scale-convergence-transformation-panels	scale_convergence.py --by transformation
+rq02_decision_accuracy	519	reliable-tasks	reliable_tasks.py --pool predictivity
+rq02_decision_accuracy	617	results	da_per_benchmark.py --pool predictivity
+rq02_decision_accuracy	646	early-small	early_small.py --pool predictivity
+rq02_decision_accuracy	698	by-L	by_L.py --pool predictivity
+rq02_decision_accuracy	731	early-small-by-transformation	by_L.py --pool predictivity --by transformation
+rq02_decision_accuracy	849	scale-convergence-L8	scale_convergence.py --by L --langs L8
+rq02_decision_accuracy	867	scale-convergence-L8-common	scale_convergence.py --by L --langs L8 --common-tasks
+rq02_decision_accuracy	934	scale-convergence-by-language	by_language.py --pool predictivity
+rq02_decision_accuracy	990	language-tier	language_tier.py --pool predictivity
+rq02_decision_accuracy	1043	seed-uncertainty	seed_uncertainty.py --pool predictivity
+rq02_decision_accuracy	1097	agreement-measures	agreement.py --pool predictivity
+rq02_decision_accuracy	1191	cross-task	cross_task.py --pool predictivity
+rq02_decision_accuracy	1267	scaling-vs-ranking	scaling_vs_ranking.py --pool predictivity
+rq02_decision_accuracy	1300	public-ladders	public_ladders.py --pool predictivity
+rq06_language_transfer	12	highlight	analyze.py --pool predictivity_all
+rq06_language_transfer	46	results	analyze.py --pool predictivity_all
+rq06_language_transfer	84	panels	panels.py --pool predictivity_all
+rq06_language_transfer	142	language-panel	language_panel.py --pool predictivity
+rq07_external_frameworks	17	highlight	analyze.py --pool predictivity
+rq07_external_frameworks	128	results	analyze.py --pool predictivity
+rq10_size_generalisation	42	above-reference-3B	above_reference.py --pool predictivity --reference 3B
+rq10_size_generalisation	99	above-reference-1.7B-design3B	above_reference.py --pool predictivity --reference 1.7B --design 3B

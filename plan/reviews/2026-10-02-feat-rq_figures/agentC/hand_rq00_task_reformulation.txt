@@ -1,0 +1,669 @@
+1: # Task reformulation for the auto evals
+2: 
+3: Status 2026-09-18. Companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
+4: (what we evaluate on) and [rq00_gate_and_curves](../rq00_gate_and_curves/) (the chance gate). The
+5: reference implementation is [lighteval_reference.py](lighteval_reference.py)
+6: (HuggingFace's FineWeb-edu ablation tasks) — it is a *reference*: everything
+7: here runs inside the lm-eval harness we already use.
+8: 
+9: ## Why
+10: 
+11: Three quarters of the auto suite is at chance at these sizes: 113 of 461
+12: gated tasks clear chance at any size, and only 21 of 252 four-option tasks;
+13: `global_mmlu_full`, `global_piqa_*` and `truthfulqa-multi_mc1` never do.
+14: Base models at 90M–1.7B do not pick up the "answer with a letter" convention,
+15: so a lettered multiple-choice prompt measures the convention, not the
+16: knowledge. The lighteval file's fix for MMLU: no letters, no few-shot, the
+17: full answer string scored as the continuation after `Answer:`, `acc_norm`
+18: (length-normalised) as the metric.
+19: 
+20: ## What the harness already does per family
+21: 
+22: 467 auto tasks, all zero-shot (`NUM_FEWSHOT` is never set), 1.19M questions.
+23: Counts read from the offline cache (`$HF_HOME/datasets/*/dataset_info.json`).
+24: 
+25: | family | tasks | prompt format in the harness | questions | tok/q | Mtok |
+26: |---|---:|---|---:|---:|---:|
+27: | belebele | 105 | **letters A–D** (passage + question + 4 options) | 94,500 | 300 | 28.4 |
+28: | global_mmlu_full | 37 | **letters A–D** (57 subject subtasks over one 14,042-row split) | 519,554 | 190 | 98.7 |
+29: | include_base_44 | 43 | **letters A–D** | 22,100 | 115 | 2.5 |
+30: | arc | 33 | cloze (answer strings) | 39,200 | 120 | 4.7 |
+31: | hellaswag | 31 | cloze (4 endings) | 280,000 | 400 | 112 |
+32: | global_piqa | 95 | cloze (2/4 solutions) | 9,773 | 185 | 1.8 |
+33: | xnli | 18 | cloze, templated `…, right? Yes/Also/No, …` | 49,859 | 70 | 3.5 |
+34: | paws | 10 | cloze, templated `…, right? Yes/No, …` | 20,000 | 75 | 1.5 |
+35: | xstorycloze | 13 | cloze (2 endings) | 19,643 | 140 | 2.75 |
+36: | xcopa | 11 | cloze (2 clauses) | 5,500 | 40 | 0.22 |
+37: | truthfulqa-multi_mc1 | 3 | cloze (mc1 strings) | 2,451 | 100 | 0.25 |
+38: | xwinograd | 6 | two contexts, shared continuation | 4,449 | 40 | 0.18 |
+39: | multiblimp | 57 | minimal pair, no context | 94,450 | 140 | 13.2 |
+40: | lambada_openai_mt | 5 | last-word log-likelihood | 25,765 | 100 | 2.6 |
+41: 
+42: Only the first three families are letter-format; that is the whole scope of
+43: the programmatic reformulation. arc and hellaswag are already cloze and still
+44: mostly at chance, so a prompt change cannot help them — only a rewrite of the
+45: items themselves (below) can. Two asides the survey turned up: `xnli` for the
+46: 15 `facebook/xnli` languages is scored on the 2,490-row *validation* split
+47: (the common YAML sets no `test_split`) while `xnli_eu`/`xnli_gl` use their
+48: 5,010-row test split, and 10 of the 57 `multiblimp` tasks have under 200
+49: items (`guj` 7, `ben` 21, `gle` 28).
+50: 
+51: ## Tier 1 — programmatic reformulation (implemented)
+52: 
+53: [`src/evals/scripts/make_rf_tasks.py`](../../../evals/scripts/make_rf_tasks.py) writes one self-contained harness YAML
+54: per original task under `src/evals/tasks/rf/<family>/rf_<task>.yaml` — same
+55: `dataset_path`, `dataset_name` and split, read from the pinned harness
+56: checkout — with:
+57: 
+58: | family | `doc_to_text` | `doc_to_choice` |
+59: |---|---|---|
+60: | belebele | `{passage}\nQuestion: {question}\nAnswer:` | the four `mc_answer*` strings |
+61: | global_mmlu_full | `The following are questions about {subject}.\nQuestion: {question}\nAnswer:` | `option_a..d` |
+62: | include_base_44 | `Question: {question}\nAnswer:` | `option_a..d` |
+63: 
+64: `output_type: multiple_choice`, `num_fewshot: 0`, metrics `acc` and
+65: `acc_norm`. The global_mmlu and include twins are one task per language over
+66: the whole split rather than a group of subject/domain subtasks — the report
+67: aggregates to the family anyway, and a 57-way group is what made the
+68: originals slow.
+69: 
+70: Plumbing, all keyed on the new task names so originals and twins coexist:
+71: 
+72: - `configs/tasks.json`: one entry per twin (`language`, `benchmark:
+73:   rf_<family>`, `n_options: 4`, `metric: acc_norm`), group `auto_rf`,
+74:   `benchmarks` metadata. The `rf_` **prefix** is deliberate:
+75:   `tasks_for_benchmarks` matches `<benchmark>_…`, so a `_rf` suffix would be
+76:   selected by the original family. Registered entries are what keep the
+77:   analysis from folding `rf_belebele_eng_Latn` into `belebele` (`results_io.
+78:   aggregate_parents`, `analysis/utils._is_language_aggregate`) and what gives
+79:   `ladder_report` its `chance` column.
+80: - `evaluate.sbatch`: `HARNESS_INCLUDE_PATH` → `eval_worker.py --include_path`
+81:   (already accepted, never set before). The pinned wheel is untouched.
+82: - `auto_evals_cscs.py --reformulated`: the `auto_rf` group instead of `auto`,
+83:   jobs named `eval-<cell>-iter<N>-rf` (the original and the rf set of one
+84:   checkpoint are different work — neither watcher may read the other's job
+85:   as its own); the include path is always exported. Per-task idempotency, walltime sizing,
+86:   hold-backs and the W&B push need nothing — the metric override makes the
+87:   series `rf_<task>/acc_norm`.
+88: - Per cell: L1 2 · L2 5 · L8 24 · L15 49 · L30 84 · L50 124 rf tasks (185 in
+89:   every language).
+90: 
+91: ### First evals to launch
+92: 
+93: The question is whether the reformulation moves scores off the chance line
+94: at all, and whether it opens a gap between sizes. Answer it on final
+95: checkpoints before touching the grid:
+96: 
+97: 1. **Two checkpoints, one job each**: the strongest model and a small one at
+98:    the same setting — `lm-1.7B-L8-deep-seed1904` and `lm-175M-L8-deep-seed1904`,
+99:    final iter plus the noise window (`--every 1000` coarsens the tenths away, but the 85/90/95/100 % points are added unconditionally, so five saves are due, not one). Both are
+100:    ALL_LANGUAGES runs, so every rf task runs (185) and the comparison covers
+101:    trained and untrained languages. Read: per family and language, rf
+102:    `acc_norm` vs the original `acc` on the same checkpoint (both on disk),
+103:    against chance 0.25 + 0.05. If the 1.7B stays at chance, stop: the
+104:    families need Tier 2, not a prompt change.
+105: 2. **The L8 size ladder finals** (90M … 1.7B, 6 jobs): does rf order the
+106:    sizes, and from which size does it clear the gate?
+107: 3. **The deep-A-seed1904 ladder** at the normal `--every 2` cadence, under
+108:    `--watch`, throttled with `--max-submit`.
+109: 
+110: ```bash
+111: cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
+112: # 1. dry-run, then two jobs
+113: python3.11 auto_evals_cscs.py --reformulated --name lm-1.7B-L8-deep-seed1904 --every 1000 --dry-run
+114: python3.11 auto_evals_cscs.py --reformulated --name lm-1.7B-L8-deep-seed1904 --every 1000
+115: python3.11 auto_evals_cscs.py --reformulated --name lm-175M-L8-deep-seed1904 --every 1000
+116: # 2. the L8 finals of every size
+117: for s in 90M 175M 350M 600M 1B 1.7B; do
+118:   python3.11 auto_evals_cscs.py --reformulated --name lm-$s-L8-deep-seed1904 --every 1000
+119: done
+120: # 3. the whole seed-1904 deep ladder, every 2nd checkpoint
+121: python3.11 auto_evals_cscs.py --reformulated --arch deep --scheme A --seed 1904 --max-submit 20 --watch 1800
+122: ```
+123: 
+124: The walltime estimate is fitted on the original task mix; the rf
+125: global_mmlu tasks score four answer strings per question over 14k questions,
+126: so the first jobs may hit their limit. That costs only the tasks in flight:
+127: the next pass resubmits what is missing, sized to it.
+128: 
+129: ### Which metric to compare
+130: 
+131: The originals ask for a letter, so every option is one token of the same
+132: length (" A" … " D") and byte-length normalisation cannot change the ranking:
+133: their `acc` and `acc_norm` are identical, and comparing the rf `acc_norm`
+134: with the original `acc` is acc_norm against acc_norm. The rf tasks are the
+135: only place the two differ — the answers have different lengths — and
+136: `acc_norm` is the standard choice for cloze scoring (the lighteval reference
+137: scores `loglikelihood_acc_norm`). It is the metric the pipeline carries for
+138: the rf tasks: tasks.json's per-task `metric`, honoured by `results_io.flatten`
+139: (W&B) and `ladder_report._primary` (the report), so both show the same number.
+140: `compare.py` reads that `primary_score` from the ladder report through the
+141: rq00 gate (`above_random.scores_and_mask` on the `predictivity` pool, deep
+142: scheme-A cells): so the table below is `original acc → rf acc_norm`, and it
+143: moves only after `ladder_report.py --plot --publish --push-hf` has picked up
+144: new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them. The conclusion
+145: does not depend on the metric — in the pilot at 1.7B in the trained
+146: languages belebele gains +0.14 on acc_norm and +0.16 on acc, Global-MMLU
+147: +0.08 and +0.06 (the per-task `acc` stays in the eval logs and W&B).
+148: 
+149: ### Pilot results (2026-09-18, final checkpoints, all 185 rf tasks)
+150: 
+151: | family | 175M rf `acc_norm` | 175M orig `acc` | 1.7B rf `acc_norm` | 1.7B orig `acc` | tasks > 0.30 at 1.7B (rf / orig) |
+152: |---|---:|---:|---:|---:|---:|
+153: | belebele (105) | 0.277 | 0.232 | 0.303 | 0.238 | 46 / 0 |
+154: | global_mmlu_full (37) | 0.255 | 0.245 | 0.274 | 0.247 | 6 / 0 |
+155: | include_base_44 (43) | 0.259 | 0.259 | 0.279 | 0.249 | 11 / 0 |
+156: 
+157: The reformulation moves the letter families off the chance line at 1.7B and
+158: opens the size gap the originals never showed: belebele 0.30 vs 0.24, Global-
+159: MMLU in the trained languages en 0.37 · de/es/fr 0.32 · it 0.31 · ja 0.30 · zh
+160: 0.32 (untrained languages stay at 0.25), INCLUDE fr 0.46 · es/it 0.38 · jp 0.35
+161: · de/bg 0.30. At 175M only belebele moves (+0.045); the knowledge families
+162: stay at chance, as they should for a 175M model. Cost: the rf Global-MMLU
+163: tasks take 2.7–3.3 min per worker-task (one 14k-row task per language) against
+164: 0.1–0.3 for belebele and INCLUDE, so the watcher weights them ×6 in the
+165: walltime. Two data faults surfaced and are fixed: 37 Global-MMLU rows and one
+166: INCLUDE row with a `None`/blank option (dropped by `process_docs`), and the
+167: cross-user `datasets` lock files in the shared cache (see
+168: `src/evals/CLAUDE.md`, "lock files"). Steps 2 and 3 were launched the same
+169: day (`eval-<cell>-iter<N>-rf` jobs).
+170: 
+171: ## Tier 2 — rewriting the items with Gemini (`rfgm_*`, driver built, data not yet produced)
+172: 
+173: Tier 1 only drops the letters. Here the item itself changes: Gemini turns
+174: the question into one declarative sentence that stops where the answer goes
+175: (a stem) and the four options into short, parallel continuations, in the
+176: item's own language — the cloze formulation the FineWeb-2 / FineTasks work
+177: found readable at small scale. Decided 2026-09-19: the three letter families
+178: in all their languages (185 tasks, ~636k items), `gemini-3.8-flash` through
+179: the Batch API, evaluated on the deep scheme-A seed-1904 ladder at every
+180: evaluated checkpoint (the `rf_*` coverage), so original / rf / rfgm are
+181: compared on identical models. The families that are cloze already (arc,
+182: hellaswag, global_piqa) are not rewritten.
+183: 
+184: The set is a third family prefix — `rfgm_` — on the exact `rf_` plumbing:
+185: [`rewrite_items_gemini.py`](../../../evals/scripts/rewrite_items_gemini.py)
+186: produces one JSONL per task under
+187: `/capstor/store/cscs/swissai/infra01/msnr/msnr-harness/rf-data/rfgm/` (never
+188: pushed publicly: gold labels), `make_rf_tasks.py --set rfgm` writes one
+189: `dataset_path: json` YAML per task under `src/evals/tasks/rfgm/` and the
+190: tasks.json entries (`benchmark: rfgm_<family>`, `metric: acc_norm`, group
+191: `auto_rfgm`), `auto_evals_cscs.py --reformulated rfgm` evaluates them with
+192: `-rfgm` job names, and `compare.py` draws them next to `rf` (SETS).
+193: 
+194: Row schema of `<task>.jsonl` (`text`, `choices`, `gold` are what the YAML
+195: reads by column name; the rest is for audits):
+196: 
+197: ```json
+198: {"id": 17, "text": "<passage>\n<stem>", "choices": ["…", "…", "…", "…"], "gold": 2,
+199:  "stem": "…", "context": "<passage or ''>", "subject": "anatomy|''",
+200:  "orig_question": "…", "orig_choices": ["…"], "lang": "deu_Latn"}
+201: ```
+202: 
+203: `text` is the full prompt: the belebele passage verbatim + newline + stem;
+204: Global-MMLU / INCLUDE the stem only. Gold keeps the original position. The
+205: stem carries no trailing space — the harness appends `" " + choice` itself.
+206: 
+207: ### Step by step
+208: 
+209: **0. Once — Application Default Credentials.** We authenticate to Vertex AI
+210: with ADC, not an API key: the Generative Language API refuses keys under an
+211: organisation policy that blocks them, which is what `API_KEY_INVALID` on a
+212: well-formed key means. ADC uses your own Google identity and the SDK picks
+213: it up with no secret in the repo. Run Google's
+214: [setup script](https://storage.googleapis.com/cloud-samples-data/adc/setup_adc.sh)
+215: — it installs the gcloud CLI, asks for your project ID, runs the login,
+216: sets the quota project and enables `aiplatform.googleapis.com` — or do the
+217: same by hand:
+218: 
+219: ```bash
+220: curl -sSL https://sdk.cloud.google.com | bash && exec -l $SHELL   # gcloud, into $HOME
+221: gcloud auth application-default login --no-browser                # prints a command to run on your laptop
+222: gcloud auth application-default set-quota-project <project-id>
+223: ```
+224: 
+225: **Run the login on the login node, not on your laptop.** ADC is a file,
+226: `~/.config/gcloud/application_default_credentials.json`, and the driver
+227: reads the one on the machine it runs on. `--no-browser` prints a
+228: `gcloud … --remote-bootstrap="…"` command to paste into a laptop that has
+229: gcloud and a browser; that returns a URL you paste back. If you already
+230: authenticated on the laptop, copying the file over is equivalent and
+231: quicker: `scp ~/.config/gcloud/application_default_credentials.json
+232: clariden:.config/gcloud/`. Credentials refresh themselves and gcloud is not
+233: needed again afterwards.
+234: 
+235: **Enabling the API is a different credential.** `gcloud auth
+236: application-default login` writes ADC for client libraries; it does not log
+237: the gcloud CLI itself in, so `gcloud services enable` answers "You do not
+238: currently have an active account selected". Either run `gcloud auth login`
+239: first, or just switch the API on in the console:
+240: `console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=<project-id>`.
+241: The project also needs billing — batch prediction is not a free-tier
+242: feature.
+243: 
+244: **Cloud Storage.** A Vertex batch job reads its requests from Cloud Storage
+245: and writes its answers back there (an uploaded file, which the Gemini
+246: Developer API takes, is not a valid Vertex source). The driver keeps them
+247: under `gs://<bucket>/rfgm/`, where `<bucket>` is `$RFGM_GCS_BUCKET`, else
+248: `--bucket`, else `<project>-msnr-rfgm`, and creates it on first use with
+249: the same ADC credential — which needs `storage.buckets.create` on the
+250: project (`roles/storage.admin`, or `roles/storage.bucketCreator` plus
+251: `roles/storage.objectAdmin`). Without it the driver stops with the 403 and
+252: the role to ask for.
+253: 
+254: ```bash
+255: # 1. can this account create the bucket?
+256: gcloud storage buckets create gs://$GOOGLE_CLOUD_PROJECT-msnr-rfgm \
+257:     --project=$GOOGLE_CLOUD_PROJECT --location=US --uniform-bucket-level-access
+258: # 2. if that is a 403, a project admin runs ONE of:
+259: gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
+260:     --member=user:<you@example.org> --role=roles/storage.admin     # then repeat step 1
+261: gcloud storage buckets create gs://<name> --project=$GOOGLE_CLOUD_PROJECT --location=US
+262: gcloud storage buckets add-iam-policy-binding gs://<name> \
+263:     --member=user:<you@example.org> --role=roles/storage.objectAdmin   # then export RFGM_GCS_BUCKET=<name>
+264: # 3. verify
+265: gcloud storage ls gs://$GOOGLE_CLOUD_PROJECT-msnr-rfgm
+266: ```
+267: 
+268: The bucket may live in another project the account does own; Vertex reads
+269: it as long as the caller has object access. Only `submit`/`fetch` need it —
+270: `pilot` and `build` do not. About 250 MB of requests and a similar volume of
+271: answers, at Standard-class prices a few cents a month; delete the bucket
+272: when the rewritten sets are on capstor.
+273: 
+274: **The environment every command below starts from.** The location must be
+275: `global`: the whole Gemini 3.x family is served only from the global
+276: endpoint, and a regional job answers 404 *The PublisherModel does not
+277: exist* (checked 2026-09-20 against `us-central1`, `europe-west4` and
+278: `us-east5` — only 2.5 is regional). Batch prediction accepts `global`, and
+279: the bucket's `US` multi-region default serves it.
+280: `google-genai` is in `requirements-ml.txt` and already in the snr env; the
+281: storage calls use `google-auth` and `requests`, which come with it.
+282: 
+283: ```bash
+284: cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual
+285: export GOOGLE_GENAI_USE_VERTEXAI=true
+286: export GOOGLE_CLOUD_PROJECT=<project-id> GOOGLE_CLOUD_LOCATION=global
+287: export HF_HOME=/iopsstor/scratch/cscs/mariagrandury/hf_home HF_HUB_OFFLINE=1 HF_DATASETS_OFFLINE=1
+288: ```
+289: 
+290: `GOOGLE_GENAI_USE_VERTEXAI` decides the shape of the request files, so the
+291: driver refuses to run if the SDK resolves a different backend than the one
+292: it was configured for — export it before `build`, not between `build` and
+293: `submit`. Everything runs on the login node (outbound internet, the snr
+294: env, the offline datasets cache the items come from); the driver is
+295: network-bound and light, and every mode is idempotent, so re-run after any
+296: interruption. Vertex's batch quota is per project and region: `submit`
+297: stops at the first `RESOURCE_EXHAUSTED` and is re-run later.
+298: 
+299: **1. Pilot (~$0.40, 15 min).** Synchronous calls with the batch's prompt
+300: and schema on 10 items of each review task — the `REVIEW_TASKS` in the
+301: driver: Spanish, Hindi, Turkish, Farsi, Greek, Arabic, Basque and Chinese
+302: in every family that has them (8 belebele, 7 Global-MMLU, 8 INCLUDE; 230
+303: items) — printed original → rewritten and written to `pilot_<task>.jsonl`
+304: in this directory (accepted rows in the row schema, rejected ones with
+305: their reason):
+306: 
+307: ```bash
+308: python3.11 src/evals/scripts/rewrite_items_gemini.py pilot
+309: ```
+310: 
+311: Read all of them: language kept, stem answerable, gold not leaked, options
+312: parallel. The prompt (`SYSTEM`, `NOTES` in the driver) is tuned here and
+313: nowhere else; the validator should pass ≥ 95 %. `--tasks a,b` / `--family`
+314: narrow the pilot while iterating on the prompt.
+315: 
+316: **2. Build the request files.** One line per item in
+317: `rf-data/rfgm/_requests/<task>.jsonl` (REST JSON: the user content, the
+318: system instruction, `responseSchema`, `thinkingLevel: LOW`), rows with a
+319: missing option dropped as in the rf twins; prints the token estimate and
+320: the cost per family. `--dry-run` prints the estimate only.
+321: 
+322: ```bash
+323: python3.11 src/evals/scripts/rewrite_items_gemini.py build --dry-run
+324: python3.11 src/evals/scripts/rewrite_items_gemini.py build
+325: ```
+326: 
+327: **3a. No bucket? Run it online instead.** `online` uses the same prompt and
+328: the same validation but calls `generate_content` directly, so it needs
+329: nothing but ADC — no Cloud Storage, no `build`/`submit`/`fetch`. It costs
+330: **double** the batch price and takes wall-clock time instead of a queue,
+331: so it is the fallback while `storage.buckets.create` is missing, not the
+332: default.
+333: 
+334: ```bash
+335: python3.11 src/evals/scripts/rewrite_items_gemini.py online --family include_base_44 --L 50
+336: python3.11 src/evals/scripts/rewrite_items_gemini.py online --family belebele --L 50
+337: ```
+338: 
+339: **`--L 50` is not an optimisation, it is the right task set.** The ladder
+340: only scores a task on models that trained its language (rule 2,
+341: `utils.trained_only`), so a twin outside the L-cell's languages is paid for
+342: and never read — the rq00 gate's own task counts are exactly this set. L50
+343: keeps 124 of the 185 tasks:
+344: 
+345: | family | all | L50 | items (L50) |
+346: |---|---:|---:|---:|
+347: | belebele | 105 | 59 | 53,100 |
+348: | global_mmlu_full | 37 | 29 | 407,192 |
+349: | include_base_44 | 43 | 36 | 18,337 |
+350: 
+351: On belebele that is $38 and ~3 hours saved online; on Global-MMLU, 112k
+352: items. `--scheme` picks the scheme `--L` refers to (default A).
+353: 
+354: Run one family at a time. Two concurrent runs at the default concurrency
+355: put 24 requests in flight, which is where the shared quota collapses — the
+356: aggregate is slower than running them in sequence.
+357: 
+358: Every answer is appended and flushed as it lands and a re-run skips the ids
+359: already written, so a killed login-node process loses at most the requests
+360: in flight — re-run the same command to continue. `--limit N` caps new items
+361: per task, `--concurrency` defaults to 12: Gemini 3.x online runs on Vertex's
+362: dynamic shared quota, where 12 threads sustain ~2.9 items/s while 24 trips
+363: 429s and collapses throughput to 0.3 (measured 2026-09-20). It prints rate,
+364: ETA and running cost every 200 items.
+365: 
+366: **3. Submit.** One batch job per task (185 files of 1–20 MB): each is
+367: uploaded to `gs://<bucket>/rfgm/requests/<task>.jsonl` and becomes the
+368: job's source, and the answers land in `…/<task>/dest`. Both URIs and the
+369: job name go into `rf-data/rfgm/_jobs.json`; a task that has a job is
+370: skipped, so re-run until `status` shows 185.
+371: 
+372: ```bash
+373: python3.11 src/evals/scripts/rewrite_items_gemini.py submit --max-jobs 40
+374: python3.11 src/evals/scripts/rewrite_items_gemini.py status
+375: ```
+376: 
+377: **4. Fetch and validate.** Reads every SUCCEEDED job's destination prefix
+378: in Cloud Storage, matches each answer back to its item — Vertex drops
+379: everything outside `request` and echoes the request instead of a key, so
+380: the match is on the prompt text, and any line that matches nothing is
+381: counted and skipped rather than written — validates each item — JSON with a non-empty stem (a
+382: trailing colon, dash or ellipsis is trimmed rather than rejected: five of
+383: the six pilot rejects were a colon, and they fell on Basque 3/10 and
+384: Persian 2/20 against 0 of 180 elsewhere, a per-language item loss this
+385: comparison cannot absorb), exactly four non-empty pairwise-distinct
+386: choices, no choice appearing as a word in the stem (answer leak), the
+387: majority Unicode script unchanged, plus a per-choice script check for the
+388: options the source wrote in the item's own script (the per-item majority was
+389: blind to a Greek item whose four numerals came back in Latin; options that
+390: were already off-script, such as a bare `"a, b"`, are skipped). Kana,
+391: katakana, hangul and han count as one script: Japanese mixes kanji and kana
+392: within a sentence, and comparing the per-choice majority without folding
+393: them rejected 30.9 % of Japanese INCLUDE items against 0-2 % elsewhere — an
+394: uneven item loss across languages is the one bias this comparison cannot
+395: absorb. Script is the cheap "still in its language" check and cannot tell
+396: Spanish from English; step 5 covers the Latin-script languages. Writes
+397: `<task>.jsonl` (accepted) and `_rejects/<task>.jsonl` (with the reason and
+398: what the model produced, so a reject can be re-judged without paying for the
+399: call again; `online --retry-rejects` re-runs them). A task file is written only from a
+400: SUCCEEDED job, so a partial run never leaves a half file; FAILED / EXPIRED
+401: jobs are cleared and `submit` resubmits them (from the object already in
+402: the bucket); rejected items get one more
+403: round through `submit --retry` (then `fetch` again), a second rejection
+404: drops the item. Batch jobs target 24 h; most finish sooner.
+405: 
+406: ```bash
+407: python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
+408: python3.11 src/evals/scripts/rewrite_items_gemini.py submit --retry && python3.11 src/evals/scripts/rewrite_items_gemini.py fetch
+409: ```
+410: 
+411: **5. Spot-check (45 min, human).** Per task the row and reject counts,
+412: reject rate, median stem / choice length, the tokens actually spent and
+413: their cost, and with `--show` five random items of each of the 23 review
+414: tasks (the pilot's eight languages):
+415: 
+416: ```bash
+417: python3.11 src/evals/scripts/rewrite_items_gemini.py report --show
+418: ```
+419: 
+420: Look for translation drift, stems that give the answer away, options
+421: collapsed to one word where the original was a clause. A task above 5 %
+422: rejects: read its rejects before evaluating it.
+423: 
+424: **6. Register the tasks.** 185 YAMLs + tasks.json (idempotent; tasks whose
+425: JSONL is missing are skipped and counted). `n_items` is filled from the
+426: first results by `derive_task_options.py`.
+427: 
+428: ```bash
+429: python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm
+430: ```
+431: 
+432: **7. First eval — one job (needs approval).** `test_new_tasks.py` checks
+433: names against a harness clone and never passes `--include_path`, so the
+434: smoke test is the watcher on one final checkpoint, all rfgm tasks, ~25
+435: min on one node; the `per_task/rfgm_*` results must carry `acc,none` and
+436: `acc_norm,none`, and `samples_rfgm_*.jsonl` the rewritten docs:
+437: 
+438: ```bash
+439: cd src/pretrain
+440: python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed1904 --every 1000 --dry-run
+441: python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed1904 --every 1000 --max-submit 1
+442: ```
+443: 
+444: **8. The ladder (needs approval).** The rf watcher's shape: every 2nd
+445: checkpoint + final of the deep scheme-A seed-1904 cells, jobs
+446: `eval-<cell>-iter<N>-rfgm`, 23–45 min each on one node, ~625 jobs, ~385
+447: node-hours (rf took about two days at `--max-submit 20`). Held-back tasks:
+448: a `--retry-held` pass. `pretrain_progress.py` does not count reformulated
+449: sets; progress is `squeue --me | grep rfgm` and the watcher log.
+450: 
+451: ```bash
+452: python3.11 auto_evals_cscs.py --reformulated rfgm --arch deep --scheme A --seed 1904 --dry-run
+453: nohup python3.11 -u auto_evals_cscs.py --reformulated rfgm --arch deep --scheme A --seed 1904 \
+454:       --max-submit 20 --watch 1800 >> /iopsstor/scratch/cscs/mariagrandury/auto_evals_rfgm_watch.log 2>&1 &
+455: ```
+456: 
+457: Results land exactly as the originals' do: `per_task/<task>/…/results_*.json`
+458: and the merged `results_*.json`, one `samples_<task>_*.jsonl` per task,
+459: `job.json`, the Slurm log `src/evals/logs/eval-<cell>-iter<N>-rfgm_<jobid>`,
+460: and `push_all_results.py` pushes `rfgm_<task>/acc_norm` to W&B (registered
+461: tasks are never dropped).
+462: 
+463: **9. Report and analysis.** The report picks the `rfgm_*` columns up
+464: (`metric_for` → acc_norm); `compare.py` then draws five panels — original,
+465: rf, rfgm, rf − original, rfgm − original — with the significance counts
+466: per set, the table below gets both deltas, and the rq00 gate outputs
+467: (`first_size_above_random`, `gate_margin_by_benchmark`) list the `rf_*` and
+468: `rfgm_*` families as rows next to the originals: that is the direct read of
+469: the gate impact. Every other RQ (decision accuracy, SNR) sees the new tasks
+470: too, as it does the rf ones.
+471: 
+472: ```bash
+473: python3.11 src/pretrain/ladder_report.py --plot --publish --push-hf
+474: bash scripts/refresh_analysis.sh
+475: ```
+476: 
+477: ### Cost
+478: 
+479: | | items | in Mtok | out Mtok (incl. thinking) | batch $ | online $ |
+480: |---|---:|---:|---:|---:|---:|
+481: | belebele (105) | 94.5k | 75 | 5 | 38 | 76 |
+482: | global_mmlu_full (37) | 519.5k | 352 | 47 | 220 | 440 |
+483: | include_base_44 (43) | 22.1k | 15 | 2 | 9 | 18 |
+484: | total | 636k | 441 | 54 | **267** | **533** |
+485: 
+486: Measured, not estimated: 16 real requests per family on 2026-09-20 gave
+487: 791/678/658 input and 55/90/88 output tokens per item (output includes
+488: thinking at LOW). The earlier bytes/3.5 projection of 607 Mtok in was ~38 %
+489: high, so the run is cheaper than the $525–570 first documented. Online
+490: prices are double batch, and are what the run costs if it goes through
+491: `generate_content` because no Cloud Storage bucket is available.
+492: 
+493: The instruction and the response schema are 550 tokens by `count_tokens`
+494: and go out with every single request, against an item that is only 57
+495: tokens for Global-MMLU and ~240 for belebele — so the scaffold is about
+496: 80 % of the input bill, and trimming instruction text is the only lever
+497: that moves it. `scaffold()` estimates it as bytes/3.5, which runs ~30 %
+498: high on English prose (719 vs 550), so `build --dry-run` moves with the
+499: prompt but reads high. No cache discount is
+500: available against it: implicit caching wants a 2 048-token shared prefix on
+501: Vertex and this is a quarter of that, and batch and cache discounts would
+502: not compound anyway.
+503: 
+504: `gemini-3.8-flash` batch: $0.375 / $1.875 per Mtok in / out through
+505: 2026-12-31, double from 2027 — the same on Vertex as on the Gemini API
+506: ([pricing](https://ai.google.dev/gemini-api/docs/pricing)), billed to the
+507: Cloud project instead of the key;
+508: thinking tokens bill as output and no Gemini 3 model turns thinking off,
+509: only down to `LOW` / `MINIMAL`. Input = item + ~150 tokens of instruction
+510: and schema; output = stem + four choices + JSON; belebele passages are
+511: input only. Bytes/3.5 estimates, ±30 %. `build --dry-run` prints the same
+512: table from the cache; `report` prints what was actually spent. Cheaper
+513: alternatives at the same scope: `gemini-3.1-flash-lite` batch
+514: ($0.125 / $0.75 → ~$125–170), riskier on low-resource scripts;
+515: `gemini-3.1-pro-preview` batch ($1 / $6 → ~$1,000–1,400).
+516: 
+517: ### The prompt
+518: 
+519: **The rewriter is never told which option is correct.** The user turn carries
+520: the language, the subject, the passage, the question and the four options in
+521: their original order, and nothing else; `gold` stays in the driver and is
+522: copied to the output row untouched. Telling it would invite the failure that
+523: defeats the whole exercise: a model that knows the answer writes the true
+524: statement more fully or more specifically than the false ones, and a small
+525: model then scores above chance by following the style rather than the
+526: content, which is the letter-format artefact traded for a subtler one. The
+527: instruction to "preserve which choice is correct" is a prohibition on
+528: flipping truth values, not a disclosure.
+529: 
+530: It can still often infer the answer, so `report` measures what is left: how
+531: often the gold continuation is the single longest of the four, in the
+532: rewrite and in the originals side by side. Chance is 25 %, the originals
+533: already carry some of this artefact, and what matters is whether the rewrite
+534: raised it.
+535: 
+536: System instruction (`SYSTEM` in the driver; `{family_note}` per family):
+537: 
+538: ```
+539: You rewrite multiple-choice test items so that a small language model can be
+540: scored on them as text continuations. Rewrite the item in the SAME LANGUAGE
+541: and script as the input — never translate, never switch to English.
+542: 
+543: Turn the question into ONE declarative sentence that stops exactly where the
+544: answer would go (a "stem"). Turn each of the four options into a short
+545: continuation that completes the stem into a true or false statement. Rules:
+546: - The stem must not contain or hint at the correct answer, and must not say
+547:   "which of the following".
+548: - Keep the meaning of the original question and of every option; keep the
+549:   options in the same order; keep the correct option correct.
+550: - Make the four continuations parallel: same grammatical form, similar
+551:   length (aim for 1-8 words), no option letters or numbers.
+552: - The stem ends with no trailing space or punctuation; each continuation
+553:   starts as it would follow a space after the stem (lowercase unless it is a
+554:   name), and ends with a period if the stem+continuation is a full sentence.
+555: - Do not add facts. If the question asks for the option that is NOT true,
+556:   write the stem as "Of the following, the one that is not … is".
+557: {family_note}
+558: Return only JSON: {"stem": "...", "choices": ["...", "...", "...", "..."]}
+559: ```
+560: 
+561: Family notes — belebele: "A passage is given; the stem must be answerable
+562: from that passage alone. Do not rewrite or quote the passage." Global-MMLU:
+563: "The subject is given; the stem may name it." INCLUDE: "The item may test
+564: regional knowledge (driving rules, local history); keep the local terms."
+565: User content per item: `Language:`, `Subject:` (Global-MMLU, INCLUDE),
+566: `Passage:` (belebele), `Question:`, `Options:` numbered 1–4. The response
+567: schema pins `{"stem": string, "choices": [4 strings]}`.
+568: 
+569: ## The probe (2026-09-23)
+570: 
+571: The same question, asked of new candidates: `configs/tasks.json` →
+572: `groups.auto_probe` (BBH and ACP-Bench as cloze arms, mmlu, commonsense_qa,
+573: cultural_bench, INCLUDE v2, …, and the `rf_` twins of the ones that ask for a
+574: letter), evaluated at the last checkpoint of the 600M–1.7B cells. `probe.sh`
+575: runs the chain — `derive_task_options` → `ladder_report --plot` →
+576: `above_random` → `compare.py --tag probe` → `probe_survivors.py` →
+577: `check_rules` — and leaves `rf_gate_probe.*` (the pairs, this README's
+578: `rf-compare-probe` block) and `probe_survivors.csv` (the gate per language,
+579: the `probe-survivors` block). `compare.py` subtracts each task's own chance
+580: level, so the 2- to 10-way probe pairs read on the same scale as the 4-way
+581: families above (whose numbers this does not change).
+582: 
+583: **Outcome (2026-09-23).** Twenty of the twenty-one candidates were promoted
+584: into `groups.auto`, so every checkpoint is topped up with them and they enter
+585: every RQ — a population change, stated in `RULES.md`. `bbq` stays a candidate:
+586: it clears a 1/12 chance at 0.44 without telling us much, and it costs 23 min
+587: per checkpoint against 2.9 for mmlu and 0.3 for a belebele task.
+588: 
+589: ### The length tell, and where it actually is
+590: 
+591: Replacing letters with answer strings hands the model a lever the lettered
+592: form does not have: the options now differ in length. If the gold answer is
+593: systematically the shortest (or longest) of its set, a model scores above
+594: chance by preferring short (raw log-likelihood) or long (`acc_norm`, which
+595: divides by length) strings without reading the stem — and the
+596: original→`rf_` difference is then partly that artefact rather than the format
+597: change. `acc_norm` normalises a candidate by its own length; it does not
+598: remove a dataset-level correlation between *being the gold* and *being short*.
+599: 
+600: Measured off the cached items, not the model: how often the gold is the
+601: **strictly** shortest (or longest) option, ties excluded, over every task of a
+602: family (8 sampled where a family has more).
+603: 
+604: | family | chance | gold shortest | gold longest | items |
+605: |---|---:|---:|---:|---:|
+606: | rf_acp_bench_mcq | 25.0 % | **35.4 %** | 15.1 % | 900 |
+607: | rf_bbh_mcq | 23.5 % | 13.1 % | 10.9 % | 1,896 |
+608: | rf_belebele | 25.0 % | 23.7 % | 20.8 % | 7,200 |
+609: | rf_commonsense_qa | 20.0 % | 11.1 % | 19.0 % | 1,221 |
+610: | rf_cultural_bench_easy | 25.0 % | 24.0 % | 27.1 % | 221 |
+611: | rf_global_mmlu_full | 25.0 % | 17.8 % | 23.3 % | 112,332 |
+612: | rf_include_base_44 | 25.0 % | 15.8 % | 22.2 % | 4,328 |
+613: | rf_mmlu | 25.0 % | 17.8 % | 23.7 % | 14,042 |
+614: | rfgm_include_base_44 | 25.0 % | 17.6 % | 21.9 % | 4,243 |
+615: 
+616: So this is not a property of the reformulation: every family the study
+617: already relies on sits at or below chance on both tells, the Gemini rewrite
+618: included (17.6 %, which is what the driver's own length report is there to
+619: keep). It is a property of ACP-Bench's published distractor sets — its items
+620: are plans, and a wrong plan tends to be stated at greater length — and it
+621: only becomes reachable once the strings are scored. Three of its seven
+622: subtasks carry it:
+623: 
+624: | task | chance | gold shortest |
+625: |---|---:|---:|
+626: | rf_acp_bench_mcq_areach | 25 % | 50.0 % |
+627: | rf_acp_bench_mcq_val | 25 % | 47.7 % |
+628: | rf_acp_bench_mcq_prog | 25 % | 46.9 % |
+629: | rf_acp_bench_mcq_land | 25 % | 30.0 % |
+630: | rf_acp_bench_mcq_app | 25 % | 28.5 % |
+631: | rf_acp_bench_mcq_reach | 25 % | 26.9 % |
+632: | rf_acp_bench_mcq_just | 25 % | 19.2 % |
+633: 
+634: For those three, the reference a score has to beat is the pick-shortest rate
+635: (0.50 / 0.48 / 0.47), not the 0.25 the gate uses, and the gate's verdict on
+636: them should be read with that substitution — which is why the probe reports
+637: `rf_acp_bench_mcq` as a family and not as one number. `rf_bbh_mcq_snarks`,
+638: the two-way task where a tell would be cheapest, measures 54.8 % against its
+639: 50 % chance on 177 items, inside its own sampling error.
+640: 
+654: 
+655: GitHub: [rf_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate.png) · [rf_gate.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate.csv) ·
+656: GitHub: [rf_gate_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.png) · [rf_gate_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language.csv) ·
+657: [rf_significance.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance.csv)
+658: 
+674: 
+675: GitHub: [rf_gate_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.png) · [rf_gate_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_probe.csv) ·
+676: GitHub: [rf_gate_by_language_probe.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.png) · [rf_gate_by_language_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_gate_by_language_probe.csv) ·
+677: [rf_significance_probe.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/rf_significance_probe.csv)
+678: 
+768: 
+769: [probe_survivors.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/probe_survivors.csv)
+770: 
+797: 
+798: GitHub: [reformulations_gate.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.png) · [reformulations_gate.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate.csv) ·
+799: [reformulations_gate_mcnemar.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_task_reformulation/reformulations_gate_mcnemar.csv)
+800: 
+801: The reading of this figure — what the twins do to the gate, to DA-size, to
+802: the reliable share and to rq01's fits, with the key findings and follow-ups —
+803: is [rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate);
+804: the former `twins_gate.*` name of these outputs is retired.
+805: 
+806: ## Extensions from other sweeps
+807: 
+808: None. The reformulation exists on the ladder only (`predictivity`, the deep
+809: scheme-A seed-1904 cells for the twin comparison): the 36-model sweep never
+810: evaluated the `rf_` or `rfgm_` twins, and its numbers would not be pooled
+811: with the ladder's in any case (a different harness, task set and reference
+812: size).

@@ -1,0 +1,582 @@
+commit 959fab2d02ed47b39a55aaff9e6e1697b94c5268
+Author: María <mariagrandury@gmail.com>
+Date:   Tue Sep 22 02:18:55 2026 +0200
+
+    pretrain: self-chain preemptable runs instead of --requeue
+    
+    Clariden sets MaxBatchRequeue=5 and a preemption spends one, so a
+    --requeue'd 21-node run on `preemptable` is HELD on its sixth and
+    reported as a launch failure even when all five attempts ended in clean
+    preemptions. Three runs stopped that way on 2026-09-21; the cap is
+    cluster-wide and admin-only, and `scontrol update Restarts=` is refused.
+    
+    launch_trainings.py --partition preemptable now exports PRETRAIN_CHAIN=1
+    and tags the job --comment=selfchain instead of passing --requeue, and
+    the wrapper queues a --dependency=singleton successor BEFORE training
+    starts -- the shape data/submit_build_one.sh has always used, which sacct
+    shows carried build-a-L8-165b across 29 links (24 PREEMPTED, 3 FAILED,
+    1 CANCELLED, 1 COMPLETED). Each link is a new jobid, so no requeue cap
+    applies, and queuing up front keeps the queue position a resubmit would
+    forfeit.
+    
+    Five stop conditions, because a chain that cannot stop is worse than a
+    requeue that gets held: `done` (cancels the pending successor), `corrupt`
+    (matching the launcher's own refusal), no checkpoint progress for
+    CHAIN_MAX_STALLS links, a progress count that cannot be recorded, and
+    CHAIN_MAX_ATTEMPTS as a backstop. Both counters live beside this job's
+    StdOut as the controller reports it, never a hard-coded path, and the
+    progress file is per-user: these trees are shared, and a file a
+    collaborator creates is one this user can neither rewrite nor remove.
+    The no-progress guard is the one that matters -- lm-1B-L2-shallow-seed1904
+    burned 14 links x 21 nodes retrying a deterministic PermissionError on
+    rank 83 that Slurm still recorded as COMPLETED 0:0.
+    
+    pretrain_progress.py gains --cell-action, printing the word and the
+    latest valid iteration so the wrapper reads a verdict rather than an exit
+    status an ImportError could forge. preempt_drain.sh's safety gate now
+    accepts Comment=selfchain or legacy Requeue=1 and still fails closed when
+    squeue says nothing.
+    
+    Verified: every stop condition fires, including read-only progress file,
+    read-only log dir and malformed state; the counter resets on a new valid
+    checkpoint; the StdOut derivation matches live `scontrol show job`; the
+    drainer gate's truth table against live jobs; every running chained job
+    holds exactly one pending successor at the right node count;
+    launch_trainings.py stays idempotent against those successors.
+
+diff --git a/scripts/preempt_drain.sh b/scripts/preempt_drain.sh
+index d213969c..dd4e531a 100755
+--- a/scripts/preempt_drain.sh
++++ b/scripts/preempt_drain.sh
+@@ -28,19 +28,20 @@
+ #              resubmits with only the tasks still missing.
+ #   pretrain-* ONLY the runs listed in the ladder below, and only when they
+ #              were submitted by launch_trainings.py --partition preemptable:
+-#              that adds --requeue and MEGATRON_EXIT_ON_SIGTERM, so the
+-#              patched handler checkpoints inside the 240s grace and the job
+-#              resumes when it comes back. A pretrain job submitted
+-#              WITHOUT those (the `normal` default) loses everything back to
+-#              its last save and never returns — moving one here is a loss,
+-#              which is why the filter takes only the named sizes.
++#              that adds MEGATRON_EXIT_ON_SIGTERM, so the patched handler
++#              checkpoints inside the 240s grace, and PRETRAIN_CHAIN, so the
++#              wrapper has already queued a singleton successor to resume from
++#              that save. A pretrain job submitted WITHOUT those (the `normal`
++#              default) loses everything back to its last save and never
++#              returns — moving one here is a loss, which is why the filter
++#              takes only the named sizes.
+ #   *bpb*      score_bpb.py writes each checkpoint's bpb.json before starting
+ #              the next, and skips what is already written on re-run.
+ #
+ # Clariden has JobRequeue=0, so a preempted job is cancelled rather than
+-# requeued unless it asked for it (only the pretrain runs do, see above); the
+-# next watcher pass resubmits a convert or eval and it picks up where it
+-# stopped, and a build's successor is already queued. BPB is not the
++# requeued, and nothing here asks otherwise; the next watcher pass resubmits a
++# convert or eval and it picks up where it stopped, and a build's — or a
++# pretrain run's — successor is already queued. BPB is not the
+ # watcher's: score_bpb.sbatch
+ # chains itself, queuing its successor BEFORE scoring, so a preempted link's
+ # successor is already pending (and is moved here in turn). But a link killed
+@@ -48,8 +49,8 @@
+ # successor ends the chain — re-run launch_bpb.sh, which skips scored cells and
+ # cells with a job in flight. That, and their number, is why BPB goes last.
+ #
+-# A pretrain job below the named rungs is never moved, and neither is one
+-# without --requeue: 21 nodes lost to a preemption costs up to a save interval
++# A pretrain job below the named rungs is never moved, and neither is one that
++# cannot come back: 21 nodes lost to a preemption costs up to a save interval
+ # of training. Unlike debug_drain.sh nothing is truncated here — preemptable's
+ # 24 h limit is above every eval walltime.
+ #
+@@ -72,7 +73,8 @@
+ # denied" for anyone but an operator, verified 2026-09-20). A moved job
+ # therefore keeps the wall it was submitted with; to use the full 24h, submit
+ # there in the first place — `launch_trainings.py --partition preemptable`
+-# (23:59:00 + --requeue).
++# (23:59:00 + the self-chain). A chain successor inherits the partition and
++# wall of the attempt that queued it, so a moved run keeps 24h from then on.
+ #
+ # The fraction comes from the size's own schedule (launch_trainings.schedule_for,
+ # the same source the watcher's due_iters uses), not from the iter number, so
+@@ -145,8 +147,8 @@ drain_once() {
+     # anchored): build/convert/eval unconditionally, and of the pretrain runs
+     # only 3B and the deep 1.7B/1B (builds excluded, see the header) — a shallow
+     # or smaller rung is cheap enough
+-    # to wait for `normal`, and every pretrain job is checked for --requeue
+-    # again below before it is actually moved.
++    # to wait for `normal`, and every pretrain job is checked below for a way
++    # back from a preemption before it is actually moved.
+     pend=$(awk -F'|' '$1=="(null)" && ($4 ~ /^(convert|eval)-/ || $4 ~ /bpb/ \
+                        || $4 ~ /^pretrain-3B-/ \
+                        || ($4 ~ /^pretrain-(1\.7B|1B)-/ && $4 ~ /-deep-/))' <<<"$q")
+@@ -191,15 +193,28 @@ drain_once() {
+                 (( waiting++ == 0 )) && echo "  wait: $jid $name needs $n nodes, room=$room"
+                 continue
+             fi
+-            # A pretrain job is only preemption-safe if it can come back:
+-            # --requeue (launch_trainings.py --partition preemptable) plus the
+-            # patched exit-signal handler. Without it a preemption is a cancelled
+-            # run and a lost save interval on 21 nodes, so ask the controller
+-            # rather than assume — Requeue is 0/1 per job.
+-            if [[ $name == pretrain-* ]] \
+-               && [[ $(squeue -h -j "$jid" -O Requeue 2>/dev/null | tr -d ' ') != 1 ]]; then
+-                echo "  skip: $jid $name submitted without --requeue (relaunch with --partition $PART)"
+-                continue
++            # A pretrain job is only preemption-safe if it can come back, and
++            # a preemption it cannot come back from costs a save interval on 21
++            # nodes — so ask the controller rather than assume. Two ways back,
++            # both set by launch_trainings.py --partition preemptable:
++            #   Comment=selfchain  the wrapper queues a singleton successor
++            #                      before training, so a preempted attempt is
++            #                      replaced by a NEW job (current).
++            #   Requeue=1          --requeue, which this used to pass (legacy,
++            #                      for jobs still in flight from before
++            #                      2026-09-21). Slurm holds such a job on its
++            #                      sixth requeue — MaxBatchRequeue=5 — which is
++            #                      why it is no longer what we submit.
++            # The comment is the only one of the two that squeue can see: the
++            # chain is driven by PRETRAIN_CHAIN in the job environment, and
++            # neither squeue nor scontrol exposes that.
++            if [[ $name == pretrain-* ]]; then
++                gate=$(squeue -h -j "$jid" -O Comment,Requeue 2>/dev/null)
++                if [[ $gate != *selfchain* && $(awk '{print $NF}' <<<"$gate") != 1 ]]; then
++                    echo "  skip: $jid $name cannot come back from a preemption" \
++                         "(relaunch with --partition $PART)"
++                    continue
++                fi
+             fi
+             if (( DRY )); then
+                 echo "  would move $jid $name (rank $rank, $n node)"
+diff --git a/src/evals/README.md b/src/evals/README.md
+index c377f9d7..3fd6fec0 100644
+--- a/src/evals/README.md
++++ b/src/evals/README.md
+@@ -233,13 +233,15 @@ so builds belong on `preemptable` only by being *submitted* there —
+ queues two segments (../pretrain/README.md).
+ 
+ Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
+-only when they carry `--requeue`**, which is what
+-`launch_trainings.py --partition preemptable` adds: it also sets
++only when they can come back from a preemption**, which is what
++`launch_trainings.py --partition preemptable` arranges: it sets
+ `MEGATRON_EXIT_ON_SIGTERM=1`, so the patched handler catches the preemption
+-signal itself and Megatron checkpoints inside the 4 min grace, and the
+-requeued job resumes from that save. The drainer asks the
+-controller per job (`squeue -O Requeue`) and skips the ones submitted without
+-it — for those a preemption really would cost a save interval on 21 nodes.
++signal itself and Megatron checkpoints inside the 4 min grace, and
++`PRETRAIN_CHAIN=1`, so the wrapper has already queued a singleton successor to
++resume from that save. The drainer asks the controller per job
++(`squeue -O Comment,Requeue`: `selfchain`, or `--requeue` for jobs still in
++flight from before 2026-09-21) and skips the rest — for those a preemption
++really would cost a save interval on 21 nodes.
+ 
+ Nothing is truncated (preemptable allows 24 h), so this one is simpler than
+ the debug drainer. It cannot *raise* a walltime either — a limit can only be
+diff --git a/src/pretrain/CLAUDE.md b/src/pretrain/CLAUDE.md
+index 81e647c4..70fa1a63 100644
+--- a/src/pretrain/CLAUDE.md
++++ b/src/pretrain/CLAUDE.md
+@@ -32,7 +32,7 @@ reintroduces the drift this design removed.
+ | File | Role |
+ |---|---|
+ | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
+-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
++| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints and the singleton self-chain that brings the run back (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
+ | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
+ | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
+ | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
+@@ -264,15 +264,66 @@ checkpoint grid, and that is already expected: `run_interval()` takes the
+ modal gap and `due_iters()` never marks an off-grid save due, so preemption
+ saves add disk, not eval work.
+ 
+-That, `--requeue` and a 23:59:00 wall are what
+-`launch_trainings.py --partition preemptable` sets up (2026-09-20): a
+-preempted run checkpoints, is requeued with the same jobid *and partition*,
+-and resumes. Two constraints it works around, both verified: a job's time
+-limit can only be LOWERED after submission (so no drainer can stretch a job it
+-moves — ask for 24h at submit), and `normal` refuses a 23:59:00 request
+-outright ("Requested time limit is invalid"), so the long wall and the
+-partition have to travel together. A requeue reopens the same `%x-%j` log,
+-hence `#SBATCH --open-mode=append`.
++**Coming back is a chain, not a requeue** (2026-09-21). `--requeue` was the
++first answer and it does not survive a busy day: Clariden sets
++`MaxBatchRequeue=5`, a preemption spends one, and on the sixth Slurm holds the
++job — reporting `launch_failure_limit_exceeded_requeued_held` even when all
++five attempts ended in clean preemptions. Two 3B and one 1B run stopped that
++way after 4h43m at 96.7% node-time efficiency; nothing had failed to launch.
++`scontrol update Restarts=` is refused, and `MaxBatchRequeue` is cluster-wide
++and admin-only.
++
++So `--partition preemptable` sets `PRETRAIN_CHAIN=1` instead, and the wrapper
++queues a singleton successor (`--dependency=singleton`, same job name) BEFORE
++it starts training — exactly what `data/submit_build_one.sh` has always done,
++and what carried `build-a-L8-165b` to completion across 29 links and 36 hours
++(24 PREEMPTED, 3 FAILED, 1 CANCELLED). Each link is a new jobid, so no requeue
++cap applies, and queuing it up front is what makes it preemption-safe: a killed
++attempt leaves its successor already pending, holding a queue position a
++resubmit would forfeit.
++
++**What stops a chain**, in the order the wrapper checks it:
++
++- `done` — `pretrain_progress.py --cell-action` on entry or after training;
++  the pending successor is cancelled. The check reads the printed WORD, not an
++  exit status: an ImportError and a legitimate "not done" both exit non-zero.
++  State unreadable → do NOT chain, and say so.
++- `corrupt` — iter dirs on disk, none loadable. `launch_trainings.py` refuses
++  these for manual review; the chain must too, or it re-runs on 21 nodes
++  exactly what the launcher will not touch.
++- **no progress four times running** (`CHAIN_MAX_STALLS`). Each link records
++  the iteration it started from in `.chain-<jobname>.progress` beside its
++  Slurm logs; unchanged means the previous link achieved nothing. Progress
++  resets the counter, so ordinary preemptions do not cap a chain — though a
++  run preempted before its first save does count as a stall, which is the
++  intended conservatism at 21 nodes a link. This is the
++  real bound — 2026-09-22, `lm-1B-L2-shallow-seed1904` burned 14 links x 21
++  nodes because its `logging/` and `debug/` belonged to a collaborator: rank 83
++  (Megatron's tensorboard writer is the LAST rank) died of `PermissionError`
++  ~70 s in, Slurm killed the step for TASK FAILURE, and the wrapper still
++  exited 0, so nothing downstream could tell a spin from a preemption. The
++  counter file is per-user for the same reason the incident happened: these
++  trees are shared, and a file a collaborator creates is one this user cannot
++  rewrite. A counter that cannot be recorded also stops the chain.
++- attempt count (`CHAIN_MAX_ATTEMPTS`, default 200) — only a backstop now, so
++  it is generous: a 3-day 3B at ~1 preemption/hour needs 30-70 links, and 29
++  were needed for a one-node build. Counted in the directory the controller
++  says this job's `StdOut` is in, never a hard-coded path — a collaborator's
++  logs land in their own scratch, and counting where there are none reads 0
++  forever and never caps. Uncountable → do NOT chain.
++
++A chained job advertises itself with `--comment=selfchain`, because
++`PRETRAIN_CHAIN` lives in the job environment and neither `squeue` nor
++`scontrol` exposes that — `scripts/preempt_drain.sh` has to know before it
++moves a 21-node run onto a partition that will preempt it.
++
++Two constraints this works around, both verified: a job's time limit can only
++be LOWERED after submission (so no drainer can stretch a job it moves — ask for
++24h at submit, and a successor inherits the wall of the attempt that queued
++it), and `normal` refuses a 23:59:00 request outright ("Requested time limit is
++invalid"), so the long wall and the partition have to travel together.
++`#SBATCH --open-mode=append` is now belt-and-braces: a requeue reopened the
++same `%x-%j` log, and a chain link never does.
+ 
+ ### 5. `OptimizerParamScheduler` train_iters mismatch on capped resumes
+ Megatron asserts the CLI schedule total equals the checkpoint's. When a
+diff --git a/src/pretrain/README.md b/src/pretrain/README.md
+index 8de349a3..ede7076f 100644
+--- a/src/pretrain/README.md
++++ b/src/pretrain/README.md
+@@ -158,7 +158,7 @@ launcher — the core design):
+ | File | Role |
+ | ---- | ---- |
+ | [`megatron_args.sh`](megatron_args.sh) | **The single source of the training logic.** Builds every Megatron argument (architecture, AdEMAMix, WSD schedule, torch_dist checkpointing, data blend, W&B) from env vars. Both platforms produce an identical command; the only delta is the SLURM graceful-exit trigger, added when `TRIGGER_PATH` is set. |
+-| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
++| [`launch_pretraining_cscs.sh`](launch_pretraining_cscs.sh) | CSCS wrapper: SBATCH header, directories under `Meg-Runs/msnr/`, SIGUSR2 trigger, srun + pyxis container, debug logging. With `PRETRAIN_CHAIN=1` it also queues a singleton successor before training and cancels it once the cell is `done`. The chain also stops on a `corrupt` cell, once `CHAIN_MAX_STALLS` (4) links in a row have ended without the checkpoint advancing (the fifth still runs, it just queues no sixth), if it cannot record that count, and at `CHAIN_MAX_ATTEMPTS` (200) links total; `CHAIN_PARTITION`/`CHAIN_WALLTIME` override what the successor inherits. Picks the container toml: the a139 capstor one, or [`container/ngc_nemo_iopsstor.toml`](container/ngc_nemo_iopsstor.toml) (same image, local EDF image store) when capstor is unavailable. |
+ | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
+ | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
+ | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
+@@ -321,14 +321,17 @@ CSCS-only knobs: `--data_dir`, `--time` (override the auto-sized walltime),
+ 
+ `--partition preemptable` starts a run now instead of queueing behind the
+ 480-node QOS cap on `normal`, at the price of preemption. It is safe here
+-because the three pieces travel together: `--requeue` (so a preempted run
+-comes back with the same jobid and partition), `MEGATRON_EXIT_ON_SIGTERM=1`
+-on the srun line (so the patched handler catches the preemption signal and
+-Megatron checkpoints inside the 4 min grace, and the requeued job resumes
+-from that save), and a walltime cap of 23:59:00 instead of 11:59:59 —
+-`preemptable` allows 24h, and a limit cannot be raised after submission, so it
+-has to be asked for here. `scripts/preempt_drain.sh` moves *pending* runs
+-there too, but only the top rungs and only if they already carry `--requeue`.
++because the three pieces travel together: `MEGATRON_EXIT_ON_SIGTERM=1` on the
++srun line (so the patched handler catches the preemption signal and Megatron
++checkpoints inside the 4 min grace), `PRETRAIN_CHAIN=1` (so the wrapper queues
++a singleton successor *before* it starts training, which resumes from that
++save), and a walltime cap of 23:59:00 instead of 11:59:59 — `preemptable`
++allows 24h, and a limit cannot be raised after submission, so it has to be
++asked for here. The chain replaced `--requeue` on 2026-09-21: Clariden holds a
++job on its sixth requeue (`MaxBatchRequeue=5`) and a preemption spends one, so
++three runs stopped dead after five clean preemptions. Each chain link is a new
++jobid, so no cap applies. `scripts/preempt_drain.sh` moves *pending* runs
++there too, but only the top rungs and only those that can come back.
+ 
+ Diagnostic knobs (CSCS only, and see the config rule under "The sweep" —
+ each forces a `diag-` name, so neither can touch a grid cell):
+diff --git a/src/pretrain/launch_pretraining_cscs.sh b/src/pretrain/launch_pretraining_cscs.sh
+index fd5891f8..68a29cad 100755
+--- a/src/pretrain/launch_pretraining_cscs.sh
++++ b/src/pretrain/launch_pretraining_cscs.sh
+@@ -11,11 +11,10 @@
+ #SBATCH --mem=460000
+ #SBATCH --signal=SIGUSR2@3600	# Send SIGUSR2 1h before hitting the time limit
+ #SBATCH --no-requeue	# Don't requeue on node failure so we don't lose the logs
+-#SBATCH --open-mode=append	# A requeue keeps the jobid, so %x-%j would be
+-				# reopened: append, or the first attempt's log is
+-				# truncated. (launch_trainings.py --partition
+-				# preemptable passes --requeue, which outranks
+-				# the directive above.)
++#SBATCH --open-mode=append	# Belt and braces: nothing requeues these any more
++				# (preemptable self-chains instead, one new jobid
++				# per link), but a requeue would keep the jobid and
++				# reopen %x-%j, truncating the first attempt's log.
+ 
+ # CSCS wrapper of the predictivity training pair — the SLURM half
+ # (launch_pretraining_azure.sh is the Azure half). Every Megatron argument
+@@ -61,6 +60,133 @@ TENSORBOARD_DIR=$LOGGING_DIR/tensorboard
+ 
+ mkdir -p $CKPT_DIR $TRIGGER_DIR $DEBUG_DIR $LOGGING_DIR $DATA_CACHE_DIR
+ 
++################ Self-chain ################
++# Clariden's MaxBatchRequeue is 5 and a preemption spends one, so a --requeue'd
++# run on `preemptable` is HELD on its sixth — reported, misleadingly, as
++# "launch failure limit exceeded requeued held" even when every attempt ended
++# in a clean preemption (three runs stopped that way on 2026-09-21). A chain
++# never meets that cap, because each link is a NEW jobid. This is the shape
++# data/submit_build_one.sh has always used, and it is proven at length:
++# build-a-L8-165b took 29 links over 36h (24 PREEMPTED, 3 FAILED, 1 CANCELLED,
++# 1 COMPLETED) to finish one 165B mixture.
++#
++# The successor is queued UP FRONT, before training starts, with
++# --dependency=singleton — same job name, so only one link of a cell ever runs.
++# Queuing it first is what makes it preemption-safe: a killed attempt leaves
++# its successor already pending (holding a queue position, which a resubmit
++# would forfeit), and the idempotent resume picks up from the checkpoint the
++# patched signal handler wrote on the way out.
++#
++# Opt-in via PRETRAIN_CHAIN, which launch_trainings.py sets for
++# --partition preemptable: a manual `sbatch` of this wrapper must never
++# silently queue a second 21-node job.
++CHAIN_SCRIPT=$SCRIPT_DIR/launch_pretraining_cscs.sh
++# Where THIS job's %x-%j.out actually lands, asked of the controller rather
++# than assumed: counting attempts in a directory that holds none reads 0 every
++# time, so the cap never fires and the chain runs unbounded at 21 nodes a link.
++# The #SBATCH --output above does pin every user's logs to this one tree today
++# (8 of aromanou's are in it), but a chain that cannot find its own bound must
++# not guess at one.
++if [ -z "${CHAIN_LOGDIR:-}" ]; then
++	CHAIN_LOGDIR=$(scontrol show job "$SLURM_JOB_ID" 2>/dev/null \
++	               | sed -n 's/.*StdOut=\([^[:space:]]*\).*/\1/p' | head -1)
++	CHAIN_LOGDIR=${CHAIN_LOGDIR%/*}
++fi
++
++# done | fresh | resume | corrupt for this cell, or EMPTY when the check could
++# not run at all. Empty is NOT "not done": chaining on a state we cannot read
++# would spend the whole attempt budget on links that allocate nodes and exit,
++# which is why pretrain_progress.py --cell-action prints the word instead of
++# encoding it in an exit status an ImportError could forge. python3.11 first —
++# the system python3 is 3.6 and cannot parse launch_trainings.py, which
++# pretrain_progress imports (scripts/preempt_drain.sh has the same note).
++cell_action() {
++	local py
++	# No positive target, no verdict: against a target of 0 cell_action calls
++	# every cell with a checkpoint "done", and the wrapper would skip training
++	# and cancel the chain. -gt, not -n: `[ -n "0" ]` is true.
++	[ "${TRAINING_STEPS:-0}" -gt 0 ] 2>/dev/null || return 0
++	py=$(command -v python3.11 || command -v python) || return 0
++	"$py" "$SCRIPT_DIR/pretrain_progress.py" --cell-action \
++	      "$EXP_DIR" "$TRAINING_STEPS" 2>/dev/null
++}
++# "<word> <latest valid iter>", or both empty when the check could not run.
++read -r CELL_ACTION CELL_ITER <<<"$(cell_action)"
++
++# Cancelling the successor is a chain operation: a plain `normal` or manual run
++# must not scancel jobs it never queued. Empty name guarded too — scancel with
++# no name filter is not a mistake worth risking.
++cancel_successor() {
++	[ -n "${PRETRAIN_CHAIN:-}" ] && [ -n "${SLURM_JOB_NAME:-}" ] \
++		&& scancel --state=PENDING --name="$SLURM_JOB_NAME"
++	return 0
++}
++
++# Already at the target: end the chain rather than start Megatron on a finished
++# cell. The successor this link would otherwise inherit has nothing to do.
++if [ "$CELL_ACTION" = done ]; then
++	echo "[$(date)] $EXP_NAME is already at its target of ${TRAINING_STEPS:-?} iters — nothing to train; ending the chain."
++	cancel_successor
++	exit 0
++fi
++
++if [ -n "${PRETRAIN_CHAIN:-}" ]; then
++	# The successor inherits the partition this attempt actually ran in (a
++	# drainer may have moved it) and its walltime — a limit cannot be raised
++	# after submission, so it has to be asked for here.
++	CHAIN_PART=${CHAIN_PARTITION:-$SLURM_JOB_PARTITION}
++	CHAIN_TIME=${CHAIN_WALLTIME:-$(squeue -h -j "$SLURM_JOB_ID" -O TimeLimit 2>/dev/null | tr -d ' ')}
++	[ -n "$CHAIN_TIME" ] || CHAIN_TIME=11:59:59
++	# The no-progress guard, and the real bound on this chain. Each link records
++	# the iteration it STARTED from; when that has not moved, the link before it
++	# achieved nothing, and a chain that achieves nothing four times running is
++	# retrying a failure, not surviving preemption. On 2026-09-22 one cell burned
++	# 17 links x 21 nodes this way: its logging/tensorboard belonged to a
++	# collaborator, so rank 83 died of PermissionError ~70s in, every time, and
++	# Slurm killed the step for TASK FAILURE while the wrapper still exited 0.
++	# Progress resets the counter, so a genuinely preempted run is never capped.
++	# Per-USER filename. This directory carries a default ACL granting each
++	# collaborator rwx, but a file one of them creates belongs to them and group
++	# a139 gets only r-x — and the dir is sticky, so nobody can replace it. A
++	# shared name would let whoever chained first freeze everyone else's counter
++	# at its value forever.
++	PROGRESS_FILE=$CHAIN_LOGDIR/.chain-$SLURM_JOB_NAME-${USER:-$(id -un)}.progress
++	stalls=0; progress_recorded=
++	if [ -n "$CELL_ACTION" ] && [ -d "$CHAIN_LOGDIR" ]; then
++		read -r prev_iter prev_stalls 2>/dev/null < "$PROGRESS_FILE" || prev_iter=
++		# Anything but digits restarts the count rather than poisoning `-ge`.
++		case ${prev_stalls:-} in ''|*[!0-9]*) prev_stalls=0 ;; esac
++		if [ "$CELL_ITER" = "$prev_iter" ]; then stalls=$((prev_stalls + 1)); fi
++		echo "$CELL_ITER $stalls" > "$PROGRESS_FILE" 2>/dev/null && progress_recorded=1
++	fi
++	# The attempt cap is now only a backstop against something the stall counter
++	# cannot see, so it is generous: a 3-day 3B at the observed ~1 preemption/hour
++	# needs 30-70 links, and build-a-L8-165b needed 29 for a ONE-node build.
++	# One %x-%j.out per attempt — each link is its own jobid, so nothing appends.
++	n_attempts=$(find "$CHAIN_LOGDIR" -maxdepth 1 -name "${SLURM_JOB_NAME}-[0-9]*.out" 2>/dev/null | wc -l)
++	if [ ! -r "$CHAIN_SCRIPT" ]; then
++		echo "[$(date)] WARN: no chain successor — $CHAIN_SCRIPT unreadable (PRETRAIN_DIR wrong?)"
++	elif [ -z "$CELL_ACTION" ]; then
++		echo "[$(date)] WARN: no chain successor — could not read this cell's state; re-run launch_trainings.py to resume it"
++	elif [ ! -d "$CHAIN_LOGDIR" ]; then
++		echo "[$(date)] WARN: no chain successor — cannot count attempts in '$CHAIN_LOGDIR'; an uncountable chain is an unbounded one"
++	elif [ "$CELL_ACTION" = corrupt ]; then
++		echo "[$(date)] WARN: no chain successor — cell is corrupt (iter dirs on disk, none loadable); launch_trainings.py refuses these too, they want manual review"
++	elif [ -z "$progress_recorded" ]; then
++		echo "[$(date)] WARN: no chain successor — cannot record progress in $PROGRESS_FILE; a chain whose progress cannot be recorded cannot be stopped by one"
++	elif [ "$stalls" -ge "${CHAIN_MAX_STALLS:-4}" ]; then
++		echo "[$(date)] WARN: no chain successor — $stalls links in a row started at iter $CELL_ITER without advancing; this is a failing run, not a preempted one. Read $SLURM_JOB_NAME-$SLURM_JOB_ID.err, fix it, then re-run launch_trainings.py."
++	elif [ "$n_attempts" -ge "${CHAIN_MAX_ATTEMPTS:-200}" ]; then
++		echo "[$(date)] WARN: no chain successor — $n_attempts attempts already (raise CHAIN_MAX_ATTEMPTS, default 200)"
++	else
++		echo "[$(date)] queuing singleton successor (attempt $n_attempts, $CHAIN_PART, $CHAIN_TIME, $SLURM_JOB_NUM_NODES nodes)"
++		sbatch --dependency=singleton --job-name="$SLURM_JOB_NAME" \
++		       --partition="$CHAIN_PART" --time="$CHAIN_TIME" \
++		       --nodes="$SLURM_JOB_NUM_NODES" --account="$SLURM_JOB_ACCOUNT" \
++		       --comment=selfchain --export=ALL "$CHAIN_SCRIPT"
++	fi
++fi
++
+ # Set up ENV
+ export TORCH_NCCL_AVOID_RECORD_STREAMS=1
+ export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
+@@ -143,10 +269,10 @@ cp $SCRIPT_PATH $DEBUG_DIR
+ # launch_trainings.py --partition preemptable) becomes MEGATRON_EXIT_ON_SIGTERM
+ # on the srun line below, and the patched DistributedSignalHandler then adds
+ # SIGTERM to what --exit-signal-handler catches, so Megatron checkpoints at the
+-# next iteration boundary and exits. With --requeue the job comes back with the
+-# same jobid and partition and resumes from that save, which is off the
+-# checkpoint grid — `run_interval`/`due_iters` already expect that from the
+-# walltime SIGUSR2, and an off-grid save is never due for eval.
++# next iteration boundary and exits. The singleton successor queued at the top
++# then starts and resumes from that save, which is off the checkpoint grid —
++# `run_interval`/`due_iters` already expect that from the walltime SIGUSR2, and
++# an off-grid save is never due for eval.
+ #
+ # This trap is NOT that mechanism, and on its own it does not work: SLURM
+ # signals the step's tasks directly, so by the time a batch-shell trap runs the
+@@ -179,6 +305,16 @@ echo "srun exited $SRUN_RC"
+ 
+ echo "END TIME: $(date)"
+ 
++# Reached the target: the successor queued before training has nothing left to
++# do, and letting it start would allocate $SLURM_JOB_NUM_NODES nodes to print
++# one line and exit. A preempted or failed attempt deliberately leaves it
++# pending — that is the whole point of queuing it up front.
++read -r CELL_ACTION CELL_ITER <<<"$(cell_action)"
++if [ "$CELL_ACTION" = done ]; then
++	echo "[$(date)] $EXP_NAME reached ${TRAINING_STEPS:-?} iters — cancelling the pending chain successor"
++	cancel_successor
++fi
++
+ if [ -f $TRIGGER_DIR/exit ]; then
+    echo "[$(date)] Detected exit trigger in $TRIGGER_DIR/exit, cancelling pending jobs"
+    rm -f $TRIGGER_DIR/exit
+diff --git a/src/pretrain/launch_trainings.py b/src/pretrain/launch_trainings.py
+index a16b48d0..2952ac09 100644
+--- a/src/pretrain/launch_trainings.py
++++ b/src/pretrain/launch_trainings.py
+@@ -888,12 +888,19 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
+                 dependency: Optional[str] = None,
+                 partition: Optional[str] = None) -> None:
+     if partition == PREEMPT_PARTITION:
+-        # The wrapper turns this into MEGATRON_EXIT_ON_SIGTERM on the srun
+-        # line, and the patched DistributedSignalHandler then checkpoints on
+-        # the preemption signal instead of dying on it. Only here: it also
+-        # makes `scancel` save before stopping, which is not what you want on
+-        # a job you are killing.
+-        env = {**env, "EXIT_ON_SIGTERM": "1"}
++        # EXIT_ON_SIGTERM: the wrapper turns this into MEGATRON_EXIT_ON_SIGTERM
++        # on the srun line, and the patched DistributedSignalHandler then
++        # checkpoints on the preemption signal instead of dying on it. Only
++        # here: it also makes `scancel` save before stopping, which is not what
++        # you want on a job you are killing.
++        #
++        # PRETRAIN_CHAIN: the wrapper queues a singleton successor before it
++        # starts training, so a preempted run comes back as a NEW job. Not
++        # --requeue, which is what this used to pass: Clariden caps a job at
++        # MaxBatchRequeue=5 requeues and a preemption spends one, so on the
++        # sixth Slurm holds the run and calls it a launch failure. A chain has
++        # no such cap (data/submit_build_one.sh has always worked this way).
++        env = {**env, "EXIT_ON_SIGTERM": "1", "PRETRAIN_CHAIN": "1"}
+     export_vars = ",".join(f"{k}={v}" for k, v in env.items())
+     # PRETRAIN_DIR: sbatch spools the wrapper, so it can't find megatron_args.sh
+     # from $0 — pass the real checkout dir here.
+@@ -910,13 +917,12 @@ def submit_cscs(env: dict, dry_run: bool, nodes: Optional[int] = None,
+     if partition is not None:
+         cmd.append(f"--partition={partition}")
+         if partition == PREEMPT_PARTITION:
+-            # The wrapper's #SBATCH --no-requeue exists so a node failure does
+-            # not overwrite the logs; on `preemptable` coming back is the whole
+-            # point, and the command line outranks the directive. A requeued
+-            # job keeps its jobid AND its partition, so it returns straight to
+-            # `preemptable` — see the wrapper's SIGTERM trap for the
+-            # checkpoint it saves on the way out.
+-            cmd.append("--requeue")
++            # The wrapper's #SBATCH --no-requeue stands: coming back is the
++            # chain's job, not Slurm's. --comment is how a job advertises that
++            # it chains — the env that carries PRETRAIN_CHAIN is invisible to
++            # squeue, and scripts/preempt_drain.sh has to know before it moves
++            # a 21-node run onto a partition that will preempt it.
++            cmd.append("--comment=selfchain")
+     cmd.append(str(CSCS_SUBMIT_SCRIPT))
+ 
+     print(f"  job:    {job_name('pretrain', env['EXP_NAME'])}"
+@@ -1067,10 +1073,11 @@ def main() -> None:
+                         help=f"CSCS only: submit to this partition. "
+                              f"`{PREEMPT_PARTITION}` starts immediately "
+                              f"instead of queueing behind the 480-node cap on "
+-                             f"`normal`, and also adds --requeue and lets the "
++                             f"`normal`, and also self-chains and lets the "
+                              f"auto walltime reach 23:59:00 — the run "
+-                             f"checkpoints on preemption and resumes when it "
+-                             f"is requeued (../pretrain/CLAUDE.md)")
++                             f"checkpoints on preemption and a successor "
++                             f"queued before it started resumes from that "
++                             f"save (../pretrain/CLAUDE.md)")
+     parser.add_argument("--dependency", metavar="DEP",
+                         help="CSCS only: pass-through to sbatch --dependency")
+     parser.add_argument("--training-steps", metavar="N", type=int,
+diff --git a/src/pretrain/pretrain_progress.py b/src/pretrain/pretrain_progress.py
+index 3dc865e7..76f1984c 100755
+--- a/src/pretrain/pretrain_progress.py
++++ b/src/pretrain/pretrain_progress.py
+@@ -1041,4 +1041,22 @@ if __name__ == "__main__":
+             print("usage: pretrain_progress.py --is-valid <iter_dir>", file=sys.stderr)
+             sys.exit(2)
+         sys.exit(0 if is_valid_iter_dir(Path(sys.argv[2])) else 1)
++    # The same for the whole-cell decision:
++    #   python3.11 pretrain_progress.py --cell-action <model_dir> <target_iters>
++    # prints "<done|fresh|resume|corrupt> <latest valid iter, 0 if none>".
++    # launch_pretraining_cscs.sh reads the word to decide whether to queue a
++    # chain successor and the iteration to tell a chain that is surviving
++    # preemptions from one that is retrying a failure. It reads the WORD, not
++    # the exit status: an ImportError and a legitimate "not done" both exit
++    # non-zero, and the difference decides between ending a chain and burning
++    # its whole budget on links that allocate 21 nodes and die.
++    if len(sys.argv) >= 2 and sys.argv[1] == "--cell-action":
++        if len(sys.argv) != 4:
++            print("usage: pretrain_progress.py --cell-action <model_dir> "
++                  "<target_iters>", file=sys.stderr)
++            sys.exit(2)
++        model_dir = Path(sys.argv[2])
++        print(cell_action(model_dir, int(sys.argv[3]))[0],
++              model_progress(model_dir)[1] or 0)
++        sys.exit(0)
+     main()

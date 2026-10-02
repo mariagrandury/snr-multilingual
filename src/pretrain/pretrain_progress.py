@@ -254,8 +254,8 @@ def scan_runs(root: Path) -> list[dict]:
     runs = []
     for entry in sorted(root.iterdir()):
         m = NAME_RE.match(entry.name)
-        if not m:
-            continue
+        if not m or int(m["gbs"] or GBS) != cell_gbs(m["size"]):
+            continue          # a retired batch-504 dir of a rung that now trains at its own batch
         arch = m["arch"]
         target = targets[(arch, m["size"])]
         _, max_valid = model_progress(entry)
@@ -751,7 +751,7 @@ def _data_cell(c: dict, target: int, head: str) -> tuple[str, bool]:
         [f"{cell_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
     planned, why = None, "not staged"
     if all(Path(f"{p}.{ext}").is_file() for p in prefixes for ext in ("bin", "idx")):
-        fw_dir, why = fineweb_source(c, CSCS_DEFAULT_DATA_DIR, target * GBS * SEQ_LEN)
+        fw_dir, why = fineweb_source(c, CSCS_DEFAULT_DATA_DIR, target * cell_gbs(c["size"]) * SEQ_LEN)
         planned = prefixes[:1] + ([f"{fw_dir}/fineweb_L{c['L']}"] if c["L"] > 1 else [])
     m = DATA_PATH_RE.search(head)
     read = [p for p in re.findall(r"'([^']+)'", m[1]) if "/" in p] if m else None

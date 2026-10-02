@@ -1,0 +1,68 @@
+## documents/figures/data.py
+   17: ladder_report.csv
+## documents/figures/predictivity.py
+   119: min_predictive.csv
+## documents/paper/sections/verify_paper_results.py
+   72: ten_checkpoints.csv
+## scripts/grant_collaborator.sh
+   56: auto_eval_errors.json
+## scripts/nightly_ladder.sh
+   119: ladder_report.csv
+   142: ladder_report_curve.csv
+## scripts/preempt_drain.sh
+   38: bpb.json
+## scripts/refresh_analysis.sh
+   64: ladder_report.csv
+## src/signal-and-noise/analysis/grids.py
+   8: _by_benchmark.png
+   9: _by_language.png
+## src/signal-and-noise/analysis/rq00_gate_and_curves/curves.py
+   53: ladder_report_curve.csv
+## src/signal-and-noise/analysis/rq01_scaling_predictability/regimes.py
+   342: v5.json
+   403: _paper.png
+## src/signal-and-noise/analysis/rq01_scaling_predictability/tokens_seen.py
+   12: _cells.csv
+   35: _points.csv
+   292: _paper.png
+## src/signal-and-noise/analysis/rq02_decision_accuracy/by_L.py
+   72: _mono_axis.png
+## src/signal-and-noise/analysis/rq02_decision_accuracy/by_language.py
+   37: _tokens.png
+   45: _coverage.csv
+## src/signal-and-noise/analysis/rq02_decision_accuracy/cross_task.py
+   16: cross_task_{size,ckpt}_by_family.png
+   18: cross_task_{size,ckpt}_by_language.png
+   21: cross_task_{size,ckpt}_benchmarks.png
+## src/signal-and-noise/analysis/rq02_decision_accuracy/reliable_tasks.py
+   47: _multi_axes.png
+## src/signal-and-noise/analysis/rq02_decision_accuracy/scale_convergence.py
+   62: scale_convergence_da_size.png
+   68: _flops.png
+   80: _above_80.png
+## src/signal-and-noise/analysis/rq03_noise_and_snr/compare_seed_splits.py
+   20: _multi_axes.csv
+   22: _multi_axes.png
+## src/signal-and-noise/analysis/rq05_design_decisions/panels.py
+   268: _mono_axis.csv
+## src/signal-and-noise/analysis/rq08_subset_selection/build_per_item_store.py
+   24: manifest.csv
+## src/signal-and-noise/analysis/rq08_subset_selection/compare_per_sample_methods.py
+   9: method_comparison.csv
+   12: method_summary.csv
+## src/signal-and-noise/analysis/rq08_subset_selection/per_item_ladder.py
+   25: per_item_ladder.png
+## src/signal-and-noise/analysis/rq10_size_generalisation/above_reference.py
+   36: _per_task.csv
+## src/signal-and-noise/run_all_predictivity.sh
+   7: ladder_report.csv
+## src/signal-and-noise/snr/autobencher/autobench/tool_util.py
+   276: response.json
+## src/signal-and-noise/snr/autobencher/autobench/wiki_autobencher.py
+   181: compare_answers.json
+   368: categories.json
+   465: questions.json
+   671: KI_questions.json
+## src/signal-and-noise/snr/download/ladder.py
+   1: ladder_report.csv
+   44: ladder_report_curve.csv

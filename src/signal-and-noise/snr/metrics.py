@@ -69,7 +69,7 @@ def decision_acc_fast(scores_small: np.ndarray, scores_target: np.ndarray) -> fl
     item count ties easily) and 0 % of per-language BPB and loss pairs — and
     1,225 of 2,845 (task, size) cells contain at least one. A cell's value
     can move by up to (tied pairs) / (all pairs). The per-task tables
-    committed on 2026-09-16 (rq02 ``da_all_per_task_both_axes.csv``, rq03
+    committed on 2026-09-16 (rq02 ``da_per_task.csv``, rq03
     ``snr_variants_per_task.csv``) were produced with the upstream kernel;
     ``run_all_predictivity.sh`` regenerates them with this one.
 

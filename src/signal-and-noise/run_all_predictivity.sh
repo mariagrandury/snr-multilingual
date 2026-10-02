@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..100} × deep/shallow
-# × five data schemes × seeds) from the published ladder report — the wide CSV that
+# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..50} × deep/shallow
+# × seven data schemes × seeds) from the published ladder report — the wide CSV that
 # `src/pretrain/ladder_report.py --plot --publish --push-hf` writes to the HF
 # dataset named in configs/hf_wandb.json (`repo_id_ladder_report`). The loader
 # downloads it on first use; point SNR_LADDER_DIR at a directory holding
@@ -75,15 +75,11 @@ pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
-# the gate on one task, run by run (hellaswag_ta: at chance to 600M, above from 1B)
-run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
-# the twins' effect on the gate (McNemar) and on every headline reading with / without them
-run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
 # which probe candidates survive the gate, per language: read off the committed mask (README block `probe-survivors`)
 run $PY analysis/rq00_task_reformulation/probe_survivors.py
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
@@ -112,7 +108,7 @@ for t in "${POOLS[@]}"; do
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
 done
-# the scheme-inclusive DA table: every data scheme at the grid seed (AT3/BT3 =
+# the scheme-inclusive DA table: every data scheme at the grid seed (AT3 =
 # a temperature, ZH/ES = a second language), which is the population by_L and
 # scale_convergence actually pair over. The headline `predictivity` pool keeps
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
@@ -128,6 +124,12 @@ done
 # scale_convergence both skip their filtered variants when it has not run yet,
 # which silently costs the paper's rq2 figures.
 run $PY analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity
+# two rq00 figures that READ rq01's regimes and the two rq02 tables above, so they run
+# here and not in the rq00 block, where they drew the previous refresh's tables
+# (CLAUDE.md bug #16): the gate on one task, run by run, with its rq02 cells;
+run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
+# the twins' effect on the gate (McNemar) and on every headline reading with / without them
+run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
 # the toy explainer of the three DA kinds, the pair sets and the value lattice (no measured number; README block)
 run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
 # per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
