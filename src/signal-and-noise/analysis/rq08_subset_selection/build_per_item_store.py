@@ -7,12 +7,15 @@ cell trains (rules 2 and 6) — read the latest ``samples_<task>_*.jsonl`` under
 the top-ups; the union is scanned and the newest file per task wins) and keep
 one row per item:
 
-    model, step, task, doc_id:int32, acc, acc_norm, ll_gold, margin (float32)
+    model, step, task, doc_id:int32, acc, acc_norm, ll_gold, margin, bytes_gold (float32)
 
 ``doc_id`` is lm-eval's positional id, stable across checkpoints. ``ll_gold``
 is the log-likelihood of the target choice (``resps`` per choice, ``target``
 its index — a digit, or a letter for the MMLU-style tasks) and ``margin`` is
-that minus the best other choice; both NaN where the record is not a
+that minus the best other choice; ``bytes_gold`` is the UTF-8 length of the
+target's continuation (``arguments.gen_args_<target>.arg_1``, the harness's
+``acc_bytes`` length), so ``-ll_gold / ln2 / bytes_gold`` is the item's
+bits-per-byte on the gold answer; all three NaN where the record is not a
 multiple-choice one. A parent with no samples file of its own (Global-MMLU,
 INCLUDE, mmlu: the harness writes one file per subject) is the union of its
 ``samples_<parent>_<subject>_*`` files with ``doc_id = FACET_STRIDE * rank +
@@ -24,13 +27,14 @@ directory of part files, one per flush, so a killed job keeps what it wrote),
 plus ``manifest.csv``; a (model, step, task) in the manifest is skipped on the
 next run. The folder is data (git-ignored), not a figure.
 
-Records are 3-5 KB and only five fields are read: the head (doc_id) and tail
-(acc, acc_norm) are regexes and ``target`` / ``resps`` are sliced by index and
+Records are 3-5 KB and only six fields are read: the head (doc_id) and tail
+(acc, acc_norm) are regexes and ``target`` / ``arguments`` / ``resps`` are sliced by index and
 json-decoded alone, which is 1.4x faster than ``json.loads`` of the record; a
 line the regexes cannot read is decoded whole.
 
     python analysis/rq08_subset_selection/build_per_item_store.py --pool predictivity_seeds --workers 64
     python ... --limit-models 1 --limit-tasks 3          # smoke test, one checkpoint dir per model
+    python ... --pool predictivity_schemes --finals-only --families rf_belebele,hellaswag   # bench-BPB DA
 """
 
 from __future__ import annotations
@@ -60,7 +64,7 @@ from pretrain.ladder_report import EVAL_LOGS  # noqa: E402
 
 STORE = SUBSET_SELECTION / "per_item_store"
 FACET_STRIDE = 10_000        # doc_id offset per subject file of a parent without its own file
-COLS = ["model", "step", "task", "doc_id", "acc", "acc_norm", "ll_gold", "margin"]
+COLS = ["model", "step", "task", "doc_id", "acc", "acc_norm", "ll_gold", "margin", "bytes_gold"]
 _FILE = re.compile(r"^samples_(.+)_(\d{4}-\d{2}-\d{2}T[\d\-.]+)\.jsonl$")
 _HEAD = re.compile(r'^\{"doc_id": (\d+), ')
 _TAIL = re.compile(r'"acc": ([^,}]+)(?:, "acc_norm": ([^,}]+))?\}\s*$')
@@ -75,22 +79,24 @@ def gold_index(target) -> int:
 def parse_record(line: str) -> tuple:
     h, t = _HEAD.match(line), _TAIL.search(line, max(0, len(line) - 64))
     if h and t:
-        i = line.index('"target": '); j = line.index(', "arguments"', i)
+        j = line.index(', "arguments": {"gen_args_'); i = line.rindex('"target": ', 0, j)   # a doc may hold its own "target"
         a = line.index('"resps": ', j); b = line.index(', "filtered_resps"', a)
         doc_id, target, resps = int(h[1]), json.loads(line[i + 10:j]), json.loads(line[a + 9:b])
+        args = json.loads(line[j + 15:a - 2])
         acc, acc_norm = float(t[1]), float(t[2]) if t[2] else np.nan
     else:
         o = json.loads(line)
-        doc_id, target, resps = o["doc_id"], o["target"], o["resps"]
+        doc_id, target, resps, args = o["doc_id"], o["target"], o["resps"], o.get("arguments")
         acc, acc_norm = o.get("acc", np.nan), o.get("acc_norm", np.nan)
-    ll_gold = margin = np.nan
+    ll_gold = margin = bytes_gold = np.nan
     g = gold_index(target)
     if resps and isinstance(resps[0][0], list) and 0 <= g < len(resps):   # loglikelihood per choice
         ll = np.array([float(r[0][0]) for r in resps])
         ll_gold = ll[g]
         if len(ll) > 1:
             margin = ll_gold - np.max(np.delete(ll, g))
-    return doc_id, acc, acc_norm, ll_gold, margin
+        bytes_gold = len(args[f"gen_args_{g}"]["arg_1"].encode("utf-8"))
+    return doc_id, acc, acc_norm, ll_gold, margin, bytes_gold
 
 
 def files_for(ckpt_dir: Path, tasks: list[str]) -> dict[str, list[tuple[Path, int]]]:
@@ -124,7 +130,7 @@ def extract(job: tuple[str, int, list[str]]) -> tuple[pd.DataFrame, list[dict]]:
                          "n_files": len(files), "n_records": len(df)})
     out = pd.concat(frames)[COLS] if frames else pd.DataFrame(columns=COLS)
     return out.astype({"step": "int32", "doc_id": "int32", "acc": "float32", "acc_norm": "float32",
-                       "ll_gold": "float32", "margin": "float32"}), manifest
+                       "ll_gold": "float32", "margin": "float32", "bytes_gold": "float32"}), manifest
 
 
 def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> None:
@@ -143,13 +149,16 @@ def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> No
     frames.clear(); manifest.clear()
 
 
-def main(pool: str, workers: int, limit_models: int, limit_tasks: int, flush_every: int) -> None:
+def main(pool: str, workers: int, limit_models: int, limit_tasks: int, flush_every: int,
+         finals_only: bool, families: list[str]) -> None:
     df = ladder_frame(pool)
     df = df[(df["kind"] == "benchmark") & (on_shared_grid(df) | on_noise_grid(df))]
     out_dir = STORE / pool
+    if families:
+        df = df[df["task"].map(benchmark_family).isin(families)]
     if limit_models:          # smoke test: the first models, ONE checkpoint dir each, the first tasks
-        models = sorted(set(df["model"]))[:limit_models]
-        df = df[df["model"].isin(models)]
+        df = df[df["model"].isin(sorted(set(df["model"]))[:limit_models])]
+    if limit_models or finals_only:
         df = df[df["step"] == df.groupby("model")["step"].transform("max")]
     if limit_tasks:
         df = df[df["task"].isin(sorted(set(df["task"]))[:limit_tasks])]
@@ -179,5 +188,8 @@ if __name__ == "__main__":
     ap.add_argument("--limit-models", type=int, default=0)
     ap.add_argument("--limit-tasks", type=int, default=0)
     ap.add_argument("--flush-every", type=int, default=16, help="checkpoint dirs per parquet part")
+    ap.add_argument("--finals-only", action="store_true", help="only each model's last checkpoint")
+    ap.add_argument("--families", type=lambda s: s.split(","), default=[],
+                    help="comma-separated benchmark families (benchmark_family) to extract")
     a = ap.parse_args()
-    main(a.pool, a.workers, a.limit_models, a.limit_tasks, a.flush_every)
+    main(a.pool, a.workers, a.limit_models, a.limit_tasks, a.flush_every, a.finals_only, a.families)
