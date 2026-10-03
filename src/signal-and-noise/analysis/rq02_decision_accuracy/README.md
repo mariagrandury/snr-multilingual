@@ -1214,7 +1214,221 @@ GitHub: [cross_task_ckpt.png](https://github.com/mariagrandury/snr-multilingual/
 GitHub: [cross_task_size_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_benchmarks.png) · [cross_task_size_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_benchmarks.csv) ·
 GitHub: [cross_task_ckpt_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_benchmarks.png) · [cross_task_ckpt_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_benchmarks.csv)
 
-### 11. Read next in the other RQs
+### 11. Benchmark BPB: a continuous score on the same items
+
+**DA-size · no filter · multi-axis pairs of `predictivity_schemes` (25
+variants at 1.7B, 300 pairs) · final checkpoints only · gate `predictivity`
+on the accuracy side only.** Figures 1–10 read every benchmark through its
+accuracy, a step function of the log-likelihoods the harness already
+computed. This figure reads the same items, the same checkpoints and the same
+pairs through the gold answer's bits-per-byte (**bBPB**). Does a continuous
+score rank like the reference where accuracy is a coin flip?
+
+How bBPB is computed (no model is re-run; `build_per_item_store.py` +
+`bench_bpb_da.py`):
+
+- **Source.** The lm-eval samples files of every final checkpoint,
+  `eval_logs/.../<cell>-iter<N>/harness/eval_*/samples_<task>_*.jsonl`. The
+  newest file per task wins across the top-up eval dirs. A parent with no file
+  of its own is the union of its subject files (rule 6). Only the iopsstor
+  copies work: the HF-pushed samples drop `arguments`.
+- **Per item.** `ll_gold` is the summed natural-log log-likelihood of the gold
+  choice, `resps[target]`. `target` is a digit or a letter (A = 0).
+  `bytes_gold` is the UTF-8 length of that choice's continuation,
+  `arguments.gen_args_<target>.arg_1`. It is the same string, with its leading
+  space, that the harness scores and that `acc_bytes` normalises by.
+- **Item bBPB** = `-ll_gold / ln 2 / bytes_gold`, the bits the model spends
+  per byte of the correct answer given the prompt. It is the OLMES / Heineman
+  et al. (2025) `correct_bpb`, and it is tokenizer-free like the FineWeb2 BPB.
+- **Task bBPB** is the mean over the task's items (OLMES's item mean, not
+  lm-eval's total-over-total `bits_per_byte`), at the run's final checkpoint.
+  Lower is better. DA compares signs of differences, so no flip is needed when
+  both sides are bBPB. Against accuracy the proxy side is negated.
+- **Which tasks.** Every parent task with per-choice log-likelihoods: the
+  trained-language parents of `ladder_frame` (rules 2 and 6).
+  - Generative tasks have no per-choice log-likelihoods and drop out.
+  - xwinograd and lambada drop out too, because their `target` is the answer
+    string, not a choice index. That leaves 816 tasks.
+  - *Lettered* tasks (mean gold length ≤ 2.5 bytes) score the continuation
+    `" A"`. Their bBPB is the letter's surprisal, not the answer text's.
+    `belebele`, `global_mmlu_full` and `include_base_44` are examples.
+  - Lettered tasks are summarised apart from the cloze ones. The `rf_` twins
+    are the cloze reading of the same items.
+- **Three readings, one kernel.** `pair_agreement` over the same families and
+  pairs for all three, with rule 5's NaN below three pairs:
+  - acc → 1.7B acc;
+  - bBPB → 1.7B acc, the practical question: does a small model's bBPB predict
+    the reference's accuracy ranking?
+  - bBPB → 1.7B bBPB.
+- **The gate (rule 1) applies to accuracy only.** bBPB has no chance level.
+  - The head-to-head population is the tasks above chance at 1.7B, where the
+    target ranking is not noise.
+  - acc → acc also needs the task above chance at the proxy, as in every rq02
+    figure, so its task count is smaller.
+  - bBPB is not gated at the proxy. That would discard exactly the regime it
+    is for: a proxy at chance on accuracy whose bBPB still separates the
+    designs.
+  - The paired test (Wilcoxon, bBPB → acc minus acc → acc) runs on the tasks
+    where both are defined.
+  - The raw ungated DAs and both gate flags stay in `bench_bpb_da.csv`.
+
+<!-- BEGIN auto:bench-bpb (bench_bpb_da.py --pool predictivity_schemes) -->
+## Benchmark BPB against accuracy
+
+DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (300 pairs), gate `predictivity` on the accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from `da_per_task.csv`. Regenerate with `python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes` (after `build_per_item_store.py --pool predictivity_schemes --finals-only`).
+
+**all benchmarks**
+
+| proxy | acc → acc (tasks) | bBPB → acc (tasks) | bBPB → bBPB | paired gain (tasks) | bBPB better / worse | Wilcoxon p | FineWeb2 val BPB |
+|---|---|---|---|---|---|---|---|
+| 90M | 0.52 (294) | 0.61 (492) | 0.70 | +0.11 (294) | 71% / 20% | <0.001 | 0.95 |
+| 175M | 0.54 (330) | 0.59 (492) | 0.65 | +0.06 (330) | 59% / 33% | <0.001 | 0.97 |
+| 350M | 0.53 (367) | 0.59 (492) | 0.68 | +0.07 (367) | 63% / 28% | <0.001 | 0.98 |
+| 600M | 0.55 (400) | 0.59 (492) | 0.66 | +0.05 (400) | 58% / 34% | <0.001 | 0.95 |
+| 1B | 0.57 (442) | 0.60 (492) | 0.67 | +0.03 (442) | 53% / 36% | <0.001 | 0.97 |
+
+**all cloze** (the answer text is the continuation)
+
+| proxy | acc → acc (tasks) | bBPB → acc (tasks) | bBPB → bBPB | paired gain (tasks) | bBPB better / worse | Wilcoxon p | FineWeb2 val BPB |
+|---|---|---|---|---|---|---|---|
+| 90M | 0.52 (291) | 0.61 (478) | 0.70 | +0.11 (291) | 72% / 20% | <0.001 | 0.95 |
+| 175M | 0.53 (328) | 0.59 (478) | 0.66 | +0.06 (328) | 59% / 33% | <0.001 | 0.97 |
+| 350M | 0.53 (365) | 0.60 (478) | 0.69 | +0.07 (365) | 64% / 28% | <0.001 | 0.98 |
+| 600M | 0.55 (397) | 0.60 (478) | 0.66 | +0.05 (397) | 58% / 34% | <0.001 | 0.95 |
+| 1B | 0.57 (438) | 0.60 (478) | 0.67 | +0.03 (438) | 53% / 36% | <0.001 | 0.97 |
+
+**all lettered** (the continuation is the letter: bBPB is the letter's surprisal)
+
+| proxy | acc → acc (tasks) | bBPB → acc (tasks) | bBPB → bBPB | paired gain (tasks) | bBPB better / worse | Wilcoxon p | FineWeb2 val BPB |
+|---|---|---|---|---|---|---|---|
+| 90M | 0.56 (3) | 0.54 (14) | 0.52 | -0.11 (3) | 33% / 33% | 1.000 | 0.95 |
+| 175M | 0.75 (2) | 0.48 (14) | 0.52 | -0.15 (2) | 50% / 50% | 1.000 | 0.97 |
+| 350M | 0.33 (2) | 0.50 (14) | 0.52 | +0.08 (2) | 50% / 0% | 1.000 | 0.98 |
+| 600M | 0.49 (3) | 0.52 (14) | 0.56 | +0.03 (3) | 67% / 33% | 0.750 | 0.95 |
+| 1B | 0.55 (4) | 0.45 (14) | 0.61 | -0.14 (4) | 25% / 50% | 0.500 | 0.97 |
+
+**Per benchmark**, mean over the five proxy sizes (tasks: the parent tasks with bBPB; cells: task-mean DA over those above chance at 1.7B, blank = all gated):
+
+| benchmark | tasks | acc → 1.7B acc | bBPB → 1.7B acc | bBPB → 1.7B bBPB |
+|---|---|---|---|---|
+| acp_bench_cloze | 7 |  |  |  |
+| arc | 28 | 0.56 | 0.64 | 0.63 |
+| arc_mt | 11 | 0.58 | 0.63 | 0.64 |
+| bbh_cloze | 6 |  |  |  |
+| bbh_mcq | 17 |  |  |  |
+| global_piqa_nonparallel_cloze | 2 | 0.79 | 0.75 | 0.90 |
+| global_piqa_parallel_cloze | 63 |  | 0.51 | 0.54 |
+| hellaswag | 26 | 0.76 | 0.82 | 0.87 |
+| include_v2_en | 77 | 0.48 | 0.49 | 0.52 |
+| include_v2_og | 77 | 0.54 | 0.59 | 0.64 |
+| mathqa | 1 | 0.53 | 0.51 | 0.49 |
+| multiblimp | 34 | 0.65 | 0.66 | 0.69 |
+| openbookqa | 1 |  | 0.56 | 0.57 |
+| paws | 8 | 0.58 | 0.54 | 0.68 |
+| acp_bench_mcq-rf | 7 | 0.43 | 0.50 | 0.54 |
+| bbh_mcq-rf | 17 | 0.46 | 0.47 | 0.54 |
+| belebele-rf | 59 | 0.49 | 0.58 | 0.71 |
+| commonsense_qa-rf | 1 | 0.53 | 0.57 | 0.58 |
+| cultural_bench_easy-rf | 19 | 0.36 | 0.43 | 0.53 |
+| global_mmlu_full-rf | 29 | 0.55 | 0.68 | 0.64 |
+| include_base_44-rf | 36 | 0.53 | 0.62 | 0.69 |
+| mmlu-rf | 1 | 0.64 | 0.67 | 0.60 |
+| belebele-rfgm | 59 | 0.50 | 0.59 | 0.74 |
+| include_base_44-rfgm | 36 | 0.55 | 0.63 | 0.80 |
+| toxigen | 1 |  |  |  |
+| truthfulqa-multi_mc1 | 2 |  |  |  |
+| truthfulqa_mc2 | 3 |  |  |  |
+| xcopa | 8 | 0.49 | 0.63 | 0.75 |
+| xnli | 15 | 0.51 | 0.53 | 0.70 |
+| xstorycloze | 8 | 0.66 | 0.74 | 0.86 |
+| acp_bench_mcq (letter) | 7 |  |  |  |
+| belebele (letter) | 59 | 0.58 | 0.51 | 0.55 |
+| blend_sample (letter) | 5 |  |  |  |
+| commonsense_qa (letter) | 1 |  |  |  |
+| cultural_bench_easy (letter) | 19 | 0.30 | 0.46 | 0.58 |
+| global_mmlu_full (letter) | 29 |  |  |  |
+| include_base_44 (letter) | 36 | 0.57 | 0.49 | 0.54 |
+| mmlu (letter) | 1 |  |  |  |
+
+![bBPB DA, overall](pretraining/predictivity_schemes/bench_bpb_da_bars.png)
+
+![bBPB DA, per benchmark](pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.png)
+
+![bBPB DA, heat map](pretraining/predictivity_schemes/bench_bpb_da_heatmap.png)
+<!-- END auto:bench-bpb -->
+
+Snapshot: ladder report cached 2026-10-02 06:24, samples read from
+`eval_logs` on 2026-10-02 (816 parent tasks with bBPB at the finals of 150
+cells). Raw per-task DAs and both gate flags: [`bench_bpb_da.csv`](pretraining/predictivity_schemes/bench_bpb_da.csv);
+every number below is in [`bench_bpb_da_summary.csv`](pretraining/predictivity_schemes/bench_bpb_da_summary.csv).
+
+**Key findings**
+
+- **bBPB predicts the 1.7B accuracy ranking better than accuracy does.**
+  - Paired over the tasks where both readings are defined, bBPB → acc minus
+    acc → acc is +0.11 at 90M (0.61 against 0.52; bBPB better on 71 % of
+    tasks, worse on 20 %).
+  - The gain shrinks with the proxy size: +0.06 at 175M, +0.07 at 350M, +0.05
+    at 600M and +0.03 at 1B, where it is better on 53 % and worse on 36 %.
+    Wilcoxon p < 0.001 at every size.
+- **It reads more tasks.** bBPB → acc is defined on 492 tasks at every proxy
+  size. acc → acc is defined on 294 at 90M and 442 at 1B, because accuracy
+  must also clear chance at the proxy.
+- **It is flat in size, accuracy is not.** bBPB → acc stays at 0.59–0.61
+  from 90M to 1B, while acc → acc only climbs from 0.52 to 0.57.
+  - A 90M model's bBPB is as useful a proxy as a 1B model's.
+  - Most of the gain is where accuracy is still noise.
+- **bBPB ranks itself more consistently than it predicts accuracy.**
+  - bBPB → 1.7B bBPB is 0.65–0.70, above bBPB → acc (0.59–0.61): part of
+    what a small model's bBPB gets right is the reference's bBPB ranking,
+    which the reference's accuracy does not share. How much is a follow-up.
+  - It is still far below FineWeb2 validation BPB (`bpb_macro`, 0.95–0.98),
+    which averages 1M tokens per language against a benchmark's few hundred
+    items.
+- **Per benchmark.** Means are over the five proxy sizes, and the arrows read
+  as acc → acc, then bBPB → acc.
+  - The largest gains are on the multilingual cloze sets: global_mmlu_full-rf
+    0.55 → 0.68, xcopa 0.49 → 0.63, include_base_44-rf 0.53 → 0.62 and
+    belebele-rf 0.49 → 0.58.
+  - hellaswag (0.76 → 0.82) and xstorycloze (0.66 → 0.74) were already
+    reliable and stay the best.
+  - The include_v2 English questions do not move (0.48 → 0.49).
+  - The Gemini-rewritten twins rank themselves best on bBPB: include_base_44
+    rfgm 0.80, belebele rfgm 0.74.
+- **The lettered tasks give no reading.**
+  - Only 14 of 157 lettered tasks are above chance at 1.7B, and their
+    continuation is a letter.
+  - bBPB → acc there is 0.45–0.54, i.e. a coin flip. The `rf_` twins are the
+    way to read those items continuously.
+
+**Follow-ups**
+
+- **The full checkpoint grid.** Run `build_per_item_store.py` without
+  `--finals-only` (normal partition, about 4 h). That gives bBPB's DA-ckpt,
+  DA-goal and SNR on the ten checkpoints, the readings figures 3 and 7 use for
+  accuracy.
+- **Feed bBPB into the shared pipeline.** Write it into `ladder_report.csv` as
+  a `bbpb__<task>` kind (not `bpb__`, which is the FineWeb2 family in
+  `snr/download/ladder.py`). Then `compute_da.py`, the scale-convergence
+  figure and rq03's SNR read it without a separate script.
+- **xwinograd and lambada.** Their `target` is the answer string, not a
+  choice index, so they have no bBPB yet.
+  - xwinograd's gold index is the doc's `answer` field.
+  - lambada has one continuation, so its gold is that continuation.
+  - Both are a change to `gold_index` and a re-extract of those two families.
+- **Seed null.** Repeat on `predictivity_seeds` to place bBPB's 0.61 against
+  the two-seeds-of-one-design null of figure 7, as DA-ckpt was.
+- **The reference's two rankings.** The DA between the 1.7B bBPB and the
+  1.7B accuracy rankings, per task, bounds what bBPB → acc can reach and
+  separates the likelihood-vs-accuracy gap from proxy noise.
+- **Cross-reading.** bBPB → acc against figure 10's cross-task map: a task's
+  bBPB as the proxy for another task's accuracy.
+
+GitHub: [bench_bpb_da_bars.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars.png) · [bench_bpb_da_bars.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars.csv) ·
+GitHub: [bench_bpb_da_bars_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.png) · [bench_bpb_da_bars_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.csv) ·
+GitHub: [bench_bpb_da_heatmap.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_heatmap.png) · [bench_bpb_da_heatmap.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_heatmap.csv)
+
+### 12. Read next in the other RQs
 
 Three rq02 readings live where their figures belong; the auto block of the
 first stays here because its script reads rq02's per-cell table.
@@ -1355,6 +1569,7 @@ built on them are in rq04's extensions.
   `language_tier.py` (figure 6); `seed_uncertainty.*` — `seed_uncertainty.py`
   (figure 7); `agreement_*.*` — `agreement.py` (figure 8);
   `cross_task_*.*` — `cross_task.py` (figure 10);
+  `bench_bpb_da*.*` — `bench_bpb_da.py` on `predictivity_schemes` (figure 11);
   `scaling_vs_ranking.*` — `scaling_vs_ranking.py` (rq01 figure 5);
   `public_ladders*.*` — `public_ladders.py` (extension).
 - `pretraining/predictivity_schemes/`, `predictivity_seeds*/` — the same

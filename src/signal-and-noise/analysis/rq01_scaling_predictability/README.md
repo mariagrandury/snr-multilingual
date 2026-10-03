@@ -324,7 +324,7 @@ ranking, `agreement_per_cell.csv`; DA-size, multi-axis pairs from
 `predictivity_schemes` at seed 1904, gate `predictivity`). The script and its
 outputs live in rq02's folder
 (`../rq02_decision_accuracy/scaling_vs_ranking.py`; auto block in
-[rq02's README](../rq02_decision_accuracy/README.md#11-read-next-in-the-other-rqs)).*
+[rq02's README](../rq02_decision_accuracy/README.md#12-read-next-in-the-other-rqs)).*
 
 ![Scaling against ranking](../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png)
 
