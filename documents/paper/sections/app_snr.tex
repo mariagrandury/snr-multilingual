@@ -17,7 +17,7 @@ A higher SNR means score differences across models are large relative to the ben
 \begin{equation}
 \text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
 \end{equation}
-On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and \S\ref{subsec:rq4} reports every intervention's effect against the seed noise.
+On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and our released analysis (rq05) reports every intervention's effect against the seed noise.
 We also consider a fifth noise definition, computable from a single evaluation run on any model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
 \begin{equation}
 \text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
