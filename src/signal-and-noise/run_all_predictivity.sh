@@ -80,6 +80,8 @@ run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
+# ... and the probe families' twins (README block `rf-compare-probe`; probe.sh's FAMILIES)
+run $PY analysis/rq00_task_reformulation/compare.py --tag probe --families mmlu,commonsense_qa,cultural_bench_easy,bbh_mcq,acp_bench_mcq
 # which probe candidates survive the gate, per language: read off the committed mask (README block `probe-survivors`)
 run $PY analysis/rq00_task_reformulation/probe_survivors.py
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
