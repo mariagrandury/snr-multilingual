@@ -37,8 +37,7 @@ if str(_SRC) not in sys.path:
 
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT  # noqa: E402
+from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
 from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
 
@@ -62,10 +61,6 @@ COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # compare transformations on. `bpb_all` is every per-language BPB row the
 # loader delivers, i.e. the languages the cell trains (RULES.md rule 2).
 POPULATIONS = ("benchmark", "bpb_all")
-# rq00 computes the above-random gate on the grid-seed pool; the all-seeds
-# pool has no mask of its own, so fall back to that one rather than leave the
-# benchmarks ungated (a task at chance in both cells decides nothing).
-GATE_POOL = "predictivity"
 
 
 def _cell(size: str, c: tuple) -> str:
@@ -202,10 +197,7 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
 def main(pool: str) -> None:
     out_dir = OUT_ROOT / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
-    mask = load_mask(pool)
-    if mask is None:
-        mask = load_mask(GATE_POOL)
-    da = transformation_da(ladder_frame(pool), mask)
+    da = transformation_da(ladder_frame(pool), gate_mask(pool))
     da.to_csv(out_dir / "transformation_da_size_mono_axis.csv", index=False)
     sm = summary(da)
     print(sm[sm["population"] == "benchmark"].pivot_table(index="label", columns="proxy_size", values="decision_acc_shared").round(2).to_string())

@@ -53,14 +53,14 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, SCALING_PREDICTABILITY  # noqa: E402
-from analysis.utils import TARGET_SIZE, size_order  # noqa: E402
+from analysis.utils import TARGET_SIZE, passes_gate, size_order  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SETS = ("rf", "rfgm")
 P_SIG = 0.05
 # A pair tied on one side counts as a miss in the DA kernel, so a proxy with no
 # signal reads 0.5 × (1 − share of one-sided ties), not 0.5: 0.47 on this ladder
-# (mean one-sided tie share 6.5 % per cell, `agreement_da_size_per_cell_multi_axes.csv`).
+# (mean one-sided tie share 6.3 % per cell, `agreement_da_size_per_cell_multi_axes.csv`).
 TIE_NULL = 0.47
 mpl.rcParams.update(S.RC)
 
@@ -121,7 +121,8 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
             gate_col = b[size].dropna()
             col = f"decision_acc_size_{size}"
             # rule 1: the DA mean is over the tasks above chance at the proxy AND at the reference
-            ok = d["task"].map(lambda t: t in passes.index and passes.loc[t, size] == 1 and passes.loc[t, TARGET_SIZE] == 1) \
+            # (passes_gate: a mask of NA, the generative tasks, passes); benchmarks only, as the gate share
+            ok = (d["task"].isin(bench["task"]) & passes_gate(passes, d["task"], size, TARGET_SIZE).to_numpy()) \
                 if col in d.columns else pd.Series(False, index=d.index)
             rows.append({"population": pop, "size": size, "tasks_gated": int(gate_col.notna().sum()),
                          "gate_share": gate_col.mean() if len(gate_col) else np.nan,

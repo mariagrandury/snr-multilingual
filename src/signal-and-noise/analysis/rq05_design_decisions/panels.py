@@ -7,9 +7,9 @@ early-decision read, without pooling the benchmarks.
     intervention_da_goal_early_by_language_mono_axis.png    the same per language
     da_all_lines_mono_axis.png                       DA-size (x = proxy size) and DA-ckpt (x = the reference's checkpoint), one line per
                                        intervention, mean over L; solid per-language BPB, dashed benchmarks, dotted training loss.
-                                       Read on the ten evaluated checkpoints of every run (`intervention_da_all_ckpt10_mono_axis.csv` and
-                                       `intervention_da_all_by_group_ckpt10_mono_axis.csv`, the decision table of analyze.py recomputed at
-                                       every k/10 checkpoint; the rest of the folder stays on 20-100 %)
+                                       Read on the ten evaluated checkpoints of every run (`intervention_da_all_ckpt10_mono_axis.csv`,
+                                       the decision table of analyze.py recomputed at every k/10 checkpoint; the rest of the folder
+                                       stays on 20-100 %)
     da_all_lines_decided_mono_axis.png               da_all_lines_mono_axis on the items whose reference |Δ| is >= DECIDED seed sds (analyze.py)
     depth_crossover.png                deep − shallow final BPB per size x L in seed sds: which depth wins, and by more than noise?
     da_all_lines_flops_mono_axis.png                 the same with every (proxy size, checkpoint) cell at its training compute
@@ -50,7 +50,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq05_design_decisions.analyze import (  # noqa: E402
-    CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, intervention_da, seed_sd)
+    CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, gate_mask, intervention_da, seed_sd)
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
 from analysis.utils import CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
 
@@ -229,14 +229,8 @@ def main(pool: str) -> None:
         if by == "family":
             highlights(out_dir, fin, keys)
     frame = ladder_frame(pool)
-    da, _, groups = intervention_da(frame, fracs=FRACS10)
+    da, _, _ = intervention_da(frame, fracs=FRACS10, mask=gate_mask(pool))
     da.to_csv(out_dir / "intervention_da_all_ckpt10_mono_axis.csv", index=False)
-    gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
-    (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-     if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
-     ).to_csv(out_dir / "intervention_da_all_by_group_ckpt10_mono_axis.csv", index=False)
-    if groups.empty:
-        print("!!! RULE 2: no per-group BPB items — the never-trained groups are rq06's; only trained languages reach this pool")
     da_lines(da, out_dir, labels={k: v[0] for k, v in INTERVENTIONS.items()},
              title="How small and how early each design decision can be read",
              note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
