@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=64
 #SBATCH --time=04:00:00
 #SBATCH --job-name=per-item-store
-#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq08_subset_selection/per_item_store/%x_%j.out
+#SBATCH --output=/iopsstor/scratch/cscs/mariagrandury/%x-%j.log
 
 # build_per_item_store.sbatch — the rq08 per-item store from the ladder's
 # lm-eval samples files (see build_per_item_store.py). Resumable: a second

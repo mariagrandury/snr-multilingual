@@ -133,8 +133,9 @@ twins, so its subset gains are a replication of the lever, never rows of the
 ladder's table. The per-item (Option D) pass under `per_sample/` is
 36-sweep-only as well: it needs the per-sample files that live on the
 cluster, and the ladder's per-item store (`build_per_item_store.sbatch`,
-`per_item_ladder.py`; `per_item_snr.csv`, `per_item_summary.csv` above) is
-its successor.
+`per_item_ladder.py`) is its successor. That store is cluster-only too, so
+`per_item_snr.csv` and `per_item_summary.csv` exist only where it was built;
+off the cluster the driver's step writes nothing.
 
 ## External model-set tier (`all/external`, 36-sweep)
 

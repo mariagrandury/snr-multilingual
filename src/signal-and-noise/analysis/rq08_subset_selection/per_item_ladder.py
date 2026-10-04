@@ -168,6 +168,11 @@ def main(pool: str, store: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = SUBSET_SELECTION / stage / pool
     out_dir.mkdir(parents=True, exist_ok=True)
+    if not any((STORE / store).glob("*.parquet")):
+        # the store lives on the cluster only: an empty one would overwrite the
+        # committed tables with column-less files
+        print(f"no per-item store at {STORE / store}: nothing written (build_per_item_store.sbatch builds it)")
+        return
     rng = np.random.default_rng(0)
     df = ladder_frame(pool)                                   # rules 2, 6 and 10 applied at load
     df = df[df["kind"] == "benchmark"]
