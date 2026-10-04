@@ -11,11 +11,14 @@ The main analysis uses every cell, with no restriction beyond MIN_UNITS
   rho        Spearman over one point per (benchmark, language) cluster (a task
              and its `rf_` twins): the cluster's mean surrogate against its
              mean truth, pooled over proxies and checkpoints. One point per
-             cluster makes the points independent, so its p is a valid test:
-             from MIN_P_UNITS units, a permutation test below PERM_BELOW units
-             (where Spearman's t approximation fails in the tails) and the t
+             cluster removes the repeated measures of a task, but clusters
+             of one benchmark still share its design (item count, format),
+             so p is a screening value, not an exact test: from MIN_P_UNITS
+             units, a permutation test below PERM_BELOW units (where
+             Spearman's t approximation fails in the tails) and the t
              approximation above; `q` is Benjamini-Hochberg over every
-             configuration of the main analysis.
+             configuration of the main analysis except the threshold filters,
+             which are built on the truth they are scored against.
   rho_cells  Spearman over every cell, no grouping.
   rho_w      within-(proxy size, fraction) Spearman: ranks inside each stratum,
              so a statistic that differs by proxy size cannot track a DA that
@@ -24,7 +27,9 @@ The main analysis uses every cell, with no restriction beyond MIN_UNITS
 The truths (`catalogue.py`): DA-size, DA-goal, DA-ckpt x DA, Kendall tau_b,
 Spearman rho x the multi-axis and mono-axis pair sets x every pair or the
 pairs sharing one language count L. Against DA-ckpt the surrogates that ARE an
-early-vs-final agreement of the proxy (`CIRCULAR`) are left out.
+early-vs-final agreement of the proxy (`CIRCULAR`) are left out, and so are
+the DA-ckpt cells inside the noise window (80 % and 90 %), whose checkpoints
+the window surrogates are computed on.
 
 The search space, per truth and task kind (benchmarks, per-language BPB):
 
@@ -88,7 +93,7 @@ from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noq
 from analysis.paths import DECISION_ACCURACY, SURROGATES  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import long_da, passes, per_task  # noqa: E402
 from analysis.rq04_surrogates.catalogue import NOISES, SIGNALS  # noqa: E402
-from analysis.utils import MIN_LANG_TASKS, PAIR_AXES  # noqa: E402
+from analysis.utils import FRAC_TOL, MIN_LANG_TASKS, NOISE_WINDOW, PAIR_AXES  # noqa: E402
 
 OUT_ROOT = SURROGATES
 KEYS = ["task", "language", "benchmark", "kind", "tier", "proxy_size", "axes"]
@@ -233,6 +238,10 @@ def load(out_dir: Path, pool: str) -> tuple[pd.DataFrame, list[str]]:
     names = [c for c in v.columns if c not in KEYS]
     v[names] = v[names].replace([np.inf, -np.inf], np.nan)
     d = t.drop(columns="language").merge(v, on=["task", "proxy_size", "axes"], how="inner")
+    # DA-ckpt inside the noise window compares checkpoints the window surrogates
+    # (noise, window_kendall, kendall_w_window, sign_consistency_window, dior)
+    # are computed on, so those cells would correlate partly by construction.
+    d = d[~((d["t_kind"] == "ckpt") & (d["frac"] >= 1 - NOISE_WINDOW - FRAC_TOL))]
     d["stratum"] = pd.factorize(d["proxy_size"] + "@" + d["frac"].astype(str))[0]
     base = d["benchmark"].str.replace(G._TWIN, r"\2", regex=True)
     d["cluster"] = base + "|" + d["language"]
@@ -608,7 +617,7 @@ def generate_readme(pool: str, corr, val, ceil, byL) -> None:
     body = "\n\n".join([
         "## A catalogue of surrogates beyond SNR",
         f"Numbers from the `{pool}` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool {pool}` "
-        f"then `search.py --pool {pool}`. Surrogates are read on the proxy alone (rule 11); the truths are rq02's DA "
+        f"then `search.py --pool {pool}`. Surrogates are read on the proxy alone (rule 11), except `pseudo_ref_da`, which reads the 1B rung; the truths are rq02's DA "
         f"(DA-size; DA-goal and DA-ckpt at every early checkpoint of the proxy; both pair sets; every pair or the pairs "
         f"sharing L) and Kendall τ-b / Spearman ρ on the same rankings, over cells above chance (rule 1). ρ is a "
         f"Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; populations "
@@ -640,7 +649,9 @@ def main(pool: str, out_dir: Path) -> None:
     filt.to_csv(out_dir / "surrogate_filters.csv", index=False)
     print(f"  filters: {len(filt):,} correlations")
     main_rows = pd.concat([corr, filt[filt["basis"] == "full"]], ignore_index=True)
-    has_p = main_rows["p"].notna()
+    # A filter is built from the top-K surrogates chosen on this same truth and
+    # data, so its p is not a test: filter rows keep rho and p but get no q.
+    has_p = main_rows["p"].notna() & (main_rows["subset_type"] != "filter")
     main_rows.loc[has_p, "q"] = bh(main_rows.loc[has_p, "p"].to_numpy())
     main_rows.drop(columns=[c for c in main_rows.columns if c.startswith("f_")]).to_csv(
         out_dir / "surrogate_correlations.csv", index=False)

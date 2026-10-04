@@ -108,8 +108,10 @@ three numbers:
 - a Spearman ρ over one point per (benchmark, language) cluster, the cluster's
   mean statistic against its mean truth. DA-ckpt and DA-goal points are pooled
   over every early checkpoint and DA-size points over every proxy. One point
-  per cluster keeps the points independent, so the p-value is valid, and
-  Benjamini–Hochberg runs over all configurations;
+  per cluster removes a task's repeated measures, but clusters of one
+  benchmark still share its design (item count, format), so the p-value is a
+  screening value rather than an exact test; Benjamini–Hochberg runs over all
+  configurations except the threshold filters, which are chosen on the truth;
 - a Spearman over every cell, with no grouping;
 - a within-(proxy, checkpoint) Spearman, for reference.
 

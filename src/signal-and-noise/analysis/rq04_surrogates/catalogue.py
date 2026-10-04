@@ -71,7 +71,7 @@ from snr.stats import calc_monotonicity, calc_total_variation  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import DECISION_ACCURACY, SURROGATES  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask, task_n_items, task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask, task_chance, task_n_items  # noqa: E402
 from analysis.rq02_decision_accuracy.by_L import _da_table  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _scores_at  # noqa: E402
 from analysis.rq02_decision_accuracy.language_tier import tier_of_language  # noqa: E402
@@ -89,6 +89,7 @@ FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 RETEST_FRAC = 0.9                      # the reference re-read one tenth earlier for the ceiling
 K_FOLDS = 5                            # the benchmark noise's folds (the value of the 2026-04 slides)
 Z_CAP = 50.0                           # a gap over noise past this is "separated"; keeps the median finite
+TINY_SD = 1e-9                         # an sd below this is a constant read through float noise, not a noise level
 DEPTH = ("tukey", "projection")        # the two aggregators whose noise is their own
 NOISES = ("ckpt_rel", "ckpt_abs", "tukey_depth", "projection_depth", "kfold_rel", "kfold_abs")
 SIGNALS = [variant_key(fd) for fd in AGGREGATION_FUNCTIONS]
@@ -192,7 +193,7 @@ SURROGATES = {
     # controls
     "n_pairs": ("control", +1, "pairs the proxy ranks", "-"),
     "n_items": ("control", +1, "scored examples", "Card 2020"),
-    "chance": ("control", -1, "1 / number of options", "-"),
+    "chance": ("control", -1, "the chance level of uniform guessing (rule 1, `task_chance`)", "-"),
 }
 
 
@@ -230,11 +231,15 @@ def _window_anova(w: np.ndarray) -> dict:
     ss_tot = ((w - w.mean()) ** 2).sum()
     r = np.apply_along_axis(rankdata, 0, w).sum(axis=1)
     tot = w.sum(axis=1).var(ddof=1)
-    return {"icc_window": (msb - msw) / (msb + (m - 1) * msw) if msb + (m - 1) * msw > 0 else np.nan,
-            "g_coefficient": (msb - msw) / msb if msb > 0 else np.nan,
-            "eta2_window": msb * (n - 1) / ss_tot if ss_tot > 0 else np.nan,
-            "cronbach_alpha": m / (m - 1) * (1 - w.var(axis=0, ddof=1).sum() / tot) if tot > 0 else np.nan,
-            "kendall_w_window": 12 * ((r - r.mean()) ** 2).sum() / (m ** 2 * (n ** 3 - n))}
+    # tie correction of Kendall's W: sum over raters of t^3 - t per group of tied subjects
+    ties = sum(((c := np.unique(col, return_counts=True)[1]) ** 3 - c).sum() for col in w.T)
+    v = TINY_SD ** 2
+    return {"icc_window": (msb - msw) / (msb + (m - 1) * msw) if msb + (m - 1) * msw > v else np.nan,
+            "g_coefficient": (msb - msw) / msb if msb > v else np.nan,
+            "eta2_window": msb * (n - 1) / ss_tot if ss_tot > v else np.nan,
+            "cronbach_alpha": m / (m - 1) * (1 - w.var(axis=0, ddof=1).sum() / tot) if tot > v else np.nan,
+            "kendall_w_window": (12 * ((r - r.mean()) ** 2).sum() / (m ** 2 * (n ** 3 - n) - m * ties)
+                                 if m ** 2 * (n ** 3 - n) > m * ties else np.nan)}
 
 
 def _dior(W: np.ndarray, x: np.ndarray, rng, draws: int = 100) -> float:
@@ -265,22 +270,22 @@ def _curve_stats(task: str, fams: list, C: np.ndarray, W: np.ndarray, pairs: lis
     sd = np.nanstd(W, axis=1, ddof=1)
     pooled = np.sqrt(np.nanmean(sd ** 2))
     d, s = np.abs(x[i] - x[j]), np.sqrt(sd[i] ** 2 + sd[j] ** 2)
-    z = np.where(s > 0, d / np.where(s > 0, s, 1), Z_CAP)          # a noiseless pair is perfectly separated
+    z = np.where(s > TINY_SD, d / np.where(s > TINY_SD, s, 1), Z_CAP)   # a noiseless pair is perfectly separated
     zz = np.minimum(z[np.isfinite(s)], Z_CAP)
     if len(zz):
         out |= {"gap_over_noise": float(np.median(zz)), "resolved_pairs_noise": float(np.mean(zz > 1.96)),
                 "retest_agreement": float(np.mean(norm.cdf(zz) ** 2 + norm.cdf(-zz) ** 2))}
     out |= _window_anova(W)
-    out["mde_resolved"] = float(np.mean(d > (1.96 + 0.84) * np.sqrt(2) * pooled)) if pooled > 0 else np.nan
+    out["mde_resolved"] = float(np.mean(d > (1.96 + 0.84) * np.sqrt(2) * pooled)) if pooled > TINY_SD else np.nan
     wi, wj = W[i][:, :, None], W[j][:, None, :]
     fin = np.isfinite(wi) & np.isfinite(wj)
     wins = np.where(fin, (wi > wj) + .5 * (wi == wj), np.nan)
     out["prob_outperform"] = float(np.nanmean(np.abs(np.nanmean(wins.reshape(len(i), -1), axis=1) - .5)))
     out["dior"] = _dior(W, x, rng)
-    n_items, n_opt = task_n_items(task), task_n_options(task)
+    n_items, c = task_n_items(task), task_chance(task)          # rule 1's chance level, CHANCE for mc2 and the like
     xs = x[np.isfinite(x)]
-    if np.isfinite(n_items) and n_items > 0 and np.isfinite(n_opt) and 0 < xs.mean() < 1:
-        p, c = xs.mean(), 1 / n_opt
+    if np.isfinite(n_items) and n_items > 0 and np.isfinite(c) and 0 < xs.mean() < 1:
+        p = xs.mean()
         out["n_items"], out["chance"] = n_items, c
         out["binomial_snr"] = xs.std(ddof=1) / np.sqrt(p * (1 - p) / n_items)
         pbar = (x[i] + x[j]) / 2
@@ -327,7 +332,7 @@ def _curve_stats(task: str, fams: list, C: np.ndarray, W: np.ndarray, pairs: lis
             if res > 0:
                 sl.append(b / res)
     out["late_slope_to_noise"] = float(np.mean(sl)) if sl else np.nan
-    if pooled > 0:
+    if pooled > TINY_SD:
         out["gain_over_noise"] = float(np.nanmean(C[:, -1] - C[:, 0]) / pooled)
     out["_pooled_sd"] = pooled
     return out
@@ -380,6 +385,7 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd
     lang = {t: assign_language(t) for t in every}
     bpb_of = pd.Series({lang[t]: t for t in every if t.startswith("bpb_")})
     bench = {t: benchmark_family(t) for t in every}
+    base = {t: G._TWIN.sub(r"\2", b) for t, b in bench.items()}      # the benchmark a twin rewrites
     pseudo = SMALL_SIZES[-1]                                        # the largest rung below the reference
     rows = []
     for si, s in enumerate(SMALL_SIZES):
@@ -413,7 +419,7 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd
                     r |= _ladder_stats(fams, lad, rungs, pairs)
                     r["size_monotonicity"] = float(np.mean([calc_monotonicity(c[np.isfinite(c)]) for c in lad
                                                             if np.isfinite(c).sum() >= 2]))
-                    if pooled > 0:
+                    if pooled > TINY_SD:
                         r["scale_gain_over_noise"] = float(np.nanmean(x - prev) / pooled)
                 if r["kind"] == "benchmark":
                     b = bpb_of.get(lang[t])
@@ -424,12 +430,13 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd
                             ok = np.isfinite(C) & np.isfinite(cb)
                             if ok.sum() >= 5:
                                 r["bpb_corr_training"] = spearmanr(C[ok], cb[ok]).statistic
-                    peers = [u for u in F_s.columns if u != t and lang.get(u) == lang[t] and bench.get(u) != bench[t]
+                    # a task's own rf_/rfgm_ twin is the same items, not an independent peer
+                    peers = [u for u in F_s.columns if u != t and lang.get(u) == lang[t] and base.get(u) != base[t]
                              and not u.startswith("bpb_") and u in gate_s.index and gate_s[u]]
                     if peers:
                         r["language_consensus"] = _da(fams, x, Z_s[peers].mean(axis=1).reindex(fams).to_numpy(), pairs)
-                    peers = [u for u in F_s.columns if u != t and not u.startswith("bpb_") and u in gate_s.index
-                             and gate_s[u]]
+                    peers = [u for u in F_s.columns if not (base.get(u) == base[t] and lang.get(u) == lang[t])
+                             and not u.startswith("bpb_") and u in gate_s.index and gate_s[u]]
                     zm = Z_s[peers].mean(axis=1).reindex(fams).to_numpy()
                     ok = np.isfinite(zm) & np.isfinite(x)
                     if ok.sum() >= 3 and np.ptp(x[ok]):
