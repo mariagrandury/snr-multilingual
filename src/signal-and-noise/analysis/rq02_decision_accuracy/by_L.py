@@ -256,7 +256,7 @@ BY = {"L": ("L", PANEL_LS, "L{}".format, "all pairs (every scheme)"),
 BENCH, WITH_BPB = ((("all benchmarks", "--"),), (("bpb", "-"), ("all benchmarks", "--")))
 BOTH_READINGS = ("goal", "ckpt")
 # variant -> (the groups drawn, the reliable_tasks FILTERS name or None, which
-# readings get it). The one-axis filters exist for rq2_da_all_above_66_one, which reads
+# readings get it). The one-axis filters exist for rq2_da_all_above_66_own, which reads
 # each panel over the tasks reliable on THAT panel's own axis: the DA-ckpt panel
 # over the DA-ckpt passers, the DA-goal panel over either.
 VARIANTS = {

@@ -41,7 +41,7 @@ and the y axis is shared so the three panels are read against one scale.
                                  and right panels are unchanged, the left one says WHICH
                                  design decisions a small fully trained model gets right
                                  rather than how many.
-    rq2_da_all_above_66_one.*           each panel over the cells reliable on ITS OWN axis
+    rq2_da_all_above_66_own.*           each panel over the cells reliable on ITS OWN axis
                                  at 0.66: DA-size over the DA-size passers, DA-ckpt
                                  over the DA-ckpt passers, DA-goal over either. The
                                  populations differ BETWEEN panels here, so the
@@ -50,7 +50,7 @@ and the y axis is shared so the three panels are read against one scale.
                                  does each definition do on the tasks it is
                                  trustworthy for", not as a like-for-like comparison.
     rq2_da_all_above_66_either_transformation.*
-                                 the per-panel populations of rq2_da_all_above_66_one with the
+                                 the per-panel populations of rq2_da_all_above_66_own with the
                                  DA-size panel broken out by design axis, as
                                  rq2_da_all_above_66_both_transformation does for the shared
                                  population. The left panel therefore reads over the
@@ -106,7 +106,7 @@ RQ2_VARIANTS = {
     "": ("scale_convergence_da_size", "", ""),
     "above_80": ("scale_convergence_da_size_above_80", "_above_80", "_above_80"),
     "above_66_both": ("scale_convergence_da_size_above_66_both", "_above_66_both", "_above_66_both"),
-    "above_66_one": ("scale_convergence_da_size_above_66_size", "_above_66_ckpt", "_above_66_either"),
+    "above_66_own": ("scale_convergence_da_size_above_66_size", "_above_66_ckpt", "_above_66_either"),
     "above_66_both_transformation": ("scale_convergence_da_size_transformation_above_66_both",
                                      "_above_66_both", "_above_66_both"),
     "above_66_either_transformation": ("scale_convergence_da_size_transformation_above_66_size",

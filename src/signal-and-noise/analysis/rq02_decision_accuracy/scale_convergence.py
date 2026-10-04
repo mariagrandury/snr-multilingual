@@ -185,7 +185,7 @@ def group_order(groups) -> list:
     return sorted(groups, key=lambda g: (0, int(g[1:])) if g[1:].isdigit() and g.startswith("L") else (1, 0))
 POPULATIONS = ("all benchmarks", "bpb")
 # every population, then one per named filter this figure is asked for.
-# `above_66_size` exists because rq2_da_all_above_66_one reads its DA-size panel over
+# `above_66_size` exists because rq2_da_all_above_66_own reads its DA-size panel over
 # the tasks whose DA-size is reliable, not over the `both` intersection.
 VARIANTS = ("", "above_80", "above_66_both", "above_66_size")
 # The ten evaluated checkpoints of every run, 0.5C ... 5C (rule 3).
