@@ -190,8 +190,8 @@ whether a task is trained, so before this every `rf_*` row was "untrained"
 and the analysis pool came back without a single twin.
 **`auto_rf` and `auto_rfgm` were retired on 2026-09-23**: every twin is in
 `auto`, the candidates are in `auto_probe`, and those are the only two
-groups a run may name. `--reformulated` therefore has no group to resolve
-and exits saying so. The
+groups a run may name; the watcher's `--reformulated` flag, which chose
+the retired groups, was removed on 2026-10-03. The
 `rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`) are the same three
 families rewritten by Gemini into statement stems: `dataset_path: json`
 YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never

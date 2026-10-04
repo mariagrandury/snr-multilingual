@@ -79,7 +79,8 @@ Plumbing, all keyed on the new task names so originals and twins coexist:
   `ladder_report` its `chance` column.
 - `evaluate.sbatch`: `HARNESS_INCLUDE_PATH` → `eval_worker.py --include_path`
   (already accepted, never set before). The pinned wheel is untouched.
-- `auto_evals_cscs.py --reformulated`: the `auto_rf` group instead of `auto`,
+- `auto_evals_cscs.py --reformulated` (removed on 2026-10-03, with its groups
+  retired on 2026-09-23: the twins are now in `auto`): the `auto_rf` group instead of `auto`,
   jobs named `eval-<cell>-iter<N>-rf` (the original and the rf set of one
   checkpoint are different work — neither watcher may read the other's job
   as its own); the include path is always exported. Per-task idempotency, walltime sizing,
@@ -106,6 +107,9 @@ checkpoints before touching the grid:
    sizes, and from which size does it clear the gate?
 3. **The deep-A-seed1904 ladder** at the normal `--every 2` cadence, under
    `--watch`, throttled with `--max-submit`.
+
+These are the commands as they were run. The flag no longer exists: an
+ordinary `auto` pass now evaluates the twins.
 
 ```bash
 cd /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/pretrain
@@ -428,6 +432,9 @@ first results by `derive_task_options.py`.
 ```bash
 python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm
 ```
+
+Steps 7 and 8 are the record of the 2026-09 launch; `--reformulated` and
+`auto_rfgm` no longer exist, and the `rfgm_*` twins are in `auto`.
 
 **7. First eval — one job (needs approval).** `test_new_tasks.py` checks
 names against a harness clone and never passes `--include_path`, so the
