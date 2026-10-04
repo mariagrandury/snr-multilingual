@@ -15738,6 +15738,7 @@
       "acp_bench_cloze",
       "acp_bench_mcq",
       "arc",
+      "arc_mt",
       "bbh_cloze",
       "bbh_mcq",
       "belebele",

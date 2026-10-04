@@ -257,7 +257,10 @@ task names and nothing else — the arm a task belongs to lives only in the
 
 Since the `benchmark` field is matched by prefix, a group listing plain
 `bbh` at the pretraining stage selects `bbh_mcq` + `bbh_cloze` and not the
-posttraining original, which is the intended reading.
+posttraining original, which is the intended reading. The same prefix rule
+let `arc` pull the probe candidate `arc_mt` into `auto` unscreened (0f9781ad);
+it is kept there deliberately and has been listed by name since 2026-10-03,
+so a reader of the group sees everything the watcher evaluates.
 
 Three things that only fail inside the eval job, all found by loading every
 task through a real `TaskManager` before launching — do that:
