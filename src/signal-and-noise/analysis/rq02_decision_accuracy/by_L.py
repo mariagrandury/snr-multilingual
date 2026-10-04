@@ -332,7 +332,8 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
     # draws, so ask it of the kinds in `groups` — an L with only BPB data has no
     # pairs at all in a benchmarks-only figure, it does not have too few.
     drawable = t[t["task"].str.startswith("bpb_") == ("bpb" in drawn)] if len(drawn) == 1 else t
-    few = [L for L in Ls if L not in set(summary[col]) and L in set(drawable.loc[drawable[value].notna(), col])]
+    # by pair count, not by value: the kernels NaN a cell under MIN_PAIRS, so its value cannot say it had pairs
+    few = [L for L in Ls if L not in set(summary[col]) and L in set(drawable.loc[drawable[reading["n_col"]].fillna(0) > 0, col])]
     counts = by == "transformation"
     fig, axes = plt.subplots(2, 4, figsize=(17, 7.4), sharey=True)
     flat = axes.ravel()
@@ -354,8 +355,8 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
                        plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")] if variant == "with_bpb" else
                       [plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")]),
                    fontsize=6.5, frameon=False, ncol=2)
-    population = (f"cell panel = pairs of design variants sharing that L (seed {GRID_SEED}, every scheme); first panel = every pair "
-                  f"at that seed, every scheme (A, B, AT3, ZH, ES)" if by == "L" else
+    population = (f"cell panel = {axes} pairs of design variants sharing that L (seed {GRID_SEED}, every scheme); first panel = "
+                  f"every {axes} pair at that seed, every scheme (A, B, AT3, ZH, ES)" if by == "L" else
                   f"cell panel = the mono-axis pairs that move that ONE design axis (seed {GRID_SEED}, every scheme, `{L_POOL}`; "
                   f"the pairs behind it in brackets); first panel = every mono-axis pair; the number at the end of a line = tasks behind it")
     top = G._header(fig, reading["title"].replace("per language count", "per design axis" if by == "transformation" else "per language count"),

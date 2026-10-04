@@ -648,11 +648,21 @@ def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
         keep = load_reliable(out_dir, variant, axes)
         if keep is None:
             return None
-        cells = cells[cells["task"].isin(set(keep["task"]))]
+        on = cells["task"].isin(set(keep["task"]))
+        if by == "transformation":
+            # a per-axis line holds pairs that differ on one axis, mono-axis
+            # pairs whatever `axes` says, so its cells are the ones reliable on
+            # the mono-axis set; only the pooled line keeps `axes`'s verdict
+            mono = load_reliable(out_dir, variant, "mono-axis")
+            if mono is None:
+                return None
+            on = on.where(cells["group"] == OVERALL, cells["task"].isin(set(mono["task"])))
+        cells = cells[on]
         populations = ("all benchmarks",)
         note = (f" Restricted to the {len(keep)} (benchmark, language) cells reliable on {crit} "
                 f"(DA ≥ {thresh:g}, {red} reduction, reliable_tasks.py), over "
-                f"{keep['benchmark'].nunique()} benchmark(s) and {keep['language'].nunique()} languages.")
+                f"{keep['benchmark'].nunique()} benchmark(s) and {keep['language'].nunique()} languages"
+                + (f"; the per-axis lines on the {len(mono)} cells reliable on the mono-axis pairs." if by == "transformation" else "."))
     if LANG_SETS[langs] is not None:
         cells = cells[cells["task"].map(assign_language).isin(LANG_SETS[langs])]
         note += (f" Tasks in the {len(LANG_SETS[langs])} languages of the {langs} setting only "

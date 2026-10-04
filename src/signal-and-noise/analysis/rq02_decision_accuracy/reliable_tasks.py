@@ -41,7 +41,7 @@ its own (the alternative was 12 near-identical CSVs):
     da_all_reliable_tasks_both_axes.csv        per task: language, benchmark, and da_{size,ckpt}_<reduction>
                                  for every reduction. The pass flags are NOT stored —
                                  they are `da_size_<red> >= t and da_ckpt_<red> >= t`.
-    da_all_reliable_by_language_both_axes.csv  long: one row per (threshold, reduction, language)
+    da_all_reliable_by_language_multi_axes.csv  long: one row per (threshold, reduction, language)
                                  with how many benchmarks pass on DA-size, on
                                  DA-ckpt, on either and on both.
     da_size_vs_da_ckpt_reliable_tasks_<t>_<red>_multi_axes.png   one per (THRESHOLDS x REDUCTIONS): left, per
@@ -333,7 +333,7 @@ def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
     rows = [figure(head, out_dir / f"da_size_vs_da_ckpt_reliable_tasks_{pct(thresh)}_{red}_multi_axes.png", red, thresh)
             for thresh in THRESHOLDS for red in REDUCTIONS]
     by_lang = pd.concat(rows, ignore_index=True).assign(axes=axes_sets[0])
-    by_lang.to_csv(out_dir / "da_all_reliable_by_language_both_axes.csv", index=False)
+    by_lang.to_csv(out_dir / "da_all_reliable_by_language_multi_axes.csv", index=False)
     generate_readme(pool, out_dir, head, by_lang)
     return tasks
 
