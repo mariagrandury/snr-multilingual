@@ -291,7 +291,10 @@ per-task tables are the persisted truth (`rq02/.../da_all_per_task_both_axes.csv
 `rq03/.../snr_variants_per_task.csv`); every figure and README block is
 derived from them. `*.csv` / `*.png` under this directory are git-LFS
 tracked (`.gitattributes`): commit regenerated results with `git lfs`
-installed, and never commit outputs produced from a fixture.
+installed, and never commit outputs produced from a fixture. Every CSV is
+written at twelve significant digits (`analysis/__init__.py` sets pandas'
+`to_csv` default), so a re-run on another machine no longer rewrites a
+table whose numbers did not change.
 
 ---
 
