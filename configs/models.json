@@ -18051,7 +18051,7 @@
       "include_external": false
     },
     "predictivity_all": {
-      "description": "Every trained predictivity cell: all seeds and all eight data schemes (A, B, AT3, BT3, ZH, ES, DCLMP, FWEB), both archs. The pool of rq06-rq08 and rq10, which read one intervention at a time against its own baseline and need the seed replicates for the noise columns; not a headline SNR pool, its signal would mix every intervention at once. NOTE: this pool has no scheme filter, so a newly registered scheme enters it as soon as its cells train.",
+      "description": "Every trained predictivity cell: all seeds and all seven data schemes (A, B, AT3, ZH, ES, DCLMP, FWEB), both archs. The pool of rq06-rq08 and rq10, which read one intervention at a time against its own baseline and need the seed replicates for the noise columns; not a headline SNR pool, its signal would mix every intervention at once. NOTE: this pool has no scheme filter, so a newly registered scheme enters it as soon as its cells train.",
       "stage": "pretraining",
       "members": [
         {

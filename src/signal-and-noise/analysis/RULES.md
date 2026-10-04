@@ -54,7 +54,7 @@ be told (rule 13):
 This matters because the originals barely survive the gate: at 1.7B the gate
 keeps 0 of 37 Global-MMLU tasks and 11 of 105 belebele tasks, against 35 and
 86 of their `rf_` twins, and 4 of 43 INCLUDE tasks against 31 of the `rf_`
-twins and 34 of the Gemini-rewritten ones. Before the twins entered the pool
+twins and 33 of the Gemini-rewritten ones. Before the twins entered the pool
 those families contributed almost nothing to any RQ.
 
 ## The probe candidates are not in the populations
@@ -78,15 +78,17 @@ blend_sample, mathqa, openbookqa, toxigen and truthfulqa_mc2. Every
 unqualified "benchmark" mean is over a wider set from the first checkpoint
 they land on, so a table regenerated after that point is not comparable with
 one regenerated before it; say which side of the promotion a number comes
-from. `bbq` alone stays a candidate (23 min per checkpoint, a third of the
-top-up bill, and it clears a 1/12 chance trivially).
+from. `bbq` was not promoted (23 min per checkpoint, a third of the top-up
+bill, and it clears a 1/12 chance trivially) and left the candidates on
+2026-10-01.
 
 ## Why three tasks per language
 
 `MIN_LANG_TASKS` trades coverage against stability, and it is worth being
 explicit that it never buys significance. In rq04 it is the binding
 constraint — `ar` has 22 tasks in the pool and still went NaN at 5 — because
-a task counts only when it has both an SNR and a decision-accuracy value:
+a task counts only when it has both an SNR and a decision-accuracy value.
+Measured when the threshold was lowered (2026-09-20 tables):
 
 | `MIN_LANG_TASKS` | languages with an rq04 correlation |
 | ---: | ---: |
@@ -95,27 +97,33 @@ a task counts only when it has both an SNR and a decision-accuracy value:
 | **3 (now)** | **17** |
 | 2 | 26 |
 
+On the 2026-09-30 tables, with 90M in the ladder and the twins in the pool,
+three tasks give 34 languages under both DA kinds (`snr_definition.csv`).
+
 Against that, the |r| a Pearson correlation must exceed to reach p < 0.05:
 
 | n | 3 | 4 | 5 | 6 | 10 | 50 | 100 | 300 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | critical \|r\| | 0.997 | 0.950 | 0.878 | 0.811 | 0.632 | 0.279 | 0.197 | 0.113 |
 
-The best per-language r in this study is 0.24, so no per-language cell is
-significant at 5 and none would be at 3 either. The threshold was never doing
-inferential work, and holding it at 5 bought nothing while costing 11 of 17
-languages. Significance lives in the pooled correlation, which is where the
-paper makes its claim: over every language, `rel_star_discrepancy` gives
-r = 0.194 at n = 324 (p = 4.5e-4) against DA-size and r = 0.138 at n = 2906
-(p = 8.7e-14) against DA-ckpt. Those points are not independent (one task
-appears at several sizes), so the nominal p is optimistic; the effect
-survives a large deflation, but a clustered test is the rigorous version and
-is not done yet. Per-language panels carry their n and say they are
-descriptive.
+When the threshold was lowered the best per-language r was 0.24, so no
+per-language cell was significant at 5 and none would have been at 3: the
+threshold was not doing inferential work, and holding it at 5 cost 11 of 17
+languages. On the 2026-09-30 tables single cells reach r = 0.72 (Korean,
+DA-size, `dist_std`) and 0.63 (Persian, DA-ckpt), but each is the maximum
+over 22 variants in one language, read on a few tasks pooled over the proxy
+sizes, so it is a selected value and not a test. Per-language panels carry
+their n and say they are descriptive. The pooled correlation is the one to
+quote: over every language, `rel_star_discrepancy` reaches r = 0.215 against
+DA-size (mean over the proxy sizes) and 0.122 against DA-ckpt
+(`snr_definition.csv`, scope `all`). Its points are not independent (one
+task appears at several sizes), so a nominal p is optimistic; rq04's
+catalogue search (`search.py`) is the clustered version, one point per
+(benchmark, language).
 
 ## Second-language repetition at L = 2
 
-Rule 9's L2 exception exists because the L2 builds are capped by the SOURCE,
+Rule 9 asks for the epoch count at L2 because the L2 builds are capped by the SOURCE,
 not the budget: the swiss-ai filtered subset holds 71.8B tokens of Russian
 (scheme A), 59.9B of Chinese and 23.4B of Spanish, against the 50 × N tokens
 of second language a run draws (the exact budget, `models.json` `stages.pretraining.tokens` / 2, not 50 x the label size). What a cell repeats is set by the BUILD it
@@ -145,9 +153,10 @@ of these is bad training, and the scheme-A baseline itself repeats at 1.7B
 **flat across the ladder**, because DA compares a proxy rung against the
 reference rung: Russian and Chinese stay under 1.7 everywhere, so a rank flip
 between rungs is about the benchmark. Spanish goes from 0.73 at 350M to 3.51
-at 1.7B, so a flip could be the data repeating instead — which is why ES is
-capped at 1B and ZH is not. Any table that compares the L2 schemes states the
-epoch count.
+at 1.7B, so a flip could be the data repeating instead. ES was capped at 1B
+for that reason until 2026-09-26; it now reaches 1.7B (rule 9), since 3.51
+epochs stays under the ~4 where repeated tokens are still worth close to
+fresh ones. Any table that compares the L2 schemes states the epoch count.
 
 ZH and ES are the **second-language axis at L = 2**: scheme A trains English
 plus Russian, ZH plus Chinese, ES plus Spanish, and all three exist in the

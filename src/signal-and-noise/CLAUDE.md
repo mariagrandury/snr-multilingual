@@ -156,7 +156,7 @@ read `da_all_reliable_tasks_both_axes.csv` (everything with an `above_*` variant
 
 **What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
 The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with Key findings and Follow-ups after each; every snapshot moves the numbers, so re-read the CSVs: (1) on the full gated population DA-size is 0.54 (90M) → 0.56 (1B),
-jackknife ±0.02 — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
+jackknife ±0.02 (±0.03 at 1B) — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
 itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
 `above_66_ckpt`, `above_66_either`) are the ones to quote, never
 `above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
@@ -170,8 +170,10 @@ one language tier does not order the per-L lines, and a language's token
 share does not predict its benchmarks' reliability (ρ 0.02–0.27). The twins
 pass the gate (McNemar p < 0.001) but rank no better than the originals
 (`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
-and without them); English alone is the worst single-language proxy of the
-multilingual decision (`rq06_language_transfer/language_panel.py`).
+and without them); English alone is a weak single-language proxy of the
+multilingual decision (0.61 at 1B against 0.62–0.67 for every other panel
+language but Japanese, 0.55) and the panel macro is the safest from
+350M up (`rq06_language_transfer/language_panel.py`).
 
 **README rules.** `analysis/RULES.md` ends with the README rules: one README
 per level (`analysis/README.md` for the RQs, one per `rqNN_*/`, none under a
@@ -223,12 +225,12 @@ schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{175M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
+predictivity               lm-{90M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
-predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the only cells with replicates)
+predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the 64/313 replicates; the 1B ×3 cells' seeds 28/1797 are not in the holdout)
 predictivity_seeds_test    seed 1904 on the same six cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq01, rq03, rq05, rq06)
+predictivity_all           every trained cell: all seeds, every scheme, both archs (rq01, rq03, rq05, rq06)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
@@ -242,7 +244,7 @@ scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
 the gate and the output folder stay `predictivity`; the `axes` column of
 `da_all_per_task_both_axes.csv` names the pair set, rule 15).
 
-The `snr` section of models.json is global: `small_sizes` 175M–1B,
+The `snr` section of models.json is global: `small_sizes` 90M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
 largest rung DataDecide has; L2 ZH and ES reach 1.7B too since 2026-09-26), `da_early_fracs` the nine
 evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,

@@ -1,6 +1,9 @@
 # Task reformulation for the auto evals
 
-Status 2026-09-18. Companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
+Status 2026-09-18; the generated blocks (`auto:rf-compare`, `auto:reformulations-gate`)
+are from the ladder-report snapshot **2026-09-30 23:54**, and the other dated
+sections (the pilot of 2026-09-18, the probe of 2026-09-23) keep their own dates.
+Companion to [plan/benchmark_selection.md](../../../../plan/benchmark_selection.md)
 (what we evaluate on) and [rq00_gate_and_curves](../rq00_gate_and_curves/) (the chance gate). The
 reference implementation is [lighteval_reference.py](lighteval_reference.py)
 (HuggingFace's FineWeb-edu ablation tasks) — it is a *reference*: everything
@@ -172,7 +175,7 @@ cross-user `datasets` lock files in the shared cache (see
 `src/evals/CLAUDE.md`, "lock files"). Steps 2 and 3 were launched the same
 day (`eval-<cell>-iter<N>-rf` jobs).
 
-## Tier 2 — rewriting the items with Gemini (`rfgm_*`, driver built, data not yet produced)
+## Tier 2 — rewriting the items with Gemini (`rfgm_*`: Belebele and INCLUDE rewritten and evaluated, Global-MMLU not yet)
 
 Tier 1 only drops the letters. Here the item itself changes: Gemini turns
 the question into one declarative sentence that stops where the answer goes

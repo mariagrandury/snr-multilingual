@@ -4,8 +4,9 @@ Which (subsets of) benchmarks give a reliable signal at each stage of
 multilingual pretraining? The study extends the Signal-and-Noise framework
 (Heineman et al., 2025) to multilingual models: a benchmark is useful when a
 cheap measurement — a smaller model, an earlier checkpoint, a statistic of the
-proxy alone — makes the decision the reference-size model would make. Ten
-research questions in four themes, one folder each; `rqNN_*/README.md` is the
+proxy alone — makes the decision the reference-size model would make. Eleven
+research questions in five themes, one folder each (rq00 has two, the gate and
+the task reformulation); `rqNN_*/README.md` is the
 single document of its question (the README rules at the end of
 [RULES.md](RULES.md)), and the outputs live under `<rq>/<stage>/<pool>/`.
 Artifact names follow rule 16: a decision-accuracy file names its DA kind
@@ -32,7 +33,7 @@ refresh regenerates the auto blocks and moves them.
 | | [rq07_external_frameworks](rq07_external_frameworks/README.md) | Do our SNR values agree with AllenAI DataDecide on the English tasks both corpora evaluate? | [snr_apertus_vs_snr_allenai_grid](rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png) |
 | **D. Can the benchmarks be improved?** | [rq08_subset_selection](rq08_subset_selection/README.md) | Can a language, subject or item subset of a benchmark beat the full set's SNR by more than selection alone gives for free? | [gain_over_null](rq08_subset_selection/pretraining/predictivity/gain_over_null.png) |
 | | [rq09_benchmark_design](rq09_benchmark_design/README.md) | Which design features of a benchmark — curation, source, format, option count, item length — go with a high SNR? | [snr_per_family_ranked](rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) |
-| **E. Past the reference** | [rq10_size_generalisation](rq10_size_generalisation/README.md) | Does a ranking that holds at the 1.7B reference still hold one rung above it, at 3B (the only reader of `above_reference=True`; waiting for the 3B evaluations)? | [above_reference_3B](rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png) |
+| **E. Past the reference** | [rq10_size_generalisation](rq10_size_generalisation/README.md) | Does a ranking that holds at the 1.7B reference still hold one rung above it, at 3B (the only reader of `above_reference=True`; the four 3B L8/L15 cells are evaluated, L30/L50 still training)? | [above_reference_3B](rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png) |
 
 **The paper's figures.** `documents/paper/figures/make_rq_figures.py` copies
 them from the analysis, never the reverse: `rq1` ← rq01
@@ -48,7 +49,7 @@ ten-checkpoint read `rq2_da_goal_ten_checkpoints_multi_axes` sits beside it) and
 One input, the published ladder report (`ladder_report.csv`, loaded by
 `snr/download/ladder.py`; diverged and unfinished runs dropped, checkpoints on
 the shared k/10 and k/20 grid). The models are the predictivity ladder — sizes
-175M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} × depth (deep, shallow) × data scheme
+90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} × depth (deep, shallow) × data scheme
 (A, B, AT3, ZH, ES) × seeds; a "design variant" is one such cell, and its
 cross-size identity (`family`, everything but the size) is what a decision
 pairs. The pools (`configs/models.json`): **`predictivity`** is the plan grid
@@ -78,8 +79,8 @@ languages only (rq06 opts out), the ten evaluated tenths as the checkpoint
 axis in Chinchilla multiples 1C–5C, one noise window (the k/20 points in the
 last 20 % of a run), at least three design-variant pairs per decision cell,
 parent tasks only (rq08 opts out), `multi` is not a language, three tasks per
-language for a per-language correlation, one reference (1.7B; L2 ES stops at
-1B), sizes 90M–1.7B at each rung's own batch (the 3B rung only for the
+language for a per-language correlation, one reference (1.7B at every L, L2 ZH and
+ES included since 2026-09-26), sizes 90M–1.7B at each rung's own batch (the 3B rung only for the
 size-generalisation question), no leakage from the reference into a proxy statistic, a CSV beside
 every PNG, and — since 2026-09-22 — an `axes` column naming a decision
 table's pair set (`multi-axis`, `mono-axis`, `seed`). The reformulated twins

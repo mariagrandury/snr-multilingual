@@ -87,15 +87,15 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_
 | population | effect / noise | median | n |
 |---|---|---|---|
 | benchmark | arch / seed | 1.20 | 1316 |
-| benchmark | arch / ckpt | 1.97 | 6707 |
+| benchmark | arch / ckpt | 1.97 | 6703 |
 | benchmark | scheme / seed | 1.16 | 320 |
-| benchmark | scheme / ckpt | 1.86 | 2562 |
+| benchmark | scheme / ckpt | 1.86 | 2561 |
 | benchmark | temperature / seed | 1.35 | 1105 |
-| benchmark | temperature / ckpt | 2.14 | 5486 |
+| benchmark | temperature / ckpt | 2.14 | 5485 |
 | benchmark | zh / seed | 1.44 | 87 |
-| benchmark | zh / ckpt | 2.55 | 178 |
+| benchmark | zh / ckpt | 2.59 | 177 |
 | benchmark | es / seed | 1.35 | 87 |
-| benchmark | es / ckpt | 2.26 | 178 |
+| benchmark | es / ckpt | 2.24 | 177 |
 | bpb | arch / seed | 1.77 | 139 |
 | bpb | arch / ckpt | 1.95 | 636 |
 | bpb | scheme / seed | 0.21 | 26 |
@@ -135,7 +135,7 @@ GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/
 ## Preliminary findings (ladder snapshot, 2026-09-01)
 
 Noise on the ≤ 600M ladder before any seed replicate existed
-(`plan/status-09-01.md`, §5; checkpoint noise = std over the last 3 evaluated
+(`plan/todos/status-09-01.md`, §5; checkpoint noise = std over the last 3 evaluated
 checkpoints, median 0.004): the across-L range of final benchmark scores at
 600M has median 0.022 ≈ 4.4× that noise (56/60 benchmarks above 2×; top:
 `xwinograd_en` 17×, `hellaswag_ru` 13×), and on BPB the separation is one to
@@ -200,17 +200,21 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
       `predictivity_seeds_train` (seeds 64, 313) and again on
       `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
       compared.
-      *The problem.* Replicate seeds exist only at 175M and 600M, so both
-      splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
-      reference never enters). English tasks and BPB rest on 15 model pairs.
-      A non-English benchmark is trained only in the L50 cell, so its train
-      split holds one pair — the two seeds of the same cell — and its
-      "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
-      The median task has one pair.
+      *The problem.* The holdout's replicate seeds (64/313) exist only at
+      175M and 600M (the 1B ×3 cells carry seeds 28/1797 and are in neither
+      split), so both splits hold those two sizes and DA-size there is
+      175M → 600M (the 1.7B reference never enters). English tasks and
+      English BPB rest on 6 model pairs (same seed, L ∈ {1, 2, 50}). A
+      non-English benchmark is trained only in the L50 cell (Russian also at
+      L2), so its train split holds no multi-axis pair — its two seeds differ
+      in nothing but the seed — and it carries no DA at all: 110 of the 898
+      tasks have a DA-size value, all of them English, so the holdout ranks
+      the variants for English alone.
       *Implications.* The per-language agreement numbers (0 % / 0 % at the
       family level on the 2026-09-30 tables; 29 % / 57 % when this was
       written) and the unstable DA-size ρ (−0.28 now, 0.75 then, against
-      0.76 for DA-ckpt) are dominated by those one-pair tasks, so "the
+      0.76 for DA-ckpt) rest on English alone (one language with a best
+      variant on both splits), so "the
       ranking does not survive a seed swap" may say more about the holdout
       than about the definitions.
       Nothing in the main `predictivity` tables is affected.

@@ -119,7 +119,7 @@ Named variants of the same points: `scaling_regimes_families.png` (one label per
 
 **Follow-ups**
 
-- The paper panel is crowded (306 points, 25 labelled families). In order of
+- The paper panel is crowded (346 points, 26 labelled families). In order of
   preference: (1) the twins as a second panel beside the originals (a
   `--twins {all,originals,twins}` switch on `regimes.py`, no new computation;
   also the figure that shows the reformulation working); (2) label a family
@@ -211,12 +211,13 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader 
 
 **Key findings**
 
-- The 1.7B BPB is under-predicted from every ladder top: median absolute
-  relative error 11.5 % with three rungs (175M–600M) and 5.7 % with four
-  (175M–1B), and every fit over-predicts the improvement (the signed error
-  is negative throughout). The exponent fitted on the small rungs is too
-  steep for the reference's regime — a curvature finding, not a symmetric
-  error bar.
+- The 1.7B BPB is over-predicted from every ladder top (deep, scheme A,
+  318 fits): median absolute relative error 7.7 % with three rungs
+  (90M–350M), 4.4 % with four (to 600M) and 2.3 % with five (to 1B), and
+  every fit under-predicts the improvement (the signed error is positive in
+  all 318). The exponent fitted on the small rungs is too shallow for the
+  reference's regime — a curvature finding, not a symmetric error bar — and
+  the error shrinks as the ladder top approaches the reference.
 - A constant offset between small and large models shows up here but not in
   decision accuracy (rq02, rq05), so the two reads can disagree.
 
@@ -383,7 +384,7 @@ harness, task set and reference size).
 - `…/scaling_regimes*.csv` — one table next to every `scaling_regimes*.png`
   (`regimes.py`; the `_paper` twins carry the same table as their non-paper
   figure).
-- `…/facts.json` — the numbers the paper quotes (merged into `rq_facts.json`).
+- `…/facts.json` — the numbers the paper quotes (`analyze.py`).
 - `…/scaling_regimes_survivorship.csv`, `.png` — per family, kept / gated /
   below the fit minimum (`regimes_survivorship.py`).
 - `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.{png,csv}`

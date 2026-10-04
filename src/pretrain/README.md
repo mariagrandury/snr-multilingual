@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 6 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L ∈ {8, 15, 30, 50}, deep only) × 6 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -94,7 +94,7 @@ Counting every scheme and the architectures each is trained in: **183 runs**.
 
 The intervention levels are suffix-marked in the run name: `--arch shallow`
 (width/depth 128, the model-depth intervention) and `--scheme` — the data
-axis, one of the eight entries of `DATA_SCHEMES` in
+axis, one of the seven entries of `DATA_SCHEMES` in
 [`launch_trainings.py`](launch_trainings.py):
 
 | `--scheme` | What it changes | Where it applies |

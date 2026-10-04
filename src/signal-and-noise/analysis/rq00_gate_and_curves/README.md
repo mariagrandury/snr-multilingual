@@ -266,7 +266,7 @@ from `reformulations_gate.csv`:
 | population | gate at 90M → 1.7B | mean DA-size 90M → 1B (gated at both sizes) | tasks with median DA-size ≥ 0.66 | rq01 median R² (tasks) |
 |---|---|---|---|---|
 | every task | 0.41 → 0.57 | 0.51 → 0.51 | 17 % of 538 | 0.889 (346) |
-| originals only | 0.37 → 0.50 | 0.51 → 0.53 | 23 % of 307 | 0.911 (203) |
+| originals only | 0.37 → 0.50 | 0.52 → 0.53 | 23 % of 307 | 0.911 (203) |
 | twins only | 0.52 → 0.81 | 0.50 → 0.49 | 9 % of 231 | 0.855 (143) |
 
 **Key findings**

@@ -224,9 +224,10 @@ separate from `auto`, whose benchmarks are topped up on every checkpoint of
 every cell. The verdict comes from
 `analysis/rq00_task_reformulation/probe.sh` (gate per language, original vs
 `rf_` on the pairs); a candidate that passes is promoted into `auto`. Twenty
-of the twenty-one were promoted on 2026-09-23; `bbq` stays a candidate,
-because it is 23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
-`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially. A
+of the twenty-one were promoted on 2026-09-23; `bbq` was not, because it is
+23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
+`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially, and it
+left `auto_probe` on 2026-10-01. A
 promoted benchmark stays listed in `auto_probe` as the record of what was
 screened, which costs nothing: the watcher's idempotency is per task, so a
 later `--group auto_probe` pass finds the work done and submits only gaps.

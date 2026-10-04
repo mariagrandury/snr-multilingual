@@ -121,7 +121,7 @@ def threshold_panels(out_dir: Path) -> None:
     and how many (task, size) cells it keeps, against fixed margins."""
     runs = pd.read_csv(out_dir / "above_random_runs.csv")
     runs = runs[runs["trained"]] if "trained" in runs else runs
-    runs = runs[runs["n_items"].notna()]   # no item count, no Wilson bound: nothing to draw (rfgm_belebele until derive_task_options runs)
+    runs = runs[runs["n_items"].notna()]   # no item count, no Wilson bound: nothing to draw (every registered task has one; a new one until derive_task_options runs)
     scores = pd.read_csv(out_dir / "above_random_scores.csv")
     sizes = [b for b in bucket_order() if b in scores.columns]
     scores = scores[scores["language"].isin(["??", "multi"]) == False]

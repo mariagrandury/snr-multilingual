@@ -48,14 +48,18 @@ family's per-language aggregate tasks):
   100 English/default items per family from each benchmark's HF dataset and
   computes character-length statistics for context vs options; correlate with SNR.
 
-**Mechanism (the durable finding).** Reliability tracks the *answer space*, not
+**Mechanism (a hypothesis).** Reliability tracks the *answer space*, not
 curation: a benchmark is sharper when the model compares **fewer, longer**
 log-likelihood-scored completions — each extra option adds another noisy LL
 estimate to rank, and longer options concentrate more discriminating tokens.
-Illustrations at fixed option count: PAWS (options `Yes`/`No`, ~2 chars) is low
-despite being binary; MultiBLiMP (full-sentence minimal pairs) is the sharpest;
-HellaSwag (long 4-option completions) escapes the 4-option penalty that sinks
-ARC (short noun-phrase options). The `passage` flag itself doesn't matter —
+On the ladder the illustrations do not hold: PAWS (options `Yes`/`No`, ~2
+chars) is among the sharpest families (1.19 at 1.7B, behind xwinograd 1.41,
+MultiBLiMP 1.24 and XStoryCloze 1.20), and HellaSwag (long 4-option
+completions, 0.40) sits below ARC (short noun-phrase options, 0.47), inside
+the 4-option band (0.30–0.56). Option length does not track sharpness over
+the 16 families (Spearman −0.13, p = 0.73; context length −0.25, p = 0.52;
+`group_stats.csv`), so the answer-space account is a hypothesis to test, not
+a finding. The `passage` flag itself doesn't matter —
 XStoryCloze (4-sentence context, completion) is high, Belebele (long passage,
 MRC) is low — what the prompt *does* with the passage is what counts.
 
