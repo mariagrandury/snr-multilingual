@@ -39,6 +39,8 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from utils.configs import read_tasks_json, write_tasks_json
+
 REPO = Path(__file__).resolve().parents[3]
 TASKS_JSON = REPO / "configs" / "tasks.json"
 EVAL_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
@@ -138,7 +140,8 @@ def main() -> None:
                         "(minutes instead of an hour; see the module docstring)")
     args = p.parse_args()
 
-    tasks = json.loads(TASKS_JSON.read_text())
+    # an hour of reading samples: another generator may write tasks.json meanwhile
+    tasks, before = read_tasks_json(TASKS_JSON)
     listed = tasks["tasks"]
     seen, have_samples = observed_options(listed, args.only_missing)
     added = changed = 0
@@ -177,7 +180,7 @@ def main() -> None:
     if args.dry_run:
         print("(dry-run: tasks.json not written)")
         return
-    TASKS_JSON.write_text(json.dumps(tasks, indent=2, ensure_ascii=False) + "\n")
+    write_tasks_json(tasks, before, TASKS_JSON)
     print(f"wrote {TASKS_JSON}")
 
 
