@@ -95,7 +95,8 @@ rq00 gate ──► rq02 DA per task ──► rq03 SNR table (22 definitions + 
    │                 │                      └─► rq03 seed holdout ──► rq04      ├─► rq08 subset sweeps (own SNR, rq00 gate)
    │                 └─► rq02 extensions (by_L, scale_convergence, …)          └─► rq09 design features
    └─► rq01 fits ──► rq02 scaling_vs_ranking ──► rq04 surrogates (fit R² as a candidate)
-rq05 decision table ──► rq05 early decision, rq03 effect_vs_noise, rq06 decision transfer, rq06 language panel
+rq05 decision table ──► rq05 early decision, rq03 effect_vs_noise
+rq05 intervention_da ──► rq06 decision transfer (recomputed there on every language's BPB, rule 2's exception)
 ```
 
 ## How to regenerate

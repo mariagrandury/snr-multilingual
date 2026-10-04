@@ -12,6 +12,10 @@ curves of every cell (the progress report's BPB figure on the analysis' cells).
     rq5_transfer_summary.csv  median |relative error| per (trained, k) and method
     rq5_transfer.png/.pdf     the paper figure
     bpb_curves.png            per cell: per-language BPB vs fraction of run
+    transfer_da_all_by_group_mono_axis.csv
+                              rq05's interventions read on every language's BPB at every
+                              evaluated checkpoint, per language group (what the two
+                              levels' lists do with the language); panels.py draws it
 
     python analysis/rq06_language_transfer/analyze.py --pool predictivity_all
 """
@@ -38,7 +42,8 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
-from analysis.paths import LANGUAGE_TRANSFER, DESIGN_DECISIONS  # noqa: E402
+from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
+from analysis.rq05_design_decisions.analyze import LANGUAGE_GROUPS, intervention_da  # noqa: E402
 from analysis.utils import (  # noqa: E402
     GRID_SEED, LADDER_SIZES, NON_EMB, finals, ladder_frame, size_order, trained_bpb_tasks)
 
@@ -182,10 +187,11 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, agg: pd.DataFrame
                    md_table(["languages", "k", "transferred α", "own fit", "largest proxy", "n"], rows),
                    f"![Transfer]({stage}/{pool}/rq5_transfer.png)"]
     if not dd.empty:
-        rows = [[r.population, r.proxy_size, fmt(r.da), int(r.cells)] for r in dd.itertuples()]
-        blocks += ["**Decision transfer** (rq05's final-checkpoint agreement, mean over interventions and L, "
-                   "on the languages both levels train vs the languages neither does):",
-                   md_table(["population", "proxy", "agreement", "cells"], rows)]
+        rows = [[r.group, r.proxy_size, fmt(r.da), int(r.cells)] for r in dd.itertuples()]
+        blocks += ["**Decision transfer** (DA-size of rq05's interventions on per-language BPB: the share of a group's "
+                   "languages on which the proxy's final ranking of the two levels matches the reference's, mean over "
+                   "interventions and L; the group says what the two levels' lists do with the language):",
+                   md_table(["language group", "proxy", "DA-size", "cells"], rows)]
     blocks.append(f"![BPB curves]({stage}/{pool}/bpb_curves.png)")
     readme = OUT_ROOT / "README.md"
     gen = f"analyze.py --pool {pool}"
@@ -210,16 +216,17 @@ def main(pool: str, out_dir: Path) -> None:
     if not t.empty:
         plot_transfer(t, agg, out_dir)
     plot_bpb_curves(df, out_dir)
-    # decision transfer: rq05's agreement on never-trained languages
-    stage = load_pools()[pool].get("stage", "pretraining")
-    src = DESIGN_DECISIONS / stage / pool / "intervention_da_all_mono_axis.csv"
-    dd = pd.DataFrame()
-    if src.is_file():
-        d = pd.read_csv(src)
-        d = d[(d["frac"] == 1.0) & d["population"].isin(["bpb_trained", "bpb_untrained"])]
-        dd = (d.groupby(["population", "proxy_size"]).agg(da=("decision_acc", "mean"), cells=("decision_acc", "size"))
-              .reset_index())
-        dd = dd.iloc[[i for s in size_order(dd["proxy_size"]) for i in dd.index[dd["proxy_size"] == s]]]
+    # decision transfer: rq05's interventions on every language's BPB (rule 2's
+    # exception), each language grouped by what the two levels' lists do with it
+    _, _, g = intervention_da(df, populations=("bpb_all",))
+    gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
+    groups = (g.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
+              if not g.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"]))
+    groups.to_csv(out_dir / "transfer_da_all_by_group_mono_axis.csv", index=False)
+    d = groups[groups["frac"] == 1.0]
+    dd = d.groupby(["group", "proxy_size"]).agg(da=("decision_acc", "mean"), cells=("decision_acc", "size")).reset_index()
+    dd = dd.iloc[[i for grp in LANGUAGE_GROUPS for s in size_order(dd["proxy_size"])
+                  for i in dd.index[(dd["group"] == grp) & (dd["proxy_size"] == s)]]]
     facts = {"rq5": {"summary": agg.round(3).to_dict("records"),
                      "alpha_pooled_by_L": t.groupby("L")["alpha_pooled"].first().round(3).to_dict() if not t.empty else {},
                      "alpha_own_spread_by_L": {int(k): v for k, v in t[t.k == 1].groupby("L")["alpha_own"]

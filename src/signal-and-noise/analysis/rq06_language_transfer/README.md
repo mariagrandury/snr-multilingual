@@ -33,9 +33,12 @@ cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
   language's k smallest rungs (k = 1 … all); the prediction at the reference
   is compared with the language's own fit (k ≥ 3) and with the largest proxy's
   BPB taken as is. Relative errors, medians per (trained, k).
-- **Decision transfer.** rq05's final-checkpoint agreement on the
-  `bpb_untrained` population against `bpb_trained` — whether a decision read
-  on the trained languages also holds on the ones neither level trains.
+- **Decision transfer.** rq05's five interventions (its `intervention_da`)
+  read on every evaluation language's BPB, the one population rule 2 lets
+  this folder use: per (intervention, L, proxy size, checkpoint) the share of
+  a language group's languages on which the proxy ranks the two levels as the
+  reference does at its final checkpoint. `analyze.py` writes it
+  (`transfer_da_all_by_group_mono_axis.csv`), `panels.py` draws it.
 - **BPB curves.** One panel per cell of the pool, per-language BPB against
   fraction of run: trained languages blue, unseen grey, macro BPB dashed
   (the progress report's `plot_bpb` on the analysis' cells).
@@ -63,15 +66,30 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 
 ![Transfer](pretraining/predictivity_all/rq5_transfer.png)
 
-**Decision transfer** (rq05's final-checkpoint agreement, mean over interventions and L, on the languages both levels train vs the languages neither does):
+**Decision transfer** (DA-size of rq05's interventions on per-language BPB: the share of a group's languages on which the proxy's final ranking of the two levels matches the reference's, mean over interventions and L; the group says what the two levels' lists do with the language):
 
-| population | proxy | agreement | cells |
+| language group | proxy | DA-size | cells |
 |---|---|---|---|
-| bpb_trained | 90M | 0.98 | 10 |
-| bpb_trained | 175M | 0.99 | 10 |
-| bpb_trained | 350M | 0.78 | 10 |
-| bpb_trained | 600M | 0.58 | 10 |
-| bpb_trained | 1B | 0.90 | 10 |
+| trained by both levels | 90M | 0.95 | 14 |
+| trained by both levels | 175M | 0.96 | 14 |
+| trained by both levels | 350M | 0.81 | 14 |
+| trained by both levels | 600M | 0.66 | 14 |
+| trained by both levels | 1B | 0.89 | 14 |
+| trained by one level | 90M | 1.00 | 5 |
+| trained by one level | 175M | 1.00 | 5 |
+| trained by one level | 350M | 1.00 | 5 |
+| trained by one level | 600M | 1.00 | 5 |
+| trained by one level | 1B | 1.00 | 5 |
+| script trained | 90M | 0.67 | 14 |
+| script trained | 175M | 0.71 | 14 |
+| script trained | 350M | 0.65 | 14 |
+| script trained | 600M | 0.66 | 14 |
+| script trained | 1B | 0.71 | 14 |
+| script not trained | 90M | 0.52 | 14 |
+| script not trained | 175M | 0.59 | 14 |
+| script not trained | 350M | 0.58 | 14 |
+| script not trained | 600M | 0.58 | 14 |
+| script not trained | 1B | 0.64 | 14 |
 
 ![BPB curves](pretraining/predictivity_all/bpb_curves.png)
 <!-- END auto:results -->
@@ -96,23 +114,29 @@ The summary above, per language (`predictivity_all` pool). Regenerate with `pyth
 <!-- END auto:panels -->
 
 **Key findings** (`transfer_da_all_lines_mono_axis`, `transfer_da_all_by_L_mono_axis`: rq05's per-item
-agreement on the per-language BPB of all 100 evaluation languages, grouped
+agreement on the per-language BPB of every evaluation language, grouped
 per (intervention, L) by what the two levels' lists do with the language —
 both train it, only one does, neither does but one trains its script, or
 neither trains even the script; the last two groups are the transfer test)
 
+- **The list decision (A vs B) transfers only partly.** DA-size on languages
+  whose script a list trains is 0.63 at 90M and 0.72–0.73 from 175M to 600M,
+  and clears 0.75 only at 1B (0.81). On unseen scripts it is 0.42–0.73 and
+  never clears 0.75. The reference's own early checkpoints do better: DA-ckpt
+  on script-trained languages climbs from 0.65 at 10 % to 0.90 at 90 %, and
+  on unseen scripts from 0.50 to 0.85.
+- **Per language count** (final checkpoint, mean over proxy sizes):
+  script-trained languages read the list decision at L8 (0.82) and L15
+  (0.77) but not L30 (0.58), temperature at every L (0.78–0.79) and the
+  second-language swaps clearly (zh 0.96, es 0.90). Depth is not read on
+  untrained languages at any L (0.41–0.72), and unseen scripts stay at
+  0.43–0.68 for every intervention.
 - The "trained languages read the decision at 1.0" reading is the languages
   only one list trains, where the model that saw the language wins at every
   size; it is the inclusion decision, not transfer.
 - Script is a coarse proxy for relatedness (Latin covers Welsh and Vietnamese
   alike), and at L1 only English is trained, so "script trained" is every
   Latin-script language.
-- `transfer_da_all_lines_mono_axis.csv` is still empty on the 2026-09-30 tables (the L8 and
-  L30 list decisions against 1.7B do not reach the three items a panel needs
-  at this snapshot either), so the per-size numbers of the earlier snapshot
-  (script-trained languages read at 0.61–0.77 from 175M to 1B, unseen scripts
-  0.33–0.73, neither clearing 0.75 below 1B) are not re-read here; they are
-  quoted again once the figure draws.
 
 **Follow-ups**
 
@@ -123,9 +147,8 @@ neither trains even the script; the last two groups are the transfer test)
   table. The "mean over proxy sizes" of `transfer_da_all_by_L_mono_axis` averages a proxy
   that flips with one that agrees into 0.5; one line per proxy size, or the
   largest proxy below the reference, for the paper version.
-- The same caveats as rq05: items are correlated and the reference is 1.7B
-  only for the lists; bootstrap over L and re-read the other interventions
-  against 1.7B when their cells exist.
+- The same caveats as rq05: items are correlated; bootstrap over L. The
+  reference is 1.7B for every intervention since 2026-09-26.
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/highlights.csv) ·
 GitHub: [transfer_error_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.png) · [transfer_error_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_all/transfer_error_by_L.csv) ·
@@ -168,8 +191,8 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 
 **Key findings**
 
-- English alone is the worst single-language proxy of the multilingual
-  decision: pooled over the panel's benchmarks at 1B English reads 0.61
+- English alone is a weak single-language proxy of the multilingual
+  decision, beaten by every panel language but Japanese: pooled over the panel's benchmarks at 1B English reads 0.61
   against 0.62–0.67 for the other panel languages (de 0.67, it 0.65, zh 0.65,
   ru 0.64, es 0.63, fr 0.62; ja 0.55) and 0.67 for the panel macro; at 600M
   English (0.60) sits with Japanese and Chinese (0.56) at the bottom, below
@@ -177,14 +200,18 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 - Per benchmark the proxy's macro reaches 0.93 on hellaswag, 0.89 on LAMBADA
   and INCLUDE-rfgm and 0.81 on Global-MMLU-rf at 1B, where English alone reads
   0.87, 0.78, — and 0.69; on `multiblimp` English reads 0.40 against 0.68 for
-  the macro. Where the macro lies above every single language (hellaswag,
-  Global-MMLU-rf, INCLUDE-rf/rfgm, xstorycloze) the languages' errors are
+  the macro. Where the macro lies above every single language at 1B
+  (hellaswag, multiblimp, Belebele-rfgm, INCLUDE-rfgm, xstorycloze;
+  Global-MMLU-rf and LAMBADA tie the best language, INCLUDE-rf trails
+  Russian 0.69 to 0.73) the languages' errors are
   partly independent and the panel is worth evaluating; on `xnli` and
   `xwinograd` nothing reads the reference at 1B.
 - A developer who evaluates a multilingual recipe on English benchmarks
   alone misreads the multilingual decision more often than one who evaluates
-  any other single panel language; the macro over the readable panel is the
-  safest proxy at every size.
+  any other single panel language except Japanese, which reads lowest at
+  every size; the macro over the readable panel is the safest proxy from
+  350M up (tied with German at 1B, 0.67), while Italian at 90M (0.66) and
+  German at 175M (0.69) read the decision better than it.
 
 **Follow-ups** (`plan/next_analyses.md` §6)
 

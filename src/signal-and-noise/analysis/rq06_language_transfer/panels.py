@@ -10,8 +10,8 @@
 
 Reads `rq5_transfer.csv`. There is no per-benchmark view: the transfer test
 is on per-language bits per byte only.
-The decision lines read rq05's `intervention_da_all_by_group_ckpt10_mono_axis.csv` (every
-evaluated checkpoint).
+The decision lines read analyze.py's `transfer_da_all_by_group_mono_axis.csv`
+(every evaluated checkpoint, every language: rule 2's exception).
 
     python analysis/rq06_language_transfer/panels.py --pool predictivity_all
 """
@@ -38,7 +38,7 @@ from evals.scripts.utils.configs import bucket_order, load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
-from analysis.paths import DESIGN_DECISIONS, LANGUAGE_TRANSFER  # noqa: E402
+from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
 from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS  # noqa: E402
 from analysis.rq05_design_decisions.panels import da_lines  # noqa: E402
 
@@ -48,15 +48,15 @@ GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.MUTED, S.RAMP[1], S.SERIE
 mpl.rcParams.update(S.RC)
 
 
-def decision_lines(out_dir: Path, stage: str) -> None:
-    src = DESIGN_DECISIONS / stage / "predictivity_all" / "intervention_da_all_by_group_ckpt10_mono_axis.csv"
+def decision_lines(out_dir: Path) -> bool:
+    """Draw the two transfer-decision figures; False when there is nothing to draw."""
+    src = out_dir / "transfer_da_all_by_group_mono_axis.csv"
     if not src.is_file():
-        return
+        return False
     g = pd.read_csv(src).assign(population="bpb")
     if g.empty:
-        print("!!! RULE 2: rq05's per-group table is empty (its pool holds trained languages only); the transfer decision "
-              "lines need the untrained groups, which only this folder's analyze.py may read — skipped")
-        return
+        print(f"no rows in {src.name} — the transfer decision lines are skipped")
+        return False
     da_lines(g[g["intervention"] == "scheme"], out_dir, name="transfer_da_all_lines_mono_axis", series="group", colours=GROUP_COLOUR,
              populations=(("bpb", "-", "per-language BPB"),),
              title="Does a proxy read the list decision (scheme A vs B) for languages it did not train?",
@@ -88,6 +88,7 @@ def decision_lines(out_dir: Path, stage: str) -> None:
                       "in the CSV of transfer_da_all_lines_mono_axis); a group is empty where the lists leave it no language — \"trained by one "
                       "level\" exists only where the two levels' lists differ",
                       tables, name="transfer_da_all_by_L_mono_axis")
+    return True
 
 
 def main(pool: str) -> None:
@@ -116,14 +117,16 @@ def main(pool: str) -> None:
                             fmt="{:.3f}"))
     G.save_highlights(fig, out_dir, "rq06 in one figure: does a scaling law transfer to a language it has not seen?",
                       "error of the reference-size BPB predicted from the k smallest rungs with the exponent of the other languages", tables)
-    decision_lines(out_dir, stage)
+    drawn = decision_lines(out_dir)
     if pool != CANONICAL:
         return
     body = "\n\n".join([
         "## Per benchmark and per language",
         f"The summary above, per language (`{pool}` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq06 in one figure]({stage}/{pool}/highlights.png)"]
-        + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Transfer error per language and L', 'transfer_error_by_L.png'), ('The list decision on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]])
+        + [f"![Transfer error per language and L]({stage}/{pool}/transfer_error_by_L.png)"]
+        + ([f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('The list decision on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]]
+           if drawn else ["The transfer-decision figures are not drawn: `transfer_da_all_by_group_mono_axis.csv` has no rows."]))
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 
 

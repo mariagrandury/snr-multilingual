@@ -111,34 +111,124 @@
   },
   "decision_transfer": [
    {
-    "population": "bpb_trained",
+    "group": "trained by both levels",
     "proxy_size": "90M",
-    "da": 0.975,
-    "cells": 10
+    "da": 0.947,
+    "cells": 14
    },
    {
-    "population": "bpb_trained",
+    "group": "trained by both levels",
     "proxy_size": "175M",
-    "da": 0.992,
-    "cells": 10
+    "da": 0.959,
+    "cells": 14
    },
    {
-    "population": "bpb_trained",
+    "group": "trained by both levels",
     "proxy_size": "350M",
-    "da": 0.78,
-    "cells": 10
+    "da": 0.807,
+    "cells": 14
    },
    {
-    "population": "bpb_trained",
+    "group": "trained by both levels",
     "proxy_size": "600M",
-    "da": 0.578,
-    "cells": 10
+    "da": 0.663,
+    "cells": 14
    },
    {
-    "population": "bpb_trained",
+    "group": "trained by both levels",
     "proxy_size": "1B",
-    "da": 0.9,
-    "cells": 10
+    "da": 0.893,
+    "cells": 14
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "90M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "175M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "350M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "600M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "1B",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "90M",
+    "da": 0.673,
+    "cells": 14
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "175M",
+    "da": 0.713,
+    "cells": 14
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "350M",
+    "da": 0.655,
+    "cells": 14
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "600M",
+    "da": 0.663,
+    "cells": 14
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "1B",
+    "da": 0.715,
+    "cells": 14
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "90M",
+    "da": 0.525,
+    "cells": 14
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "175M",
+    "da": 0.59,
+    "cells": 14
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "350M",
+    "da": 0.579,
+    "cells": 14
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "600M",
+    "da": 0.575,
+    "cells": 14
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "1B",
+    "da": 0.642,
+    "cells": 14
    }
   ]
  }
