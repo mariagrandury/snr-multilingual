@@ -78,11 +78,13 @@ so a script never decides by model name.
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
 - Diverged runs (`run__diverged`) and runs short of their target are dropped
   by default; the pool flag `include_diverged` keeps them. `build_snr_pool`
-  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 175M
-  up to the reference (rule 10): the 90M rung trains but is off the ladder
-  (nine of its ten runs diverge), and the 3B rung sits ABOVE the reference and
-  belongs to the size-generalization question alone, which opts in with
-  `above_reference=True`. Neither carries into any other pool, table or
+  also drops every size outside `utils.ANALYSIS_SIZES`, the ladder from 90M
+  up to the reference (rule 10). The loader keeps only the runs at the batch a
+  rung uses now (`ladder_report.on_grid`): the 90M and 175M rungs were
+  retrained at batch 84 / 168 on 2026-09-23 and their diverged batch-504
+  predecessors, still on disk, would otherwise share a `family` with them. The
+  3B rung sits ABOVE the reference and belongs to the size-generalization
+  question alone, which opts in with `above_reference=True`. Neither carries into any other pool, table or
   figure. `ANALYSIS_SIZES` derives from `TARGET_SIZE`, so moving the reference
   moves the ladder with it.
 - **Shared checkpoint grid** (`shared_grid=True`): benchmark rows on the k/10
@@ -102,8 +104,9 @@ so a script never decides by model name.
   read the seed replicates for the noise that does not depend on the window.
 - **The analysis-wide rules** — `analysis/RULES.md`: the gate, trained
   languages only, ten checkpoints, one noise window, three pairs, parent tasks
-  only, `multi` is not a language, three tasks per language, one reference, no
-  90M and no size above the reference, no leakage, the figure conventions.
+  only, `multi` is not a language, three tasks per language, one reference,
+  sizes 90M–1.7B at each rung's own batch and no size above the reference, no
+  leakage, the figure conventions.
   `build_snr_pool` applies the
   population rules at load (parents only, trained languages only; rq06 and
   rq08 opt out explicitly), the rq02 kernels enforce the pair minimum, and
@@ -115,24 +118,69 @@ so a script never decides by model name.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
 
-**Pipeline order** (`run_all_predictivity.sh`): rq00 `above_random.py` (the
-gate) → rq02 `compute_da.py` (the truth) → rq03 `run_apertus_snr_variants.py`
-(22 SNR variants × bucket, joined to the DA table) → rq03
-`compare_seed_splits.py` (holdout) → per pool rq04 `analyze_snr_variants.py`
-and `snr_definition_postprocess.py`, rq02 `da_per_benchmark.py` and `early_small.py`, rq09
-`analyze.py`, rq07 `analyze.py` → on `predictivity_all` (every seed and
-scheme) rq05 `analyze.py` + `early_decision.py`, rq01 `analyze.py` +
-`scaling_law_error.py`, rq03 `effect_vs_noise.py`, rq06 → rq08, the rq00
-curves (`run_apertus.py`, `curves.py`), rq02 `by_L.py` (decision accuracy
-per language count, on `predictivity_all` at the grid seed), rq04 `analyze.py`
-(reads rq03's table, rq00's scores, rq01's fits) and its per-L panels,
-`report_figures/make_figures.py`. Themes: A
-predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C generalisation
-(rq05–rq07), D benchmark improvement (rq08–rq09); `analysis/paths.py` is the
-one map from constant to folder. The
-canonical pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) runs last so
-its README generators see every other pool's CSVs; generators no-op on other
-pools. Outputs: `analysis/<rq>/<stage>/<pool>/`.
+**Pipeline order** (`run_all_predictivity.sh`, reorganised 2026-09-23): the
+passes run in research-question order so the early questions' tables land
+first — rq00 (`above_random.py`, the gate every later step reads; then
+`run_apertus.py`, `curves.py`, `panels.py`, the rf-twin comparison) → rq01
+(`analyze.py`, `panels.py`, `regimes.py`, `regimes_survivorship.py`,
+`scaling_law_error.py`, all on `predictivity_all`) → rq02 (`compute_da.py` per
+pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
+`reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
+`paper_ten_checkpoints.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then
+the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
+`by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
+`pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
+rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
+`analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
+proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
+against every DA) → rq05 (+ rq03's
+`effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
+ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+reference, the only reader of `above_reference=True`; filled since the
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → `report_figures/make_figures.py` →
+`check_rules.py`.
+Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
+`analysis/paths.py` is the one map from constant to folder. The canonical
+pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README
+generators write; generators no-op on other pools. Outputs:
+`analysis/<rq>/<stage>/<pool>/`.
+
+**Regenerating one figure without the driver** (the normal way to iterate;
+the driver is ~2 h): from `src/signal-and-noise`,
+`export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH; PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0 python analysis/rqNN_*/<script>.py --pool predictivity`.
+The thread caps are not optional: without them OpenBLAS spawns one thread
+per core and the login node's 1000-pid slice kills the process. Scripts that
+read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
+`reliable_tasks.py` to have run on the current DA tables first.
+
+**What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
+The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with Key findings and Follow-ups after each; every snapshot moves the numbers, so re-read the CSVs: (1) on the full gated population DA-size is 0.54 (90M) → 0.56 (1B),
+jackknife ±0.02 — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
+itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
+`above_66_ckpt`, `above_66_either`) are the ones to quote, never
+`above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
+sits near the seed null (two seeds of ONE design reach up to 0.75): it measures
+within-run persistence, and a checkpoint-axis figure is read against
+`seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
+statistic (r ≥ 0.96 over 1,883 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 2–7 % of
+cells. Restricting to the L8 languages, to common tasks, to one language or
+one language tier does not order the per-L lines, and a language's token
+share does not predict its benchmarks' reliability (ρ 0.02–0.27). The twins
+pass the gate (McNemar p < 0.001) but rank no better than the originals
+(`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
+and without them); English alone is the worst single-language proxy of the
+multilingual decision (`rq06_language_transfer/language_panel.py`).
+
+**README rules.** `analysis/RULES.md` ends with the README rules: one README
+per level (`analysis/README.md` for the RQs, one per `rqNN_*/`, none under a
+pool folder), the current sweep first and other sweeps in a final
+"Extensions from other sweeps" section, every rq02-family figure stating its
+DA kind / filter / pair set / gate pool, storyline order with cross-links,
+Key findings and Follow-ups bullets after every figure, a GitHub link on
+`main` after every figure, auto blocks untouched, the snapshot date stated.
+A session that edits a README follows them.
 
 **Shared helpers.** `analysis/utils.py` also carries the ladder-frame helpers
 the ladder-frame scripts (rq00 curves, rq01, rq03, rq05, rq06) use — `ladder_frame` (the pool plus `frac`), `finals`,
@@ -188,13 +236,15 @@ The four `predictivity*` pools above filter on `scheme ∈ {A, B}`. AT3, ES and
 ZH are a different intervention (a sampling temperature, a swapped second
 language), so letting them into the headline pool would widen every signal
 without widening the decision the pool exists to measure. They live in
-`predictivity_schemes` instead, which no driver runs — invoke a script with
-`--pool predictivity_schemes` when the scheme axis itself is the question.
+`predictivity_schemes` instead. The driver runs `compute_da.py` on it because
+`reliable_tasks.py`, `by_L.py` and `scale_convergence.py` pair over every
+scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
+the gate and the output folder stay `predictivity`; the `axes` column of
+`da_per_task.csv` names the pair set, rule 15).
 
 The `snr` section of models.json is global: `small_sizes` 175M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
-largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
-source data and are the one labelled exception), `da_early_fracs` the nine
+largest rung DataDecide has; L2 ZH and ES reach 1.7B too since 2026-09-26), `da_early_fracs` the nine
 evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,
 `min_pairs` 3, `min_lang_tasks` 3 (lowered from 5 on 2026-09-20: it was the
 binding constraint on rq04's per-language panel, 6 languages against 17, and
@@ -208,7 +258,7 @@ committed outputs are the 1B-reference ones and are not regenerated. Sizes and c
 `noise_window` / `noise_grid` / `min_pairs` / `min_lang_tasks`** (commit 56c806d dropped two of
 them, and `analysis/utils.py` fails at import without them).
 
-- **size** = `175M`…`1.7B` (the ladder; 90M trains but is dropped at load), `175M`…`1B` (36-sweep), native sizes
+- **size** = `90M`…`1.7B` (the ladder, each rung at its own batch), `175M`…`1B` (36-sweep), native sizes
   for externals; **bucket** = `size_bucket(size)`.
 - **family** = cross-size identity (`lm-L8-deep-seed1904` /
   `apertus-fwEdu30-fw270-seed1904`), attached at load; DA groups on it so the
@@ -448,6 +498,25 @@ kernels apply `MIN_PAIRS`, and `analysis/check_rules.py` fails the pipeline
 when a table on disk breaks a rule. Add a new rule to `analysis/RULES.md`,
 implement it in the shared layer, and teach the checker — never in a single
 rqNN script.
+
+### 16. A figure drawn before its input is a stale figure with a fresh timestamp
+On 2026-09-23 the rq00 panels (`first_size_above_random`, `highlights`) were
+drawn at 02:32 and the gate mask rewritten at 02:41 by a later step: 649
+cells on disk against 775 recomputed, and nothing complained. The driver now
+runs each RQ's panels right after the table they read (RQ order), and
+`check_rules.py` cannot see this class of error — when a table is
+regenerated by hand, regenerate the panels that read it in the same breath.
+Same family: `scale_convergence.py --langs L8` once wrote its three `--by`
+groupings to ONE stem, so the per-L L8 figure on disk was the transformation
+figure; `stem_for` now carries `by`, and the driver passes `--by L`.
+
+### 17. Filtering on the quantity drawn
+Every `above_*` variant keeps the tasks whose DA cleared a cut and then
+plots DA on them; the rise it shows is partly the cut (passers 0.80 against
+0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
+cell by its value but still selects tasks by it. Quote the unfiltered
+figure (`scale_convergence.png`, `rq2_ten_checkpoints`) beside any filtered
+one, and never call a filtered figure "free of selection bias".
 ---
 
 ## Legacy code (upstream DataDecide / OLMo path)
@@ -466,13 +535,13 @@ masks), `snr/stats.py` (total variation / monotonicity of training curves),
 is quoted by rq08's docstring only), `snr/autobencher/`, `snr/scripts/`,
 `snr/constants/{datadecide,ladder,ladder_config.json,models,signal,smooth}.py`,
 `allenai_analysis/*.ipynb` (LFS pointers) and `allenai_analysis/plotting/scaling.py`,
-`analysis/PARALLEL_SESSIONS.md`, the `INSTRUCTIONS.md` files (pre-refactor
-`results/` layout), `analysis/ANALYSIS_new_vs_previous.md`,
 `analysis/rq08_subset_selection/per_sample/` (cluster-only per-item outputs
 of the 36-sweep), `posttraining.ipynb`, `notebook_guidelines.md`,
 `run_all_pretraining.sh` (36-sweep driver). See the root README's
 "Legacy code" for the removal proposal; nothing is deleted without the
-owner's call.
+owner's call. (The pre-refactor `INSTRUCTIONS.md` / `PARALLEL_SESSIONS.md` /
+`ANALYSIS_new_vs_previous.md` notes were folded into the RQ READMEs and
+removed on 2026-09-23.)
 
 ---
 

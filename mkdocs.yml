@@ -1,9 +1,11 @@
 site_name: SNR Multilingual
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
 site_url: https://snr-multilingual.netlify.app/
-repo_url: https://github.com/swiss-ai/snr-multilingual
+repo_url: https://github.com/mariagrandury/snr-multilingual
 docs_dir: docs
 site_dir: site
+exclude_docs: |
+  CLAUDE.md
 
 theme:
   name: material
@@ -46,7 +48,9 @@ nav:
       - Signal-to-Ratio Configs: evaluation/configs.md
   - Signal & Noise:
       - Overview: signal-noise/index.md
+      - Analysis: signal-noise/analysis.md
       - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
+      - "RQ0 · Task reformulation": signal-noise/task_reformulation.md
       - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
       - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
       - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
@@ -91,5 +95,4 @@ hooks:
   - mkdocs_hooks.py
 
 extra_javascript:
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

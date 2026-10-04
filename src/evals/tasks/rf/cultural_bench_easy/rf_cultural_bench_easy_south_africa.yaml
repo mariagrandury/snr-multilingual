@@ -1,0 +1,19 @@
+task: rf_cultural_bench_easy_south_africa
+include: /capstor/store/cscs/swissai/infra01/msnr/msnr-harness/lm-evaluation-harness/lm_eval/tasks/cultural_bench/easy/cultural_bench_easy_south_africa.yaml
+output_type: multiple_choice
+num_fewshot: 0
+doc_to_text: '{{prompt_question.strip()}}
+
+  Answer:'
+doc_to_choice: '{{[prompt_option_a, prompt_option_b, prompt_option_c, prompt_option_d]}}'
+doc_to_target: '{{answer}}'
+metric_list:
+- metric: acc
+  aggregation: mean
+  higher_is_better: true
+- metric: acc_norm
+  aggregation: mean
+  higher_is_better: true
+metadata:
+  version: 0.0
+process_docs: !function utils.process_south_africa

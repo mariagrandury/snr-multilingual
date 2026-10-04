@@ -17,7 +17,7 @@
 <!-- BEGIN auto:highlight (analyze.py --pool predictivity) -->
 ## Highlighted result
 
-- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `rel_star_discrepancy` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **0.85**, Spearman ρ **0.50**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
+- **On the `predictivity` pool SNR values and rank order cannot be compared across corpora** — variant `aad` (rq04's global best, not selected here), Pearson r of log₁₀(SNR) **1.00**, Spearman ρ **1.00**, over only **3** shared English tasks after the above-random gate — too few for a correlation to mean anything.
 - **The shared universe is the English tasks both corpora evaluate** (ARC, HellaSwag, MMLU via the Global-MMLU English split, PIQA/CSQA/OpenBookQA where run), so the evidence is the SNR *correlation* over that handful, not top-K Jaccard (trivially 1.0 on so small a universe).
 <!-- END auto:highlight -->
 
@@ -122,6 +122,9 @@ MMLU subjects) against 3 today. DataDecide's generative and code tasks
 Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-30 23:54**.
+
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
 
@@ -131,13 +134,39 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 
 | pool | variant (from rq04) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
-| `predictivity` (grid, seed 1904) | `rel_star_discrepancy` | 0.85 | 0.50 | 3 |
-| `predictivity_seeds` (all seeds) | `rel_star_discrepancy` | 0.68 | 0.50 | 3 |
+| `predictivity` (grid, seed 1904) | `aad` | 1.00 | 1.00 | 3 |
+| `predictivity_seeds` (all seeds) | `aad` | 0.95 | 1.00 | 3 |
 
-![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_rel_star_discrepancy.png)
+![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png)
 
 ![Ladder vs AllenAI SNR across variants](pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png)
 <!-- END auto:results -->
+
+[snr_apertus_vs_snr_allenai_aad.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png) ·
+[snr_apertus_vs_snr_allenai_grid.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png) ·
+[pearson_r_per_variant.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/pearson_r_per_variant.csv) ·
+[shared_task_agreement.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/shared_task_agreement.csv) ·
+[pearson_r_size_sweep.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/pearson_r_size_sweep.csv) ·
+[agreement.md](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/agreement.md)
+
+## TODO
+
+- [ ] Add `mmlu_pro` / BBH to widen the 7-task shared universe.
+- [ ] Bootstrap CIs on the cross-corpus Pearson r and Spearman ρ.
+- [ ] Re-run the original `mmlu` lm-eval task on Apertus and drop the MMLU alias
+      for a like-for-like comparison.
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pools `seeds_1904`, `seeds_28_1797`,
+`seeds_28_1797_1904`, `custom_swissai_hf`; reference **1B**, the 86-task old
+list) or from the **external tier** (`all/external`: the public and reference
+models, 270M–70B, cross-model dispersion with no mixture axis). Its harness,
+task set and reference differ from the ladder's, and its shared universe with
+DataDecide is the 7 standalone English tasks (the ladder's `auto` list shares
+3 after the gate), so its correlations are a replication on a different
+population, never rows of the ladder's table.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -174,6 +203,9 @@ at n_shared = 6 this is indicative, not robust; and 1 shared task is the aliased
 `global_mmlu_full_en → mmlu` (different MMLU content; `commonsense_qa → csqa` is
 the other alias). See `all/external/agreement.md`.
 
+[snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/all/external/snr_apertus_vs_snr_allenai_star_discrepancy_shifted.png) ·
+[snr_apertus_vs_snr_allenai_grid.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/all/external/snr_apertus_vs_snr_allenai_grid.png) ·
+[agreement.md](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/all/external/agreement.md)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -202,12 +234,9 @@ Cross-corpus agreement by pool (headline = the pure 3-seed pool `seeds_28_1797_1
 ![Apertus vs AllenAI SNR — 3-seed pool, best variant](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_dispersion_shifted.png)
 
 ![Apertus vs AllenAI SNR across variants](pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
-## TODO
 
-- [ ] Add `mmlu_pro` / BBH to widen the 7-task shared universe.
-- [ ] Bootstrap CIs on the cross-corpus Pearson r and Spearman ρ.
-- [ ] Re-run the original `mmlu` lm-eval task on Apertus and drop the MMLU alias
-      for a like-for-like comparison.
+[snr_apertus_vs_snr_allenai_dispersion_shifted.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_dispersion_shifted.png) ·
+[snr_apertus_vs_snr_allenai_grid.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/seeds_28_1797_1904/snr_apertus_vs_snr_allenai_grid.png)
 
 ## Files
 

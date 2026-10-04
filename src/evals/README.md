@@ -49,7 +49,7 @@ comparison, and the subset-search outputs all start from it.
 [`../pretrain/`](../pretrain/)), plus reference HF models (Qwen3, Gemma-3,
 SmolLM3, Olmo-3, Apertus-8B/70B) and the a06 main runs (`apertus3-{1b,3b}-*-nodes`).
 
-The full list lives in [`configs/models.json`](configs/models.json) (the
+The full list lives in [`configs/models.json`](../../configs/models.json) (the
 shared source of truth, read via
 [`scripts/utils/configs.py`](scripts/utils/configs.py)). Pools group them
 for downstream SNR analysis — see
@@ -57,9 +57,9 @@ for downstream SNR analysis — see
 
 ## Tasks in scope
 
-86 tasks per checkpoint — the deduplicated union of
-[`configs/signal_to_ratio/tasks_pretraining.txt`](configs/signal_to_ratio/tasks_pretraining.txt)
-and `tasks_pretraining_b.txt`, exposed as the launcher mode
+86 tasks per checkpoint —
+[`configs/signal_to_ratio/tasks_pretraining_full.txt`](configs/signal_to_ratio/tasks_pretraining_full.txt)
+(the deduplicated union of `tasks_pretraining.txt` and `tasks_pretraining_b.txt`), exposed as the launcher mode
 `snr-pretraining-full`. Coverage includes per-language benchmarks
 (`multiblimp_<lang>`, `xstorycloze_<lang>`, `xwinograd_<lang>`,
 `hellaswag_<lang>`, `xnli_<lang>`, `xcopa_<lang>`, `paws_<lang>`,
@@ -86,12 +86,14 @@ generates a cloze twin of each (`rf_<task>`: same dataset, config and
 split, no lettered option list, the four answer strings scored as
 continuations, zero-shot, `acc` + `acc_norm`) under
 [`tasks/rf/`](tasks/rf/) and registers them in `configs/tasks.json`
-(`benchmark: rf_<family>`, `metric: acc_norm`, group `auto_rf`). The YAMLs
+(`benchmark: rf_<family>`, `metric: acc_norm`, in `auto`). The YAMLs
 reach the harness through `eval_worker.py --include_path`, which
 `evaluate.sbatch` passes when `HARNESS_INCLUDE_PATH` is set, so the pinned
 wheel is untouched. Re-run the generator after adding a language to any of
-the three families; it is idempotent. The second twin, `rfgm_<task>`
-(`--set rfgm`, group `auto_rfgm`, [`tasks/rfgm/`](tasks/rfgm/)), is the
+the three families; it is idempotent. The lettered probe families (below)
+get twins from the same script, through an absolute `include:` of the
+original YAML. The second twin, `rfgm_<task>`
+(`--set rfgm`, [`tasks/rfgm/`](tasks/rfgm/), also in `auto`), is the
 same item rewritten by Gemini into a statement stem with four short
 continuations: [`scripts/rewrite_items_gemini.py`](scripts/rewrite_items_gemini.py)
 runs the Batch API from the login node and leaves one JSONL per task under
@@ -106,6 +108,56 @@ figures and the generated table in that README (`rf_gate.png`, per
 language `rf_gate_by_language.png`, a CSV each): the rq00 gate cell —
 median task margin over chance, trained languages — original, rf, rfgm,
 and each set's difference.
+
+### Probe benchmarks (`groups.auto_probe`, `tasks/cloze/`, `tasks/include_v2/`)
+
+A screening pass over candidate benchmarks at each cell's last checkpoint:
+`auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --final-only`.
+A candidate that passes is promoted into `auto`: twenty of the
+twenty-one were on 2026-09-23, all but `bbq`. Two generators feed it, both idempotent and both
+registering in `configs/tasks.json`:
+
+- [`scripts/make_cloze_tasks.py`](scripts/make_cloze_tasks.py) turns the
+  closed-form subtasks of BBH and ACP-Bench into logprob tasks under
+  [`tasks/cloze/`](tasks/cloze/), one benchmark per arm so the arms stay
+  separable by name: `bbh_mcq` / `rf_bbh_mcq` (the reformulation pair),
+  `bbh_cloze` (two-way, no twin), and the same three for `acp_bench`.
+  Option and item counts are measured from the data and written as
+  `n_options` / `n_items`.
+- [`scripts/make_include_v2_tasks.py`](scripts/make_include_v2_tasks.py)
+  writes INCLUDE v2 (`include-results/include-128`, the L50 pairs, OG and EN
+  variants) as cloze tasks under [`tasks/include_v2/`](tasks/include_v2/),
+  in the same group, read straight from the cached parquet.
+- [`scripts/add_harness_tasks.py`](scripts/add_harness_tasks.py) writes no
+  YAML at all: it registers benchmarks the pinned wheel already ships and
+  that this project simply never evaluated — the IberoBench multiple-choice
+  tasks (es, ca, and the eu/gl ones that no mixture trains), TokSuite, and
+  the language-specific leaderboards a 2026-09-23 survey of the harness
+  turned up (C-Eval, KMMLU, HAE-RAE, TurkishMMLU, TurBLiMP, ZhoBLiMP,
+  BLiMP-NL, EVALITA, NorEval, FrenchBench, the Bangla set, ARC-MT, MELA).
+  `--set ibero|toksuite|leaderboards` picks a list; every task is loaded
+  through a real `TaskManager`, and `n_options` / `n_items` are read off the
+  documents, so a name that does not resolve or a dataset that is not cached
+  fails here rather than inside an eval job. Its datasets must be built
+  first: add the repo to [`configs/eval_datasets.txt`](configs/eval_datasets.txt)
+  and run `scripts/download_eval_datasets.py` (it takes a manifest path, so
+  a subset builds on its own). A script-format dataset (cmmlu, BasqueGLUE)
+  cannot be built at all — `datasets` v3 refuses it.
+
+Two things the gate makes non-negotiable when picking candidates: a task
+needs enough items for the Wilson bound to clear chance (40 items over four
+options needs 36 % accuracy, 71 items over two needs 60 %, which is why the
+WNLI translations are not registered), and a language no mixture trains is
+selected by no cell — Basque and Galician are in no `L`, so their tasks sit
+inert unless a pass is run with `--all-languages`.
+
+Run the generators one at a time: each rewrites all of `tasks.json`, and
+`utils.configs.write_tasks_json` refuses to write over a file that changed
+underneath it. Load every new task through a `TaskManager` before launching;
+`src/evals/CLAUDE.md` lists what only fails inside the job. Once the
+results are in, `src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh`
+produces the verdict: the gate per language and original-vs-`rf_` on the
+pairs. A candidate that earns its place is then added to `groups.auto`.
 
 ## How to run
 
@@ -233,13 +285,15 @@ so builds belong on `preemptable` only by being *submitted* there —
 queues two segments (../pretrain/README.md).
 
 Pretrain jobs are moved only at the top rungs (3B, deep 1.7B and 1B) **and
-only when they carry `--requeue`**, which is what
-`launch_trainings.py --partition preemptable` adds: it also sets
+only when they can come back from a preemption**, which is what
+`launch_trainings.py --partition preemptable` arranges: it sets
 `MEGATRON_EXIT_ON_SIGTERM=1`, so the patched handler catches the preemption
-signal itself and Megatron checkpoints inside the 4 min grace, and the
-requeued job resumes from that save. The drainer asks the
-controller per job (`squeue -O Requeue`) and skips the ones submitted without
-it — for those a preemption really would cost a save interval on 21 nodes.
+signal itself and Megatron checkpoints inside the 4 min grace, and
+`PRETRAIN_CHAIN=1`, so the wrapper has already queued a singleton successor to
+resume from that save. The drainer asks the controller per job
+(`squeue -O Comment,Requeue`: `selfchain`, or `--requeue` for jobs still in
+flight from before 2026-09-21) and skips the rest — for those a preemption
+really would cost a save interval on 21 nodes.
 
 Nothing is truncated (preemptable allows 24 h), so this one is simpler than
 the debug drainer. It cannot *raise* a walltime either — a limit can only be

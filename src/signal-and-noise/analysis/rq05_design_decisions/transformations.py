@@ -40,7 +40,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT  # noqa: E402
 from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
 
 mpl.rcParams.update(S.RC)
 # key -> (label, pairs); a pair is two cells as (L, scheme, arch), first = baseline
@@ -69,8 +69,15 @@ GATE_POOL = "predictivity"
 
 
 def _cell(size: str, c: tuple) -> str:
+    """The cell name, built by the launcher rather than re-spelled here.
+
+    Re-spelling the format silently dropped the `-b<N>` part the 90M and 175M
+    rungs carry since 2026-09-23, so at 175M this looked up the name of the
+    DIVERGED batch-504 run instead of its replacement — a comparison against a
+    model that ends 0.26 nats off the power law, with nothing to show it had
+    happened."""
     L, scheme, arch = c
-    return f"lm-{size}-L{L}{DATA_SCHEMES[scheme]['label']}-{arch}-seed{GRID_SEED}"
+    return exp_name(size, L, arch, GRID_SEED, scheme)
 
 
 def _items(fin: dict, kind: dict, size: str, x: tuple, y: tuple, pop: str) -> pd.Series | None:

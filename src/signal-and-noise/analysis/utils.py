@@ -218,7 +218,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
     language its mixture does not train is dropped (`untrained=True` keeps
     it, for rq06 alone and for the gate, which has to cover every task).
 
-    Sizes are ANALYSIS_SIZES, 175M to the reference (rule 10);
+    Sizes are ANALYSIS_SIZES, 90M to the reference (rule 10);
     `above_reference=True` widens that to every evaluated size and belongs to
     the size-generalization question alone, which is what the 3B rung is for.
     """
@@ -289,14 +289,266 @@ from pretrain.ladder_report import NON_EMB  # noqa: E402
 from pretrain.launch_trainings import EVAL_SIZES  # noqa: E402
 
 LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
-# Rule 10: every analysis reads the ladder from 175M up to the reference. 90M
-# trains but diverges, and the 3B rung sits ABOVE the reference — it exists for
-# the size-generalization question, which opts in with `above_reference=True`.
+# Rule 10: every analysis reads the ladder from 90M up to the reference (the
+# 90M and 175M rungs at their own batch, 2026-09-23; the loader keeps the
+# diverged batch-504 runs out). The 3B rung sits ABOVE the reference — it exists
+# for the size-generalization question, which opts in with `above_reference=True`.
 # Everywhere else a size above the reference would quietly become one more
 # column in a table whose reference is 1.7B. Derived from TARGET_SIZE, so
 # moving the reference moves this with it.
 ANALYSIS_SIZES = [s for s in EVAL_SIZES if NON_EMB[s] <= NON_EMB[TARGET_SIZE]]
 GRID_SEED = 1904                      # the plan grid's seed
+# `scheme` is not one design axis: it encodes the language LIST, the sampling
+# TEMPERATURE and, at L = 2, the SECOND LANGUAGE. `DATA_SCHEMES` in
+# pretrain.launch_trainings is the source of truth for the first two (`sets`,
+# `temp`); the third is the substitution below. Split this way AT3 is list A at
+# T=3, BT3 is list B at T=3, and ZH/ES are scheme A's list with Chinese or
+# Spanish in the second slot — so at L = 2 every setting is "English + one other
+# language" and A's own second language, Russian, is the axis's default level.
+SECOND_LANG = {"ZH": "zh", "ES": "es"}
+# ... and it encodes the ENGLISH corpus too, for the two schemes that vary it
+# (`english` in the registry). That axis exists because at L = 1 none of the
+# three above do: the mixture is 100 % English, so the only thing a second
+# family can differ by is which English. Without this column DCLMP, FWEB and A
+# are one row at L = 1, their pairs differ on NOTHING, and the mono-axis set
+# silently fills with (x-deep, shallow) pairs that report the DEPTH decision
+# three times over. Short level names for the schemes we have; any future one
+# falls back to its corpus path, which is ugly in a table but never wrong.
+ENGLISH_CORPUS = {"DCLMP": "dclm-noedu", "FWEB": "fineweb"}
+# What a cell is, apart from its size. The order is the one figures read in.
+DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "en", "seed"]
+# The three pair sets a decision-accuracy table can be computed over (rule 15).
+#   multi-axis  every pair of design variants: rq02's convention to date, and
+#               two thirds of its pairs move more than one axis at once.
+#   mono-axis   the pairs that move exactly ONE of L/arch/list/T/lang2/en, the seed
+#               held: the decision a practitioner actually makes, and what
+#               upstream's "every pair" is by construction (DataDecide's recipes
+#               differ in the data mix alone).
+#   seed        two draws of ONE design. There is no right ordering, so this is
+#               not a decision set but the null: what a benchmark with no signal
+#               reads. Empty in a single-seed pool.
+PAIR_AXES = ("multi-axis", "mono-axis", "seed")
+# What a figure or table drawn over each pair set is called: every pair set
+# carries its own suffix, so the two readings sit side by side in one folder
+# and no file name leaves the pair set to be guessed.
+AXES_SUFFIX = {"multi-axis": "_multi_axes", "mono-axis": "_mono_axis", "seed": "_seed_null"}
+
+
+def design_axes(df: pd.DataFrame) -> pd.DataFrame:
+    """family -> its design axes, `scheme` unpacked into `list`, `T` and
+    `lang2` through the registry that defines the grid (see SECOND_LANG).
+
+    `family` is the cell name with only the size token stripped, so the axes
+    are a function of it; the assertion is what guarantees that.
+    """
+    from pretrain.launch_trainings import DATA_SCHEMES
+    a = df[["family", "L", "arch", "scheme", "seed"]].drop_duplicates().set_index("family")
+    a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
+    a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
+    a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
+    a["en"] = a["scheme"].map(
+        lambda s: ENGLISH_CORPUS.get(s) or DATA_SCHEMES[s].get("english", "dclm-edu"))
+    assert not a.index.duplicated().any(), "family does not determine its design axes"
+    return a
+
+
+def pair_sets(attrs: pd.DataFrame, seed: int | None = GRID_SEED) -> dict[str, list]:
+    """The three pair sets of PAIR_AXES over `attrs`'s families.
+
+    `seed` holds the design pairs at one seed, so a replicate never enters a
+    decision set (it is a draw of one design, not a second design); pass None
+    to let every seed in. The `seed` set is the complement: pairs identical on
+    every axis but the seed.
+
+    A pool holding no cell at `seed` — the holdout's train split is seeds
+    64/313 by definition — would otherwise have no design pair at all, and
+    every table built from it comes out empty (its SNR join, and the seed
+    holdout downstream of that). The seed is then held at each seed the pool
+    does have; a pair spanning two seeds is still the null's, as everywhere.
+    """
+    if seed is not None and seed not in set(attrs["seed"]):
+        seed = None
+    fams = sorted(attrs.index)
+    multi, mono, null = [], [], []
+    for i, a in enumerate(fams):
+        ra = attrs.loc[a]
+        for b in fams[i + 1:]:
+            rb = attrs.loc[b]
+            differ = [k for k in DESIGN_AXES if ra[k] != rb[k]]
+            if differ == ["seed"]:
+                null.append((a, b))
+                continue
+            if "seed" in differ or (seed is not None and ra["seed"] != seed):
+                continue          # mixes a replicate into a design decision
+            multi.append((a, b))
+            if len(differ) == 1:
+                mono.append((a, b))
+    return {"multi-axis": multi, "mono-axis": mono, "seed": null}
+
+
+def one_axes(df: pd.DataFrame, axes: str = PAIR_AXES[0]) -> pd.DataFrame:
+    """One pair set of a decision-accuracy table (rule 15), with the `axes`
+    column dropped so the frame has the shape it had before that column
+    existed. The default is the multi-axis reading, so a consumer that does not
+    ask keeps the numbers it had; a table written before rule 15 has no such
+    column and passes straight through.
+    """
+    return df if "axes" not in df.columns else df[df["axes"] == axes].drop(columns="axes")
+
+
+def pair_agreement(proxy: dict, ref: dict, pairs=None) -> tuple[float, int]:
+    """(decision accuracy, pairs) over the families `proxy` and `ref` share.
+
+    The rule of `snr.metrics.decision_acc_fast`, applied to an explicit pair
+    list rather than to two aligned vectors: the sign of the score difference
+    on both sides, so a pair tied in both agrees and a pair tied in one is a
+    miss, order-invariantly. That kernel cannot take a pair list, so the rule
+    is stated twice — `tests/test_metrics.py::TestPairAgreement` is what keeps
+    the two from drifting apart. `pairs` restricts the set (the mono-axis
+    reading); None is every pair, which reproduces the kernel exactly.
+    Returns (NaN, n) below MIN_PAIRS, as rule 5 requires.
+    """
+    common = set(proxy) & set(ref)
+    pl = [(a, b) for a, b in pairs if a in common and b in common] if pairs is not None \
+        else [(a, b) for i, a in enumerate(sorted(common)) for b in sorted(common)[i + 1:]]
+    if len(pl) < MIN_PAIRS:                                   # rule 5
+        return float("nan"), len(pl)
+    agree = sum(np.sign(proxy[a] - proxy[b]) == np.sign(ref[a] - ref[b]) for a, b in pl)
+    return agree / len(pl), len(pl)
+
+
+def agreement_measures(proxy, ref) -> dict:
+    """Every rank-agreement statistic of two aligned score vectors, with the
+    pair counts they are all functions of — so a table can show WHY two of
+    them differ rather than that they do.
+
+    Over the n(n-1)/2 unordered pairs: C concordant (decided the same way on
+    both sides), D discordant, T_both tied on both, T_one tied on one side.
+    Then, with n_pairs = C + D + T_both + T_one:
+
+        da              (C + T_both) / n_pairs      `decision_acc_fast`'s convention
+        tau_a           (C - D) / n_pairs           Kendall, ties count for neither
+        gamma           (C - D) / (C + D)           Goodman-Kruskal, ties dropped
+        da_drop_ref_ties  C / (C + D + T_one_proxy) rq05's convention: a pair the
+                                                    REFERENCE ties is no decision
+        tau_b           scipy's Kendall, the tie-corrected denominator
+        rho, pearson_r  Spearman on ranks, Pearson on the raw scores
+
+    and the exact relation the pipeline's DA has to Kendall's tau, ties
+    included, which `tests/test_metrics.py` pins:
+
+        2 * da - 1 == tau_a + (T_both - T_one) / n_pairs
+
+    Rank statistics are NaN below MIN_PAIRS (rule 5) or when a side is
+    constant; the counts are always returned.
+    """
+    from scipy.stats import kendalltau, pearsonr, spearmanr
+    s, t = np.asarray(proxy, float), np.asarray(ref, float)
+    i, j = np.triu_indices(len(s), 1)
+    ds, dt = np.sign(s[i] - s[j]), np.sign(t[i] - t[j])
+    C = int(((ds == dt) & (ds != 0)).sum())
+    D = int(((ds == -dt) & (ds != 0)).sum())
+    T_both = int(((ds == 0) & (dt == 0)).sum())
+    T_proxy, T_ref = int(((ds == 0) & (dt != 0)).sum()), int(((ds != 0) & (dt == 0)).sum())
+    n = len(i)
+    out = {"n_models": len(s), "n_pairs": n, "concordant": C, "discordant": D,
+           "tied_both": T_both, "tied_one": T_proxy + T_ref}
+    nan = float("nan")
+    if n < MIN_PAIRS:                                                 # rule 5
+        return out | {k: nan for k in ("da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r")}
+    if np.std(s) == 0 or np.std(t) == 0:
+        # a constant side has no rank correlation, but the pair counts are
+        # still what the kernel reads: DA and tau_a stay, as decision_acc_fast has them
+        return out | {"da": (C + T_both) / n, "tau_a": (C - D) / n,
+                      "gamma": (C - D) / (C + D) if C + D else nan,
+                      "da_drop_ref_ties": C / (C + D + T_proxy) if C + D + T_proxy else nan,
+                      "tau_b": nan, "rho": nan, "pearson_r": nan}
+    return out | {"da": (C + T_both) / n, "tau_a": (C - D) / n,
+                  "tau_b": float(kendalltau(s, t).statistic),
+                  "gamma": (C - D) / (C + D) if C + D else nan,
+                  "da_drop_ref_ties": C / (C + D + T_proxy) if C + D + T_proxy else nan,
+                  "rho": float(spearmanr(s, t).statistic), "pearson_r": float(pearsonr(s, t).statistic)}
+
+
+JACKKNIFE_Z = 1.645          # the two-sided 90 % band every jackknife interval here is drawn at
+
+
+def jackknife_ratio(decisions: pd.DataFrame, keys: list, a: str = "family_a", b: str = "family_b",
+                    match: str = "match") -> pd.DataFrame:
+    """A pooled decision ratio per group of `keys`, with its leave-one-FAMILY-out
+    jackknife standard error and 90 % band.
+
+    Decision accuracy pooled over pairs is a degree-2 U-statistic of the
+    families, so the unit that gets resampled is the family, never the pair
+    and never the task: pairs share families, tasks share families. The
+    jackknife is used rather than a bootstrap because a family drawn twice
+    forms a pair tied on both sides, which the kernel scores as an agreement —
+    a resample that inflates the very number it estimates. Leave-one-out has
+    no such pair. With m families in a group the interval is over m values;
+    below MIN_PAIRS + 1 families it is reported as NaN rather than drawn, and
+    `n_families` is carried so a reader can see how much the band rests on.
+    """
+    rows = []
+    for key, g in decisions.groupby(keys, sort=False):
+        fams = sorted(set(g[a]) | set(g[b]))
+        theta = g[match].mean()
+        m = len(fams)
+        if m <= MIN_PAIRS:
+            rows.append(dict(zip(keys, key), reliability=theta, se=float("nan"), n_families=m))
+            continue
+        loo = np.array([g.loc[(g[a] != f) & (g[b] != f), match].mean() for f in fams])
+        se = np.sqrt((m - 1) / m * ((loo - loo.mean()) ** 2).sum())
+        rows.append(dict(zip(keys, key), reliability=theta, se=se, n_families=m))
+    out = pd.DataFrame(rows)
+    out["lo"], out["hi"] = out["reliability"] - JACKKNIFE_Z * out["se"], out["reliability"] + JACKKNIFE_Z * out["se"]
+    return out
+
+
+@lru_cache(maxsize=None)
+def language_token_share(L: int, scheme: str) -> dict[str, float] | None:
+    """language -> share of a cell's training tokens, for the mixture (L, scheme).
+
+    English is the DCLM half, `EN_SHARE` % of every token (all of them at
+    L = 1); the FineWeb-2 half is split by the builder's own plan
+    (`<prefix>.plan.json` on DATA_MASTER, via data_progress.exact_tokens — the
+    same record data_progress.py reports coverage from), so the share is the
+    temperature-allocated one and not a byte estimate. None when the build's
+    record is not reachable (capstor), so a caller can degrade and say so.
+    The shares are the same at every size — only the token budget scales.
+    """
+    from pretrain.data.data_progress import exact_tokens, mixture_paths
+    from pretrain.launch_trainings import DATA_MASTER, EN_SHARE, cell_fineweb_subsets
+    en = EN_SHARE / 100
+    if L == 1:
+        return {"en": 1.0}
+    subsets = cell_fineweb_subsets(L, scheme)
+    if len(subsets) == 1:              # one language takes the whole half; scheme A's L2 predates plan files
+        return {"en": en, fineweb_language(subsets[0]): 1 - en}
+    got = exact_tokens(mixture_paths(DATA_MASTER, L, scheme))
+    if got is None:
+        return None
+    tokens, _ = got
+    total = sum(tokens.values())
+    out = {"en": en}
+    for subset, n in tokens.items():
+        lang = fineweb_language(subset)
+        out[lang] = out.get(lang, 0.0) + (1 - en) * n / total      # dialects fold into one tag
+    return out
+
+
+@lru_cache(maxsize=None)
+def train_tokens(size: str, arch: str) -> int:
+    """The token budget D(N) a cell of `size` and `arch` trains for."""
+    import json
+    from pretrain.launch_trainings import HYPERPARAMS
+    return json.loads(Path(HYPERPARAMS[arch]).read_text())["configs"][size]["predictivity"]["train_tokens"]
+
+
+def language_tokens(L: int, scheme: str, size: str, arch: str) -> dict[str, float] | None:
+    """language -> training tokens of it a cell (size, L, arch, scheme) saw:
+    `language_token_share` times the cell's budget. None where the share is."""
+    share = language_token_share(L, scheme)
+    return None if share is None else {k: v * train_tokens(size, arch) for k, v in share.items()}
 
 
 def size_order(sizes) -> list[str]:

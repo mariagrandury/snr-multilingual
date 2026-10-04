@@ -1,35 +1,138 @@
-\section{Signal and Noise Definitions}
-\label{app:snr-definitions}
+\section{Definitions of Signal and Noise}
 
-We adapt the signal-and-noise framework of \citet{heineman_signal_2025}. This appendix describes the definitions used to interpret our surrogate analysis; it does not claim additional experiments beyond those reported in the main text.
+% IMP: this section is copied from AllenAI's paper!!
 
-\subsection{Scaling Fits}
+\subsection{Scaling Law Details}
 \label{app:scaling-law-prediction-error}
 
-The scaling figure uses linear fits of task score against log model size and log training tokens. The reported $R^2$ values describe in-sample fit quality. We do not use a two-stage loss-to-accuracy scaling model or treat $R^2$ as held-out prediction accuracy in the present analysis.
+\citet{hoffmann2022training} models the improvement for larger model training budgets as a power function, proportional to the model parameters $N$ and training tokens $D$, with the exact functional form and prediction setup varying between work \citep{pearce2024reconciling}. Recent work has begun using the downstream task as the prediction target \citep{dubey2024llama, gadre2024language}, in this work we follow \citet{bhagia2024establishing} by fitting a scaling law function to the language modeling loss over the correct continuation, then from the task loss to the downstream evaluation. We use the following functional form:
+\begin{equation}
+L(N, D) = \frac{A}{N^\alpha} + \frac{B}{D^\beta} + E, \quad U(L) = \frac{a}{1 + e^{-k(L-L_0)}} + b
+\end{equation}
 
-\subsection{Decision Accuracy and Ties}
+We follow the same methodology as \citet{bhagia2024establishing} and use the Huber loss to fit $L(N,D)$ and use a non-linear least squares optimizer to fit $U(L)$. The prediction error is defined as the relative error of the scaling law fit: 
+\begin{equation}
+\text{Prediction Error} = \frac{|\text{Measured Value} - \text{True Value}|}{|\text{True Value}|}
+\end{equation}
+
+
+\subsection{Decision Accuracy Details}
 \label{app:decision-acc-details}
 
-We use the sign-agreement definition in Equation~\ref{eq:da}. With no ties, if $C$ pairs are concordant and $D$ are discordant, then $\mathrm{DA}=C/(C+D)$ and Kendall's $\tau=2\mathrm{DA}-1$. Our actual evaluations allow ties: a tie on both sides agrees, while a tie on only one side does not. The no-tie identity therefore does not directly apply to all reported results. We retain this rule for consistency across accuracy and BPB measurements.
+Decision accuracy is one of many rank agreement metrics we could use to show that models trained across pre-training corpora agree at a small scale and a large scale. We present two alternatives here:
 
-\subsection{Noise Estimates}
+\textbf{Kendall's $\tau$.} 
+Here, rather than report Kendall’s $\tau$, we show it is proportional to decision accuracy. Kendall’s $\tau$ is defined as the difference between the concordant pairs $C$ and discordant pairs $D$, divided by the total pairs of models:
+$\tau = (C - D) / \binom{N}{2}$.
+We can then rewrite decision accuracy defined only by the number of concordant pairs $C$: 
+$\text{decision accuracy} = C / \binom{N}{2}$.
+
+Since we do not allow ties, $C$ and $D$ make up the total number of pairs $\binom{N}{2} = C + D$, we can rewrite decision accuracy as follows:
+\begin{align*}
+\tau &= \frac{C - \left( \binom{N}{2} - C \right)}{\binom{N}{2}} = \frac{2C - \binom{N}{2}}{\binom{N}{2}} = 2 \cdot \frac{C}{\binom{N}{2}} - 1 \\
+     &= 2 \cdot (\text{decision accuracy}) - 1
+\end{align*}
+
+Therefore, the decision accuracy measure in  \citet{magnusson2025datadecide} is equivalent to Kendall's $\tau$ modulo a scale and shift.
+
+\textbf{Spearman's Rank Correlation.} Kendall's $\tau$ is not sensitive to outliers, and instead we can incorporate the strength of the difference in rank with Spearman's $\rho$: $\rho = 1 - \frac{6 \sum d_i^2}{n(n^2 - 1)}$. This statistic will be more sensitive to large differences in model ranking.
+
+We use decision accuracy in this work for consistency, and to provide a more interpretable metric of rank agreement (for instance, a decision accuracy of 80\% indicates that 80\% of the pairs of mixes agree between the small scale and large scale). To show that both additional measures of agreement produce similar conclusions, we include correlation with these additional measures of agreement in Table \ref{tab:snr_variants}.
+
+\subsection{Measures of Modeling noise{}}
 \label{app:measuring-noise}
 
-\textbf{Checkpoint noise.} The surrogate export estimates variability over each model's last five available checkpoints on its shared grid and aggregates it across the model population. For the leading variants, the implementation divides mean checkpoint standard deviation by the mean late-checkpoint score. BPB uses a finer shared grid than benchmarks in this export; comparisons of absolute SNR magnitudes across these measurement types therefore need care.
+\textbf{Seed noise{}.} To measure the noise{} introduced from changing the random seed initialization between training runs, we can compute the standard deviation of the final checkpoint from multiple training runs with different random seeds. To estimate seed noise{}, we train $M$ models using the same configuration, and average the scores over the final $n$ checkpoints of $T$ total training checkpoints to smooth the checkpoint-to-checkpoint noise{}, then compute the standard deviation:
+\begin{equation}
+ \text{Seed noise{}}(M) = \sigma(M),\quad M_i = \textstyle\frac{1}{n} \sum_{j=T-n+1}^{T} U(t_j)
+\end{equation}
 
-\textbf{Seed variability.} Runs with different seeds change initialization and data order together. Their score variability measures the combined effect; these runs do not identify the two sources separately. Seed variability is distinct from uncertainty due to the finite number of evaluation items.
+\textbf{Data Order noise{}.} This is noise{} introduced from changing the order of sampled documents from the training data. We estimate the data order noise{} using the same method as seed noise{}.
 
-\textbf{Other possible estimates.}
+\textbf{Total Variation.} To measure the checkpoint-to-checkpoint noise{} throughout an entire training run, we measure the total variation of the intermediate training checkpoints on the downstream benchmark. We measure total variation as the average change in metric score across $T$ training checkpoints minus an improvement term:
 \label{app:total-variation}
-Total variation across a training curve and dispersion across disjoint evaluation folds are alternative noise diagnostics. They are not substituted for checkpoint noise in the reported 22-definition comparison. In particular, the present results do not establish that fold-based noise is a better surrogate than checkpoint noise.
+\begin{equation}
+\text{Total Variation} = \textstyle\frac{1}{T} \sum_{t=1}^{T} |U(t) - U(t-1)| - \frac{1}{T}(U(T) - U(0))
+\end{equation}
 
-\subsection{Signal Variants}
+\textbf{Checkpoint-to-checkpoint noise{}.} 
+Calculating the above sources of noise{} are either too expensive to estimate at large scales (e.g., training LLMs by varying the random seed) or difficult to run (e.g., evaluating every checkpoint on an LLM training curve). Instead, we propose an estimate measuring only the noise{} of the final $n$ training checkpoints of training:
+\begin{equation}
+\text{Checkpoint-to-checkpoint noise{}} = \textstyle\sigma\left(\{U(t_j)\}_{j=T-k+1}^{T}\right)
+\end{equation}
 
-\textbf{Pairwise distances.} For model scores $u_1,\ldots,u_m$, mean pairwise distance averages $|u_i-u_j|$ over unordered pairs; MPSD averages $(u_i-u_j)^2$. Their relative variants divide the signal by the mean late-checkpoint score before forming SNR. Relative dispersion uses the largest pairwise distance with the analogous normalization.
+\textbf{Benchmark noise.} We propose to measure noise as the relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set, averaged across models:
 
-\textbf{Robust spread.} Interquartile range is the upper score quartile minus the lower quartile; quartile deviation is half this range. Other variants use median or mean absolute deviations. These definitions measure different aspects of separation and can rank task--size cells differently.
+$$\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
 
-\textbf{Discrepancy and shifted variants.} The implementation also provides discrepancy, star discrepancy, and shifted versions of the discrepancy and dispersion measures. These are separate transformations of the score distribution; their names in the results identify the corresponding repository implementations. A leading shifted variant should not be interpreted as equivalent to its unshifted counterpart.
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We adopt the benchmark noise over the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, it correlates more strongly with decision accuracy than checkpoint noise ($R = 0.808$ vs. $R = 0.760$).
 
-\textbf{Language-specific comparison.} We retain finite, positive SNR values and correlate their logarithms with DA within a language. Size correlations use only comparisons with the 1.7B reference; checkpoint correlations pool the nine pre-final fractions across the five analyzed sizes. We require at least two task entries for a language and at least five finite observations for a reported correlation. Checkpoints and tasks share models, so the observations are dependent. We do not attach independent-sample significance claims to the selected best variants.
+
+
+\subsubsection{Correlation between Sources of noise{}}
+\label{app:measuring-noise-sources}
+
+To measure the relationship between each source of noise{}, we train 10 1B-5xC models varying the random seed initializations and 10 models varying the data order. In Figure \ref{fig:combined-noise-example}, we measure the correlation between the seed noise{}, data order noise{} and total variation against the step-to-step noise{}. Each source of noise{} is highly correlated with the step-to-step noise{} ($R\ge0.9$ for all measures). While it would be ideal to calculate and reduce all sources of noise{}, seed noise{} and data order noise{} are too expensive to measure (e.g., for large model runs as in \citet{madaan2024quantifying}), so only calculating step-to-step noise{} is a reasonable estimate for the modeling noise{}. Thus, we use step-to-step noise{} in as our estimate of the modeling noise.
+
+\subsubsection{Selecting the Number of Checkpoints in noise{}}
+\label{app:selecting-n-in-noise}
+
+The noise calculation introduced in Section \ref{sec:measuring-noise} requires selecting some $n$ intermediate checkpoints to estimate the checkpoint-to-checkpoint noise. In this section, we provide guidance on selecting $n$, and discuss its impact on our findings. Increasing the number of intermediate checkpoints $n$ will lead to a less biased estimate of noise. Thus, we can calculate the minimum number of $n$ intermediate checkpoint samples such that the sample noise $s_n$ is a reasonable estimate of the population noise $\sigma$.
+
+
+We first assume the checkpoint to checkpoint scores are independent and normally distributed (which we observe when computing decision accuracy on intermediate checkpoints in Figure 7). Under this assumption, the ratio between the sample variance and the population variance follows a scaled chi squared distribution: $\frac{(n-1)s_n^2}{\sigma^2} \sim \chi^2_{n-1}$
+
+Therefore we would like to calculate the probability that the sample standard deviation $s_n$ is within one standard deviation of the population standard deviation $\sigma$: $|s_n - \sigma| < \sigma$
+
+We can rewrite this inequality:
+
+$$\left| \frac{s_n}{\sigma} - 1 \right| < 1 \Rightarrow 0 < \frac{s_n}{\sigma} < 2$$
+
+And then, can substitute the chi-squared distribution to compute the likelihood w.r.t. $n$:
+
+$$\frac{s_n}{\sigma} \sim \sqrt{\frac{\chi^2_{n-1}}{n-1}} \Rightarrow P\left( \sqrt{\frac{\chi^2_{n-1}}{n-1}} < 2 \right) \Rightarrow P\left( \chi^2_{n-1} < 4(n-1) \right)$$
+
+We can then solve the inequality for the smallest value of $n$ for a particular threshold $\alpha$:
+
+$$P\left( \chi^2_{n-1} < 4(n-1) \right)>\alpha$$
+
+Solving this inequality numerically with $\alpha=0.95$ for increasing values of $n$, we find that $n=9$ provides the smallest sample size such that the probability that the sample standard deviation (the observed noise) is within one standard deviation of the population standard deviation (the true noise) with 95\% confidence. In addition, we can specify a stricter bound by defining the sample standard deviation to be within $k\cdot \sigma$ of the population standard deviation: $|s_n - \sigma| < k\cdot \sigma$
+
+We then verify this empirically using our estimate for noise at the 7B scale (from \S\ref{sec:improving-averaging}). If we assume the 30 intermediate checkpoints provide a reasonable estimate of the population standard deviation, we then compute the sample standard deviation $s_n$ for $n < 30$. We re-compute $s_n$ 1000 times for different subsets to calculate the likelihood that the sampled standard deviation is within $k\cdot \sigma$ of the population standard deviation $\sigma$. In the below table, we report this likelihood with tolerances $k\in \{0.2, 1.0\}$ for subsets $n\in \{5, 10, 20\}$ and bold all results with a likelihood above $0.95$.
+
+In practice, we find that for a large bound ($\pm 1$ std. dev.) can be satisfied for almost all benchmarks with $n=5$ intermediate checkpoints, but for smaller bounds, (20\% of $\pm 1$ std. dev.), using $n=20$ gives an adequate estimate for 34 of 39 benchmarks we considered in our work.
+
+For our experiment on the 1B-5xC checkpoints, we estimate noise using the average noise of the last 5 checkpoints for all 25 models, so our estimate of noise considers $5\cdot 25=125$ scores.
+
+
+\subsection{Measures of signal{}}
+\label{app:measuring-signal}
+
+\paragraph{Measurements.}
+When designing an measure of signal{}, we want to incorporate the uniformity of benchmark scores and the overall range of scores. Given the final checkpoints of training runs under similar compute spend $C_\text{final}$, we evaluate multiple approaches to measuring signal{}:
+
+\begin{itemize}[itemsep=0pt, topsep=0pt]
+    \item \textbf{Variance} measures average squared distance from the mean: $\text{Var}(C_\text{final}) = \frac{1}{n} \sum_{i=1}^{n} \|c_i - \bar{c}\|^2$
+    \item \textbf{Mean distance} measures average pairwise distance between points: $\text{Mean Dist}(C_\text{final}) = \frac{2}{n(n-1)} \sum_{i < j} \|c_i - c_j\|$
+    \item \textbf{Relative standard deviation}, or the coefficient of variation, measures the standard deviation divided by the mean: $\text{Rel. Std.}(C_\text{final}) = \frac{\sqrt{\text{Var}(C_\text{final})}}{\text{Mean}(C_\text{final})}$
+    \item \textbf{Star Discrepancy} measures the largest difference between any point and the uniform distribution: $\text{Discrepancy}(C_\text{final}) = \sup_{t \in [0,1]} \left| \frac{1}{n} \sum_{i=1}^n \mathbf{1}\{c_i \leq t\} - t \right|$. 
+    \item \textbf{Dispersion} measures the largest difference between any two points, or the largest unfilled space in the range of performance: $\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|$. 
+\end{itemize}
+
+\new{Note, we include metrics that are sensitive and non sensitive to outliers, and find our results hold when measuring both types of spread (Table \ref{tab:snr_variants}).} We also include variants of these terms, such using a min-max normalization or scaling by the mean.
+
+\paragraph{Choosing the a signal{} measurement.}
+In Table \ref{tab:snr_variants}, we calculate the correlation between \snr{} and decision accuracy when using each of the signal{} variants. We see that many straight forward measures have similarly high correlations. We use relative dispersion, the highest correlated among them, as our measure of signal{}. 
+
+
+\subsection{Performance Metrics}
+
+\textbf{Accuracy.} For downstream tasks formulated as multiple-choice or classification problems, we score each model with accuracy, computed via the LM Evaluation Harness \cite{eval-harness}.
+
+\textbf{Bits-per-byte.} For raw text corpora, we use rolling bits-per-byte (BPB), defined as the average number of bits the model needs to encode each byte of UTF-8 text:
+
+$$\text{BPB}_{\text{rolling}} = \frac{\sum_{i=1}^{n} -\log_2 P(x_i \mid x_{<i})}{\text{Bytes}(\text{Total Text})}$$
+
+Unlike accuracy, BPB is continuous, threshold free, and does not require the model to follow a prompt format. This property is essential for multilingual evaluation, since accuracy on non-English tasks is depressed when small models cannot understand English-centric prompts, regardless of their proficiency in the target language. We show that rolling BPB on raw multilingual corpora yields decision accuracies between 0.77 and 0.96 in settings where downstream accuracy is near random.
+
+% \textbf{Raw text corpora for BPB.} We additionally evaluate models on raw multilingual text using rolling BPB. We use 10 disjoint subsets of Flores+ CITE, covering approximately 220 languages, and 5 disjoint subsets of Wiki40B CITE, covering approximately 40 languages. These corpora let us measure benchmark reliability without relying on prompt comprehension.

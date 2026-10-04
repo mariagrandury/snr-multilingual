@@ -18,10 +18,12 @@ gated. The mean per (size, fraction) is over the tasks that remain, and the
 task count is written next to it (rule 13). The loader has already reduced the
 tasks to parents in trained languages (rules 2 and 6).
 
-    rq2.csv               size x fraction x group: mean DA, tasks
-    rq2.png / .svg        the figure the paper includes: no title, the x axis in
-                          Chinchilla multiples (every half-C point drawn, the
-                          whole ones labelled), one boxed key inside the axes
+    rq2_ten_checkpoints.csv       size x fraction x group: mean DA, tasks
+    rq2_ten_checkpoints.png/.svg  no title, the x axis in Chinchilla multiples
+                          (every half-C point drawn, the whole ones labelled),
+                          one boxed key inside the axes. `paper_rq2.py` owns the
+                          name `rq2.*` — the three-panel figure the paper embeds —
+                          so this one keeps its own, and the two never race.
 
     python analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 """
@@ -39,11 +41,12 @@ if str(_REPO) not in sys.path:
 
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.utils import SMALL_SIZES, TARGET_SIZE, passes_gate, size_order  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    SMALL_SIZES, TARGET_SIZE, one_axes, passes_gate, size_order)
 
 POOL, STAGE = "predictivity", "pretraining"
 OUT = DECISION_ACCURACY / STAGE / POOL
-COLORS = {"175M": "#86b6eb", "350M": "#438cdd", "600M": "#2464aa", "1B": "#123f78", "1.7B": "#061f3e"}
+COLORS = {"90M": "#cde2fb", "175M": "#86b6eb", "350M": "#438cdd", "600M": "#2464aa", "1B": "#123f78", "1.7B": "#061f3e"}
 KEY = "#5c6066"             # neutral ink for the line-style samples: the style carries the meaning, not the colour
 FULL = 5.0                  # every cell trains 5x Chinchilla, so 100% of training is 5C and the ten points are half-C steps
 GROUPS = [("bpb", "", "per-language BPB"), ("benchmarks", 'stroke-dasharray="9,6"', "benchmark tasks")]
@@ -51,7 +54,9 @@ GROUPS = [("bpb", "", "per-language BPB"), ("benchmarks", 'stroke-dasharray="9,6
 
 def summary() -> pd.DataFrame:
     """(size, frac, group) -> mean DA and task count over the gated tasks."""
-    d = pd.read_csv(OUT / "da_early_small_per_task.csv").dropna(subset=["da"])
+    # `one_axes`: the table carries one row per (task, pair set) since rule 15,
+    # and a mean over both sets at once is a mean over two populations.
+    d = one_axes(pd.read_csv(OUT / "da_early_small_per_task.csv")).dropna(subset=["da"])
     d = d[~d["task"].isin(["bpb_macro", "train_loss"])]                       # whole-mixture aggregates, not tasks (rule 7)
     d["group"] = d["task"].str.startswith("bpb_").map({True: "bpb", False: "benchmarks"})
     mask = load_mask(POOL)
@@ -66,10 +71,11 @@ def summary() -> pd.DataFrame:
     return s.sort_values(["group", "size", "frac"]).reset_index(drop=True)
 
 
-def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 520)) -> None:
+def draw(name: str, s: pd.DataFrame, *, W=1250, H=620, margins=(100, 950, 45, 520)) -> None:
     left, right, top, bottom = margins
+    lo = min(55, int(s["mean_da"].min() * 20) * 5)             # the axis floor, in %: no curve below the frame
     X = lambda f: left + (float(f) - .1) / .9 * (right - left)          # noqa: E731
-    Y = lambda v: bottom - (float(v) - .55) / .45 * (bottom - top)      # noqa: E731
+    Y = lambda v: bottom - (float(v) - lo / 100) / (1 - lo / 100) * (bottom - top)      # noqa: E731
     a = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
          '<rect width="100%" height="100%" fill="white"/>', '<g font-family="DejaVu Sans, sans-serif" fill="#20252a">']
 
@@ -82,7 +88,7 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
     # every measured fraction keeps its point; the labels are the whole Chinchilla multiples (rule 3)
     for f in (0.2, 0.4, 0.6, 0.8, 1.0):
         x = X(f); a.append(f'<line x1="{x}" y1="{top}" x2="{x}" y2="{bottom}" stroke="#edf0f2"/>'); text(x, bottom + 30, f"{round(f * FULL):g}C", 17, "middle")
-    for j in range(55, 101, 5):
+    for j in range(lo, 101, 5):
         y = Y(j / 100); a.append(f'<line x1="{left}" y1="{y}" x2="{right}" y2="{y}" stroke="#e1e5e8"/>'); text(left - 13, y + 6, f"{j / 100:.2f}", 17, "end")
     a.append(f'<line x1="{left}" y1="{Y(.75)}" x2="{right}" y2="{Y(.75)}" stroke="#7e858c" stroke-dasharray="3,5" stroke-width="1.5"/>')
     for group, dash, _ in GROUPS:
@@ -93,8 +99,8 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
             a.append(f'<polyline points="{" ".join(f"{X(f):.2f},{Y(v):.2f}" for f, v in zip(g["frac"], g["mean_da"]))}" fill="none" stroke="{c}" stroke-width="2.6" {dash}/>')
             for f, v in zip(g["frac"], g["mean_da"]):
                 a.append(f'<circle cx="{X(f)}" cy="{Y(v)}" r="3.5" fill="{c}"/>')
-    # the key sits in the empty bottom-right corner, below every curve: size colours left, line styles right
-    bw, bh = 268, 104; bx, by = right - bw - 14, bottom - bh - 12
+    # the key sits right of the frame, clear of every curve: size colours left, line styles right
+    bw, bh = 268, 104; bx, by = right + 16, top
     a.append(f'<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" fill="white" fill-opacity="0.92" stroke="#c8ccd0" stroke-width="1" rx="4"/>')
     text(bx + 12, by + 18, "proxy size", 14, extra='fill="#5c6066"'); text(bx + 128, by + 18, "measurement", 14, extra='fill="#5c6066"')
     for i, (size, c) in enumerate(COLORS.items()):
@@ -111,10 +117,10 @@ def draw(name: str, s: pd.DataFrame, *, W=1000, H=620, margins=(100, 950, 45, 52
 
 def main() -> None:
     s = summary()
-    s.to_csv(OUT / "rq2.csv", index=False)
-    draw("rq2", s)
+    s.to_csv(OUT / "rq2_ten_checkpoints.csv", index=False)
+    draw("rq2_ten_checkpoints", s)
     final = s[s["frac"] >= 1.0].pivot(index="size", columns="group", values="mean_da").round(3)
-    print("mean DA at the proxies' final checkpoint (tasks in rq2.csv):\n" + final.to_string())
+    print("mean DA at the proxies' final checkpoint (tasks in rq2_ten_checkpoints.csv):\n" + final.to_string())
     for size in SMALL_SIZES:
         g = s[(s["size"] == size) & (s["group"] == "benchmarks")]
         if g["tasks"].nunique() > 1:

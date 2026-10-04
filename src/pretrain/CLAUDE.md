@@ -32,11 +32,11 @@ reintroduces the drift this design removed.
 | File | Role |
 |---|---|
 | `megatron_args.sh` | all Megatron args + W&B block; `WANDB_ENTITY` constant lives here |
-| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
+| `launch_pretraining_cscs.sh` | SBATCH header, Meg-Runs dirs, SIGUSR2 trigger, `MEGATRON_EXIT_ON_SIGTERM` on the srun line so preemption checkpoints and the singleton self-chain that brings the run back (#4), srun+pyxis, debug log; falls back to `container/ngc_nemo_iopsstor.toml` when capstor is unreadable (`CONTAINER_TOML` overrides) |
 | `launch_pretraining_azure.sh` | `azure/get_megatron.sh` checkout, MBS auto-shrink to GPU count, torchrun |
 | `launch_trainings.py` | **the grid** (`LADDER`, `LANG_SETTINGS`, `DATA_SCHEMES`, `SEED_TRIPLES` — every other tool imports them from here) + filters + both submit backends; **idempotent** — per cell it skips done/active, warns on corrupt, resumes partial (marker rewind + auto-sized walltime). There is no separate resume script. |
 | `pretrain_progress.py` | CSCS per-cell actions (`done/fresh/resume/corrupt` — the same `cell_action` the launcher uses) + `--is-valid` CLI + the plan table and three heatmaps (`--plot`): planned runs, finished models, and eval work outstanding. `--plot` also rewrites the generated grid block in README.md and the plan doc, so the figures and counts cannot drift from the constants in `launch_trainings.py`. `--plot`, every launch and every watcher pass also write `pretrain_progress_1b_17b.md` (per 1B/1.7B run of any account: data read, checkpoint, job, jobs left; then the launch commands). |
-| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, which `every` alone misses at every size but the 40-save one, and + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated [rf|rfgm]` evaluates the `auto_rf` group — belebele / global_mmlu_full / include_base_44 as cloze `rf_*` tasks — or `auto_rfgm`, the Gemini-rewritten `rfgm_*` twins (`-rfgm` job names), see ../evals/CLAUDE.md "Reformulated twins"; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
+| `auto_evals_cscs.py` | CSCS watcher: per due ckpt (every 2nd of the size's grid, on the run's own save grid — `due_iters` — plus the k/20 points of the noise window, 85 % and 95 %, which `every` alone misses at every size but the 40-save one, and + final; the FLOPs-milestone add-on decided 09-02 is not implemented yet) submits convert-snr then evaluate.sbatch (one eval worker per GPU, results per task, so a killed job resumes on the next pass with only the missing tasks; `--max-attempts` holds back tasks that keep failing, `--retry-held` frees them for one pass after you fix the cause — the reason shown is the task's own, or its job log's only when that log belongs to the same run and family (../evals/CLAUDE.md "A second opinion from the wrong job's log"); `--all-languages` swaps a cell's trained languages for every language any task is tagged with; `--reformulated [rf|rfgm]` is retired with its groups (2026-09-23: the twins are in `auto`, the candidates in `auto_probe`) and exits naming the groups that exist; `--size` filters, default `EVAL_SIZES` = the ladder without 90M — the diverged rung is trained but never evaluated (2026-09-18), and `eval_progress` leaves it out of its grid); needs models.json entries (`sync_models_json.py`) |
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
@@ -47,7 +47,7 @@ file defines it (`launch_trainings.arches_for`): the 3B exists in
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
@@ -55,12 +55,15 @@ names drop the `lm-` for a kind prefix instead
 `/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/Meg-Runs/msnr/<cell>/checkpoints/`.
 Azure: `predictivity/runs/<cell>/checkpoints` in each workspace's blob store.
 
-**The data axis is `DATA_SCHEMES`** (2026-09-10, five entries, `--scheme` on
+**The data axis is `DATA_SCHEMES`** (2026-09-10, seven entries, `--scheme` on
 `launch_trainings.py`, `pretrain_progress.py`, `sync_models_json.py`,
 `auto_evals_cscs.py` and `data/build_data_mixtures.py`): **A** resource-ranked
 at T=1 — the baseline, and the only one with no name label; **AT3** the same
 language lists at T=3; **B** diversity-first at L ∈ {8, 15, 30}; **ZH**/**ES**
-L2 with Chinese / Spanish instead of Russian, deep only. Each entry owns its
+L2 with Chinese / Spanish instead of Russian, deep only; **DCLMP**/**FWEB**
+the only two that vary the ENGLISH half instead (`english` in the registry) —
+`dclm_processed` and plain FineWeb, the edu-filter axis at L=1, where there is
+no FineWeb-2 half to vary (2026-09-22, `plan/l1_third_family.md`). Each entry owns its
 label, its data subdir, the settings it defines and its per-setting size cap,
 so a cell's scheme *is* its data and two schemes can never collide in a
 checkpoint dir, a W&B run id or a models.json key (which keeps the key
@@ -78,9 +81,23 @@ the temperature change is calibrated against the T=1 curve, and AT3 adds
 L15 and L30 (deep only, 1B and 1.7B launched first) where no language is
 starved (T=1 floors 1.2B and 343M tokens). AT3 runs the whole ladder at L50: a 92B L50 build at
 T=3 realizes 87.1B on the filtered subset, enough for the 83.6B a 1.7B draws
-(0.96 epochs). ES stops at the 1B rung: Spanish would repeat 2.0x at 1B and
-3.6x at 1.7B, a swing across the ladder that would confound a rank flip with
-the repetition, so its reference is 1B. ZH runs to the 1.7B reference
+(0.96 epochs). ES stopped at the 1B rung until 2026-09-23, because Spanish
+repeats 3.51x at 1.7B (23.9B realized, against Russian's 1.15x and Chinese's
+1.61x) and a repetition that grows across the ladder can be mistaken for a
+rank flip. It now runs to 1.7B anyway: the repetition stays under the ~4-epoch
+point where the data-constrained scaling results find repeated tokens still
+worth close to fresh ones, so the SCORE a decision reads should land where a
+less-repeated run would — and the cell is what takes the SECOND-LANGUAGE axis
+from one mono-axis pair to the three rule 5 needs, making it reportable for
+the first time. (That is a different count from ZH's below: ZH fixed how many
+FAMILIES L2 has at the reference, this fixes how many pairs differ in the
+second language ALONE — 1 -> 3, every other axis unmoved.) The epoch counts
+are not comparable across the three L2 schemes: record 3.51x wherever L2-ES
+is. `undersized_build` says nothing here — it reports a build smaller than its
+SOURCE could give, and ES exhausts every Spanish token there is, so it passes
+in silence; the launcher prints `repeats its multilingual half N.NNx` for any
+cell drawing more than one epoch (`fineweb_epochs`), which is the only signal
+this cell is unusual. ZH runs to the 1.7B reference
 (2026-09-20): that third family is what takes L2 at 1.7B from one DA pair to
 three, the minimum rule 5 accepts (`signal-and-noise/analysis/RULES.md`).
 **Its build holds 52.0B, not the 59.9B of Chinese there is** — it was sized
@@ -97,10 +114,11 @@ Spanish), deep only.
 
 Seed triples are **per size** (`SEED_TRIPLES`): 175M and 600M run
 (64, 313, 1904) at L ∈ {1, 2, 50}, 1B runs (28, 1797, 1904) at
-L ∈ {1, 2, 30, 50} — the 1B column is aromanou's already-trained runs (L50
-added 2026-09-10 to match the other ×3 columns; those two cells are new), and
-naming the wrong triple would submit two more runs per cell while the watcher
-ignored the ones on disk. **Her 1B runs follow the old 20-checkpoint regime**
+L ∈ {1, 2, 30} — the 1B column is aromanou's already-trained runs (L50 was
+added 2026-09-10 to match the other ×3 columns and dropped again 2026-09-21,
+never having been launched), and naming the wrong triple would submit two
+more runs per cell while the watcher ignored the ones on disk. Replicates are
+**deep only**: no analysis reads a shallow seed std. **Her 1B runs follow the old 20-checkpoint regime**
 (every 2287 iters to 45740, a 45,740-iter schedule — L1, L2, L15, L30 and
 schemeB L8/L15/L30 at seed 1904, plus 28/1797 at L1, L2, L30 and schemeB L30;
 15 cells), while `n_checkpoints` gives the 1B rung 40 saves
@@ -109,14 +127,13 @@ on that grid, so until 2026-09-10 the watcher reported `eval DONE (0/0)` for
 all of them — nothing ever fell due — and the launcher counts them done
 (45740 ≥ 45720). **Due checkpoints are now read on the run's own grid**
 (`launch_trainings.due_iters`, used by both watchers, `eval_counts` and the
-ladder report): `run_interval()` takes the modal gap between saves, and every
-Nth point of the SIZE's grid is mapped onto it, so a 20-save 1B run yields
-every save and a 40-save one every 2nd — the same k/20 fractions, comparable
-checkpoint for checkpoint; the final save is due whatever its iter. Since
-2026-09-20 the k/20 points inside the noise window (the last 20 %: 85 % and
-95 %) are due at every size as well, so the analysis reads checkpoint noise
-over five points instead of three — two extra evals per run on the 20-save
-and 60-save sizes, none on the 40-save 1B. models.json
+ladder report): `run_interval()` takes the modal gap between saves, and the
+ten tenths of training are mapped onto it, so a 20-save run yields every 2nd
+save, a 40-save one every 4th and a 60-save one every 6th — the same
+fractions, comparable checkpoint for checkpoint; the final save is due
+whatever its iter. 85 % and 95 % are due at every size as well, so the
+analysis reads checkpoint noise over five points instead of three: 12 evals
+per run at every size. models.json
 still lists the size grid under `checkpoints.all`, which is wrong for her
 2287-spaced cells: the watcher is unaffected (it passes `--iters`), but
 `convert-snr.sh --models` without `--iters`, `snr_progress.py` and
@@ -160,8 +177,9 @@ then never log again without a code-side id suffix.
   `/iopsstor/scratch/cscs/mariagrandury/data-92B`. The launcher reads a cell's
   FineWeb-2 half from there only when the stage copy is too small for it (the
   six 1.7B cells at A-L15/A-L50/B-L15); every other rung stays on 52B. The 3B
-  rung (2026-09-19, A/B at L8/L15, deep only — `plan/3b_models.md`) repeats
-  the pattern as a second tier: those four builds are sized 165B, built into
+  rung (2026-09-19, A/B at L8/L15; L30 and L50 added 2026-09-30, deep only —
+  `plan/3b_models.md`) repeats
+  the pattern as a second tier: those seven builds are sized 165B, built into
   `rebuild-165B`, staged to `data-165B`, and read only by cells the 92B copies
   cannot feed (`CSCS_REBUILD_DATA_DIRS`, smallest fit first). **Do not
   swap the 92B files into the training stage.** Each language section is a
@@ -181,7 +199,13 @@ then never log again without a code-side id suffix.
   one rung means re-running every rung. `launch_trainings.py` has exactly three
   config-perturbing flags, `--lr`, `--ademamix-beta3-factor` and `--gbs`; all
   are opt-in, all require a `--size/--langs/--seed` filter, and all **force a
-  `diag-` EXP_NAME**. That rename is the enforcement, not a convention:
+  `diag-` EXP_NAME**. The one standing exception is `GBS_BY_SIZE` (2026-09-23):
+  the 90M and 175M rungs carry a grid batch of 84 and 168 because at 504 they
+  diverge, and those cells are named `-b84`/`-b168` rather than `diag-`. That
+  is the same enforcement, not a hole in it — the batch is part of the cell's
+  NAME, so the retrained rung is a new set of cells and the diverged
+  batch-504 runs keep their own checkpoint dirs, models.json entries and W&B
+  ids. Nothing was reconfigured in place. See `plan/90M-175M-batch-retrain.md`. That rename is the enforcement, not a convention:
   `diag-` matches neither `pretrain_progress.NAME_RE` nor
   `ladder_report.LOG_RE`, and `sync_models_json` derives its keys from
   `exp_name()`, so a perturbed run cannot occupy a cell's checkpoint dir,
@@ -263,15 +287,66 @@ checkpoint grid, and that is already expected: `run_interval()` takes the
 modal gap and `due_iters()` never marks an off-grid save due, so preemption
 saves add disk, not eval work.
 
-That, `--requeue` and a 23:59:00 wall are what
-`launch_trainings.py --partition preemptable` sets up (2026-09-20): a
-preempted run checkpoints, is requeued with the same jobid *and partition*,
-and resumes. Two constraints it works around, both verified: a job's time
-limit can only be LOWERED after submission (so no drainer can stretch a job it
-moves — ask for 24h at submit), and `normal` refuses a 23:59:00 request
-outright ("Requested time limit is invalid"), so the long wall and the
-partition have to travel together. A requeue reopens the same `%x-%j` log,
-hence `#SBATCH --open-mode=append`.
+**Coming back is a chain, not a requeue** (2026-09-21). `--requeue` was the
+first answer and it does not survive a busy day: Clariden sets
+`MaxBatchRequeue=5`, a preemption spends one, and on the sixth Slurm holds the
+job — reporting `launch_failure_limit_exceeded_requeued_held` even when all
+five attempts ended in clean preemptions. Two 3B and one 1B run stopped that
+way after 4h43m at 96.7% node-time efficiency; nothing had failed to launch.
+`scontrol update Restarts=` is refused, and `MaxBatchRequeue` is cluster-wide
+and admin-only.
+
+So `--partition preemptable` sets `PRETRAIN_CHAIN=1` instead, and the wrapper
+queues a singleton successor (`--dependency=singleton`, same job name) BEFORE
+it starts training — exactly what `data/submit_build_one.sh` has always done,
+and what carried `build-a-L8-165b` to completion across 29 links and 36 hours
+(24 PREEMPTED, 3 FAILED, 1 CANCELLED). Each link is a new jobid, so no requeue
+cap applies, and queuing it up front is what makes it preemption-safe: a killed
+attempt leaves its successor already pending, holding a queue position a
+resubmit would forfeit.
+
+**What stops a chain**, in the order the wrapper checks it:
+
+- `done` — `pretrain_progress.py --cell-action` on entry or after training;
+  the pending successor is cancelled. The check reads the printed WORD, not an
+  exit status: an ImportError and a legitimate "not done" both exit non-zero.
+  State unreadable → do NOT chain, and say so.
+- `corrupt` — iter dirs on disk, none loadable. `launch_trainings.py` refuses
+  these for manual review; the chain must too, or it re-runs on 21 nodes
+  exactly what the launcher will not touch.
+- **no progress four times running** (`CHAIN_MAX_STALLS`). Each link records
+  the iteration it started from in `.chain-<jobname>.progress` beside its
+  Slurm logs; unchanged means the previous link achieved nothing. Progress
+  resets the counter, so ordinary preemptions do not cap a chain — though a
+  run preempted before its first save does count as a stall, which is the
+  intended conservatism at 21 nodes a link. This is the
+  real bound — 2026-09-22, `lm-1B-L2-shallow-seed1904` burned 14 links x 21
+  nodes because its `logging/` and `debug/` belonged to a collaborator: rank 83
+  (Megatron's tensorboard writer is the LAST rank) died of `PermissionError`
+  ~70 s in, Slurm killed the step for TASK FAILURE, and the wrapper still
+  exited 0, so nothing downstream could tell a spin from a preemption. The
+  counter file is per-user for the same reason the incident happened: these
+  trees are shared, and a file a collaborator creates is one this user cannot
+  rewrite. A counter that cannot be recorded also stops the chain.
+- attempt count (`CHAIN_MAX_ATTEMPTS`, default 200) — only a backstop now, so
+  it is generous: a 3-day 3B at ~1 preemption/hour needs 30-70 links, and 29
+  were needed for a one-node build. Counted in the directory the controller
+  says this job's `StdOut` is in, never a hard-coded path — a collaborator's
+  logs land in their own scratch, and counting where there are none reads 0
+  forever and never caps. Uncountable → do NOT chain.
+
+A chained job advertises itself with `--comment=selfchain`, because
+`PRETRAIN_CHAIN` lives in the job environment and neither `squeue` nor
+`scontrol` exposes that — `scripts/preempt_drain.sh` has to know before it
+moves a 21-node run onto a partition that will preempt it.
+
+Two constraints this works around, both verified: a job's time limit can only
+be LOWERED after submission (so no drainer can stretch a job it moves — ask for
+24h at submit, and a successor inherits the wall of the attempt that queued
+it), and `normal` refuses a 23:59:00 request outright ("Requested time limit is
+invalid"), so the long wall and the partition have to travel together.
+`#SBATCH --open-mode=append` is now belt-and-braces: a requeue reopened the
+same `%x-%j` log, and a chain link never does.
 
 ### 5. `OptimizerParamScheduler` train_iters mismatch on capped resumes
 Megatron asserts the CLI schedule total equals the checkpoint's. When a
@@ -426,6 +501,19 @@ up front, 2 on `preemptable`, so a kill before the script runs cannot end a
 chain. `scontrol` cannot add `--exclusive` to a queued job, so builds are
 submitted to `preemptable`, never moved there — `scripts/preempt_drain.sh`
 skips `build-*` for exactly that reason.
+
+### 13. A run a few iterations old plans a row per iteration (2026-09-25)
+`ladder_report.write_csv` reads each cell's checkpoint grid off its own saves
+(`run_interval`), so a run that has one save at iteration 1, or a test run
+saving every 22, was read as a grid of 1 or 22 and planned 27,000 rows for
+one 90M cell — 79k bogus rows over four cells, on a wide table that the
+benchmark melt in `plot_benchmarks` then blew past pyarrow's 2 GiB string
+limit (`ArrowInvalid: Negative buffer resize`), and `publish()` never ran.
+A run's own grid now needs two saves and may plan at most twice the rung's
+checkpoint count (`n_checkpoints`), else the rung's rule applies; `_melt`
+strips the family prefix off the column names before melting, never off the
+long key column. `--push-git` after a crash is the trap `nightly_ladder.sh`
+guards: the fetch succeeds and hands the analysis yesterday's report.
 
 ---
 

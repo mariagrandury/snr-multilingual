@@ -56,15 +56,32 @@ language on the fixed validation set). Level 1 is always the baseline below:
 
 | Axis | Levels | Status |
 |---|---|---|
-| Model depth | deep (width/depth ≈ 64) vs shallow (width/depth ≈ 128) at equal non-emb size | **wired**: `--arch deep\|shallow` in both launchers, same data |
+| Model depth | deep (width/depth 51–78) vs shallow (110–146) at equal non-emb size — a 1.71×–2.50× contrast, 1.83× at the 1.7B reference | **wired**: `--arch deep\|shallow` in both launchers, same data |
 | Data scheme | A (resource-ranked language sets) vs B (diversity-first) | **wired**: `--scheme B`, differs from A only at L ∈ {8, 15, 30} |
 | Tokenizer | Apertus V1 (swiss-ai/Apertus-70B-2509) vs a candidate | open — BPB is byte-denominated so results stay comparable; data must be rebuilt per tokenizer |
 
 ## Architecture per size — deep baseline (`hyperparams_deep.json`)
 
 Non-embedding parameter convention (Signal-and-Noise / OLMo ladder); tied
-embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated);
-width/depth ≈ 64 (the `find_hyperparams_deep.py` rule).
+embeddings; head_dim 64; GQA ratio 4; FFN multiplier 4 (xIELU, non-gated).
+
+**Width/depth is 51.2–78.2 across the ladder, not a constant 64**, and no rule
+in `find_hyperparams_deep.py` pins it — that file reads `n_layers` and
+`hidden_size` from the JSON and only *reports* `wd_ratio`. The ladder is built
+on a width grid instead: `d_model = 64 × heads` (head_dim 64) with heads
+divisible by 4, since GQA ratio 4 needs integer KV groups. Requiring
+width/depth = 64 on top of that forces `layers == heads`, and the non-embedding
+count then becomes **N = 43,008 · L³** with L stepping by 4 — a coarse family:
+0.176, 0.344, 0.595, 0.944, 1.409, 2.007, 2.753, 3.664 B. 175M/350M/600M/1B
+**are** that family exactly (L = 16, 20, 24, 28), which is why their ratio is
+exactly 64. It has nothing near the 1.7B or 3B targets, so those rungs keep the
+width grid and truncate the depth (1.7B: the L=36 width, 30 layers; 3B: the
+L=44 width, 36 layers), and 90M does the same in reverse (the L=12 width, 15
+layers). So 64 is not a rule the top rungs violate — it is what happens when
+`layers == heads`, which the cubic allows at only four of the seven sizes.
+
+The deep/shallow contrast is therefore **1.71×–2.50×**, not a constant 2×, and
+**1.83×** at the 1.7B reference (76.8 vs 140.8).
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B | 3B |
 |---|---|---|---|---|---|---|---|
@@ -83,9 +100,11 @@ deep only, L ∈ {8, 15}, schemes A and B, seed 1904 — see
 ## Architecture per size — shallow variant (`hyperparams_shallow.json`)
 
 The model-depth intervention level: the same six non-embedding sizes at
-width/depth ≈ 128 (`find_hyperparams_shallow.py`: head_dim 64, FFN multiplier
-4, GQA ratio 4 — both pinned to the deep ladder so the two differ in depth
-only). Launched with `--arch shallow`.
+width/depth in [96, 160], the candidate closest to 128 winning
+(`find_hyperparams_shallow.py` — unlike the deep ladder this one really is a
+ratio rule; head_dim 64, FFN multiplier 4 and GQA ratio 4 are pinned to the
+deep ladder so the two differ in depth only). Realized: 128.0, 128.0, 109.7,
+146.3, 135.5, 140.8. Launched with `--arch shallow`.
 
 | | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
@@ -180,8 +199,9 @@ nested across settings — `src/pretrain/data/language_sets_scheme{A,B}.json`.
 
 ## Evaluation
 
-Auto-evals during training on **every 2nd checkpoint and each run's final
-one** (`auto_evals_cscs.py` / `auto_evals_azure.py`; the planned third
+Auto-evals during training on **twelve checkpoints per run — the ten tenths
+of training plus 85 % and 95 %**, the grid the analysis reads at every size
+(`launch_trainings.due_iters`) (`auto_evals_cscs.py` / `auto_evals_azure.py`; the planned third
 piece — the checkpoint nearest each half-decade FLOPs milestone — is not
 implemented yet): the `auto` benchmark
 group of `configs/tasks.json`, expanded to one task per benchmark per

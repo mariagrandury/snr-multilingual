@@ -48,7 +48,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import task_n_options  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import task_chance, task_n_options  # noqa: E402
 from analysis.utils import (  # noqa: E402
     GRID_SEED, NON_EMB, benchmark_family, finals, ladder_frame, size_order)
 
@@ -111,9 +111,9 @@ def plot_rq1(fin: pd.DataFrame, fits: pd.DataFrame, fam: pd.DataFrame, out_dir: 
     # (a) score above chance against size, family medians at one L (ungated: a task at chance sits at 0)
     ex = g0[(g0["L"] == EXAMPLE_L) & (g0["kind"] == "benchmark")].copy()
     ex["family"] = ex["task"].map(benchmark_family)
-    ex["chance"] = ex["task"].map(task_n_options)
+    ex["chance"] = ex["task"].map(task_chance)
     ex = ex.dropna(subset=["chance"])
-    ex["above"] = ex["primary_score"] - 1 / ex["chance"]
+    ex["above"] = ex["primary_score"] - ex["chance"]
     show = [("multiblimp", S.RAMP[3]), ("hellaswag", S.RAMP[1]), ("xnli", S.SERIES[2]),
             ("belebele", S.SERIES[1]), ("global_mmlu_full", S.MUTED)]
     for famname, col in show:

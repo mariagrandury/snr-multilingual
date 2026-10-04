@@ -76,6 +76,53 @@ def snr_col(csv_path: Path) -> str:
 # `passage` is True iff the prompt contains a substantial passage / long
 # context (a heuristic, formalised quantitatively in Phase B).
 FAMILY_META: dict[str, dict] = {
+    # The reformulated twins are separate benchmarks, not aliases: same items,
+    # same curation, but the format is the thing rq09 measures and it is what
+    # the reformulation changed. `rf_` drops the A-D letters and scores the
+    # answer strings; `rfgm_` is a Gemini rewrite into a statement stem with
+    # four short continuations. n_options stays 4 (chance is unchanged).
+    "rf_belebele": {
+        "data_source": "FLORES-200 passages, custom MRC questions",
+        "curation_process": "human translation by bilingual experts",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "cloze_completion", "n_options": 4, "passage": True,
+    },
+    "rf_global_mmlu_full": {
+        "data_source": "MMLU (Hendrycks et al. 2021), Cohere Full",
+        "curation_process": "machine translation + crowd / expert post-editing",
+        "curation_category": "mt_post_edited",
+        "source_origin": "english_translated",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rf_include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exam questions (no translation)",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "cloze_completion", "n_options": 4, "passage": False,
+    },
+    "rfgm_belebele": {
+        "data_source": "FLORES-200 passages, custom MRC questions",
+        "curation_process": "human translation, then LLM rewrite to a statement stem",
+        "curation_category": "human_translation",
+        "source_origin": "english_translated",
+        "format": "statement_continuation", "n_options": 4, "passage": True,
+    },
+    "rfgm_global_mmlu_full": {
+        "data_source": "MMLU (Hendrycks et al. 2021), Cohere Full",
+        "curation_process": "MT post-editing, then LLM rewrite to a statement stem",
+        "curation_category": "mt_post_edited",
+        "source_origin": "english_translated",
+        "format": "statement_continuation", "n_options": 4, "passage": False,
+    },
+    "rfgm_include_base_44": {
+        "data_source": "INCLUDE base-44 (Romanou et al. 2025), regional exams",
+        "curation_process": "natively sourced exams, then LLM rewrite to a statement stem",
+        "curation_category": "originally_multilingual",
+        "source_origin": "originally_multilingual",
+        "format": "statement_continuation", "n_options": 4, "passage": False,
+    },
     "arc": {
         "data_source": "ARC (Clark et al. 2018), Okapi-translated",
         "curation_process": "machine translation by ChatGPT",

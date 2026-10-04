@@ -10,11 +10,11 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **2.99 → 4.40** (**+1.42**) with `multiblimp_deu|multiblimp_eng|multiblimp_fra`.
-- **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.61 → 3.83** (**+1.22**) with `arc_challenge`.
-- **`global_mmlu_full` 600M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.14 → 3.33** (**+1.18**) with `human_aging`.
-- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.24 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **19 of 53** swept cells beat the null's 95th percentile: `multiblimp` 350M, `global_mmlu_full` 600M, `multiblimp` 175M, `global_mmlu_full_sr` 350M, `multiblimp` 1.7B.
+- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.66** (**+1.50**) with `multiblimp_deu|multiblimp_eng|multiblimp_rus|multiblimp_fra`.
+- **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.57 → 3.97** (**+1.40**) with `arc_challenge`.
+- **`rf_belebele` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.41** (**+1.25**) with `rf_belebele_zho_Hans`.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.32 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **60 of 124** swept cells beat the null's 95th percentile: `multiblimp` 350M, `rf_belebele` 350M, `global_mmlu_full` 600M, `include_v2_en` 90M, `global_mmlu_full_sr` 350M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -63,6 +63,9 @@ macro-average):
   subsets of the best size give `null_snr_p95`; `gain_over_null =
   best − null_p95` is the part of the gain that is not selection.
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-30 23:54**.
+
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
 ## Results
 
@@ -72,21 +75,66 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `multiblimp` | 350M | 2.99 → 4.40 | +1.42 | 3.63 | `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_fra` |
-| per_benchmark | `arc` | 1B | 2.61 → 3.83 | +1.22 | 3.83 | `arc_challenge` |
+| per_benchmark | `multiblimp` | 350M | 3.16 → 4.66 | +1.50 | 3.61 | `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_rus` \| `multiblimp_fra` |
+| per_benchmark | `arc` | 1B | 2.57 → 3.97 | +1.40 | 3.97 | `arc_challenge` |
+| per_benchmark | `rf_belebele` | 350M | 3.16 → 4.41 | +1.25 | 3.81 | `rf_belebele_zho_Hans` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 | 3.22 | `human_aging` |
-| per_benchmark | `multiblimp` | 175M | 3.22 → 4.24 | +1.02 | 3.67 | `multiblimp_rus` |
+| per_benchmark | `include_v2_en` | 90M | 2.87 → 3.89 | +1.01 | 3.63 | `include_v2_en_japanese_japan` \| `include_v2_en_korean_korea` \| `include_v2_en_arabic_morocco` \| `include_v2_en_french_france` \| `… (+5)` |
 | global_mmlu_full_per_language | `global_mmlu_full_sr` | 350M | 2.66 → 3.65 | +0.99 | 3.48 | `formal_logic` |
-| per_benchmark | `bpb` | 175M | 3.11 → 4.09 | +0.99 | 4.09 | `bpb_rus_Cyrl` |
-| per_benchmark | `multiblimp` | 1.7B | 3.03 → 3.94 | +0.91 | 3.31 | `multiblimp_deu` \| `multiblimp_rus` \| `multiblimp_eng` |
+| per_benchmark | `rf_acp_bench_mcq` | 1B | 2.63 → 3.62 | +0.99 | 3.62 | `rf_acp_bench_mcq_land` |
+| per_benchmark | `include_v2_og` | 90M | 3.03 → 4.00 | +0.97 | 3.63 | `include_v2_og_russian_russia` \| `include_v2_og_arabic_jordan` \| `include_v2_og_spanish_espa_a` \| `include_v2_og_vietnamese_vietnam` \| `… (+2)` |
 | global_mmlu_full_per_language | `global_mmlu_full_ms` | 350M | 2.53 → 3.43 | +0.91 | 2.96 | `prehistory` \| `professional_psychology` |
+| per_benchmark | `multiblimp` | 175M | 2.90 → 3.80 | +0.90 | 3.27 | `multiblimp_rus` |
+| per_benchmark | `include_v2_en` | 600M | 3.10 → 3.99 | +0.89 | 3.65 | `include_v2_en_spanish_chile` \| `include_v2_en_german_germany` \| `include_v2_en_spanish_el_salvador` \| `include_v2_en_russian_russia` \| `… (+1)` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 350M | 3.23 → 4.09 | +0.87 | 3.91 | `nutrition` |
-| per_benchmark | `multiblimp` | 600M | 2.92 → 3.73 | +0.81 | 3.36 | `multiblimp_eng` \| `multiblimp_deu` |
-| global_mmlu_full_per_language | `global_mmlu_full_lt` | 350M | 2.69 → 3.44 | +0.75 | 3.00 | `anatomy` \| `international_law` \| `professional_psychology` \| `formal_logic` \| `… (+4)` |
-| per_benchmark | `xcopa` | 175M | 2.54 → 3.20 | +0.66 | 3.20 | `xcopa_id` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
+
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_subjects.png) ·
+[summary.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/summary.csv) ·
+[per_benchmark.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/per_benchmark.csv) ·
+[global_mmlu_full.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full.csv) ·
+[global_mmlu_full_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_per_language.csv)
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+Every swept cell in one grid (`predictivity` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq08 in one figure](pretraining/predictivity/highlights.png)
+
+![Gain over the null](pretraining/predictivity/gain_over_null.png)
+<!-- END auto:panels -->
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
+GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
+
+## TODO
+
+- [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
+      `human_aging`, `international_law`, world-history), not an exact subset —
+      only subsets that recur in both train and test seed pools transfer.
+- [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
+      train and test seed pools (Case 2 subjects are the safest; per-item picks
+      the least transferable).
+- [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
+      Jaccard / SNR-rank Spearman of the winning subsets.
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pools `seeds_28_1797_1904`, `custom_swissai_hf`;
+reference **1B**, 12 languages, the 86-task old list) or from the **external
+tier** (`all/external`: the public and reference models, 270M–70B,
+cross-model dispersion with no mixture axis). Its SNR is computed over three
+mixtures with the sweep's checkpoint window, on a task list without the
+twins, so its subset gains are a replication of the lever, never rows of the
+ladder's table. The per-item (Option D) pass under `per_sample/` is
+36-sweep-only as well: it needs the per-sample files that live on the
+cluster, and the ladder's per-item store (`build_per_item_store.sbatch`,
+`per_item_ladder.py`; `per_item_snr.csv`, `per_item_summary.csv` above) is
+its successor.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -120,6 +168,8 @@ ladder) for the highest-gain families:
 
 ![TruthfulQA subset sweep (external)](all/external/per_benchmark_plots/truthfulqa.png)
 
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/global_mmlu_full_subjects.png) ·
+[truthfulqa.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/per_benchmark_plots/truthfulqa.png)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -155,16 +205,8 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
 
 ![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
-## TODO
 
-- [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
-      `human_aging`, `international_law`, world-history), not an exact subset —
-      only subsets that recur in both train and test seed pools transfer.
-- [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
-      train and test seed pools (Case 2 subjects are the safest; per-item picks
-      the least transferable).
-- [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
-      Jaccard / SNR-rank Spearman of the winning subsets.
+[global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
 
 ## Files
 
@@ -173,13 +215,3 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `global_mmlu_full_per_language.csv` (Case 3) + their `*_plots/`.
 - `per_sample/variance_prefilter/analysis/` — Option-D size distribution,
   cross-size Jaccard/Spearman, `highlights.md`.
-
-<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
-## Per benchmark and per language
-
-Every swept cell in one grid (`predictivity` pool). Regenerate with `python analysis/rq08_subset_selection/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
-
-![rq08 in one figure](pretraining/predictivity/highlights.png)
-
-![Gain over the null](pretraining/predictivity/gain_over_null.png)
-<!-- END auto:panels -->

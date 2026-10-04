@@ -253,8 +253,11 @@
       "language": "en",
       "benchmark": "bbq",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 12,
+      "n_items": 58492
     },
     "belebele_arb_Arab": {
       "language": "ar",
@@ -377,36 +380,51 @@
       "language": "ar",
       "benchmark": "blend_sample",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 500
     },
     "blend_china_sample": {
       "language": "zh",
       "benchmark": "blend_sample",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 500
     },
     "blend_mexico_sample": {
       "language": "es",
       "benchmark": "blend_sample",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 500
     },
     "blend_spain_sample": {
       "language": "es",
       "benchmark": "blend_sample",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 500
     },
     "blend_us_sample": {
       "language": "en",
       "benchmark": "blend_sample",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 500
     },
     "ceval-valid": {
       "language": "zh",
@@ -428,273 +446,388 @@
       "stages": [
         "pretraining"
       ],
-      "n_options": 5
+      "n_options": 5,
+      "n_items": 1221
     },
     "cultural_bench_easy_argentina": {
       "language": "es",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 35
     },
     "cultural_bench_easy_australia": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 15
     },
     "cultural_bench_easy_canada": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 7
     },
     "cultural_bench_easy_chile": {
       "language": "es",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 22
     },
     "cultural_bench_easy_china": {
       "language": "zh",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 59
     },
     "cultural_bench_easy_india": {
       "language": "hi",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 46
     },
     "cultural_bench_easy_japan": {
       "language": "ja",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 53
     },
     "cultural_bench_easy_mexico": {
       "language": "es",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 49
     },
     "cultural_bench_easy_morocco": {
       "language": "ar",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 17
     },
     "cultural_bench_easy_nigeria": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 22
     },
     "cultural_bench_easy_peru": {
       "language": "es",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 19
     },
     "cultural_bench_easy_russia": {
       "language": "ru",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 30
     },
     "cultural_bench_easy_saudi_arabia": {
       "language": "ar",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 17
     },
     "cultural_bench_easy_south_africa": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 58
     },
     "cultural_bench_easy_spain": {
       "language": "es",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 40
     },
     "cultural_bench_easy_united_kingdom": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 25
     },
     "cultural_bench_easy_united_states": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 20
     },
     "cultural_bench_easy_vietnam": {
       "language": "vi",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 27
     },
     "cultural_bench_easy_zimbabwe": {
       "language": "en",
       "benchmark": "cultural_bench_easy",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 17
     },
     "cultural_bench_hard_argentina": {
       "language": "es",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 140
     },
     "cultural_bench_hard_australia": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 60
     },
     "cultural_bench_hard_canada": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 28
     },
     "cultural_bench_hard_chile": {
       "language": "es",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 88
     },
     "cultural_bench_hard_china": {
       "language": "zh",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 236
     },
     "cultural_bench_hard_india": {
       "language": "hi",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 184
     },
     "cultural_bench_hard_japan": {
       "language": "ja",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 212
     },
     "cultural_bench_hard_mexico": {
       "language": "es",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 196
     },
     "cultural_bench_hard_morocco": {
       "language": "ar",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 68
     },
     "cultural_bench_hard_nigeria": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 88
     },
     "cultural_bench_hard_peru": {
       "language": "es",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 76
     },
     "cultural_bench_hard_russia": {
       "language": "ru",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 120
     },
     "cultural_bench_hard_saudi_arabia": {
       "language": "ar",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 68
     },
     "cultural_bench_hard_south_africa": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 232
     },
     "cultural_bench_hard_spain": {
       "language": "es",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 160
     },
     "cultural_bench_hard_united_kingdom": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 100
     },
     "cultural_bench_hard_united_states": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 80
     },
     "cultural_bench_hard_vietnam": {
       "language": "vi",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 108
     },
     "cultural_bench_hard_zimbabwe": {
       "language": "en",
       "benchmark": "cultural_bench_hard",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 68
     },
     "drop": {
       "language": "en",
@@ -1468,8 +1601,11 @@
       "language": "en",
       "benchmark": "mathqa",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 5,
+      "n_items": 2985
     },
     "mbpp_instruct": {
       "language": "en",
@@ -1680,7 +1816,8 @@
       "stages": [
         "pretraining"
       ],
-      "n_options": 4
+      "n_options": 4,
+      "n_items": 14042
     },
     "mmlu_flan_cot_zeroshot": {
       "language": "en",
@@ -1765,7 +1902,8 @@
       "stages": [
         "pretraining"
       ],
-      "n_options": 4
+      "n_options": 4,
+      "n_items": 500
     },
     "paws_en": {
       "language": "en",
@@ -1888,8 +2026,11 @@
       "language": "en",
       "benchmark": "toxigen",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 2,
+      "n_items": 940
     },
     "triviaqa": {
       "language": "en",
@@ -1992,8 +2133,11 @@
       "language": "en",
       "benchmark": "truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 4,
+      "n_items": 817
     },
     "truthfulqa_ru_mc1": {
       "language": "ru",
@@ -2020,8 +2164,11 @@
       "language": "vi",
       "benchmark": "truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 5,
+      "n_items": 785
     },
     "truthfulqa_zh_mc1": {
       "language": "zh",
@@ -2034,8 +2181,11 @@
       "language": "zh",
       "benchmark": "truthfulqa_mc2",
       "stages": [
+        "pretraining",
         "posttraining"
-      ]
+      ],
+      "n_options": 5,
+      "n_items": 788
     },
     "wikitext": {
       "language": "en",
@@ -7437,6 +7587,7525 @@
       "n_options": 4,
       "metric": "acc_norm",
       "n_items": 900
+    },
+    "rfgm_include_base_44_albanian": {
+      "language": "sq",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 551
+    },
+    "rfgm_include_base_44_arabic": {
+      "language": "ar",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_armenian": {
+      "language": "hy",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_azerbaijani": {
+      "language": "az",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "rfgm_include_base_44_basque": {
+      "language": "eu",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 497
+    },
+    "rfgm_include_base_44_belarusian": {
+      "language": "be",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 544
+    },
+    "rfgm_include_base_44_bengali": {
+      "language": "bn",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_bulgarian": {
+      "language": "bg",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 548
+    },
+    "rfgm_include_base_44_chinese": {
+      "language": "zh",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 545
+    },
+    "rfgm_include_base_44_croatian": {
+      "language": "hr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_estonian": {
+      "language": "et",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 224
+    },
+    "rfgm_include_base_44_finnish": {
+      "language": "fi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_french": {
+      "language": "fr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 419
+    },
+    "rfgm_include_base_44_georgian": {
+      "language": "ka",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 499
+    },
+    "rfgm_include_base_44_german": {
+      "language": "de",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 139
+    },
+    "rfgm_include_base_44_greek": {
+      "language": "el",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 548
+    },
+    "rfgm_include_base_44_hebrew": {
+      "language": "he",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_hindi": {
+      "language": "hi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 540
+    },
+    "rfgm_include_base_44_hungarian": {
+      "language": "hu",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_indonesian": {
+      "language": "id",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_italian": {
+      "language": "it",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_japanese": {
+      "language": "jp",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 495
+    },
+    "rfgm_include_base_44_kazakh": {
+      "language": "kk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 500
+    },
+    "rfgm_include_base_44_korean": {
+      "language": "ko",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 481
+    },
+    "rfgm_include_base_44_lithuanian": {
+      "language": "lt",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 534
+    },
+    "rfgm_include_base_44_malay": {
+      "language": "ms",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 500
+    },
+    "rfgm_include_base_44_malayalam": {
+      "language": "ml",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 468
+    },
+    "rfgm_include_base_44_nepali": {
+      "language": "ne",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 497
+    },
+    "rfgm_include_base_44_north_macedonian": {
+      "language": "mk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 551
+    },
+    "rfgm_include_base_44_persian": {
+      "language": "fa",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "rfgm_include_base_44_polish": {
+      "language": "pl",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_portuguese": {
+      "language": "pt",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 539
+    },
+    "rfgm_include_base_44_russian": {
+      "language": "ru",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 542
+    },
+    "rfgm_include_base_44_serbian": {
+      "language": "sr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_spanish": {
+      "language": "es",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_tagalog": {
+      "language": "tl",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 498
+    },
+    "rfgm_include_base_44_tamil": {
+      "language": "ta",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 549
+    },
+    "rfgm_include_base_44_telugu": {
+      "language": "te",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 527
+    },
+    "rfgm_include_base_44_turkish": {
+      "language": "tr",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "rfgm_include_base_44_ukrainian": {
+      "language": "uk",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_urdu": {
+      "language": "ur",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 348
+    },
+    "rfgm_include_base_44_uzbek": {
+      "language": "uz",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 550
+    },
+    "rfgm_include_base_44_vietnamese": {
+      "language": "vi",
+      "benchmark": "rfgm_include_base_44",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "rf_commonsense_qa": {
+      "language": "en",
+      "benchmark": "rf_commonsense_qa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "metric": "acc_norm",
+      "n_items": 1221
+    },
+    "rf_cultural_bench_easy_argentina": {
+      "language": "es",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 35
+    },
+    "rf_cultural_bench_easy_australia": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 15
+    },
+    "rf_cultural_bench_easy_canada": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 7
+    },
+    "rf_cultural_bench_easy_chile": {
+      "language": "es",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 22
+    },
+    "rf_cultural_bench_easy_china": {
+      "language": "zh",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 59
+    },
+    "rf_cultural_bench_easy_india": {
+      "language": "hi",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 46
+    },
+    "rf_cultural_bench_easy_japan": {
+      "language": "ja",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 53
+    },
+    "rf_cultural_bench_easy_mexico": {
+      "language": "es",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 49
+    },
+    "rf_cultural_bench_easy_morocco": {
+      "language": "ar",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 17
+    },
+    "rf_cultural_bench_easy_nigeria": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 22
+    },
+    "rf_cultural_bench_easy_peru": {
+      "language": "es",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 19
+    },
+    "rf_cultural_bench_easy_russia": {
+      "language": "ru",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 30
+    },
+    "rf_cultural_bench_easy_saudi_arabia": {
+      "language": "ar",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 17
+    },
+    "rf_cultural_bench_easy_south_africa": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 58
+    },
+    "rf_cultural_bench_easy_spain": {
+      "language": "es",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 39
+    },
+    "rf_cultural_bench_easy_united_kingdom": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 25
+    },
+    "rf_cultural_bench_easy_united_states": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 20
+    },
+    "rf_cultural_bench_easy_vietnam": {
+      "language": "vi",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 27
+    },
+    "rf_cultural_bench_easy_zimbabwe": {
+      "language": "en",
+      "benchmark": "rf_cultural_bench_easy",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 17
+    },
+    "bbh_mcq_date_understanding": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_date_understanding": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_disambiguation_qa": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_disambiguation_qa": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_geometric_shapes": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 10,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_geometric_shapes": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 10,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_hyperbaton": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_hyperbaton": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_logical_deduction_five_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_logical_deduction_five_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_logical_deduction_seven_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 7,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_logical_deduction_seven_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 7,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_logical_deduction_three_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_logical_deduction_three_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_movie_recommendation": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 249,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_movie_recommendation": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 249,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_penguins_in_a_table": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 146,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_penguins_in_a_table": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 146,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_reasoning_about_colored_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 8,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_reasoning_about_colored_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 8,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_ruin_names": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 249,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_ruin_names": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 249,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_salient_translation_error_detection": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_salient_translation_error_detection": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 6,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_snarks": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 177,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_snarks": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 177,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_temporal_sequences": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_temporal_sequences": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_tracking_shuffled_objects_five_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_tracking_shuffled_objects_five_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_tracking_shuffled_objects_seven_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 7,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_tracking_shuffled_objects_seven_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 7,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_mcq_tracking_shuffled_objects_three_objects": {
+      "language": "en",
+      "benchmark": "bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "rf_bbh_mcq_tracking_shuffled_objects_three_objects": {
+      "language": "en",
+      "benchmark": "rf_bbh_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_boolean_expressions": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_causal_judgement": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 187,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_formal_fallacies": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_navigate": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_sports_understanding": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "bbh_cloze_web_of_lies": {
+      "language": "en",
+      "benchmark": "bbh_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 250,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_app": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_app": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_app": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_areach": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 120,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_areach": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 120,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_areach": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 120,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_just": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_just": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_just": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_land": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_land": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_land": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_prog": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_prog": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_prog": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_reach": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_reach": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_reach": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_cloze_val": {
+      "language": "en",
+      "benchmark": "acp_bench_cloze",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "acp_bench_mcq_val": {
+      "language": "en",
+      "benchmark": "acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "rf_acp_bench_mcq_val": {
+      "language": "en",
+      "benchmark": "rf_acp_bench_mcq",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "include_v2_og_albanian_albania": {
+      "language": "sq",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2317
+    },
+    "include_v2_en_albanian_albania": {
+      "language": "sq",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2317
+    },
+    "include_v2_og_arabic_egypt": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1616
+    },
+    "include_v2_en_arabic_egypt": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1616
+    },
+    "include_v2_og_arabic_jordan": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4749
+    },
+    "include_v2_en_arabic_jordan": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4749
+    },
+    "include_v2_og_arabic_ksa": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 71
+    },
+    "include_v2_en_arabic_ksa": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 71
+    },
+    "include_v2_og_arabic_kuwait": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 18
+    },
+    "include_v2_en_arabic_kuwait": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 18
+    },
+    "include_v2_og_arabic_morocco": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 193
+    },
+    "include_v2_en_arabic_morocco": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 193
+    },
+    "include_v2_og_arabic_palestine": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 623
+    },
+    "include_v2_en_arabic_palestine": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 623
+    },
+    "include_v2_og_arabic_qatar": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "include_v2_en_arabic_qatar": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 547
+    },
+    "include_v2_og_arabic_uae": {
+      "language": "ar",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 107
+    },
+    "include_v2_en_arabic_uae": {
+      "language": "ar",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 107
+    },
+    "include_v2_og_azerbaijani_azerbaijan": {
+      "language": "az",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 6141
+    },
+    "include_v2_en_azerbaijani_azerbaijan": {
+      "language": "az",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 6140
+    },
+    "include_v2_og_bengali_bangladesh": {
+      "language": "bn",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14388
+    },
+    "include_v2_en_bengali_bangladesh": {
+      "language": "bn",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14388
+    },
+    "include_v2_og_bengali_india": {
+      "language": "bn",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 306
+    },
+    "include_v2_en_bengali_india": {
+      "language": "bn",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 306
+    },
+    "include_v2_og_bulgarian_bulgaria": {
+      "language": "bg",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2827
+    },
+    "include_v2_en_bulgarian_bulgaria": {
+      "language": "bg",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2827
+    },
+    "include_v2_og_chinese_china": {
+      "language": "zh",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12005
+    },
+    "include_v2_en_chinese_china": {
+      "language": "zh",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12005
+    },
+    "include_v2_og_chinese_hong_kong": {
+      "language": "zh",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 405
+    },
+    "include_v2_en_chinese_hong_kong": {
+      "language": "zh",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 405
+    },
+    "include_v2_og_chinese_singapore": {
+      "language": "zh",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 15
+    },
+    "include_v2_en_chinese_singapore": {
+      "language": "zh",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 15
+    },
+    "include_v2_og_croatian_croatia": {
+      "language": "hr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2369
+    },
+    "include_v2_en_croatian_croatia": {
+      "language": "hr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2369
+    },
+    "include_v2_og_czech_czechia": {
+      "language": "cs",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 714
+    },
+    "include_v2_en_czech_czechia": {
+      "language": "cs",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 714
+    },
+    "include_v2_og_danish_denmark": {
+      "language": "da",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 446
+    },
+    "include_v2_en_danish_denmark": {
+      "language": "da",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 446
+    },
+    "include_v2_og_dutch_belgium": {
+      "language": "nl",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 521
+    },
+    "include_v2_en_dutch_belgium": {
+      "language": "nl",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 521
+    },
+    "include_v2_og_dutch_netherlands": {
+      "language": "nl",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 925
+    },
+    "include_v2_en_dutch_netherlands": {
+      "language": "nl",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 925
+    },
+    "include_v2_og_estonian_estonia": {
+      "language": "et",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 490
+    },
+    "include_v2_en_estonian_estonia": {
+      "language": "et",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 490
+    },
+    "include_v2_og_finnish_finland": {
+      "language": "fi",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 838
+    },
+    "include_v2_en_finnish_finland": {
+      "language": "fi",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 838
+    },
+    "include_v2_og_french_canada": {
+      "language": "fr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 846
+    },
+    "include_v2_en_french_canada": {
+      "language": "fr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 846
+    },
+    "include_v2_og_french_france": {
+      "language": "fr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 939
+    },
+    "include_v2_en_french_france": {
+      "language": "fr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 939
+    },
+    "include_v2_og_georgian_georgia": {
+      "language": "ka",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "include_v2_en_georgian_georgia": {
+      "language": "ka",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 546
+    },
+    "include_v2_og_german_germany": {
+      "language": "de",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1880
+    },
+    "include_v2_en_german_germany": {
+      "language": "de",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1880
+    },
+    "include_v2_og_greek_cyprus": {
+      "language": "el",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 42
+    },
+    "include_v2_en_greek_cyprus": {
+      "language": "el",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 42
+    },
+    "include_v2_og_greek_greece": {
+      "language": "el",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2236
+    },
+    "include_v2_en_greek_greece": {
+      "language": "el",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2236
+    },
+    "include_v2_og_hebrew_israel": {
+      "language": "he",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2279
+    },
+    "include_v2_en_hebrew_israel": {
+      "language": "he",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2279
+    },
+    "include_v2_og_hindi_india": {
+      "language": "hi",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4804
+    },
+    "include_v2_en_hindi_india": {
+      "language": "hi",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4804
+    },
+    "include_v2_og_hungarian_hungary": {
+      "language": "hu",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1386
+    },
+    "include_v2_en_hungarian_hungary": {
+      "language": "hu",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1386
+    },
+    "include_v2_og_indonesian_indonesia": {
+      "language": "id",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 11045
+    },
+    "include_v2_en_indonesian_indonesia": {
+      "language": "id",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 11045
+    },
+    "include_v2_og_italian_italy": {
+      "language": "it",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4608
+    },
+    "include_v2_en_italian_italy": {
+      "language": "it",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4608
+    },
+    "include_v2_og_japanese_japan": {
+      "language": "jp",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2540
+    },
+    "include_v2_en_japanese_japan": {
+      "language": "jp",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2540
+    },
+    "include_v2_og_kazakh_kazakhstan": {
+      "language": "kk",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 5591
+    },
+    "include_v2_en_kazakh_kazakhstan": {
+      "language": "kk",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 5591
+    },
+    "include_v2_og_korean_korea": {
+      "language": "ko",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1607
+    },
+    "include_v2_en_korean_korea": {
+      "language": "ko",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1607
+    },
+    "include_v2_og_lithuanian_lithuania": {
+      "language": "lt",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 682
+    },
+    "include_v2_en_lithuanian_lithuania": {
+      "language": "lt",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 682
+    },
+    "include_v2_og_malay_malaysia": {
+      "language": "ms",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 986
+    },
+    "include_v2_en_malay_malaysia": {
+      "language": "ms",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 986
+    },
+    "include_v2_og_malay_singapore": {
+      "language": "ms",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12
+    },
+    "include_v2_en_malay_singapore": {
+      "language": "ms",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 12
+    },
+    "include_v2_og_malayalam_india": {
+      "language": "ml",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 886
+    },
+    "include_v2_en_malayalam_india": {
+      "language": "ml",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 886
+    },
+    "include_v2_og_marathi_india": {
+      "language": "mr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 304
+    },
+    "include_v2_en_marathi_india": {
+      "language": "mr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 304
+    },
+    "include_v2_og_nepali_nepal": {
+      "language": "ne",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1316
+    },
+    "include_v2_en_nepali_nepal": {
+      "language": "ne",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1316
+    },
+    "include_v2_og_persian_iran": {
+      "language": "fa",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 24098
+    },
+    "include_v2_en_persian_iran": {
+      "language": "fa",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 24099
+    },
+    "include_v2_og_polish_poland": {
+      "language": "pl",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1926
+    },
+    "include_v2_en_polish_poland": {
+      "language": "pl",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1926
+    },
+    "include_v2_og_portuguese_brazil": {
+      "language": "pt",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 425
+    },
+    "include_v2_en_portuguese_brazil": {
+      "language": "pt",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 424
+    },
+    "include_v2_og_portuguese_portugal": {
+      "language": "pt",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 869
+    },
+    "include_v2_en_portuguese_portugal": {
+      "language": "pt",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 869
+    },
+    "include_v2_og_russian_russia": {
+      "language": "ru",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 6222
+    },
+    "include_v2_en_russian_russia": {
+      "language": "ru",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 6195
+    },
+    "include_v2_og_serbian_serbia": {
+      "language": "sr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1412
+    },
+    "include_v2_en_serbian_serbia": {
+      "language": "sr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1412
+    },
+    "include_v2_og_slovak_slovakia": {
+      "language": "sk",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 130
+    },
+    "include_v2_en_slovak_slovakia": {
+      "language": "sk",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 130
+    },
+    "include_v2_og_spanish_argentina": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 887
+    },
+    "include_v2_en_spanish_argentina": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 887
+    },
+    "include_v2_og_spanish_belice": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 15
+    },
+    "include_v2_en_spanish_belice": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 15
+    },
+    "include_v2_og_spanish_bolivia": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 913
+    },
+    "include_v2_en_spanish_bolivia": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 913
+    },
+    "include_v2_og_spanish_chile": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 689
+    },
+    "include_v2_en_spanish_chile": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 689
+    },
+    "include_v2_og_spanish_colombia": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1342
+    },
+    "include_v2_en_spanish_colombia": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1342
+    },
+    "include_v2_og_spanish_costa_rica": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 347
+    },
+    "include_v2_en_spanish_costa_rica": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 347
+    },
+    "include_v2_og_spanish_cuba": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 584
+    },
+    "include_v2_en_spanish_cuba": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 584
+    },
+    "include_v2_og_spanish_ecuador": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1807
+    },
+    "include_v2_en_spanish_ecuador": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1807
+    },
+    "include_v2_og_spanish_el_salvador": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 453
+    },
+    "include_v2_en_spanish_el_salvador": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 453
+    },
+    "include_v2_og_spanish_espa_a": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4326
+    },
+    "include_v2_en_spanish_espa_a": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 4326
+    },
+    "include_v2_og_spanish_jamaica": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 19
+    },
+    "include_v2_en_spanish_jamaica": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 19
+    },
+    "include_v2_og_spanish_m_xico": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1088
+    },
+    "include_v2_en_spanish_m_xico": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1088
+    },
+    "include_v2_og_spanish_nicaragua": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 20
+    },
+    "include_v2_en_spanish_nicaragua": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 20
+    },
+    "include_v2_og_spanish_panam_": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 48
+    },
+    "include_v2_en_spanish_panam_": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 48
+    },
+    "include_v2_og_spanish_paraguay": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 214
+    },
+    "include_v2_en_spanish_paraguay": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 214
+    },
+    "include_v2_og_spanish_per_": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1213
+    },
+    "include_v2_en_spanish_per_": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1213
+    },
+    "include_v2_og_spanish_puerto_rico": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 251
+    },
+    "include_v2_en_spanish_puerto_rico": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 251
+    },
+    "include_v2_og_spanish_rep_blica_dominicana": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 21
+    },
+    "include_v2_en_spanish_rep_blica_dominicana": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 21
+    },
+    "include_v2_og_spanish_uruguay": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 263
+    },
+    "include_v2_en_spanish_uruguay": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 263
+    },
+    "include_v2_og_spanish_venezuela": {
+      "language": "es",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 169
+    },
+    "include_v2_en_spanish_venezuela": {
+      "language": "es",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 169
+    },
+    "include_v2_og_swedish_sweden": {
+      "language": "sv",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2494
+    },
+    "include_v2_en_swedish_sweden": {
+      "language": "sv",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2494
+    },
+    "include_v2_og_tamil_india": {
+      "language": "ta",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1215
+    },
+    "include_v2_en_tamil_india": {
+      "language": "ta",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1215
+    },
+    "include_v2_og_turkish_turkey": {
+      "language": "tr",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2764
+    },
+    "include_v2_en_turkish_turkey": {
+      "language": "tr",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 2763
+    },
+    "include_v2_og_ukrainian_ukraine": {
+      "language": "uk",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1421
+    },
+    "include_v2_en_ukrainian_ukraine": {
+      "language": "uk",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 1421
+    },
+    "include_v2_og_urdu_india": {
+      "language": "ur",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 111
+    },
+    "include_v2_en_urdu_india": {
+      "language": "ur",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 111
+    },
+    "include_v2_og_urdu_pakistan": {
+      "language": "ur",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 512
+    },
+    "include_v2_en_urdu_pakistan": {
+      "language": "ur",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 512
+    },
+    "include_v2_og_vietnamese_vietnam": {
+      "language": "vi",
+      "benchmark": "include_v2_og",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 8320
+    },
+    "include_v2_en_vietnamese_vietnam": {
+      "language": "vi",
+      "benchmark": "include_v2_en",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 8318
+    },
+    "rf_mmlu": {
+      "language": "en",
+      "benchmark": "rf_mmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 14042
+    },
+    "rfgm_belebele_arb_Arab": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_eng_Latn": {
+      "language": "en",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_hin_Deva": {
+      "language": "hi",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_jpn_Jpan": {
+      "language": "ja",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_rus_Cyrl": {
+      "language": "ru",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_spa_Latn": {
+      "language": "es",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_tha_Thai": {
+      "language": "th",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 893
+    },
+    "rfgm_belebele_tur_Latn": {
+      "language": "tr",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_vie_Latn": {
+      "language": "vi",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_zho_Hans": {
+      "language": "zh",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_ars_Arab": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ita_Latn": {
+      "language": "it",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_kat_Geor": {
+      "language": "ka",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ben_Latn": {
+      "language": "bn",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_bul_Cyrl": {
+      "language": "bg",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_slv_Latn": {
+      "language": "sl",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_swe_Latn": {
+      "language": "sv",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_deu_Latn": {
+      "language": "de",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ukr_Cyrl": {
+      "language": "uk",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_heb_Hebr": {
+      "language": "he",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_npi_Deva": {
+      "language": "ne",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 893
+    },
+    "rfgm_belebele_por_Latn": {
+      "language": "pt",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_hun_Latn": {
+      "language": "hu",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_fin_Latn": {
+      "language": "fi",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_urd_Latn": {
+      "language": "ur",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_ces_Latn": {
+      "language": "cs",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_lvs_Latn": {
+      "language": "lv",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_slk_Latn": {
+      "language": "sk",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_nob_Latn": {
+      "language": "no",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_pol_Latn": {
+      "language": "pl",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_hin_Latn": {
+      "language": "hi",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ary_Arab": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_mal_Mlym": {
+      "language": "ml",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ben_Beng": {
+      "language": "bn",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_nld_Latn": {
+      "language": "nl",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_kor_Hang": {
+      "language": "ko",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 896
+    },
+    "rfgm_belebele_urd_Arab": {
+      "language": "ur",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_fra_Latn": {
+      "language": "fr",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_lit_Latn": {
+      "language": "lt",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_ron_Latn": {
+      "language": "ro",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_srp_Cyrl": {
+      "language": "sr",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_npi_Latn": {
+      "language": "ne",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_kaz_Cyrl": {
+      "language": "kk",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 895
+    },
+    "rfgm_belebele_tam_Taml": {
+      "language": "ta",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_ind_Latn": {
+      "language": "id",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_dan_Latn": {
+      "language": "da",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_cat_Latn": {
+      "language": "ca",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_azj_Latn": {
+      "language": "az",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 895
+    },
+    "rfgm_belebele_hrv_Latn": {
+      "language": "hr",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_als_Latn": {
+      "language": "sq",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_arb_Latn": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_mar_Deva": {
+      "language": "mr",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 896
+    },
+    "rfgm_belebele_zsm_Latn": {
+      "language": "ms",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_ell_Grek": {
+      "language": "el",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 895
+    },
+    "rfgm_belebele_zho_Hant": {
+      "language": "zh",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 897
+    },
+    "rfgm_belebele_arz_Arab": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_apc_Arab": {
+      "language": "ar",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_est_Latn": {
+      "language": "et",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 898
+    },
+    "rfgm_belebele_pes_Arab": {
+      "language": "fa",
+      "benchmark": "rfgm_belebele",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "metric": "acc_norm",
+      "n_items": 895
+    },
+    "arc_ca_challenge": {
+      "language": "ca",
+      "benchmark": "ibero_arc",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_ca_easy": {
+      "language": "ca",
+      "benchmark": "ibero_arc",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2376,
+      "metric": "acc_norm"
+    },
+    "arc_eu_challenge": {
+      "language": "eu",
+      "benchmark": "ibero_arc",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_eu_easy": {
+      "language": "eu",
+      "benchmark": "ibero_arc",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 2376,
+      "metric": "acc_norm"
+    },
+    "openbookqa_es": {
+      "language": "es",
+      "benchmark": "ibero_openbookqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "openbookqa_ca": {
+      "language": "ca",
+      "benchmark": "ibero_openbookqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "openbookqa_gl": {
+      "language": "gl",
+      "benchmark": "ibero_openbookqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "piqa_ca": {
+      "language": "ca",
+      "benchmark": "ibero_piqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1838,
+      "metric": "acc_norm"
+    },
+    "piqa_eu": {
+      "language": "eu",
+      "benchmark": "ibero_piqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1836,
+      "metric": "acc_norm"
+    },
+    "siqa_ca": {
+      "language": "ca",
+      "benchmark": "ibero_siqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 1931,
+      "metric": "acc_norm"
+    },
+    "escola": {
+      "language": "es",
+      "benchmark": "ibero_cola",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1053,
+      "metric": "acc_norm"
+    },
+    "catcola": {
+      "language": "ca",
+      "benchmark": "ibero_cola",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1018,
+      "metric": "acc_norm"
+    },
+    "truthfulqa_gl_mc1": {
+      "language": "gl",
+      "benchmark": "ibero_truthfulqa",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 817,
+      "metric": "acc_norm"
+    },
+    "toksuite_english_canonical": {
+      "language": "en",
+      "benchmark": "toksuite",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 40,
+      "metric": "acc_norm"
+    },
+    "toksuite_farsi_canonical": {
+      "language": "fa",
+      "benchmark": "toksuite",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 40,
+      "metric": "acc_norm"
+    },
+    "toksuite_italian_canonical": {
+      "language": "it",
+      "benchmark": "toksuite",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 40,
+      "metric": "acc_norm"
+    },
+    "toksuite_chinese_canonical": {
+      "language": "zh",
+      "benchmark": "toksuite",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 40,
+      "metric": "acc_norm"
+    },
+    "toksuite_turkish_canonical": {
+      "language": "tr",
+      "benchmark": "toksuite",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 40,
+      "metric": "acc_norm"
+    },
+    "toksuite_math": {
+      "language": "en",
+      "benchmark": "toksuite_math",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 189,
+      "metric": "acc_norm"
+    },
+    "toksuite_stem": {
+      "language": "en",
+      "benchmark": "toksuite_stem",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 613,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_accountant": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 49,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_advanced_mathematics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_art_studies": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 33,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_basic_medicine": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_business_administration": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 33,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_chinese_language_and_literature": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 23,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_civil_servant": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 47,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_clinical_medicine": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 22,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_college_chemistry": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 24,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_college_economics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 55,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_college_physics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_college_programming": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 37,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_computer_architecture": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 21,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_computer_network": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_discrete_mathematics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 16,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_education_science": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 29,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_electrical_engineer": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 37,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_environmental_impact_assessment_engineer": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 31,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_fire_engineer": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 31,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_biology": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_chemistry": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_chinese": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_geography": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_history": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 20,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_mathematics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 18,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_physics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_high_school_politics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_ideological_and_moral_cultivation": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_law": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 24,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_legal_professional": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 23,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_logic": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 22,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_mao_zedong_thought": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 24,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_marxism": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_metrology_engineer": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 24,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_biology": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 21,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_chemistry": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 20,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_geography": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 12,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_history": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 22,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_mathematics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_physics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_middle_school_politics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 21,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_modern_chinese_history": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 23,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_operating_system": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_physician": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 49,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_plant_protection": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 22,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_probability_and_statistics": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 18,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_professional_tour_guide": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 29,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_sports_science": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 19,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_tax_accountant": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 49,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_teacher_qualification": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 44,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_urban_and_rural_planner": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 46,
+      "metric": "acc_norm"
+    },
+    "ceval-valid_veterinary_medicine": {
+      "language": "zh",
+      "benchmark": "ceval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 23,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_BEI_subj_drop": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_deletion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_duplicate_argument": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_inversion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_meiba": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_no_progressive": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_no_stative_verb": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_suo_adverbial_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_suo_adverbial_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_verb_le_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BA_verb_le_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BEI_construction_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BEI_construction_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BEI_deletion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_BEI_preposition": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_PN_numP_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_PN_numP_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_adjective_transitive_dui": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_agent_animacy_adv": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_agent_animacy_passive": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_agent_animacy_subj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_agent_causative": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_agent_deletion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_anaphor_gender_agreement": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_anaphor_number_agreement": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_causative_shi_ba": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_classifier_noun_agreement": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_classifier_noun_agreement_no_gap": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_classifier_noun_subj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_control_modal_vs_raising_modal": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_ellipsis_adj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_ellipsis_double_object": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_ellipsis_n_bar_class": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_existential_there_subject_raising": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_fci_renhe_dou": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_fci_renhe_prepP": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_fci_renhe_ruguo": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_fci_renhe_subj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_fci_renhe_suoyou": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_intransitive_double_obj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_intransitive_no_obj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_left_adverbial_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_left_adverbial_d": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_left_adverbial_e": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_left_adverbial_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_left_dou": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_modal_raising_hui": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_modal_raising_topicalization": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_nominal_definite_men": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_nominal_modal_insertion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_noun_adjective_shi": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_noun_phrase_conjunction_jian": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_A_not_A_question": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_conditional": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_neg_scope_locP": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_neg_scope_subj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_wh_question_obj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_npi_renhe_wh_question_subj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_agent_deletion_long_left": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_agent_deletion_long_right_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_agent_deletion_long_right_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_agent_deletion_short": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_body_part": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_intransitive": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_no_adj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_passive_suo": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_plural_cardinal_men_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_plural_cardinal_men_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_preposition_deletion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_preposition_insertion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_principle_A_c_command": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_principle_A_c_command_number": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_principle_A_domain": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_principle_A_domain_number": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_A_not_A": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_A_not_A_daodi_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_A_not_A_daodi_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_A_not_A_indirect": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_V_not_VP_1": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_V_not_VP_2": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_daodi_nandao_1": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_daodi_nandao_2": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_daodi_nandao_A_not_A_intran": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_daodi_nandao_A_not_A_tran": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_daodi_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_raising_1_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_raising_1_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_raising_2": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_raising_3": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_scope_1": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_nandao_scope_2": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_particle_daodi_choice_intran": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_particle_daodi_choice_tran": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_question_particle_nandao": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_relative_operator_intepretation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_relative_operator_who": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_relativization_movement_no_gap": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_relativization_movement_when_where": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_renhe_no_episodic_sentences": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_renhe_no_superordinate_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_renhe_non_factive_verb": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_right_yijing_a": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_right_yijing_b": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_singular_PN_but_plural_pron": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_superlative_quantifiers_1": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_superlative_quantifiers_2": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_topicalization_OSV": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_topicalization_OSV_mei": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_topicalization_SOV": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_topicalization_SOV_mei": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_verb_negation_particle": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_verb_phrase_left_adverbial": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_verb_phrase_left_negation": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_ya_insertion": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_you_quantifier_adj": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "zhoblimp_you_yige": {
+      "language": "zh",
+      "benchmark": "zhoblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "kmmlu_accounting": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "kmmlu_agricultural_sciences": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_aviation_engineering_and_maintenance": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_biology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_chemical_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_chemistry": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 600,
+      "metric": "acc_norm"
+    },
+    "kmmlu_civil_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_computer_science": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_construction": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_criminal_law": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 200,
+      "metric": "acc_norm"
+    },
+    "kmmlu_ecology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_economics": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 130,
+      "metric": "acc_norm"
+    },
+    "kmmlu_education": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "kmmlu_electrical_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_electronics_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_energy_management": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_environmental_science": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_fashion": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_food_processing": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_gas_technology_and_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_geomatics": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_health": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "kmmlu_industrial_engineer": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_information_technology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_interior_architecture_and_design": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_korean_history": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "kmmlu_law": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_machine_design_and_manufacturing": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_management": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_maritime_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 600,
+      "metric": "acc_norm"
+    },
+    "kmmlu_marketing": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_materials_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_math": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "kmmlu_mechanical_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_nondestructive_testing": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_patent": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "kmmlu_political_science_and_sociology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 300,
+      "metric": "acc_norm"
+    },
+    "kmmlu_psychology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_public_safety": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_railway_and_automotive_engineering": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_real_estate": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 200,
+      "metric": "acc_norm"
+    },
+    "kmmlu_refrigerating_machinery": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_social_welfare": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "kmmlu_taxation": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 200,
+      "metric": "acc_norm"
+    },
+    "kmmlu_telecommunications_and_wireless_technology": {
+      "language": "ko",
+      "benchmark": "kmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "haerae_general_knowledge": {
+      "language": "ko",
+      "benchmark": "haerae",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 176,
+      "metric": "acc_norm"
+    },
+    "haerae_history": {
+      "language": "ko",
+      "benchmark": "haerae",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 188,
+      "metric": "acc_norm"
+    },
+    "haerae_loan_word": {
+      "language": "ko",
+      "benchmark": "haerae",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 169,
+      "metric": "acc_norm"
+    },
+    "haerae_rare_word": {
+      "language": "ko",
+      "benchmark": "haerae",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 405,
+      "metric": "acc_norm"
+    },
+    "haerae_standard_nomenclature": {
+      "language": "ko",
+      "benchmark": "haerae",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 153,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_biology": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_chemistry": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_geography": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_history": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_mathematics": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_philosophy": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_physics": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_religion_and_ethics": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turkishmmlu_turkish_language_and_literature": {
+      "language": "tr",
+      "benchmark": "turkishmmlu",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "turblimp_anaphor_agreement": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_argument_structure_ditransitive": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_argument_structure_transitive": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_binding": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_determiners": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_ellipsis": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_irregular_forms": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_island_effects": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_nominalization": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_npi_licensing": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_passives": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_quantifiers": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_relative_clauses": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_scrambling": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_subject_agreement": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "turblimp_suspended_affixation": {
+      "language": "tr",
+      "benchmark": "turblimp",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1000,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_at_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_te_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 400,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-1": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-2": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-3": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-4": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-5": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "evalita-mp_wic_prompt-6": {
+      "language": "it",
+      "benchmark": "evalita_llm",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 500,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__adpositional_phrases__argument_r_extraction": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__adpositional_phrases__argument_scrambling": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__adverbial_modification__position_proform": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__adverbial_modification__position_type": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__anaphor_agreement__number": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__anaphor_agreement__person": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__argument_number_ditransitive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__argument_number_in_transitive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__ditransitive_nomdat_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__ditransitive_nomdat_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__ditransitive_nomdat_3": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__intransitive_unaccusative_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__intransitive_unaccusative_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__argument_structure__intransitive_unaccusative_3": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__auxiliaries__order_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__auxiliaries__order_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__auxiliaries__perfect": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__auxiliaries__semi_aspectual_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__auxiliaries__semi_aspectual_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__binding_principle_a__c_command": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__binding_principle_a__monomorphemic": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__complementive__ditransitive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__complementive__intransitive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__complementive__position_adverb": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__complementive__position_verb": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__complementive__transitive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__crossing_dependencies__cross_dependency": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__determiners__geen_expletive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__determiners__geen_scrambling_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__determiners__geen_scrambling_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__determiners__negative_polarity": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__extraposition__adjectival_adverbial": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__extraposition__adjectival_supplementive": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__extraposition__argument_nominal": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__complementizer": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__perception_dat": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__perception_of": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__position": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__sluicing_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__finite_argument_clause__sluicing_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__bare_verb_cluster": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__bare_verb_type_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__bare_verb_type_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__bare_verb_type_3": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__om_te": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__te_om_te_difference_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__te_om_te_difference_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__te_transparant_split": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__infinitival_argument_clause__verb_type": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__nominalization__type_inf_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__nominalization__type_inf_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__parasitic_gaps__scrambling": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__parasitic_gaps__structure_type_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__parasitic_gaps__structure_type_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__parasitic_gaps__structure_type_3": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__passive__aci": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__passive__ditransitive_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__passive__ditransitive_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__passive__impersonal": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__quantifiers__universal_difference_agreement_plural": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__quantifiers__universal_difference_agreement_singular": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__r_words__adverbial": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__r_words__weak_proform": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__relativization__island": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__relativization__pied_piping": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__relativization__resumptive_prolepsis": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__topicalization__island": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__topicalization__question_similarity_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__topicalization__question_similarity_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__topicalization__resumptive_prolepsis": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__verb_second__order_embedded": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__verb_second__order_main": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__filler_effect_gap": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__filler_effect_no_gap": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__hierarchy": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__question_formation": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__stranding_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement__stranding_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__bridge_verb_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__bridge_verb_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__island_1": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__island_2": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__resumptive_prolepsis": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "blimp_nl__wh_movement_restrictions__superiority": {
+      "language": "nl",
+      "benchmark": "blimp_nl",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 100,
+      "metric": "acc_norm"
+    },
+    "ncb": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 840,
+      "metric": "acc_norm"
+    },
+    "norbelebele_p0": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 900,
+      "metric": "acc_norm"
+    },
+    "norbelebele_p1": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 900,
+      "metric": "acc_norm"
+    },
+    "norbelebele_p2": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 900,
+      "metric": "acc_norm"
+    },
+    "norbelebele_p3": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 900,
+      "metric": "acc_norm"
+    },
+    "norbelebele_p4": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 900,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nno_p0": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 95,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nno_p1": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 95,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nno_p2": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 95,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nno_p3": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 95,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nno_p4": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 95,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nob_p0": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 998,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nob_p1": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 998,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nob_p2": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 998,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nob_p3": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 998,
+      "metric": "acc_norm"
+    },
+    "norcommonsenseqa_nob_p4": {
+      "language": "no",
+      "benchmark": "noreval",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 998,
+      "metric": "acc_norm"
+    },
+    "bangla_commonsenseqa": {
+      "language": "bn",
+      "benchmark": "bangla",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 5,
+      "n_items": 1221,
+      "metric": "acc_norm"
+    },
+    "bangla_mmlu": {
+      "language": "bn",
+      "benchmark": "bangla",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 14750,
+      "metric": "acc_norm"
+    },
+    "openbookqa_bn": {
+      "language": "bn",
+      "benchmark": "bangla",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 497,
+      "metric": "acc_norm"
+    },
+    "piqa_bn": {
+      "language": "bn",
+      "benchmark": "bangla",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1838,
+      "metric": "acc_norm"
+    },
+    "french_bench_arc_challenge": {
+      "language": "fr",
+      "benchmark": "french_bench",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1169,
+      "metric": "acc_norm"
+    },
+    "french_bench_grammar": {
+      "language": "fr",
+      "benchmark": "french_bench",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 119,
+      "metric": "acc_norm"
+    },
+    "french_bench_reading_comp": {
+      "language": "fr",
+      "benchmark": "french_bench",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 71,
+      "metric": "acc_norm"
+    },
+    "french_bench_vocab": {
+      "language": "fr",
+      "benchmark": "french_bench",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 119,
+      "metric": "acc_norm"
+    },
+    "french_bench_xnli": {
+      "language": "fr",
+      "benchmark": "french_bench",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 3,
+      "n_items": 5010,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_da": {
+      "language": "da",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_de": {
+      "language": "de",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_el": {
+      "language": "el",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_es": {
+      "language": "es",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_fi": {
+      "language": "fi",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_hu": {
+      "language": "hu",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_it": {
+      "language": "it",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_nb": {
+      "language": "no",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_pl": {
+      "language": "pl",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_pt": {
+      "language": "pt",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "arc_challenge_mt_sv": {
+      "language": "sv",
+      "benchmark": "arc_mt",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 4,
+      "n_items": 1172,
+      "metric": "acc_norm"
+    },
+    "mela_ar": {
+      "language": "ar",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 917,
+      "metric": "acc_norm"
+    },
+    "mela_de": {
+      "language": "de",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 945,
+      "metric": "acc_norm"
+    },
+    "mela_en": {
+      "language": "en",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 516,
+      "metric": "acc_norm"
+    },
+    "mela_es": {
+      "language": "es",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 988,
+      "metric": "acc_norm"
+    },
+    "mela_fr": {
+      "language": "fr",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1333,
+      "metric": "acc_norm"
+    },
+    "mela_is": {
+      "language": "is",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2198,
+      "metric": "acc_norm"
+    },
+    "mela_it": {
+      "language": "it",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 975,
+      "metric": "acc_norm"
+    },
+    "mela_ja": {
+      "language": "ja",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 1561,
+      "metric": "acc_norm"
+    },
+    "mela_ru": {
+      "language": "ru",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 2227,
+      "metric": "acc_norm"
+    },
+    "mela_zh": {
+      "language": "zh",
+      "benchmark": "mela",
+      "stages": [
+        "pretraining"
+      ],
+      "n_options": 2,
+      "n_items": 931,
+      "metric": "acc_norm"
+    },
+    "xquad_es": {
+      "language": "es",
+      "benchmark": "xquad",
+      "stages": [
+        "pretraining"
+      ],
+      "n_items": 1190,
+      "metric": "exact_match"
     }
   },
   "groups": {
@@ -8066,25 +15735,90 @@
       "truthfulqa_zh_mc2"
     ],
     "auto": [
+      "acp_bench_cloze",
+      "acp_bench_mcq",
       "arc",
+      "bbh_cloze",
+      "bbh_mcq",
       "belebele",
+      "blend_sample",
+      "commonsense_qa",
+      "cultural_bench_easy",
+      "cultural_bench_hard",
       "global_mmlu",
       "global_piqa",
       "hellaswag",
       "include_base_44",
+      "include_v2_en",
+      "include_v2_og",
       "lambada_openai_mt",
+      "mathqa",
+      "mmlu",
       "multiblimp",
+      "openbookqa",
       "paws",
+      "rf_acp_bench_mcq",
+      "rf_bbh_mcq",
+      "rf_belebele",
+      "rf_commonsense_qa",
+      "rf_cultural_bench_easy",
+      "rf_global_mmlu_full",
+      "rf_include_base_44",
+      "rf_mmlu",
+      "rfgm_belebele",
+      "rfgm_include_base_44",
+      "toxigen",
       "truthfulqa-multi_mc1",
+      "truthfulqa_mc2",
       "xcopa",
       "xnli",
       "xstorycloze",
       "xwinograd"
     ],
-    "auto_rf": [
-      "rf_belebele",
-      "rf_global_mmlu_full",
-      "rf_include_base_44"
+    "auto_probe": [
+      "acp_bench_cloze",
+      "acp_bench_mcq",
+      "arc_mt",
+      "bangla",
+      "bbh_cloze",
+      "bbh_mcq",
+      "blend_sample",
+      "blimp_nl",
+      "ceval",
+      "commonsense_qa",
+      "cultural_bench_easy",
+      "cultural_bench_hard",
+      "evalita_llm",
+      "french_bench",
+      "haerae",
+      "ibero_arc",
+      "ibero_cola",
+      "ibero_openbookqa",
+      "ibero_piqa",
+      "ibero_siqa",
+      "ibero_truthfulqa",
+      "include_v2_en",
+      "include_v2_og",
+      "kmmlu",
+      "mathqa",
+      "mela",
+      "mmlu",
+      "noreval",
+      "openbookqa",
+      "rf_acp_bench_mcq",
+      "rf_bbh_mcq",
+      "rf_commonsense_qa",
+      "rf_cultural_bench_easy",
+      "rf_mmlu",
+      "toksuite",
+      "toksuite_math",
+      "toksuite_stem",
+      "toxigen",
+      "truthfulqa_mc2",
+      "turblimp",
+      "turkishmmlu",
+      "xquad",
+      "zhoblimp"
     ]
   },
   "benchmarks": {
@@ -8234,6 +15968,187 @@
       "name": "INCLUDE (Romanou et al.)",
       "languages": 44,
       "format": "cloze reformulation of include_base_44: question only, the four options scored as continuations"
+    },
+    "rfgm_include_base_44": {
+      "paper": "https://openreview.net/forum?id=k3gCieTXeY",
+      "venue": "ICLR 2025",
+      "name": "INCLUDE (Romanou et al.)",
+      "languages": 44,
+      "format": "Gemini statement rewrite of include_base_44: stem + four short continuations, scored as continuations (rf-data/rfgm/<task>.jsonl)"
+    },
+    "rf_commonsense_qa": {
+      "name": "commonsense_qa",
+      "format": "cloze reformulation of commonsense_qa: question only, the five options scored as continuations"
+    },
+    "rf_cultural_bench_easy": {
+      "name": "cultural_bench_easy",
+      "format": "cloze reformulation of cultural_bench_easy: question only, the four options scored as continuations"
+    },
+    "bbh_mcq": {
+      "name": "BIG-Bench Hard (Suzgun et al. 2023)",
+      "languages": 1,
+      "format": "BBH's closed-form subtasks as logprob: the published item incl. its (A)-(R) option block, the letters scored as continuations (no chain of thought)"
+    },
+    "rf_bbh_mcq": {
+      "name": "BIG-Bench Hard (Suzgun et al. 2023)",
+      "languages": 1,
+      "format": "cloze reformulation of bbh_mcq: the stem without the option block, the option strings scored as continuations"
+    },
+    "bbh_cloze": {
+      "name": "BIG-Bench Hard (Suzgun et al. 2023)",
+      "languages": 1,
+      "format": "BBH's two-way subtasks as logprob: the published item, the two answer strings scored as continuations (already cloze; no reformulated twin)"
+    },
+    "acp_bench_mcq": {
+      "name": "ACP-Bench (Kokel et al. 2025)",
+      "languages": 1,
+      "format": "ACP-Bench's multiple-choice subtasks as logprob: context + the question incl. its A.-D. list, the letters scored as continuations"
+    },
+    "rf_acp_bench_mcq": {
+      "name": "ACP-Bench (Kokel et al. 2025)",
+      "languages": 1,
+      "format": "cloze reformulation of acp_bench_mcq: context + the bare query, the four action strings scored as continuations"
+    },
+    "acp_bench_cloze": {
+      "name": "ACP-Bench (Kokel et al. 2025)",
+      "languages": 1,
+      "format": "ACP-Bench's boolean subtasks as logprob: context + question, yes/no scored as continuations (already cloze; no reformulated twin)"
+    },
+    "include_v2_og": {
+      "name": "INCLUDE v2 (Romanou et al.)",
+      "languages": 77,
+      "format": "cloze INCLUDE v2: question only in the item's own language, the four options scored as continuations"
+    },
+    "include_v2_en": {
+      "name": "INCLUDE v2 (Romanou et al.)",
+      "languages": 77,
+      "format": "cloze INCLUDE v2: the English translation of the same items, the four options scored as continuations"
+    },
+    "rf_mmlu": {
+      "name": "mmlu",
+      "format": "cloze reformulation of mmlu: question only, the four options scored as continuations"
+    },
+    "rfgm_belebele": {
+      "paper": "https://aclanthology.org/2024.acl-long.44/",
+      "venue": "ACL 2024",
+      "name": "Belebele (Bandarkar et al.)",
+      "languages": 122,
+      "format": "Gemini statement rewrite of belebele: stem + four short continuations, scored as continuations (rf-data/rfgm/<task>.jsonl)"
+    },
+    "ibero_arc": {
+      "name": "ARC (IberoBench: projecte-aina, HiTZ)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 2
+    },
+    "ibero_cola": {
+      "name": "CoLA acceptability (EsCoLA / CatCoLA / GalCoLA)",
+      "url": "https://huggingface.co/nbel",
+      "languages": 2
+    },
+    "ibero_openbookqa": {
+      "name": "OpenBookQA (IberoBench)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 3
+    },
+    "ibero_piqa": {
+      "name": "PIQA (IberoBench)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 2
+    },
+    "ibero_siqa": {
+      "name": "SIQA (IberoBench)",
+      "url": "https://huggingface.co/collections/BSC-LT",
+      "languages": 1
+    },
+    "ibero_truthfulqa": {
+      "name": "TruthfulQA mc1 (Galician)",
+      "url": "https://huggingface.co/proxectonos",
+      "languages": 1
+    },
+    "toksuite": {
+      "name": "TokSuite parallel set (Altintas et al. 2025)",
+      "url": "https://arxiv.org/abs/2512.20757",
+      "languages": 5
+    },
+    "toksuite_math": {
+      "name": "TokSuite math",
+      "url": "https://arxiv.org/abs/2512.20757",
+      "languages": 1
+    },
+    "toksuite_stem": {
+      "name": "TokSuite STEM",
+      "url": "https://arxiv.org/abs/2512.20757",
+      "languages": 1
+    },
+    "arc_mt": {
+      "name": "ARC-Challenge translated (LumiOpen)",
+      "url": "https://huggingface.co/LumiOpen/arc_challenge_mt",
+      "languages": 11
+    },
+    "bangla": {
+      "name": "Bangla benchmarks (hishab)",
+      "url": "https://huggingface.co/hishab",
+      "languages": 1
+    },
+    "blimp_nl": {
+      "name": "BLiMP-NL (Dutch minimal pairs)",
+      "url": "https://huggingface.co/jmichaelov/blimp_nl",
+      "languages": 1
+    },
+    "ceval": {
+      "name": "C-Eval (Chinese)",
+      "url": "https://cevalbenchmark.com",
+      "languages": 1
+    },
+    "evalita_llm": {
+      "name": "EVALITA-LLM (Italian)",
+      "url": "https://huggingface.co/evalitahf",
+      "languages": 1
+    },
+    "french_bench": {
+      "name": "FrenchBench",
+      "url": "https://huggingface.co/manu",
+      "languages": 1
+    },
+    "haerae": {
+      "name": "HAE-RAE Bench (Korean)",
+      "url": "https://huggingface.co/HAERAE-HUB",
+      "languages": 1
+    },
+    "kmmlu": {
+      "name": "KMMLU (Korean)",
+      "url": "https://huggingface.co/HAERAE-HUB",
+      "languages": 1
+    },
+    "mela": {
+      "name": "MELA (multilingual acceptability)",
+      "url": "https://huggingface.co/Geralt-Targaryen/MELA",
+      "languages": 10
+    },
+    "noreval": {
+      "name": "NorEval (Norwegian)",
+      "url": "https://huggingface.co/ltg",
+      "languages": 1
+    },
+    "turblimp": {
+      "name": "TurBLiMP (Turkish minimal pairs)",
+      "url": "https://huggingface.co/juletxara/turblimp",
+      "languages": 1
+    },
+    "turkishmmlu": {
+      "name": "TurkishMMLU",
+      "url": "https://huggingface.co/AYueksel/TurkishMMLU",
+      "languages": 1
+    },
+    "zhoblimp": {
+      "name": "ZhoBLiMP (Chinese minimal pairs)",
+      "url": "https://huggingface.co/datasets/Junrui1202/zhoblimp",
+      "languages": 1
+    },
+    "xquad": {
+      "name": "XQuAD (extractive QA)",
+      "url": "https://huggingface.co/datasets/google/xquad",
+      "languages": 1
     }
   }
 }

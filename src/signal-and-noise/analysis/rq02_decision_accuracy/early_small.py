@@ -55,7 +55,8 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
-from analysis.utils import MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family  # noqa: E402
+from analysis.utils import (  # noqa: E402
+    MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, one_axes)
 
 OUT_ROOT = DECISION_ACCURACY
 SAFE_DA = 0.75          # the agreement rq05 also calls "reads like the reference"
@@ -75,9 +76,12 @@ def load_cells(pool_dir: Path, pool: str) -> tuple[pd.DataFrame, pd.DataFrame, p
     family/language. A benchmark row at chance at its proxy size, or at the
     reference it is ranked against, keeps its place with `gated` true and no
     value (the grey cells); DA-ckpt is gated at its own size only."""
-    early = G.mark_gated(_meta(pd.read_csv(pool_dir / "da_early_small_per_task.csv")), pool, "proxy_size", "da", TARGET_SIZE)
-    da = pd.read_csv(pool_dir / "da_per_task.csv", index_col="task")
-    npairs = pd.read_csv(pool_dir / "da_n_pairs_per_task.csv", index_col="task")
+    # `one_axes`: these tables carry one row per (task, pair set) since rule 15;
+    # the default keeps the multi-axis reading this figure has always shown.
+    early = G.mark_gated(_meta(one_axes(pd.read_csv(pool_dir / "da_early_small_per_task.csv"))),
+                         pool, "proxy_size", "da", TARGET_SIZE)
+    da = one_axes(pd.read_csv(pool_dir / "da_per_task.csv")).set_index("task")
+    npairs = one_axes(pd.read_csv(pool_dir / "da_n_pairs_per_task.csv")).set_index("task")
     size_rows, ckpt_rows = [], []
     for c in da.columns:
         if (m := re.fullmatch(r"decision_acc_size_([^_]+)", c)):

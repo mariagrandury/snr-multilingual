@@ -1,0 +1,68 @@
+\section{Signal and Noise}
+\label{subsec:methodology-snr}
+
+The signal-to-noise ratio (SNR) summarizes a benchmark's reliability as the ratio between signal, how well a benchmark separates models of similar compute, and noise, the variability in scores across training checkpoints or stochastic runs.
+We define it as
+\begin{equation}
+\text{SNR} = \frac{\text{Signal}}{\text{Noise}}.
+\end{equation}
+A higher SNR means score differences across models are large relative to the benchmark's intrinsic variability. The framework is not tied to a particular signal or noise definition, so we evaluate several candidates and select the pair with the strongest empirical correlation to DA.
+
+\textbf{Signal candidates.} Given the final checkpoints of training runs at similar compute $C_\text{final}$, we consider five candidate signal definitions to capture a different notion of how spread out model scores are. Variance is the average squared distance from the mean. Mean distance is the average pairwise distance between points. Relative standard deviation is the standard deviation divided by the mean. Star discrepancy is the largest difference between any point and the uniform distribution. Dispersion is the largest pairwise distance,
+\begin{equation}
+\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|.
+\end{equation}
+
+\textbf{Noise candidates.} We consider four sources of noise that the framework can in principle account for. Seed noise is the standard deviation of the final checkpoint across training runs with different random seeds. Data order noise is the equivalent across runs that vary the order of training documents. Total variation is the average change in metric score across training checkpoints minus an improvement term. Checkpoint-to-checkpoint noise is proposed by \citet{heineman_signal_2025} as a proxy when the first three are too expensive to estimate at large scale and depends only on the final $n$ training checkpoints:
+\begin{equation}
+\text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
+\end{equation}
+On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and \S\ref{subsec:rq4} reports every intervention's effect against the seed noise.
+We also consider a fifth noise definition, computable from a single evaluation run on any model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
+\begin{equation}
+\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
+\end{equation}
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. The fold scores are obtained by partitioning the stored per-question outputs of a single evaluation run, so no inference is repeated and no intermediate checkpoints are needed.
+
+
+\subsection{Measures of signal}
+\label{app:measuring-signal}
+
+When designing an measure of signal, we want to incorporate the uniformity of benchmark scores and the overall range of scores. Given the final checkpoints of training runs under similar compute spend $C_\text{final}$, we evaluate multiple approaches to measuring signal:
+
+\begin{itemize}[itemsep=0pt,topsep=0pt]
+    \item \textbf{Variance} measures average squared distance from the mean: $\text{Var}(C_\text{final}) = \frac{1}{n} \sum_{i=1}^{n} \|c_i - \bar{c}\|^2$
+    \item \textbf{Mean distance} measures average pairwise distance between points: $\text{Mean Dist}(C_\text{final}) = \frac{2}{n(n-1)} \sum_{i < j} \|c_i - c_j\|$
+    \item \textbf{Relative standard deviation}, or the coefficient of variation, measures the standard deviation divided by the mean: $\text{Rel. Std.}(C_\text{final}) = \frac{\sqrt{\text{Var}(C_\text{final})}}{\text{Mean}(C_\text{final})}$
+    \item \textbf{Star Discrepancy} measures the largest difference between any point and the uniform distribution: $\text{Discrepancy}(C_\text{final}) = \sup_{t \in [0,1]} \left| \frac{1}{n} \sum_{i=1}^n \mathbf{1}\{c_i \leq t\} - t \right|$. 
+    \item \textbf{Dispersion} measures the largest difference between any two points, or the largest unfilled space in the range of performance: $\text{Dispersion}(C_\text{final}) = \max_{i \neq j} \|c_i - c_j\|$. 
+\end{itemize}
+
+
+\subsection{Measures of Modeling noise{}}
+\label{app:measuring-noise}
+
+\textbf{Seed noise{}.} To measure the noise{} introduced from changing the random seed initialization between training runs, we can compute the standard deviation of the final checkpoint from multiple training runs with different random seeds. To estimate seed noise{}, we train $M$ models using the same configuration, and average the scores over the final $n$ checkpoints of $T$ total training checkpoints to smooth the checkpoint-to-checkpoint noise{}, then compute the standard deviation:
+\begin{equation}
+ \text{Seed noise{}}(M) = \sigma(M),\quad M_i = \textstyle\frac{1}{n} \sum_{j=T-n+1}^{T} U(t_j)
+\end{equation}
+
+\textbf{Data Order noise{}.} This is noise{} introduced from changing the order of sampled documents from the training data. We estimate the data order noise{} using the same method as seed noise{}.
+
+\textbf{Total Variation.} To measure the checkpoint-to-checkpoint noise{} throughout an entire training run, we measure the total variation of the intermediate training checkpoints on the downstream benchmark. We measure total variation as the average change in metric score across $T$ training checkpoints minus an improvement term:
+\label{app:total-variation}
+\begin{equation}
+\text{Total Variation} = \textstyle\frac{1}{T} \sum_{t=1}^{T} |U(t) - U(t-1)| - \frac{1}{T}(U(T) - U(0))
+\end{equation}
+
+\textbf{Checkpoint-to-checkpoint noise{}.} 
+Calculating the above sources of noise{} are either too expensive to estimate at large scales (e.g., training LLMs by varying the random seed) or difficult to run (e.g., evaluating every checkpoint on an LLM training curve). Instead, we propose an estimate measuring only the noise{} of the final $n$ training checkpoints of training:
+\begin{equation}
+\text{Checkpoint-to-checkpoint noise{}} = \textstyle\sigma\left(\{U(t_j)\}_{j=T-k+1}^{T}\right)
+\end{equation}
+
+\textbf{Benchmark noise.} We propose to measure noise as the relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set, averaged across models:
+
+$$\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
+
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We adopt the benchmark noise over the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, it correlates more strongly with decision accuracy than checkpoint noise ($R = 0.808$ vs. $R = 0.760$).

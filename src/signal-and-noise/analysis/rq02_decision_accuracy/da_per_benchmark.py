@@ -48,7 +48,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
-from analysis.utils import (LANGUAGE_AGGREGATES, passes_gate,  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import DECISION_ACCURACY
@@ -107,7 +107,7 @@ def _pivot(long: pd.DataFrame, da_def: str) -> pd.DataFrame:
 
 def run(pool: str, out_dir: Path) -> None:
     csv_path = out_dir / "da_per_task.csv"
-    df = pd.read_csv(csv_path, index_col="task")
+    df = one_axes(pd.read_csv(csv_path)).set_index("task")
     long = melt_da(df)
     long = long.sort_values(["da_def", "language", "benchmark", "comparison"])
 
@@ -145,7 +145,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
     from analysis.rq00_gate_and_curves.above_random import load_mask
     stage = load_pools()[pool].get("stage", "pretraining")
     npairs_path = out_dir / "da_n_pairs_per_task.csv"
-    npairs = pd.read_csv(npairs_path, index_col="task") if npairs_path.is_file() else None
+    npairs = one_axes(pd.read_csv(npairs_path)).set_index("task") if npairs_path.is_file() else None
     mask = load_mask(pool)
     # the two aggregates are DA proxies of their own, not members of a mean
     is_bench = ~df.index.str.startswith("bpb_") & (df.index != "train_loss")

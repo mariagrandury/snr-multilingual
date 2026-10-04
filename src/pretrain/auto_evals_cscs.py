@@ -2,11 +2,11 @@
 """
 CSCS auto-eval watcher — the cluster twin of auto_evals_azure.py.
 
-Every N checkpoints of the size's save grid (default 2) plus each run's final
-checkpoint — read on the grid the run actually saved at, so a run saved at
-half the density (aromanou's 1B cells, 20 saves) yields every save and lands
-on the same fractions of training (launch_trainings.due_iters) —
-evaluate on the "auto" benchmark group (configs/tasks.json) and push to W&B
+Twelve checkpoints per run — the ten tenths of training plus 85 % and 95 %,
+which is exactly the grid the analysis reads — read on the grid the run
+actually saved at, so every size lands on the same fractions of training
+whether it saved 20, 40 or 60 times (launch_trainings.due_iters). Evaluate
+them on the "auto" benchmark group (configs/tasks.json) and push to W&B
 `mariagrandury-epflnlp/msnr` — the same project the training loss logs to.
 
 Idempotent, safe to run alongside the trainings (login node, tmux):
@@ -77,6 +77,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
+    cell_schedule,
     arches_for, due_iters, exp_name, job_name, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
@@ -145,7 +146,9 @@ def convert_job_name(cell: str) -> str:
 # resubmissions.
 MIN_PER_TASK = {"90M": 0.39, "175M": 0.48, "350M": 0.54,   # per worker-task, 583 jobs
                 "600M": 0.55, "1B": 0.59, "1.7B": 0.68,
-                "3B": 0.85}   # not fitted: 1.7B x 1.25, the 1B->1.7B step
+                "3B": 0.85}   # not fitted: 1.7B x 1.25, deliberately above
+                              # the measured 1B->1.7B step (0.59->0.68 = 1.15)
+                              # because nothing at 3B has been timed yet
 OVERHEAD_MIN = 10   # max fitted intercept 1.9; the rest is cold-start headroom
 SAFETY = 1.15       # worst observed requirement 0.91 -> 26% margin
 # Must match what evaluate.sbatch derives (GPUS_PER_NODE / (TP x PP), forced
@@ -185,7 +188,13 @@ def auto_benchmarks(group: str = "auto") -> list[str]:
     reformulated sets: the letter-format families rewritten as cloze tasks
     / as Gemini statements (../evals/scripts/make_rf_tasks.py), distinct task
     names, so all sets coexist on disk and in W&B."""
-    return json.loads(TASKS_JSON.read_text())["groups"][group]
+    groups = json.loads(TASKS_JSON.read_text())["groups"]
+    if group not in groups:
+        # `auto_rf` / `auto_rfgm` were retired on 2026-09-23: the twins live in
+        # `auto`, the candidates in `auto_probe`, and nothing else is a group.
+        raise SystemExit(f"no group {group!r} in configs/tasks.json; it has "
+                         f"{', '.join(sorted(groups))}")
+    return groups[group]
 
 
 def saved_valid_iters(cell: str, root: Path) -> list[int]:
@@ -496,8 +505,15 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
     # The rf / rfgm Global-MMLU twins are one task over the whole 14k-row split
     # with four answer strings to score per item: 2.7-3.3 min per worker-task
     # on the 2026-09-18 pilots against the ~0.5 the fit assumes, so each
-    # counts as six tasks in the walltime.
-    n_tasks = sum(6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1
+    # counts as six tasks in the walltime. `bbq` (auto_probe) is 58,492 items
+    # x 12 choices = 702k requests, ~17 min at 600M's ~700 req/s plus ~4 min
+    # of context building (job 3485222, 2026-09-23): 36 task-minutes that no
+    # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
+    # count across the workers. Without this the solo top-up job the watcher
+    # gives it is 15 min, the kill is not a recorded failure, and it is
+    # resubmitted every pass forever.
+    TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
+    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
                   for t in remaining)
     # Prefix-export via the process env rather than --export=ALL,K=V,...:
     # sbatch's --export uses commas as separators BETWEEN vars, so the
@@ -639,7 +655,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # old two-scheme loop there are no duplicates to dedupe.
     for arch in args.archs:
         configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
-        for c in predictivity_cells(args.schemes):
+        for c in predictivity_cells(args.schemes, arch):
             scheme = c["scheme"]
             if arch not in arches_for(scheme, c["size"], c["L"]):
                 continue
@@ -701,14 +717,23 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
              staging: Path, logs_root: Path, benchmarks: list[str],
              running: set[str], errors: dict, submitted: dict) -> None:
     """One cell of a pass: convert what is missing, evaluate what is due."""
-    target = schedule_for(configs[c["size"]])[0]
+    # The rung's own batch, not the hyperparams file's: at 175M/b168 the
+    # unscaled 8540 makes due_iters return 3 checkpoints instead of 12.
+    target = cell_schedule(configs[c["size"]], c["size"])[0]
     saved = saved_valid_iters(cell, root)
     if not saved:
         return
-    # Every Nth checkpoint of the size's grid, read on the grid the run
-    # actually saved at (a 20-save 1B run yields every save, a 40-save one
-    # every 2nd — the same points), plus its final one — same rule as Azure.
+    # The ten tenths of training, read on the grid the run actually saved at
+    # (a 20-save run yields every 2nd save, a 40-save one every 4th, a
+    # 60-save one every 6th — the same fractions), plus the 85 % / 95 %
+    # noise points and its final one — same rule as Azure. 12 per run.
     due = due_iters(saved, target, args.every)
+    if args.final_only:
+        # A screening pass over a new benchmark group: the gate and the signal
+        # at each size, without the noise window. `--every` cannot express it
+        # (its noise-window clause ignores `every`, so the floor is 5) and
+        # --max-submit takes the EARLIEST outstanding checkpoint, not the last.
+        due = due[-1:]
     # The cell's task list: every auto benchmark, in the languages this cell
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
     # under --all-languages and for the ALL_LANGUAGES_RUNS.
@@ -834,9 +859,23 @@ def main() -> None:
                         "group auto_rf) or as the `rfgm` Gemini-rewritten "
                         "statements (group auto_rfgm) — prefixed task names, "
                         "so nothing already evaluated is touched")
-    p.add_argument("--every", type=int, default=2,
-                   help="evaluate every N saved checkpoints (the final "
-                        "checkpoint is always evaluated on top)")
+    p.add_argument("--every", type=int, default=1,
+                   help="coarsen the evaluated grid: every Nth of the ten "
+                        "tenths of training. The default 1 is the grid the "
+                        "analysis reads (12 checkpoints/run: the tenths plus "
+                        "85%% and 95%%); raise it only for one-off passes")
+    p.add_argument("--final-only", action="store_true",
+                   help="evaluate only each cell's last due checkpoint, not "
+                        "all twelve — a screening pass over a new benchmark "
+                        "group, where the noise window is not yet worth its "
+                        "node-hours. No SNR and no DA-ckpt come out of it")
+    p.add_argument("--group", default="auto", metavar="NAME",
+                   help="the configs/tasks.json benchmark group to evaluate "
+                        "(default auto). A probe group keeps candidate "
+                        "benchmarks out of the watchers' way, which read auto "
+                        "every pass; the jobs take the group's name (minus "
+                        "auto_) as a suffix so neither reads the other's job "
+                        "as its own")
     p.add_argument("--convert-only", action="store_true",
                    help="submit conversions but no eval jobs — for driving the "
                         "convert half forward while the eval half is blocked "
@@ -879,11 +918,15 @@ def main() -> None:
     if bad := set(args.sizes) - set(LADDER):
         p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
-    benchmarks = auto_benchmarks(f"auto_{args.reformulated}" if args.reformulated else "auto")
+    if args.reformulated and args.group != "auto":
+        p.error("--group and --reformulated both choose the benchmark group; pass one")
+    group = f"auto_{args.reformulated}" if args.reformulated else args.group
+    benchmarks = auto_benchmarks(group)
     # The reformulated evals get their own job name (`eval-<cell>-iter<N>-rf`
     # / `-rfgm`): the original and each reformulated set of one checkpoint are
     # different work, so no watcher may read another's job as its own and skip it.
-    args.job_suffix = f"-{args.reformulated}" if args.reformulated else ""
+    args.job_suffix = f"-{args.reformulated}" if args.reformulated else (
+        "" if group == "auto" else f"-{group.removeprefix('auto_')}")
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:

@@ -1,0 +1,21 @@
+\section{Evaluations filtering}
+\label{app:results-filtering}
+
+For each benchmark--language subset $(B,L)$ and model size $N$, we test whether the observed accuracy is distinguishable from random guessing.
+For a task with $K$ answer options, chance accuracy is defined as $1/K$.
+For every evaluation run, we compute the one-sided 95\% Wilson lower confidence bound on its accuracy and mark the run as above chance when
+
+\[
+\operatorname{LCB}_{95}(\hat{p}) > \frac{1}{K}.
+\]
+
+We then aggregate these decisions across the available architectures, language mixtures, and seeds for the same $(B,L,N)$ cell.
+A cell is retained if at least 50\% of its evaluation runs are above chance.
+When models trained on the benchmark language are available, we use those runs for the filtering decision; otherwise, we use all evaluated runs.
+Measurements without a meaningful chance baseline, such as bits per byte and training loss, are not filtered by this procedure.
+
+The Wilson bound accounts for the number of evaluation examples, so the amount by which accuracy must exceed chance varies across tasks.
+Smaller evaluation sets require a larger margin above chance, while larger sets can support smaller but more reliable departures from chance.
+For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA, 2.44 for Belebele, 0.74 for HellaSwag, and 0.60 for Global-MMLU.
+The corresponding fractions of benchmark--language--size cells that pass the filter are 37.5\%, 6.8\%, 92.7\%, and 4.3\%, respectively.
+This filtering step is used only to determine whether a benchmark provides measurable signal at a given scale; it does not assess whether the benchmark can reliably rank model variants.

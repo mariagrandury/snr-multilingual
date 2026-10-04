@@ -23,6 +23,7 @@ chance at every size does not appear:
 
     scaling_regimes.png / .csv             the figure and its per-task table (medians, counts, the regime)
     scaling_regimes_families.png / .csv    the same, one label per benchmark family at its median point (no legend)
+    scaling_regimes_families_paper.png/pdf/svg  the families figure for the paper: bare and square as the outliers one
     scaling_regimes_outliers.png / .csv    the family labels plus the tasks that break their family's regime
                                            (another quadrant than the family's majority and > OUTLIER_DIST from
                                            its median point), named family:language
@@ -368,10 +369,12 @@ def main(pool: str) -> None:
     t.to_csv(out_dir / "scaling_regimes.csv", index=False)
     fam, out = family_table(t), outliers(t, family_table(t))
     fam.to_csv(out_dir / "scaling_regimes_families.csv", index=False)
+    fam.to_csv(out_dir / "scaling_regimes_families_paper.csv", index=False)
     out.to_csv(out_dir / "scaling_regimes_outliers.csv", index=False)
     out.to_csv(out_dir / "scaling_regimes_outliers_paper.csv", index=False)
     figure(t, out_dir)
     figure(t, out_dir, fam=fam, name="scaling_regimes_families")
+    figure(t, out_dir, fam=fam, name="scaling_regimes_families_paper", paper=True, dark=LABEL_DARK)
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers")
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers_paper", paper=True, dark=LABEL_DARK)
     figure_by_family(t, fam, out_dir)
@@ -394,7 +397,7 @@ def main(pool: str) -> None:
             f"Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool {pool}`.",
             f"![Scaling regimes]({stage}/{pool}/scaling_regimes.png)",
             f"Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, "
-            f"`scaling_regimes_families.csv`), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
+            f"`scaling_regimes_families.csv`; `scaling_regimes_families_paper.png/.pdf/.svg` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
             f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version "
             f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), `scaling_regimes_by_family.png` "
             f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "

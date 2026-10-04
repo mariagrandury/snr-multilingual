@@ -10,13 +10,15 @@
 > [`documents/paper/sections/04_analysis.tex`](../../../../documents/paper/sections/04_analysis.tex)):
 > its signal or noise part alone, the proxy's early-checkpoint agreement, how
 > well its scores fit a scaling trend (rq01), its margin above chance (rq00).
+> Finally, ~210 statistics from the literature and the AllenAI signal × noise grid (`catalogue.py`, `search.py`,
+> [`literature.md`](literature.md)), per language, tier and benchmark.
 
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
 
-- **Global-best SNR definition (`predictivity`): `rel_star_discrepancy`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.20** (DA-size, proxy → 1.7B, 17 languages), **0.19** (DA-ckpt, proxy sizes pooled, 17 languages), 0.19 overall. DA-ckpt is led by `rel_star_discrepancy`/`star_discrepancy`/`discrepancy` (≈ 0.19; one family: discrepancy) — recommend the *family*, not an exact variant.
-- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **27 of 46** languages (`rel_star_discrepancy` SNR @ 1.7B; `train_loss` and `bpb_macro` are not a language's and are left out); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 0 of the 0 languages that have both. Weakest variants overall: `tukey`, `projection`.
-- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.81** (DA-ckpt), **-0.45** (DA-size); family-level per-language agreement 100% / 100%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
+- **Global-best SNR definition (`predictivity`): `aad`** — mean Pearson r of log₁₀(SNR) vs decision accuracy **0.15** (DA-size, proxy → 1.7B, 34 languages), **0.27** (DA-ckpt, proxy sizes pooled, 34 languages), 0.21 overall. DA-ckpt is led by `aad`/`quartile_deviation`/`mpd` (≈ 0.27; one family: dispersion) — recommend the *family*, not an exact variant.
+- **Per-language anchor: `multiblimp`** — the highest-SNR above-random benchmark in **19 of 50** languages (`aad` SNR @ 1.7B; `train_loss` and `bpb_macro` are not a language's and are left out); the language's own BPB, ungated and on its own noise scale, outranks that benchmark in 2 of the 50 languages that have both. Weakest variants overall: `tukey`, `projection`.
+- **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.76** (DA-ckpt), **-0.28** (DA-size); family-level per-language agreement 0% / 0%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -55,25 +57,28 @@ seed, while English and the BPB tasks cover all four.
   (64/313) and on seed 1904 of the same cells; agreement is counted over
   the languages that have a best variant on both splits.
 
+Hand-written numbers in this README are from the ladder-report snapshot
+**2026-09-23 06:16**.
+
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
 
 Headline numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/snr_definition_postprocess.py --pool predictivity`.
 
-**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across the trained languages with ≥ 3 tasks (rule 8; 17 languages under DA-size, 17 under DA-ckpt). DA-size = proxy final → 1.7B final only (the proxy-to-proxy scaling pairs are not DA-size, rule 9); DA-ckpt = a proxy size's early checkpoints → its final, the proxy sizes 175M, 350M, 600M, 1B pooled, never the 1.7B run's own checkpoints (rule 11):
+**Global variant ranking** — mean Pearson r of log₁₀(SNR) vs DA across the trained languages with ≥ 3 tasks (rule 8; 34 languages under DA-size, 34 under DA-ckpt). DA-size = proxy final → 1.7B final only (the proxy-to-proxy scaling pairs are not DA-size, rule 9); DA-ckpt = a proxy size's early checkpoints → its final, the proxy sizes 90M, 175M, 350M, 600M, 1B pooled, never the 1.7B run's own checkpoints (rule 11):
 
 | variant | DA-size r | DA-ckpt r | overall |
 |---|---|---|---|
-| `rel_star_discrepancy` | 0.20 | 0.19 | 0.19 |
-| `star_discrepancy` | 0.07 | 0.16 | 0.12 |
-| `discrepancy` | 0.06 | 0.15 | 0.10 |
-| `quartile_deviation` | 0.03 | 0.13 | 0.08 |
-| `aad` | 0.03 | 0.13 | 0.08 |
-| `mpd` | 0.01 | 0.13 | 0.07 |
-| `mad` | 0.03 | 0.11 | 0.07 |
+| `aad` | 0.15 | 0.27 | 0.21 |
+| `quartile_deviation` | 0.15 | 0.27 | 0.21 |
+| `rms_deviation` | 0.14 | 0.26 | 0.20 |
+| `mpd` | 0.14 | 0.26 | 0.20 |
+| `dist_std` | 0.13 | 0.26 | 0.19 |
+| `dispersion` | 0.10 | 0.23 | 0.17 |
+| `range` | 0.10 | 0.23 | 0.17 |
 | … |  |  |  |
-| `projection` | 0.08 | -0.19 | -0.05 |
-| `tukey` | -0.04 | -0.28 | -0.16 |
+| `projection` | -0.20 | -0.26 | -0.23 |
+| `tukey` | -0.26 | -0.32 | -0.29 |
 
 ![SNR variants ranked by correlation with DA](pretraining/predictivity/top_variants_overall.png)
 
@@ -81,59 +86,63 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | pool | best variant (overall) | DA-size r | DA-ckpt r |
 |---|---|---|---|
-| `predictivity` (grid, seed 1904) | `rel_star_discrepancy` | 0.20 | 0.19 |
-| `predictivity_seeds` (all seeds) | `rel_star_discrepancy` | 0.20 | 0.15 |
+| `predictivity` (grid, seed 1904) | `aad` | 0.15 | 0.27 |
+| `predictivity_seeds` (all seeds) | `aad` | 0.13 | 0.24 |
 
-**Most reliable benchmark per language** — `rel_star_discrepancy` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown; `train_loss` and `bpb_macro` measure the whole mixture and are not a row, rule 7):
+**Most reliable benchmark per language** — `aad` SNR @ 1.7B over the above-random benchmarks, with the language's own BPB SNR alongside (ungated, on its own noise scale; DA-size is undefined at the reference size itself, so DA-ckpt@1.7B is shown; `train_loss` and `bpb_macro` measure the whole mixture and are not a row, rule 7):
 
 | lang | top benchmark | SNR | DA-ckpt@1.7B | BPB SNR |
 |---|---|---|---|---|
-| ar | `multiblimp_arb` | 61.81 | 0.42 |  |
-| az | `belebele_azj_Latn` | 23.89 |  |  |
-| bg | `multiblimp_bul` | 46.95 | 0.59 |  |
-| bn | `hellaswag_bn` | 230.08 | 0.72 |  |
-| bs | `global_piqa_nonparallel_cloze_bos_latn` | 11.14 |  |  |
-| ca | `hellaswag_ca` | 35.91 |  |  |
-| cs | `multiblimp_ces` | 44.00 | 0.67 |  |
-| da | `multiblimp_dan` | 125.58 | 0.50 |  |
-| de | `multiblimp_deu` | 208.55 | 0.58 |  |
-| el | `multiblimp_ell` | 158.29 | 0.62 |  |
-| en | `multiblimp_eng` | 205.87 | 0.47 |  |
-| es | `multiblimp_spa` | 128.98 | 0.65 |  |
-| et | `xcopa_et` | 42.54 |  |  |
-| fa | `belebele_pes_Arab` | 24.49 | 0.62 |  |
-| fi | `multiblimp_fin` | 39.89 | 0.72 |  |
-| fr | `multiblimp_fra` | 204.76 | 0.55 |  |
-| he | `multiblimp_heb` | 30.43 | 0.63 |  |
-| hi | `multiblimp_hin` | 91.23 | 0.53 |  |
-| hr | `hellaswag_hr` | 62.79 |  |  |
-| hu | `multiblimp_hun` | 61.93 | 0.55 |  |
-| id | `arc_id` | 38.85 | 0.71 |  |
-| it | `multiblimp_ita` | 91.26 | 0.64 |  |
-| ja | `xwinograd_jp` | 24.23 | 0.69 |  |
-| ka | `multiblimp_kat` | 44.85 | 0.53 |  |
-| kk | `multiblimp_kaz` | 6.59 |  |  |
-| lt | `multiblimp_lit` | 27.76 |  |  |
-| mr | `hellaswag_mr` | 278.87 |  |  |
-| ne | `hellaswag_ne` | 368.01 |  |  |
-| nl | `multiblimp_nld` | 59.05 | 0.63 |  |
-| no | `belebele_nob_Latn` | 28.96 | 0.37 |  |
-| pl | `multiblimp_pol` | 60.18 | 0.60 |  |
-| pt | `multiblimp_por` | 91.27 | 0.58 |  |
-| ro | `multiblimp_ron` | 76.35 | 0.53 |  |
-| ru | `multiblimp_rus` | 155.31 | 0.72 |  |
-| sk | `hellaswag_sk` | 54.07 |  |  |
-| sl | `multiblimp_slv` | 23.20 |  |  |
-| sq | `belebele_als_Latn` | 48.75 |  |  |
-| sr | `hellaswag_sr` | 40.50 |  |  |
-| sv | `multiblimp_swe` | 456.85 | 0.62 |  |
-| ta | `hellaswag_ta` | 247.84 | 0.58 |  |
-| th | `xnli_th` | 39.41 | 0.63 |  |
-| tr | `multiblimp_tur` | 34.22 | 0.59 |  |
-| uk | `multiblimp_ukr` | 81.09 | 0.53 |  |
-| ur | `multiblimp_urd` | 36.98 |  |  |
-| vi | `hellaswag_vi` | 45.10 | 0.73 |  |
-| zh | `xstorycloze_zh` | 54.75 | 0.65 |  |
+| ar | `multiblimp_arb` | 0.91 | 0.42 | 0.20 |
+| az | `rf_include_base_44_azerbaijani` | 0.47 |  | 0.18 |
+| bg | `multiblimp_bul` | 1.35 | 0.59 | 0.13 |
+| bn | `multiblimp_ben` | 1.17 | 0.37 | 0.27 |
+| bs | `global_piqa_nonparallel_cloze_bos_latn` | 0.38 |  | 0.25 |
+| ca | `xstorycloze_ca` | 2.10 |  | 0.21 |
+| cs | `multiblimp_ces` | 0.66 | 0.67 | 0.19 |
+| da | `multiblimp_dan` | 3.06 | 0.50 | 0.25 |
+| de | `multiblimp_deu` | 1.12 | 0.58 | 0.52 |
+| el | `multiblimp_ell` | 1.01 | 0.62 | 0.20 |
+| en | `rf_bbh_mcq_hyperbaton` | 1.47 | 0.54 | 0.60 |
+| es | `paws_es` | 1.06 | 0.75 | 0.30 |
+| et | `include_v2_og_estonian_estonia` | 1.79 |  | 0.31 |
+| fa | `multiblimp_fas` | 0.54 | 0.62 | 0.39 |
+| fi | `multiblimp_fin` | 0.92 | 0.72 | 0.24 |
+| fr | `xwinograd_fr` | 1.03 | 0.53 | 0.36 |
+| he | `multiblimp_heb` | 0.85 | 0.63 | 0.42 |
+| hi | `xstorycloze_hi` | 0.73 | 0.52 | 0.24 |
+| hr | `belebele_hrv_Latn` | 0.46 |  | 0.24 |
+| hu | `multiblimp_hun` | 1.45 | 0.55 | 0.20 |
+| id | `rfgm_include_base_44_indonesian` | 0.43 | 0.61 | 0.26 |
+| it | `multiblimp_ita` | 0.95 | 0.64 | 0.42 |
+| ja | `xwinograd_jp` | 1.01 | 0.69 | 0.68 |
+| ka | `multiblimp_kat` | 1.06 | 0.53 | 0.19 |
+| kk | `include_v2_en_kazakh_kazakhstan` | 0.90 |  | 0.12 |
+| ko | `rf_belebele_kor_Hang` | 0.40 | 0.65 | 0.59 |
+| lt | `rf_include_base_44_lithuanian` | 0.77 |  | 0.24 |
+| lv | `rfgm_belebele_lvs_Latn` | 0.15 |  | 0.25 |
+| ml | `include_v2_en_malayalam_india` | 0.66 | 0.59 | 0.32 |
+| mr | `include_v2_en_marathi_india` | 0.61 |  | 0.10 |
+| ms | `include_v2_en_malay_malaysia` | 0.63 |  | 0.22 |
+| ne | `rf_belebele_npi_Latn` | 0.59 |  | 0.07 |
+| nl | `multiblimp_nld` | 1.32 | 0.63 | 0.25 |
+| no | `rfgm_belebele_nob_Latn` | 0.72 | 0.52 | 0.20 |
+| pl | `multiblimp_pol` | 0.97 | 0.60 | 0.23 |
+| pt | `xwinograd_pt` | 1.43 | 0.61 | 0.29 |
+| ro | `multiblimp_ron` | 0.69 | 0.53 | 0.19 |
+| ru | `xnli_ru` | 0.98 | 0.67 | 0.59 |
+| sk | `multiblimp_slk` | 0.32 |  | 0.23 |
+| sl | `rfgm_belebele_slv_Latn` | 0.88 |  | 0.38 |
+| sq | `include_v2_en_albanian_albania` | 0.55 |  | 0.28 |
+| sr | `rfgm_include_base_44_serbian` | 0.62 |  | 0.16 |
+| sv | `include_v2_og_swedish_sweden` | 0.35 | 0.63 | 0.28 |
+| ta | `xcopa_ta` | 0.60 | 0.44 | 0.29 |
+| th | `xnli_th` | 0.72 | 0.63 | 0.38 |
+| tr | `multiblimp_tur` | 1.23 | 0.59 | 0.23 |
+| uk | `multiblimp_ukr` | 0.79 | 0.53 | 0.11 |
+| ur | `rf_belebele_urd_Arab` | 0.55 |  | 0.11 |
+| vi | `xnli_vi` | 0.74 | 0.63 | 0.22 |
+| zh | `xstorycloze_zh` | 0.82 | 0.65 | 0.79 |
 
 ![Top-5 benchmarks per language by SNR](pretraining/predictivity/top_benchmarks_per_language.png)
 
@@ -141,12 +150,17 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | metric | DA-size | DA-ckpt |
 |---|---|---|
-| Spearman ρ on global variant ranking | -0.45 | 0.81 |
-| Pearson r between splits (all cells) | 0.03 | 0.90 |
-| Exact-variant agreement (per lang) | 0% | 100% |
-| Family-level agreement (per lang) | 100% | 100% |
-| Retention of train-best r on test | 0% | 100% |
+| Spearman ρ on global variant ranking | -0.28 | 0.76 |
+| Pearson r between splits (all cells) | -0.22 | 0.84 |
+| Exact-variant agreement (per lang) | 0% | 0% |
+| Family-level agreement (per lang) | 0% | 0% |
+| Retention of train-best r on test | 42% | 99% |
 <!-- END auto:results -->
+
+GitHub: [top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.png) · [top_variants_overall.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_variants_overall.csv) ·
+GitHub: [top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_benchmarks_per_language.png) · [top_benchmarks_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/top_benchmarks_per_language.csv) ·
+[snr_variant_ranking.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_ranking.csv) ·
+[best_variant_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/best_variant_per_language.csv)
 
 ### Statistics beyond SNR — setup
 
@@ -167,37 +181,455 @@ is better" holds for every candidate.
 <!-- BEGIN auto:surrogates (analyze.py --pool predictivity) -->
 ## Statistics beyond SNR (paper RQ3)
 
-Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analysis/rq04_surrogates/analyze.py --pool predictivity`. The population at a proxy size is the tasks above chance at the proxy and at 1.7B (rule 1); each candidate is scored on the tasks of it where the candidate has a value, so n differs per candidate and is given next to every ρ. The scaling-fit R² is rq01's log-N fit refitted on the rungs up to the proxy only (rule 11; it needs 3 rungs, so it starts at 600M). `bpb_macro` and `train_loss` are in neither population (rule 7).
+Numbers from the `predictivity` pool's rq03 table. Regenerate with `python analysis/rq04_surrogates/analyze.py --pool predictivity`. The population at a proxy size is the tasks above chance at the proxy and at 1.7B (rule 1); each candidate is scored on the tasks of it where the candidate has a value, so n differs per candidate and is given next to every ρ. The scaling-fit R² is rq01's log-N fit refitted on the rungs up to the proxy only (rule 11; it needs 3 rungs, so it starts at 350M). `bpb_macro` and `train_loss` are in neither population (rule 7).
 
-- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `scaling-fit R² (proxy rungs only)` 0.48; weakest: `margin above chance` -0.18.
-- **per-language bits per byte** — strongest surrogate of DA-size (mean ρ over proxies): `SNR, relative std` 0.38; weakest: `early-checkpoint agreement (10 %)` 0.00.
+- **benchmark tasks** — strongest surrogate of DA-size (mean ρ over proxies): `noise alone (relative std, inverted)` 0.26; weakest: `signal alone (relative std)` -0.19.
+- **per-language bits per byte** — strongest surrogate of DA-size (mean ρ over proxies): `SNR, dist_std` 0.37; weakest: `scaling-fit R² (proxy rungs only)` -0.19.
 
 **benchmark tasks** (Spearman ρ of the statistic with DA-size, per proxy size; n = the tasks behind the ρ):
 
-| metric | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
-|---|---|---|---|---|
-| scaling-fit R² (proxy rungs only) |  |  | 0.36 (62) | 0.59 (80) |
-| SNR, relative std | 0.06 (63) | 0.30 (80) | 0.23 (85) | 0.02 (90) |
-| early-checkpoint agreement (10 %) | 0.17 (63) | 0.02 (80) | 0.23 (85) | 0.17 (90) |
-| noise alone (relative std, inverted) | 0.28 (63) | 0.22 (80) | 0.15 (85) | -0.14 (90) |
-| SNR, discrepancy | 0.20 (63) | 0.09 (80) | 0.17 (85) | -0.13 (90) |
-| signal alone (relative std) | -0.09 (63) | -0.01 (80) | -0.07 (85) | 0.09 (90) |
-| SNR, dist_std | -0.21 (63) | -0.06 (80) | -0.00 (85) | -0.24 (90) |
-| margin above chance | -0.31 (58) | -0.33 (75) | 0.03 (80) | -0.12 (85) |
+| metric | 90M ρ (n) | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
+|---|---|---|---|---|---|
+| noise alone (relative std, inverted) | 0.20 (235) | 0.23 (269) | 0.33 (298) | 0.20 (332) | 0.34 (360) |
+| scaling-fit R² (proxy rungs only) |  |  | 0.26 (233) | 0.26 (265) | 0.25 (301) |
+| SNR, discrepancy | 0.19 (235) | 0.22 (269) | 0.30 (298) | 0.19 (332) | 0.30 (360) |
+| early-checkpoint agreement (10 %) | 0.19 (235) | 0.23 (269) | 0.03 (298) | 0.09 (332) | 0.19 (360) |
+| SNR, relative std | 0.15 (235) | 0.05 (269) | 0.11 (298) | 0.11 (332) | 0.08 (360) |
+| SNR, dist_std | 0.03 (235) | -0.07 (269) | 0.08 (298) | 0.08 (332) | -0.01 (360) |
+| margin above chance | -0.16 (230) | -0.25 (264) | -0.10 (293) | 0.02 (327) | -0.03 (355) |
+| signal alone (relative std) | -0.10 (235) | -0.20 (269) | -0.23 (298) | -0.15 (332) | -0.28 (360) |
 
 **per-language bits per byte** (Spearman ρ of the statistic with DA-size, per proxy size; n = the tasks behind the ρ):
 
-| metric | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
-|---|---|---|---|---|
-| SNR, relative std | 0.63 (26) | -0.43 (26) | 0.66 (26) | 0.64 (26) |
-| SNR, dist_std | 0.02 (26) | -0.29 (26) | 0.65 (26) | 0.51 (26) |
-| noise alone (relative std, inverted) | 0.39 (26) | -0.15 (26) | 0.56 (26) | 0.03 (26) |
-| scaling-fit R² (proxy rungs only) |  |  | -0.05 (26) | 0.39 (26) |
-| signal alone (relative std) | -0.07 (26) | -0.46 (26) | 0.51 (26) | 0.71 (26) |
-| early-checkpoint agreement (10 %) | -0.54 (26) | -0.06 (26) | 0.22 (26) | 0.39 (26) |
+| metric | 90M ρ (n) | 175M ρ (n) | 350M ρ (n) | 600M ρ (n) | 1B ρ (n) |
+|---|---|---|---|---|---|
+| SNR, dist_std | 0.30 (34) | 0.28 (34) | 0.10 (34) | 0.75 (34) | 0.41 (34) |
+| noise alone (relative std, inverted) | 0.37 (34) | 0.45 (34) | 0.11 (34) | 0.16 (34) | 0.35 (34) |
+| SNR, relative std | 0.05 (34) | 0.13 (34) | -0.10 (34) | 0.85 (34) | 0.29 (34) |
+| early-checkpoint agreement (10 %) | 0.21 (34) | 0.70 (34) | 0.13 (34) | -0.15 (34) | -0.04 (34) |
+| signal alone (relative std) | -0.14 (34) | -0.01 (34) | -0.16 (34) | 0.83 (34) | 0.15 (34) |
+| scaling-fit R² (proxy rungs only) |  |  | -0.01 (34) | -0.62 (34) | 0.06 (34) |
 
 ![Surrogates](pretraining/predictivity/rq3_surrogates.png)
 <!-- END auto:surrogates -->
+
+GitHub: [rq3_surrogates.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates.png) · [rq3_surrogates.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/rq3_surrogates.csv) ·
+[facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/facts.json)
+
+### FineTasks' criteria — setup
+
+A selection rule computed on one size, with no larger model in sight, is the
+practical alternative to SNR: FineTasks (Kydlíček, Penedo et al., 2024)
+selects tasks per language with four such statistics. `finetasks_criteria.py`
+(moved here from rq09 on 2026-09-23; its outputs are
+`pretraining/predictivity/finetasks_*`) computes them per (task, size) on the
+`predictivity` pool — the 18 design variants at each size, grid seed, schemes
+A/B, on the ten evaluated tenths — and judges them by DA-size against the
+1.7B reference, which the criteria never see. The gate is not applied (non-random
+is one of the criteria under test) but the mask is carried; every candidate is
+scored as Spearman ρ with DA-size across tasks, the way the SNR definitions
+above are. Their "noise" is the spread across recipes at one step, which this
+framework calls signal, so their SNR is the inverse of ours and the two should
+not be expected to agree.
+
+<!-- BEGIN auto:finetasks-criteria (finetasks_criteria.py --pool predictivity) -->
+## FineTasks' criteria on the ladder
+
+FineTasks selects tasks with four statistics computed on single-seed runs at one size (monotonicity, a cross-run SNR, a non-random margin, consecutive-step ordering). Computed here per (task, size) on the `predictivity` variants and judged by DA-size against 1.7B, which the criteria never see. Columns: share passing each criterion, all three, and our gate; mean DA-size of passers vs failers; Spearman of each statistic with DA-size (monotonicity / SNR / non-random / ordering). Regenerate with `python analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity`.
+
+| size | tasks | monotone | SNR > 20 | non-random | all three | our gate | DA-size pass vs fail | ρ with DA-size |
+|---|---|---|---|---|---|---|---|---|
+| 90M | 685 | 20% | 63% | 44% | 17% | 36% | 0.54 [116] vs 0.48 [569] | +0.15 / +0.20 / +0.06 / +0.18 |
+| 175M | 685 | 29% | 62% | 46% | 23% | 39% | 0.53 [156] vs 0.48 [529] | +0.14 / +0.25 / +0.13 / +0.04 |
+| 350M | 685 | 36% | 63% | 49% | 29% | 44% | 0.53 [202] vs 0.45 [483] | +0.23 / +0.29 / +0.22 / +0.08 |
+| 600M | 685 | 44% | 62% | 53% | 37% | 49% | 0.53 [251] vs 0.46 [434] | +0.18 / +0.27 / +0.19 / +0.09 |
+| 1B | 685 | 50% | 62% | 57% | 42% | 53% | 0.53 [291] vs 0.45 [394] | +0.33 / +0.37 / +0.22 / +0.16 |
+| 1.7B | 685 | 54% | 62% | 62% | 47% | 58% | — | +nan / +nan / +nan / +nan |
+
+![FineTasks criteria](pretraining/predictivity/finetasks_criteria.png)
+
+![DA against each surrogate](pretraining/predictivity/finetasks_surrogates_scatter.png)
+<!-- END auto:finetasks-criteria -->
+
+*`finetasks_criteria.png`: (a) the share of tasks passing each criterion and
+all three, with our gate; (b) each criterion's Spearman correlation with
+DA-size across tasks; (c) DA-size of the tasks passing all three against the
+rest; (d) panel (a) with the share of tasks clearing rq02's two DA cuts at that
+size (DA-size against the reference ≥ 0.66; median DA-ckpt of the size's own
+run ≥ 0.66); (e) panel (b) with rq03's 22 SNR definitions behind it and, for
+scale, rq02's own ρ and τ_b of the proxy ranking against the reference's (an
+oracle) and rq01's ρ of score with size; (f) the FineTasks picks with a
+counterpart in our registry, originals and cloze twins.
+`finetasks_surrogates_scatter.png`: DA-size against each surrogate, one point
+per (task, proxy size) coloured by the proxy — FineTasks' four criteria, our
+gate, rq01's ρ, the three rq03 SNR definitions with the largest |Spearman|
+here, rq02's own ρ (the ceiling), and ten further reference-free candidates
+(ordering in the noise window, the 10 % and 50 % rankings against the final,
+the proxy's own DA-ckpt, DA between the two rungs below the proxy, relative
+signal and noise, cross-variant std, margin over chance, item count); Pearson
+r, Spearman ρ and the cell count in each corner. Pooled ranking in
+`finetasks_surrogates_rank.csv`, the FineTasks picks in `finetasks_overlap.csv`
+(folder root).*
+
+**Key findings**
+
+- A selection rule that never sees a larger model recovers about a third of
+  the chance-to-reference gap: the composite (monotonicity ≥ 0.5, cross-run
+  SNR > 20, best margin > 3 std) passes 13 % of tasks at 175M and 38 % at 1B,
+  close to our gate's 31 % and 49 %, and the passers read DA-size 0.52–0.54
+  at every proxy against 0.45–0.47 for the tasks that fail. Their SNR
+  criterion passes about 60 % of tasks at every size and does not
+  discriminate; monotonicity is the size-sensitive one.
+- As surrogates of DA-size the four statistics correlate at Spearman
+  0.10–0.39 across tasks, the same range as our 22 SNR definitions (best
+  `dispersion_shifted`, 0.28–0.38) and as rq01's ρ of score with size
+  (0.15–0.38).
+- Pooled over the four proxies (`finetasks_surrogates_rank.csv`) the best
+  reference-free statistics are the task's item count (0.32), FineTasks' SNR
+  (0.31), the proxy's own median DA-ckpt (0.28), `dispersion_shifted` (0.28)
+  and the DA between the two rungs below the proxy (0.27); the gate reads
+  0.15 and the ordering statistics 0.04–0.12; the cross-variant std of the
+  final score, the relative noise and the relative signal correlate
+  negatively (−0.27, −0.28, −0.23), so more spread across variants at the
+  proxy goes with less agreement with the reference — against the
+  framework's premise; rq02's own ρ, which needs the reference, reads 0.76.
+  No reference-free statistic exceeds 0.33.
+- rq02's two DA cuts move in opposite directions with size (panel d): the
+  DA-size cut passes 12 % of tasks at 175M and 16 % at 1B, the DA-ckpt cut
+  46 % at 175M falling to 19 % at 1.7B — the within-run persistence of
+  [rq02 figure 7](../rq02_decision_accuracy/README.md#7-seed-uncertainty-and-the-da-ckpt-null)
+  in another guise.
+- Of their 96 picks, 45 exist in our registry; 49 % of the originals pass
+  their own criteria on our ladder against 100 % of the cloze twins, with the
+  same mean DA-size (0.56 against 0.57). The format choice they make
+  implicitly (cloze for selection) is the one decision that moves the
+  population; the thresholds move it little.
+
+**Follow-ups**
+
+- Bootstrap the ρ over tasks (a 90 % interval per statistic): the top
+  candidates are within 0.05 of each other, and the seed holdout above says
+  the exact ranking does not transfer — claim the family ("relative
+  dispersion over checkpoint noise", or here "item count and persistence"),
+  not a winner.
+- The negative correlation of the cross-variant spread with DA-size deserves
+  its own figure: signal at the proxy against the reference's agreement, per
+  family, to see whether it is the twins (large spread, re-sorting with
+  scale; [rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate))
+  or general.
+- A per-size and per-population version of the pooled ranking, as the `_b`
+  panels do for the SNR definitions: the pooled Spearman mixes BPB with
+  benchmarks and small with large proxies.
+
+GitHub: [finetasks_criteria.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_criteria.png) · [finetasks_criteria.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_criteria.csv) ·
+GitHub: [finetasks_surrogates_scatter.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_scatter.png) · [finetasks_surrogates_scatter.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_scatter.csv) ·
+[finetasks_surrogates_rank.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/finetasks_surrogates_rank.csv) ·
+[finetasks_overlap.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/finetasks_overlap.csv)
+
+<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
+## Per benchmark and per language
+
+The rankings above, without the aggregation (`predictivity` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+
+![rq04 in one figure](pretraining/predictivity/highlights.png)
+
+![SNR definition per language](pretraining/predictivity/snr_definition_by_language.png)
+
+![Surrogates per benchmark](pretraining/predictivity/surrogates_by_benchmark.png)
+
+![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
+
+**Per language count** (rq02's `da_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
+
+![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines.png)
+
+![Smallest size at which an SNR definition tracks DA, per L](pretraining/predictivity/snr_variant_min_size_by_L.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
+
+**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
+
+![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/min_level_by_L_lines_b.png)
+
+![Spearman rho of each SNR definition with DA per proxy size](pretraining/predictivity/snr_variant_min_size_by_L_b.png)
+
+![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
+
+**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:
+
+![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
+
+![rho of each SNR definition against compute](pretraining/predictivity/snr_variant_min_size_by_L_flops.png)
+<!-- END auto:panels -->
+
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/highlights.csv) ·
+[snr_definition_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_definition_by_language.png) ·
+[snr_definition.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_definition.csv) ·
+[surrogates_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates_by_benchmark.png) ·
+[surrogates_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates_by_language.png) ·
+[surrogates.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/surrogates.csv) ·
+GitHub: [min_level_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L.png) · [min_level_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L.csv) ·
+GitHub: [min_level_by_L_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines.png) · [min_level_by_L_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines.csv) ·
+GitHub: [snr_variant_min_size_by_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L.png) · [snr_variant_min_size_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L.csv) ·
+GitHub: [snr_variant_min_size_by_L_lines.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines.png) · [snr_variant_min_size_by_L_lines.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines.csv) ·
+GitHub: [min_level_by_L_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_b.png) · [min_level_by_L_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_b.csv) ·
+GitHub: [min_level_by_L_lines_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines_b.png) · [min_level_by_L_lines_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_lines_b.csv) ·
+GitHub: [snr_variant_min_size_by_L_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_b.png) · [snr_variant_min_size_by_L_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_b.csv) ·
+GitHub: [snr_variant_min_size_by_L_lines_b.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png) · [snr_variant_min_size_by_L_lines_b.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_lines_b.csv) ·
+GitHub: [min_level_by_L_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_flops.png) · [min_level_by_L_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/min_level_by_L_flops.csv) ·
+GitHub: [snr_variant_min_size_by_L_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_flops.png) · [snr_variant_min_size_by_L_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/snr_variant_min_size_by_L_flops.csv)
+
+Two readings of the version-B and per-FLOPs panels carried over from the
+2026-09-18 figure review, still true on today's tables: the per-L SNR
+correlations (`snr_variant_min_size_by_L`) are "never" for DA-size almost
+everywhere because per-L DA is a lattice with ≤ 3 pairs, so the L-dependence
+of SNR needs SNR computed over the L's own variants (degenerate below three);
+and the per-FLOPs line joins a bigger model's first (peak-LR) checkpoint to a
+smaller model's annealed final, which explains the zigzags near 10⁻² — one
+line per proxy size with the annealed points marked, plus the compute
+frontier (the best DA reachable at or below each compute), is the version to
+draw for the paper.
+
+## Surrogates from the literature — summary
+
+`catalogue.py` computes 211 proxy-only statistics: the literature catalogue
+([`literature.md`](literature.md); every definition, its source and how our port
+differs from it are in the paper's appendix,
+`documents/paper/sections/app_snr_new.tex`), every AllenAI signal over every
+noise (22 × 6, the k-fold benchmark noise included), and each signal and noise
+alone. `search.py` scores them against 30 truths from rq02 (DA / τ-b / ρ for
+DA-size, DA-goal and DA-ckpt, both pair sets, every pair or the pairs sharing
+one L) on all the data: Spearman over one point per (benchmark, language)
+cluster, permutation p below 30 clusters, Benjamini–Hochberg over every
+configuration, and a split-half confirmation as an extra. The numbers are in
+the generated block below; what they say:
+
+- **The ceiling.** A truth re-read at 90 % keeps ρ = 0.66 (DA-size), 0.81
+  (DA-goal) and 0.84 (DA-ckpt) with itself on the benchmarks.
+- **No surrogate reaches it.** Over all benchmarks (239–245 clusters) the best
+  are rank-stability statistics of the proxy's own run: window sign
+  consistency for DA-ckpt (0.73), sign persistence for DA-goal (0.59) and the
+  proxy's mean DA-ckpt for DA-size (0.57) — 73–87 % of the ceiling.
+- **SNR is weak here.** AllenAI's `rel_std` / checkpoint noise reads 0.25 on
+  DA-size (0.23 for relative dispersion, the paper's headline, against their
+  R = 0.79). The k-fold benchmark noise beats the checkpoint noise for every
+  signal (best ratios 0.48 / 0.51 / 0.63 on DA-size / goal / ckpt), but it is
+  mostly the item count: `n_items` alone reads 0.51 on DA-size, and the best
+  DA-size ratio, `dispersion_shifted / kfold_abs`, is the inverse noise
+  (that signal is constant).
+- **Dispersion alone points the wrong way.** Range, standard deviation and
+  pairwise distance across variants correlate negatively with every truth
+  (−0.20 to −0.35).
+- **Particular cases** reach 0.94–1.00 on single languages or benchmarks
+  (10–19 clusters) and on rq02's reliable subsets; the latter are selected on
+  the truth, so their ρ is conditional on it.
+- **Language count.** Over pairs of variants sharing L (L8, L15, L30) mean
+  DA-size is 0.51 / 0.48 / 0.48: no trend, on a coarse test.
+- **Split-half check.** 706 of 1,849 configurations chosen on one half hold on
+  the other at q < 0.05.
+
+<!-- BEGIN auto:catalogue (search.py --pool predictivity) -->
+## A catalogue of surrogates beyond SNR
+
+Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool predictivity` then `search.py --pool predictivity`. Surrogates are read on the proxy alone (rule 11); the truths are rq02's DA (DA-size; DA-goal and DA-ckpt at every early checkpoint of the proxy; both pair sets; every pair or the pairs sharing L) and Kendall τ-b / Spearman ρ on the same rankings, over cells above chance (rule 1). ρ is a Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; populations differ per configuration (rule 13) and n is in the CSVs. Definitions and sources: [`literature.md`](literature.md); method: `search.py`'s docstring.
+
+**Main analysis (all the data).** 409,273 configurations (truths × subsets × surrogates, the threshold filters included); 240,212 have a p-value (≥ 10 units); **75,442 hold at BH q < 0.05**. A best-of-many ρ is optimistic even when it is significant; the extra below measures by how much.
+
+**The ceiling** — each truth against itself re-read at 90 % (benchmarks):
+
+| truth | ρ | ρ over cells | units |
+|---|---|---|---|
+| DA-size da (multi-axis) | 0.66 | 0.66 | 239 |
+| DA-goal da (multi-axis) | 0.81 | 0.66 | 239 |
+| DA-ckpt da (multi-axis) | 0.84 | 0.73 | 245 |
+| DA-size tau_b (multi-axis) | 0.60 | 0.64 | 237 |
+| DA-size rho (multi-axis) | 0.63 | 0.66 | 237 |
+| DA-goal tau_b (multi-axis) | 0.75 | 0.63 | 237 |
+| DA-goal rho (multi-axis) | 0.75 | 0.65 | 237 |
+| DA-ckpt tau_b (multi-axis) | 0.81 | 0.71 | 245 |
+| DA-ckpt rho (multi-axis) | 0.83 | 0.72 | 245 |
+
+**Strongest surrogate per truth**, every benchmark:
+
+| truth | surrogate | ρ | q | ρ over cells | ρ within stratum | units |
+|---|---|---|---|---|---|---|
+| DA-ckpt da (mono-axis, pairs within L15) | `noise__kfold_rel` | -0.47 | 1.0e-03 | -0.15 | -0.15 | 58 |
+| DA-ckpt da (mono-axis, pairs within L30) | `sign_consistency_window` | 0.54 | 1.5e-15 | 0.20 | 0.19 | 212 |
+| DA-ckpt da (mono-axis, pairs within L8) | `kendall_w_window` | 0.52 | 3.1e-04 | 0.15 | 0.14 | 54 |
+| DA-ckpt da (mono-axis) | `sign_consistency_window` | 0.73 | 1.7e-37 | 0.32 | 0.34 | 245 |
+| DA-ckpt da (multi-axis, pairs within L15) | `snr__gini__kfold_rel` | 0.50 | 4.2e-04 | 0.13 | 0.13 | 58 |
+| DA-ckpt da (multi-axis, pairs within L30) | `sign_consistency_window` | 0.58 | 2.2e-18 | 0.22 | 0.22 | 212 |
+| DA-ckpt da (multi-axis, pairs within L8) | `sign_consistency_window` | 0.60 | 1.4e-05 | 0.19 | 0.19 | 54 |
+| DA-ckpt da (multi-axis) | `sign_consistency_window` | 0.73 | 1.3e-37 | 0.37 | 0.42 | 245 |
+| DA-ckpt rho (multi-axis) | `consecutive_kendall_late` | 0.71 | 1.7e-35 | 0.32 | 0.36 | 245 |
+| DA-ckpt tau_b (multi-axis) | `consecutive_kendall_late` | 0.71 | 4.3e-35 | 0.31 | 0.35 | 245 |
+| DA-goal da (mono-axis, pairs within L15) | `consecutive_kendall` | -0.30 | 7.7e-02 | -0.06 | -0.05 | 55 |
+| DA-goal da (mono-axis, pairs within L30) | `scale_gain_over_noise` | 0.35 | 1.7e-06 | 0.09 | 0.09 | 206 |
+| DA-goal da (mono-axis, pairs within L8) | `snr__rel_mpd__kfold_abs` | 0.40 | 1.5e-02 | 0.08 | 0.07 | 51 |
+| DA-goal da (mono-axis) | `autocorr` | 0.52 | 2.7e-16 | 0.20 | 0.21 | 239 |
+| DA-goal da (multi-axis, pairs within L15) | `nonrandom` | -0.24 | 1.8e-01 | -0.08 | -0.09 | 53 |
+| DA-goal da (multi-axis, pairs within L30) | `scale_gain_over_noise` | 0.39 | 7.2e-08 | 0.10 | 0.10 | 206 |
+| DA-goal da (multi-axis, pairs within L8) | `snr__rel_mpd__kfold_abs` | 0.38 | 2.3e-02 | 0.08 | 0.07 | 51 |
+| DA-goal da (multi-axis) | `sign_persistence` | 0.59 | 1.6e-21 | 0.24 | 0.25 | 239 |
+| DA-goal rho (multi-axis) | `bpb_rank_agreement` | 0.53 | 7.7e-17 | 0.20 | 0.20 | 238 |
+| DA-goal tau_b (multi-axis) | `bpb_rank_agreement` | 0.53 | 7.1e-17 | 0.20 | 0.19 | 238 |
+| DA-size da (mono-axis, pairs within L15) | `snr__dispersion__projection_depth` | -0.26 | 1.4e-01 | -0.03 | -0.02 | 55 |
+| DA-size da (mono-axis, pairs within L30) | `signal__projection` | 0.27 | 5.3e-04 | 0.09 | 0.09 | 206 |
+| DA-size da (mono-axis, pairs within L8) | `snr__rel_dispersion__kfold_abs` | 0.33 | 5.8e-02 | 0.10 | 0.09 | 51 |
+| DA-size da (mono-axis) | `n_items` | 0.45 | 1.0e-11 | 0.27 | 0.27 | 234 |
+| DA-size da (multi-axis, pairs within L15) | `z_above_chance` | -0.28 | 1.1e-01 | -0.09 | -0.10 | 53 |
+| DA-size da (multi-axis, pairs within L30) | `snr__projection__kfold_abs` | 0.30 | 7.8e-05 | 0.16 | 0.15 | 205 |
+| DA-size da (multi-axis, pairs within L8) | `pseudo_ref_da` | 0.32 | 7.2e-02 | 0.21 | 0.21 | 50 |
+| DA-size da (multi-axis) | `da_ckpt_mean` | 0.57 | 1.1e-19 | 0.29 | 0.29 | 239 |
+| DA-size rho (multi-axis) | `sign_persistence` | 0.48 | 8.5e-14 | 0.22 | 0.22 | 238 |
+| DA-size tau_b (multi-axis) | `da_ckpt_mean` | 0.48 | 1.5e-13 | 0.21 | 0.22 | 238 |
+
+**The AllenAI grid** (22 signals × 6 noises, DA, every pair, benchmarks): best combination against AllenAI's own `rel_std` / checkpoint noise:
+
+| truth | best signal / noise | ρ | rel_std / ckpt_rel ρ |
+|---|---|---|---|
+| DA-ckpt | `gini / kfold_rel` | 0.63 | 0.38 |
+| DA-goal | `tukey / kfold_rel` | 0.51 | 0.26 |
+| DA-size | `dispersion_shifted / kfold_abs` | 0.48 | 0.25 |
+
+**Particular cases** — the strongest significant configurations outside "every benchmark", two per (truth, subset type); `reliable (on the truth)` subsets are selected on the truth itself, so their ρ is conditional on it; all of them in `surrogate_correlations.csv` (`q` column):
+
+| truth | subset | surrogate | ρ | q | ρ over cells | units |
+|---|---|---|---|---|---|---|
+| DA-ckpt da (multi-axis) | language: fr | `gain_over_noise` | 1.00 | 3.1e-04 | 0.31 | 11 |
+| DA-ckpt rho (multi-axis) | language: ru | `icc_window` | 0.99 | 3.1e-04 | 0.57 | 11 |
+| DA-ckpt rho (multi-axis) | language: ru | `g_coefficient` | 0.99 | 3.1e-04 | 0.57 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `g_coefficient` | 0.99 | 3.1e-04 | 0.57 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `snr__range__ckpt_abs` | 0.99 | 3.1e-04 | 0.50 | 11 |
+| DA-ckpt da (multi-axis) | language: ru | `rung_gap_corr` | 0.99 | 3.1e-04 | 0.59 | 10 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.98 | 3.1e-04 | -0.56 | 11 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.98 | 3.1e-04 | 0.56 | 11 |
+| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `sign_persistence` | 0.97 | 3.1e-04 | 0.48 | 11 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.97 | 3.1e-04 | -0.53 | 11 |
+| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.97 | 3.1e-04 | -0.38 | 11 |
+| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `da_ckpt_mean` | 0.97 | 3.1e-04 | 0.48 | 11 |
+| DA-ckpt da (multi-axis) | benchmark: hellaswag | `consecutive_kendall` | 0.97 | 3.1e-04 | 0.55 | 19 |
+| DA-ckpt da (multi-axis) | benchmark: hellaswag | `crossings` | -0.97 | 3.1e-04 | -0.55 | 19 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_either | `crossings` | -0.96 | 3.1e-04 | -0.51 | 18 |
+| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `da_ckpt_mean` | 0.96 | 5.8e-04 | 0.47 | 11 |
+| DA-goal da (multi-axis) | language: ru | `bpb_rank_agreement` | 0.96 | 1.1e-03 | 0.62 | 10 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_ckpt | `crossings` | -0.96 | 3.1e-04 | -0.49 | 14 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.95 | 5.8e-04 | -0.52 | 11 |
+| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `da_ckpt_mean` | 0.95 | 5.8e-04 | 0.48 | 11 |
+| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `sign_persistence` | 0.95 | 5.8e-04 | 0.48 | 11 |
+| DA-size da (multi-axis) | language: en | `bpb_rank_agreement` | 0.95 | 3.1e-04 | 0.57 | 16 |
+| DA-goal da (multi-axis) | language: es | `autocorr` | 0.95 | 3.1e-04 | 0.35 | 14 |
+| DA-goal tau_b (multi-axis) | language: ru | `bpb_rank_agreement` | 0.95 | 1.6e-03 | 0.58 | 10 |
+| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `crossings` | -0.95 | 3.1e-04 | -0.53 | 19 |
+| DA-ckpt tau_b (multi-axis) | benchmark: hellaswag | `consecutive_kendall_late` | 0.95 | 3.1e-04 | 0.53 | 19 |
+| DA-size da (multi-axis) | language: en | `pseudo_ref_da` | 0.95 | 3.1e-04 | 0.51 | 16 |
+| DA-ckpt rho (multi-axis) | benchmark: hellaswag | `crossings` | -0.95 | 3.1e-04 | -0.54 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `scale_gain_over_noise` | 0.94 | 3.1e-04 | 0.18 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `sign_persistence` | 0.94 | 3.1e-04 | 0.47 | 19 |
+
+**Per language count** (pairs of variants sharing L; benchmarks):
+
+| truth | L | mean DA | sd | tasks | best surrogate | ρ |
+|---|---|---|---|---|---|---|
+| DA-ckpt | 8 | 0.57 | 0.26 | 86 | `sign_consistency_window` | 0.60 |
+| DA-ckpt | 15 | 0.59 | 0.25 | 91 | `snr__gini__kfold_rel` | 0.50 |
+| DA-ckpt | 30 | 0.57 | 0.26 | 339 | `sign_consistency_window` | 0.58 |
+| DA-goal | 8 | 0.49 | 0.24 | 76 | `snr__rel_mpd__kfold_abs` | 0.38 |
+| DA-goal | 15 | 0.48 | 0.25 | 81 | `nonrandom` | -0.24 |
+| DA-goal | 30 | 0.47 | 0.25 | 319 | `scale_gain_over_noise` | 0.39 |
+| DA-size | 8 | 0.51 | 0.25 | 76 | `pseudo_ref_da` | 0.32 |
+| DA-size | 15 | 0.48 | 0.25 | 81 | `z_above_chance` | -0.28 |
+| DA-size | 30 | 0.48 | 0.25 | 319 | `snr__projection__kfold_abs` | 0.30 |
+
+**Extra: held-out confirmation.** The (benchmark, language) clusters split in two halves; 1849 configurations ranked best on one half (within-stratum ρ) were tested once on the other (one-sided cluster permutation test, BH): **706 hold at q < 0.05**. The strongest:
+
+| truth | subset | surrogate | ρ disc. | ρ val. [90 %] | q | tasks val. |
+|---|---|---|---|---|---|---|
+| DA-size rho (multi-axis) | filter: item_total_corr ≥ q75 & monotonicity ≥ q75 | `bpb_corr_training` | 0.53 | 0.68 [0.46, 0.82] | 1.3e-02 | 48 |
+| DA-size rho (multi-axis) | filter: item_total_corr ≥ q75 & autocorr ≥ q75 | `bpb_corr_training` | 0.54 | 0.66 [0.40, 0.80] | 1.3e-02 | 44 |
+| DA-ckpt da (multi-axis) | benchmark: multiblimp | `sign_consistency_window` | 0.48 | 0.61 [0.40, 0.71] | 3.0e-03 | 13 |
+| DA-ckpt da (multi-axis) | benchmark: multiblimp | `kendall_w_window` | 0.49 | 0.61 [0.42, 0.71] | 3.0e-03 | 13 |
+| DA-size da (mono-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.66 | 0.61 [0.32, 0.82] | 2.5e-02 | 12 |
+| DA-size rho (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.55 | 0.61 [0.27, 0.80] | 3.0e-03 | 13 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__quartile_deviation__projection_depth` | 0.67 | 0.60 [0.41, 0.70] | 3.0e-03 | 17 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__tukey_depth` | 0.63 | 0.59 [0.40, 0.70] | 3.0e-03 | 17 |
+| DA-size da (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.53 | 0.59 [0.22, 0.80] | 3.0e-03 | 13 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__projection_depth` | 0.63 | 0.59 [0.42, 0.71] | 3.0e-03 | 17 |
+| DA-ckpt da (multi-axis) | tier: L8 | `sign_consistency_window` | 0.52 | 0.59 [0.50, 0.67] | 3.0e-03 | 74 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__quartile_deviation__tukey_depth` | 0.58 | 0.58 [0.37, 0.71] | 3.0e-03 | 17 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__ckpt_abs` | 0.67 | 0.57 [0.40, 0.70] | 3.0e-03 | 17 |
+| DA-size tau_b (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.54 | 0.57 [0.26, 0.80] | 5.1e-03 | 13 |
+| DA-ckpt da (multi-axis) | tier: L8 | `kendall_w_window` | 0.50 | 0.57 [0.48, 0.65] | 3.0e-03 | 74 |
+
+![surrogates_significant](pretraining/predictivity/surrogates_significant.png)
+
+![surrogates_snr_grid](pretraining/predictivity/surrogates_snr_grid.png)
+
+![surrogates_catalogue](pretraining/predictivity/surrogates_catalogue.png)
+
+![surrogates_by_L](pretraining/predictivity/surrogates_by_L.png)
+
+![surrogates_catalogue_by_language](pretraining/predictivity/surrogates_catalogue_by_language.png)
+
+![surrogates_validated](pretraining/predictivity/surrogates_validated.png)
+<!-- END auto:catalogue -->
+
+## TODO
+
+- [ ] **The seed holdout ranks most tasks on a single model pair (open, 2026-09-17).**
+      *What it is.* rq04 claims one SNR definition tracks decision accuracy
+      best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
+      in rq04's highlight and "Seed generalization" table) asks whether that
+      ranking of definitions survives a change of seed: it is computed on
+      `predictivity_seeds_train` (seeds 64, 313) and again on
+      `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
+      compared.
+      *The problem.* Replicate seeds exist only at 175M and 600M, so both
+      splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
+      reference never enters). English tasks and BPB rest on 15 model pairs.
+      A non-English benchmark is trained only in the L50 cell, so its train
+      split holds one pair — the two seeds of the same cell — and its
+      "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
+      The median task has one pair.
+      *Implications.* The per-language agreement numbers (29 % / 57 %) and the
+      low DA-ckpt ρ (0.07) are dominated by those one-pair tasks, so "the
+      ranking does not survive a seed swap" may say more about the holdout
+      than about the definitions; the DA-size ρ (0.75) leans on English + BPB.
+      Nothing in the main `predictivity` tables is affected.
+      *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
+      check, but English + BPB only. (B) treat replicate seeds as replicates,
+      not as models: average them before ranking, and use the holdout only
+      for the noise estimate — changes what the holdout means. (C) report the
+      holdout for DA-ckpt only, whose pairs are checkpoints × variants within
+      a size and do not shrink to one. (D) drop the holdout numbers from the
+      highlight until more sizes have replicate seeds.
+      *Recommendation.* A now (small change, honest scope, say "English and
+      BPB" in the highlight), and revisit once the 90M / 1.7B-L15 cells and
+      any further replicate seeds exist. Not implemented yet.
+- [ ] Bootstrap CIs on per-language Pearson r and cross-pool Spearman ρ.
+- [ ] Recommend a *family* (dispersion / relative-spread), not an exact variant
+      — only the family transfers across seeds.
+- [ ] Use a larger DA-size target (e.g. Apertus-8B) instead of the
+      not-fully-converged 1B custom model.
+
+## Extensions from other sweeps
+
+Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+data mixtures × 3 seeds, pools `seeds_1904`, `seeds_28_1797`,
+`seeds_28_1797_1904`, `custom_swissai_hf`; 12 languages, reference **1B**)
+or from the **external tier** (`all/external`: the public and reference
+models, 270M–70B, no data-mixture axis). Its harness, task set, checkpoint
+window and reference differ from the ladder's, and its 36-sweep DA-size is
+a 3-mixture ranking against 1B, so its numbers are replications of the
+family-level recommendation above, never rows of the same table. The dated
+comparison note that once tracked these tiers (`ANALYSIS_new_vs_previous.md`, removed 2026-09-23:
+`rel_mpd` on top in every tier, DA-ckpt r 0.379 → 0.519 with the externals
+folded in, holdout ρ 0.80 / 0.93) predates the tie fix in `decision_acc_fast`
+and the parent-only filter and is superseded by the blocks below.
 
 ## External model-set tier (`all/external`, 36-sweep)
 
@@ -253,6 +685,8 @@ The exact per-language argmax still does not transfer across tiers — only the
 dispersion/relative-spread *family* does — so the paper-level claim is the family
 recommendation, with HellaSwag and MultiBLiMP as the durable multilingual anchors.
 
+[top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/all/external/top_variants_overall.png) ·
+[top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/all/external/top_benchmarks_per_language.png)
 
 ## Results from the 36-model sweep (2026-06, superseded)
 
@@ -321,43 +755,9 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 | Exact-variant agreement (per lang) | 7% | 7% |
 | Family-level agreement (per lang) | 21% | 29% |
 | Retention of train-best r on test | 61% | 79% |
-## TODO
 
-- [ ] **The seed holdout ranks most tasks on a single model pair (open, 2026-09-17).**
-      *What it is.* rq04 claims one SNR definition tracks decision accuracy
-      best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
-      in rq04's highlight and "Seed generalization" table) asks whether that
-      ranking of definitions survives a change of seed: it is computed on
-      `predictivity_seeds_train` (seeds 64, 313) and again on
-      `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
-      compared.
-      *The problem.* Replicate seeds exist only at 175M and 600M, so both
-      splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
-      reference never enters). English tasks and BPB rest on 15 model pairs.
-      A non-English benchmark is trained only in the L50 cell, so its train
-      split holds one pair — the two seeds of the same cell — and its
-      "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
-      The median task has one pair.
-      *Implications.* The per-language agreement numbers (29 % / 57 %) and the
-      low DA-ckpt ρ (0.07) are dominated by those one-pair tasks, so "the
-      ranking does not survive a seed swap" may say more about the holdout
-      than about the definitions; the DA-size ρ (0.75) leans on English + BPB.
-      Nothing in the main `predictivity` tables is affected.
-      *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
-      check, but English + BPB only. (B) treat replicate seeds as replicates,
-      not as models: average them before ranking, and use the holdout only
-      for the noise estimate — changes what the holdout means. (C) report the
-      holdout for DA-ckpt only, whose pairs are checkpoints × variants within
-      a size and do not shrink to one. (D) drop the holdout numbers from the
-      highlight until more sizes have replicate seeds.
-      *Recommendation.* A now (small change, honest scope, say "English and
-      BPB" in the highlight), and revisit once the 90M / 1.7B-L15 cells and
-      any further replicate seeds exist. Not implemented yet.
-- [ ] Bootstrap CIs on per-language Pearson r and cross-pool Spearman ρ.
-- [ ] Recommend a *family* (dispersion / relative-spread), not an exact variant
-      — only the family transfers across seeds.
-- [ ] Use a larger DA-size target (e.g. Apertus-8B) instead of the
-      not-fully-converged 1B custom model.
+[top_variants_overall.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/custom_swissai_hf/top_variants_overall.png) ·
+[top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/custom_swissai_hf/top_benchmarks_per_language.png)
 
 ## Files
 
@@ -373,45 +773,16 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   `{da_size,da_ckpt}/…` — supporting figures.
 - `…/rq3_surrogates.csv`, `rq3_surrogates.png/.pdf`, `facts.json` — the
   statistics beyond SNR (`analyze.py`; the paper's RQ3 figure).
+- `…/surrogate_values.csv`, `surrogate_targets.csv`, `surrogate_definitions.csv` — the
+  surrogates per (task, proxy, pair set) and the truths, long (`catalogue.py`; sources in
+  `literature.md`); `surrogate_correlations.csv`, `surrogate_filters.csv`,
+  `surrogate_validated.csv`, `surrogate_by_language.csv`, `da_retest.csv` and
+  `surrogates_{validated,snr_grid,catalogue,by_L,catalogue_by_language}.png` — the
+  validated search (`search.py`).
 - Inputs: rq03's `snr_variants_per_task.csv` and holdout
   `headline_metrics.csv`, rq00's `above_random_scores.csv`, rq01's `rq1_fits.csv`.
-
-<!-- BEGIN auto:panels (panels.py --pool predictivity) -->
-## Per benchmark and per language
-
-The rankings above, without the aggregation (`predictivity` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool predictivity`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
-
-![rq04 in one figure](pretraining/predictivity/highlights.png)
-
-![SNR definition per language](pretraining/predictivity/snr_definition_by_language.png)
-
-![Surrogates per benchmark](pretraining/predictivity/surrogates_by_benchmark.png)
-
-![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
-
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
-
-![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
-
-![the same as lines](pretraining/predictivity/min_level_by_L_lines.png)
-
-![Smallest size at which an SNR definition tracks DA, per L](pretraining/predictivity/snr_variant_min_size_by_L.png)
-
-![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
-
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
-
-![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
-
-![the same as lines](pretraining/predictivity/min_level_by_L_lines_b.png)
-
-![Spearman rho of each SNR definition with DA per proxy size](pretraining/predictivity/snr_variant_min_size_by_L_b.png)
-
-![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines_b.png)
-
-**Version per FLOPs** — every (proxy size, checkpoint) cell at its training compute, the same population as version B:
-
-![DA of every cell against compute](pretraining/predictivity/min_level_by_L_flops.png)
-
-![rho of each SNR definition against compute](pretraining/predictivity/snr_variant_min_size_by_L_flops.png)
-<!-- END auto:panels -->
+- `…/finetasks_criteria.{csv,png}`, `finetasks_surrogates_scatter.{csv,png}`,
+  `finetasks_surrogates_rank.csv`, `../finetasks_overlap.csv` — FineTasks'
+  criteria on the ladder and every surrogate against DA-size
+  (`finetasks_criteria.py`; moved from rq09 on 2026-09-23, the copies left
+  under `rq09_benchmark_design/pretraining/predictivity/` are stale).

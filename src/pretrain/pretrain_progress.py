@@ -61,8 +61,8 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
     CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
     LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
-    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, exp_name,
-    fineweb_source, job_name,
+    SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, cell_gbs,
+    cell_schedule, exp_name, fineweb_source, iter_ms, job_name,
     predictivity_cells, schedule_for, seeds_for, scheme_sizes)
 
 # Megatron writes checkpoints under Meg-Runs/<PROJECT_NAME>/<EXP_NAME>/
@@ -92,7 +92,13 @@ NAME_RE = re.compile(
     r"(?P<scheme>"
     + "|".join(re.escape(lab) for lab in
                sorted((lab for lab in SCHEME_OF_LABEL if lab), key=len, reverse=True))
-    + r")?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    # `-b<N>`: the rung's own global batch, present only where the grid gives
+    # one (GBS_BY_SIZE — 90M and 175M since 2026-09-23). Optional and captured
+    # rather than skipped, because the diverged batch-504 runs of those two
+    # rungs are still on disk under the name WITHOUT it: the group is what
+    # tells the two apart, and a pattern that merely tolerated the suffix
+    # would read both as the same cell.
+    + r")?(?:-b(?P<gbs>\d+))?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
@@ -111,9 +117,12 @@ def cell_in_scheme(scheme: str, size: str, L: int) -> bool:
 
 
 def planned_seeds(size: str, L: int) -> set[int]:
-    """Every seed the grid plans at this (size, L), across all schemes."""
+    """Every seed the grid plans at this (size, L), across all schemes.
+
+    Read on the deep arch, which is the union: replicate seeds are deep only
+    (seeds_for), so the shallow set is always the single seed 1904."""
     return {s for v in DATA_SCHEMES if cell_in_scheme(v, size, L)
-            for s in seeds_for(size, L, v)}
+            for s in seeds_for(size, L, v, "deep")}
 
 
 def is_valid_iter_dir(iter_dir: Path) -> bool:
@@ -196,8 +205,8 @@ def sweep_cells(arch: str, scheme: str = "A") -> list[tuple[str, int]]:
     configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
     return [
         (exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]),
-         schedule_for(configs[c["size"]])[0])
-        for c in predictivity_cells([scheme])
+         cell_schedule(configs[c["size"]], c["size"])[0])
+        for c in predictivity_cells([scheme], arch)
         if arch in arches_for(scheme, c["size"], c["L"])
     ]
 
@@ -229,7 +238,10 @@ def _targets() -> dict[tuple[str, str], int]:
     for arch, path in HYPERPARAMS.items():
         configs = json.loads(path.read_text())["configs"]
         for size, cfg in configs.items():
-            out[(arch, size)] = schedule_for(cfg)[0]
+            # cell_schedule, not schedule_for: the 90M/175M rungs train at
+            # their own batch, so the file's iters are 1/6 and 1/3 of the
+            # real target. scan_runs would call a 90M done at 4,500 of 27,000.
+            out[(arch, size)] = cell_schedule(cfg, size)[0]
     return out
 
 
@@ -387,8 +399,10 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     Returns per cell:
       done      results actually on disk
       models    runs of this cell trained so far
-      planned   runs the grid plans for it (seeds x arch x scheme)
-      ckpts     due checkpoints per run (every 2nd save, plus the final one)
+      planned   runs the grid plans for it (per scheme, summed over the
+                architectures it trains in, each with its own seeds)
+      ckpts     due checkpoints per run (12 at every size: the ten tenths
+                of training plus 85 % and 95 % -- launch_trainings.due_iters)
       benches   benchmark entries per checkpoint at this L
 
     `benches` grows with L: the auto group expands to one entry per benchmark
@@ -423,16 +437,21 @@ def eval_counts(root: Path, logs_root: Path | None = None,
             # with no run yet, which is most of the grid.
             target = targets[("deep", size)]
             si = save_interval(target)
-            n_due = len({i for i in range(si, target + 1, si)
-                         if i % (2 * si) == 0} | {target})
+            # The watcher's own rule, not a copy of it: 12 at every size (the
+            # ten tenths plus 85 % and 95 %) whatever density the size saves at.
+            n_due = len(due_iters(list(range(si, target + 1, si)), target))
             schemes = [v for v in DATA_SCHEMES if cell_in_scheme(v, size, L)]
-            # Per scheme the grid plans seeds x the architectures that scheme
-            # is trained in — not always both: ZH and ES are deep only.
-            runs = {v: len(seeds_for(size, L, v)) * len(arches_for(v, size, L))
+            # Per scheme the grid plans, for each architecture that scheme is
+            # trained in, that architecture's own seeds — a SUM, not a product:
+            # not every scheme trains both arches (ZH and ES are deep only) and
+            # the replicate seeds are deep only, so deep can plan 3 runs where
+            # shallow plans 1.
+            runs = {v: sum(len(seeds_for(size, L, v, a))
+                           for a in arches_for(v, size, L))
                     for v in schemes}
             if all_languages:
-                s, _, seed = ae.ALL_LANGUAGES_RUNS
-                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s) else {}
+                s, a, seed = ae.ALL_LANGUAGES_RUNS
+                runs = {s: 1} if s in runs and seed in seeds_for(size, L, s, a) else {}
                 if not runs:
                     continue
             cells[(size, L)] = {
@@ -453,8 +472,9 @@ def eval_counts(root: Path, logs_root: Path | None = None,
     # combination no triple covers) is work it will never do — counting it
     # here painted the cell as permanently under-evaluated.
     grid = {exp_name(c["size"], c["L"], a, c["seed"], c["scheme"])
-            for c in predictivity_cells() for a in arches_for(c["scheme"], c["size"], c["L"])
-            if c["size"] in EVAL_SIZES}     # 90M trains but is not evaluated
+            for a in HYPERPARAMS for c in predictivity_cells(arch=a)
+            if a in arches_for(c["scheme"], c["size"], c["L"])
+            and c["size"] in EVAL_SIZES}    # 90M trains but is not evaluated
     for entry in sorted(root.iterdir()) if root.is_dir() else []:
         m = NAME_RE.match(entry.name)
         if not m:
@@ -614,8 +634,8 @@ def planned_variants(size: str, L: int) -> list[str]:
     for scheme in DATA_SCHEMES:
         if not cell_in_scheme(scheme, size, L):
             continue
-        seeds = "/".join(str(x) for x in seeds_for(size, L, scheme))
         for arch in arches_for(scheme, size, L):
+            seeds = "/".join(str(x) for x in seeds_for(size, L, scheme, arch))
             lines.append(f"{scheme} {arch} {seeds}")
     return lines
 
@@ -770,10 +790,11 @@ def large_rung_status(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> Non
         for arch, path in HYPERPARAMS.items():
             if size not in SIZES_BY_ARCH[arch]:   # the 3B rung is deep only
                 continue
-            target = schedule_for(json.loads(path.read_text())["configs"][size])[0]
-            ms = ITER_MS[arch][size]
+            target = cell_schedule(
+                json.loads(path.read_text())["configs"][size], size)[0]
+            ms = iter_ms(size, arch, cell_gbs(size))
             per_job = JOB_TRAIN_SEC * 1000 // ms
-            for c in predictivity_cells():
+            for c in predictivity_cells(arch=arch):
                 if c["size"] != size or arch not in arches_for(c["scheme"], size, c["L"]):
                     continue
                 exp = exp_name(size, c["L"], arch, c["seed"], c["scheme"])
@@ -932,11 +953,12 @@ def _scheme_desc(name: str, d: dict) -> str:
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
     baseline = len(predictivity_cells(["A"]))
-    # Every run the grid plans: per scheme, its cells x the architectures that
-    # scheme is actually trained in (ZH and ES are deep only, so multiplying
-    # the whole grid by 2 would over-count them).
-    full = sum(len(arches_for(v, c["size"], c["L"]))
-               for v in DATA_SCHEMES for c in predictivity_cells([v]))
+    # Every run the grid plans, counted by enumerating rather than multiplying:
+    # not every scheme trains both architectures (ZH and ES are deep only)
+    # and the replicate seeds are deep only, so the two axes do not factor.
+    full = sum(1 for a in HYPERPARAMS for v in DATA_SCHEMES
+               for c in predictivity_cells([v], a)
+               if a in arches_for(v, c["size"], c["L"]))
     # Sizes that do not train at every setting (the 3B extrapolation check).
     partial = "; ".join(f"{s} at L ∈ {{{_fmt(SIZE_LANG_SETTINGS[s])}}} only"
                         for s in SIZES if SIZE_LANG_SETTINGS[s] != LANG_SETTINGS)
@@ -1029,4 +1051,22 @@ if __name__ == "__main__":
             print("usage: pretrain_progress.py --is-valid <iter_dir>", file=sys.stderr)
             sys.exit(2)
         sys.exit(0 if is_valid_iter_dir(Path(sys.argv[2])) else 1)
+    # The same for the whole-cell decision:
+    #   python3.11 pretrain_progress.py --cell-action <model_dir> <target_iters>
+    # prints "<done|fresh|resume|corrupt> <latest valid iter, 0 if none>".
+    # launch_pretraining_cscs.sh reads the word to decide whether to queue a
+    # chain successor and the iteration to tell a chain that is surviving
+    # preemptions from one that is retrying a failure. It reads the WORD, not
+    # the exit status: an ImportError and a legitimate "not done" both exit
+    # non-zero, and the difference decides between ending a chain and burning
+    # its whole budget on links that allocate 21 nodes and die.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--cell-action":
+        if len(sys.argv) != 4:
+            print("usage: pretrain_progress.py --cell-action <model_dir> "
+                  "<target_iters>", file=sys.stderr)
+            sys.exit(2)
+        model_dir = Path(sys.argv[2])
+        print(cell_action(model_dir, int(sys.argv[3]))[0],
+              model_progress(model_dir)[1] or 0)
+        sys.exit(0)
     main()

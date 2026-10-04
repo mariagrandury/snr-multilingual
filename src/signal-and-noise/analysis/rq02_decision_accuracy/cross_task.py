@@ -18,6 +18,14 @@ A and B). A cell holds a *level* (the same code as the other level maps):
     cross_task_{size,ckpt}_by_language.png / .csv   language x language, over the pairs of tasks of
                                  the SAME benchmark (bpb_x -> bpb_y, arc_x -> arc_y, ...), languages
                                  in the resource order of the scheme-A lists (English first)
+    cross_task_{size,ckpt}_benchmarks.png / .csv   the same two maps over the BENCHMARK tasks that are
+                                 above chance somewhere: BPB and the loss are dropped (they have no
+                                 chance level, so they never carry the gate's grey and dominate the
+                                 readable part of the full map), and so is every benchmark the gate
+                                 finds at chance at EVERY size, which can never contribute a pair in
+                                 either direction. What is left is the sub-map where a transfer
+                                 result is possible at all; the rows and columns are the same set,
+                                 so it stays square and the diagonal stays rq02's own-task DA.
 
 "Safely" is rq02's rule: DA >= SAFE_DA over >= MIN_PAIRS pairs at that level
 and at every larger level with information. The rq00 gate applies to both
@@ -57,7 +65,7 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import CKPT_TOL, add_family_column  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
-from analysis.utils import (LANGUAGE_AGGREGATES,  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, one_axes,  # noqa: E402
     SMALL_SIZES, TARGET_SIZE, _is_parent_task, assign_language, benchmark_family, build_snr_pool)
 from evals.scripts.utils.configs import fineweb_language  # noqa: E402
 from pretrain.launch_trainings import cell_fineweb_subsets  # noqa: E402
@@ -325,7 +333,7 @@ def run(pool: str, out_dir: Path) -> None:
     # the diagonal is rq02's per-task DA-size: check it against the committed table
     per_task = out_dir / "da_per_task.csv"
     if per_task.exists():
-        da = pd.read_csv(per_task, index_col="task")
+        da = one_axes(pd.read_csv(per_task)).set_index("task")
         for b in sizes:
             col = f"decision_acc_size_{b}"
             if col in da.columns and b in size_da:
@@ -345,6 +353,27 @@ def run(pool: str, out_dir: Path) -> None:
             note=f"{common} Within-size pairs pooled over {', '.join(b for b, n in within.items() if n >= 2)} "
                  f"({pairs_within} pairs); the level is the fraction of x's own run as a Chinchilla multiple (runs train 5C).",
             cbar="earliest checkpoint")
+    # The benchmarks-only sub-map: drop BPB / the loss (no chance level) and every
+    # benchmark the gate finds at chance at every size — neither side of such a
+    # pair can ever be valid, so those rows and columns are structurally empty.
+    # NA (no chance level: lambada, mc2) passes the gate, as everywhere (rule 1)
+    scored = set(mask.index[(mask == 1).any(axis=1) | mask.isna().all(axis=1)]) if mask is not None else set(tasks)
+    bench = [t for t in tasks if benchmark_family(t) not in ("bpb", "loss") and t in scored]
+    dropped = len(tasks) - len(bench)
+    b_note = (f"Pool `{pool}`, the {len(bench)} benchmark tasks above chance at >= 1 size ({dropped} of {len(tasks)} "
+              f"parent tasks dropped: BPB and the loss have no chance level, and a benchmark at chance everywhere "
+              f"can never contribute a pair). A cell holds a level only where the two tasks share >= {MIN_PAIRS} "
+              f"pairs; DA >= {SAFE_DA} at that level and at every larger level with a value. Grey: the gate emptied "
+              "every level; white: no data; the diagonal is rq02's own-task DA.")
+    if len(bench) >= 2:
+        big_map(size_lv.loc[bench, bench], out_dir / "cross_task_size_benchmarks.png", levels=sizes, level_label=str,
+                title=f"Cross-task DA-size, benchmarks above chance: smallest size of proxy task x whose final ranking predicts task y's at {TARGET_SIZE}",
+                note=b_note, cbar="smallest proxy size")
+        big_map(ckpt_lv.loc[bench, bench], out_dir / "cross_task_ckpt_benchmarks.png", levels=FRACS[:-1],
+                level_label=G.chinchilla,
+                title="Cross-task DA-ckpt, benchmarks above chance: earliest checkpoint of proxy task x that predicts task y's final ranking at the same size",
+                note=b_note, cbar="earliest checkpoint")
+
     fam = dict(group=benchmark_family, order=G.panel_order, same_family=False, xlabel="proxy benchmark x", ylabel="target benchmark y",
                note="Cell: the median level over the task pairs of the two benchmarks (every language) that reach one, rounded up; "
                     "the CSV adds the share that never do.")
@@ -377,6 +406,11 @@ def generate_readme(pool: str, out_dir: Path, n_tasks: int, ref_fams: int, pairs
         "is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` "
         "maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). "
         f"Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool {pool}`.",
+        "The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the "
+        "benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer "
+        "result is possible at all: "
+        f"[`cross_task_size_benchmarks.png`]({stage}/{pool}/cross_task_size_benchmarks.png), "
+        f"[`cross_task_ckpt_benchmarks.png`]({stage}/{pool}/cross_task_ckpt_benchmarks.png).",
         f"![Cross-task DA-size by benchmark]({stage}/{pool}/cross_task_size_by_family.png)",
         f"![Cross-task DA-ckpt by benchmark]({stage}/{pool}/cross_task_ckpt_by_family.png)",
         f"![Cross-task DA-size by language]({stage}/{pool}/cross_task_size_by_language.png)",

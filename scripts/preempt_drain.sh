@@ -28,19 +28,20 @@
 #              resubmits with only the tasks still missing.
 #   pretrain-* ONLY the runs listed in the ladder below, and only when they
 #              were submitted by launch_trainings.py --partition preemptable:
-#              that adds --requeue and MEGATRON_EXIT_ON_SIGTERM, so the
-#              patched handler checkpoints inside the 240s grace and the job
-#              resumes when it comes back. A pretrain job submitted
-#              WITHOUT those (the `normal` default) loses everything back to
-#              its last save and never returns — moving one here is a loss,
-#              which is why the filter takes only the named sizes.
+#              that adds MEGATRON_EXIT_ON_SIGTERM, so the patched handler
+#              checkpoints inside the 240s grace, and PRETRAIN_CHAIN, so the
+#              wrapper has already queued a singleton successor to resume from
+#              that save. A pretrain job submitted WITHOUT those (the `normal`
+#              default) loses everything back to its last save and never
+#              returns — moving one here is a loss, which is why the filter
+#              takes only the named sizes.
 #   *bpb*      score_bpb.py writes each checkpoint's bpb.json before starting
 #              the next, and skips what is already written on re-run.
 #
 # Clariden has JobRequeue=0, so a preempted job is cancelled rather than
-# requeued unless it asked for it (only the pretrain runs do, see above); the
-# next watcher pass resubmits a convert or eval and it picks up where it
-# stopped, and a build's successor is already queued. BPB is not the
+# requeued, and nothing here asks otherwise; the next watcher pass resubmits a
+# convert or eval and it picks up where it stopped, and a build's — or a
+# pretrain run's — successor is already queued. BPB is not the
 # watcher's: score_bpb.sbatch
 # chains itself, queuing its successor BEFORE scoring, so a preempted link's
 # successor is already pending (and is moved here in turn). But a link killed
@@ -48,8 +49,8 @@
 # successor ends the chain — re-run launch_bpb.sh, which skips scored cells and
 # cells with a job in flight. That, and their number, is why BPB goes last.
 #
-# A pretrain job below the named rungs is never moved, and neither is one
-# without --requeue: 21 nodes lost to a preemption costs up to a save interval
+# A pretrain job below the named rungs is never moved, and neither is one that
+# cannot come back: 21 nodes lost to a preemption costs up to a save interval
 # of training. Unlike debug_drain.sh nothing is truncated here — preemptable's
 # 24 h limit is above every eval walltime.
 #
@@ -72,7 +73,8 @@
 # denied" for anyone but an operator, verified 2026-09-20). A moved job
 # therefore keeps the wall it was submitted with; to use the full 24h, submit
 # there in the first place — `launch_trainings.py --partition preemptable`
-# (23:59:00 + --requeue).
+# (23:59:00 + the self-chain). A chain successor inherits the partition and
+# wall of the attempt that queued it, so a moved run keeps 24h from then on.
 #
 # The fraction comes from the size's own schedule (launch_trainings.schedule_for,
 # the same source the watcher's due_iters uses), not from the iter number, so
@@ -145,8 +147,8 @@ drain_once() {
     # anchored): build/convert/eval unconditionally, and of the pretrain runs
     # only 3B and the deep 1.7B/1B (builds excluded, see the header) — a shallow
     # or smaller rung is cheap enough
-    # to wait for `normal`, and every pretrain job is checked for --requeue
-    # again below before it is actually moved.
+    # to wait for `normal`, and every pretrain job is checked below for a way
+    # back from a preemption before it is actually moved.
     pend=$(awk -F'|' '$1=="(null)" && ($4 ~ /^(convert|eval)-/ || $4 ~ /bpb/ \
                        || $4 ~ /^pretrain-3B-/ \
                        || ($4 ~ /^pretrain-(1\.7B|1B)-/ && $4 ~ /-deep-/))' <<<"$q")
@@ -191,15 +193,28 @@ drain_once() {
                 (( waiting++ == 0 )) && echo "  wait: $jid $name needs $n nodes, room=$room"
                 continue
             fi
-            # A pretrain job is only preemption-safe if it can come back:
-            # --requeue (launch_trainings.py --partition preemptable) plus the
-            # patched exit-signal handler. Without it a preemption is a cancelled
-            # run and a lost save interval on 21 nodes, so ask the controller
-            # rather than assume — Requeue is 0/1 per job.
-            if [[ $name == pretrain-* ]] \
-               && [[ $(squeue -h -j "$jid" -O Requeue 2>/dev/null | tr -d ' ') != 1 ]]; then
-                echo "  skip: $jid $name submitted without --requeue (relaunch with --partition $PART)"
-                continue
+            # A pretrain job is only preemption-safe if it can come back, and
+            # a preemption it cannot come back from costs a save interval on 21
+            # nodes — so ask the controller rather than assume. Two ways back,
+            # both set by launch_trainings.py --partition preemptable:
+            #   Comment=selfchain  the wrapper queues a singleton successor
+            #                      before training, so a preempted attempt is
+            #                      replaced by a NEW job (current).
+            #   Requeue=1          --requeue, which this used to pass (legacy,
+            #                      for jobs still in flight from before
+            #                      2026-09-21). Slurm holds such a job on its
+            #                      sixth requeue — MaxBatchRequeue=5 — which is
+            #                      why it is no longer what we submit.
+            # The comment is the only one of the two that squeue can see: the
+            # chain is driven by PRETRAIN_CHAIN in the job environment, and
+            # neither squeue nor scontrol exposes that.
+            if [[ $name == pretrain-* ]]; then
+                gate=$(squeue -h -j "$jid" -O Comment,Requeue 2>/dev/null)
+                if [[ $gate != *selfchain* && $(awk '{print $NF}' <<<"$gate") != 1 ]]; then
+                    echo "  skip: $jid $name cannot come back from a preemption" \
+                         "(relaunch with --partition $PART)"
+                    continue
+                fi
             fi
             if (( DRY )); then
                 echo "  would move $jid $name (rank $rank, $n node)"

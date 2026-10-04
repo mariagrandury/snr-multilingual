@@ -72,7 +72,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     pool_include_external,
     size_bucket,
 )
-from analysis.utils import (  # noqa: E402
+from analysis.utils import (one_axes,  # noqa: E402
     NOISE_WINDOW, _is_parent_task, benchmark_family, ladder_frame,
     noise_checkpoints, pool_models,
 )
@@ -296,7 +296,9 @@ def run(pool: str, out_dir: Path):
             f"DA table missing: {da_path}\n"
             f"Run `compute_da.py --pool {pool}` first (DA is computed before SNR)."
         )
-    da_df = pd.read_csv(da_path, index_col="task")
+    # one row per task again: the SNR columns are computed over the pool, not
+    # over a pair set, so they join the multi-axis reading (rule 15).
+    da_df = one_axes(pd.read_csv(da_path)).set_index("task")
     combined = da_df.join(snr_df)
 
     out_dir.mkdir(parents=True, exist_ok=True)
