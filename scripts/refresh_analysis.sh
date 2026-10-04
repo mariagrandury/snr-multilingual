@@ -69,6 +69,7 @@ echo "report: $(wc -l < "$LADDER") rows, $(date -r "$LADDER" '+%Y-%m-%d %H:%M')"
 #    a refreshed report invalidates every table below it.
 # The orphan check below (rule 17) asks which artifacts this refresh did not write.
 STARTED=$(mktemp)
+trap 'rm -f "$STARTED"' EXIT
 step "analysis pipeline"
 ( cd src/signal-and-noise && HF_HUB_OFFLINE=1 CURVES=$CURVES bash run_all_predictivity.sh ) \
   || FAILED+=("run_all_predictivity.sh")

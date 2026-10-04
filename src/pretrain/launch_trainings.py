@@ -1590,7 +1590,8 @@ def main() -> None:
             blend = data_blend("$ENGLISH_DIR/english_dclm",
                                f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
-                cell_env(cfg, c["size"], c["seed"], exp, blend),
+                cell_env(cfg, c["size"], c["seed"], exp, blend,
+                         gbs=None if gbs == GBS else gbs),
                 cell=c, dry_run=args.dry_run,
                 data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
                 compute=az_compute,
