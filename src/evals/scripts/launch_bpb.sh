@@ -20,6 +20,7 @@ set -uo pipefail
 STAGING=${STAGING:-/capstor/store/cscs/swissai/infra01/msnr/msnr-hf-models}
 OUT_ROOT=${OUT_ROOT:-/iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/eval_logs/mariagrandury-epflnlp/msnr}
 SBATCH=${SBATCH:-$(dirname "${BASH_SOURCE[0]}")/score_bpb.sbatch}
+ON_GRID=${ON_GRID:-$(dirname "${BASH_SOURCE[0]}")/on_grid_iters.awk}
 DRY=0; FILTER='.'
 
 while [[ $# -gt 0 ]]; do
@@ -38,8 +39,13 @@ for cell in $(ls "$STAGING" 2>/dev/null | grep '^lm-' | grep -E "$FILTER"); do
     due=0; conv=0
     # .hf_complete is convert-snr.sh's last write: a half-written snapshot has
     # a config.json but no marker, and must not be scored.
+    # A preempted job's off-grid saves are not scored either (on_grid_iters.awk).
+    # Filtered HERE as well as inside score_bpb.sbatch: a cell whose only
+    # unscored checkpoints are off-grid would otherwise read as due on every run
+    # of this script and be handed a job that exits with nothing to do.
     for it in $(find "$STAGING/$cell" -name .hf_complete -printf '%h\n' 2>/dev/null \
-                | xargs -r -n1 basename | sed 's/^iter_0*//'); do
+                | xargs -r -n1 basename | sed 's/^iter_0*//' \
+                | sort -n | awk -f "$ON_GRID"); do
         conv=$((conv + 1))
         [ -s "$OUT_ROOT/$cell-iter$it/bpb/bpb.json" ] || due=$((due + 1))
     done
