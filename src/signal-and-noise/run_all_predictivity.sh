@@ -116,6 +116,9 @@ done
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
 # agreement and has no such problem (plan/decision_accuracy.md).
 run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
+# DA of the benchmark BPB (bBPB) against accuracy on the same pool; reads the
+# per-item store, so off the cluster it writes nothing (README block `bench-bpb`)
+run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"

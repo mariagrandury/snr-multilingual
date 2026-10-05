@@ -217,7 +217,7 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str)
         "accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the "
         "task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc "
         "minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from "
-        "`da_per_task.csv`. Regenerate with "
+        "`da_all_per_task_both_axes.csv`. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool {pool}` (after "
         f"`build_per_item_store.py --pool {pool} --finals-only`).",
         f"**{ALL}**", md_table(head, size_rows(ALL)),
@@ -233,6 +233,11 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str)
 
 
 def main(pool: str) -> None:
+    if not any((STORE / pool).glob("*.parquet")):
+        # the store lives on the cluster only: an empty one would overwrite the
+        # committed tables with column-less files (per_item_ladder.py does the same)
+        print(f"no per-item store at {STORE / pool}: nothing written (build_per_item_store.sbatch builds it)")
+        return
     out, n_pairs = da_table(pool)
     out_dir = DECISION_ACCURACY / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -242,7 +247,7 @@ def main(pool: str) -> None:
     print(summ.loc[[ALL, CLOZE, LETTER], ["n_tasks", *READINGS, "acc_acc_n", "bbpb_acc_n", "n_paired",
                                           "gain", "bbpb_better", "acc_better", "p"]].round(3).to_string())
 
-    da = pd.read_csv(out_dir / "da_per_task.csv")
+    da = pd.read_csv(out_dir / "da_all_per_task_both_axes.csv")
     da = da[(da["axes"] == "multi-axis") & (da["task"] == "bpb_macro")].iloc[0]
     ref = {s: da[f"decision_acc_size_{s}"] for s in SMALL_SIZES}
     letter = out.groupby("family")["letter"].all().to_dict()
