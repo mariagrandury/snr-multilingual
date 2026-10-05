@@ -106,7 +106,9 @@ PUB_ERR=$LOG_DIR/$STAMP.publish.err
 ( cd "$REPO/src" && $PY pretrain/ladder_report.py --plot --publish --push-hf --push-git ) \
     > >(tee -a "$LOG") 2> >(tee "$PUB_ERR" >>"$LOG")
 LR_RC=$?
-(( LR_RC == 0 )) || FAILED+=("ladder_report.py (exit $LR_RC)")
+# A crash before publish() wrote its CSV leaves yesterday's file at $FRESH,
+# which step 2 would install and verify as "today's": stop here instead.
+(( LR_RC == 0 )) || { FAILED+=("ladder_report.py (exit $LR_RC)"); finish 1; }
 
 GIT_PUSHED=1; HF_PUSHED=1
 grep -q "\[publish\] git push skipped"  "$PUB_ERR" 2>/dev/null && GIT_PUSHED=0

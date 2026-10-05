@@ -32,8 +32,9 @@ Sizes are non-embedding parameters. Cells marked ×3 get three seeds (different 
 
 The ×3 columns use **different seed triples**, because two people fill them:
 175M and 600M run (64, 313, 1904) at L ∈ {1, 2, 50}; the 1B column is
-aromanou's and runs (28, 1797, 1904) at L ∈ {1, 2, 30}, plus L50 (added
-2026-09-10 to match the other ×3 columns — those two cells are new). The grid
+aromanou's and runs (28, 1797, 1904) at L ∈ {1, 2, 30}, L50 was added
+2026-09-10 to match the other ×3 columns and dropped again 2026-09-21,
+never launched. The grid
 names the seeds that exist on disk — under the wrong triple the launcher
 would submit two more runs per cell and the auto-eval watcher would never
 evaluate the ones already trained.
@@ -43,7 +44,7 @@ iters, to 45740), while the 1B rung now saves 40 (every 1143 iters, to
 45720; the regime itself is unchanged — 20 per run, 40 at the 1B, 60 at the
 1.7B). None of their checkpoints lands on that grid (15 cells: seed 1904 at
 L1, L2, L15, L30 and schemeB L8/L15/L30, and seeds 28/1797 at L1, L2, L30 and
-schemeB L30; their schedule also ends at 45,740, the new 1B L50 ×3 at 45,720), so the
+schemeB L30; their schedule also ends at 45,740, the 1B grid at 45,720), so the
 watchers now read due checkpoints on the run's *own* grid
 (`launch_trainings.due_iters`): every save of a 20-checkpoint run sits at the
 same k/20 fraction as every 2nd save of a 40-checkpoint run, so the two are
@@ -136,7 +137,7 @@ To avoid tokenizing English once per setting, build the English data once and th
 | 50          | 49                 | 92B (A and AT3)       | 50%                            |
 | 100         | 99                 | 92B (AT3 only)        | 50%                            |
 
-Each FineWeb2 build is sized to half of the largest budget at that setting, with about 10% headroom, and that number is **derived from the grid** rather than tabulated (`build_data_mixtures.largest_size` reads `launch_trainings.scheme_sizes`): 92B where a 1.7B model trains (half of 167B plus headroom), 52B where the largest rung is the 1B (half of 94B plus headroom). Since the 1.7B row gained L15 and L50 on 2026-09-10, every scheme-A and AT3 build is 92B; only ZH and ES at L2, capped at the 1B rung, are 52B. The English dataset is built once to 184B, which covers the 1-language setting's largest need and the English half of every other setting.
+Each FineWeb2 build is sized to half of the largest budget at that setting, with about 10% headroom, and that number is **derived from the grid** rather than tabulated (`build_data_mixtures.largest_size` reads `launch_trainings.scheme_sizes`): 92B where a 1.7B model trains (half of 167B plus headroom), 52B where the largest rung is the 1B (half of 94B plus headroom). Since the 1.7B row gained L15 and L50 on 2026-09-10, every scheme-A and AT3 build targets 92B. The L2 builds fall short of it because the source runs out (see below): ZH holds 52.0B (sized when ZH stopped at the 1B) and ES 23.9B, and both train to 1.7B regardless. The English dataset is built once to 184B, which covers the 1-language setting's largest need and the English half of every other setting.
 
 The build script reports the realized per-language token counts and warns when a language runs out of data; record any shortfall. **The builder never repeats data** — it prints the shortfall and moves on — so a target the source cannot reach yields a *smaller* build, not a flatter one. Two consequences already bite:
 
@@ -146,7 +147,7 @@ The build script reports the realized per-language token counts and warns when a
 
   That is why **no already-trained cell has to be re-run.** A model reads only its own budget out of the build, and at L15/L50 every rung through the 1B fits inside 52B — 4.7B at 90M (9 % of the pool) up to 47.2B at the 1B (91 %). Only the 1.7B exceeds it, at 83.6B (1.61 epochs), which is the sole reason the rebuild exists. The residual asymmetry is that the 1.7B reference reads a 92B pool while its proxies read the nested 52B one; since the proportions are identical and each rung already reads a different *fraction* of the pool, that difference is of the same kind and scale as a data-order seed change — which the ×3 seed columns already quantify as noise. Record it; do not re-run the column for it. One qualification, measured 2026-09-13: FineWeb-2's parquet files are grouped by CommonCrawl dump, so the extension is not a random superset of the smaller pool but a newer one — in scheme B's L15, crawls from 2021–24 are 4% of the 52B Russian and 14% of the 92B, 0% and 32% of the Chinese. The 1.7B reference therefore also reads a later crawl mix than its proxies.
 
-  **Nothing is swapped into the training stage.** `launch_trainings.py cscs` reads the 92B copy (staged to `/iopsstor/scratch/cscs/mariagrandury/data-92B`) only for a cell the staged 52B build is too small for — the 1.7B cells at A-L15, A-L50 and B-L15 — and keeps every other rung, including cells not trained yet (the shallow ones, the new 1B ×3 seeds at L50), on the 52B pool their peers read. Replacing the stage files would change what those cells see, not just how much: Megatron shuffles over the whole file, so a different pool is a different sample order as well as a newer crawl mix. Without a big-enough rebuild the launcher still skips a cell drawing more than its staged build holds (`skip [data undersized]`), unless the build already realizes what the source allows at the current target.
+  **Nothing is swapped into the training stage.** `launch_trainings.py cscs` reads the 92B copy (staged to `/iopsstor/scratch/cscs/mariagrandury/data-92B`) only for a cell the staged 52B build is too small for — the 1.7B cells at A-L15, A-L50 and B-L15 — and keeps every other rung, including cells not trained yet (the shallow ones), on the 52B pool their peers read. Replacing the stage files would change what those cells see, not just how much: Megatron shuffles over the whole file, so a different pool is a different sample order as well as a newer crawl mix. Without a big-enough rebuild the launcher still skips a cell drawing more than its staged build holds (`skip [data undersized]`), unless the build already realizes what the source allows at the current target.
 
   **For the paper:** the six 1.7B cells at A-L15, A-L50 and B-L15 (deep and shallow) train on a different build from their smaller rungs — the same languages in the same proportions, extended with newer crawls — and nothing in `configs/models.json` records which build a cell read. The record is this paragraph, the launcher's `(FineWeb-2 from /iopsstor/scratch/cscs/mariagrandury/data-92B…)` line when it submitted them, and the `data-92B/` paths in those cells' training logs. State it wherever results at those settings compare the 1.7B reference with its proxies.
 - **No L2 language can feed a 1.7B.** A 1.7B draws 83.6B from the multilingual half, and the filtered subset holds about 71.8B of Russian by the builder's estimate (the L2 build realized 72.8B, so the estimates undercount slightly), 59.9B of Chinese and 23.4B of Spanish. The existing scheme-A L2 build is 72.8B, not 92B, for exactly this reason; Spanish is clean only through the 350M rung. All three train to 1.7B regardless (ES uncapped 2026-09-23), repeating 1.15x / 1.61x / 3.51x — under the ~4 epochs at which repeated tokens stop being worth close to fresh ones, and the price of having a second-language axis at all: without ES at the reference it holds one pair, below the three rule 5 needs.

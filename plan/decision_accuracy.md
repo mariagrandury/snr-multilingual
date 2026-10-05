@@ -103,7 +103,7 @@ report, ES is capped at 1B).
 
 `pair_axes.py`, the 23 `above_66_both` cells, pooled over decisions, both pair
 sets on the same gate and `MIN_PAIRS`
-(`analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both_axes.{png,csv}`):
+(`analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_mono_vs_multi_axes.{png,csv}`):
 
 | definition | reading | multi-axis | mono-axis | Δ | decisions @175M (multi / mono) |
 |---|---|---|---|---|---|
@@ -152,7 +152,7 @@ Three findings:
 - con: a third of the decisions; temperature (2 pairs) and second language
   (0 at the reference) draw no line until BT3 and ZH's 1.7B land
 - con: `decision_acc_fast` cannot express it — every consumer of
-  `da_per_task.csv` needs the explicit-pair kernel or the new column
+  `da_all_per_task_both_axes.csv` needs the explicit-pair kernel or the new column
 
 **The seed axis.** A seed pair is two draws of one design: there is no right
 ordering, so agreement between a small and a large model on it measures only
@@ -172,14 +172,14 @@ interpretation.
 
 ### 2.5 Implementation sketch (from the compaction discussion, confirmed)
 
-- one `da_per_task.csv` with an `axes` column; every existing consumer
+- one `da_all_per_task_both_axes.csv` with an `axes` column; every existing consumer
   filters `axes == "multi-axis"` by default, so no number moves silently
 - the axis decomposition (`list`, `T`, `lang2` from `DATA_SCHEMES`) moves from
   `scale_convergence.py` into `analysis/utils.py` (CLAUDE.md: a rule lives in
   the shared layer)
 - `compute_da.py` gains the explicit-pair kernel for mono-axis; DA-goal
   columns join the table (`decision_acc_goal_f<NN>_<size>`)
-- rq2 figures come in `_multi_axis` / `_one_axis` pairs in one directory (§3)
+- rq2 figures come in `_multi_axes` / `_mono_axis` pairs in one directory (§3)
 
 ---
 
@@ -268,7 +268,7 @@ twins.
 `rf_belebele`, `rf_global_mmlu_full`, `rf_include_base_44` rows with many blue
 cells: **rq00 is current**. `rq1_fits.csv` and `scaling_regimes.csv` contain
 **zero** twin tasks against 124 in today's `predictivity_all` frame: **the
-whole rq01 chain is stale** (rule 14). rq02's `da_per_task.csv` (382 rows,
+whole rq01 chain is stale** (rule 14). rq02's `da_all_per_task_both_axes.csv` (382 rows,
 written 2026-09-21 21:35) contains **zero** twin tasks as well, so every DA
 table, the reliable populations and both rq2 figures are stale in the same
 way. Of the three RQs only rq00 carries the twins.
@@ -348,13 +348,13 @@ are above chance somewhere and drawn".
 
 ---
 
-## 6. RQ02 paper figure: `rq2_above_66_both_transformation.png`
+## 6. RQ02 paper figure: `rq2_da_all_above_66_both_transformation_multi_axes.png`
 
 **What it shows today.** Three panels on the 23 `above_66_both` cells (14
 languages, 5 families): DA-size by design axis with a pooled black line;
 DA-ckpt and DA-goal per proxy size on the checkpoint axis.
 
-**Findings from the current version** (`rq2_above_66_both_transformation.csv`).
+**Findings from the current version** (`rq2_da_all_above_66_both_transformation_multi_axes.csv`).
 
 | panel | line | 175M | 350M | 600M | 1B | reading |
 |---|---|---|---|---|---|---|
@@ -388,7 +388,7 @@ not, the pooled DA-size hides which decisions recover — all hold.
 - *The filename* (`rq2.*`) collides with the paper's current `fig:rq2`
   (§0, row 8).
 
-**New figure: `rq2_above_66_both_axes.png`** (`pair_axes.py`): the same three
+**New figure: `rq2_da_all_above_66_both_mono_vs_multi_axes.png`** (`pair_axes.py`): the same three
 definitions, rows = pair set, same 23 cells, same gate. Findings are §2.3's
 table: DA-ckpt unchanged, DA-size/DA-goal −0.04 to −0.05 with the same shape,
 a third of the decisions. Conclusions are robust to the pair set; levels are
@@ -417,8 +417,8 @@ reference's own DA-ckpt at 4.5C (0.871) is a measured ceiling.
    declared filters. One full pipeline run.
 4. rq01 chain rerun (it is stale regardless of 1–3); `regimes.py` gains
    survivorship labels; the paper figure is re-cut.
-5. rq02: `reliable_tasks` on `grid`'s table; rq2 figures in `_multi_axis` /
-   `_one_axis` pairs; the mono-axis version becomes the paper's; the `rq2.*`
+5. rq02: `reliable_tasks` on `grid`'s table; rq2 figures in `_multi_axes` /
+   `_mono_axis` pairs; the mono-axis version becomes the paper's; the `rq2.*`
    name resolved with `make_rq_figures.py` and the tex caption in one change.
 
 Steps 1–2 are the big change discussed on 2026-09-22 and are unstarted; the
@@ -437,7 +437,7 @@ review of this session's rq02 work is committed (`2f6c05c`).
 4. **Which figure is the paper's `fig:rq2`** — the ten-checkpoint one the
    tex describes, or the three-panel one? This blocks the next
    `make_rq_figures.py` run.
-5. ~~Does rq02's `da_per_task.csv` contain the twins?~~ Resolved: it does
+5. ~~Does rq02's `da_all_per_task_both_axes.csv` contain the twins?~~ Resolved: it does
    not (0 of 382 rows). rq01 **and** rq02 are stale; only rq00 carries the
    twins. Both chains rerun before anything is cited — which argues for
    doing steps 1–3 of §7 first and running the pipeline once.
@@ -462,8 +462,9 @@ wide columns; `reliable_tasks.py` gates the three kinds separately, carries
 both pair sets and reads its DA from `--da-pool predictivity_schemes` while the
 gate and the outputs stay with `predictivity` (option C, so #9 is fixed without
 renaming a directory); `by_L`, `scale_convergence` and `paper_rq2` take
-`--axes` and write `_one_axis` twins beside the existing names; the driver runs
-both passes. Every other consumer calls `one_axes()` and so still reads the
+`--axes` and write `_mono_axis` twins beside the multi-axis ones, which carry
+`_multi_axes` since 2026-09-25 (no bare names left, so `rq2.*` no longer collides
+with the paper's `fig:rq2`, the ten-checkpoint figure); the driver runs both passes. Every other consumer calls `one_axes()` and so still reads the
 multi-axis table it always read.
 
 **Two checks worth keeping.** `pair_agreement` reproduces
@@ -500,7 +501,7 @@ reliable-eligible tasks against 289 multi-axis (93 %), and 43 against 59 in
 `above_66_both` (73 %). The pair minimum is not the binding constraint, so the
 mono-axis reading is viable as a headline.
 
-**DA-size on the paper population** (`rq2_above_66_both_transformation`):
+**DA-size on the paper population** (`rq2_da_all_above_66_both_transformation_mono_axis`):
 
 | line | | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|

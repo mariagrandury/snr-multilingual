@@ -76,7 +76,7 @@
 # (23:59:00 + the self-chain). A chain successor inherits the partition and
 # wall of the attempt that queued it, so a moved run keeps 24h from then on.
 #
-# The fraction comes from the size's own schedule (launch_trainings.schedule_for,
+# The fraction comes from the size's own schedule (launch_trainings.cell_schedule,
 # the same source the watcher's due_iters uses), not from the iter number, so
 # 81000 at 1.7B and 28800 at 600M both read as 100 %. If that lookup fails the
 # script still runs — every eval then ranks 7 and only the kinds above them
@@ -123,11 +123,11 @@ PY_BIN=$(command -v python3.11 || command -v python3)
 TARGETS=$(OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 "$PY_BIN" - "$PRETRAIN_DIR" <<'PY' 2>/dev/null
 import json, sys
 sys.path.insert(0, sys.argv[1])
-from launch_trainings import HYPERPARAMS, schedule_for
+from launch_trainings import HYPERPARAMS, cell_schedule
 for arch, path in HYPERPARAMS.items():
     for size, cfg in json.loads(path.read_text())["configs"].items():
         try:
-            print(f"{size}|{arch}|{schedule_for(cfg)[0]}")
+            print(f"{size}|{arch}|{cell_schedule(cfg, size)[0]}")
         except KeyError:            # a size with no predictivity block
             pass
 PY

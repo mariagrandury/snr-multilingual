@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..100} × deep/shallow
-# × five data schemes × seeds) from the published ladder report — the wide CSV that
+# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..50} × deep/shallow
+# × seven data schemes × seeds) from the published ladder report — the wide CSV that
 # `src/pretrain/ladder_report.py --plot --publish --push-hf` writes to the HF
 # dataset named in configs/hf_wandb.json (`repo_id_ladder_report`). The loader
 # downloads it on first use; point SNR_LADDER_DIR at a directory holding
@@ -75,15 +75,15 @@ pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
-# the gate on one task, run by run (hellaswag_ta: at chance to 600M, above from 1B)
-run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
-# the twins' effect on the gate (McNemar) and on every headline reading with / without them
-run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
+# ... and the probe families' twins (README block `rf-compare-probe`; probe.sh's FAMILIES)
+run $PY analysis/rq00_task_reformulation/compare.py --tag probe --families mmlu,commonsense_qa,cultural_bench_easy,bbh_mcq,acp_bench_mcq
+# which probe candidates survive the gate, per language: read off the committed mask (README block `probe-survivors`)
+run $PY analysis/rq00_task_reformulation/probe_survivors.py
 # the ladder's gate floor against the public models' (all/external mask): size floor or benchmark floor
 run $PY analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 
@@ -104,13 +104,13 @@ pass "rq02 — decision accuracy"
 # report is newer than them.
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
-  if fresh "analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv"; then
-    echo "  (DA cached: analysis/rq02_decision_accuracy/$st/$t/da_per_task.csv)"
+  if fresh "analysis/rq02_decision_accuracy/$st/$t/da_all_per_task_both_axes.csv"; then
+    echo "  (DA cached: analysis/rq02_decision_accuracy/$st/$t/da_all_per_task_both_axes.csv)"
   else
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
 done
-# the scheme-inclusive DA table: every data scheme at the grid seed (AT3/BT3 =
+# the scheme-inclusive DA table: every data scheme at the grid seed (AT3 =
 # a temperature, ZH/ES = a second language), which is the population by_L and
 # scale_convergence actually pair over. The headline `predictivity` pool keeps
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
@@ -121,11 +121,17 @@ for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
 done
 # which (benchmark, language) cells rank reliably at all: the population every
-# `above_*` figure below averages over. Reads rq02's da_per_task.csv, so it comes
+# `above_*` figure below averages over. Reads rq02's da_all_per_task_both_axes.csv, so it comes
 # after compute_da and BEFORE everything that filters on it — by_L and
 # scale_convergence both skip their filtered variants when it has not run yet,
 # which silently costs the paper's rq2 figures.
 run $PY analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity
+# two rq00 figures that READ rq01's regimes and the two rq02 tables above, so they run
+# here and not in the rq00 block, where they drew the previous refresh's tables
+# (CLAUDE.md bug #16): the gate on one task, run by run, with its rq02 cells;
+run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivity --task include_v2_og_hungarian_hungary
+# the twins' effect on the gate (McNemar) and on every headline reading with / without them
+run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
 # the toy explainer of the three DA kinds, the pair sets and the value lattice (no measured number; README block)
 run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
 # per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
@@ -143,7 +149,7 @@ run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # the paper's RQ2 figure: composes the three panels from the CSVs above, so it
 # runs LAST of the rq02 block — it derives nothing of its own
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
-# the mono-axis twins (`_one_axis`): the same three definitions over the pairs
+# the mono-axis twins (`_mono_axis`): the same three definitions over the pairs
 # that move ONE design axis, which is what upstream's "every pair" is by
 # construction. Same folder, so the two readings compare without opening two.
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --axes mono-axis
@@ -153,7 +159,7 @@ run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity --axes 
 # languages only and on the tasks every regime shares, one panel per L8
 # language with a tokens-of-that-language axis, the DA ↔ Kendall τ identity and
 # the tie-convention flip rates, and the seed-replicate uncertainty. All read
-# da_reliable_tasks.csv, so they come after reliable_tasks.py.
+# da_all_reliable_tasks_both_axes.csv, so they come after reliable_tasks.py.
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity --by L --langs L8 --common-tasks
 run $PY analysis/rq02_decision_accuracy/by_language.py --pool predictivity
@@ -194,6 +200,9 @@ run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 # FineTasks' four selection criteria on the ladder, judged by DA-size, plus every surrogate against DA-size
 run $PY analysis/rq04_surrogates/finetasks_criteria.py --pool predictivity
+# the surrogate catalogue (literature.md) and the truths (rq02's DA, tau, rho), then the validated search
+run $PY analysis/rq04_surrogates/catalogue.py --pool predictivity
+run $PY analysis/rq04_surrogates/search.py --pool predictivity
 
 pass "rq05 — design decisions"
 # rq05 needs the five interventions and its early-decision read follows from

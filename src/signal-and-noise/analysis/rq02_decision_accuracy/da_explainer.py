@@ -26,7 +26,7 @@ cannot disagree on a definition.
       identities: DA-goal at the final checkpoint IS DA-size, and at the
       reference size DA-ckpt IS DA-goal.
 
-    da_explainer.png / .csv   the toy scores (kind = score) and the decided
+    da_all_explainer_both_axes.png / .csv   the toy scores (kind = score) and the decided
                               pairs (kind = pair) behind panel (c), with the
                               multi-axis (`da`) and mono-axis (`da_mono`) DA
 
@@ -229,7 +229,7 @@ def figure(out_dir: Path) -> pd.DataFrame:
                     f"is one (task, proxy size[, checkpoint]) over the ladder's families at the grid seed — {MIN_PAIRS} pairs at least (rule 5), gated "
                     "where either side is at chance (rule 1); the mono-axis set is the pairs that move exactly one design axis (rule 15).")
     fig.tight_layout(rect=(0, 0, 1, top), h_pad=2.2)
-    S.save(fig, out_dir / "da_explainer.png", dpi=150)
+    S.save(fig, out_dir / "da_all_explainer_both_axes.png", dpi=150)
 
     scores = pd.concat([FINALS.rename_axis("family").reset_index().melt(id_vars="family", var_name="size", value_name="score").assign(frac=1.0),
                         RUN.drop(columns=1.0).rename_axis("family").reset_index().melt(id_vars="family", var_name="frac", value_name="score").assign(size=PROXY)],
@@ -237,7 +237,7 @@ def figure(out_dir: Path) -> pd.DataFrame:
     pairs_long = pd.concat([t.assign(kind="pair", da_kind=k, da=stats[k]["da"], da_mono=t.loc[t["axis"] != "two axes", "match"].mean())
                             for k, t in tables.items()], ignore_index=True)
     table = pd.concat([scores, pairs_long], ignore_index=True)
-    table.to_csv(out_dir / "da_explainer.csv", index=False)
+    table.to_csv(out_dir / "da_all_explainer_both_axes.csv", index=False)
     return table
 
 
@@ -257,7 +257,7 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
         "moves; (c) decides the six pairs three ways over both pair sets of rule 15 and rings the values at or above the reliability cut; "
         "(d) is where each definition sits on the size × checkpoint grid, with the two identities. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/da_explainer.py --pool {pool}`.",
-        f"![Decision accuracy explained on a toy ladder]({rel}/da_explainer.png)",
+        f"![Decision accuracy explained on a toy ladder]({rel}/da_all_explainer_both_axes.png)",
         "Key findings (definitions, so nothing to measure):",
         "\n".join([
             f"- On the toy, DA-size {da['DA-size']:.2f}, DA-ckpt {da['DA-ckpt']:.2f} and DA-goal {da['DA-goal']:.2f} over the six "
@@ -267,21 +267,23 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
             f"- A cell of n pairs takes the values k/n: at the minimum of {MIN_PAIRS} pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on "
             "its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. "
             f"The ringed cells ({', '.join(above)}) are the ones the `above_66_*` filters would keep (cut {CUT:g}).",
-            "- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it — ≈ 0.47 "
-            "on the ladder (7 % of pairs tied, the seed null of `seed_uncertainty.py`).",
+            "- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at "
+            "0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (6 % one-sided ties, "
+            "`agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of "
+            "one design, read in its own section).",
             "- DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's "
             "last column and last row are the other two figures' numbers.",
             "- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder "
             "a (task, size) cell holds 0–4 pairs for the temperature axis, 0–6 for the list, 0–10 for depth and 0–39 for the language "
             "count, so the temperature and depth groups often fall below the minimum and are NaN "
-            "(`early_small_by_transformation_*`, `scale_convergence_transformation_panels*`)."]),
+            "(`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`)."]),
         "Follow-ups:",
         "\n".join([
             "- A measured twin: the same panels on one real task (`hellaswag_de`, say) with the ladder's families, so the toy "
             "orders become the observed ones.",
             "- The lattice of the ladder's actual pair counts per cell (`median_pairs` in the scale-convergence CSVs), to show how coarse "
             "a per-cell DA is on each axis."]),
-        f"Files: [`da_explainer.png`]({gh}/da_explainer.png), [`da_explainer.csv`]({gh}/da_explainer.csv)."])
+        f"Files: [`da_all_explainer_both_axes.png`]({gh}/da_all_explainer_both_axes.png), [`da_all_explainer_both_axes.csv`]({gh}/da_all_explainer_both_axes.csv)."])
     replace_block(DECISION_ACCURACY / "README.md", "da-explainer", body, f"da_explainer.py --pool {pool}")
 
 

@@ -184,10 +184,10 @@ def eval_walltime(size: str, n_tasks: int) -> str:
 def auto_benchmarks(group: str = "auto") -> list[str]:
     """The `auto` group in configs/tasks.json — BENCHMARK names; each cell
     is evaluated on every benchmark's tasks in the languages it trains on
-    (tasks_for_benchmarks x cell_languages). `auto_rf` / `auto_rfgm` are the
-    reformulated sets: the letter-format families rewritten as cloze tasks
-    / as Gemini statements (../evals/scripts/make_rf_tasks.py), distinct task
-    names, so all sets coexist on disk and in W&B."""
+    (tasks_for_benchmarks x cell_languages). `auto` carries the reformulated
+    twins (`rf_*` cloze, `rfgm_*` Gemini statements,
+    ../evals/scripts/make_rf_tasks.py) beside the originals under distinct
+    task names, so all of them coexist on disk and in W&B."""
     groups = json.loads(TASKS_JSON.read_text())["groups"]
     if group not in groups:
         # `auto_rf` / `auto_rfgm` were retired on 2026-09-23: the twins live in
@@ -851,14 +851,6 @@ def main() -> None:
     p.add_argument("--all-languages", action="store_true",
                    help="evaluate every auto benchmark in every language, not "
                         "only the languages the cell trains on")
-    p.add_argument("--reformulated", nargs="?", const="rf", choices=["rf", "rfgm"],
-                   help="evaluate a reformulated group instead of `auto`: the "
-                        "letter-format families (belebele, global_mmlu_full, "
-                        "include_base_44) as `rf` cloze tasks scored on the "
-                        "answer strings (the default when no value is given, "
-                        "group auto_rf) or as the `rfgm` Gemini-rewritten "
-                        "statements (group auto_rfgm) — prefixed task names, "
-                        "so nothing already evaluated is touched")
     p.add_argument("--every", type=int, default=1,
                    help="coarsen the evaluated grid: every Nth of the ten "
                         "tenths of training. The default 1 is the grid the "
@@ -918,15 +910,11 @@ def main() -> None:
     if bad := set(args.sizes) - set(LADDER):
         p.error(f"unknown size(s) {sorted(bad)}; the ladder is {LADDER}")
 
-    if args.reformulated and args.group != "auto":
-        p.error("--group and --reformulated both choose the benchmark group; pass one")
-    group = f"auto_{args.reformulated}" if args.reformulated else args.group
-    benchmarks = auto_benchmarks(group)
-    # The reformulated evals get their own job name (`eval-<cell>-iter<N>-rf`
-    # / `-rfgm`): the original and each reformulated set of one checkpoint are
-    # different work, so no watcher may read another's job as its own and skip it.
-    args.job_suffix = f"-{args.reformulated}" if args.reformulated else (
-        "" if group == "auto" else f"-{group.removeprefix('auto_')}")
+    benchmarks = auto_benchmarks(args.group)
+    # Another group's evals get their own job name (`eval-<cell>-iter<N>-probe`):
+    # two groups on one checkpoint are different work, so no watcher may read
+    # another's job as its own and skip it.
+    args.job_suffix = "" if args.group == "auto" else f"-{args.group.removeprefix('auto_')}"
     if args.retry_held:
         print("--retry-held: the failure gate is off for this pass only\n")
     while True:

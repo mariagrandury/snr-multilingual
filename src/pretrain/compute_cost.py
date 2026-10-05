@@ -110,8 +110,9 @@ def kind_of(name: str) -> tuple[str, str | None]:
     if name.startswith("apertus-"):
         return "pretrain", None
     if name.startswith("eval-"):
-        # `-rf` / `-rfgm`: the reformulated-task evals (auto_evals_cscs.py --reformulated)
-        return "eval", "lm-" + re.sub(r"-iter\d+(-rf|-rfgm)?$", "", name.removeprefix("eval-"))
+        # a group suffix: `-probe` (auto_evals_cscs.py --group), or `-rf` / `-rfgm`
+        # from the reformulated groups retired on 2026-09-23
+        return "eval", "lm-" + re.sub(r"-iter\d+(-[a-z]+)?$", "", name.removeprefix("eval-"))
     if name.startswith("bpb-"):
         return "bpb", name.removeprefix("bpb-")
     if name in ("convert-snr", "convert-snr-models"):

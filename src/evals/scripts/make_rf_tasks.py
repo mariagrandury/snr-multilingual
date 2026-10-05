@@ -24,8 +24,8 @@ What it writes, idempotently:
         --include_path (evaluate.sbatch passes $HARNESS_INCLUDE_PATH)
   configs/tasks.json                            one entry per rf task
         (language, benchmark rf_<family>, n_options 4 -- 5 for commonsense_qa --
-        metric acc_norm),
-        the `auto_rf` group and the `benchmarks` metadata
+        metric acc_norm) and the `benchmarks` metadata; the twins enter
+        the `auto` group by hand (the `auto_rf` group was retired 2026-09-23)
 
 Task names carry an `rf_` PREFIX on purpose: tasks_for_benchmarks matches
 `<benchmark>_…`, so a `_rf` suffix would be swept into the original family.
@@ -34,7 +34,7 @@ Task names carry an `rf_` PREFIX on purpose: tasks_for_benchmarks matches
 originals, read from the JSONLs rewrite_items_gemini.py left in RFGM_DATA
 (tasks without a file are skipped and counted), through one `dataset_path:
 json` YAML per task under src/evals/tasks/rfgm/, registered as `rfgm_<task>`
-/ `rfgm_<family>` / group `auto_rfgm`.
+/ `rfgm_<family>`.
 
 Usage:
     python3.11 src/evals/scripts/make_rf_tasks.py [--set rf|rfgm] [--harness DIR] [--dry-run]
@@ -328,11 +328,8 @@ def main() -> None:
             if not out.exists() or out.read_text() != body:
                 out.write_text(body)
                 written += 1
-    # the group lists the families that actually have registered tasks, so a
-    # family still being rewritten is not advertised to the watcher
-    have = sorted({f"{pre}_{e['benchmark']}" for n, e in originals
-                   if f"{pre}_{n}" in tasks} | set(data["groups"].get(f"auto_{pre}", [])))
-    data["groups"][f"auto_{pre}"] = have
+    # No `auto_{pre}` group: those were retired on 2026-09-23 (the twins are
+    # listed in `auto` by hand), so writing one here would resurrect it.
     fmt = FORMAT if pre == "rf" else FORMAT_RFGM
     for fam in families:
         # The `benchmarks` block documents the multilingual families only, so a
@@ -341,7 +338,7 @@ def main() -> None:
         data["benchmarks"][f"{pre}_{fam}"] = {**data["benchmarks"].get(fam, {"name": fam}),
                                               "format": fmt[fam]}
     print(f"{len(originals) - len(missing)} {pre} tasks ({written} yaml files written) under {out_dir}; "
-          f"auto_{pre} = {data['groups'][f'auto_{pre}']}"
+          f"{pre} families = {sorted({e['benchmark'] for n, e in originals if f'{pre}_{n}' in tasks})}"
           + (f"; {len(missing)} tasks have no JSONL in {RFGM_DATA} yet" if missing else ""))
     if not args.dry_run:
         write_tasks_json(data, before, TASKS_JSON)

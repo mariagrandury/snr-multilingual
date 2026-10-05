@@ -1,0 +1,49 @@
+bib keys 166
+DUP keys 0
+case-dups []
+UNRESOLVED 01_introduction.tex 16 wang2026metaeval 
+UNRESOLVED 01_introduction.tex 21 he2025scaling 
+UNRESOLVED 03_methodology.tex 27 hoffmann_training_2022 
+UNRESOLVED 03_methodology.tex 29 bhagia_establishing_2024 (commented)
+UNRESOLVED 03_methodology.tex 36 ainslie_gqa_2023 (commented)
+UNRESOLVED 03_methodology.tex 41 pagliardini_ademamix_2024 (commented)
+UNRESOLVED 03_methodology.tex 42 hagele_scaling_2024 
+UNRESOLVED 03_methodology.tex 77 kwon2023efficient 
+FIG 04_analysis.tex 11 figures/rq1.png 
+FIG 04_analysis.tex 68 figures/rq2.png 
+FIG 04_analysis.tex 104 figures/rq3_surrogates.pdf (commented)
+FIG 04_analysis_gen.tex 17 figures/rq4.png 
+FIG 04_analysis_gen.tex 40 figures/rq5.png 
+FIG 04_measurability_draft.tex 15 figures/app_chance_share.png 
+FIG 04_measurability_draft.tex 17 figures/app_chance_reformulation.png 
+FIG 04_measurability_draft.tex 48 figures/rq0.png 
+INPUT app_languages.tex 6 sections/app_tables_generated 
+UNRESOLVED app_methodology.tex 24 ... (commented)
+UNRESOLVED app_methodology.tex 88 bhagia_establishing_2024 
+UNRESOLVED app_methodology.tex 90 ainslie_gqa_2023 
+UNRESOLVED app_methodology.tex 121 pagliardini_ademamix_2024 
+UNRESOLVED app_methodology.tex 121 hagele_scaling_2024 
+UNRESOLVED app_methodology.tex 182 gao_framework_2024 
+UNRESOLVED app_methodology.tex 182 kwon_efficient_2023 
+UNRESOLVED app_snr_allenai.tex 8 hoffmann2022training 
+UNRESOLVED app_snr_allenai.tex 8 pearce2024reconciling 
+UNRESOLVED app_snr_allenai.tex 8 dubey2024llama 
+UNRESOLVED app_snr_allenai.tex 8 gadre2024language 
+UNRESOLVED app_snr_allenai.tex 8 bhagia2024establishing 
+UNRESOLVED app_snr_allenai.tex 13 bhagia2024establishing 
+UNRESOLVED app_snr_allenai.tex 36 magnusson2025datadecide 
+UNRESOLVED app_snr_allenai.tex 75 madaan2024quantifying 
+UNRESOLVED app_snr_allenai.tex 130 eval-harness 
+INPUT main.tex 6 math_commands.tex 
+INPUT main.tex 98 sections/01_introduction 
+INPUT main.tex 99 sections/02_related_work 
+INPUT main.tex 100 sections/03_methodology 
+INPUT main.tex 101 sections/04_analysis 
+INPUT main.tex 102 sections/04_analysis_b (commented)
+INPUT main.tex 103 sections/05_conclusions 
+INPUT main.tex 109 sections/app_terminology 
+INPUT main.tex 110 sections/app_methodology 
+INPUT main.tex 111 sections/app_random_gate 
+INPUT main.tex 112 sections/app_languages 
+INPUT main.tex 113 sections/app_snr 
+INPUT main.tex 114 sections/app_snr_new 

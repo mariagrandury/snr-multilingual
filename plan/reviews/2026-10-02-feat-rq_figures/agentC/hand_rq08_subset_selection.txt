@@ -1,0 +1,175 @@
+1: # RQ8 — Can a subset of subtasks give higher SNR than the full set?
+2: 
+3: ## Research question
+4: 
+5: > Per benchmark, does a subset of subtasks — a subset of *languages* in a
+6: > multilingual family, or a subset of *subjects* in MMLU, or a subset of
+7: > individual *items* — give higher SNR than the full set, and does the same
+8: > subset hold across seeds and scales?
+9: 
+19: 
+20: ## Experimental setup
+21: 
+22: Subtask-level outputs under `pretraining/<pool>/` (ladder pool `predictivity`;
+23: the 36-sweep pools as history); per-item (Option D) under
+24: `per_sample/variance_prefilter/` (36-sweep only — it needs the per-sample
+25: files that live on the cluster). Three subtask cases plus a per-item view;
+26: on the ladder the multilingual families span up to 100 languages, so Case 1
+27: asks which language subset of Belebele, Global-PIQA, MultiBLiMP or
+28: Global-MMLU carries the family's signal, and the per-language BPB family
+29: (`bpb`) is swept the same way (which languages' BPB make the sharpest
+30: macro-average):
+31: 
+32: - **Case 1** — language subset of a multilingual family. `task` = the benchmark
+33:   family (arc, belebele, global_mmlu, xnli, …); `subtask` = the per-language
+34:   tasks in that family (arc_de, arc_es, …). Which language subset, ordered by
+35:   per-language SNR, gives the highest combined SNR for the family?
+36: - **Case 2** — MMLU subject subset (mean over the global_mmlu languages the
+37:   pool carries, 37 on the ladder). `task` = `global_mmlu_full`; `subtask` = one
+38:   subject (leaves only), whose per-(model, ckpt) score is the mean across languages.
+39: - **Case 3** — MMLU subject subset per language (no cross-language averaging).
+40:   `task` = `global_mmlu_full_<lang>`; `subtask` = one subject within that
+41:   language.
+42: - **Per-item (Option D)** — `per_sample/variance_prefilter/`. Subset selection at
+43:   the individual-item level (per-sample SNR on binary item accuracy — not
+44:   comparable to subtask-level SNR).
+45: 
+46: ## Methodology
+47: 
+48: - **Subset SNR.** `signal_to_noise_ratio` over per-*model* last-N-checkpoint
+49:   arrays, one array per training run (seed replicates and external models
+50:   are separate runs), with the noise pooled across runs as in upstream's
+51:   `compute_snr_small_scale` (see the comparability note below). A
+52:   combined subset averages the per-(model, step) scores across its subtasks
+53:   first.
+54: - **Sweep.** Per (task, size) the subtasks are ranked by standalone SNR and
+55:   the cumulative prefixes 1..N are scored; `best_n` / `best_subset` is the
+56:   prefix with the highest SNR and `snr_gain = best − full`.
+57: - **Gate.** The rq00 above-random mask: a language task at chance at a size
+58:   is not swept (Case 1), and a language whose `global_mmlu_full_<lang>`
+59:   aggregate is at chance is skipped (Cases 2 and 3). The four MMLU category
+60:   roll-ups are excluded from the subject lists.
+61: - **Selection null.** The prefix is chosen on the same numbers it is scored
+62:   on, so `best ≥ full` by construction. For every swept cell, 100 random
+63:   subsets of the best size give `null_snr_p95`; `gain_over_null =
+64:   best − null_p95` is the part of the gain that is not selection.
+65: 
+66: Hand-written numbers in this README are from the ladder-report snapshot
+67: **2026-09-30 23:54**.
+68: 
+93: 
+94: [global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_subjects.png) ·
+95: [summary.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/summary.csv) ·
+96: [per_benchmark.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/per_benchmark.csv) ·
+97: [global_mmlu_full.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full.csv) ·
+98: [global_mmlu_full_per_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/global_mmlu_full_per_language.csv)
+99: 
+109: 
+110: GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
+111: GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
+112: 
+113: ## TODO
+114: 
+115: - [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,
+116:       `human_aging`, `international_law`, world-history), not an exact subset —
+117:       only subsets that recur in both train and test seed pools transfer.
+118: - [ ] Treat best-subset picks as candidates; prefer subsets that recur in both
+119:       train and test seed pools (Case 2 subjects are the safest; per-item picks
+120:       the least transferable).
+121: - [ ] Bootstrap CIs on `snr_gain` per (case, task, size) and check cross-seed
+122:       Jaccard / SNR-rank Spearman of the winning subsets.
+123: 
+124: ## Extensions from other sweeps
+125: 
+126: Everything below comes from the **36-model sweep** (2026-04…06, 4 sizes × 3
+127: data mixtures × 3 seeds, pools `seeds_28_1797_1904`, `custom_swissai_hf`;
+128: reference **1B**, 12 languages, the 86-task old list) or from the **external
+129: tier** (`all/external`: the public and reference models, 270M–70B,
+130: cross-model dispersion with no mixture axis). Its SNR is computed over three
+131: mixtures with the sweep's checkpoint window, on a task list without the
+132: twins, so its subset gains are a replication of the lever, never rows of the
+133: ladder's table. The per-item (Option D) pass under `per_sample/` is
+134: 36-sweep-only as well: it needs the per-sample files that live on the
+135: cluster, and the ladder's per-item store (`build_per_item_store.sbatch`,
+136: `per_item_ladder.py`; `per_item_snr.csv`, `per_item_summary.csv` above) is
+137: its successor.
+138: 
+139: ## External model-set tier (`all/external`, 36-sweep)
+140: 
+141: Run on the `external` tier the SNR is **cross-model dispersion** over the
+142: 270M…70B external ladder (no mixture axis), and only the three subtask cases run
+143: (no per-item Option-D pass). Outputs in `all/external/`; regenerate with
+144: `python analysis/rq08_subset_selection/smooth_subtasks.py --pool external`.
+145: 
+146: **Subset-beats-full survives the change of model set.** Even though the external
+147: ladder's full-set SNRs are low (the heterogeneous model families wash out a
+148: benchmark's combined signal), a small subtask subset recovers it — the gains are
+149: as large as on the custom pool:
+150: 
+151: | case | task | size | full → best SNR | +gain | best subset |
+152: |---|---|---|---|---|---|
+153: | case3_global_mmlu_full_per_language | `global_mmlu_full_ar` | 1B | 0.18 → 1.95 | +1.77 | `high_school_chemistry` |
+154: | case1_per_benchmark | `truthfulqa` | 1B | 0.52 → 1.96 | +1.44 | `truthfulqa_hi_mc2` \| `truthfulqa_vi_mc2` |
+155: | case1_per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
+156: | case1_per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
+157: | case1_per_benchmark | `global_piqa_completions` | 1B | 0.56 → 1.73 | +1.16 | `global_piqa_completions_eng_latn` |
+158: | case3_global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 0.87 → 1.93 | +1.06 | `high_school_chemistry` \| `elementary_mathematics` |
+159: 
+160: ![MMLU subject subsets vs full set (external)](all/external/global_mmlu_full_subjects.png)
+161: 
+162: The recurring levers carry over (MMLU subject subsets, per-language TruthfulQA
+163: `mc` splits, `paws_eu`), but the **exact** winning subjects differ from the custom
+164: pool (`high_school_chemistry` recurs here rather than world-history), reinforcing
+165: RQ4's headline: treat subset picks as a robust *lever*, not a transferable exact
+166: subset. Per-benchmark curves of the sweep (full vs best subset across the external
+167: ladder) for the highest-gain families:
+168: 
+169: ![TruthfulQA subset sweep (external)](all/external/per_benchmark_plots/truthfulqa.png)
+170: 
+171: [global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/global_mmlu_full_subjects.png) ·
+172: [truthfulqa.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/all/external/per_benchmark_plots/truthfulqa.png)
+173: 
+174: ## Results from the 36-model sweep (2026-06, superseded)
+175: 
+176: The numbers below were generated on the 36-model sweep (4 sizes × 3 data mixtures × 3 seeds, 12 languages, pool `custom_swissai_hf` unless stated) and are kept as history; the predictivity ladder regenerates the blocks above.
+177: 
+178: ### Highlighted result
+179: 
+180: - **`global_mmlu_full_vi` 1B (global_mmlu_full_per_language)** — a subset beats the full set: SNR **2.05 → 4.01** (**+1.95**) with `high_school_world_history|business_ethics|marketing`.
+181: - **`global_mmlu_full` 175M (global_mmlu_full_subjects)** — a subset beats the full set: SNR **2.12 → 3.65** (**+1.52**) with `medical_genetics`.
+182: - **`paws` 3B (per_benchmark)** — a subset beats the full set: SNR **0.37 → 1.81** (**+1.44**) with `paws_eu`.
+183: - **MMLU subject subsets are the most/most-stable lever** — a 1–2 subject subset matches or beats the full ~48-subject set across sizes (`medical_genetics`, `human_aging`, `international_law`, world-history recur).
+184: - **Per-item (per-sample) ranking is mostly noise / overfits across scale** — per-sample subsets give even larger gains but their best picks barely overlap across sizes (Jaccard ≈ 0.03, SNR-rank Spearman ≈ 0.05), so prefer subtask-level selection.
+185: 
+186: ### Results
+187: 
+188: Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python analysis/rq08_subset_selection/smooth_subtasks.py --pool custom_swissai_hf`.
+189: 
+190: **Top subset gains** — every (case, task, size) ranked by `snr_gain = best − full`:
+191: 
+192: | case | task | size | full → best SNR | +gain | best subset |
+193: |---|---|---|---|---|---|
+194: | global_mmlu_full_per_language | `global_mmlu_full_vi` | 1B | 2.05 → 4.01 | +1.95 | `high_school_world_history` \| `business_ethics` \| `marketing` |
+195: | global_mmlu_full_subjects | `global_mmlu_full` | 175M | 2.12 → 3.65 | +1.52 | `medical_genetics` |
+196: | per_benchmark | `paws` | 3B | 0.37 → 1.81 | +1.44 | `paws_eu` |
+197: | global_mmlu_full_per_language | `global_mmlu_full_sw` | 600M | 1.71 → 3.07 | +1.36 | `public_relations` \| `philosophy` |
+198: | global_mmlu_full_per_language | `global_mmlu_full_vi` | 350M | 1.97 → 3.31 | +1.34 | `prehistory` \| `college_medicine` \| `high_school_geography` |
+199: | global_mmlu_full_per_language | `global_mmlu_full_zh` | 175M | 2.15 → 3.46 | +1.31 | `high_school_world_history` \| `international_law` |
+200: | per_benchmark | `truthfulqa` | 3B | 0.66 → 1.92 | +1.26 | `truthfulqa_es_mc1` |
+201: | per_benchmark | `belebele` | 350M | 2.28 → 3.44 | +1.16 | `belebele_swh_Latn` \| `belebele_hin_Deva` \| `belebele_eus_Latn` |
+202: | global_mmlu_full_per_language | `global_mmlu_full_ru` | 600M | 2.09 → 3.24 | +1.15 | `medical_genetics` \| `international_law` \| `high_school_statistics` |
+203: | global_mmlu_full_per_language | `global_mmlu_full_zh` | 1B | 3.15 → 4.27 | +1.13 | `other` \| `high_school_world_history` \| `marketing` \| `human_aging` \| `… (+4)` |
+204: | global_mmlu_full_per_language | `global_mmlu_full_hi` | 1B | 2.91 → 4.03 | +1.12 | `marketing` \| `high_school_world_history` |
+205: | global_mmlu_full_per_language | `global_mmlu_full_sw` | 350M | 2.41 → 3.53 | +1.12 | `management` |
+206: 
+207: ![](pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
+208: 
+209: [global_mmlu_full_subjects.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/custom_swissai_hf/global_mmlu_full_subjects.png)
+210: 
+211: ## Files
+212: 
+213: - `pretraining/<pool>/summary.csv` — every (case, task, size) by `snr_gain`.
+214: - `…/per_benchmark.csv` (Case 1), `global_mmlu_full.csv` (Case 2),
+215:   `global_mmlu_full_per_language.csv` (Case 3) + their `*_plots/`.
+216: - `per_sample/variance_prefilter/analysis/` — Option-D size distribution,
+217:   cross-size Jaccard/Spearman, `highlights.md`.

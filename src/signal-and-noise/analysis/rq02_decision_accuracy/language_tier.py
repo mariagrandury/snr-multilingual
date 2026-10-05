@@ -31,8 +31,8 @@ family gap; the pairs are the same design variants for every tier, but a task
 only counts where both members train its language (rule 2), so the L50 tier
 reads fewer pairs per task (its languages are trained by the L50 cells alone).
 
-    reliability_by_language_tier.png / .csv   (a) all gated tasks, (b) above_66_size tasks
-    reliability_vs_language_share.png / .csv  per language at each proxy size (rows: size)
+    reliability_da_size_by_language_tier_multi_axes.png / .csv   (a) all gated tasks, (b) above_66_size tasks
+    reliability_da_size_vs_language_share_multi_axes.png / .csv  per language at each proxy size (rows: size)
 
     python analysis/rq02_decision_accuracy/language_tier.py --pool predictivity
 """
@@ -164,7 +164,7 @@ def figure_share(per_lang: pd.DataFrame, path: Path, pool: str) -> None:
                     f"size: the pooled reliability of every {GRID_SEED}-seed design-variant pair (multi-axis) on the "
                     f"language's tasks, against the language's share of ALL tokens in the L50 scheme-A mixture, the one "
                     f"setting that trains every language. Marker area grows with the task count; colour is the tier of "
-                    f"`reliability_by_language_tier.png`. No selection on DA. The share is a proxy for resource level, "
+                    f"`reliability_da_size_by_language_tier_multi_axes.png`. No selection on DA. The share is a proxy for resource level, "
                     f"not the exposure of any one pair's members (those differ by regime). Gate: `{pool}`.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
@@ -190,14 +190,14 @@ def generate_readme(pool: str, out_dir: Path, table: pd.DataFrame, per_lang: pd.
         f"The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks of one language TIER — the "
         f"smallest scheme-A regime that trains the language (L8: the eight high-resource languages every regime trains; "
         f"L50: the twenty only the L50 mixture trains). Reliability at the smallest → largest proxy [task count]. "
-        f"`reliability_vs_language_share.png` is the per-language version: reliability against the language's share of "
+        f"`reliability_da_size_vs_language_share_multi_axes.png` is the per-language version: reliability against the language's share of "
         f"the L50 mixture, Spearman ρ over languages "
         + ", ".join(f"{s} {v:.2f}" for s, v in rho.items()) + ". "
         f"Both are unfiltered; a tier also differs in benchmark mix. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/language_tier.py --pool {pool}`.",
         md_table(list(t.columns), t.values.tolist()),
-        f"![Reliability by language tier]({stage}/{pool}/reliability_by_language_tier.png)",
-        f"![Reliability against language share]({stage}/{pool}/reliability_vs_language_share.png)"])
+        f"![Reliability by language tier]({stage}/{pool}/reliability_da_size_by_language_tier_multi_axes.png)",
+        f"![Reliability against language share]({stage}/{pool}/reliability_da_size_vs_language_share_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "language-tier", body, f"language_tier.py --pool {pool}")
 
 
@@ -230,8 +230,8 @@ if __name__ == "__main__":
             if len(out):
                 tables.append(out.assign(variant=variant or "all", languages=len(langs)))
     table = pd.concat(tables, ignore_index=True)
-    table.to_csv(out_dir / "reliability_by_language_tier.csv", index=False)
-    figure_tiers(table, out_dir / "reliability_by_language_tier.png", args.pool)
+    table.to_csv(out_dir / "reliability_da_size_by_language_tier_multi_axes.csv", index=False)
+    figure_tiers(table, out_dir / "reliability_da_size_by_language_tier_multi_axes.png", args.pool)
     print(table[table["size"] != TARGET_SIZE].pivot_table(index=["variant", "group"], columns="size", values="reliability")
           .reindex(columns=[s for s in sizes if s != TARGET_SIZE]).round(3).to_string())
 
@@ -247,9 +247,9 @@ if __name__ == "__main__":
         if len(out) and lang in share:
             rows.append(out.assign(language=lang, tier=tier.get(lang, "—"), share_L50=share[lang]))
     per_lang = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
-    per_lang.to_csv(out_dir / "reliability_vs_language_share.csv", index=False)
+    per_lang.to_csv(out_dir / "reliability_da_size_vs_language_share_multi_axes.csv", index=False)
     if len(per_lang):
-        figure_share(per_lang, out_dir / "reliability_vs_language_share.png", args.pool)
+        figure_share(per_lang, out_dir / "reliability_da_size_vs_language_share_multi_axes.png", args.pool)
         for s, g in per_lang.groupby("size"):
             print(f"{s}: {len(g)} languages, Spearman ρ(share, reliability) = "
                   f"{g['share_L50'].corr(g['reliability'], method='spearman'):.3f}")

@@ -1,0 +1,170 @@
+1: # RQ3 — Noise and SNR: how noisy is a measurement, and what is its signal-to-noise ratio?
+2: 
+3: ## Research question
+4: 
+5: > How much does a measurement move when nothing but the seed or the
+6: > checkpoint changes, how does that noise compare with the effect of a design
+7: > decision, and what is each benchmark's signal-to-noise ratio under the 22
+8: > candidate definitions? The per-task SNR table computed here is what rq04
+9: > ranks against decision accuracy and what rq07 and rq09 read.
+10: 
+11: ## Experimental setup
+12: 
+13: Outputs live under `pretraining/<pool>/` for the ladder pools: `predictivity`
+14: (the plan grid, seed 1904 — the headline), `predictivity_seeds` (every seed;
+15: replicates enter the signal pool as separate models), and the seed holdout
+16: `predictivity_seeds_train` (seeds 64/313 at the ×3 cells) → `_test` (seed 1904
+17: on the same cells). The signal population at a size is every design variant
+18: trained there (language setting × depth × scheme); the noise is the
+19: checkpoint std over the one noise window of rule 4 (`utils.noise_checkpoints`:
+20: the k/20 points in the last 20 % of the run, 80/85/90/95/100 %, the same rows for
+21: BPB and benchmarks; `effect_vs_noise.py` below carries the seed-replicate
+22: noise). DA has two flavours: **DA-size** (small→1.7B ranking, plus every
+23: other bucket pair) and **DA-ckpt** (10 … 90 % → final within a size). The 22
+24: variants are grouped into families (dispersion / relative-spread /
+25: discrepancy / robust / depth); rq04 correlates them with DA per language. The
+26: per-language BPB tasks (`bpb_<subset>`) take part like any benchmark, except
+27: under the discrepancy family (below).
+28: The seed holdout is English-heavy by construction: the ×3 cells are the deep
+29: scheme-A runs at 175M and 600M for L ∈ {1, 2, 50}, and a non-English harness
+30: task is only trained at L50 (Russian also at L2), so its per-language variant
+31: ranking rests on one language setting per seed, while English and the BPB
+32: tasks cover all three.
+33: 
+34: ## Methodology
+35: 
+36: - **Signal and noise per (task, size bucket).** Signal pool = every model at
+37:   the bucket (`per_model_inputs`); each model's `data_score` is its final
+38:   checkpoint, `step_noise` the std (ddof 0) over the noise window, the
+39:   k/20 points in the last `noise_window` = 20 % of its run (80/85/90/95/100 %,
+40:   rule 4 — before 2026-09-20 it was the last five checkpoints of whatever grid
+41:   the task had, 80–100 % for BPB and 60–100 % for benchmarks, which put BPB's
+42:   noise on a narrower window). The 22 aggregators in `snr/snr_variants.py`
+43:   differ in how they turn the cross-model scores into a dispersion; all but
+44:   `rel_std` share `noise = mean(step_noise) / mean(window means)`. Cells the
+45:   rq00 gate marks at chance are NaN. The discrepancy family (`discrepancy`,
+46:   `star_discrepancy`, `star_discrepancy_shifted`, `rel_star_discrepancy`)
+47:   reads the scores as points of [0, 1] and returns finite but meaningless
+48:   values on BPB and the loss, so the driver sets it to NaN on every task that
+49:   is not a benchmark; `snr_variant_coverage.csv` records how many cells each
+50:   variant covers per bucket, and the driver prints the ones that fall short.
+51:   (Upstream's `signal_xlabel` / `noise_xlabel` strings are swapped; the
+52:   definitions table writes them under the right name and no figure uses them.)
+53: - **Effect vs noise.** For every (size, L, task) the intervention's |Δ| is put
+54:   against the seed noise (sample std, n−1, over the seed replicates, where
+55:   ≥ 2 seeds exist) and the checkpoint noise (std over the same 80/85/90/95/100 %
+56:   window of the baseline cell, raw with n−1 and detrended with n−2 — under
+57:   WSD the final window is still descending, so the raw std carries trend).
+58:   Every std divides by its residual degrees of freedom. A ratio near 1 means
+59:   the two levels are the same model as far as a ranking is concerned (the
+60:   "read this against the seed row" rule of `ladder_report.md`); a decision on
+61:   such a cell is a coin flip whatever its DA (rq05). Cells at chance at their
+62:   size keep their row with no number (rule 1) and are grey in the panels.
+63: - **Seed holdout.** `compare_seed_splits.py` builds the per-language variant
+64:   ranking (rq04's Pearson table: at least `min_lang_tasks` = 3 distinct tasks
+65:   per language, rule 8; `multi` is never a language, rule 7) on the replicate
+66:   seeds (64/313 of the ×3 cells) and on seed 1904 of the same cells and writes
+67:   `<train>__vs__<test>/headline_metrics.csv`; agreement is counted over the
+68:   languages that have a best variant on both splits. Its README block below
+69:   says whether the two pools hold the same cells. rq04 reports the numbers
+70:   next to the ranking they test.
+71: 
+72: Hand-written numbers in this README are from the ladder-report snapshot
+73: **2026-09-30 23:54** unless a section names an earlier one.
+74: 
+132: 
+133: GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_vs_noise.png) · [effect_vs_noise.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_vs_noise.csv)
+134: 
+135: ## Preliminary findings (ladder snapshot, 2026-09-01)
+136: 
+137: Noise on the ≤ 600M ladder before any seed replicate existed
+138: (`plan/status-09-01.md`, §5; checkpoint noise = std over the last 3 evaluated
+139: checkpoints, median 0.004): the across-L range of final benchmark scores at
+140: 600M has median 0.022 ≈ 4.4× that noise (56/60 benchmarks above 2×; top:
+141: `xwinograd_en` 17×, `hellaswag_ru` 13×), and on BPB the separation is one to
+142: two orders of magnitude above noise — the language-count axis gives genuinely
+143: distinct models for SNR. The transformation table on the 14 September report
+144: (18 seed pairs) puts the seed effect at Δ final loss −0.061 … +0.046,
+145: Δ macro BPB −0.050 … +0.034 and Δ mean benchmark −0.004 … +0.007; the depth
+146: effect on benchmarks is of the same order (−0.009 … +0.014 over the tasks each
+147: pair shares), so
+148: whether deep vs shallow is a distinct model for SNR is exactly what the
+149: effect-vs-noise table above decides per task.
+150: 
+166: 
+167: GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.csv) ·
+168: [snr_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_by_benchmark.png) ·
+169: [snr_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_by_language.png) ·
+170: [snr.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr.csv) ·
+171: [effect_over_seed_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_over_seed_by_benchmark.png) ·
+172: [effect_over_seed_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_over_seed_by_language.png) ·
+173: [snr_variants_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv)
+174: 
+189: 
+190: [headline_metrics.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv) ·
+191: [summary.md](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/summary.md)
+192: 
+193: ## TODO
+194: 
+195: - [ ] **The seed holdout ranks most tasks on a single model pair (open, 2026-09-17).**
+196:       *What it is.* rq04 claims one SNR definition tracks decision accuracy
+197:       best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
+198:       in rq04's highlight and "Seed generalization" table) asks whether that
+199:       ranking of definitions survives a change of seed: it is computed on
+200:       `predictivity_seeds_train` (seeds 64, 313) and again on
+201:       `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
+202:       compared.
+203:       *The problem.* Replicate seeds exist only at 175M and 600M, so both
+204:       splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
+205:       reference never enters). English tasks and BPB rest on 15 model pairs.
+206:       A non-English benchmark is trained only in the L50 cell, so its train
+207:       split holds one pair — the two seeds of the same cell — and its
+208:       "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
+209:       The median task has one pair.
+210:       *Implications.* The per-language agreement numbers (0 % / 0 % at the
+211:       family level on the 2026-09-30 tables; 29 % / 57 % when this was
+212:       written) and the unstable DA-size ρ (−0.28 now, 0.75 then, against
+213:       0.76 for DA-ckpt) are dominated by those one-pair tasks, so "the
+214:       ranking does not survive a seed swap" may say more about the holdout
+215:       than about the definitions.
+216:       Nothing in the main `predictivity` tables is affected.
+217:       *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
+218:       check, but English + BPB only. (B) treat replicate seeds as replicates,
+219:       not as models: average them before ranking, and use the holdout only
+220:       for the noise estimate — changes what the holdout means. (C) report the
+221:       holdout for DA-ckpt only, whose pairs are checkpoints × variants within
+222:       a size and do not shrink to one. (D) drop the holdout numbers from the
+223:       highlight until more sizes have replicate seeds.
+224:       *Recommendation.* A now (small change, honest scope, say "English and
+225:       BPB" in the highlight), and revisit once the 90M / 1.7B-L15 cells and
+226:       any further replicate seeds exist. Not implemented yet.
+227: 
+228: ## Extensions from other sweeps
+229: 
+230: From the **36-model sweep** (2026-04…06, 4 sizes × 3 data mixtures × 3 seeds,
+231: pools `seeds_1904`, `seeds_28_1797`, `seeds_28_1797_1904`, `custom_swissai_hf`)
+232: and the public models (`all/external`): `pretraining/<pool>/snr_variants_per_task.csv`
+233: are the same 22 definitions on those pools, with the sweep's checkpoint
+234: window and its 1B reference, and `pretraining/seeds_28_1797__vs__seeds_1904/`
+235: is the sweep's seed holdout (seeds 28/1797 → 1904). They are history, not
+236: regenerated, and never pooled with the ladder's table: a different harness,
+237: task set (the 86-task old list), noise window and reference size. The
+238: readings built on them — the variant ranking per tier, the holdout's
+239: Spearman ρ, the per-language anchors — are in
+240: [rq04's extensions](../rq04_surrogates/README.md#extensions-from-other-sweeps);
+241: the dated comparison note that once accompanied them
+242: (`ANALYSIS_new_vs_previous.md`, removed 2026-09-23) is superseded by that section.
+243: 
+244: ## Files
+245: 
+246: - `pretraining/<pool>/snr_variants_per_task.csv` — per-task SNR (every
+247:   variant × size bucket) + the DA columns joined from rq02. Single source of
+248:   truth for rq04, rq07 and rq09 (`run_apertus_snr_variants.py`).
+249: - `…/snr_variants_definitions.csv`, `snr_variant_coverage.csv` — the 22
+250:   definitions and how many cells each covers per bucket.
+251: - `…/effect_vs_noise.csv`, `effect_vs_noise.png` — per (size, L, task): |Δ|
+252:   per intervention, seed noise, raw and detrended checkpoint noise, and their
+253:   ratios (`effect_vs_noise.py`).
+254: - `pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/` — the
+255:   seed-holdout report (`compare_seed_splits.py`: `headline_metrics.csv`, the
+256:   per-language agreement and the variant r train vs test).

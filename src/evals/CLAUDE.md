@@ -179,8 +179,9 @@ would be swept into the original family. They ship via
 tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
 honours through `configs.metric_for` — the W&B series is
 `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
-**Since 2026-09-22 the twins are in the `auto` group itself** — the three
-`rf_*` benchmarks and `rfgm_include_base_44` — so an ordinary watcher pass
+**Since 2026-09-22 the twins are in the `auto` group itself** — the eight
+`rf_*` benchmarks (the first three plus five promoted from `auto_probe`
+on 2026-09-23) and `rfgm_include_base_44` — so an ordinary watcher pass
 evaluates them alongside the originals and tops up every existing
 checkpoint with the tasks it is missing (the watcher is per-task
 idempotent, and walltime is priced from the missing tasks). That also
@@ -189,8 +190,8 @@ whether a task is trained, so before this every `rf_*` row was "untrained"
 and the analysis pool came back without a single twin.
 **`auto_rf` and `auto_rfgm` were retired on 2026-09-23**: every twin is in
 `auto`, the candidates are in `auto_probe`, and those are the only two
-groups a run may name. `--reformulated` therefore has no group to resolve
-and exits saying so. The
+groups a run may name; the watcher's `--reformulated` flag, which chose
+the retired groups, was removed on 2026-10-03. The
 `rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`) are the same three
 families rewritten by Gemini into statement stems: `dataset_path: json`
 YAMLs over `rf-data/rfgm/<task>.jsonl` on capstor (gold labels — never
@@ -223,9 +224,10 @@ separate from `auto`, whose benchmarks are topped up on every checkpoint of
 every cell. The verdict comes from
 `analysis/rq00_task_reformulation/probe.sh` (gate per language, original vs
 `rf_` on the pairs); a candidate that passes is promoted into `auto`. Twenty
-of the twenty-one were promoted on 2026-09-23; `bbq` stays a candidate,
-because it is 23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
-`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially. A
+of the twenty-one were promoted on 2026-09-23; `bbq` was not, because it is
+23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
+`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially, and it
+left `auto_probe` on 2026-10-01. A
 promoted benchmark stays listed in `auto_probe` as the record of what was
 screened, which costs nothing: the watcher's idempotency is per task, so a
 later `--group auto_probe` pass finds the work done and submits only gaps.
@@ -256,7 +258,10 @@ task names and nothing else — the arm a task belongs to lives only in the
 
 Since the `benchmark` field is matched by prefix, a group listing plain
 `bbh` at the pretraining stage selects `bbh_mcq` + `bbh_cloze` and not the
-posttraining original, which is the intended reading.
+posttraining original, which is the intended reading. The same prefix rule
+let `arc` pull the probe candidate `arc_mt` into `auto` unscreened (0f9781ad);
+it is kept there deliberately and has been listed by name since 2026-10-03,
+so a reader of the group sees everything the watcher evaluates.
 
 Three things that only fail inside the eval job, all found by loading every
 task through a real `TaskManager` before launching — do that:

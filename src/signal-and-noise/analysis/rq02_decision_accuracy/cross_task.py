@@ -8,9 +8,9 @@ other one (x = proxy task on the columns, y = target task on the rows), over
 the pairs of design variants of the pool (`predictivity`: seed 1904, schemes
 A and B). A cell holds a *level* (the same code as the other level maps):
 
-    cross_task_size.png / .csv   smallest proxy size at which x's final ranking safely predicts
+    cross_task_da_size_multi_axes.png / .csv   smallest proxy size at which x's final ranking safely predicts
                                  y's final ranking at the reference (DA-size, levels = SMALL_SIZES)
-    cross_task_ckpt.png / .csv   earliest checkpoint of x (fraction of its own run, ten
+    cross_task_da_ckpt_multi_axes.png / .csv   earliest checkpoint of x (fraction of its own run, ten
                                  checkpoints) that safely predicts y's final ranking at the same
                                  size; the within-size pairs of every size are pooled (DA-ckpt)
     cross_task_{size,ckpt}_by_family.png / .csv   benchmark x benchmark: the median level over the
@@ -331,7 +331,7 @@ def run(pool: str, out_dir: Path) -> None:
     ckpt_lv, ckpt_da = ckpt_map(scores, mask, tasks, FRACS[:-1], buckets)
 
     # the diagonal is rq02's per-task DA-size: check it against the committed table
-    per_task = out_dir / "da_per_task.csv"
+    per_task = out_dir / "da_all_per_task_both_axes.csv"
     if per_task.exists():
         da = one_axes(pd.read_csv(per_task)).set_index("task")
         for b in sizes:
@@ -345,10 +345,10 @@ def run(pool: str, out_dir: Path) -> None:
     common = (f"Pool `{pool}`, {len(tasks)} parent tasks; a cell holds a level only where the two tasks share >= {MIN_PAIRS} "
               f"pairs of design variants; DA >= {SAFE_DA} at that level and at every larger level with a value. "
               "Grey: the gate (a benchmark at chance) emptied every level; white: no data; the diagonal is rq02's own-task DA.")
-    big_map(size_lv, out_dir / "cross_task_size.png", levels=sizes, level_label=str,
+    big_map(size_lv, out_dir / "cross_task_da_size_multi_axes.png", levels=sizes, level_label=str,
             title=f"Cross-task DA-size: smallest size of proxy task x whose final ranking predicts task y's final ranking at {TARGET_SIZE}",
             note=f"{common} {ref_fams} design variants at {TARGET_SIZE} ({pairs_ref} pairs).", cbar="smallest proxy size")
-    big_map(ckpt_lv, out_dir / "cross_task_ckpt.png", levels=FRACS[:-1], level_label=G.chinchilla,
+    big_map(ckpt_lv, out_dir / "cross_task_da_ckpt_multi_axes.png", levels=FRACS[:-1], level_label=G.chinchilla,
             title="Cross-task DA-ckpt: earliest checkpoint of proxy task x that predicts task y's final ranking at the same size",
             note=f"{common} Within-size pairs pooled over {', '.join(b for b, n in within.items() if n >= 2)} "
                  f"({pairs_within} pairs); the level is the fraction of x's own run as a Chinchilla multiple (runs train 5C).",
@@ -366,10 +366,10 @@ def run(pool: str, out_dir: Path) -> None:
               f"pairs; DA >= {SAFE_DA} at that level and at every larger level with a value. Grey: the gate emptied "
               "every level; white: no data; the diagonal is rq02's own-task DA.")
     if len(bench) >= 2:
-        big_map(size_lv.loc[bench, bench], out_dir / "cross_task_size_benchmarks.png", levels=sizes, level_label=str,
+        big_map(size_lv.loc[bench, bench], out_dir / "cross_task_da_size_benchmarks_multi_axes.png", levels=sizes, level_label=str,
                 title=f"Cross-task DA-size, benchmarks above chance: smallest size of proxy task x whose final ranking predicts task y's at {TARGET_SIZE}",
                 note=b_note, cbar="smallest proxy size")
-        big_map(ckpt_lv.loc[bench, bench], out_dir / "cross_task_ckpt_benchmarks.png", levels=FRACS[:-1],
+        big_map(ckpt_lv.loc[bench, bench], out_dir / "cross_task_da_ckpt_benchmarks_multi_axes.png", levels=FRACS[:-1],
                 level_label=G.chinchilla,
                 title="Cross-task DA-ckpt, benchmarks above chance: earliest checkpoint of proxy task x that predicts task y's final ranking at the same size",
                 note=b_note, cbar="earliest checkpoint")
@@ -385,9 +385,9 @@ def run(pool: str, out_dir: Path) -> None:
                      "and L50 lists end, so the languages between two lines enter the mixture at the same L.")
     for kind, lv, levels, label, cb in [("size", size_lv, sizes, str, "median smallest proxy size"),
                                         ("ckpt", ckpt_lv, FRACS[:-1], G.chinchilla, "median earliest checkpoint")]:
-        group_map(lv, out_dir / f"cross_task_{kind}_by_family.png", levels=levels, level_label=label, cbar=cb,
+        group_map(lv, out_dir / f"cross_task_da_{kind}_by_family_multi_axes.png", levels=levels, level_label=label, cbar=cb,
                   title=f"Cross-task DA-{kind} by benchmark", **fam)
-        group_map(lv, out_dir / f"cross_task_{kind}_by_language.png", levels=levels, level_label=label, cbar=cb,
+        group_map(lv, out_dir / f"cross_task_da_{kind}_by_language_multi_axes.png", levels=levels, level_label=label, cbar=cb,
                   title=f"Cross-task DA-{kind} by language (same benchmark)", **lang)
     generate_readme(pool, out_dir, len(tasks), ref_fams, pairs_ref, pairs_within)
 
@@ -409,14 +409,14 @@ def generate_readme(pool: str, out_dir: Path, n_tasks: int, ref_fams: int, pairs
         "The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the "
         "benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer "
         "result is possible at all: "
-        f"[`cross_task_size_benchmarks.png`]({stage}/{pool}/cross_task_size_benchmarks.png), "
-        f"[`cross_task_ckpt_benchmarks.png`]({stage}/{pool}/cross_task_ckpt_benchmarks.png).",
-        f"![Cross-task DA-size by benchmark]({stage}/{pool}/cross_task_size_by_family.png)",
-        f"![Cross-task DA-ckpt by benchmark]({stage}/{pool}/cross_task_ckpt_by_family.png)",
-        f"![Cross-task DA-size by language]({stage}/{pool}/cross_task_size_by_language.png)",
-        f"![Cross-task DA-ckpt by language]({stage}/{pool}/cross_task_ckpt_by_language.png)",
-        f"Full task-level maps: [`cross_task_size.png`]({stage}/{pool}/cross_task_size.png), "
-        f"[`cross_task_ckpt.png`]({stage}/{pool}/cross_task_ckpt.png)."])
+        f"[`cross_task_da_size_benchmarks_multi_axes.png`]({stage}/{pool}/cross_task_da_size_benchmarks_multi_axes.png), "
+        f"[`cross_task_da_ckpt_benchmarks_multi_axes.png`]({stage}/{pool}/cross_task_da_ckpt_benchmarks_multi_axes.png).",
+        f"![Cross-task DA-size by benchmark]({stage}/{pool}/cross_task_da_size_by_family_multi_axes.png)",
+        f"![Cross-task DA-ckpt by benchmark]({stage}/{pool}/cross_task_da_ckpt_by_family_multi_axes.png)",
+        f"![Cross-task DA-size by language]({stage}/{pool}/cross_task_da_size_by_language_multi_axes.png)",
+        f"![Cross-task DA-ckpt by language]({stage}/{pool}/cross_task_da_ckpt_by_language_multi_axes.png)",
+        f"Full task-level maps: [`cross_task_da_size_multi_axes.png`]({stage}/{pool}/cross_task_da_size_multi_axes.png), "
+        f"[`cross_task_da_ckpt_multi_axes.png`]({stage}/{pool}/cross_task_da_ckpt_multi_axes.png)."])
     replace_block(OUT_ROOT / "README.md", "cross-task", body, f"cross_task.py --pool {pool}")
 
 

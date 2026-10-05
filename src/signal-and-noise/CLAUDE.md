@@ -130,11 +130,14 @@ pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
 `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
-rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 → rq05 (+ rq03's
+rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
+`analyze.py`, `finetasks_criteria.py`, then `catalogue.py` + `search.py`: ~210
+proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
+against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
-reference, the only reader of `above_reference=True`; header-only tables
-until the 3B evaluations land) → `report_figures/make_figures.py` →
+reference, the only reader of `above_reference=True`; filled since the
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
 generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
@@ -148,28 +151,29 @@ the driver is ~2 h): from `src/signal-and-noise`,
 `export PATH=/users/mariagrandury/miniconda3/envs/snr/bin:$PATH; PYTHONPATH=$PWD:$PWD/../../src OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 SOURCE_DATE_EPOCH=0 python analysis/rqNN_*/<script>.py --pool predictivity`.
 The thread caps are not optional: without them OpenBLAS spawns one thread
 per core and the login node's 1000-pid slice kills the process. Scripts that
-read `da_reliable_tasks.csv` (everything with an `above_*` variant) need
+read `da_all_reliable_tasks_both_axes.csv` (everything with an `above_*` variant) need
 `reliable_tasks.py` to have run on the current DA tables first.
 
-**What the tables say (2026-09-23), so a session does not re-derive it.**
-The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with the auto blocks. Three facts every rq02 reading must
-respect (numbers of the 06:16 snapshot; every snapshot moves them, re-read the CSVs): (1) on the full gated population DA-size is 0.53 (175M) → 0.56 (1B),
-jackknife ±0.03 — the 0.60 → 0.76 of the `above_66_*` figures is a cut on DA
+**What the tables say (2026-09-30 snapshot, every cell of the grid evaluated except FWEB and the 3B L30/L50 rungs), so a session does not re-derive it.**
+The rq00–rq02 write-up lives in the three RQ READMEs (`analysis/rq00_gate_and_curves/README.md`, `rq01_scaling_predictability/README.md`, `rq02_decision_accuracy/README.md`), figures in storyline order with Key findings and Follow-ups after each; every snapshot moves the numbers, so re-read the CSVs: (1) on the full gated population DA-size is 0.54 (90M) → 0.56 (1B),
+jackknife ±0.02 (±0.03 at 1B) — the 0.64 → 0.76 of the `above_66_*` figures is a cut on DA
 itself and is quoted as conditional; the per-axis cuts (`above_66_size`,
 `above_66_ckpt`, `above_66_either`) are the ones to quote, never
-`above_66_both`. (2) DA-ckpt over design pairs (0.83 at 90 % of a 175M run) is
-within 0.01–0.03 of the seed null (two seeds of ONE design, 0.81): it measures
+`above_66_both`. (2) DA-ckpt over design pairs (0.74–0.82 at 90 % of a run)
+sits near the seed null (two seeds of ONE design reach up to 0.75): it measures
 within-run persistence, and a checkpoint-axis figure is read against
-`seed_uncertainty.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
-statistic (r ≥ 0.961 over 1,286 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
-exactly), and the tie convention moves the reliable-task verdict on 2.5–6 % of
+`seed_uncertainty_da_all_seed_null.png`'s null. (3) DA, Kendall τ and Spearman ρ are one
+statistic (r ≥ 0.96 over 1,883 cells; 2·DA − 1 = τ_a + (T_both − T_one)/n
+exactly), and the tie convention moves the reliable-task verdict on 2–7 % of
 cells. Restricting to the L8 languages, to common tasks, to one language or
 one language tier does not order the per-L lines, and a language's token
-share does not predict its benchmarks' reliability (ρ −0.07–0.20). The twins
+share does not predict its benchmarks' reliability (ρ 0.02–0.27). The twins
 pass the gate (McNemar p < 0.001) but rank no better than the originals
 (`rq00_task_reformulation/reformulations_gate.py` carries every headline reading with
-and without them); English alone is the worst single-language proxy of the
-multilingual decision (`rq06_language_transfer/language_panel.py`).
+and without them); English alone is a weak single-language proxy of the
+multilingual decision (0.61 at 1B against 0.62–0.67 for every other panel
+language but Japanese, 0.55) and the panel macro is the safest from
+350M up (`rq06_language_transfer/language_panel.py`).
 
 **README rules.** `analysis/RULES.md` ends with the README rules: one README
 per level (`analysis/README.md` for the RQs, one per `rqNN_*/`, none under a
@@ -221,12 +225,12 @@ schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{175M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
+predictivity               lm-{90M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
-predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the only cells with replicates)
+predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the 64/313 replicates; the 1B ×3 cells' seeds 28/1797 are not in the holdout)
 predictivity_seeds_test    seed 1904 on the same six cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, all five schemes, both archs (rq01, rq03, rq05, rq06)
+predictivity_all           every trained cell: all seeds, every scheme, both archs (rq01, rq03, rq05, rq06)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
@@ -238,12 +242,11 @@ without widening the decision the pool exists to measure. They live in
 `reliable_tasks.py`, `by_L.py` and `scale_convergence.py` pair over every
 scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
 the gate and the output folder stay `predictivity`; the `axes` column of
-`da_per_task.csv` names the pair set, rule 15).
+`da_all_per_task_both_axes.csv` names the pair set, rule 15).
 
-The `snr` section of models.json is global: `small_sizes` 175M–1B,
+The `snr` section of models.json is global: `small_sizes` 90M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the
-largest rung DataDecide has; the L2 ZH/ES settings stop at 1B for lack of
-source data and are the one labelled exception), `da_early_fracs` the nine
+largest rung DataDecide has; L2 ZH and ES reach 1.7B too since 2026-09-26), `da_early_fracs` the nine
 evaluated tenths before the final, `noise_window` 0.2, `noise_grid` 20,
 `min_pairs` 3, `min_lang_tasks` 3 (lowered from 5 on 2026-09-20: it was the
 binding constraint on rq04's per-language panel, 6 languages against 17, and
@@ -286,11 +289,14 @@ strips the `-fwY` mix complement and numeric-size-sorts.
 ## Outputs
 
 Each RQ writes next to its script: `analysis/<rq>/<stage>/<pool>/`. The
-per-task tables are the persisted truth (`rq02/.../da_per_task.csv`,
+per-task tables are the persisted truth (`rq02/.../da_all_per_task_both_axes.csv`,
 `rq03/.../snr_variants_per_task.csv`); every figure and README block is
 derived from them. `*.csv` / `*.png` under this directory are git-LFS
 tracked (`.gitattributes`): commit regenerated results with `git lfs`
-installed, and never commit outputs produced from a fixture.
+installed, and never commit outputs produced from a fixture. Every CSV is
+written at twelve significant digits (`analysis/__init__.py` sets pandas'
+`to_csv` default), so a re-run on another machine no longer rewrites a
+table whose numbers did not change.
 
 ---
 
@@ -514,7 +520,7 @@ Every `above_*` variant keeps the tasks whose DA cleared a cut and then
 plots DA on them; the rise it shows is partly the cut (passers 0.80 against
 0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
 cell by its value but still selects tasks by it. Quote the unfiltered
-figure (`scale_convergence.png`, `rq2_ten_checkpoints`) beside any filtered
+figure (`scale_convergence_da_size_multi_axes.png`, `rq2_da_goal_ten_checkpoints_multi_axes`) beside any filtered
 one, and never call a filtered figure "free of selection bias".
 ---
 

@@ -40,7 +40,7 @@ rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and 
 We use AdEMAMix as optimizer
 %\citep{pagliardini_ademamix_2024}
 and a warmup-stable-decay learning-rate schedule, %\citep{hagele_scaling_2024},
-using a global batch of 504 sequences. We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
+using a global batch of 504 sequences (84 at 90M and 168 at 175M, see Appendix~\ref{app:model-configurations}). We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
 
 \textbf{Seeds.} Every configuration is trained with seed 1904. Selected deep scheme-A configurations at sizes 175M, 600M and 1B use two additional seeds (Appendix~\ref{app:training-grid}). These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
 % Seed replicates are never ranked against each other as design variants: every ranking in \S\ref{subsec:methodology-da} compares configurations at seed 1904.
@@ -48,7 +48,7 @@ using a global batch of 504 sequences. We scale the peak learning rate with the 
 
 \subsubsection{Intervention Axes}
 
-\textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B. % The analysis reads the ladder from 175M to the 1.7B reference. The 90M rung is excluded because nine of its ten runs diverge (Appendix~\ref{app:model-configurations}), and the 3B rung, trained only at $K \in \{8, 15\}$ under schemes A and B with the deep architecture, sits above the reference and is reserved for an extrapolation check.
+\textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B. The analysis reads the ladder from 90M to the 1.7B reference; the 3B rung, trained only at $K \in \{8, 15\}$ under schemes A and B with the deep architecture, sits above the reference and is reserved for an extrapolation check.
 
 \textbf{Architecture $A$.} We compare a deep with a shallow-wide architecture at each size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the ratio of query heads to key-value heads. Their non-embedding counts differ from the corresponding deep models by 0.4\% to 5.2\% \AR{Point to a table in the appendix for the specific architecture aspect ratios and details}.
 
@@ -74,7 +74,7 @@ where $p_i$ is the language's estimated proportion of the available corpus. We u
 We use the following evaluations:
 \begin{itemize}[leftmargin=15pt,noitemsep,topsep=0pt]
 
-\item \textbf{Downstream tasks.} We evaluate \nbenchmarks benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} using the vLLM backend \citep{kwon2023efficient}. We use each task's documented prompt and number of in-context examples, without a chat template.
+\item \textbf{Downstream tasks.} We evaluate \nbenchmarks benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} using the vLLM backend \citep{kwon_efficient_2023}. We use each task's documented prompt and number of in-context examples, without a chat template.
 % The evaluated group also contains the reformulated variants of the letter-format families described in \S\ref{subsec:rq1}, which are gated, counted and plotted like any other benchmark.
 By default, we evaluate each model only on the languages included in its training mixture.
 % For the seed-1904, deep, scheme-A ladder, we additionally evaluate all validation languages and all benchmark languages registered in the harness. This extended evaluation supports our analysis of transfer to languages absent from a model's training mixture.

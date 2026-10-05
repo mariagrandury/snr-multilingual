@@ -29,7 +29,7 @@ therefore English at three proxy sizes and Russian at 1B, and is drawn as such.
                 noise persists to its final and lifts DA-ckpt for real pairs
                 too. Drawn against the real DA-ckpt of the same cells.
 
-    seed_uncertainty.png / .csv     the three panels and their long table
+    seed_uncertainty_da_all_seed_null.png / .csv     the three panels and their long table
 
     python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool predictivity
 """
@@ -131,7 +131,7 @@ def seed_views(fin: pd.DataFrame, pool: str) -> pd.DataFrame:
 def null_view(out_dir_seed: Path, pool: str) -> pd.DataFrame:
     """The seed null against the real DA-ckpt, per (size, fraction), mean over
     the gated benchmark tasks that carry both."""
-    da = pd.read_csv(out_dir_seed / "da_per_task.csv")
+    da = pd.read_csv(out_dir_seed / "da_all_per_task_both_axes.csv")
     if "axes" not in da.columns or "seed" not in set(da["axes"]):
         return pd.DataFrame()
     mask = load_mask(pool)
@@ -226,7 +226,7 @@ def generate_readme(pool: str, out_dir: Path, sv: pd.DataFrame, nv: pd.DataFrame
         f"of one design, mean over fractions and gated tasks) is {null}. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/seed_uncertainty.py --pool {pool}`.",
         md_table(["size", "language", "designs", "DA at the 3 proxy seeds", "test-retest (3 seed pairs)", "tasks"], rows),
-        f"![Seed uncertainty]({stage}/{pool}/seed_uncertainty.png)"])
+        f"![Seed uncertainty]({stage}/{pool}/seed_uncertainty_da_all_seed_null.png)"])
     replace_block(OUT_ROOT / "README.md", "seed-uncertainty", body, f"seed_uncertainty.py --pool {pool}")
 
 
@@ -241,9 +241,9 @@ if __name__ == "__main__":
     fin["design"] = fin["family"].map(lambda f: f"L{int(attrs.loc[f, 'L'])}-{attrs.loc[f, 'arch']}-{attrs.loc[f, 'scheme']}")
     sv = seed_views(fin, args.pool)
     nv = null_view(OUT_ROOT / stage / SEED_POOL, args.pool)
-    pd.concat([sv, nv], ignore_index=True).to_csv(out_dir / "seed_uncertainty.csv", index=False)
+    pd.concat([sv, nv], ignore_index=True).to_csv(out_dir / "seed_uncertainty_da_all_seed_null.csv", index=False)
     print(sv.to_string(index=False))
     if len(nv):
         print(nv.groupby("size")[["da", "da_real"]].mean().round(3).to_string())
-    figure(sv, nv, out_dir / "seed_uncertainty.png", args.pool)
+    figure(sv, nv, out_dir / "seed_uncertainty_da_all_seed_null.png", args.pool)
     generate_readme(args.pool, out_dir, sv, nv)

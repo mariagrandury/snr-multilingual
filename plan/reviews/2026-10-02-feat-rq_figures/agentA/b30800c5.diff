@@ -1,0 +1,330 @@
+commit b30800c5a57a39ef379444de579a9f0117682821
+Author: María <mariagrandury@gmail.com>
+Date:   Wed Sep 23 03:36:55 2026 +0200
+
+    probe: promote 20 screened benchmarks into auto, keep bbq screening
+    
+    The probe (auto_probe, --final-only at 600M/1B/1.7B) answered its question:
+    INCLUDE v2 clears the gate in 42 of 42 languages at 1.7B, and every lettered
+    candidate is rescued by its rf_ twin (mmlu 0.001 -> 0.057, commonsense_qa
+    0.002 -> 0.188, bbh_mcq 0/17 -> 10/17 tasks, acp_bench_mcq 0/7 -> 5/7). All
+    twenty join groups.auto, so every checkpoint is topped up with them and they
+    enter every RQ -- a population change, stated in RULES.md. bbq stays a
+    candidate: it clears a 1/12 chance at 0.44 without saying much, and costs
+    23 min per checkpoint against 2.9 for mmlu and 0.3 for a belebele task.
+    
+    The tooling that decides it, reusing what exists:
+    - probe.sh chains derive -> ladder report -> gate -> compare -> survivors.
+    - probe_survivors.py reads the committed mask alone and writes the gate per
+      language, original vs rf_ twin.
+    - compare.py gains --families/--tag and subtracts each task's own chance
+      level instead of a hardcoded 0.25, so 2- to 10-way pairs read on the scale
+      the 4-way families already used; proven to leave those families' numbers
+      identical (max |delta margin| 0.00 over 40 cells).
+    - ladder_report._trained_tasks reads SNR_TRAINED_GROUPS (default auto), the
+      opt-in that let the probe be gated before promotion.
+    
+    Three fixes found by running it:
+    - derive_task_options opened all 4.0M sample files on every pass; with
+      --only-missing it is 75 s instead of an hour, and it filled n_items for 227
+      tasks -- all 288 probe tasks now match an independent harness count exactly.
+    - truthfulqa_mc2 is _APPROX: its score is probability mass over all true
+      answers, so the derived 1/4 would have been a chance level every model
+      clears.
+    - bbq is 36 task-minutes in submit_eval's walltime weight; without it a solo
+      top-up got 15 minutes, the kill is not a recorded failure, and the watcher
+      resubmitted it forever.
+    
+    Also: INCLUDE v2 moved into auto_probe (one group, not two: 85 jobs and
+    48.5 node-h against 161 and 86), the rfgm_belebele registration and its 59
+    YAMLs (rewrite finished 52,944 of 53,100 rows), and evals/CLAUDE.md no longer
+    claims a running watcher re-reads tasks.json -- it does not, which is why a
+    promotion only takes effect when the watcher is restarted.
+
+diff --git a/src/evals/CLAUDE.md b/src/evals/CLAUDE.md
+index 6a3c5272..6b87e775 100644
+--- a/src/evals/CLAUDE.md
++++ b/src/evals/CLAUDE.md
+@@ -216,10 +216,27 @@ significance test reads `n_items`
+ (`compute_cost.kind_of` strips the suffix).
+ 
+ **Probe benchmarks and mixed families** (2026-09-23). `groups.auto_probe`
+-screens candidate benchmarks at the last checkpoint only
++screens candidate benchmarks — INCLUDE v2 included; one group, because a
++second group is a second job per cell — at the last checkpoint only
+ (`auto_evals_cscs.py --group auto_probe --final-only`); it is deliberately
+-separate from `auto`, because a watcher re-reads tasks.json every pass and
+-would top up every checkpoint of every cell.
++separate from `auto`, whose benchmarks are topped up on every checkpoint of
++every cell. The verdict comes from
++`analysis/rq00_task_reformulation/probe.sh` (gate per language, original vs
++`rf_` on the pairs); a candidate that passes is promoted into `auto`. Twenty
++of the twenty-one were promoted on 2026-09-23; `bbq` stays a candidate,
++because it is 23 min per checkpoint (20x any other task, `TASK_WEIGHT` in
++`auto_evals_cscs.submit_eval`) and clears its 1/12 chance trivially. A
++promoted benchmark stays listed in `auto_probe` as the record of what was
++screened, which costs nothing: the watcher's idempotency is per task, so a
++later `--group auto_probe` pass finds the work done and submits only gaps.
++
++**A running watcher does not see a tasks.json edit.** `auto_evals_cscs.py`
++reads the group once, before the `--watch` loop (`benchmarks =
++auto_benchmarks(group)`), and `configs.load_tasks` is `lru_cache`d, so a
++process started yesterday holds yesterday's benchmark list *and* yesterday's
++task table. Promoting a benchmark into `auto` therefore takes effect only
++when the watcher is restarted (or a one-shot pass is run alongside it) — the
++restart is the launch, and it is what submits the top-ups.
+ 
+ BBH and ACP-Bench are *mixed*: `scripts/make_cloze_tasks.py` measures each
+ subtask against the cached data and splits them by what they actually are.
+diff --git a/src/evals/README.md b/src/evals/README.md
+index 6cfe431e..7cdc096e 100644
+--- a/src/evals/README.md
++++ b/src/evals/README.md
+@@ -127,12 +127,15 @@ registering in `configs/tasks.json`:
+ - [`scripts/make_include_v2_tasks.py`](scripts/make_include_v2_tasks.py)
+   writes INCLUDE v2 (`include-results/include-128`, the L50 pairs, OG and EN
+   variants) as cloze tasks under [`tasks/include_v2/`](tasks/include_v2/),
+-  group `auto_include_v2`, read straight from the cached parquet.
++  in the same group, read straight from the cached parquet.
+ 
+ Run the generators one at a time: each rewrites all of `tasks.json`, and
+ `utils.configs.write_tasks_json` refuses to write over a file that changed
+ underneath it. Load every new task through a `TaskManager` before launching;
+-`src/evals/CLAUDE.md` lists what only fails inside the job.
++`src/evals/CLAUDE.md` lists what only fails inside the job. Once the
++results are in, `src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh`
++produces the verdict: the gate per language and original-vs-`rf_` on the
++pairs. A candidate that earns its place is then added to `groups.auto`.
+ 
+ ## How to run
+ 
+diff --git a/src/evals/scripts/derive_task_options.py b/src/evals/scripts/derive_task_options.py
+index 21ef6d16..0d6fdd7e 100644
+--- a/src/evals/scripts/derive_task_options.py
++++ b/src/evals/scripts/derive_task_options.py
+@@ -20,9 +20,16 @@ is enough (every checkpoint scores the same test set), so the walk over
+ eval_logs stops as soon as every listed task has a count.
+ 
+ Idempotent — re-run after adding benchmarks; existing values are overwritten
+-only when the samples disagree, and that disagreement is printed.
+-
+-    python3.11 scripts/derive_task_options.py [--dry-run]
++only when the samples disagree, and that disagreement is printed. It is also
++expensive: the samples live one file per (task, run), 4.0M of them on Lustre
++as of 2026-09-23, and a full pass opens every one, so it costs about an hour.
++`--only-missing` opens only the files of tasks that have no `n_options` yet
++and looks for items only where `n_items` is still blank, which is what adding
++a benchmark needs; run the full pass when a task's format may have changed
++under it (that is how cultural_bench_hard was caught declaring four options
++for a True/False task).
++
++    python3.11 scripts/derive_task_options.py [--only-missing] [--dry-run]
+ """
+ from __future__ import annotations
+ 
+@@ -39,21 +46,46 @@ EVAL_LOGS = Path("/iopsstor/scratch/cscs/mariagrandury/data-mix-small/"
+ SAMPLE_RE = re.compile(r"samples_(.+)_\d{4}-\d{2}-\d{2}T.*\.jsonl$")
+ 
+ 
+-def observed_options() -> dict[str, Counter]:
+-    """task -> Counter of option counts seen across sample files.
++def observed_options(listed: dict, only_missing: bool
++                     ) -> tuple[dict[str, Counter], set[str]]:
++    """(task -> Counter of option counts seen across sample files, tasks that
++    have samples at all).
+ 
+     A Counter rather than a single value so a task whose format is not
+     constant shows up instead of being silently reduced to whichever file was
+     read last. One SAMPLE per file is enough (a file's records share one
+     format), but every file per task must be read or the Counter can never
+     hold a second value and the non-constant case it exists for is invisible.
++
++    lm_eval reports MMLU-style subtopics (global_mmlu_full_en_anatomy) that
++    tasks.json only lists by their parent (global_mmlu_full_en); the subtopics
++    share the parent's answer format, so an observation is attributed to the
++    longest listed prefix rather than dropped — without this the big
++    multi-subject benchmarks, which are most of the rows, get no chance level
++    at all. The resolution is memoised per sample-file task name: there are
++    thousands of those and millions of files.
++
++    The second return value costs nothing (it is read off the file names) and
++    is what lets the item walk stop: a task with no samples anywhere has no
++    results either, so waiting for one keeps the walk going to the last run.
+     """
+     seen: dict[str, Counter] = {}
++    have: set[str] = set()
++    resolved: dict[str, str | None] = {}
+     for f in EVAL_LOGS.glob("*/harness/eval_*/samples_*.jsonl"):
+         m = SAMPLE_RE.search(f.name)
+         if not m:
+             continue
+         task = m.group(1)
++        if task not in resolved:
++            resolved[task] = task if task in listed else max(
++                (k for k in listed if task.startswith(k + "_")), key=len, default=None)
++        entry = resolved[task]
++        if entry is None:
++            continue
++        have.add(entry)
++        if only_missing and "n_options" in listed[entry]:
++            continue
+         try:
+             with open(f) as fh:
+                 rec = json.loads(fh.readline())
+@@ -61,16 +93,16 @@ def observed_options() -> dict[str, Counter]:
+             continue
+         args = rec.get("arguments")
+         if isinstance(args, (list, dict)) and len(args) > 1:
+-            seen.setdefault(task, Counter())[len(args)] += 1
+-    return seen
++            seen.setdefault(entry, Counter())[len(args)] += 1
++    return seen, have
+ 
+ 
+-def observed_items(listed: dict) -> dict[str, int]:
++def observed_items(want: set[str]) -> dict[str, int]:
+     """task -> number of scored items, from the newest results file of each
+     task (per_task/<task>/<model>/results_*.json, or the older one-file-per-job
+-    layout). Stops once every listed task is covered."""
++    layout). Stops once every wanted task is covered."""
+     seen: dict[str, int] = {}
+-    want = set(listed)
++    want = set(want)
+     runs = sorted(EVAL_LOGS.glob("*/harness/eval_*"), key=lambda d: d.stat().st_mtime, reverse=True)
+     for run in runs:
+         for f in list(run.glob("per_task/*/*/results_*.json")) + list(run.glob("results_*.json")):
+@@ -101,27 +133,18 @@ def main() -> None:
+     p = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+     p.add_argument("--dry-run", action="store_true")
++    p.add_argument("--only-missing", action="store_true",
++                   help="derive only what tasks.json does not already carry "
++                        "(minutes instead of an hour; see the module docstring)")
+     args = p.parse_args()
+ 
+     tasks = json.loads(TASKS_JSON.read_text())
+-    seen = observed_options()
+-    added = changed = 0
+     listed = tasks["tasks"]
++    seen, have_samples = observed_options(listed, args.only_missing)
++    added = changed = 0
+     for task, counts in sorted(seen.items()):
+         n = counts.most_common(1)[0][0]
+-        entry = listed.get(task)
+-        if entry is None:
+-            # lm_eval reports MMLU-style subtopics (global_mmlu_full_en_anatomy)
+-            # that tasks.json only lists by their parent (global_mmlu_full_en).
+-            # The subtopics share the parent's answer format, so attribute the
+-            # observation to the longest listed prefix instead of dropping it —
+-            # without this the big multi-subject benchmarks, which are most of
+-            # the rows, get no chance level at all.
+-            parent = max((k for k in listed if task.startswith(k + "_")),
+-                         key=len, default=None)
+-            if parent is None:
+-                continue
+-            entry = listed[parent]
++        entry = listed[task]
+         old = entry.get("n_options")
+         if old == n:
+             continue
+@@ -132,8 +155,10 @@ def main() -> None:
+             print(f"  {task}: n_options {old} -> {n} (samples say {dict(counts)})")
+         entry["n_options"] = n
+ 
+-    print(f"{len(seen)} tasks have samples; +{added} new, ~{changed} changed")
+-    items = observed_items(listed)
++    print(f"{len(seen)} tasks read from samples; +{added} new, ~{changed} changed")
++    want = {t for t in have_samples
++            if not args.only_missing or "n_items" not in listed[t]}
++    items = observed_items(want)
+     added = changed = 0
+     for task, n in sorted(items.items()):
+         old = listed[task].get("n_items")
+diff --git a/src/evals/scripts/make_include_v2_tasks.py b/src/evals/scripts/make_include_v2_tasks.py
+index 608fba2b..d494af4a 100644
+--- a/src/evals/scripts/make_include_v2_tasks.py
++++ b/src/evals/scripts/make_include_v2_tasks.py
+@@ -27,7 +27,7 @@ What it writes, idempotently:
+         be rebuilt
+   configs/tasks.json
+         one entry per task (language, benchmark include_v2_<variant>,
+-        n_options 4, metric acc_norm) plus the `auto_include_v2` group
++        n_options 4, metric acc_norm) and their membership in `auto_probe`
+ 
+ Only the pairs whose language the ladder trains (`languages.json` ->
+ groups.trained, the L50 set) are written: rule 2 drops every other row from
+@@ -207,8 +207,11 @@ def main() -> None:
+                 [("language", code), ("benchmark", f"include_v2_{variant}"),
+                  ("stages", ["pretraining"]), ("n_options", 4), ("metric", "acc_norm")])
+ 
+-    group = sorted(f"include_v2_{v}" for v in VARIANTS)
+-    data["groups"]["auto_include_v2"] = group
++    # One probe group, not two: a second group is a second job per cell, each
++    # paying the fixed overhead. `auto_include_v2` (2026-09-22) is retired.
++    data["groups"]["auto_probe"] = sorted(set(data["groups"].get("auto_probe", []))
++                                          | {f"include_v2_{v}" for v in VARIANTS})
++    data["groups"].pop("auto_include_v2", None)
+     for variant in VARIANTS:
+         data["benchmarks"][f"include_v2_{variant}"] = OrderedDict(
+             [("name", "INCLUDE v2 (Romanou et al.)"), ("languages", len(kept)),
+diff --git a/src/pretrain/auto_evals_cscs.py b/src/pretrain/auto_evals_cscs.py
+index c3cf84c9..3d4d4e50 100644
+--- a/src/pretrain/auto_evals_cscs.py
++++ b/src/pretrain/auto_evals_cscs.py
+@@ -498,8 +498,15 @@ def submit_eval(cell: str, it: int, staging: Path, logs_root: Path,
+     # The rf / rfgm Global-MMLU twins are one task over the whole 14k-row split
+     # with four answer strings to score per item: 2.7-3.3 min per worker-task
+     # on the 2026-09-18 pilots against the ~0.5 the fit assumes, so each
+-    # counts as six tasks in the walltime.
+-    n_tasks = sum(6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1
++    # counts as six tasks in the walltime. `bbq` (auto_probe) is 58,492 items
++    # x 12 choices = 702k requests, ~17 min at 600M's ~700 req/s plus ~4 min
++    # of context building (job 3485222, 2026-09-23): 36 task-minutes that no
++    # worker can share, so x EVAL_WORKERS, because eval_minutes divides the
++    # count across the workers. Without this the solo top-up job the watcher
++    # gives it is 15 min, the kill is not a recorded failure, and it is
++    # resubmitted every pass forever.
++    TASK_WEIGHT = {"bbq": 36 * EVAL_WORKERS}
++    n_tasks = sum(TASK_WEIGHT.get(t, 6 if t.startswith(("rf_global_mmlu_full", "rfgm_global_mmlu_full")) else 1)
+                   for t in remaining)
+     # Prefix-export via the process env rather than --export=ALL,K=V,...:
+     # sbatch's --export uses commas as separators BETWEEN vars, so the
+diff --git a/src/pretrain/ladder_report.py b/src/pretrain/ladder_report.py
+index 82474d3e..ce5bc331 100644
+--- a/src/pretrain/ladder_report.py
++++ b/src/pretrain/ladder_report.py
+@@ -36,6 +36,7 @@ import argparse
+ import itertools
+ import json
+ import math
++import os
+ import re
+ import sys
+ from pathlib import Path
+@@ -982,11 +983,23 @@ _TRAINED_TASKS: dict[tuple, frozenset] = {}
+ 
+ def _trained_tasks(L, scheme: str) -> frozenset:
+     """The tasks a cell is evaluated on in the languages it TRAINS on — the
+-    watcher's default list, whatever extra languages the cell also carries."""
+-    key = (int(L), scheme)
++    watcher's default list, whatever extra languages the cell also carries.
++
++    The list is drawn from the `auto` group, so a benchmark outside it (the
++    probe candidates, `auto_probe`) is "untrained" everywhere: rule 2 drops it
++    from every pool and the gate reads it on the wrong population. The probe
++    pass opts in by naming its groups in SNR_TRAINED_GROUPS (comma-separated,
++    default `auto`); nothing else sets it, so the populations of every other
++    RQ do not move until a candidate is promoted into `auto`."""
++    groups = os.environ.get("SNR_TRAINED_GROUPS", "auto")
++    # groups in the key: one process holds one setting, but a test may change it.
++    # eval_languages() is called by name, not `*key` — its third parameter is
++    # `all_languages`, and a truthy one returns every language of every task.
++    key = (int(L), scheme, groups)
+     if key not in _TRAINED_TASKS:
++        benchmarks = [b for g in groups.split(",") for b in auto_benchmarks(g.strip())]
+         _TRAINED_TASKS[key] = frozenset(
+-            tasks_for_benchmarks(auto_benchmarks(), eval_languages(*key)))
++            tasks_for_benchmarks(benchmarks, eval_languages(int(L), scheme)))
+     return _TRAINED_TASKS[key]
+ 
+ 

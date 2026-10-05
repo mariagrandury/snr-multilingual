@@ -17,9 +17,9 @@ two pools must hold the same cells (size × L × arch × scheme); the script
 checks that on the loaded pools and says so in the README block.
 
 Outputs land under ``<rq03>/<stage>/<train_pool>__vs__<test_pool>/``:
-  - ``per_language_agreement_da_<size|ckpt>.csv`` — for each language, the
+  - ``per_language_agreement_da_<size|ckpt>_multi_axes.csv`` — for each language, the
     train-best variant and its r in both splits, plus the test-split's own best.
-  - ``per_language_agreement_da_<size|ckpt>.png`` — bar chart of train-vs-test
+  - ``per_language_agreement_da_<size|ckpt>_multi_axes.png`` — bar chart of train-vs-test
     r per language under the train-best variant.
   - ``variant_r_train_vs_test.csv`` — long table of (language, variant,
     r_train, r_test) for every (lang, variant) cell.
@@ -405,13 +405,13 @@ def main():
     agreements = {}
     for kind in ("size", "ckpt"):
         agreement = per_language_agreement(df_train, df_test, kind)
-        agreement_path = out_dir / f"per_language_agreement_da_{kind}.csv"
+        agreement_path = out_dir / f"per_language_agreement_da_{kind}_multi_axes.csv"
         agreement.to_csv(agreement_path, index=False)
         print(f"Wrote → {agreement_path}")
 
         render_per_language(
             agreement,
-            out_dir / f"per_language_agreement_da_{kind}.png",
+            out_dir / f"per_language_agreement_da_{kind}_multi_axes.png",
             title=f"Train-best variant: r on train vs test (DA-{kind})",
         )
         agreements[kind] = agreement

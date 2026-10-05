@@ -48,14 +48,18 @@ family's per-language aggregate tasks):
   100 English/default items per family from each benchmark's HF dataset and
   computes character-length statistics for context vs options; correlate with SNR.
 
-**Mechanism (the durable finding).** Reliability tracks the *answer space*, not
+**Mechanism (a hypothesis).** Reliability tracks the *answer space*, not
 curation: a benchmark is sharper when the model compares **fewer, longer**
 log-likelihood-scored completions — each extra option adds another noisy LL
 estimate to rank, and longer options concentrate more discriminating tokens.
-Illustrations at fixed option count: PAWS (options `Yes`/`No`, ~2 chars) is low
-despite being binary; MultiBLiMP (full-sentence minimal pairs) is the sharpest;
-HellaSwag (long 4-option completions) escapes the 4-option penalty that sinks
-ARC (short noun-phrase options). The `passage` flag itself doesn't matter —
+On the ladder the illustrations do not hold: PAWS (options `Yes`/`No`, ~2
+chars) is among the sharpest families (1.19 at 1.7B, behind xwinograd 1.41,
+MultiBLiMP 1.24 and XStoryCloze 1.20), and HellaSwag (long 4-option
+completions, 0.40) sits below ARC (short noun-phrase options, 0.47), inside
+the 4-option band (0.30–0.56). Option length does not track sharpness over
+the 16 families (Spearman −0.13, p = 0.73; context length −0.25, p = 0.52;
+`group_stats.csv`), so the answer-space account is a hypothesis to test, not
+a finding. The `passage` flag itself doesn't matter —
 XStoryCloze (4-sentence context, completion) is high, Belebele (long passage,
 MRC) is low — what the prompt *does* with the passage is what counts.
 
@@ -67,10 +71,18 @@ machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `hellaswag_de/fr` were NaN at the reference when this was written and excluded.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**. FineTasks' selection criteria, judged on this ladder,
+**2026-09-30 23:54**. FineTasks' selection criteria, judged on this ladder,
 moved to [rq04](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)
 on 2026-09-23 (`finetasks_criteria.py` and its `finetasks_*` outputs; the
 copies left under `pretraining/predictivity/` here are stale).
+
+**Families without metadata are left out.** `load_per_task_snr` keeps a family only if it
+has a `FAMILY_META` entry, so the benchmarks added to `auto` since (as of 2026-09-25:
+`acp_bench_*`, `bbh_*`, `blend_sample`, `commonsense_qa`, `cultural_bench_*`, `global_piqa`,
+`include_v2_*`, `lambada_openai_mt`, `mathqa`, `mmlu`, `openbookqa`, `toxigen`,
+`truthfulqa_mc2` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy
+and mmlu) are not in any rq09 table. Tagging them in `data_info.md` and `FAMILY_META`
+brings them in.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results

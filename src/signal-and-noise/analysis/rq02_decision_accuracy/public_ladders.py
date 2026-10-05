@@ -20,7 +20,7 @@ size at fixed Chinchilla multiple. The comparison the figure draws is with
 the ladder's own DA-size at the 1B proxy on the same tasks, which is the
 number a reader would otherwise extrapolate.
 
-    public_ladders.png / .csv   (a) per task, DA of the 1B–1.7B models against the 12–14B
+    public_ladders_da_size_multi_axes.png / .csv   (a) per task, DA of the 1B–1.7B models against the 12–14B
                                 models over the three line pairs, beside the ladder's
                                 1B → 1.7B DA-size on the same task; (b) per line pair, the
                                 share of gated tasks where the small-scale order holds at
@@ -43,13 +43,17 @@ import pandas as pd
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+_SRC = Path(__file__).resolve().parents[3]   # `evals.` and `pretrain.` live under src/
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools, size_bucket  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES  # noqa: E402
-from analysis.utils import MIN_PAIRS, benchmark_family, build_snr_pool  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
+from analysis.utils import MIN_PAIRS, TARGET_SIZE, benchmark_family, build_snr_pool, passes_gate  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
 EXTERNAL_MASK = GATE_AND_CURVES / "all" / "external" / "above_random_mask.csv"
@@ -103,12 +107,14 @@ def per_pair(d: pd.DataFrame) -> pd.DataFrame:
 
 
 def per_task(d: pd.DataFrame, pool: str) -> pd.DataFrame:
-    """DA per task over the line pairs (≥ MIN_PAIRS), beside the ladder's DA-size at the 1B proxy."""
+    """DA per task over the line pairs (≥ MIN_PAIRS), beside the ladder's gated DA-size at the 1B proxy."""
     t = d.groupby(["task", "family"]).agg(da_public=("match", "mean"), pairs=("match", "size")).reset_index()
     t = t[t["pairs"] >= MIN_PAIRS]
     stage = load_pools()[pool].get("stage", "pretraining")
-    da = pd.read_csv(OUT_ROOT / stage / pool / "da_per_task.csv")
+    da = pd.read_csv(OUT_ROOT / stage / pool / "da_all_per_task_both_axes.csv")
     da = da[da["axes"] == "multi-axis"] if "axes" in da.columns else da
+    # rule 1: the ladder's DA-size counts where the task is above chance at the proxy and the reference
+    da = da[passes_gate(load_mask(pool), da["task"], LADDER_PROXY, TARGET_SIZE).to_numpy()]
     return t.merge(da[["task", f"decision_acc_size_{LADDER_PROXY}"]].rename(columns={f"decision_acc_size_{LADDER_PROXY}": "da_ladder"}),
                    on="task", how="left")
 
@@ -154,7 +160,7 @@ def figure(t: pd.DataFrame, d: pd.DataFrame, path: Path, pool: str) -> None:
                     f"ladder's own DA-size at {LADDER_PROXY} on the same tasks; (b) per pair, DA beside the majority baseline — the share "
                     f"a proxy scores by always naming the line that usually wins at 12–14B; DA above it is what the small "
                     f"models add, and the DA on the minority tasks is where they can add it. "
-                    f"Gate: external mask; ladder DA from `{pool}`.")
+                    f"Gate: the external mask for the public lines, the ladder's own at {LADDER_PROXY} and {TARGET_SIZE} for its DA (`{pool}`).")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
 
@@ -178,7 +184,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, d: pd.DataFrame) 
         md_table(["family", "tasks", "DA public lines (1B–1.7B → 12–14B)", f"DA ladder ({LADDER_PROXY} → 1.7B)"],
                  [[r["family"], int(r["tasks"]), f"{r['da_public']:.2f}", f"{r['da_ladder']:.2f}" if r["da_ladder"] == r["da_ladder"] else "—"]
                   for _, r in fam.iterrows()]),
-        f"![Public ladders]({stage}/{pool}/public_ladders.png)"])
+        f"![Public ladders]({stage}/{pool}/public_ladders_da_size_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "public-ladders", body, f"public_ladders.py --pool {pool}")
 
 
@@ -189,11 +195,11 @@ if __name__ == "__main__":
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     d = decisions(finals())
     t = per_task(d, args.pool)
-    t.to_csv(out_dir / "public_ladders.csv", index=False)
+    t.to_csv(out_dir / "public_ladders_da_size_multi_axes.csv", index=False)
     print(f"{len(t)} gated tasks; pooled DA public lines {t['da_public'].mean():.3f}; ladder {LADDER_PROXY} on the same "
           f"tasks {t['da_ladder'].mean():.3f} ({t['da_ladder'].notna().sum()} tasks)")
-    pp = per_pair(d); pp.to_csv(out_dir / "public_ladders_pairs.csv", index=False); print(pp.round(3).to_string())
+    pp = per_pair(d); pp.to_csv(out_dir / "public_ladders_da_size_pairs_multi_axes.csv", index=False); print(pp.round(3).to_string())
     print(t.groupby("family").agg(tasks=("task", "size"), da_public=("da_public", "mean"), da_ladder=("da_ladder", "mean")).round(2).to_string())
-    figure(t, d, out_dir / "public_ladders.png", args.pool)
+    figure(t, d, out_dir / "public_ladders_da_size_multi_axes.png", args.pool)
     if args.pool == CANONICAL_POOL:
         generate_readme(args.pool, out_dir, t, d)

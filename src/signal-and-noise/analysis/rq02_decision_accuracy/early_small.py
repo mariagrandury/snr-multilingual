@@ -1,24 +1,24 @@
 """Early and small, as a ranking — how early in a run, and how small a proxy,
 still ranks the design variants like the reference at its final checkpoint?
 
-Reads the long table ``compute_da.py`` writes (`da_early_small_per_task.csv`:
+Reads the long table ``compute_da.py`` writes (`da_goal_early_small_per_task_both_axes.csv`:
 per task, proxy size and fraction of the proxy's own run, the decision
 accuracy against the reference's final ranking, with the pair count and the
 training compute) and the rq00 gate. A fraction of the run is shown as a
 multiple of Chinchilla: every run trains 5C, so 20 % = 1C and 100 % = 5C.
 Every figure has its table next to it under the same name.
 
-    highlights.png / .csv                  rq02 on one page
-    early_small.csv                        the gated cells behind the three early_small figures
-    early_small.png                        BPB and all benchmarks: proxy size x Chinchilla multiple
-    early_small_by_benchmark.png           the same grid, one subplot per benchmark (BPB first)
-    early_small_by_language.png            one subplot per language
-    early_small_summary.csv                the means early_small.png prints
-    da_size.csv, da_size_by_benchmark.png  DA-size, language x proxy size, one subplot per benchmark
-    da_size_by_language.png                DA-size, benchmark x proxy size, one subplot per language
-    safe_size.png / .csv                   language x benchmark: smallest size that safely predicts the reference ranking
-    safe_checkpoint.png / .csv             the same per size: fewest training tokens that predict its own final ranking
-    safe_flops.png / .csv                  language x benchmark: fewest FLOPs that predict the reference ranking
+    highlights_da_all_multi_axes.png / .csv                  rq02 on one page
+    early_small_da_goal_multi_axes.csv                        the gated cells behind the three early_small figures
+    early_small_da_goal_multi_axes.png                        BPB and all benchmarks: proxy size x Chinchilla multiple
+    early_small_da_goal_by_benchmark_multi_axes.png           the same grid, one subplot per benchmark (BPB first)
+    early_small_da_goal_by_language_multi_axes.png            one subplot per language
+    early_small_da_goal_summary_multi_axes.csv                the means early_small_da_goal_multi_axes.png prints
+    da_size_multi_axes.csv, da_size_by_benchmark_multi_axes.png  DA-size, language x proxy size, one subplot per benchmark
+    da_size_by_language_multi_axes.png                DA-size, benchmark x proxy size, one subplot per language
+    safe_size_da_size_multi_axes.png / .csv                   language x benchmark: smallest size that safely predicts the reference ranking
+    safe_checkpoint_da_ckpt_multi_axes.png / .csv             the same per size: fewest training tokens that predict its own final ranking
+    safe_flops_da_goal_multi_axes.png / .csv                  language x benchmark: fewest FLOPs that predict the reference ranking
 
 In a grid white is "no value" and grey is "filtered out by the gate".
 "Safely" = decision accuracy >= SAFE_DA over >= MIN_PAIRS model pairs, at that
@@ -78,10 +78,10 @@ def load_cells(pool_dir: Path, pool: str) -> tuple[pd.DataFrame, pd.DataFrame, p
     value (the grey cells); DA-ckpt is gated at its own size only."""
     # `one_axes`: these tables carry one row per (task, pair set) since rule 15;
     # the default keeps the multi-axis reading this figure has always shown.
-    early = G.mark_gated(_meta(one_axes(pd.read_csv(pool_dir / "da_early_small_per_task.csv"))),
+    early = G.mark_gated(_meta(one_axes(pd.read_csv(pool_dir / "da_goal_early_small_per_task_both_axes.csv"))),
                          pool, "proxy_size", "da", TARGET_SIZE)
-    da = one_axes(pd.read_csv(pool_dir / "da_per_task.csv")).set_index("task")
-    npairs = one_axes(pd.read_csv(pool_dir / "da_n_pairs_per_task.csv")).set_index("task")
+    da = one_axes(pd.read_csv(pool_dir / "da_all_per_task_both_axes.csv")).set_index("task")
+    npairs = one_axes(pd.read_csv(pool_dir / "da_all_n_pairs_per_task_both_axes.csv")).set_index("task")
     size_rows, ckpt_rows = [], []
     for c in da.columns:
         if (m := re.fullmatch(r"decision_acc_size_([^_]+)", c)):
@@ -152,37 +152,37 @@ def figures(pool: str, out_dir: Path) -> dict | None:
     kw = dict(row="proxy_size", col="frac", value="da", row_order=sizes, col_order=fracs, col_label=G.chinchilla,
               cbar=f"decision accuracy vs {TARGET_SIZE} final", xlabel="proxy's training tokens (C = Chinchilla-optimal, 20 tokens per parameter)",
               ylabel="proxy size", note=da_note + f"; 5C is the proxy's final checkpoint (that column is DA-size, the {TARGET_SIZE} row its DA-ckpt)")
-    # aggregate: BPB and all benchmarks, the two-panel short version (its numbers: early_small_summary.csv)
+    # aggregate: BPB and all benchmarks, the two-panel short version (its numbers: early_small_da_goal_summary_multi_axes.csv)
     agg = early.assign(group=np.where(early["family"] == "bpb", "bpb", "all benchmarks"))
-    G.panel_grid(agg, out_dir / "early_small.png", by="group", ncols=2, first=("bpb",),
+    G.panel_grid(agg, out_dir / "early_small_da_goal_multi_axes.png", by="group", ncols=2, first=("bpb",),
                  title=f"Early and small: ranking agreement with the {TARGET_SIZE} final checkpoint", **kw)
-    G.panel_grid(early, out_dir / "early_small_by_benchmark.png", by="family", csv=False,
+    G.panel_grid(early, out_dir / "early_small_da_goal_by_benchmark_multi_axes.png", by="family", csv=False,
                  title=f"Early and small, per benchmark (vs {TARGET_SIZE} final)", **kw)
-    G.panel_grid(early, out_dir / "early_small_by_language.png", by="language", ncols=6, csv=False,
+    G.panel_grid(early, out_dir / "early_small_da_goal_by_language_multi_axes.png", by="language", ncols=6, csv=False,
                  title=f"Early and small, per language (vs {TARGET_SIZE} final)", **kw)
     proxies = list(SMALL_SIZES)
     skw = dict(value="da", cbar=f"DA-size (proxy → {TARGET_SIZE})", note=da_note + "; both at their final checkpoint")
-    G.panel_grid(size, out_dir / "da_size_by_benchmark.png", by="family", row="proxy_size", row_order=proxies,
+    G.panel_grid(size, out_dir / "da_size_by_benchmark_multi_axes.png", by="family", row="proxy_size", row_order=proxies,
                  col="language", ncols=1, cell_w=0.3, counts=False, xlabel="language", ylabel="proxy size",
                  title=f"DA-size per benchmark: does the proxy rank the variants like {TARGET_SIZE}?", **skw)
-    G.panel_grid(size, out_dir / "da_size_by_language.png", by="language", row="family", ylabel="benchmark", ncols=6,
+    G.panel_grid(size, out_dir / "da_size_by_language_multi_axes.png", by="language", row="family", ylabel="benchmark", ncols=6,
                  col="proxy_size", col_order=proxies, xlabel="proxy size", csv=False,
                  title=f"DA-size per language: does the proxy rank the variants like {TARGET_SIZE}?", **skw)
 
     safe_size = safe_level_matrix(size, "proxy_size", proxies)
-    G.level_heatmap(safe_size, out_dir / "safe_size.png", levels=proxies, cbar="smallest safe proxy",
+    G.level_heatmap(safe_size, out_dir / "safe_size_da_size_multi_axes.png", levels=proxies, cbar="smallest safe proxy",
                     title=f"Smallest size whose final ranking safely predicts the {TARGET_SIZE} ranking",
                     note=f"cell = smallest proxy size whose DA-size against {TARGET_SIZE} is safe; {rule}")
     ck_fracs = sorted(ckpt["frac"].unique())
     safe_ckpt = {b: safe_level_matrix(ckpt[ckpt["size"] == b], "frac", ck_fracs)
                  for b in bucket_order() if b in set(ckpt["size"])}
-    G.level_heatmap(safe_ckpt, out_dir / "safe_checkpoint.png", levels=ck_fracs, level_label=G.chinchilla,
+    G.level_heatmap(safe_ckpt, out_dir / "safe_checkpoint_da_ckpt_multi_axes.png", levels=ck_fracs, level_label=G.chinchilla,
                     cbar="smallest safe training length",
                     title="Smallest checkpoint that safely predicts the size's own final ranking, one map per size",
                     note="cell = fewest training tokens (in Chinchilla multiples, 5C = the full run) at which the size ranks the "
                          f"design variants like its own final checkpoint; {rule}")
     safe_flops = safe_flops_matrix(early)
-    G.level_heatmap(safe_flops, out_dir / "safe_flops.png", levels=FLOP_LEVELS, level_label=lambda v: f"≤{v:.0%}",
+    G.level_heatmap(safe_flops, out_dir / "safe_flops_da_goal_multi_axes.png", levels=FLOP_LEVELS, level_label=lambda v: f"≤{v:.0%}",
                     cbar=f"share of the {TARGET_SIZE} run's FLOPs",
                     title=f"Fewest FLOPs that safely predict the {TARGET_SIZE} final ranking",
                     note=f"cell = compute of the cheapest (proxy size, checkpoint), as a share of the {TARGET_SIZE} run, from which "
@@ -191,7 +191,7 @@ def figures(pool: str, out_dir: Path) -> dict | None:
     summary = (agg.dropna(subset=["da"]).groupby(["group", "proxy_size", "frac"])
                .agg(da=("da", "mean"), tasks=("task", "nunique"), median_pairs=("n_pairs", "median")).reset_index())
     summary["chinchilla"] = summary["frac"] * G.CHINCHILLA_AT_FULL
-    summary.to_csv(out_dir / "early_small_summary.csv", index=False)
+    summary.to_csv(out_dir / "early_small_da_goal_summary_multi_axes.csv", index=False)
     highlights(out_dir, summary, size, safe_size, safe_flops, sizes, proxies)
     return {"summary": summary, "sizes": sizes, "fracs": fracs, "safe_size": safe_size, "proxies": proxies}
 
@@ -265,18 +265,18 @@ def generate_readme(pool: str, r: dict | None) -> None:
         f"size and at {TARGET_SIZE}. "
         f"Regenerate with `python analysis/rq02_decision_accuracy/early_small.py --pool {pool}`.",
         "\n".join(bullets),
-        f"![rq02 in one figure]({rel}/highlights.png)"] + blocks + [
-        f"![Early and small]({rel}/early_small.png)",
-        f"![Early and small per benchmark]({rel}/early_small_by_benchmark.png)",
-        f"![Early and small per language]({rel}/early_small_by_language.png)",
+        f"![rq02 in one figure]({rel}/highlights_da_all_multi_axes.png)"] + blocks + [
+        f"![Early and small]({rel}/early_small_da_goal_multi_axes.png)",
+        f"![Early and small per benchmark]({rel}/early_small_da_goal_by_benchmark_multi_axes.png)",
+        f"![Early and small per language]({rel}/early_small_da_goal_by_language_multi_axes.png)",
         f"**Smallest safe level per language and benchmark** (DA ≥ {SAFE_DA} over ≥ {MIN_PAIRS} pairs, held at "
         "every larger level — for FLOPs, at every costlier (size, checkpoint) cell; red = never, grey = filtered "
         "out by the above-random gate, white = no value). Each figure's table sits next to it under the same name:",
-        f"![Smallest safe size]({rel}/safe_size.png)",
-        f"![Smallest safe checkpoint]({rel}/safe_checkpoint.png)",
-        f"![Smallest safe FLOPs]({rel}/safe_flops.png)",
-        f"![DA-size per benchmark]({rel}/da_size_by_benchmark.png)",
-        f"![DA-size per language]({rel}/da_size_by_language.png)"])
+        f"![Smallest safe size]({rel}/safe_size_da_size_multi_axes.png)",
+        f"![Smallest safe checkpoint]({rel}/safe_checkpoint_da_ckpt_multi_axes.png)",
+        f"![Smallest safe FLOPs]({rel}/safe_flops_da_goal_multi_axes.png)",
+        f"![DA-size per benchmark]({rel}/da_size_by_benchmark_multi_axes.png)",
+        f"![DA-size per language]({rel}/da_size_by_language_multi_axes.png)"])
     readme = OUT_ROOT / "README.md"
     replace_block(readme, "early-small", body, f"early_small.py --pool {pool}")
     print(f"Wrote auto README block → {readme}")

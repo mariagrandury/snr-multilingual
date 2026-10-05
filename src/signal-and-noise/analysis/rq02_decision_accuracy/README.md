@@ -18,29 +18,53 @@
 - **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 350M 90 % (0.79).
 <!-- END auto:highlight -->
 
-**In one paragraph** (ladder-report snapshot **2026-09-23 06:16**, the one
-the tables on disk were built from; every number below is read from the CSV
-beside the figure it describes). Ranking design variants from a smaller
-fully trained model is close to a coin flip on the full gated population
-(0.53 at 175M, 0.56 at 1B, jackknife ± 0.03); the 0.60 → 0.76 rise of the
-paper's filtered figure is a conditional statement on the tasks whose
+**In one paragraph** (ladder-report snapshot **2026-09-30 23:54**, the one
+the tables on disk were built from — every cell of the grid evaluated except
+FWEB and the 3B L30/L50 rungs, the 90M and 175M rungs at their own batch;
+every number below is read from the CSV beside the figure it describes).
+Ranking design variants from a smaller fully trained model is close to a
+coin flip on the full gated population (0.54 at 90M, 0.55 at 175M, 0.56 at
+1B, jackknife ± 0.02, ± 0.03 at 1B); the 0.64 → 0.76 rise of the paper's filtered figure
+(0.72 → 0.76 from 175M) is a conditional statement on the tasks whose
 DA-size cleared 0.66. Ranking from an early checkpoint of the same run
-reaches 0.86 at 90 % of training, but two seeds of one design reach 0.81 on
-the same axis: most of DA-ckpt's rise is within-run persistence, and on
-English at 600M and 1B two seeds of the same designs disagree with each
-other (test-retest 0.54–0.71) as much as the proxy disagrees with the
-reference. Restricting to the eight high-resource languages, to a common
-task set, or to one language or one language tier does not order the per-L
-lines, and a language's token share does not predict how reliably its
-benchmarks rank (Spearman ρ −0.07 to 0.20 over 36–45 languages). Decision
-accuracy, Kendall's τ and Spearman's ρ are one statistic (r ≥ 0.961 over
-1 286 cells), and the tie convention alone moves the reliable-task verdict
-on 2.5–6 % of cells.
+reaches 0.74–0.82 at 90 % of training (0.75 at 90M, 0.82 at 350M), but two
+seeds of one design reach up to 0.75 on the same axis (the seed null,
+0.56–0.58 on average): most of DA-ckpt's rise is within-run persistence, and
+on English at 175M–1B two seeds of the same designs disagree with each other
+(test-retest 0.55–0.89, 0.63–0.73 on average) as much as the proxy disagrees
+with the reference. Restricting to the eight high-resource languages, to a
+common task set, or to one language or one language tier does not order the
+per-L lines, and a language's token share does not predict how reliably its
+benchmarks rank (Spearman ρ 0.02 to 0.27 over 45–48 languages). Decision
+accuracy, Kendall's τ and Spearman's ρ are one statistic (r ≥ 0.96 over
+1 883 cells), and the tie convention alone moves the reliable-task verdict
+on 2–7 % of cells.
+
+## Naming
+
+Every artifact of this folder says in its name what it holds (rule 16), in one
+order: `<subject>_da_<kind>[_<breakdown>][_<filter>]_<pair set>[_<view>]`.
+
+- **DA kind**: `da_size`, `da_ckpt`, `da_goal`; `da_all` when one file holds
+  more than one (the per-task tables, the three-panel `rq2_da_all_*` figures);
+  `da_size_vs_da_ckpt` when it sets two against each other.
+- **Breakdown**: `by_L`, `by_transformation`, `by_benchmark`, `by_language`,
+  `L` / `transformation` / `lang_*` for the scale-convergence lines.
+- **Filter**: `above_66_size`, `above_66_ckpt`, `above_66_either`,
+  `above_66_both`, `above_80` — the reliability cut the population passed.
+- **Pair set** (rule 15): `multi_axes` (every pair of design variants),
+  `mono_axis` (pairs moving exactly one axis), `seed_null` (two seeds of one
+  design); `both_axes` marks a table whose `axes` column carries every pair
+  set, `mono_vs_multi_axes` a figure that compares the two.
+- **View**: `_flops`, `_tokens`, `_coverage`.
+
+A facet pair shares one table: `<name>_by_benchmark_<pair set>.png` and
+`<name>_by_language_<pair set>.png` read `<name>_<pair set>.csv`.
 
 ## Setup
 
 **Pools and sizes.** Models are the predictivity ladder's cells (pool
-`predictivity`: 175M–1.7B, the 90M rung dropped at load, rule 10;
+`predictivity`: 90M–1.7B, each rung at its own batch, rule 10;
 L ∈ {1, 2, 8, 15, 30, 50} × deep/shallow × scheme A/B, seed 1904).
 `predictivity_schemes` adds the AT3, ZH and ES cells at the grid seed and is
 the pair set every decision figure from figure 1 on is computed over
@@ -57,14 +81,14 @@ with the 1.7B final; **DA-ckpt** an early checkpoint of a run with that run's
 own final; **DA-goal** an early checkpoint of the proxy with the 1.7B final.
 Two identities are verified on every run: DA-size equals DA-goal at 100 % of
 the proxy's run, and DA-ckpt of the 1.7B run equals DA-goal of the 1.7B run.
-Pooled figures (`scale_convergence*`, `rq2_*`, `reliability_*`) report
+Pooled figures (`scale_convergence_da_size*`, `rq2_da_all*`, `reliability_da_size*`) report
 matching decisions over comparable decisions summed over tasks; the
-`early_small*` and `by_L` families report the mean over tasks. The two agree
+`early_small_da_*` families (`early_small.py`, `by_L.py`) report the mean over tasks. The two agree
 to two decimals on today's tables but are different estimands.
 
 **Pair sets (rule 15).** `multi-axis`: every pair of design variants at the
 grid seed (two thirds move more than one axis at once). `mono-axis`
-(`_one_axis` stems): the pairs moving exactly one of L, depth, list, T,
+(`_mono_axis` stems; the multi-axis files carry `_multi_axes`): the pairs moving exactly one of L, depth, list, T,
 lang2 — the decision a practitioner makes, and what upstream's "every pair"
 is by construction. `seed`: two draws of one design (the null; DA-ckpt only,
 figure 7). At the reference the mono-axis pairs are `language count` 39,
@@ -82,7 +106,7 @@ plots the quantity it selected on and is read as conditional (bug #17,
 ## Experimental setup
 
 Models are the predictivity ladder's cells (`configs/models.json` pool
-`predictivity`: 175M–1.7B (the 90M rung is dropped at load, rule 10) ×
+`predictivity`: 90M–1.7B (each rung at its own batch, rule 10) ×
 L ∈ {1, 2, 8, 15, 30, 50} × deep/shallow × scheme A/B, seed 1904;
 `predictivity_seeds` adds the seed replicates as separate models;
 `predictivity_schemes` adds the AT3, ZH and ES cells at the grid seed and is
@@ -108,9 +132,9 @@ never gated: it is the truth the SNR proxies of rq03 and rq04 are scored against
 
 ## Methodology
 
-[`compute_da.py`](compute_da.py) writes `pretraining/<pool>/da_per_task.csv`
-(one row per parent task, one column per DA definition) from
-`snr.metrics.decision_acc_fast`; [`da_per_benchmark.py`](da_per_benchmark.py)
+[`compute_da.py`](compute_da.py) writes `pretraining/<pool>/da_all_per_task_both_axes.csv`
+(one row per (parent task, pair set `axes`), one column per DA definition) from
+`utils.pair_agreement`; [`da_per_benchmark.py`](da_per_benchmark.py)
 melts it into a long (language, benchmark, comparison) table and the wide
 `_size` / `_ckpt` pivots, and rewrites the deck's appendix slides for the
 canonical pool. rq03 joins the SNR variants onto this table; rq05 asks the
@@ -121,7 +145,7 @@ With few families at a size (18 A/B variants at 1.7B, 24 with every scheme;
 a task in a language only the L50 mixture trains rests on three or four),
 DA is quantised to 1/#pairs: read the
 family-level averages, and `n` alongside every value
-(`da_n_pairs_per_task.csv`).
+(`da_all_n_pairs_per_task_both_axes.csv`).
 
 ## Departure from upstream: tie handling in `decision_acc_fast`
 
@@ -175,13 +199,13 @@ benchmark tasks, the plain scale-convergence line across 175M → 1B went from
 **0.590, 0.599, 0.600, 0.598** under the A/B filter to **0.586, 0.613, 0.623,
 0.629** with every scheme — a slope of **+0.010** against **+0.057** per decade of
 non-embedding parameters; on the `above_66_both` population +0.100 against +0.180.
-The A/B filter was suppressing measured convergence. On the 2026-09-23 tables
-(the `rf_` twins at 175M and 350M, ZH and ES at 1.7B) the every-scheme line reads
-**0.531, 0.536, 0.544, 0.557** (`scale_convergence.csv`, +0.034 per decade) and
-0.637 → 0.772 on `above_66_both` (+0.172); the A/B counterfactual has not been
-re-measured on them.
+The A/B filter was suppressing measured convergence. On the 2026-09-30 tables
+(90M in the ladder, the twins at every size, ZH and ES at 1.7B) the every-scheme
+line reads **0.540, 0.548, 0.539, 0.550, 0.563** from 90M to 1B
+(`scale_convergence_da_size_multi_axes.csv`) and 0.687 → 0.776 on `above_66_both`;
+the A/B counterfactual has not been re-measured on them.
 
-The every-scheme numbers are `scale_convergence[_above_66_both].csv` as it stands;
+The every-scheme numbers are `scale_convergence_da_size[_above_66_both]_multi_axes.csv` as it stands;
 the A/B numbers are a counterfactual, since no A/B-only table is kept. Reproduce it
 by restricting `pairs_by_group`'s OVERALL branch to
 `{ra["scheme"], rb["scheme"]} <= {"A", "B"}` and rerunning — do not hand-carry these
@@ -194,7 +218,7 @@ on, and drops any pair that moves two at once — such a pair is a decision abou
 neither. That only works if the axes are actually independent, and the `scheme`
 token is not: it encodes **three** design choices at once. It is unpacked through
 `DATA_SCHEMES` (`sets`, `temp`), the registry that defines the grid, so the axes
-are `L`, `arch`, `list`, `T`, `lang2`, `seed`:
+are `L`, `arch`, `list`, `T`, `lang2`, `en` (the English corpus of the L = 1 DCLMP/FWEB cells), `seed`:
 
 | scheme | `list` | `T` | `lang2` | reading |
 |---|---|---|---|---|
@@ -213,7 +237,7 @@ list and differ on `lang2` alone, and A's L2 cell is the `ru` level of the
 second-language axis rather than a scheme of its own. They used to be three
 separate one-pair groups; they are now one 3-pair axis, and all three reach the
 reference in the 2026-09-23 report (ZH and ES at 1.7B) — exactly `MIN_PAIRS`.
-`scale_convergence_transformation.csv` still draws no line for it: the axis is
+`scale_convergence_da_size_transformation_multi_axes.csv` still draws no line for it: the axis is
 0.1 % of the pooled decisions (`share_lang2`).
 
 **B vs AT3 moves two axes, not one.** Under the old `scheme` key it differed on a
@@ -234,29 +258,29 @@ the language-list axis with no code change.
 
 **Toy, not measured.** Four labelled variants (Deep-A-T1, Deep-B-T1, Shallow-A-T1, Deep-A-T3) with hand-written scores; every DA in the figure is the pipeline's kernel run on them. (a) the finals per size and (b) one run along training show the two ways a ranking moves; (c) decides the six pairs three ways over both pair sets of rule 15 and rings the values at or above the reliability cut; (d) is where each definition sits on the size × checkpoint grid, with the two identities. Regenerate with `python analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity`.
 
-![Decision accuracy explained on a toy ladder](pretraining/predictivity/da_explainer.png)
+![Decision accuracy explained on a toy ladder](pretraining/predictivity/da_all_explainer_both_axes.png)
 
 Key findings (definitions, so nothing to measure):
 
 - On the toy, DA-size 0.50, DA-ckpt 0.17 and DA-goal 0.67 over the six multi-axis pairs; over the three mono-axis pairs 0.33 / 0.00 / 0.67. The tied pair (Deep-A-T1 = Deep-A-T3 at the proxy's final) is a miss wherever the other side decides it, an agreement only if both sides tie — `decision_acc_fast`'s convention, order-invariant.
 - A cell of n pairs takes the values k/n: at the minimum of 3 pairs that is 0, ⅓, ⅔, 1, so a per-cell DA is read on its lattice and the figures draw the pooled ratio over tasks (`scale_convergence.py`) or the mean over cells (`by_L.py`), never one cell. The ringed cells (DA-goal multi-axis 0.67, DA-goal mono-axis 0.67) are the ones the `above_66_*` filters would keep (cut 0.66).
-- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it — ≈ 0.47 on the ladder (7 % of pairs tied, the seed null of `seed_uncertainty.py`).
+- 0.5 is a coin flip on every untied pair; since a one-sided tie is a miss, an uninformative proxy sits below it, at 0.5 × (1 − the share of pairs one side ties): ≈ 0.47 on the ladder (6 % one-sided ties, `agreement_da_size_per_cell_multi_axes.csv`). The seed null of `seed_uncertainty.py` is a different baseline (two seeds of one design, read in its own section).
 - DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's last column and last row are the other two figures' numbers.
-- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder a (task, size) cell holds 0–4 pairs for the temperature axis, 0–6 for the list, 0–10 for depth and 0–39 for the language count, so the temperature and depth groups often fall below the minimum and are NaN (`early_small_by_transformation_*`, `scale_convergence_transformation_panels*`).
+- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder a (task, size) cell holds 0–4 pairs for the temperature axis, 0–6 for the list, 0–10 for depth and 0–39 for the language count, so the temperature and depth groups often fall below the minimum and are NaN (`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`).
 
 Follow-ups:
 
 - A measured twin: the same panels on one real task (`hellaswag_de`, say) with the ladder's families, so the toy orders become the observed ones.
 - The lattice of the ladder's actual pair counts per cell (`median_pairs` in the scale-convergence CSVs), to show how coarse a per-cell DA is on each axis.
 
-Files: [`da_explainer.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_explainer.png), [`da_explainer.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_explainer.csv).
+Files: [`da_all_explainer_both_axes.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_explainer_both_axes.png), [`da_all_explainer_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_explainer_both_axes.csv).
 <!-- END auto:da-explainer -->
 
 ## Figures, in storyline order
 
 ### 1. The full population: a smaller model is close to a coin flip
 
-**DA-size · no filter · multi-axis pairs (`_one_axis` twin: mono-axis) ·
+**DA-size · no filter · multi-axis pairs (`_mono_axis` twin: mono-axis) ·
 pairs from `predictivity_schemes` at seed 1904 · gate `predictivity`.**
 Pooled over decisions, gated at the proxy and at the reference, ≥ 3 pairs
 per task; the band is the 90 % leave-one-family-out jackknife.
@@ -266,15 +290,15 @@ per task; the band is the 90 % leave-one-family-out jackknife.
 
 How small a **fully trained** model may be and still decide the way the 1.7B final checkpoint does: R_size(N) = matching decisions / comparable decisions over the gated tasks, and N_min(τ) = the smallest size with R ≥ τ (τ = 0.9). Same kernel, gate and pair minimum as the rest of rq02 — this is DA-size pooled over decisions rather than averaged over tasks, so the counts behind a point are in the CSV. The 1.7B point is 1.0 by construction. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py` (all three groupings).
 
-**Pooled over every pair** (benchmarks; `scale_convergence.csv` carries BPB and the decision counts):
+**Pooled over every pair** (benchmarks; `scale_convergence_da_size_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
 | all pairs | 0.54 | 0.55 | 0.54 | 0.55 | 0.56 | 1.0 | — |
 
-![Scale convergence, overall](pretraining/predictivity/scale_convergence.png)
+![Scale convergence, overall](pretraining/predictivity/scale_convergence_da_size_multi_axes.png)
 
-**By language count** (benchmarks; `scale_convergence_L.csv` carries BPB and the decision counts):
+**By language count** (benchmarks; `scale_convergence_da_size_L_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
@@ -286,9 +310,9 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 | L8 | 0.57 | 0.5 | 0.48 | 0.48 | 0.55 | 1.0 | — |
 | all pairs | 0.54 | 0.55 | 0.54 | 0.55 | 0.56 | 1.0 | — |
 
-![Scale convergence, L](pretraining/predictivity/scale_convergence_L.png)
+![Scale convergence, L](pretraining/predictivity/scale_convergence_da_size_L_multi_axes.png)
 
-**By design axis** (benchmarks; `scale_convergence_transformation.csv` carries BPB and the decision counts):
+**By design axis** (benchmarks; `scale_convergence_da_size_transformation_multi_axes.csv` carries BPB and the decision counts):
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
@@ -299,15 +323,15 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 | language list (A vs B) | 0.47 | 0.47 | 0.48 | 0.47 | 0.5 | 1.0 | — |
 | temperature (T=1 vs T=3) | 0.51 | 0.53 | 0.54 | 0.57 | 0.56 | 1.0 | — |
 
-![Scale convergence, transformation](pretraining/predictivity/scale_convergence_transformation.png)
+![Scale convergence, transformation](pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.png)
 <!-- END auto:scale-convergence -->
 
 <!-- BEGIN auto:scale-convergence-transformation-panels (scale_convergence.py --by transformation) -->
 ## Scale convergence per design axis, one panel each
 
-The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-family-out band and the pooled `all pairs` line faint behind it. DA-size pooled over decisions, every pair at seed 1904 (`predictivity_all`), gated with `predictivity`'s mask, ≥ 3 pairs per task; task counts under the points. Same table as `scale_convergence_transformation.csv`. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by transformation`.
+The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-family-out band and the pooled `all pairs` line faint behind it. DA-size pooled over decisions, every pair at seed 1904 (`predictivity_all`), gated with `predictivity`'s mask, ≥ 3 pairs per task; task counts under the points. Same table as `scale_convergence_da_size_transformation_multi_axes.csv`. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by transformation`.
 
-![Scale convergence per design axis](pretraining/predictivity/scale_convergence_transformation_panels.png)
+![Scale convergence per design axis](pretraining/predictivity/scale_convergence_da_size_transformation_panels_multi_axes.png)
 
 | axis | families | 90M R [lo, hi] (tasks) | 175M R [lo, hi] (tasks) | 350M R [lo, hi] (tasks) | 600M R [lo, hi] (tasks) | 1B R [lo, hi] (tasks) | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
@@ -329,26 +353,28 @@ Key findings:
 
 Follow-ups:
 
-- The `above_66_size` twin per panel (`scale_convergence_transformation_panels_above_66_size.png`): the same split on the cells that rank reliably.
+- The `above_66_size` twin per panel (`scale_convergence_da_size_transformation_panels_above_66_size_multi_axes.png`): the same split on the cells that rank reliably.
 - A per-axis panel grid on the L8 languages only (`--langs L8`), so the language-count panel is read on one task set.
 - The second-language and English-corpus panels fill in once their 1.7B cells are in the report (rule 9).
 
-Files: [`scale_convergence_transformation_panels.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation_panels.png), [`scale_convergence_transformation_panels.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation_panels.csv).
+Files: [`scale_convergence_da_size_transformation_panels_multi_axes.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_panels_multi_axes.png), [`scale_convergence_da_size_transformation_panels_multi_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_panels_multi_axes.csv).
 <!-- END auto:scale-convergence-transformation-panels -->
 
 **Key findings**
 
-- On every gated task DA-size is 0.53 at 175M and 0.56 at 1B: 0.531
-  [0.506, 0.556], 0.536 [0.512, 0.559], 0.544 [0.523, 0.565], 0.557
-  [0.522, 0.591] at 175M, 350M, 600M, 1B on 227–387 tasks (23 families); the
-  mono-axis pairs read 0.518, 0.511, 0.517, 0.524 (`scale_convergence_one_axis.csv`).
-  Nowhere near τ = 0.90, so N_min is undefined.
-- Per-language BPB does better (0.81 / 0.87 / 0.73 / 0.89 on the BPB panel)
-  and the two aggregates best of all: `bpb_macro` 0.91–0.97 and `train_loss`
-  0.81–0.86 from any size (highlight block). The design differences the
+- On every gated task DA-size is 0.54 at 90M and 0.56 at 1B: 0.540
+  [0.516, 0.564], 0.548 [0.525, 0.571], 0.539 [0.517, 0.561], 0.550
+  [0.527, 0.573], 0.563 [0.529, 0.598] at 90M, 175M, 350M, 600M, 1B on
+  302–453 tasks (25 families); the mono-axis pairs read 0.506, 0.519, 0.507,
+  0.518, 0.523 (`scale_convergence_da_size_mono_axis.csv`). Nowhere near τ = 0.90,
+  so N_min is undefined.
+- Per-language BPB does better (0.91 / 0.91 / 0.82 / 0.58 / 0.82 at 90M …
+  1B on the BPB panel) and the two aggregates best of all: `bpb_macro`
+  0.92–0.97 and `train_loss` 0.79–0.93 from any size (highlight block). The
+  design differences the
   ladder measures move most benchmark scores by less than their noise at any
   one size; BPB, which sums over every token, sees them.
-- By design axis (`scale_convergence_transformation.csv`) the unfiltered
+- By design axis (`scale_convergence_da_size_transformation_multi_axes.csv`) the unfiltered
   lines sit at 0.48–0.57 at every size; by language count the regime lines
   are unordered (figure 4).
 - With and without the twins: on the ungated multi-axis table the originals
@@ -367,16 +393,16 @@ Files: [`scale_convergence_transformation_panels.png`](https://github.com/mariag
 - A noise ceiling on the DA-size panel: no seed replicate exists at 1.7B, so
   the test-retest ceiling of figure 7 stops at 1B; a second 1.7B seed on two
   cells would put a band on this figure.
-- Read the `_flops` twins (`scale_convergence_*_flops.png`) with one line per
+- Read the `_flops` twins (`scale_convergence_da_size_*_flops.png`) with one line per
   size and the annealed points marked; a bigger model's first (peak-LR)
   checkpoint beside a smaller model's annealed final is what makes the
   compute axis zigzag.
 
-GitHub: [scale_convergence.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence.png) · [scale_convergence.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence.csv) ·
-GitHub: [scale_convergence_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_one_axis.png) · [scale_convergence_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_one_axis.csv) ·
-GitHub: [scale_convergence_L.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L.png) · [scale_convergence_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L.csv) ·
-GitHub: [scale_convergence_transformation.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation.png) · [scale_convergence_transformation.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation.csv) ·
-GitHub: [scale_convergence_transformation_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation_one_axis.png) · [scale_convergence_transformation_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_transformation_one_axis.csv)
+GitHub: [scale_convergence_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes.png) · [scale_convergence_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_mono_axis.png) · [scale_convergence_da_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_mono_axis.csv) ·
+GitHub: [scale_convergence_da_size_L_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L_multi_axes.png) · [scale_convergence_da_size_L_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_transformation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.png) · [scale_convergence_da_size_transformation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_mono_axis.png) · [scale_convergence_da_size_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_transformation_mono_axis.csv)
 
 What this leaves open is whether the coin flip is the average of a few
 reliable tasks and many hopeless ones — figure 2.
@@ -385,47 +411,49 @@ reliable tasks and many hopeless ones — figure 2.
 
 **Left panel DA-size, middle DA-ckpt, right DA-goal · filter per panel:
 `above_66_size` / `above_66_ckpt` / `above_66_either` (the
-`_either_transformation` stem) · mono-axis pairs (`_one_axis`) · pairs from
+`_either_transformation` stem) · mono-axis pairs (`_mono_axis`) · pairs from
 `predictivity_schemes` at seed 1904 · gate `predictivity`.** The paper
-embeds `rq2.png` (`paper_rq2.py`, no filter, multi-axis, copied by
+embeds `rq2_da_all_multi_axes.png` (`paper_rq2.py`, no filter, multi-axis, copied by
 `documents/paper/figures/make_rq_figures.py`); its variants share the
-composition and differ only in filter and pair set: `rq2_one_axis`
-(mono-axis, no filter), `rq2_above_80` (the `late` reduction at 0.80, both
-axes), `rq2_above_66_both[_transformation]` (one population on all three
-panels, kept for comparison only), `rq2_above_66_one` (each panel its own
-cut), and `rq2_ten_checkpoints` (`paper_ten_checkpoints.py`: the mean over
+composition and differ only in filter and pair set: `rq2_da_all_mono_axis`
+(mono-axis, no filter), `rq2_da_all_above_80_*` (the `late` reduction at 0.80, both
+axes), `rq2_da_all_above_66_both[_transformation]_*` (one population on all three
+panels, kept for comparison only), `rq2_da_all_above_66_own_*` (each panel its own
+cut), and `rq2_da_goal_ten_checkpoints_multi_axes` (`paper_ten_checkpoints.py`: the mean over
 tasks on the A/B pool's ten checkpoints, BPB and benchmarks, no filter).
 
-![RQ2, per-panel cuts, mono-axis pairs](pretraining/predictivity/rq2_above_66_either_transformation_one_axis.png)
+![RQ2, per-panel cuts, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png)
 
 *Left: DA-size per design axis (mono-axis pairs) and pooled, over the tasks
-whose median DA-size over the proxy sizes is ≥ 0.66 (38 tasks at 175M, 63 at
+whose median DA-size over the proxy sizes is ≥ 0.66 (49 tasks at 90M, 72 at
 1.7B); x is non-embedding parameters, the hollow 1.7B point is 1.0 by
 construction, dotted τ = 0.90. Middle: DA-ckpt over the tasks whose median
-DA-ckpt is ≥ 0.66 (99–130 tasks), each proxy against its own final, x in
+DA-ckpt is ≥ 0.66 (86–114 tasks), each proxy against its own final, x in
 Chinchilla multiples, dotted 0.75. Right: DA-goal over the tasks passing
-either cut (97–149), the same checkpoints against the reference's final; the
+either cut (90–136), the same checkpoints against the reference's final; the
 panels share the y axis, so the vertical distance between middle and right is
 what the proxy's SIZE costs on top of reading it early. The left panel is
 therefore not the same cells as the middle and right: three claims, not one
-population seen three ways. CSVs: `rq2_above_66_either_transformation_one_axis.csv`,
-`early_small_by_L_ckpt_above_66_ckpt_one_axis.csv`,
-`early_small_by_L_goal_above_66_either_one_axis.csv`.*
+population seen three ways. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
+`early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.csv`,
+`early_small_da_goal_by_L_above_66_either_mono_axis.csv`.*
 
-| line (mono-axis, `above_66_size` tasks) | 175M | 350M | 600M | 1B | tasks |
-|---|---|---|---|---|---|
-| all pairs | 0.599 | 0.717 | 0.738 | 0.761 | 38–62 |
-| temperature (T = 1 vs 3) | 0.576 | 0.829 | 0.793 | 0.811 | 24–37 |
-| language count | 0.577 | 0.755 | 0.821 | 0.796 | 24–37 |
-| depth (deep vs shallow) | 0.682 | 0.689 | 0.572 | 0.744 | 24–39 |
-| language list (A vs B) | 0.500 | 0.533 | 0.583 | 0.571 | 4–7 |
+| line (mono-axis, `above_66_size` tasks) | 90M | 175M | 350M | 600M | 1B | tasks |
+|---|---|---|---|---|---|---|
+| all pairs | 0.644 | 0.720 | 0.699 | 0.742 | 0.759 | 49–70 |
+| temperature (T = 1 vs 3) | 0.683 | 0.804 | 0.821 | 0.827 | 0.828 | 29–41 |
+| language count | 0.678 | 0.756 | 0.729 | 0.829 | 0.789 | 29–41 |
+| depth (deep vs shallow) | 0.658 | 0.661 | 0.643 | 0.569 | 0.746 | 29–43 |
+| language list (A vs B) | 0.389 | 0.583 | 0.479 | 0.537 | 0.500 | 6–10 |
+| second language (ru vs zh vs es) | 0.556 | 0.778 | 0.778 | 0.833 | 0.833 | 3–4 |
 
 **Key findings**
 
-- On the filtered population the pooled DA-size rises from 0.60 to 0.76;
-  temperature and language count are the decisions a 350M proxy already
-  reads at 0.76–0.83; depth dips to 0.57 at 600M (unexplained); the
-  language-list decision never leaves 0.50–0.58 on 4–7 tasks — a coin flip,
+- On the filtered population the pooled DA-size rises from 0.64 at 90M
+  (0.72 at 175M) to 0.76 at 1B; temperature and language count are the
+  decisions a 175M proxy already reads at 0.76–0.83; depth dips to 0.57 at
+  600M (unexplained); the language-list decision never leaves 0.39–0.58 on
+  6–10 tasks — a coin flip,
   not below it. On the unfiltered tables the same four lines sit at 0.48–0.57
   (figure 1).
 - The rise is partly the cut: the filter keeps the tasks whose DA-size
@@ -467,15 +495,15 @@ population seen three ways. CSVs: `rq2_above_66_either_transformation_one_axis.c
 - Bootstrap over design variants (not tasks, which share the variants) for a
   90 % interval on every line: with 11 variants a DA moves in steps of 1/55.
 
-GitHub: [rq2_above_66_either_transformation_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_either_transformation_one_axis.png) · [rq2_above_66_either_transformation_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_either_transformation_one_axis.csv) ·
-GitHub: [rq2.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2.png) · [rq2.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2.csv) ·
-GitHub: [rq2_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_one_axis.png) · [rq2_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_one_axis.csv) ·
-GitHub: [rq2_above_80.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_80.png) · [rq2_above_80.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_80.csv) ·
-GitHub: [rq2_above_66_both.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both.png) · [rq2_above_66_both.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both.csv) ·
-GitHub: [rq2_above_66_both_transformation.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both_transformation.png) · [rq2_above_66_both_transformation.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both_transformation.csv) ·
-GitHub: [rq2_above_66_one.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_one.png) · [rq2_above_66_one.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_one.csv) ·
-GitHub: [rq2_ten_checkpoints.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_ten_checkpoints.png) · [rq2_ten_checkpoints.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_ten_checkpoints.csv) ·
-GitHub: [scale_convergence_above_66_size_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_above_66_size_one_axis.png) · [scale_convergence_above_66_size_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_above_66_size_one_axis.csv)
+GitHub: [rq2_da_all_above_66_either_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png) · [rq2_da_all_above_66_either_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.csv) ·
+GitHub: [rq2_da_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.png) · [rq2_da_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.csv) ·
+GitHub: [rq2_da_all_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_mono_axis.png) · [rq2_da_all_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_mono_axis.csv) ·
+GitHub: [rq2_da_all_above_80_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_80_multi_axes.png) · [rq2_da_all_above_80_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_80_multi_axes.csv) ·
+GitHub: [rq2_da_all_above_66_both_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_multi_axes.png) · [rq2_da_all_above_66_both_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_multi_axes.csv) ·
+GitHub: [rq2_da_all_above_66_both_transformation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.png) · [rq2_da_all_above_66_both_transformation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.csv) ·
+GitHub: [rq2_da_all_above_66_own_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.png) · [rq2_da_all_above_66_own_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.csv) ·
+GitHub: [rq2_da_goal_ten_checkpoints_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_goal_ten_checkpoints_multi_axes.png) · [rq2_da_goal_ten_checkpoints_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_goal_ten_checkpoints_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_above_66_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.png) · [scale_convergence_da_size_above_66_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.csv)
 
 The population behind the cuts — which (benchmark, language) cells rank
 reliably at all, and in which languages — is the block below.
@@ -491,7 +519,7 @@ to 71.
 <!-- BEGIN auto:reliable-tasks (reliable_tasks.py --pool predictivity) -->
 ## Which benchmark-language cells rank reliably
 
-Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's final ranking vs the reference's) and on DA-ckpt (an earlier checkpoint vs the same size's final), reducing each task's cells with `late` (one fixed cell per axis, so no cell is chosen by its value). Cells need ≥ 3 pairs (rule 5) and must survive the above-random gate (rule 1). The decisions come from the `predictivity_schemes` pool — every data scheme at the grid seed, which is the population `by_L` and `scale_convergence` pair over — while the gate and this folder stay with `predictivity`; the table carries one row per pair set (rule 15) and the figures show `multi-axis`. `da_reliable_tasks.csv` holds the per-task values for every reduction and is threshold-free — each figure is one view of it. Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity`.
+Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's final ranking vs the reference's) and on DA-ckpt (an earlier checkpoint vs the same size's final), reducing each task's cells with `late` (one fixed cell per axis, so no cell is chosen by its value). Cells need ≥ 3 pairs (rule 5) and must survive the above-random gate (rule 1). The decisions come from the `predictivity_schemes` pool — every data scheme at the grid seed, which is the population `by_L` and `scale_convergence` pair over — while the gate and this folder stay with `predictivity`; the table carries one row per pair set (rule 15) and the figures show `multi-axis`. `da_all_reliable_tasks_both_axes.csv` holds the per-task values for every reduction and is threshold-free — each figure is one view of it. Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool predictivity`.
 
 | language | benchmarks evaluated | DA-size | DA-ckpt | either | both |
 |---|---|---|---|---|---|
@@ -563,24 +591,24 @@ Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's fi
 | 0.66 | median | 77 | 37 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xstorycloze, xwinograd |
 | 0.66 | max | 240 | 48 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xcopa, xnli, xstorycloze, xwinograd |
 
-![Reliable benchmark-language cells](pretraining/predictivity/da_reliable_tasks_80_late.png)
+![Reliable benchmark-language cells](pretraining/predictivity/da_size_vs_da_ckpt_reliable_tasks_80_late_multi_axes.png)
 <!-- END auto:reliable-tasks -->
 
-[da_reliable_tasks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_reliable_tasks.csv) ·
-[da_reliable_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_reliable_by_language.csv) ·
-[da_reliable_tasks_80_late.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_reliable_tasks_80_late.png) ·
-[da_reliable_tasks_66_median.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_reliable_tasks_66_median.png) ·
-[da_reliable_tasks_75_late.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_reliable_tasks_75_late.png)
-(one PNG per cut × reduction, `da_reliable_tasks_<t>_<red>.png`, tables
-`da_reliable_tasks_66.csv`, `da_reliable_tasks_75.csv`).
+[da_all_reliable_tasks_both_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_reliable_tasks_both_axes.csv) ·
+[da_all_reliable_by_language_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_reliable_by_language_multi_axes.csv) ·
+[da_size_vs_da_ckpt_reliable_tasks_80_late_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_vs_da_ckpt_reliable_tasks_80_late_multi_axes.png) ·
+[da_size_vs_da_ckpt_reliable_tasks_66_median_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_vs_da_ckpt_reliable_tasks_66_median_multi_axes.png) ·
+[da_size_vs_da_ckpt_reliable_tasks_75_late_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_vs_da_ckpt_reliable_tasks_75_late_multi_axes.png)
+(one PNG per cut × reduction, `da_size_vs_da_ckpt_reliable_tasks_<t>_<red>_multi_axes.png`, all views of
+`da_all_reliable_tasks_both_axes.csv`).
 
 ### 3. Early and small: DA-goal and DA-ckpt on the ten checkpoints
 
-**`early_small_by_L_{ckpt,goal}_*`: DA-ckpt / DA-goal · mean over tasks ·
+**`early_small_da_{ckpt,goal}_by_L_*`: DA-ckpt / DA-goal · mean over tasks ·
 filter per stem (none, `_above_80`, `_above_66_ckpt`, `_above_66_either`,
 `_above_66_both`; `_with_bpb` adds the per-size BPB lines) · multi-axis
-unless `_one_axis` · pairs from `predictivity_schemes` (`by_L.py` pools every
-scheme at the grid seed) · gate `predictivity`.** The `early_small.png` grid,
+unless `_mono_axis` · pairs from `predictivity_schemes` (`by_L.py` pools every
+scheme at the grid seed) · gate `predictivity`.** The `early_small_da_goal_multi_axes.png` grid,
 the `safe_*` maps and the Results block below read `compute_da.py`'s own
 tables on the A/B pool `predictivity` (multi-axis, no filter, gate
 `predictivity`) — DA-goal at 1C–5C per proxy, the mean over tasks, and the
@@ -589,7 +617,7 @@ smallest safe level (DA ≥ 0.75 over ≥ 3 pairs, held at every larger level).
 <!-- BEGIN auto:results (da_per_benchmark.py --pool predictivity) -->
 ## Results
 
-Numbers from the `predictivity` pool (`da_per_task.csv`, pairs from `da_n_pairs_per_task.csv`, gate from rq00). Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool predictivity`.
+Numbers from the `predictivity` pool (`da_all_per_task_both_axes.csv`, pairs from `da_all_n_pairs_per_task_both_axes.csv`, gate from rq00). Regenerate with `python analysis/rq02_decision_accuracy/da_per_benchmark.py --pool predictivity`.
 
 **DA-size by proxy size** (`n` tasks; median pairs per cell):
 
@@ -601,7 +629,7 @@ Numbers from the `predictivity` pool (`da_per_task.csv`, pairs from `da_n_pairs_
 | 600M → 1.7B | 0.51 | 332 | 28 | 0.58 | 34 |
 | 1B → 1.7B | 0.51 | 360 | 28 | 0.82 | 34 |
 
-![DA-size by family](pretraining/predictivity/da_size_by_family.png)
+![DA-size by family](pretraining/predictivity/da_size_by_family_multi_axes.png)
 
 **DA-ckpt by bucket and fraction of the run** (mean over the above-random benchmark tasks):
 
@@ -624,7 +652,7 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 - **all benchmarks** — no (proxy, checkpoint) reaches a mean agreement of 0.75.
 - **Smallest safe size per (benchmark, language)** — never: 267, 1B: 39, 90M: 8, 600M: 4, 350M: 2, 175M: 2 of 322 cells.
 
-![rq02 in one figure](pretraining/predictivity/highlights.png)
+![rq02 in one figure](pretraining/predictivity/highlights_da_all_multi_axes.png)
 
 **bpb** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 34 tasks):
 
@@ -648,56 +676,56 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 | 1B | 0.49 | 0.50 | 0.50 | 0.50 | 0.52 | 0.51 | 0.51 | 0.52 | 0.51 | 0.51 |
 | 1.7B | 0.50 | 0.54 | 0.54 | 0.56 | 0.56 | 0.59 | 0.59 | 0.63 | 0.71 |  |
 
-![Early and small](pretraining/predictivity/early_small.png)
+![Early and small](pretraining/predictivity/early_small_da_goal_multi_axes.png)
 
-![Early and small per benchmark](pretraining/predictivity/early_small_by_benchmark.png)
+![Early and small per benchmark](pretraining/predictivity/early_small_da_goal_by_benchmark_multi_axes.png)
 
-![Early and small per language](pretraining/predictivity/early_small_by_language.png)
+![Early and small per language](pretraining/predictivity/early_small_da_goal_by_language_multi_axes.png)
 
 **Smallest safe level per language and benchmark** (DA ≥ 0.75 over ≥ 3 pairs, held at every larger level — for FLOPs, at every costlier (size, checkpoint) cell; red = never, grey = filtered out by the above-random gate, white = no value). Each figure's table sits next to it under the same name:
 
-![Smallest safe size](pretraining/predictivity/safe_size.png)
+![Smallest safe size](pretraining/predictivity/safe_size_da_size_multi_axes.png)
 
-![Smallest safe checkpoint](pretraining/predictivity/safe_checkpoint.png)
+![Smallest safe checkpoint](pretraining/predictivity/safe_checkpoint_da_ckpt_multi_axes.png)
 
-![Smallest safe FLOPs](pretraining/predictivity/safe_flops.png)
+![Smallest safe FLOPs](pretraining/predictivity/safe_flops_da_goal_multi_axes.png)
 
-![DA-size per benchmark](pretraining/predictivity/da_size_by_benchmark.png)
+![DA-size per benchmark](pretraining/predictivity/da_size_by_benchmark_multi_axes.png)
 
-![DA-size per language](pretraining/predictivity/da_size_by_language.png)
+![DA-size per language](pretraining/predictivity/da_size_by_language_multi_axes.png)
 <!-- END auto:early-small -->
 
 <!-- BEGIN auto:by-L (by_L.py --pool predictivity) -->
 ## Per language count
 
-**Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ES stops at 1B, so it never pairs against the reference; ZH runs to 1.7B (2026-09-20) and is the third L2 family. A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.
+**Pairs per L** — the design variants the grid plans at seed 1904, and per proxy size the pairs usable against 1.7B (both members planned at that size and at 1.7B): planned / with data today on BPB / on the benchmarks / on the training loss. ZH and ES run to 1.7B and are the second and third L2 families. A cell below MIN_PAIRS (3) families is left empty (rule 5), so a thin L shows blanks rather than a 0/1 reading.
 
 | L | variants | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| 1 | L1-dclmP-deep, L1-deep, L1-fweb-deep, L1-shallow | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 | 6 / 0/0/0 |
-| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 |
-| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 |
-| 15 | L15-AT3-deep, L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 |
-| 30 | L30-AT3-deep, L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 | 10 / 5/5/5 |
-| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 | 6 / 4/4/4 |
+| 1 | L1-dclmP-deep, L1-deep, L1-fweb-deep, L1-shallow | 6 / 3/3/3 | 6 / 3/3/3 | 6 / 3/3/3 | 6 / 3/3/3 | 6 / 3/3/3 |
+| 2 | L2-ES-deep, L2-ZH-deep, L2-deep, L2-shallow | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 |
+| 8 | L8-deep, L8-schemeB-deep, L8-schemeB-shallow, L8-shallow | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 |
+| 15 | L15-AT3-deep, L15-deep, L15-schemeB-deep, L15-schemeB-shallow, L15-shallow | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 |
+| 30 | L30-AT3-deep, L30-deep, L30-schemeB-deep, L30-schemeB-shallow, L30-shallow | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 | 10 / 10/10/10 |
+| 50 | L50-AT3-deep, L50-AT3-shallow, L50-deep, L50-shallow | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 | 6 / 6/6/6 |
 
-The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair at that seed, every scheme included (`da_pooled_per_task.csv`). `da_by_L_per_task.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity`.
+The early-and-small reading one L at a time: pairs of design variants that share the L (seed 1904 of every scheme, `predictivity_all`), against the 1.7B final ranking, on the ten evaluated checkpoints of every run; a cell needs ≥ 3 pairs (rq02's rule), which today leaves out every L with one pair (the table above); the first panel pools every pair at that seed, every scheme included (`da_all_pooled_per_task_multi_axes.csv`). `da_all_by_L_per_task_multi_axes.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. The `_mono_axis` twins of every table and figure are the same over the one-axis pairs (rule 15). Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity [--axes mono-axis]`.
 
-Two of rq02's three decision accuracies have a checkpoint axis and so a figure here. **DA-goal** ranks the proxy at any checkpoint against the 1.7B final checkpoint; **DA-ckpt** ranks it against its own size's final checkpoint, so the 175M line asks what 175M would have decided early and what it misses is the checkpoint alone. The distance between the two is what the proxy *size* costs, and the 1.7B line is the same curve in both — at the reference the definitions coincide. DA-ckpt has no 5C column: a run's final checkpoint is its own reference. The third, **DA-size**, is DA-goal read at 5C alone and lives in `da_per_task.csv`. Each figure comes in a benchmarks-only version and a `_with_bpb` one that adds the solid per-size BPB lines; all four share the y axis, so any two overlay.
+Two of rq02's three decision accuracies have a checkpoint axis and so a figure here. **DA-goal** ranks the proxy at any checkpoint against the 1.7B final checkpoint; **DA-ckpt** ranks it against its own size's final checkpoint, so the 175M line asks what 175M would have decided early and what it misses is the checkpoint alone. The distance between the two is what the proxy *size* costs, and the 1.7B line is the same curve in both — at the reference the definitions coincide. DA-ckpt has no 5C column: a run's final checkpoint is its own reference. The third, **DA-size**, is DA-goal read at 5C alone and lives in `da_all_per_task_both_axes.csv`. Each figure comes in a benchmarks-only version and a `_with_bpb` one that adds the solid per-size BPB lines; all four share the y axis, so any two overlay.
 
-![DA-goal per L](pretraining/predictivity/early_small_by_L_goal.png)
+![DA-goal per L](pretraining/predictivity/early_small_da_goal_by_L_multi_axes.png)
 
-![DA-goal per L, with BPB](pretraining/predictivity/early_small_by_L_goal_with_bpb.png)
+![DA-goal per L, with BPB](pretraining/predictivity/early_small_da_goal_by_L_with_bpb_multi_axes.png)
 
-![DA-ckpt per L](pretraining/predictivity/early_small_by_L_ckpt.png)
+![DA-ckpt per L](pretraining/predictivity/early_small_da_ckpt_by_L_multi_axes.png)
 
-![DA-ckpt per L, with BPB](pretraining/predictivity/early_small_by_L_ckpt_with_bpb.png)
+![DA-ckpt per L, with BPB](pretraining/predictivity/early_small_da_ckpt_by_L_with_bpb_multi_axes.png)
 
 A third variant of each restricts the mean to the (benchmark, language) cells that rank reliably on BOTH axes (DA-size and DA-ckpt each ≥ 0.8, `reliable_tasks.py`): the plain panels average over every gated benchmark, these average over the benchmarks that work.
 
-![DA-goal per L, reliable cells only](pretraining/predictivity/early_small_by_L_goal_above_80.png)
+![DA-goal per L, reliable cells only](pretraining/predictivity/early_small_da_goal_by_L_above_80_multi_axes.png)
 
-![DA-ckpt per L, reliable cells only](pretraining/predictivity/early_small_by_L_ckpt_above_80.png)
+![DA-ckpt per L, reliable cells only](pretraining/predictivity/early_small_da_ckpt_by_L_above_80_multi_axes.png)
 <!-- END auto:by-L -->
 
 <!-- BEGIN auto:early-small-by-transformation (by_L.py --pool predictivity --by transformation) -->
@@ -705,7 +733,7 @@ A third variant of each restricts the mean to the (benchmark, language) cells th
 
 The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed 1904 (`predictivity_all`, every scheme) by the one axis each pair moves — language count, depth (deep vs shallow), language list (A vs B), temperature (T=1 vs T=3), 2nd language (ru vs zh vs es) — one panel per axis and a first panel over every mono-axis pair (median pairs per cell up to 20). Same gate (rule 1), pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and `above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line and the populations differ between panels and sizes (rule 13). Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation`.
 
-![DA-ckpt per design axis](pretraining/predictivity/early_small_by_transformation_ckpt.png)
+![DA-ckpt per design axis](pretraining/predictivity/early_small_da_ckpt_by_transformation_mono_axis.png)
 
 **DA-ckpt** (against the proxy size's own final; cell = mean DA at the first → last drawn checkpoint, tasks behind the line in brackets):
 
@@ -729,7 +757,7 @@ Follow-ups:
 - The same panels on the L8 languages only (`scale_convergence.py --langs L8` does it for DA-size), so the language-count panel is read on one task set.
 - Once BT3 trains, the temperature panel gains the B-vs-BT3 pairs and the list panel AT3-vs-BT3 with no code change.
 
-![DA-goal per design axis](pretraining/predictivity/early_small_by_transformation_goal.png)
+![DA-goal per design axis](pretraining/predictivity/early_small_da_goal_by_transformation_mono_axis.png)
 
 **DA-goal** (against the 1.7B final):
 
@@ -749,28 +777,28 @@ Key findings:
 
 Follow-ups:
 
-- The size axis of the same split is `scale_convergence_transformation_panels.png` (DA-size pooled over decisions).
+- The size axis of the same split is `scale_convergence_da_size_transformation_panels_multi_axes.png` (DA-size pooled over decisions).
 - A jackknife band per axis line (leave one family out), as the scale-convergence panels carry.
 
-Filtered twins (reliable cells only): [`early_small_by_transformation_goal_above_80.png`](pretraining/predictivity/early_small_by_transformation_goal_above_80.png), [`early_small_by_transformation_goal_above_66_both.png`](pretraining/predictivity/early_small_by_transformation_goal_above_66_both.png), [`early_small_by_transformation_goal_above_66_either.png`](pretraining/predictivity/early_small_by_transformation_goal_above_66_either.png), [`early_small_by_transformation_ckpt_above_80.png`](pretraining/predictivity/early_small_by_transformation_ckpt_above_80.png), [`early_small_by_transformation_ckpt_above_66_both.png`](pretraining/predictivity/early_small_by_transformation_ckpt_above_66_both.png), [`early_small_by_transformation_ckpt_above_66_ckpt.png`](pretraining/predictivity/early_small_by_transformation_ckpt_above_66_ckpt.png)
+Filtered twins (reliable cells only): [`early_small_da_goal_by_transformation_above_80_mono_axis.png`](pretraining/predictivity/early_small_da_goal_by_transformation_above_80_mono_axis.png), [`early_small_da_goal_by_transformation_above_66_both_mono_axis.png`](pretraining/predictivity/early_small_da_goal_by_transformation_above_66_both_mono_axis.png), [`early_small_da_goal_by_transformation_above_66_either_mono_axis.png`](pretraining/predictivity/early_small_da_goal_by_transformation_above_66_either_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_80_mono_axis.png`](pretraining/predictivity/early_small_da_ckpt_by_transformation_above_80_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_66_both_mono_axis.png`](pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_both_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.png`](pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.png)
 
-Files: [`early_small_by_transformation_goal.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal.png), [`early_small_by_transformation_goal.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal.csv), [`early_small_by_transformation_goal_above_80.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_80.png), [`early_small_by_transformation_goal_above_80.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_80.csv), [`early_small_by_transformation_goal_above_66_both.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_66_both.png), [`early_small_by_transformation_goal_above_66_both.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_66_both.csv), [`early_small_by_transformation_goal_above_66_either.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_66_either.png), [`early_small_by_transformation_goal_above_66_either.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_goal_above_66_either.csv), [`early_small_by_transformation_ckpt.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt.png), [`early_small_by_transformation_ckpt.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt.csv), [`early_small_by_transformation_ckpt_above_80.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_80.png), [`early_small_by_transformation_ckpt_above_80.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_80.csv), [`early_small_by_transformation_ckpt_above_66_both.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_66_both.png), [`early_small_by_transformation_ckpt_above_66_both.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_66_both.csv), [`early_small_by_transformation_ckpt_above_66_ckpt.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_66_ckpt.png), [`early_small_by_transformation_ckpt_above_66_ckpt.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_transformation_ckpt_above_66_ckpt.csv), [`da_by_transformation_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_by_transformation_per_task.csv).
+Files: [`early_small_da_goal_by_transformation_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_mono_axis.png), [`early_small_da_goal_by_transformation_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_mono_axis.csv), [`early_small_da_goal_by_transformation_above_80_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_80_mono_axis.png), [`early_small_da_goal_by_transformation_above_80_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_80_mono_axis.csv), [`early_small_da_goal_by_transformation_above_66_both_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_66_both_mono_axis.png), [`early_small_da_goal_by_transformation_above_66_both_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_66_both_mono_axis.csv), [`early_small_da_goal_by_transformation_above_66_either_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_66_either_mono_axis.png), [`early_small_da_goal_by_transformation_above_66_either_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_transformation_above_66_either_mono_axis.csv), [`early_small_da_ckpt_by_transformation_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_mono_axis.png), [`early_small_da_ckpt_by_transformation_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_mono_axis.csv), [`early_small_da_ckpt_by_transformation_above_80_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_80_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_80_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_80_mono_axis.csv), [`early_small_da_ckpt_by_transformation_above_66_both_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_both_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_66_both_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_both_mono_axis.csv), [`early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.png), [`early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_transformation_above_66_ckpt_mono_axis.csv), [`da_all_by_transformation_per_task_mono_axis.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_by_transformation_per_task_mono_axis.csv).
 <!-- END auto:early-small-by-transformation -->
 
 **Key findings**
 
 - The mean-over-tasks reading on the A/B pool is 0.46–0.53 at every proxy
-  size and checkpoint for the benchmarks (`early_small.csv`,
-  `rq2_ten_checkpoints.csv`), the pooled-over-decisions reading of figure 1
+  size and checkpoint for the benchmarks (`early_small_da_goal_multi_axes.csv`,
+  `rq2_da_goal_ten_checkpoints_multi_axes.csv`), the pooled-over-decisions reading of figure 1
   0.53–0.56: two estimands, one verdict.
 - BPB reads the 1.7B ranking at ≥ 0.75 from 175M at 2C (0.77) and from 350M
   at 2.5C; `bpb_macro` and `train_loss` from any size and checkpoint; no
   (proxy, checkpoint) cell reaches 0.75 for the benchmark mean.
-- DA-ckpt rises monotonically along every run (175M: 0.51 at 10 % → 0.83 at
-  90 %; 1.7B: 0.50 → 0.71) and the reference's own curve is its DA-ckpt; read
-  against the seed null of figure 7 (0.47 → 0.81 at 175M), the design signal
-  in that rise is 0.01–0.03.
-- Per L, only the regimes with ≥ 3 usable pairs draw a panel (`pairs_by_L.csv`:
+- DA-ckpt rises along every run (175M: 0.54 at 10 % → 0.76 at 90 %; 1.7B:
+  0.53 → 0.74) and the reference's own curve is its DA-ckpt; read against the
+  seed null of figure 7 (0.51 → 0.75 at 175M), the design signal at 90 % is
+  −0.01 to +0.02.
+- Per L, only the regimes with ≥ 3 usable pairs draw a panel (`pairs_da_all_by_L_multi_axes.csv`:
   L1 and L2 have one pair against 1.7B on the A/B pool; the ZH/ES cells give
   L2 its three families on `predictivity_schemes`, figure 4).
 - Smallest safe level per (benchmark, language): never 228, 1B 38, 350M 7,
@@ -778,41 +806,41 @@ Files: [`early_small_by_transformation_goal.png`](https://github.com/mariagrandu
 
 **Follow-ups**
 
-- The `_flops` reading (`safe_flops.png`) joins un-annealed and annealed
+- The `_flops` reading (`safe_flops_da_goal_multi_axes.png`) joins un-annealed and annealed
   points; one line per size with the annealed points marked, plus the
   compute frontier (the best DA reachable at or below each compute), is the
   practical answer.
 - `early_small_by_L_own` (the size's cost separated from the checkpoint's) as
-  an appendix pair with `early_small_by_L_goal`, once the 6-pair L's are
-  complete; `pairs_by_L.csv` justifies why per-L DA is coarse.
+  an appendix pair with `early_small_da_goal_by_L_multi_axes`, once the 6-pair L's are
+  complete; `pairs_da_all_by_L_multi_axes.csv` justifies why per-L DA is coarse.
 
-GitHub: [early_small.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small.png) · [early_small.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small.csv) ·
-[early_small_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_benchmark.png) ·
-[early_small_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_language.png) ·
-GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/highlights.csv) ·
-GitHub: [safe_size.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_size.png) · [safe_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_size.csv) ·
-GitHub: [safe_checkpoint.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_checkpoint.png) · [safe_checkpoint.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_checkpoint.csv) ·
-GitHub: [safe_flops.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_flops.png) · [safe_flops.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_flops.csv) ·
-GitHub: [da_size_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_family.png) · [da_size_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_family.csv) ·
-[da_size_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_benchmark.png) ·
-[da_size_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_language.png) ·
-[da_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size.csv) ·
-GitHub: [early_small_by_L_goal.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal.png) · [early_small_by_L_goal.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal.csv) ·
-GitHub: [early_small_by_L_goal_with_bpb.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_with_bpb.png) · [early_small_by_L_goal_with_bpb.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_with_bpb.csv) ·
-GitHub: [early_small_by_L_ckpt.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt.png) · [early_small_by_L_ckpt.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt.csv) ·
-GitHub: [early_small_by_L_ckpt_with_bpb.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_with_bpb.png) · [early_small_by_L_ckpt_with_bpb.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_with_bpb.csv) ·
-GitHub: [early_small_by_L_goal_above_80.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_above_80.png) · [early_small_by_L_goal_above_80.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_above_80.csv) ·
-GitHub: [early_small_by_L_ckpt_above_80.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_above_80.png) · [early_small_by_L_ckpt_above_80.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_above_80.csv) ·
-GitHub: [early_small_by_L_ckpt_above_66_ckpt_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_above_66_ckpt_one_axis.png) · [early_small_by_L_ckpt_above_66_ckpt_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_ckpt_above_66_ckpt_one_axis.csv) ·
-GitHub: [early_small_by_L_goal_above_66_either_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_above_66_either_one_axis.png) · [early_small_by_L_goal_above_66_either_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_by_L_goal_above_66_either_one_axis.csv) ·
-[pairs_by_L.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/pairs_by_L.csv) ·
-[da_by_L_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_by_L_per_task.csv) ·
-[da_pooled_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_pooled_per_task.csv)
+GitHub: [early_small_da_goal_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_multi_axes.png) · [early_small_da_goal_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_multi_axes.csv) ·
+[early_small_da_goal_by_benchmark_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_benchmark_multi_axes.png) ·
+[early_small_da_goal_by_language_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_language_multi_axes.png) ·
+GitHub: [highlights_da_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/highlights_da_all_multi_axes.png) · [highlights_da_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/highlights_da_all_multi_axes.csv) ·
+GitHub: [safe_size_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_size_da_size_multi_axes.png) · [safe_size_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_size_da_size_multi_axes.csv) ·
+GitHub: [safe_checkpoint_da_ckpt_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_checkpoint_da_ckpt_multi_axes.png) · [safe_checkpoint_da_ckpt_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_checkpoint_da_ckpt_multi_axes.csv) ·
+GitHub: [safe_flops_da_goal_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_flops_da_goal_multi_axes.png) · [safe_flops_da_goal_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/safe_flops_da_goal_multi_axes.csv) ·
+GitHub: [da_size_by_family_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_family_multi_axes.png) · [da_size_by_family_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_family_multi_axes.csv) ·
+[da_size_by_benchmark_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_benchmark_multi_axes.png) ·
+[da_size_by_language_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_by_language_multi_axes.png) ·
+[da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_size_multi_axes.csv) ·
+GitHub: [early_small_da_goal_by_L_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_multi_axes.png) · [early_small_da_goal_by_L_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_multi_axes.csv) ·
+GitHub: [early_small_da_goal_by_L_with_bpb_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_with_bpb_multi_axes.png) · [early_small_da_goal_by_L_with_bpb_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_with_bpb_multi_axes.csv) ·
+GitHub: [early_small_da_ckpt_by_L_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_multi_axes.png) · [early_small_da_ckpt_by_L_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_multi_axes.csv) ·
+GitHub: [early_small_da_ckpt_by_L_with_bpb_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_with_bpb_multi_axes.png) · [early_small_da_ckpt_by_L_with_bpb_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_with_bpb_multi_axes.csv) ·
+GitHub: [early_small_da_goal_by_L_above_80_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_above_80_multi_axes.png) · [early_small_da_goal_by_L_above_80_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_above_80_multi_axes.csv) ·
+GitHub: [early_small_da_ckpt_by_L_above_80_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_above_80_multi_axes.png) · [early_small_da_ckpt_by_L_above_80_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_above_80_multi_axes.csv) ·
+GitHub: [early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.png) · [early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.csv) ·
+GitHub: [early_small_da_goal_by_L_above_66_either_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_above_66_either_mono_axis.png) · [early_small_da_goal_by_L_above_66_either_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_above_66_either_mono_axis.csv) ·
+[pairs_da_all_by_L_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/pairs_da_all_by_L_multi_axes.csv) ·
+[da_all_by_L_per_task_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_by_L_per_task_multi_axes.csv) ·
+[da_all_pooled_per_task_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/da_all_pooled_per_task_multi_axes.csv)
 
 ### 4. Language count: unordered, on any task set
 
-**DA-size · `scale_convergence_L8*`: no filter (the `_above_66_size` twins
-conditional) · multi-axis (`scale_convergence_L_one_axis` mono-axis, every
+**DA-size · `scale_convergence_da_size_L8*`: no filter (the `_above_66_size` twins
+conditional) · multi-axis (`scale_convergence_da_size_L_mono_axis` mono-axis, every
 language) · pairs sharing the L from `predictivity_schemes` at seed 1904 ·
 gate `predictivity`.** One line per language-count regime; a regime pools
 depth, list and temperature decisions (`share_*` in the CSV) and the mix
@@ -821,7 +849,7 @@ differs by regime, which rule 5 forbids holding fixed.
 <!-- BEGIN auto:scale-convergence-L8 (scale_convergence.py --by L --langs L8) -->
 ## Scale convergence by language count, on the L8 languages
 
-The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8`.
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_da_size_L8_above_66_size_multi_axes.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8`.
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
@@ -833,13 +861,13 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 | L8 | 0.57 | 0.5 | 0.48 | 0.48 | 0.55 | 1.0 | — |
 | all pairs | 0.56 | 0.56 | 0.55 | 0.55 | 0.57 | 1.0 | — |
 
-![Scale convergence, L8](pretraining/predictivity/scale_convergence_L8.png)
+![Scale convergence, L8](pretraining/predictivity/scale_convergence_da_size_L8_multi_axes.png)
 <!-- END auto:scale-convergence-L8 -->
 
 <!-- BEGIN auto:scale-convergence-L8-common (scale_convergence.py --by L --langs L8 --common-tasks) -->
 ## Scale convergence by language count, on the L8 languages, common tasks
 
-The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_L8common_above_66_size.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
+The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de, en, es, fr, it, ja, ru, zh), which every regime from L8 up trains, and further over the tasks with ≥ 3 pairs in every regime at every proxy size — one task set for the whole figure, so a gap between lines is a gap on the same benchmarks. What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. Numbers below are the unfiltered population; the `above_66_size` twin (`scale_convergence_da_size_L8common_above_66_size_multi_axes.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks`.
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
@@ -851,7 +879,7 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 | L8 | 0.64 | 0.5 | 0.53 | 0.36 | 0.44 | 1.0 | — |
 | all pairs | 0.59 | 0.58 | 0.63 | 0.62 | 0.6 | 1.0 | — |
 
-![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_L8common.png)
+![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_da_size_L8common_multi_axes.png)
 <!-- END auto:scale-convergence-L8-common -->
 
 | regime, L8-language tasks (unfiltered) | 175M | 350M | 600M | 1B | tasks | decision mix at 1B |
@@ -888,15 +916,15 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 - Bootstrap over L, not items, for the per-L comparison (items within an L
   move together).
 
-GitHub: [scale_convergence_L8.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8.png) · [scale_convergence_L8.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8.csv) ·
-GitHub: [scale_convergence_L8common.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8common.png) · [scale_convergence_L8common.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8common.csv) ·
-GitHub: [scale_convergence_L8_above_66_size.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8_above_66_size.png) · [scale_convergence_L8_above_66_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8_above_66_size.csv) ·
-GitHub: [scale_convergence_L8common_above_66_size.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8common_above_66_size.png) · [scale_convergence_L8common_above_66_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L8common_above_66_size.csv) ·
-GitHub: [scale_convergence_L_one_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L_one_axis.png) · [scale_convergence_L_one_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_L_one_axis.csv)
+GitHub: [scale_convergence_da_size_L8_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8_multi_axes.png) · [scale_convergence_da_size_L8_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_L8common_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8common_multi_axes.png) · [scale_convergence_da_size_L8common_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8common_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_L8_above_66_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8_above_66_size_multi_axes.png) · [scale_convergence_da_size_L8_above_66_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8_above_66_size_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_L8common_above_66_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8common_above_66_size_multi_axes.png) · [scale_convergence_da_size_L8common_above_66_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L8common_above_66_size_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_L_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L_mono_axis.png) · [scale_convergence_da_size_L_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_L_mono_axis.csv)
 
 ### 5. One language at a time, and the tokens axis
 
-**DA-size · `scale_convergence_lang_all*`: no filter (`_above_66_size`
+**DA-size · `scale_convergence_da_size_lang_all*`: no filter (`_above_66_size`
 conditional) · multi-axis · pairs sharing the L from `predictivity_schemes` ·
 gate `predictivity`.** One panel per L8 language, one line per regime that
 trains it plus the pooled line; the `_tokens` twin relabels x as the tokens of
@@ -906,7 +934,7 @@ panel title carries the collapse test.
 <!-- BEGIN auto:scale-convergence-by-language (by_language.py --pool predictivity) -->
 ## Scale convergence per language
 
-For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_lang_all_coverage.csv` says why a cell is empty.
+For each language of the L8 setting, the `--by L` lines read on that language's benchmarks alone: R at the smallest → largest proxy [tasks], per regime that trains the language, on every gated task (no selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is the collapse test: R² of one log-linear line through every regime's points with x = model size, then with x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with `python analysis/rq02_decision_accuracy/by_language.py --pool predictivity`; `scale_convergence_da_size_lang_all_multi_axes_coverage.csv` says why a cell is empty.
 
 | language | L1 | L2 | L8 | L15 | L30 | L50 | R² size / tokens |
 |---|---|---|---|---|---|---|---|
@@ -919,9 +947,9 @@ For each language of the L8 setting, the `--by L` lines read on that language's 
 | fr | — | — | — | 0.57→0.49 [13] | 0.44→0.50 [13] | 0.52→0.59 [13] | 0.01 / 0.03 |
 | it | — | — | — | 0.62→0.72 [13] | 0.40→0.50 [13] | 0.60→0.62 [13] | 0.02 / 0.02 |
 
-![Scale convergence per language](pretraining/predictivity/scale_convergence_lang_all.png)
+![Scale convergence per language](pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes.png)
 
-![Scale convergence per language, tokens axis](pretraining/predictivity/scale_convergence_lang_all_tokens.png)
+![Scale convergence per language, tokens axis](pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_tokens.png)
 <!-- END auto:scale-convergence-by-language -->
 
 **Key findings**
@@ -944,17 +972,17 @@ For each language of the L8 setting, the `--by L` lines read on that language's 
   reformulated twins were evaluated on a subset of cells; an evaluation
   top-up, not analysis code, fills them.
 
-GitHub: [scale_convergence_lang_all.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_all.png) · [scale_convergence_lang_all.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_all.csv) ·
-GitHub: [scale_convergence_lang_all_tokens.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_all_tokens.png) · [scale_convergence_lang_all_tokens.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_all_tokens.csv) ·
-[scale_convergence_lang_all_coverage.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_all_coverage.csv) ·
-GitHub: [scale_convergence_lang_above_66_size.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_above_66_size.png) · [scale_convergence_lang_above_66_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_above_66_size.csv) ·
-GitHub: [scale_convergence_lang_above_66_size_tokens.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_above_66_size_tokens.png) · [scale_convergence_lang_above_66_size_tokens.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_lang_above_66_size_tokens.csv)
+GitHub: [scale_convergence_da_size_lang_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes.png) · [scale_convergence_da_size_lang_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_lang_all_multi_axes_tokens.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_tokens.png) · [scale_convergence_da_size_lang_all_multi_axes_tokens.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_tokens.csv) ·
+[scale_convergence_da_size_lang_all_multi_axes_coverage.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_coverage.csv) ·
+GitHub: [scale_convergence_da_size_lang_above_66_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_above_66_size_multi_axes.png) · [scale_convergence_da_size_lang_above_66_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_above_66_size_multi_axes.csv) ·
+GitHub: [scale_convergence_da_size_lang_above_66_size_multi_axes_tokens.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_above_66_size_multi_axes_tokens.png) · [scale_convergence_da_size_lang_above_66_size_multi_axes_tokens.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_above_66_size_multi_axes_tokens.csv)
 
 ### 6. High-resource languages are not easier to read
 
-**DA-size · `reliability_by_language_tier`: panel (a) no filter, panel (b)
+**DA-size · `reliability_da_size_by_language_tier_multi_axes`: panel (a) no filter, panel (b)
 `above_66_size` · multi-axis · pairs from `predictivity_schemes` · gate
-`predictivity`; `reliability_vs_language_share`: no filter, per language with
+`predictivity`; `reliability_da_size_vs_language_share_multi_axes`: no filter, per language with
 ≥ 3 gated tasks (rule 8).** A tier is the smallest scheme-A regime that trains
 the language (L8 = the eight high-resource languages, L50 = the twenty only
 the L50 mixture trains).
@@ -962,7 +990,7 @@ the L50 mixture trains).
 <!-- BEGIN auto:language-tier (language_tier.py --pool predictivity) -->
 ## Decision reliability by language tier
 
-The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks of one language TIER — the smallest scheme-A regime that trains the language (L8: the eight high-resource languages every regime trains; L50: the twenty only the L50 mixture trains). Reliability at the smallest → largest proxy [task count]. `reliability_vs_language_share.png` is the per-language version: reliability against the language's share of the L50 mixture, Spearman ρ over languages 175M 0.24, 1B 0.02, 350M 0.18, 600M 0.27, 90M 0.24. Both are unfiltered; a tier also differs in benchmark mix. Regenerate with `python analysis/rq02_decision_accuracy/language_tier.py --pool predictivity`.
+The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks of one language TIER — the smallest scheme-A regime that trains the language (L8: the eight high-resource languages every regime trains; L50: the twenty only the L50 mixture trains). Reliability at the smallest → largest proxy [task count]. `reliability_da_size_vs_language_share_multi_axes.png` is the per-language version: reliability against the language's share of the L50 mixture, Spearman ρ over languages 175M 0.24, 1B 0.02, 350M 0.18, 600M 0.27, 90M 0.24. Both are unfiltered; a tier also differs in benchmark mix. Regenerate with `python analysis/rq02_decision_accuracy/language_tier.py --pool predictivity`.
 
 | tier | all gated tasks | above_66_size |
 |---|---|---|
@@ -971,9 +999,9 @@ The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks 
 | L30-only languages | 0.49 → 0.56 [68–108 tasks] | 0.61 → 0.77 [13–16 tasks] |
 | L50-only languages | 0.50 → 0.56 [81–114 tasks] | 0.65 → 0.76 [26–36 tasks] |
 
-![Reliability by language tier](pretraining/predictivity/reliability_by_language_tier.png)
+![Reliability by language tier](pretraining/predictivity/reliability_da_size_by_language_tier_multi_axes.png)
 
-![Reliability against language share](pretraining/predictivity/reliability_vs_language_share.png)
+![Reliability against language share](pretraining/predictivity/reliability_da_size_vs_language_share_multi_axes.png)
 <!-- END auto:language-tier -->
 
 **Key findings**
@@ -999,12 +1027,12 @@ The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks 
 - A tier also differs in benchmark mix (the L50 tier is mostly Belebele and
   Global-MMLU twins); a per-family version of panel (a) separates the two.
 
-GitHub: [reliability_by_language_tier.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_by_language_tier.png) · [reliability_by_language_tier.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_by_language_tier.csv) ·
-GitHub: [reliability_vs_language_share.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_vs_language_share.png) · [reliability_vs_language_share.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_vs_language_share.csv)
+GitHub: [reliability_da_size_by_language_tier_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_da_size_by_language_tier_multi_axes.png) · [reliability_da_size_by_language_tier_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_da_size_by_language_tier_multi_axes.csv) ·
+GitHub: [reliability_da_size_vs_language_share_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_da_size_vs_language_share_multi_axes.png) · [reliability_da_size_vs_language_share_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/reliability_da_size_vs_language_share_multi_axes.csv)
 
 ### 7. Seed uncertainty and the DA-ckpt null
 
-**`seed_uncertainty`: proxy-seed DA = DA-size at each of the proxy's three
+**`seed_uncertainty_da_all_seed_null`: proxy-seed DA = DA-size at each of the proxy's three
 seeds against the fixed 1.7B (seed 1904) final; test-retest = the same
 designs ranked from seed s1 against seed s2 at one size; seed null = DA-ckpt
 over the `seed` pairs (two seeds of ONE design) against the real design pairs
@@ -1024,27 +1052,28 @@ What the replicate seeds say about decision accuracy — English at three proxy 
 | 1B | en | 4 | 0.63, 0.53, 0.58 | 0.56–0.62 | 31 |
 | 1B | ru | 4 | 0.83, 0.83, 0.81 | 0.81–0.89 | 12 |
 
-![Seed uncertainty](pretraining/predictivity/seed_uncertainty.png)
+![Seed uncertainty](pretraining/predictivity/seed_uncertainty_da_all_seed_null.png)
 <!-- END auto:seed-uncertainty -->
 
 **Key findings**
 
-- Proxy-seed noise is ± 0.05 on English: the three seeds read 0.72 / 0.78 /
-  0.83 at 175M (18 decisions on 6 tasks), 0.61 / 0.67 / 0.68 at 600M (93
-  decisions, 31 tasks), 0.52 / 0.57 / 0.64 at 1B (186 decisions, 31 tasks);
-  Russian at 1B 0.79 / 0.82 / 0.82 on 11 tasks. Three pairs put a DA on
-  {0, ⅓, ⅔, 1}: read the spread, not a mean.
-- The English test-retest ceiling collapses once the probe families count:
-  0.83–0.94 at 175M but 0.54–0.71 at 600M and 0.56–0.62 at 1B (Russian
-  0.79–0.88). On the 31 English tasks readable at 600M and 1B (`include_v2_en`,
-  `bbh`, `acp_bench` among them) two seeds of the same designs disagree with
-  each other as much as the proxy disagrees with the reference: the design
-  differences are below the seed noise of those benchmarks.
+- Proxy-seed noise is up to ± 0.07 on English: the three seeds read 0.60 /
+  0.74 / 0.68 at 175M (72 decisions on 24 tasks), 0.67 / 0.68 / 0.59 at 600M
+  (93 decisions, 31 tasks), 0.63 / 0.53 / 0.58 at 1B (186 decisions, 31
+  tasks); Russian at 1B 0.83 / 0.83 / 0.81 on 12 tasks. Three pairs put a DA
+  on {0, ⅓, ⅔, 1}: read the spread, not a mean.
+- The English test-retest ceiling is low at every size: 0.64–0.71 at 175M,
+  0.55–0.71 at 600M and 0.56–0.62 at 1B (Russian 0.81–0.89). On the 24–31
+  English tasks readable there (`include_v2_en`, `bbh`, `acp_bench` among
+  them) two seeds of the same designs disagree with each other as much as the
+  proxy disagrees with the reference: the design differences are below the
+  seed noise of those benchmarks.
 - DA-ckpt is mostly within-run persistence: two seeds of one design, which
-  have nothing to decide, read 0.47 at 10 % of the 175M run and 0.81 at 90 %,
-  against 0.51 and 0.83 for the real pairs, and 0.48 → 0.72 against 0.48 →
-  0.74 at 1B; at 90 % the real pairs exceed the null by 0.01–0.02 at every
-  size, the largest gap mid-run at 175M (0.54 against 0.64 at 40 %). The
+  have nothing to decide, read 0.51 at 10 % of the 175M run and 0.75 at 90 %,
+  against 0.51 and 0.75 for the real pairs, and 0.48 → 0.72 against 0.48 →
+  0.74 at 1B; at 90 % the real pairs exceed the null by −0.01 (175M), +0.01
+  (600M) and +0.02 (1B), the largest gap mid-run (+0.05: 0.51 against 0.55
+  at 40 % of the 600M run, 0.54 against 0.59 at 50 % of the 175M one). The
   "reading early is cheap" panel of figure 2 measures how much a run's
   ranking at 90 % resembles its ranking at 100 %.
 - These replicated cells are three or four cross-L deep designs on one or two
@@ -1058,7 +1087,7 @@ What the replicate seeds say about decision accuracy — English at three proxy 
   seed on two cells would give the DA-size and DA-goal panels the same floor.
 - Draw the null on every checkpoint-axis figure the paper shows.
 
-GitHub: [seed_uncertainty.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty.png) · [seed_uncertainty.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty.csv)
+GitHub: [seed_uncertainty_da_all_seed_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null.png) · [seed_uncertainty_da_all_seed_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/seed_uncertainty_da_all_seed_null.csv)
 
 ### 8. Decision accuracy is Kendall's τ under another tie convention
 
@@ -1069,23 +1098,23 @@ size) cell, median 12 models per cell.**
 <!-- BEGIN auto:agreement-measures (agreement.py --pool predictivity) -->
 ## Decision accuracy is Kendall's τ under another tie convention
 
-Over the 1,340 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 7,071 of 95,757 pairs (7.4%), 94% of them one-sided, and touch 73% of the cells — so the two statistics correlate at r = 0.972 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
+Over the 1,884 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 10,682 of 150,024 pairs (7.1%), 95% of them one-sided, and touch 75% of the cells — so the two statistics correlate at r = 0.975 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
 
-| statistic | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|
-| da | 0.0 | 0.0 | 0.0 | 0.0 |
-| da_drop_ref_ties | 0.0 | 3.2 | 2.9 | 3.5 |
-| gamma | 2.0 | 4.8 | 6.8 | 6.8 |
-| tau_a | 2.0 | 3.2 | 5.1 | 4.9 |
-| tau_b | 2.0 | 4.2 | 6.1 | 5.5 |
+| statistic | 90M | 175M | 350M | 600M | 1B |
+|---|---|---|---|---|---|
+| da | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| da_drop_ref_ties | 2.3 | 2.3 | 3.4 | 2.7 | 4.0 |
+| gamma | 7.0 | 4.4 | 5.0 | 6.8 | 6.2 |
+| tau_a | 5.6 | 3.8 | 3.4 | 5.1 | 4.6 |
+| tau_b | 6.0 | 3.8 | 4.8 | 6.3 | 5.3 |
 
-Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair by its displacement — and sit at r = 0.961 and 0.899 against DA. Median 12 models per cell. Values in `agreement_per_cell.csv`; regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
+Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair by its displacement — and sit at r = 0.964 and 0.901 against DA. Median 12 models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
 
-![DA, Kendall tau and Spearman rho against each other](pretraining/predictivity/agreement_correlation.png)
+![DA, Kendall tau and Spearman rho against each other](pretraining/predictivity/agreement_da_size_correlation_multi_axes.png)
 
-![DA against Kendall's tau](pretraining/predictivity/agreement_identity.png)
+![DA against Kendall's tau](pretraining/predictivity/agreement_da_size_identity_multi_axes.png)
 
-![Cut sensitivity](pretraining/predictivity/agreement_cut_sensitivity.png)
+![Cut sensitivity](pretraining/predictivity/agreement_da_size_cut_sensitivity_multi_axes.png)
 <!-- END auto:agreement-measures -->
 
 **Key findings**
@@ -1108,32 +1137,32 @@ Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT 
 - Report the reliable-task list under two conventions (DA and γ) in the
   paper's appendix, or state the flip rate beside it.
 
-GitHub: [agreement_correlation.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_correlation.png) · [agreement_correlation.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_correlation.csv) ·
-GitHub: [agreement_identity.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_identity.png) · [agreement_identity.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_identity.csv) ·
-GitHub: [agreement_cut_sensitivity.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_cut_sensitivity.png) · [agreement_cut_sensitivity.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_cut_sensitivity.csv) ·
-[agreement_per_cell.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_per_cell.csv)
+GitHub: [agreement_da_size_correlation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_correlation_multi_axes.png) · [agreement_da_size_correlation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_correlation_multi_axes.csv) ·
+GitHub: [agreement_da_size_identity_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_identity_multi_axes.png) · [agreement_da_size_identity_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_identity_multi_axes.csv) ·
+GitHub: [agreement_da_size_cut_sensitivity_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_cut_sensitivity_multi_axes.png) · [agreement_da_size_cut_sensitivity_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_cut_sensitivity_multi_axes.csv) ·
+[agreement_da_size_per_cell_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/agreement_da_size_per_cell_multi_axes.csv)
 
 ### 9. Multi-axis against mono-axis pairs
 
-**`rq2_above_66_both_axes`: the three definitions · filter `above_66_both`
+**`rq2_da_all_above_66_both_mono_vs_multi_axes`: the three definitions · filter `above_66_both`
 (71 cells; the one place it is drawn, for the pair-set comparison only) ·
 rows multi-axis and mono-axis · pairs from `predictivity_schemes` · gate
 `predictivity`.** Exploratory (`pair_axes.py`); it fed `plan/decision_accuracy.md`
 and the `axes` column of rule 15.
 
-![Multi-axis against mono-axis pairs](pretraining/predictivity/rq2_above_66_both_axes.png)
+![Multi-axis against mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_both_mono_vs_multi_axes.png)
 
 `pair_axes.py` computes the three decision accuracies on the `above_66_both` cells
 twice — over every pair at the grid seed (multi-axis, rq02's convention) and over
 the pairs that move exactly one of L, depth, list, temperature, second language
 (mono-axis, which is what DataDecide's "all pairs" are by construction) — and
-writes `rq2_above_66_both_axes.png/.csv` (71 cells on the 2026-09-23 tables).
+writes `rq2_da_all_above_66_both_mono_vs_multi_axes.png/.csv` (71 cells on the 2026-09-23 tables).
 DA-ckpt is indifferent to the pair set (the 1.7B run 0.68 → 0.83 mono-axis against
 0.73 → 0.84 multi-axis from 10 % to 90 %); DA-size reads 0.586, 0.679, 0.698, 0.721
 mono-axis against 0.637, 0.726, 0.742, 0.772 multi-axis at 175M … 1B — 0.04–0.05
 lower with the same trend — and DA-goal likewise, on 28 % of the decisions (999 of
 3,552 at 175M). The proposal that follows from it (an `axes` column in
-`da_per_task.csv`, mono-axis as the headline for decisions) is in
+`da_all_per_task_both_axes.csv`, mono-axis as the headline for decisions) is in
 `plan/decision_accuracy.md` (§2, §6).
 
 **Key findings**
@@ -1149,7 +1178,7 @@ lower with the same trend — and DA-goal likewise, on 28 % of the decisions (99
 - Mono-axis as the headline for decisions (the paper's left panel already
   draws it); the multi-axis pooled line as the population statement.
 
-GitHub: [rq2_above_66_both_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both_axes.png) · [rq2_above_66_both_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_both_axes.csv)
+GitHub: [rq2_da_all_above_66_both_mono_vs_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_mono_vs_multi_axes.png) · [rq2_da_all_above_66_both_mono_vs_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_mono_vs_multi_axes.csv)
 
 ### 10. Cross-task predictability
 
@@ -1165,17 +1194,17 @@ over ≥ 3 pairs, held at every larger level).
 
 Every parent task as the proxy for every other one (898 x 898): the cell is the smallest proxy size (DA-size, 18 variants at 1.7B, 153 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 918 pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
 
-The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer result is possible at all: [`cross_task_size_benchmarks.png`](pretraining/predictivity/cross_task_size_benchmarks.png), [`cross_task_ckpt_benchmarks.png`](pretraining/predictivity/cross_task_ckpt_benchmarks.png).
+The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer result is possible at all: [`cross_task_da_size_benchmarks_multi_axes.png`](pretraining/predictivity/cross_task_da_size_benchmarks_multi_axes.png), [`cross_task_da_ckpt_benchmarks_multi_axes.png`](pretraining/predictivity/cross_task_da_ckpt_benchmarks_multi_axes.png).
 
-![Cross-task DA-size by benchmark](pretraining/predictivity/cross_task_size_by_family.png)
+![Cross-task DA-size by benchmark](pretraining/predictivity/cross_task_da_size_by_family_multi_axes.png)
 
-![Cross-task DA-ckpt by benchmark](pretraining/predictivity/cross_task_ckpt_by_family.png)
+![Cross-task DA-ckpt by benchmark](pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.png)
 
-![Cross-task DA-size by language](pretraining/predictivity/cross_task_size_by_language.png)
+![Cross-task DA-size by language](pretraining/predictivity/cross_task_da_size_by_language_multi_axes.png)
 
-![Cross-task DA-ckpt by language](pretraining/predictivity/cross_task_ckpt_by_language.png)
+![Cross-task DA-ckpt by language](pretraining/predictivity/cross_task_da_ckpt_by_language_multi_axes.png)
 
-Full task-level maps: [`cross_task_size.png`](pretraining/predictivity/cross_task_size.png), [`cross_task_ckpt.png`](pretraining/predictivity/cross_task_ckpt.png).
+Full task-level maps: [`cross_task_da_size_multi_axes.png`](pretraining/predictivity/cross_task_da_size_multi_axes.png), [`cross_task_da_ckpt_multi_axes.png`](pretraining/predictivity/cross_task_da_ckpt_multi_axes.png).
 <!-- END auto:cross-task -->
 
 **Key findings**
@@ -1191,7 +1220,7 @@ Full task-level maps: [`cross_task_size.png`](pretraining/predictivity/cross_tas
   blocks between the lines), because the same design variants train both.
 - Most cells are gated (the letter-format originals are at chance at 1.7B for
   every language), so the full maps mostly say which tasks have a ranking at
-  all; `cross_task_{size,ckpt}_benchmarks.png` is the sub-map where a
+  all; `cross_task_da_{size,ckpt}_benchmarks_multi_axes.png` is the sub-map where a
   transfer result is possible.
 
 **Follow-ups**
@@ -1205,14 +1234,14 @@ Full task-level maps: [`cross_task_size.png`](pretraining/predictivity/cross_tas
 - Recompute on `predictivity_schemes` (every scheme), as the other figures
   are, so the diagonal is figure 1's population.
 
-GitHub: [cross_task_size_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.png) · [cross_task_size_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_family.csv) ·
-GitHub: [cross_task_ckpt_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.png) · [cross_task_ckpt_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_family.csv) ·
-GitHub: [cross_task_size_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_language.png) · [cross_task_size_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_by_language.csv) ·
-GitHub: [cross_task_ckpt_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_language.png) · [cross_task_ckpt_by_language.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_by_language.csv) ·
-GitHub: [cross_task_size.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size.png) · [cross_task_size.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size.csv) ·
-GitHub: [cross_task_ckpt.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt.png) · [cross_task_ckpt.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt.csv) ·
-GitHub: [cross_task_size_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_benchmarks.png) · [cross_task_size_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_size_benchmarks.csv) ·
-GitHub: [cross_task_ckpt_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_benchmarks.png) · [cross_task_ckpt_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_ckpt_benchmarks.csv)
+GitHub: [cross_task_da_size_by_family_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.png) · [cross_task_da_size_by_family_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv) ·
+GitHub: [cross_task_da_ckpt_by_family_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.png) · [cross_task_da_ckpt_by_family_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv) ·
+GitHub: [cross_task_da_size_by_language_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_language_multi_axes.png) · [cross_task_da_size_by_language_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_language_multi_axes.csv) ·
+GitHub: [cross_task_da_ckpt_by_language_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_language_multi_axes.png) · [cross_task_da_ckpt_by_language_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_language_multi_axes.csv) ·
+GitHub: [cross_task_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_multi_axes.png) · [cross_task_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_multi_axes.csv) ·
+GitHub: [cross_task_da_ckpt_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_multi_axes.png) · [cross_task_da_ckpt_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_multi_axes.csv) ·
+GitHub: [cross_task_da_size_benchmarks_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_benchmarks_multi_axes.png) · [cross_task_da_size_benchmarks_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_benchmarks_multi_axes.csv) ·
+GitHub: [cross_task_da_ckpt_benchmarks_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_benchmarks_multi_axes.png) · [cross_task_da_ckpt_benchmarks_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_benchmarks_multi_axes.csv)
 
 ### 11. Benchmark BPB: a continuous score on the same items
 
@@ -1457,15 +1486,16 @@ Per proxy size, the Spearman correlation ACROSS TASKS between rq01's scaling sta
 
 | proxy | tasks | ρ_size vs ρ_ranking | R²_size vs DA-size | R²_traj vs DA-size | DA-size, predictable both | DA-size, other regimes |
 |---|---|---|---|---|---|---|
-| 175M | 167 | +0.12 | +0.16 | +0.38 | 0.54 | 0.46 |
-| 350M | 245 | +0.23 | +0.21 | +0.52 | 0.55 | 0.44 |
-| 600M | 274 | +0.28 | +0.26 | +0.53 | 0.57 | 0.45 |
-| 1B | 274 | +0.37 | +0.34 | +0.62 | 0.59 | 0.46 |
+| 90M | 221 | +0.39 | +0.39 | +0.55 | 0.55 | 0.45 |
+| 175M | 252 | +0.30 | +0.29 | +0.56 | 0.57 | 0.43 |
+| 350M | 282 | +0.33 | +0.29 | +0.52 | 0.56 | 0.46 |
+| 600M | 312 | +0.32 | +0.28 | +0.51 | 0.58 | 0.47 |
+| 1B | 313 | +0.39 | +0.31 | +0.58 | 0.59 | 0.48 |
 
-![Scaling against ranking](pretraining/predictivity/scaling_vs_ranking.png)
+![Scaling against ranking](pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png)
 <!-- END auto:scaling-vs-ranking -->
 
-GitHub: [scaling_vs_ranking.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png) · [scaling_vs_ranking.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.csv)
+GitHub: [scaling_vs_ranking_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png) · [scaling_vs_ranking_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.csv)
 
 ## Extensions from other sweeps
 
@@ -1485,7 +1515,7 @@ pairs.**
 <!-- BEGIN auto:public-ladders (public_ladders.py --pool predictivity) -->
 ## Decision accuracy one rung above the ladder: the public lines
 
-gemma-3, Qwen3-Base and OLMo-2 each have a base model near 1B and near 13B in the external tier. Per task above chance at both buckets, DA is the share of the three line pairs the small models order like the large ones: pooled 0.73 over 54 tasks, against the ladder's own 1B → 1.7B DA-size of 0.55 on the same tasks. Per line pair: Qwen3 vs OLMo-2 0.87 against a majority baseline of 0.80 (11 minority tasks, DA there 0.55); gemma-3 vs OLMo-2 0.76 against a majority baseline of 0.81 (10 minority tasks, DA there 0.80); gemma-3 vs Qwen3 0.57 against a majority baseline of 0.56 (24 minority tasks, DA there 0.79). The majority baseline is what a proxy scores by always naming the line that usually wins at 12–14B, so only DA above it is information the small models add. Between-lab decisions on public sizes, not the ladder's one-axis ones; three pairs, so per-task values are a lattice. Regenerate with `python analysis/rq02_decision_accuracy/public_ladders.py --pool predictivity`.
+gemma-3, Qwen3-Base and OLMo-2 each have a base model near 1B and near 13B in the external tier. Per task above chance at both buckets, DA is the share of the three line pairs the small models order like the large ones: pooled 0.73 over 54 tasks, against the ladder's own 1B → 1.7B DA-size of 0.58 on the same tasks. Per line pair: Qwen3 vs OLMo-2 0.87 against a majority baseline of 0.80 (11 minority tasks, DA there 0.55); gemma-3 vs OLMo-2 0.76 against a majority baseline of 0.81 (10 minority tasks, DA there 0.80); gemma-3 vs Qwen3 0.57 against a majority baseline of 0.56 (24 minority tasks, DA there 0.79). The majority baseline is what a proxy scores by always naming the line that usually wins at 12–14B, so only DA above it is information the small models add. Between-lab decisions on public sizes, not the ladder's one-axis ones; three pairs, so per-task values are a lattice. Regenerate with `python analysis/rq02_decision_accuracy/public_ladders.py --pool predictivity`.
 
 | family | tasks | DA public lines (1B–1.7B → 12–14B) | DA ladder (1B → 1.7B) |
 |---|---|---|---|
@@ -1497,28 +1527,29 @@ gemma-3, Qwen3-Base and OLMo-2 each have a base model near 1B and near 13B in th
 | xstorycloze | 5 | 0.87 | 0.60 |
 | xcopa | 4 | 0.83 | 0.55 |
 | xwinograd | 4 | 0.75 | 0.62 |
-| belebele | 3 | 0.67 | 0.47 |
+| belebele | 3 | 0.67 | — |
 
-![Public ladders](pretraining/predictivity/public_ladders.png)
+![Public ladders](pretraining/predictivity/public_ladders_da_size_multi_axes.png)
 <!-- END auto:public-ladders -->
 
 **Verdict.** The pooled 0.73 is within 0.07 of a majority-order baseline —
 a proxy that always names the line that usually wins at 12–14B scores 0.80 /
-0.82 / 0.56 on the same three pairs (DA +0.07, −0.06, +0.02 against it) — so
+0.81 / 0.56 on the same three pairs (DA +0.07, −0.05, +0.01 against it) — so
 the figure shows lab-level differences (Qwen3 above OLMo-2 on four tasks in
 five at 13B and already at 1.7B, which any leaderboard gives), not
 task-level ranking preservation. On the 10–24 minority tasks, where the
 reference order is the uncommon one, the small models read it at 0.55–0.80,
-better than the ladder's 0.55 but on too few tasks to be a finding. As
+better than the ladder's gated 0.58 but on too few tasks to be a finding. As
 evaluated today the public tier cannot say whether benchmarks read decisions
 above 1.7B.
 
 **Follow-ups** (the better routes to "which benchmarks preserve ranking at
 larger scale"; `plan/next_analyses.md` §7c)
 
-- The ladder's own 3B rung: 1.7B → 3B on four families (deep, L8/L15, A/B)
-  once its evals land — the one within-recipe generalisation above the
-  current reference (`above_reference=True` in `build_snr_pool`).
+- The ladder's own 3B rung: 1.7B → 3B on four families (deep, L8/L15, A/B),
+  now evaluated and read in [rq10](../rq10_size_generalisation/README.md) —
+  the one within-recipe generalisation above the current reference
+  (`above_reference=True` in `build_snr_pool`).
 - The trend of DA-size across proxies per task: does agreement rise
   monotonically towards the reference? A task whose DA-size climbs 175M →
   1B is the one whose ranking is converging.
@@ -1526,14 +1557,14 @@ larger scale"; `plan/next_analyses.md` §7c)
   task list (an eval launch of the `auto` list on ~15 public checkpoints),
   close enough in level that the majority baseline is near 0.5.
 
-GitHub: [public_ladders.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders.png) · [public_ladders.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders.csv) ·
-[public_ladders_pairs.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders_pairs.csv)
+GitHub: [public_ladders_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders_da_size_multi_axes.png) · [public_ladders_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders_da_size_multi_axes.csv) ·
+[public_ladders_da_size_pairs_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/public_ladders_da_size_pairs_multi_axes.csv)
 
 ### The 36-model sweep
 
 From the **36-model sweep** (2026-04…06, 4 sizes × 3 data mixtures × 3 seeds,
 pools `seeds_1904`, `seeds_28_1797`, `seeds_28_1797_1904`,
-`custom_swissai_hf`): `pretraining/<pool>/da_per_task.csv` and the
+`custom_swissai_hf`): `pretraining/<pool>/da_all_per_task_both_axes.csv` and the
 per-benchmark views are its decision tables with the **1B** reference and the
 three FineWeb mixtures as the design variants (three pairs). They are kept as
 history and not regenerated — rerun today their `decision_acc_size_*`
@@ -1544,34 +1575,34 @@ built on them are in rq04's extensions.
 
 ## Files
 
-- `da_explainer.py` → `…/da_explainer.{png,csv}` — the toy explainer of the
+- `da_explainer.py` → `…/da_all_explainer_both_axes.{png,csv}` — the toy explainer of the
   three DA kinds, the pair sets and the value lattice (Setup; no measured number).
-- `pretraining/<pool>/da_per_task.csv` — the DA table (single source of truth
+- `pretraining/<pool>/da_all_per_task_both_axes.csv` — the DA table (single source of truth
   for rq03; the `axes` column names the pair set, rule 15);
-  `da_n_pairs_per_task.csv` the pair count behind every cell;
-  `da_early_small_per_task.csv` the ten-checkpoint grid.
-- `…/da_per_benchmark.csv`, `da_per_benchmark_size.csv`,
-  `da_per_benchmark_ckpt.csv` — long and wide per-(language, benchmark) views
+  `da_all_n_pairs_per_task_both_axes.csv` the pair count behind every cell;
+  `da_goal_early_small_per_task_both_axes.csv` the ten-checkpoint grid.
+- `…/da_all_per_benchmark_multi_axes.csv`, `da_size_per_benchmark_multi_axes.csv`,
+  `da_ckpt_per_benchmark_multi_axes.csv` — long and wide per-(language, benchmark) views
   (`da_per_benchmark.py`).
-- `…/early_small*.csv/.png`, `safe_{size,checkpoint,flops}.*`, `safe_levels.csv`,
-  `highlights.*`, `da_size*.*` — `early_small.py` (figure 3).
-- `…/da_reliable_tasks.csv`, `da_reliable_by_language.csv`,
-  `da_reliable_tasks_<t>_<red>.png` — `reliable_tasks.py` (figure 2).
-- `…/da_by_L_per_task.csv`, `da_pooled_per_task.csv`, `pairs_by_L.csv`,
-  `early_small_by_L_*` — `by_L.py` (figure 3; rq04's panels read the tables).
-- `…/scale_convergence*.csv/.png` — `scale_convergence.py` (figures 1, 4;
-  `_L8`, `_L8common`, `_L`, `_transformation`, `_one_axis`, `_above_*`,
-  `_flops`); `scale_convergence_lang_*` — `by_language.py` (figure 5).
-- `…/rq2*.csv/.png/.svg` — `paper_rq2.py` (figure 2; `rq2.*` is what the
-  paper embeds), `rq2_ten_checkpoints.*` — `paper_ten_checkpoints.py`,
-  `rq2_above_66_both_axes.*` — `pair_axes.py` (figure 9).
-- `…/reliability_by_language_tier.*`, `reliability_vs_language_share.*` —
-  `language_tier.py` (figure 6); `seed_uncertainty.*` — `seed_uncertainty.py`
-  (figure 7); `agreement_*.*` — `agreement.py` (figure 8);
-  `cross_task_*.*` — `cross_task.py` (figure 10);
+- `…/early_small_da_goal*_multi_axes.csv/.png`, `safe_{size,checkpoint,flops}_da_*_multi_axes.*`,
+  `highlights_da_all_multi_axes.*`, `da_size*_multi_axes.*` — `early_small.py` (figure 3).
+- `…/da_all_reliable_tasks_both_axes.csv`, `da_all_reliable_by_language_multi_axes.csv`,
+  `da_size_vs_da_ckpt_reliable_tasks_<t>_<red>_multi_axes.png` — `reliable_tasks.py` (figure 2).
+- `…/da_all_by_L_per_task_multi_axes.csv`, `da_all_pooled_per_task_multi_axes.csv`, `pairs_da_all_by_L_multi_axes.csv`,
+  `early_small_da_{goal,ckpt}_by_{L,transformation}_*` — `by_L.py` (figure 3; rq04's panels read the tables).
+- `…/scale_convergence_da_size*.csv/.png` — `scale_convergence.py` (figures 1, 4;
+  `_L8`, `_L8common`, `_L`, `_transformation`, `_mono_axis`, `_above_*`,
+  `_flops`); `scale_convergence_da_size_lang_*` — `by_language.py` (figure 5).
+- `…/rq2_da_all*.csv/.png/.svg` — `paper_rq2.py` (figure 2; the paper embeds
+  `rq2_da_all_above_66_either_transformation_mono_axis`), `rq2_da_goal_ten_checkpoints_multi_axes.*` —
+  `paper_ten_checkpoints.py`, `rq2_da_all_above_66_both_mono_vs_multi_axes.*` — `pair_axes.py` (figure 9).
+- `…/reliability_da_size_{by_language_tier,vs_language_share}_multi_axes.*` —
+  `language_tier.py` (figure 6); `seed_uncertainty_da_all_seed_null.*` — `seed_uncertainty.py`
+  (figure 7); `agreement_da_size_*_multi_axes.*` — `agreement.py` (figure 8);
+  `cross_task_da_{size,ckpt}*_multi_axes.*` — `cross_task.py` (figure 10);
   `bench_bpb_da*.*` — `bench_bpb_da.py` on `predictivity_schemes` (figure 11);
-  `scaling_vs_ranking.*` — `scaling_vs_ranking.py` (rq01 figure 5);
-  `public_ladders*.*` — `public_ladders.py` (extension).
+  `scaling_vs_ranking_da_size_multi_axes.*` — `scaling_vs_ranking.py` (rq01 figure 5);
+  `public_ladders_da_size*_multi_axes.*` — `public_ladders.py` (extension).
 - `pretraining/predictivity_schemes/`, `predictivity_seeds*/` — the same
   tables on the other ladder pools; `pretraining/seeds_*`,
   `custom_swissai_hf/`, `all/external/` — the 36-sweep's and the public

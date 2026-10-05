@@ -38,13 +38,13 @@ ONE table, many views. The per-task DA values do not depend on the cut, so they
 are written once and every threshold is a filter over them rather than a file of
 its own (the alternative was 12 near-identical CSVs):
 
-    da_reliable_tasks.csv        per task: language, benchmark, and da_{size,ckpt}_<reduction>
+    da_all_reliable_tasks_both_axes.csv        per task: language, benchmark, and da_{size,ckpt}_<reduction>
                                  for every reduction. The pass flags are NOT stored —
                                  they are `da_size_<red> >= t and da_ckpt_<red> >= t`.
-    da_reliable_by_language.csv  long: one row per (threshold, reduction, language)
+    da_all_reliable_by_language_multi_axes.csv  long: one row per (threshold, reduction, language)
                                  with how many benchmarks pass on DA-size, on
                                  DA-ckpt, on either and on both.
-    da_reliable_tasks_<t>_<red>.png   one per (THRESHOLDS x REDUCTIONS): left, per
+    da_size_vs_da_ckpt_reliable_tasks_<t>_<red>_multi_axes.png   one per (THRESHOLDS x REDUCTIONS): left, per
                                  language, benchmarks passing both / size only /
                                  ckpt only; right, the benchmark x language grid of
                                  which test each cell passes.
@@ -139,7 +139,7 @@ def load_reliable(out_dir: Path, variant: str, axes: str = DEFAULT_AXES) -> pd.D
     on, so a figure drawn over mono-axis decisions is filtered by a mono-axis
     reliability."""
     red, thresh, crit = FILTERS[variant]
-    f = out_dir / "da_reliable_tasks.csv"
+    f = out_dir / "da_all_reliable_tasks_both_axes.csv"
     if not f.exists():
         print(f"  (no {f.name}: run reliable_tasks.py first — skipping {variant})")
         return None
@@ -159,13 +159,13 @@ GATE_REF = {"size": TARGET_SIZE, "goal": TARGET_SIZE, "ckpt": None}
 
 
 def long_da(out_dir: Path, pool: str, axes: str = DEFAULT_AXES) -> pd.DataFrame:
-    """da_per_task.csv melted to (task, kind, level, da), with the pair
+    """da_all_per_task_both_axes.csv melted to (task, kind, level, da), with the pair
     minimum and the above-random gate applied. `kind` is `size`, `ckpt` or
     `goal`; `axes` picks the pair set (`compute_da`'s `axes` column, rule 15)
     and defaults to the multi-axis reading, so this table did not move when the
     mono-axis one was added."""
-    da = pd.read_csv(out_dir / "da_per_task.csv")
-    n = pd.read_csv(out_dir / "da_n_pairs_per_task.csv")
+    da = pd.read_csv(out_dir / "da_all_per_task_both_axes.csv")
+    n = pd.read_csv(out_dir / "da_all_n_pairs_per_task_both_axes.csv")
     if "axes" in da.columns:                 # a table written before rule 15 has one pair set
         da, n = da[da["axes"] == axes], n[n["axes"] == axes]
     da = da.set_index("task").drop(columns="axes", errors="ignore")
@@ -262,7 +262,7 @@ def figure(tasks: pd.DataFrame, path: Path, red: str, thresh: float) -> pd.DataF
                     f"≥ {MIN_PAIRS} pairs (rule 5) that the above-random gate keeps (rule 1); a benchmark at chance can "
                     f"never pass. Benchmarks only — BPB and the loss have no chance level. Decisions from the "
                     f"`{DA_POOL}` pool over its {DEFAULT_AXES} pairs (rule 15); the gate is the figure's own pool. "
-                    f"Values in `da_reliable_tasks.csv`, which carries every pair set; this figure is one "
+                    f"Values in `da_all_reliable_tasks_both_axes.csv`, which carries every pair set; this figure is one "
                     f"(threshold, reduction) view of it.")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
@@ -287,18 +287,18 @@ def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.D
         f"`{DA_POOL}` pool — every data scheme at the grid seed, which is the population `by_L` and "
         f"`scale_convergence` pair over — while the gate and this folder stay with `{pool}`; the table carries one "
         f"row per pair set (rule 15) and the figures show `{DEFAULT_AXES}`. "
-        f"`da_reliable_tasks.csv` holds the per-task values for every reduction and is threshold-free — each figure "
+        f"`da_all_reliable_tasks_both_axes.csv` holds the per-task values for every reduction and is threshold-free — each figure "
         f"is one view of it. Regenerate with `python analysis/rq02_decision_accuracy/reliable_tasks.py --pool {pool}`.",
         md_table(list(t.columns), t.values.tolist()),
         "**How many cells pass, by cut and reduction** — the cut is a choice, and this is its whole sensitivity:",
         md_table(["threshold", "reduction", "tasks passing both", "languages", "benchmarks"], sweep),
-        f"![Reliable benchmark-language cells]({stage}/{pool}/da_reliable_tasks_{pct(THRESH)}_{DEFAULT_REDUCTION}.png)"])
+        f"![Reliable benchmark-language cells]({stage}/{pool}/da_size_vs_da_ckpt_reliable_tasks_{pct(THRESH)}_{DEFAULT_REDUCTION}_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "reliable-tasks", body, f"reliable_tasks.py --pool {pool}")
 
 
 def available_axes(out_dir: Path) -> list[str]:
     """The pair sets `compute_da` wrote for this pool, in PAIR_AXES order."""
-    da = pd.read_csv(out_dir / "da_per_task.csv", nrows=2000)
+    da = pd.read_csv(out_dir / "da_all_per_task_both_axes.csv", nrows=2000)
     got = set(da["axes"]) if "axes" in da.columns else {DEFAULT_AXES}
     return [a for a in PAIR_AXES if a in got]
 
@@ -317,7 +317,7 @@ def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
     tasks = pd.concat([per_task(long_da(da_dir, pool, axes=a)).assign(axes=a) for a in axes_sets],
                       ignore_index=True)
     tasks = tasks[["axes"] + [c for c in tasks.columns if c != "axes"]]
-    tasks.to_csv(out_dir / "da_reliable_tasks.csv", index=False)
+    tasks.to_csv(out_dir / "da_all_reliable_tasks_both_axes.csv", index=False)
     for a in axes_sets:
         d = tasks[tasks["axes"] == a]
         print(f"\n[{a}] {len(d)} benchmark tasks over {d['language'].nunique()} languages "
@@ -330,10 +330,10 @@ def run(pool: str, out_dir: Path, da_dir: Path | None = None) -> pd.DataFrame:
                       f"{d.loc[q['both'], 'language'].nunique():2d} languages "
                       f"[{', '.join(sorted(d.loc[q['both'], 'benchmark'].unique())) or '—'}]")
     head = tasks[tasks["axes"] == axes_sets[0]].reset_index(drop=True)
-    rows = [figure(head, out_dir / f"da_reliable_tasks_{pct(thresh)}_{red}.png", red, thresh)
+    rows = [figure(head, out_dir / f"da_size_vs_da_ckpt_reliable_tasks_{pct(thresh)}_{red}_multi_axes.png", red, thresh)
             for thresh in THRESHOLDS for red in REDUCTIONS]
     by_lang = pd.concat(rows, ignore_index=True).assign(axes=axes_sets[0])
-    by_lang.to_csv(out_dir / "da_reliable_by_language.csv", index=False)
+    by_lang.to_csv(out_dir / "da_all_reliable_by_language_multi_axes.csv", index=False)
     generate_readme(pool, out_dir, head, by_lang)
     return tasks
 
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL, help="the pool whose gate applies and whose folder is written")
     p.add_argument("--da-pool", default=DA_POOL,
-                   help="the pool whose da_per_task.csv the decisions come from (default: %(default)s)")
+                   help="the pool whose da_all_per_task_both_axes.csv the decisions come from (default: %(default)s)")
     args = p.parse_args()
     stage = load_pools()[args.pool].get("stage", "pretraining")
     run(args.pool, OUT_ROOT / stage / args.pool,

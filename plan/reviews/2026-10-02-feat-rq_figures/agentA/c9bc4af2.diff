@@ -1,0 +1,153 @@
+commit c9bc4af270337679ebf96f4fefb32c5255d728c2
+Author: María <mariagrandury@gmail.com>
+Date:   Tue Sep 22 08:52:13 2026 +0200
+
+    evals+analysis: the reformulated twins become ordinary benchmarks
+    
+    groups.auto in configs/tasks.json gains rf_belebele, rf_global_mmlu_full,
+    rf_include_base_44 and rfgm_include_base_44, and the 43
+    rfgm_include_base_44_* tasks are registered with their YAMLs.
+    
+    One config change does three jobs. auto_evals_cscs.py reads this group and
+    is per-task idempotent, so every evaluated checkpoint is topped up with only
+    its missing tasks rather than re-run. utils.trained_only resolves through
+    auto_benchmarks(), so rule 2 stops deleting every rf_* row - 46,921 of them,
+    124 distinct tasks, dropped before any analysis saw them. And above_random.py
+    calls the same helper, which is why rf rows carried population=all while
+    their originals carried trained: the twins were gated on a different
+    population from the benchmarks they are compared against. They now split
+    124 trained / 61 all, matching the originals' 324/138.
+    
+    make_rf_tasks.py gains --family, so a family still mid-rewrite is not
+    registered with a partial item set; without it, registering rfgm would have
+    picked up belebele_deu_Latn at 289 of its 900 rows. It also stops discarding
+    a twin's derived n_items when the entry is rewritten: the gate needs that
+    count, and a re-run would have dropped all 185 rf_ tasks out of the gate
+    silently. Both sets now regenerate byte-identically.
+    
+    grids.display() renders rf_belebele as "belebele-rf" and sorts a twin beside
+    its original. rq09's FAMILY_META gains six entries carrying two new format
+    values, cloze_completion and statement_continuation.
+    
+    rewrite_items_gemini.py names the missing export when
+    GOOGLE_GENAI_USE_VERTEXAI is unset, instead of dying six frames down in the
+    SDK with "No API key was provided" - two belebele launches were lost to it.
+    
+    RULES.md records that the populations moved (rule 13) and that a twin
+    re-measures its original's items, so it is not an independent task for
+    rule 8.
+
+diff --git a/src/evals/CLAUDE.md b/src/evals/CLAUDE.md
+index 24f0d732..0e8e7446 100644
+--- a/src/evals/CLAUDE.md
++++ b/src/evals/CLAUDE.md
+@@ -178,9 +178,17 @@ would be swept into the original family. They ship via
+ tasks.json entries carry `metric: acc_norm`, which `results_io.flatten`
+ honours through `configs.metric_for` — the W&B series is
+ `rf_<task>/acc_norm`, next to the original `<task>/acc`. Watcher side:
+-`auto_evals_cscs.py --reformulated` swaps the `auto` group for `auto_rf`
+-and names the jobs `eval-<cell>-iter<N>-rf`, so the original and the rf
+-watcher never mistake each other's in-flight job for their own. The
++**Since 2026-09-22 the twins are in the `auto` group itself** — the three
++`rf_*` benchmarks and `rfgm_include_base_44` — so an ordinary watcher pass
++evaluates them alongside the originals and tops up every existing
++checkpoint with the tasks it is missing (the watcher is per-task
++idempotent, and walltime is priced from the missing tasks). That also
++resolves rule 2 for them: `utils.trained_only` asks `auto_benchmarks()`
++whether a task is trained, so before this every `rf_*` row was "untrained"
++and the analysis pool came back without a single twin.
++`--reformulated` still works and still swaps in `auto_rf` / `auto_rfgm`
++with `-rf` / `-rfgm` job names, but it is now redundant for new runs: use
++it only to evaluate a twin set on its own. The
+ `rfgm_*` twins (2026-09-19, `make_rf_tasks.py --set rfgm`, group
+ `auto_rfgm`, `--reformulated rfgm`, `-rfgm` jobs) are the same three
+ families rewritten by Gemini into statement stems: `dataset_path: json`
+diff --git a/src/evals/scripts/make_rf_tasks.py b/src/evals/scripts/make_rf_tasks.py
+index 025228d2..8bf18320 100644
+--- a/src/evals/scripts/make_rf_tasks.py
++++ b/src/evals/scripts/make_rf_tasks.py
+@@ -160,6 +160,9 @@ def main() -> None:
+     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+     p.add_argument("--set", choices=["rf", "rfgm"], default="rf",
+                    help="rf: the cloze twins (default); rfgm: the Gemini-rewritten twins")
++    p.add_argument("--family", choices=list(TEMPLATES),
++                   help="register only this family; for rfgm, whose families are rewritten one at a "
++                        "time, so a family still mid-rewrite is not registered with a partial item set")
+     p.add_argument("--harness", type=Path, default=HARNESS)
+     p.add_argument("--dry-run", action="store_true")
+     args = p.parse_args()
+@@ -167,8 +170,9 @@ def main() -> None:
+ 
+     data = json.loads(TASKS_JSON.read_text())
+     tasks = data["tasks"]
++    families = [args.family] if args.family else list(TEMPLATES)
+     originals = [(n, e) for n, e in tasks.items()
+-                 if e["benchmark"] in TEMPLATES and "pretraining" in e["stages"]
++                 if e["benchmark"] in families and "pretraining" in e["stages"]
+                  and e["language"] not in ("multi", "??")]
+     written, missing = 0, []
+     for name, e in originals:
+@@ -180,8 +184,14 @@ def main() -> None:
+         out = out_dir / fam / f"{twin}.yaml"
+         body = (rf_yaml(name, fam, source_config(name, fam, args.harness)) if pre == "rf"
+                 else rfgm_yaml(name))
++        prev = tasks.get(twin, {})
+         tasks[twin] = {"language": e["language"], "benchmark": f"{pre}_{fam}",
+                        "stages": ["pretraining"], "n_options": 4, "metric": "acc_norm"}
++        # `n_items` is derived from the harness results by derive_task_options.py,
++        # and the above-random gate needs it: rewriting the entry without it drops
++        # the task out of the gate silently, as if it had stopped clearing chance.
++        if "n_items" in prev:
++            tasks[twin]["n_items"] = prev["n_items"]
+         if not args.dry_run:
+             out.parent.mkdir(parents=True, exist_ok=True)
+             if pre == "rf" and fam in FILTERED:
+@@ -189,9 +199,13 @@ def main() -> None:
+             if not out.exists() or out.read_text() != body:
+                 out.write_text(body)
+                 written += 1
+-    data["groups"][f"auto_{pre}"] = sorted(f"{pre}_{f}" for f in TEMPLATES)
++    # the group lists the families that actually have registered tasks, so a
++    # family still being rewritten is not advertised to the watcher
++    have = sorted({f"{pre}_{e['benchmark']}" for n, e in originals
++                   if f"{pre}_{n}" in tasks} | set(data["groups"].get(f"auto_{pre}", [])))
++    data["groups"][f"auto_{pre}"] = have
+     fmt = FORMAT if pre == "rf" else FORMAT_RFGM
+-    for fam in TEMPLATES:
++    for fam in families:
+         data["benchmarks"][f"{pre}_{fam}"] = {**data["benchmarks"][fam], "format": fmt[fam]}
+     print(f"{len(originals) - len(missing)} {pre} tasks ({written} yaml files written) under {out_dir}; "
+           f"auto_{pre} = {data['groups'][f'auto_{pre}']}"
+diff --git a/src/evals/scripts/rewrite_items_gemini.py b/src/evals/scripts/rewrite_items_gemini.py
+index 52a6bfc4..704bc7a4 100644
+--- a/src/evals/scripts/rewrite_items_gemini.py
++++ b/src/evals/scripts/rewrite_items_gemini.py
+@@ -367,6 +367,15 @@ def save_state(d: Path, state: dict) -> None:
+ 
+ def client():
+     from google import genai
++    if not VERTEX and not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
++        # Without GOOGLE_GENAI_USE_VERTEXAI the SDK takes the API-key route and
++        # dies several frames down with "No API key was provided", which reads
++        # like a credentials problem rather than a missing export. Two launches
++        # were lost to it; say which variable is missing.
++        sys.exit("GOOGLE_GENAI_USE_VERTEXAI is not set, so this would call the Gemini API with an API "
++                 "key rather than Vertex with ADC. Export it with the other two:\n"
++                 "  export GOOGLE_GENAI_USE_VERTEXAI=true GOOGLE_CLOUD_PROJECT=silin-482809 "
++                 "GOOGLE_CLOUD_LOCATION=global")
+     if VERTEX:
+         # With no project/location the SDK reads a GEMINI_API_KEY left in the
+         # shell and calls Vertex in express mode with it, instead of ADC — the
+diff --git a/src/pretrain/README.md b/src/pretrain/README.md
+index ede7076f..e688af1e 100644
+--- a/src/pretrain/README.md
++++ b/src/pretrain/README.md
+@@ -162,7 +162,7 @@ launcher — the core design):
+ | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
+ | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
+ | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
+-| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. `--reformulated [rf|rfgm]` evaluates the `auto_rf` group instead (the letter-format families as cloze `rf_*` tasks, `../evals/scripts/make_rf_tasks.py`; bare `--reformulated` = `rf`) or `auto_rfgm` (the same items rewritten by Gemini, `../evals/scripts/rewrite_items_gemini.py`). `--size` narrows to a comma-separated list; the default is every size but 90M (`launch_trainings.EVAL_SIZES` — the rung is off the ladder), which `--name` overrides. |
++| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. The `auto` group now contains the three `rf_*` benchmarks and `rfgm_include_base_44`, so an ordinary pass evaluates the twins too and tops up existing checkpoints with the tasks they are missing; `--reformulated [rf|rfgm]` is therefore redundant for new runs and evaluates the `auto_rf` group on its own (the letter-format families as cloze `rf_*` tasks, `../evals/scripts/make_rf_tasks.py`; bare `--reformulated` = `rf`) or `auto_rfgm` (the same items rewritten by Gemini, `../evals/scripts/rewrite_items_gemini.py`). `--size` narrows to a comma-separated list; the default is every size but 90M (`launch_trainings.EVAL_SIZES` — the rung is off the ladder), which `--name` overrides. |
+ | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
+ | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
+ | [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. Reads every account's training logs (aromanou's 1B cells are under her scratch) and a killed eval job's unmerged `per_task/` results. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md): benchmarks twice, over each cell's trained languages and, for the runs evaluated in every language, over all of them; BPB in the tables is the final checkpoint's, blank until that one is scored. |

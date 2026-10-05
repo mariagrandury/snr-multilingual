@@ -328,11 +328,10 @@ DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "en", "seed"]
 #               not a decision set but the null: what a benchmark with no signal
 #               reads. Empty in a single-seed pool.
 PAIR_AXES = ("multi-axis", "mono-axis", "seed")
-# What a figure or table drawn over each pair set is called. The multi-axis
-# outputs keep their bare names so every existing reference to them resolves;
-# the mono-axis twins sit beside them under `_one_axis`, in the same folder, so
-# the two readings can be compared without opening two directories.
-AXES_SUFFIX = {"multi-axis": "", "mono-axis": "_one_axis", "seed": "_seed_null"}
+# What a figure or table drawn over each pair set is called: every pair set
+# carries its own suffix, so the two readings sit side by side in one folder
+# and no file name leaves the pair set to be guessed.
+AXES_SUFFIX = {"multi-axis": "_multi_axes", "mono-axis": "_mono_axis", "seed": "_seed_null"}
 
 
 def design_axes(df: pd.DataFrame) -> pd.DataFrame:

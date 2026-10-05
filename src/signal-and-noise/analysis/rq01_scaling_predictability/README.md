@@ -21,10 +21,10 @@
 ## Setup
 
 Pool `predictivity_all` (every seed and scheme; the fits use the deep,
-scheme-A, seed-1904 cells), sizes 175M–1.7B, the rq00 gate per (task, size)
+scheme-A, seed-1904 cells), sizes 90M–1.7B, the rq00 gate per (task, size)
 (`predictivity` mask), trained languages and parent tasks only; no design
 pairs are involved, so no pair set. Hand-written numbers are from the
-ladder-report snapshot **2026-09-23 06:16**.
+ladder-report snapshot **2026-09-30 23:54**.
 
 ## Experimental setup
 
@@ -84,7 +84,7 @@ figure is `scaling_regimes_outliers_paper` (copied by
 
 ![Scaling regimes](pretraining/predictivity_all/scaling_regimes.png)
 
-Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, `scaling_regimes_families.csv`), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's majority and > 0.25 from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version for the paper, the label text pulled 45% towards the ink), `scaling_regimes_by_family.png` (panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; for the project site).
+Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, `scaling_regimes_families.csv`; `scaling_regimes_families_paper.png/.pdf/.svg` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's majority and > 0.25 from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version for the paper, the label text pulled 45% towards the ink), `scaling_regimes_by_family.png` (panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; for the project site).
 
 ![Scaling regimes, outliers named](pretraining/predictivity_all/scaling_regimes_outliers.png)
 
@@ -93,30 +93,33 @@ Named variants of the same points: `scaling_regimes_families.png` (one label per
 
 **Key findings**
 
-- Scaling is predictable on the tasks that survive the gate: of the 306 tasks
-  with a regime, 242 are predictable across both size and training, 38
-  across size only, 20 weak in both and 6 decline with size (three
-  `truthfulqa_*_mc2`, two `rf_bbh_mcq` subtasks, `include_base_44_ukrainian`).
-  Medians: R² 0.936 (IQR 0.847–0.968) for the size fit, 0.776 (0.563–0.887)
-  for the trajectory fit, Spearman ρ with size 1.0 (IQR 0.9–1.0).
-- The fit is made on the rungs that already cleared chance — 110 of the 136
-  three-rung fits lost their two smallest rungs to the gate — so a line
+- Scaling is predictable on the tasks that survive the gate: of the 346 tasks
+  with a regime, 266 are predictable across both size and training, 50
+  across size only, 24 weak in both, 1 predictable during training only and
+  5 decline with size (two `rf_bbh_mcq` subtasks, `truthfulqa-multi_mc1_es`,
+  `include_base_44_ukrainian`, `include_v2_en_arabic_morocco`). Medians: R²
+  0.889 (IQR 0.810–0.949) for the size fit, 0.754 (0.533–0.879) for the
+  trajectory fit, Spearman ρ with size 0.99 (IQR 0.92–1.0).
+- The fit is made on the rungs that already cleared chance — all 127
+  three-rung fits lost their smallest rungs to the gate — so a line
   through the rising top of a sigmoid is fitted and R² is inflated by
   construction; and the reference is inside every fit, so R² is a property of
   the ladder including 1.7B, not a statement about predicting 1.7B from
   below (figure 3 is that statement).
-- With and without the twins: the 306 tasks are 201 originals (median
-  size-fit R² 0.943) and 105 twins (0.921), with the same regime shares to
+- With and without the twins: the 346 tasks are 203 originals (median
+  size-fit R² 0.911) and 143 twins (0.855), with the same regime shares to
   within a few points, so the twins change the population, not the verdict
   ([rq00 figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate)).
-- Spearman ρ over five points saturates (ρ = 1 in 67 % of the 1 044 benchmark
-  fits), and the trajectory fit runs over all saved points under a WSD decay
+- Spearman ρ over six points saturates less than over five (ρ = 1 in 25 %
+  of the 2 481 benchmark fits now that the 90M rung is in; 67 % of the
+  1 044 five-rung fits of the 09-23 snapshot), and the trajectory fit runs
+  over all saved points under a WSD decay
   that is not log-linear in tokens, so part of panel (b)'s spread is
   schedule.
 
 **Follow-ups**
 
-- The paper panel is crowded (306 points, 25 labelled families). In order of
+- The paper panel is crowded (346 points, 26 labelled families). In order of
   preference: (1) the twins as a second panel beside the originals (a
   `--twins {all,originals,twins}` switch on `regimes.py`, no new computation;
   also the figure that shows the reformulation working); (2) label a family
@@ -141,7 +144,7 @@ GitHub: [scaling_regimes_by_family_paper.png](https://github.com/mariagrandury/s
 
 *The same population as figure 1, per family: the tasks the regimes figure
 draws against the two ways a task loses its point.* It exists because
-figure 1 shows the 306 tasks that have a regime and not the 520 of 826 that
+figure 1 shows the 346 tasks that have a regime and not the 550 of 896 that
 do not.
 
 ![Survivorship](pretraining/predictivity_all/scaling_regimes_survivorship.png)
@@ -154,16 +157,17 @@ in every label. It does not replace `regimes.py`, whose table it reads.*
 
 **Key findings**
 
-- 417 tasks have no fit at any L because they are at chance wherever a fit
-  was possible, and a further 103 have a fit at a single L and so no median.
-  15 of the 40 families lose every task, five of them with ≥ 17 tasks
+- 425 tasks have no fit at any L because they are at chance wherever a fit
+  was possible, and a further 125 have a fit at a single L and so no median.
+  16 of the 42 families lose every task, six of them with ≥ 17 tasks
   (`global_piqa_parallel_cloze` 0/63, `belebele` 0/59, `global_mmlu_full`
-  0/29, `cultural_bench_hard` 0/19, `bbh_mcq` 0/17); `arc` keeps 2 of 28.
+  0/29, `cultural_bench_hard` 0/19, `cultural_bench_easy` 0/19, `bbh_mcq`
+  0/17); `arc` keeps 2 of 28.
 - The reformulated twins put those families back (`rf_belebele` 35/59,
-  `rf_global_mmlu_full` 21/29, `rf_include_base_44` 13/36,
-  `rfgm_include_base_44` 14/36, `rf_bbh_mcq` 9/17, `rf_cultural_bench_easy`
-  6/19), and the probe families evaluated from 600M add `include_v2_en` 48/77
-  and `include_v2_og` 38/77.
+  `rfgm_belebele` 38/59, `rf_global_mmlu_full` 21/29, `rf_include_base_44`
+  13/36, `rfgm_include_base_44` 14/36, `rf_bbh_mcq` 9/17,
+  `rf_cultural_bench_easy` 6/19), and the probe families add `include_v2_en`
+  49/77 and `include_v2_og` 38/77.
 - The 20 BPB tasks below the fit minimum are the languages only the L50
   mixture trains, which have one L setting by construction.
 
@@ -207,12 +211,13 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader 
 
 **Key findings**
 
-- The 1.7B BPB is under-predicted from every ladder top: median absolute
-  relative error 11.5 % with three rungs (175M–600M) and 5.7 % with four
-  (175M–1B), and every fit over-predicts the improvement (the signed error
-  is negative throughout). The exponent fitted on the small rungs is too
-  steep for the reference's regime — a curvature finding, not a symmetric
-  error bar.
+- The 1.7B BPB is over-predicted from every ladder top (deep, scheme A,
+  318 fits): median absolute relative error 7.7 % with three rungs
+  (90M–350M), 4.4 % with four (to 600M) and 2.3 % with five (to 1B), and
+  every fit under-predicts the improvement (the signed error is positive in
+  all 318). The exponent fitted on the small rungs is too shallow for the
+  reference's regime — a curvature finding, not a symmetric error bar — and
+  the error shrinks as the ladder top approaches the reference.
 - A constant offset between small and large models shows up here but not in
   decision accuracy (rq02, rq05), so the two reads can disagree.
 
@@ -320,13 +325,13 @@ GitHub: [fit_r2_median.png](https://github.com/mariagrandury/snr-multilingual/bl
 
 *Per task: figure 1's ρ (score with model size along the ladder, `rho_size`)
 against rq02's ρ (the proxy's ranking of the design variants with the 1.7B
-ranking, `agreement_per_cell.csv`; DA-size, multi-axis pairs from
+ranking, `agreement_da_size_per_cell_multi_axes.csv`; DA-size, multi-axis pairs from
 `predictivity_schemes` at seed 1904, gate `predictivity`). The script and its
 outputs live in rq02's folder
 (`../rq02_decision_accuracy/scaling_vs_ranking.py`; auto block in
 [rq02's README](../rq02_decision_accuracy/README.md#12-read-next-in-the-other-rqs)).*
 
-![Scaling against ranking](../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png)
+![Scaling against ranking](../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png)
 
 *One point per task with both a scaling regime (rq01) and a decision-accuracy
 cell at the proxy (rq02). Top: rq01's ρ (jittered, it lives on a lattice)
@@ -354,7 +359,7 @@ the Spearman correlation across tasks.*
 - The same scatter with the trajectory R² on the x axis, which is the
   stronger surrogate, as the panel the paper quotes.
 
-GitHub: [scaling_vs_ranking.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.png) · [scaling_vs_ranking.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.csv)
+GitHub: [scaling_vs_ranking_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png) · [scaling_vs_ranking_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.csv)
 
 ## Extensions from other sweeps
 
@@ -379,10 +384,10 @@ harness, task set and reference size).
 - `…/scaling_regimes*.csv` — one table next to every `scaling_regimes*.png`
   (`regimes.py`; the `_paper` twins carry the same table as their non-paper
   figure).
-- `…/facts.json` — the numbers the paper quotes (merged into `rq_facts.json`).
+- `…/facts.json` — the numbers the paper quotes (`analyze.py`).
 - `…/scaling_regimes_survivorship.csv`, `.png` — per family, kept / gated /
   below the fit minimum (`regimes_survivorship.py`).
-- `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking.{png,csv}`
+- `../rq02_decision_accuracy/pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.{png,csv}`
   — figure 5 (`scaling_vs_ranking.py`, in rq02's folder because it reads
   rq02's per-cell agreement table).
 - `…/da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv`, `_cells.csv` — a
@@ -400,7 +405,7 @@ harness, task set and reference size).
 
 `tokens_seen.py`, `predictivity_all` pool: both figures put a language's evaluation against the training tokens of that language the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all`.
 
-**A. DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages of the share of design-variant pairs the proxy's BPB orders like the 1.7B final (rq02's kernel, every pair at seed 1904 of every scheme on the variants that train the language, ≥ 3 pairs; rule 15's multi-axis set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of the language they had seen, and a point's x the geometric mean over languages (50 languages; `da_goal_multi_axes_across_langs_bpb_cells.csv` has the per-language cells with the min and max over variants). The 1.7B line is its own early checkpoints against its final.
+**A. DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages of the share of design-variant pairs the proxy's BPB orders like the 1.7B final (rq02's kernel, every pair at seed 1904 of every scheme on the variants that train the language, ≥ 3 pairs; rule 15's multi-axis set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of the language they had seen, and a point's x the geometric mean over languages (50 languages; `da_goal_multi_axes_across_langs_bpb_cells.csv` has the per-language cells with the min and max over variants). The 1.7B line is its own early checkpoints against its final. `da_ckpt_multi_axes_across_langs_bpb` ranks each checkpoint against the proxy size's OWN final (DA-ckpt) and `da_size_multi_axes_across_langs_bpb` the final of every size against the 1.7B final (DA-size, one point per size: the 100 % end of the DA-goal lines); the `_vs_frac` twins of the goal and ckpt figures put the same points against the share of the run the checkpoint sits at, where lines that are apart on the token axis falling together says the schedule, not the exposure, decides.
 
 | proxy size | tokens of a language at 1C | DA at 1C | tokens at 5C | DA at 5C | languages |
 |---|---|---|---|---|---|
@@ -412,7 +417,7 @@ harness, task set and reference size).
 
 ![DA-goal of BPB vs tokens seen](pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb.png)
 
-**B. Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned 3 per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two populations: `deep_A_1904`, the plan grid, deep / scheme A / seed 1904: one run per cell; `1904`, every seed-1904 run at the (size, L) that trains the language, every scheme and architecture. The `.csv` next to each figure is the cell table (benchmark, task, language, model_size, language_scheme, train_tokens, task_score, above_chance, share_above, n_runs), `_points.csv` the binned values drawn. The `_ckpts` twins read the same runs at every evaluated tenth (a cell = (task, size, L, tenth), x = the tokens seen by that checkpoint): ten times the cells, and a token axis that runs through every training run. Cells above chance: `deep_A_1904` 5934 of 13878 (782 tasks), `deep_A_1904_ckpts` 55309 of 138780 (782 tasks), `1904` 6805 of 15696 (782 tasks), `1904_ckpts` 63790 of 156960 (782 tasks).
+**B. Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned 3 per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two populations: `deep_A_1904`, the plan grid, deep / scheme A / seed 1904: one run per cell; `1904`, every seed-1904 run at the (size, L) that trains the language, every scheme and architecture. The `.csv` next to each figure is the cell table (benchmark, task, language, model_size, language_scheme, train_tokens, task_score, above_chance, share_above, n_runs), `_points.csv` the binned values drawn. The `_ckpts` twins read the same runs at every evaluated tenth (a cell = (task, size, L, tenth), x = the tokens seen by that checkpoint): ten times the cells, and a token axis that runs through every training run. Each cell table is drawn per benchmark (`_by_benchmark_`), per language (`_by_language_`, panels from the best- to the least-resourced language) and pooled (`_all_`, one panel; their `.csv` is the binned points drawn). Cells above chance: `deep_A_1904` 6711 of 14657 (841 tasks), `deep_A_1904_ckpts` 63070 of 146570 (841 tasks), `1904` 7711 of 16602 (841 tasks), `1904_ckpts` 72842 of 166020 (841 tasks).
 
 ![Share above chance vs tokens seen, deep_A_1904](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.png)
 

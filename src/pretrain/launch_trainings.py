@@ -363,9 +363,8 @@ SEED_TRIPLES = {
 
 def scheme_sizes(scheme: str, L: int) -> list[str]:
     """Ladder rungs a scheme trains at one setting — everything up to its
-    per-setting cap. ES stops at 1B: its 23.4B Spanish source cannot feed a
-    1.7B without repeating ~3.5x (see DATA_SCHEMES), so its reference is the
-    1B rung. ZH runs to 1.7B on its existing build (2026-09-20)."""
+    per-setting cap. ZH and ES stop at the 1.7B reference; ES's 1.7B repeats
+    its 23.9B build 3.51x (see DATA_SCHEMES)."""
     sizes = [s for s in LADDER if L in SIZE_LANG_SETTINGS[s]]
     cap = DATA_SCHEMES[scheme]["max_size"].get(L)
     return sizes[: sizes.index(cap) + 1] if cap else sizes
@@ -1497,7 +1496,7 @@ def main() -> None:
             # settings) must not feed a cell that draws more than it holds:
             # Megatron silently repeats it. fineweb_source() reads such a cell's
             # FineWeb-2 half from the 92B rebuild stage instead, when it can.
-            run_tokens = target * (args.gbs or GBS) * SEQ_LEN
+            run_tokens = target * gbs * SEQ_LEN        # `target` is already at the rung's own batch
             fineweb_dir, short = fineweb_source(c, args.data_dir, run_tokens)
             # The exception is the registry's or the flag's, never a wildcard:
             # a filter that happens to match several undersized cells must not
@@ -1591,7 +1590,8 @@ def main() -> None:
             blend = data_blend("$ENGLISH_DIR/english_dclm",
                                f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
-                cell_env(cfg, c["size"], c["seed"], exp, blend),
+                cell_env(cfg, c["size"], c["seed"], exp, blend,
+                         gbs=None if gbs == GBS else gbs),
                 cell=c, dry_run=args.dry_run,
                 data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
                 compute=az_compute,

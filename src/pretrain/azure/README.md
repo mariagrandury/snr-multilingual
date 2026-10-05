@@ -533,8 +533,9 @@ gets every listed benchmark's tasks in the languages it trains on (an L2
 cell gets `hellaswag` + `hellaswag_ru` + …, an L1 cell only the English
 variants) — and pushed to the same W&B project (`msnr`) as the training
 runs. Due are
-**every 2nd saved checkpoint plus the run's final one** whatever its iter
-(predictivity targets end off the save grid, e.g. 4500 or 81000);
+**the ten tenths of training on the run's own save grid, the 85 % and 95 %
+noise-window points and the run's final one** whatever its iter (predictivity
+targets end off the save grid, e.g. 27000 or 81000), 12 per run;
 `--every N` changes the cadence. Edit the `auto` benchmark group in
 `configs/tasks.json` to change what runs.
 

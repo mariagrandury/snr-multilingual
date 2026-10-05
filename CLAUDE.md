@@ -14,7 +14,9 @@
   obeys those rules (the above-random gate, trained languages only, ten
   checkpoints, one noise window, three pairs per decision, parent tasks only,
   `multi` is not a language, one reference size, sizes 90M–1.7B at each
-  rung's own batch, no leakage, the figure conventions). Read it before touching an `rqNN_*` script; implement
+  rung's own batch, no leakage, the figure conventions, names that say
+  which DA and which pairs, nothing generated outside the regeneration and
+  every orphan flagged). Read it before touching an `rqNN_*` script; implement
   a new rule in the shared layer (`analysis/utils.py`, the loader), never in
   one script; `python analysis/check_rules.py` must pass before a commit.
 
@@ -177,7 +179,7 @@ cd documents && npx slidev build                # the deck the job skipped
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 
-# 2d. all of 2b, unattended at 06:00 Europe/Zurich. Arm it once, on the login
+# 2d. 2b without --curves, unattended at 06:00 Europe/Zurich. Arm it once, on the login
 #     node you want it pinned to; it needs no session and no Claude.
 loginctl enable-linger                              # or it dies at logout
 systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd/user/

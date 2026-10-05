@@ -29,7 +29,7 @@ runs it every pass so the figure fills in by itself. `--reference 1.7B
 --design 3B` is the preview available today — the same four families read to
 the current reference — and `--reference 1.7B --check` is the known-answer
 check: its DA-size per task and pair set equals rq02's
-`predictivity_schemes/da_per_task.csv` (`decision_acc_size_<proxy>`) on every
+`predictivity_schemes/da_all_per_task_both_axes.csv` (`decision_acc_size_<proxy>`) on every
 cell (verified exact on 3,312 cells, 2026-09-23).
 
     above_reference_<ref>[_design<d>].png / .csv       the pooled lines of (a), (b) and (d)
@@ -304,7 +304,7 @@ def check_against_rq02(tables: dict, pool: str) -> None:
     grid seed) the rq02 decision figures are computed over; the `predictivity`
     folder's table holds the A/B-only pool and differs by construction."""
     stage = load_pools()[pool].get("stage", "pretraining")
-    raw = pd.read_csv(DECISION_ACCURACY / stage / "predictivity_schemes" / "da_per_task.csv")
+    raw = pd.read_csv(DECISION_ACCURACY / stage / "predictivity_schemes" / "da_all_per_task_both_axes.csv")
     pt = tables["per_task"]
     pt = pt[(pt["frac"] == 1.0) & pt["da"].notna()]
     for axes in PAIR_AXES[:2]:
@@ -314,7 +314,7 @@ def check_against_rq02(tables: dict, pool: str) -> None:
                .assign(size=lambda x: x["col"].str.replace("decision_acc_size_", "")))
         m = pt[pt["axes"] == axes].merge(ref, on=["task", "size"]).dropna(subset=["rq02"])
         diff = (m["da"] - m["rq02"]).abs()
-        print(f"known-answer check vs rq02 predictivity_schemes/da_per_task.csv ({axes}): "
+        print(f"known-answer check vs rq02 predictivity_schemes/da_all_per_task_both_axes.csv ({axes}): "
               f"{len(m)} cells, {int((diff < 1e-9).sum())} exact, max |diff| = {diff.max():.3g}")
 
 

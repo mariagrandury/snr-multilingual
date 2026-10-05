@@ -52,7 +52,7 @@
   },
   "gate": {
     "gated_tasks": 1373,
-    "clear_any_size": 780,
+    "clear_any_size": 839,
     "by_options": {
       "2": [
         288,
@@ -63,7 +63,7 @@
         24
       ],
       "4": [
-        454,
+        513,
         932
       ],
       "5": [
@@ -92,12 +92,12 @@
       ]
     },
     "per_size": {
-      "90M": 501,
-      "175M": 537,
-      "350M": 577,
-      "600M": 617,
-      "1B": 670,
-      "1.7B": 729
+      "90M": 560,
+      "175M": 596,
+      "350M": 636,
+      "600M": 676,
+      "1B": 729,
+      "1.7B": 788
     },
     "never_clearing_families": [
       "acp_bench_cloze",
@@ -109,7 +109,6 @@
       "cultural_bench_hard",
       "haerae",
       "mmlu",
-      "rfgm_belebele",
       "toxigen",
       "truthfulqa_mc2",
       "turkishmmlu"

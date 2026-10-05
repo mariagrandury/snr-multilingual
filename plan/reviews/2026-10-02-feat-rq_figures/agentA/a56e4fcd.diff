@@ -1,0 +1,103 @@
+commit a56e4fcdcdbbe184ca29f75ce2a5e2c470d56c2a
+Author: María Grandury <mariagrandury@gmail.com>
+Date:   Fri Sep 25 19:05:27 2026 +0200
+
+    ladder: keep each rung at its own batch; put 90M back on the ladder
+    
+    The 90M and 175M rungs were retrained at batch 84 / 168 (GBS_BY_SIZE,
+    2026-09-23) and their diverged batch-504 predecessors are still on disk
+    and in older reports. The loader now keeps only the runs at the batch a
+    rung uses now (ladder_report.on_grid, the report's own test, repeated at
+    the one place every analysis reads from: snr/download/ladder.py), so an
+    old run can never share a `family` with its replacement or reach a table.
+    
+    With the rung sound again, 90M is the ladder's first size everywhere:
+    EVAL_SIZES is the whole LADDER (the watcher evaluates the b84 cells on
+    its next start), ANALYSIS_SIZES follows, small_sizes gains 90M (a
+    decision_acc_size_90M column), check_rules forbids only the sizes above
+    the reference, and the two hardcoded size lists that would have raised
+    on 90M (paper_ten_checkpoints COLORS, seed_uncertainty's x-limits) read
+    the ladder. Rule 10 and the CLAUDE.md / README sentences that said "no
+    90M" now say "90M-1.7B at each rung's own batch".
+    
+    Checked: the guard on a report with fake old-batch 90M/175M cells (dropped)
+    next to their b84/b168 replacements and a 350M cell with and without a
+    batch token (kept); check_rules 0 findings; unit tests OK. The tables on
+    disk still stop at 175M until the pipeline reruns.
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 344f229b..d78d7c4a 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -13,8 +13,8 @@
+   table, figure and README number under `src/signal-and-noise/analysis/`
+   obeys those rules (the above-random gate, trained languages only, ten
+   checkpoints, one noise window, three pairs per decision, parent tasks only,
+-  `multi` is not a language, one reference size, no 90M, no leakage, the
+-  figure conventions). Read it before touching an `rqNN_*` script; implement
++  `multi` is not a language, one reference size, sizes 90M–1.7B at each
++  rung's own batch, no leakage, the figure conventions). Read it before touching an `rqNN_*` script; implement
+   a new rule in the shared layer (`analysis/utils.py`, the loader), never in
+   one script; `python analysis/check_rules.py` must pass before a commit.
+ 
+diff --git a/src/pretrain/launch_trainings.py b/src/pretrain/launch_trainings.py
+index 2a730cc3..29e28900 100644
+--- a/src/pretrain/launch_trainings.py
++++ b/src/pretrain/launch_trainings.py
+@@ -170,11 +170,12 @@ EN_SHARE = 50  # fixed English share for the multilingual (L >= 2) settings
+ # The ladder, small -> large. The order is load-bearing: a scheme's
+ # per-setting size cap below means "this rung and every rung under it".
+ LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B", "3B"]
+-# The sizes the eval watcher and the eval-progress views cover. 90M trains
+-# (its checkpoints stay on disk) but is not on the ladder: nine of its ten
+-# runs diverge (plan/90M-rung-anomaly.md) and the report drops the rung, so
+-# evaluating it buys nothing (2026-09-18). `--name` still reaches a 90M cell.
+-EVAL_SIZES = [s for s in LADDER if s != "90M"]
++# The sizes the eval watcher and the eval-progress views cover: the whole
++# ladder. 90M was off it from 2026-09-18 (nine of its ten batch-504 runs
++# diverged, plan/90M-rung-anomaly.md) until the rung was retrained at its own
++# batch (GBS_BY_SIZE, 2026-09-23); the old runs stay on disk and `on_grid`
++# keeps them out of the report and the analyses (2026-09-25).
++EVAL_SIZES = list(LADDER)
+ 
+ # Which language settings each size trains at. Every size covers every
+ # setting — the 1.7B row gained L=15 and L=50 on 2026-09-10 — except the 3B,
+diff --git a/src/signal-and-noise/snr/download/ladder.py b/src/signal-and-noise/snr/download/ladder.py
+index 8b010ed3..457f1018 100644
+--- a/src/signal-and-noise/snr/download/ladder.py
++++ b/src/signal-and-noise/snr/download/ladder.py
+@@ -37,6 +37,7 @@ _SRC = Path(__file__).resolve().parents[3]
+ if str(_SRC) not in sys.path:
+     sys.path.insert(0, str(_SRC))
+ from evals.scripts.utils.configs import load_hf_wandb_config  # noqa: E402
++from pretrain.ladder_report import CELL_RE, on_grid  # noqa: E402
+ from pretrain.launch_trainings import (  # noqa: E402
+     NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
+ 
+@@ -127,9 +128,14 @@ def load_predictivity_eval_results(
+     (`benchmark` / `bpb` / `loss`), primary_score, tokens, compute
+     (6 x params x tokens on the ladder convention), diverged, complete.
+ 
+-    Diverged runs (the 90M rung, see plan/90M-rung-anomaly.md) and runs that
+-    have not reached their target are dropped by default: their final
+-    checkpoint is not the annealed endpoint the ladder compares. For the same
++    Only the runs trained at the batch their rung uses NOW enter (the 90M and
++    175M rungs were retrained at batch 84 / 168 on 2026-09-23; the diverged
++    batch-504 runs they replace are still on disk and in older reports, and
++    both versions of a cell would carry one `family`): `ladder_report.on_grid`,
++    the report's own test, repeated here because this is where every analysis
++    reads from. Diverged runs and runs that have not reached their target are
++    dropped by default: their final checkpoint is not the annealed endpoint
++    the ladder compares. For the same
+     reason `require_final` drops every (cell, task) series whose last scored
+     checkpoint is not the run's final save: the evaluation of that cell is
+     still in flight, and "the last checkpoint per task" that every analysis
+@@ -138,6 +144,8 @@ def load_predictivity_eval_results(
+     """
+     wide = load_ladder_wide(path)
+     wide = wide.dropna(subset=["cell"])
++    matched = wide["cell"].map(CELL_RE.match)
++    wide = wide[[bool(m) and on_grid(m) for m in matched]]        # the rung's current batch only
+     # A report predating one of these columns is treated as complete and
+     # healthy: filling NaN instead would silently drop every row below.
+     for c, absent in (("run__diverged", 0), ("run__complete", 1),

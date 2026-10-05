@@ -36,7 +36,10 @@ because that is the metric a cloze task is scored with, and `norm_offset`
 in the CSV is how much of the cell is that choice. A task's gain is
 significant at a size when p < P_SIG for at least half of the size's models
 (per family); per language the small number counts the significant (task,
-model) pairs instead. README.md gets the `auto:rf-compare` block (the
+model) pairs instead. The twin run's `acc` lives in the harness results files
+on the cluster only: elsewhere the test reuses the values the last cluster run
+recorded in rf_significance.csv, leaves the newer pairs untested (p NaN, and
+`sig=n/a` in a cell with none tested) and says how many in the block. README.md gets the `auto:rf-compare` block (the
 family x size table).
 
     python3.11 src/signal-and-noise/analysis/rq00_task_reformulation/compare.py
@@ -139,14 +142,23 @@ SIG_COLS = ["set", "task", "size", "model", "acc_orig", "acc_twin", "acc_twin_pl
             "n_orig", "n_twin", "p", "sig"]
 
 
-def significance(df: pd.DataFrame, s: str) -> pd.DataFrame:
+def kept_plain_acc(path: Path) -> pd.Series:
+    """The twin runs' own `acc` as the last run that could read the harness
+    results (the cluster) recorded it in `path`, keyed like `twin_plain_acc`."""
+    old = pd.read_csv(path).dropna(subset=["acc_twin_plain"]) if path.exists() else pd.DataFrame(columns=SIG_COLS)
+    return pd.Series(old["acc_twin_plain"].to_numpy(), dtype=float,
+                     index=pd.MultiIndex.from_arrays([old["model"], old["set"] + "_" + old["task"]]))
+
+
+def significance(df: pd.DataFrame, s: str, kept: pd.Series | None = None) -> pd.DataFrame:
     """Per (task, size, model): original vs twin accuracy at the final
-    checkpoint and the two-proportion z-test p-value; `sig` when p < P_SIG."""
+    checkpoint and the two-proportion z-test p-value; `sig` when p < P_SIG.
+    `kept`: the twin acc to use instead of the results files (off the cluster)."""
     if df.empty:
         return pd.DataFrame(columns=SIG_COLS)
     f = finals(df)[["model", "size", "step", "task", "primary_score", "set", "base"]].copy()
     f["n"] = f["task"].map(task_n_items)
-    plain = twin_plain_acc(f, s)
+    plain = twin_plain_acc(f, s) if kept is None else kept
     f["set"] = f["set"].replace({s: "twin"})
     w = f.pivot(index=["model", "size", "base"], columns="set", values=["primary_score", "n"]).dropna()
     # the twin side on the originals' metric; where the results file is gone the
@@ -225,7 +237,14 @@ def main() -> None:
         # are pushed) would otherwise overwrite the figures with an empty table
         sys.exit("no rf_* / rfgm_* results in this ladder report: point SNR_LADDER_DIR at one that has them")
     pairs = {s: paired(df, s) for s in SETS}
-    sig = pd.concat([significance(pairs[s], s) for s in SETS], ignore_index=True)
+    # Off the cluster the harness results files are absent, and testing without
+    # them would write p = NaN everywhere and `sig=0` in every cell: reuse the
+    # twin acc the last cluster run recorded, and leave newer pairs untested.
+    kept = None if RESULTS.is_dir() else kept_plain_acc(HERE / f"rf_significance{sfx}.csv")
+    if kept is not None:
+        print(f"no harness results under {RESULTS}: twin acc from the committed rf_significance{sfx}.csv ({len(kept)} pairs)")
+    sig = pd.concat([significance(pairs[s], s, kept) for s in SETS], ignore_index=True)
+    untested = int(sig["p"].isna().sum())
     sig.to_csv(HERE / f"rf_significance{sfx}.csv", index=False)
     fam = {s: cells(pairs[s], sig[sig["set"] == s], s, ["family"]) for s in SETS}      # set -> (orig, twin, n_sig)
     fam_o = fam[have[0]][0]
@@ -263,6 +282,7 @@ def main() -> None:
              f"shown is the {have[0]} pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, "
              f"n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models "
              f"(two-proportion z-test of the original's acc against the twin run's own acc, p < {P_SIG}"
+             + (f"; {untested} of {len(sig)} (task, model) pairs untested, no harness results file" if untested else "")
              + ("; the acc_norm−acc offset is family-shaped, rf median +0.005, and exceeds half the plotted rf gain in "
                 "36 % of the pairs" if not sfx else "") + ").", "",
              "| family | " + " | ".join(sizes) + " |", "|---|" + "---:|" * len(sizes)]
@@ -280,8 +300,11 @@ def main() -> None:
                 if r.empty or oo.empty or r["margin"].isna().all():
                     parts.append(f"{s} —"); continue
                 ks = k[(k["family"] == f) & (k["size"] == sz)]["n_sig"]
+                tested = sig[(sig["set"] == s) & (sig["size"] == sz) & sig["p"].notna()
+                             & (sig["task"].map(lambda t: TASKS[t]["benchmark"]) == f)]
+                n_sig = (int(ks.iloc[0]) if len(ks) else 0) if len(tested) else "n/a"
                 parts.append(f"{s} {r['margin'].iloc[0]:+.3f} (**{r['margin'].iloc[0] - oo['margin'].iloc[0]:+.3f}**, "
-                             f"n={int(r['n'].iloc[0])}, sig={int(ks.iloc[0]) if len(ks) else 0})")
+                             f"n={int(r['n'].iloc[0])}, sig={n_sig})")
             out.append(" · ".join(parts))
         lines.append(f"| {f} | " + " | ".join(out) + " |")
     lines += ["", f"![family x size](rf_gate{sfx}.png)", "", f"![per language](rf_gate_by_language{sfx}.png)"]

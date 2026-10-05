@@ -106,7 +106,7 @@ def collect():
                     f"predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv")
     f["seed_holdout"] = {f"{r.metric}_{r.da_kind}": _r(r.value) for r in h.itertuples()}
 
-    iv = pd.read_csv(ANALYSIS / f"rq05_design_decisions/{PS}/intervention_da.csv")
+    iv = pd.read_csv(ANALYSIS / f"rq05_design_decisions/{PS}/intervention_da_all_mono_axis.csv")
     sl = pd.read_csv(ANALYSIS / f"rq01_scaling_predictability/{PS}/scaling_law_error.csv")
     ev = pd.read_csv(ANALYSIS / f"rq03_noise_and_snr/{PS}/effect_vs_noise.csv")
     ratio = (ev.seed_noise / ev.ckpt_noise_detrended).replace([np.inf, -np.inf], np.nan).dropna()

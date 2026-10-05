@@ -63,12 +63,23 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, at_fraction, finals, ladder_frame, size_order, trained_bpb_tasks)
+    GRID_SEED, at_fraction, finals, ladder_frame, passes_gate, size_order, trained_bpb_tasks)
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
 MIN_ITEMS = 3                         # fewest population items for a DA cell
+# rq00 computes the above-random gate on the grid-seed pool; the all-seeds
+# pool has no mask of its own, so fall back to that one rather than leave the
+# benchmarks ungated (a task at chance in both cells decides nothing).
+GATE_POOL = "predictivity"
+
+
+def gate_mask(pool: str) -> pd.DataFrame | None:
+    """The above-random mask of `pool`, or of GATE_POOL when the pool has none."""
+    mask = load_mask(pool)
+    return mask if mask is not None else load_mask(GATE_POOL)
 # The reference's |Δ| is a difference of two single runs, so its null sd is
 # sqrt(2) x the per-run seed sd; DECIDED counts in those difference sds.
 DECIDED = 2.0
@@ -83,10 +94,10 @@ INTERVENTIONS = {
     "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("arch", "deep")),
     "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("arch", "deep")),
 }
-# `bpb_untrained` and `bpb_all` are gone: a score on a language the mixture does
-# not train is rq06's measurement (RULES.md rule 2); the loader no longer
-# delivers those rows, so the populations would be empty. rq06 reads the
-# never-trained languages of every intervention.
+# `bpb_untrained` and `bpb_all` are not rq05's: a score on a language the
+# mixture does not train is rq06's measurement (RULES.md rule 2), and the
+# loader does not deliver those rows here. rq06 passes `populations=("bpb_all",)`
+# on its untrained frame for the per-group transfer table.
 POPULATIONS = ("bpb_trained", "benchmark", "bpb_macro", "loss")
 SINGLE = {"bpb_macro": "bpb_macro", "loss": "train_loss"}   # one-task populations: the aggregates
 CELL_POPULATIONS = ("bpb_trained", "benchmark")   # the items behind the per-benchmark / per-language tables
@@ -130,12 +141,16 @@ def seed_sd(fin: pd.DataFrame) -> pd.Series:
     return sd[sd["count"] >= 2]["std"].groupby("task").median()
 
 
-def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | None = None,
+                    populations: tuple = POPULATIONS) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """(the decision table, the per-item agreement behind it, the same for
     every language's BPB with its `group`). The second frame has one row per
     (intervention, L, proxy size, fraction, task) of CELL_POPULATIONS with
     `agree` in {0, 1}: what the per-benchmark and per-language tables
-    aggregate; the third is what rq06's transfer lines aggregate."""
+    aggregate; the third, filled only for `bpb_all` (rq06's call), is what
+    rq06's transfer lines aggregate. A benchmark
+    item counts at a proxy size only where the task is above chance there and
+    at the cell's reference (rule 1, `mask`)."""
     sd = seed_sd(finals(df))
     grid = df[df["seed"] == GRID_SEED]
     fin = finals(grid)
@@ -144,7 +159,7 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
     for key, (label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
         sub_fin = fin[fin[hcol] == hval]
         for L in sorted(sub_fin["L"].unique()):
-            for pop in POPULATIONS:
+            for pop in populations:
                 min_items = 1 if pop in SINGLE else MIN_ITEMS
                 ref_piv = _pivot(_population(sub_fin[sub_fin["L"] == L], pop, int(L), levels, axis), axis, levels)
                 if ref_piv is None:
@@ -170,6 +185,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS) -> tuple[pd.DataFrame
                             continue
                         p = piv.xs(s, level="size")
                         items = p.index.intersection(ref_sign.index)
+                        if pop == "benchmark":
+                            items = items[passes_gate(mask, items, s, ref).to_numpy()]
                         if len(items) < min_items:
                             continue
                         d_proxy = p.loc[items, levels[0]] - p.loc[items, levels[1]]
@@ -362,7 +379,7 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
             m = bench.groupby("proxy_size")["decision_acc"].mean()
             bullets.append("- **Depth decision on benchmarks** — mean DA over L by proxy: "
                            + ", ".join(f"{s} {fmt(m[s])}" for s in size_order(m.index)) + ".")
-        blocks.append(f"![Intervention DA grid]({rel}/intervention_da.png)")
+        blocks.append(f"![Intervention DA grid]({rel}/intervention_da_all_mono_axis.png)")
     if not ev.empty:
         med = ev.groupby(["intervention", "population"])["median_effect_over_seed_sd"].median().unstack("population")
         bullets.append("- **Is there a decision to make?** median |Δ| at the reference in seed sds — "
@@ -391,8 +408,8 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Pool '{pool}': {df['model'].nunique()} cells, {fin['task'].nunique()} tasks, "
           f"seeds {sorted(df['seed'].unique())}, schemes {sorted(df['scheme'].unique())}")
 
-    da, items, groups = intervention_da(df)
-    da.to_csv(out_dir / "intervention_da.csv", index=False)
+    da, items, _ = intervention_da(df, mask=gate_mask(pool))
+    da.to_csv(out_dir / "intervention_da_all_mono_axis.csv", index=False)
     if not items.empty:
         # the same agreement, per benchmark and per language (panels.py draws them);
         # add_meta drops the items with no single language (aggregates, subject facets)
@@ -400,19 +417,15 @@ def main(pool: str, out_dir: Path) -> None:
         keys = ["intervention", "label", "L", "proxy_size", "frac"]
         for by, name in (("family", "benchmark"), ("language", "language")):
             (items.groupby(keys + [by]).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-             .to_csv(out_dir / f"intervention_da_by_{name}.csv", index=False))
-    gcols = ["intervention", "label", "L", "proxy_size", "frac", "reference_size", "group"]
-    (groups.groupby(gcols).agg(decision_acc=("agree", "mean"), n_items=("agree", "size")).reset_index()
-     if not groups.empty else pd.DataFrame(columns=gcols + ["decision_acc", "n_items"])
-     ).to_csv(out_dir / "intervention_da_by_group.csv", index=False)     # written empty rather than left stale (rule 14)
-    print(f"Wrote → {out_dir / 'intervention_da.csv'} ({len(da)} cells)")
+             .to_csv(out_dir / f"intervention_da_size_by_{name}_mono_axis.csv", index=False))
+    print(f"Wrote → {out_dir / 'intervention_da_all_mono_axis.csv'} ({len(da)} cells)")
     dag = pd.DataFrame()
     if not da.empty:
-        plot_da_grid(da, out_dir / "intervention_da.png")
+        plot_da_grid(da, out_dir / "intervention_da_all_mono_axis.png")
         dag = (da[da["frac"] == 1.0].groupby(["intervention", "label", "population", "proxy_size"])
                .agg(decision_acc=("decision_acc", "mean"), cells=("decision_acc", "size"),
                     refs=("reference_size", lambda s: ",".join(sorted(set(s))))).reset_index())
-        dag.to_csv(out_dir / "rq4_da_by_intervention.csv", index=False)
+        dag.to_csv(out_dir / "rq4_da_size_by_intervention_mono_axis.csv", index=False)
 
     ev = effect_at_reference(fin)
     ev.to_csv(out_dir / "rq4_effect_vs_seed.csv", index=False)

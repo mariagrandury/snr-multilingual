@@ -1,7 +1,7 @@
 # Predictivity-sweep pretraining (CSCS + Azure)
 
 > Pretraining infrastructure for the small-to-large predictivity sweep: a
-> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L8/L15 only) × 6 language settings, fixed
+> 7-rung size ladder (90M–3B non-embedding; the 3B rung at L ∈ {8, 15, 30, 50}, deep only) × 6 language settings, fixed
 > 50/50 English/multilingual data, each size trained to its own
 > 5×Chinchilla budget. Runs split across the CSCS cluster and Azure ML —
 > **both platforms execute the exact same training logic.**
@@ -94,7 +94,7 @@ Counting every scheme and the architectures each is trained in: **183 runs**.
 
 The intervention levels are suffix-marked in the run name: `--arch shallow`
 (width/depth 128, the model-depth intervention) and `--scheme` — the data
-axis, one of the eight entries of `DATA_SCHEMES` in
+axis, one of the seven entries of `DATA_SCHEMES` in
 [`launch_trainings.py`](launch_trainings.py):
 
 | `--scheme` | What it changes | Where it applies |
@@ -163,7 +163,7 @@ launcher — the core design):
 | [`launch_pretraining_azure.sh`](launch_pretraining_azure.sh) | Azure wrapper: pinned Megatron checkout, GPU-count-aware micro-batch, torchrun. Run through `azure/jobs/pretrain.yml`. |
 | [`launch_trainings.py`](launch_trainings.py) | The idempotent launcher for **both** platforms: enumerates the grid, decides skip/fresh/resume per cell, builds one env-var dict, submits via `sbatch --export` (cscs) or `az ml job create --set` (azure). |
 | [`pretrain_progress.py`](pretrain_progress.py) | CSCS status: per-cell action lines (the same `cell_action` decision the launcher uses), the `--is-valid` checkpoint check (also used by `conversion/`), and the plan table + progress heatmaps (`--plot`, which also rewrites the generated grid block in this README and the plan doc). |
-| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. The `auto` group contains every `rf_*` and `rfgm_*` twin as well as the originals, so an ordinary pass evaluates the twins and tops up existing checkpoints with the tasks they are missing; the `auto_rf` / `auto_rfgm` groups were retired on 2026-09-23 (only `auto` and `auto_probe` remain), so `--reformulated` now exits with the list of groups that do exist. `--group NAME` evaluates another `configs/tasks.json` group instead of `auto` (jobs get `-<name minus auto_>` as a suffix, so a probe never collides with a watcher), and `--final-only` keeps only each cell's last due checkpoint — together the screening pass `--group auto_probe --size 600M,1B,1.7B --final-only` (`../evals/README.md`, probe benchmarks). `--size` narrows to a comma-separated list; the default is every size but 90M (`launch_trainings.EVAL_SIZES` — the rung is off the ladder), which `--name` overrides. |
+| [`auto_evals_cscs.py`](auto_evals_cscs.py) | CSCS auto-eval watcher (twin of `auto_evals_azure.py`): per due checkpoint submits convert (`conversion/convert-snr.sh --models`) then eval (`../evals/` `evaluate.sbatch`), pushing to W&B msnr. Idempotent. The `auto` group contains every `rf_*` and `rfgm_*` twin as well as the originals, so an ordinary pass evaluates the twins and tops up existing checkpoints with the tasks they are missing; the `auto_rf` / `auto_rfgm` groups were retired on 2026-09-23 (only `auto` and `auto_probe` remain), and the `--reformulated` flag that chose them was removed on 2026-10-03. `--group NAME` evaluates another `configs/tasks.json` group instead of `auto` (jobs get `-<name minus auto_>` as a suffix, so a probe never collides with a watcher), and `--final-only` keeps only each cell's last due checkpoint — together the screening pass `--group auto_probe --size 600M,1B,1.7B --final-only` (`../evals/README.md`, probe benchmarks). `--size` narrows to a comma-separated list; the default is every size but 90M (`launch_trainings.EVAL_SIZES` — the rung is off the ladder), which `--name` overrides. |
 | [`sync_models_json.py`](sync_models_json.py) | Upserts one `configs/models.json` entry per grid cell (paths + schedule) — the W&B push refuses cells without one. Both watchers run it automatically each pass; the CLI exists for explicit use. |
 | [`auto_evals_azure.py`](auto_evals_azure.py) | Azure auto-eval watcher — same due rule against blob storage (`source azure/env.sh` first). |
 | [`ladder_report.py`](ladder_report.py) | "Is the sweep going well?" from disk alone — loss curves (including divergence: best loss vs final), the per-L scaling fit with outlier rungs flagged, benchmark movement, and per-language BPB from `../evals/scripts/score_bpb.py`. Reads every account's training logs (aromanou's 1B cells are under her scratch) and a killed eval job's unmerged `per_task/` results. No W&B, no network. `--plot` writes the figures and [`ladder_report.md`](ladder_report.md): benchmarks twice, over each cell's trained languages and, for the runs evaluated in every language, over all of them; BPB in the tables is the final checkpoint's, blank until that one is scored. |

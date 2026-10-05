@@ -369,7 +369,7 @@ _DA_MIN_SUPPORT = 6
 
 
 def fig3b_reliability_map_external() -> None:
-    path = DECISION_ACCURACY / "all" / "external" / "da_per_task.csv"
+    path = DECISION_ACCURACY / "all" / "external" / "da_all_per_task_both_axes.csv"
     if not path.exists() or path.read_text(errors="ignore").startswith("version https://git-lfs"):
         print("[fig3b] skipped: external DA table not available locally")
         return
@@ -461,7 +461,7 @@ def fig4_subset_sweep() -> None:
 # Figure 5 — proxy size x language count: intervention decision accuracy
 # ===========================================================================
 def fig5_proxy_grid() -> None:
-    path = DESIGN_DECISIONS / POOL_STAGE / "predictivity_all" / "intervention_da.csv"
+    path = DESIGN_DECISIONS / POOL_STAGE / "predictivity_all" / "intervention_da_all_mono_axis.csv"
     if not path.exists():
         print(f"[fig5] skipped: {path} missing")
         return

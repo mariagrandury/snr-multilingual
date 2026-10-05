@@ -4,19 +4,19 @@ One horizontal row, one panel per definition, drawn from the tables the three
 rq02 scripts already write — this module only composes, it computes nothing,
 so the panels can never disagree with the figures they are taken from:
 
-    left    DA-size   `scale_convergence.csv`, the `all benchmarks` population:
+    left    DA-size   `scale_convergence_da_size<axes>.csv`, the `all benchmarks` population:
                       how small a FULLY TRAINED model may be and still decide like
                       the reference. The PLAIN grouping — the single pooled line
                       over every pair at the grid seed, every data scheme (NOT the
                       A/B-only `predictivity` headline pool), which is the claim the
-                      question is written as; `scale_convergence_transformation.csv`
+                      question is written as; `scale_convergence_da_size_transformation<axes>.csv`
                       breaks the same decisions down by design axis and is the
                       figure to read next to it, not inside it.
                       x = non-embedding parameters (log).
-    middle  DA-ckpt   `early_small_by_L_ckpt.csv`, the `all pairs` panel: agreement
+    middle  DA-ckpt   `early_small_da_ckpt_by_L<axes>.csv`, the `all pairs` panel: agreement
                       of an earlier checkpoint with the SAME size's final ranking,
                       one line per proxy size. x = Chinchilla multiples.
-    right   DA-goal   `early_small_by_L_goal.csv`, the `all pairs` panel: agreement
+    right   DA-goal   `early_small_da_goal_by_L<axes>.csv`, the `all pairs` panel: agreement
                       with the reference's final ranking, same lines and x axis, so
                       the middle and right panels overlay directly — the distance
                       between them is what the proxy SIZE costs, on top of reading
@@ -27,20 +27,21 @@ its definition in its own y label, the two line legends sit inside the axes
 (design axes on the left, proxy sizes in the middle, shared with the right),
 and the y axis is shared so the three panels are read against one scale.
 
-    rq2.png / .svg / .csv        the figure the paper embeds (the SVG is the vector
-                                 copy the paper build prefers)
-    rq2_above_80.*               the same three panels over the cells reliable on
+    rq2.png / .svg / .csv        the three panels over every task (the SVG is the
+                                 vector copy; the paper's fig:rq2 is currently
+                                 paper_ten_checkpoints.py's, plan/decision_accuracy.md #8)
+    rq2_da_all_above_80.*               the same three panels over the cells reliable on
                                  BOTH axes at 0.80 (the `late` reduction)
-    rq2_above_66_both.*          the same at 0.66 on the `median` reduction: one
+    rq2_da_all_above_66_both.*          the same at 0.66 on the `median` reduction: one
                                  population, applied to all three panels
-    rq2_above_66_both_transformation.*
-                                 the same population as rq2_above_66_both, with the
+    rq2_da_all_above_66_both_transformation.*
+                                 the same population as rq2_da_all_above_66_both, with the
                                  DA-size panel broken out by the design axis each pair
                                  differs on instead of pooled into one line: the middle
                                  and right panels are unchanged, the left one says WHICH
                                  design decisions a small fully trained model gets right
                                  rather than how many.
-    rq2_above_66_one.*           each panel over the cells reliable on ITS OWN axis
+    rq2_da_all_above_66_own.*           each panel over the cells reliable on ITS OWN axis
                                  at 0.66: DA-size over the DA-size passers, DA-ckpt
                                  over the DA-ckpt passers, DA-goal over either. The
                                  populations differ BETWEEN panels here, so the
@@ -48,13 +49,16 @@ and the y axis is shared so the three panels are read against one scale.
                                  population seen three ways — read it as "how well
                                  does each definition do on the tasks it is
                                  trustworthy for", not as a like-for-like comparison.
-    rq2_above_66_either_transformation.*
-                                 the per-panel populations of rq2_above_66_one with the
+    rq2_da_all_above_66_either_transformation.*
+                                 the per-panel populations of rq2_da_all_above_66_own with the
                                  DA-size panel broken out by design axis, as
-                                 rq2_above_66_both_transformation does for the shared
+                                 rq2_da_all_above_66_both_transformation does for the shared
                                  population. The left panel therefore reads over the
                                  DA-size passers only, so its axes are not the same
                                  cells as the middle and right panels.
+
+Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
+or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
 
 This module reads CSVs and draws them. It derives nothing, so a change to how a
 panel's own figure is computed reaches rq2 the moment that script reruns — the
@@ -99,19 +103,19 @@ YLIM = (0.25, 1.0)            # one scale for the three panels
 # DA-goal suffixes. One entry per figure, so both the per-panel filter and the
 # choice of scale-convergence grouping are data rather than a branch.
 RQ2_VARIANTS = {
-    "": ("scale_convergence", "", ""),
-    "above_80": ("scale_convergence_above_80", "_above_80", "_above_80"),
-    "above_66_both": ("scale_convergence_above_66_both", "_above_66_both", "_above_66_both"),
-    "above_66_one": ("scale_convergence_above_66_size", "_above_66_ckpt", "_above_66_either"),
-    "above_66_both_transformation": ("scale_convergence_transformation_above_66_both",
+    "": ("scale_convergence_da_size", "", ""),
+    "above_80": ("scale_convergence_da_size_above_80", "_above_80", "_above_80"),
+    "above_66_both": ("scale_convergence_da_size_above_66_both", "_above_66_both", "_above_66_both"),
+    "above_66_own": ("scale_convergence_da_size_above_66_size", "_above_66_ckpt", "_above_66_either"),
+    "above_66_both_transformation": ("scale_convergence_da_size_transformation_above_66_both",
                                      "_above_66_both", "_above_66_both"),
-    "above_66_either_transformation": ("scale_convergence_transformation_above_66_size",
+    "above_66_either_transformation": ("scale_convergence_da_size_transformation_above_66_size",
                                        "_above_66_ckpt", "_above_66_either"),
 }
 mpl.rcParams.update(S.RC)
 
 
-def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence") -> pd.DataFrame:
+def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence_da_size") -> pd.DataFrame:
     """DA-size: reliability vs non-embedding parameters. `stem` picks which
     scale-convergence table, and so whether this is the single pooled line or
     one line per design axis."""
@@ -143,7 +147,7 @@ def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence") -> pd.DataF
 
 def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: str = "") -> pd.DataFrame:
     """DA-ckpt / DA-goal: the `all pairs` panel of by_L, one line per proxy size."""
-    d = pd.read_csv(out_dir / f"early_small_by_L_{name}{suffix}.csv")
+    d = pd.read_csv(out_dir / f"early_small_da_{name}_by_L{suffix}.csv")
     d = d[(d["L"].astype(str) == "all") & (d["group"] == "all benchmarks")].sort_values("chinchilla")
     sizes = [s for s in SMALL_SIZES + [TARGET_SIZE] if s in set(d["proxy_size"])]
     for s_ in sizes:
@@ -161,16 +165,16 @@ def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: 
 
 def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     """`axes` picks the pair set (rule 15): every panel reads the table drawn
-    over it, and the figure carries the same suffix, so `rq2.png` and
-    `rq2_one_axis.png` sit side by side over the same three definitions."""
+    over it, and the figure carries the same suffix, so `rq2_da_all_multi_axes.png` and
+    `rq2_da_all_mono_axis.png` sit side by side over the same three definitions."""
     a = AXES_SUFFIX[axes]
     suffix = (f"_{variant}" if variant else "") + a
     sz, ck, gl = RQ2_VARIANTS[variant]
-    need = [f"{sz}{a}.csv", f"early_small_by_L_ckpt{ck}{a}.csv",
-            f"early_small_by_L_goal{gl}{a}.csv"]
+    need = [f"{sz}{a}.csv", f"early_small_da_ckpt_by_L{ck}{a}.csv",
+            f"early_small_da_goal_by_L{gl}{a}.csv"]
     missing = [f for f in need if not (out_dir / f).is_file()]
     if missing:
-        print(f"  (rq2{suffix}: missing {', '.join(missing)} — skipped)")
+        print(f"  (rq2_da_all{suffix}: missing {', '.join(missing)} — skipped)")
         return
     fig, ax3 = plt.subplots(1, 3, figsize=(13.5, 4.0), sharey=True)
     rows = [_scale_panel(ax3[0], out_dir, sz + a),
@@ -179,16 +183,16 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
     for ax in ax3:
         ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.tight_layout()
-    pd.concat(rows, ignore_index=True).to_csv(out_dir / f"rq2{suffix}.csv", index=False)
-    fig.savefig(out_dir / f"rq2{suffix}.svg", bbox_inches="tight", facecolor=S.SURFACE)
-    S.save(fig, out_dir / f"rq2{suffix}.png", dpi=200)          # closes the figure
+    pd.concat(rows, ignore_index=True).to_csv(out_dir / f"rq2_da_all{suffix}.csv", index=False)
+    fig.savefig(out_dir / f"rq2_da_all{suffix}.svg", bbox_inches="tight", facecolor=S.SURFACE)
+    S.save(fig, out_dir / f"rq2_da_all{suffix}.png", dpi=200)          # closes the figure
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
     p.add_argument("--axes", default="multi-axis", choices=["multi-axis", "mono-axis"],
-                   help="the pair set (rule 15); mono-axis writes the `_one_axis` twins")
+                   help="the pair set (rule 15); mono-axis writes the `_mono_axis` twins")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     for variant in RQ2_VARIANTS:

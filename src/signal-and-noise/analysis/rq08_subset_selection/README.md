@@ -64,7 +64,7 @@ macro-average):
   best − null_p95` is the part of the gain that is not selection.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
 ## Results
@@ -133,8 +133,9 @@ twins, so its subset gains are a replication of the lever, never rows of the
 ladder's table. The per-item (Option D) pass under `per_sample/` is
 36-sweep-only as well: it needs the per-sample files that live on the
 cluster, and the ladder's per-item store (`build_per_item_store.sbatch`,
-`per_item_ladder.py`; `per_item_snr.csv`, `per_item_summary.csv` above) is
-its successor.
+`per_item_ladder.py`) is its successor. That store is cluster-only too, so
+`per_item_snr.csv` and `per_item_summary.csv` exist only where it was built;
+off the cluster the driver's step writes nothing.
 
 ## External model-set tier (`all/external`, 36-sweep)
 

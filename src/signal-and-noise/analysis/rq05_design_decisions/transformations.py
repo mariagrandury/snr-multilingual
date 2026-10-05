@@ -5,12 +5,12 @@ compared. analyze.py reads each intervention on its own items; pooled over
 different task mixes those numbers are not comparable (a pair whose 1.7B has
 no reformulated evals yet pools only the predictable families).
 
-    transformation_da.csv   per transformation, pair (the two cells' L / level), proxy size and population:
+    transformation_da_size_mono_axis.csv   per transformation, pair (the two cells' L / level), proxy size and population:
                             DA on the pair's own items the reference decides (`decision_acc_own`, `n_own`)
                             and on the items every transformation decides somewhere (`decision_acc_shared`,
                             `n_shared`); benchmarks are gated by rq00's above-random mask at the proxy and
                             at the reference; `mean_abs_delta_ref` is the reference's effect on the own items
-    transformation_da.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
+    transformation_da_size_mono_axis.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
                             solid benchmarks, dashed per-language BPB (all 100 validation languages)
 
     python analysis/rq05_design_decisions/transformations.py --pool predictivity_all
@@ -37,8 +37,7 @@ if str(_SRC) not in sys.path:
 
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT  # noqa: E402
+from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
 from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
 
@@ -62,10 +61,6 @@ COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # compare transformations on. `bpb_all` is every per-language BPB row the
 # loader delivers, i.e. the languages the cell trains (RULES.md rule 2).
 POPULATIONS = ("benchmark", "bpb_all")
-# rq00 computes the above-random gate on the grid-seed pool; the all-seeds
-# pool has no mask of its own, so fall back to that one rather than leave the
-# benchmarks ungated (a task at chance in both cells decides nothing).
-GATE_POOL = "predictivity"
 
 
 def _cell(size: str, c: tuple) -> str:
@@ -170,7 +165,7 @@ def plot(sm: pd.DataFrame, out_dir: Path) -> None:
           Line2D([], [], color=S.INK, ls="--", marker="o", ms=4, label="per-language BPB")]
     ax.legend(handles=h, frameon=False, loc="lower right", fontsize=6.8)
     ax.grid(color=S.GRID, lw=.6); ax.set_axisbelow(True); S.clean(ax)
-    S.save_figure(fig, out_dir, "transformation_da")
+    S.save_figure(fig, out_dir, "transformation_da_size_mono_axis")
 
 
 def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
@@ -180,7 +175,7 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
     blocks = ["## Transformations on one item set",
               f"Mean decision accuracy over each transformation's pairs, on the items every transformation "
               f"decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); "
-              f"`transformation_da.csv` has every pair. Regenerate with "
+              f"`transformation_da_size_mono_axis.csv` has every pair. Regenerate with "
               f"`python analysis/rq05_design_decisions/transformations.py --pool {pool}`."]
     for pop, title in (("benchmark", "benchmarks"), ("bpb_all", "per-language BPB (trained languages)")):
         g = sm[sm["population"] == pop]
@@ -195,23 +190,20 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
                    md_table(["transformation", "pairs (with data)", "items"] + cols,
                             [[lab, f"{int(pairs[lab])} ({int(withdata[lab])})", int(items[lab])]
                              + [fmt(grid.loc[lab, c]) for c in cols] for lab in grid.index])]
-    blocks.append(f"![Transformations]({rel}/transformation_da.png)")
+    blocks.append(f"![Transformations]({rel}/transformation_da_size_mono_axis.png)")
     replace_block(OUT_ROOT / "README.md", "transformations", "\n\n".join(blocks), f"transformations.py --pool {pool}")
 
 
 def main(pool: str) -> None:
     out_dir = OUT_ROOT / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
-    mask = load_mask(pool)
-    if mask is None:
-        mask = load_mask(GATE_POOL)
-    da = transformation_da(ladder_frame(pool), mask)
-    da.to_csv(out_dir / "transformation_da.csv", index=False)
+    da = transformation_da(ladder_frame(pool), gate_mask(pool))
+    da.to_csv(out_dir / "transformation_da_size_mono_axis.csv", index=False)
     sm = summary(da)
     print(sm[sm["population"] == "benchmark"].pivot_table(index="label", columns="proxy_size", values="decision_acc_shared").round(2).to_string())
     plot(sm, out_dir)
     generate_readme(pool, out_dir, sm)
-    print(f"Wrote → {out_dir / 'transformation_da.csv'} ({len(da)} rows)")
+    print(f"Wrote → {out_dir / 'transformation_da_size_mono_axis.csv'} ({len(da)} rows)")
 
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@
 > [`documents/paper/sections/04_analysis.tex`](../../../../documents/paper/sections/04_analysis.tex)):
 > its signal or noise part alone, the proxy's early-checkpoint agreement, how
 > well its scores fit a scaling trend (rq01), its margin above chance (rq00).
+> Finally, ~210 statistics from the literature and the AllenAI signal × noise grid (`catalogue.py`, `search.py`,
+> [`literature.md`](literature.md)), per language, tier and benchmark.
 
 <!-- BEGIN auto:highlight (snr_definition_postprocess.py --pool predictivity) -->
 ## Highlighted result
@@ -45,7 +47,7 @@ seed, while English and the BPB tasks cover all four.
 - **SNR per (task, size bucket)** is rq03's table (`snr_variants_per_task.csv`:
   22 variants, gated cells NaN, coverage per variant recorded there).
 - **Decision accuracy** is joined from rq02 (`decision_acc_size_*`,
-  `decision_acc_ckpt_*`; pair counts in `da_n_pairs_per_task.csv`).
+  `decision_acc_ckpt_*`; pair counts in `da_all_n_pairs_per_task_both_axes.csv`).
 - **Ranking.** Per language, Pearson r of log₁₀(SNR) against DA over the
   (task, bucket) cells; the global variant is the highest mean r over
   languages and over both DA kinds (`top_variants_overall.csv`), and the
@@ -56,7 +58,7 @@ seed, while English and the BPB tasks cover all four.
   the languages that have a best variant on both splits.
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
@@ -237,11 +239,12 @@ FineTasks selects tasks with four statistics computed on single-seed runs at one
 
 | size | tasks | monotone | SNR > 20 | non-random | all three | our gate | DA-size pass vs fail | ρ with DA-size |
 |---|---|---|---|---|---|---|---|---|
-| 175M | 168 | 38% | 56% | 45% | 23% | 39% | 0.51 [38] vs 0.45 [130] | +0.08 / +0.18 / +0.02 / +0.09 |
-| 350M | 685 | 36% | 63% | 49% | 29% | 40% | 0.53 [202] vs 0.45 [483] | +0.23 / +0.29 / +0.22 / +0.08 |
-| 600M | 685 | 44% | 62% | 53% | 37% | 45% | 0.53 [251] vs 0.46 [434] | +0.18 / +0.27 / +0.19 / +0.09 |
-| 1B | 685 | 50% | 62% | 57% | 42% | 50% | 0.53 [291] vs 0.45 [394] | +0.33 / +0.37 / +0.22 / +0.16 |
-| 1.7B | 685 | 54% | 62% | 62% | 47% | 55% | — | +nan / +nan / +nan / +nan |
+| 90M | 685 | 20% | 63% | 44% | 17% | 36% | 0.54 [116] vs 0.48 [569] | +0.15 / +0.20 / +0.06 / +0.18 |
+| 175M | 685 | 29% | 62% | 46% | 23% | 39% | 0.53 [156] vs 0.48 [529] | +0.14 / +0.25 / +0.13 / +0.04 |
+| 350M | 685 | 36% | 63% | 49% | 29% | 44% | 0.53 [202] vs 0.45 [483] | +0.23 / +0.29 / +0.22 / +0.08 |
+| 600M | 685 | 44% | 62% | 53% | 37% | 49% | 0.53 [251] vs 0.46 [434] | +0.18 / +0.27 / +0.19 / +0.09 |
+| 1B | 685 | 50% | 62% | 57% | 42% | 53% | 0.53 [291] vs 0.45 [394] | +0.33 / +0.37 / +0.22 / +0.16 |
+| 1.7B | 685 | 54% | 62% | 62% | 47% | 58% | — | +nan / +nan / +nan / +nan |
 
 ![FineTasks criteria](pretraining/predictivity/finetasks_criteria.png)
 
@@ -272,33 +275,35 @@ r, Spearman ρ and the cell count in each corner. Pooled ranking in
 
 - A selection rule that never sees a larger model recovers about a third of
   the chance-to-reference gap: the composite (monotonicity ≥ 0.5, cross-run
-  SNR > 20, best margin > 3 std) passes 13 % of tasks at 175M and 38 % at 1B,
-  close to our gate's 31 % and 49 %, and the passers read DA-size 0.52–0.54
-  at every proxy against 0.45–0.47 for the tasks that fail. Their SNR
-  criterion passes about 60 % of tasks at every size and does not
-  discriminate; monotonicity is the size-sensitive one.
+  SNR > 20, best margin > 3 std) passes 17 % of tasks at 90M, 23 % at 175M
+  and 43 % at 1B, below our gate's 36 %, 39 % and 53 %, and the passers read
+  DA-size 0.53–0.54 at every proxy against 0.45–0.48 for the tasks that
+  fail. Their SNR criterion passes 62–63 % of tasks at every size and does
+  not discriminate; monotonicity is the size-sensitive one.
 - As surrogates of DA-size the four statistics correlate at Spearman
-  0.10–0.39 across tasks, the same range as our 22 SNR definitions (best
-  `dispersion_shifted`, 0.28–0.38) and as rq01's ρ of score with size
-  (0.15–0.38).
-- Pooled over the four proxies (`finetasks_surrogates_rank.csv`) the best
-  reference-free statistics are the task's item count (0.32), FineTasks' SNR
-  (0.31), the proxy's own median DA-ckpt (0.28), `dispersion_shifted` (0.28)
-  and the DA between the two rungs below the proxy (0.27); the gate reads
-  0.15 and the ordering statistics 0.04–0.12; the cross-variant std of the
+  0.04–0.37 across tasks per proxy, the same range as our 22 SNR
+  definitions (`dispersion_shifted` 0.19–0.35, the best at 1B) and as rq01's
+  ρ of score with size (0.19–0.33).
+- Pooled over the five proxies (`finetasks_surrogates_rank.csv`) the best
+  reference-free statistics are the task's item count (0.29), FineTasks' SNR
+  (0.28), the proxy's own median DA-ckpt (0.28), `dispersion_shifted` (0.25)
+  and the DA between the two rungs below the proxy (0.23); the gate reads
+  0.13 and the ordering statistics 0.03–0.10; the cross-variant std of the
   final score, the relative noise and the relative signal correlate
-  negatively (−0.27, −0.28, −0.23), so more spread across variants at the
+  negatively (−0.25, −0.25, −0.20), so more spread across variants at the
   proxy goes with less agreement with the reference — against the
-  framework's premise; rq02's own ρ, which needs the reference, reads 0.76.
-  No reference-free statistic exceeds 0.33.
-- rq02's two DA cuts move in opposite directions with size (panel d): the
-  DA-size cut passes 12 % of tasks at 175M and 16 % at 1B, the DA-ckpt cut
-  46 % at 175M falling to 19 % at 1.7B — the within-run persistence of
+  framework's premise. The statistics that read the reference are higher:
+  rq02's own ρ 0.75 and rq01's trajectory R² over every size 0.35. No
+  reference-free statistic exceeds 0.30.
+- rq02's two DA cuts (panel d) barely move with size: the DA-size cut passes
+  13–15 % of tasks at every proxy, the DA-ckpt cut 17–20 % except at 350M
+  (28 %). The DA-ckpt cut passing more tasks than the DA-size one at every
+  size is the within-run persistence of
   [rq02 figure 7](../rq02_decision_accuracy/README.md#7-seed-uncertainty-and-the-da-ckpt-null)
   in another guise.
-- Of their 96 picks, 45 exist in our registry; 49 % of the originals pass
-  their own criteria on our ladder against 100 % of the cloze twins, with the
-  same mean DA-size (0.56 against 0.57). The format choice they make
+- Of their 96 picks, 55 exist in our registry (35 with results on the
+  ladder); at 1B 49 % of the originals pass their own criteria on our ladder
+  against 100 % of the 13 cloze twins, with the same mean DA-size (0.53). The format choice they make
   implicitly (cloze for selection) is the one decision that moves the
   population; the thresholds move it little.
 
@@ -336,7 +341,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![Surrogates per language](pretraining/predictivity/surrogates_by_language.png)
 
-**Per language count** (rq02's `da_by_L_per_task.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
+**Per language count** (rq02's `da_all_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always); a level counts when it holds at every larger level with a value; DA ≥ 0.75, an SNR definition tracks DA at ρ ≥ 0.3). Rule 9: L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to 1.7B); this pool excludes ZH/ES and L2 has fewer than 3 pairs against 1.7B, so L2 is blank in the DA-size panel; a 1B reference is not implemented:
 
 ![Smallest safe level per measurement and L](pretraining/predictivity/min_level_by_L.png)
 
@@ -346,7 +351,7 @@ The rankings above, without the aggregation (`predictivity` pool); a surrogate s
 
 ![the same as lines](pretraining/predictivity/snr_variant_min_size_by_L_lines.png)
 
-**Version B — every pair pooled, the size axis instead of the language count** (`da_pooled_per_task.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
+**Version B — every pair pooled, the size axis instead of the language count** (`da_all_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at 1.7B; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):
 
 ![Earliest checkpoint per proxy size and DA at 1C](pretraining/predictivity/min_level_by_L_b.png)
 
@@ -390,6 +395,194 @@ smaller model's annealed final, which explains the zigzags near 10⁻² — one
 line per proxy size with the annealed points marked, plus the compute
 frontier (the best DA reachable at or below each compute), is the version to
 draw for the paper.
+
+## Surrogates from the literature — summary
+
+`catalogue.py` computes 211 statistics read on the proxy alone, save
+`pseudo_ref_da`, which reads the 1B rung below the reference (labelled so): the literature catalogue
+([`literature.md`](literature.md); every definition, its source and how our port
+differs from it are in the paper's appendix,
+`documents/paper/sections/app_snr_new.tex`), every AllenAI signal over every
+noise (22 × 6, the k-fold benchmark noise included), and each signal and noise
+alone. `search.py` scores them against 30 truths from rq02 (DA / τ-b / ρ for
+DA-size, DA-goal and DA-ckpt, both pair sets, every pair or the pairs sharing
+one L) on all the data: Spearman over one point per (benchmark, language)
+cluster, permutation p below 30 clusters, Benjamini–Hochberg over every
+configuration, and a split-half confirmation as an extra. The numbers are in
+the generated block below; what they say:
+
+- **The ceiling.** A truth re-read at 90 % keeps ρ = 0.66 (DA-size), 0.81
+  (DA-goal) and 0.84 (DA-ckpt) with itself on the benchmarks.
+- **No surrogate reaches it.** Over all benchmarks (239–245 clusters) the best
+  are rank-stability statistics of the proxy's own run: late consecutive-step
+  Kendall τ for DA-ckpt (0.63), sign persistence for DA-goal (0.59) and the
+  proxy's mean DA-ckpt for DA-size (0.57) — 73–86 % of the ceiling. (DA-ckpt
+  is read before the noise window: at 80 % and 90 % it shares its checkpoints
+  with the window statistics, which made window sign consistency look like
+  0.73.)
+- **SNR is weak here.** AllenAI's `rel_std` / checkpoint noise reads 0.25 on
+  DA-size (0.23 for relative dispersion, the paper's headline, against their
+  R = 0.79). The k-fold benchmark noise beats the checkpoint noise for every
+  signal (best ratios 0.48 / 0.51 / 0.60 on DA-size / goal / ckpt), but it is
+  mostly the item count: `n_items` alone reads 0.51 on DA-size, and the best
+  DA-size ratio, `dispersion_shifted / kfold_abs`, is the inverse noise
+  (that signal is constant).
+- **Dispersion alone points the wrong way.** Range, standard deviation and
+  pairwise distance across variants correlate negatively with every truth
+  (−0.16 to −0.31).
+- **Particular cases** reach 0.93–1.00 on single languages or benchmarks
+  (10–19 clusters) and on rq02's reliable subsets; the latter are selected on
+  the truth, so their ρ is conditional on it.
+- **Language count.** Over pairs of variants sharing L (L8, L15, L30) mean
+  DA-size is 0.51 / 0.48 / 0.48: no trend, on a coarse test.
+- **Split-half check.** 627 of 1,861 configurations chosen on one half hold on
+  the other at q < 0.05.
+
+<!-- BEGIN auto:catalogue (search.py --pool predictivity) -->
+## A catalogue of surrogates beyond SNR
+
+Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surrogates/catalogue.py --pool predictivity` then `search.py --pool predictivity`. Surrogates are read on the proxy alone (rule 11), except `pseudo_ref_da`, which reads the 1B rung; the truths are rq02's DA (DA-size; DA-goal and DA-ckpt at every early checkpoint of the proxy; both pair sets; every pair or the pairs sharing L) and Kendall τ-b / Spearman ρ on the same rankings, over cells above chance (rule 1). ρ is a Spearman over one point per (benchmark, language) cluster, pooled over proxies and checkpoints; populations differ per configuration (rule 13) and n is in the CSVs. Definitions and sources: [`literature.md`](literature.md); method: `search.py`'s docstring.
+
+**Main analysis (all the data).** 409,231 configurations (truths × subsets × surrogates, the threshold filters included); 240,170 have a p-value (≥ 10 units); **28,245 hold at BH q < 0.05**. A best-of-many ρ is optimistic even when it is significant; the extra below measures by how much.
+
+**The ceiling** — each truth against itself re-read at 90 % (benchmarks):
+
+| truth | ρ | ρ over cells | units |
+|---|---|---|---|
+| DA-size da (multi-axis) | 0.66 | 0.66 | 239 |
+| DA-goal da (multi-axis) | 0.81 | 0.66 | 239 |
+| DA-ckpt da (multi-axis) | 0.84 | 0.72 | 245 |
+| DA-size tau_b (multi-axis) | 0.60 | 0.64 | 237 |
+| DA-size rho (multi-axis) | 0.63 | 0.66 | 237 |
+| DA-goal tau_b (multi-axis) | 0.75 | 0.63 | 237 |
+| DA-goal rho (multi-axis) | 0.75 | 0.65 | 237 |
+| DA-ckpt tau_b (multi-axis) | 0.81 | 0.69 | 245 |
+| DA-ckpt rho (multi-axis) | 0.83 | 0.71 | 245 |
+
+**Strongest surrogate per truth**, every benchmark:
+
+| truth | surrogate | ρ | q | ρ over cells | ρ within stratum | units |
+|---|---|---|---|---|---|---|
+| DA-ckpt da (mono-axis, pairs within L15) | `emerged_share` | 0.44 | 7.4e-03 | 0.07 | 0.07 | 56 |
+| DA-ckpt da (mono-axis, pairs within L30) | `sign_consistency_window` | 0.45 | 1.1e-09 | 0.15 | 0.15 | 212 |
+| DA-ckpt da (mono-axis, pairs within L8) | `snr__aad__kfold_abs` | 0.45 | 6.5e-03 | 0.13 | 0.14 | 54 |
+| DA-ckpt da (mono-axis) | `consecutive_kendall_late` | 0.60 | 2.8e-21 | 0.26 | 0.25 | 245 |
+| DA-ckpt da (multi-axis, pairs within L15) | `snr__gini__kfold_rel` | 0.45 | 4.5e-03 | 0.14 | 0.13 | 58 |
+| DA-ckpt da (multi-axis, pairs within L30) | `consecutive_kendall_late` | 0.50 | 1.5e-12 | 0.17 | 0.16 | 212 |
+| DA-ckpt da (multi-axis, pairs within L8) | `sign_consistency_window` | 0.58 | 1.3e-04 | 0.18 | 0.17 | 54 |
+| DA-ckpt da (multi-axis) | `gain_over_noise` | 0.63 | 4.2e-24 | 0.25 | 0.27 | 245 |
+| DA-ckpt rho (multi-axis) | `consecutive_kendall` | 0.63 | 6.2e-24 | 0.31 | 0.32 | 245 |
+| DA-ckpt tau_b (multi-axis) | `consecutive_kendall` | 0.62 | 2.3e-23 | 0.30 | 0.31 | 245 |
+| DA-goal da (mono-axis, pairs within L15) | `consecutive_kendall` | -0.30 | 1.2e-01 | -0.06 | -0.05 | 55 |
+| DA-goal da (mono-axis, pairs within L30) | `scale_gain_over_noise` | 0.35 | 6.7e-06 | 0.09 | 0.09 | 206 |
+| DA-goal da (mono-axis, pairs within L8) | `snr__rel_mpd__kfold_abs` | 0.40 | 2.8e-02 | 0.08 | 0.07 | 51 |
+| DA-goal da (mono-axis) | `autocorr` | 0.52 | 2.7e-15 | 0.20 | 0.21 | 239 |
+| DA-goal da (multi-axis, pairs within L15) | `nonrandom` | -0.24 | 2.4e-01 | -0.08 | -0.09 | 53 |
+| DA-goal da (multi-axis, pairs within L30) | `scale_gain_over_noise` | 0.39 | 3.3e-07 | 0.10 | 0.10 | 206 |
+| DA-goal da (multi-axis, pairs within L8) | `snr__rel_mpd__kfold_abs` | 0.38 | 4.1e-02 | 0.08 | 0.07 | 51 |
+| DA-goal da (multi-axis) | `sign_persistence` | 0.59 | 3.6e-20 | 0.24 | 0.25 | 239 |
+| DA-goal rho (multi-axis) | `bpb_rank_agreement` | 0.53 | 8.1e-16 | 0.20 | 0.20 | 238 |
+| DA-goal tau_b (multi-axis) | `bpb_rank_agreement` | 0.53 | 7.7e-16 | 0.20 | 0.19 | 238 |
+| DA-size da (mono-axis, pairs within L15) | `snr__dispersion__projection_depth` | -0.26 | 2.0e-01 | -0.03 | -0.02 | 55 |
+| DA-size da (mono-axis, pairs within L30) | `signal__projection` | 0.27 | 1.4e-03 | 0.09 | 0.09 | 206 |
+| DA-size da (mono-axis, pairs within L8) | `snr__rel_dispersion__kfold_abs` | 0.33 | 9.2e-02 | 0.10 | 0.09 | 51 |
+| DA-size da (mono-axis) | `n_items` | 0.45 | 6.7e-11 | 0.27 | 0.27 | 234 |
+| DA-size da (multi-axis, pairs within L15) | `z_above_chance` | -0.28 | 1.6e-01 | -0.09 | -0.10 | 53 |
+| DA-size da (multi-axis, pairs within L30) | `snr__projection__kfold_abs` | 0.30 | 2.4e-04 | 0.16 | 0.15 | 205 |
+| DA-size da (multi-axis, pairs within L8) | `pseudo_ref_da` | 0.32 | 1.1e-01 | 0.21 | 0.21 | 50 |
+| DA-size da (multi-axis) | `da_ckpt_mean` | 0.57 | 1.9e-18 | 0.29 | 0.29 | 239 |
+| DA-size rho (multi-axis) | `sign_persistence` | 0.48 | 6.3e-13 | 0.22 | 0.22 | 238 |
+| DA-size tau_b (multi-axis) | `da_ckpt_mean` | 0.48 | 1.1e-12 | 0.21 | 0.22 | 238 |
+
+**The AllenAI grid** (22 signals × 6 noises, DA, every pair, benchmarks): best combination against AllenAI's own `rel_std` / checkpoint noise:
+
+| truth | best signal / noise | ρ | rel_std / ckpt_rel ρ |
+|---|---|---|---|
+| DA-ckpt | `dispersion_shifted / kfold_rel` | 0.60 | 0.32 |
+| DA-goal | `tukey / kfold_rel` | 0.51 | 0.26 |
+| DA-size | `dispersion_shifted / kfold_abs` | 0.48 | 0.25 |
+
+**Particular cases** — the strongest significant configurations outside "every benchmark", two per (truth, subset type); `reliable (on the truth)` subsets are selected on the truth itself, so their ρ is conditional on it; all of them in `surrogate_correlations.csv` (`q` column):
+
+| truth | subset | surrogate | ρ | q | ρ over cells | units |
+|---|---|---|---|---|---|---|
+| DA-ckpt da (multi-axis) | language: fr | `gain_over_noise` | 1.00 | 8.2e-04 | 0.34 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `snr__dispersion__ckpt_abs` | 0.99 | 8.2e-04 | 0.53 | 11 |
+| DA-ckpt tau_b (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.99 | 8.2e-04 | 0.53 | 11 |
+| DA-ckpt rho (multi-axis) | language: ru | `snr__rel_dispersion__ckpt_rel` | 0.99 | 8.2e-04 | 0.53 | 11 |
+| DA-ckpt rho (multi-axis) | language: ru | `snr__dispersion__ckpt_abs` | 0.99 | 8.2e-04 | 0.53 | 11 |
+| DA-ckpt da (multi-axis) | language: ru | `prev_rung_da` | 0.99 | 1.4e-03 | 0.64 | 10 |
+| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `sign_persistence` | 0.97 | 8.2e-04 | 0.48 | 11 |
+| DA-goal rho (multi-axis) | reliable (on the truth): 75_size | `da_ckpt_mean` | 0.97 | 8.2e-04 | 0.48 | 11 |
+| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.97 | 8.2e-04 | -0.38 | 11 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `crossings` | -0.97 | 8.2e-04 | -0.61 | 11 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.96 | 1.4e-03 | 0.58 | 11 |
+| DA-ckpt da (multi-axis) | reliable (on the truth): 75_size | `consecutive_kendall` | 0.96 | 1.4e-03 | 0.61 | 11 |
+| DA-goal da (multi-axis) | reliable (on the truth): 75_size | `sign_persistence` | 0.96 | 1.4e-03 | 0.47 | 11 |
+| DA-ckpt rho (multi-axis) | reliable (on the truth): 75_size | `gain_over_noise` | 0.96 | 8.2e-04 | 0.39 | 11 |
+| DA-goal da (multi-axis) | language: ru | `bpb_rank_agreement` | 0.96 | 2.6e-03 | 0.62 | 10 |
+| DA-ckpt da (mono-axis) | benchmark: hellaswag | `consecutive_kendall` | 0.96 | 8.2e-04 | 0.53 | 19 |
+| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `sign_persistence` | 0.95 | 1.4e-03 | 0.48 | 11 |
+| DA-goal tau_b (multi-axis) | reliable (on the truth): 75_size | `da_ckpt_mean` | 0.95 | 1.4e-03 | 0.48 | 11 |
+| DA-size da (multi-axis) | language: en | `bpb_rank_agreement` | 0.95 | 8.2e-04 | 0.57 | 16 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_either | `crossings` | -0.95 | 8.2e-04 | -0.54 | 18 |
+| DA-goal da (multi-axis) | language: es | `autocorr` | 0.95 | 8.2e-04 | 0.35 | 14 |
+| DA-goal tau_b (multi-axis) | language: ru | `bpb_rank_agreement` | 0.95 | 3.6e-03 | 0.58 | 10 |
+| DA-ckpt tau_b (multi-axis) | reliable (on the truth): 75_either | `consecutive_kendall` | 0.95 | 8.2e-04 | 0.54 | 18 |
+| DA-size da (multi-axis) | language: en | `pseudo_ref_da` | 0.95 | 8.2e-04 | 0.51 | 16 |
+| DA-ckpt da (multi-axis) | benchmark: hellaswag | `consecutive_kendall` | 0.95 | 8.2e-04 | 0.56 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `scale_gain_over_noise` | 0.94 | 8.2e-04 | 0.18 | 19 |
+| DA-goal rho (multi-axis) | benchmark: hellaswag | `da_ckpt_mean` | 0.94 | 8.2e-04 | 0.47 | 19 |
+| DA-goal da (multi-axis) | benchmark: hellaswag | `pseudo_ref_da` | 0.94 | 8.2e-04 | 0.46 | 18 |
+| DA-goal tau_b (multi-axis) | language: ru | `bpb_corr_training` | 0.93 | 5.5e-03 | 0.59 | 10 |
+| DA-goal rho (multi-axis) | language: ru | `bpb_rank_agreement` | 0.93 | 5.5e-03 | 0.58 | 10 |
+
+**Per language count** (pairs of variants sharing L; benchmarks):
+
+| truth | L | mean DA | sd | tasks | best surrogate | ρ |
+|---|---|---|---|---|---|---|
+| DA-ckpt | 8 | 0.54 | 0.26 | 86 | `sign_consistency_window` | 0.58 |
+| DA-ckpt | 15 | 0.55 | 0.25 | 91 | `snr__gini__kfold_rel` | 0.45 |
+| DA-ckpt | 30 | 0.54 | 0.25 | 339 | `consecutive_kendall_late` | 0.50 |
+| DA-goal | 8 | 0.49 | 0.24 | 76 | `snr__rel_mpd__kfold_abs` | 0.38 |
+| DA-goal | 15 | 0.48 | 0.25 | 81 | `nonrandom` | -0.24 |
+| DA-goal | 30 | 0.47 | 0.25 | 319 | `scale_gain_over_noise` | 0.39 |
+| DA-size | 8 | 0.51 | 0.25 | 76 | `pseudo_ref_da` | 0.32 |
+| DA-size | 15 | 0.48 | 0.25 | 81 | `z_above_chance` | -0.28 |
+| DA-size | 30 | 0.48 | 0.25 | 319 | `snr__projection__kfold_abs` | 0.30 |
+
+**Extra: held-out confirmation.** The (benchmark, language) clusters split in two halves; 1861 configurations ranked best on one half (within-stratum ρ) were tested once on the other (one-sided cluster permutation test, BH): **627 hold at q < 0.05**. The strongest:
+
+| truth | subset | surrogate | ρ disc. | ρ val. [90 %] | q | tasks val. |
+|---|---|---|---|---|---|---|
+| DA-size rho (multi-axis) | filter: item_total_corr ≥ q75 & monotonicity ≥ q75 | `bpb_corr_training` | 0.55 | 0.66 [0.45, 0.80] | 1.2e-02 | 50 |
+| DA-size tau_b (multi-axis) | filter: item_total_corr ≥ q75 & monotonicity ≥ q75 | `bpb_corr_training` | 0.53 | 0.64 [0.42, 0.80] | 2.3e-02 | 50 |
+| DA-size rho (multi-axis) | filter: item_total_corr ≥ q75 & autocorr ≥ q75 | `bpb_corr_training` | 0.56 | 0.64 [0.40, 0.80] | 6.1e-03 | 46 |
+| DA-size tau_b (multi-axis) | filter: item_total_corr ≥ q75 & autocorr ≥ q75 | `bpb_corr_training` | 0.54 | 0.63 [0.41, 0.78] | 2.9e-02 | 46 |
+| DA-size da (mono-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.66 | 0.61 [0.32, 0.82] | 2.9e-02 | 12 |
+| DA-size rho (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.55 | 0.61 [0.27, 0.81] | 8.1e-03 | 13 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__quartile_deviation__projection_depth` | 0.67 | 0.60 [0.41, 0.70] | 3.6e-03 | 17 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__tukey_depth` | 0.63 | 0.59 [0.40, 0.70] | 3.6e-03 | 17 |
+| DA-size da (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.53 | 0.59 [0.22, 0.80] | 3.6e-03 | 13 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__projection_depth` | 0.63 | 0.59 [0.42, 0.71] | 3.6e-03 | 17 |
+| DA-size rho (multi-axis) | filter: item_total_corr ≥ q75 & bpb_corr_training ≥ q75 | `monotonicity` | 0.53 | 0.59 [0.37, 0.74] | 3.5e-02 | 52 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__quartile_deviation__tukey_depth` | 0.58 | 0.58 [0.37, 0.71] | 3.6e-03 | 17 |
+| DA-goal rho (multi-axis) | all: bpb | `snr__mad__ckpt_abs` | 0.67 | 0.57 [0.40, 0.70] | 3.6e-03 | 17 |
+| DA-size tau_b (multi-axis) | reliable (on the truth): 66_both | `pseudo_ref_da` | 0.54 | 0.57 [0.20, 0.78] | 3.6e-03 | 13 |
+| DA-goal tau_b (multi-axis) | all: bpb | `snr__quartile_deviation__projection_depth` | 0.64 | 0.57 [0.38, 0.67] | 3.6e-03 | 17 |
+
+![surrogates_significant](pretraining/predictivity/surrogates_significant.png)
+
+![surrogates_snr_grid](pretraining/predictivity/surrogates_snr_grid.png)
+
+![surrogates_catalogue](pretraining/predictivity/surrogates_catalogue.png)
+
+![surrogates_by_L](pretraining/predictivity/surrogates_by_L.png)
+
+![surrogates_catalogue_by_language](pretraining/predictivity/surrogates_catalogue_by_language.png)
+
+![surrogates_validated](pretraining/predictivity/surrogates_validated.png)
+<!-- END auto:catalogue -->
 
 ## TODO
 
@@ -582,10 +775,16 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
   anchor (`snr_definition_postprocess.py`).
 - `…/top_variants_overall.png`, `best_variant_per_language.png`,
   `best_variant_family_per_language.png`, `top_benchmarks_per_language.png`,
-  `variant_correlation_matrix.png`, `da_size_vs_da_ckpt.png`,
+  `variant_correlation_matrix.png`, `da_size_vs_da_ckpt_multi_axes.png`,
   `{da_size,da_ckpt}/…` — supporting figures.
 - `…/rq3_surrogates.csv`, `rq3_surrogates.png/.pdf`, `facts.json` — the
   statistics beyond SNR (`analyze.py`; the paper's RQ3 figure).
+- `…/surrogate_values.csv`, `surrogate_targets.csv`, `surrogate_definitions.csv` — the
+  surrogates per (task, proxy, pair set) and the truths, long (`catalogue.py`; sources in
+  `literature.md`); `surrogate_correlations.csv`, `surrogate_filters.csv`,
+  `surrogate_validated.csv`, `da_all_retest_multi_axes.csv` and
+  `surrogates_{validated,snr_grid,catalogue,by_L,catalogue_by_language}.png` — the
+  validated search (`search.py`).
 - Inputs: rq03's `snr_variants_per_task.csv` and holdout
   `headline_metrics.csv`, rq00's `above_random_scores.csv`, rq01's `rq1_fits.csv`.
 - `…/finetasks_criteria.{csv,png}`, `finetasks_surrogates_scatter.{csv,png}`,

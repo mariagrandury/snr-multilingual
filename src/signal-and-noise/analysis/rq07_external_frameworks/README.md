@@ -7,9 +7,10 @@
 > both share?
 
 > ⚠️ **Only a handful of English benchmarks overlap.** On the ladder's auto
-> task set they are `arc_easy`, `arc_challenge`, `hellaswag` and MMLU (via the
-> Global-MMLU English split); the 36-sweep also shared `csqa`, `openbookqa`
-> and `piqa`. With so small a universe, *set*-overlap metrics (top-K Jaccard)
+> task set they are `arc_easy`, `arc_challenge`, `hellaswag`, `csqa` (via
+> `commonsense_qa`), `openbookqa` and MMLU (via the Global-MMLU English split),
+> of which the above-random gate keeps `arc_easy`, `arc_challenge` and
+> `hellaswag`; the 36-sweep also shared `piqa`. With so small a universe, *set*-overlap metrics (top-K Jaccard)
 > are uninformative — any K ≥ N spans the whole universe and is trivially 1.0.
 > The real evidence is the **correlation of SNR over the shared tasks**
 > (values: Pearson r; ranking: Spearman ρ), not the overlap.
@@ -92,7 +93,7 @@ pools):
 | **relative-spread** | `rel_std`, `rel_mpd`, `rel_mpsd`, `iqr`, `rel_dispersion` | **No** — robust within-corpus, weak cross-corpus (includes AllenAI's default `rel_std`) |
 | **depth** | `tukey`, `projection` | **No** — uncorrelated with DA in the first place |
 
-**Enlarging the shared universe.** The 7-task overlap is the binding constraint;
+**Enlarging the shared universe.** The 6-task overlap (3 after the gate; 7 on the 36-sweep) is the binding constraint;
 AllenAI's `core` split has ~178 tasks Apertus does not yet evaluate. Highest-yield
 additions, by category — adding them to the Apertus suite directly widens the
 comparison surface:
@@ -123,7 +124,7 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-09-23 06:16**.
+**2026-09-30 23:54**.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
@@ -151,7 +152,7 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 
 ## TODO
 
-- [ ] Add `mmlu_pro` / BBH to widen the 7-task shared universe.
+- [ ] Add `mmlu_pro` / BBH to widen the 6-task shared universe.
 - [ ] Bootstrap CIs on the cross-corpus Pearson r and Spearman ρ.
 - [ ] Re-run the original `mmlu` lm-eval task on Apertus and drop the MMLU alias
       for a like-for-like comparison.

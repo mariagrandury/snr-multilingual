@@ -54,6 +54,9 @@ import pandas as pd
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from analysis.paths import SUBSET_SELECTION  # noqa: E402
 from analysis.utils import benchmark_family, ladder_frame, on_noise_grid, on_shared_grid  # noqa: E402

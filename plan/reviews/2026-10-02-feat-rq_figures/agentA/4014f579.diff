@@ -1,0 +1,25 @@
+commit 4014f579a20fec51fa5fd60d4c1908b1a23523ce
+Author: María Grandury <mariagrandury@gmail.com>
+Date:   Fri Sep 25 19:22:31 2026 +0200
+
+    ladder_report: the benchmark check reads the rung's current batch only
+    
+    check_benchmarks() globbed every eval dir on disk, so the 2026-09-25 19:16
+    run flagged the retired batch-504 90M cells ("only 23/74 benchmarks
+    improved between iter 426 and 4260") that the table itself no longer
+    carries. Same CELL_RE + on_grid test as the table.
+
+diff --git a/src/pretrain/ladder_report.py b/src/pretrain/ladder_report.py
+index b82f719f..7aa00446 100644
+--- a/src/pretrain/ladder_report.py
++++ b/src/pretrain/ladder_report.py
+@@ -289,7 +289,8 @@ def check_benchmarks() -> list[str]:
+     cells: dict[str, dict[int, dict]] = {}
+     for d in sorted(EVAL_LOGS.glob("lm-*-iter*")):
+         m = re.match(r"(.+)-iter(\d+)$", d.name)
+-        if m:
++        c = m and CELL_RE.match(m.group(1))
++        if c and on_grid(c):          # the rung's current batch only, as the table itself
+             cells.setdefault(m.group(1), {})[int(m.group(2))] = _scores(d)
+     for cell, iters in sorted(cells.items()):
+         # Only iters that carry harness scores. score_bpb.py writes

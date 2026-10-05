@@ -15,7 +15,7 @@ trains the task's language (the runs the gate counts):
       the bound clears chance and grey where it does not, and the verdict per
       size: k of n runs pass, above random when k/n >= MIN_SHARE;
   (c) what the verdict does downstream: rq02's decision-accuracy cells of
-      this task (`da_per_task.csv`, the multi-axis pairs) — DA-size from
+      this task (`da_all_per_task_both_axes.csv`, the multi-axis pairs) — DA-size from
       each proxy to the reference and DA-ckpt at 90 % of each run — drawn
       grey where the gate blanks them (at chance at the proxy, or at the
       reference for DA-size) and in colour where every RQ reads them.
@@ -142,7 +142,7 @@ def figure(pool: str, task: str, highlight: str | None, out_dir: Path) -> pd.Dat
 
     # (c) the consequence: rq02's cells of this task, grey where the gate blanks them
     stage = load_pools()[pool].get("stage", "pretraining")
-    da = one_axes(pd.read_csv(DECISION_ACCURACY / stage / pool / "da_per_task.csv"))
+    da = one_axes(pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv"))
     da = da[da["task"] == task].iloc[0] if (da["task"] == task).any() else None
     proxies = [s_ for s_ in sizes if s_ != TARGET_SIZE]
     rows = [(f"DA-size\n(proxy final vs\n{TARGET_SIZE} final)", "decision_acc_size_{}", proxies,

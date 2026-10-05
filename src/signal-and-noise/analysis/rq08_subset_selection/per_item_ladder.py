@@ -44,6 +44,9 @@ import pandas as pd
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+_SRC = Path(__file__).resolve().parents[3]
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools, metric_for  # noqa: E402
 from analysis import grids as G  # noqa: E402
@@ -165,6 +168,11 @@ def main(pool: str, store: str) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     out_dir = SUBSET_SELECTION / stage / pool
     out_dir.mkdir(parents=True, exist_ok=True)
+    if not any((STORE / store).glob("*.parquet")):
+        # the store lives on the cluster only: an empty one would overwrite the
+        # committed tables with column-less files
+        print(f"no per-item store at {STORE / store}: nothing written (build_per_item_store.sbatch builds it)")
+        return
     rng = np.random.default_rng(0)
     df = ladder_frame(pool)                                   # rules 2, 6 and 10 applied at load
     df = df[df["kind"] == "benchmark"]

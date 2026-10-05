@@ -1,17 +1,21 @@
 """Multi-axis vs mono-axis pairs: the same three decision accuracies, on the same
 reliable population, with the PAIR SET as the only thing that changes.
 
-Exploratory: this feeds plan/decision_accuracy.md. The production form — an
-`axes` column in `da_per_task.csv` so every rq02 table carries both readings —
-is that plan's recommendation, not this script.
+Both rows are filtered by the MULTI-AXIS reliable tasks, the one stated exception
+to rule 15: filtering each row by its own pair set would change the task
+population together with the pair set.
+
+The production form — the `axes` column of `da_all_per_task_both_axes.csv` (compute_da.py),
+so every rq02 table carries both readings — is in place; this script is the
+side-by-side view of the two on one population (plan/decision_accuracy.md).
 
     multi-axis   every pair of design variants at the grid seed: rq02's convention
                  to date. Two thirds of these pairs move two or three axes at once
                  ("L8-A-deep vs L50-B-shallow"), a comparison nobody makes.
-    mono-axis    the pairs that differ on exactly ONE of L, arch, list, T, lang2.
+    mono-axis    the pairs that differ on exactly ONE of L, arch, list, T, lang2, en.
                  This is the structure upstream had by construction — DataDecide's
                  recipes differ only in the data mix, so every one of its pairs is
-                 a single-axis decision — generalised to a grid with six axes. The
+                 a single-axis decision — generalised to a grid with seven axes. The
                  seed is held at the grid seed in both sets, so a seed pair (two
                  draws of one design, which decide nothing) is in neither.
 
@@ -24,7 +28,7 @@ final — with MIN_PAIRS per cell (rule 5), pooled over decisions:
     DA-ckpt   proxy at a checkpoint vs the SAME size's final
     DA-goal   proxy at a checkpoint vs the reference's final
 
-    rq2_above_66_both_axes.png / .csv   2 x 3: rows = pair set, columns = the three
+    rq2_da_all_above_66_both_mono_vs_multi_axes.png / .csv   2 x 3: rows = pair set, columns = the three
                                         definitions, over the above_66_both cells
 
     python analysis/rq02_decision_accuracy/pair_axes.py --pool predictivity
@@ -184,6 +188,6 @@ if __name__ == "__main__":
     sizes = size_order(fin["size"].unique())
     print({a: len(pl) for a, pl in pairs.items()}, "family pairs")
     out = pooled(cells(df, fin, pairs, sizes), args.pool, set(keep["task"]))
-    out.to_csv(out_dir / f"rq2_{VARIANT}_axes.csv", index=False)
+    out.to_csv(out_dir / f"rq2_da_all_{VARIANT}_mono_vs_multi_axes.csv", index=False)
     print(table(out).to_string(index=False))
-    figure(out, out_dir / f"rq2_{VARIANT}_axes.png", len(keep))
+    figure(out, out_dir / f"rq2_da_all_{VARIANT}_mono_vs_multi_axes.png", len(keep))

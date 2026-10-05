@@ -5,7 +5,7 @@ rq01's ρ is the correlation between MODEL SIZE and a task's score along the
 ladder (the size fit; `scaling_regimes.csv`, `rho_size`, the median over the
 L settings, and `r2_size` its R²). rq02's ρ is the correlation between the
 PROXY'S RANKING of the design variants and the 1.7B ranking on the same task
-(`agreement_per_cell.csv`, `rho`, one value per proxy size; `da` is the
+(`agreement_da_size_per_cell_multi_axes.csv`, `rho`, one value per proxy size; `da` is the
 same agreement as a pair share). The first says the benchmark moves with
 scale, the second that it moves with the design differences the way the
 reference does. This script puts the two side by side per task and reports
@@ -17,7 +17,7 @@ Population: the tasks in both tables — gated at the proxy and at the
 reference (rule 1) with ≥ MIN_PAIRS pairs (rule 5) on the rq02 side, a
 regime (≥ 2 L settings with a size fit) on the rq01 side.
 
-    scaling_vs_ranking.png / .csv   (a) rq01 ρ against rq02 ρ at each proxy size, one point
+    scaling_vs_ranking_da_size_multi_axes.png / .csv   (a) rq01 ρ against rq02 ρ at each proxy size, one point
                                     per task; (b) rq01 R² against rq02 DA-size; the Spearman
                                     across tasks in each corner
     python analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool predictivity
@@ -37,6 +37,9 @@ import pandas as pd
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+_SRC = Path(__file__).resolve().parents[3]   # `evals.` and `pretrain.` live under src/
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
 from analysis import grids as G  # noqa: E402
@@ -52,7 +55,7 @@ mpl.rcParams.update(S.RC)
 def joined(pool: str) -> pd.DataFrame:
     stage = load_pools()[pool].get("stage", "pretraining")
     reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")
-    cells = pd.read_csv(OUT_ROOT / stage / pool / "agreement_per_cell.csv")
+    cells = pd.read_csv(OUT_ROOT / stage / pool / "agreement_da_size_per_cell_multi_axes.csv")
     t = cells[["task", "size", "family", "language", "rho", "da", "n_models"]].merge(
         reg[["task", "rho_size", "r2_size", "r2_trajectory", "regime"]], on="task")
     return t.rename(columns={"rho": "rho_ranking", "da": "da_size"})
@@ -120,7 +123,7 @@ def generate_readme(pool: str, out_dir: Path, sm: pd.DataFrame) -> None:
         f"`python analysis/rq02_decision_accuracy/scaling_vs_ranking.py --pool {pool}`.",
         md_table(["proxy", "tasks", "ρ_size vs ρ_ranking", "R²_size vs DA-size", "R²_traj vs DA-size",
                   "DA-size, predictable both", "DA-size, other regimes"], rows),
-        f"![Scaling against ranking]({stage}/{pool}/scaling_vs_ranking.png)"])
+        f"![Scaling against ranking]({stage}/{pool}/scaling_vs_ranking_da_size_multi_axes.png)"])
     replace_block(OUT_ROOT / "README.md", "scaling-vs-ranking", body, f"scaling_vs_ranking.py --pool {pool}")
 
 
@@ -130,9 +133,9 @@ if __name__ == "__main__":
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     t = joined(args.pool)
-    t.to_csv(out_dir / "scaling_vs_ranking.csv", index=False)
+    t.to_csv(out_dir / "scaling_vs_ranking_da_size_multi_axes.csv", index=False)
     sm = summary(t)
     print(sm.round(3).to_string(index=False))
-    figure(t, sm, out_dir / "scaling_vs_ranking.png", args.pool)
+    figure(t, sm, out_dir / "scaling_vs_ranking_da_size_multi_axes.png", args.pool)
     if args.pool == CANONICAL_POOL:
         generate_readme(args.pool, out_dir, sm)
