@@ -85,7 +85,7 @@ class Ladder(unittest.TestCase):
 
     def _finals(self, size):
         f = self.df[(self.df["size"] == size) & (self.df["seed"] == 1904)
-                    & (self.df["arch"] == "deep") & (self.df["scheme"] == "A")]
+                    & (self.df["ladder"] == "deep") & (self.df["scheme"] == "A")]
         f = f.loc[f.groupby(["family", "task"])["step"].idxmax()]
         return f.pivot(index="family", columns="task", values="primary_score")
 

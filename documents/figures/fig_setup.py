@@ -121,11 +121,11 @@ def effect_vs_seed_noise(out):
     """
     h = data.healthy(data.wide()).reset_index()
     h = h.assign(L=h["L"].astype(int), loss=h["run__final_loss"].astype(float)).dropna(subset=["loss"])
-    reps = h.groupby(["size", "L", "arch", "scheme"])["loss"]
+    reps = h.groupby(["size", "L", "ladder", "scheme"])["loss"]
     sd = float(reps.std()[reps.size() >= 2].median())
 
     across_L = [g["loss"].max() - g["loss"].min()
-                for _, g in h.groupby(["size", "arch", "scheme", "seed"]) if g["L"].nunique() >= 2]
+                for _, g in h.groupby(["size", "ladder", "scheme", "seed"]) if g["L"].nunique() >= 2]
 
     def paired(col, a, b, keys):
         p = h.pivot_table(index=keys, columns=col, values="loss")
@@ -133,9 +133,9 @@ def effect_vs_seed_noise(out):
 
     rows = [("language count L\nrange across L, per size", np.median(across_L), len(across_L)),
             ("data scheme\nA vs B, matched cells",
-             *(lambda d: (d.median(), len(d)))(paired("scheme", "A", "B", ["size", "L", "arch", "seed"]))),
+             *(lambda d: (d.median(), len(d)))(paired("scheme", "A", "B", ["size", "L", "ladder", "seed"]))),
             ("model depth\ndeep vs shallow, matched",
-             *(lambda d: (d.median(), len(d)))(paired("arch", "deep", "shallow", ["size", "L", "scheme", "seed"])))]
+             *(lambda d: (d.median(), len(d)))(paired("ladder", "deep", "shallow", ["size", "L", "scheme", "seed"])))]
     rows = [(lab, v / sd, n) for lab, v, n in rows]
 
     fig, ax = plt.subplots(figsize=(8.6, 3.3))

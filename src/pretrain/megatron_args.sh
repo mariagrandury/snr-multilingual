@@ -70,15 +70,23 @@ build_megatron_cmd() {
 		--attention-backend flash
 	)
 
-	# The activation is the one MODEL knob a cell may vary (ARCH_AXES in
+	# The activation is one of a ladder's intervention axes (LADDERS in
 	# launch_trainings.py). The default reproduces every trained cell's args
 	# exactly; ACTIVATION=swiglu swaps XIELU for Megatron's gated SiLU MLP,
-	# whose extra per-layer matrix is why the swiglu family carries a narrower
+	# whose extra per-layer matrix is why the swiglu ladder carries a narrower
 	# FFN at a matched parameter count (hyperparams/find_hyperparams_swiglu.py).
 	case "${ACTIVATION:-xielu}" in
 		xielu)  NETWORK_SIZE_ARGS+=(--xielu)  ;;
 		swiglu) NETWORK_SIZE_ARGS+=(--swiglu) ;;
 		*) echo "megatron_args.sh: unknown ACTIVATION '$ACTIVATION'" >&2; return 1 ;;
+	esac
+	# The optimizer is a LADDERS axis too, and launch_trainings.py emits
+	# OPTIMIZER for a ladder that changes it — but only AdEMAMix is wired here
+	# (TRAINING_ARGS, and its betas and warmups below). Refuse anything else
+	# rather than train AdEMAMix under another ladder's name.
+	case "${OPTIMIZER:-ademamix}" in
+		ademamix) ;;
+		*) echo "megatron_args.sh: OPTIMIZER '$OPTIMIZER' is not wired (ademamix only)" >&2; return 1 ;;
 	esac
 
 	LOGGING_ARGS=(

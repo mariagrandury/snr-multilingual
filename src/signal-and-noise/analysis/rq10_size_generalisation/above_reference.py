@@ -76,7 +76,8 @@ FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 # The design set of a rung: which families it was planned with. `3B` is the
 # four deep L8/L15 A/B cells (plan/3b_models.md); `all` is every family.
 DESIGNS = {"all": lambda a: pd.Series(True, index=a.index),
-           "3B": lambda a: (a["arch"] == "deep") & a["L"].isin([8, 15]) & a["scheme"].isin(["A", "B"])}
+           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & a["L"].isin([8, 15])
+                           & a["scheme"].isin(["A", "B"])}
 mpl.rcParams.update(S.RC)
 
 

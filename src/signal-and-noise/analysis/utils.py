@@ -186,8 +186,9 @@ def _is_parent_task(task: str) -> bool:
 # Ladder pools filter the loaded frame on its own columns (the scheme-B cells
 # and the adopted off-grid seeds are real runs whether or not models.json
 # lists them), so a member spec may carry any of these column filters.
-_LADDER_FILTERS = {"seeds": "seed", "sizes": "size", "L": "L",
-                   "arch": "arch", "scheme": "scheme"}
+_LADDER_FILTERS = {"seeds": "seed", "sizes": "size", "L": "L", "ladder": "ladder",
+                   "arch": "arch", "activation": "activation", "optimizer": "optimizer",
+                   "scheme": "scheme"}
 
 
 def _is_ladder_pool(pool: str) -> bool:
@@ -316,16 +317,16 @@ SECOND_LANG = {"ZH": "zh", "ES": "es"}
 # falls back to its corpus path, which is ugly in a table but never wrong.
 ENGLISH_CORPUS = {"DCLMP": "dclm-noedu", "FWEB": "fineweb"}
 # What a cell is, apart from its size. The order is the one figures read in.
-# `arch` is the model-DEPTH level alone. The cell name's architecture slot also
-# carries the activation (and would carry the optimizer), and those are separate
+# `arch` is the model-DEPTH level alone. The cell name's ladder token also
+# encodes the activation (and would encode the optimizer), and those are separate
 # decisions: pooling them would read a (deep, swiglu) pair as a depth choice.
-# design_axes() splits the slot through launch_trainings.ARCH_AXES, which is the
-# registry the launcher itself trains from.
+# The loader carries the three levels as columns of their own, from
+# launch_trainings.LADDERS, the registry the launcher itself trains from.
 DESIGN_AXES = ["L", "arch", "activation", "optimizer", "list", "T", "lang2", "en", "seed"]
 # The three pair sets a decision-accuracy table can be computed over (rule 15).
 #   multi-axis  every pair of design variants: rq02's convention to date, and
 #               two thirds of its pairs move more than one axis at once.
-#   mono-axis   the pairs that move exactly ONE of L/arch/list/T/lang2/en, the seed
+#   mono-axis   the pairs that move exactly ONE of the DESIGN_AXES above, the seed
 #               held: the decision a practitioner actually makes, and what
 #               upstream's "every pair" is by construction (DataDecide's recipes
 #               differ in the data mix alone).
@@ -346,15 +347,12 @@ def design_axes(df: pd.DataFrame) -> pd.DataFrame:
     `family` is the cell name with only the size token stripped, so the axes
     are a function of it; the assertion is what guarantees that.
     """
-    from pretrain.launch_trainings import ARCH_AXES, DATA_SCHEMES
-    a = df[["family", "L", "arch", "scheme", "seed"]].drop_duplicates().set_index("family")
-    # Split the architecture slot into the decisions it actually encodes. The
-    # `arch` column keeps its name but narrows to the depth level, so every
-    # figure that says "arch" still means deep-vs-shallow; swiglu is deep-shaped
-    # and differs from the baseline on `activation` alone.
-    for axis in ("activation", "optimizer"):
-        a[axis] = a["arch"].map(lambda x: ARCH_AXES[x][axis])
-    a["arch"] = a["arch"].map(lambda x: ARCH_AXES[x]["depth"])
+    from pretrain.launch_trainings import DATA_SCHEMES
+    # The ladder's levels, not its token: `arch` is the depth, so every figure
+    # that says "arch" means deep-vs-shallow; swiglu is deep-shaped and differs
+    # from the baseline on `activation` alone.
+    a = (df[["family", "L", "arch", "scheme", "seed", "activation", "optimizer"]]
+         .drop_duplicates().set_index("family"))
     a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
     a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
     a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
@@ -560,18 +558,18 @@ def language_token_share(L: int, scheme: str) -> dict[str, float] | None:
 
 
 @lru_cache(maxsize=None)
-def train_tokens(size: str, arch: str) -> int:
-    """The token budget D(N) a cell of `size` and `arch` trains for."""
+def train_tokens(size: str, ladder: str) -> int:
+    """The token budget D(N) a cell of `size` and `ladder` trains for."""
     import json
     from pretrain.launch_trainings import HYPERPARAMS
-    return json.loads(Path(HYPERPARAMS[arch]).read_text())["configs"][size]["predictivity"]["train_tokens"]
+    return json.loads(Path(HYPERPARAMS[ladder]).read_text())["configs"][size]["predictivity"]["train_tokens"]
 
 
-def language_tokens(L: int, scheme: str, size: str, arch: str) -> dict[str, float] | None:
-    """language -> training tokens of it a cell (size, L, arch, scheme) saw:
+def language_tokens(L: int, scheme: str, size: str, ladder: str) -> dict[str, float] | None:
+    """language -> training tokens of it a cell (size, L, ladder, scheme) saw:
     `language_token_share` times the cell's budget. None where the share is."""
     share = language_token_share(L, scheme)
-    return None if share is None else {k: v * train_tokens(size, arch) for k, v in share.items()}
+    return None if share is None else {k: v * train_tokens(size, ladder) for k, v in share.items()}
 
 
 def size_order(sizes) -> list[str]:

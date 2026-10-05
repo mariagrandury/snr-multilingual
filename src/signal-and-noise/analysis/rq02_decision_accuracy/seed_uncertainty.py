@@ -61,7 +61,7 @@ from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, GRID_SEED, MIN_PAIRS, NON_EMB, SMALL_SIZES, TARGET_SIZE, assign_language,
-    design_axes, finals, ladder_frame, passes_gate, size_order)
+    finals, ladder_frame, passes_gate, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
 POOL = "predictivity_all"          # every seed: the replicates live here
@@ -237,8 +237,9 @@ if __name__ == "__main__":
     stage = load_pools()[args.pool].get("stage", "pretraining")
     out_dir = OUT_ROOT / stage / args.pool
     fin = finals(ladder_frame(POOL))
-    attrs = design_axes(fin)
-    fin["design"] = fin["family"].map(lambda f: f"L{int(attrs.loc[f, 'L'])}-{attrs.loc[f, 'arch']}-{attrs.loc[f, 'scheme']}")
+    # the cell's ladder, not its depth level `arch`: swiglu is deep-shaped,
+    # and a shared label would merge it into deep's replicates
+    fin["design"] = "L" + fin["L"].astype(int).astype(str) + "-" + fin["ladder"] + "-" + fin["scheme"]
     sv = seed_views(fin, args.pool)
     nv = null_view(OUT_ROOT / stage / SEED_POOL, args.pool)
     pd.concat([sv, nv], ignore_index=True).to_csv(out_dir / "seed_uncertainty_da_all_seed_null.csv", index=False)

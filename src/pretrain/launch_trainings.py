@@ -5,13 +5,14 @@ Launch predictivity-sweep training jobs on CSCS (sbatch) or Azure ML (az ml).
 The grid (see plan/small-to-large-predictivity-training-plan.md):
 
   * size — the 7-rung ladder (90M..3B) shared by the reviewed hyperparams
-           files; --arch picks the architecture family, one reviewed
-           hyperparams file each: deep (the baseline), shallow (the
-           model-depth level) or swiglu (the activation level, scheme A at
-           L in {1, 8, 30} — deep's shape at a matched parameter count).
-           A rung is trained in an arch only if that arch's file defines it
-           AND the scheme plans it there (arches_for): 3B is deep only, and
-           swiglu runs at three settings, not six.
+           files; --arch / --activation / --optimizer pick the ladder, one
+           reviewed hyperparams file each: deep (the baseline), shallow
+           (--arch shallow, the model-depth level) or swiglu (--activation
+           swiglu, scheme A at L in {8, 15, 30} — deep's shape at a matched
+           parameter count). A rung is trained in a ladder only if that
+           ladder's file defines it AND the scheme plans it there
+           (ladders_for): 3B is deep only, and swiglu runs at three
+           settings, not six.
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
            FineWeb-2 languages. Every size trains at every setting except 3B,
            the extrapolation check, which trains at L in {8, 15} only
@@ -56,8 +57,9 @@ Usage:
                                      [--training-steps N] [--test] [filters]
     python launch_trainings.py azure [filters]        # `source azure/env.sh` first
 
-Filters (both platforms): --arch {deep,shallow,swiglu}, --scheme {A,AT3,B,ZH,ES},
---size 350M[,175M,...], --langs L, --seed N, --dry-run.
+Filters (both platforms): --arch {deep,shallow}, --activation {xielu,swiglu},
+--optimizer {ademamix}, --scheme {A,AT3,B,ZH,ES}, --size 350M[,175M,...],
+--langs L, --seed N, --dry-run.
 
 Diagnostic overrides (CSCS only). Each needs a --size/--langs/--seed filter,
 turns the auto-eval watcher off and forces a diag- run name, so no grid cell
@@ -82,6 +84,8 @@ Examples:
     python3.11 pretrain/launch_trainings.py azure --langs 1
     # depth intervention
     python3.11 pretrain/launch_trainings.py cscs --arch shallow --dry-run
+    # activation intervention
+    python3.11 pretrain/launch_trainings.py cscs --activation swiglu --dry-run
     # diversity-first lists
     python3.11 pretrain/launch_trainings.py cscs --scheme B --langs 8
     # T=3: L15, L30 and L50
@@ -107,39 +111,50 @@ from typing import Optional
 # fails with a path that looks nothing like the mistake.
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-# The reviewed architecture families. Deep is the baseline; the others each
-# move exactly ONE thing away from it, and the `arch` slot of a cell name is
-# what carries which. "shallow vs deep" (width/depth 128 vs 64) is the
-# model-depth level; "swiglu vs deep" is the activation level (2026-10-03,
-# deep's shape at a matched parameter count — hyperparams/find_hyperparams_swiglu.py).
+# The ladders: one trained model configuration each — one reviewed
+# hyperparams file, and the token its cells carry in their names (kept as
+# named on disk: checkpoints, W&B runs, models.json keys and HF dirs all exist
+# under `lm-...-swiglu-seed1904`). Deep is the baseline; the others each move
+# exactly ONE design level away from it: shallow the depth (width/depth 128 vs
+# 64), swiglu the activation (2026-10-03, deep's shape at a matched parameter
+# count — hyperparams/find_hyperparams_swiglu.py).
 #
-# These are NOT all one axis: a (deep, shallow) pair is a DEPTH decision and a
-# (deep, swiglu) pair an ACTIVATION one, so the analysis decomposes the slot
-# rather than reading it whole (ARCH_AXES below, analysis/utils.design_axes).
-# Pooling them would report a depth decision three times over and call it
-# an architecture effect.
+# A ladder is therefore not one axis: a (deep, shallow) pair is an ARCH decision
+# and a (deep, swiglu) pair an ACTIVATION one, so the analysis reads the levels
+# (LADDERS below, analysis/utils.design_axes), never the token. Pooling them
+# would report a depth decision three times over and call it an architecture
+# effect.
 HYPERPARAMS = {
     "deep": SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json",
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
     "swiglu": SCRIPT_DIR / "hyperparams" / "hyperparams_swiglu.json",
 }
 
-# What each architecture family varies, against the deep baseline's levels.
-# `depth` is the shape axis the family's hyperparams file describes;
-# `activation` and `optimizer` are what megatron_args.sh must be told, and are
-# emitted into the cell env ONLY when they differ from the baseline, so a deep
-# or shallow cell's env dict stays byte-identical to what the trained cells
-# used.
+# Each ladder's design levels, one intervention axis each: `arch` is the depth
+# its hyperparams file describes; `activation` and `optimizer` are what
+# megatron_args.sh must be told, and are emitted into the cell env ONLY when
+# they differ from the baseline, so a deep or shallow cell's env dict stays
+# byte-identical to what the trained cells used.
 #
-# Adding an OPTIMIZER family needs Megatron work first: `--optimizer` accepts
-# only adam|sgd|ademamix (megatron/training/arguments.py), with no Muon
+# Adding an OPTIMIZER level (muon) needs Megatron work first: `--optimizer`
+# accepts only adam|sgd|ademamix (megatron/training/arguments.py), with no Muon
 # implementation in the checkout.
-ARCH_AXES = {
-    "deep":    dict(depth="deep",    activation="xielu",  optimizer="ademamix"),
-    "shallow": dict(depth="shallow", activation="xielu",  optimizer="ademamix"),
-    "swiglu":  dict(depth="deep",    activation="swiglu", optimizer="ademamix"),
+LADDERS = {
+    "deep":    dict(arch="deep",    activation="xielu",  optimizer="ademamix"),
+    "shallow": dict(arch="shallow", activation="xielu",  optimizer="ademamix"),
+    "swiglu":  dict(arch="deep",    activation="swiglu", optimizer="ademamix"),
 }
-BASELINE_ARCH = "deep"
+BASELINE_LADDER = "deep"
+
+
+def ladder_of(arch: str, activation: str, optimizer: str) -> str:
+    """The ladder that trains these levels; ValueError when none does."""
+    levels = dict(arch=arch, activation=activation, optimizer=optimizer)
+    for ladder, v in LADDERS.items():
+        if v == levels:
+            return ladder
+    raise ValueError(f"no ladder trains {arch} + {activation} + {optimizer} "
+                     f"(ladders: {', '.join(LADDERS)})")
 
 # W&B project for this sweep — single source of truth is configs/hf_wandb.json.
 # The entity is the constant "mariagrandury-epflnlp", hardcoded in
@@ -211,7 +226,7 @@ EVAL_SIZES = list(LADDER)
 # added 2026-09-19 as the extrapolation check above the 1.7B reference: the
 # paper's DA-across-size question is asked on benchmarks, and a 3B cell costs
 # ~1,630 node-hours (measured 2026-09-22), so the rung covers only the
-# settings that earn it (plan/3b_models.md). Deep only (arches_for), seed
+# settings that earn it (plan/3b_models.md). Deep only (ladders_for), seed
 # 1904 only (SEED_TRIPLES has no 3B).
 SIZE_LANG_SETTINGS = {size: LANG_SETTINGS for size in LADDER}
 # The 3B rung: L8 and L15 since 2026-09-19, L30 and L50 added 2026-09-30.
@@ -239,7 +254,7 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 #   temp      sampling temperature for the per-language allocation (T = 1/alpha)
 #   sets      which language_sets_scheme<X>.json supplies its language lists
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
-#   arches    architecture families the scheme is trained in
+#   ladders   the ladders (HYPERPARAMS) the scheme is trained in
 #   english   the corpus the ENGLISH half is built from, when the scheme
 #             varies it (the edu-filter axis at L=1). Absent = the DCLM-edu
 #             corpus every other cell reads; data/launch_builds.sh gives a
@@ -264,16 +279,17 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 # at L50 (built both ways, calibrating T=3 against the T=1 curve) and
 # replicated at L15 and L30 where nothing is starved.
 DATA_SCHEMES = {
-    # The activation axis rides scheme A's data at three settings (2026-10-03):
-    # L1 the monolingual anchor, L8 the modal multilingual setting, L30 near
-    # the top of the language range — spaced so the three mono-axis pairs rule
-    # 5 needs also span the axis the paper is about, rather than clustering at
-    # one language count. `arches_by_L` and not `arches`, so no other setting
+    # The activation axis rides scheme A's data at three settings: L8, L15 and
+    # L30, whose language lists nest, so every language L8 trains has the three
+    # mono-axis pairs rule 5 needs. L1 was the first choice (2026-10-03) and was
+    # dropped on 2026-10-05: English only, it left every non-English task with
+    # two pairs, i.e. no activation reading at all (its 90M run stays on disk,
+    # off the grid). `ladders_by_L` and not `ladders`, so no other setting
     # plans a swiglu cell; the replicate seeds stay deep-only via seeds_for.
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
               max_size={}, temp=1.0, sets="A", seeds="grid",
-              arches=("deep", "shallow"),
-              arches_by_L={L: ("deep", "shallow", "swiglu") for L in (1, 8, 30)}),
+              ladders=("deep", "shallow"),
+              ladders_by_L={L: ("deep", "shallow", "swiglu") for L in (8, 15, 30)}),
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
     # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
     # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
@@ -287,10 +303,10 @@ DATA_SCHEMES = {
                 # explicit because the 3B rung now covers L50 — without it,
                 # opening that setting would create an AT3 3B cell by accident.
                 max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, sets="A", seeds="single",
-                arches=("deep", "shallow"), arches_by_L={15: ("deep",), 30: ("deep",)}),
+                ladders=("deep", "shallow"), ladders_by_L={15: ("deep",), 30: ("deep",)}),
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
               max_size={}, temp=1.0, sets="B", seeds="grid",
-              arches=("deep", "shallow")),
+              ladders=("deep", "shallow")),
     # ZH and ES are the second-language intervention at L=2. Their ceiling is
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
     # tokens of Russian (scheme A's L2), 59.9B of Chinese and 23.4B of Spanish,
@@ -311,7 +327,7 @@ DATA_SCHEMES = {
     # the 59.9B there is (2.5 epochs), and nothing above the reference is read.
     "ZH": dict(label="-ZH", subdir="ZH", langs={2},
                max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
-               arches=("deep",),
+               ladders=("deep",),
                allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
     # BT3 — the scheme x temperature interaction — was registered 2026-09-21
     # and RETIRED 2026-09-23 without ever being trained. Its gate (the AT3
@@ -349,7 +365,7 @@ DATA_SCHEMES = {
     # `fineweb_epochs` instead, which is a different question.
     "ES": dict(label="-ES", subdir="ES", langs={2},
                max_size={2: "1.7B"}, temp=1.0, sets="ES", seeds="single",
-               arches=("deep",)),
+               ladders=("deep",)),
     # The L=1 rung has no language axis, so its only family contrast is depth —
     # one pair, where rule 5 needs three. These two schemes are the third and
     # fourth families, and what they vary is the EDUCATIONAL-QUALITY FILTER:
@@ -366,12 +382,12 @@ DATA_SCHEMES = {
     # temp/sets are inert here: L=1 has no FineWeb-2 half.
     "DCLMP": dict(label="-dclmP", subdir="DCLMP", langs={1},
                   max_size={}, temp=1.0, sets="A", seeds="single",
-                  arches=("deep",),
+                  ladders=("deep",),
                   english="/capstor/store/cscs/swissai/infra01/datasets/"
                           "dclm_processed/output"),
     "FWEB": dict(label="-fweb", subdir="FWEB", langs={1},
                  max_size={}, temp=1.0, sets="A", seeds="single",
-                 arches=("deep",),
+                 ladders=("deep",),
                  english="/capstor/store/cscs/swissai/infra01/datasets/"
                          "HuggingFaceFW/fineweb/data",
                  english_max_year=2022),
@@ -420,23 +436,23 @@ def cell_fineweb_subsets(L: int, scheme: str = "A") -> list[str]:
     return list(sets_[f"FW_L{L}"])
 
 
-# The sizes each reviewed hyperparams file defines. A rung exists in an
-# architecture iff its file has a config for it — the file is the only place
-# the architecture is described, so nothing else could train it anyway.
-SIZES_BY_ARCH = {arch: tuple(json.loads(p.read_text())["configs"])
-                 for arch, p in HYPERPARAMS.items()}
+# The sizes each reviewed hyperparams file defines. A rung exists in a
+# ladder iff its file has a config for it — the file is the only place the
+# model is described, so nothing else could train it anyway.
+SIZES_BY_LADDER = {ladder: tuple(json.loads(p.read_text())["configs"])
+                   for ladder, p in HYPERPARAMS.items()}
 
 
-def arches_for(scheme: str, size: str, L: int) -> tuple[str, ...]:
-    """Architectures a scheme trains at one cell: the scheme's arches (or its
-    `arches_by_L` override at that setting — AT3 is deep only at L15/L30),
+def ladders_for(scheme: str, size: str, L: int) -> tuple[str, ...]:
+    """Ladders a scheme trains at one cell: the scheme's ladders (or its
+    `ladders_by_L` override at that setting — AT3 is deep only at L15/L30),
     minus any whose hyperparams file has no config for the size (the 3B rung
     is deep only: hyperparams_shallow.json stops at 1.7B). Every tool that
-    fans a cell out over architectures must read this rather than the
-    scheme's list, or it plans cells the grid never trains."""
+    fans a cell out over ladders must read this rather than the scheme's
+    list, or it plans cells the grid never trains."""
     cfg = DATA_SCHEMES[scheme]
-    return tuple(a for a in cfg.get("arches_by_L", {}).get(L, cfg["arches"])
-                 if size in SIZES_BY_ARCH[a])
+    return tuple(a for a in cfg.get("ladders_by_L", {}).get(L, cfg["ladders"])
+                 if size in SIZES_BY_LADDER[a])
 
 
 def cell_languages(L: int, scheme: str = "A") -> set[str]:
@@ -465,7 +481,7 @@ TEST_WARMUP = 10
 TEST_DECAY = 20
 
 
-def seeds_for(size: str, L: int, scheme: str = "A", arch: str = "deep") -> list[int]:
+def seeds_for(size: str, L: int, scheme: str = "A", ladder: str = "deep") -> list[int]:
     """Seeds for one cell: three on the columns the plan marks x3, one
     everywhere else. The extra data schemes run a single seed — they are
     intervention levels, not part of the seed-noise estimate.
@@ -477,31 +493,32 @@ def seeds_for(size: str, L: int, scheme: str = "A", arch: str = "deep") -> list[
     cells only". No analysis reads a shallow seed std, so a shallow replicate
     is 3,281 node-h nothing would load. Every replicate ever trained is in
     fact deep; this makes the grid say so."""
-    if arch != "deep" or DATA_SCHEMES[scheme]["seeds"] == "single":
+    if ladder != "deep" or DATA_SCHEMES[scheme]["seeds"] == "single":
         return SEED_SINGLE
     triple, langs = SEED_TRIPLES.get(size, (SEED_SINGLE, set()))
     return triple if L in langs else SEED_SINGLE
 
 
 def predictivity_cells(schemes: Optional[list] = None,
-                       arch: str = "deep") -> list[dict]:
+                       ladder: str = "deep") -> list[dict]:
     """Every run in the grid as {size, L, seed, scheme}, in
     scheme -> size -> L -> seed order. Defaults to EVERY scheme so the
     progress, models.json and auto-eval tools see the whole sweep; the
     launcher narrows it with --scheme.
 
-    `arch` selects the SEED set, not the schemes: replicate seeds are deep
-    only (see seeds_for), so a caller that fans a cell out over architectures
-    must loop `arch` OUTSIDE this call and pass it, or it plans shallow
+    `ladder` selects the SEED set, not the schemes: replicate seeds are deep
+    only (see seeds_for), so a caller that fans a cell out over ladders must
+    loop `ladder` OUTSIDE this call and pass it, or it plans shallow
     replicates the grid does not train. The cells themselves are still
-    arch-free — `arches_for()` remains the filter for which arch trains them."""
+    ladder-free — `ladders_for()` remains the filter for which ladder trains
+    them."""
     cells = []
     for scheme in (schemes or list(DATA_SCHEMES)):
         for size in LADDER:
             for L in sorted(DATA_SCHEMES[scheme]["langs"]):
                 if size not in scheme_sizes(scheme, L):
                     continue
-                for seed in seeds_for(size, L, scheme, arch):
+                for seed in seeds_for(size, L, scheme, ladder):
                     cells.append({"size": size, "L": L, "seed": seed,
                                   "scheme": scheme})
     return cells
@@ -625,11 +642,11 @@ def due_iters(saved: list[int], target: int, every: int = 1) -> list[int]:
     return [i for i in saved if _due(i)]
 
 
-def mix_label(L: int, arch: str = "deep", scheme: str = "A",
+def mix_label(L: int, ladder: str = "deep", scheme: str = "A",
               size: Optional[str] = None) -> str:
     """Scheme label for EXP_NAME: language setting, data scheme (empty for
-    the scheme-A baseline), the batch when the rung has its own, and the arch
-    — always explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L50-AT3-shallow`,
+    the scheme-A baseline), the batch when the rung has its own, and the
+    ladder — always explicit, e.g. `L8-deep`, `L8-schemeB-deep`, `L50-AT3-shallow`,
     `L2-ZH-deep`, `L2-b168-deep`.
 
     `size` is optional only so the callers that label a FAMILY rather than a
@@ -637,10 +654,10 @@ def mix_label(L: int, arch: str = "deep", scheme: str = "A",
     form; a cell must always pass it, or two runs with different batches —
     and different losses — collide on one name."""
     batch = "" if size is None or cell_gbs(size) == GBS else f"-b{cell_gbs(size)}"
-    return f"L{L}{DATA_SCHEMES[scheme]['label']}{batch}-{arch}"
+    return f"L{L}{DATA_SCHEMES[scheme]['label']}{batch}-{ladder}"
 
 
-def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
+def exp_name(size: str, L: int, ladder: str, seed: int, scheme: str = "A") -> str:
     """Canonical model/cell name (e.g. `lm-90M-L8-b84-deep-seed1904`) — the
     checkpoint dir under Meg-Runs/<project>/, the W&B run id/name, and the
     prefix of eval result ids. `lm` not `apertus`: the architecture has
@@ -653,7 +670,7 @@ def exp_name(size: str, L: int, arch: str, seed: int, scheme: str = "A") -> str:
     hazard — RESUME one, which it would otherwise do, silently continuing a
     batch-504 checkpoint into a batch-84 run (iters go 4,500 -> 27,000, so the
     old final checkpoint reads as a mid-run one)."""
-    return f"lm-{size}-{mix_label(L, arch, scheme, size)}-seed{seed}"
+    return f"lm-{size}-{mix_label(L, ladder, scheme, size)}-seed{seed}"
 
 
 def job_name(kind: str, exp: str) -> str:
@@ -814,7 +831,7 @@ def cell_env(
     seed: int,
     exp: str,
     blend: str,
-    arch: str = BASELINE_ARCH,
+    ladder: str = BASELINE_LADDER,
     training_steps: Optional[int] = None,
     lr_warmup_iters: Optional[int] = None,
     lr_wsd_decay_iters: Optional[int] = None,
@@ -875,12 +892,13 @@ def cell_env(
         # normal launch's dict stays byte-identical to what the trained
         # cells used and megatron_args.sh keeps its own GBS=504.
         **({"GBS": gbs} if gbs is not None else {}),
-        # The architecture knobs megatron_args.sh reads, emitted ONLY where the
-        # family differs from the deep baseline — same rule as ADEMAMIX_BETA3
+        # The model knobs megatron_args.sh reads, emitted ONLY where the
+        # ladder differs from the deep baseline — same rule as ADEMAMIX_BETA3
         # and GBS above, and what keeps `deep`/`shallow` dicts byte-identical
-        # to the ones the trained cells used.
-        **{k.upper(): v for k, v in ARCH_AXES[arch].items()
-           if k != "depth" and v != ARCH_AXES[BASELINE_ARCH][k]},
+        # to the ones the trained cells used. `arch` is not a knob: the
+        # hyperparams file already describes the shape.
+        **{k.upper(): v for k, v in LADDERS[ladder].items()
+           if k != "arch" and v != LADDERS[BASELINE_LADDER][k]},
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -985,7 +1003,7 @@ def cscs_mbs(nodes: int, mbs: int, gbs: int = GBS) -> int:
     return mbs
 
 
-# Per-size steady-state iter time (ms), for walltime sizing, keyed by arch
+# Per-size steady-state iter time (ms), for walltime sizing, keyed by ladder
 # then size. Values carry ~20% over the measurement: under-estimating walls a
 # job and costs a whole queue cycle, over-estimating only lengthens the
 # request. (At 600M and above the 11:59:59 cap dominates anyway.)
@@ -1035,14 +1053,14 @@ ITER_MS = {
                 "1B": 940,     # no shallow 1B run yet: deep's value
                 "1.7B": 1230}, # [w] 1113, 1 job
 }
-# The swiglu family has not run yet, so it borrows deep's walltime sizing — the
+# The swiglu ladder has not run yet, so it borrows deep's walltime sizing — the
 # same stand-in the shallow 1B uses. It is the right starting guess: the FLOPs
 # per token are matched by construction (same N, same tokens/iter), and the
 # gated MLP trades one wide GEMM for two at 2/3 the width plus an elementwise
 # multiply. Re-measure from a clean run and replace these, as the [m]/[w] marks
 # above record for every other rung.
 ITER_MS["swiglu"] = {s: ms for s, ms in ITER_MS["deep"].items()
-                     if s in SIZES_BY_ARCH["swiglu"]}
+                     if s in SIZES_BY_LADDER["swiglu"]}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
@@ -1055,7 +1073,7 @@ TIME_MAX_PREEMPT_SEC = 86340   # 23:59:00
 PREEMPT_PARTITION = "preemptable"
 
 
-def iter_ms(size: str, arch: str, gbs: int = GBS) -> int:
+def iter_ms(size: str, ladder: str, gbs: int = GBS) -> int:
     """Steady-state ms per iteration at a given global batch.
 
     ITER_MS is measured at GBS 504. A smaller batch does NOT scale the step
@@ -1083,15 +1101,15 @@ def iter_ms(size: str, arch: str, gbs: int = GBS) -> int:
     retrain never touched silently asks for a longer wall than it did before
     this function existed — 350M, 600M and 1B all moved when C was 0.20.
     """
-    per_iter = ITER_MS[arch].get(size, 2400)
+    per_iter = ITER_MS[ladder].get(size, 2400)
     return per_iter if gbs == GBS else round(
         per_iter * (gbs / GBS + 0.02) / 1.02)
 
 
-def auto_time(size: str, remaining_iters: int, arch: str = "deep",
+def auto_time(size: str, remaining_iters: int, ladder: str = "deep",
               cap: int = TIME_MAX_SEC, gbs: int = GBS) -> str:
     """Walltime for a run with `remaining_iters` to go, rounded up to 15 min."""
-    total = remaining_iters * iter_ms(size, arch, gbs) // 1000 + TIME_MARGIN_SEC
+    total = remaining_iters * iter_ms(size, ladder, gbs) // 1000 + TIME_MARGIN_SEC
     total = (total + 899) // 900 * 900
     total = min(max(total, TIME_MIN_SEC), cap)
     return f"{total // 3600:02d}:{total % 3600 // 60:02d}:{total % 60:02d}"
@@ -1275,14 +1293,14 @@ def submit_azure(env: dict, cell: dict, dry_run: bool,
 
 # --- Driver ------------------------------------------------------------------
 
-def run_test(data: dict, arch: str, data_dir: str, dry_run: bool) -> None:
+def run_test(data: dict, ladder: str, data_dir: str, dry_run: bool) -> None:
     cfg = data["configs"][TEST_SIZE]
-    exp = f"lm-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, arch)}"
+    exp = f"lm-test-{TEST_SIZE.lower()}-{mix_label(TEST_LANGS, ladder)}"
     blend = data_blend(f"{data_dir}/english_dclm",
                        f"{data_dir}/fineweb_L{TEST_LANGS}", TEST_LANGS)
-    print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, arch)} | "
+    print(f"=== Test run: {TEST_SIZE} | {mix_label(TEST_LANGS, ladder)} | "
           f"seed {TEST_SEED} | {TEST_STEPS} steps ===\n")
-    env = cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend,
+    env = cell_env(cfg, TEST_SIZE, TEST_SEED, exp, blend, ladder,
                    training_steps=TEST_STEPS,
                    lr_warmup_iters=TEST_WARMUP, lr_wsd_decay_iters=TEST_DECAY)
     # Save twice inside the short run. cell_env sizes SAVE_INTERVAL for the
@@ -1301,15 +1319,27 @@ def main() -> None:
                         help="Where to submit: cscs (sbatch) or azure (az ml)")
     parser.add_argument("--no-auto-evals", action="store_true",
                         help="CSCS only: do NOT start the auto-eval watcher. "
-                             "By default a launch also starts it for the arch "
-                             "being submitted, so trained cells get converted "
-                             "and evaluated without a separate step.")
+                             "By default a launch also starts it, so trained "
+                             "cells get converted and evaluated without a "
+                             "separate step.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print submit commands without running them")
-    parser.add_argument("--arch", choices=list(HYPERPARAMS), default="deep",
-                        help="Architecture family: deep (baseline), shallow "
-                             "(the model-depth level) or swiglu (the "
-                             "activation level, L in {1, 8, 30})")
+    # The three levels pick the ladder (ladder_of); each defaults to the
+    # baseline's, so `--arch shallow` is the shallow ladder and
+    # `--activation swiglu` the swiglu one.
+    base = LADDERS[BASELINE_LADDER]
+    parser.add_argument("--arch", default=base["arch"],
+                        choices=list(dict.fromkeys(v["arch"] for v in LADDERS.values())),
+                        help="Model depth: deep (baseline) or shallow (the "
+                             "model-depth level)")
+    parser.add_argument("--activation", default=base["activation"],
+                        choices=list(dict.fromkeys(v["activation"] for v in LADDERS.values())),
+                        help="MLP activation: xielu (baseline) or swiglu (the "
+                             "activation level, scheme A at L in {8, 15, 30})")
+    parser.add_argument("--optimizer", default=base["optimizer"],
+                        choices=list(dict.fromkeys(v["optimizer"] for v in LADDERS.values())),
+                        help="Optimizer: ademamix (baseline; the only level "
+                             "trained so far)")
     parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                         help="Data scheme to submit: A (resource-ranked, "
                              "T=1 — the baseline), AT3 (same lists at T=3; "
@@ -1391,6 +1421,10 @@ def main() -> None:
                              "504 and be a multiple of DP = 4 x nodes. Forces a "
                              "diag- run name — never a grid cell.")
     args = parser.parse_args()
+    try:
+        ladder = ladder_of(args.arch, args.activation, args.optimizer)
+    except ValueError as e:
+        parser.error(str(e))
 
     if args.platform != "cscs":
         # not-in-(None, False), not truthiness: --lr 0 is a mistake worth
@@ -1447,30 +1481,30 @@ def main() -> None:
                   or args.compute.startswith("azureml:")
                   else f"azureml:{args.compute}")
 
-    config = HYPERPARAMS[args.arch]
+    config = HYPERPARAMS[ladder]
     data = json.loads(config.read_text())
-    print(f"Platform: {args.platform} | Config: {config.name} (arch: {args.arch})")
+    print(f"Platform: {args.platform} | Config: {config.name} (ladder: {ladder})")
     if args.dry_run:
         print("(dry-run — submit commands will be printed but not executed)")
     print()
 
     if args.test:
-        run_test(data, args.arch, args.data_dir, args.dry_run)
+        run_test(data, ladder, args.data_dir, args.dry_run)
         return
 
-    # arches_for, not the scheme's `arches` list: a family can be defined at
-    # SOME of a scheme's settings only (swiglu at L in {1, 8, 30}, AT3 deep-only
+    # ladders_for, not the scheme's `ladders` list: a ladder can be defined at
+    # SOME of a scheme's settings only (swiglu at L in {8, 15, 30}, AT3 deep-only
     # at L15/L30), and reading the list directly refused those outright.
     trained_in = {a for L in DATA_SCHEMES[args.scheme]["langs"]
                   for size in scheme_sizes(args.scheme, L)
-                  for a in arches_for(args.scheme, size, L)}
-    if args.arch not in trained_in:
-        print(f"Scheme {args.scheme} is not trained in the {args.arch} "
-              f"architecture (only {', '.join(sorted(trained_in))}).")
+                  for a in ladders_for(args.scheme, size, L)}
+    if ladder not in trained_in:
+        print(f"Scheme {args.scheme} is not trained in the {ladder} "
+              f"ladder (only {', '.join(sorted(trained_in))}).")
         return
     cells = [
-        c for c in predictivity_cells([args.scheme], args.arch)
-        if args.arch in arches_for(c["scheme"], c["size"], c["L"])
+        c for c in predictivity_cells([args.scheme], ladder)
+        if ladder in ladders_for(c["scheme"], c["size"], c["L"])
         and (size_filter is None or c["size"] in size_filter)
         and (args.langs is None or c["L"] == args.langs)
         and (args.seed is None or c["seed"] == args.seed)
@@ -1507,7 +1541,7 @@ def main() -> None:
         # A" case to guess at here: a cell's scheme IS its data.
         subdir = DATA_SCHEMES[c["scheme"]]["subdir"]
         cell_dir = args.data_dir + (f"/{subdir}" if subdir else "")
-        exp = exp_name(c["size"], c["L"], args.arch, c["seed"], c["scheme"])
+        exp = exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"])
         if diag:
             # Rename BEFORE anything keys off it. `diag-...` matches neither
             # pretrain_progress.NAME_RE nor ladder_report.LOG_RE, and
@@ -1623,7 +1657,7 @@ def main() -> None:
                   + (f"  (FineWeb-2 from {fineweb_dir})" if fineweb_dir != cell_dir else ""))
             nodes = cfg.get("nodes", NODES_BY_SIZE[c["size"]])
             submit_cscs(
-                cell_env(cfg, c["size"], c["seed"], exp, blend, args.arch,
+                cell_env(cfg, c["size"], c["seed"], exp, blend, ladder,
                          training_steps=args.training_steps or tgt,
                          mbs=cscs_mbs(nodes, cfg["micro_batch_size"], gbs),
                          lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
@@ -1634,7 +1668,7 @@ def main() -> None:
                          gbs=None if gbs == GBS else gbs),
                 dry_run=args.dry_run, nodes=nodes,
                 time=args.time or auto_time(
-                    c["size"], tgt - load_iter, args.arch,
+                    c["size"], tgt - load_iter, ladder,
                     TIME_MAX_PREEMPT_SEC if args.partition == PREEMPT_PARTITION
                     else TIME_MAX_SEC, gbs),
                 account=args.account, dependency=args.dependency,
@@ -1648,7 +1682,7 @@ def main() -> None:
             blend = data_blend("$ENGLISH_DIR/english_dclm",
                                f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
-                cell_env(cfg, c["size"], c["seed"], exp, blend, args.arch,
+                cell_env(cfg, c["size"], c["seed"], exp, blend, ladder,
                          gbs=None if gbs == GBS else gbs),
                 cell=c, dry_run=args.dry_run,
                 data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
@@ -1656,8 +1690,8 @@ def main() -> None:
             )
 
     if args.platform == "cscs" and not args.no_auto_evals and not args.dry_run:
-        # ONE watcher for the whole grid, not one per --arch. The watcher
-        # covers every arch and scheme in a pass, so a launch of the deep
+        # ONE watcher for the whole grid, not one per ladder. The watcher
+        # covers every ladder and scheme in a pass, so a launch of the deep
         # ladder no longer leaves the shallow and scheme-B cells waiting for
         # a watcher nobody remembered to start.
         watcher = "auto_evals_cscs.py --watch"
@@ -1667,7 +1701,7 @@ def main() -> None:
             subprocess.Popen([sys.executable, "auto_evals_cscs.py",
                               "--watch", "1800"], cwd=str(SCRIPT_DIR),
                              stdout=log, stderr=log, start_new_session=True)
-            print("started auto-evals (all archs/schemes); opt out with "
+            print("started auto-evals (all ladders/schemes); opt out with "
                   "--no-auto-evals")
         else:
             print("(auto-evals already watching)")

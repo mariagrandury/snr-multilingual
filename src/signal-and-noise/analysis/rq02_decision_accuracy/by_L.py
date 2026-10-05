@@ -62,8 +62,8 @@ them overlay. The variants differ only in which tasks the mean runs over:
 `--by transformation` reads the same two decision accuracies one DESIGN AXIS
 at a time instead of one L at a time: the MONO-AXIS pairs at the grid seed
 (`utils.pair_sets`), split by the one axis each pair moves
-(`scale_convergence.pairs_by_group`) — language count, depth, language list,
-temperature, second language, English corpus — one panel per axis and a first
+(`scale_convergence.pairs_by_group`) — language count, depth, activation, language
+list, temperature, second language, English corpus — one panel per axis and a first
 panel over every mono-axis pair. Same gate, pair minimum and filter variants;
 the reliability filter is the mono-axis one (rule 15). Task counts sit at the
 end of every line.
@@ -98,7 +98,7 @@ from evals.scripts.utils.configs import bucket_order, load_pools, size_bucket  #
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES, arches_for, mix_label, scheme_sizes  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, LADDERS, ladders_for, mix_label, scheme_sizes  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import (  # noqa: E402
     compute_ckpt_decision_accuracy, compute_early_small_decision_accuracy)
@@ -191,13 +191,13 @@ def pairs_by_L(t: pd.DataFrame) -> pd.DataFrame:
     for scheme, cfg in DATA_SCHEMES.items():
         for L in cfg["langs"]:
             for size in scheme_sizes(scheme, L):
-                # arches_for, never cfg["arches"]: a scheme can be trained in
-                # one architecture at some settings (AT3 is deep only at L15
-                # and L30) or lack a hyperparams config at a size (the 3B is
-                # deep only), and counting those as planned inflates the pair
+                # ladders_for, never cfg["ladders"]: a scheme can be trained in
+                # one ladder at some settings (AT3 is deep only at L15 and
+                # L30) or lack a hyperparams config at a size (the 3B is deep
+                # only), and counting those as planned inflates the pair
                 # count — 15 where the grid plans 10, at L15 and L30.
-                for arch in arches_for(scheme, size, L):
-                    planned.setdefault((L, size), set()).add(mix_label(L, arch, scheme))
+                for ladder in ladders_for(scheme, size, L):
+                    planned.setdefault((L, size), set()).add(mix_label(L, ladder, scheme))
     fin = t[t["frac"] == 1.0].copy()
     fin["kind"] = np.where(fin["task"].str.startswith("bpb_"), "bpb", np.where(fin["task"] == "train_loss", "loss", "bench"))
     have = fin.groupby(["L", "proxy_size", "kind"])["n_pairs_ref"].max()     # the pairs any task of that kind has
@@ -248,7 +248,10 @@ READINGS = {
 # so it is not a cell of this grid; an L with data but too few pairs still gets its panel.
 PANEL_LS = [1, 2, 8, 15, 30, 50]
 # The panels of `--by transformation`: one per design axis (the seed is the null, not a decision).
-PANEL_AXES = [AXIS_LABEL[k] for k in DESIGN_AXES if k != "seed"]
+# A design level no registered ladder varies (the optimizer, today) has
+# no pair to draw now or later, so it gets no permanent "(no pairs yet)" panel.
+PANEL_AXES = [AXIS_LABEL[k] for k in DESIGN_AXES if k != "seed"
+              and not (k in ("activation", "optimizer") and len({a[k] for a in LADDERS.values()}) == 1)]
 # grouping -> (its column in the table, the panel list, how a panel is labelled, the first panel's title)
 BY = {"L": ("L", PANEL_LS, "L{}".format, "all pairs (every scheme)"),
       "transformation": ("axis", PANEL_AXES, str, "all mono-axis pairs")}
@@ -336,10 +339,11 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
     few = [L for L in Ls if L not in set(summary[col]) and L in set(drawable.loc[drawable[reading["n_col"]].fillna(0) > 0, col])]
     counts = by == "transformation"
     # two rows, the pooled panel first: 2 x 4 for the six Ls, wider for the design
-    # axes (DESIGN_AXES grows with the grid) — zip() below would drop a panel silently
-    ncols = -(-(len(Ls) + 1) // 2)
-    fig, axes = plt.subplots(2, ncols, figsize=(4.25 * ncols, 7.4), sharey=True)
-    flat = axes.ravel()
+    # axes (DESIGN_AXES grows with the grid) — zip() below would drop a panel silently.
+    # A filtered variant also needs one spare cell for the reliable-cell inventory.
+    ncols = -(-(len(Ls) + 1 + bool(filt)) // 2)
+    fig, grid = plt.subplots(2, ncols, figsize=(4.25 * ncols, 7.4), sharey=True)
+    flat = grid.ravel()
     n_all = pooled[reading["n_col"]].max()
     _lines(flat[0], head, sizes, first + (f"  ({int(n_all)} pairs)" if pd.notna(n_all) else ""), groups, counts)
     for ax, L in zip(flat[1:], Ls):
@@ -351,7 +355,7 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
         flat[i].axis("off")
     for ax in flat[ncols:]:
         ax.set_xlabel("proxy's training tokens (× Chinchilla)")
-    for ax in axes[:, 0]:
+    for ax in grid[:, 0]:
         ax.set_ylabel(reading["ylabel"])
     flat[0].legend(handles=[plt.Line2D([], [], color=S.SIZE_COLOR[s_], lw=2, label=s_) for s_ in sizes if s_ in S.SIZE_COLOR]
                    + ([plt.Line2D([], [], color=S.INK, ls="-", label="BPB"),
@@ -373,7 +377,7 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
     # fresh subplot in the same grid slot, which tight_layout still manages.
     if filt and spare:
         flat[spare[0]].remove()
-        _reliable_panel(fig.add_subplot(2, 4, spare[0] + 1), keep, red, thresh, crit)
+        _reliable_panel(fig.add_subplot(2, ncols, spare[0] + 1), keep, red, thresh, crit)
     fig.tight_layout(rect=(0, 0, 1, top))
     summary = pd.concat([head.assign(**{col: "all"}), summary])
     summary.to_csv(out_dir / f"{stem}.csv", index=False)

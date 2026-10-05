@@ -193,6 +193,9 @@ def name_to_metadata(name: str) -> dict | None:
         "L": entry.get("L"),
         "scheme": entry.get("scheme"),
         "arch": entry.get("arch"),
+        "ladder": entry.get("ladder"),
+        "activation": entry.get("activation"),
+        "optimizer": entry.get("optimizer"),
         "split": split,
     }
 
@@ -303,6 +306,9 @@ def build_rows(project_dir: Path) -> list[dict]:
                 "L": meta["L"],
                 "scheme": meta["scheme"],
                 "arch": meta["arch"],
+                "ladder": meta["ladder"],
+                "activation": meta["activation"],
+                "optimizer": meta["optimizer"],
                 "primary_score": primary_score,
                 "primary_metric": primary_metric,
                 "metrics": metrics,
@@ -579,6 +585,9 @@ def fetch_multilingual_evals_rows(
                 "L": entry.get("L"),
                 "scheme": entry.get("scheme"),
                 "arch": entry.get("arch"),
+                "ladder": entry.get("ladder"),
+                "activation": entry.get("activation"),
+                "optimizer": entry.get("optimizer"),
                 "step": ckpt_meta["step"],
                 "size": entry.get("size"),
                 "mix": ckpt_meta["mix"],
@@ -819,6 +828,9 @@ def _arrow_schema():
         ("L", pa.int64()),
         ("scheme", pa.large_string()),
         ("arch", pa.large_string()),
+        ("ladder", pa.large_string()),
+        ("activation", pa.large_string()),
+        ("optimizer", pa.large_string()),
         ("primary_score", pa.float64()),
         ("primary_metric", pa.large_string()),
         ("metrics", metric_struct),
@@ -912,7 +924,7 @@ per-instance predictions.
 
 | Split | Models | Description |
 |---|---|---|
-| `pretraining_predictivity` | lm-{{90M…3B}}-L{{1,2,8,15,30,50}}[{{-AT3,-schemeB,-ZH,-ES}}]-{{deep,shallow}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × architecture × data scheme × seed, every 2nd saved checkpoint plus each run's final one. A data scheme is one build of the FineWeb-2 half — its language list plus the per-language sampling temperature: unlabelled = resource-ranked at T=1 (the baseline), `AT3` = the same lists at T=3 (L15, L30 and L50), `schemeB` = diversity-first, `ZH`/`ES` = L2 with Chinese / Spanish in place of Russian. `L`, `scheme` and `arch` carry the axes; `mix` repeats them as one string (`L8-schemeA`) |
+| `pretraining_predictivity` | lm-{{90M…3B}}-L{{1,2,8,15,30,50}}[{{-AT3,-schemeB,-ZH,-ES}}]-{{deep,shallow,swiglu}}-seed{{N}} | The small-to-large predictivity ladder: size × language count × ladder (model configuration) × data scheme × seed, every 2nd saved checkpoint plus each run's final one. A data scheme is one build of the FineWeb-2 half — its language list plus the per-language sampling temperature: unlabelled = resource-ranked at T=1 (the baseline), `AT3` = the same lists at T=3 (L15, L30 and L50), `schemeB` = diversity-first, `ZH`/`ES` = L2 with Chinese / Spanish in place of Russian. `L`, `scheme`, `ladder`, `arch`, `activation` and `optimizer` carry the axes; `mix` repeats `L` and `scheme` as one string (`L8-schemeA`) |
 | `pretraining_custom` | apertus-{{175M, 350M, 600M, 1B}}-fwEdu{{30,60,90}}-seed{{28,1797,1904}} | 36 custom megatron pretraining curves (4 sizes × 3 mixes × 3 seeds) at canonical iters {{2k, 6k, 12k, 18k, 22k, 28k, 34k, 38k, 42k, 44k, 46k, 48k, 50k}} |
 | `pretraining_a06` | apertus3-{{1b, 3b}}-*-nodes | a06 main pretraining runs |
 | `reference_hf` | Apertus-8B/70B-2509 (incl. `step<N>-tokens<X>` intermediates), Olmo-3-1025-7B (stage1 intermediates + final), SmolLM3-3B (stage1 intermediates, stages 1/2/3 finals), SmolLM3-3B-Base | External reference checkpoints; merged from local cluster runs and the multilingual-snr raw/ folder |
@@ -941,7 +953,10 @@ per-instance predictions.
 | `seed` | int | Pretraining seed (custom only) |
 | `L` | int | Language count of the training mixture — `pretraining_predictivity` only, null elsewhere |
 | `scheme` | str | Data scheme — the FineWeb-2 language list plus its sampling temperature: `A` (resource-ranked, T=1), `AT3` (the same lists at T=3), `B` (diversity-first, T=1), `ZH` / `ES` (L2 with Chinese / Spanish instead of Russian) — predictivity only |
-| `arch` | str | `deep` (baseline) or `shallow` (the model-depth intervention) — predictivity only |
+| `ladder` | str | The trained configuration, the last token of the run name: `deep` (baseline), `shallow` or `swiglu` — predictivity only |
+| `arch` | str | Model depth: `deep` (baseline) or `shallow` (the model-depth intervention); a `swiglu` run is `deep` — predictivity only |
+| `activation` | str | `xielu` (baseline) or `swiglu` (the activation intervention: deep's shape, SwiGLU instead of XIELU) — predictivity only |
+| `optimizer` | str | `ademamix` — predictivity only |
 | `primary_score` | float | Headline metric — `acc` if available else `exact_match` |
 | `primary_metric` | str | Name of the primary metric |
 | `metrics` | dict | All numeric metric variants reported for the task |

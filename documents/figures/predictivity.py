@@ -27,7 +27,10 @@ from snr.download.ladder import load_predictivity_eval_results  # noqa: E402
 import style as S  # noqa: E402
 
 INTERVENTION = {"arch": ("deep", "shallow"), "scheme": ("A", "B")}
-HOLD = {"arch": ("scheme", "A"), "scheme": ("arch", "deep")}
+# The depth pair and the held baseline are read on the ladder, not the depth
+# level `arch`: swiglu is deep-shaped and would join deep's cells.
+COLUMN = {"arch": "ladder"}
+HOLD = {"arch": ("scheme", "A"), "scheme": ("ladder", "deep")}
 
 
 def finals(df):
@@ -43,7 +46,7 @@ def min_predictive_size(seed=1904):
         hold_col, hold_val = HOLD[axis]
         sub = fin[fin[hold_col] == hold_val]
         for L, g in sub.groupby("L"):
-            piv = g.pivot_table(index=["task", "size"], columns=axis, values="primary_score")
+            piv = g.pivot_table(index=["task", "size"], columns=COLUMN.get(axis, axis), values="primary_score")
             if not {a, b} <= set(piv.columns):
                 continue
             piv = piv.dropna(subset=[a, b])
@@ -91,7 +94,7 @@ def agreement_by_size(seed=1904):
         hold_col, hold_val = HOLD[axis]
         sub = fin[fin[hold_col] == hold_val]
         for L, g in sub.groupby("L"):
-            piv = g.pivot_table(index=["task", "size"], columns=axis, values="primary_score")
+            piv = g.pivot_table(index=["task", "size"], columns=COLUMN.get(axis, axis), values="primary_score")
             if not {a, b} <= set(piv.columns):
                 continue
             delta = (piv[a] - piv[b]).dropna().unstack("size")

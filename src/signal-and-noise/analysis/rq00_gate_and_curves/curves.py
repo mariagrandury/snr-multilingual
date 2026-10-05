@@ -42,16 +42,18 @@ CLOSEUP_YMAX = 3.5                  # ceiling of the last-10 % loss panels, as i
 mpl.rcParams.update(S.RC)
 
 
-def _line_style(size, arch, scheme) -> dict:
-    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.ARCH_WIDTH.get(arch, 1.0),
+def _line_style(size, ladder, scheme) -> dict:
+    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.LADDER_WIDTH.get(ladder, 1.0),
                 ls=S.SCHEME_DASH.get(scheme, "-"))
 
 
 def plot_loss_curves(df: pd.DataFrame, out_dir: Path) -> None:
     """The report's loss figure on the analysis' cells: per L, the whole run
-    and its last 10 % (the close-up is where arch and scheme separate)."""
+    and its last 10 % (the close-up is where ladder and scheme separate)."""
     curve = pd.read_csv(ladder_dir() / "ladder_report_curve.csv", low_memory=False)
-    curve = curve[curve["cell"].isin(set(df["model"]))]
+    # the cell's ladder from the frame: a report from before 2026-10-05 has no `ladder` column
+    ladder_of = dict(zip(df["model"], df["ladder"]))
+    curve = curve[curve["cell"].isin(ladder_of)].assign(ladder=lambda c: c["cell"].map(ladder_of))
     if curve.empty:
         return
     Ls = sorted(curve["L"].unique())
@@ -63,7 +65,7 @@ def plot_loss_curves(df: pd.DataFrame, out_dir: Path) -> None:
             win = sub[sub["frac"] >= lo]
             for _cell, g in win.groupby("cell"):
                 g = g.sort_values("frac")
-                ax.plot(g["frac"], g["loss"], **_line_style(*g.iloc[0][["size", "arch", "scheme"]]))
+                ax.plot(g["frac"], g["loss"], **_line_style(*g.iloc[0][["size", "ladder", "scheme"]]))
             if col == 0:
                 ax.set_ylim(2, 8)
             else:
@@ -72,10 +74,10 @@ def plot_loss_curves(df: pd.DataFrame, out_dir: Path) -> None:
             ax.set_title(f"L = {L} — {title}", loc="left"); ax.set_xlabel("fraction of run")
             ax.set_ylabel("lm loss"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     handles = ([plt.Line2D([], [], color=S.SIZE_COLOR[s], lw=2, label=s) for s in LADDER_SIZES if s in set(curve["size"])]
-               + [plt.Line2D([], [], color=S.INK, lw=S.ARCH_WIDTH[a], label=a) for a in ("deep", "shallow") if a in set(curve["arch"])]
+               + [plt.Line2D([], [], color=S.INK, lw=S.LADDER_WIDTH[a], label=a) for a in S.LADDER_WIDTH if a in set(curve["ladder"])]
                + [plt.Line2D([], [], color=S.INK, ls=S.SCHEME_DASH[v], label=f"scheme {v}") for v in S.SCHEME_DASH if v in set(curve["scheme"])])
     fig.legend(handles=handles, ncol=min(8, len(handles)), loc="lower center", frameon=False)
-    fig.suptitle("Training loss — colour = size, width = arch, dash = data scheme", y=1.0)
+    fig.suptitle("Training loss — colour = size, width = ladder, dash = data scheme", y=1.0)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     curve.to_csv(out_dir / "loss_curves.csv", index=False)      # rule 12
     S.save(fig, out_dir / "loss_curves.png", dpi=150)
@@ -104,14 +106,14 @@ def plot_benchmark_curves(df: pd.DataFrame, out_dir: Path) -> None:
         g = b[b["family"] == fam]
         for _cell, gc in g.groupby("model"):
             m = gc.groupby("frac")["primary_score"].mean().sort_index()
-            ax.plot(m.index, m.values, **_line_style(*gc.iloc[0][["size", "arch", "scheme"]]))
+            ax.plot(m.index, m.values, **_line_style(*gc.iloc[0][["size", "ladder", "scheme"]]))
         ch = g["chance"].dropna()
         if not ch.empty:
             ax.axhline(ch.mean(), color=S.ALERT, lw=.9, ls=":")
         ax.set_title(fam, loc="left"); ax.set_xlabel("fraction of run"); ax.set_ylabel("accuracy")
         ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.suptitle("Benchmark accuracy vs fraction of run, mean over the cell's trained-language tasks\n"
-                 "colour = size, width = arch, dash = scheme, dotted red = chance", y=1.0)
+                 "colour = size, width = ladder, dash = scheme, dotted red = chance", y=1.0)
     fig.tight_layout()
     b[["model", "task", "frac", "primary_score"]].to_csv(out_dir / "benchmark_curves.csv", index=False)   # rule 12
     S.save(fig, out_dir / "benchmark_curves.png", dpi=150)
@@ -127,7 +129,7 @@ def generate_readme(pool: str) -> None:
             f"Every cell the `{pool}` pool holds (all seeds and schemes), after the loader has dropped "
             "diverged and unfinished runs and restricted checkpoints to the shared grid: the detailed "
             "counterpart of the progress report's figures. Loss per L, the whole run and its last 10 % "
-            f"(capped at {CLOSEUP_YMAX} nats, where arch and scheme separate); benchmark accuracy as the mean "
+            f"(capped at {CLOSEUP_YMAX} nats, where ladder and scheme separate); benchmark accuracy as the mean "
             "over the tasks in the languages the cell trains on, one line per cell, chance from the option "
             f"count. Regenerate with `python analysis/rq00_gate_and_curves/curves.py --pool {pool}`.\n\n"
             f"![Loss curves]({rel}/loss_curves.png)\n\n"

@@ -42,7 +42,7 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
                     above chance = its one-sided 95 % Wilson lower bound clears
                     chance (rule 1's per-run test, `above_random.above_chance`)
      _1904          every seed-1904 run at the (size, L) that trains the language
-                    (every scheme, both architectures): above chance when at least
+                    (every scheme and ladder): above chance when at least
                     MIN_SHARE of them are (rule 1's cell rule); the score and the
                     tokens are their means
    Only benchmarks with a chance level appear (BPB and the generative tasks
@@ -120,11 +120,11 @@ POPULATIONS = {
 mpl.rcParams.update(S.RC)
 
 
-def _tokens(L, scheme, size, arch, lang) -> float:
+def _tokens(L, scheme, size, ladder, lang) -> float:
     """Tokens of `lang` a full run of the cell trains on; NaN when the build's
     plan is unreachable. A trained language is always in the share, so a
     missing key is a bug and raises."""
-    t = language_tokens(int(L), scheme, size, arch)
+    t = language_tokens(int(L), scheme, size, ladder)
     return np.nan if t is None else t[lang]
 
 
@@ -137,7 +137,7 @@ def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
     proxies had seen at that checkpoint (mean, min and max over the variants)."""
     bpb = df[df["kind"] == "bpb"].assign(language=lambda d: d["task"].map(assign_language))
     bpb = languages_only(bpb)
-    attrs = bpb[["family", "L", "scheme", "arch"]].drop_duplicates().set_index("family")
+    attrs = bpb[["family", "L", "scheme", "ladder"]].drop_duplicates().set_index("family")
     fracs = DA_MODES[mode][1]
     rows = []
     for task, dft in bpb.groupby("task", sort=False):
@@ -150,7 +150,7 @@ def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
                 if mode == "ckpt" and c["proxy_size"] != target:
                     continue
                 fams = sorted(set(_scores_at(dft, c["proxy_size"], c["frac"])) & ref)
-                tok = np.array([c["frac"] * _tokens(attrs.at[f, "L"], attrs.at[f, "scheme"], c["proxy_size"], attrs.at[f, "arch"], lang)
+                tok = np.array([c["frac"] * _tokens(attrs.at[f, "L"], attrs.at[f, "scheme"], c["proxy_size"], attrs.at[f, "ladder"], lang)
                                 for f in fams])
                 rows.append({"task": task, "language": lang, "proxy_size": c["proxy_size"], "frac": c["frac"], "da": c["da"],
                              "n_pairs": c["n_pairs"], "n_variants": len(fams), "tokens": tok.mean(),
@@ -227,7 +227,7 @@ def gate_cells(fin: pd.DataFrame, ckpts: bool = False) -> pd.DataFrame:
     fin["language"] = fin["task"].map(assign_language)
     fin = languages_only(fin)
     fin["tokens"] = [_tokens(L, s, size, a, lang)
-                     for L, s, size, a, lang in zip(fin["L"], fin["scheme"], fin["size"], fin["arch"], fin["language"])]
+                     for L, s, size, a, lang in zip(fin["L"], fin["scheme"], fin["size"], fin["ladder"], fin["language"])]
     keys = ["task", "language", "size", "L"]
     if ckpts:
         fin["tokens"] *= fin["frac"]
@@ -467,7 +467,7 @@ def main(pool: str, out_dir: Path) -> None:
     cells_b = {}
     for population in POPULATIONS:
         for ckpts, frame in ((False, fin), (True, tenths)):
-            sub = frame[(frame["arch"] == "deep") & (frame["scheme"] == "A")] if population == "deep_A_1904" else frame
+            sub = frame[(frame["ladder"] == "deep") & (frame["scheme"] == "A")] if population == "deep_A_1904" else frame
             c = gate_cells(sub, ckpts)
             c.to_csv(out_dir / f"{pass_stem('benchmark', population, ckpts)}.csv", index=False)
             cells_b[population + ("_ckpts" if ckpts else "")] = c

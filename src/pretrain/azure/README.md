@@ -586,12 +586,15 @@ python launch_trainings.py azure                        # everything
 python launch_trainings.py azure --arch shallow         # the depth-intervention variant
 ```
 
-`--arch` picks the reviewed architecture family — `deep` (default baseline,
-`hyperparams/hyperparams_deep.json`) or `shallow`
-(`hyperparams/hyperparams_shallow.json`, same non-embedding sizes at
-width/depth 128); the D(N) = 100 × N schedule comes from each config's
-`predictivity` block. Runs are named `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`
-and log to `mariagrandury-epflnlp/msnr`. Micro-batch sizes tuned for the
+`--arch`, `--activation` and `--optimizer` pick the ladder — the reviewed
+model configuration, one hyperparams file each: `deep` (the default
+baseline, `hyperparams/hyperparams_deep.json`), `shallow` (`--arch shallow`,
+`hyperparams/hyperparams_shallow.json`, same non-embedding sizes at
+width/depth 128) or `swiglu` (`--activation swiglu`, the deep model with the
+swiglu activation, `hyperparams/hyperparams_swiglu.json`); the
+D(N) = 100 × N schedule comes from each config's `predictivity` block. Runs
+are named `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>` (the
+last token is the ladder) and log to `mariagrandury-epflnlp/msnr`. Micro-batch sizes tuned for the
 cluster are auto-shrunk per node (`launch_pretraining_azure.sh`) so the
 global batch of 504 always divides; the 1.7B resolves to MBS 1 on the 8-GPU
 nodes — override with `--set environment_variables.MBS=3` if it fits.

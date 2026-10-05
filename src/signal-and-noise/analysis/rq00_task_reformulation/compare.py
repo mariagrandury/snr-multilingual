@@ -107,7 +107,7 @@ def pool(families: list[str]) -> pd.DataFrame:
     # row is "untrained" there and the pool would come back without a single
     # twin. The rule is applied below instead, on the base task name.
     df = build_snr_pool("predictivity", untrained=True)
-    df = df[(df["arch"] == "deep") & (df["scheme"] == "A")]
+    df = df[(df["ladder"] == "deep") & (df["scheme"] == "A")]
     fam = df["task"].map(lambda t: base(TASKS.get(t, {}).get("benchmark", "")))
     trained = [base(t) in _trained_tasks(L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]
     df = df[fam.isin(families) & pd.Series(trained, index=df.index)]

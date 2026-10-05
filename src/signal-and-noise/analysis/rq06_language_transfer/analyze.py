@@ -55,7 +55,7 @@ mpl.rcParams.update(S.RC)
 
 
 def transfer(fin: pd.DataFrame) -> pd.DataFrame:
-    g0 = fin[(fin["seed"] == GRID_SEED) & (fin["arch"] == "deep") & (fin["scheme"] == "A")
+    g0 = fin[(fin["seed"] == GRID_SEED) & (fin["ladder"] == "deep") & (fin["scheme"] == "A")
              & (fin["kind"] == "bpb") & (fin["task"] != "bpb_macro") & (fin["size"] != LADDER_SIZES[0])]
     rows = []
     for L, g in g0.groupby("L"):

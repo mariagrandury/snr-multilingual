@@ -86,13 +86,15 @@ DECIDED = 2.0
 FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]     # where the proxy is read: every evaluated tenth of its run (rule 3)
 # key -> (label, axis, levels, (held axis, its baseline level)). The first
 # level is the baseline; the reference is TARGET_SIZE (1.7B, rule 9), and an
-# (intervention, L) without a 1.7B cell at both levels is skipped.
+# (intervention, L) without a 1.7B cell at both levels is skipped. Depth and the
+# held baseline read the `ladder` column, not the depth level `arch`: swiglu is
+# deep-shaped and would join deep's cells.
 INTERVENTIONS = {
-    "arch":        ("depth (deep vs shallow)",  "arch",   ("deep", "shallow"), ("scheme", "A")),
-    "scheme":      ("language lists (A vs B)",  "scheme", ("A", "B"),          ("arch", "deep")),
-    "temperature": ("temperature (T=1 vs T=3)", "scheme", ("A", "AT3"),        ("arch", "deep")),
-    "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("arch", "deep")),
-    "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("arch", "deep")),
+    "arch":        ("depth (deep vs shallow)",  "ladder", ("deep", "shallow"), ("scheme", "A")),
+    "scheme":      ("language lists (A vs B)",  "scheme", ("A", "B"),          ("ladder", "deep")),
+    "temperature": ("temperature (T=1 vs T=3)", "scheme", ("A", "AT3"),        ("ladder", "deep")),
+    "zh":          ("2nd language (ru vs zh)",  "scheme", ("A", "ZH"),         ("ladder", "deep")),
+    "es":          ("2nd language (ru vs es)",  "scheme", ("A", "ES"),         ("ladder", "deep")),
 }
 # `bpb_untrained` and `bpb_all` are not rq05's: a score on a language the
 # mixture does not train is rq06's measurement (RULES.md rule 2), and the
@@ -136,7 +138,7 @@ def seed_sd(fin: pd.DataFrame) -> pd.Series:
     """Per task, the seed standard deviation of ONE run's final score: the
     median over the baseline (deep, scheme A) (size, L) cells with replicates
     (3 seeds where they exist, so the estimate itself is coarse)."""
-    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    base = fin[(fin["ladder"] == "deep") & (fin["scheme"] == "A")]
     sd = base.groupby(["size", "L", "task"])["primary_score"].agg(["std", "count"])
     return sd[sd["count"] >= 2]["std"].groupby("task").median()
 

@@ -1,7 +1,7 @@
 """Scaling-law error on per-language BPB: how well does a power law fitted on
 the proxy rungs predict the reference rung?
 
-Per (L, arch, scheme, language): log BPB = a − α log N is fitted on the proxy
+Per (L, ladder, scheme, language): log BPB = a − α log N is fitted on the proxy
 rungs up to a ladder top (≥ 3 points; `pretrain.ladder_report._fit`, the
 ladder health check's law) and predicts the reference's BPB. The reference is
 TARGET_SIZE (rule 9), never the largest size a chain happens to have: a chain
@@ -14,7 +14,7 @@ large models shows up here but not in the decision accuracy of rq05, so the
 two reads can disagree; the plan's "prediction ability" read. The loader
 keeps trained languages only (rule 2), so every chain is a trained language.
 
-    scaling_law_error.csv   per (L, arch, scheme, language, ladder top): α, predicted vs observed, signed relative error
+    scaling_law_error.csv   per (L, ladder, scheme, language, ladder top): α, predicted vs observed, signed relative error
                             (the loader keeps trained languages only, so every chain is a trained one; bpb_macro is left out, rule 7)
     scaling_law_error.png   median |relative error| per L and ladder top (deep, scheme A)
 
@@ -54,16 +54,16 @@ mpl.rcParams.update(S.RC)
 
 
 def scaling_law_error(fin: pd.DataFrame) -> tuple[pd.DataFrame, list]:
-    """The fits, and the (L, arch, scheme) settings dropped for lack of a
+    """The fits, and the (L, ladder, scheme) settings dropped for lack of a
     TARGET_SIZE final (rule 9: the reference is never a smaller size)."""
     sub = fin[(fin["seed"] == GRID_SEED) & (fin["kind"] == "bpb")]
     sub = languages_only(sub.assign(language=sub["task"].map(assign_language)))   # rule 7: no bpb_macro chain
     rows, dropped = [], []
-    for (L, arch, scheme, task), g in sub.groupby(["L", "arch", "scheme", "task"]):
+    for (L, ladder, scheme, task), g in sub.groupby(["L", "ladder", "scheme", "task"]):
         g = g.assign(N=g["size"].map(NON_EMB)).dropna(subset=["N"]).sort_values("N")
         if TARGET_SIZE not in set(g["size"]):
-            if (int(L), arch, scheme) not in dropped:
-                dropped.append((int(L), arch, scheme))
+            if (int(L), ladder, scheme) not in dropped:
+                dropped.append((int(L), ladder, scheme))
             continue
         ref = g[g["size"] == TARGET_SIZE].iloc[0]
         proxies = g[g["N"] < ref["N"]]
@@ -77,7 +77,7 @@ def scaling_law_error(fin: pd.DataFrame) -> tuple[pd.DataFrame, list]:
             slope, icpt = fit
             pred = float(np.exp(icpt + slope * np.log(ref["N"])))
             rows.append({
-                "L": int(L), "arch": arch, "scheme": scheme, "task": task,
+                "L": int(L), "ladder": ladder, "scheme": scheme, "task": task,
                 "language": assign_language(task),
                 "ladder_top": pts["size"].iloc[-1], "n_points": top,
                 "reference_size": ref["size"], "alpha": -slope,
@@ -92,7 +92,7 @@ def scaling_law_error(fin: pd.DataFrame) -> tuple[pd.DataFrame, list]:
 
 
 def plot_scaling_error(sle: pd.DataFrame, path: Path) -> None:
-    sub = sle[(sle["arch"] == "deep") & (sle["scheme"] == "A")]
+    sub = sle[(sle["ladder"] == "deep") & (sle["scheme"] == "A")]
     if sub.empty:
         return
     fig, ax = plt.subplots(figsize=(6, 3.6))
@@ -118,7 +118,7 @@ def generate_readme(pool: str, out_dir: Path, sle: pd.DataFrame, dropped: list) 
         return
     stage = load_pools()[pool].get("stage", "pretraining")
     rel = f"{stage}/{pool}"
-    core = sle[(sle["arch"] == "deep") & (sle["scheme"] == "A")]
+    core = sle[(sle["ladder"] == "deep") & (sle["scheme"] == "A")]
     if core.empty:
         return
     m = (core.groupby(["L", "ladder_top"])["rel_error"]

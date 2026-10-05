@@ -40,26 +40,43 @@ reintroduces the drift this design removed.
 | `sync_models_json.py` | upserts one models.json entry per grid cell — conversion + W&B push resolve through it |
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
-A rung is trained in an architecture only if that architecture's hyperparams
-file defines it AND the scheme plans that architecture at that setting
-(`launch_trainings.arches_for`): the 3B exists in `hyperparams_deep.json`
-only, and `swiglu` is listed in scheme A's `arches_by_L` at L ∈ {1, 8, 30}
-rather than in its `arches`, so it runs at three settings and not six. Every
-fan-out over architectures reads `arches_for(scheme, size, L)`, never a
-scheme's `arches` list directly — the `--arch` guard in `main()` did read it
-directly and refused `--arch swiglu` outright until 2026-10-03.
+A rung is trained in a ladder only if that ladder's hyperparams file defines
+it AND the scheme plans that ladder at that setting
+(`launch_trainings.ladders_for`): the 3B exists in `hyperparams_deep.json`
+only, and `swiglu` is listed in scheme A's `ladders_by_L` at L ∈ {8, 15, 30}
+rather than in its `ladders`, so it runs at three settings and not six. Every
+fan-out over ladders reads `ladders_for(scheme, size, L)`, never a scheme's
+`ladders` list directly — the launcher's guard in `main()` did read it
+directly and refused the swiglu ladder outright until 2026-10-03.
 
-**The architecture slot is not one axis.** `ARCH_AXES` says what each family
-varies against the deep baseline — `shallow` the depth, `swiglu` the
-activation — and `analysis/utils.design_axes` splits the slot on it, so a
-(deep, swiglu) pair is an ACTIVATION decision and only (deep, shallow) is a
-depth one. A family added to `HYPERPARAMS` without an `ARCH_AXES` entry raises
-there rather than being silently pooled into the depth axis. An OPTIMIZER
-family needs Megatron work first: `--optimizer` takes only adam|sgd|ademamix.
+**A ladder is not an axis.** A ladder (`deep`, `shallow`, `swiglu` — the
+`HYPERPARAMS` key, the token in the cell name, one trained model
+configuration) sits at one level on each of three intervention axes,
+`launch_trainings.LADDERS`: `arch` ∈ {deep, shallow} (the depth),
+`activation` ∈ {xielu, swiglu}, `optimizer` ∈ {ademamix}. Deep is
+(deep, xielu, ademamix), shallow moves `arch`, swiglu moves `activation`, so
+a (deep, swiglu) pair is an ACTIVATION decision, only (deep, shallow) is an
+ARCH one, and (shallow, swiglu) moves two axes and is neither.
+`cell_env` emits `ACTIVATION`/`OPTIMIZER` only where a ladder's level differs
+from deep's, so deep and shallow env dicts are what those cells trained
+with. The launcher takes the levels, not the token — `--arch {deep,shallow}`,
+`--activation {xielu,swiglu}`, `--optimizer {ademamix}`, resolved by
+`ladder_of()`, which refuses a combination no ladder trains (`--arch shallow
+--activation swiglu`); `sync_models_json.py` and `pretrain_progress.py` take
+the same three options, and `auto_evals_cscs.py` filters on `--arch` /
+`--activation` (default: every ladder; `--arch deep` keeps the deep AND
+swiglu ladders). `configs/models.json` predictivity entries and
+`ladder_report.py`'s wide CSV carry `ladder` plus the three levels, and
+`transform_effects` counts a pair on an axis only when it differs in that one
+axis. A ladder added to `HYPERPARAMS` without a `LADDERS` entry raises rather
+than being silently pooled into an axis. An OPTIMIZER level (muon) needs
+Megatron work first: Megatron's `--optimizer` takes only adam|sgd|ademamix.
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>` — the last
+token is the ladder, never renamed to the levels (the cells exist under it);
+`lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
@@ -152,10 +169,10 @@ still lists the size grid under `checkpoints.all`, which is wrong for her
 `azure/launch_evals.py --ckpts final` plan iters those runs never saved — pass
 the iters explicitly for them. The 1.7B row now trains at every setting, so no (size, L) cell of scheme A is
 empty. Terminology: **scheme** is this data axis; **variant** keeps its older,
-looser sense (any run configuration — seed × arch × scheme).
+looser sense (any run configuration — seed × ladder × scheme).
 
 Per-size schedule (iters/warmup/decay for D(N) = 100 × N) comes from the
-`predictivity` block in `hyperparams/hyperparams_<arch>.json` — the
+`predictivity` block in `hyperparams/hyperparams_<ladder>.json` — the
 top-level `train_iters: 50000` in those files belongs to the finished
 36-model sweep, not this one. Two more knobs are launcher-derived per cell
 (not in the JSONs): `ADEMAMIX_WARMUP` = the cell's target iters (alpha/beta3

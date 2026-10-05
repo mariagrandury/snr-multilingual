@@ -87,12 +87,12 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
     if out is None:
         return pd.DataFrame()
     # seed noise: the baseline cell's finals across seeds (sample std, n >= 2)
-    base = fin[(fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    base = fin[(fin["ladder"] == "deep") & (fin["scheme"] == "A")]
     seed = base.groupby(key)["primary_score"].agg(["std", "count"])
     out["seed_noise"] = seed.loc[seed["count"] >= 2, "std"]
     out["n_seeds"] = seed["count"]
     # checkpoint noise: the grid seed's baseline cell over the noise window (rule 4)
-    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["arch"] == "deep") & (df["scheme"] == "A")])
+    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["ladder"] == "deep") & (df["scheme"] == "A")])
     curve = curve.sort_values("step").groupby(key)["primary_score"].apply(np.asarray)
     out["ckpt_noise"] = curve.map(lambda s: _late_std(s, detrend=False))
     out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))

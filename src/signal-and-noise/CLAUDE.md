@@ -28,7 +28,7 @@ ladders. Two generations of models flow through it:
 
 - the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>`,
   90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
-  2026-09-20, plan/l100_data_mixture.md) × deep/shallow × scheme A/B/AT3/ZH/ES ×
+  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × scheme A/B/AT3/ZH/ES ×
   seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
   summarised by `src/pretrain/ladder_report.py` into **one wide CSV** published
   as the HF dataset `msnr-data/ladder-report`. That CSV is the source of truth.
@@ -58,8 +58,15 @@ python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds   # o
 
 **Loaders.** `snr/download/ladder.py::load_predictivity_eval_results` pulls
 `ladder_report.csv` (`hf_hub_download` into `<DATA_DIR>/ladder-report`, or
-`$SNR_LADDER_DIR`) and melts it to the long schema (`model, size, L, arch,
-scheme, seed, mix, step, task, kind, primary_score, tokens, compute, family`).
+`$SNR_LADDER_DIR`) and melts it to the long schema (`model, size, L, ladder,
+arch, activation, optimizer, scheme, seed, mix, step, task, kind,
+primary_score, tokens, compute, family`). `ladder` is the cell-name token
+(`deep`/`shallow`/`swiglu`, one trained configuration); `arch` (deep|shallow),
+`activation` (xielu|swiglu) and `optimizer` (ademamix) are its levels on the
+three intervention axes (`launch_trainings.LADDERS`), so `arch == "deep"`
+also matches the swiglu cells — the deep baseline configuration is
+`ladder == "deep"`. A cached CSV from before the split (no `ladder` column,
+`arch` = the token) goes through one compatibility branch in the loader.
 `snr/download/apertus.py` is the parquet loader of the 36-sweep and the
 external models. `analysis/utils.build_snr_pool(pool)` picks the loader from
 the pool members' `source` (`configs/models.json` → `sources.<source>.loader`),
@@ -113,7 +120,8 @@ so a script never decides by model name.
   `analysis/check_rules.py` tests the tables on disk; the driver and the
   review skill run it.
 - Pool member filters apply to the frame's columns (`seeds`, `sizes`, `L`,
-  `arch`, `scheme`), not to models.json names, so scheme-B cells and adopted
+  `ladder`, `arch`, `activation`, `optimizer`, `scheme`; `arch: [deep]`
+  admits the swiglu ladder too), not to models.json names, so scheme-B cells and adopted
   off-grid seeds count whether or not the registry lists them.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
@@ -220,17 +228,17 @@ the `multi`-tagged aggregates (`include_base_44`), which are not parents.
 ## Models in scope
 
 `configs/models.json` is the registry (read via `src/evals/scripts/utils/configs.py`).
-`sync_models_json.py` writes one entry per grid cell — both archs, both
-schemes, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
+`sync_models_json.py` writes one entry per grid cell — every ladder, every
+scheme, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{90M…1.7B}-L{1…50}[-schemeB]-{deep,shallow}-seed1904
+predictivity               lm-{90M…1.7B}-L{1…50}[-schemeB]-{deep,shallow,swiglu}-seed1904
 predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
 predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the 64/313 replicates; the 1B ×3 cells' seeds 28/1797 are not in the holdout)
 predictivity_seeds_test    seed 1904 on the same six cells
 predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, every scheme, both archs (rq01, rq03, rq05, rq06)
+predictivity_all           every trained cell: all seeds, every scheme, every ladder (rq01, rq03, rq05, rq06)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 

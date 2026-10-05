@@ -114,7 +114,7 @@ done
 
 sum() { awk '{s+=$1} END{print s+0}'; }
 
-# size|arch -> train_iters, read once: the schedules are static. A failure here
+# size|ladder -> train_iters, read once: the schedules are static. A failure here
 # is not fatal (see the header), so the error is reported and the map left empty.
 # python3.11, not python3: the login node's python3 is 3.6 and cannot even
 # parse launch_trainings.py (walrus operators), which fails silently into an
@@ -124,10 +124,10 @@ TARGETS=$(OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 "$PY_BIN" - "$PRETRAIN_DIR" <
 import json, sys
 sys.path.insert(0, sys.argv[1])
 from launch_trainings import HYPERPARAMS, cell_schedule
-for arch, path in HYPERPARAMS.items():
+for ladder, path in HYPERPARAMS.items():
     for size, cfg in json.loads(path.read_text())["configs"].items():
         try:
-            print(f"{size}|{arch}|{cell_schedule(cfg, size)[0]}")
+            print(f"{size}|{ladder}|{cell_schedule(cfg, size)[0]}")
         except KeyError:            # a size with no predictivity block
             pass
 PY
@@ -162,7 +162,7 @@ drain_once() {
 
     # rank|jobid|nodes|name, then: rank, then oldest job id first.
     awk -F'|' '
-        NR == FNR { target[$1 "|" $2] = $3; next }        # size|arch -> iters
+        NR == FNR { target[$1 "|" $2] = $3; ladders[$2]; next }   # size|ladder -> iters
         { name = $4; rank = 7                             # every other eval-*
           if (name ~ /bpb/) rank = 8
           else if (name ~ /^build-/) rank = 0
@@ -172,8 +172,9 @@ drain_once() {
           else if (name ~ /^pretrain-1B-/) rank = 5
           else {
               split(name, f, "-")                         # eval-<size>-L..-...
-              arch = (name ~ /-shallow-/) ? "shallow" : "deep"
-              t = target[f[2] "|" arch]
+              ladder = "deep"                             # the name token, from the registry
+              for (l in ladders) if (index(name, "-" l "-seed")) ladder = l
+              t = target[f[2] "|" ladder]
               # Not anchored at the end: a reformulated eval carries a family
               # suffix (-rf, -rfgm) after the iter, and anchoring sent every
               # one of them to the bottom rank.

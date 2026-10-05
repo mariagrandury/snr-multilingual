@@ -43,7 +43,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, HYPERPARAMS, LADDER, arches_for, exp_name, predictivity_cells)
+    DATA_SCHEMES, HYPERPARAMS, LADDER, exp_name, ladders_for, predictivity_cells)
 from ladder_report import EVAL_LOGS  # noqa: E402
 from pretrain_progress import TRAIN_LOGS  # noqa: E402
 from auto_evals_cscs import (  # noqa: E402
@@ -172,11 +172,11 @@ def main() -> None:
     args = p.parse_args()
     users = args.users.split(",")
 
-    # arch OUTSIDE the cell loop: replicate seeds are deep only, so the
+    # ladder OUTSIDE the cell loop: replicate seeds are deep only, so the
     # shallow pass must enumerate its own (single-seed) cells.
-    grid = {exp_name(c["size"], c["L"], arch, c["seed"], c["scheme"]): {**c, "arch": arch}
-            for arch in HYPERPARAMS for c in predictivity_cells(arch=arch)
-            if arch in arches_for(c["scheme"], c["size"], c["L"])}
+    grid = {exp_name(c["size"], c["L"], ladder, c["seed"], c["scheme"]): {**c, "ladder": ladder}
+            for ladder in HYPERPARAMS for c in predictivity_cells(ladder=ladder)
+            if ladder in ladders_for(c["scheme"], c["size"], c["L"])}
     # evaluate.sbatch writes every user's results into ONE tree, but each
     # user's Slurm logs go under their own scratch (`%u` in --output).
     log_dirs = [Path(str(TRAIN_LOGS).replace("/mariagrandury/", f"/{u}/")) for u in users]
@@ -187,7 +187,7 @@ def main() -> None:
         # or every language for ALL_LANGUAGES_RUNS, whose extra tasks are
         # deliberate work, not work outside the auto list.
         g = grid[cell]
-        key = (g["L"], g["scheme"], (g["scheme"], g["arch"], g["seed"]) == ALL_LANGUAGES_RUNS)
+        key = (g["L"], g["scheme"], (g["scheme"], g["ladder"], g["seed"]) == ALL_LANGUAGES_RUNS)
         if key not in auto_cache:
             auto_cache[key] = set(tasks_for_benchmarks(benchmarks, eval_languages(*key)))
         return auto_cache[key]

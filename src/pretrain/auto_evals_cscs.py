@@ -17,15 +17,15 @@ Idempotent, safe to run alongside the trainings (login node, tmux):
     python3.11 pretrain/auto_evals_cscs.py --retry-held
     python3.11 pretrain/auto_evals_cscs.py --name lm-175M-L1-deep-seed1904 --max-submit 2
     python3.11 pretrain/auto_evals_cscs.py --convert-only
-    python3.11 pretrain/auto_evals_cscs.py --arch deep --scheme A --seed 1904 --all-languages
+    python3.11 pretrain/auto_evals_cscs.py --arch deep --activation xielu --scheme A --seed 1904 --all-languages
 
 The eval job pushes to W&B with the key from your environment or, as
 everywhere else in the cluster pipeline, from the fallback file
 src/evals/scripts/wandb_api_key.txt — nothing to export here.
 
-Each pass covers EVERY variant — both architectures and every data scheme,
-so the shallow ladder and the non-baseline mixtures cannot fall behind a
-watcher someone forgot to start. --arch/--scheme narrow it. For each due
+Each pass covers EVERY variant — every ladder and every data scheme, so the
+shallow ladder and the non-baseline mixtures cannot fall behind a watcher
+someone forgot to start. --arch/--activation/--scheme narrow it. For each due
 checkpoint
 of each cell:
 
@@ -76,9 +76,9 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, TOKENIZER_MODEL, cell_languages,
+    DATA_SCHEMES, EVAL_SIZES, HYPERPARAMS, LADDER, LADDERS, TOKENIZER_MODEL, cell_languages,
     cell_schedule,
-    arches_for, due_iters, exp_name, job_name, predictivity_cells, schedule_for)
+    due_iters, exp_name, job_name, ladders_for, predictivity_cells, schedule_for)
 from pretrain_progress import CKPT_ROOT, ITER_RE, is_valid_iter_dir  # noqa: E402
 sys.path.insert(0, str(SCRIPT_DIR.parent))
 from evals.scripts.utils.configs import load_tasks, tasks_for_benchmarks  # noqa: E402
@@ -628,9 +628,9 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     # push resolve cells through it. No-op when already in sync.
     from sync_models_json import sync
     added, updated = [], []
-    for arch in args.archs:
+    for ladder in args.ladders:
         for scheme in args.schemes:
-            a, u = sync(arch, scheme)
+            a, u = sync(ladder, scheme)
             added += a
             updated += u
     if added or updated:
@@ -647,19 +647,19 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
     errors: dict[str, dict] = {}   # checkpoints held back, written out below
     submitted = {"evals": 0}       # against --max-submit, across all cells
 
-    # EVERY variant in one pass, not one watcher per arch. A watcher covering
-    # a single --arch/--scheme means the shallow ladder and the non-baseline
+    # EVERY variant in one pass, not one watcher per ladder. A watcher covering
+    # a single ladder/--scheme means the shallow ladder and the non-baseline
     # data schemes only progress while someone remembers to run their own
     # watcher, and they fall behind silently — the checkpoints pile up and
     # nothing complains. Each scheme now names a distinct cell, so unlike the
     # old two-scheme loop there are no duplicates to dedupe.
-    for arch in args.archs:
-        configs = json.loads(HYPERPARAMS[arch].read_text())["configs"]
-        for c in predictivity_cells(args.schemes, arch):
+    for ladder in args.ladders:
+        configs = json.loads(HYPERPARAMS[ladder].read_text())["configs"]
+        for c in predictivity_cells(args.schemes, ladder):
             scheme = c["scheme"]
-            if arch not in arches_for(scheme, c["size"], c["L"]):
+            if ladder not in ladders_for(scheme, c["size"], c["L"]):
                 continue
-            cell = exp_name(c["size"], c["L"], arch, c["seed"], scheme)
+            cell = exp_name(c["size"], c["L"], ladder, c["seed"], scheme)
             if args.name:
                 if cell != args.name:
                     continue
@@ -672,7 +672,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
             # launch, so one blip must cost one cell for one pass, not kill
             # the whole loop.
             try:
-                one_cell(args, {**c, "arch": arch}, cell, scheme, configs, root, staging,
+                one_cell(args, {**c, "ladder": ladder}, cell, scheme, configs, root, staging,
                          logs_root, benchmarks, running, errors, submitted)
             except (OSError, subprocess.SubprocessError) as e:
                 print(f"{cell}: skipped this pass — {getattr(e, 'strerror', None) or e}",
@@ -698,7 +698,7 @@ def one_pass(args, root: Path, staging: Path, logs_root: Path,
               + ("(dry-run: not written)" if args.dry_run else f"details in {path}"))
 
 
-# (scheme, arch, seed) of the runs evaluated in EVERY language, flag or not:
+# (scheme, ladder, seed) of the runs evaluated in EVERY language, flag or not:
 # one full size x L ladder showing how each benchmark behaves in languages
 # the model never trained on (eval_progress_all_languages.png).
 ALL_LANGUAGES_RUNS = ("A", "deep", 1904)
@@ -738,7 +738,7 @@ def one_cell(args, c: dict, cell: str, scheme: str, configs: dict, root: Path,
     # trains on (e.g. L2 -> hellaswag + hellaswag_ru + ...), or in all of them
     # under --all-languages and for the ALL_LANGUAGES_RUNS.
     langs = eval_languages(c["L"], scheme, args.all_languages
-                           or (scheme, c["arch"], c["seed"]) == ALL_LANGUAGES_RUNS)
+                           or (scheme, c["ladder"], c["seed"]) == ALL_LANGUAGES_RUNS)
     task_list = tasks_for_benchmarks(benchmarks, langs)
     # Convert EVERY saved checkpoint (persist all of them to capstor), but
     # evaluate only the due ones — conversion is the durability step, eval
@@ -830,13 +830,16 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    # Default: every arch and every scheme. One watcher covers the whole
+    # Default: every ladder and every scheme. One watcher covers the whole
     # grid, so the shallow ladder and the non-A schemes cannot quietly fall
     # behind while a deep/A-only watcher runs. The flags narrow it for a
-    # targeted pass.
-    p.add_argument("--arch", choices=list(HYPERPARAMS), default=None,
-                   help="only this architecture family (default: every one "
-                        "HYPERPARAMS defines)")
+    # targeted pass: --arch and --activation keep the ladders at that level
+    # (`--arch deep` is the deep and swiglu ladders).
+    for k in ("arch", "activation"):
+        p.add_argument(f"--{k}", default=None,
+                       choices=list(dict.fromkeys(v[k] for v in LADDERS.values())),
+                       help=f"only the ladders at this {k} (default: every "
+                            "ladder HYPERPARAMS defines)")
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
                    help="only this data scheme (default: all of them)")
     p.add_argument("--max-submit", type=int, metavar="N",
@@ -905,7 +908,9 @@ def main() -> None:
                    help=f"Eval results root (default: {DEFAULT_LOGS_ROOT})")
     args = p.parse_args()
     # The pass iterates over these; a flag narrows the default "everything".
-    args.archs = [args.arch] if args.arch else list(HYPERPARAMS)
+    args.ladders = [lad for lad in HYPERPARAMS
+                    if args.arch in (None, LADDERS[lad]["arch"])
+                    and args.activation in (None, LADDERS[lad]["activation"])]
     args.schemes = [args.scheme] if args.scheme else list(DATA_SCHEMES)
     args.sizes = args.size.split(",") if args.size else EVAL_SIZES
     if bad := set(args.sizes) - set(LADDER):

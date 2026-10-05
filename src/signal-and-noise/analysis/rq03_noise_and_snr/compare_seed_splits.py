@@ -13,7 +13,7 @@ seed 1904 on the same cells, as the "test" split) and asks:
 The per-language r is rq04's ``_per_language_pearson_table``: a language needs
 MIN_LANG_TASKS (3) distinct tasks with a value, fewer is NaN (rule 8), and
 ``multi`` / ``??`` are never a language (rule 7, `utils.languages_only`). The
-two pools must hold the same cells (size × L × arch × scheme); the script
+two pools must hold the same cells (size × L × ladder × scheme); the script
 checks that on the loaded pools and says so in the README block.
 
 Outputs land under ``<rq03>/<stage>/<train_pool>__vs__<test_pool>/``:
@@ -470,9 +470,9 @@ def main():
 
 
 def pool_cells(pool: str) -> tuple[set, list]:
-    """The (size, L, arch, scheme) cells a pool holds, and its seeds."""
+    """The (size, L, ladder, scheme) cells a pool holds, and its seeds."""
     df = build_snr_pool(pool)
-    return set(map(tuple, df[["size", "L", "arch", "scheme"]].drop_duplicates().to_numpy())), sorted(df["seed"].unique())
+    return set(map(tuple, df[["size", "L", "ladder", "scheme"]].drop_duplicates().to_numpy())), sorted(df["seed"].unique())
 
 
 def generate_readme(train_pool: str, test_pool: str, out_dir: Path, agreements: dict, rank_corrs: dict,

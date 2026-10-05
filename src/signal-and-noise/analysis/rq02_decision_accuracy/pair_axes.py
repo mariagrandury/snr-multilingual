@@ -146,8 +146,8 @@ def figure(out: pd.DataFrame, path: Path, n_cells: int) -> None:
     top = G._header(fig, "Multi-axis vs mono-axis pairs: the three decision accuracies on the reliable cells",
                     f"rows = pair set, columns = definition; the {n_cells} (benchmark, language) cells reliable on both axes "
                     f"at 0.66 (median, reliable_tasks.py). multi-axis = every pair at the grid seed ({n_pairs['multi-axis']} "
-                    f"decisions at the reference); mono-axis = those moving exactly one of L, depth, list, temperature, "
-                    f"second language ({n_pairs['mono-axis']}). DA-size: final vs the {TARGET_SIZE} final; DA-ckpt: a "
+                    f"decisions at the reference); mono-axis = those moving exactly one of L, depth, activation, list, "
+                    f"temperature, second language, English corpus ({n_pairs['mono-axis']}). DA-size: final vs the {TARGET_SIZE} final; DA-ckpt: a "
                     f"checkpoint vs its own size's final; DA-goal: a checkpoint vs the {TARGET_SIZE} final. Pooled over "
                     f"decisions; gate and MIN_PAIRS as everywhere in rq02; dotted = τ {TAU:g} / {SAFE_DA}.")
     fig.tight_layout(rect=(0, 0, 1, top))

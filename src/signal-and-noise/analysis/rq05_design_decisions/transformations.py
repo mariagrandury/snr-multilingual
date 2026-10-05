@@ -42,7 +42,7 @@ from analysis.utils import GRID_SEED, TARGET_SIZE, finals, ladder_frame, passes_
 from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
 
 mpl.rcParams.update(S.RC)
-# key -> (label, pairs); a pair is two cells as (L, scheme, arch), first = baseline
+# key -> (label, pairs); a pair is two cells as (L, scheme, ladder), first = baseline
 _A = sorted(DATA_SCHEMES["A"]["langs"])
 TRANSFORMATIONS = {
     "langs":       ("language count (L vs next L)",
@@ -71,8 +71,8 @@ def _cell(size: str, c: tuple) -> str:
     DIVERGED batch-504 run instead of its replacement — a comparison against a
     model that ends 0.26 nats off the power law, with nothing to show it had
     happened."""
-    L, scheme, arch = c
-    return exp_name(size, L, arch, GRID_SEED, scheme)
+    L, scheme, ladder = c
+    return exp_name(size, L, ladder, GRID_SEED, scheme)
 
 
 def _items(fin: dict, kind: dict, size: str, x: tuple, y: tuple, pop: str) -> pd.Series | None:

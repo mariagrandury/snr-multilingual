@@ -22,9 +22,10 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a"]
 SIZE_COLOR = {"90M": "#cde2fb", "175M": "#86b6ef", "350M": "#3987e5",
               "600M": "#1c5cab", "1B": "#0d366b", "1.7B": "#061d3a"}
 SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
-# The ladder's other two axes on a curve: the arch takes the line width, the
-# data scheme the dash pattern, so colour stays free for the size.
-ARCH_WIDTH = {"deep": 1.4, "shallow": 0.8}
+# A cell's other two axes on a curve: its ladder (deep, shallow, swiglu) takes
+# the line width, the data scheme the dash pattern, so colour stays free for
+# the size.
+LADDER_WIDTH = {"deep": 1.4, "shallow": 0.8, "swiglu": 2.2}
 SCHEME_DASH = {"A": "-", "B": "--", "AT3": ":", "BT3": (0, (5, 2)), "ZH": "-.",
                "ES": (0, (3, 1, 1, 1)), "DCLMP": (0, (6, 2, 2, 2)),
                "FWEB": (0, (1, 1))}

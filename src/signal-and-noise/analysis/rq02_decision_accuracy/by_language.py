@@ -112,10 +112,12 @@ def coverage(dec: pd.DataFrame, lang_of: pd.Series, sizes: list) -> pd.DataFrame
 
 
 def tokens_axis(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool: str,
-                attrs: pd.DataFrame, lang: str) -> pd.DataFrame:
+                by_family: pd.DataFrame, lang: str) -> pd.DataFrame:
     """`out` with a `tokens` column: per (group, size), the mean over the kept
-    decisions of the two members' training tokens in `lang`. The reference row
-    gets the reference's own tokens. NaN where a build's record is unreachable."""
+    decisions of the two members' training tokens in `lang`, each at its own
+    ladder's budget (`by_family`: the frame's L, scheme and ladder per family).
+    The reference row gets the reference's own tokens. NaN where a build's
+    record is unreachable."""
     kept = keep_cells(cells, pool)[["task", "group", "size", "frac"]]
     d = dec.astype({c: str for c in ("task", "group", "size", "family_a", "family_b")}).merge(kept)
     cache: dict = {}
@@ -123,8 +125,8 @@ def tokens_axis(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool:
     def tok(fam: str, size: str) -> float:
         key = (fam, size)
         if key not in cache:
-            r = attrs.loc[fam]
-            t = language_tokens(int(r["L"]), r["scheme"], size, r["arch"])
+            r = by_family.loc[fam]
+            t = language_tokens(int(r["L"]), r["scheme"], size, r["ladder"])
             cache[key] = float("nan") if t is None else t.get(lang, 0.0)
         return cache[key]
 
@@ -266,6 +268,7 @@ if __name__ == "__main__":
     df = ladder_frame(POOL)
     fin = finals(df)
     attrs = design_axes(df)
+    by_family = df.drop_duplicates("family").set_index("family")
     groups, axis_of = pairs_by_group(attrs, "L", args.axes), pair_axis(attrs)
     sizes = size_order(fin["size"].unique())
     dec = decisions(fin.assign(frac=1.0), groups, sizes, fin)
@@ -288,7 +291,7 @@ if __name__ == "__main__":
                 continue
             keys = ["population", "group", "size"]
             out = decorate(aggregate(c, args.pool, TAU), dec, c, args.pool, keys, axis_of)
-            out = tokens_axis(out, dec, c, args.pool, attrs, lang)
+            out = tokens_axis(out, dec, c, args.pool, by_family, lang)
             per_lang[lang] = out
             r2[lang] = (collapse_r2(out, "non_emb"), collapse_r2(out, "tokens"))
             # the panel title's two numbers, so the CSV carries what the PNG shows (rule 12)

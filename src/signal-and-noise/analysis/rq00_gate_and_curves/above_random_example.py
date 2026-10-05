@@ -84,7 +84,7 @@ def figure(pool: str, task: str, highlight: str | None, out_dir: Path) -> pd.Dat
     chance, n_items, need = task_chance(task), int(task_n_items(task)), needed_score(task)
     sizes = size_order(runs["bucket"].unique())
     if highlight is None:                          # the 350M deep scheme-A run with the fewest languages
-        c = d[(d["size"] == "350M") & (d["arch"] == "deep") & (d["scheme"] == "A")]
+        c = d[(d["size"] == "350M") & (d["ladder"] == "deep") & (d["scheme"] == "A")]
         highlight = c.loc[c["L"].idxmin(), "model"] if len(c) else runs["model"].iloc[0]
     lang = assign_language(task)
 

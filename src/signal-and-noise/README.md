@@ -3,8 +3,9 @@
 > Local fork of [allenai/signal-and-noise](https://github.com/allenai/signal-and-noise),
 > extended to run the SNR / decision-accuracy framework on our multilingual
 > pretraining ladders: first the 36-model sweep (4 sizes × 3 data mixtures ×
-> 3 seeds, 12 languages), now the **predictivity ladder** (175M–1.7B × 7
-> language settings × deep/shallow × data scheme A/B × seeds, 100 languages).
+> 3 seeds, 12 languages), now the **predictivity ladder** (90M–3B × 6
+> language settings × the deep/shallow/swiglu ladders × seven data schemes ×
+> seeds, 50 languages).
 
 For the framework itself — the definitions of signal, noise, decision
 accuracy, scaling-law error, and the AllenAI DataDecide / OLMo experiments —
@@ -25,7 +26,8 @@ one column per measurement: `bench__<task>`, `bpb__<subset>`, `ppl__<subset>`,
 [`snr/download/ladder.py`](snr/download/ladder.py) downloads it on first use
 (or reads `$SNR_LADDER_DIR`) and melts it into the long schema every script
 consumes — one row per (model, step, task) — with the ladder's axes as columns
-(`size`, `L`, `arch`, `scheme`, `seed`) and per-language BPB as tasks of its
+(`size`, `L`, `ladder` and its levels `arch` / `activation` / `optimizer`,
+`scheme`, `seed`) and per-language BPB as tasks of its
 own (`bpb_rus_Cyrl`, `bpb_dclm`, `bpb_macro`). Diverged and unfinished runs
 are dropped, and checkpoints are restricted to the grid every size shares
 (k/10 for benchmarks, k/20 for BPB) so late-window noise spans the same
@@ -40,7 +42,7 @@ uses is declared per `source` in `configs/models.json` (`loader: ladder`).
 
 | pool | models | use |
 |---|---|---|
-| `predictivity` | one run per (size, L, arch, scheme), seed 1904 | the headline pool: every README's numbers |
+| `predictivity` | one run per (size, L, ladder, scheme), seed 1904 | the headline pool: every README's numbers |
 | `predictivity_seeds` | every trained cell, all seeds | seed-noise estimates (rq03, rq05) |
 | `predictivity_seeds_train` / `_test` | the ×3 cells split by seed (64/313 vs 1904) | the seed holdout of rq03 |
 | `predictivity_all` | every trained cell, all seeds and all five schemes | rq01, rq03, rq05 and rq06: one intervention at a time against its own baseline |

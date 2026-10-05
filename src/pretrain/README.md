@@ -79,11 +79,11 @@ walltime to the remaining iters); on Azure resubmitting is the resume.
 | Size (non-embedding) | 90M, 175M, 350M, 600M, 1B, 1.7B, 3B, every size at every setting except 3B at L ∈ {8, 15, 30, 50} only |
 | Language setting L | 1, 2, 8, 15, 30, 50 (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | 1904 everywhere; ×3 on the marked columns — 64, 313, 1904 at 175M, L ∈ {1, 2, 50} · 64, 313, 1904 at 600M, L ∈ {1, 2, 50} · 28, 1797, 1904 at 1B, L ∈ {1, 2, 30} |
-| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L1 adds swiglu; L8 adds swiglu; L30 adds swiglu) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
-| Architecture | deep (baseline), shallow (the depth intervention), swiglu (the activation intervention) |
+| Data scheme | **A** (L ∈ {1, 2, 8, 15, 30, 50}; L8 adds swiglu; L15 adds swiglu; L30 adds swiglu) · **AT3** (L ∈ {15, 30, 50}; T=3; L15 stops at 1.7B, L30 stops at 1.7B, L50 stops at 1.7B; L15 is deep only; L30 is deep only) · **B** (L ∈ {8, 15, 30}) · **ZH** (L ∈ {2}; L2 stops at 1.7B; deep only) · **ES** (L ∈ {2}; L2 stops at 1.7B; deep only) · **DCLMP** (L ∈ {1}; deep only) · **FWEB** (L ∈ {1}; deep only) |
+| Ladder (model) | deep (baseline), shallow (arch = shallow), swiglu (activation = swiglu) |
 
 **58 runs** at one intervention level (scheme A, deep — the plan grid).
-Counting every scheme and the architectures each is trained in: **201 runs**.
+Counting every scheme and the ladders each is trained in: **201 runs**.
 
 ![Planned runs per grid cell](./pretrain_progress_plan.png)
 
@@ -92,10 +92,16 @@ Counting every scheme and the architectures each is trained in: **201 runs**.
 ![Eval work outstanding per grid cell](./eval_progress.png)
 <!-- END generated -->
 
-The intervention levels are suffix-marked in the run name: `--arch shallow`
-(width/depth 128, the model-depth intervention) and `--scheme` — the data
-axis, one of the seven entries of `DATA_SCHEMES` in
-[`launch_trainings.py`](launch_trainings.py):
+The intervention levels are suffix-marked in the run name. The model side
+is three axes — `--arch {deep,shallow}`, `--activation {xielu,swiglu}`,
+`--optimizer {ademamix}` — and the trained combinations are the ladders of
+`LADDERS` in [`launch_trainings.py`](launch_trainings.py), each named by the
+token its cells carry: `deep` (the baseline: deep, xielu, ademamix),
+`shallow` (`--arch shallow`, width/depth 128, the model-depth intervention)
+and `swiglu` (`--activation swiglu`, the activation intervention on the deep
+model). A combination no ladder trains (`--arch shallow --activation
+swiglu`) is refused. The data axis is `--scheme`, one of the seven entries
+of `DATA_SCHEMES`:
 
 | `--scheme` | What it changes | Where it applies |
 | ---------- | --------------- | ---------------- |
@@ -116,8 +122,8 @@ D(N) = 100 × N tokens (5×C); the per-size schedule lives in the
 `predictivity` block of the hyperparams files.
 
 Run name = Slurm job name = Azure display name = checkpoint dir = W&B run
-name: `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`.
-Runs log to
+name: `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+(the last token is the ladder). Runs log to
 W&B under `mariagrandury-epflnlp/msnr` — the entity is a hardcoded constant
 (`megatron_args.sh`) and the project comes from
 [`configs/hf_wandb.json`](../../configs/hf_wandb.json) (`wandb.project`).
@@ -177,7 +183,7 @@ launcher — the core design):
 | --- | -------- |
 | [`azure/`](azure/) | Everything only Azure needs (guide: [`azure/README.md`](azure/README.md)): [`env.sh`](azure/env.sh) (names — edit once, `source azure/env.sh` before any az command), [`setup.sh`](azure/setup.sh) (one-time workspace/compute setup, consumes the `compute-*.yml` / `environment-*.yml` specs), [`get_megatron.sh`](azure/get_megatron.sh) (pinned Megatron checkout), [`jobs/`](azure/jobs/) (AML job specs: `pretrain.yml`, `smoke.yml`, `convert.yml`, `eval.yml`), [`convert.sh`](azure/convert.sh) / [`eval.sh`](azure/eval.sh) (job entrypoints), [`launch_evals.py`](azure/launch_evals.py) (eval launcher). |
 | [`data/`](data/) | Data-mixture pipeline: [`create_data_mixture.py`](data/create_data_mixture.py) (tokenize-and-blend worker), [`build_data_mixtures.py`](data/build_data_mixtures.py) (per-sweep driver), [`language_sets_scheme{A,B,ZH,ES}.json`](data/language_sets_schemeA.json) (the nested language lists; AT3 reuses A's), [`launch_builds.sh`](data/launch_builds.sh) + [`submit_build_one.sh`](data/submit_build_one.sh) (one idempotent self-chaining Slurm job per (scheme, setting) mixture, fanned out from `DATA_SCHEMES`), [`stage_to_iopsstor.sh`](data/stage_to_iopsstor.sh) (capstor master → iopsstor training stage), [`data_progress.py`](data/data_progress.py) (per-language token coverage of every mixture, as a heatmap), [`build_status.sh`](data/build_status.sh) (is each build done, running or stalled — and the one sbatch to resume a dead chain). |
-| [`hyperparams/`](hyperparams/) | The reviewed architecture ladders: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
+| [`hyperparams/`](hyperparams/) | The reviewed ladders, one file each: [`hyperparams_deep.json`](hyperparams/hyperparams_deep.json) (baseline) / [`hyperparams_shallow.json`](hyperparams/hyperparams_shallow.json) (depth variant) / [`hyperparams_swiglu.json`](hyperparams/hyperparams_swiglu.json) (activation variant, deep's shape), each with the per-size `predictivity` schedule block; their generators and shared helpers. |
 | [`conversion/`](conversion/) | CSCS Megatron → HF conversion ([`convert-snr.sh`](conversion/convert-snr.sh)) and HF-Hub push ([`push-snr.py`](conversion/push-snr.py)). |
 
 Plus [`env.toml`](env.toml) (pyxis container env file, CSCS),
@@ -302,6 +308,7 @@ Intervention axes and filters compose:
 
 ```bash
 python launch_trainings.py cscs --arch shallow         # the depth intervention
+python launch_trainings.py cscs --activation swiglu    # the activation one (L 8/15/30)
 python launch_trainings.py cscs --scheme B --langs 8   # diversity-first lists
 python launch_trainings.py cscs --scheme AT3           # T=3: L15, L30 and L50
 python launch_trainings.py cscs --scheme ZH            # L2 with Chinese
@@ -455,7 +462,7 @@ loads the final checkpoint and exits immediately.
 ```bash
 python3.11 pretrain_progress.py                 # what a re-launch would do, per cell
 python3.11 pretrain_progress.py --filter 1.7B   # subset by name substring
-python3.11 pretrain_progress.py --arch shallow --scheme B   # one arch × scheme
+python3.11 pretrain_progress.py --arch shallow --scheme B   # one ladder × scheme
 python3.11 pretrain_progress.py --plot          # + the plan table and heatmaps
 ```
 
@@ -466,17 +473,17 @@ from the constants in `launch_trainings.py`, so a grid edit reaches the docs
 instead of leaving stale numbers behind.
 
 - **`pretrain_progress_plan.png`** — the plan, read off those constants:
-  cell = the scheme / architecture / seed(s) of every run it calls for,
+  cell = the scheme / ladder / seed(s) of every run it calls for,
   not just a count.
 
 The other two are read off disk, aggregated over **every** run found there
 regardless of variant:
 
 - **`pretrain_progress_simple.png`** — cell = how many finished models exist
-  at (size, L), across seeds, deep/shallow, every scheme, tokenizers.
+  at (size, L), across seeds, ladders, every scheme, tokenizers.
 - **`pretrain_progress_detailed.png`** — one row of binary (yellow 0 /
   blue 1) heatmaps per transformation: SEED (28 / 64 / 313 / 1797 / 1904),
-  ARCH (deep / shallow), DATA (A / AT3 / B / ZH / ES), TOKENIZER (v1 for
+  LADDER (deep / shallow / swiglu), DATA (A / AT3 / B / ZH / ES), TOKENIZER (v1 for
   now). Cells a factor value was never planned at — a scheme's undefined
   settings, a seed outside that size's triple — are greyed out rather than
   drawn as permanently missing runs.
@@ -487,7 +494,7 @@ per planned 1B / 1.7B run, the FineWeb-2 file its newest training log read
 (⚠ when that is off iopsstor or differs from what a launch would pick now),
 its latest checkpoint, its running or queued job (any account) and the 12h
 jobs that still have to start — followed by one launch command per size ×
-scheme × architecture that still has incomplete runs. The auto-eval watcher
+scheme × ladder that still has incomplete runs. The auto-eval watcher
 also rewrites it after every pass, so job states stay current between
 launches.
 
@@ -562,7 +569,7 @@ nothing duplicates.
   it frees the held tasks for one pass only.
 
   Every `launch_trainings.py cscs` run **starts this watcher in the
-  background** for the arch it submits (a pass every 30 min, log under
+  background** — one for the whole grid, every ladder and scheme (a pass every 30 min, log under
   `.../Megatron-LM/logs/auto_evals/`) unless one is already running, so
   trained cells reach W&B without a separate step. `--no-auto-evals` opts
   out; `--dry-run` never starts it.

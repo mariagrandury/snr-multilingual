@@ -66,7 +66,7 @@ Two sweeps, in this order:
    against 1.7B) differ, so they are compared as replications of a finding,
    never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow × seven data schemes
+   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data schemes
    (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
    grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
@@ -131,9 +131,14 @@ Eval results are NOT in the repo: they live on the cluster at
   matching keys off, plus the `groups` the report and deck slice by —
   `trained` is the 50 languages of the L50 mixture and is what every
   per-language figure covers, `main` the older 12-language set
-- Architectures live in `src/pretrain/hyperparams/hyperparams_<arch>.json`
-  (`deep` the baseline, `shallow` the depth level, `swiglu` the activation
-  level — `launch_trainings.ARCH_AXES` says what each one varies)
+- Each trained model configuration (a **ladder**) lives in
+  `src/pretrain/hyperparams/hyperparams_<ladder>.json`: `deep` the baseline,
+  `shallow` the depth level, `swiglu` the activation level.
+  `launch_trainings.LADDERS` gives each ladder its levels on the three
+  intervention axes — `arch` ∈ {deep, shallow}, `activation` ∈ {xielu,
+  swiglu}, `optimizer` ∈ {ademamix} — so `swiglu` is a deep model with the
+  swiglu activation, not an architecture; muon would be an optimizer level
+  (needs Megatron work first)
 
 ## Development
 
@@ -271,7 +276,9 @@ are retired — do not carry them into new work):
   the AT3 L15/L30 evals gave the temperature axis four mono-axis pairs
   against a MIN_PAIRS of three, so it would have added a fifth to a served
   axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
-  run configuration (seed × arch × scheme) — don't use it for the data axis.
+  run configuration (seed × ladder × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
   `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
+  — the last token is the ladder, not the arch (`swiglu` = arch deep +
+  activation swiglu); names stay as trained
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

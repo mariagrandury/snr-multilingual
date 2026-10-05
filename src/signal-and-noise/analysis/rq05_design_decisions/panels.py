@@ -153,7 +153,7 @@ def depth_crossover(frame: pd.DataFrame, out_dir: Path) -> None:
     fin = finals(frame)
     sd = seed_sd(fin)
     g = fin[(fin["seed"] == GRID_SEED) & (fin["scheme"] == "A") & (fin["kind"] == "bpb") & (fin["task"] != "bpb_macro")]
-    piv = g.pivot_table(index=["size", "L", "task"], columns="arch", values="primary_score")
+    piv = g.pivot_table(index=["size", "L", "task"], columns="ladder", values="primary_score")
     if not {"deep", "shallow"} <= set(piv.columns):
         return
     piv = piv.dropna(subset=["deep", "shallow"])

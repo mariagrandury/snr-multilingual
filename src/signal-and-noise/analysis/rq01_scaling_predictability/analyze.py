@@ -10,14 +10,14 @@ provenance. The above-random gate (analysis/RULES.md, rule 1) is applied per
 rungs, and a (task, L) the gate leaves short is kept in the table with NaN
 statistics and `gated` set (grey in panels.py). The loader already keeps only
 parent tasks (rule 6) and trained languages (rule 2). The loss scaling fit is
-the ladder health check's power law on the seed-1904 cell of every (L, arch,
+the ladder health check's power law on the seed-1904 cell of every (L, ladder,
 scheme); `scaling_law_error.py` next to this script asks how well such a fit
 on the proxy rungs predicts the reference rung's per-language BPB.
 
     rq1_scaling.png/.pdf/.csv  above-chance curves at L=30 (ungated, so a task at chance is visible at 0),
                                R²/ρ per family over the gated fits; the CSV holds both panels' plotted values
     rq1_fits.csv           one row per (task, L): n_rungs (fitted), gated_rungs, gated, the fit;  rq1_families.csv  the family medians
-    scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (arch, scheme), the rung count in the legend
+    scaling_fit.png/.csv   final loss vs N per L, one power-law fit per (ladder, scheme), the rung count in the legend
 
     python analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
 """
@@ -61,11 +61,11 @@ mpl.rcParams.update(S.RC)
 
 
 def _grid(fin: pd.DataFrame) -> pd.DataFrame:
-    return fin[(fin["seed"] == GRID_SEED) & (fin["arch"] == "deep") & (fin["scheme"] == "A")]
+    return fin[(fin["seed"] == GRID_SEED) & (fin["ladder"] == "deep") & (fin["scheme"] == "A")]
 
 
-def _line_style(size, arch, scheme) -> dict:
-    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.ARCH_WIDTH.get(arch, 1.0),
+def _line_style(size, ladder, scheme) -> dict:
+    return dict(color=S.SIZE_COLOR.get(size, S.MUTED), lw=S.LADDER_WIDTH.get(ladder, 1.0),
                 ls=S.SCHEME_DASH.get(scheme, "-"))
 
 
@@ -165,18 +165,18 @@ def plot_rq1(fin: pd.DataFrame, fits: pd.DataFrame, fam: pd.DataFrame, out_dir: 
 
 def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     """Final training loss of the seed-1904 cells against N per L, one power
-    law per (arch, scheme) over every rung present (≥ MIN_RUNGS; `n_rungs` in
+    law per (ladder, scheme) over every rung present (≥ MIN_RUNGS; `n_rungs` in
     the table and the legend): `pretrain.ladder_report._fit`, the ladder
     health check's law, applied to the analysis' cells."""
     loss = fin[(fin["task"] == "train_loss") & (fin["seed"] == GRID_SEED)]
     loss = loss.assign(N=loss["size"].map(NON_EMB)).dropna(subset=["N"])
     rows = []
-    for (L, arch, scheme), g in loss.groupby(["L", "arch", "scheme"]):
+    for (L, ladder, scheme), g in loss.groupby(["L", "ladder", "scheme"]):
         g = g.sort_values("N")
         fit = _fit(list(zip(g["N"], g["primary_score"]))) if len(g) >= MIN_RUNGS else None
         for _, r in g.iterrows():
             pred = float(np.exp(fit[1] + fit[0] * np.log(r["N"]))) if fit else np.nan
-            rows.append({"L": int(L), "arch": arch, "scheme": scheme, "size": r["size"], "N": r["N"],
+            rows.append({"L": int(L), "ladder": ladder, "scheme": scheme, "size": r["size"], "N": r["N"],
                          "final_loss": r["primary_score"], "alpha": -fit[0] if fit else np.nan,
                          "pred_loss": pred, "n_rungs": len(g)})
     out = pd.DataFrame(rows)
@@ -186,10 +186,10 @@ def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     Ls = sorted(out["L"].unique())
     fig, axes = plt.subplots(1, len(Ls), figsize=(3.1 * len(Ls), 3.2), squeeze=False)
     for ax, L in zip(axes[0], Ls):
-        for (arch, scheme), g in out[out["L"] == L].groupby(["arch", "scheme"]):
+        for (ladder, scheme), g in out[out["L"] == L].groupby(["ladder", "scheme"]):
             g = g.sort_values("N")
-            st = dict(color=S.SIZE_COLOR["1B"] if arch == "deep" else S.SERIES[1], ls=S.SCHEME_DASH.get(scheme, "-"))
-            lab = f"{arch}/{scheme}" + (f" α={g['alpha'].iloc[0]:.3f}" if g["alpha"].notna().any() else "") + f" (n={len(g)})"
+            st = dict(color={"deep": S.SIZE_COLOR["1B"], "shallow": S.SERIES[1]}.get(ladder, S.SERIES[2]), ls=S.SCHEME_DASH.get(scheme, "-"))
+            lab = f"{ladder}/{scheme}" + (f" α={g['alpha'].iloc[0]:.3f}" if g["alpha"].notna().any() else "") + f" (n={len(g)})"
             ax.plot(g["N"], g["final_loss"], "o", ms=4, color=st["color"], label=lab)
             if g["pred_loss"].notna().any():
                 ax.plot(g["N"], g["pred_loss"], lw=1, alpha=.7, **st)
@@ -199,8 +199,8 @@ def loss_scaling(fin: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
         ax.set_xticks([], minor=True); ax.set_title(f"L = {L}", loc="left")
         ax.set_xlabel("non-embedding params"); ax.set_ylabel("final lm loss")
         ax.legend(fontsize=6, frameon=False); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    top = G._header(fig, "Final loss against size, one fit per (arch, scheme) over every rung",
-                    f"point = the seed-{GRID_SEED} cell's final training loss; line = log loss = log A − α log N fitted over the (L, arch, "
+    top = G._header(fig, "Final loss against size, one fit per (ladder, scheme) over every rung",
+                    f"point = the seed-{GRID_SEED} cell's final training loss; line = log loss = log A − α log N fitted over the (L, ladder, "
                     f"scheme)'s rungs present (n in the legend, ≥ {MIN_RUNGS}); no gate (the loss has no chance level)")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, out_dir / "scaling_fit.png", dpi=150)
@@ -231,8 +231,8 @@ def generate_readme(pool: str, out_dir: Path, fits: pd.DataFrame, fam: pd.DataFr
         + ", ".join(f"{fmt(v)} over the {int(k)}-option fits" for k, v in by_opt.items()) + ".",
     ]
     if not sf.empty:
-        al = sf.dropna(subset=["alpha"]).groupby(["L", "arch", "scheme"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
-        bullets.append(f"- **Loss exponent α per (L, arch, scheme)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
+        al = sf.dropna(subset=["alpha"]).groupby(["L", "ladder", "scheme"]).agg(alpha=("alpha", "first"), n=("n_rungs", "first"))
+        bullets.append(f"- **Loss exponent α per (L, ladder, scheme)**, the seed-{GRID_SEED} cells, sizes in the fit in brackets: "
                        + ", ".join(f"L{L} {a}/{s} {fmt(r.alpha, 3)} ({int(r.n)})" for (L, a, s), r in al.iterrows()) + ".")
     rows = [[f, fmt(r.r2), fmt(r.rho), int(r.n), "" if not np.isfinite(r.n_options) else int(r.n_options)]
             for f, r in fam.iterrows()]

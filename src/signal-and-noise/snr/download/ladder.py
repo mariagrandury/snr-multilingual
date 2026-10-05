@@ -10,7 +10,9 @@ truth for every predictivity analysis: nothing here reads eval_logs or W&B.
 This module melts the wide table into the long schema the rest of the
 pipeline consumes (`snr.dataloader.get_slice`, `analysis.utils.build_snr_pool`):
 one row per (model, step, task) with `primary_score`, plus the ladder's axes
-(`size`, `L`, `arch`, `scheme`, `seed`) as columns. Per-language BPB enters as
+(`size`, `L`, `ladder`, `arch`, `activation`, `optimizer`, `scheme`, `seed`) as
+columns: `ladder` is the cell name's token (the trained configuration), `arch`,
+`activation` and `optimizer` its design levels (launch_trainings.LADDERS). Per-language BPB enters as
 tasks of its own — `bpb_<subset>` (`bpb_rus_Cyrl`, `bpb_dclm` for English;
 lower is better) and `bpb_macro` — so the same decision-accuracy and SNR
 machinery runs on the plan's outcome metric. Decision accuracy is a rank
@@ -39,7 +41,7 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import load_hf_wandb_config  # noqa: E402
 from pretrain.ladder_report import CELL_RE, on_grid  # noqa: E402
 from pretrain.launch_trainings import (  # noqa: E402
-    NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
+    BASELINE_LADDER, LADDERS, NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
 
 LADDER_FILES = ("ladder_report.csv", "ladder_report_curve.csv", "ladder_report.md")
 # Tokens per optimizer step = the RUNG'S OWN global batch x seq. It was a
@@ -49,7 +51,7 @@ LADDER_FILES = ("ladder_report.csv", "ladder_report_curve.csv", "ladder_report.m
 # point they contribute to a scaling fit — by 6x and 3x. 175M is in
 # ANALYSIS_SIZES, so that is not a cosmetic error.
 _HYPERPARAMS = _SRC / "pretrain" / "hyperparams"
-_META = ["cell", "size", "L", "arch", "scheme", "seed", "iter"]
+_META = ["cell", "size", "L", "ladder", *LADDERS[BASELINE_LADDER], "scheme", "seed", "iter"]
 
 
 def ladder_dir(path: str | Path | None = None) -> Path:
@@ -70,10 +72,10 @@ def load_ladder_wide(path: str | Path | None = None) -> pd.DataFrame:
 
 
 @lru_cache(maxsize=None)
-def cell_params(size: str, arch: str) -> int:
+def cell_params(size: str, ladder: str) -> int:
     """Parameters on the FLOPs convention — N_non_emb + d_model x V, the tied
-    embedding included — from the reviewed hyperparams file of the arch."""
-    h = json.loads((_HYPERPARAMS / f"hyperparams_{arch}.json").read_text())
+    embedding included — from the reviewed hyperparams file of the ladder."""
+    h = json.loads((_HYPERPARAMS / f"hyperparams_{ladder}.json").read_text())
     cfg = h["configs"][size]
     return int(cfg["n_non_emb_params"] + h["global"]["vocab_size"] * cfg["hidden_size"])
 
@@ -123,7 +125,9 @@ def load_predictivity_eval_results(
     """One row per (cell, checkpoint, task) for the predictivity ladder.
 
     Columns: model (the cell name), family (cross-size identity), size, L,
-    arch, scheme, seed, mix (`L8-schemeB-deep`: the cell's design variant,
+    ladder (the name's token: deep / shallow / swiglu), its levels arch (the
+    depth: a swiglu cell is "deep"), activation and optimizer, scheme, seed,
+    mix (`L8-schemeB-deep`: the cell's design variant,
     what the 36-sweep called its data mixture), step, task, kind
     (`benchmark` / `bpb` / `loss`), primary_score, tokens, compute
     (6 x params x tokens on the ladder convention), diverged, complete.
@@ -144,6 +148,13 @@ def load_predictivity_eval_results(
     """
     wide = load_ladder_wide(path)
     wide = wide.dropna(subset=["cell"])
+    # A report from before 2026-10-05 has no `ladder` column, and its `arch`
+    # holds the name's token (swiglu included): read the ladder from it and the
+    # levels from the registry, which is what the report now writes itself.
+    # (One concat, not four inserts: the table is ~4,000 columns wide.)
+    if "ladder" not in wide.columns:
+        levels = pd.DataFrame([LADDERS[x] for x in wide["arch"]], index=wide.index)
+        wide = pd.concat([wide.drop(columns="arch"), levels.assign(ladder=wide["arch"])], axis=1)
     matched = wide["cell"].map(CELL_RE.match)
     wide = wide[[bool(m) and on_grid(m) for m in matched]]        # the rung's current batch only
     # A report predating one of these columns is treated as complete and
@@ -190,13 +201,13 @@ def load_predictivity_eval_results(
 
     df["L"] = df["L"].astype(int)
     df["seed"] = df["seed"].astype(int)
-    df["mix"] = [mix_label(L, arch, scheme)
-                 for L, arch, scheme in zip(df["L"], df["arch"], df["scheme"])]
+    df["mix"] = [mix_label(L, ladder, scheme)
+                 for L, ladder, scheme in zip(df["L"], df["ladder"], df["scheme"])]
     df["family"] = "lm-" + df["mix"] + "-seed" + df["seed"].astype(str)
     df = df.rename(columns={"cell": "model", "iter": "step"})
     df["step"] = df["step"].astype(int)
     df["tokens"] = df["step"] * [float(cell_gbs(sz) * SEQ_LEN) for sz in df["size"]]
-    params = {k: cell_params(*k) for k in set(zip(df["size"], df["arch"]))}
-    df["compute"] = 6.0 * df["tokens"] * [params[k] for k in zip(df["size"], df["arch"])]
-    return (df.sort_values(["size", "L", "arch", "scheme", "seed", "step", "task"])
+    params = {k: cell_params(*k) for k in set(zip(df["size"], df["ladder"]))}
+    df["compute"] = 6.0 * df["tokens"] * [params[k] for k in zip(df["size"], df["ladder"])]
+    return (df.sort_values(["size", "L", "ladder", "scheme", "seed", "step", "task"])
               .reset_index(drop=True))
