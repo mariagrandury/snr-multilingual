@@ -5,6 +5,7 @@ squeue --me -h -o '%i|%j' | awk -F'|' '$2 ~ /seed28/ {print $1}' | xargs -r scan
 ## Pretraining
 
 python3.11 pretrain/launch_trainings.py cscs --scheme FWEB --partition preemptable
+python3.11 pretrain/launch_trainings.py cscs --size 3B --partition preemptable
 
 ## Convert and eval new ckpts
 
@@ -16,7 +17,7 @@ SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --watch 1800
 SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --retry-held
 
 ✅ probe new benchmarks:
-SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 600M,1B,1.7B --seed 1904 --final-only
+SBATCH_PARTITION=preemptable python3.11 pretrain/auto_evals_cscs.py --group auto_probe --size 90M,175M,350M,600M,1B,1.7B --seed 1904 --final-only
 
 ✅ compare probe benchmarks and decide which to keep:
 bash /iopsstor/scratch/cscs/mariagrandury/Projects/snr-multilingual/src/signal-and-noise/analysis/rq00_task_reformulation/probe.sh
@@ -139,3 +140,105 @@ python3.11 src/evals/scripts/make_rf_tasks.py --set rfgm --family belebele # reg
 - external models
 - varify EN versions in L1
 - verify RU/ZH/ES in L2
+
+
+---
+
+# Review
+
+run_tokens counted 90M/175M runs at batch 504 (the reviewer fixed this in your commit f4c81050). The reviewer described it as a reporting error, but it also chooses each cell's FineWeb-2 file: the 52B stage copy, or the 92B rebuild for cells the 52B copy is too small for. With the inflated 55.7B / 52.9B estimates, the 90M/175M cells at A-L15, A-L50 and B-L15 were probably sent to the 92B file. Their 350M–1B rungs read the 52B one.
+
+This is the one finding that touches the trained grid. Those 90M/175M cells would have seen a different sample order and the 92B copy's newer crawls, unlike the 350M–1B rungs of the same settings. The 1.7B rung reads the 92B copy too, by design.
+The fix retrains nothing: finished cells are skipped. It is correct for any future launch. pretrain_progress will now plan the 52B file for those cells, so its report will flag any that actually read the 92B copy.
+Needed: keep the fix, and check on the cluster which file those cells read. A suggested read-only command; I haven't run it, and the log path is from CLAUDE.md:
+
+grep -lE "data-92B" /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/logs/slurm/training/pretrain-{90M,175M}-*-{L15,L50}-* 2>/dev/null
+
+If they did read it, the honest fix is to state it in rule 10 and the paper. The alternative is a retrain of those cells, which is your decision.
+
+
+ALSO
+
+
+The batch confound at 90M/175M: LR not rescaled when the batch changed, together with the data-file question in #2. Both belong in rule 10 and the paper.
+
+
+The batch confound at 90M/175M: LR not rescaled when the batch changed, together with the data-file question in #2. Both belong in rule 10 and the paper.
+Recompute rf_significance.csv on the cluster.
+Move the 15.6 MB ladder_report_bpb.png to LFS.
+
+
+## Answer
+
+Both answered. Nothing changed, nothing launched.
+
+# 1. The 92B data routing — not an issue
+
+Two independent lines of evidence, both negative.
+
+**Empirically:** zero of the ~1,400 `-b84`/`-b168` training logs mention `data-92B` or `data-165B`. Every one that names a data root names `/iopsstor/.../data/` — the 52B stage. The only cells that ever read the 92B copy are the six 1.7B ones (A-L15, B-L15, A-L50, deep and shallow), exactly by design.
+
+**Mechanically, the inflated numbers never crossed the threshold.** The reviewer's 55.7B / 52.9B are right as `run_tokens`, but `fineweb_source` passes that to `undersized_build`, which halves it internally (`draw = run_tokens * (100 − EN_SHARE) // 100`) because only half the blend is FineWeb-2:
+
+| cell | run_tokens (buggy) | FineWeb-2 draw | build has | routed |
+|---|---:|---:|---:|---|
+| 90M-L15/L50-A, L15-B | 55.7B | **27.9B** | 52.0B | 52B stage |
+| 175M-L15/L50-A, L15-B | 52.9B | **26.4B** | 52.0B | 52B stage |
+
+`draw ≤ have` → `undersized_build` returns `None` → no rebuild lookup. I re-ran `fineweb_source` with both the fixed and the inflated token count for all six cells: the routing is identical. The bug was a reporting error only, exactly as the reviewer first called it. Keep the fix — it's correct for any future launch — but no trained cell is affected.
+
+(My first attempt at this got the wrong answer because I pre-halved the token count before calling `undersized_build`, which halves it again. The table above is from the corrected run.)
+
+# 2. The LR was not rescaled — confirmed, and deliberate
+
+`scale_for_gbs` rescales `train_iters`, `lr_warmup_iters` and `lr_wsd_decay_iters` only. The peak LR is untouched, and the logs confirm it: `90M-L8-b84` ran at **0.0014276**, identical to its diverged batch-504 predecessor; `175M-L8-b168` at **0.00121655**, likewise.
+
+**It's a documented choice, not an oversight.** `plan/90M-175M-batch-retrain.md:72-73` says "LR 0.0014276 *unchanged*", and `plan/90M-rung-anomaly.md:693` says "the LR is not rescaled for the smaller batch". More importantly, §"What it is not: the learning rate" rules the LR out as the cause: at batch 504 the 90M rung diverged at **3e-4, 6e-4 and 1.4276e-3** alike — "LR changes how badly it degrades, not whether it does". Holding the LR is what makes the retrain a single-variable change against the runs it replaces.
+
+## Does it show up?
+
+`ladder_report.py --check scaling --tol 0.15` → **nothing flagged**. Residuals aggregated over all 26 families:
+
+| rung | mean residual | families below the fit |
+|---|---:|---|
+| 90M | −0.045 | 24/26 *(out-of-sample — the fit starts at 175M)* |
+| **175M** | −0.023 | **26/26** |
+| **350M** | +0.038 | **0/26** |
+| 600M | −0.013 | 21/26 |
+| 1B | +0.003 | 11/26 |
+| 1.7B | −0.005 | 16/26 |
+
+26/26 then 0/26 is a clean sign flip, and it lands exactly at the batch boundary (175M = 168, 350M = 504). But it is also precisely what a straight line fitted to a convex log-log curve does — ends below, middle above — and 1.7B being below on 16/26 fits that reading, not the batch one. The magnitudes are small against the 0.15 tolerance.
+
+## So: is it an issue?
+
+**Not for the headline results.** DA is a *ranking within a rung*. Every family at 90M shares the same batch and the same LR, so a rung-wide offset cancels exactly in the comparison. rq02 — DA-size, DA-ckpt, the reliable-task lists — is safe by construction, and that is where the paper's claims live.
+
+**Marginally for rq01's scaling fits**, where 90M/175M are points on the curve. The fit already starts at 175M, the residuals are inside tolerance, and the check passes.
+
+**The honest limitation** is that batch and rung are perfectly confounded: every 90M cell is at 84, every 350M+ cell at 504, and the only 90M/175M runs at 504 diverged. You cannot estimate the batch effect at those rungs from data that exists.
+
+## How to close it, if you want to
+
+One diagnostic settles it — **350M at batch 168, LR unchanged**, the smallest rung that currently uses 504 and so the cheapest place you can have both. If its loss lands on the batch-504 350M, the batch/LR change is proven harmless at a rung where both exist, and the 90M/175M rungs inherit that. The launcher already supports it and forces a `diag-` name, so it cannot occupy a grid cell:
+
+```bash
+python3.11 launch_trainings.py cscs --size 350M --langs 8 --gbs 168 --dry-run
+# diag-350M-L8-deep-seed1904-gbs168-tok34.39B, 49,980 iters, 14 nodes, ~45 node-h
+```
+
+Otherwise the minimal action is documentation: state in the paper that the two smallest rungs train at batch 84/168 with the LR held, and that the rank-based results are unaffected because the offset is rung-wide. I'd do that regardless of whether you run the diagnostic.
+
+## Dive deep
+
+can i say that the 90m and 175m models are from the same ladder except the batch size? short answer
+
+Yes — with one caveat worth a half-sentence.
+
+**Accurate:** batch is the only *primitive* that changed. Everything else that differs is derived from it to hold the token budget D = 100·N and the same schedule *fractions*: iterations ×6 / ×3, warmup and WSD decay scaled with them, save interval and `ADEMAMIX_WARMUP` likewise. Peak LR, architecture, init, data, tokenizer and seed are identical to the rest of the ladder — I checked the logs: 90M ran at 0.0014276 and 175M at 0.00121655, the same values their batch-504 predecessors used and the same 6ND law every other rung uses.
+
+**The caveat:** don't let "only the batch size" imply "and therefore nothing else changed". At a fixed LR a 6× smaller batch *is* a different optimization regime — 6× more updates at the same step size — and that is precisely why these rungs converge where batch-504 diverged. The LR was deliberately not rescaled (`plan/90M-rung-anomaly.md:693`).
+
+So I'd write it as: *"the 90M and 175M rungs train at a reduced global batch (84 and 168 against 504), with the token budget and every schedule fraction held; the peak learning rate is unchanged."* That is defensible as written. "Identical except the batch size" is also true but invites the reader to assume the difference is cosmetic.
+
+One thing it's worth knowing supports you: the batch change moved those rungs' AdEMAMix slow-EMA memory from 10,000/4,500 ≈ 2.2 runs (longer than the run — the bug) to ≈ 0.37 and 0.39, which is the same range as 350M (0.60) and 600M (0.35). On that axis the retrained rungs are *more* like the rest of the ladder than before, not less.

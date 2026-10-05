@@ -10,16 +10,17 @@ the session that produced it.
 | [agentC/NUMBERS.md](agentC/NUMBERS.md) | hand-written numbers of rq00–rq02, rq04, rq06, rq10, `RULES.md`, `CLAUDE.md` and the paper checked against the committed CSVs (56 checks) |
 | [numbers2/NUMBERS2.md](numbers2/NUMBERS2.md) | the same for rq03, rq05–rq09, `analysis/README.md` and `CLAUDE.md` (87 checks) |
 | `agentA/` | launchers, reports and comparability (`FINDINGS.md`, `COMPARABILITY.md`) |
-| `agentB/` | the last 13 commits' analysis code (`FINDINGS.md`) and the scripts behind its checks |
-| `agentC/` | names, orphans, links and generated blocks (`FINDINGS.md`), with the extracted hand text per README (`hand_*.txt`) |
-| `agentE/` | the changed Python and shell run on fixtures (`FINDINGS.md`, `sub5a/`, `sub5b/`) |
-| `NOTES.md`, `names.py`, `orph.py`, `pc/` | the coordinator's notes and the name / orphan checks |
+| `agentB/` | the last 13 commits' analysis code (`FINDINGS.md`) |
+| `agentC/` | names, orphans, links and generated blocks (`FINDINGS.md`) |
+| `agentE/` | the changed Python and shell run on fixtures (`FINDINGS.md`, `sub5a/findings.md`, `sub5b/findings.md`) |
+| `NOTES.md` | the coordinator's notes |
 
-The scripts carry the scratch paths of the session that ran them and are kept
-as a record of how each number was obtained, not to be re-run as they are.
-Copies of repo files the helpers diffed against (`launch_trainings.py`,
-`models.json`, `tasks.json` snapshots, file listings) were left out: git
-holds them.
+Only the write-ups are kept. The helper scripts, fixtures and raw outputs
+behind them (141 files: the per-agent `*.py` / `*.sh`, `.diff` / `.txt` / `.out`
+captures, the `hand_*.txt` extracts, `names.py`, `orph.py`, `pc/`) were removed
+on 2026-10-05, once every finding had been checked against the tree; they carry
+the scratch paths of the session that ran them and are recoverable from commit
+f4c81050.
 
 ## What was done with it
 
@@ -64,10 +65,20 @@ Decided by the user on 2026-10-03 and applied:
 - CSVs are written at twelve significant digits; `ladder_report_bpb.png`
   moved to LFS.
 
-Still open: whether the 90M/175M cells at A-L15, A-L50 and B-L15 read the
-92B FineWeb-2 rebuild (a cluster log check), the batch confound in rule 10,
-recomputing `rf_significance.csv` on the cluster, rq06 `language_panel.py`
-keeping one task per language where a family has several, the rq05
-`intervention_da_size_by_*` names, the legacy-pool `compute_da.py` path, two
-unresolved cite keys and three placeholder `\ref`s in the paper, and the
-two header-only rq05 per-group tables nothing writes any more.
+Closed on 2026-10-05: the 90M/175M cells do not read the 92B FineWeb-2
+rebuild (no `-b84`/`-b168` training log names `data-92B`; their FineWeb-2
+draws stay under the 52B build); the two header-only rq05 per-group tables
+are deleted (rq06's `transfer_da_all_by_group_mono_axis.csv` replaces them).
+
+Still open (re-checked against the tree on 2026-10-05): the batch confound in
+rule 10 (the 90M/175M LR is deliberately not rescaled for their smaller
+batch), recomputing `rf_significance.csv` on the cluster (the nightly refresh
+does), `auto_evals_azure.py` reading `groups.auto` with CSCS-only task YAMLs
+(#8), the orphan listing's remaining noise (#15), the rule-16 names of the
+legacy pools, `rq2_…_either_transformation` and the rq05
+`intervention_da_size_by_*` tables (#17), rq06 `language_panel.py` keeping one
+task per language where a family has several (#25), the legacy-pool
+`compute_da.py` path (#26), `scale_convergence`'s `[nan, nan]` and the rq00
+score curves off the shared grid (#28), and in the paper four unresolved cite
+keys (`bhagia_establishing_2024` against the bib's `_2025`, `he2025scaling`,
+`hoffmann_training_2022`, `wang2026metaeval`) and five unresolved `\ref`s.

@@ -330,11 +330,26 @@ have a job in flight. That second check is not optional — `score_bpb.sbatch`
 queues its own successor (below), so a cell mid-chain always has a PENDING job
 that a naive loop would duplicate.
 
-One job per cell scores every converted checkpoint it finds and writes
+One job per cell scores every converted checkpoint **on the run's own save
+grid** and writes
 `<LOGS_ROOT>/<entity>/msnr/<cell>-iter<N>/bpb/bpb.json` — per language, the
 NLL, the byte count, `bpb` and `ppl`. `ppl` is `Infinity` when a diverged
 checkpoint averages more than ~709.8 nats/token, past what a double can
 exponentiate; its `bpb` stays finite.
+
+A preempted job writes an extra checkpoint on its way out, so a cell trained on
+`preemptable` carries saves between its grid ones — `lm-3B-L30-deep-seed1904`
+has 11478, 21769, 27354 and 31411 among its 2420-step saves. Those are
+converted, because conversion is the durability step, but
+[`on_grid_iters.awk`](scripts/on_grid_iters.awk) keeps them out of BPB's due
+set: nothing reads them (the analysis takes the ten tenths of a run, and an
+exact grid save always wins `at_fraction`'s nearest-match at distance 0) and
+each one costs a full scoring pass. Each run's grid is read off its own saves,
+so the 20-save 1B cells keep their 2287-iter grid rather than the 40-save rule;
+a trailing off-grid save is kept only when the grid's own endpoint is missing,
+which is the same `final` exception `due_iters` makes. Checked against
+`due_iters` over all 222 converted cells: every checkpoint it asks for is
+scored. Naming iters on the command line bypasses the filter.
 
 How it differs from the harness path, and why:
 
@@ -470,6 +485,7 @@ evals/
 │   ├── score_bpb.py                     # per-language BPB + perplexity
 │   ├── score_bpb.sbatch                 # BPB job, one per cell (self-chaining)
 │   ├── launch_bpb.sh                    # submit BPB for every cell still due
+│   ├── on_grid_iters.awk                # BPB's due set: drop a preempted job's saves
 │   ├── mirror_eval_logs.sbatch          # rsync eval_logs -> capstor; touch ckpts vs purge
 │   ├── snr_progress.py                  # progress dashboard
 │   ├── _eval_status.py                  # idempotency disk scan

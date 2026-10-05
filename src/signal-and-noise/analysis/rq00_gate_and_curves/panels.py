@@ -130,13 +130,6 @@ def threshold_panels(out_dir: Path) -> None:
     tasks = runs.drop_duplicates("task").set_index("task")
     thr = {}
     for t, r in tasks.iterrows():
-        # 59 of the 846 gated tasks carry a chance level but no item count
-        # (above_random.py reports them). The Wilson threshold is undefined
-        # without n, so leave it NaN -- int(NaN) raised here and took the whole
-        # panel, and with it above_random_thresholds.{csv,png}, down.
-        if pd.isna(r["n_items"]):
-            thr[t] = np.nan
-            continue
         n = int(r["n_items"]); ks = np.arange(0, n + 1)
         ok = wilson_lcb(ks / n, np.full(n + 1, n)) > r["random_baseline"]
         thr[t] = ks[ok][0] / n - r["random_baseline"] if ok.any() else np.nan
@@ -157,10 +150,7 @@ def threshold_panels(out_dir: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(14, 5.4), gridspec_kw={"width_ratios": [1, 1.5]})
     med = tasks.groupby("family")["threshold"].median().reindex(fam)
     ni = tasks.groupby("family")["n_items"].median().reindex(fam)
-    # Same NaN as above, one aggregation later: a family whose tasks all lack an
-    # item count has no median n, so label it "?" instead of int(NaN)-ing.
-    tables = [G.rank_ax(axes[0], med.rename(index=lambda f: "%s  (n = %s)" % (
-                            f, "?" if pd.isna(ni[f]) else format(int(ni[f]), ","))),
+    tables = [G.rank_ax(axes[0], med.rename(index=lambda f: "%s  (n = %s)" % (f, format(int(ni[f]), ","))),
                         "Margin over chance the Wilson gate implies per benchmark (median task)", k=len(fam),
                         xlabel="smallest (accuracy − chance) with LCB > chance", fmt="{:+.3f}")]
     tables.append(G.matrix_ax(axes[1], counts.div(total, axis=0), "Share of a benchmark's (task, size) cells above random, per rule",

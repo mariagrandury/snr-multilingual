@@ -834,8 +834,9 @@ def main() -> None:
     # grid, so the shallow ladder and the non-A schemes cannot quietly fall
     # behind while a deep/A-only watcher runs. The flags narrow it for a
     # targeted pass.
-    p.add_argument("--arch", choices=["deep", "shallow"], default=None,
-                   help="only this architecture (default: both)")
+    p.add_argument("--arch", choices=list(HYPERPARAMS), default=None,
+                   help="only this architecture family (default: every one "
+                        "HYPERPARAMS defines)")
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
                    help="only this data scheme (default: all of them)")
     p.add_argument("--max-submit", type=int, metavar="N",

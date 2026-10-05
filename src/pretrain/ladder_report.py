@@ -45,7 +45,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from pretrain_progress import CKPT_ROOT, SIZES, TRAIN_LOG_DIRS  # noqa: E402
 from launch_trainings import (  # noqa: E402
-    DATA_SCHEMES, GBS, cell_fineweb_subsets, cell_gbs, exp_name, mix_label,
+    DATA_SCHEMES, GBS, HYPERPARAMS, cell_fineweb_subsets, cell_gbs, exp_name,
+    mix_label,
     n_checkpoints, run_interval, save_interval)
 from auto_evals_cscs import (  # noqa: E402
     ALL_LANGUAGES_RUNS, auto_benchmarks, eval_languages, saved_valid_iters)
@@ -67,16 +68,20 @@ LOSS_RE = re.compile(r"iteration\s+(\d+)/\s*(\d+).*?lm loss: ([0-9.E+-]+)")
 SCHEME_OF = {v["label"]: k for k, v in DATA_SCHEMES.items()}
 _LABELS = "|".join(re.escape(lab) for lab in
                    sorted((lab for lab in SCHEME_OF if lab), key=len, reverse=True))
+# Same treatment for the architecture slot: derived from the registry, never
+# spelled out, so a new family (swiglu, 2026-10-03) is matched without an edit
+# here. Longest first, so one name cannot shadow another's prefix.
+_ARCHES = "|".join(sorted(HYPERPARAMS, key=len, reverse=True))
 LOG_RE = re.compile(r"pretrain-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
                     rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
-                    r"-(?P<arch>deep|shallow)-seed(?P<seed>\d+)-\d+\.out")
+                    rf"-(?P<arch>{_ARCHES})-seed(?P<seed>\d+)-\d+\.out")
 # The same name without the job-id suffix — the checkpoint / eval-dir form.
 # Requiring `lm-` and a seed is load-bearing: it keeps the hyperparameter
 # diagnostics (`diag-90M-L2-deep-lr0.0006`) out of the ladder, where their
 # short runs would sit nats off every scaling fit.
 CELL_RE = re.compile(r"lm-(?P<size>[\d.]+[MB])-L(?P<L>\d+)"
                      rf"(?P<scheme>{_LABELS})?(?:-b(?P<gbs>\d+))?"
-                     r"-(?P<arch>deep|shallow)-seed(?P<seed>\d+)")
+                     rf"-(?P<arch>{_ARCHES})-seed(?P<seed>\d+)")
 
 # Non-embedding parameters — the x of the scaling fit. The ladder is defined by
 # these targets, so they are the right abscissa even though the realised counts
@@ -376,8 +381,10 @@ _DASHES = ["-", "--", ":", "-.", (0, (3, 1, 1, 1)), (0, (1, 1)), (0, (5, 1))]
 SCHEME_STYLE = {v: _DASHES[i % len(_DASHES)] for i, v in enumerate(DATA_SCHEMES)}
 # Palettes run pale -> very dark. Deep and shallow take the two most readable
 # steps (mid and dark); an earlier assignment gave shallow the palest step and
-# it was legible in the legend but not in the plot.
-ARCH_STEP = {"deep": 1, "shallow": 2}
+# it was legible in the legend but not in the plot. Swiglu takes the darkest:
+# it trains scheme A like deep, so with deep's shade it would share deep's dash
+# too and its curves would be indistinguishable from deep's.
+ARCH_STEP = {"deep": 1, "shallow": 2, "swiglu": 3}
 # The scaling panels put SIZE on the x axis, so colour is free to carry the
 # whole intervention there — one hue per (arch, scheme). Generated from the
 # registry rather than written out, for the same reason as SCHEME_STYLE: the
@@ -386,9 +393,9 @@ ARCH_STEP = {"deep": 1, "shallow": 2}
 # panels and a red fit line next to it reads as a flag.
 _FIT_HUES = ["#2980b9", "#e67e22", "#8e44ad", "#27ae60", "#16a085",
              "#d35400", "#2c3e50", "#7f8c8d", "#b7950b", "#6c3483"]
-FIT_COLOUR = {(arch, v): _FIT_HUES[(2 * i + j) % len(_FIT_HUES)]
+FIT_COLOUR = {(arch, v): _FIT_HUES[(len(HYPERPARAMS) * i + j) % len(_FIT_HUES)]
               for i, v in enumerate(DATA_SCHEMES)
-              for j, arch in enumerate(("deep", "shallow"))}
+              for j, arch in enumerate(HYPERPARAMS)}
 CURVE_WINDOWS = 400
 CLOSEUP_YMAX = 3.5   # ceiling for the last-10% panels     # per run, emitting each window's min AND max
 

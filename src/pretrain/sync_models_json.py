@@ -179,7 +179,7 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--arch", choices=["deep", "shallow"], default="deep")
+    p.add_argument("--arch", choices=list(HYPERPARAMS), default="deep")
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default=None,
                    help="Only this data scheme (default: every scheme "
                         "trained in --arch)")

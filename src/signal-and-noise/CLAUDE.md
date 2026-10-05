@@ -26,7 +26,7 @@ This is a local fork of [allenai/signal-and-noise](https://github.com/allenai/si
 augmented to run the SNR / decision-accuracy pipeline on our own pretraining
 ladders. Two generations of models flow through it:
 
-- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow>-seed<seed>`,
+- the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>`,
   90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
   2026-09-20, plan/l100_data_mixture.md) × deep/shallow × scheme A/B/AT3/ZH/ES ×
   seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and

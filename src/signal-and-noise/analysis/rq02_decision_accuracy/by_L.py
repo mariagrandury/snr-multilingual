@@ -335,7 +335,10 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
     # by pair count, not by value: the kernels NaN a cell under MIN_PAIRS, so its value cannot say it had pairs
     few = [L for L in Ls if L not in set(summary[col]) and L in set(drawable.loc[drawable[reading["n_col"]].fillna(0) > 0, col])]
     counts = by == "transformation"
-    fig, axes = plt.subplots(2, 4, figsize=(17, 7.4), sharey=True)
+    # two rows, the pooled panel first: 2 x 4 for the six Ls, wider for the design
+    # axes (DESIGN_AXES grows with the grid) — zip() below would drop a panel silently
+    ncols = -(-(len(Ls) + 1) // 2)
+    fig, axes = plt.subplots(2, ncols, figsize=(4.25 * ncols, 7.4), sharey=True)
     flat = axes.ravel()
     n_all = pooled[reading["n_col"]].max()
     _lines(flat[0], head, sizes, first + (f"  ({int(n_all)} pairs)" if pd.notna(n_all) else ""), groups, counts)
@@ -346,7 +349,7 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
     spare = list(range(len(Ls) + 1, len(flat)))
     for i in spare:
         flat[i].axis("off")
-    for ax in flat[4:]:
+    for ax in flat[ncols:]:
         ax.set_xlabel("proxy's training tokens (× Chinchilla)")
     for ax in axes[:, 0]:
         ax.set_ylabel(reading["ylabel"])

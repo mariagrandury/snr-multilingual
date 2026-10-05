@@ -122,7 +122,8 @@ done
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
 # agreement and has no such problem (plan/decision_accuracy.md).
 run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
-# bBPB against accuracy as the proxy's reading, on the per-item store's finals (figure 11; nothing without the store)
+# DA of the benchmark BPB (bBPB) against accuracy on the same pool; reads the
+# per-item store, so off the cluster it writes nothing (README block `bench-bpb`)
 run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
@@ -264,6 +265,9 @@ pass "rq10 — size generalisation (the 3B rung as the reference)"
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # today's preview: the same four families read to 1.7B (the comparison line of panel (a))
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B
+# the prior question to the ranking one: which benchmarks the 3B rung lifts above
+# chance that the reference cannot resolve at all (both gate columns on the 3B families)
+run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
 
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py

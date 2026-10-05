@@ -9,7 +9,9 @@
 #   sbatch --job-name=bpb-<cell> scripts/score_bpb.sbatch <cell> [iters...]
 #   sbatch scripts/score_bpb.sbatch lm-90M-L2-deep-seed1904 450 900
 #
-# With no iters it scores every checkpoint converted for the cell.
+# With no iters it scores every checkpoint converted for the cell that is on the
+# run's own save grid (on_grid_iters.awk drops a preempted job's extra saves,
+# which nothing reads). Naming iters explicitly overrides that filter.
 #
 # A cell does not fit one debug slot. Scoring costs a flat ~444 s/ckpt at 90M
 # and ~2,141 s at 1.7B (medians over 1,023 jobs), so debug's 1:30 wall gets
@@ -66,9 +68,10 @@ if [ ${#ITERS[@]} -eq 0 ]; then
     # .hf_complete is convert-snr.sh's last write, so its presence means the
     # snapshot is whole — config.json alone can match a half-written save.
     mapfile -t ITERS < <(find "$STAGING/$CELL" -name .hf_complete -printf '%h\n' 2>/dev/null \
-        | xargs -r -n1 basename | sed 's/^iter_0*//' | sort -n)
+        | xargs -r -n1 basename | sed 's/^iter_0*//' | sort -n \
+        | awk -f "$(dirname "$SCRIPT")/on_grid_iters.awk")
 fi
-echo "cell=$CELL  converted=${#ITERS[@]}  max_tokens=$MAX_TOKENS"
+echo "cell=$CELL  scorable=${#ITERS[@]}  max_tokens=$MAX_TOKENS"
 [ ${#ITERS[@]} -eq 0 ] && { echo "no converted checkpoints for $CELL"; exit 1; }
 
 # What is still DUE. Deciding this here rather than only inside the loop is

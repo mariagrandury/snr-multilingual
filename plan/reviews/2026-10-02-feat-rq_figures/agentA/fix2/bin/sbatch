@@ -1,2 +1,0 @@
-#!/bin/bash
-echo "sbatch called: $*" >&2; n=$(cat "$CNT" 2>/dev/null || echo 0); echo $((n+1)) > "$CNT"; [ "$n" -ge "${FAIL_FIRST:-99}" ]

@@ -1,6 +1,0 @@
-#!/bin/bash
-V=/Users/mariagrandury/Projects/epfl/snr-multilingual/venv/bin/python
-case "$1" in
-  *.py) exec $V /private/tmp/claude-501/-Users-mariagrandury-Projects-epfl-snr-multilingual/f7d6f8d9-67db-4234-9ff3-0c61069faa4c/scratchpad/review/run_with_plans_wt.py /private/tmp/claude-501/-Users-mariagrandury-Projects-epfl-snr-multilingual/f7d6f8d9-67db-4234-9ff3-0c61069faa4c/scratchpad/review/../plans "$@" ;;
-  *) exec $V "$@" ;;
-esac

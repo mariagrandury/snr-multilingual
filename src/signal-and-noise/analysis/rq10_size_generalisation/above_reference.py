@@ -138,10 +138,21 @@ def per_task(df: pd.DataFrame, reference: str, families: list, mask: pd.DataFram
     return out
 
 
-def pooled(pt: pd.DataFrame) -> pd.DataFrame:
+def pooled(pt: pd.DataFrame, channel: str = "benchmarks") -> pd.DataFrame:
     """The gated, rule-5 cells pooled per (axes, size, frac): the ratio the
-    figure draws, with the number of tasks behind it."""
-    k = pt[~pt["gated"] & pt["da"].notna() & (pt["family"] != "bpb")]
+    figure draws, with the number of tasks behind it.
+
+    `channel` keeps the two measurement channels apart instead of averaging
+    them: "benchmarks" is every gated benchmark task, "bpb" the per-language
+    bits-per-byte tasks (and `bpb_macro`), which carry no chance level and so
+    are never gated. rq02 separates them for the same reason — DA-size sits at
+    ~0.50 on benchmark accuracy and ~0.9 on BPB, so a single mean over both
+    reports neither. Pooling them was also why this RQ read as "no signal at
+    3B": the benchmark half is at chance at EVERY reference, the 1.7B one
+    included, and the BPB half was filtered out before it could say otherwise.
+    """
+    k = pt[~pt["gated"] & pt["da"].notna()]
+    k = k[k["family"] == "bpb"] if channel == "bpb" else k[k["family"] != "bpb"]
     out = (k.groupby(["axes", "size", "frac"]).agg(n_matching=("n_matching", "sum"), n_pairs=("n_pairs", "sum"),
                                                    n_tasks=("task", "nunique"), da_macro=("da", "mean")).reset_index())
     out["da"] = out["n_matching"] / out["n_pairs"]
@@ -168,6 +179,15 @@ def figure(tables: dict, path: Path, pool: str, reference: str, design: str, fam
             for _, r in g.iterrows():
                 ax_a.annotate(f"{int(r['n_tasks'])}", (r["non_emb"], r["da"]), textcoords="offset points", xytext=(0, -9),
                               ha="center", va="top", fontsize=5.5, color=c)
+    # The BPB channel on the same axes: without it panel (a) shows only the
+    # benchmark half, which is at chance at every reference and reads as "the
+    # rung is unpredictable" rather than "benchmark rankings do not transfer".
+    for axes_, c in (("multi-axis", S.INK), ("mono-axis", S.RAMP[1])):
+        g = tables["pooled_bpb"][(tables["pooled_bpb"]["axes"] == axes_) & (tables["pooled_bpb"]["frac"] == 1.0)]
+        if not len(g):
+            continue
+        ax_a.plot(g["non_emb"], g["da"], color=c, ls=(0, (1, 1.5)), marker="s", ms=4, lw=1.6,
+                  label=f"→ {reference} final, {axes_}, BPB ({int(g['n_tasks'].median())} tasks)")
     ax_a.axhline(.5, color=S.MUTED, lw=.8, ls=":")
     ax_a.set_xscale("log"); ax_a.set_xticks([NON_EMB[s] for s in EVAL_SIZES if s in set(sizes) | {TARGET_SIZE}])
     ax_a.set_xticklabels([s for s in EVAL_SIZES if s in set(sizes) | {TARGET_SIZE}]); ax_a.minorticks_off()
@@ -230,7 +250,9 @@ def figure(tables: dict, path: Path, pool: str, reference: str, design: str, fam
                       f"({len(pair_sets(design_axes(finals(tables['frame'])))['multi-axis']) if len(fams) else 0}) and mono-axis "
                       f"({len(pair_sets(design_axes(finals(tables['frame'])))['mono-axis']) if len(fams) else 0}) sets (rule 15); a cell needs "
                       f"{MIN_PAIRS} pairs (rule 5); the gate is `{pool}`'s mask at the proxy and the same Wilson rule on the {reference} runs "
-                      f"(rule 1); BPB is left out of the pooled lines. (a) and (c) read the same families to {TARGET_SIZE} for comparison, "
+                      f"(rule 1); the benchmark and BPB channels are pooled separately (BPB has no chance level, so it is never gated, "
+                      f"and only the languages every paired family scores clear the pair minimum). "
+                      f"(a) and (c) read the same families to {TARGET_SIZE} for comparison, "
                       f"so the two references differ in nothing but the reference. The count under a point is the tasks behind it.")
     fig.tight_layout(rect=(0, 0, 1, top_y))
     S.save(fig, path, dpi=150)
@@ -251,11 +273,20 @@ def generate_readme(pool: str, reference: str, design: str, stem: str, tables: d
     else:
         g = pooled_[pooled_["frac"] == 1.0]
         status = (f"**Population.** {len(fams)} families with a final at {reference} ({', '.join(fams)}); DA-size pooled over the gated "
-                  f"benchmark tasks with ≥ {MIN_PAIRS} pairs.")
-        table = md_table(["axes", "proxy", f"DA-size → {reference}", "tasks", f"DA-size → {TARGET_SIZE} (same families)"],
+                  f"benchmark tasks with ≥ {MIN_PAIRS} pairs, and separately over the per-language BPB tasks "
+                  f"(never gated — no chance level; only the languages every paired family scores clear {MIN_PAIRS} pairs, "
+                  f"which is why the BPB column rests on far fewer tasks).")
+        def _cell(key: str, r) -> tuple:
+            """The same (axes, proxy) row of another pooled table, or dashes."""
+            q = tables[key]
+            q = q[(q["axes"] == r["axes"]) & (q["size"] == r["size"]) & (q["frac"] == 1.0)]
+            return (f"{q['da'].iloc[0]:.2f}", str(int(q["n_tasks"].iloc[0]))) if len(q) else ("—", "—")
+
+        table = md_table(["axes", "proxy", f"DA-size → {reference}", "tasks",
+                          f"DA-size → {TARGET_SIZE} (same families)",
+                          f"BPB DA-size → {reference}", "BPB tasks"],
                          [[r["axes"], r["size"], f"{r['da']:.2f}", int(r["n_tasks"]),
-                           (lambda q: f"{q['da'].iloc[0]:.2f}" if len(q) else "—")(
-                               tables["pooled_1.7B"][(tables["pooled_1.7B"]["axes"] == r["axes"]) & (tables["pooled_1.7B"]["size"] == r["size"]) & (tables["pooled_1.7B"]["frac"] == 1.0)])]
+                           _cell("pooled_1.7B", r)[0], *_cell("pooled_bpb", r)]
                           for _, r in g.iterrows() if r["size"] != reference])
     body = "\n\n".join(filter(None, [
         f"## The {reference} rung as the reference" + (f" — preview on the `{design}` design set" if design != "all" else ""),
@@ -285,9 +316,13 @@ def run(pool: str, reference: str, design: str, out_dir: Path) -> dict:
     fams17 = sorted(set(fin.loc[fin["size"] == TARGET_SIZE, "family"]) & set(fams)) if reference != TARGET_SIZE else fams
     pt17 = per_task(df, TARGET_SIZE, fams17, mask) if reference != TARGET_SIZE else pt
     tables = {"per_task": pt, "pooled": pooled(pt), "per_task_1.7B": pt17, "pooled_1.7B": pooled(pt17),
+              "pooled_bpb": pooled(pt, "bpb"), "pooled_bpb_1.7B": pooled(pt17, "bpb"),
               "frame": df[df["family"].isin(fams)]}
     pt.to_csv(out_dir / f"{stem}_per_task.csv", index=False)
-    tables["pooled"].assign(reference=reference).to_csv(out_dir / f"{stem}.csv", index=False)
+    # One CSV per PNG, both channels in it: `channel` is what tells them apart.
+    pd.concat([tables["pooled"].assign(channel="benchmarks"),
+               tables["pooled_bpb"].assign(channel="bpb")], ignore_index=True) \
+      .assign(reference=reference).to_csv(out_dir / f"{stem}.csv", index=False)
     figure(tables, out_dir / f"{stem}.png", pool, reference, design, fams, n_ref_runs)
     if out_dir == OUT_ROOT / load_pools()[pool].get("stage", "pretraining") / pool:
         generate_readme(pool, reference, design, stem, tables, fams, n_ref_runs)

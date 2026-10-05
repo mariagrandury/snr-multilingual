@@ -41,13 +41,25 @@ reintroduces the drift this design removed.
 |  `auto_evals_azure.py` | Azure watcher: same due rule against blob storage |
 
 A rung is trained in an architecture only if that architecture's hyperparams
-file defines it (`launch_trainings.arches_for`): the 3B exists in
-`hyperparams_deep.json` only, so every fan-out over architectures reads
-`arches_for(scheme, size)`, never a scheme's `arches` list directly.
+file defines it AND the scheme plans that architecture at that setting
+(`launch_trainings.arches_for`): the 3B exists in `hyperparams_deep.json`
+only, and `swiglu` is listed in scheme A's `arches_by_L` at L ∈ {1, 8, 30}
+rather than in its `arches`, so it runs at three settings and not six. Every
+fan-out over architectures reads `arches_for(scheme, size, L)`, never a
+scheme's `arches` list directly — the `--arch` guard in `main()` did read it
+directly and refused `--arch swiglu` outright until 2026-10-03.
+
+**The architecture slot is not one axis.** `ARCH_AXES` says what each family
+varies against the deep baseline — `shallow` the depth, `swiglu` the
+activation — and `analysis/utils.design_axes` splits the slot on it, so a
+(deep, swiglu) pair is an ACTIVATION decision and only (deep, shallow) is a
+depth one. A family added to `HYPERPARAMS` without an `ARCH_AXES` entry raises
+there rather than being silently pooled into the depth axis. An OPTIMIZER
+family needs Megatron work first: `--optimizer` takes only adam|sgd|ademamix.
 
 Cell name everywhere (checkpoint dir, W&B run id/name, models.json key,
 parsed by `pretrain_progress.py`):
-`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow>-seed<seed>` — `lm`, not `apertus`:
+`lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>` — `lm`, not `apertus`:
 the architecture has diverged from Apertus (renamed 2026-08-21). Job display
 names drop the `lm-` for a kind prefix instead
 (`launch_trainings.job_name`): `pretrain-90M-L8-deep-seed1904`,
@@ -143,7 +155,7 @@ empty. Terminology: **scheme** is this data axis; **variant** keeps its older,
 looser sense (any run configuration — seed × arch × scheme).
 
 Per-size schedule (iters/warmup/decay for D(N) = 100 × N) comes from the
-`predictivity` block in `hyperparams/hyperparams_{deep,shallow}.json` — the
+`predictivity` block in `hyperparams/hyperparams_<arch>.json` — the
 top-level `train_iters: 50000` in those files belongs to the finished
 36-model sweep, not this one. Two more knobs are launcher-derived per cell
 (not in the JSONs): `ADEMAMIX_WARMUP` = the cell's target iters (alpha/beta3
@@ -512,7 +524,7 @@ limit (`ArrowInvalid: Negative buffer resize`), and `publish()` never ran.
 A run's own grid now needs two saves and may plan at most twice the rung's
 checkpoint count (`n_checkpoints`), else the rung's rule applies; `_melt`
 strips the family prefix off the column names before melting, never off the
-long key column. `--push-git` after a crash is the trap `nightly_ladder.sh`
+long key column. `--push-git` after a crash is the trap `nightly.sh ladder`
 guards: the fetch succeeds and hands the analysis yesterday's report.
 
 ---

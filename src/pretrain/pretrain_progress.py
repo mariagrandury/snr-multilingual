@@ -3,7 +3,7 @@
 
 Prints one tab-separated status line per cell of the selected scheme
 (`--arch`/`--scheme`). Each cell's target is its size's own 5xC budget (the
-"predictivity" block in hyperparams/hyperparams_{deep,shallow}.json):
+"predictivity" block in hyperparams/hyperparams_<arch>.json):
 
     <model>\tdone
     <model>\tfresh\t<target>
@@ -59,7 +59,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from launch_trainings import (  # noqa: E402
-    CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES, GBS, HYPERPARAMS, ITER_MS,
+    ARCH_AXES, BASELINE_ARCH, CSCS_DEFAULT_DATA_DIR, DATA_SCHEMES, EVAL_SIZES,
+    GBS, HYPERPARAMS, ITER_MS,
     LADDER, LANG_SETTINGS, NODES_BY_SIZE, SEED_SINGLE, SEED_TRIPLES, SEQ_LEN,
     SIZES_BY_ARCH, SIZE_LANG_SETTINGS, TIME_MAX_SEC, arches_for, cell_gbs,
     cell_schedule, exp_name, fineweb_source, iter_ms, job_name,
@@ -87,6 +88,10 @@ ITER_RE = re.compile(r"^iter_(\d+)$")
 # alternation is ordered, and a short label that prefixes a longer one would
 # otherwise win and leave the remainder unmatched.
 SCHEME_OF_LABEL = {v["label"]: name for name, v in DATA_SCHEMES.items()}
+# The architecture slot, derived from the registry rather than spelled out,
+# so a new family (swiglu, 2026-10-03) is matched without an edit here.
+# Longest first, so one name cannot shadow another's prefix.
+_ARCHES = "|".join(sorted(HYPERPARAMS, key=len, reverse=True))
 NAME_RE = re.compile(
     r"^lm-(?P<size>" + "|".join(re.escape(s) for s in LADDER) + r")-L(?P<L>\d+)"
     r"(?P<scheme>"
@@ -98,7 +103,7 @@ NAME_RE = re.compile(
     # rungs are still on disk under the name WITHOUT it: the group is what
     # tells the two apart, and a pattern that merely tolerated the suffix
     # would read both as the same cell.
-    + r")?(?:-b(?P<gbs>\d+))?-(?P<arch>deep|shallow)-seed(?P<seed>\d+)$"
+    + rf")?(?:-b(?P<gbs>\d+))?-(?P<arch>{_ARCHES})-seed(?P<seed>\d+)$"
 )
 
 SIZES = list(SIZE_LANG_SETTINGS)  # 90M .. 1.7B, grid order
@@ -337,7 +342,7 @@ def update_plots(root: Path = CKPT_ROOT, out_dir: Path = SCRIPT_DIR) -> None:
     # --- detailed: one row of binary heatmaps per transformation ------------
     rows = [
         ("SEED", "seed", ALL_SEEDS),
-        ("ARCH", "arch", ["deep", "shallow"]),
+        ("ARCH", "arch", list(HYPERPARAMS)),
         ("DATA", "scheme", list(DATA_SCHEMES)),
         ("TOKENIZER", "tokenizer", ["v1"]),
     ]
@@ -945,13 +950,26 @@ def _scheme_desc(name: str, d: dict) -> str:
     # (AT3 is deep only at L15 and L30, both architectures at L50), which the
     # scheme-wide list above cannot say.
     for L, arches in sorted(d.get("arches_by_L", {}).items()):
-        if tuple(arches) != tuple(d["arches"]):
-            bits.append(f"L{L} is {' + '.join(arches)} only")
+        if tuple(arches) == tuple(d["arches"]):
+            continue
+        # The override can restrict (AT3 is deep only at L15/L30) or extend
+        # (scheme A adds swiglu at L1/L8/L30). "only" is wrong for the second,
+        # and the counts it sits beside make the difference matter.
+        extra = [a for a in arches if a not in d["arches"]]
+        bits.append(f"L{L} adds {' + '.join(extra)}" if extra
+                    else f"L{L} is {' + '.join(arches)} only")
     return f"**{name}** ({'; '.join(bits)})"
 
 
 def grid_markdown(png_dir: str) -> str:
     """The sweep's axes, run counts and figures — derived, never hand-written."""
+    # One phrase per architecture family, from the registry that defines them:
+    # the baseline first, then what each of the others moves away from it.
+    base = ARCH_AXES[BASELINE_ARCH]
+    arch_row = ", ".join(
+        [f"{BASELINE_ARCH} (baseline)"]
+        + [f"{a} (the {', '.join(k for k, v in ARCH_AXES[a].items() if v != base[k])} "
+           f"intervention)" for a in HYPERPARAMS if a != BASELINE_ARCH])
     baseline = len(predictivity_cells(["A"]))
     # Every run the grid plans, counted by enumerating rather than multiplying:
     # not every scheme trains both architectures (ZH and ES are deep only)
@@ -972,7 +990,7 @@ def grid_markdown(png_dir: str) -> str:
 | Language setting L | {_fmt(LANG_SETTINGS)} (English + L−1 FineWeb-2 languages; L=1 is 100% English) |
 | Seed | {_fmt(SEED_SINGLE)} everywhere; ×3 on the marked columns — {seeds} |
 | Data scheme | {" · ".join(_scheme_desc(v, d) for v, d in DATA_SCHEMES.items())} |
-| Architecture | deep (baseline) and shallow (the model-depth intervention) |
+| Architecture | {arch_row} |
 
 **{baseline} runs** at one intervention level (scheme A, deep — the plan grid).
 Counting every scheme and the architectures each is trained in: **{full} runs**.
@@ -1014,7 +1032,7 @@ def main() -> None:
     )
     p.add_argument("--root", default=str(CKPT_ROOT),
                    help=f"Megatron run root (default: {CKPT_ROOT})")
-    p.add_argument("--arch", choices=["deep", "shallow"], default="deep",
+    p.add_argument("--arch", choices=list(HYPERPARAMS), default="deep",
                    help="Which architecture family's cells to report")
     p.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                    help="Which data scheme's cells to report")
