@@ -256,6 +256,9 @@ pass "rq10 — size generalisation (the 3B rung as the reference)"
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # today's preview: the same four families read to 1.7B (the comparison line of panel (a))
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B
+# the prior question to the ranking one: which benchmarks the 3B rung lifts above
+# chance that the reference cannot resolve at all (both gate columns on the 3B families)
+run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
 
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py
