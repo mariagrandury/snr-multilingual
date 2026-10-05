@@ -25,7 +25,7 @@ Three groupings of the same decisions, `--by`:
                      within a regime a decision is any pair of design variants
                      that share the L, as `by_L.py` defines it. Under
                      `--axes mono-axis` a regime keeps only its pairs that move
-                     ONE other axis (L8 6 → 4 pairs, L30 10 → 5), so the
+                     ONE other axis (the README block gives the counts), so the
                      `_mono_axis` L lines rest on fewer decisions and fewer tasks
                      (L15 loses the tasks only its scheme-A list trains).
                      The multi-axis L lines pool arch, list and
@@ -715,6 +715,9 @@ def run_all(by: str, pool: str, tau: float, out_dir: Path, axes: str = "multi-ax
     dec = decisions(fin.assign(frac=1.0), groups, sizes, fin)
     kw = dict(axes=axes, langs=langs, common=common, axis_of=axis_of)
     out = {v: run(by, pool, tau, out_dir, v, dec, groups, fin, **kw) for v in VARIANTS}
+    # each group's pair count under both pair sets, for the prose that quotes them
+    out["n_pairs"] = {a: {g: len(p) for g, p in pairs_by_group(attrs, by, a).items()}
+                      for a in ("multi-axis", "mono-axis")}
     # The ten-point grid costs ten times the size axis, so only score it when a
     # reliable-task table exists for at least one _flops variant to filter on.
     todo = [v for v in FLOPS_VARIANTS if load_reliable(out_dir, v, axes) is not None]
@@ -740,9 +743,10 @@ if __name__ == "__main__":
                    help="restrict to the tasks with ≥ MIN_PAIRS pairs in every regime at every proxy size")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    tables = {}
+    tables, n_pairs = {}, {}
     for by in args.by:
-        t = run_all(by, args.pool, args.tau, out, args.axes, args.langs, args.common_tasks)[""]
+        res = run_all(by, args.pool, args.tau, out, args.axes, args.langs, args.common_tasks)
+        t, n_pairs[by] = res[""], res["n_pairs"]
         if t is None:
             continue
         if by == "transformation" and args.axes == "multi-axis" and args.langs == "all" and not args.common_tasks:
@@ -769,7 +773,11 @@ if __name__ == "__main__":
                f"for the whole figure, so a gap between lines is a gap on the same benchmarks" if args.common_tasks else "")
             + f". What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs "
             f"by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes "
-            f"keep only their one-axis pairs (L8 6 → 4, L30 10 → 5) and rest on fewer tasks. "
+            f"keep only their one-axis pairs ("
+            + ", ".join(f"{g} {n_pairs['L']['multi-axis'][g]} → {n_pairs['L']['mono-axis'].get(g, 0)}"
+                        for g in group_order(k for k in n_pairs["L"]["multi-axis"] if k != OVERALL)
+                        if n_pairs["L"]["multi-axis"][g] != n_pairs["L"]["mono-axis"].get(g, 0))
+            + ") and rest on fewer tasks. "
             f"Numbers below are the unfiltered population; the `above_66_size` twin "
             f"(`{stem}.png`) is the conditional one. Regenerate with `python analysis/rq02_decision_accuracy/"
             f"scale_convergence.py --by L --langs {args.langs}{' --common-tasks' if args.common_tasks else ''}`.",
