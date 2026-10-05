@@ -524,7 +524,7 @@ limit (`ArrowInvalid: Negative buffer resize`), and `publish()` never ran.
 A run's own grid now needs two saves and may plan at most twice the rung's
 checkpoint count (`n_checkpoints`), else the rung's rule applies; `_melt`
 strips the family prefix off the column names before melting, never off the
-long key column. `--push-git` after a crash is the trap `nightly_ladder.sh`
+long key column. `--push-git` after a crash is the trap `nightly.sh ladder`
 guards: the fetch succeeds and hands the analysis yesterday's report.
 
 ---

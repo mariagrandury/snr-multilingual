@@ -84,7 +84,7 @@ documents/        # Slidev presentation (scholarly theme) + project documents
 plan/             # the sweep design + compute budget (the planning docs)
 scripts/          # build_configs.py, lint_models_json.py, grant_collaborator.sh,
                   # reservation_drain.sh, preempt_drain.sh (queue drainers),
-                  # nightly_ladder.sh (the 06:00 publish + refresh, see below)
+                  # nightly.sh {evals|ladder} (the two nightly passes, below)
 src/
   evals/          # evaluation harness wrapper (lm_eval integration)
   pretrain/       # the predictivity sweep: launchers, data build, auto-evals
@@ -181,12 +181,13 @@ cd documents && npx slidev build                # the deck the job skipped
 #     so refresh the cache first as in 2b.
 cd src/signal-and-noise && FORCE=1 HF_HUB_OFFLINE=1 bash run_all_predictivity.sh
 
-# 2d. 2b without --curves, unattended at 06:00 Europe/Zurich. Arm it once, on the login
-#     node you want it pinned to; it needs no session and no Claude.
-loginctl enable-linger                              # or it dies at logout
-systemctl --user enable --now ladder-nightly.timer  # units in ~/.config/systemd/user/
-systemctl --user list-timers ladder-nightly         # confirm the next 06:00
-cat /iopsstor/scratch/cscs/$USER/logs/nightly-ladder/last-run.txt   # OK or FAILED
+# 2d. unattended, every night. Arm once; $HOME is shared NFS so this enables
+#     the timers on EVERY login node, and nightly.sh's cross-node lock is what
+#     keeps that from meaning three concurrent runs.
+loginctl enable-linger                      # or they die with your session
+systemctl --user enable --now nightly-evals.timer nightly-ladder.timer
+systemctl --user list-timers 'nightly-*'    # 00:00 evals, 04:00 ladder
+cat /iopsstor/scratch/cscs/$USER/logs/nightly/last-run-{evals,ladder}.txt
 ```
 
 The current state of the analysis, in prose, is the RQ READMEs under
@@ -202,14 +203,27 @@ deck, and fails if a slide points at a figure that no longer exists. Prose it
 cannot fix, so its last step (`documents/figures/facts.py`) diffs the headline
 numbers against `documents/ladder-facts.json` and prints the ones that moved.
 
-`scripts/nightly_ladder.sh` is that recipe automated, and it exists because
-of one trap: `ladder_report.publish()` catches its own push failures and still
-exits 0, so after a failed `--push-git` the fetch below *succeeds* and hands
-the analysis yesterday's report. The script reads publish()'s stderr, installs
-the freshly generated CSVs from disk when a push did not land, and then proves
-with `cmp` that what the analysis will read is byte-identical to what was just
-generated — refusing to spend two hours otherwise. `nightly_ladder_setsid.sh`
-is the fallback when `loginctl enable-linger` is refused.
+`scripts/nightly.sh {evals|ladder}` automates it. `evals` (00:00) queues the
+bpb chain and **restarts** the auto-eval watcher, so the running watcher always
+matches the code on disk — a watcher holds its constants from import time, and
+on 2026-09-21 one started before a path fix kept writing conversions to the old
+capstor tree for three hours after the fix landed. `ladder` (04:00) publishes,
+installs, then submits the analysis plus a separate `afterany` job for the
+`--curves` grids, so the hour they cost does not lengthen the main refresh.
+
+Two traps it exists for. `ladder_report.publish()` catches its own push
+failures and still exits 0, so after a failed `--push-git` the fetch *succeeds*
+and hands the analysis yesterday's report; the script reads publish()'s stderr,
+installs the fresh CSVs from disk when a push did not land, and proves with
+`cmp` that what the analysis will read is what was just generated. A
+`ladder_report.py` crash stops the run outright: `cmp` cannot catch that one,
+since the CSV it compares is then yesterday's on both sides. And `$HOME`
+is shared NFS, so an enabled timer fires on every login node at once — on
+2026-10-02 ln001, ln002 and ln003 each ran at 06:00, three `ladder-refresh`
+jobs and three concurrent `--push-git`. Hence the atomic lock (per mode, with a
+12 h `NIGHTLY_LOCK_TTL` takeover) and the `squeue` check before submitting.
+`nightly_ladder_setsid.sh <mode> start` is the fallback when `loginctl
+enable-linger` is refused, which on these nodes it keeps becoming.
 
 Three things it cannot guess:
 
