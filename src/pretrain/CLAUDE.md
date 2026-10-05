@@ -372,10 +372,10 @@ WSD decay at the wrong step. Verified end-to-end 2026-05-10.
 
 ### 6. Platform parity beyond the arguments
 - Azure checks out Megatron at the pinned `MEGATRON_COMMIT`
-  (`azure/get_megatron.sh`) and copies `patches/` over it — the same
-  dist-checkpointing patch the CSCS checkout carries (README "Before the
-  first CSCS run"); the CSCS wrapper uses the on-disk checkout at
-  `/iopsstor/.../data-mix-small/Megatron-LM`. Identical args don't guarantee
+  (`azure/get_megatron.sh`) and copies `patches/` over it — the same three
+  patches the CSCS checkout carries (dist-checkpointing load, signal handler,
+  HF saver; README "Before the first CSCS run"); the CSCS wrapper uses the
+  on-disk checkout at `/iopsstor/.../data-mix-small/Megatron-LM`. Identical args don't guarantee
   identical code — verify the cluster checkout is at the same commit
   (`c92402e`) before cross-platform comparisons.
 - CSCS compute nodes have no internet: the tokenizer
@@ -526,6 +526,30 @@ checkpoint count (`n_checkpoints`), else the rung's rule applies; `_melt`
 strips the family prefix off the column names before melting, never off the
 long key column. `--push-git` after a crash is the trap `nightly.sh ladder`
 guards: the fetch succeeds and hands the analysis yesterday's report.
+
+### 14. A swiglu checkpoint converted as Apertus loses its gate (2026-10-05)
+The stock `saver_swissai_hf.py` wrote every checkpoint as
+`ApertusForCausalLM`, whose MLP is ungated (`down(act(up x))`) in HF and
+vLLM. A swiglu checkpoint's `gate_proj` had no slot, so the saver's own
+`from_pretrained` reload dropped it with only a warning, `save_pretrained`
+wrote the gate-less model and `convert-snr.sh` still wrote `.hf_complete`. The
+snapshot loads cleanly and scores ~16 nats/token at 90M. The patched saver
+(`patches/tools_checkpoint_saver_swissai_hf.py`, live on the CSCS checkout,
+copied onto Azure's by `azure/get_megatron.sh`) exports swiglu as
+`Qwen3ForCausalLM`: the same attention (GQA, no bias, per-head q/k RMSNorm
+before RoPE, tied head) with a gated SiLU MLP and Llama's norm key names. It
+raises when the reload reports missing, unexpected or mismatched keys — but
+`tools/checkpoint/convert.py` runs the saver in a child process and exits 0
+whatever it did, so `convert-snr.sh` and `azure/convert.sh` refuse to write
+`.hf_complete` into a save dir with no `config.json` (the guard fires before
+`save_pretrained`); a failed `--test-logits` assert, which runs after the save,
+is still not caught. Verified on GPU: 99.92 % top-1 agreement with Megatron
+(`TEST_LOGITS=1`, which `convert-snr.sh` now forwards into the container);
+Megatron-vs-converted evals equal within bf16 noise on 8 tasks x 300 items; a
+deep conversion byte-identical to production. `src/evals/scripts/score_bpb.py`
+refuses an `apertus` config whose `hidden_act` is not `xielu`. Lesson: a
+reload into a class with no slot for a weight is a warning, not an error, so
+read `output_loading_info`.
 
 ---
 

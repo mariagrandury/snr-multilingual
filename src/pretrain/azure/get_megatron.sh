@@ -24,5 +24,13 @@ cp "$(dirname "${BASH_SOURCE[0]}")/../patches/dist_checkpointing_strategies_torc
 # for parity, so a low-priority preemption here can use the same mechanism.
 cp "$(dirname "${BASH_SOURCE[0]}")/../patches/training_dist_signal_handler.py" \
    "$MEGATRON_LM_DIR/megatron/training/dist_signal_handler.py"
+# The HF saver writes a swiglu checkpoint as Qwen3ForCausalLM (Apertus' MLP is
+# ungated, so the stock saver dropped every gate_proj and still reported
+# success), and raises when its reload drops or misses a weight. convert.py
+# runs the saver in a child process and exits 0 regardless, so convert.sh and
+# convert-snr.sh refuse to mark a save dir with no config.json complete; a
+# failed --test-logits check (asserted after the save) is still not caught.
+cp "$(dirname "${BASH_SOURCE[0]}")/../patches/tools_checkpoint_saver_swissai_hf.py" \
+   "$MEGATRON_LM_DIR/tools/checkpoint/saver_swissai_hf.py"
 export MEGATRON_LM_DIR
 export PYTHONPATH=$MEGATRON_LM_DIR${PYTHONPATH:+:$PYTHONPATH}

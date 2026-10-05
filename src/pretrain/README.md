@@ -384,15 +384,21 @@ by design.
   `CONTAINER_TOML=...` overrides the choice. Submit to an `up` partition
   (`sinfo -p normal`): jobs queued against a down partition sit on
   `PartitionDown` and the launcher counts them as in flight.
-- **Re-apply the legacy-checkpoint load patch after any fresh clone.** A scratch
-  cleaning sweep can wipe the checkout, and a re-clone reverts the fix — then
-  **every resume** dies in `get_reformulation_metadata` with `AttributeError:
+- **Re-apply the patches after any fresh clone.** A scratch cleaning sweep can
+  wipe the checkout, and a re-clone reverts all three fixes — then **every
+  resume** dies in `get_reformulation_metadata` with `AttributeError:
   'Metadata' object has no attribute 'mcore_data'` (our checkpoints predate
   `mcore_data`; the patch synthesizes the reformulation metadata from the saved
-  tensor sizes). Copy the tracked, patched file over the fork's:
+  tensor sizes), a preemption stops checkpointing on SIGTERM (CLAUDE.md #4),
+  and the HF saver silently drops every swiglu `gate_proj` again (CLAUDE.md
+  #14). Copy the tracked, patched files over the fork's:
   ```bash
   cp patches/dist_checkpointing_strategies_torch.py \
      /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/core/dist_checkpointing/strategies/torch.py
+  cp patches/training_dist_signal_handler.py \
+     /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/megatron/training/dist_signal_handler.py
+  cp patches/tools_checkpoint_saver_swissai_hf.py \
+     /iopsstor/scratch/cscs/mariagrandury/data-mix-small/Megatron-LM/tools/checkpoint/saver_swissai_hf.py
   ```
 - **Train off the iopsstor copy of the data, not the capstor master.** Megatron
   memmaps the `.bin` files and reads them shuffled (random access): capstor is

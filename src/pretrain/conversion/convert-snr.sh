@@ -196,6 +196,10 @@ VEOF
         "${extra[@]}"
 
     [[ "${KEEP_TMP_TORCH:-0}" == "1" ]] || rm -rf "$TORCH_CKPT_SAVE_PATH"
+    # convert.py runs the saver in a child process and exits 0 whatever it
+    # did, so a saver that raised (its reload guard fires before
+    # save_pretrained) leaves only the tokenizer here — never mark that done.
+    [[ -f "$SAVE_DIR/config.json" ]] || { echo "[convert-snr] ERROR: the saver wrote no config.json to $SAVE_DIR (traceback above) - not marking it complete" >&2; exit 1; }
     # Written LAST: the watchers treat a snapshot as staged only once this
     # exists, so a half-written save_pretrained is never evaluated.
     touch "$SAVE_DIR/.hf_complete"
@@ -238,7 +242,7 @@ if [[ -n "${SLURM_JOB_ID:-}" && -n "${PLAN_FILE:-}" ]]; then
 HF_TOKENIZER='${HF_TOKENIZER:-alehc/swissai-tokenizer}' \
 STAGING_BASE='${STAGING_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints}' \
 TMP_TORCH_BASE='${TMP_TORCH_BASE:-/iopsstor/scratch/cscs/$USER/snr-hf-checkpoints/_tmp_torch}' \
-PROGRESS_PY='${PROGRESS_PY:-}' \
+PROGRESS_PY='${PROGRESS_PY:-}' TEST_LOGITS='${TEST_LOGITS:-0}' \
 HF_HOME='/iopsstor/scratch/cscs/mariagrandury/hf_home' \
 HF_HUB_CACHE='/capstor/store/cscs/swissai/infra01/users/mariagrandury/hf_models' \
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1"

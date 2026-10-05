@@ -461,7 +461,8 @@ permissions Read+Add+Create+Write+List.)
 ## 6. Convert and evaluate a checkpoint
 
 **Convert** a Megatron checkpoint to a Hugging Face snapshot
-(`ApertusForCausalLM`) — a few minutes on one node. The defaults in the YAML
+(`ApertusForCausalLM`; the swiglu ladder as `Qwen3ForCausalLM`) — a few
+minutes on one node. The defaults in the YAML
 are placeholders; point them at a real cell with `--set`:
 
 ```bash

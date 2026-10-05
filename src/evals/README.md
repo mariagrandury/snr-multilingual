@@ -337,6 +337,14 @@ NLL, the byte count, `bpb` and `ppl`. `ppl` is `Infinity` when a diverged
 checkpoint averages more than ~709.8 nats/token, past what a double can
 exponentiate; its `bpb` stays finite.
 
+`score_bpb.py` refuses (exits non-zero, writes no `bpb.json`) a snapshot whose
+`config.json` has `model_type: apertus` and a `hidden_act` other than `xielu`:
+that is a swiglu checkpoint converted by the stock saver, with its gate
+dropped. Reconvert it with the patched saver
+([`src/pretrain/CLAUDE.md`](../pretrain/CLAUDE.md) #14) into a new
+`SAVE_DIR`, because `convert-snr.sh` backfills `.hf_complete` for any
+populated `SAVE_DIR` whose weights validate.
+
 A preempted job writes an extra checkpoint on its way out, so a cell trained on
 `preemptable` carries saves between its grid ones — `lm-3B-L30-deep-seed1904`
 has 11478, 21769, 27354 and 31411 among its 2420-step saves. Those are
