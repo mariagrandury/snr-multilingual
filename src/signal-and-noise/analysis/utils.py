@@ -116,6 +116,27 @@ BBPB = "bbpb_"
 BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb
 
 
+# A benchmark task is one evaluation VARIANT of a benchmark: a `format` (how
+# the items are posed: the original, its `rf_` cloze rewrite, its `rfgm_`
+# LLM rewrite) and a `scoring` (how an answer becomes a number: accuracy, or
+# the gold answer's bits per byte). The loader writes both as columns, so a
+# table splits by variant with one groupby instead of parsing names.
+FORMATS = ("original", "rf", "rfgm")
+SCORINGS = ("acc", "bbpb")
+# tau: a decision accuracy at or above it "reads like the reference" (rq02's
+# safe sizes, rq05's lines, rq11's recommendation). One constant, so a figure,
+# a table and a README sentence that quote it cannot drift apart.
+RELIABLE_DA = 0.75
+
+
+def variant(task: str) -> tuple[str, str]:
+    """(format, scoring) of a benchmark task: `bbpb_rf_belebele_spa_Latn` ->
+    ("rf", "bbpb"), `include_base_44_es` -> ("original", "acc")."""
+    scoring = "bbpb" if task.startswith(BBPB) else "acc"
+    t = task[len(BBPB):] if scoring == "bbpb" else task
+    return ("rfgm" if t.startswith("rfgm_") else "rf" if t.startswith("rf_") else "original"), scoring
+
+
 def lower_is_better(task: str) -> bool:
     """Bits per byte (per-language, `bpb_*`, and a benchmark's, `bbpb_*`) and
     the training loss: the scores where a smaller value is the better model."""
@@ -281,7 +302,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
             df = parents_only(df)
         if not untrained:
             df = trained_only(df)
-        return with_bbpb_twins(df)
+        return with_variant_columns(with_bbpb_twins(df))
 
     members = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
@@ -703,6 +724,14 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     twin = df[df["kind"] == "benchmark"].merge(t, on=["model", "step", "task"])
     twin = twin.assign(task=BBPB + twin["task"], primary_score=twin["bbpb"]).drop(columns="bbpb")
     return pd.concat([df, twin], ignore_index=True)
+
+
+def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """`format` and `scoring` on every benchmark row (`variant`); empty on the
+    per-language BPB and the loss, which are not benchmark variants."""
+    v = {t: variant(t) for t in df.loc[df["kind"] == "benchmark", "task"].unique()}
+    return df.assign(format=df["task"].map(lambda t: v.get(t, (None, None))[0]),
+                     scoring=df["task"].map(lambda t: v.get(t, (None, None))[1]))
 
 
 def finals(df: pd.DataFrame) -> pd.DataFrame:

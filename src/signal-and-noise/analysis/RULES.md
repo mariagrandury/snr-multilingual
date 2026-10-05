@@ -65,7 +65,7 @@ third member, `bbpb_<task>`: the item-mean bits per byte of the gold answer
 rq08 per-item store (`build_per_item_store.py --bench-bpb` writes
 `rq08_subset_selection/bench_bpb.csv`) and added by the loader
 (`utils.with_bbpb_twins`) as a copy of the original's row. So it inherits that
-row's rules 2, 6 and 10, reads as `belebele-bbpb` (paper: "Belebele BPB"), and
+row's rules 2, 6 and 10, reads as `belebele-bbpb` (paper: "Belebele bBPB"), and
 an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told:
 
 - **Lower is better.** Every score oriented by direction goes through
@@ -83,6 +83,15 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
   `rf_` twins and all their `bbpb_` twins (`grids.base`).
 - `reformulations_gate.py` leaves it out: its question is the accuracy
   formulations, and the twin would count as an "original".
+- **Every benchmark row carries its variant.** The loader writes `format`
+  (original / rf / rfgm) and `scoring` (acc / bbpb) on every benchmark row
+  (`utils.variant`, `utils.with_variant_columns`), so a table splits by variant
+  with a groupby. A pooled "all benchmarks" number pools every variant;
+  rq11 (`rq11_evaluation_recipe`) gives every finding per variant and pooled,
+  and the head-to-head on the paired cells.
+- **One reliability cut, τ = 0.75** (`utils.RELIABLE_DA`): rq02's safe sizes
+  and rq11's recommendation read it from there, and every figure, table and
+  README block that uses it states it.
 
 ## The probe candidates are not in the populations
 

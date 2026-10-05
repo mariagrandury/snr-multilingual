@@ -76,12 +76,12 @@ PAPER_NAMES = {
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
     "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
 }
-_TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "BPB"}
+_TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}
 
 
 def paper_name(key) -> str:
     """`rf_belebele` -> `Belebele RF`, `rfgm_include_base_44` -> `INCLUDE LLM-RF`,
-    `bbpb_rf_belebele` -> `Belebele RF BPB`."""
+    `bbpb_rf_belebele` -> `Belebele RF bBPB`."""
     m = _TWIN.match(str(key))
     if m:
         return f"{paper_name(m.group(2))} {_TWIN_NAMES[m.group(1)]}"
