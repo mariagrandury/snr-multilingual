@@ -269,6 +269,11 @@ run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # chance that the reference cannot resolve at all (both gate columns on the 3B families)
 run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
 
+pass "rq11 — the evaluation recipe"
+# which benchmark, posed how (original, rf, rfgm) and scored how (accuracy, bBPB), reads the reference
+# from the smallest proxy: reads rq02's per-task early-small table, so it runs after rq02 (tau = utils.RELIABLE_DA)
+run $PY analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
+
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py
 # every table on disk against analysis/RULES.md (rule 14)

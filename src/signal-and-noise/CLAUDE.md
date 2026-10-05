@@ -146,10 +146,13 @@ against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
 reference, the only reader of `above_reference=True`; filled since the
-2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → `report_figures/make_figures.py` →
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
+(`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's
+per-task table) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
-generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09), E past the
+reference (rq10), F the recommendation (rq11);
 `analysis/paths.py` is the one map from constant to folder. The canonical
 pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README
 generators write; generators no-op on other pools. Outputs:

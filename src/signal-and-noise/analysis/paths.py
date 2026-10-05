@@ -31,3 +31,5 @@ SUBSET_SELECTION = _ANALYSIS / "rq08_subset_selection"          # can a subset b
 BENCHMARK_DESIGN = _ANALYSIS / "rq09_benchmark_design"          # which design features predict reliability
 # E. past the reference
 SIZE_GENERALISATION = _ANALYSIS / "rq10_size_generalisation"    # the 3B rung as the reference: the only reader of above_reference=True
+# F. the recommendation
+EVALUATION_RECIPE = _ANALYSIS / "rq11_evaluation_recipe"        # which benchmark, posed and scored how, to evaluate
