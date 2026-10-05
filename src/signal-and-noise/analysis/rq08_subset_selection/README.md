@@ -10,8 +10,8 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.66** (**+1.50**) with `multiblimp_deu|multiblimp_eng|multiblimp_rus|multiblimp_fra`.
 - **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.57 → 3.97** (**+1.40**) with `arc_challenge`.
+- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.08 → 4.38** (**+1.30**) with `multiblimp_deu|multiblimp_rus|multiblimp_eng|multiblimp_fra`.
 - **`rf_belebele` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.41** (**+1.25**) with `rf_belebele_zho_Hans`.
 - **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.32 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
 - **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **60 of 124** swept cells beat the null's 95th percentile: `multiblimp` 350M, `rf_belebele` 350M, `global_mmlu_full` 600M, `include_v2_en` 90M, `global_mmlu_full_sr` 350M.
@@ -75,8 +75,8 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `multiblimp` | 350M | 3.16 → 4.66 | +1.50 | 3.61 | `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_rus` \| `multiblimp_fra` |
 | per_benchmark | `arc` | 1B | 2.57 → 3.97 | +1.40 | 3.97 | `arc_challenge` |
+| per_benchmark | `multiblimp` | 350M | 3.08 → 4.38 | +1.30 | 3.62 | `multiblimp_deu` \| `multiblimp_rus` \| `multiblimp_eng` \| `multiblimp_fra` |
 | per_benchmark | `rf_belebele` | 350M | 3.16 → 4.41 | +1.25 | 3.81 | `rf_belebele_zho_Hans` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 | 3.22 | `human_aging` |
 | per_benchmark | `include_v2_en` | 90M | 2.87 → 3.89 | +1.01 | 3.63 | `include_v2_en_japanese_japan` \| `include_v2_en_korean_korea` \| `include_v2_en_arabic_morocco` \| `include_v2_en_french_france` \| `… (+5)` |

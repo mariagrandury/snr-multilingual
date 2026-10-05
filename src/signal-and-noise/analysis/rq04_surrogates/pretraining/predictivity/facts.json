@@ -197,7 +197,7 @@
    "kind": "benchmark tasks",
    "metric": "SNR, relative std",
    "rho": 0.112,
-   "p": 0.053,
+   "p": 0.054,
    "n": 298
   },
   {
@@ -228,7 +228,7 @@
    "proxy": "350M",
    "kind": "benchmark tasks",
    "metric": "noise alone (relative std, inverted)",
-   "rho": 0.333,
+   "rho": 0.332,
    "p": 0.0,
    "n": 298
   },

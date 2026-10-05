@@ -9,7 +9,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | Exact-variant agreement (lang-level) | 0% (0/1) | 0% (0/1) |
 | **Family-level agreement** (lang-level) | 0% (0/1) | 0% (0/1) |
 | Pearson r between splits (over all variant cells) | -0.222 (n = 22) | +0.838 (n = 22) |
-| **Spearman ρ on global variant ranking** | -0.278 | +0.762 |
+| **Spearman ρ on global variant ranking** | -0.293 | +0.785 |
 | Retention of train-best (r_test / r_test_best, mean across langs) | 42% (n = 1) | 99% (n = 1) |
 
 **Family** groups together algebraically near-equivalent variants (e.g. the dispersion cluster: `dispersion`/`mpd`/`range`/`quartile_deviation`/`rms_deviation`/`aad`). At n_mixes=3, members of a family correlate at r ≥ 0.999 so exact-variant equality is overly strict.
@@ -85,7 +85,7 @@ DA-size here is 175M → 600M (scaling pair); DA-ckpt is the within-size early �
 | da | `` () | +nan | +nan | `` () | +nan |  |  |
 | de | `` () | +nan | +nan | `` () | +nan |  |  |
 | el | `` () | +nan | +nan | `` () | +nan |  |  |
-| en | `iqr` (rel_spread) | +0.511 | +0.496 | `mpd` (dispersion) | +0.501 |  |  |
+| en | `iqr` (rel_spread) | +0.511 | +0.496 | `quartile_deviation` (dispersion) | +0.501 |  |  |
 | es | `` () | +nan | +nan | `` () | +nan |  |  |
 | et | `` () | +nan | +nan | `` () | +nan |  |  |
 | fa | `` () | +nan | +nan | `` () | +nan |  |  |

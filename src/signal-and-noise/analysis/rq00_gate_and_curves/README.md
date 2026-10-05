@@ -13,7 +13,7 @@
 <!-- BEGIN auto:highlight (run_apertus.py --pool predictivity) -->
 ## Highlighted result
 
-- **The benchmarks that separate the language settings most: `cultural_bench_easy`, `cultural_bench_hard`, `acp_bench_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
+- **The benchmarks that separate the language settings most: `cultural_bench_easy`, `bbpb_bbh_cloze`, `bbpb_bbh_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
 - **Above-random gate.** Of **1373 benchmarks, 839 clear chance at ≥1 size** and 788 at 1.7B (534 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 

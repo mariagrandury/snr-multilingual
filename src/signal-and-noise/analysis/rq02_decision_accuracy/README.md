@@ -12,7 +12,7 @@
 <!-- BEGIN auto:highlight (da_per_benchmark.py --pool predictivity) -->
 ## Highlighted result
 
-- **DA-size, proxy → 1.7B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 90M → 1.7B 0.51 / 0.91; 175M → 1.7B 0.50 / 0.91; 350M → 1.7B 0.50 / 0.82; 600M → 1.7B 0.51 / 0.58; 1B → 1.7B 0.51 / 0.82.
+- **DA-size, proxy → 1.7B** (mean over the above-random benchmark tasks / over the per-language BPB tasks): 90M → 1.7B 0.55 / 0.91; 175M → 1.7B 0.53 / 0.91; 350M → 1.7B 0.54 / 0.82; 600M → 1.7B 0.54 / 0.58; 1B → 1.7B 0.53 / 0.82.
 - **DA-size of `bpb_macro`** (one task, kept out of the means above): 90M 0.94; 175M 0.97; 350M 0.97; 600M 0.92; 1B 0.94.
 - **DA-size of `train_loss`** (one task, kept out of the means above): 90M 0.79; 175M 0.93; 350M 0.86; 600M 0.81; 1B 0.83.
 - **DA-ckpt** (early checkpoint vs final, above-random benchmark tasks): highest at 350M 90 % (0.79).
@@ -294,7 +294,7 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| all pairs | 0.54 | 0.55 | 0.54 | 0.55 | 0.56 | 1.0 | — |
+| all pairs | 0.6 | 0.58 | 0.58 | 0.58 | 0.58 | 1.0 | — |
 
 ![Scale convergence, overall](pretraining/predictivity/scale_convergence_da_size_multi_axes.png)
 
@@ -302,13 +302,13 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| L1 | 0.62 | 0.51 | 0.83 | 0.53 | 0.6 | 1.0 | — |
-| L15 | 0.48 | 0.54 | 0.52 | 0.51 | 0.55 | 1.0 | — |
-| L2 | 0.46 | 0.51 | 0.57 | 0.53 | 0.51 | 1.0 | — |
-| L30 | 0.49 | 0.5 | 0.49 | 0.52 | 0.5 | 1.0 | — |
-| L50 | 0.51 | 0.53 | 0.51 | 0.53 | 0.57 | 1.0 | — |
-| L8 | 0.57 | 0.5 | 0.48 | 0.48 | 0.55 | 1.0 | — |
-| all pairs | 0.54 | 0.55 | 0.54 | 0.55 | 0.56 | 1.0 | — |
+| L1 | 0.55 | 0.59 | 0.69 | 0.51 | 0.56 | 1.0 | — |
+| L15 | 0.55 | 0.52 | 0.55 | 0.53 | 0.56 | 1.0 | — |
+| L2 | 0.53 | 0.51 | 0.51 | 0.53 | 0.46 | 1.0 | — |
+| L30 | 0.56 | 0.55 | 0.54 | 0.55 | 0.55 | 1.0 | — |
+| L50 | 0.64 | 0.59 | 0.61 | 0.58 | 0.62 | 1.0 | — |
+| L8 | 0.51 | 0.51 | 0.5 | 0.52 | 0.51 | 1.0 | — |
+| all pairs | 0.6 | 0.58 | 0.58 | 0.58 | 0.58 | 1.0 | — |
 
 ![Scale convergence, L](pretraining/predictivity/scale_convergence_da_size_L_multi_axes.png)
 
@@ -316,12 +316,13 @@ How small a **fully trained** model may be and still decide the way the 1.7B fin
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| 2nd language (ru vs zh vs es) | 0.48 | 0.54 | 0.52 | 0.56 | 0.56 | 1.0 | — |
-| all pairs | 0.54 | 0.55 | 0.54 | 0.55 | 0.56 | 1.0 | — |
-| depth (deep vs shallow) | 0.5 | 0.5 | 0.48 | 0.48 | 0.52 | 1.0 | — |
-| language count | 0.52 | 0.53 | 0.52 | 0.53 | 0.53 | 1.0 | — |
-| language list (A vs B) | 0.47 | 0.47 | 0.48 | 0.47 | 0.5 | 1.0 | — |
-| temperature (T=1 vs T=3) | 0.51 | 0.53 | 0.54 | 0.57 | 0.56 | 1.0 | — |
+| 2nd language (ru vs zh vs es) | 0.53 | 0.51 | 0.49 | 0.53 | 0.48 | 1.0 | — |
+| English corpus (edu filter on vs off) | 0.55 | 0.61 | 0.78 | 0.62 | 0.66 | 1.0 | — |
+| all pairs | 0.6 | 0.58 | 0.58 | 0.58 | 0.58 | 1.0 | — |
+| depth (deep vs shallow) | 0.55 | 0.5 | 0.51 | 0.47 | 0.5 | 1.0 | — |
+| language count | 0.58 | 0.57 | 0.57 | 0.56 | 0.55 | 1.0 | — |
+| language list (A vs B) | 0.5 | 0.47 | 0.46 | 0.48 | 0.53 | 1.0 | — |
+| temperature (T=1 vs T=3) | 0.63 | 0.6 | 0.62 | 0.62 | 0.62 | 1.0 | — |
 
 ![Scale convergence, transformation](pretraining/predictivity/scale_convergence_da_size_transformation_multi_axes.png)
 <!-- END auto:scale-convergence -->
@@ -335,20 +336,22 @@ The `--by transformation` lines above drawn one axis per panel, with the panel's
 
 | axis | families | 90M R [lo, hi] (tasks) | 175M R [lo, hi] (tasks) | 350M R [lo, hi] (tasks) | 600M R [lo, hi] (tasks) | 1B R [lo, hi] (tasks) | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| all pairs | 25 | 0.54 [0.52, 0.56] (302) | 0.55 [0.52, 0.57] (341) | 0.54 [0.52, 0.56] (377) | 0.55 [0.53, 0.57] (411) | 0.56 [0.53, 0.60] (453) | never |
-| 2nd language (ru vs zh vs es) | 3 | 0.48 [nan, nan] (23) | 0.54 [nan, nan] (24) | 0.52 [nan, nan] (28) | 0.56 [nan, nan] (31) | 0.56 [nan, nan] (31) | never |
-| depth (deep vs shallow) | 20 | 0.50 [0.45, 0.55] (235) | 0.50 [0.48, 0.53] (269) | 0.48 [0.46, 0.49] (298) | 0.48 [0.45, 0.52] (332) | 0.52 [0.47, 0.57] (360) | never |
-| language count | 21 | 0.52 [0.49, 0.55] (221) | 0.53 [0.50, 0.57] (252) | 0.52 [0.49, 0.54] (282) | 0.53 [0.50, 0.55] (313) | 0.53 [0.49, 0.56] (339) | never |
-| language list (A vs B) | 12 | 0.47 [0.38, 0.56] (55) | 0.47 [0.42, 0.53] (60) | 0.48 [0.45, 0.51] (70) | 0.47 [0.42, 0.53] (79) | 0.50 [0.46, 0.53] (81) | never |
-| temperature (T=1 vs T=3) | 8 | 0.51 [0.49, 0.54] (221) | 0.53 [0.49, 0.57] (252) | 0.54 [0.52, 0.56] (282) | 0.57 [0.55, 0.59] (313) | 0.56 [0.51, 0.61] (339) | never |
+| all pairs | 26 | 0.60 [0.57, 0.62] (1118) | 0.58 [0.55, 0.60] (1157) | 0.58 [0.56, 0.61] (1193) | 0.58 [0.55, 0.60] (1227) | 0.58 [0.55, 0.61] (1269) | never |
+| 2nd language (ru vs zh vs es) | 3 | 0.53 [nan, nan] (121) | 0.51 [nan, nan] (122) | 0.49 [nan, nan] (126) | 0.53 [nan, nan] (129) | 0.48 [nan, nan] (129) | never |
+| English corpus (edu filter on vs off) | 3 | 0.55 [nan, nan] (23) | 0.61 [nan, nan] (24) | 0.78 [nan, nan] (6) | 0.62 [nan, nan] (31) | 0.66 [nan, nan] (31) | never |
+| depth (deep vs shallow) | 20 | 0.55 [0.50, 0.60] (890) | 0.50 [0.47, 0.54] (924) | 0.51 [0.50, 0.53] (953) | 0.47 [0.42, 0.52] (987) | 0.50 [0.46, 0.55] (1015) | never |
+| language count | 21 | 0.58 [0.54, 0.61] (830) | 0.57 [0.54, 0.59] (861) | 0.57 [0.54, 0.60] (891) | 0.56 [0.54, 0.59] (922) | 0.55 [0.52, 0.58] (948) | never |
+| language list (A vs B) | 12 | 0.50 [0.44, 0.55] (242) | 0.47 [0.43, 0.51] (247) | 0.46 [0.43, 0.50] (257) | 0.48 [0.46, 0.50] (266) | 0.53 [0.50, 0.55] (268) | never |
+| temperature (T=1 vs T=3) | 8 | 0.63 [0.57, 0.69] (830) | 0.60 [0.55, 0.65] (861) | 0.62 [0.59, 0.64] (891) | 0.62 [0.58, 0.66] (922) | 0.62 [0.56, 0.67] (948) | never |
 
 Key findings:
 
-- **2nd language (ru vs zh vs es)** (3 families): R = 0.56 at 1B [nan, nan] over 31 tasks; no proxy reaches τ.
-- **depth (deep vs shallow)** (20 families): R = 0.52 at 1B [0.47, 0.57] over 360 tasks; no proxy reaches τ.
-- **language count** (21 families): R = 0.53 at 1B [0.49, 0.56] over 339 tasks; no proxy reaches τ.
-- **language list (A vs B)** (12 families): R = 0.50 at 1B [0.46, 0.53] over 81 tasks; no proxy reaches τ.
-- **temperature (T=1 vs T=3)** (8 families): R = 0.56 at 1B [0.51, 0.61] over 339 tasks; no proxy reaches τ.
+- **2nd language (ru vs zh vs es)** (3 families): R = 0.48 at 1B [nan, nan] over 129 tasks; no proxy reaches τ.
+- **English corpus (edu filter on vs off)** (3 families): R = 0.66 at 1B [nan, nan] over 31 tasks; no proxy reaches τ.
+- **depth (deep vs shallow)** (20 families): R = 0.50 at 1B [0.46, 0.55] over 1015 tasks; no proxy reaches τ.
+- **language count** (21 families): R = 0.55 at 1B [0.52, 0.58] over 948 tasks; no proxy reaches τ.
+- **language list (A vs B)** (12 families): R = 0.53 at 1B [0.50, 0.55] over 268 tasks; no proxy reaches τ.
+- **temperature (T=1 vs T=3)** (8 families): R = 0.62 at 1B [0.56, 0.67] over 948 tasks; no proxy reaches τ.
 - The bands are leave-one-design-variant-out over the families in the column, not seed noise; a band on 4 families is four numbers and only says which variant the line hinges on.
 
 Follow-ups:
@@ -521,56 +524,56 @@ Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's fi
 
 | language | benchmarks evaluated | DA-size | DA-ckpt | either | both |
 |---|---|---|---|---|---|
-| en | 40 | 2 | 13 | 13 | 2 |
-| ru | 14 | 3 | 6 | 6 | 3 |
-| zh | 16 | 0 | 2 | 2 | 0 |
-| de | 14 | 1 | 8 | 8 | 1 |
-| ja | 10 | 0 | 3 | 3 | 0 |
-| es | 54 | 1 | 14 | 14 | 1 |
-| fr | 14 | 2 | 6 | 6 | 2 |
-| it | 13 | 2 | 6 | 6 | 2 |
-| pt | 13 | 1 | 4 | 4 | 1 |
-| pl | 9 | 0 | 3 | 3 | 0 |
-| nl | 10 | 1 | 3 | 3 | 1 |
-| id | 11 | 2 | 4 | 4 | 2 |
-| vi | 12 | 1 | 4 | 4 | 1 |
-| fa | 8 | 0 | 3 | 3 | 0 |
-| tr | 10 | 0 | 4 | 4 | 0 |
-| th | 4 | 0 | 1 | 1 | 0 |
-| uk | 10 | 1 | 3 | 4 | 0 |
-| el | 11 | 0 | 1 | 1 | 0 |
-| ko | 7 | 0 | 1 | 1 | 0 |
-| cs | 7 | 0 | 2 | 2 | 0 |
-| sv | 9 | 1 | 4 | 4 | 1 |
-| hu | 9 | 1 | 2 | 2 | 1 |
-| ro | 6 | 1 | 3 | 3 | 1 |
-| no | 4 | 0 | 2 | 2 | 0 |
-| da | 9 | 1 | 4 | 4 | 1 |
-| bg | 8 | 0 | 3 | 3 | 0 |
-| fi | 5 | 0 | 1 | 1 | 0 |
-| hi | 15 | 0 | 5 | 5 | 0 |
-| bn | 12 | 1 | 3 | 3 | 1 |
-| sk | 5 | 4 | 4 | 5 | 3 |
-| he | 7 | 2 | 2 | 3 | 1 |
-| lt | 9 | 3 | 3 | 5 | 1 |
-| bs | 1 | 0 | 0 | 0 | 0 |
-| sl | 4 | 1 | 3 | 3 | 1 |
-| et | 9 | 4 | 3 | 4 | 3 |
-| ca | 9 | 3 | 4 | 5 | 2 |
-| ta | 6 | 0 | 0 | 0 | 0 |
-| hr | 8 | 2 | 4 | 4 | 2 |
-| lv | 2 | 0 | 1 | 1 | 0 |
-| ms | 10 | 2 | 5 | 5 | 2 |
-| az | 8 | 0 | 4 | 4 | 0 |
-| ka | 8 | 0 | 2 | 2 | 0 |
-| ne | 12 | 2 | 3 | 3 | 2 |
-| mr | 6 | 3 | 2 | 3 | 2 |
-| ml | 3 | 0 | 1 | 1 | 0 |
-| kk | 10 | 2 | 4 | 5 | 1 |
-| ur | 9 | 2 | 6 | 7 | 1 |
-| sq | 7 | 2 | 2 | 3 | 1 |
-| ar | 30 | 0 | 7 | 7 | 0 |
-| sr | 11 | 3 | 3 | 5 | 1 |
+| en | 138 | 4 | 14 | 16 | 2 |
+| ru | 32 | 7 | 6 | 10 | 3 |
+| zh | 44 | 4 | 2 | 6 | 0 |
+| de | 31 | 2 | 8 | 9 | 1 |
+| ja | 24 | 0 | 3 | 3 | 0 |
+| es | 125 | 4 | 14 | 17 | 1 |
+| fr | 33 | 5 | 6 | 9 | 2 |
+| it | 29 | 3 | 6 | 7 | 2 |
+| pt | 31 | 2 | 4 | 5 | 1 |
+| pl | 22 | 0 | 3 | 3 | 0 |
+| nl | 23 | 2 | 3 | 4 | 1 |
+| id | 26 | 5 | 4 | 7 | 2 |
+| vi | 30 | 3 | 4 | 6 | 1 |
+| fa | 20 | 1 | 3 | 4 | 0 |
+| tr | 24 | 2 | 4 | 6 | 0 |
+| th | 10 | 0 | 1 | 1 | 0 |
+| uk | 24 | 2 | 3 | 5 | 0 |
+| el | 27 | 1 | 1 | 2 | 0 |
+| ko | 19 | 1 | 1 | 2 | 0 |
+| cs | 16 | 0 | 2 | 2 | 0 |
+| sv | 21 | 3 | 4 | 6 | 1 |
+| hu | 22 | 4 | 2 | 5 | 1 |
+| ro | 15 | 2 | 3 | 4 | 1 |
+| no | 9 | 1 | 2 | 3 | 0 |
+| da | 18 | 3 | 4 | 6 | 1 |
+| bg | 19 | 1 | 3 | 4 | 0 |
+| fi | 16 | 5 | 1 | 6 | 0 |
+| hi | 36 | 4 | 5 | 9 | 0 |
+| bn | 32 | 6 | 3 | 8 | 1 |
+| sk | 15 | 9 | 4 | 10 | 3 |
+| he | 19 | 7 | 2 | 8 | 1 |
+| lt | 21 | 8 | 3 | 10 | 1 |
+| bs | 2 | 1 | 0 | 1 | 0 |
+| sl | 10 | 6 | 3 | 8 | 1 |
+| et | 20 | 11 | 3 | 11 | 3 |
+| ca | 19 | 10 | 4 | 12 | 2 |
+| ta | 19 | 6 | 0 | 6 | 0 |
+| hr | 19 | 7 | 4 | 9 | 2 |
+| lv | 5 | 3 | 1 | 4 | 0 |
+| ms | 23 | 12 | 5 | 15 | 2 |
+| az | 17 | 5 | 4 | 9 | 0 |
+| ka | 18 | 3 | 2 | 5 | 0 |
+| ne | 28 | 11 | 3 | 12 | 2 |
+| mr | 15 | 9 | 2 | 9 | 2 |
+| ml | 14 | 7 | 1 | 8 | 0 |
+| kk | 20 | 6 | 4 | 9 | 1 |
+| ur | 26 | 8 | 6 | 13 | 1 |
+| sq | 16 | 7 | 2 | 8 | 1 |
+| ar | 87 | 9 | 7 | 16 | 0 |
+| sr | 25 | 14 | 3 | 16 | 1 |
 
 **How many cells pass, by cut and reduction** — the cut is a choice, and this is its whole sensitivity:
 
@@ -580,14 +583,14 @@ Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's fi
 | 0.8 | mean | 11 | 11 | hellaswag, multiblimp, rfgm_include_base_44 |
 | 0.8 | median | 20 | 19 | global_piqa_nonparallel_cloze, hellaswag, multiblimp, rf_include_base_44, rfgm_include_base_44 |
 | 0.8 | max | 88 | 36 | global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xnli, xstorycloze |
-| 0.75 | late | 59 | 36 | arc_mt, hellaswag, include_v2_og, lambada_openai_mt, multiblimp, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xcopa, xstorycloze |
+| 0.75 | late | 60 | 36 | arc_mt, hellaswag, include_v2_og, lambada_openai_mt, multiblimp, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xcopa, xstorycloze |
 | 0.75 | mean | 24 | 21 | global_piqa_nonparallel_cloze, hellaswag, include_v2_og, multiblimp, rfgm_include_base_44, xstorycloze |
 | 0.75 | median | 31 | 26 | global_piqa_nonparallel_cloze, hellaswag, include_v2_og, lambada_openai_mt, multiblimp, rf_global_mmlu_full, rf_include_base_44, rfgm_include_base_44, xstorycloze |
-| 0.75 | max | 119 | 43 | arc_mt, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xcopa, xnli, xstorycloze |
-| 0.66 | late | 120 | 43 | arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xcopa, xstorycloze, xwinograd |
-| 0.66 | mean | 66 | 37 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xstorycloze, xwinograd |
-| 0.66 | median | 77 | 37 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xstorycloze, xwinograd |
-| 0.66 | max | 240 | 48 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xcopa, xnli, xstorycloze, xwinograd |
+| 0.75 | max | 120 | 43 | arc_mt, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rfgm_belebele, rfgm_include_base_44, xcopa, xnli, xstorycloze, xwinograd |
+| 0.66 | late | 122 | 43 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xcopa, xstorycloze, xwinograd |
+| 0.66 | mean | 68 | 37 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xstorycloze, xwinograd |
+| 0.66 | median | 78 | 37 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xstorycloze, xwinograd |
+| 0.66 | max | 241 | 48 | arc, arc_mt, belebele, global_piqa_nonparallel_cloze, hellaswag, include_base_44, include_v2_en, include_v2_og, lambada_openai_mt, multiblimp, paws, rf_belebele, rf_global_mmlu_full, rf_include_base_44, rf_mmlu, rfgm_belebele, rfgm_include_base_44, xcopa, xnli, xstorycloze, xwinograd |
 
 ![Reliable benchmark-language cells](pretraining/predictivity/da_size_vs_da_ckpt_reliable_tasks_80_late_multi_axes.png)
 <!-- END auto:reliable-tasks -->
@@ -621,11 +624,11 @@ Numbers from the `predictivity` pool (`da_all_per_task_both_axes.csv`, pairs fro
 
 | comparison | benchmarks | n | pairs | BPB | n |
 |---|---|---|---|---|---|
-| 90M → 1.7B | 0.51 | 235 | 28 | 0.91 | 34 |
-| 175M → 1.7B | 0.50 | 269 | 28 | 0.91 | 34 |
-| 350M → 1.7B | 0.50 | 298 | 28 | 0.82 | 34 |
-| 600M → 1.7B | 0.51 | 332 | 28 | 0.58 | 34 |
-| 1B → 1.7B | 0.51 | 360 | 28 | 0.82 | 34 |
+| 90M → 1.7B | 0.55 | 890 | 28 | 0.91 | 34 |
+| 175M → 1.7B | 0.53 | 924 | 28 | 0.91 | 34 |
+| 350M → 1.7B | 0.54 | 953 | 28 | 0.82 | 34 |
+| 600M → 1.7B | 0.54 | 987 | 28 | 0.58 | 34 |
+| 1B → 1.7B | 0.53 | 1015 | 28 | 0.82 | 34 |
 
 ![DA-size by family](pretraining/predictivity/da_size_by_family_multi_axes.png)
 
@@ -648,7 +651,7 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 
 - **bpb** — smallest proxy whose mean agreement with the 1.7B final ranking reaches 0.75: **90M at 0.5C** (0.90).
 - **all benchmarks** — no (proxy, checkpoint) reaches a mean agreement of 0.75.
-- **Smallest safe size per (benchmark, language)** — never: 267, 1B: 39, 90M: 8, 600M: 4, 350M: 2, 175M: 2 of 322 cells.
+- **Smallest safe size per (benchmark, language)** — never: 686, 1B: 77, 90M: 14, 600M: 12, 350M: 4, 175M: 2 of 795 cells.
 
 ![rq02 in one figure](pretraining/predictivity/highlights_da_all_multi_axes.png)
 
@@ -663,15 +666,15 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 | 1B | 0.65 | 0.66 | 0.70 | 0.75 | 0.74 | 0.80 | 0.77 | 0.80 | 0.81 | 0.82 |
 | 1.7B | 0.81 | 0.90 | 0.93 | 0.95 | 0.96 | 0.95 | 0.97 | 0.96 | 0.99 |  |
 
-**all benchmarks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 397 tasks):
+**all benchmarks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples; mean DA over 1015 tasks):
 
 | proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 90M | 0.49 | 0.47 | 0.49 | 0.48 | 0.50 | 0.51 | 0.50 | 0.51 | 0.51 | 0.51 |
-| 175M | 0.51 | 0.50 | 0.49 | 0.50 | 0.50 | 0.50 | 0.49 | 0.49 | 0.48 | 0.50 |
-| 350M | 0.47 | 0.47 | 0.48 | 0.47 | 0.47 | 0.49 | 0.49 | 0.49 | 0.49 | 0.50 |
-| 600M | 0.47 | 0.47 | 0.48 | 0.49 | 0.50 | 0.49 | 0.50 | 0.50 | 0.51 | 0.51 |
-| 1B | 0.49 | 0.50 | 0.50 | 0.50 | 0.52 | 0.51 | 0.51 | 0.52 | 0.51 | 0.51 |
+| 90M | 0.49 | 0.47 | 0.49 | 0.48 | 0.50 | 0.51 | 0.50 | 0.51 | 0.51 | 0.55 |
+| 175M | 0.51 | 0.50 | 0.49 | 0.50 | 0.50 | 0.50 | 0.49 | 0.49 | 0.48 | 0.53 |
+| 350M | 0.47 | 0.47 | 0.48 | 0.47 | 0.47 | 0.49 | 0.49 | 0.49 | 0.49 | 0.54 |
+| 600M | 0.47 | 0.47 | 0.48 | 0.49 | 0.50 | 0.49 | 0.50 | 0.50 | 0.51 | 0.54 |
+| 1B | 0.49 | 0.50 | 0.50 | 0.50 | 0.52 | 0.51 | 0.51 | 0.52 | 0.51 | 0.53 |
 | 1.7B | 0.50 | 0.54 | 0.54 | 0.56 | 0.56 | 0.59 | 0.59 | 0.63 | 0.71 |  |
 
 ![Early and small](pretraining/predictivity/early_small_da_goal_multi_axes.png)
@@ -729,7 +732,7 @@ A third variant of each restricts the mean to the (benchmark, language) cells th
 <!-- BEGIN auto:early-small-by-transformation (by_L.py --pool predictivity --by transformation) -->
 ## Early and small per design axis
 
-The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed 1904 (`predictivity_all`, every scheme) by the one axis each pair moves — language count, depth (deep vs shallow), language list (A vs B), temperature (T=1 vs T=3), 2nd language (ru vs zh vs es) — one panel per axis and a first panel over every mono-axis pair (median pairs per cell up to 20). Same gate (rule 1), pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and `above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line and the populations differ between panels and sizes (rule 13). Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation`.
+The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed 1904 (`predictivity_all`, every scheme) by the one axis each pair moves — language count, depth (deep vs shallow), language list (A vs B), temperature (T=1 vs T=3), 2nd language (ru vs zh vs es), English corpus (edu filter on vs off) — one panel per axis and a first panel over every mono-axis pair (median pairs per cell up to 20). Same gate (rule 1), pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and `above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line and the populations differ between panels and sizes (rule 13). Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation`.
 
 ![DA-ckpt per design axis](pretraining/predictivity/early_small_da_ckpt_by_transformation_mono_axis.png)
 
@@ -737,17 +740,18 @@ The per-L reading above pools every design axis inside an L; this one splits the
 
 | axis (DA-ckpt, 0.5C → 4.5C, tasks) | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| all | 0.50 → 0.75 (324) | 0.51 → 0.75 (349) | 0.50 → 0.81 (386) | 0.50 → 0.75 (417) | 0.51 → 0.74 (458) | 0.51 → 0.72 (503) |
+| all | 0.50 → 0.75 (324) | 0.51 → 0.75 (349) | 0.50 → 0.81 (386) | 0.51 → 0.75 (417) | 0.51 → 0.74 (458) | 0.51 → 0.72 (503) |
 | language count | 0.48 → 0.76 (235) | 0.48 → 0.73 (256) | 0.48 → 0.79 (285) | 0.49 → 0.75 (316) | 0.50 → 0.74 (343) | 0.51 → 0.72 (374) |
 | depth (deep vs shallow) | 0.48 → 0.74 (250) | 0.49 → 0.75 (273) | 0.48 → 0.79 (301) | 0.48 → 0.73 (335) | 0.47 → 0.73 (365) | 0.49 → 0.72 (397) |
 | language list (A vs B) | 0.39 → 0.75 (63) | 0.49 → 0.70 (61) | 0.49 → 0.81 (70) | 0.52 → 0.74 (79) | 0.46 → 0.73 (83) | 0.45 → 0.69 (92) |
 | temperature (T=1 vs T=3) | 0.49 → 0.72 (235) | 0.52 → 0.77 (256) | 0.52 → 0.84 (285) | 0.54 → 0.77 (316) | 0.52 → 0.73 (343) | 0.54 → 0.73 (374) |
 | 2nd language (ru vs zh vs es) | 0.42 → 0.71 (28) | 0.49 → 0.83 (25) | 0.39 → 0.70 (28) | 0.55 → 0.77 (31) | 0.46 → 0.78 (32) | 0.61 → 0.75 (34) |
+| English corpus (edu filter on vs off) | 0.56 → 0.82 (28) | 0.63 → 0.75 (25) | 0.56 → 0.83 (6) | 0.58 → 0.90 (31) | 0.60 → 0.79 (32) | 0.67 → 0.78 (34) |
 
 Key findings:
 
-- At 90M the DA-ckpt line clears 0.75 and stays there — language count: from 4.5C (0.76); depth (deep vs shallow): never (max 0.74); language list (A vs B): from 4.5C (0.75); temperature (T=1 vs T=3): never (max 0.72); 2nd language (ru vs zh vs es): never (max 0.71).
-- At 1.7B — language count: 0.51 → 0.72 (374); depth (deep vs shallow): 0.49 → 0.72 (397); language list (A vs B): 0.45 → 0.69 (92); temperature (T=1 vs T=3): 0.54 → 0.73 (374); 2nd language (ru vs zh vs es): 0.61 → 0.75 (34).
+- At 90M the DA-ckpt line clears 0.75 and stays there — language count: from 4.5C (0.76); depth (deep vs shallow): never (max 0.74); language list (A vs B): from 4.5C (0.75); temperature (T=1 vs T=3): never (max 0.72); 2nd language (ru vs zh vs es): never (max 0.71); English corpus (edu filter on vs off): from 4C (0.76).
+- At 1.7B — language count: 0.51 → 0.72 (374); depth (deep vs shallow): 0.49 → 0.72 (397); language list (A vs B): 0.45 → 0.69 (92); temperature (T=1 vs T=3): 0.54 → 0.73 (374); 2nd language (ru vs zh vs es): 0.61 → 0.75 (34); English corpus (edu filter on vs off): 0.67 → 0.78 (34).
 
 Follow-ups:
 
@@ -761,16 +765,17 @@ Follow-ups:
 
 | axis (DA-goal, 0.5C → 5C, tasks) | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| all | 0.50 → 0.50 (302) | 0.49 → 0.51 (341) | 0.47 → 0.50 (377) | 0.49 → 0.52 (411) | 0.50 → 0.53 (453) | 0.51 → 0.72 (503) |
-| language count | 0.51 → 0.50 (221) | 0.50 → 0.51 (252) | 0.47 → 0.51 (282) | 0.53 → 0.53 (313) | 0.52 → 0.52 (339) | 0.51 → 0.72 (374) |
-| depth (deep vs shallow) | 0.48 → 0.50 (235) | 0.50 → 0.50 (269) | 0.47 → 0.48 (298) | 0.42 → 0.49 (332) | 0.46 → 0.52 (360) | 0.49 → 0.72 (397) |
-| language list (A vs B) | 0.50 → 0.47 (55) | 0.47 → 0.48 (60) | 0.47 → 0.48 (70) | 0.44 → 0.47 (79) | 0.48 → 0.50 (81) | 0.45 → 0.69 (92) |
-| temperature (T=1 vs T=3) | 0.54 → 0.51 (221) | 0.50 → 0.53 (252) | 0.49 → 0.54 (282) | 0.53 → 0.57 (313) | 0.55 → 0.57 (339) | 0.54 → 0.73 (374) |
-| 2nd language (ru vs zh vs es) | 0.45 → 0.48 (23) | 0.50 → 0.54 (24) | 0.43 → 0.52 (28) | 0.52 → 0.56 (31) | 0.49 → 0.56 (31) | 0.61 → 0.75 (34) |
+| all | 0.50 → 0.59 (302–1118) | 0.49 → 0.56 (341–1157) | 0.47 → 0.57 (377–1193) | 0.49 → 0.56 (411–1227) | 0.51 → 0.58 (453–1269) | 0.51 → 0.72 (503) |
+| language count | 0.51 → 0.56 (221–830) | 0.50 → 0.56 (252–861) | 0.47 → 0.56 (282–891) | 0.53 → 0.57 (313–922) | 0.52 → 0.55 (339–948) | 0.51 → 0.72 (374) |
+| depth (deep vs shallow) | 0.48 → 0.56 (235–890) | 0.50 → 0.50 (269–924) | 0.47 → 0.52 (298–953) | 0.42 → 0.47 (332–987) | 0.46 → 0.51 (360–1015) | 0.49 → 0.72 (397) |
+| language list (A vs B) | 0.50 → 0.50 (55–242) | 0.47 → 0.47 (60–247) | 0.47 → 0.47 (70–257) | 0.44 → 0.48 (79–266) | 0.48 → 0.53 (81–268) | 0.45 → 0.69 (92) |
+| temperature (T=1 vs T=3) | 0.54 → 0.64 (221–830) | 0.50 → 0.60 (252–861) | 0.49 → 0.62 (282–891) | 0.53 → 0.62 (313–922) | 0.55 → 0.62 (339–948) | 0.54 → 0.73 (374) |
+| 2nd language (ru vs zh vs es) | 0.45 → 0.53 (23–121) | 0.50 → 0.51 (24–122) | 0.43 → 0.49 (28–126) | 0.52 → 0.53 (31–129) | 0.49 → 0.48 (31–129) | 0.61 → 0.75 (34) |
+| English corpus (edu filter on vs off) | 0.54 → 0.55 (23) | 0.56 → 0.61 (24) | 0.50 → 0.78 (6) | 0.47 → 0.62 (31) | 0.55 → 0.66 (31) | 0.67 → 0.78 (34) |
 
 Key findings:
 
-- At 90M the DA-goal line clears 0.75 and stays there — language count: never (max 0.52); depth (deep vs shallow): never (max 0.51); language list (A vs B): never (max 0.51); temperature (T=1 vs T=3): never (max 0.59); 2nd language (ru vs zh vs es): never (max 0.62).
+- At 90M the DA-goal line clears 0.75 and stays there — language count: never (max 0.56); depth (deep vs shallow): never (max 0.56); language list (A vs B): never (max 0.51); temperature (T=1 vs T=3): never (max 0.64); 2nd language (ru vs zh vs es): never (max 0.62); English corpus (edu filter on vs off): never (max 0.65).
 - The distance between the DA-goal and DA-ckpt cell of an axis at a proxy size is what the size costs; the 1.7B column is the same line in both.
 
 Follow-ups:
@@ -851,13 +856,13 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| L1 | 0.62 | 0.51 | 0.83 | 0.53 | 0.6 | 1.0 | — |
-| L15 | 0.48 | 0.52 | 0.5 | 0.5 | 0.52 | 1.0 | — |
-| L2 | 0.46 | 0.51 | 0.57 | 0.53 | 0.51 | 1.0 | — |
-| L30 | 0.5 | 0.49 | 0.47 | 0.51 | 0.46 | 1.0 | — |
-| L50 | 0.49 | 0.53 | 0.53 | 0.53 | 0.58 | 1.0 | — |
-| L8 | 0.57 | 0.5 | 0.48 | 0.48 | 0.55 | 1.0 | — |
-| all pairs | 0.56 | 0.56 | 0.55 | 0.55 | 0.57 | 1.0 | — |
+| L1 | 0.55 | 0.59 | 0.69 | 0.51 | 0.56 | 1.0 | — |
+| L15 | 0.52 | 0.49 | 0.51 | 0.51 | 0.54 | 1.0 | — |
+| L2 | 0.53 | 0.51 | 0.51 | 0.53 | 0.46 | 1.0 | — |
+| L30 | 0.54 | 0.52 | 0.51 | 0.52 | 0.52 | 1.0 | — |
+| L50 | 0.6 | 0.57 | 0.58 | 0.55 | 0.56 | 1.0 | — |
+| L8 | 0.51 | 0.51 | 0.5 | 0.52 | 0.51 | 1.0 | — |
+| all pairs | 0.59 | 0.57 | 0.58 | 0.57 | 0.57 | 1.0 | — |
 
 ![Scale convergence, L8](pretraining/predictivity/scale_convergence_da_size_L8_multi_axes.png)
 <!-- END auto:scale-convergence-L8 -->
@@ -869,13 +874,13 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 
 | group | 90M | 175M | 350M | 600M | 1B | 1.7B | N_min(τ=0.9) |
 |---|---|---|---|---|---|---|---|
-| L1 | 0.61 | 0.67 | 0.83 | 0.67 | 0.72 | 1.0 | — |
-| L15 | 0.4 | 0.53 | 0.4 | 0.4 | 0.6 | 1.0 | — |
-| L2 | 0.39 | 0.56 | 0.61 | 0.69 | 0.56 | 1.0 | — |
-| L30 | 0.53 | 0.48 | 0.62 | 0.53 | 0.42 | 1.0 | — |
-| L50 | 0.47 | 0.5 | 0.67 | 0.53 | 0.53 | 1.0 | — |
-| L8 | 0.64 | 0.5 | 0.53 | 0.36 | 0.44 | 1.0 | — |
-| all pairs | 0.59 | 0.58 | 0.63 | 0.62 | 0.6 | 1.0 | — |
+| L1 | 0.62 | 0.62 | 0.72 | 0.59 | 0.69 | 1.0 | — |
+| L15 | 0.48 | 0.47 | 0.4 | 0.47 | 0.54 | 1.0 | — |
+| L2 | 0.53 | 0.53 | 0.55 | 0.58 | 0.6 | 1.0 | — |
+| L30 | 0.51 | 0.5 | 0.46 | 0.48 | 0.51 | 1.0 | — |
+| L50 | 0.53 | 0.39 | 0.54 | 0.46 | 0.51 | 1.0 | — |
+| L8 | 0.53 | 0.56 | 0.42 | 0.46 | 0.51 | 1.0 | — |
+| all pairs | 0.56 | 0.54 | 0.55 | 0.55 | 0.58 | 1.0 | — |
 
 ![Scale convergence, L8 common tasks](pretraining/predictivity/scale_convergence_da_size_L8common_multi_axes.png)
 <!-- END auto:scale-convergence-L8-common -->
@@ -1096,17 +1101,17 @@ size) cell, median 12 models per cell.**
 <!-- BEGIN auto:agreement-measures (agreement.py --pool predictivity) -->
 ## Decision accuracy is Kendall's τ under another tie convention
 
-Over the 1,884 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 10,682 of 150,024 pairs (7.1%), 95% of them one-sided, and touch 75% of the cells — so the two statistics correlate at r = 0.975 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
+Over the 5,964 (benchmark task, proxy size) cells of DA-size's population (every pair of the grid-seed variants, ≥ 3 pairs, above chance at the proxy and at 1.7B): 2·DA − 1 = τ_a + (T_both − T_one)/n exactly, where T_both / T_one are the pairs tied on both / one side. Ties are 10,977 of 518,627 pairs (2.1%), 95% of them one-sided, and touch 24% of the cells — so the two statistics correlate at r = 0.989 by construction, and the number with content is how often the tie convention changes a reliability verdict (DA ≥ 0.66, i.e. τ ≥ 0.32), in % of cells per proxy size:
 
 | statistic | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|
 | da | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
-| da_drop_ref_ties | 2.3 | 2.3 | 3.4 | 2.7 | 4.0 |
-| gamma | 7.0 | 4.4 | 5.0 | 6.8 | 6.2 |
-| tau_a | 5.6 | 3.8 | 3.4 | 5.1 | 4.6 |
-| tau_b | 6.0 | 3.8 | 4.8 | 6.3 | 5.3 |
+| da_drop_ref_ties | 0.6 | 0.7 | 1.1 | 1.0 | 1.4 |
+| gamma | 2.1 | 1.4 | 1.6 | 2.4 | 2.2 |
+| tau_a | 1.5 | 1.2 | 1.1 | 1.8 | 1.7 |
+| tau_b | 1.7 | 1.2 | 1.5 | 2.2 | 1.9 |
 
-Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair by its displacement — and sit at r = 0.964 and 0.901 against DA. Median 12 models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
+Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT a rescaling — they weight a pair by its displacement — and sit at r = 0.973 and 0.897 against DA. Median 12 models per cell. Values in `agreement_da_size_per_cell_multi_axes.csv`; regenerate with `python analysis/rq02_decision_accuracy/agreement.py --pool predictivity`.
 
 ![DA, Kendall tau and Spearman rho against each other](pretraining/predictivity/agreement_da_size_correlation_multi_axes.png)
 
@@ -1190,7 +1195,7 @@ over ≥ 3 pairs, held at every larger level).
 <!-- BEGIN auto:cross-task (cross_task.py --pool predictivity) -->
 ## Cross-task predictability
 
-Every parent task as the proxy for every other one (898 x 898): the cell is the smallest proxy size (DA-size, 18 variants at 1.7B, 153 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 918 pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
+Every parent task as the proxy for every other one (1714 x 1714): the cell is the smallest proxy size (DA-size, 18 variants at 1.7B, 153 pairs) or the earliest checkpoint (DA-ckpt, the within-size pairs of every size pooled, 918 pairs, the nine checkpoints before the final) at which the ranking on task x (columns) safely predicts the final ranking on task y (rows): DA >= 0.75 over >= 3 pairs there and at every larger level with a value. The diagonal is rq02's own-task DA; the gate empties a benchmark's pairs at every size where it is at chance. The `_by_family` maps take the median level over the task pairs of two benchmarks, the `_by_language` maps over the same-benchmark task pairs of two languages (resource order of the scheme-A lists). Regenerate with `python analysis/rq02_decision_accuracy/cross_task.py --pool predictivity`.
 
 The same two maps over the benchmark tasks that are above chance at some size — BPB, the loss and the benchmarks the gate finds at chance everywhere are dropped, so what is left is the sub-map where a transfer result is possible at all: [`cross_task_da_size_benchmarks_multi_axes.png`](pretraining/predictivity/cross_task_da_size_benchmarks_multi_axes.png), [`cross_task_da_ckpt_benchmarks_multi_axes.png`](pretraining/predictivity/cross_task_da_ckpt_benchmarks_multi_axes.png).
 
@@ -1484,11 +1489,11 @@ Per proxy size, the Spearman correlation ACROSS TASKS between rq01's scaling sta
 
 | proxy | tasks | ρ_size vs ρ_ranking | R²_size vs DA-size | R²_traj vs DA-size | DA-size, predictable both | DA-size, other regimes |
 |---|---|---|---|---|---|---|
-| 90M | 221 | +0.39 | +0.39 | +0.55 | 0.55 | 0.45 |
-| 175M | 252 | +0.30 | +0.29 | +0.56 | 0.57 | 0.43 |
-| 350M | 282 | +0.33 | +0.29 | +0.52 | 0.56 | 0.46 |
+| 90M | 221 | +0.40 | +0.40 | +0.55 | 0.55 | 0.45 |
+| 175M | 252 | +0.31 | +0.29 | +0.57 | 0.57 | 0.43 |
+| 350M | 282 | +0.34 | +0.29 | +0.52 | 0.56 | 0.46 |
 | 600M | 312 | +0.32 | +0.28 | +0.51 | 0.58 | 0.47 |
-| 1B | 313 | +0.39 | +0.31 | +0.58 | 0.59 | 0.48 |
+| 1B | 313 | +0.39 | +0.31 | +0.58 | 0.60 | 0.48 |
 
 ![Scaling against ranking](pretraining/predictivity/scaling_vs_ranking_da_size_multi_axes.png)
 <!-- END auto:scaling-vs-ranking -->

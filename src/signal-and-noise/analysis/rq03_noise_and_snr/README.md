@@ -78,7 +78,7 @@ Hand-written numbers in this README are from the ladder-report snapshot
 Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all`.
 
 - **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 9147 of 17556 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Gate.** 9147 of 33438 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
 - **Seed noise vs detrended checkpoint noise** — median ratio 1.63 over 1478 (size, L, task) cells with seed replicates.
 - **Depth effect vs seed noise** — median |Δ|/seed-std 1.33; 29% of 1473 cells above 2× (a distinct model for SNR, not a re-roll).
 
@@ -183,8 +183,8 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
 
 | DA | languages | same variant | same family | Spearman ρ of the variant ranking |
 |---|---|---|---|---|
-| DA-size | 1 | 0 | 0 | -0.28 |
-| DA-ckpt | 1 | 0 | 0 | 0.76 |
+| DA-size | 1 | 0 | 0 | -0.29 |
+| DA-ckpt | 1 | 0 | 0 | 0.79 |
 <!-- END auto:seed-holdout -->
 
 [headline_metrics.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv) ·

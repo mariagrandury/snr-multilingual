@@ -50,17 +50,17 @@ the 3B block below is filled in; the 3B L30 and L50 cells opened on
 
 | axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) |
 |---|---|---|---|---|
-| mono-axis | 90M | 0.50 | 60 | 0.48 |
-| mono-axis | 175M | 0.48 | 58 | 0.47 |
-| mono-axis | 350M | 0.47 | 68 | 0.46 |
-| mono-axis | 600M | 0.52 | 76 | 0.44 |
-| mono-axis | 1B | 0.49 | 78 | 0.48 |
+| mono-axis | 90M | 0.50 | 60 | 0.46 |
+| mono-axis | 175M | 0.48 | 58 | 0.51 |
+| mono-axis | 350M | 0.47 | 68 | 0.48 |
+| mono-axis | 600M | 0.52 | 76 | 0.50 |
+| mono-axis | 1B | 0.49 | 78 | 0.53 |
 | mono-axis | 1.7B | 0.43 | 85 | — |
 | multi-axis | 90M | 0.51 | 63 | 0.47 |
-| multi-axis | 175M | 0.49 | 61 | 0.49 |
-| multi-axis | 350M | 0.46 | 71 | 0.47 |
-| multi-axis | 600M | 0.51 | 80 | 0.44 |
-| multi-axis | 1B | 0.49 | 83 | 0.48 |
+| multi-axis | 175M | 0.49 | 61 | 0.51 |
+| multi-axis | 350M | 0.46 | 71 | 0.50 |
+| multi-axis | 600M | 0.51 | 80 | 0.50 |
+| multi-axis | 1B | 0.49 | 83 | 0.51 |
 | multi-axis | 1.7B | 0.44 | 93 | — |
 
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
@@ -107,16 +107,16 @@ be read against the day it fills in.
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) |
 |---|---|---|---|---|
-| mono-axis | 90M | 0.48 | 53 | 0.48 |
-| mono-axis | 175M | 0.47 | 58 | 0.47 |
-| mono-axis | 350M | 0.46 | 68 | 0.46 |
-| mono-axis | 600M | 0.44 | 76 | 0.44 |
-| mono-axis | 1B | 0.48 | 77 | 0.48 |
-| multi-axis | 90M | 0.47 | 56 | 0.47 |
-| multi-axis | 175M | 0.49 | 61 | 0.49 |
-| multi-axis | 350M | 0.47 | 71 | 0.47 |
-| multi-axis | 600M | 0.44 | 80 | 0.44 |
-| multi-axis | 1B | 0.48 | 82 | 0.48 |
+| mono-axis | 90M | 0.46 | 228 | 0.46 |
+| mono-axis | 175M | 0.51 | 233 | 0.51 |
+| mono-axis | 350M | 0.48 | 243 | 0.48 |
+| mono-axis | 600M | 0.50 | 251 | 0.50 |
+| mono-axis | 1B | 0.53 | 252 | 0.53 |
+| multi-axis | 90M | 0.47 | 243 | 0.47 |
+| multi-axis | 175M | 0.51 | 248 | 0.51 |
+| multi-axis | 350M | 0.50 | 258 | 0.50 |
+| multi-axis | 600M | 0.50 | 267 | 0.50 |
+| multi-axis | 1B | 0.51 | 269 | 0.51 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
