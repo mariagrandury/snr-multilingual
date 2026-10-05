@@ -1,8 +1,0 @@
-[2026-10-02 11:30:15] === nightly ladder refresh on Marias-MacBook-Air-7.local ===
-[2026-10-02 11:30:15] publishing the ladder report
-Traceback: crash in check_benchmarks before write_artifacts
-[2026-10-02 11:30:17] installing the report from origin/data/ladder-report
-[2026-10-02 11:30:18] installed abc123 yesterday's report
-[2026-10-02 11:30:18] report verified:        2 rows, identical to today's run
-[2026-10-02 11:30:18] NIGHTLY_NO_SUBMIT set — stopping before sbatch
-[2026-10-02 11:30:18] FAILED: ladder_report.py (exit 1)
