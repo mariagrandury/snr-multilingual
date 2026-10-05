@@ -53,7 +53,7 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY, GATE_AND_CURVES, SCALING_PREDICTABILITY  # noqa: E402
-from analysis.utils import TARGET_SIZE, passes_gate, size_order  # noqa: E402
+from analysis.utils import BBPB, TARGET_SIZE, passes_gate, size_order  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SETS = ("rf", "rfgm")
@@ -102,15 +102,18 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     """Gate share, mean DA-size, reliable share and rq01 median R² on every
     task, the originals and the twins."""
     stage = load_pools()[pool].get("stage", "pretraining")
-    bench = mask[~mask["family"].isin(["bpb", "loss"])].copy()
+    # the question is the accuracy formulations (original, rf, rfgm): a `bbpb_` twin is
+    # the same items read as bits per byte, has no gate, and would count as an "original"
+    no_bbpb = lambda d: d[~d["task"].str.startswith(BBPB)].copy()
+    bench = no_bbpb(mask[~mask["family"].isin(["bpb", "loss"])])
     bench["set"] = bench["task"].map(twin_set)
     da = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_per_task_both_axes.csv")
-    da = da[da["axes"] == "multi-axis"] if "axes" in da.columns else da
+    da = no_bbpb(da[da["axes"] == "multi-axis"] if "axes" in da.columns else da)
     da["set"] = da["task"].map(twin_set)
     rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_reliable_tasks_both_axes.csv")
-    rel = rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel
+    rel = no_bbpb(rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel)
     rel["set"] = rel["task"].map(twin_set)
-    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")
+    reg = no_bbpb(pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv"))
     reg["set"] = reg["task"].map(twin_set)
     passes = mask.set_index("task")
     rows = []

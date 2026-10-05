@@ -71,6 +71,12 @@ fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ];
 CURVES=${CURVES:-0}
 GRIDS=(--no-grids); [ "$CURVES" = 1 ] && GRIDS=()
 
+pass "the benchmark BPB twins"
+# every loader adds a `bbpb_<task>` row beside a benchmark row the table has a
+# value for (utils.with_bbpb_twins), so it is (re)written before anything loads;
+# without the cluster-only per-item store it writes nothing and the committed table stays
+run $PY analysis/rq08_subset_selection/build_per_item_store.py --bench-bpb
+
 pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.

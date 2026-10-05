@@ -66,7 +66,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
 from analysis.rq01_scaling_predictability.analyze import _grid  # noqa: E402
-from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only  # noqa: E402
+from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
 CANONICAL = "predictivity_all"
@@ -90,7 +90,7 @@ def size_medians(fits: pd.DataFrame) -> pd.DataFrame:
     """Per task: median R² and oriented median ρ of the gated log-N fits of
     rq1_fits.csv (a (task, L) the gate left without a fit has NaN there)."""
     f = fits.dropna(subset=["r2"]).copy()
-    f["rho"] = np.where(f["kind"] == "benchmark", f["rho"], -f["rho"])
+    f["rho"] = np.where(f["task"].map(lower_is_better), -f["rho"], f["rho"])
     g = f.groupby("task").agg(r2_size=("r2", "median"), rho_size=("rho", "median"), n_size_fits=("r2", "count"))
     return g[g["n_size_fits"] >= MIN_FITS]
 

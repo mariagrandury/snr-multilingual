@@ -73,6 +73,15 @@ so a script never decides by model name.
   SNR variants do not care about. The above-random gate skips them (no chance
   level). `assign_language` maps subsets through `configs/languages.json`
   (`fineweb_iso2`).
+- Each benchmark gets a BPB twin, `bbpb_<task>`: the gold answer's bits per
+  byte at a checkpoint, from `analysis/rq08_subset_selection/bench_bpb.csv`
+  (the per-item store reduced by `build_per_item_store.py --bench-bpb`, the
+  driver's first step; without the cluster-only store it keeps the committed
+  table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
+  original's row, so it is wherever the original is and nowhere else. Its
+  family is `bbpb_<family>`, its language the original's, and it is
+  lower-is-better (`utils.lower_is_better`). Finals only for now: see
+  RULES.md "The benchmark-BPB twins".
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.

@@ -243,7 +243,7 @@ def load(out_dir: Path, pool: str) -> tuple[pd.DataFrame, list[str]]:
     # are computed on, so those cells would correlate partly by construction.
     d = d[~((d["t_kind"] == "ckpt") & (d["frac"] >= 1 - NOISE_WINDOW - FRAC_TOL))]
     d["stratum"] = pd.factorize(d["proxy_size"] + "@" + d["frac"].astype(str))[0]
-    base = d["benchmark"].str.replace(G._TWIN, r"\2", regex=True)
+    base = d["benchmark"].map(G.base)
     d["cluster"] = base + "|" + d["language"]
     d["unit"] = pd.factorize(d["cluster"])[0]
     tix = d.groupby(["cluster", "benchmark"])["task"].transform(lambda t: pd.factorize(t)[0])

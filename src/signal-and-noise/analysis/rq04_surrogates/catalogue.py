@@ -80,7 +80,7 @@ from analysis.rq03_noise_and_snr.run_apertus_snr_variants import (  # noqa: E402
     DISCREPANCY_UNIT_INTERVAL, per_model_inputs, variant_key, variant_signal_noise_snr)
 from analysis.utils import (  # noqa: E402
     CKPT_DA_EARLY_FRACS, MIN_PAIRS, NOISE_GRID, NON_EMB, PAIR_AXES, SMALL_SIZES, TARGET_SIZE, agreement_measures,
-    assign_language, benchmark_family, design_axes, ladder_frame, languages_only, noise_checkpoints,
+    assign_language, benchmark_family, design_axes, ladder_frame, languages_only, lower_is_better, noise_checkpoints,
     on_shared_grid, pair_agreement, pair_sets, passes_gate)
 
 OUT_ROOT = SURROGATES
@@ -370,9 +370,10 @@ def _ladder_stats(fams: list, lad: np.ndarray, sizes: list, pairs: list) -> dict
 def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd.DataFrame:
     """One row per (task, proxy, axes) of `tasks`: every catalogue statistic, read on
     the proxy's final checkpoint, its ten tenths, its window and the rungs below it."""
-    # Oriented so higher is better for every kind: BPB and loss flip sign. DA is
+    # Oriented so higher is better for every task: BPB (per language and a
+    # benchmark's, `utils.lower_is_better`) and the loss flip sign. DA is
     # sign-invariant; the curve and ladder statistics that read a direction are not.
-    df = df.assign(score=np.where(df["kind"].isin(["bpb", "loss"]), -df["primary_score"], df["primary_score"]))
+    df = df.assign(score=np.where(df["task"].map(lower_is_better), -df["primary_score"], df["primary_score"]))
     grid = df[on_shared_grid(df)].assign(k=lambda d: (d["frac"] * 10).round().astype(int))
     win = noise_checkpoints(df).assign(p=lambda d: (d["frac"] * NOISE_GRID).round().astype(int))
     curves = {s: g.pivot_table(index=["task", "family"], columns="k", values="score").reindex(columns=range(1, 11))
@@ -385,7 +386,7 @@ def compute(df: pd.DataFrame, mask: pd.DataFrame | None, tasks: list[str]) -> pd
     lang = {t: assign_language(t) for t in every}
     bpb_of = pd.Series({lang[t]: t for t in every if t.startswith("bpb_")})
     bench = {t: benchmark_family(t) for t in every}
-    base = {t: G._TWIN.sub(r"\2", b) for t, b in bench.items()}      # the benchmark a twin rewrites
+    base = {t: G.base(b) for t, b in bench.items()}                  # the benchmark a twin rewrites
     pseudo = SMALL_SIZES[-1]                                        # the largest rung below the reference
     rows = []
     for si, s in enumerate(SMALL_SIZES):
