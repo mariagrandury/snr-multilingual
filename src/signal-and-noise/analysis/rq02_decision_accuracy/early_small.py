@@ -224,7 +224,7 @@ def highlights(out_dir: Path, summary, size, safe_size, safe_flops, sizes, proxi
     G.save_highlights(fig, out_dir, f"rq02 in one figure: how early and how small can the {TARGET_SIZE} ranking be read?",
                       f"DA = share of design-variant pairs ordered like the {TARGET_SIZE} final checkpoint; safe = DA ≥ {SAFE_DA} "
                       f"over ≥ {MIN_PAIRS} pairs, held at every larger level; a benchmark's bar counts its (language) cells, number in brackets",
-                      tables)
+                      tables, name="highlights_da_all_multi_axes")
 
 
 def generate_readme(pool: str, r: dict | None) -> None:
