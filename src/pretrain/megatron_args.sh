@@ -65,11 +65,21 @@ build_megatron_cmd() {
 		--rope-scaling-factor 8
 		--make-vocab-size-divisible-by 128
 		--normalization RMSNorm
-		--xielu
 		--qk-layernorm
 		--qknorm-impl apex
 		--attention-backend flash
 	)
+
+	# The activation is the one MODEL knob a cell may vary (ARCH_AXES in
+	# launch_trainings.py). The default reproduces every trained cell's args
+	# exactly; ACTIVATION=swiglu swaps XIELU for Megatron's gated SiLU MLP,
+	# whose extra per-layer matrix is why the swiglu family carries a narrower
+	# FFN at a matched parameter count (hyperparams/find_hyperparams_swiglu.py).
+	case "${ACTIVATION:-xielu}" in
+		xielu)  NETWORK_SIZE_ARGS+=(--xielu)  ;;
+		swiglu) NETWORK_SIZE_ARGS+=(--swiglu) ;;
+		*) echo "megatron_args.sh: unknown ACTIVATION '$ACTIVATION'" >&2; return 1 ;;
+	esac
 
 	LOGGING_ARGS=(
 		--log-throughput

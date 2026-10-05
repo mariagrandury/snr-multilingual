@@ -131,7 +131,9 @@ Eval results are NOT in the repo: they live on the cluster at
   matching keys off, plus the `groups` the report and deck slice by —
   `trained` is the 50 languages of the L50 mixture and is what every
   per-language figure covers, `main` the older 12-language set
-- Architectures live in `src/pretrain/hyperparams/hyperparams_{deep,shallow}.json`
+- Architectures live in `src/pretrain/hyperparams/hyperparams_<arch>.json`
+  (`deep` the baseline, `shallow` the depth level, `swiglu` the activation
+  level — `launch_trainings.ARCH_AXES` says what each one varies)
 
 ## Development
 
@@ -257,5 +259,5 @@ are retired — do not carry them into new work):
   axis. Its 88.5B build stays on disk, unreferenced. "Variant" is the older, looser word for any
   run configuration (seed × arch × scheme) — don't use it for the data axis.
 - Cell name = Slurm job name = checkpoint dir = W&B run name:
-  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow>-seed<seed>`
+  `lm-<size>-L<L>[-AT3|-schemeB|-ZH|-ES|-dclmP|-fweb][-b<batch>]-<deep|shallow|swiglu>-seed<seed>`
 - Each size trains its own budget D(N) = 100 × N tokens (5× Chinchilla)

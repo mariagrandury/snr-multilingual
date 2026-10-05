@@ -5,10 +5,13 @@ Launch predictivity-sweep training jobs on CSCS (sbatch) or Azure ML (az ml).
 The grid (see plan/small-to-large-predictivity-training-plan.md):
 
   * size — the 7-rung ladder (90M..3B) shared by the reviewed hyperparams
-           files; --arch picks deep (hyperparams/hyperparams_deep.json, the
-           baseline) or shallow (hyperparams/hyperparams_shallow.json, the
-           model-depth intervention level). A rung is trained in an arch only
-           if that arch's file defines it (arches_for): 3B is deep only.
+           files; --arch picks the architecture family, one reviewed
+           hyperparams file each: deep (the baseline), shallow (the
+           model-depth level) or swiglu (the activation level, scheme A at
+           L in {1, 8, 30} — deep's shape at a matched parameter count).
+           A rung is trained in an arch only if that arch's file defines it
+           AND the scheme plans it there (arches_for): 3B is deep only, and
+           swiglu runs at three settings, not six.
   * L    — language setting in {1, 2, 8, 15, 30, 50, 100}: English + L-1
            FineWeb-2 languages. Every size trains at every setting except 3B,
            the extrapolation check, which trains at L in {8, 15} only
@@ -53,7 +56,7 @@ Usage:
                                      [--training-steps N] [--test] [filters]
     python launch_trainings.py azure [filters]        # `source azure/env.sh` first
 
-Filters (both platforms): --arch {deep,shallow}, --scheme {A,AT3,B,ZH,ES},
+Filters (both platforms): --arch {deep,shallow,swiglu}, --scheme {A,AT3,B,ZH,ES},
 --size 350M[,175M,...], --langs L, --seed N, --dry-run.
 
 Diagnostic overrides (CSCS only). Each needs a --size/--langs/--seed filter,
@@ -104,13 +107,39 @@ from typing import Optional
 # fails with a path that looks nothing like the mistake.
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-# The two reviewed architecture families cover the same six non-embedding
-# sizes; "shallow vs deep" (width/depth 128 vs 64) is the model-depth level of
-# the intervention axis. Deep is the baseline.
+# The reviewed architecture families. Deep is the baseline; the others each
+# move exactly ONE thing away from it, and the `arch` slot of a cell name is
+# what carries which. "shallow vs deep" (width/depth 128 vs 64) is the
+# model-depth level; "swiglu vs deep" is the activation level (2026-10-03,
+# deep's shape at a matched parameter count — hyperparams/find_hyperparams_swiglu.py).
+#
+# These are NOT all one axis: a (deep, shallow) pair is a DEPTH decision and a
+# (deep, swiglu) pair an ACTIVATION one, so the analysis decomposes the slot
+# rather than reading it whole (ARCH_AXES below, analysis/utils.design_axes).
+# Pooling them would report a depth decision three times over and call it
+# an architecture effect.
 HYPERPARAMS = {
     "deep": SCRIPT_DIR / "hyperparams" / "hyperparams_deep.json",
     "shallow": SCRIPT_DIR / "hyperparams" / "hyperparams_shallow.json",
+    "swiglu": SCRIPT_DIR / "hyperparams" / "hyperparams_swiglu.json",
 }
+
+# What each architecture family varies, against the deep baseline's levels.
+# `depth` is the shape axis the family's hyperparams file describes;
+# `activation` and `optimizer` are what megatron_args.sh must be told, and are
+# emitted into the cell env ONLY when they differ from the baseline, so a deep
+# or shallow cell's env dict stays byte-identical to what the trained cells
+# used.
+#
+# Adding an OPTIMIZER family needs Megatron work first: `--optimizer` accepts
+# only adam|sgd|ademamix (megatron/training/arguments.py), with no Muon
+# implementation in the checkout.
+ARCH_AXES = {
+    "deep":    dict(depth="deep",    activation="xielu",  optimizer="ademamix"),
+    "shallow": dict(depth="shallow", activation="xielu",  optimizer="ademamix"),
+    "swiglu":  dict(depth="deep",    activation="swiglu", optimizer="ademamix"),
+}
+BASELINE_ARCH = "deep"
 
 # W&B project for this sweep — single source of truth is configs/hf_wandb.json.
 # The entity is the constant "mariagrandury-epflnlp", hardcoded in
@@ -235,9 +264,16 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 # at L50 (built both ways, calibrating T=3 against the T=1 curve) and
 # replicated at L15 and L30 where nothing is starved.
 DATA_SCHEMES = {
+    # The activation axis rides scheme A's data at three settings (2026-10-03):
+    # L1 the monolingual anchor, L8 the modal multilingual setting, L30 near
+    # the top of the language range — spaced so the three mono-axis pairs rule
+    # 5 needs also span the axis the paper is about, rather than clustering at
+    # one language count. `arches_by_L` and not `arches`, so no other setting
+    # plans a swiglu cell; the replicate seeds stay deep-only via seeds_for.
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
               max_size={}, temp=1.0, sets="A", seeds="grid",
-              arches=("deep", "shallow")),
+              arches=("deep", "shallow"),
+              arches_by_L={L: ("deep", "shallow", "swiglu") for L in (1, 8, 30)}),
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
     # L50 build at T=3 realizes 87.1B (13 of 49 languages exhausted), enough
     # for the 83.6B a 1.7B draws (0.96 epochs) — decided 2026-09-10.
@@ -778,6 +814,7 @@ def cell_env(
     seed: int,
     exp: str,
     blend: str,
+    arch: str = BASELINE_ARCH,
     training_steps: Optional[int] = None,
     lr_warmup_iters: Optional[int] = None,
     lr_wsd_decay_iters: Optional[int] = None,
@@ -838,6 +875,12 @@ def cell_env(
         # normal launch's dict stays byte-identical to what the trained
         # cells used and megatron_args.sh keeps its own GBS=504.
         **({"GBS": gbs} if gbs is not None else {}),
+        # The architecture knobs megatron_args.sh reads, emitted ONLY where the
+        # family differs from the deep baseline — same rule as ADEMAMIX_BETA3
+        # and GBS above, and what keeps `deep`/`shallow` dicts byte-identical
+        # to the ones the trained cells used.
+        **{k.upper(): v for k, v in ARCH_AXES[arch].items()
+           if k != "depth" and v != ARCH_AXES[BASELINE_ARCH][k]},
         "SAVE_INTERVAL": save_interval(iters),
         "INIT_STD": init_std(cfg["hidden_size"]),
         "SEED": seed,
@@ -992,6 +1035,14 @@ ITER_MS = {
                 "1B": 940,     # no shallow 1B run yet: deep's value
                 "1.7B": 1230}, # [w] 1113, 1 job
 }
+# The swiglu family has not run yet, so it borrows deep's walltime sizing — the
+# same stand-in the shallow 1B uses. It is the right starting guess: the FLOPs
+# per token are matched by construction (same N, same tokens/iter), and the
+# gated MLP trades one wide GEMM for two at 2/3 the width plus an elementwise
+# multiply. Re-measure from a clean run and replace these, as the [m]/[w] marks
+# above record for every other rung.
+ITER_MS["swiglu"] = {s: ms for s, ms in ITER_MS["deep"].items()
+                     if s in SIZES_BY_ARCH["swiglu"]}
 TIME_MARGIN_SEC = 9000   # 2h30m: 1h SIGUSR2 grace + cold-start + buffer
 TIME_MIN_SEC = 5400      # 1h30m
 TIME_MAX_SEC = 43199     # 11:59:59 (slurm normal queue cap)
@@ -1255,9 +1306,10 @@ def main() -> None:
                              "and evaluated without a separate step.")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print submit commands without running them")
-    parser.add_argument("--arch", choices=["deep", "shallow"], default="deep",
-                        help="Architecture family: deep (baseline) or shallow "
-                             "(the model-depth intervention level)")
+    parser.add_argument("--arch", choices=list(HYPERPARAMS), default="deep",
+                        help="Architecture family: deep (baseline), shallow "
+                             "(the model-depth level) or swiglu (the "
+                             "activation level, L in {1, 8, 30})")
     parser.add_argument("--scheme", choices=list(DATA_SCHEMES), default="A",
                         help="Data scheme to submit: A (resource-ranked, "
                              "T=1 — the baseline), AT3 (same lists at T=3; "
@@ -1406,9 +1458,15 @@ def main() -> None:
         run_test(data, args.arch, args.data_dir, args.dry_run)
         return
 
-    if args.arch not in DATA_SCHEMES[args.scheme]["arches"]:
+    # arches_for, not the scheme's `arches` list: a family can be defined at
+    # SOME of a scheme's settings only (swiglu at L in {1, 8, 30}, AT3 deep-only
+    # at L15/L30), and reading the list directly refused those outright.
+    trained_in = {a for L in DATA_SCHEMES[args.scheme]["langs"]
+                  for size in scheme_sizes(args.scheme, L)
+                  for a in arches_for(args.scheme, size, L)}
+    if args.arch not in trained_in:
         print(f"Scheme {args.scheme} is not trained in the {args.arch} "
-              f"architecture (only {', '.join(DATA_SCHEMES[args.scheme]['arches'])}).")
+              f"architecture (only {', '.join(sorted(trained_in))}).")
         return
     cells = [
         c for c in predictivity_cells([args.scheme], args.arch)
@@ -1565,7 +1623,7 @@ def main() -> None:
                   + (f"  (FineWeb-2 from {fineweb_dir})" if fineweb_dir != cell_dir else ""))
             nodes = cfg.get("nodes", NODES_BY_SIZE[c["size"]])
             submit_cscs(
-                cell_env(cfg, c["size"], c["seed"], exp, blend,
+                cell_env(cfg, c["size"], c["seed"], exp, blend, args.arch,
                          training_steps=args.training_steps or tgt,
                          mbs=cscs_mbs(nodes, cfg["micro_batch_size"], gbs),
                          lr=args.lr, beta3_factor=args.ademamix_beta3_factor,
@@ -1590,7 +1648,7 @@ def main() -> None:
             blend = data_blend("$ENGLISH_DIR/english_dclm",
                                f"$FINEWEB_DIR/fineweb_L{c['L']}", c["L"])
             submit_azure(
-                cell_env(cfg, c["size"], c["seed"], exp, blend,
+                cell_env(cfg, c["size"], c["seed"], exp, blend, args.arch,
                          gbs=None if gbs == GBS else gbs),
                 cell=c, dry_run=args.dry_run,
                 data_root=(f"{DATASTORE}/data/{subdir}" if subdir else None),
