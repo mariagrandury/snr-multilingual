@@ -110,6 +110,22 @@ Every swept cell in one grid (`predictivity` pool). Regenerate with `python anal
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
 GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
 
+<!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity_schemes) -->
+## Items the reference solves
+
+DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (grid seed), gate `predictivity` at the proxy and the reference, 460 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes`.
+
+| proxy | tasks | solved share | DA all (held out) | DA solved (held out) | Δ | Wilcoxon p | DA solved (in sample) | ρ(SNR, DA) all | ρ(SNR, DA) solved |
+|---|---|---|---|---|---|---|---|---|---|
+| 90M | 235 | 0.40 | 0.54 | 0.57 | +0.034 | 0.000 | 0.57 | 0.27 | 0.36 |
+| 175M | 269 | 0.40 | 0.54 | 0.57 | +0.024 | 0.001 | 0.58 | 0.31 | 0.40 |
+| 350M | 298 | 0.40 | 0.53 | 0.56 | +0.026 | 0.000 | 0.57 | 0.32 | 0.39 |
+| 600M | 332 | 0.40 | 0.55 | 0.57 | +0.021 | 0.000 | 0.58 | 0.39 | 0.47 |
+| 1B | 360 | 0.39 | 0.57 | 0.57 | +0.003 | 0.818 | 0.57 | 0.40 | 0.45 |
+
+![Items the reference solves](pretraining/predictivity_schemes/reference_solved_da_size_multi_axes.png)
+<!-- END auto:reference-solved -->
+
 ## TODO
 
 - [ ] Recommend a *family* of robust subjects (e.g. `medical_genetics`,

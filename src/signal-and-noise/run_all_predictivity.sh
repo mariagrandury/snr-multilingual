@@ -248,6 +248,8 @@ run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 # per-item view: reads the per-item store; the store is built by the sbatch
 # (analysis/rq08_subset_selection/build_per_item_store.sbatch), not here
 run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
+# the items the 1.7B runs solve, chosen on half the designs, DA and SNR read on the rest (store finals; nothing without it)
+run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do
