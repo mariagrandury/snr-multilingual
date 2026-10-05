@@ -496,21 +496,32 @@ def jackknife_ratio(decisions: pd.DataFrame, keys: list, a: str = "family_a", b:
     jackknife is used rather than a bootstrap because a family drawn twice
     forms a pair tied on both sides, which the kernel scores as an agreement —
     a resample that inflates the very number it estimates. Leave-one-out has
-    no such pair. With m families in a group the interval is over m values;
-    below MIN_PAIRS + 1 families it is reported as NaN rather than drawn, and
-    `n_families` is carried so a reader can see how much the band rests on.
+    no such pair.
+
+    Two families whose removal deletes the same pairs are ONE unit. On an
+    axis of disjoint pairs (deep vs swiglu at each L, deep vs shallow) both
+    members of a pair delete exactly that pair, and counting the two equal
+    leave-one-out values as independent overstates the variance by
+    2(m-1)/m / ((n-1)/n) — x2.5 on three pairs. The units are therefore the
+    distinct deletion sets: the pair on such an axis, the family wherever
+    families are shared between pairs (the L regimes, the pooled line), where
+    nothing changes. With n units the interval is over n values; at or below
+    MIN_PAIRS units it is reported as NaN rather than drawn, and `n_families`
+    and `n_units` are carried so a reader can see how much the band rests on.
     """
     rows = []
     for key, g in decisions.groupby(keys, sort=False):
         fams = sorted(set(g[a]) | set(g[b]))
         theta = g[match].mean()
-        m = len(fams)
-        if m <= MIN_PAIRS:
-            rows.append(dict(zip(keys, key), reliability=theta, se=float("nan"), n_families=m))
+        pair = pd.Series(list(zip(g[a], g[b])), index=g.index)
+        units = {frozenset(q for q in set(pair) if f in q) for f in fams}
+        n = len(units)
+        if n <= MIN_PAIRS:
+            rows.append(dict(zip(keys, key), reliability=theta, se=float("nan"), n_families=len(fams), n_units=n))
             continue
-        loo = np.array([g.loc[(g[a] != f) & (g[b] != f), match].mean() for f in fams])
-        se = np.sqrt((m - 1) / m * ((loo - loo.mean()) ** 2).sum())
-        rows.append(dict(zip(keys, key), reliability=theta, se=se, n_families=m))
+        loo = np.array([g.loc[~pair.isin(u), match].mean() for u in units])
+        se = np.sqrt((n - 1) / n * ((loo - loo.mean()) ** 2).sum())
+        rows.append(dict(zip(keys, key), reliability=theta, se=se, n_families=len(fams), n_units=n))
     out = pd.DataFrame(rows)
     out["lo"], out["hi"] = out["reliability"] - JACKKNIFE_Z * out["se"], out["reliability"] + JACKKNIFE_Z * out["se"]
     return out

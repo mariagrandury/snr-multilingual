@@ -45,8 +45,9 @@ Three groupings of the same decisions, `--by`:
 Every grouping also carries `OVERALL`, the pooled black line: every pair at the
 grid seed, every data scheme included (A, B, AT3, ZH, ES), so it is the same
 population as by_L's first panel and means the same thing in every rq02 figure.
-It carries a leave-one-family-out jackknife band (`lo`/`hi`, 90 %): the unit
-resampled is the design variant, since pairs and tasks both share them.
+It carries a leave-one-out jackknife band (`lo`/`hi`, 90 %): the unit
+resampled is the design variant, since pairs and tasks both share them, or the
+pair on an axis whose pairs share no variant (`utils.jackknife_ratio`).
 
 Two restrictions make the L lines comparable with each other, which by
 default they are not (an L50 line pools 52 tasks, an L8 line 7):
@@ -74,7 +75,7 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  the reliable populations only.
     scale_convergence_da_size_transformation_panels[_<variant>][_flops].png   the `--by transformation`
                                  figure as a grid, one panel per design axis: the axis's own
-                                 line with its leave-one-family-out band, the pooled `all pairs`
+                                 line with its leave-one-out band, the pooled `all pairs`
                                  line faint in each for reference, task counts under the points
                                  (size axis). Same table as the one-panel figure, written beside it.
     scale_convergence_da_size_<by>_above_80.png   the same, restricted to the (benchmark,
@@ -377,8 +378,8 @@ def aggregate(cells: pd.DataFrame, pool: str, tau: float, x: str = "non_emb") ->
 def decorate(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool: str, keys: list,
              axis_of: dict | None = None) -> pd.DataFrame:
     """Per point of `out`: which axis the pooled decisions moved (`share_<axis>`,
-    the mix a regime line is made of) and the leave-one-family-out band
-    (`se`, `n_families`, `lo`, `hi`). Both are read from the decision rows
+    the mix a regime line is made of) and the leave-one-out jackknife band
+    (`se`, `n_families`, `n_units`, `lo`, `hi`). Both are read from the decision rows
     behind exactly the cells `aggregate` kept, so they join on the cell key."""
     kept = keep_cells(cells, pool)
     d = dec.astype({c: str for c in ("task", "group", "size", "family_a", "family_b")})
@@ -388,7 +389,7 @@ def decorate(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool: st
         mix = d.groupby(keys + ["axis"], observed=True).size().unstack("axis", fill_value=0)
         mix = mix.div(mix.sum(axis=1), axis=0).add_prefix("share_").reset_index()
         out = out.merge(mix, on=keys, how="left")
-    return out.merge(jackknife_ratio(d, keys)[keys + ["se", "n_families", "lo", "hi"]], on=keys, how="left")
+    return out.merge(jackknife_ratio(d, keys)[keys + ["se", "n_families", "n_units", "lo", "hi"]], on=keys, how="left")
 
 
 def diagnostics(out: pd.DataFrame, groups: dict, fin: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -536,7 +537,9 @@ def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populatio
                 ax.set_xticks([NON_EMB[s] for s in size_order(out["size"].unique())])
                 ax.set_xticklabels(size_order(out["size"].unique()))
             fams = sub.loc[sub["group"] == grp, "n_families"].max()
-            ax.set_title(f"{pop}: {grp}" + (f"  ({int(fams)} families)" if np.isfinite(fams) else ""), loc="left", fontsize=8)
+            units = sub.loc[sub["group"] == grp, "n_units"].max()
+            ax.set_title(f"{pop}: {grp}" + (f"\n({int(units)} units / {int(fams)} families)" if np.isfinite(fams) else ""),
+                         loc="left", fontsize=8)
             ax.grid(color=S.GRID, lw=.6); S.clean(ax)
         row[0].set_ylabel(f"decision reliability vs {TARGET_SIZE} final")
         row[0].legend(fontsize=6, frameon=False, loc="lower right")
@@ -546,7 +549,8 @@ def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populatio
                     f"one panel per design axis the pair differs on, its {OVERALL} line (every pair at the grid seed) faint in each "
                     f"for reference; a decision = one pair of design variants at both models' FINAL checkpoint, R = matching / "
                     f"comparable decisions pooled over the gated tasks with ≥ {MIN_PAIRS} pairs; the shaded band = the panel's own "
-                    f"leave-one-design-variant-out jackknife (90 %; families in the title, so a 4-family band is four numbers); "
+                    f"leave-one-unit-out jackknife (90 %; the unit is the design variant, or the pair on an axis whose pairs "
+                    f"share no variant; units in the title, so a 4-unit band is four numbers); "
                     f"dotted line = τ = {tau:g}, the ring = N_min(τ); the hollow {TARGET_SIZE} point is 1.0 by construction"
                     + ("; the number under a point = tasks behind it" if counts else "")
                     + f". Pairs from the {POOL} pool, gated with {pool}'s mask." + note)
@@ -567,25 +571,26 @@ def generate_readme_panels(pool: str, out_dir: Path, out: pd.DataFrame) -> None:
     rows, bullets = [], []
     for grp in [OVERALL] + group_order(g for g in b["group"].unique() if g != OVERALL):
         g = b[b["group"] == grp].set_index("size")
-        rows.append([grp, int(g["n_families"].max())] + [f"{g.at[s, 'reliability']:.2f} [{g.at[s, 'lo']:.2f}, {g.at[s, 'hi']:.2f}] ({int(g.at[s, 'n_tasks'])})"
+        rows.append([grp, int(g["n_units"].max()), int(g["n_families"].max())] + [f"{g.at[s, 'reliability']:.2f} [{g.at[s, 'lo']:.2f}, {g.at[s, 'hi']:.2f}] ({int(g.at[s, 'n_tasks'])})"
                                                           if s in g.index else "—" for s in sizes]
                     + [g["n_min_size"].iloc[0] if pd.notna(g["n_min_size"].iloc[0]) else "never"])
         if grp != OVERALL and len(g):
             last = g.loc[sizes[-1]] if sizes[-1] in g.index else g.iloc[-1]
-            bullets.append(f"- **{grp}** ({int(last['n_families'])} families): R = {last['reliability']:.2f} at {last.name} "
+            bullets.append(f"- **{grp}** ({int(last['n_units'])} units / {int(last['n_families'])} families): R = {last['reliability']:.2f} at {last.name} "
                            f"[{last['lo']:.2f}, {last['hi']:.2f}] over {int(last['n_tasks'])} tasks; "
                            + (f"N_min(τ) = {g['n_min_size'].iloc[0]}." if pd.notna(g["n_min_size"].iloc[0]) else "no proxy reaches τ."))
     body = "\n\n".join([
         "## Scale convergence per design axis, one panel each",
-        f"The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-family-out band and the "
+        f"The `--by transformation` lines above drawn one axis per panel, with the panel's own leave-one-unit-out band and the "
         f"pooled `{OVERALL}` line faint behind it. DA-size pooled over decisions, every pair at seed {GRID_SEED} (`{POOL}`), "
         f"gated with `{pool}`'s mask, ≥ {MIN_PAIRS} pairs per task; task counts under the points. Same table as "
         f"`{stem_for('transformation')}.csv`. Regenerate with `python analysis/rq02_decision_accuracy/scale_convergence.py --by transformation`.",
         f"![Scale convergence per design axis]({rel}/{stem}.png)",
-        md_table(["axis", "families"] + [f"{s} R [lo, hi] (tasks)" for s in sizes] + [f"N_min(τ={TAU:g})"], rows),
+        md_table(["axis", "units", "families"] + [f"{s} R [lo, hi] (tasks)" for s in sizes] + [f"N_min(τ={TAU:g})"], rows),
         "Key findings:",
-        "\n".join(bullets + [f"- The bands are leave-one-design-variant-out over the families in the column, not seed noise; a band "
-                              f"on 4 families is four numbers and only says which variant the line hinges on."]),
+        "\n".join(bullets + [f"- The bands are leave-one-unit-out over the units in the column — the design variant, or the "
+                              f"pair on an axis whose pairs share no variant — not seed noise; a band on 4 units is four numbers "
+                              f"and only says which variant or pair the line hinges on."]),
         "Follow-ups:",
         "\n".join(["- The `above_66_size` twin per panel (`" + stem_for("transformation_panels", "above_66_size") + ".png`): the same split on the cells that rank reliably.",
                     "- A per-axis panel grid on the L8 languages only (`--langs L8`), so the language-count panel is read on one task set.",

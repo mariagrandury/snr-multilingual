@@ -196,6 +196,22 @@ class TestAgreementMeasures(unittest.TestCase):
         out = jackknife_ratio(d[d["family_a"].isin(list("ab")) & d["family_b"].isin(list("bc"))], ["g"]).iloc[0]
         self.assertTrue(np.isnan(out["se"])); self.assertEqual(out["n_families"], 3)
 
+    def test_jackknife_resamples_pairs_on_a_disjoint_axis(self):
+        import pandas as pd
+        _, jackknife_ratio = self._fn()
+        # four disjoint pairs (deep vs swiglu at four L): both members of a pair
+        # delete the same pair, so the units are the four pairs, not eight families
+        d = pd.DataFrame({"g": "x", "family_a": [f"d{i}" for i in range(4) for _ in range(5)],
+                          "family_b": [f"s{i}" for i in range(4) for _ in range(5)],
+                          "match": [int(i == 0) for i in range(4) for _ in range(5)]})
+        out = jackknife_ratio(d, ["g"]).iloc[0]
+        self.assertEqual((out["n_families"], out["n_units"]), (8, 4))
+        # the delete-one-pair jackknife of the pair means [1, 0, 0, 0]
+        loo = np.array([0.0, 1 / 3, 1 / 3, 1 / 3])
+        self.assertAlmostEqual(out["se"], np.sqrt(3 / 4 * ((loo - loo.mean()) ** 2).sum()), places=12)
+        # three disjoint pairs are MIN_PAIRS units: no band
+        self.assertTrue(np.isnan(jackknife_ratio(d[d["family_a"] != "d3"], ["g"]).iloc[0]["se"]))
+
 
 if __name__ == "__main__":
     unittest.main()
