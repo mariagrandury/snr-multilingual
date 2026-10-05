@@ -418,9 +418,8 @@ embeds `rq2_da_all_multi_axes.png` (`paper_rq2.py`, no filter, multi-axis, copie
 composition and differ only in filter and pair set: `rq2_da_all_mono_axis`
 (mono-axis, no filter), `rq2_da_all_above_80_*` (the `late` reduction at 0.80, both
 axes), `rq2_da_all_above_66_both[_transformation]_*` (one population on all three
-panels, kept for comparison only), `rq2_da_all_above_66_own_*` (each panel its own
-cut), and `rq2_da_goal_ten_checkpoints_multi_axes` (`paper_ten_checkpoints.py`: the mean over
-tasks on the A/B pool's ten checkpoints, BPB and benchmarks, no filter).
+panels, kept for comparison only) and `rq2_da_all_above_66_own_*` (each panel its own
+cut).
 
 ![RQ2, per-panel cuts, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png)
 
@@ -502,7 +501,6 @@ GitHub: [rq2_da_all_above_80_multi_axes.png](https://github.com/mariagrandury/sn
 GitHub: [rq2_da_all_above_66_both_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_multi_axes.png) · [rq2_da_all_above_66_both_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_multi_axes.csv) ·
 GitHub: [rq2_da_all_above_66_both_transformation_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.png) · [rq2_da_all_above_66_both_transformation_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_both_transformation_multi_axes.csv) ·
 GitHub: [rq2_da_all_above_66_own_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.png) · [rq2_da_all_above_66_own_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_own_multi_axes.csv) ·
-GitHub: [rq2_da_goal_ten_checkpoints_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_goal_ten_checkpoints_multi_axes.png) · [rq2_da_goal_ten_checkpoints_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_goal_ten_checkpoints_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_above_66_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.png) · [scale_convergence_da_size_above_66_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_above_66_size_mono_axis.csv)
 
 The population behind the cuts — which (benchmark, language) cells rank
@@ -788,8 +786,8 @@ Files: [`early_small_da_goal_by_transformation_mono_axis.png`](https://github.co
 **Key findings**
 
 - The mean-over-tasks reading on the A/B pool is 0.46–0.53 at every proxy
-  size and checkpoint for the benchmarks (`early_small_da_goal_multi_axes.csv`,
-  `rq2_da_goal_ten_checkpoints_multi_axes.csv`), the pooled-over-decisions reading of figure 1
+  size and checkpoint for the benchmarks (`early_small_da_goal_multi_axes.csv`),
+  the pooled-over-decisions reading of figure 1
   0.53–0.56: two estimands, one verdict.
 - BPB reads the 1.7B ranking at ≥ 0.75 from 175M at 2C (0.77) and from 350M
   at 2.5C; `bpb_macro` and `train_loss` from any size and checkpoint; no
@@ -1594,8 +1592,8 @@ built on them are in rq04's extensions.
   `_L8`, `_L8common`, `_L`, `_transformation`, `_mono_axis`, `_above_*`,
   `_flops`); `scale_convergence_da_size_lang_*` — `by_language.py` (figure 5).
 - `…/rq2_da_all*.csv/.png/.svg` — `paper_rq2.py` (figure 2; the paper embeds
-  `rq2_da_all_above_66_either_transformation_mono_axis`), `rq2_da_goal_ten_checkpoints_multi_axes.*` —
-  `paper_ten_checkpoints.py`, `rq2_da_all_above_66_both_mono_vs_multi_axes.*` — `pair_axes.py` (figure 9).
+  `rq2_da_all_above_66_either_transformation_mono_axis`), `rq2_da_all_above_66_both_mono_vs_multi_axes.*` —
+  `pair_axes.py` (figure 9).
 - `…/reliability_da_size_{by_language_tier,vs_language_share}_multi_axes.*` —
   `language_tier.py` (figure 6); `seed_uncertainty_da_all_seed_null.*` — `seed_uncertainty.py`
   (figure 7); `agreement_da_size_*_multi_axes.*` — `agreement.py` (figure 8);

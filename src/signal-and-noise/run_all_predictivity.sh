@@ -144,8 +144,6 @@ run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
 # reference, by language count and by design axis (+ their above_80 variants);
 # `--by transformation` also writes the one-panel-per-axis twin (`_transformation_panels`)
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
-# DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
-run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # the paper's RQ2 figure: composes the three panels from the CSVs above, so it
 # runs LAST of the rq02 block — it derives nothing of its own
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity

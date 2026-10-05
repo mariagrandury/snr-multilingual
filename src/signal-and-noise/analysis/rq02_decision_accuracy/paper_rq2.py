@@ -28,8 +28,7 @@ its definition in its own y label, the two line legends sit inside the axes
 and the y axis is shared so the three panels are read against one scale.
 
     rq2.png / .svg / .csv        the three panels over every task (the SVG is the
-                                 vector copy; the paper's fig:rq2 is currently
-                                 paper_ten_checkpoints.py's, plan/decision_accuracy.md #8)
+                                 vector copy)
     rq2_da_all_above_80.*               the same three panels over the cells reliable on
                                  BOTH axes at 0.80 (the `late` reduction)
     rq2_da_all_above_66_both.*          the same at 0.66 on the `median` reduction: one

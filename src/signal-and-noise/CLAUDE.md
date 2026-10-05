@@ -126,7 +126,7 @@ first — rq00 (`above_random.py`, the gate every later step reads; then
 `scaling_law_error.py`, all on `predictivity_all`) → rq02 (`compute_da.py` per
 pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
 `reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
-`paper_ten_checkpoints.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then
+`paper_rq2.py`, the `--axes mono-axis` twins, then
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
 `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
@@ -520,7 +520,7 @@ Every `above_*` variant keeps the tasks whose DA cleared a cut and then
 plots DA on them; the rise it shows is partly the cut (passers 0.80 against
 0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
 cell by its value but still selects tasks by it. Quote the unfiltered
-figure (`scale_convergence_da_size_multi_axes.png`, `rq2_da_goal_ten_checkpoints_multi_axes`) beside any filtered
+figure (`scale_convergence_da_size_multi_axes.png`, `early_small_da_goal_multi_axes`) beside any filtered
 one, and never call a filtered figure "free of selection bias".
 ---
 

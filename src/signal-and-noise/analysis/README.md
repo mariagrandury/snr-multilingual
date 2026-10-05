@@ -38,8 +38,7 @@ refresh regenerates the auto blocks and moves them.
 **The paper's figures.** `documents/paper/figures/make_rq_figures.py` copies
 them from the analysis, never the reverse: `rq1` ← rq01
 `scaling_regimes_outliers_paper` (appendix `scaling_regimes_by_family_paper`);
-`rq2` ← rq02 `rq2` (`paper_rq2.py`, the three decision accuracies; the
-ten-checkpoint read `rq2_da_goal_ten_checkpoints_multi_axes` sits beside it) and `rq2_da_goal_early_small_mono_axis`
+`rq2` ← rq02 `rq2` (`paper_rq2.py`, the three decision accuracies) and `rq2_da_goal_early_small_mono_axis`
 ← rq05 `early_decision.py`; `rq3` ← rq04 `rq3_surrogates`; `rq4` ← rq05
 `rq4_interventions`; `rq5` ← rq06 `rq5_transfer`. The four report figures
 (`report_figures/make_figures.py`) are the 36-sweep's.
@@ -117,8 +116,7 @@ step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `panels.py`, `regimes.py`, `regimes_survivorship.py`, `scaling_law_error.py`)
 → rq02 (`compute_da.py` per pool and for `predictivity_schemes`,
 `da_per_benchmark.py`, `early_small.py`, `reliable_tasks.py`, `by_L.py`,
-`cross_task.py`, `scale_convergence.py`, `paper_ten_checkpoints.py`,
-`paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
+`cross_task.py`, `scale_convergence.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
 --langs L8 [--common-tasks]`, `by_language.py`, `agreement.py`,
 `seed_uncertainty.py`, `scaling_vs_ranking.py`, `public_ladders.py`,
 `language_tier.py`, `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per
