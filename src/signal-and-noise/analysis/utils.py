@@ -316,7 +316,12 @@ SECOND_LANG = {"ZH": "zh", "ES": "es"}
 # falls back to its corpus path, which is ugly in a table but never wrong.
 ENGLISH_CORPUS = {"DCLMP": "dclm-noedu", "FWEB": "fineweb"}
 # What a cell is, apart from its size. The order is the one figures read in.
-DESIGN_AXES = ["L", "arch", "list", "T", "lang2", "en", "seed"]
+# `arch` is the model-DEPTH level alone. The cell name's architecture slot also
+# carries the activation (and would carry the optimizer), and those are separate
+# decisions: pooling them would read a (deep, swiglu) pair as a depth choice.
+# design_axes() splits the slot through launch_trainings.ARCH_AXES, which is the
+# registry the launcher itself trains from.
+DESIGN_AXES = ["L", "arch", "activation", "optimizer", "list", "T", "lang2", "en", "seed"]
 # The three pair sets a decision-accuracy table can be computed over (rule 15).
 #   multi-axis  every pair of design variants: rq02's convention to date, and
 #               two thirds of its pairs move more than one axis at once.
@@ -341,8 +346,15 @@ def design_axes(df: pd.DataFrame) -> pd.DataFrame:
     `family` is the cell name with only the size token stripped, so the axes
     are a function of it; the assertion is what guarantees that.
     """
-    from pretrain.launch_trainings import DATA_SCHEMES
+    from pretrain.launch_trainings import ARCH_AXES, DATA_SCHEMES
     a = df[["family", "L", "arch", "scheme", "seed"]].drop_duplicates().set_index("family")
+    # Split the architecture slot into the decisions it actually encodes. The
+    # `arch` column keeps its name but narrows to the depth level, so every
+    # figure that says "arch" still means deep-vs-shallow; swiglu is deep-shaped
+    # and differs from the baseline on `activation` alone.
+    for axis in ("activation", "optimizer"):
+        a[axis] = a["arch"].map(lambda x: ARCH_AXES[x][axis])
+    a["arch"] = a["arch"].map(lambda x: ARCH_AXES[x]["depth"])
     a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
     a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
     a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
