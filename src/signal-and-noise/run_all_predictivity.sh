@@ -122,6 +122,8 @@ done
 # its A/B filter because its SNR signal would widen; decision accuracy is a rank
 # agreement and has no such problem (plan/decision_accuracy.md).
 run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
+# bBPB against accuracy as the proxy's reading, on the per-item store's finals (figure 11; nothing without the store)
+run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"

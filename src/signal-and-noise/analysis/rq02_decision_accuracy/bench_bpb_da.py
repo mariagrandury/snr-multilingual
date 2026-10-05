@@ -19,7 +19,7 @@ proxy, so its task count is smaller and is printed beside it. Gating bBPB at the
 proxy would discard exactly the regime it is for (a proxy at chance on accuracy
 whose bBPB still separates the designs). The paired test (bBPB -> acc minus
 acc -> acc, Wilcoxon signed-rank over tasks) runs on the tasks where both are
-defined. The raw ungated values and both gate flags stay in bench_bpb_da.csv.
+defined. The raw ungated values and both gate flags stay in bench_bpb_da_size_multi_axes.csv.
 
 A task whose `target` is not a choice index has no bBPB and drops out: xwinograd
 (the answer string; the choices vary the context, not the continuation) and
@@ -29,9 +29,9 @@ A lettered task's continuation is " A": its bBPB is the letter's surprisal, not
 the answer text's. Such tasks are flagged `letter` (mean gold length <= 2.5
 bytes) and summarised apart from the cloze ones.
 
-Outputs under pretraining/<pool>/: bench_bpb_da.csv (task x size),
-bench_bpb_da_summary.csv (group x size), bench_bpb_da_heatmap.png,
-bench_bpb_da_bars.png (overall), bench_bpb_da_bars_benchmarks.png (per
+Outputs under pretraining/<pool>/: bench_bpb_da_size_multi_axes.csv (task x size),
+bench_bpb_da_size_summary_multi_axes.csv (group x size), bench_bpb_da_size_heatmap_multi_axes.png,
+bench_bpb_da_size_bars_multi_axes.png (overall), bench_bpb_da_size_bars_benchmarks_multi_axes.png (per
 benchmark), each with its CSV, and the README's `bench-bpb` block.
 
     python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
@@ -58,8 +58,8 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq08_subset_selection.build_per_item_store import STORE  # noqa: E402
-from analysis.utils import (SMALL_SIZES, TARGET_SIZE, benchmark_family, design_axes, finals,  # noqa: E402
+from analysis.rq08_subset_selection.build_per_item_store import STORE, bench_bpb  # noqa: E402
+from analysis.utils import (BBPB, SMALL_SIZES, TARGET_SIZE, benchmark_family, design_axes, finals,  # noqa: E402
                             ladder_frame, pair_agreement, pair_sets, passes_gate)
 
 GATE_POOL = "predictivity"           # the gate every rq02 reader uses, whatever pool the DA comes from
@@ -71,15 +71,12 @@ mpl.rcParams.update(S.RC)
 
 def da_table(pool: str) -> tuple[pd.DataFrame, int]:
     """task x size: the three raw DAs, the gate flags and the three gated readings."""
-    store = pd.concat(pd.read_parquet(d, columns=["model", "step", "task", "ll_gold", "bytes_gold"])
-                      for d in sorted((STORE / pool).glob("*.parquet")))
-    store["bpb"] = -store["ll_gold"] / np.log(2) / store["bytes_gold"]
-    per = store.groupby(["model", "step", "task"], as_index=False)[["bpb", "bytes_gold"]].mean()
+    per = bench_bpb(sorted((STORE / pool).glob("*.parquet"))).rename(columns={"bbpb": "bpb"})
     letter = per.groupby("task")["bytes_gold"].mean() <= 2.5
 
     df = ladder_frame(pool)
     pairs = pair_sets(design_axes(df))["multi-axis"]
-    df = finals(df[df["kind"] == "benchmark"]).merge(per[["model", "step", "task", "bpb"]], on=["model", "step", "task"])
+    df = finals(df[(df["kind"] == "benchmark") & ~df["task"].str.startswith(BBPB)]).merge(per[["model", "step", "task", "bpb"]], on=["model", "step", "task"])
     df = df.dropna(subset=["bpb"])   # a NaN score would count as a disagreeing pair in pair_agreement
     print(f"{pool}: {df['model'].nunique()} models, {df['task'].nunique()} tasks with bBPB, "
           f"{len(pairs)} multi-axis pairs, finals only, gate {GATE_POOL}")
@@ -146,8 +143,8 @@ def heatmap(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str) -> None:
                                 xlabel="proxy size", gated=gated))
     top = G._header(fig, "Decision accuracy of benchmark BPB (bBPB) against accuracy, proxy → 1.7B", note)
     fig.tight_layout(rect=(0, 0, 1, top))
-    pd.concat(long).to_csv(out_dir / "bench_bpb_da_heatmap.csv", index=False)
-    S.save_figure(fig, out_dir, "bench_bpb_da_heatmap")
+    pd.concat(long).to_csv(out_dir / "bench_bpb_da_size_heatmap_multi_axes.csv", index=False)
+    S.save_figure(fig, out_dir, "bench_bpb_da_size_heatmap_multi_axes")
 
 
 def bars_ax(ax, s: pd.DataFrame, title: str, ref: dict | None = None) -> None:
@@ -180,8 +177,8 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
     axes[0].set_ylabel("decision accuracy vs 1.7B")
     top = legend_top(fig, axes[0], G._header(fig, "Benchmark BPB against accuracy as the proxy for the 1.7B ranking", note))
     fig.tight_layout(rect=(0, 0, 1, top))
-    summ.loc[[ALL, CLOZE, LETTER], keep].to_csv(out_dir / "bench_bpb_da_bars.csv")
-    S.save_figure(fig, out_dir, "bench_bpb_da_bars")
+    summ.loc[[ALL, CLOZE, LETTER], keep].to_csv(out_dir / "bench_bpb_da_size_bars_multi_axes.csv")
+    S.save_figure(fig, out_dir, "bench_bpb_da_size_bars_multi_axes")
 
     fams = [g for g in dict.fromkeys(summ.index.get_level_values("group")) if g not in (ALL, CLOZE, LETTER)]
     ncols = 6
@@ -195,8 +192,8 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
         ax.set_visible(False)
     top = legend_top(fig, axes[0, 0], G._header(fig, "Benchmark BPB against accuracy, per benchmark (proxy → 1.7B)", note))
     fig.tight_layout(rect=(0, 0, 1, top))
-    summ.loc[fams, keep].to_csv(out_dir / "bench_bpb_da_bars_benchmarks.csv")
-    S.save_figure(fig, out_dir, "bench_bpb_da_bars_benchmarks")
+    summ.loc[fams, keep].to_csv(out_dir / "bench_bpb_da_size_bars_benchmarks_multi_axes.csv")
+    S.save_figure(fig, out_dir, "bench_bpb_da_size_bars_benchmarks_multi_axes")
 
 
 def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str) -> None:
@@ -225,24 +222,28 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str)
         f"**{LETTER}** (the continuation is the letter: bBPB is the letter's surprisal)", md_table(head, size_rows(LETTER)),
         "**Per benchmark**, mean over the five proxy sizes (tasks: the parent tasks with bBPB; cells: task-mean DA over those above chance at 1.7B, blank = all gated):",
         md_table(["benchmark", "tasks", *READINGS.values()], fam_rows),
-        f"![bBPB DA, overall](pretraining/{pool}/bench_bpb_da_bars.png)",
-        f"![bBPB DA, per benchmark](pretraining/{pool}/bench_bpb_da_bars_benchmarks.png)",
-        f"![bBPB DA, heat map](pretraining/{pool}/bench_bpb_da_heatmap.png)",
+        f"![bBPB DA, overall](pretraining/{pool}/bench_bpb_da_size_bars_multi_axes.png)",
+        f"![bBPB DA, per benchmark](pretraining/{pool}/bench_bpb_da_size_bars_benchmarks_multi_axes.png)",
+        f"![bBPB DA, heat map](pretraining/{pool}/bench_bpb_da_size_heatmap_multi_axes.png)",
     ]
     replace_block(DECISION_ACCURACY / "README.md", "bench-bpb", "\n\n".join(body), f"bench_bpb_da.py --pool {pool}")
 
 
 def main(pool: str) -> None:
+    if not any((STORE / pool).glob("*.parquet")):
+        # the store lives on the cluster only: without it there is nothing to read
+        print(f"no per-item store at {STORE / pool}: nothing written (build_per_item_store.sbatch builds it)")
+        return
     out, n_pairs = da_table(pool)
     out_dir = DECISION_ACCURACY / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
-    out.to_csv(out_dir / "bench_bpb_da.csv", index=False)
+    out.to_csv(out_dir / "bench_bpb_da_size_multi_axes.csv", index=False)
     summ = summary_table(out)
-    summ.assign(axes="multi-axis").to_csv(out_dir / "bench_bpb_da_summary.csv")
+    summ.assign(axes="multi-axis").to_csv(out_dir / "bench_bpb_da_size_summary_multi_axes.csv")
     print(summ.loc[[ALL, CLOZE, LETTER], ["n_tasks", *READINGS, "acc_acc_n", "bbpb_acc_n", "n_paired",
                                           "gain", "bbpb_better", "acc_better", "p"]].round(3).to_string())
 
-    da = pd.read_csv(out_dir / "da_per_task.csv")
+    da = pd.read_csv(out_dir / "da_all_per_task_both_axes.csv")
     da = da[(da["axes"] == "multi-axis") & (da["task"] == "bpb_macro")].iloc[0]
     ref = {s: da[f"decision_acc_size_{s}"] for s in SMALL_SIZES}
     letter = out.groupby("family")["letter"].all().to_dict()

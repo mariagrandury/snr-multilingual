@@ -1297,12 +1297,12 @@ How bBPB is computed (no model is re-run; `build_per_item_store.py` +
     designs.
   - The paired test (Wilcoxon, bBPB → acc minus acc → acc) runs on the tasks
     where both are defined.
-  - The raw ungated DAs and both gate flags stay in `bench_bpb_da.csv`.
+  - The raw ungated DAs and both gate flags stay in `bench_bpb_da_size_multi_axes.csv`.
 
 <!-- BEGIN auto:bench-bpb (bench_bpb_da.py --pool predictivity_schemes) -->
 ## Benchmark BPB against accuracy
 
-DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (300 pairs), gate `predictivity` on the accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from `da_per_task.csv`. Regenerate with `python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes` (after `build_per_item_store.py --pool predictivity_schemes --finals-only`).
+DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pairs), gate `predictivity` on the accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from `da_per_task.csv`. Regenerate with `python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes` (after `build_per_item_store.py --pool predictivity_schemes --finals-only`).
 
 **all benchmarks**
 
@@ -1377,17 +1377,17 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (300 pair
 | include_base_44 (letter) | 36 | 0.57 | 0.49 | 0.54 |
 | mmlu (letter) | 1 |  |  |  |
 
-![bBPB DA, overall](pretraining/predictivity_schemes/bench_bpb_da_bars.png)
+![bBPB DA, overall](pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.png)
 
-![bBPB DA, per benchmark](pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.png)
+![bBPB DA, per benchmark](pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.png)
 
-![bBPB DA, heat map](pretraining/predictivity_schemes/bench_bpb_da_heatmap.png)
+![bBPB DA, heat map](pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.png)
 <!-- END auto:bench-bpb -->
 
 Snapshot: ladder report cached 2026-10-02 06:24, samples read from
 `eval_logs` on 2026-10-02 (816 parent tasks with bBPB at the finals of 150
-cells). Raw per-task DAs and both gate flags: [`bench_bpb_da.csv`](pretraining/predictivity_schemes/bench_bpb_da.csv);
-every number below is in [`bench_bpb_da_summary.csv`](pretraining/predictivity_schemes/bench_bpb_da_summary.csv).
+cells). Raw per-task DAs and both gate flags: [`bench_bpb_da_size_multi_axes.csv`](pretraining/predictivity_schemes/bench_bpb_da_size_multi_axes.csv);
+every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretraining/predictivity_schemes/bench_bpb_da_size_summary_multi_axes.csv).
 
 **Key findings**
 
@@ -1451,9 +1451,9 @@ every number below is in [`bench_bpb_da_summary.csv`](pretraining/predictivity_s
 - **Cross-reading.** bBPB → acc against figure 10's cross-task map: a task's
   bBPB as the proxy for another task's accuracy.
 
-GitHub: [bench_bpb_da_bars.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars.png) · [bench_bpb_da_bars.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars.csv) ·
-GitHub: [bench_bpb_da_bars_benchmarks.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.png) · [bench_bpb_da_bars_benchmarks.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_bars_benchmarks.csv) ·
-GitHub: [bench_bpb_da_heatmap.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_heatmap.png) · [bench_bpb_da_heatmap.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_heatmap.csv)
+GitHub: [bench_bpb_da_size_bars_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.png) · [bench_bpb_da_size_bars_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.csv) ·
+GitHub: [bench_bpb_da_size_bars_benchmarks_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.png) · [bench_bpb_da_size_bars_benchmarks_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.csv) ·
+GitHub: [bench_bpb_da_size_heatmap_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.png) · [bench_bpb_da_size_heatmap_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.csv)
 
 ### 12. Read next in the other RQs
 
