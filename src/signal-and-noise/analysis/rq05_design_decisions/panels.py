@@ -86,7 +86,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
     (mean over the L's that share the line's reference size), one line style
     per population."""
     da, refs = one_reference(da[da[series].notna()], series)
-    note = note + ". Each line keeps the L's that share one reference size (the largest size trained at both levels): " + refs
+    note = note + ". Each line keeps the L's that share one reference size: " + refs
     size = (da[da["frac"] == 1.0].groupby([series, "population", "proxy_size"])["decision_acc"].mean().reset_index())
     ckpt = (da[(da["proxy_size"] == da["reference_size"]) & (da["frac"] < 1.0)]
             .groupby([series, "population", "frac"])["decision_acc"].mean().reset_index())

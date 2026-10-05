@@ -3,7 +3,7 @@
 ## Research question
 
 > At a given number of languages L, when does a small model rank a design
-> choice the way the largest model trained at that L does — and how does the
+> choice the way the 1.7B reference (TARGET_SIZE, rule 9) does — and how does the
 > answer move with L? This is the predictivity question of
 > [`plan/small-to-large-predictivity-training-plan.md`](../../../../plan/small-to-large-predictivity-training-plan.md):
 > rq00–rq04 ask which *benchmarks* carry reliable signal, this RQ asks which
@@ -28,8 +28,8 @@ settings L ∈ {1, 2, 8, 15, 30, 50}, two intervention axes — model depth
 data scheme (A resource-ranked vs B diversity-first language sets, which differ
 only at L ∈ {8, 15, 30}) — and seed replicates on the ×3 cells. Every read uses
 each cell's final checkpoint (D = 100·N tokens, WSD-annealed). The reference at
-each L is the largest size trained there (1.7B at every L since 2026-09-26); a
-proxy is every smaller size. The diverged batch-504 90M and 175M runs (see
+each L is TARGET_SIZE, 1.7B (rule 9) — an (intervention, L) without a 1.7B cell
+at both levels is skipped; a proxy is every smaller size. The diverged batch-504 90M and 175M runs (see
 [`plan/90M-rung-anomaly.md`](../../../../plan/90M-rung-anomaly.md)) are dropped
 at load in favour of their batch-84 / batch-168 retrains (rule 10), and runs
 that have not reached their target are excluded by the loader.
@@ -173,8 +173,9 @@ GitHub: [rq4_interventions.png](https://github.com/mariagrandury/snr-multilingua
 
 Everything comes from the decision table above: with two levels,
 decision accuracy is the share of population items on which the proxy
-prefers the level the reference prefers. The reference is the largest size
-trained at both levels, at its final checkpoint; the proxy is every smaller
+prefers the level the reference prefers. The reference is TARGET_SIZE (1.7B,
+rule 9) at its final checkpoint — an (intervention, L) without a 1.7B cell at
+both levels is skipped; the proxy is every smaller
 size, read at the checkpoint nearest 1C, 2C, 3C, 4C and 5C of training (C = the
 Chinchilla-optimal 20 tokens per parameter; 5C is the full run) — one grid answers both halves of the question, how small and how
 early. Two populations: the per-language BPB of the languages both levels
@@ -259,9 +260,10 @@ GitHub: [rq2_da_goal_early_small_mono_axis.png](https://github.com/mariagrandury
   (the loader's default): 5 late checkpoints span the final 25 % of a
   20-checkpoint run and 12.5 % of a 40-checkpoint one
   ([`plan/1b-models.md`](../../../../plan/1b-models.md)).
-- The reference is the largest size trained at both levels: 1.7B for every
-  intervention and L since the L15 AT3, ZH and ES 1.7B cells finished
-  (2026-09-26). The `reference_size` column names it per cell.
+- The reference is TARGET_SIZE, 1.7B (rule 9); an (intervention, L) without a
+  1.7B cell at both levels is skipped. Every intervention and L has one since
+  the L15 AT3, ZH and ES 1.7B cells finished (2026-09-26). The `reference_size`
+  column names it per cell.
 
 <!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
 ## Per benchmark and per language
@@ -289,7 +291,7 @@ The decision table and the early read above, without pooling the benchmarks (`pr
 
 **Key findings** (`da_all_lines_mono_axis`, `da_all_lines_decided_mono_axis`, `depth_crossover`;
 population, sizes and reference as in the setup above: `predictivity_all`,
-the reference per (intervention, L) the largest size trained at both levels,
+the reference per (intervention, L) TARGET_SIZE, 1.7B (rule 9),
 items the reference ties dropped)
 
 - Most decisions on the shared languages are not decisions at the reference:

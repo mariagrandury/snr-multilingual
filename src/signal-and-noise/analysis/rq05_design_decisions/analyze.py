@@ -2,9 +2,9 @@
 
 The plan's question (plan/small-to-large-predictivity-training-plan.md,
 "Analysis"): at a given number of languages L, does a proxy size rank a design
-choice the way the reference size — the largest model trained at that L —
-does? rq00–rq04 ask which *benchmarks* carry reliable signal; this RQ asks
-which *model sizes* do.
+choice the way the reference size — TARGET_SIZE, 1.7B (rule 9) — does?
+rq00–rq04 ask which *benchmarks* carry reliable signal; this RQ asks which
+*model sizes* do.
 
   intervention DA   — per (intervention, L, population, proxy size, fraction of
                       the proxy's run): the share of population items on which
@@ -65,7 +65,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, at_fraction, finals, ladder_frame, passes_gate, size_order, trained_bpb_tasks)
+    GRID_SEED, TARGET_SIZE, at_fraction, finals, ladder_frame, passes_gate, size_order, trained_bpb_tasks)
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
@@ -85,8 +85,8 @@ def gate_mask(pool: str) -> pd.DataFrame | None:
 DECIDED = 2.0
 FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]     # where the proxy is read: every evaluated tenth of its run (rule 3)
 # key -> (label, axis, levels, (held axis, its baseline level)). The first
-# level is the baseline; the reference at each L is the largest size trained
-# at both levels.
+# level is the baseline; the reference is TARGET_SIZE (1.7B, rule 9), and an
+# (intervention, L) without a 1.7B cell at both levels is skipped.
 INTERVENTIONS = {
     "arch":        ("depth (deep vs shallow)",  "arch",   ("deep", "shallow"), ("scheme", "A")),
     "scheme":      ("language lists (A vs B)",  "scheme", ("A", "B"),          ("arch", "deep")),
@@ -164,10 +164,15 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
                 ref_piv = _pivot(_population(sub_fin[sub_fin["L"] == L], pop, int(L), levels, axis), axis, levels)
                 if ref_piv is None:
                     continue
+                # rule 9: the reference is the TARGET_SIZE final, never the
+                # largest size both levels happen to reach on a partly trained ladder
                 sizes = size_order(ref_piv.index.get_level_values("size"))
+                if TARGET_SIZE not in sizes:
+                    continue
+                sizes = sizes[:sizes.index(TARGET_SIZE) + 1]
                 if len(sizes) < 2:
                     continue
-                ref = sizes[-1]
+                ref = TARGET_SIZE
                 r = ref_piv.xs(ref, level="size")
                 d_ref = r[levels[0]] - r[levels[1]]
                 ref_sign = np.sign(d_ref)[np.sign(d_ref) != 0]      # items the reference decides
@@ -252,9 +257,9 @@ def effect_at_reference(fin: pd.DataFrame) -> pd.DataFrame:
                 pp = piv[mask]
                 counts = pp.groupby(level="size").size()
                 sizes = size_order(counts[counts >= MIN_ITEMS].index)
-                if not sizes:
+                if TARGET_SIZE not in sizes:       # rule 9, as above
                     continue
-                ref = sizes[-1]
+                ref = TARGET_SIZE
                 p = pp.xs(ref, level="size")
                 ratio = ((p[levels[0]] - p[levels[1]]).abs() / p.index.map(sd)).replace(np.inf, np.nan).dropna()
                 if len(ratio) >= MIN_ITEMS:

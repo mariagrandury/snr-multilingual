@@ -38,7 +38,7 @@ if str(_SRC) not in sys.path:
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
-from analysis.utils import GRID_SEED, finals, ladder_frame, passes_gate, size_order  # noqa: E402
+from analysis.utils import GRID_SEED, TARGET_SIZE, finals, ladder_frame, passes_gate, size_order  # noqa: E402
 from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
 
 mpl.rcParams.update(S.RC)
@@ -96,6 +96,10 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
     for key, (label, pairs) in TRANSFORMATIONS.items():
         for x, y in pairs:
             sizes = [s for s in size_order(grid["size"].unique()) if _cell(s, x) in fin and _cell(s, y) in fin]
+            # rule 9: the TARGET_SIZE final is the reference, the sizes below it the proxies
+            if TARGET_SIZE not in sizes:
+                continue
+            sizes = sizes[:sizes.index(TARGET_SIZE) + 1]
             if len(sizes) < 2:
                 continue
             ref = sizes[-1]
