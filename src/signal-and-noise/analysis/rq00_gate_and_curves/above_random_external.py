@@ -40,6 +40,14 @@ English-only cells among them; panel (d) carries the count per task.
                           a model reads against its parameters, public lines vs the ladder;
                           (d) the ladder-gated tasks: best ladder run at the reference vs the
                           best public model ≤ 1.7B, a near-miss view
+    above_random_external_paper.png/.svg/.csv   panel (b) for the paper, on the PUBLIC BASE releases alone
+                          (the full figure's external mask pools every external model, post-trained
+                          releases and our own a06 / distilled runs included): per family, the
+                          ladder-gated tasks by the smallest public base bucket that reads them
+    above_random_external_paper_b.png/.svg/.csv   the same, one cell per task tagged with its language and
+                          the line of the public base model that reads it first
+    above_random_external_paper_c.png/.svg/.csv   the same as a family x bucket grid, the languages in the cell
+    above_random_external_models.tex / .csv   the public base models per line and size bucket (LaTeX table)
     python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 """
 
@@ -62,7 +70,7 @@ _SRC = Path(__file__).resolve().parents[3]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from evals.scripts.utils.configs import load_pools  # noqa: E402
+from evals.scripts.utils.configs import bucket_order, load_pools, size_bucket  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
@@ -77,6 +85,9 @@ NEVER = "never"
 # where the public models first read a task, in the bins the paper can use
 BINS = [("≤ 600M", {"270M", "600M"}), ("1B–1.7B", {"1B", "1.7B"}), ("3B–4B", {"3B", "4B"}),
         ("7B–14B", {"7-9B", "12-14B"}), ("≥ 27B", {"27-32B", "70B"}), (NEVER, {NEVER})]
+PAPER_BINS = {"≤ 600M": "≤ 600M", "1B–1.7B": "1B to 1.7B", "3B–4B": "3B to 4B", "7B–14B": "7B to 14B",
+              "≥ 27B": "≥ 27B", NEVER: "Never"}                 # rule 18: no dash in a paper label
+INTERNAL = ("apertus3-a06", "ap-from8b-TOP256")                 # our own runs, not public releases
 mpl.rcParams.update(S.RC)
 
 
@@ -121,8 +132,8 @@ def external_models(df: pd.DataFrame | None = None) -> pd.DataFrame:
     return m.sort_values(["line", "params"])
 
 
-def external_lines(t: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """(models, lines, near): the public models; per public base model of `LINES` and
+def external_lines(t: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """(models, lines, near, runs): the public models; per public base model of `LINES` and
     per ladder size the share of the shared tasks above the gate (a public model's
     own run clears the Wilson bound; a ladder size clears the mask, half of its
     runs); and, for the ladder-gated tasks, the best single ladder run at the
@@ -131,9 +142,9 @@ def external_lines(t: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFra
     stage = load_pools()[pool].get("stage", "pretraining")
     df = build_snr_pool("external", untrained=True)
     m = external_models(df)
-    runs = scores_and_mask(df, runs=True)[3]
+    allruns = scores_and_mask(df, runs=True)[3]
     base = m[~m["post_trained"] & m["line"].isin(LINES)]
-    runs = runs[runs["task"].isin(t["task"]) & runs["model"].isin(base["model"])].merge(base[["model", "line", "params"]], on="model")
+    runs = allruns[allruns["task"].isin(t["task"]) & allruns["model"].isin(base["model"])].merge(base[["model", "line", "params"]], on="model")
     lines = runs.groupby(["line", "model", "params"])["above"].agg(share="mean", n_tasks="count").reset_index()
     ladder = pd.read_csv(GATE_AND_CURVES / stage / pool / "above_random_mask.csv").set_index("task").reindex(t["task"])
     levels = [c for c in ladder.columns if c not in META]
@@ -153,7 +164,95 @@ def external_lines(t: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFra
     pb = small.loc[small.groupby("task")["score"].idxmax()].set_index("task")
     near["public_best_model"] = pb["model"]
     near["public_best_margin"] = pb["score"] - chance
-    return m, lines, near.dropna(subset=["ladder_best_margin"]).reset_index()
+    return m, lines, near.dropna(subset=["ladder_best_margin"]).reset_index(), allruns
+
+
+def public_base(t: pd.DataFrame, m: pd.DataFrame, runs: pd.DataFrame) -> pd.DataFrame:
+    """The ladder-gated tasks with their floor over the public base releases
+    alone (same gate: at least MIN_SHARE of a bucket's runs clear the Wilson
+    bound), its bin, and the line of the model that reads the task first (the
+    best-scoring passing base model at the floor bucket)."""
+    base = m[~m["post_trained"] & ~m["line"].isin(INTERNAL)]
+    r = runs[runs["model"].isin(base["model"]) & runs["task"].isin(t["task"])].merge(base[["model", "line"]], on="model")
+    share = r.pivot_table(index="task", columns="bucket", values="above", aggfunc="mean")
+    levels = [b for b in bucket_order() if b in share.columns]
+    mask = (share[levels] >= MIN_SHARE).astype(float).where(share[levels].notna()).reset_index()
+    g = t.loc[t["ladder_gated_at_ref"], ["task", "family", "language"]].copy()
+    g["base_floor"] = g["task"].map(floor_of(mask))
+    g["base_bin"] = g["base_floor"].map({lvl: name for name, lv in BINS for lvl in lv})
+    passed = r[r["above"] == 1].merge(g[["task", "base_floor"]], left_on=["task", "bucket"], right_on=["task", "base_floor"])
+    first = passed.loc[passed.groupby("task")["score"].idxmax()].set_index("task")
+    g["first_reader"], g["first_reader_model"] = g["task"].map(first["line"]), g["task"].map(first["model"])
+    return g
+
+
+def figure_paper(g: pd.DataFrame, out_dir: Path, variant: str = "") -> None:
+    """Panel (b) for the paper on the public base releases. `variant` "" counts
+    the tasks per bucket; "b" draws one cell per task with its language and the
+    line that reads it first; "c" is a family x bucket grid with the languages
+    written in the cell."""
+    order = [n for n, _ in BINS]
+    colours = dict(zip(order, S.RAMP + [S.SERIES[1], S.MUTED]))
+    dark = {order[2], order[3], NEVER}
+    tab = pd.crosstab(g["family"], g["base_bin"]).reindex(columns=order, fill_value=0)
+    fams = list(tab.sum(axis=1).sort_values(ascending=False, kind="stable").index)
+    stem = "above_random_external_paper" + (f"_{variant}" if variant else "")
+    if variant == "c":
+        fig, ax = plt.subplots(figsize=(6.4, 0.42 * len(fams) + 0.9))
+        cmap = S.SEQ.copy(); cmap.set_bad(S.SURFACE)
+        vals = tab.loc[fams].to_numpy(dtype=float)
+        ax.imshow(np.ma.masked_equal(vals, 0), cmap=cmap, vmin=0, vmax=vals.max() * 1.3, aspect="auto")
+        for i, f in enumerate(fams):
+            for j, b in enumerate(order):
+                langs = sorted(g.loc[(g["family"] == f) & (g["base_bin"] == b), "language"])
+                rows = [", ".join(langs[k:k + 4]) for k in range(0, len(langs), 4)]
+                ax.text(j, i, "\n".join(rows), ha="center", va="center", fontsize=5.5,
+                        color=S.SURFACE if vals[i, j] > vals.max() * 0.55 else S.INK)
+        ax.set_xticks(range(len(order))); ax.set_xticklabels([PAPER_BINS[b] for b in order], fontsize=7)
+        ax.set_yticks(range(len(fams))); ax.set_yticklabels([G.paper_name(f) for f in fams], fontsize=7)
+        ax.set_xlabel("Smallest public base model above chance"); S.clean(ax, spines=()); ax.tick_params(length=0)
+    else:
+        fig, ax = plt.subplots(figsize=(6.4, 0.3 * len(fams) + 1.0))
+        if variant == "b":
+            for i, f in enumerate(fams):
+                cells = g[g["family"] == f].assign(k=lambda d: d["base_bin"].map(order.index)).sort_values(["k", "language"])
+                for left, r in enumerate(cells.itertuples()):
+                    ax.barh(i, 1, left=left, color=colours[r.base_bin], edgecolor=S.SURFACE, lw=.6, height=0.8)
+                    tag = r.language + ("" if r.first_reader != r.first_reader else f"\n{r.first_reader}")
+                    ax.text(left + 0.5, i, tag, ha="center", va="center", fontsize=4.2, linespacing=0.9,
+                            color=S.SURFACE if r.base_bin in dark else S.INK)
+        else:
+            left = np.zeros(len(fams))
+            for b in order:
+                ax.barh(range(len(fams)), tab.loc[fams, b], left=left, color=colours[b], height=0.8)
+                left += tab.loc[fams, b].to_numpy()
+        ax.set_yticks(range(len(fams))); ax.set_yticklabels([G.paper_name(f) for f in fams], fontsize=7)
+        ax.set_xlim(0, tab.sum(axis=1).max() + 0.5)
+        ax.invert_yaxis(); ax.set_xlabel("Tasks at chance at every ladder size")
+        ax.grid(color=S.GRID, lw=.6, axis="x"); S.clean(ax)
+        ax.legend([plt.Rectangle((0, 0), 1, 1, color=colours[b]) for b in order], [PAPER_BINS[b] for b in order],
+                  ncol=3, fontsize=6.5, frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.0),
+                  title="Smallest public base model above chance", title_fontsize=6.5)
+    fig.tight_layout()
+    g.to_csv(out_dir / f"{stem}.csv", index=False)
+    S.save_paper(fig, out_dir / stem)
+
+
+def models_table(m: pd.DataFrame, levels: list, out_dir: Path) -> None:
+    """The public base models per line (row) and size bucket (column), each
+    cell the models' own sizes: a LaTeX tabular and its CSV."""
+    base = m[~m["post_trained"] & ~m["line"].isin(INTERNAL)].assign(bucket=lambda d: d["size"].map(size_bucket))
+    cols = [b for b in levels if b in set(base["bucket"])]
+    tab = (base.groupby(["line", "bucket"])["size"].agg(lambda v: ", ".join(dict.fromkeys(v)))
+           .unstack().reindex(columns=cols).fillna(""))
+    tab.to_csv(out_dir / "above_random_external_models.csv")
+    tex = ["% Generated by above_random_external.py (src/signal-and-noise/analysis/rq00_gate_and_curves):",
+           "% the public base models behind the external size buckets, one row per model line.",
+           r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule",
+           "Family & " + " & ".join(c.replace("-", "--") for c in cols) + r" \\", r"\midrule"]
+    tex += [f"{line.replace('_', chr(92) + '_')} & " + " & ".join(row) + r" \\" for line, row in zip(tab.index, tab.to_numpy())]
+    (out_dir / "above_random_external_models.tex").write_text("\n".join(tex + [r"\bottomrule", r"\end{tabular}", ""]))
+    print(f"wrote {out_dir / 'above_random_external_models.tex'} ({len(tab)} lines x {len(cols)} buckets)")
 
 
 def figure(t: pd.DataFrame, m: pd.DataFrame, lines_tab: pd.DataFrame, near: pd.DataFrame, path: Path, pool: str,
@@ -257,7 +356,8 @@ def figure(t: pd.DataFrame, m: pd.DataFrame, lines_tab: pd.DataFrame, near: pd.D
     S.save(fig, path, dpi=150)
 
 
-def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.DataFrame, near: pd.DataFrame) -> None:
+def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.DataFrame, near: pd.DataFrame,
+                    base: pd.DataFrame) -> None:
     stage = load_pools()[pool].get("stage", "pretraining")
     gh = f"https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/{stage}/{pool}"
     g = t[t["ladder_gated_at_ref"]]
@@ -271,8 +371,8 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
     fam = fam.loc[fam.sum(axis=1).sort_values(ascending=False).index].reset_index()
     body = "\n\n".join([
         "## Benchmark floors: the ladder's gate against the public models'",
-        f"Of the {len(t)} tasks both tiers score, {len(g)} are at chance at every ladder size. Where the public base "
-        f"models (270M–70B, same gate) first read them: " + ", ".join(f"{n} {c}" for n, c in counts.items()) + ". "
+        f"Of the {len(t)} tasks both tiers score, {len(g)} are at chance at every ladder size. Where the external "
+        f"models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: " + ", ".join(f"{n} {c}" for n, c in counts.items()) + ". "
         f"A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach "
         f"it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a "
         f"benchmark or language-resource floor. \"Never reads\" is the gate's verdict: at every ladder size fewer than "
@@ -281,12 +381,17 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
         f"`python analysis/rq00_gate_and_curves/above_random_external.py --pool {pool}`.",
         md_table(list(fam.columns), fam.values.tolist()),
         f"![The gate on the public models]({stage}/{pool}/above_random_external.png)",
+        "The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and "
+        "`_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no "
+        f"post-trained release, none of {', '.join(INTERNAL)}): "
+        + ", ".join(f"{n} {c}" for n, c in base["base_bin"].value_counts().reindex([n for n, _ in BINS], fill_value=0).items())
+        + ". `above_random_external_models.tex` lists those models per line and size bucket.",
         "Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against the "
         "external tier's base models (`all/external`, same gate; panels (c) and (d) use the six public lines "
         + ", ".join(LINES) + "); no task filter beyond the 84-task overlap.",
         "Key findings:\n" + "\n".join([
             f"- {len(g)} of the {len(t)} shared tasks are gated at every ladder size; {int(counts['≤ 600M'] + counts['1B–1.7B'])} "
-            f"of them are read by a public base model ≤ 1.7B, {int(counts['never'])} by none up to 70B.",
+            f"of them are read by an external model ≤ 1.7B, {int(counts['never'])} by none up to 70B.",
             f"- (c) the ladder reads {lad.iloc[0]:.0%} of the shared tasks at {lad.index[0]} and {lad.iloc[-1]:.0%} at "
             f"{lad.index[-1]}; the public base models ≤ 1.7B read " + ", ".join(f"{r.model} {r.share:.0%}" for r in small.itertuples())
             + " (a model's own run clears the bound; the ladder's share is its mask, half of the runs).",
@@ -308,7 +413,7 @@ if __name__ == "__main__":
     stage = load_pools()[args.pool].get("stage", "pretraining")
     out_dir = GATE_AND_CURVES / stage / args.pool
     t = floors(args.pool)
-    m, lines_tab, near = external_lines(t, args.pool)
+    m, lines_tab, near, runs = external_lines(t, args.pool)
     t.merge(near, on="task", how="left").to_csv(out_dir / "above_random_external.csv", index=False)
     lines_tab.to_csv(out_dir / "above_random_external_lines.csv", index=False)
     ladder_levels = [c for c in pd.read_csv(out_dir / "above_random_mask.csv", nrows=0).columns if c not in META]
@@ -317,5 +422,11 @@ if __name__ == "__main__":
     print(lines_tab.round(3).to_string(index=False))
     print(near.round(3).sort_values("ladder_best_lcb_margin", ascending=False).to_string(index=False))
     figure(t, m, lines_tab, near, out_dir / "above_random_external.png", args.pool, ladder_levels, ext_levels)
+    g = public_base(t, m, runs)
+    print(f"public base releases: {len(g)} ladder-gated tasks by first bucket "
+          + g["base_bin"].value_counts().reindex([n for n, _ in BINS], fill_value=0).to_string().replace("\n", ", "))
+    for variant in ("", "b", "c"):
+        figure_paper(g, out_dir, variant)
+    models_table(m, ext_levels, out_dir)
     if args.pool == CANONICAL_POOL:
-        generate_readme(args.pool, out_dir, t, lines_tab, near)
+        generate_readme(args.pool, out_dir, t, lines_tab, near, g)

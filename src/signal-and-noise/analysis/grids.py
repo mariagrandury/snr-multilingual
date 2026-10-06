@@ -269,7 +269,10 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     `<name>.csv` next to the figure, its row and column keys under `names`;
     `also` adds formats (".svg") beside the PNG; `name` labels the ticks,
     `cell_text` writes the level into every cell, `cell_w` is a column's
-    width in inches; an empty `xlabel` / `ylabel` is not drawn."""
+    width in inches; an empty `xlabel` / `ylabel` is not drawn. A path whose
+    stem ends in `_paper` is a paper figure (rule 18): capitalized legend
+    entries, no dash glyph, written through `S.save_paper`, which lints it."""
+    paper = path.stem.endswith("_paper")
     if isinstance(mats, pd.DataFrame):
         mats = {"": mats}
     mats = {k: m for k, m in mats.items() if m is not None and not m.empty}
@@ -309,14 +312,19 @@ def level_heatmap(mats, path: Path, *, levels: list, title: str, note: str = "",
     any_gated = any((m == GATED).any().any() for m in mats.values())
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colours + [NEVER] + ([S.NODATA] if any_gated else [])]
     handles.append(plt.Rectangle((0, 0), 1, 1, facecolor=S.SURFACE, edgecolor=S.GRID))
-    axes[0, 0].legend(handles, [level_label(l) for l in levels] + [f"{never} never"]
-                      + (["filtered out by the gate"] if any_gated else []) + ["no value"],
+    tail = [f"{never} never"] + (["filtered out by the gate"] if any_gated else []) + ["no value"]
+    if paper:                       # the cells carry no glyph there, and rule 18 bans the dash
+        tail = [t.replace(f"{never} ", "").capitalize() for t in tail]
+    axes[0, 0].legend(handles, [level_label(l) for l in levels] + tail,
                       title=cbar, fontsize=6.5, title_fontsize=7, frameon=False, loc="upper left", bbox_to_anchor=(1.005, 1.0))
     top = _header(fig, title, note)
     fig.tight_layout(rect=(0, 0, 1, top))
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.concat(long)[["panel", *names, "level_index", "level"]].to_csv(path.with_suffix(".csv"), index=False)
-    S.save(fig, path, dpi=130, also=also)
+    if paper:
+        S.save_paper(fig, path.with_suffix(""), exts=("png", *(e.lstrip(".") for e in also)), dpi=130)
+    else:
+        S.save(fig, path, dpi=130, also=also)
     print(f"Wrote {path.name} ({len(mats)} panel(s), {len(rows)} benchmarks x {len(cols)} languages)")
 
 

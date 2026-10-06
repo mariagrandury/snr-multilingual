@@ -28,7 +28,7 @@ SIZES = ["90M", "175M", "350M", "600M", "1B", "1.7B"]
 LADDER_WIDTH = {"deep": 1.4, "shallow": 0.8, "swiglu": 2.2}
 DATA_DASH = {"A": "-", "B": "--", "AT3": ":", "BT3": (0, (5, 2)), "ZH": "-.",
                "ES": (0, (3, 1, 1, 1)), "DCLMP": (0, (6, 2, 2, 2)),
-               "FWEB": (0, (1, 1))}
+               "FWEB": (0, (5, 1, 1, 1, 1, 1))}         # dash-dot-dot: AT3 is the only dotted one
 
 SEQ = LinearSegmentedColormap.from_list("snr_seq", ["#eaf2fd", "#0d366b"])
 DIV = LinearSegmentedColormap.from_list(
@@ -61,6 +61,55 @@ def save(fig, path, dpi=200, also=()):
         fig.savefig(p, dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
     mpl.pyplot.close(fig)
     print(f"wrote {path}" + "".join(f" {ext}" for ext in also))
+
+
+ADVISORY = "advisory: "                    # rule 18's "try to": reported, not refused
+PAPER_BANNED = ("—", "–", " - ", ";")      # rule 18: no dash used as punctuation, no ';' (a hyphen inside a word is fine)
+
+
+def paper_problems(fig) -> list[str]:
+    """Rule 18 (RULES.md): what a `_paper` figure must not carry. No figure
+    title and no description text; axis labels capitalized; no dash or ';' in
+    a label, panel title or legend entry; the same number of entries in every
+    legend column, which is advisory (`ADVISORY`): the rule says to try."""
+    out = []
+    sup = fig._suptitle.get_text() if fig._suptitle is not None else ""
+    if sup.strip():
+        out.append(f"a figure title {sup!r}")
+    sups = {id(t) for t in (getattr(fig, "_supxlabel", None), getattr(fig, "_supylabel", None)) if t is not None}
+    out += [f"a description {t.get_text()[:40]!r}" for t in fig.texts if id(t) not in sups and t.get_text().strip()]
+    labels = [t.get_text() for t in fig.texts if id(t) in sups]
+    labels += [lab for ax in fig.axes for lab in (ax.get_xlabel(), ax.get_ylabel())]
+    for lab in filter(str.strip, labels):
+        first = next((ch for ch in lab if ch.isalpha()), "")
+        if first and not first.isupper():
+            out.append(f"axis label not capitalized {lab!r}")
+    legends = [ax.get_legend() for ax in fig.axes if ax.get_legend() is not None] + list(fig.legends)
+    texts = labels + [ax.get_title(loc) for ax in fig.axes for loc in ("left", "center", "right")]
+    texts += [t.get_text() for leg in legends for t in [*leg.get_texts(), leg.get_title()]]
+    out += [f"{b!r} in {t!r}" for t in texts for b in PAPER_BANNED if b in t]
+    for leg in legends:
+        n, ncol = len(leg.get_texts()), leg._ncols
+        if ncol > 1 and n % ncol:
+            out.append(f"{ADVISORY}legend of {n} entries in {ncol} columns (unequal columns)")
+    return out
+
+
+def save_paper(fig, path, exts=("png", "svg"), dpi=200):
+    """Write a `_paper` figure: `path` without its extension, one file per
+    `exts`. Refuses (ValueError) a figure that breaks rule 18 instead of
+    writing it, so a paper figure on disk is always one that passed."""
+    path = Path(path)
+    problems = paper_problems(fig)
+    for p in (p for p in problems if p.startswith(ADVISORY)):
+        print(f"!!! RULE 18: {path.name}: {p}")
+    if bad := [p for p in problems if not p.startswith(ADVISORY)]:
+        mpl.pyplot.close(fig)
+        raise ValueError(f"RULE 18: {path.name}: " + " | ".join(bad))
+    for ext in exts:
+        fig.savefig(path.parent / f"{path.name}.{ext}", dpi=dpi, bbox_inches="tight", facecolor=SURFACE)
+    mpl.pyplot.close(fig)
+    print(f"wrote {path}." + "/.".join(exts))
 
 
 def save_figure(fig, out_dir, name, dpi=200, exts=("png", "pdf")):

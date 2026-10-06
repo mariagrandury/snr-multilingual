@@ -92,7 +92,8 @@ def mcnemar(mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
             o, t = o[ok].astype(int), t[ok].astype(int)
             b, c = int(((o == 1) & (t == 0)).sum()), int(((o == 0) & (t == 1)).sum())
             p = binomtest(min(b, c), b + c, 0.5).pvalue if b + c else np.nan
-            rows.append({"family": fam, "set": s, "size": size, "languages": int(ok.sum()),
+            rows.append({"family": fam, "set": s, "size": size, "languages": int(ok.sum()),   # paired tasks
+                         "n_languages": o.index.nunique(),     # CulturalBench: one task per country, 19 over 8 languages
                          "share_original": o.mean() if len(o) else np.nan, "share_twin": t.mean() if len(t) else np.nan,
                          "twin_only": c, "original_only": b, "p_mcnemar": p})
     return pd.DataFrame(rows)
@@ -148,7 +149,7 @@ def _twins_ax(a, mc: pd.DataFrame, sizes: list) -> None:
     for k, size in enumerate(sizes):
         g = mc[(mc["size"] == size) & (mc["set"] == "rf")].set_index("family").reindex(fams)
         a.bar(x + (k - len(sizes) / 2) * w * 2, g["share_original"], w, color=S.GRID, edgecolor=S.MUTED, lw=.4)
-        a.bar(x + (k - len(sizes) / 2) * w * 2 + w, g["share_twin"], w, color=S.RAMP[min(k, 3)],
+        a.bar(x + (k - len(sizes) / 2) * w * 2 + w, g["share_twin"], w, color=S.SIZE_COLOR[size],
               label=f"rf twin at {size}")
         gm = mc[(mc["size"] == size) & (mc["set"] == "rfgm")].set_index("family").reindex(fams)
         a.scatter(x + (k - len(sizes) / 2) * w * 2 + w, gm["share_twin"], s=14, marker="D", color=S.SERIES[1], zorder=4,
@@ -163,21 +164,25 @@ def _twins_ax(a, mc: pd.DataFrame, sizes: list) -> None:
 
 
 def figure_paper(mc: pd.DataFrame, path: Path, sizes: list) -> None:
-    """Panel (a) alone, in the paper's words: `rf` is the RF version, `rfgm` the LLM-RF version."""
+    """Panel (a) alone, in the paper's words: `rf` is the RF version, `rfgm` the LLM-RF version.
+    Each benchmark is named with its language count; the legend is three columns of three:
+    the original, the LLM-RF version and the test, then the RF version by size."""
     fig, a = plt.subplots(figsize=(6.4, 3.4))
     _twins_ax(a, mc, sizes)
     h, labels = a.get_legend_handles_labels()
     rf = [(x, l.replace("rf twin", "RF version")) for x, l in zip(h, labels) if l.startswith("rf twin")]
     gm = [(x, "LLM-RF version") for x, l in zip(h, labels) if l == "rfgm twin"]
-    handles = [(plt.Rectangle((0, 0), 1, 1, facecolor=S.GRID, edgecolor=S.MUTED, lw=.4), "original")] + rf + gm \
-        + [(plt.Line2D([], [], marker="$*$", ls="none", color=S.INK, ms=7), f"McNemar p < {P_SIG}")]
-    a.legend([x for x, _ in handles], [l for _, l in handles], fontsize=6, frameon=False, ncol=4,
+    handles = [(plt.Rectangle((0, 0), 1, 1, facecolor=S.GRID, edgecolor=S.MUTED, lw=.4), "Original")] + gm \
+        + [(plt.Line2D([], [], marker="$*$", ls="none", color=S.INK, ms=7), f"McNemar p < {P_SIG}")] + rf
+    a.legend([x for x, _ in handles], [l for _, l in handles], fontsize=6, frameon=False, ncol=3,
              loc="lower center", bbox_to_anchor=(0.5, 1.0))
-    a.set_ylabel("Share of languages above threshold")
-    a.set_xticklabels([G.paper_name(t.get_text()) for t in a.get_xticklabels()], rotation=30, ha="right", fontsize=7)
+    a.set_ylabel("Share of tasks above threshold")
+    n_lang = mc.groupby("family")["n_languages"].max()      # the label counts languages, the share is over tasks
+    a.set_xticklabels([f"{G.paper_name(t.get_text())} ({n_lang[t.get_text()]})" for t in a.get_xticklabels()],
+                      rotation=30, ha="right", fontsize=7)
     fig.tight_layout()
     mc.to_csv(path.with_suffix(".csv"), index=False)
-    S.save(fig, path, also=(".svg",))
+    S.save_paper(fig, path.with_suffix(""))
 
 
 def figure(mc: pd.DataFrame, head: pd.DataFrame, path: Path, sizes: list) -> None:
