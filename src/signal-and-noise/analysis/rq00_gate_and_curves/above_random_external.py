@@ -386,8 +386,9 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, lines_tab: pd.Dat
         f"post-trained release, none of {', '.join(INTERNAL)}): "
         + ", ".join(f"{n} {c}" for n, c in base["base_bin"].value_counts().reindex([n for n, _ in BINS], fill_value=0).items())
         + ". `above_random_external_models.tex` lists those models per line and size bucket.",
-        "Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against the "
-        "external tier's base models (`all/external`, same gate; panels (c) and (d) use the six public lines "
+        "Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against "
+        "every external release (`all/external`, base and post-trained, same gate; the paper version uses the public "
+        "base releases only; panels (c) and (d) use the six public lines "
         + ", ".join(LINES) + "); no task filter beyond the 84-task overlap.",
         "Key findings:\n" + "\n".join([
             f"- {len(g)} of the {len(t)} shared tasks are gated at every ladder size; {int(counts['≤ 600M'] + counts['1B–1.7B'])} "

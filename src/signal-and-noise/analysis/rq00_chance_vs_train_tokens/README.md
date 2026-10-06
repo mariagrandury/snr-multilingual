@@ -22,9 +22,28 @@ The decision-accuracy counterpart is in
 
 ![Share above chance vs tokens seen, deep_A_1904](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.png)
 
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904.csv)
+
 ![Share above chance vs tokens seen, deep_A_1904_ckpts](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904_ckpts.png)
+
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904_ckpts.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_deep_A_1904_ckpts.csv)
 
 ![Share above chance vs tokens seen, 1904](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904.png)
 
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904.csv)
+
 ![Share above chance vs tokens seen, 1904_ckpts](pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.png)
+
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_chance_vs_train_tokens/pretraining/predictivity_all/pass_prob_vs_train_tokens_by_benchmark_1904_ckpts.csv)
+
+Key findings:
+- `deep_A_1904`: 46% of 14657 cells above chance; per size 90M 37%, 175M 39%, 350M 43%, 600M 47%, 1B 51%, 1.7B 58%.
+- `deep_A_1904_ckpts`: 43% of 146570 cells above chance; per size 90M 35%, 175M 37%, 350M 40%, 600M 44%, 1B 48%, 1.7B 54%.
+- `1904`: 46% of 16602 cells above chance; per size 90M 38%, 175M 40%, 350M 44%, 600M 49%, 1B 52%, 1.7B 57%.
+- `1904_ckpts`: 44% of 166020 cells above chance; per size 90M 36%, 175M 38%, 350M 41%, 600M 45%, 1B 49%, 1.7B 54%.
 <!-- END auto:chance-vs-train-tokens -->
+
+Follow-ups:
+- The `_by_language_` figures with the token bins pooled across sizes, to separate the effect of exposure from the effect of size.
+- A twin restricted to the gate's surviving tasks, to check that the share rises with tokens on the tasks the later analyses keep.
+- A twin over the reformulated (RF) tasks alone, since the letter-choice originals sit at chance at most sizes.
