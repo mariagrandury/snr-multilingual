@@ -43,12 +43,23 @@ not a proxy, so it is NOT gated (the above-random gate only NaN-s SNR cells).
 pairs behind every value; an early checkpoint counts only within CKPT_TOL of
 the fraction asked for.
 
+Every column is read from one score cube per task (`_ckpt_cube`): the
+checkpoint each (bucket, family) is read at, for every fraction, picked once
+under the rule of `_scores_at`, and the pair signs taken once per pair set.
+The per-call kernels below (`compute_size_decision_accuracy`, ...) state the
+same rule one cell at a time; tests/test_early_small.py holds the two equal,
+and a task with two rows at one (bucket, family, step) is computed by them.
+`--workers` (or COMPUTE_DA_WORKERS) spreads the tasks over processes.
+
     python analysis/rq02_decision_accuracy/compute_da.py --pool custom_swissai_hf
 """
 
 from __future__ import annotations
 
 import argparse
+import itertools
+import multiprocessing as mp
+import os
 import sys
 from pathlib import Path
 
@@ -260,9 +271,218 @@ def _scaling_da_pairs(df_pool) -> list[tuple[str, str]]:
     return pairs
 
 
-def run(pool: str, out_dir: Path):
+def _ckpt_cube(df: pd.DataFrame, buckets, fracs):
+    """The scores every DA column reads, picked once: (tasks, families, cols,
+    S, C, P, single). Column (bucket, frac) holds, per task and family, the
+    score S and compute C at the checkpoint `_scores_at(bucket, frac)` reads
+    (frac 1.0: the final checkpoint); P marks a family read there, so a NaN
+    score stays apart from an absent family (it is counted, and is a miss, as
+    in `pair_agreement`). `single` lists the (task, bucket, family) runs with
+    one checkpoint, which DA-ckpt logs and skips.
+
+    The rule of `_scores_at` and `compute_ckpt_decision_accuracy`: the
+    non-final checkpoint nearest frac × the run's max step, the smaller step
+    on a tie, within CKPT_TOL of the run. It assumes one row per (task,
+    bucket, family, step); `run` sends a task that breaks that to the per-call
+    kernels."""
+    d = df.loc[df["bucket"].isin(buckets) & df["family"].notna(), ["task", "bucket", "family", "step", "primary_score"]]
+    d = d.assign(compute=df["compute"] if "compute" in df.columns else np.nan)
+    d = d.sort_values(["task", "bucket", "family", "step"], kind="mergesort").reset_index(drop=True)
+    gid = d.groupby(["task", "bucket", "family"], sort=False).ngroup().to_numpy()
+    step = d["step"]
+    mx = step.groupby(gid).transform("max")
+    tasks = sorted(d["task"].unique())
+    fams = sorted(d["family"].unique())
+    cols = [(b, f) for b in buckets for f in list(fracs) + [1.0]]
+    S = np.full((len(tasks), len(fams), len(cols)), np.nan)
+    C = np.full_like(S, np.nan)
+    P = np.zeros(S.shape, dtype=bool)
+    ti = d["task"].map({t: i for i, t in enumerate(tasks)}).to_numpy(dtype=int)
+    fi = d["family"].map({f: i for i, f in enumerate(fams)}).to_numpy(dtype=int)
+    bpos = {b: i for i, b in enumerate(buckets)}
+    bi = d["bucket"].map(bpos).to_numpy(dtype=int)
+    nf = len(fracs) + 1
+    score, comp = d["primary_score"].to_numpy(), d["compute"].to_numpy(dtype=float)
+
+    def put(rows, k):
+        c = bi[rows] * nf + k
+        S[ti[rows], fi[rows], c], C[ti[rows], fi[rows], c], P[ti[rows], fi[rows], c] = score[rows], comp[rows], True
+
+    put(np.flatnonzero((step == mx).to_numpy()), nf - 1)          # the final checkpoint
+    is_pre = (step < mx).to_numpy()
+    pre = np.flatnonzero(is_pre)
+    for k, frac in enumerate(fracs):
+        target = frac * mx.iloc[pre]
+        dist = (step.iloc[pre] - target).abs()
+        best = dist.groupby(gid[pre]).idxmin().to_numpy()       # first minimum: the smaller step on a tie
+        ok = (dist.loc[best] <= CKPT_TOL * mx.loc[best]).to_numpy()
+        put(best[ok], k)
+    has_pre = np.zeros(gid.max() + 1 if len(gid) else 0, dtype=bool)
+    has_pre[gid[pre]] = True
+    first = np.flatnonzero(np.r_[True, gid[1:] != gid[:-1]]) if len(gid) else np.array([], int)
+    single = [(tasks[ti[r]], d["bucket"].iat[r], d["family"].iat[r]) for r in first if not has_pre[gid[r]]]
+    return tasks, fams, cols, S, C, P, single
+
+
+# Shared with forked workers (set in `run` before the pool starts).
+_CUBE: dict = {}
+
+
+def _da(D, V, pc, rc):
+    """(DA, pairs) of proxy column `pc` against reference column `rc`, over
+    the pairs both columns read (`pair_agreement`'s rule; NaN below MIN_PAIRS)."""
+    m = V[:, pc] & V[:, rc]
+    n = int(m.sum())
+    if n < MIN_PAIRS:
+        return float("nan"), n
+    agree = (D[m, pc] == D[m, rc]).sum()
+    return float(agree / n), n
+
+
+def _task_rows(k: int):
+    """Every pair set's (row, n_row, early rows) for the k-th task of the cube,
+    plus its rule-5 log — the rows `run` used to build one call at a time."""
+    c = _CUBE
+    task, S, Cm, P = c["tasks"][k], c["S"][k], c["C"][k], c["P"][k]
+    col = c["col"]
+    present = {b: bool(P[:, col[(b, 1.0)]].any()) for b in c["buckets"]}
+    few, out = [], {}
+    for axes, (I, J) in c["pairs"].items():
+        D = np.sign(S[I] - S[J])
+        V = P[I] & P[J]
+        row, nrow = {"task": task, "axes": axes}, {"task": task, "axes": axes}
+
+        def size(sb, tb, name):
+            if not (present.get(sb) and present.get(tb)):
+                row[name], nrow[name] = float("nan"), 0
+                return
+            row[name], nrow[name] = _da(D, V, col[(sb, 1.0)], col[(tb, 1.0)])
+            if nrow[name] < MIN_PAIRS:
+                few.append((task, sb, tb, nrow[name]))
+
+        for s in SMALL_SIZES:
+            size(s, TARGET_SIZE, f"decision_acc_size_{s}")
+        for sb, tb in c["scaling_pairs"]:
+            size(sb, tb, f"decision_acc_size_{sb}_to_{tb}")
+        for frac in CKPT_DA_EARLY_FRACS:
+            fl = _frac_label(frac)
+            for b in c["buckets"]:
+                name = f"decision_acc_ckpt_{fl}_{b}"
+                if not present[b]:
+                    row[name], nrow[name] = float("nan"), 0
+                    continue
+                row[name], nrow[name] = _da(D, V, col[(b, frac)], col[(b, 1.0)])
+                if nrow[name] < MIN_PAIRS:
+                    few.append((task, b, f"ckpt@{frac}", nrow[name]))
+        early = []
+        if TARGET_SIZE in c["buckets"]:
+            rc = col[(TARGET_SIZE, 1.0)]
+            if P[:, rc].sum() >= 2:
+                order = bucket_order()
+                for b in [b for b in order[: order.index(TARGET_SIZE) + 1] if present.get(b)]:
+                    for frac in EARLY_SMALL_FRACS:
+                        if b == TARGET_SIZE and frac >= 1.0:
+                            continue
+                        pc = col[(b, frac)]
+                        da, n_pairs = _da(D, V, pc, rc)
+                        if n_pairs < MIN_PAIRS:
+                            few.append((None, b, f"early-small@{frac}", n_pairs))
+                            continue
+                        common = P[:, pc] & P[:, rc]
+                        early.append({"proxy_size": b, "frac": frac, "da": da, "n_pairs": n_pairs,
+                                      "compute": float(np.mean(Cm[common, pc])),
+                                      "ref_compute": float(np.mean(Cm[common, rc]))})
+            for r in early:
+                name = f"decision_acc_goal_{_frac_label(r['frac'])}_{r['proxy_size']}"
+                row[name], nrow[name] = r["da"], r["n_pairs"]
+        out[axes] = (row, nrow, [{"task": task, "axes": axes, **r} for r in early])
+    return out, few
+
+
+def _task_rows_per_call(dft, task, axes_sets, psets, scaling_pairs, pool_buckets):
+    """`_task_rows` by the per-call kernels, for a task the cube cannot hold."""
+    out = {}
+    for axes in axes_sets:
+        pairs = psets[axes]
+        row, nrow = {"task": task, "axes": axes}, {"task": task, "axes": axes}
+        for s in SMALL_SIZES:
+            row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
+                compute_size_decision_accuracy, dft, task, s, pairs=pairs)
+        for sb, tb in scaling_pairs:
+            row[f"decision_acc_size_{sb}_to_{tb}"], nrow[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
+                compute_size_decision_accuracy, dft, task, sb, tb, pairs=pairs)
+        for frac in CKPT_DA_EARLY_FRACS:
+            fl = _frac_label(frac)
+            for b in pool_buckets:
+                row[f"decision_acc_ckpt_{fl}_{b}"], nrow[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
+                    compute_ckpt_decision_accuracy, dft, task, b, frac, pairs=pairs)
+        early = []
+        if TARGET_SIZE in pool_buckets:
+            early = compute_early_small_decision_accuracy(dft, pairs=pairs)
+            for r in early:
+                col = f"decision_acc_goal_{_frac_label(r['frac'])}_{r['proxy_size']}"
+                row[col], nrow[col] = r["da"], r["n_pairs"]
+        out[axes] = (row, nrow, [{"task": task, "axes": axes, **r} for r in early])
+    return out
+
+
+def _n_workers(cli: int | None) -> int:
+    """--workers, else COMPUTE_DA_WORKERS, else 1 (the login-node default)."""
+    return max(1, cli if cli is not None else int(os.environ.get("COMPUTE_DA_WORKERS", "1")))
+
+
+def da_by_task(dfp, tasks, axes_sets, psets, scaling_pairs, pool_buckets, workers: int = 1,
+               cube: bool = True) -> dict:
+    """{task: {axes: (row, n_row, early rows)}} over `dfp`, the pool's rows of
+    `tasks`. `cube=False` sends every task to the per-call kernels, which the
+    cube reproduces bit for bit (tests/test_early_small.py)."""
+    # One cube per task, read by every pair set. A task with two rows at one
+    # (bucket, family, step) has no single "nearest checkpoint" the cube can
+    # hold; it goes to the per-call kernels, which pick as they always did.
+    dup = dfp.duplicated(["task", "bucket", "family", "step"]) & dfp["bucket"].notna()
+    per_call = sorted(set(dfp.loc[dup, "task"])) if cube else list(tasks)
+    if per_call and cube:
+        print(f"  {len(per_call)} task(s) with duplicate (bucket, family, step) rows → per-call kernels")
+    ctasks, fams, cols, S, Cm, P, single = _ckpt_cube(dfp[~dfp["task"].isin(per_call)], pool_buckets,
+                                                     CKPT_DA_EARLY_FRACS)
+    fidx = {f: i for i, f in enumerate(fams)}
+    pairs_ij = {}
+    for a in axes_sets:
+        pl = [(fidx[x], fidx[y]) for x, y in psets[a] if x in fidx and y in fidx]
+        pairs_ij[a] = (np.array([i for i, _ in pl], dtype=int), np.array([j for _, j in pl], dtype=int))
+    _CUBE.update(tasks=ctasks, S=S, C=Cm, P=P, col={c: i for i, c in enumerate(cols)}, buckets=pool_buckets,
+                 scaling_pairs=scaling_pairs, pairs=pairs_ij)
+    # DA-ckpt skips a run with one checkpoint; say so once per (bucket, frac, family).
+    for t, grp in itertools.groupby(single, key=lambda x: x[0]):      # `single` is in task order
+        grp = sorted(grp, key=lambda x: (pool_buckets.index(x[1]), x[2]))
+        for frac, (_, b, f) in itertools.product(CKPT_DA_EARLY_FRACS, grp):
+            if (b, frac, f) not in _LOGGED_MISSING_CKPTS:
+                _LOGGED_MISSING_CKPTS.add((b, frac, f))
+                print(f"  ckpt-DA: only one ckpt for bucket={b} family={f} (first seen on task={t}) — skipped")
+
+    by_task = {}
+    n_workers = min(workers, max(1, len(ctasks)))
+    if n_workers > 1:
+        print(f"  {n_workers} worker processes")
+        with mp.get_context("fork").Pool(n_workers) as ex:
+            res = ex.imap(_task_rows, range(len(ctasks)), chunksize=max(1, len(ctasks) // (8 * n_workers)))
+            for t, (out, few) in zip(ctasks, tqdm(res, total=len(ctasks), desc="DA tasks")):
+                by_task[t] = out
+                _FEW_PAIRS.extend(few)
+    else:
+        for k, t in enumerate(tqdm(ctasks, desc="DA tasks")):
+            by_task[t], few = _task_rows(k)
+            _FEW_PAIRS.extend(few)
+    for t in [t for t in tasks if t not in by_task]:       # duplicate rows, or no row in any bucket
+        by_task[t] = _task_rows_per_call(dfp[dfp["task"] == t], t, axes_sets, psets, scaling_pairs, pool_buckets)
+
+    return by_task
+
+
+def run(pool: str, out_dir: Path, workers: int | None = None):
     df_pool = build_snr_pool(pool)
     df_pool["bucket"] = df_pool["size"].map(size_bucket)
+    df_pool = add_family_column(df_pool)
     all_tasks = sorted(df_pool["task"].unique())
     tasks = [t for t in all_tasks if _is_parent_task(t)]
 
@@ -288,43 +508,15 @@ def run(pool: str, out_dir: Path):
     axes_sets = [a for a in PAIR_AXES if psets[a]]
     print("  Pair sets: " + ", ".join(f"{a} {len(psets[a])}" for a in axes_sets))
 
-    # Pre-slice by task once — each compute_*_decision_accuracy call filters by
-    # task, so grouping avoids re-scanning the whole pool per call.
-    df_by_task = {t: g for t, g in df_pool.groupby("task", sort=False)}
-
+    by_task = da_by_task(df_pool[df_pool["task"].isin(tasks)], tasks, axes_sets, psets, scaling_pairs,
+                         pool_buckets, _n_workers(workers))
     rows, n_rows, early_rows = [], [], []
     for axes in axes_sets:
-        pairs = psets[axes]
-        for task in tqdm(tasks, desc=f"DA tasks ({axes})"):
-            row, nrow = {"task": task, "axes": axes}, {"task": task, "axes": axes}
-            dft = df_by_task[task]
-            # Core size-DA: small bucket@last → reference bucket@last.
-            for s in SMALL_SIZES:
-                row[f"decision_acc_size_{s}"], nrow[f"decision_acc_size_{s}"] = _safe(
-                    compute_size_decision_accuracy, dft, task, s, pairs=pairs,
-                )
-            # Scaling-DA: every other cross-bucket pair with ≥2 shared families.
-            for sb, tb in scaling_pairs:
-                row[f"decision_acc_size_{sb}_to_{tb}"], nrow[f"decision_acc_size_{sb}_to_{tb}"] = _safe(
-                    compute_size_decision_accuracy, dft, task, sb, tb, pairs=pairs,
-                )
-            # ckpt-DA: relative-fraction early ckpt vs max, per bucket.
-            for frac in CKPT_DA_EARLY_FRACS:
-                fl = _frac_label(frac)
-                for b in pool_buckets:
-                    row[f"decision_acc_ckpt_{fl}_{b}"], nrow[f"decision_acc_ckpt_{fl}_{b}"] = _safe(
-                        compute_ckpt_decision_accuracy, dft, task, b, frac, pairs=pairs,
-                    )
-            # goal-DA: early AND small, the long table and its wide columns from
-            # ONE computation, so the two shapes cannot disagree.
-            if TARGET_SIZE in pool_buckets:
-                early = compute_early_small_decision_accuracy(dft, pairs=pairs)
-                for r in early:
-                    col = f"decision_acc_goal_{_frac_label(r['frac'])}_{r['proxy_size']}"
-                    row[col], nrow[col] = r["da"], r["n_pairs"]
-                early_rows += [{"task": task, "axes": axes, **r} for r in early]
+        for task in tasks:
+            row, nrow, early = by_task[task][axes]
             rows.append(row)
             n_rows.append(nrow)
+            early_rows += early
 
     out = pd.DataFrame(rows).set_index(["task", "axes"]).sort_index()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -375,11 +567,13 @@ def main():
                         "custom_swissai_hf).")
     p.add_argument("--out-subdir", default=None,
                    help="Subdir under <stage>/ (default: <pool>).")
+    p.add_argument("--workers", type=int, default=None,
+                   help="Processes over the tasks (default: COMPUTE_DA_WORKERS, else 1).")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools().keys())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    run(pool=args.pool, out_dir=OUT_ROOT / stage / (args.out_subdir or args.pool))
+    run(pool=args.pool, out_dir=OUT_ROOT / stage / (args.out_subdir or args.pool), workers=args.workers)
 
 
 if __name__ == "__main__":
