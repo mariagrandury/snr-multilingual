@@ -31,9 +31,16 @@ chance at every size does not appear:
                                            label text darkened towards the ink so it reads at 5 pt
     scaling_regimes_by_family.png / .csv   panel (b) per family: its tasks labelled with the language code, the
                                            other tasks in grey behind (the per-task table with the labels)
-    scaling_regimes_by_family_paper.png/pdf/svg/csv  the same for the paper's appendix: no header, the paper
-                                           figure's axis labels and darkened label text (the same table)
-    scaling_regimes.html                   the two panels with hover names and a click-to-highlight legend
+    scaling_regimes_by_family_paper.png/pdf/svg/csv  the paper appendix's version as ONE panel: the tasks coloured
+                                           by family, each family's points enclosed by an outline in its colour,
+                                           no quadrant shading (the same table)
+    scaling_regimes_by_family_spread_paper.png/pdf/svg/csv  one panel per family of SPREAD_FAMILIES in square
+                                           panels (3 × 2), from the most concentrated to the most spread, the tasks
+                                           over their kernel density in 95/80/50/25 % bands (the table adds the
+                                           spread and the panel order)
+    scaling_regimes_size_paper.png/pdf/svg  panel (a) of the outliers figure alone, in the spread grid's look
+                                           (its colours, one square panel; table: scaling_regimes_outliers_paper.csv)
+    scaling_regimes.html                  the two panels with hover names and a click-to-highlight legend
                                            (Vega-Lite from a CDN, for the project site; not for the paper)
 
     python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
@@ -51,6 +58,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from adjustText import adjust_text
+from scipy.ndimage import distance_transform_edt
+from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.stats import gaussian_kde
 
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
@@ -73,6 +83,17 @@ R2_SPLIT = 0.5          # the heuristic boundary between "predictable" and "weak
 MIN_POINTS = 5          # checkpoints a trajectory fit needs
 MIN_FITS = 2            # fits (L's, or cells) a task needs for a median
 LABEL_DARK = 0.45       # how far the paper figure's label text is pulled from the family's colour towards the ink
+OUTLINE_PAD = 0.035    # how far a family's outline in the paper's by-family figure stays from its points
+CLEAN = ["#1A73E8", "#EA4335", "#F9AB00", "#34A853", "#A142F4", "#12B5CB",    # Google-style, bright on white: blue, red,
+         "#E52592", "#FA7B17", "#3949AB", "#00897B", "#8D6E63"]              # amber, green, violet, cyan, pink, orange,
+                                                                             # indigo, teal, brown; the outline figures' families
+SPREAD_FAMILIES = {"bpb": "#1A73E8", "hellaswag": "#F9AB00", "multiblimp": "#4FC3F7",   # the spread grid's families and
+                   "xnli": "#FA7B17", "xcopa": "#E52592", "xwinograd": "#34A853"}      # colours: blue, yellow, light blue,
+                                                                                         # orange, pink, green
+DENSITY_MASS = (.95, .8, .5, .25)       # the spread grid's density bands: the region holding this share of the density
+DENSITY_ALPHA = (.10, .20, .32, .46)    # ... and each band's opacity, faint outside to dark at the core
+OUTLINE_FILL = 0.10    # opacity of the fill inside a family's outline
+OUTLINE_CLOSE = 0.12   # how much that outline is rounded (dilated, then eroded back to OUTLINE_PAD)
 OUTLIER_DIST = 0.25     # a task in another quadrant than its family AND this far from its median point (either panel) gets named
 DECLINES = "declines with size"   # the fifth regime: median ρ with size < 0, whatever the quadrant
 REGIME_SHORT = {"predictable across both": "both", "predictable during training only": "training only",
@@ -148,8 +169,12 @@ def outliers(t: pd.DataFrame, fam: pd.DataFrame) -> pd.DataFrame:
     return m[["task", "family", "language", "label"] + COLS + ["regime", "regime_majority", "other_regime", "dist_a", "dist_b"]]
 
 
-def _colours(t: pd.DataFrame) -> dict:
+def _colours(t: pd.DataFrame, palette: list | None = None) -> dict:
+    """A colour per family in panel order: tab20 (bpb in the ramp's blue), or
+    `palette` cycled (the outline figures use CLEAN)."""
     fams = G.panel_order(t["family"].unique())
+    if palette:
+        return {f: palette[i % len(palette)] for i, f in enumerate(fams)}
     return {f: (S.RAMP[3] if f == "bpb" else S.MUTED if f == "loss" else plt.cm.tab20(i % 20)) for i, f in enumerate(fams)}
 
 
@@ -263,11 +288,10 @@ def figure(t: pd.DataFrame, out_dir: Path, fam: pd.DataFrame | None = None, out:
     S.save(fig, out_dir / f"{name}.png"); plt.close(fig)
 
 
-def figure_by_family(t: pd.DataFrame, fam: pd.DataFrame, out_dir: Path, paper: bool = False) -> None:
+def figure_by_family(t: pd.DataFrame, fam: pd.DataFrame, out_dir: Path) -> None:
     """Panel (b) once per family, its tasks labelled with the language code,
-    every other task in grey behind; `paper` = the appendix version, as the
-    main paper figure: no header, its axis labels, darkened label text, PNG,
-    PDF and SVG."""
+    every other task in grey behind (the paper's version is
+    figure_by_family_paper)."""
     colours = _colours(t)
     labels = point_label(t)
     n = len(colours); ncol = 4; nrow = -(-n // ncol)
@@ -278,29 +302,145 @@ def figure_by_family(t: pd.DataFrame, fam: pd.DataFrame, out_dir: Path, paper: b
         ax.scatter(t.loc[~g, "r2_size"], t.loc[~g, "r2_trajectory"], s=5, color=S.NODATA, lw=0, zorder=1)
         ax.scatter(t.loc[g, "r2_size"], t.loc[g, "r2_trajectory"], **_edged(dict(s=14, color=colours[f], zorder=2), t[g]))
         _labels(ax, t.loc[g, "r2_size"], t.loc[g, "r2_trajectory"], labels[g],
-                [darken(colours[f], LABEL_DARK if paper else 0.0)] * int(g.sum()), fontsize=5.5)
+                [colours[f]] * int(g.sum()), fontsize=5.5)
         row = fam[fam["family"] == f].iloc[0]
         ax.set_title(f"{short(f)} ({int(row['n_tasks'])}, {row['share_majority']:.0%} {REGIME_SHORT[row['regime_majority']]})", loc="left", fontsize=7)
         ax.set_xlim(-0.02, 1.02); ax.set_ylim(-0.02, 1.02); ax.grid(color=S.GRID, lw=.5); S.clean(ax)
     for ax in axes.flat[n:]:
         ax.axis("off")
     for ax in axes[-1]:
-        ax.set_xlabel("Median R² across model-size scaling fits" if paper else "median R² across size", fontsize=7)
+        ax.set_xlabel("median R² across size", fontsize=7)
     for ax in axes[:, 0]:
-        ax.set_ylabel("Median R² across training-trajectory fits" if paper else "median R² along training", fontsize=7)
-    name = "scaling_regimes_by_family" + ("_paper" if paper else "")
+        ax.set_ylabel("median R² along training", fontsize=7)
+    name = "scaling_regimes_by_family"
     t.assign(label=labels).to_csv(out_dir / f"{name}.csv", index=False)
-    if paper:
-        fig.tight_layout()
-        fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)
-        S.save_figure(fig, out_dir, name)
-        return
     top = G._header(fig, "Panel (b) per benchmark family, tasks named by language",
                     "the family's tasks coloured and labelled (language code; arc: the task suffix), the other tasks in grey; "
                     "title = tasks, share of them in the family's majority regime and that regime (both = predictable across size and "
                     "training, weak = neither, declines = median ρ with size < 0, black edge); quadrants and the gate as in scaling_regimes.png")
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, out_dir / f"{name}.png"); plt.close(fig)
+
+
+def _outline(ax, xs, ys, colour, r: float = OUTLINE_PAD, close: float = OUTLINE_CLOSE) -> None:
+    """A smooth line around a family's points, drawn `r` away from them and
+    filled with the same colour at OUTLINE_FILL opacity: the
+    points and the edges of their minimum spanning tree (so the shape stays
+    one piece) dilated by `close` and eroded back, which rounds the shape
+    into a blob that is still concave where the points leave a gap."""
+    p = np.c_[xs, ys]
+    d = np.hypot(*(p[:, None] - p[None]).transpose(2, 0, 1))
+    tree = minimum_spanning_tree(d + 1e-9 * (1 - np.eye(len(p)))).tocoo()     # 1e-9: tied points still get an edge
+    s, e = p[np.r_[np.arange(len(p)), tree.row]], p[np.r_[np.arange(len(p)), tree.col]]
+    axis = np.linspace(-.15, 1.15, 500)
+    gx, gy = np.meshgrid(axis, axis)
+    q, v = np.c_[gx.ravel(), gy.ravel()][:, None], e - s                        # grid × segments
+    u = np.clip(((q - s) * v).sum(-1) / np.maximum((v * v).sum(-1), 1e-12), 0, 1)
+    dist = np.hypot(*(q - s - u[..., None] * v).transpose(2, 0, 1)).min(1).reshape(gx.shape)
+    depth = distance_transform_edt(dist <= close) * (axis[1] - axis[0])
+    ax.contourf(gx, gy, depth, levels=[close - r, np.inf], colors=[colour], alpha=OUTLINE_FILL, zorder=1)
+    ax.contour(gx, gy, depth, levels=[close - r], colors=[darken(colour, .15)], linewidths=1, zorder=1)
+
+
+def figure_by_family_paper(t: pd.DataFrame, out_dir: Path) -> None:
+    """The paper appendix's panel (b) per family, as one panel: every task a
+    dot in its family's colour, each family's points enclosed by an outline in
+    that colour; no quadrant shading, the R2_SPLIT lines only. PNG, PDF, SVG
+    and the per-task table with its labels."""
+    colours = _colours(t, CLEAN)
+    fig, ax = plt.subplots(figsize=(6.4, 4.6))
+    ax.axvline(R2_SPLIT, color=S.MUTED, lw=.6, ls="--", zorder=0); ax.axhline(R2_SPLIT, color=S.MUTED, lw=.6, ls="--", zorder=0)
+    for f, c in colours.items():
+        g = t[t["family"] == f]
+        _outline(ax, g["r2_size"], g["r2_trajectory"], c)
+        ax.scatter(g["r2_size"], g["r2_trajectory"], label=f"{short(f)} ({len(g)})", **_edged(dict(s=14, color=c, zorder=2), g))
+    ax.set_xlim(-0.05, 1.05); ax.set_ylim(-0.05, 1.05); ax.set_box_aspect(1)
+    ax.set_xlabel("Median R² across model-size scaling fits"); ax.set_ylabel("Median R² across training-trajectory fits")
+    ax.grid(color=S.GRID, lw=.5); S.clean(ax)
+    ax.legend(fontsize=6.5, frameon=False, loc="upper left", bbox_to_anchor=(1.02, 1.0), title="benchmark (tasks)", title_fontsize=7)
+    name = "scaling_regimes_by_family_paper"
+    t.assign(label=point_label(t)).to_csv(out_dir / f"{name}.csv", index=False)
+    fig.tight_layout()
+    fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)
+    S.save_figure(fig, out_dir, name)
+
+
+def _density(ax, xs, ys, colour) -> None:
+    """A family's points as a Gaussian kernel density (Scott's bandwidth),
+    filled in DENSITY_MASS bands: the region holding 95 % of the density,
+    80 %, 50 %, 25 %, each darker than the last, so the faint outer band
+    shows how far the outliers reach."""
+    axis = np.linspace(-.3, 1.3, 320)
+    gx, gy = np.meshgrid(axis, axis)
+    z = gaussian_kde(np.vstack([xs, ys]))(np.vstack([gx.ravel(), gy.ravel()])).reshape(gx.shape)
+    zs = np.sort(z.ravel())[::-1]
+    mass = np.cumsum(zs) / zs.sum()
+    levels = [zs[np.searchsorted(mass, m)] for m in DENSITY_MASS] + [z.max()]
+    ax.contourf(gx, gy, z, levels=levels, colors=[mpl.colors.to_rgba(colour, a) for a in DENSITY_ALPHA], zorder=1)
+
+
+def figure_by_family_spread_paper(t: pd.DataFrame, out_dir: Path) -> None:
+    """The one-panel figure split into a panel per family of SPREAD_FAMILIES,
+    in its colour there, square panels on a 3 × 2 grid, ordered from the most
+    concentrated family to the most spread: spread = mean distance of its
+    tasks from the family's median point. Each panel: the family's tasks
+    labelled with the language, over their kernel density (_density), every
+    other task in grey behind.
+    PNG, PDF, SVG and the shown families' per-task table with the spread and
+    the panel order."""
+    colours, labels = SPREAD_FAMILIES, point_label(t)
+    med = t.groupby("family")[["r2_size", "r2_trajectory"]].transform("median")
+    spread = np.hypot(t["r2_size"] - med["r2_size"], t["r2_trajectory"] - med["r2_trajectory"]).groupby(t["family"]).mean()
+    order = spread[list(colours)].sort_values(kind="stable").index
+    fig, axes = plt.subplots(2, 3, figsize=(11, 7.6), sharex=True, sharey=True)
+    for ax, f in zip(axes.flat, order):
+        g = t["family"] == f
+        ax.axvline(R2_SPLIT, color=S.MUTED, lw=.5, ls="--", zorder=0); ax.axhline(R2_SPLIT, color=S.MUTED, lw=.5, ls="--", zorder=0)
+        ax.scatter(t.loc[~g, "r2_size"], t.loc[~g, "r2_trajectory"], s=8, color=S.NODATA, lw=0, zorder=1)
+        _density(ax, t.loc[g, "r2_size"], t.loc[g, "r2_trajectory"], colours[f])
+        ax.scatter(t.loc[g, "r2_size"], t.loc[g, "r2_trajectory"], **_edged(dict(s=26, color=colours[f], zorder=2), t[g]))
+        _labels(ax, t.loc[g, "r2_size"], t.loc[g, "r2_trajectory"], labels[g], [darken(colours[f], LABEL_DARK)] * int(g.sum()), fontsize=7.5)
+        ax.set_title(f"{short(f)} ({int(g.sum())} tasks, spread {spread[f]:.2f})", loc="left", fontsize=11)
+        ax.set_xlim(-0.05, 1.05); ax.set_ylim(-0.05, 1.05); ax.grid(color=S.GRID, lw=.5); S.clean(ax)
+        ax.tick_params(labelsize=9); ax.set_box_aspect(1)
+    for ax in axes[-1]:
+        ax.set_xlabel("Median R² across model-size scaling fits", fontsize=10)
+    for ax in axes[:, 0]:
+        ax.set_ylabel("Median R² across\ntraining-trajectory fits", fontsize=10)
+    name = "scaling_regimes_by_family_spread_paper"
+    t.assign(label=labels, spread=t["family"].map(spread), panel=t["family"].map({f: i + 1 for i, f in enumerate(order)})) \
+        .dropna(subset=["panel"]).sort_values(["panel", "task"]).to_csv(out_dir / f"{name}.csv", index=False)
+    fig.tight_layout()
+    fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)
+    S.save_figure(fig, out_dir, name)
+
+
+def figure_size_paper(t: pd.DataFrame, fam: pd.DataFrame, out: pd.DataFrame, out_dir: Path) -> None:
+    """Panel (a) of the outliers figure alone, in the spread grid's look: one
+    square panel, the SPREAD_FAMILIES colours (the other families take the
+    rest of CLEAN), dashed lines at ρ = 0 and R2_SPLIT, each family named at
+    its median point and the outliers by family:language. PNG, PDF, SVG."""
+    rest = [c for c in CLEAN if c not in SPREAD_FAMILIES.values()]
+    colours = {**_colours(t[~t["family"].isin(SPREAD_FAMILIES)], rest), **SPREAD_FAMILIES}
+    fig, ax = plt.subplots(figsize=(5.6, 5.6))
+    ax.axvline(R2_SPLIT, color=S.MUTED, lw=.5, ls="--", zorder=0); ax.axhline(0, color=S.MUTED, lw=.5, ls="--", zorder=0)
+    ax.scatter(t["r2_size"], t["rho_size"], s=26, color=t["family"].map(colours), lw=.3, edgecolor="white", zorder=2)
+    ax.scatter(fam["r2_size"], fam["rho_size"], s=60, color=fam["family"].map(colours), lw=.8, edgecolor=S.INK, zorder=3)
+    ax.set_xlim(-0.05, 1.05); ax.set_ylim(-1.05, 2.05); ax.set_yticks(np.arange(-1, 1.01, .5))   # headroom for the labels at ρ = 1, before the labels are placed
+    ax.grid(color=S.GRID, lw=.5); S.clean(ax); ax.tick_params(labelsize=9); ax.set_box_aspect(1)
+    fam = fam.assign(name=[f"{short(f)} ({n})" for f, n in zip(fam["family"], fam["n_tasks"])]).sort_values(["rho_size", "r2_size"])
+    top = fam["rho_size"] > .5      # the families piled near ρ = 1: their labels stacked in the headroom, lowest then leftmost point first
+    for i, r in enumerate(fam[top].itertuples()):
+        ax.annotate(r.name, (r.r2_size, r.rho_size), xytext=(.78, 1.12 + .085 * i), ha="right", va="center", fontsize=9, weight="bold",
+                    color=darken(colours[r.family], LABEL_DARK), arrowprops=dict(arrowstyle="-", color=S.MUTED, lw=.4, alpha=.7), zorder=4)
+    for d, names, kw in ((fam[~top], fam.loc[~top, "name"], dict(fontsize=9, weight="bold")), (out, out["label"], dict(fontsize=7.5))):
+        _adjust(ax, _texts(ax, d["r2_size"], d["rho_size"], names, [darken(colours[f], LABEL_DARK) for f in d["family"]], **kw),
+                (t["r2_size"], t["rho_size"]))
+    ax.set_xlabel("Median R² across model-size scaling fits", fontsize=10); ax.set_ylabel("Median Spearman ρ with model size", fontsize=10)
+    name = "scaling_regimes_size_paper"
+    fig.tight_layout()
+    fig.savefig(out_dir / f"{name}.svg", bbox_inches="tight", facecolor=S.SURFACE)
+    S.save_figure(fig, out_dir, name)
 
 
 def html(t: pd.DataFrame, out_dir: Path) -> None:
@@ -375,7 +515,9 @@ def main(pool: str) -> None:
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers")
     figure(t, out_dir, fam=fam, out=out, name="scaling_regimes_outliers_paper", paper=True, dark=LABEL_DARK)
     figure_by_family(t, fam, out_dir)
-    figure_by_family(t, fam, out_dir, paper=True)
+    figure_by_family_paper(t, out_dir)
+    figure_by_family_spread_paper(t, out_dir)
+    figure_size_paper(t, fam, out, out_dir)
     html(t, out_dir)
     print(f"Wrote scaling_regimes*.png/.csv/.html ({len(t)} tasks, {len(out)} named outliers; the gate left {len(gated_out)} tasks "
           f"without any size fit: {gated_note})")
@@ -396,8 +538,9 @@ def main(pool: str) -> None:
             f"Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, "
             f"`scaling_regimes_families.csv`), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's "
             f"majority and > {OUTLIER_DIST} from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version "
-            f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink), `scaling_regimes_by_family.png` "
-            f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; "
+            f"for the paper, the label text pulled {LABEL_DARK:.0%} towards the ink; `scaling_regimes_size_paper.png/.pdf/.svg` is its panel (a) alone, "
+            f"in the spread grid's colours), `scaling_regimes_by_family.png` "
+            f"(panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is the paper appendix's one-panel version, each family's tasks enclosed by an outline in its colour; `scaling_regimes_by_family_spread_paper.png/.pdf/.svg/.csv` splits six families into a panel each, ordered from the most concentrated to the most spread, the tasks over their kernel density in 95/80/50/25 % bands) and `scaling_regimes.html` (hover names, click-to-highlight legend; "
             f"for the project site).",
             f"![Scaling regimes, outliers named]({stage}/{pool}/scaling_regimes_outliers.png)",
             f"![Scaling regimes per family]({stage}/{pool}/scaling_regimes_by_family.png)"])
