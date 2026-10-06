@@ -391,6 +391,59 @@ def paper(pass_dir: Path, da_dir: Path, population: str = "1904", ckpts: bool = 
 
 # --- README ----------------------------------------------------------------------------
 
+# (mode, pair set, x axis, alt text): every DA figure the README embeds, in reading order
+DA_FIGURES = [("goal", "multi-axis", "tokens", "DA-goal of BPB vs tokens seen"),
+              ("goal", "mono-axis", "tokens", "DA-goal of BPB vs tokens seen, mono-axis pairs"),
+              ("goal", "multi-axis", "frac", "DA-goal of BPB vs share of the run"),
+              ("ckpt", "multi-axis", "tokens", "DA-ckpt of BPB vs tokens seen"),
+              ("ckpt", "mono-axis", "tokens", "DA-ckpt of BPB vs tokens seen, mono-axis pairs"),
+              ("ckpt", "multi-axis", "frac", "DA-ckpt of BPB vs share of the run"),
+              ("size", "multi-axis", "tokens", "DA-size of BPB vs tokens seen")]
+GITHUB = "https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis"
+
+
+def _gh_links(folder: Path, rel: str, name: str) -> str:
+    """README rule 6: the figure and its CSV on the main branch (internal only: rule 19)."""
+    base = f"{GITHUB}/{folder.name}/{rel}/{name}"
+    return f"[PNG on GitHub]({base}.png) · [CSV on GitHub]({base}.csv)"
+
+
+def _da_figure(rel: str, mode: str, axes: str, x: str, alt: str) -> list[str]:
+    """One DA figure: the image, its GitHub links and Key findings read from its
+    table on disk (README rule 5); nothing when the table is missing."""
+    name = DA_STEM.format(mode=mode, axes=AXES_SUFFIX[axes]) + ("_vs_frac" if x == "frac" else "")
+    path = DA_VS_TRAIN_TOKENS / rel / f"{name}.csv"
+    if not path.exists():
+        return []
+    s = pd.read_csv(path)
+    proxies = [z for z in size_order(s["proxy_size"].unique()) if z != TARGET_SIZE]
+    last = s[s["proxy_size"].isin(proxies)].sort_values("frac").groupby("proxy_size").last()["da"]
+    lo, hi = last.idxmin(), last.idxmax()
+    bullets = [f"- Over {int(s['n_languages'].max())} languages, the proxies' last point ranges from {fmt(last[lo])} "
+               f"({lo}) to {fmt(last[hi])} ({hi})."]
+    if mode != "size":
+        first = {z: g.sort_values("frac").loc[lambda d: d["da"] >= SAFE_DA, "frac"].min()
+                 for z, g in s[s["proxy_size"].isin(proxies)].groupby("proxy_size")}
+        bullets.append(f"- First tenth of the run at DA ≥ {SAFE_DA}: " + ", ".join(
+            f"{z} {'never' if pd.isna(first[z]) else f'{first[z]:.0%}'}" for z in proxies) + ".")
+    if axes == "mono-axis":
+        multi = pd.read_csv(DA_VS_TRAIN_TOKENS / rel / f"{DA_STEM.format(mode=mode, axes=AXES_SUFFIX['multi-axis'])}.csv")
+        gap = s.merge(multi, on=["proxy_size", "frac"], suffixes=("", "_multi"))
+        gap = gap[gap["proxy_size"].isin(proxies)]
+        gap = (gap["da_multi"] - gap["da"])
+        bullets.append(f"- The mono-axis pairs read lower than the multi-axis set at {int((gap > 0).sum())} of {len(gap)} "
+                       f"(size, tenth) points, by {fmt(gap.mean())} on average.")
+    return [f"![{alt}]({rel}/{name}.png)", _gh_links(DA_VS_TRAIN_TOKENS, rel, name), "Key findings:\n" + "\n".join(bullets)]
+
+
+def _pass_finding(population: str, c: pd.DataFrame) -> str:
+    """One Key-findings bullet per population: the share of its cells above chance, overall and per size."""
+    by = c.groupby("model_size")["above_chance"].mean()
+    by = by.reindex(size_order(by.index))
+    return (f"- `{population}`: {c['above_chance'].mean():.0%} of {len(c)} cells above chance; per size "
+            + ", ".join(f"{z} {v:.0%}" for z, v in by.items()) + ".")
+
+
 def generate_readme(pool: str, summary: pd.DataFrame, cells_a: pd.DataFrame,
                     cells_b: dict[str, pd.DataFrame]) -> None:
     """Two blocks: the DA figures' in rq02_da_vs_train_tokens/README.md, the
@@ -428,9 +481,8 @@ def generate_readme(pool: str, summary: pd.DataFrame, cells_a: pd.DataFrame,
         f"share of the run the checkpoint sits at, where lines that are apart on the token axis falling together says the "
         f"schedule, not the exposure, decides. The `{AXES_SUFFIX['mono-axis']}` twins of the goal and ckpt figures read only the "
         f"pairs that move one design axis (rule 15).",
-        md_table(["proxy size", "tokens of a language at 1C", "DA at 1C", "tokens at 5C", "DA at 5C", "languages"], rows),
-        f"![DA-goal of BPB vs tokens seen]({rel}/{DA_NAME}.png)",
-        f"![DA-goal of BPB vs tokens seen, mono-axis pairs]({rel}/{DA_STEM.format(mode='goal', axes=AXES_SUFFIX['mono-axis'])}.png)"])
+        md_table(["proxy size", "tokens of a language at 1C", "DA at 1C", "tokens at 5C", "DA at 5C", "languages"], rows)]
+        + [part for mode, axes, x, alt in DA_FIGURES for part in _da_figure(rel, mode, axes, x, alt)])
     replace_block(DA_VS_TRAIN_TOKENS / "README.md", "da-vs-train-tokens", da_body, f"tokens_seen.py --pool {pool}")
     pass_body = "\n\n".join([
         "## Share of cells above chance against the tokens of the language seen", intro,
@@ -446,7 +498,9 @@ def generate_readme(pool: str, summary: pd.DataFrame, cells_a: pd.DataFrame,
         f"their `.csv` is the binned points drawn). "
         f"Cells above chance: "
         + ", ".join(f"`{p}` {int(c['above_chance'].sum())} of {len(c)} ({c['task'].nunique()} tasks)" for p, c in cells_b.items()) + ".",
-    ] + [f"![Share above chance vs tokens seen, {p}]({rel}/{PASS_NAME}_by_benchmark_{p}.png)" for p in cells_b])
+    ] + [f"![Share above chance vs tokens seen, {p}]({rel}/{PASS_NAME}_by_benchmark_{p}.png)\n\n"
+         + _gh_links(CHANCE_VS_TRAIN_TOKENS, rel, f"{PASS_NAME}_by_benchmark_{p}") for p in cells_b]
+      + ["Key findings:\n" + "\n".join(_pass_finding(p, c) for p, c in cells_b.items())])
     replace_block(CHANCE_VS_TRAIN_TOKENS / "README.md", "chance-vs-train-tokens", pass_body, f"tokens_seen.py --pool {pool}")
     print(f"Wrote auto README blocks → {DA_VS_TRAIN_TOKENS / 'README.md'}, {CHANCE_VS_TRAIN_TOKENS / 'README.md'}")
 

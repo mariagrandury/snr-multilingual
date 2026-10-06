@@ -344,7 +344,7 @@ Of the 86 tasks both tiers score, 37 are at chance at every ladder size. Where t
 
 The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 19, 1B–1.7B 8, 3B–4B 4, 7B–14B 0, ≥ 27B 4, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
 
-Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against the external tier's base models (`all/external`, same gate; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
+Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against every external release (`all/external`, base and post-trained, same gate; the paper version uses the public base releases only; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
 
 Key findings:
 - 37 of the 86 shared tasks are gated at every ladder size; 27 of them are read by an external model ≤ 1.7B, 3 by none up to 70B.

@@ -24,8 +24,9 @@ checks, by rule:
       (Artifacts no generator wrote are flagged by the refresh itself.)
   18  every script that writes a `_paper` figure saves it through
       `style.save_paper`, which refuses a figure with a title or description,
-      an uncapitalized axis label, a dash or ';' in a label or legend, or
-      unequal legend columns — the figure itself is checked when it is drawn.
+      an uncapitalized axis label, or a dash or ';' in a label or legend, and
+      warns (does not refuse) on unequal legend columns; the figure itself is
+      checked when it is drawn.
   16  with --names: lists the decision-accuracy artifacts whose file name does
       not say which DA and which pair set. Advisory, not counted: what it
       lists today are orphans (no writer left), which rule 17 leaves to the user.
