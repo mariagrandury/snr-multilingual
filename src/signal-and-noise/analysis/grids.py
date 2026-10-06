@@ -42,14 +42,23 @@ from analysis import style as S
 FIRST = ("bpb", "loss")          # panels drawn before the alphabetical benchmarks
 # The reformulated twins are ordinary benchmarks (`rf_belebele`), but reading
 # them as `belebele-rf` keeps a twin next to its original instead of stranding
-# every one of them under "r", and says which of the three sets a panel is.
-_TWIN = re.compile(r"^(rfgm|rf)_(.+)$")
+# every one of them under "r", and says which of the sets a panel is. `bbpb_`
+# is the benchmark's gold-answer BPB (utils.BBPB), its third member.
+_TWIN = re.compile(r"^(rfgm|rf|bbpb)_(.+)$")
 
 
 def display(key) -> str:
-    """A benchmark family as a figure reads it: `rf_belebele` -> `belebele-rf`."""
+    """A benchmark family as a figure reads it: `rf_belebele` -> `belebele-rf`,
+    `bbpb_rf_belebele` -> `belebele-rf-bbpb`."""
     m = _TWIN.match(str(key))
-    return f"{m.group(2)}-{m.group(1)}" if m else str(key)
+    return f"{display(m.group(2))}-{m.group(1)}" if m else str(key)
+
+
+def base(key) -> str:
+    """The benchmark a twin rewrites, every twin prefix stripped:
+    `bbpb_rf_belebele` -> `belebele`. One cluster per original."""
+    m = _TWIN.match(str(key))
+    return base(m.group(2)) if m else str(key)
 
 
 # The paper's names for the benchmark families; a family not listed reads its
@@ -67,15 +76,16 @@ PAPER_NAMES = {
     "cultural_bench_hard": "CulturalBench-hard", "blend_sample": "BLEnD", "mathqa": "MathQA", "openbookqa": "OpenBookQA",
     "toxigen": "ToxiGen", "bbq": "BBQ", "bpb": "BPB", "loss": "training loss",
 }
-_TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF"}
+_TWIN_NAMES = {"rf": "RF", "rfgm": "LLM-RF", "bbpb": "bBPB"}
 
 
 def paper_name(key) -> str:
-    """`rf_belebele` -> `Belebele RF`, `rfgm_include_base_44` -> `INCLUDE LLM-RF`."""
+    """`rf_belebele` -> `Belebele RF`, `rfgm_include_base_44` -> `INCLUDE LLM-RF`,
+    `bbpb_rf_belebele` -> `Belebele RF bBPB`."""
     m = _TWIN.match(str(key))
-    base = m.group(2) if m else str(key)
-    name = PAPER_NAMES.get(base, base.replace("_", " "))
-    return f"{name} {_TWIN_NAMES[m.group(1)]}" if m else name
+    if m:
+        return f"{paper_name(m.group(2))} {_TWIN_NAMES[m.group(1)]}"
+    return PAPER_NAMES.get(str(key), str(key).replace("_", " "))
 NEVER = "#d6a29e"                # a level map's "never reached" (grey is kept for "filtered out")
 GATED, NEVER_CODE = -2.0, -1.0   # a level map's codes below the levels' own indices
 # Every run trains D(N) = 100 N tokens, five times the Chinchilla-optimal 20 N:

@@ -56,10 +56,10 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, one_axes)
+    MIN_PAIRS, RELIABLE_DA, SMALL_SIZES, TARGET_SIZE, assign_language, benchmark_family, one_axes)
 
 OUT_ROOT = DECISION_ACCURACY
-SAFE_DA = 0.75          # the agreement rq05 also calls "reads like the reference"
+SAFE_DA = RELIABLE_DA   # tau, the agreement rq05 also calls "reads like the reference" (utils)
 FLOP_LEVELS = [0.01, 0.02, 0.05, 0.10, 0.25, 0.50, 1.00]   # share of the reference's training compute
 mpl.rcParams.update(S.RC)
 
@@ -224,7 +224,7 @@ def highlights(out_dir: Path, summary, size, safe_size, safe_flops, sizes, proxi
     G.save_highlights(fig, out_dir, f"rq02 in one figure: how early and how small can the {TARGET_SIZE} ranking be read?",
                       f"DA = share of design-variant pairs ordered like the {TARGET_SIZE} final checkpoint; safe = DA ≥ {SAFE_DA} "
                       f"over ≥ {MIN_PAIRS} pairs, held at every larger level; a benchmark's bar counts its (language) cells, number in brackets",
-                      tables)
+                      tables, name="highlights_da_all_multi_axes")
 
 
 def generate_readme(pool: str, r: dict | None) -> None:

@@ -4,8 +4,8 @@ Which (subsets of) benchmarks give a reliable signal at each stage of
 multilingual pretraining? The study extends the Signal-and-Noise framework
 (Heineman et al., 2025) to multilingual models: a benchmark is useful when a
 cheap measurement — a smaller model, an earlier checkpoint, a statistic of the
-proxy alone — makes the decision the reference-size model would make. Eleven
-research questions in five themes, one folder each (rq00 has two, the gate and
+proxy alone — makes the decision the reference-size model would make. Twelve
+research questions in six themes, one folder each (rq00 has two, the gate and
 the task reformulation); `rqNN_*/README.md` is the
 single document of its question (the README rules at the end of
 [RULES.md](RULES.md)), and the outputs live under `<rq>/<stage>/<pool>/`.
@@ -34,12 +34,12 @@ refresh regenerates the auto blocks and moves them.
 | **D. Can the benchmarks be improved?** | [rq08_subset_selection](rq08_subset_selection/README.md) | Can a language, subject or item subset of a benchmark beat the full set's SNR by more than selection alone gives for free? | [gain_over_null](rq08_subset_selection/pretraining/predictivity/gain_over_null.png) |
 | | [rq09_benchmark_design](rq09_benchmark_design/README.md) | Which design features of a benchmark — curation, source, format, option count, item length — go with a high SNR? | [snr_per_family_ranked](rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) |
 | **E. Past the reference** | [rq10_size_generalisation](rq10_size_generalisation/README.md) | Does a ranking that holds at the 1.7B reference still hold one rung above it, at 3B (the only reader of `above_reference=True`; the four 3B L8/L15 cells are evaluated, L30/L50 still training)? | [above_reference_3B](rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png) |
+| **F. The recommendation** | [rq11_evaluation_recipe](rq11_evaluation_recipe/README.md) | Which benchmark, posed how (original, RF, LLM-RF) and scored how (accuracy, bBPB), reads the 1.7B decision from the smallest proxy (DA-size ≥ τ = 0.75, `utils.RELIABLE_DA`)? | [recipe_da_size_ladder_multi_axes](rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_ladder_multi_axes.png) |
 
 **The paper's figures.** `documents/paper/figures/make_rq_figures.py` copies
 them from the analysis, never the reverse: `rq1` ← rq01
 `scaling_regimes_outliers_paper` (appendix `scaling_regimes_by_family_paper`);
-`rq2` ← rq02 `rq2` (`paper_rq2.py`, the three decision accuracies; the
-ten-checkpoint read `rq2_da_goal_ten_checkpoints_multi_axes` sits beside it) and `rq2_da_goal_early_small_mono_axis`
+`rq2` ← rq02 `rq2` (`paper_rq2.py`, the three decision accuracies) and `rq2_da_goal_early_small_mono_axis`
 ← rq05 `early_decision.py`; `rq3` ← rq04 `rq3_surrogates`; `rq4` ← rq05
 `rq4_interventions`; `rq5` ← rq06 `rq5_transfer`. The four report figures
 (`report_figures/make_figures.py`) are the 36-sweep's.
@@ -117,8 +117,7 @@ step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `panels.py`, `regimes.py`, `regimes_survivorship.py`, `scaling_law_error.py`)
 → rq02 (`compute_da.py` per pool and for `predictivity_schemes`,
 `da_per_benchmark.py`, `early_small.py`, `reliable_tasks.py`, `by_L.py`,
-`cross_task.py`, `scale_convergence.py`, `paper_ten_checkpoints.py`,
-`paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
+`cross_task.py`, `scale_convergence.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
 --langs L8 [--common-tasks]`, `by_language.py`, `agreement.py`,
 `seed_uncertainty.py`, `scaling_vs_ranking.py`, `public_ladders.py`,
 `language_tier.py`, `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per

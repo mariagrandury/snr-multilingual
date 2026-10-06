@@ -205,9 +205,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 1.0,
-    "da": 0.539,
+    "da": 0.524,
     "cells": 6,
-    "items": 901,
+    "items": 3248,
     "refs": "1.7B"
    },
    {
@@ -315,9 +315,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.505,
+    "da": 0.491,
     "cells": 6,
-    "items": 1199,
+    "items": 3546,
     "refs": "1.7B"
    },
    {
@@ -425,9 +425,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 1.0,
-    "da": 0.564,
+    "da": 0.581,
     "cells": 6,
-    "items": 985,
+    "items": 3242,
     "refs": "1.7B"
    },
    {
@@ -535,9 +535,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.455,
+    "da": 0.475,
     "cells": 6,
-    "items": 1117,
+    "items": 3464,
     "refs": "1.7B"
    },
    {
@@ -645,9 +645,9 @@
     "population": "benchmark",
     "proxy_size": "90M",
     "frac": 1.0,
-    "da": 0.52,
+    "da": 0.55,
     "cells": 6,
-    "items": 802,
+    "items": 3149,
     "refs": "1.7B"
    },
    {
@@ -2801,9 +2801,9 @@
     "population": "benchmark",
     "proxy_size": "175M",
     "frac": 1.0,
-    "da": 0.504,
+    "da": 0.482,
     "cells": 3,
-    "items": 342,
+    "items": 1277,
     "refs": "1.7B"
    },
    {
@@ -2911,9 +2911,9 @@
     "population": "benchmark",
     "proxy_size": "1B",
     "frac": 1.0,
-    "da": 0.48,
+    "da": 0.516,
     "cells": 3,
-    "items": 456,
+    "items": 1391,
     "refs": "1.7B"
    },
    {
@@ -3021,9 +3021,9 @@
     "population": "benchmark",
     "proxy_size": "350M",
     "frac": 1.0,
-    "da": 0.469,
+    "da": 0.459,
     "cells": 3,
-    "items": 388,
+    "items": 1323,
     "refs": "1.7B"
    },
    {
@@ -3131,9 +3131,9 @@
     "population": "benchmark",
     "proxy_size": "600M",
     "frac": 1.0,
-    "da": 0.445,
+    "da": 0.479,
     "cells": 3,
-    "items": 433,
+    "items": 1368,
     "refs": "1.7B"
    },
    {
@@ -3241,9 +3241,9 @@
     "population": "benchmark",
     "proxy_size": "90M",
     "frac": 1.0,
-    "da": 0.455,
+    "da": 0.457,
     "cells": 3,
-    "items": 304,
+    "items": 1239,
     "refs": "1.7B"
    },
    {

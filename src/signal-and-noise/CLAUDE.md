@@ -80,6 +80,15 @@ so a script never decides by model name.
   SNR variants do not care about. The above-random gate skips them (no chance
   level). `assign_language` maps subsets through `configs/languages.json`
   (`fineweb_iso2`).
+- Each benchmark gets a BPB twin, `bbpb_<task>`: the gold answer's bits per
+  byte at a checkpoint, from `analysis/rq08_subset_selection/bench_bpb.csv`
+  (the per-item store reduced by `build_per_item_store.py --bench-bpb`, the
+  driver's first step; without the cluster-only store it keeps the committed
+  table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
+  original's row, so it is wherever the original is and nowhere else. Its
+  family is `bbpb_<family>`, its language the original's, and it is
+  lower-is-better (`utils.lower_is_better`). Finals only for now: see
+  RULES.md "The benchmark-BPB twins".
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.
@@ -134,7 +143,7 @@ first — rq00 (`above_random.py`, the gate every later step reads; then
 `scaling_law_error.py`, all on `predictivity_all`) → rq02 (`compute_da.py` per
 pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
 `reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
-`paper_ten_checkpoints.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then
+`paper_rq2.py`, the `--axes mono-axis` twins, then
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
 `by_language.py`, `agreement.py`, `seed_uncertainty.py`, `language_tier.py`,
 `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per pool, which reads
@@ -145,10 +154,13 @@ against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
 reference, the only reader of `above_reference=True`; filled since the
-2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → `report_figures/make_figures.py` →
+2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
+(`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's
+per-task table) → `report_figures/make_figures.py` →
 `check_rules.py`.
 Themes: A predictivity (rq00–rq02), B cheap measurements (rq03–rq04), C
-generalisation (rq05–rq07), D benchmark improvement (rq08–rq09);
+generalisation (rq05–rq07), D benchmark improvement (rq08–rq09), E past the
+reference (rq10), F the recommendation (rq11);
 `analysis/paths.py` is the one map from constant to folder. The canonical
 pool (`analysis/autodoc.CANONICAL_POOL = predictivity`) is the one whose README
 generators write; generators no-op on other pools. Outputs:
@@ -528,7 +540,7 @@ Every `above_*` variant keeps the tasks whose DA cleared a cut and then
 plots DA on them; the rise it shows is partly the cut (passers 0.80 against
 0.55 for the rest at 1B). `reliable_tasks.py`'s `late` reduction chooses no
 cell by its value but still selects tasks by it. Quote the unfiltered
-figure (`scale_convergence_da_size_multi_axes.png`, `rq2_da_goal_ten_checkpoints_multi_axes`) beside any filtered
+figure (`scale_convergence_da_size_multi_axes.png`, `early_small_da_goal_multi_axes`) beside any filtered
 one, and never call a filtered figure "free of selection bias".
 ---
 

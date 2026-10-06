@@ -35,6 +35,12 @@ line the regexes cannot read is decoded whole.
     python analysis/rq08_subset_selection/build_per_item_store.py --pool predictivity_seeds --workers 64
     python ... --limit-models 1 --limit-tasks 3          # smoke test, one checkpoint dir per model
     python ... --pool predictivity_schemes --finals-only --families rf_belebele,hellaswag   # bench-BPB DA
+    python ... --bench-bpb            # only (re)write utils.BENCH_BPB from the BBPB_POOL folder of the store
+
+``--bench-bpb`` reduces the store to one bits-per-byte value per (model, step,
+task), the item mean of ``-ll_gold / ln2 / bytes_gold`` (`bench_bpb`), which
+the loader turns into each benchmark's `bbpb_` twin (utils.with_bbpb_twins).
+Without a store it writes nothing, so the committed table stays.
 """
 
 from __future__ import annotations
@@ -59,10 +65,11 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from analysis.paths import SUBSET_SELECTION  # noqa: E402
-from analysis.utils import benchmark_family, ladder_frame, on_noise_grid, on_shared_grid  # noqa: E402
+from analysis.utils import BBPB, BENCH_BPB, benchmark_family, ladder_frame, on_noise_grid, on_shared_grid  # noqa: E402
 from pretrain.ladder_report import EVAL_LOGS  # noqa: E402
 
 STORE = SUBSET_SELECTION / "per_item_store"
+BBPB_POOL = "predictivity_schemes"   # the one store folder bench_bpb.csv is reduced from (others may predate bytes_gold)
 FACET_STRIDE = 10_000        # doc_id offset per subject file of a parent without its own file
 COLS = ["model", "step", "task", "doc_id", "acc", "acc_norm", "ll_gold", "margin", "bytes_gold"]
 _FILE = re.compile(r"^samples_(.+)_(\d{4}-\d{2}-\d{2}T[\d\-.]+)\.jsonl$")
@@ -149,10 +156,30 @@ def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> No
     frames.clear(); manifest.clear()
 
 
+def bench_bpb(parts) -> pd.DataFrame:
+    """Per (model, step, task) of the store `parts`: the item-mean bits per
+    byte of the gold answer (`bbpb`) and the mean gold length (`bytes_gold`);
+    a task with no multiple-choice record (no bytes_gold) has none."""
+    store = pd.concat(pd.read_parquet(d, columns=["model", "step", "task", "ll_gold", "bytes_gold"]) for d in parts)
+    store["bbpb"] = -store["ll_gold"] / np.log(2) / store["bytes_gold"]
+    return store.groupby(["model", "step", "task"], as_index=False)[["bbpb", "bytes_gold"]].mean().dropna(subset=["bbpb"])
+
+
+def write_bench_bpb() -> None:
+    parts = sorted((STORE / BBPB_POOL).glob("*.parquet"))
+    if not parts:
+        print(f"no per-item store at {STORE / BBPB_POOL}: {BENCH_BPB.name} not written (build_per_item_store.sbatch builds it)")
+        return
+    t = bench_bpb(parts)[["model", "step", "task", "bbpb"]]
+    t.sort_values(["model", "step", "task"]).to_csv(BENCH_BPB, index=False)
+    print(f"wrote {BENCH_BPB}: {len(t)} (model, step, task), {t['model'].nunique()} models, {t['task'].nunique()} tasks")
+
+
 def main(pool: str, workers: int, limit_models: int, limit_tasks: int, flush_every: int,
          finals_only: bool, families: list[str]) -> None:
     df = ladder_frame(pool)
-    df = df[(df["kind"] == "benchmark") & (on_shared_grid(df) | on_noise_grid(df))]
+    df = df[(df["kind"] == "benchmark") & ~df["task"].str.startswith(BBPB)        # a bbpb_ twin has no samples of its own
+            & (on_shared_grid(df) | on_noise_grid(df))]
     out_dir = STORE / pool
     if families:
         df = df[df["task"].map(benchmark_family).isin(families)]
@@ -191,5 +218,9 @@ if __name__ == "__main__":
     ap.add_argument("--finals-only", action="store_true", help="only each model's last checkpoint")
     ap.add_argument("--families", type=lambda s: s.split(","), default=[],
                     help="comma-separated benchmark families (benchmark_family) to extract")
+    ap.add_argument("--bench-bpb", action="store_true", help="only write the bbpb table from the store, extract nothing")
     a = ap.parse_args()
-    main(a.pool, a.workers, a.limit_models, a.limit_tasks, a.flush_every, a.finals_only, a.families)
+    if a.bench_bpb:
+        write_bench_bpb()
+    else:
+        main(a.pool, a.workers, a.limit_models, a.limit_tasks, a.flush_every, a.finals_only, a.families)

@@ -44,6 +44,7 @@ from snr.download.apertus import (  # noqa: E402
     load_reference_hf_eval_results,
 )
 from snr.download.ladder import load_predictivity_eval_results  # noqa: E402
+from analysis.paths import SUBSET_SELECTION  # noqa: E402
 
 # --- size params (single source of truth: configs/models.json) --------------
 _SNR = load_snr_params()
@@ -107,10 +108,47 @@ _TRAILING_OK = {
 }
 
 
+# A benchmark's BPB twin: `bbpb_<task>` is the item-mean bits per byte of the
+# gold answer of <task> (build_per_item_store.bench_bpb), a third member of the
+# family beside the original and its `rf_` twins. Not `bpb_`: that prefix is
+# the per-language BPB of the validation sets.
+BBPB = "bbpb_"
+BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb
+
+
+# A benchmark task is one evaluation VARIANT of a benchmark: a `format` (how
+# the items are posed: the original, its `rf_` cloze rewrite, its `rfgm_`
+# LLM rewrite) and a `scoring` (how an answer becomes a number: accuracy, or
+# the gold answer's bits per byte). The loader writes both as columns, so a
+# table splits by variant with one groupby instead of parsing names.
+FORMATS = ("original", "rf", "rfgm")
+SCORINGS = ("acc", "bbpb")
+# tau: a decision accuracy at or above it "reads like the reference" (rq02's
+# safe sizes, rq05's lines, rq11's recommendation). One constant, so a figure,
+# a table and a README sentence that quote it cannot drift apart.
+RELIABLE_DA = 0.75
+
+
+def variant(task: str) -> tuple[str, str]:
+    """(format, scoring) of a benchmark task: `bbpb_rf_belebele_spa_Latn` ->
+    ("rf", "bbpb"), `include_base_44_es` -> ("original", "acc")."""
+    scoring = "bbpb" if task.startswith(BBPB) else "acc"
+    t = task[len(BBPB):] if scoring == "bbpb" else task
+    return ("rfgm" if t.startswith("rfgm_") else "rf" if t.startswith("rf_") else "original"), scoring
+
+
+def lower_is_better(task: str) -> bool:
+    """Bits per byte (per-language, `bpb_*`, and a benchmark's, `bbpb_*`) and
+    the training loss: the scores where a smaller value is the better model."""
+    return task.startswith(("bpb_", BBPB)) or task == "train_loss"
+
+
 def assign_language(task: str) -> str:
     """Project language tag of a task: ``multi`` for cross-language
     aggregates (`bpb_macro`, `train_loss`, `include_base_44`), ``??`` when
-    unresolved."""
+    unresolved; a BBPB twin has its original's."""
+    if task.startswith(BBPB):
+        return assign_language(task[len(BBPB):])
     if task in ("bpb_macro", "train_loss"):
         return "multi"
     if task.startswith("bpb_"):
@@ -132,8 +170,11 @@ def benchmark_family(task: str) -> str:
     ``arc_challenge`` / ``arc_easy`` collapse to ``arc``; English
     ``truthfulqa_mc1`` is left alone so it doesn't collapse with the
     multilingual ``truthfulqa_<lang>_mc1`` variants. Per-language BPB tasks
-    form the ``bpb`` family, the training loss the ``loss`` family.
+    form the ``bpb`` family, the training loss the ``loss`` family; a BBPB
+    twin the ``bbpb_<family>`` one, as an ``rf_`` twin's is ``rf_<family>``.
     """
+    if task.startswith(BBPB):
+        return BBPB + benchmark_family(task[len(BBPB):])
     if task == "train_loss":
         return "loss"
     if task.startswith("bpb_"):
@@ -178,6 +219,8 @@ def _is_parent_task(task: str) -> bool:
     evaluation, dropping the per-(lang, subject) facets. English standalone
     tasks (``_ENGLISH_ONLY_TASKS``) plus multilingual per-language aggregates.
     """
+    if task.startswith(BBPB):
+        return _is_parent_task(task[len(BBPB):])
     if task in _ENGLISH_ONLY_TASKS or task.startswith("bpb_") or task == "train_loss":
         return True
     return _is_language_aggregate(task, benchmark_family(task))
@@ -260,7 +303,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
             df = parents_only(df)
         if not untrained:
             df = trained_only(df)
-        return df
+        return with_variant_columns(with_bbpb_twins(df))
 
     members = set(expand_pool(pool))
     df_a = load_apertus_eval_results()
@@ -676,6 +719,28 @@ def trained_only(df: pd.DataFrame) -> pd.DataFrame:
     transfer, which is rq06's question and no other's."""
     keep = [is_trained(t, L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]
     return df[np.asarray(keep, dtype=bool)]
+
+
+def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
+    """`df` plus a `bbpb_<task>` row for every benchmark row the BBPB table
+    (`BENCH_BPB`, written from the per-item store) has a value for: a copy of
+    the row with the gold-answer bits per byte as its score. A copy, so the
+    twin carries the row's model, size, step and design columns and inherits
+    every rule the row already passed (the frame is filtered before this)."""
+    if not BENCH_BPB.is_file():
+        return df
+    t = pd.read_csv(BENCH_BPB)
+    twin = df[df["kind"] == "benchmark"].merge(t, on=["model", "step", "task"])
+    twin = twin.assign(task=BBPB + twin["task"], primary_score=twin["bbpb"]).drop(columns="bbpb")
+    return pd.concat([df, twin], ignore_index=True)
+
+
+def with_variant_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """`format` and `scoring` on every benchmark row (`variant`); empty on the
+    per-language BPB and the loss, which are not benchmark variants."""
+    v = {t: variant(t) for t in df.loc[df["kind"] == "benchmark", "task"].unique()}
+    return df.assign(format=df["task"].map(lambda t: v.get(t, (None, None))[0]),
+                     scoring=df["task"].map(lambda t: v.get(t, (None, None))[1]))
 
 
 def finals(df: pd.DataFrame) -> pd.DataFrame:

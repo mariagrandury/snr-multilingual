@@ -10,8 +10,8 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.66** (**+1.50**) with `multiblimp_deu|multiblimp_eng|multiblimp_rus|multiblimp_fra`.
 - **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **2.57 → 3.97** (**+1.40**) with `arc_challenge`.
+- **`multiblimp` 350M (per_benchmark)** — a subset beats the full set: SNR **3.08 → 4.38** (**+1.30**) with `multiblimp_deu|multiblimp_rus|multiblimp_eng|multiblimp_fra`.
 - **`rf_belebele` 350M (per_benchmark)** — a subset beats the full set: SNR **3.16 → 4.41** (**+1.25**) with `rf_belebele_zho_Hans`.
 - **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.32 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
 - **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **60 of 124** swept cells beat the null's 95th percentile: `multiblimp` 350M, `rf_belebele` 350M, `global_mmlu_full` 600M, `include_v2_en` 90M, `global_mmlu_full_sr` 350M.
@@ -75,8 +75,8 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `multiblimp` | 350M | 3.16 → 4.66 | +1.50 | 3.61 | `multiblimp_deu` \| `multiblimp_eng` \| `multiblimp_rus` \| `multiblimp_fra` |
 | per_benchmark | `arc` | 1B | 2.57 → 3.97 | +1.40 | 3.97 | `arc_challenge` |
+| per_benchmark | `multiblimp` | 350M | 3.08 → 4.38 | +1.30 | 3.62 | `multiblimp_deu` \| `multiblimp_rus` \| `multiblimp_eng` \| `multiblimp_fra` |
 | per_benchmark | `rf_belebele` | 350M | 3.16 → 4.41 | +1.25 | 3.81 | `rf_belebele_zho_Hans` |
 | global_mmlu_full_subjects | `global_mmlu_full` | 600M | 2.14 → 3.33 | +1.18 | 3.22 | `human_aging` |
 | per_benchmark | `include_v2_en` | 90M | 2.87 → 3.89 | +1.01 | 3.63 | `include_v2_en_japanese_japan` \| `include_v2_en_korean_korea` \| `include_v2_en_arabic_morocco` \| `include_v2_en_french_france` \| `… (+5)` |
@@ -109,6 +109,22 @@ Every swept cell in one grid (`predictivity` pool). Regenerate with `python anal
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
 GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
+
+<!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity_schemes) -->
+## Items the reference solves
+
+DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (grid seed), gate `predictivity` at the proxy and the reference, 460 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes`.
+
+| proxy | tasks | solved share | DA all (held out) | DA solved (held out) | Δ | Wilcoxon p | DA solved (in sample) | ρ(SNR, DA) all | ρ(SNR, DA) solved |
+|---|---|---|---|---|---|---|---|---|---|
+| 90M | 235 | 0.40 | 0.54 | 0.57 | +0.034 | 0.000 | 0.57 | 0.27 | 0.36 |
+| 175M | 269 | 0.40 | 0.54 | 0.57 | +0.024 | 0.001 | 0.58 | 0.31 | 0.40 |
+| 350M | 298 | 0.40 | 0.53 | 0.56 | +0.026 | 0.000 | 0.57 | 0.32 | 0.39 |
+| 600M | 332 | 0.40 | 0.55 | 0.57 | +0.021 | 0.000 | 0.58 | 0.39 | 0.47 |
+| 1B | 360 | 0.39 | 0.57 | 0.57 | +0.003 | 0.818 | 0.57 | 0.40 | 0.45 |
+
+![Items the reference solves](pretraining/predictivity_schemes/reference_solved_da_size_multi_axes.png)
+<!-- END auto:reference-solved -->
 
 ## TODO
 

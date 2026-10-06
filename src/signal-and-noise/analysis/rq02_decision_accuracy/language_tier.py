@@ -236,7 +236,13 @@ if __name__ == "__main__":
           .reindex(columns=[s for s in sizes if s != TARGET_SIZE]).round(3).to_string())
 
     # per language, unfiltered, against the share of the L50 mixture
-    share = language_token_share(50, "A") or {}
+    share = language_token_share(50, "A")
+    if share is None:
+        # the shares come from the build plans on capstor: off the cluster there is no
+        # per-language table to write, and an empty one would replace the committed one
+        print("!!! the L50 build plan is unreachable: the per-language share table, its figure and the README block "
+              "are kept from the last run that could read it")
+        sys.exit(0)
     rows = []
     for lang in sorted(lang_of.unique()):
         c = cells_all[cells_all["task"].map(lang_of) == lang]

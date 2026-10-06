@@ -57,6 +57,42 @@ keeps 0 of 37 Global-MMLU tasks and 11 of 105 belebele tasks, against 35 and
 twins and 33 of the Gemini-rewritten ones. Before the twins entered the pool
 those families contributed almost nothing to any RQ.
 
+## The benchmark-BPB twins are in the populations too
+
+Since 2026-10-04 every benchmark task with a gold-answer log-likelihood has a
+third member, `bbpb_<task>`: the item-mean bits per byte of the gold answer
+(Heineman et al. 2025's `correct_bpb`), read from the lm-eval samples by the
+rq08 per-item store (`build_per_item_store.py --bench-bpb` writes
+`rq08_subset_selection/bench_bpb.csv`) and added by the loader
+(`utils.with_bbpb_twins`) as a copy of the original's row. So it inherits that
+row's rules 2, 6 and 10, reads as `belebele-bbpb` (paper: "Belebele bBPB"), and
+an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told:
+
+- **Lower is better.** Every score oriented by direction goes through
+  `utils.lower_is_better` (per-language BPB, the benchmark BPB, the loss);
+  DA and the dispersion SNRs do not care.
+- **No chance level, so no gate.** Like per-language BPB, the twin has a mask
+  of NA and passes rule 1 everywhere, including where its original is at chance.
+- **The store holds finals only.** It was built with `--finals-only` on
+  `predictivity_schemes` (seed 1904), so a twin exists at each cell's final
+  checkpoint and nowhere else: it enters DA-size and every final-checkpoint
+  read, and is empty in DA-ckpt, DA-goal before 100 %, the checkpoint noise
+  and the seed replicates until the store is rebuilt over every checkpoint.
+- **Same items again.** Like an `rf_` twin it is not an independent task
+  (rule 8's caveat above); the twin cluster of rq04 holds the original, its
+  `rf_` twins and all their `bbpb_` twins (`grids.base`).
+- `reformulations_gate.py` leaves it out: its question is the accuracy
+  formulations, and the twin would count as an "original".
+- **Every benchmark row carries its variant.** The loader writes `format`
+  (original / rf / rfgm) and `scoring` (acc / bbpb) on every benchmark row
+  (`utils.variant`, `utils.with_variant_columns`), so a table splits by variant
+  with a groupby. A pooled "all benchmarks" number pools every variant;
+  rq11 (`rq11_evaluation_recipe`) gives every finding per variant and pooled,
+  and the head-to-head on the paired cells.
+- **One reliability cut, τ = 0.75** (`utils.RELIABLE_DA`): rq02's safe sizes
+  and rq11's recommendation read it from there, and every figure, table and
+  README block that uses it states it.
+
 ## The probe candidates are not in the populations
 
 `groups.auto_probe` (2026-09-23) holds benchmarks being screened — BBH and

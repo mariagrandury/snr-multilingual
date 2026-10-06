@@ -71,6 +71,12 @@ fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ];
 CURVES=${CURVES:-0}
 GRIDS=(--no-grids); [ "$CURVES" = 1 ] && GRIDS=()
 
+pass "the benchmark BPB twins"
+# every loader adds a `bbpb_<task>` row beside a benchmark row the table has a
+# value for (utils.with_bbpb_twins), so it is (re)written before anything loads;
+# without the cluster-only per-item store it writes nothing and the committed table stays
+run $PY analysis/rq08_subset_selection/build_per_item_store.py --bench-bpb
+
 pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.
@@ -147,8 +153,6 @@ run $PY analysis/rq02_decision_accuracy/cross_task.py --pool predictivity
 # reference, by language count and by design axis (+ their above_80 variants);
 # `--by transformation` also writes the one-panel-per-axis twin (`_transformation_panels`)
 run $PY analysis/rq02_decision_accuracy/scale_convergence.py --pool predictivity
-# DA at all ten evaluated checkpoints (rq02's own table stops at da_early_fracs)
-run $PY analysis/rq02_decision_accuracy/paper_ten_checkpoints.py
 # the paper's RQ2 figure: composes the three panels from the CSVs above, so it
 # runs LAST of the rq02 block — it derives nothing of its own
 run $PY analysis/rq02_decision_accuracy/paper_rq2.py --pool predictivity
@@ -245,6 +249,8 @@ run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 # per-item view: reads the per-item store; the store is built by the sbatch
 # (analysis/rq08_subset_selection/build_per_item_store.sbatch), not here
 run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
+# the items the 1.7B runs solve, chosen on half the designs, DA and SNR read on the rest (store finals; nothing without it)
+run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do
@@ -262,6 +268,11 @@ run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # the prior question to the ranking one: which benchmarks the 3B rung lifts above
 # chance that the reference cannot resolve at all (both gate columns on the 3B families)
 run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
+
+pass "rq11 — the evaluation recipe"
+# which benchmark, posed how (original, rf, rfgm) and scored how (accuracy, bBPB), reads the reference
+# from the smallest proxy: reads rq02's per-task early-small table, so it runs after rq02 (tau = utils.RELIABLE_DA)
+run $PY analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
 
 pass "report figures and the rules check"
 run $PY analysis/report_figures/make_figures.py

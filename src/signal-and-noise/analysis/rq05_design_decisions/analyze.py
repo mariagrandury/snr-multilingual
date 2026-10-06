@@ -65,7 +65,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, TARGET_SIZE, at_fraction, finals, ladder_frame, passes_gate, size_order, trained_bpb_tasks)
+    GRID_SEED, TARGET_SIZE, at_fraction, finals, ladder_frame, lower_is_better, passes_gate, size_order, trained_bpb_tasks)
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_all"        # every cell: all seeds and schemes
@@ -214,8 +214,8 @@ def intervention_da(df: pd.DataFrame, fracs: list = FRACS, mask: pd.DataFrame | 
                                if len(dec) >= min_items else np.nan}
                         if f == 1.0:
                             # the first level wins an item when its score is
-                            # higher on a benchmark, lower on BPB
-                            first = (d_ref.loc[items] > 0) if pop == "benchmark" else (d_ref.loc[items] < 0)
+                            # higher on a benchmark, lower on any BPB or the loss
+                            first = pd.Series(np.where(items.map(lower_is_better), d_ref.loc[items] < 0, d_ref.loc[items] > 0))
                             row.update({"mean_abs_delta_proxy": float(d_proxy.abs().mean()),
                                         "mean_abs_delta_ref": float(d_ref.loc[items].abs().mean()),
                                         "reference_prefers": levels[0] if first.mean() > 0.5 else levels[1]})

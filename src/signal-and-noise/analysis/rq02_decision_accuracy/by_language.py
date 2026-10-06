@@ -265,6 +265,11 @@ if __name__ == "__main__":
                    help="the pair set (rule 15); under mono-axis the regimes have no line below 1B (rule 5)")
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if language_token_share(8, "A") is None:
+        # every panel has a tokens twin and the README's collapse test reads both: without
+        # the build plans (capstor) half of each output would be NaN over the committed one
+        print("!!! the build plans are unreachable: no per-language tokens, nothing written (run this on the cluster)")
+        sys.exit(0)
     df = ladder_frame(POOL)
     fin = finals(df)
     attrs = design_axes(df)
