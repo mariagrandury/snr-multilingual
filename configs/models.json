@@ -19669,67 +19669,46 @@
       ]
     },
     "predictivity": {
-      "description": "The predictivity ladder as planned: one run per (size, L, ladder, scheme), seed 1904. The deep, shallow and swiglu ladders and scheme A/B are the intervention levels; seeds are noise, not signal (see rq06).",
+      "description": "The grid seed: seed 1904, every cell of every design (every ladder: deep, shallow, swiglu; every data build: A, AT3, B, ZH, ES, DCLMP, FWEB). The headline SNR and DA pool (the rq00 gate, rq02-rq04, rq07-rq09), and the one the above-random gate is computed on; every other pool is gated with its mask. The builds are not filtered because L1, L2 and T=3 have too few pairs without AT3/ZH/ES/DCLMP/FWEB (rule 5). The only filter is the seed, so a newly trained cell enters as soon as it completes (analysis/RULES.md, Definitions).",
       "stage": "pretraining",
       "members": [
         {
           "source": "snr-pretraining-predictivity",
           "seeds": [
             1904
-          ],
-          "scheme": [
-            "A",
-            "B"
           ]
         }
       ],
       "include_external": false
     },
     "predictivity_seeds": {
-      "description": "Every trained predictivity cell, all seeds (seed replicates at 175M/600M for L in {1,2,50,100} and the 1B x3 row). Seed replicates enter the signal pool as separate models, so use it for seed-noise estimates (rq06), not as the headline pool.",
+      "description": "Every seed, every cell: the grid seed plus the replicate seeds (64/313 at the 175M/600M x3 cells, 28/1797 at the 1B x3 cells). Replicates enter the signal pool as separate models, so this is the pool of the seed-noise columns (rq03, rq05) and of the reads that take every run (rq01, rq06, rq10), not a headline SNR pool. No filter at all.",
       "stage": "pretraining",
       "members": [
         {
-          "source": "snr-pretraining-predictivity",
-          "scheme": [
-            "A",
-            "B"
-          ]
+          "source": "snr-pretraining-predictivity"
         }
       ],
       "include_external": false
     },
     "predictivity_seeds_train": {
-      "description": "Seed holdout, train split: the replicate seeds (64, 313) at the x3 cells (175M/600M, L in {1,2,50}). Deep scheme-A cells only: the replicate seeds exist nowhere else.",
+      "description": "Seed holdout, train split: every replicate seed (64, 313, 28, 1797). A seed filter only, so a replicate trained anywhere joins it and predictivity_seeds_test follows.",
       "stage": "pretraining",
       "members": [
         {
           "source": "snr-pretraining-predictivity",
           "seeds": [
             64,
-            313
-          ],
-          "sizes": [
-            "175M",
-            "600M"
-          ],
-          "L": [
-            1,
-            2,
-            50
-          ],
-          "scheme": [
-            "A"
-          ],
-          "arch": [
-            "deep"
+            313,
+            28,
+            1797
           ]
         }
       ],
       "include_external": false
     },
     "predictivity_seeds_test": {
-      "description": "Seed holdout, test split: seed 1904 on the same x3 cells as predictivity_seeds_train. Deep scheme-A cells only: the replicate seeds exist nowhere else.",
+      "description": "Seed holdout, test split: seed 1904 on exactly the cells (size, L, ladder, data build) that have a replicate in predictivity_seeds_train, the matched holdout. Derived from the train pool (`cells_of`, analysis/utils.py), never a hand-listed size/L/arch filter.",
       "stage": "pretraining",
       "members": [
         {
@@ -19737,44 +19716,7 @@
           "seeds": [
             1904
           ],
-          "sizes": [
-            "175M",
-            "600M"
-          ],
-          "L": [
-            1,
-            2,
-            50
-          ],
-          "scheme": [
-            "A"
-          ],
-          "arch": [
-            "deep"
-          ]
-        }
-      ],
-      "include_external": false
-    },
-    "predictivity_schemes": {
-      "description": "Every data-scheme cell including the AT3 (T=3), ES and ZH diagnostics, seed 1904. Use to analyse the scheme axis itself; the headline `predictivity` pool holds only the planned A/B levels so its signal is not widened by a different intervention.",
-      "stage": "pretraining",
-      "members": [
-        {
-          "source": "snr-pretraining-predictivity",
-          "seeds": [
-            1904
-          ]
-        }
-      ],
-      "include_external": false
-    },
-    "predictivity_all": {
-      "description": "Every trained predictivity cell: all seeds and all seven data schemes (A, B, AT3, ZH, ES, DCLMP, FWEB), every ladder. The pool of rq06-rq08 and rq10, which read one intervention at a time against its own baseline and need the seed replicates for the noise columns; not a headline SNR pool, its signal would mix every intervention at once. NOTE: this pool has no scheme filter, so a newly registered scheme enters it as soon as its cells train.",
-      "stage": "pretraining",
-      "members": [
-        {
-          "source": "snr-pretraining-predictivity"
+          "cells_of": "predictivity_seeds_train"
         }
       ],
       "include_external": false

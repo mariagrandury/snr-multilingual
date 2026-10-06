@@ -20,15 +20,15 @@
 
 ## Setup
 
-Pool `predictivity_all` (every seed and scheme; the fits use the deep,
-scheme-A, seed-1904 cells), sizes 90M–1.7B, the rq00 gate per (task, size)
+Pool `predictivity_seeds` (every seed and data build; the fits use the deep,
+data-A, seed-1904 cells), sizes 90M–1.7B, the rq00 gate per (task, size)
 (`predictivity` mask), trained languages and parent tasks only; no design
 pairs are involved, so no pair set. Hand-written numbers are from the
 ladder-report snapshot **2026-09-30 23:54**.
 
 ## Experimental setup
 
-The fits read the plan grid — deep, scheme A, seed 1904 — at each cell's
+The fits read the plan grid — deep, data A, seed 1904 — at each cell's
 final checkpoint, from 90M up (each rung at its own batch since the
 2026-09-23 retrain; the diverged batch-504 90M/175M runs are dropped at load,
 [`plan/90M-rung-anomaly.md`](../../../../plan/90M-rung-anomaly.md)); the
@@ -70,7 +70,7 @@ seed-1904 cell of every (L, arch, scheme) the pool holds.
 
 ### 1. Scaling regimes: the paper figure
 
-*`predictivity_all`, deep scheme-A seed-1904 cells, gated log-N fits
+*`predictivity_seeds`, deep data-A seed-1904 cells, gated log-N fits
 (`rq1_fits.csv`) and trajectory fits over each run's saved checkpoints; one
 point per task with a median over ≥ 2 language settings.* The paper's RQ1
 figure is `scaling_regimes_outliers_paper` (copied by
@@ -133,12 +133,12 @@ Named variants of the same points: `scaling_regimes_families.png` (one label per
   those families have no point at all and their twins fit at R² 0.91–0.95.
   The paragraph and the caption need the population statement of figure 2.
 
-GitHub: [scaling_regimes_outliers_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.png) · [scaling_regimes_outliers_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.csv) ·
-GitHub: [scaling_regimes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes.png) · [scaling_regimes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes.csv) ·
-GitHub: [scaling_regimes_outliers.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers.png) · [scaling_regimes_outliers.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers.csv) ·
-GitHub: [scaling_regimes_families.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_families.png) · [scaling_regimes_families.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_families.csv) ·
-GitHub: [scaling_regimes_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family.png) · [scaling_regimes_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family.csv) ·
-GitHub: [scaling_regimes_by_family_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family_paper.png) · [scaling_regimes_by_family_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family_paper.csv)
+GitHub: [scaling_regimes_outliers_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png) · [scaling_regimes_outliers_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.csv) ·
+GitHub: [scaling_regimes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes.png) · [scaling_regimes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes.csv) ·
+GitHub: [scaling_regimes_outliers.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers.png) · [scaling_regimes_outliers.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers.csv) ·
+GitHub: [scaling_regimes_families.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_families.png) · [scaling_regimes_families.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_families.csv) ·
+GitHub: [scaling_regimes_by_family.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_by_family.png) · [scaling_regimes_by_family.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_by_family.csv) ·
+GitHub: [scaling_regimes_by_family_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_by_family_paper.png) · [scaling_regimes_by_family_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_by_family_paper.csv)
 
 ### 2. Survivorship: what the gate and the fit minimum removed
 
@@ -147,7 +147,7 @@ draws against the two ways a task loses its point.* It exists because
 figure 1 shows the 346 tasks that have a regime and not the 550 of 896 that
 do not.
 
-![Survivorship](pretraining/predictivity_all/scaling_regimes_survivorship.png)
+![Survivorship](pretraining/predictivity_seeds/scaling_regimes_survivorship.png)
 
 *`regimes_survivorship.py` reads `scaling_regimes.csv` and `rq1_fits.csv`:
 (a) per family, the tasks in the figure against those at chance at every
@@ -176,11 +176,11 @@ in every label. It does not replace `regimes.py`, whose table it reads.*
 - Make the population statement part of the paper figure's caption
   (`plan/decision_accuracy.md` §5 has the recommendation).
 
-GitHub: [scaling_regimes_survivorship.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_survivorship.png) · [scaling_regimes_survivorship.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_survivorship.csv)
+GitHub: [scaling_regimes_survivorship.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_survivorship.png) · [scaling_regimes_survivorship.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_survivorship.csv)
 
 ### 3. Scaling-law error: predicting the 1.7B BPB from below
 
-*`predictivity_all`, deep scheme-A seed-1904 cells, per-language BPB
+*`predictivity_seeds`, deep data-A seed-1904 cells, per-language BPB
 (ungated: no chance level), a power law fitted on the proxy rungs up to a
 ladder top and evaluated at the 1.7B reference (rule 11: the reference never
 enters the fit).* The leave-top-out error is the prediction test figure 1's
@@ -211,7 +211,7 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader 
 
 **Key findings**
 
-- The 1.7B BPB is over-predicted from every ladder top (deep, scheme A,
+- The 1.7B BPB is over-predicted from every ladder top (deep, data A,
   318 fits): median absolute relative error 7.7 % with three rungs
   (90M–350M), 4.4 % with four (to 600M) and 2.3 % with five (to 1B), and
   every fit under-predicts the improvement (the signed error is positive in
@@ -230,7 +230,7 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader 
   is the same fit with the exponent pooled over languages; the two tables
   should quote each other's error at k = 4 rungs.
 
-GitHub: [scaling_law_error.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_law_error.png) · [scaling_law_error.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_law_error.csv)
+GitHub: [scaling_law_error.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_law_error.png) · [scaling_law_error.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_law_error.csv)
 
 ### 4. The fits per family and per language
 
@@ -348,22 +348,22 @@ The family medians above, without the aggregation (`predictivity_all` pool). Reg
   (`grids.mark_gated`) so the per-family grid carries the same population
   statement as figure 2.
 
-GitHub: [rq1_scaling.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/rq1_scaling.png) · [rq1_scaling.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/rq1_scaling.csv) ·
-GitHub: [scaling_fit.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_fit.png) · [scaling_fit.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_fit.csv) ·
-GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/highlights.csv) ·
-GitHub: [fit_r2_median.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/fit_r2_median.png) · [fit_r2_median.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/fit_r2_median.csv) ·
-[fit_r2_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/fit_r2_by_benchmark.png) ·
-[fit_r2_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/fit_r2_by_language.png) ·
-[fit_r2.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/fit_r2.csv) ·
-[rq1_fits.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/rq1_fits.csv) ·
-[rq1_families.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/rq1_families.csv)
+GitHub: [rq1_scaling.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_scaling.png) · [rq1_scaling.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_scaling.csv) ·
+GitHub: [scaling_fit.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.png) · [scaling_fit.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.csv) ·
+GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/highlights.csv) ·
+GitHub: [fit_r2_median.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2_median.png) · [fit_r2_median.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2_median.csv) ·
+[fit_r2_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2_by_benchmark.png) ·
+[fit_r2_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2_by_language.png) ·
+[fit_r2.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2.csv) ·
+[rq1_fits.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_fits.csv) ·
+[rq1_families.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_families.csv)
 
 ### 5. Scaling cleanly and ranking like the reference are different properties
 
 *Per task: figure 1's ρ (score with model size along the ladder, `rho_size`)
 against rq02's ρ (the proxy's ranking of the design variants with the 1.7B
 ranking, `agreement_da_size_per_cell_multi_axes.csv`; DA-size, multi-axis pairs from
-`predictivity_schemes` at seed 1904, gate `predictivity`). The script and its
+`predictivity` at seed 1904, gate `predictivity`). The script and its
 outputs live in rq02's folder
 (`../rq02_decision_accuracy/scaling_vs_ranking.py`; auto block in
 [rq02's README](../rq02_decision_accuracy/README.md#12-read-next-in-the-other-rqs)).*
@@ -400,7 +400,7 @@ GitHub: [scaling_vs_ranking_da_size_multi_axes.png](https://github.com/mariagran
 
 ## Extensions from other sweeps
 
-None. rq01 exists on the ladder only (`predictivity_all`, `predictivity_seeds`):
+None. rq01 exists on the ladder only (`predictivity_seeds`):
 the 36-model sweep had three data mixtures at four sizes with no language-count
 axis and no per-language BPB, so no fit of this kind was ever made on it, and
 its numbers would not be pooled with the ladder's in any case (a different

@@ -1,7 +1,8 @@
 # Decision accuracy: definitions, pairs, pools, and the RQ0–RQ2 figures
 
 *2026-09-22. Status: **§7 steps 1, 2 and the rq02 half of 5 are implemented**
-(see §9 for what landed and what the new tables say); steps 3 and 4 are not.
+(see §9 for what landed and what the new tables say); step 3 landed on
+2026-10-05 as four pools with the scheme axis (§9, last entry); step 4 is not.
 Everything below §1 was written against the tables of 2026-09-21 and its
 §5–§6 numbers are superseded — see §9. The two exploratory figures it
 introduces are written by `analysis/rq02_decision_accuracy/pair_axes.py` and
@@ -536,3 +537,45 @@ Three things changed against §6, and two of them change a claim:
 2. Rewrite §5 and §6 from the regenerated tables; the three claims above are
    the ones that moved.
 3. Decide #1 (mono-axis as the headline), #3 (pools) and #4 (`rq2.*`).
+
+### 2026-10-05 — decision 4 landed: four pools and the scheme axis
+
+**Pools.** Decision 4 ("collapse the pools to grid and all") is implemented as
+four pools, every one gated with `predictivity`'s rq00 mask
+(`analysis/RULES.md`, Definitions):
+
+| pool | filter | was |
+|---|---|---|
+| `predictivity` | seed 1904, every ladder and data build | `predictivity_schemes` (the "grid" of §3.3) |
+| `predictivity_seeds` | none | `predictivity_all` (the "all" of §3.3) |
+| `predictivity_seeds_train` | the replicate seeds 64, 313, 28, 1797 | seeds 64/313 at six hand-listed cells |
+| `predictivity_seeds_test` | seed 1904 on exactly the train split's cells (`cells_of`, resolved in `utils.build_snr_pool`) | seed 1904 at the same six hand-listed cells |
+
+`predictivity_schemes` and `predictivity_all` are gone from `models.json`;
+every reader, the driver (the extra `compute_da --pool predictivity_schemes`
+step is dropped, `reliable_tasks`'s DA pool is `predictivity`) and the
+document readers point at the new names, and outputs follow the pool. The old
+folders are not moved: the refresh lists them as orphans (`RETIRED_POOLS` in
+`scripts/refresh_analysis.sh`, rule 17). On the 2026-10-05 report: 156 models
+(26 families) in `predictivity`, 176 (40) in `predictivity_seeds`, 20 in the
+train split and 10 in the test split (the 1B ×3 cells now join the holdout).
+The A/B restriction of §3.3's `HEADLINE_SCHEMES` was not reintroduced: without
+AT3/ZH/ES/DCLMP/FWEB, L1, L2 and T = 3 do not reach `MIN_PAIRS`.
+
+**Scheme axis.** The build label (A, AT3, B, ZH, ES, DCLMP, FWEB) is no longer
+read as design levels through `list`/`T`/`lang2`/`en`; each build carries a
+`letter` in `DATA_SCHEMES` and the loader's frame has `data` (the build),
+`scheme` (A/B/C, the recipe at that L) and `T`. A, AT3 → scheme A at T 1, 3;
+B, ZH, DCLMP → B; ES, FWEB → C. `DESIGN_AXES` = L, arch, activation, optimizer,
+scheme, T, seed, and `utils.moved_axes` counts a cross-L pair as moving the
+scheme when it reads two builds at one T (B at L1 is not B at L8). The
+multi-axis, mono-axis and seed pair sets are identical as sets to the old
+decomposition's on every pool; only the per-axis grouping changed — at the
+grid seed list 6 + second language 3 + English corpus 3 → data scheme 12
+(language count 39, depth 10, temperature 4 unchanged; 65 mono-axis of 325
+pairs). rq05's interventions are depth, scheme A vs B, scheme A vs C (per L)
+and temperature; the zh/es-only ones are dropped. A figure or table that
+averages a decision over L reads a scheme decision per build
+(`rq05 analyze.by_recipe`: A vs B, ZH, DCLMP; A vs ES, FWEB), and the
+early-decision heat map and rq06's transfer lines keep the planned list
+decision (A vs B at L8–L30).

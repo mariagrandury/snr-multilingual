@@ -24,12 +24,12 @@ refresh regenerates the auto blocks and moves them.
 |---|---|---|---|
 | **A. Is the evaluation predictable?** | [rq00_gate_and_curves](rq00_gate_and_curves/README.md) | Which benchmark-language tasks are above chance at each size, and is what the ladder cannot read a size floor or a benchmark floor? | [first_size_above_random](rq00_gate_and_curves/pretraining/predictivity/first_size_above_random.png) |
 | | [rq00_task_reformulation](rq00_task_reformulation/README.md) | Do the letter-format families clear chance once scored on their answer strings (`rf_`) or on Gemini-rewritten items (`rfgm_`), and does that change any headline reading? | [reformulations_gate](rq00_task_reformulation/reformulations_gate.png) |
-| | [rq01_scaling_predictability](rq01_scaling_predictability/README.md) | Which tasks move with model size in a way a log-linear fit captures, and how well does a fit on the proxy rungs predict the reference? | [scaling_regimes_outliers_paper](rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.png) |
+| | [rq01_scaling_predictability](rq01_scaling_predictability/README.md) | Which tasks move with model size in a way a log-linear fit captures, and how well does a fit on the proxy rungs predict the reference? | [scaling_regimes_outliers_paper](rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png) |
 | | [rq02_decision_accuracy](rq02_decision_accuracy/README.md) | Does a benchmark rank the ladder's design variants at a smaller size, or at an earlier checkpoint, the way the 1.7B reference does? | [scale_convergence](rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_multi_axes.png) |
-| **B. Can it be measured cheaply?** | [rq03_noise_and_snr](rq03_noise_and_snr/README.md) | How much does a score move with the seed or the checkpoint alone, how large is a design effect against that noise, and what is each benchmark's SNR under 22 definitions? | [effect_vs_noise](rq03_noise_and_snr/pretraining/predictivity_all/effect_vs_noise.png) |
+| **B. Can it be measured cheaply?** | [rq03_noise_and_snr](rq03_noise_and_snr/README.md) | How much does a score move with the seed or the checkpoint alone, how large is a design effect against that noise, and what is each benchmark's SNR under 22 definitions? | [effect_vs_noise](rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.png) |
 | | [rq04_surrogates](rq04_surrogates/README.md) | Which statistic computed on the proxy alone — an SNR definition, its signal or noise part, early-checkpoint agreement, a scaling fit, FineTasks' criteria — predicts decision accuracy? | [rq3_surrogates](rq04_surrogates/pretraining/predictivity/rq3_surrogates.png) |
-| **C. Does the framework generalise?** | [rq05_design_decisions](rq05_design_decisions/README.md) | For one design decision at a time (depth, language list, temperature, second language), which proxy sizes, and how early in their run, read the reference's preference at each language count? | [rq4_interventions](rq05_design_decisions/pretraining/predictivity_all/rq4_interventions.png) |
-| | [rq06_language_transfer](rq06_language_transfer/README.md) | Does per-language scaling transfer to languages never measured or never trained, and which languages must a developer evaluate to recover the multilingual decision? | [rq5_transfer](rq06_language_transfer/pretraining/predictivity_all/rq5_transfer.png) |
+| **C. Does the framework generalise?** | [rq05_design_decisions](rq05_design_decisions/README.md) | For one design decision at a time (depth, data scheme A vs B and A vs C, temperature), which proxy sizes, and how early in their run, read the reference's preference at each language count? | [rq4_interventions](rq05_design_decisions/pretraining/predictivity_seeds/rq4_interventions.png) |
+| | [rq06_language_transfer](rq06_language_transfer/README.md) | Does per-language scaling transfer to languages never measured or never trained, and which languages must a developer evaluate to recover the multilingual decision? | [rq5_transfer](rq06_language_transfer/pretraining/predictivity_seeds/rq5_transfer.png) |
 | | [rq07_external_frameworks](rq07_external_frameworks/README.md) | Do our SNR values agree with AllenAI DataDecide on the English tasks both corpora evaluate? | [snr_apertus_vs_snr_allenai_grid](rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png) |
 | **D. Can the benchmarks be improved?** | [rq08_subset_selection](rq08_subset_selection/README.md) | Can a language, subject or item subset of a benchmark beat the full set's SNR by more than selection alone gives for free? | [gain_over_null](rq08_subset_selection/pretraining/predictivity/gain_over_null.png) |
 | | [rq09_benchmark_design](rq09_benchmark_design/README.md) | Which design features of a benchmark — curation, source, format, option count, item length — go with a high SNR? | [snr_per_family_ranked](rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) |
@@ -49,21 +49,23 @@ them from the analysis, never the reverse: `rq1` ← rq01
 One input, the published ladder report (`ladder_report.csv`, loaded by
 `snr/download/ladder.py`; diverged and unfinished runs dropped, checkpoints on
 the shared k/10 and k/20 grid). The models are the predictivity ladder — sizes
-90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} × depth (deep, shallow) × data scheme
-(A, B, AT3, ZH, ES) × seeds; a "design variant" is one such cell, and its
-cross-size identity (`family`, everything but the size) is what a decision
-pairs. The pools (`configs/models.json`): **`predictivity`** is the plan grid
-at seed 1904 with schemes A and B, the headline pool of rq00, rq02, rq03,
-rq04, rq07, rq08 and rq09 and the gate pool of every rq02-family figure;
-**`predictivity_schemes`** adds AT3, ZH and ES at the grid seed and is the pair
-set the rq02 decision figures are computed over (a temperature or a second
-language is a design decision; it would only widen an SNR signal, which is why
-the headline pool keeps the A/B filter); **`predictivity_seeds`** adds every
-replicate seed as a separate model, and **`predictivity_seeds_train` /
-`_test`** split the ×3 cells (seeds 64/313 against seed 1904) for the seed
-holdout; **`predictivity_all`** is every trained cell, all seeds and schemes,
-read by the ladder-frame scripts (rq00 curves, rq01, rq03 effect-vs-noise,
-rq05, rq06). The 36-model sweep and the public models (`seeds_*`,
+90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} × ladder (deep, shallow, swiglu) × data
+build (A, AT3, B, ZH, ES, DCLMP, FWEB) × seeds; a "design variant" is one such
+cell, and its cross-size identity (`family`, everything but the size) is what a
+decision pairs. The analysis reads a cell on its design axes, never on its
+build or ladder label: L, arch, activation, optimizer, data scheme (A/B/C, the
+recipe at that L), T and seed ([RULES.md](RULES.md), Definitions). The four
+pools (`configs/models.json`): **`predictivity`** is the grid seed, every
+design (seed 1904, every ladder and data build), the headline SNR and DA pool
+(the rq00 gate, rq02–rq04, rq07–rq09) and the one the above-random gate is
+computed on; **`predictivity_seeds`** is
+every seed, every cell, the pool of the seed-noise columns and of the reads
+that take every run (rq00 curves, rq01, rq03 effect-vs-noise, rq05, rq06,
+rq10); **`predictivity_seeds_train` / `_test`** are the matched seed holdout,
+the replicate seeds (64, 313, 28, 1797) against seed 1904 on exactly their
+cells. Every pool is gated with `predictivity`'s mask (2026-10-05; until then
+the headline pool held schemes A/B only and a separate all-builds pool carried
+the decisions, plan/decision_accuracy.md §9). The 36-model sweep and the public models (`seeds_*`,
 `custom_swissai_hf`, `external`) are another period of the project — a
 different harness, task set and reference size (1B) — and are never pooled
 with the ladder: each RQ keeps them in its final section "Extensions from
@@ -115,16 +117,17 @@ is also the dependency order: rq00 (`above_random.py`, the gate every later
 step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `reformulations_gate.py` and `above_random_external.py`) → rq01 (`analyze.py`,
 `panels.py`, `regimes.py`, `regimes_survivorship.py`, `scaling_law_error.py`)
-→ rq02 (`compute_da.py` per pool and for `predictivity_schemes`,
+→ rq02 (`compute_da.py` per pool, `bench_bpb_da.py`,
 `da_per_benchmark.py`, `early_small.py`, `reliable_tasks.py`, `by_L.py`,
 `cross_task.py`, `scale_convergence.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
 --langs L8 [--common-tasks]`, `by_language.py`, `agreement.py`,
 `seed_uncertainty.py`, `scaling_vs_ranking.py`, `public_ladders.py`,
 `language_tier.py`, `pair_axes.py`) → rq03 (`run_apertus_snr_variants.py` per
-pool, `compare_seed_splits.py`, `panels.py`) → rq04 (`analyze_snr_variants.py`,
+pool, `compare_seed_splits.py`) → rq04 (`analyze_snr_variants.py`,
 `snr_definition_postprocess.py`, `analyze.py`, `finetasks_criteria.py`,
 `panels.py`, `catalogue.py` + `search.py`) → rq05 (`analyze.py`, `early_decision.py`, `transformations.py`,
-`panels.py`; then rq03's `effect_vs_noise.py`, which reads rq05's table) →
+`panels.py`; then rq03's `effect_vs_noise.py`, which reads rq05's table, and
+rq03's `panels.py`, which draws from it) →
 rq06 (`analyze.py`, `panels.py`, `language_panel.py`) → rq07 (reads rq04's
 ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung) →
 `report_figures/make_figures.py` → `check_rules.py`.

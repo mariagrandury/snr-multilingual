@@ -1,6 +1,6 @@
 """RQ6 (paper RQ5) — Does it generalize to languages we have not measured?
 
-Per-language BPB scaling on the plan grid (deep, scheme A, seed 1904): each
+Per-language BPB scaling on the plan grid (deep, data A, seed 1904): each
 language's own exponent over the proxy rungs, and a leave-one-language-out
 test — the held-out language's reference BPB predicted from its k smallest
 rungs and the exponent pooled over the other languages, against its own fit
@@ -17,7 +17,7 @@ curves of every cell (the progress report's BPB figure on the analysis' cells).
                               evaluated checkpoint, per language group (what the two
                               levels' lists do with the language); panels.py draws it
 
-    python analysis/rq06_language_transfer/analyze.py --pool predictivity_all
+    python analysis/rq06_language_transfer/analyze.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -48,14 +48,14 @@ from analysis.utils import (  # noqa: E402
     GRID_SEED, LADDER_SIZES, NON_EMB, finals, ladder_frame, size_order, trained_bpb_tasks)
 
 OUT_ROOT = LANGUAGE_TRANSFER
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 MIN_SIZES = 4                       # three proxy rungs + the reference
 BPB, UNTR = S.RAMP[3], S.SERIES[2]
 mpl.rcParams.update(S.RC)
 
 
 def transfer(fin: pd.DataFrame) -> pd.DataFrame:
-    g0 = fin[(fin["seed"] == GRID_SEED) & (fin["ladder"] == "deep") & (fin["scheme"] == "A")
+    g0 = fin[(fin["seed"] == GRID_SEED) & (fin["ladder"] == "deep") & (fin["data"] == "A")
              & (fin["kind"] == "bpb") & (fin["task"] != "bpb_macro") & (fin["size"] != LADDER_SIZES[0])]
     rows = []
     for L, g in g0.groupby("L"):
@@ -139,7 +139,7 @@ def plot_bpb_curves(df: pd.DataFrame, out_dir: Path) -> None:
     for ax, cell in zip(flat, cells):
         g = b[b["model"] == cell]
         r0 = g.iloc[0]
-        trained = trained_bpb_tasks(int(r0["L"]), r0["scheme"]) or {"bpb_dclm"}
+        trained = trained_bpb_tasks(int(r0["L"]), r0["data"]) or {"bpb_dclm"}
         for task, gt in g.groupby("task"):
             gt = gt.sort_values("frac")
             if task == "bpb_macro":

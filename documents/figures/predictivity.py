@@ -28,9 +28,11 @@ import style as S  # noqa: E402
 
 INTERVENTION = {"arch": ("deep", "shallow"), "scheme": ("A", "B")}
 # The depth pair and the held baseline are read on the ladder, not the depth
-# level `arch`: swiglu is deep-shaped and would join deep's cells.
-COLUMN = {"arch": "ladder"}
-HOLD = {"arch": ("scheme", "A"), "scheme": ("ladder", "deep")}
+# level `arch`: swiglu is deep-shaped and would join deep's cells. The scheme
+# pair and the held baseline are read on the data build (`data`), not the
+# scheme letter: scheme A also matches AT3 (analysis/RULES.md, Definitions).
+COLUMN = {"arch": "ladder", "scheme": "data"}
+HOLD = {"arch": ("data", "A"), "scheme": ("ladder", "deep")}
 
 
 def finals(df):

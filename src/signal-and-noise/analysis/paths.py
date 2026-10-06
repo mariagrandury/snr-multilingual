@@ -23,7 +23,7 @@ DECISION_ACCURACY = _ANALYSIS / "rq02_decision_accuracy"        # does a small s
 NOISE_AND_SNR = _ANALYSIS / "rq03_noise_and_snr"                # seed vs checkpoint noise; the 22 SNR definitions; the seed holdout
 SURROGATES = _ANALYSIS / "rq04_surrogates"                      # which cheap statistic predicts decision accuracy
 # C. generalisation of the framework
-DESIGN_DECISIONS = _ANALYSIS / "rq05_design_decisions"          # the five interventions; how small and how early
+DESIGN_DECISIONS = _ANALYSIS / "rq05_design_decisions"          # the four interventions; how small and how early
 LANGUAGE_TRANSFER = _ANALYSIS / "rq06_language_transfer"        # unmeasured and never-trained languages
 EXTERNAL_FRAMEWORKS = _ANALYSIS / "rq07_external_frameworks"    # agreement with AllenAI DataDecide
 # D. benchmark improvement

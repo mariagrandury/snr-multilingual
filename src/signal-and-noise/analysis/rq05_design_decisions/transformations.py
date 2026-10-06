@@ -1,5 +1,5 @@
 """rq05: the grid's transformations side by side — language count, sampling
-temperature, model depth and language lists — read as decisions a proxy size
+temperature, model depth and data scheme (A vs B, A vs C) — read as decisions a proxy size
 makes for the reference, on ONE item set, so their predictability can be
 compared. analyze.py reads each intervention on its own items; pooled over
 different task mixes those numbers are not comparable (a pair whose 1.7B has
@@ -13,7 +13,7 @@ no reformulated evals yet pools only the predictable families).
     transformation_da_size_mono_axis.png   mean over a transformation's pairs of the shared-item DA vs proxy size;
                             solid benchmarks, dashed per-language BPB (all 100 validation languages)
 
-    python analysis/rq05_design_decisions/transformations.py --pool predictivity_all
+    python analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -38,21 +38,27 @@ if str(_SRC) not in sys.path:
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.rq05_design_decisions.analyze import CANONICAL, COLOUR, MIN_ITEMS, OUT_ROOT, gate_mask  # noqa: E402
-from analysis.utils import GRID_SEED, TARGET_SIZE, finals, ladder_frame, passes_gate, size_order  # noqa: E402
-from pretrain.launch_trainings import DATA_SCHEMES, exp_name  # noqa: E402
+from analysis.utils import GRID_SEED, TARGET_SIZE, data_build, finals, ladder_frame, passes_gate, size_order  # noqa: E402
+from pretrain.launch_trainings import DATA_SCHEMES, exp_name, mix_label  # noqa: E402
 
 mpl.rcParams.update(S.RC)
-# key -> (label, pairs); a pair is two cells as (L, scheme, ladder), first = baseline
-_A = sorted(DATA_SCHEMES["A"]["langs"])
+# key -> (label, pairs); a pair is two cells as (L, scheme, T, ladder) on the
+# design axes (analysis/RULES.md, Definitions), first = baseline; `data_build`
+# names the build that implements each. A scheme pair holds T=1 and is one pair
+# per L: A vs B is A vs DCLMP at L1, A vs ZH at L2, A vs B at L8-L30.
+_LS = sorted({L for v in DATA_SCHEMES.values() for L in v["langs"]})
+_A = [L for L in _LS if data_build(L, "A", 1)]
 TRANSFORMATIONS = {
     "langs":       ("language count (L vs next L)",
-                    [((a, "A", "deep"), (b, "A", "deep")) for a, b in zip(_A, _A[1:])]),
+                    [((a, "A", 1, "deep"), (b, "A", 1, "deep")) for a, b in zip(_A, _A[1:])]),
     "temperature": ("temperature (T=1 vs T=3)",
-                    [((L, "A", "deep"), (L, "AT3", "deep")) for L in sorted(DATA_SCHEMES["AT3"]["langs"])]),
+                    [((L, "A", 1, "deep"), (L, "A", 3, "deep")) for L in _LS if data_build(L, "A", 3)]),
     "arch":        ("depth (deep vs shallow)",
-                    [((L, "A", "deep"), (L, "A", "shallow")) for L in _A]),
-    "scheme":      ("language lists (A vs B)",
-                    [((L, "A", "deep"), (L, "B", "deep")) for L in sorted(DATA_SCHEMES["B"]["langs"])]),
+                    [((L, "A", 1, "deep"), (L, "A", 1, "shallow")) for L in _A]),
+    "scheme_B":    ("data scheme (A vs B)",
+                    [((L, "A", 1, "deep"), (L, "B", 1, "deep")) for L in _LS if data_build(L, "B", 1)]),
+    "scheme_C":    ("data scheme (A vs C)",
+                    [((L, "A", 1, "deep"), (L, "C", 1, "deep")) for L in _LS if data_build(L, "C", 1)]),
 }
 COLOUR = {**COLOUR, "langs": S.RAMP[2]}
 # BPB is read on ALL validation languages, not on the languages both cells
@@ -71,8 +77,14 @@ def _cell(size: str, c: tuple) -> str:
     DIVERGED batch-504 run instead of its replacement — a comparison against a
     model that ends 0.26 nats off the power law, with nothing to show it had
     happened."""
-    L, scheme, ladder = c
-    return exp_name(size, L, ladder, GRID_SEED, scheme)
+    L, scheme, T, ladder = c
+    return exp_name(size, L, ladder, GRID_SEED, data_build(L, scheme, T))
+
+
+def _mix(c: tuple) -> str:
+    """`L2-ZH-deep`: the family's design variant, as the launcher spells it."""
+    L, scheme, T, ladder = c
+    return mix_label(L, ladder, data_build(L, scheme, T))
 
 
 def _items(fin: dict, kind: dict, size: str, x: tuple, y: tuple, pop: str) -> pd.Series | None:
@@ -116,7 +128,7 @@ def transformation_da(df: pd.DataFrame, mask: pd.DataFrame | None) -> pd.DataFra
                         # has no chance level, from this population.
                         items = items[passes_gate(gate, items, s, ref).to_numpy()]
                     rows.append({"transformation": key, "label": label, "population": pop,
-                                 "pair": f"L{x[0]}{DATA_SCHEMES[x[1]]['label']}-{x[2]} vs L{y[0]}{DATA_SCHEMES[y[1]]['label']}-{y[2]}",
+                                 "pair": f"{_mix(x)} vs {_mix(y)}",
                                  "proxy_size": s, "reference_size": ref,
                                  "_agree": (np.sign(d[items]) == np.sign(d_ref[items])),
                                  "mean_abs_delta_ref": float(d_ref[items].abs().mean()) if len(items) else np.nan})

@@ -5,17 +5,17 @@ regime that trains the language, so the lines within a panel differ in how
 much of the language the models saw.
 
 The lines are `scale_convergence.py --by L`'s (pairs of design variants sharing
-the L, seed 1904, every scheme), read over the tasks in one language instead of
-over every language at once. Within scheme A the share of a language is a
+the L, seed 1904, every data build), read over the tasks in one language instead of
+over every language at once. Within data A the share of a language is a
 function of L alone (the lists are nested; ru is 15.0 % of every token at L8,
 10.2 % at L30), so the legend carries the share and the tokens at the reference
 size. Two things the reader must know:
 
-  * tokens of a language = share(L, scheme) × D(N), the share being of ALL
+  * tokens of a language = share(L, data build) × D(N), the share being of ALL
     tokens (English is the other 50 %): a RELABELLING of the
     (L, size) grid, not a new measurement. Its one honest test is the collapse
     test of `_tokens` below.
-  * an L regime pools arch, list and temperature decisions at once and the mix
+  * an L regime pools arch, scheme and temperature decisions at once and the mix
     differs by regime (`share_*` columns); rule 5 forbids holding it fixed.
 
 Two populations, two names — and which one supports inference:
@@ -115,7 +115,7 @@ def tokens_axis(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool:
                 by_family: pd.DataFrame, lang: str) -> pd.DataFrame:
     """`out` with a `tokens` column: per (group, size), the mean over the kept
     decisions of the two members' training tokens in `lang`, each at its own
-    ladder's budget (`by_family`: the frame's L, scheme and ladder per family).
+    ladder's budget (`by_family`: the frame's L, data build and ladder per family).
     The reference row gets the reference's own tokens. NaN where a build's
     record is unreachable."""
     kept = keep_cells(cells, pool)[["task", "group", "size", "frac"]]
@@ -126,7 +126,7 @@ def tokens_axis(out: pd.DataFrame, dec: pd.DataFrame, cells: pd.DataFrame, pool:
         key = (fam, size)
         if key not in cache:
             r = by_family.loc[fam]
-            t = language_tokens(int(r["L"]), r["scheme"], size, r["ladder"])
+            t = language_tokens(int(r["L"]), r["data"], size, r["ladder"])
             cache[key] = float("nan") if t is None else t.get(lang, 0.0)
         return cache[key]
 
@@ -151,9 +151,9 @@ def collapse_r2(out: pd.DataFrame, x: str) -> float:
 
 
 def legend_labels(lang: str, groups: list) -> dict:
-    """`L8 — ru 15.0 % of tokens — 25.0 B @1.7B`: scheme A's share (the lists
+    """`L8 — ru 15.0 % of tokens — 25.0 B @1.7B`: data A's share (the lists
     are A's; AT3/B lines in the same regime have their own) and the tokens a
-    deep scheme-A cell of the reference size saw."""
+    deep data-A cell of the reference size saw."""
     out = {OVERALL: f"{OVERALL} (cross-L included)"}
     for grp in groups:
         if grp == OVERALL:
@@ -208,15 +208,15 @@ def figure(per_lang: dict, cov: pd.DataFrame, path: Path, pool: str, variant: st
     top = G._header(fig, f"Scale convergence per language: how small a model still decides like {TARGET_SIZE} on "
                          f"{'each language of the L8 setting' if x == 'non_emb' else 'a language, against its exposure to it'}",
                     f"Panel = one language; line = pairs of design variants sharing that language count (seed {GRID_SEED}, "
-                    f"every scheme), read on that language's benchmarks only; R = matching / comparable decisions against "
+                    f"every data build), read on that language's benchmarks only; R = matching / comparable decisions against "
                     f"the {TARGET_SIZE} final, pooled over tasks; the number under a point is its task count. Population: {pop}. "
-                    + (f"Legend: scheme A's share of the language and the tokens a deep {TARGET_SIZE} cell of that regime saw; "
+                    + (f"Legend: data A's share of the language and the tokens a deep {TARGET_SIZE} cell of that regime saw; "
                        f"AT3 (T=3) and B lines in the same regime saw less or more. Shaded band on `{OVERALL}` = "
                        f"leave-one-family-out jackknife, 90 %. " if x == "non_emb" else
                        f"x = mean over a decision's two members of the tokens of this language they trained on "
                        f"(share of all tokens × D(N)) — a relabelling of (L, size), not a new axis; the test is whether the "
                        f"regime lines collapse onto one curve, which the R² in each title measures. ")
-                    + f"A regime pools arch, list and temperature decisions at once (`share_*` in the CSV). A regime "
+                    + f"A regime pools arch, scheme and temperature decisions at once (`share_*` in the CSV). A regime "
                     f"with no line here is one whose members are not trained on this language or fall below "
                     f"{MIN_PAIRS} pairs — `_coverage.csv` says which. Gate and pair minimum as everywhere in rq02; "
                     f"pairs from {POOL}, gated with {pool}'s mask.")
@@ -249,7 +249,7 @@ def generate_readme(pool: str, out_dir: Path, per_lang: dict, r2: dict, stem: st
         f"selection on DA — the inference version; the `above_66_size` twin is the conditional one). The last column is "
         f"the collapse test: R² of one log-linear line through every regime's points with x = model size, then with "
         f"x = tokens of the language (its share of all tokens × D(N)); a rise under tokens says exposure explains what language "
-        f"count does not. Regimes pool arch, list and temperature decisions at once. Regenerate with "
+        f"count does not. Regimes pool arch, scheme and temperature decisions at once. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/by_language.py --pool {pool}`; `{stem}_coverage.csv` says why a "
         f"cell is empty.",
         md_table(list(t.columns), t.values.tolist()),

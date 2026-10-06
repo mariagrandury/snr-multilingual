@@ -3,7 +3,7 @@ across model size and along a training run.
 
 One point per task (a benchmark in one language, or one language's BPB; the
 training loss is not one language's and is left out, rule 7), aggregated over
-the deep, scheme-A, seed-1904 cells; the loader keeps parent
+the deep, data-A, seed-1904 cells; the loader keeps parent
 tasks and trained languages (rules 6 and 2) and the above-random gate (rule 1,
 `grids.mark_gated`) keeps a (task, size) only where the task is above chance,
 so a task at chance at a size contributes nothing at that size and a task at
@@ -37,7 +37,7 @@ chance at every size does not appear:
     scaling_regimes.html                   the two panels with hover names and a click-to-highlight legend
                                            (Vega-Lite from a CDN, for the project site; not for the paper)
 
-    python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -69,7 +69,7 @@ from analysis.rq01_scaling_predictability.analyze import _grid  # noqa: E402
 from analysis.utils import assign_language, benchmark_family, ladder_frame, languages_only, lower_is_better  # noqa: E402
 
 OUT_ROOT = SCALING_PREDICTABILITY
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 R2_SPLIT = 0.5          # the heuristic boundary between "predictable" and "weak" on both R² axes
 MIN_POINTS = 5          # checkpoints a trajectory fit needs
 MIN_FITS = 2            # fits (L's, or cells) a task needs for a median
@@ -220,7 +220,7 @@ def _labels(ax, xs, ys, names, colours, *, fontsize, weight="normal", avoid=None
     _adjust(ax, texts, avoid if avoid is not None else (xs, ys))
 
 
-NOTE = ("point = one task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) at the sizes where the "
+NOTE = ("point = one task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) at the sizes where the "
         "task is above chance (rule 1 gate; a task at chance at every size is left out): (a) R² and Spearman ρ of the final score ~ "
         "log N fit, one fit per L (ρ of BPB and the loss negated so improving is positive); (b) the same R² against the R² of "
         f"score ~ log tokens over each run's checkpoints, one fit per (L, size); shaded quadrants split at R² = {R2_SPLIT}, a "
@@ -387,7 +387,7 @@ def main(pool: str) -> None:
     if pool == CANONICAL:
         body = "\n\n".join([
             "## Scaling regimes per benchmark-language pair",
-            f"`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) — the R² and "
+            f"`regimes.py`: one point per task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) — the R² and "
             f"(oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit "
             f"(score ~ log tokens over a run's checkpoints, ≥ {MIN_POINTS} points), one per (L, size). Both use only the sizes where the "
             f"task is above chance (rule 1, rq00's mask): {len(t)} tasks have a point; the gate removed {len(gated_out)} tasks that are at "

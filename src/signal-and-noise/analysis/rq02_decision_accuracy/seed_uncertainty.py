@@ -64,7 +64,7 @@ from analysis.utils import (  # noqa: E402
     finals, ladder_frame, passes_gate, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
-POOL = "predictivity_all"          # every seed: the replicates live here
+POOL = "predictivity_seeds"          # every seed: the replicates live here
 SEED_POOL = "predictivity_seeds"   # where compute_da writes the `seed` pair set
 LANGS = ("en", "ru")               # the languages a replicated triple can be read on (rule 2)
 mpl.rcParams.update(S.RC)
@@ -239,7 +239,7 @@ if __name__ == "__main__":
     fin = finals(ladder_frame(POOL))
     # the cell's ladder, not its depth level `arch`: swiglu is deep-shaped,
     # and a shared label would merge it into deep's replicates
-    fin["design"] = "L" + fin["L"].astype(int).astype(str) + "-" + fin["ladder"] + "-" + fin["scheme"]
+    fin["design"] = "L" + fin["L"].astype(int).astype(str) + "-" + fin["ladder"] + "-" + fin["data"]
     sv = seed_views(fin, args.pool)
     nv = null_view(OUT_ROOT / stage / SEED_POOL, args.pool)
     pd.concat([sv, nv], ignore_index=True).to_csv(out_dir / "seed_uncertainty_da_all_seed_null.csv", index=False)

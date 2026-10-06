@@ -2,7 +2,7 @@
 that language the proxy has trained on?
 
 Both figures share one x axis: the training tokens of ONE language a checkpoint
-has seen — the language's share of the mixture (L, scheme), from the build's own
+has seen — the language's share of the mixture (L, data build), from the build's own
 plan (`utils.language_token_share`), times the cell's budget D(N), times the
 checkpoint's share of the run. The share is a relabelling of the (L, size,
 checkpoint) grid, not a new measurement, and the plan files live on capstor: a
@@ -13,10 +13,10 @@ A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv
    DA-goal of a language's BPB against the tokens of that language the proxies
    had seen. DA-goal = the share of pairs of design variants the proxy
    checkpoint orders like the reference's final (rq02's kernel; rule 15's
-   multi-axis set: every pair at the grid seed of every scheme, the pair set of
+   multi-axis set: every pair at the grid seed of every data build, the pair set of
    rq02's pooled panel). A BPB task is read only on the variants that train its
    language (rule 2, the loader), so the variants behind one cell differ in L,
-   list and temperature and saw different amounts of the language: a cell's x is
+   scheme and temperature and saw different amounts of the language: a cell's x is
    the checkpoint's share of the run times the MEAN over the pair set's proxy
    variants of their tokens of the language (the cells table keeps the min and
    max). A cell needs MIN_PAIRS pairs (rule 5). Per (proxy size, tenth of the
@@ -38,11 +38,11 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
    size, the cells binned on log10 tokens (BINS_PER_DECADE per decade, the cell
    count on every point). The `.csv` is the cell table, `_points.csv` the binned
    values drawn. Two populations of runs behind a (task, size, L) cell:
-     _deep_A_1904   the plan grid (deep, scheme A, seed 1904): one run per cell,
+     _deep_A_1904   the plan grid (deep, data A, seed 1904): one run per cell,
                     above chance = its one-sided 95 % Wilson lower bound clears
                     chance (rule 1's per-run test, `above_random.above_chance`)
      _1904          every seed-1904 run at the (size, L) that trains the language
-                    (every scheme and ladder): above chance when at least
+                    (every data build and ladder): above chance when at least
                     MIN_SHARE of them are (rule 1's cell rule); the score and the
                     tokens are their means
    Only benchmarks with a chance level appear (BPB and the generative tasks
@@ -64,7 +64,7 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
    the two panels stacked in the height of one), and `da_goal_..._paper`, the
    DA-goal figure without its header.
 
-    python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
     python analysis/rq01_scaling_predictability/tokens_seen.py --paper     # the paper copies alone, from the tables on disk
 """
 
@@ -100,7 +100,7 @@ from analysis.utils import (  # noqa: E402
     ladder_frame, language_tokens, languages_only, size_order)
 
 OUT_ROOT = SCALING_PREDICTABILITY
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 BINS_PER_DECADE = 3
 DA_STEM = "da_{mode}_multi_axes_across_langs_bpb"
 DA_NAME = DA_STEM.format(mode="goal")
@@ -112,19 +112,19 @@ PASS_NAME = "pass_prob_vs_train_tokens"
 PANELS = ("benchmark", "language", "all")         # what a panel of the pass figure holds
 # population -> (the runs of a (task, size, L) cell, how the cell is called above chance)
 POPULATIONS = {
-    "deep_A_1904": ("the plan grid, deep / scheme A / seed 1904: one run per cell",
+    "deep_A_1904": ("the plan grid, deep / data A / seed 1904: one run per cell",
                     "the run's one-sided 95 % Wilson lower bound clears chance"),
-    "1904": (f"every seed-{GRID_SEED} run at the (size, L) that trains the language, every scheme and architecture",
+    "1904": (f"every seed-{GRID_SEED} run at the (size, L) that trains the language, every data build and ladder",
              f"at least {MIN_SHARE:.0%} of the cell's runs clear chance (Wilson lower bound); score and tokens are their means"),
 }
 mpl.rcParams.update(S.RC)
 
 
-def _tokens(L, scheme, size, ladder, lang) -> float:
+def _tokens(L, data, size, ladder, lang) -> float:
     """Tokens of `lang` a full run of the cell trains on; NaN when the build's
     plan is unreachable. A trained language is always in the share, so a
     missing key is a bug and raises."""
-    t = language_tokens(int(L), scheme, size, ladder)
+    t = language_tokens(int(L), data, size, ladder)
     return np.nan if t is None else t[lang]
 
 
@@ -137,7 +137,7 @@ def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
     proxies had seen at that checkpoint (mean, min and max over the variants)."""
     bpb = df[df["kind"] == "bpb"].assign(language=lambda d: d["task"].map(assign_language))
     bpb = languages_only(bpb)
-    attrs = bpb[["family", "L", "scheme", "ladder"]].drop_duplicates().set_index("family")
+    attrs = bpb[["family", "L", "data", "ladder"]].drop_duplicates().set_index("family")
     fracs = DA_MODES[mode][1]
     rows = []
     for task, dft in bpb.groupby("task", sort=False):
@@ -150,7 +150,7 @@ def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
                 if mode == "ckpt" and c["proxy_size"] != target:
                     continue
                 fams = sorted(set(_scores_at(dft, c["proxy_size"], c["frac"])) & ref)
-                tok = np.array([c["frac"] * _tokens(attrs.at[f, "L"], attrs.at[f, "scheme"], c["proxy_size"], attrs.at[f, "ladder"], lang)
+                tok = np.array([c["frac"] * _tokens(attrs.at[f, "L"], attrs.at[f, "data"], c["proxy_size"], attrs.at[f, "ladder"], lang)
                                 for f in fams])
                 rows.append({"task": task, "language": lang, "proxy_size": c["proxy_size"], "frac": c["frac"], "da": c["da"],
                              "n_pairs": c["n_pairs"], "n_variants": len(fams), "tokens": tok.mean(),
@@ -204,7 +204,7 @@ def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str
              if x == "tokens" else "the share of the run the proxy checkpoint sits at")
     top = G._header(fig, f"Does a language's BPB rank the design variants {what}?",
                     f"point = {unit}: mean over languages of DA-{mode} (share of design-variant pairs the proxy's BPB of that "
-                    f"language orders like {ref}; every pair at seed {GRID_SEED} of every scheme, on the variants that train the "
+                    f"language orders like {ref}; every pair at seed {GRID_SEED} of every data build, on the variants that train the "
                     f"language, ≥ {MIN_PAIRS} pairs), bar = standard error over languages; x = {xdesc}; "
                     f"{cells.dropna(subset=['tokens'])['task'].nunique()} languages, dotted = {SAFE_DA}"
                     + (f"; the {TARGET_SIZE} line is its own early checkpoints against its final" if mode == "goal" else ""))
@@ -226,8 +226,8 @@ def gate_cells(fin: pd.DataFrame, ckpts: bool = False) -> pd.DataFrame:
     fin = fin.dropna(subset=["above"])            # no chance level or item count: cannot be gated
     fin["language"] = fin["task"].map(assign_language)
     fin = languages_only(fin)
-    fin["tokens"] = [_tokens(L, s, size, a, lang)
-                     for L, s, size, a, lang in zip(fin["L"], fin["scheme"], fin["size"], fin["ladder"], fin["language"])]
+    fin["tokens"] = [_tokens(L, d, size, a, lang)
+                     for L, d, size, a, lang in zip(fin["L"], fin["data"], fin["size"], fin["ladder"], fin["language"])]
     keys = ["task", "language", "size", "L"]
     if ckpts:
         fin["tokens"] *= fin["frac"]
@@ -403,7 +403,7 @@ def generate_readme(pool: str, out_dir: Path, summary: pd.DataFrame, cells_a: pd
         f"run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool {pool}`." + unreachable,
         f"**A. DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages "
         f"of the share of design-variant pairs the proxy's BPB orders like the {TARGET_SIZE} final (rq02's kernel, every pair at "
-        f"seed {GRID_SEED} of every scheme on the variants that train the language, ≥ {MIN_PAIRS} pairs; rule 15's multi-axis "
+        f"seed {GRID_SEED} of every data build on the variants that train the language, ≥ {MIN_PAIRS} pairs; rule 15's multi-axis "
         f"set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of "
         f"the language they had seen, and a point's x the geometric mean over languages "
         f"({cells_a.dropna(subset=['tokens'])['task'].nunique()} languages; `{DA_NAME}_cells.csv` has the per-language cells "
@@ -467,7 +467,7 @@ def main(pool: str, out_dir: Path) -> None:
     cells_b = {}
     for population in POPULATIONS:
         for ckpts, frame in ((False, fin), (True, tenths)):
-            sub = frame[(frame["ladder"] == "deep") & (frame["scheme"] == "A")] if population == "deep_A_1904" else frame
+            sub = frame[(frame["ladder"] == "deep") & (frame["data"] == "A")] if population == "deep_A_1904" else frame
             c = gate_cells(sub, ckpts)
             c.to_csv(out_dir / f"{pass_stem('benchmark', population, ckpts)}.csv", index=False)
             cells_b[population + ("_ckpts" if ckpts else "")] = c

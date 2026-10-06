@@ -228,10 +228,29 @@ def _is_parent_task(task: str) -> bool:
 
 # Ladder pools filter the loaded frame on its own columns (the scheme-B cells
 # and the adopted off-grid seeds are real runs whether or not models.json
-# lists them), so a member spec may carry any of these column filters.
+# lists them), so a member spec may carry any of these column filters, plus
+# `cells_of: <pool>`: only the cells (CELL_KEYS) that other pool has, which is
+# how the seed holdout's test split matches its train split without a
+# hand-kept list of sizes, settings and ladders.
 _LADDER_FILTERS = {"seeds": "seed", "sizes": "size", "L": "L", "ladder": "ladder",
                    "arch": "arch", "activation": "activation", "optimizer": "optimizer",
-                   "scheme": "scheme"}
+                   "data": "data", "scheme": "scheme", "T": "T"}
+CELL_KEYS = ["size", "L", "ladder", "data"]     # a cell, apart from its seed
+
+
+def _ladder_members(df: pd.DataFrame, pool: str) -> pd.DataFrame:
+    """The rows of the loaded ladder frame `df` that `pool`'s members select."""
+    frames = []
+    for m in load_pools()[pool]["members"]:
+        sub = df
+        for key, col in _LADDER_FILTERS.items():
+            if key in m:
+                sub = sub[sub[col].isin(m[key])]
+        if "cells_of" in m:
+            cells = pd.MultiIndex.from_frame(_ladder_members(df, m["cells_of"])[CELL_KEYS])
+            sub = sub[pd.MultiIndex.from_frame(sub[CELL_KEYS]).isin(cells)]
+        frames.append(sub)
+    return pd.concat(frames).drop_duplicates().reset_index(drop=True)
 
 
 def _is_ladder_pool(pool: str) -> bool:
@@ -290,15 +309,7 @@ def build_snr_pool(pool: str, *, untrained: bool = False, facets: bool = False,
     if _is_ladder_pool(pool):
         df = load_predictivity_eval_results(
             include_diverged=spec.get("include_diverged", False))
-        df = df[df["size"].isin(EVAL_SIZES if above_reference else ANALYSIS_SIZES)]   # rule 10
-        frames = []
-        for m in spec["members"]:
-            sub = df
-            for key, col in _LADDER_FILTERS.items():
-                if key in m:
-                    sub = sub[sub[col].isin(m[key])]
-            frames.append(sub)
-        df = pd.concat(frames).drop_duplicates().reset_index(drop=True)
+        df = _ladder_members(df[df["size"].isin(EVAL_SIZES if above_reference else ANALYSIS_SIZES)], pool)   # rule 10
         if not facets:
             df = parents_only(df)
         if not untrained:
@@ -342,30 +353,16 @@ LADDER_SIZES = sorted(NON_EMB, key=NON_EMB.get)
 # moving the reference moves this with it.
 ANALYSIS_SIZES = [s for s in EVAL_SIZES if NON_EMB[s] <= NON_EMB[TARGET_SIZE]]
 GRID_SEED = 1904                      # the plan grid's seed
-# `scheme` is not one design axis: it encodes the language LIST, the sampling
-# TEMPERATURE and, at L = 2, the SECOND LANGUAGE. `DATA_SCHEMES` in
-# pretrain.launch_trainings is the source of truth for the first two (`sets`,
-# `temp`); the third is the substitution below. Split this way AT3 is list A at
-# T=3, BT3 is list B at T=3, and ZH/ES are scheme A's list with Chinese or
-# Spanish in the second slot — so at L = 2 every setting is "English + one other
-# language" and A's own second language, Russian, is the axis's default level.
-SECOND_LANG = {"ZH": "zh", "ES": "es"}
-# ... and it encodes the ENGLISH corpus too, for the two schemes that vary it
-# (`english` in the registry). That axis exists because at L = 1 none of the
-# three above do: the mixture is 100 % English, so the only thing a second
-# family can differ by is which English. Without this column DCLMP, FWEB and A
-# are one row at L = 1, their pairs differ on NOTHING, and the mono-axis set
-# silently fills with (x-deep, shallow) pairs that report the DEPTH decision
-# three times over. Short level names for the schemes we have; any future one
-# falls back to its corpus path, which is ugly in a table but never wrong.
-ENGLISH_CORPUS = {"DCLMP": "dclm-noedu", "FWEB": "fineweb"}
-# What a cell is, apart from its size. The order is the one figures read in.
-# `arch` is the model-DEPTH level alone. The cell name's ladder token also
-# encodes the activation (and would encode the optimizer), and those are separate
-# decisions: pooling them would read a (deep, swiglu) pair as a depth choice.
-# The loader carries the three levels as columns of their own, from
-# launch_trainings.LADDERS, the registry the launcher itself trains from.
-DESIGN_AXES = ["L", "arch", "activation", "optimizer", "list", "T", "lang2", "en", "seed"]
+# What a cell is, apart from its size, as design levels (analysis/RULES.md,
+# Definitions). The order is the one figures read in. A cell is named by its
+# ladder token and its data BUILD (`ladder`, `data`); neither is an axis. The
+# ladder is read as `arch` (the depth alone), `activation` and `optimizer`
+# (launch_trainings.LADDERS), so a (deep, swiglu) pair is an activation choice
+# and not a depth one. The build is read as `scheme`, the letter of the recipe
+# it implements at its L, and `T` (DATA_SCHEMES `letter`, `temp`): A and AT3
+# are scheme A at T=1 and T=3; B (L8-L30), ZH (L2) and DCLMP (L1) are scheme B;
+# ES (L2) and FWEB (L1) are scheme C. The loader carries all of these as columns.
+DESIGN_AXES = ["L", "arch", "activation", "optimizer", "scheme", "T", "seed"]
 # The three pair sets a decision-accuracy table can be computed over (rule 15).
 #   multi-axis  every pair of design variants: rq02's convention to date, and
 #               two thirds of its pairs move more than one axis at once.
@@ -384,25 +381,40 @@ AXES_SUFFIX = {"multi-axis": "_multi_axes", "mono-axis": "_mono_axis", "seed": "
 
 
 def design_axes(df: pd.DataFrame) -> pd.DataFrame:
-    """family -> its design axes, `scheme` unpacked into `list`, `T` and
-    `lang2` through the registry that defines the grid (see SECOND_LANG).
+    """family -> its DESIGN_AXES, and the `data` build `moved_axes` needs.
 
     `family` is the cell name with only the size token stripped, so the axes
     are a function of it; the assertion is what guarantees that.
     """
-    from pretrain.launch_trainings import DATA_SCHEMES
-    # The ladder's levels, not its token: `arch` is the depth, so every figure
-    # that says "arch" means deep-vs-shallow; swiglu is deep-shaped and differs
-    # from the baseline on `activation` alone.
-    a = (df[["family", "L", "arch", "scheme", "seed", "activation", "optimizer"]]
-         .drop_duplicates().set_index("family"))
-    a["list"] = a["scheme"].map(lambda s: "A" if s in SECOND_LANG else DATA_SCHEMES[s]["sets"])
-    a["T"] = a["scheme"].map(lambda s: DATA_SCHEMES[s]["temp"])
-    a["lang2"] = a["scheme"].map(lambda s: SECOND_LANG.get(s, "ru"))
-    a["en"] = a["scheme"].map(
-        lambda s: ENGLISH_CORPUS.get(s) or DATA_SCHEMES[s].get("english", "dclm-edu"))
+    a = (df[["family", *DESIGN_AXES, "data"]].drop_duplicates().set_index("family"))
     assert not a.index.duplicated().any(), "family does not determine its design axes"
     return a
+
+
+def data_build(L: int, scheme: str, T: int) -> str | None:
+    """The data build that implements (scheme, T) at L, or None: the inverse
+    of the loader's build -> (scheme, T) map, one-to-one within an L."""
+    from pretrain.launch_trainings import DATA_SCHEMES
+    hits = [d for d, v in DATA_SCHEMES.items()
+            if v["letter"] == scheme and int(v["temp"]) == T and L in v["langs"]]
+    assert len(hits) <= 1, f"two builds implement scheme {scheme} at T={T}, L{L}: {hits}"
+    return hits[0] if hits else None
+
+
+def moved_axes(ra: pd.Series, rb: pd.Series) -> list[str]:
+    """The DESIGN_AXES two families (rows of `design_axes`) differ on.
+
+    `scheme` is the recipe AT THAT L, so across L the letter alone does not
+    say whether the recipe moved: B is DCLMP at L1, ZH at L2 and the
+    diversity-first list at L8-L30. A pair moves `scheme` when the letters
+    differ or when it reads two builds at one temperature (A and AT3 are one
+    recipe at two T); within one L the two readings agree.
+    """
+    def moves(k):
+        if k == "scheme":
+            return ra[k] != rb[k] or (ra["data"] != rb["data"] and ra["T"] == rb["T"])
+        return ra[k] != rb[k]
+    return [k for k in DESIGN_AXES if moves(k)]
 
 
 def pair_sets(attrs: pd.DataFrame, seed: int | None = GRID_SEED) -> dict[str, list]:
@@ -413,8 +425,8 @@ def pair_sets(attrs: pd.DataFrame, seed: int | None = GRID_SEED) -> dict[str, li
     to let every seed in. The `seed` set is the complement: pairs identical on
     every axis but the seed.
 
-    A pool holding no cell at `seed` — the holdout's train split is seeds
-    64/313 by definition — would otherwise have no design pair at all, and
+    A pool holding no cell at `seed` — the holdout's train split is the
+    replicate seeds by definition — would otherwise have no design pair at all, and
     every table built from it comes out empty (its SNR join, and the seed
     holdout downstream of that). The seed is then held at each seed the pool
     does have; a pair spanning two seeds is still the null's, as everywhere.
@@ -427,7 +439,7 @@ def pair_sets(attrs: pd.DataFrame, seed: int | None = GRID_SEED) -> dict[str, li
         ra = attrs.loc[a]
         for b in fams[i + 1:]:
             rb = attrs.loc[b]
-            differ = [k for k in DESIGN_AXES if ra[k] != rb[k]]
+            differ = moved_axes(ra, rb)
             if differ == ["seed"]:
                 null.append((a, b))
                 continue
@@ -569,8 +581,9 @@ def jackknife_ratio(decisions: pd.DataFrame, keys: list, a: str = "family_a", b:
 
 
 @lru_cache(maxsize=None)
-def language_token_share(L: int, scheme: str) -> dict[str, float] | None:
-    """language -> share of a cell's training tokens, for the mixture (L, scheme).
+def language_token_share(L: int, data: str) -> dict[str, float] | None:
+    """language -> share of a cell's training tokens, for the mixture (L, data
+    build: the frame's `data`, never the scheme letter).
 
     English is the DCLM half, `EN_SHARE` % of every token (all of them at
     L = 1); the FineWeb-2 half is split by the builder's own plan
@@ -585,10 +598,10 @@ def language_token_share(L: int, scheme: str) -> dict[str, float] | None:
     en = EN_SHARE / 100
     if L == 1:
         return {"en": 1.0}
-    subsets = cell_fineweb_subsets(L, scheme)
+    subsets = cell_fineweb_subsets(L, data)
     if len(subsets) == 1:              # one language takes the whole half; scheme A's L2 predates plan files
         return {"en": en, fineweb_language(subsets[0]): 1 - en}
-    got = exact_tokens(mixture_paths(DATA_MASTER, L, scheme))
+    got = exact_tokens(mixture_paths(DATA_MASTER, L, data))
     if got is None:
         return None
     tokens, _ = got
@@ -608,10 +621,10 @@ def train_tokens(size: str, ladder: str) -> int:
     return json.loads(Path(HYPERPARAMS[ladder]).read_text())["configs"][size]["predictivity"]["train_tokens"]
 
 
-def language_tokens(L: int, scheme: str, size: str, ladder: str) -> dict[str, float] | None:
-    """language -> training tokens of it a cell (size, L, ladder, scheme) saw:
+def language_tokens(L: int, data: str, size: str, ladder: str) -> dict[str, float] | None:
+    """language -> training tokens of it a cell (size, L, ladder, data build) saw:
     `language_token_share` times the cell's budget. None where the share is."""
-    share = language_token_share(L, scheme)
+    share = language_token_share(L, data)
     return None if share is None else {k: v * train_tokens(size, ladder) for k, v in share.items()}
 
 
@@ -701,23 +714,23 @@ def languages_only(df: pd.DataFrame, col: str = "language") -> pd.DataFrame:
 
 
 @lru_cache(maxsize=None)
-def trained_tasks(L: int, scheme: str) -> frozenset[str]:
-    """Every task a (L, scheme) cell is trained for: the benchmarks in its
+def trained_tasks(L: int, data: str) -> frozenset[str]:
+    """Every task a (L, data build) cell is trained for: the benchmarks in its
     languages (English always), its languages' BPB, and the measurements that
     are not one language's (train_loss, bpb_macro)."""
     from pretrain.ladder_report import _trained_tasks
-    return frozenset(_trained_tasks(L, scheme)) | (trained_bpb_tasks(L, scheme) or frozenset()) | {"train_loss", "bpb_macro"}
+    return frozenset(_trained_tasks(L, data)) | (trained_bpb_tasks(L, data) or frozenset()) | {"train_loss", "bpb_macro"}
 
 
-def is_trained(task: str, L: int, scheme: str) -> bool:
-    return task in trained_tasks(int(L), scheme)
+def is_trained(task: str, L: int, data: str) -> bool:
+    return task in trained_tasks(int(L), data)
 
 
 def trained_only(df: pd.DataFrame) -> pd.DataFrame:
     """Keep a (model, task) row only when the model's mixture trains the
     task's language (rule 2). A score on an untrained language measures
     transfer, which is rq06's question and no other's."""
-    keep = [is_trained(t, L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]
+    keep = [is_trained(t, L, d) for t, L, d in zip(df["task"], df["L"], df["data"])]
     return df[np.asarray(keep, dtype=bool)]
 
 
@@ -756,11 +769,11 @@ def at_fraction(df: pd.DataFrame, f: float, tol: float = 0.06) -> pd.DataFrame:
     return d[d["dist"] <= tol].drop(columns="dist")
 
 
-def trained_bpb_tasks(L: int, scheme: str) -> set[str] | None:
-    """The `bpb_<subset>` tasks of the languages a (L, scheme) cell trains on
-    (English always); None when the scheme defines no list at that L."""
+def trained_bpb_tasks(L: int, data: str) -> set[str] | None:
+    """The `bpb_<subset>` tasks of the languages a (L, data build) cell trains on
+    (English always); None when the build defines no list at that L."""
     from pretrain.launch_trainings import cell_fineweb_subsets
     try:
-        return {"bpb_dclm"} | {f"bpb_{s}" for s in cell_fineweb_subsets(L, scheme)}
+        return {"bpb_dclm"} | {f"bpb_{s}" for s in cell_fineweb_subsets(L, data)}
     except KeyError:
         return None

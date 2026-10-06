@@ -1,7 +1,7 @@
 """Decision accuracy per language count — the early-and-small grid read one
 L at a time: pairs of design variants that share the L (deep vs shallow,
-scheme A vs B, AT3, the second language), at the grid seed of every scheme
-(`predictivity_all`, seed 1904). L1 and L2 have few pairs once
+data scheme A vs B vs C, T = 1 vs 3), at the grid seed of every data build
+(`predictivity_seeds`, seed 1904). L1 and L2 have few pairs once
 its 1.7B cells are final; until then its cells stay blank.
 
     da_all_by_L_per_task<axes>.csv   per task, L, proxy size and fraction of the proxy's own run, on
@@ -11,10 +11,10 @@ its 1.7B cells are final; until then its cells stay blank.
                            ranking (DA-ckpt within the L, `n_pairs_own`); `compute` = the training FLOPs the
                            pair's proxies spent up to that checkpoint (mean over the families in the pair
                            set), `compute_share` = as a share of the reference's full run
-    da_all_pooled_per_task<axes>.csv the same with EVERY pair at the grid seed pooled, schemes
-                           A, B, AT3, ZH and ES alike: the headline reading on ten
+    da_all_pooled_per_task<axes>.csv the same with EVERY pair at the grid seed pooled, every
+                           data build alike: the headline reading on ten
                            checkpoints. The scheme is not held fixed here because a
-                           temperature or a second-language swap is a design decision
+                           temperature or a data recipe is a design decision
                            like any other, and the per-L panels beside it have always
                            pooled the schemes — restricting only this panel made the
                            first panel a different population from the six next to it.
@@ -62,8 +62,8 @@ them overlay. The variants differ only in which tasks the mean runs over:
 `--by transformation` reads the same two decision accuracies one DESIGN AXIS
 at a time instead of one L at a time: the MONO-AXIS pairs at the grid seed
 (`utils.pair_sets`), split by the one axis each pair moves
-(`scale_convergence.pairs_by_group`) — language count, depth, activation, language
-list, temperature, second language, English corpus — one panel per axis and a first
+(`scale_convergence.pairs_by_group`) — language count, depth, activation, data
+scheme (A vs B vs C), temperature — one panel per axis and a first
 panel over every mono-axis pair. Same gate, pair minimum and filter variants;
 the reliability filter is the mono-axis one (rule 15). Task counts sit at the
 end of every line.
@@ -111,7 +111,7 @@ from analysis.utils import (  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
 GITHUB = "https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis"
-L_POOL = "predictivity_all"      # every scheme; the grid seed keeps replicate seeds out of the pairs
+L_POOL = "predictivity_seeds"      # every data build; the grid seed keeps replicate seeds out of the pairs
 FRACS = [k / 10 for k in range(1, 11)]     # the ten evaluated checkpoints of every run (0.5C ... 5C)
 mpl.rcParams.update(S.RC)
 
@@ -149,7 +149,7 @@ COLS = ["task", "L", "proxy_size", "frac", "da_ref", "n_pairs_ref", "da_own", "n
 
 
 def da_by_L(axes: str = "multi-axis") -> tuple[pd.DataFrame, pd.DataFrame]:
-    """(per L, pooled): both over the grid seed of every scheme — the per-L one
+    """(per L, pooled): both over the grid seed of every data build — the per-L one
     within a language count, the pooled one across every pair."""
     df = build_snr_pool(L_POOL)
     df = df[df["seed"] == GRID_SEED].copy()
@@ -188,16 +188,16 @@ def pairs_by_L(t: pd.DataFrame) -> pd.DataFrame:
     the training loss (a cell whose 1.7B has only the loss scored counts
     for the loss alone)."""
     planned = {}                                        # (L, size) -> set of variants
-    for scheme, cfg in DATA_SCHEMES.items():
+    for data, cfg in DATA_SCHEMES.items():                 # the builds: the registry's keys
         for L in cfg["langs"]:
-            for size in scheme_sizes(scheme, L):
-                # ladders_for, never cfg["ladders"]: a scheme can be trained in
+            for size in scheme_sizes(data, L):
+                # ladders_for, never cfg["ladders"]: a build can be trained in
                 # one ladder at some settings (AT3 is deep only at L15 and
                 # L30) or lack a hyperparams config at a size (the 3B is deep
                 # only), and counting those as planned inflates the pair
                 # count — 15 where the grid plans 10, at L15 and L30.
-                for ladder in ladders_for(scheme, size, L):
-                    planned.setdefault((L, size), set()).add(mix_label(L, ladder, scheme))
+                for ladder in ladders_for(data, size, L):
+                    planned.setdefault((L, size), set()).add(mix_label(L, ladder, data))
     fin = t[t["frac"] == 1.0].copy()
     fin["kind"] = np.where(fin["task"].str.startswith("bpb_"), "bpb", np.where(fin["task"] == "train_loss", "loss", "bench"))
     have = fin.groupby(["L", "proxy_size", "kind"])["n_pairs_ref"].max()     # the pairs any task of that kind has
@@ -253,7 +253,7 @@ PANEL_LS = [1, 2, 8, 15, 30, 50]
 PANEL_AXES = [AXIS_LABEL[k] for k in DESIGN_AXES if k != "seed"
               and not (k in ("activation", "optimizer") and len({a[k] for a in LADDERS.values()}) == 1)]
 # grouping -> (its column in the table, the panel list, how a panel is labelled, the first panel's title)
-BY = {"L": ("L", PANEL_LS, "L{}".format, "all pairs (every scheme)"),
+BY = {"L": ("L", PANEL_LS, "L{}".format, "all pairs (every data build)"),
       "transformation": ("axis", PANEL_AXES, str, "all mono-axis pairs")}
 # variant -> (filename suffix, the groups drawn, whether the reliable-task filter applies)
 BENCH, WITH_BPB = ((("all benchmarks", "--"),), (("bpb", "-"), ("all benchmarks", "--")))
@@ -362,9 +362,9 @@ def figure(pool: str, out_dir: Path, t: pd.DataFrame, pooled: pd.DataFrame,
                        plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")] if variant == "with_bpb" else
                       [plt.Line2D([], [], color=S.INK, ls="--", label="benchmarks")]),
                    fontsize=6.5, frameon=False, ncol=2)
-    population = (f"cell panel = {axes} pairs of design variants sharing that L (seed {GRID_SEED}, every scheme); first panel = "
-                  f"every {axes} pair at that seed, every scheme (A, B, AT3, ZH, ES)" if by == "L" else
-                  f"cell panel = the mono-axis pairs that move that ONE design axis (seed {GRID_SEED}, every scheme, `{L_POOL}`; "
+    population = (f"cell panel = {axes} pairs of design variants sharing that L (seed {GRID_SEED}, every data build); first panel = "
+                  f"every {axes} pair at that seed, every data build (A, AT3, B, ZH, ES, DCLMP, FWEB)" if by == "L" else
+                  f"cell panel = the mono-axis pairs that move that ONE design axis (seed {GRID_SEED}, every data build, `{L_POOL}`; "
                   f"the pairs behind it in brackets); first panel = every mono-axis pair; the number at the end of a line = tasks behind it")
     top = G._header(fig, reading["title"].replace("per language count", "per design axis" if by == "transformation" else "per language count"),
                     f"{population}. DA = share of pairs the proxy orders like {reading['what']}, mean over "
@@ -399,9 +399,9 @@ def generate_readme(pool: str, out_dir: Path, pairs: pd.DataFrame) -> None:
         "so a thin L shows blanks rather than a 0/1 reading.",
         md_table(list(pairs.columns), pairs.values.tolist()),
         f"The early-and-small reading one L at a time: pairs of design variants that share the L (seed {GRID_SEED} of every "
-        f"scheme, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "
+        f"data build, `{L_POOL}`), against the {TARGET_SIZE} final ranking, on the ten evaluated checkpoints of every run; a cell "
         f"needs ≥ {MIN_PAIRS} pairs (rq02's rule), which today leaves out every L with one pair (the table above); the "
-        f"first panel pools every pair at that seed, every scheme included (`da_all_pooled_per_task{m}.csv`). "
+        f"first panel pools every pair at that seed, every data build included (`da_all_pooled_per_task{m}.csv`). "
         f"`da_all_by_L_per_task{m}.csv` also carries each size's DA-ckpt within the L (`da_own`); rq04 reads both tables. "
         f"The `_mono_axis` twins of every table and figure are the same over the one-axis pairs (rule 15). "
         f"Regenerate with `python analysis/rq02_decision_accuracy/by_L.py --pool {pool} [--axes mono-axis]`.",
@@ -463,7 +463,7 @@ def generate_readme_transformation(pool: str, out_dir: Path, summaries: dict) ->
     body = "\n\n".join([
         "## Early and small per design axis",
         f"The per-L reading above pools every design axis inside an L; this one splits the MONO-AXIS pairs at seed {GRID_SEED} "
-        f"(`{L_POOL}`, every scheme) by the one axis each pair moves — {', '.join(axes_)} — one panel per axis and a first panel "
+        f"(`{L_POOL}`, every data build) by the one axis each pair moves — {', '.join(axes_)} — one panel per axis and a first panel "
         f"over every mono-axis pair (median pairs per cell up to {int(summaries[('ckpt', '')]['median_pairs'].max())}). Same gate (rule 1), "
         f"pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and "
         f"`above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line "
@@ -476,9 +476,9 @@ def generate_readme_transformation(pool: str, out_dir: Path, summaries: dict) ->
         "\n".join([f"- At {SMALL_SIZES[0]} the DA-ckpt line clears {SAFE_DA} and stays there — " + "; ".join(early("ckpt")) + ".",
                     f"- At {TARGET_SIZE} — " + "; ".join(f"{a}: {cell(summaries[('ckpt', '')], a, TARGET_SIZE)}" for a in axes_) + "."]),
         "Follow-ups:",
-        "\n".join(["- A `_with_bpb` variant per axis, to see whether BPB decides the temperature and the second language earlier than the benchmarks do.",
+        "\n".join(["- A `_with_bpb` variant per axis, to see whether BPB decides the temperature and the data scheme earlier than the benchmarks do.",
                     "- The same panels on the L8 languages only (`scale_convergence.py --langs L8` does it for DA-size), so the language-count panel is read on one task set.",
-                    "- Once BT3 trains, the temperature panel gains the B-vs-BT3 pairs and the list panel AT3-vs-BT3 with no code change."]),
+                    "- Once BT3 trains, the temperature panel gains the B-vs-BT3 pairs and the scheme panel AT3-vs-BT3 with no code change."]),
         f"![DA-goal per design axis]({rel}/{stem('goal', '')}.png)",
         f"**DA-goal** (against the {TARGET_SIZE} final):",
         table("goal", ""),

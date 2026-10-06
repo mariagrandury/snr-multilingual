@@ -4,7 +4,7 @@ twins and the `rfgm_*` Gemini-rewritten twins (SETS) side by side.
 
 The rq00 gate, focused on the three letter-format families and read on every
 task set: per (task, size) the mean final-checkpoint score of the size's
-models that trained the task's language (the deep scheme-A seed-1904 ladder,
+models that trained the task's language (the deep data-A seed-1904 ladder,
 the only cells with reformulated results), minus chance (0.25). Each set is
 paired with the originals on the same models: a (model, task) enters a set's
 comparison only when the original and that twin are both scored, so the
@@ -100,16 +100,16 @@ def set_of(task: str) -> str:
 
 
 def pool(families: list[str]) -> pd.DataFrame:
-    """The deep scheme-A seed-1904 rows of `families`, originals and every
+    """The deep data-A seed-1904 rows of `families`, originals and every
     twin, trained languages only; `set` and `base` columns."""
     # untrained=True because utils' trained_only() resolves a task against
     # auto_benchmarks(), which knows only the originals — every rf_*/rfgm_*
     # row is "untrained" there and the pool would come back without a single
     # twin. The rule is applied below instead, on the base task name.
     df = build_snr_pool("predictivity", untrained=True)
-    df = df[(df["ladder"] == "deep") & (df["scheme"] == "A")]
+    df = df[(df["ladder"] == "deep") & (df["data"] == "A")]
     fam = df["task"].map(lambda t: base(TASKS.get(t, {}).get("benchmark", "")))
-    trained = [base(t) in _trained_tasks(L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]
+    trained = [base(t) in _trained_tasks(L, d) for t, L, d in zip(df["task"], df["L"], df["data"])]
     df = df[fam.isin(families) & pd.Series(trained, index=df.index)]
     return df.assign(set=df["task"].map(set_of), base=df["task"].map(base))
 
@@ -249,7 +249,7 @@ def main() -> None:
     fam = {s: cells(pairs[s], sig[sig["set"] == s], s, ["family"]) for s in SETS}      # set -> (orig, twin, n_sig)
     fam_o = fam[have[0]][0]
     sizes = size_order({sz for o, t, _ in fam.values() for sz in set(o["size"]) | set(t["size"])})
-    cell = ("cell = median over the {unit}'s tasks of (mean final-checkpoint score of the size's deep scheme-A seed-1904 "
+    cell = ("cell = median over the {unit}'s tasks of (mean final-checkpoint score of the size's deep data-A seed-1904 "
             "models that trained the language and have the original and the twin scored) − the task's chance level "
             "(1 / n_options); original = acc, twins = acc_norm, and part of every twin cell is that metric choice "
             f"(`norm_offset` in rf_significance{sfx}.csv"
@@ -277,7 +277,7 @@ def main() -> None:
     G.save_highlights(fig, HERE, "Per language, before and after the reformulations", note_lang, tables, name=f"rf_gate_by_language{sfx}")
 
     # the markdown block: family x size, original / per set: twin, Δ, sig
-    lines = [f"Gate cells (median task margin over the task's chance level, trained languages, deep scheme-A seed-1904 ladder, "
+    lines = [f"Gate cells (median task margin over the task's chance level, trained languages, deep data-A seed-1904 ladder, "
              f"from the ladder report; each set on the models that have the original and that twin scored — the original "
              f"shown is the {have[0]} pairing). Cell: original acc, then per set `twin acc_norm (**Δ** = twin − original, "
              f"n = tasks, sig)`; sig = tasks whose gain is significant for at least half of the size's models "

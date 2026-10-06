@@ -5,8 +5,8 @@ FINAL ranking on task y?
 The per-task DA of rq02 is the diagonal of this: a task predicting its own
 reference ranking. Here every parent task is tried as the proxy for every
 other one (x = proxy task on the columns, y = target task on the rows), over
-the pairs of design variants of the pool (`predictivity`: seed 1904, schemes
-A and B). A cell holds a *level* (the same code as the other level maps):
+the pairs of design variants of the pool (`predictivity`: seed 1904, every
+data build). A cell holds a *level* (the same code as the other level maps):
 
     cross_task_da_size_multi_axes.png / .csv   smallest proxy size at which x's final ranking safely predicts
                                  y's final ranking at the reference (DA-size, levels = SMALL_SIZES)

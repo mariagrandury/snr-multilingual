@@ -7,8 +7,8 @@ so the panels can never disagree with the figures they are taken from:
     left    DA-size   `scale_convergence_da_size<axes>.csv`, the `all benchmarks` population:
                       how small a FULLY TRAINED model may be and still decide like
                       the reference. The PLAIN grouping — the single pooled line
-                      over every pair at the grid seed, every data scheme (NOT the
-                      A/B-only `predictivity` headline pool), which is the claim the
+                      over every pair at the grid seed, every data build (the
+                      `predictivity` pool), which is the claim the
                       question is written as; `scale_convergence_da_size_transformation<axes>.csv`
                       breaks the same decisions down by design axis and is the
                       figure to read next to it, not inside it.

@@ -9,9 +9,9 @@ The copy renames the analysis's descriptive stem to the paper's name (rqN for
 the main text, app_* for the appendix). The .tex carries the source path as a
 comment next to the \\includegraphics.
 
-    rq0  INCLUDE vs its RF twin <- rq01_scaling_predictability/tokens_seen.py --paper (pool predictivity_all)
+    rq0  INCLUDE vs its RF twin <- rq01_scaling_predictability/tokens_seen.py --paper (pool predictivity_seeds)
                              pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical
-    rq1  scaling regimes  <- rq01_scaling_predictability/regimes.py  (pool predictivity_all)
+    rq1  scaling regimes  <- rq01_scaling_predictability/regimes.py  (pool predictivity_seeds)
                              scaling_regimes_outliers_paper.png
     rq2  decision accuracy<- rq02_decision_accuracy/paper_rq2.py     (pool predictivity, --axes mono-axis)
                              rq2_da_all_above_66_either_transformation_mono_axis.png
@@ -36,7 +36,7 @@ REPO = HERE.parents[2]
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 
 GATE = ANALYSIS / "rq00_gate_and_curves" / "pretraining" / "predictivity"
-RQ01 = ANALYSIS / "rq01_scaling_predictability" / "pretraining" / "predictivity_all"
+RQ01 = ANALYSIS / "rq01_scaling_predictability" / "pretraining" / "predictivity_seeds"
 # paper stem -> (the analysis stem it is a copy of, the formats copied)
 FIGURES = {
     "rq0": (RQ01 / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png", "svg")),

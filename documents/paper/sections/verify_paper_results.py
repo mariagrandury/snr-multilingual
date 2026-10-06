@@ -162,7 +162,7 @@ def provenance(ten: pd.DataFrame) -> dict:
     from snr.download.ladder import load_predictivity_eval_results
     d = load_predictivity_eval_results()
     d = d[d["size"].isin(ANALYSIS_SIZES)]
-    head = d[(d["seed"] == 1904) & (d["scheme"].isin(["A", "B"]))]
+    head = d[(d["seed"] == 1904) & (d["data"].isin(["A", "B"]))]
     return {
         "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
         "sources": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -171,6 +171,7 @@ def provenance(ten: pd.DataFrame) -> dict:
                       "TARGET_SIZE": TARGET_SIZE, "ANALYSIS_SIZES": list(ANALYSIS_SIZES)},
         "healthy_175M_to_1_7B": int(d["model"].nunique()),
         "headline_seed1904_A_B_runs": int(head["model"].nunique()),
+        "grid_seed1904_runs": int(d.loc[d["seed"] == 1904, "model"].nunique()),   # the `predictivity` pool
         "sizes": {k: int(v) for k, v in d.groupby("size")["model"].nunique().items()},
         "da_rows": int(len(ten)),
     }
@@ -201,7 +202,8 @@ def main(check: bool) -> int:
     p = json.loads(text)
     print(f"{'wrote':>12}  {prov.name}")
     print(f"\npopulation: {p['healthy_175M_to_1_7B']} healthy runs 175M-{TARGET_SIZE}, "
-          f"{p['headline_seed1904_A_B_runs']} headline (seed 1904, schemes A/B)")
+          f"{p['grid_seed1904_runs']} in the grid pool (seed 1904, every data build), "
+          f"{p['headline_seed1904_A_B_runs']} of them on data A/B")
     print(f"            per size {p['sizes']}")
     print("            the same two counts live in documents/ladder-facts.json, which\n"
           "            facts.py diffs on every refresh — the paper's prose quotes them.")

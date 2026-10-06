@@ -3,7 +3,9 @@
 Reads the intervention decision table `analyze.py` writes next to it (one
 row per intervention, L, population, proxy size, fraction of the proxy's run)
 and answers the paper's question for the two planned decisions, depth and
-language lists: at which proxy size, and how early in that proxy's run, does
+the language lists (data scheme A vs B at L8-L30; `analyze.by_recipe` keeps
+A vs ZH at L2 and A vs DCLMP at L1, the other recipes the letter B names, out
+of it): at which proxy size, and how early in that proxy's run, does
 the decision match the reference's final one? The heat map is the mean over
 language settings of the per-setting agreement, so a setting with thousands
 of benchmark tasks does not outweigh one with hundreds.
@@ -13,7 +15,7 @@ of benchmark tasks does not outweigh one with hundreds.
     rq2_da_goal_early_small_mono_axis.png/.pdf
     early_decision_facts.json
 
-    python analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
+    python analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -40,17 +42,19 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import by_recipe  # noqa: E402
 from analysis.utils import size_order  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
-CANONICAL = "predictivity_all"
-DECISIONS = ["arch", "scheme"]                       # the two planned axes (analyze.py keys)
+CANONICAL = "predictivity_seeds"
+DECISIONS = ["arch", "scheme_B"]                     # the two planned decisions (analyze.by_recipe keys: scheme_B = the L8-L30 lists)
 POPULATIONS = [("bpb_trained", "per-language bits per byte"), ("benchmark", "benchmark tasks")]
 mpl.rcParams.update(S.RC)
 
 
 def early_small(dt: pd.DataFrame) -> pd.DataFrame:
-    core = dt[dt["intervention"].isin(DECISIONS)]
+    core = by_recipe(dt)
+    core = core[core["intervention"].isin(DECISIONS)]
     return (core.groupby(["intervention", "label", "population", "proxy_size", "frac"])
             .agg(da=("decision_acc", "mean"), cells=("decision_acc", "size"),
                  items=("n_items", "sum"), refs=("reference_size", lambda s: "/".join(sorted(set(s)))))
@@ -139,7 +143,8 @@ def main(pool: str, out_dir: Path) -> None:
         sys.exit(f"missing {src} — run analysis/rq05_design_decisions/analyze.py --pool {pool} first")
     dt = pd.read_csv(src)
     out_dir.mkdir(parents=True, exist_ok=True)
-    core = dt[dt["intervention"].isin(DECISIONS)]
+    core = by_recipe(dt)
+    core = core[core["intervention"].isin(DECISIONS)]
     core.to_csv(out_dir / "rq2_da_all_decisions_mono_axis.csv", index=False)
     agg = early_small(dt)
     agg.to_csv(out_dir / "rq2_da_goal_early_small_mono_axis.csv", index=False)

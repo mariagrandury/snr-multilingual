@@ -23,12 +23,14 @@
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/` for the ladder pools: `predictivity`
-(the plan grid, seed 1904 — the headline), `predictivity_seeds` (every seed;
+Outputs live under `pretraining/<pool>/` for the ladder pools
+([RULES.md](../RULES.md), Definitions): `predictivity` (the grid seed, every
+ladder and data build — the headline), `predictivity_seeds` (every seed;
 replicates enter the signal pool as separate models), and the seed holdout
-`predictivity_seeds_train` (seeds 64/313 at the ×3 cells) → `_test` (seed 1904
-on the same cells). The signal population at a size is every design variant
-trained there (language setting × depth × scheme); the noise is the
+`predictivity_seeds_train` (the replicate seeds 64/313 at 175M/600M and 28/1797
+at 1B) → `_test` (seed 1904 on exactly the same cells; until 2026-10-05 the
+holdout was the 175M/600M cells alone). The signal population at a size is every design variant
+trained there (language setting × ladder × data build); the noise is the
 late-checkpoint std over the noise window, the k/20 points in the last 20 %
 of the run — 80/85/90/95/100 % (rule 4) — (rq03
 carries the seed-replicate noise). DA has two flavours: **DA-size**
@@ -38,9 +40,10 @@ families (dispersion / relative-spread / discrepancy / robust / depth) and
 correlated with DA per language as Pearson r of log₁₀(SNR) vs DA; the
 per-language BPB tasks (`bpb_<subset>`) take part like any benchmark.
 The seed holdout is English-heavy by construction: among the ×3 cells
-(L ∈ {1, 2, 50, 100}) a non-English harness task is only evaluated at L50 and
-L100, so its per-language variant ranking rests on two language settings per
-seed, while English and the BPB tasks cover all four.
+(L ∈ {1, 2, 50} at 175M/600M, L ∈ {1, 2, 30} at 1B) a non-English harness task
+is only trained at L30/L50 (Russian also at L2), so its per-language variant
+ranking rests on few language settings per seed, while English and the BPB
+tasks cover them all.
 
 ## Methodology
 
@@ -54,7 +57,7 @@ seed, while English and the BPB tasks cover all four.
   per-language "most reliable benchmark" table reads that variant at the
   reference size.
 - **Seed holdout.** The same per-language table on the replicate seeds
-  (64/313) and on seed 1904 of the same cells; agreement is counted over
+  (64/313/28/1797) and on seed 1904 of the same cells; agreement is counted over
   the languages that have a best variant on both splits.
 
 Hand-written numbers in this README are from the ladder-report snapshot
@@ -223,8 +226,9 @@ practical alternative to SNR: FineTasks (Kydlíček, Penedo et al., 2024)
 selects tasks per language with four such statistics. `finetasks_criteria.py`
 (moved here from rq09 on 2026-09-23; its outputs are
 `pretraining/predictivity/finetasks_*`) computes them per (task, size) on the
-`predictivity` pool — the 18 design variants at each size, grid seed, schemes
-A/B, on the ten evaluated tenths — and judges them by DA-size against the
+`predictivity` pool — every design variant at each size at the grid seed (18
+of schemes A/B on the tables quoted here; every data build since 2026-10-05),
+on the ten evaluated tenths — and judges them by DA-size against the
 1.7B reference, which the criteria never see. The gate is not applied (non-random
 is one of the criteria under test) but the mask is carried; every candidate is
 scored as Spearman ρ with DA-size across tasks, the way the SNR definitions
@@ -591,10 +595,12 @@ Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surr
       best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
       in rq04's highlight and "Seed generalization" table) asks whether that
       ranking of definitions survives a change of seed: it is computed on
-      `predictivity_seeds_train` (seeds 64, 313) and again on
+      `predictivity_seeds_train` (the replicate seeds 64, 313, 28, 1797) and again on
       `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
       compared.
-      *The problem.* Replicate seeds exist only at 175M and 600M, so both
+      *The problem.* (2026-10-05: the train split is now every replicate
+      seed, so the 1B ×3 cells, seeds 28/1797, join both splits and the
+      text below predates that.) Replicate seeds exist only at 175M and 600M, so both
       splits hold those two sizes and DA-size there is 175M → 600M (the 1.7B
       reference never enters). English tasks and BPB rest on 15 model pairs.
       A non-English benchmark is trained only in the L50 cell, so its train

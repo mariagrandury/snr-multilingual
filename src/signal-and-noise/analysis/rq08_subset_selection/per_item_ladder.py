@@ -27,7 +27,7 @@ per_item_summary.csv (task, size), per_item_ladder.png + .csv, and the
 (kept, `gated`); rule 6: the store holds the parents' items, subject files
 folded in; rule 13: the captions carry the populations.
 
-    python analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity [--store predictivity_seeds]
+    python analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity [--store predictivity]
 """
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
@@ -54,7 +55,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import SUBSET_SELECTION  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq08_subset_selection.build_per_item_store import STORE  # noqa: E402
+from analysis.rq08_subset_selection.build_per_item_store import BBPB_POOL, STORE, readable_parts  # noqa: E402
 from analysis.rq08_subset_selection.smooth_subtasks import NULL_DRAWS  # noqa: E402
 from analysis.utils import (GRID_SEED, MIN_PAIRS, TARGET_SIZE, benchmark_family, design_axes, finals,  # noqa: E402
                             ladder_frame, noise_checkpoints, pair_agreement, pair_sets, passes_gate, size_order)
@@ -107,7 +108,7 @@ def heldout_da(A: np.ndarray, runs: np.ndarray, P: dict, ref: dict, pairs: list,
     """Choose the subset on one half of the families, score it on the other
     half's pairs (proxy final vs the reference's final of the full task), swap.
     `P` = family -> item vector at the proxy's final; `ref` = family -> score."""
-    fams = attrs.loc[sorted(set(runs) & set(P) & set(ref))].sort_values(["L", "arch", "scheme"]).index.to_numpy()
+    fams = attrs.loc[sorted(set(runs) & set(P) & set(ref))].sort_values(["L", "arch", "scheme", "T"]).index.to_numpy()
     halves = fams[::2], fams[1::2]                          # alternate along the sorted axes: stratified
     out = {"da_heldout_ab": np.nan, "da_heldout_ba": np.nan, "da_full": [], "da_random_subset": [],
            "n_pairs_heldout": 0, "best_n_heldout": []}
@@ -191,8 +192,11 @@ def main(pool: str, store: str) -> None:
           f"grid-seed runs in scope, {int(keys['is_win'].sum())} window rows, {len(pairs)} multi-axis pairs")
     rows, items = [], []
     for part in parts:
-        s = pd.read_parquet(part, columns=["model", "step", "task", "doc_id", "acc", "acc_norm"],
-                            filters=[("model", "in", sorted(set(keys["model"]))), ("step", "in", sorted(set(keys["step"])))])
+        files = readable_parts(part)               # a truncated part is skipped with a warning
+        if not files:
+            continue
+        s = pq.read_table(files, columns=["model", "step", "task", "doc_id", "acc", "acc_norm"],
+                          filters=[("model", "in", sorted(set(keys["model"]))), ("step", "in", sorted(set(keys["step"])))]).to_pandas()
         s = s.merge(keys, on=["model", "step", "task"])
         for (task, size), g in s.groupby(["task", "size"], sort=True):
             metric = metric_for(task) or "acc"
@@ -225,17 +229,16 @@ def main(pool: str, store: str) -> None:
                   f"held-out DA full {fmt(row['da_full'])} subset {fmt(row['da_subset_heldout'])} random {fmt(row['da_random_subset'])} "
                   f"over {da['n_pairs_heldout']} pairs{' [gated]' if gated else ''}")
     summary = pd.DataFrame(rows)
-    summary.to_csv(out_dir / "per_item_summary.csv", index=False)
-    (pd.concat(items) if items else pd.DataFrame(columns=["task", "size", "doc_id", "snr", "dead", "gated"])).to_csv(
-        out_dir / "per_item_snr.csv", index=False)
-    if summary.empty:
-        print("!!! no (task, size) cell has two runs with two window checkpoints in the store: no figure, no README block")
+    if summary.empty:         # never overwrite the committed tables with column-less files
+        print("!!! no (task, size) cell has two runs with two window checkpoints in the store: nothing written")
         return
+    summary.to_csv(out_dir / "per_item_summary.csv", index=False)
+    pd.concat(items).to_csv(out_dir / "per_item_snr.csv", index=False)
     ok = summary[~summary["gated"]]
     note = (f"Grid-seed ({GRID_SEED}) design variants, {ok['task'].nunique()} tasks over {ok['n_runs'].max()} runs at most; "
             f"per-item SNR on the rule-4 window (80-100 % of the run, k/20 points); dead = the same mean outcome in every run. "
             f"Gain = best-prefix SNR minus the 95th percentile of {NULL_DRAWS} random subsets of the same size. Held-out DA: items "
-            f"chosen on half of the families (stratified over L, arch, scheme), scored on the other half's multi-axis pairs "
+            f"chosen on half of the families (stratified over L, arch, scheme, T), scored on the other half's multi-axis pairs "
             f"(>= {MIN_PAIRS}, proxy final vs the {TARGET_SIZE} final of the full task), both halves averaged; random = {RANDOM_DRAWS} "
             f"draws. Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).")
     figure(summary, out_dir, pool, note)
@@ -260,6 +263,6 @@ def main(pool: str, store: str) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pool", default=CANONICAL_POOL)
-    ap.add_argument("--store", default="predictivity_seeds", help="the per_item_store/<store> folder to read (a superset pool)")
+    ap.add_argument("--store", default=BBPB_POOL, help="the per_item_store/<store> folder to read (default: the build default)")
     a = ap.parse_args()
     main(a.pool, a.store)

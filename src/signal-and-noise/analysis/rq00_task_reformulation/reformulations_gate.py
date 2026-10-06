@@ -113,7 +113,7 @@ def headline(pool: str, mask: pd.DataFrame, sizes: list) -> pd.DataFrame:
     rel = pd.read_csv(DECISION_ACCURACY / stage / pool / "da_all_reliable_tasks_both_axes.csv")
     rel = no_bbpb(rel[rel["axes"] == "multi-axis"] if "axes" in rel.columns else rel)
     rel["set"] = rel["task"].map(twin_set)
-    reg = no_bbpb(pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv"))
+    reg = no_bbpb(pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv"))
     reg["set"] = reg["task"].map(twin_set)
     passes = mask.set_index("task")
     rows = []

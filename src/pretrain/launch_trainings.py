@@ -252,6 +252,12 @@ SIZE_LANG_SETTINGS["3B"] = [8, 15, 30, 50]
 #   langs     the L settings where the scheme defines data at all
 #   max_size  per-setting cap on the ladder; absent = the full ladder
 #   temp      sampling temperature for the per-language allocation (T = 1/alpha)
+#   letter    the ANALYSIS's data scheme: the recipe the build implements at
+#             its L (A the resource-ranked baseline, B and C the alternatives
+#             at that L), with `temp` as the separate T axis. The build label
+#             names cells and data dirs; analysis/RULES.md reads (letter, temp)
+#             as the design levels: A and AT3 are A at T=1 and T=3; B, ZH (L2)
+#             and DCLMP (L1) are B; ES (L2) and FWEB (L1) are C
 #   sets      which language_sets_scheme<X>.json supplies its language lists
 #   seeds     "grid" follows SEED_TRIPLES, "single" is seed 1904 only
 #   ladders   the ladders (HYPERPARAMS) the scheme is trained in
@@ -287,7 +293,7 @@ DATA_SCHEMES = {
     # off the grid). `ladders_by_L` and not `ladders`, so no other setting
     # plans a swiglu cell; the replicate seeds stay deep-only via seeds_for.
     "A": dict(label="", subdir="", langs={1, 2, 8, 15, 30, 50},
-              max_size={}, temp=1.0, sets="A", seeds="grid",
+              max_size={}, temp=1.0, letter="A", sets="A", seeds="grid",
               ladders=("deep", "shallow"),
               ladders_by_L={L: ("deep", "shallow", "swiglu") for L in (8, 15, 30)}),
     # AT3 runs the whole ladder at both settings: on the filtered subset a 92B
@@ -302,10 +308,10 @@ DATA_SCHEMES = {
                 # 1.7B reference, and it was never planned above it. The cap is
                 # explicit because the 3B rung now covers L50 — without it,
                 # opening that setting would create an AT3 3B cell by accident.
-                max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, sets="A", seeds="single",
+                max_size={15: "1.7B", 30: "1.7B", 50: "1.7B"}, temp=3.0, letter="A", sets="A", seeds="single",
                 ladders=("deep", "shallow"), ladders_by_L={15: ("deep",), 30: ("deep",)}),
     "B": dict(label="-schemeB", subdir="schemeB", langs={8, 15, 30},
-              max_size={}, temp=1.0, sets="B", seeds="grid",
+              max_size={}, temp=1.0, letter="B", sets="B", seeds="grid",
               ladders=("deep", "shallow")),
     # ZH and ES are the second-language intervention at L=2. Their ceiling is
     # the SOURCE, not the budget: the swiss-ai filtered subset holds 71.8B
@@ -326,7 +332,7 @@ DATA_SCHEMES = {
     # ZH stops at the 1.7B reference: a 3B would draw 150B of Chinese against
     # the 59.9B there is (2.5 epochs), and nothing above the reference is read.
     "ZH": dict(label="-ZH", subdir="ZH", langs={2},
-               max_size={2: "1.7B"}, temp=1.0, sets="ZH", seeds="single",
+               max_size={2: "1.7B"}, temp=1.0, letter="B", sets="ZH", seeds="single",
                ladders=("deep",),
                allow_undersized=("lm-1.7B-L2-ZH-deep-seed1904",)),
     # BT3 — the scheme x temperature interaction — was registered 2026-09-21
@@ -352,7 +358,7 @@ DATA_SCHEMES = {
     # repeated tokens still worth close to fresh ones, so the 1.7B's SCORE —
     # which is all decision accuracy reads — should land where a less-repeated
     # run would. And the cell buys the whole second-language axis: with ES at
-    # the reference, L2 holds A, ZH and ES there, and `lang2` goes from ONE
+    # the reference, L2 holds A, ZH and ES there, and the L2 data axis (`lang2` then, the scheme axis since 2026-10-05) goes from ONE
     # mono-axis pair to the three rule 5 needs, so that axis becomes
     # reportable for the first time.
     # The three epoch counts are NOT comparable, and that is the cost: record
@@ -364,7 +370,7 @@ DATA_SCHEMES = {
     # rebuilt SHORT of its source. The repetition is reported by
     # `fineweb_epochs` instead, which is a different question.
     "ES": dict(label="-ES", subdir="ES", langs={2},
-               max_size={2: "1.7B"}, temp=1.0, sets="ES", seeds="single",
+               max_size={2: "1.7B"}, temp=1.0, letter="C", sets="ES", seeds="single",
                ladders=("deep",)),
     # The L=1 rung has no language axis, so its only family contrast is depth —
     # one pair, where rule 5 needs three. These two schemes are the third and
@@ -381,12 +387,12 @@ DATA_SCHEMES = {
     #          crawl directories, read one file per crawl in rotation.
     # temp/sets are inert here: L=1 has no FineWeb-2 half.
     "DCLMP": dict(label="-dclmP", subdir="DCLMP", langs={1},
-                  max_size={}, temp=1.0, sets="A", seeds="single",
+                  max_size={}, temp=1.0, letter="B", sets="A", seeds="single",
                   ladders=("deep",),
                   english="/capstor/store/cscs/swissai/infra01/datasets/"
                           "dclm_processed/output"),
     "FWEB": dict(label="-fweb", subdir="FWEB", langs={1},
-                 max_size={}, temp=1.0, sets="A", seeds="single",
+                 max_size={}, temp=1.0, letter="C", sets="A", seeds="single",
                  ladders=("deep",),
                  english="/capstor/store/cscs/swissai/infra01/datasets/"
                          "HuggingFaceFW/fineweb/data",
@@ -488,9 +494,9 @@ def seeds_for(size: str, L: int, scheme: str = "A", ladder: str = "deep") -> lis
 
     **Deep only** (2026-09-21). The seed axis is read as the noise denominator
     of the interventions, and every one of those is measured against a DEEP
-    baseline: INTERVENTIONS["arch"] holds ("scheme", "A") with `deep` as the
-    baseline level, and the seed-holdout pools are declared "Deep scheme-A
-    cells only". No analysis reads a shallow seed std, so a shallow replicate
+    baseline: INTERVENTIONS["arch"] holds scheme A at T=1 with `deep` as the
+    baseline level, and the seed-holdout pools take the replicate seeds
+    wherever they exist. No analysis reads a shallow seed std, so a shallow replicate
     is 3,281 node-h nothing would load. Every replicate ever trained is in
     fact deep; this makes the grid say so."""
     if ladder != "deep" or DATA_SCHEMES[scheme]["seeds"] == "single":

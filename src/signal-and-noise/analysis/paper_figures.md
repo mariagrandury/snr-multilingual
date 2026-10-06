@@ -4,8 +4,9 @@ The figures proposed for the paper, one block per research question: the
 question, the figure, how each cell is computed, the key finding, the other
 findings, and what is still open. Paths are relative to this folder; every
 PNG has its table next to it under the same name. Numbers are from the
-`predictivity` pool (seed 1904, schemes A and B, reference 1.7B) unless the
-block says `predictivity_all` (every seed and scheme). Written 2026-09-18;
+`predictivity` pool (seed 1904, schemes A and B when written — every data build
+since 2026-10-05 —, reference 1.7B) unless the
+block says `predictivity_seeds` (every seed and data build). Written 2026-09-18;
 the L15 and L100 cells at 1.7B and the BPB of some 1.7B cells are not final
 yet, which blanks every per-L figure at those L.
 
@@ -39,15 +40,15 @@ Measurement issues
 
 ## rq01 — What scales predictably with model size?
 
-![Median R² per benchmark and L](rq01_scaling_predictability/pretraining/predictivity_all/fit_r2_median.png)
+![Median R² per benchmark and L](rq01_scaling_predictability/pretraining/predictivity_seeds/fit_r2_median.png)
 
-![Scaling regimes per benchmark-language pair](rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes.png)
+![Scaling regimes per benchmark-language pair](rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes.png)
 
-![Appendix: scaling regimes per family, tasks named by language](rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_by_family_paper.png)
+![Appendix: scaling regimes per family, tasks named by language](rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_by_family_paper.png)
 
 How it is computed
-- Per (task, L): final score = a + b·log₁₀N over the rungs trained at that L (deep, scheme A, seed 1904); the cell is the median R² over the benchmark's tasks (number = fits).
-- Scaling regimes (`regimes.py`): one point per task, medians over the deep scheme-A seed-1904 cells that train its language. (a) R² and Spearman ρ of the log-N fits (one per L; ρ of BPB and the loss negated so improving is positive). (b) the same R² against the R² of score ~ log tokens over each run's checkpoints (one fit per (L, size), ≥ 5 points); quadrants split at R² = 0.5, a heuristic.
+- Per (task, L): final score = a + b·log₁₀N over the rungs trained at that L (deep, data A, seed 1904); the cell is the median R² over the benchmark's tasks (number = fits).
+- Scaling regimes (`regimes.py`): one point per task, medians over the deep data-A seed-1904 cells that train its language. (a) R² and Spearman ρ of the log-N fits (one per L; ρ of BPB and the loss negated so improving is positive). (b) the same R² against the R² of score ~ log tokens over each run's checkpoints (one fit per (L, size), ≥ 5 points); quadrants split at R² = 0.5, a heuristic.
 
 Key finding
 - Per-language BPB (0.94–0.96), LAMBADA (0.96–0.99), XStoryCloze (0.90–0.96), XWinograd (0.89–0.95) and HellaSwag (0.86–0.94) follow a log-linear law at every L; knowledge and reading benchmarks do not (Belebele 0.13–0.62, Global-MMLU 0.10–0.63, INCLUDE 0.05–0.64).
@@ -97,7 +98,7 @@ Measurement issues
 ![Early and small per L](rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_L_multi_axes.png)
 
 How it is computed
-- Same DA, but the pairs are restricted to the design variants that share the L (`predictivity_all`, seed 1904, every scheme), on the ten evaluated checkpoints (0.5C–5C). A panel needs ≥ 3 pairs; the first panel pools every pair of schemes A and B.
+- Same DA, but the pairs are restricted to the design variants that share the L (`predictivity_seeds`, seed 1904, every scheme), on the ten evaluated checkpoints (0.5C–5C). A panel needs ≥ 3 pairs; the first panel pools every pair of schemes A and B.
 - `pairs_da_all_by_L_multi_axes.csv`: planned pairs against 1.7B per L and size, vs pairs with data today (BPB / benchmarks / loss).
 
 Key finding
@@ -208,13 +209,13 @@ Issues / open
 - The FLOPs line joins cells of different sizes: the zigzags near 10⁻² are a bigger model's first checkpoint scoring below a smaller model's last. One line per size, or per-size markers, for the paper version.
 - Benchmark families panel is unreadable; keep the aggregates panel only.
 
-## rq05 — Would a small proxy make the same design decision as the reference? (`predictivity_all`)
+## rq05 — Would a small proxy make the same design decision as the reference? (`predictivity_seeds`)
 
-![Decisions by proxy size and by checkpoint](rq05_design_decisions/pretraining/predictivity_all/da_all_lines_mono_axis.png)
+![Decisions by proxy size and by checkpoint](rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis.png)
 
-![The same, on the items the reference decides outside seed noise](rq05_design_decisions/pretraining/predictivity_all/da_all_lines_decided_mono_axis.png)
+![The same, on the items the reference decides outside seed noise](rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_decided_mono_axis.png)
 
-![Which depth wins, in seed sds](rq05_design_decisions/pretraining/predictivity_all/depth_crossover.png)
+![Which depth wins, in seed sds](rq05_design_decisions/pretraining/predictivity_seeds/depth_crossover.png)
 
 How it is computed
 - For each intervention with two levels (depth, language lists A/B, temperature T1/T3, second language ru/zh and ru/es) and L, DA = share of items (per-language BPB of the languages both levels train, or the benchmark tasks) on which the proxy prefers the level the reference prefers at its final checkpoint. The reference is the largest size trained at both levels at that L — 600M for depth, temperature and zh/es, 1.7B for the lists — and each line keeps only the L's sharing one reference (listed in the note) and averages over them. Ten checkpoints per run.
@@ -242,11 +243,11 @@ Measurement issues
 - *The reference changes between lines.* Depth, temperature and zh/es are read against 600M, the lists against 1.7B, and a 1.7B depth or temperature decision may differ. Fix: once the 1.7B shallow and AT3 cells finish, re-read every line against 1.7B; until then name the reference in the legend, not only in the note.
 - *The seed sd comes from the baseline cells.* It is the median over the deep scheme-A cells with replicates (175M, 600M, 1B), applied to every size and scheme, and each cell's own sd rests on 3 seeds (the median-of-sd is biased low by ~17 %). The |Δ| of two runs is compared against √2 × that sd. Fix: where the ×3 cells exist at the reference's size, use that size's sd, and widen DECIDED to cover the sd's sampling error.
 
-## rq06 — Does the decision transfer to languages the proxy did not train? (`predictivity_all`)
+## rq06 — Does the decision transfer to languages the proxy did not train? (`predictivity_seeds`)
 
-![The list decision by language group](rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_lines_mono_axis.png)
+![The list decision by language group](rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis.png)
 
-![The decisions by language count](rq06_language_transfer/pretraining/predictivity_all/transfer_da_all_by_L_mono_axis.png)
+![The decisions by language count](rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_by_L_mono_axis.png)
 
 How it is computed
 - rq05's per-item agreement on the per-language BPB of all 100 evaluation languages, grouped per (intervention, L) by what the two levels' lists do with the language: both train it, only one does, neither does but one trains its script, or neither trains even the script. The last two groups are the transfer test; "only one" is the decision the language's own inclusion makes. First figure: the list decision (A vs B) at L8 and L30 (reference 1.7B), by proxy size and by the reference's checkpoint. Second: every intervention, x = L, DA-size averaged over the proxy sizes.

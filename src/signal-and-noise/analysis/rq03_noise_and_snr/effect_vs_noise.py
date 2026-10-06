@@ -23,7 +23,7 @@ only (the loader, rules 6 and 2).
     effect_vs_noise.csv   per (size, L, task): |Δ| per intervention, seed noise, raw and detrended checkpoint noise, ratios
     effect_vs_noise.png
 
-    python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+    python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -49,12 +49,12 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.grids import mark_gated  # noqa: E402
 from analysis.paths import NOISE_AND_SNR  # noqa: E402
-from analysis.rq05_design_decisions.analyze import INTERVENTIONS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, at_baseline  # noqa: E402
 from analysis.utils import (  # noqa: E402
     GRID_SEED, NOISE_WINDOW, benchmark_family, finals, ladder_frame, noise_checkpoints, size_order)
 
 OUT_ROOT = NOISE_AND_SNR
-CANONICAL = "predictivity_all"      # every seed: the seed-noise column needs the replicates
+CANONICAL = "predictivity_seeds"      # every seed: the seed-noise column needs the replicates
 mpl.rcParams.update(S.RC)
 
 
@@ -79,20 +79,20 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
     key = ["size", "L", "task"]
     grid = fin[fin["seed"] == GRID_SEED]
     out = None
-    for k, (_label, axis, levels, (hcol, hval)) in INTERVENTIONS.items():
-        piv = grid[grid[hcol] == hval].pivot_table(index=key, columns=axis, values="primary_score")
+    for k, (_label, axis, levels, held) in INTERVENTIONS.items():
+        piv = at_baseline(grid, held).pivot_table(index=key, columns=axis, values="primary_score")
         if set(levels) <= set(piv.columns):
             eff = (piv[levels[0]] - piv[levels[1]]).abs().rename(f"effect_{k}")
             out = eff.to_frame() if out is None else out.join(eff, how="outer")
     if out is None:
         return pd.DataFrame()
     # seed noise: the baseline cell's finals across seeds (sample std, n >= 2)
-    base = fin[(fin["ladder"] == "deep") & (fin["scheme"] == "A")]
+    base = fin[(fin["ladder"] == "deep") & (fin["data"] == "A")]
     seed = base.groupby(key)["primary_score"].agg(["std", "count"])
     out["seed_noise"] = seed.loc[seed["count"] >= 2, "std"]
     out["n_seeds"] = seed["count"]
     # checkpoint noise: the grid seed's baseline cell over the noise window (rule 4)
-    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["ladder"] == "deep") & (df["scheme"] == "A")])
+    curve = noise_checkpoints(df[(df["seed"] == GRID_SEED) & (df["ladder"] == "deep") & (df["data"] == "A")])
     curve = curve.sort_values("step").groupby(key)["primary_score"].apply(np.asarray)
     out["ckpt_noise"] = curve.map(lambda s: _late_std(s, detrend=False))
     out["ckpt_noise_detrended"] = curve.map(lambda s: _late_std(s, detrend=True))
@@ -147,7 +147,7 @@ def generate_readme(pool: str, out_dir: Path, evn: pd.DataFrame) -> None:
     rel = f"{stage}/{pool}"
     bullets, rows = [], []
     bullets.append(f"- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds "
-                   f"of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
+                   f"of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, "
                    f"the k/20 points in the last {NOISE_WINDOW:.0%} of the run (80/85/90/95/100 %, the same for BPB and "
                    f"benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees "
                    f"of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter "

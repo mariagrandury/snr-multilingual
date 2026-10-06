@@ -12,7 +12,7 @@
 # lm-eval samples files (see build_per_item_store.py). Resumable: a second
 # submission skips every (model, step, task) already in the manifest.
 #
-#   sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch [--pool predictivity_seeds]
+#   sbatch analysis/rq08_subset_selection/build_per_item_store.sbatch [--pool predictivity]
 #
 # CPU-only: json decoding of ~500k samples files, parallel over checkpoint
 # dirs. Never run this on the login node (the 1000-pid slice, the 4 M-file tree).

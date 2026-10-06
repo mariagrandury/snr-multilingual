@@ -10,12 +10,14 @@
 
 ## Experimental setup
 
-Outputs live under `pretraining/<pool>/` for the ladder pools: `predictivity`
-(the plan grid, seed 1904 — the headline), `predictivity_seeds` (every seed;
+Outputs live under `pretraining/<pool>/` for the ladder pools
+([RULES.md](../RULES.md), Definitions): `predictivity` (the grid seed, every
+ladder and data build — the headline), `predictivity_seeds` (every seed;
 replicates enter the signal pool as separate models), and the seed holdout
-`predictivity_seeds_train` (seeds 64/313 at the ×3 cells) → `_test` (seed 1904
-on the same cells). The signal population at a size is every design variant
-trained there (language setting × depth × scheme); the noise is the
+`predictivity_seeds_train` (the replicate seeds 64/313 at 175M/600M and 28/1797
+at 1B) → `_test` (seed 1904 on exactly the same cells; until 2026-10-05 the
+holdout was the 175M/600M cells alone). The signal population at a size is every design variant
+trained there (language setting × ladder × data build); the noise is the
 checkpoint std over the one noise window of rule 4 (`utils.noise_checkpoints`:
 the k/20 points in the last 20 % of the run, 80/85/90/95/100 %, the same rows for
 BPB and benchmarks; `effect_vs_noise.py` below carries the seed-replicate
@@ -26,10 +28,10 @@ discrepancy / robust / depth); rq04 correlates them with DA per language. The
 per-language BPB tasks (`bpb_<subset>`) take part like any benchmark, except
 under the discrepancy family (below).
 The seed holdout is English-heavy by construction: the ×3 cells are the deep
-scheme-A runs at 175M and 600M for L ∈ {1, 2, 50}, and a non-English harness
-task is only trained at L50 (Russian also at L2), so its per-language variant
-ranking rests on one language setting per seed, while English and the BPB
-tasks cover all three.
+data-A runs at 175M and 600M for L ∈ {1, 2, 50} and at 1B for L ∈ {1, 2, 30}
+plus the 1B L30 data-B run, and a non-English harness task is only trained at
+L30/L50 (Russian also at L2), so its per-language variant ranking rests on few
+language settings per seed, while English and the BPB tasks cover them all.
 
 ## Methodology
 
@@ -63,7 +65,7 @@ tasks cover all three.
 - **Seed holdout.** `compare_seed_splits.py` builds the per-language variant
   ranking (rq04's Pearson table: at least `min_lang_tasks` = 3 distinct tasks
   per language, rule 8; `multi` is never a language, rule 7) on the replicate
-  seeds (64/313 of the ×3 cells) and on seed 1904 of the same cells and writes
+  seeds (64/313/28/1797 of the ×3 cells) and on seed 1904 of the same cells and writes
   `<train>__vs__<test>/headline_metrics.csv`; agreement is counted over the
   languages that have a best variant on both splits. Its README block below
   says whether the two pools hold the same cells. rq04 reports the numbers
@@ -130,7 +132,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_
 ![Effect vs noise](pretraining/predictivity_all/effect_vs_noise.png)
 <!-- END auto:effect-vs-noise -->
 
-GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_vs_noise.png) · [effect_vs_noise.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_vs_noise.csv)
+GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.png) · [effect_vs_noise.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.csv)
 
 ## Preliminary findings (ladder snapshot, 2026-09-01)
 
@@ -168,8 +170,8 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 [snr_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_by_benchmark.png) ·
 [snr_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_by_language.png) ·
 [snr.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr.csv) ·
-[effect_over_seed_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_over_seed_by_benchmark.png) ·
-[effect_over_seed_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_all/effect_over_seed_by_language.png) ·
+[effect_over_seed_by_benchmark.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_over_seed_by_benchmark.png) ·
+[effect_over_seed_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_over_seed_by_language.png) ·
 [snr_variants_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/snr_variants_per_task.csv)
 
 <!-- BEGIN auto:seed-holdout (compare_seed_splits.py --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test) -->
@@ -197,10 +199,12 @@ A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and ne
       best; the holdout (`rq03_noise_and_snr/compare_seed_splits.py`, reported
       in rq04's highlight and "Seed generalization" table) asks whether that
       ranking of definitions survives a change of seed: it is computed on
-      `predictivity_seeds_train` (seeds 64, 313) and again on
+      `predictivity_seeds_train` (the replicate seeds 64, 313, 28, 1797) and again on
       `predictivity_seeds_test` (seed 1904 of the same cells) and the two are
       compared.
-      *The problem.* The holdout's replicate seeds (64/313) exist only at
+      *The problem.* (2026-10-05: the train split is now every replicate
+      seed, so the 1B ×3 cells, seeds 28/1797, join both splits and the
+      text below predates that.) The holdout's replicate seeds (64/313) exist only at
       175M and 600M (the 1B ×3 cells carry seeds 28/1797 and are in neither
       split), so both splits hold those two sizes and DA-size there is
       175M → 600M (the 1.7B reference never enters). English tasks and

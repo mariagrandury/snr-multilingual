@@ -27,7 +27,8 @@ one column per measurement: `bench__<task>`, `bpb__<subset>`, `ppl__<subset>`,
 (or reads `$SNR_LADDER_DIR`) and melts it into the long schema every script
 consumes — one row per (model, step, task) — with the ladder's axes as columns
 (`size`, `L`, `ladder` and its levels `arch` / `activation` / `optimizer`,
-`scheme`, `seed`) and per-language BPB as tasks of its
+`data` — the build label — and its levels `scheme` (A/B/C) / `T`, `seed`;
+`analysis/RULES.md`, Definitions) and per-language BPB as tasks of its
 own (`bpb_rus_Cyrl`, `bpb_dclm`, `bpb_macro`). Diverged and unfinished runs
 are dropped, and checkpoints are restricted to the grid every size shares
 (k/10 for benchmarks, k/20 for BPB) so late-window noise spans the same
@@ -42,10 +43,9 @@ uses is declared per `source` in `configs/models.json` (`loader: ladder`).
 
 | pool | models | use |
 |---|---|---|
-| `predictivity` | one run per (size, L, ladder, scheme), seed 1904 | the headline pool: every README's numbers |
-| `predictivity_seeds` | every trained cell, all seeds | seed-noise estimates (rq03, rq05) |
-| `predictivity_seeds_train` / `_test` | the ×3 cells split by seed (64/313 vs 1904) | the seed holdout of rq03 |
-| `predictivity_all` | every trained cell, all seeds and all five schemes | rq01, rq03, rq05 and rq06: one intervention at a time against its own baseline |
+| `predictivity` | seed 1904, every ladder and data build: one run per (size, L, ladder, data build) | the headline pool and the gate's: every README's numbers |
+| `predictivity_seeds` | every trained cell, all seeds | seed-noise estimates (rq03, rq05); rq01, rq06 and rq10, which read every run |
+| `predictivity_seeds_train` / `_test` | the replicate seeds (64, 313, 28, 1797) vs seed 1904 on exactly their cells | the seed holdout of rq03 |
 | `seeds_*`, `custom_swissai_hf`, `external` | the 36-sweep and the external models | committed history; still runnable |
 
 The size axis (`snr` section of `configs/models.json`): proxies 175M–1B,
@@ -84,7 +84,7 @@ generalise; **D**, can the benchmarks be improved:
 | RQ2 | [`rq02_decision_accuracy/`](analysis/rq02_decision_accuracy/) | A | Does a benchmark rank the design variants at a small size, or an early checkpoint, the way the reference does? |
 | RQ3 | [`rq03_noise_and_snr/`](analysis/rq03_noise_and_snr/) | B | Seed vs checkpoint noise, the effect of a design decision against it, the 22 SNR definitions per task, the seed holdout |
 | RQ4 | [`rq04_surrogates/`](analysis/rq04_surrogates/) | B | Which cheap statistic — an SNR definition, its parts, early agreement, fit quality, margin above chance — predicts decision accuracy (paper RQ3) |
-| RQ5 | [`rq05_design_decisions/`](analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the five design decisions like the reference at each L (paper RQ2, RQ4) |
+| RQ5 | [`rq05_design_decisions/`](analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the four design decisions (depth, data scheme A vs B and A vs C, temperature) like the reference at each L (paper RQ2, RQ4) |
 | RQ6 | [`rq06_language_transfer/`](analysis/rq06_language_transfer/) | C | Does per-language scaling transfer to unmeasured and never-trained languages? (paper RQ5) |
 | RQ7 | [`rq07_external_frameworks/`](analysis/rq07_external_frameworks/) | C | Do our SNR values agree with AllenAI DataDecide on the shared English tasks? |
 | RQ8 | [`rq08_subset_selection/`](analysis/rq08_subset_selection/) | D | Can a language or subject subset of a benchmark beat the full set's SNR, beyond a random-subset null? |

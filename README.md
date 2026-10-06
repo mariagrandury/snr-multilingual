@@ -56,7 +56,7 @@ report is published — the results.
 | RQ2 | [`rq02_decision_accuracy/`](src/signal-and-noise/analysis/rq02_decision_accuracy/) | A | Does a benchmark rank the design variants at a small size, or an early checkpoint, the way the reference does? |
 | RQ3 | [`rq03_noise_and_snr/`](src/signal-and-noise/analysis/rq03_noise_and_snr/) | B | Seed vs checkpoint noise, the effect of a design decision against it, the 22 SNR definitions per task, the seed holdout |
 | RQ4 | [`rq04_surrogates/`](src/signal-and-noise/analysis/rq04_surrogates/) | B | Which cheap statistic — an SNR definition, its parts, early agreement, fit quality, margin above chance — predicts decision accuracy (paper RQ3) |
-| RQ5 | [`rq05_design_decisions/`](src/signal-and-noise/analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the five design decisions like the reference at each L (paper RQ2, RQ4) |
+| RQ5 | [`rq05_design_decisions/`](src/signal-and-noise/analysis/rq05_design_decisions/) | C | Which proxy sizes, and how early in their run, rank the four design decisions (depth, data scheme A vs B and A vs C, temperature) like the reference at each L (paper RQ2, RQ4) |
 | RQ6 | [`rq06_language_transfer/`](src/signal-and-noise/analysis/rq06_language_transfer/) | C | Does per-language scaling transfer to unmeasured and never-trained languages? (paper RQ5) |
 | RQ7 | [`rq07_external_frameworks/`](src/signal-and-noise/analysis/rq07_external_frameworks/) | C | Do our SNR values agree with AllenAI DataDecide on the shared English tasks? |
 | RQ8 | [`rq08_subset_selection/`](src/signal-and-noise/analysis/rq08_subset_selection/) | D | Can a language or subject subset of a benchmark beat the full set's SNR, beyond a random-subset null? |

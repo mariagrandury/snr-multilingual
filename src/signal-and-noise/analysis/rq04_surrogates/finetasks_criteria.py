@@ -21,8 +21,8 @@ one step, which the SNR framework (and rq03) calls SIGNAL; so their SNR is
 seeds, so consecutive-step τ carries within-run persistence (rq02's seed
 null); ours does too, and is reported as the same number for comparability.
 
-Population: the `predictivity` pool (the 18 design variants at each size,
-grid seed, schemes A/B), benchmark tasks on the ten evaluated tenths (rule 3),
+Population: the `predictivity` pool (every design variant at each size at
+the grid seed, every ladder and data build), benchmark tasks on the ten evaluated tenths (rule 3),
 trained languages only (rule 2), parents only (rule 6). The gate is NOT
 applied — non-random is one of the criteria under test — but the mask is
 carried so the two verdicts can be compared.
@@ -208,7 +208,7 @@ def reference_statistics(pool: str, out: pd.DataFrame) -> pd.DataFrame:
     from analysis.paths import SCALING_PREDICTABILITY
     stage = load_pools()[pool].get("stage", "pretraining")
     cells = pd.read_csv(DECISION_ACCURACY / stage / pool / "agreement_da_size_per_cell_multi_axes.csv")[["task", "size", "rho", "tau_b"]]
-    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")[["task", "rho_size", "r2_trajectory"]]
+    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv")[["task", "rho_size", "r2_trajectory"]]
     return (out[["task", "size", "da_size"]].merge(cells, on=["task", "size"], how="left").merge(reg, on="task", how="left")
             .rename(columns={"rho": "rho_ranking", "tau_b": "tau_ranking"}))
 

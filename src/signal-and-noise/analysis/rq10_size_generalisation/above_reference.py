@@ -3,7 +3,7 @@ still hold one rung ABOVE it, at 3B?
 
 Every other RQ stops at the reference (rule 10). This is the one analysis that
 opts in with `above_reference=True`: it takes every family with a final at the
-`--reference` rung (3B: deep, L ∈ {8, 15}, schemes A and B — four families, six
+`--reference` rung (3B: deep, L ∈ {8, 15}, data builds A and B — four families, six
 multi-axis and four mono-axis pairs) and reads, on those families alone,
 
   (a) DA-size from every smaller rung to the reference, pooled over the gated
@@ -29,7 +29,7 @@ runs it every pass so the figure fills in by itself. `--reference 1.7B
 --design 3B` is the preview available today — the same four families read to
 the current reference — and `--reference 1.7B --check` is the known-answer
 check: its DA-size per task and pair set equals rq02's
-`predictivity_schemes/da_all_per_task_both_axes.csv` (`decision_acc_size_<proxy>`) on every
+`predictivity/da_all_per_task_both_axes.csv` (`decision_acc_size_<proxy>`) on every
 cell (verified exact on 3,312 cells, 2026-09-23).
 
     above_reference_<ref>[_design<d>].png / .csv       the pooled lines of (a), (b) and (d)
@@ -70,14 +70,14 @@ from analysis.utils import (  # noqa: E402
 
 GITHUB = "https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis"
 OUT_ROOT = SIZE_GENERALISATION
-POOL = "predictivity_all"                   # every trained cell; the pairs are held at the grid seed by pair_sets
+POOL = "predictivity_seeds"                   # every trained cell; the pairs are held at the grid seed by pair_sets
 REFERENCE = next((s for s in EVAL_SIZES if NON_EMB[s] > NON_EMB[TARGET_SIZE]), TARGET_SIZE)   # 3B today
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 # The design set of a rung: which families it was planned with. `3B` is the
 # four deep L8/L15 A/B cells (plan/3b_models.md); `all` is every family.
 DESIGNS = {"all": lambda a: pd.Series(True, index=a.index),
            "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & a["L"].isin([8, 15])
-                           & a["scheme"].isin(["A", "B"])}
+                           & a["data"].isin(["A", "B"])}
 mpl.rcParams.update(S.RC)
 
 
@@ -336,11 +336,10 @@ def run(pool: str, reference: str, design: str, out_dir: Path) -> dict:
 def check_against_rq02(tables: dict, pool: str) -> None:
     """Known answer: with the reference at 1.7B and every family, the DA-size per
     task and pair set is rq02's `decision_acc_size_<proxy>` in the
-    `predictivity_schemes` table — the pool whose pairs (every scheme at the
-    grid seed) the rq02 decision figures are computed over; the `predictivity`
-    folder's table holds the A/B-only pool and differs by construction."""
+    `predictivity` table — the pool whose pairs (every data build at the
+    grid seed) the rq02 decision figures are computed over."""
     stage = load_pools()[pool].get("stage", "pretraining")
-    raw = pd.read_csv(DECISION_ACCURACY / stage / "predictivity_schemes" / "da_all_per_task_both_axes.csv")
+    raw = pd.read_csv(DECISION_ACCURACY / stage / "predictivity" / "da_all_per_task_both_axes.csv")
     pt = tables["per_task"]
     pt = pt[(pt["frac"] == 1.0) & pt["da"].notna()]
     for axes in PAIR_AXES[:2]:
@@ -350,7 +349,7 @@ def check_against_rq02(tables: dict, pool: str) -> None:
                .assign(size=lambda x: x["col"].str.replace("decision_acc_size_", "")))
         m = pt[pt["axes"] == axes].merge(ref, on=["task", "size"]).dropna(subset=["rq02"])
         diff = (m["da"] - m["rq02"]).abs()
-        print(f"known-answer check vs rq02 predictivity_schemes/da_all_per_task_both_axes.csv ({axes}): "
+        print(f"known-answer check vs rq02 predictivity/da_all_per_task_both_axes.csv ({axes}): "
               f"{len(m)} cells, {int((diff < 1e-9).sum())} exact, max |diff| = {diff.max():.3g}")
 
 

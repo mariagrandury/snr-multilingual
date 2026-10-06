@@ -183,7 +183,7 @@ the question into one declarative sentence that stops where the answer goes
 item's own language — the cloze formulation the FineWeb-2 / FineTasks work
 found readable at small scale. Decided 2026-09-19: the three letter families
 in all their languages (185 tasks, ~636k items), `gemini-3.8-flash` through
-the Batch API, evaluated on the deep scheme-A seed-1904 ladder at every
+the Batch API, evaluated on the deep data-A seed-1904 ladder at every
 evaluated checkpoint (the `rf_*` coverage), so original / rf / rfgm are
 compared on identical models. The families that are cloze already (arc,
 hellaswag, global_piqa) are not rewritten.
@@ -452,7 +452,7 @@ python3.11 auto_evals_cscs.py --reformulated rfgm --name lm-175M-L8-deep-seed190
 ```
 
 **8. The ladder (needs approval).** The rf watcher's shape: every 2nd
-checkpoint + final of the deep scheme-A seed-1904 cells, jobs
+checkpoint + final of the deep data-A seed-1904 cells, jobs
 `eval-<cell>-iter<N>-rfgm`, 23–45 min each on one node, ~625 jobs, ~385
 node-hours (rf took about two days at `--max-submit 20`). Held-back tasks:
 a `--retry-held` pass. `pretrain_progress.py` does not count reformulated

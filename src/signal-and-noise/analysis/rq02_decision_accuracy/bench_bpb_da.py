@@ -32,9 +32,12 @@ bytes) and summarised apart from the cloze ones.
 Outputs under pretraining/<pool>/: bench_bpb_da_size_multi_axes.csv (task x size),
 bench_bpb_da_size_summary_multi_axes.csv (group x size), bench_bpb_da_size_heatmap_multi_axes.png,
 bench_bpb_da_size_bars_multi_axes.png (overall), bench_bpb_da_size_bars_benchmarks_multi_axes.png (per
-benchmark), each with its CSV, and the README's `bench-bpb` block.
+benchmark), each with its CSV, and the README's `bench-bpb` block. `--store`
+names the per_item_store/<store> folder when it differs from the pool; the
+merge keeps the pool's models, and the pool models the store lacks are printed
+and named in the README block.
 
-    python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
+    python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity [--store predictivity_schemes]
 """
 
 from __future__ import annotations
@@ -58,24 +61,25 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
-from analysis.rq08_subset_selection.build_per_item_store import STORE, bench_bpb  # noqa: E402
+from analysis.rq08_subset_selection.build_per_item_store import STORE, bench_bpb, store_gap  # noqa: E402
 from analysis.utils import (BBPB, SMALL_SIZES, TARGET_SIZE, benchmark_family, design_axes, finals,  # noqa: E402
                             ladder_frame, pair_agreement, pair_sets, passes_gate)
 
 GATE_POOL = "predictivity"           # the gate every rq02 reader uses, whatever pool the DA comes from
-DOC_POOL = "predictivity_schemes"    # the pool rq02's DA verdicts come from; only it writes the README
+DOC_POOL = "predictivity"             # the pool rq02's DA verdicts come from; only it writes the README
 READINGS = {"acc_acc": "acc → 1.7B acc", "bbpb_acc": "bBPB → 1.7B acc", "bbpb_bbpb": "bBPB → 1.7B bBPB"}
 ALL, CLOZE, LETTER = "all benchmarks", "all cloze", "all lettered"
 mpl.rcParams.update(S.RC)
 
 
-def da_table(pool: str) -> tuple[pd.DataFrame, int]:
+def da_table(pool: str, store_dir: Path) -> tuple[pd.DataFrame, int, list[str]]:
     """task x size: the three raw DAs, the gate flags and the three gated readings."""
-    per = bench_bpb(sorted((STORE / pool).glob("*.parquet"))).rename(columns={"bbpb": "bpb"})
+    per = bench_bpb(sorted(store_dir.glob("*.parquet"))).rename(columns={"bbpb": "bpb"})
     letter = per.groupby("task")["bytes_gold"].mean() <= 2.5
 
     df = ladder_frame(pool)
     pairs = pair_sets(design_axes(df))["multi-axis"]
+    missing = store_gap(df["model"], store_dir)
     df = finals(df[(df["kind"] == "benchmark") & ~df["task"].str.startswith(BBPB)]).merge(per[["model", "step", "task", "bpb"]], on=["model", "step", "task"])
     df = df.dropna(subset=["bpb"])   # a NaN score would count as a disagreeing pair in pair_agreement
     print(f"{pool}: {df['model'].nunique()} models, {df['task'].nunique()} tasks with bBPB, "
@@ -103,7 +107,7 @@ def da_table(pool: str) -> tuple[pd.DataFrame, int]:
     out["acc_acc"] = out["da_acc"].where(ref_ok & out["above_chance_proxy"])
     out["bbpb_acc"] = out["da_bpb_to_acc"].where(ref_ok)
     out["bbpb_bbpb"] = out["da_bpb"].where(ref_ok)
-    return out, len(pairs)
+    return out, len(pairs), missing
 
 
 def summarise(g: pd.DataFrame) -> pd.Series:
@@ -196,7 +200,8 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
     S.save_figure(fig, out_dir, "bench_bpb_da_size_bars_benchmarks_multi_axes")
 
 
-def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str) -> None:
+def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str, store: str,
+           missing: list[str]) -> None:
     def size_rows(g):
         return [[z, f"{fmt(r.acc_acc)} ({int(r.acc_acc_n)})", f"{fmt(r.bbpb_acc)} ({int(r.bbpb_acc_n)})",
                  fmt(r.bbpb_bbpb), f"{r.gain:+.2f} ({int(r.n_paired)})",
@@ -215,8 +220,11 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str)
         "task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc "
         "minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from "
         "`da_all_per_task_both_axes.csv`. Regenerate with "
-        f"`python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool {pool}` (after "
-        f"`build_per_item_store.py --pool {pool} --finals-only`).",
+        f"`python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool {pool}"
+        f"{'' if store == pool else ' --store ' + store}` (after "
+        f"`build_per_item_store.py --pool {store} --finals-only`)."
+        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}); "
+           "they are left out until the store is rebuilt for the pool." if missing else ""),
         f"**{ALL}**", md_table(head, size_rows(ALL)),
         f"**{CLOZE}** (the answer text is the continuation)", md_table(head, size_rows(CLOZE)),
         f"**{LETTER}** (the continuation is the letter: bBPB is the letter's surprisal)", md_table(head, size_rows(LETTER)),
@@ -229,13 +237,14 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str)
     replace_block(DECISION_ACCURACY / "README.md", "bench-bpb", "\n\n".join(body), f"bench_bpb_da.py --pool {pool}")
 
 
-def main(pool: str) -> None:
-    if not any((STORE / pool).glob("*.parquet")):
+def main(pool: str, store: str | None = None) -> None:
+    store = store or pool
+    if not any((STORE / store).glob("*.parquet")):
         # the store lives on the cluster only: an empty one would overwrite the
         # committed tables with column-less files (per_item_ladder.py does the same)
-        print(f"no per-item store at {STORE / pool}: nothing written (build_per_item_store.sbatch builds it)")
+        print(f"no per-item store at {STORE / store}: nothing written (build_per_item_store.sbatch builds it)")
         return
-    out, n_pairs = da_table(pool)
+    out, n_pairs, missing = da_table(pool, STORE / store)
     out_dir = DECISION_ACCURACY / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
     out.to_csv(out_dir / "bench_bpb_da_size_multi_axes.csv", index=False)
@@ -256,10 +265,12 @@ def main(pool: str) -> None:
     bars(summ, letter, out_dir, note + " Bars: mean DA over tasks (n in the panel title); dashed line = coin flip; "
          "black tick = FineWeb2 val BPB's DA; an empty panel = every task gated.", ref)
     if pool == DOC_POOL:
-        readme(summ, letter, ref, n_pairs, pool)
+        readme(summ, letter, ref, n_pairs, pool, store, missing)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pool", default=DOC_POOL)
-    main(ap.parse_args().pool)
+    ap.add_argument("--store", default=None, help="the per_item_store/<store> folder to read (default: the pool's)")
+    a = ap.parse_args()
+    main(a.pool, a.store)

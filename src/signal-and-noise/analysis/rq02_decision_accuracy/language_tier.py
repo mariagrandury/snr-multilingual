@@ -128,7 +128,7 @@ def figure_tiers(table: pd.DataFrame, path: Path, pool: str) -> None:
     top = G._header(fig, "Decision reliability by language tier: are the high-resource languages easier to read?",
                     f"One line per tier — the smallest scheme-A regime that trains the language (nested lists, so also "
                     f"how many regimes train it and how large its share is) — over the {GRID_SEED}-seed design-variant "
-                    f"pairs of every scheme (multi-axis, rule 15), pooled over the gated benchmark tasks in the tier's "
+                    f"pairs of every data build (multi-axis, rule 15), pooled over the gated benchmark tasks in the tier's "
                     f"languages: the proxy's final ranking against the {TARGET_SIZE} final's, ≥ {MIN_PAIRS} pairs per "
                     f"task (rule 5), above chance at both sizes (rule 1), the number under a point its task count, the "
                     f"band the 90 % leave-one-family-out interval. Dotted: chance. (a) supports inference; (b) is "

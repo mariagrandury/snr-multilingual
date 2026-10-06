@@ -3,7 +3,7 @@
 Does a benchmark rank the designs better, or is its SNR a better guide to its
 DA, once the items the 1.7B models fail are dropped? Read on the per-item
 store's final checkpoints (`build_per_item_store.py --finals-only`), the
-grid-seed design variants of `predictivity_schemes`:
+grid-seed design variants of `predictivity`:
 
   solved      an item is solved when at least SOLVED of the TARGET_SIZE runs
               in the selecting set answer it right (the task's metric, acc or
@@ -21,7 +21,7 @@ grid-seed design variants of `predictivity_schemes`:
 The selection reads the reference's answers, and DA is scored against the
 reference: chosen on every 1.7B run, the subset has seen the truth (rule 11).
 So the subset is chosen on the 1.7B runs of half of the families (stratified
-over L, arch, scheme, as per_item_ladder.heldout_da) and scored on the other
+over L, arch, scheme, T, as per_item_ladder.heldout_da) and scored on the other
 half's pairs, both ways round, against the full set on the same held-out pairs;
 the in-sample reading (every 1.7B run selects) is kept beside it as an upper
 bound and labelled so. Rule 1: a task counts at a size when it is above chance
@@ -33,7 +33,7 @@ mean DAs, the paired test, and the SNR-DA Spearman of both sets), the figure
 reference_solved_da_size_multi_axes.png with its CSV, and the README's
 `reference-solved` block.
 
-    python analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes
+    python analysis/rq08_subset_selection/reference_solved.py --pool predictivity [--store predictivity_schemes]
 """
 
 from __future__ import annotations
@@ -63,11 +63,11 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import SUBSET_SELECTION  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq04_surrogates.catalogue import kfold_noise  # noqa: E402
-from analysis.rq08_subset_selection.build_per_item_store import STORE  # noqa: E402
+from analysis.rq08_subset_selection.build_per_item_store import STORE, readable_parts, store_gap  # noqa: E402
 from analysis.utils import (BBPB, MIN_PAIRS, SMALL_SIZES, TARGET_SIZE, benchmark_family,  # noqa: E402
                             design_axes, finals, ladder_frame, pair_agreement, pair_sets, passes_gate)
 
-DOC_POOL = "predictivity_schemes"    # the pool the store was built on; only it writes the README
+DOC_POOL = "predictivity"            # the pool the store is built on; only it writes the README
 GATE_POOL = "predictivity"           # the gate every rq02 reader uses
 SOLVED = 0.5                         # share of the selecting 1.7B runs that must answer an item right
 NAME = "reference_solved_da_size_multi_axes"
@@ -170,7 +170,7 @@ def figure(summ: pd.DataFrame, out_dir: Path, note: str) -> None:
                       [pd.DataFrame(rows)], name=NAME)
 
 
-def readme(summ: pd.DataFrame, pool: str, n_tasks: int) -> None:
+def readme(summ: pd.DataFrame, pool: str, n_tasks: int, store: str, missing: list[str]) -> None:
     rows = [[r.size, int(r.n_paired), fmt(r.solved_share), fmt(r.da_full_heldout), fmt(r.da_solved_heldout),
              f"{r.gain_heldout:+.3f}" if np.isfinite(r.gain_heldout) else "", fmt(r.p_wilcoxon, 3),
              fmt(r.da_solved_in_sample), fmt(r.rho_snr_da_full), fmt(r.rho_snr_da_solved)] for r in summ.itertuples()]
@@ -183,27 +183,32 @@ def readme(summ: pd.DataFrame, pool: str, n_tasks: int) -> None:
         "pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the "
         "design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least "
         f"half of all the {TARGET_SIZE} runs solve, while the DA it is correlated with is the held-out one. Regenerate with "
-        f"`python analysis/rq08_subset_selection/reference_solved.py --pool {pool}`.",
+        f"`python analysis/rq08_subset_selection/reference_solved.py --pool {pool}"
+        f"{'' if store == pool else ' --store ' + store}`."
+        + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}); "
+           "they are left out until the store is rebuilt for the pool." if missing else ""),
         md_table(["proxy", "tasks", "solved share", "DA all (held out)", "DA solved (held out)", "Δ", "Wilcoxon p",
                   "DA solved (in sample)", "ρ(SNR, DA) all", "ρ(SNR, DA) solved"], rows),
         f"![Items the reference solves](pretraining/{pool}/{NAME}.png)"])
     replace_block(SUBSET_SELECTION / "README.md", "reference-solved", body, f"reference_solved.py --pool {pool}")
 
 
-def main(pool: str) -> None:
+def main(pool: str, store: str | None = None) -> None:
     out_dir = SUBSET_SELECTION / "pretraining" / pool
-    parts = sorted((STORE / pool).glob("*.parquet"))
+    store = store or pool
+    parts = sorted((STORE / store).glob("*.parquet"))
     if not parts:
-        print(f"no per-item store at {STORE / pool}: nothing written (build_per_item_store.sbatch builds it)")
+        print(f"no per-item store at {STORE / store}: nothing written (build_per_item_store.sbatch builds it)")
         return
     df = ladder_frame(pool)
     fin = finals(df[(df["kind"] == "benchmark") & ~df["task"].str.startswith(BBPB)])
     keys = fin[["model", "step", "task", "size", "family"]]
+    missing = store_gap(keys["model"], STORE / store)
     last = keys.groupby("model")["step"].max()                     # the store's finals are these steps
     truth = {t: dict(zip(g["family"], g["primary_score"])) for t, g in fin[fin["size"] == TARGET_SIZE].groupby("task")}
     attrs = design_axes(df)
     pairs = pair_sets(attrs)["multi-axis"]
-    fams = attrs.loc[sorted(set(fin.loc[fin["size"] == TARGET_SIZE, "family"]))].sort_values(["L", "arch", "scheme"]).index
+    fams = attrs.loc[sorted(set(fin.loc[fin["size"] == TARGET_SIZE, "family"]))].sort_values(["L", "arch", "scheme", "T"]).index
     halves = (set(fams[::2]), set(fams[1::2]))              # alternate along the sorted axes: stratified
     mask = load_mask(GATE_POOL)
     print(f"{pool}: {len(parts)} store families, {keys['task'].nunique()} tasks, {len(pairs)} multi-axis pairs, "
@@ -211,7 +216,10 @@ def main(pool: str) -> None:
     rows = []
     for part in parts:
         # dictionary-encoded strings: the largest family is ~10^7 items x runs
-        s = pq.read_table(part, columns=["model", "step", "task", "doc_id", "acc", "acc_norm"],
+        files = readable_parts(part)
+        if not files:
+            continue
+        s = pq.read_table(files, columns=["model", "step", "task", "doc_id", "acc", "acc_norm"],
                           read_dictionary=["model", "task"]).to_pandas()
         s = s[s["step"].to_numpy() == s["model"].map(last).astype(float).to_numpy()]
         for task, g in s.groupby("task", observed=True):
@@ -238,10 +246,12 @@ def main(pool: str) -> None:
             f"{TARGET_SIZE} run (sees the truth, rule 11). ρ over tasks, SNR = relative dispersion / relative k-fold noise.")
     figure(summ, out_dir, note)
     if pool == DOC_POOL:
-        readme(summ, pool, out.loc[~out["gated"], "task"].nunique())
+        readme(summ, pool, out.loc[~out["gated"], "task"].nunique(), store, missing)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pool", default=DOC_POOL)
-    main(ap.parse_args().pool)
+    ap.add_argument("--store", default=None, help="the per_item_store/<store> folder to read (default: the pool's)")
+    a = ap.parse_args()
+    main(a.pool, a.store)

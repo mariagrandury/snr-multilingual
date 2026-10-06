@@ -461,7 +461,7 @@ def fig4_subset_sweep() -> None:
 # Figure 5 — proxy size x language count: intervention decision accuracy
 # ===========================================================================
 def fig5_proxy_grid() -> None:
-    path = DESIGN_DECISIONS / POOL_STAGE / "predictivity_all" / "intervention_da_all_mono_axis.csv"
+    path = DESIGN_DECISIONS / POOL_STAGE / "predictivity_seeds" / "intervention_da_all_mono_axis.csv"
     if not path.exists():
         print(f"[fig5] skipped: {path} missing")
         return

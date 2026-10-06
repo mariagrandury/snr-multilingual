@@ -32,9 +32,9 @@ Records are 3-5 KB and only six fields are read: the head (doc_id) and tail
 json-decoded alone, which is 1.4x faster than ``json.loads`` of the record; a
 line the regexes cannot read is decoded whole.
 
-    python analysis/rq08_subset_selection/build_per_item_store.py --pool predictivity_seeds --workers 64
+    python analysis/rq08_subset_selection/build_per_item_store.py --pool predictivity --workers 64
     python ... --limit-models 1 --limit-tasks 3          # smoke test, one checkpoint dir per model
-    python ... --pool predictivity_schemes --finals-only --families rf_belebele,hellaswag   # bench-BPB DA
+    python ... --pool predictivity --finals-only --families rf_belebele,hellaswag   # bench-BPB DA
     python ... --bench-bpb            # only (re)write utils.BENCH_BPB from the BBPB_POOL folder of the store
 
 ``--bench-bpb`` reduces the store to one bits-per-byte value per (model, step,
@@ -56,6 +56,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
@@ -69,7 +71,7 @@ from analysis.utils import BBPB, BENCH_BPB, benchmark_family, ladder_frame, on_n
 from pretrain.ladder_report import EVAL_LOGS  # noqa: E402
 
 STORE = SUBSET_SELECTION / "per_item_store"
-BBPB_POOL = "predictivity_schemes"   # the one store folder bench_bpb.csv is reduced from (others may predate bytes_gold)
+BBPB_POOL = "predictivity"   # the store folder the pipeline reads (the build default; bench_bpb.csv is reduced from it alone: others may predate bytes_gold)
 FACET_STRIDE = 10_000        # doc_id offset per subject file of a parent without its own file
 COLS = ["model", "step", "task", "doc_id", "acc", "acc_norm", "ll_gold", "margin", "bytes_gold"]
 _FILE = re.compile(r"^samples_(.+)_(\d{4}-\d{2}-\d{2}T[\d\-.]+)\.jsonl$")
@@ -156,13 +158,43 @@ def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> No
     frames.clear(); manifest.clear()
 
 
+def readable_parts(family: Path) -> list[Path]:
+    """The part files of one store family whose footer opens; a truncated part
+    (an extraction killed mid-write) is skipped with a warning, never removed."""
+    ok = []
+    for f in sorted(Path(family).glob("*.parquet")):
+        try:
+            pq.ParquetFile(f)
+        except (pa.ArrowInvalid, OSError) as e:
+            print(f"warning: skipping unreadable store part {f}: {e}")
+        else:
+            ok.append(f)
+    return ok
+
+
+def store_gap(pool_models, store_dir: Path) -> list[str]:
+    """The pool's models absent from the store's manifest (printed): a store
+    built for another pool can lack some of them."""
+    have = set(pd.read_csv(store_dir / "manifest.csv", usecols=["model"])["model"])
+    missing = sorted(set(pool_models) - have)
+    if missing:
+        print(f"warning: {len(missing)} pool models absent from the store {store_dir.name}: {', '.join(missing)}")
+    return missing
+
+
 def bench_bpb(parts) -> pd.DataFrame:
     """Per (model, step, task) of the store `parts`: the item-mean bits per
     byte of the gold answer (`bbpb`) and the mean gold length (`bytes_gold`);
     a task with no multiple-choice record (no bytes_gold) has none."""
-    store = pd.concat(pd.read_parquet(d, columns=["model", "step", "task", "ll_gold", "bytes_gold"]) for d in parts)
-    store["bbpb"] = -store["ll_gold"] / np.log(2) / store["bytes_gold"]
-    return store.groupby(["model", "step", "task"], as_index=False)[["bbpb", "bytes_gold"]].mean().dropna(subset=["bbpb"])
+    out = []
+    for d in parts:           # one family per part: a task lives in one part, so reducing part by part is exact
+        files = readable_parts(d)
+        if not files:
+            continue
+        x = pq.read_table(files, columns=["model", "step", "task", "ll_gold", "bytes_gold"]).to_pandas()
+        x["bbpb"] = -x["ll_gold"] / np.log(2) / x["bytes_gold"]
+        out.append(x.groupby(["model", "step", "task"], as_index=False)[["bbpb", "bytes_gold"]].mean())
+    return pd.concat(out, ignore_index=True).dropna(subset=["bbpb"])
 
 
 def write_bench_bpb() -> None:
@@ -210,7 +242,7 @@ def main(pool: str, workers: int, limit_models: int, limit_tasks: int, flush_eve
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--pool", default="predictivity_seeds")
+    ap.add_argument("--pool", default=BBPB_POOL)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit-models", type=int, default=0)
     ap.add_argument("--limit-tasks", type=int, default=0)

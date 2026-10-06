@@ -147,7 +147,7 @@ The same over the paired cells (a (benchmark, language) that also has an origina
 **Follow-ups**
 
 - Rebuild the per-item store over every checkpoint (`build_per_item_store.sbatch
-  --pool predictivity_schemes`, then `--bench-bpb`) so that DA-goal and the
+  --pool predictivity`, then `--bench-bpb`) so that DA-goal and the
   safe compute share, and with them "how small AND how early", are compared
   across all six variants.
 - Add rq03's SNR and the k-fold noise per variant to the table, so a reader

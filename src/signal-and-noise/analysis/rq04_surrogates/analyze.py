@@ -52,7 +52,7 @@ from analysis.utils import (  # noqa: E402
 
 OUT_ROOT = SURROGATES
 CANONICAL = CANONICAL_POOL                 # rq03's headline table
-FITS_POOL = "predictivity_all"             # the pool rq01 fits on
+FITS_POOL = "predictivity_seeds"             # the pool rq01 fits on
 MIN_TASKS = 8
 KINDS = ("benchmark tasks", "per-language bits per byte")
 R2_NAME = "scaling-fit R² (proxy rungs only)"

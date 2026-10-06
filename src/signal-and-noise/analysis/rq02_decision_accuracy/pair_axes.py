@@ -12,7 +12,8 @@ side-by-side view of the two on one population (plan/decision_accuracy.md).
     multi-axis   every pair of design variants at the grid seed: rq02's convention
                  to date. Two thirds of these pairs move two or three axes at once
                  ("L8-A-deep vs L50-B-shallow"), a comparison nobody makes.
-    mono-axis    the pairs that differ on exactly ONE of L, arch, list, T, lang2, en.
+    mono-axis    the pairs that differ on exactly ONE of L, arch, activation, optimizer,
+                 scheme, T (utils.DESIGN_AXES, utils.moved_axes).
                  This is the structure upstream had by construction — DataDecide's
                  recipes differ only in the data mix, so every one of its pairs is
                  a single-axis decision — generalised to a grid with seven axes. The
@@ -146,8 +147,8 @@ def figure(out: pd.DataFrame, path: Path, n_cells: int) -> None:
     top = G._header(fig, "Multi-axis vs mono-axis pairs: the three decision accuracies on the reliable cells",
                     f"rows = pair set, columns = definition; the {n_cells} (benchmark, language) cells reliable on both axes "
                     f"at 0.66 (median, reliable_tasks.py). multi-axis = every pair at the grid seed ({n_pairs['multi-axis']} "
-                    f"decisions at the reference); mono-axis = those moving exactly one of L, depth, activation, list, "
-                    f"temperature, second language, English corpus ({n_pairs['mono-axis']}). DA-size: final vs the {TARGET_SIZE} final; DA-ckpt: a "
+                    f"decisions at the reference); mono-axis = those moving exactly one of L, depth, activation, optimizer, "
+                    f"data scheme, temperature ({n_pairs['mono-axis']}). DA-size: final vs the {TARGET_SIZE} final; DA-ckpt: a "
                     f"checkpoint vs its own size's final; DA-goal: a checkpoint vs the {TARGET_SIZE} final. Pooled over "
                     f"decisions; gate and MIN_PAIRS as everywhere in rq02; dotted = τ {TAU:g} / {SAFE_DA}.")
     fig.tight_layout(rect=(0, 0, 1, top))

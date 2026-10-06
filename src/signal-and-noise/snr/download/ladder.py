@@ -10,9 +10,13 @@ truth for every predictivity analysis: nothing here reads eval_logs or W&B.
 This module melts the wide table into the long schema the rest of the
 pipeline consumes (`snr.dataloader.get_slice`, `analysis.utils.build_snr_pool`):
 one row per (model, step, task) with `primary_score`, plus the ladder's axes
-(`size`, `L`, `ladder`, `arch`, `activation`, `optimizer`, `scheme`, `seed`) as
-columns: `ladder` is the cell name's token (the trained configuration), `arch`,
-`activation` and `optimizer` its design levels (launch_trainings.LADDERS). Per-language BPB enters as
+(`size`, `L`, `ladder`, `arch`, `activation`, `optimizer`, `data`, `scheme`,
+`T`, `seed`) as columns: `ladder` is the cell name's token (the trained
+configuration), `arch`, `activation` and `optimizer` its design levels
+(launch_trainings.LADDERS); `data` is the build label the report calls
+`scheme` (A, AT3, B, ZH, ES, DCLMP, FWEB: what names cells and data dirs), and
+`scheme` (the letter, A/B/C) and `T` are its design levels
+(launch_trainings.DATA_SCHEMES `letter`, `temp`). Per-language BPB enters as
 tasks of its own — `bpb_<subset>` (`bpb_rus_Cyrl`, `bpb_dclm` for English;
 lower is better) and `bpb_macro` — so the same decision-accuracy and SNR
 machinery runs on the plan's outcome metric. Decision accuracy is a rank
@@ -41,7 +45,7 @@ if str(_SRC) not in sys.path:
 from evals.scripts.utils.configs import load_hf_wandb_config  # noqa: E402
 from pretrain.ladder_report import CELL_RE, on_grid  # noqa: E402
 from pretrain.launch_trainings import (  # noqa: E402
-    BASELINE_LADDER, LADDERS, NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
+    BASELINE_LADDER, DATA_SCHEMES, LADDERS, NOISE_GRID, NOISE_WINDOW, SEQ_LEN, cell_gbs, mix_label)
 
 LADDER_FILES = ("ladder_report.csv", "ladder_report_curve.csv", "ladder_report.md")
 # Tokens per optimizer step = the RUNG'S OWN global batch x seq. It was a
@@ -126,8 +130,9 @@ def load_predictivity_eval_results(
 
     Columns: model (the cell name), family (cross-size identity), size, L,
     ladder (the name's token: deep / shallow / swiglu), its levels arch (the
-    depth: a swiglu cell is "deep"), activation and optimizer, scheme, seed,
-    mix (`L8-schemeB-deep`: the cell's design variant,
+    depth: a swiglu cell is "deep"), activation and optimizer, data (the
+    build label: A, AT3, B, ZH, ES, DCLMP, FWEB), its levels scheme (the
+    letter: A, B, C) and T (1, 3), seed, mix (`L8-schemeB-deep`: the cell's design variant,
     what the 36-sweep called its data mixture), step, task, kind
     (`benchmark` / `bpb` / `loss`), primary_score, tokens, compute
     (6 x params x tokens on the ladder convention), diverged, complete.
@@ -201,13 +206,20 @@ def load_predictivity_eval_results(
 
     df["L"] = df["L"].astype(int)
     df["seed"] = df["seed"].astype(int)
-    df["mix"] = [mix_label(L, ladder, scheme)
-                 for L, ladder, scheme in zip(df["L"], df["ladder"], df["scheme"])]
+    # The report's `scheme` is the launcher's word, the BUILD label; in the
+    # analysis frame it is `data`, and `scheme` is the letter of the recipe the
+    # build implements at its L, `T` its temperature (analysis/RULES.md,
+    # Definitions) — the same split as `ladder` vs arch/activation/optimizer.
+    df = df.rename(columns={"scheme": "data"})
+    df["scheme"] = df["data"].map({d: v["letter"] for d, v in DATA_SCHEMES.items()})
+    df["T"] = df["data"].map({d: int(v["temp"]) for d, v in DATA_SCHEMES.items()})
+    df["mix"] = [mix_label(L, ladder, data)
+                 for L, ladder, data in zip(df["L"], df["ladder"], df["data"])]
     df["family"] = "lm-" + df["mix"] + "-seed" + df["seed"].astype(str)
     df = df.rename(columns={"cell": "model", "iter": "step"})
     df["step"] = df["step"].astype(int)
     df["tokens"] = df["step"] * [float(cell_gbs(sz) * SEQ_LEN) for sz in df["size"]]
     params = {k: cell_params(*k) for k in set(zip(df["size"], df["ladder"]))}
     df["compute"] = 6.0 * df["tokens"] * [params[k] for k in zip(df["size"], df["ladder"])]
-    return (df.sort_values(["size", "L", "ladder", "scheme", "seed", "step", "task"])
+    return (df.sort_values(["size", "L", "ladder", "data", "seed", "step", "task"])
               .reset_index(drop=True))

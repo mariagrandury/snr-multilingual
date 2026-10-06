@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..50} × deep/shallow
-# × seven data schemes × seeds) from the published ladder report — the wide CSV that
+# Full analysis of the predictivity ladder (90M–1.7B × L ∈ {1..50} × deep/shallow/swiglu
+# × seven data builds × seeds) from the published ladder report — the wide CSV that
 # `src/pretrain/ladder_report.py --plot --publish --push-hf` writes to the HF
 # dataset named in configs/hf_wandb.json (`repo_id_ladder_report`). The loader
 # downloads it on first use; point SNR_LADDER_DIR at a directory holding
@@ -19,12 +19,12 @@
 # reads rq05's decision table, and rq07 reads rq04's variant ranking.
 #
 #   rq00  the above-random gate (every later step reads its mask), the curves
-#   rq01  scaling predictability on every seed and scheme
+#   rq01  scaling predictability on every seed and data build
 #   rq02  decision accuracy: the per-pool tables, then every figure that reads them
 #   rq03  the 22 SNR variants per pool (read rq02's DA), the seed holdout
 #   rq04  surrogates: the variant ranking per pool (reads rq03), then the
 #         analysis that reads rq00, rq01, rq02 and rq03 at once
-#   rq05  design decisions on every seed and scheme; then rq03's effect-vs-noise
+#   rq05  design decisions on every seed and data build; then rq03's effect-vs-noise
 #   rq06  language transfer (reads rq05)
 #   rq07  DataDecide agreement (reads rq03 and rq04)
 #   rq08  subset selection; rq09 benchmark design (reads rq03 code)
@@ -42,9 +42,11 @@ export SOURCE_DATE_EPOCH=0
 # Steps that exited non-zero. Without this every stage failed silently and
 # the script still printed ALL DONE, so a README could keep stale numbers.
 FAILED=()
-# `predictivity` is the plan grid (seed 1904): the headline pool. The
-# all-seeds pool feeds the seed-noise estimates (rq03, rq05); the two holdout pools are
-# the ×3 cells split by seed.
+# The four pools (analysis/RULES.md, Definitions): `predictivity` is the grid
+# seed, every design — the headline pool and the gate's. `predictivity_seeds`
+# is every seed, which feeds the seed-noise estimates (rq03, rq05) and the reads
+# that take every run (rq01, rq06); the two holdout pools are the replicate seeds
+# and seed 1904 on exactly their cells.
 POOLS=(predictivity_seeds predictivity_seeds_train predictivity_seeds_test predictivity)
 # The pools whose per-pool analysis and docs are written (the canonical one
 # last, so it sees the holdout).
@@ -82,7 +84,7 @@ pass "rq00 — the above-random gate and the curves"
 # it too, so they follow it here rather than at the end of the run.
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
-run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_all
+run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_seeds
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
 # the reformulated twins (rf_*) against the letter originals, through the rq00 gate
 run $PY analysis/rq00_task_reformulation/compare.py
@@ -94,16 +96,15 @@ run $PY analysis/rq00_task_reformulation/probe_survivors.py
 run $PY analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 
 pass "rq01 — scaling predictability"
-# The ladder-frame reads take every seed and scheme (`predictivity_all`); the
-# scaling-law error reads every scheme.
-run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all
+# The ladder-frame reads take every seed and data build (`predictivity_seeds`).
+run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_seeds
+run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_seeds
+run $PY analysis/rq01_scaling_predictability/regimes.py --pool predictivity_seeds
 # the same table with what the gate and the fit minimum removed put back, per family
-run $PY analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_all
-run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_seeds
+run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_seeds
 # a language's evaluation against the tokens of that language the proxy saw (BPB DA-goal; the gate per benchmark)
-run $PY analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all
+run $PY analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
 
 pass "rq02 — decision accuracy"
 # The per-pool DA tables (the truth every later RQ reads), cached until the
@@ -116,15 +117,12 @@ for t in "${POOLS[@]}"; do
     run $PY analysis/rq02_decision_accuracy/compute_da.py --pool "$t"
   fi
 done
-# the scheme-inclusive DA table: every data scheme at the grid seed (AT3 =
-# a temperature, ZH/ES = a second language), which is the population by_L and
-# scale_convergence actually pair over. The headline `predictivity` pool keeps
-# its A/B filter because its SNR signal would widen; decision accuracy is a rank
-# agreement and has no such problem (plan/decision_accuracy.md).
-run $PY analysis/rq02_decision_accuracy/compute_da.py --pool predictivity_schemes
-# DA of the benchmark BPB (bBPB) against accuracy on the same pool; reads the
-# per-item store, so off the cluster it writes nothing (README block `bench-bpb`)
-run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes
+# DA of the benchmark BPB (bBPB) against accuracy on the grid pool; reads the
+# per-item store, so off the cluster it writes nothing (README block `bench-bpb`).
+# The store was built under the retired pool name and lacks some predictivity
+# models (the swiglu and L1 FWEB cells; the script prints and names them): read it
+# there until build_per_item_store is re-run for predictivity. Unreadable parts are skipped.
+run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity --store predictivity_schemes
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
@@ -143,7 +141,7 @@ run $PY analysis/rq00_gate_and_curves/above_random_example.py --pool predictivit
 run $PY analysis/rq00_task_reformulation/reformulations_gate.py --pool predictivity
 # the toy explainer of the three DA kinds, the pair sets and the value lattice (no measured number; README block)
 run $PY analysis/rq02_decision_accuracy/da_explainer.py --pool predictivity
-# per language count: pairs of design variants sharing the L (predictivity_all at the grid seed); rq04's panels read it
+# per language count: pairs of design variants sharing the L (the grid seed of predictivity_seeds); rq04's panels read it
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity
 # per design axis: the mono-axis pairs split by the one axis they move, one panel per axis (DA-ckpt and DA-goal)
 run $PY analysis/rq02_decision_accuracy/by_L.py --pool predictivity --by transformation
@@ -194,8 +192,8 @@ done
 # seed holdout — needs the train/test pool CSVs above
 run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
     --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test
-run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
-# effect_vs_noise reads rq05's decision table: it runs in the rq05 block below.
+# effect_vs_noise reads rq05's decision table and rq03's panels read effect_vs_noise:
+# both run in the rq05 block below.
 
 pass "rq04 — surrogates"
 for t in "${DOC_POOLS[@]}"; do
@@ -212,18 +210,20 @@ run $PY analysis/rq04_surrogates/catalogue.py --pool predictivity
 run $PY analysis/rq04_surrogates/search.py --pool predictivity
 
 pass "rq05 — design decisions"
-# rq05 needs the five interventions and its early-decision read follows from
+# rq05 needs the four interventions and its early-decision read follows from
 # its decision table; rq06 reads its table for the never-trained languages.
-run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_all
-run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_all
-# rq03's effect-vs-noise reads rq05's interventions and the seed replicates
-run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all
+run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds
+run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds
+run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_seeds
+run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds
+# rq03's effect-vs-noise reads rq05's interventions and the seed replicates;
+# rq03's panels draw the effect-over-seed grids from it, so they come right after
+run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
+run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
 
 pass "rq06 — language transfer"
-run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_all
-run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_all
+run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_seeds
+run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
 # the minimal language panel: one language / English / the panel macro at the proxy against the 1.7B macro ranking
 run $PY analysis/rq06_language_transfer/language_panel.py --pool predictivity
 
@@ -250,7 +250,7 @@ run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 # (analysis/rq08_subset_selection/build_per_item_store.sbatch), not here
 run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
 # the items the 1.7B runs solve, chosen on half the designs, DA and SNR read on the rest (store finals; nothing without it)
-run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes
+run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity --store predictivity_schemes   # the retired pool's store (a subset of the models): switch with bench_bpb_da
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do

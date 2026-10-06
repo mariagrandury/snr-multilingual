@@ -28,22 +28,22 @@ Three groupings of the same decisions, `--by`:
                      ONE other axis (the README block gives the counts), so the
                      `_mono_axis` L lines rest on fewer decisions and fewer tasks
                      (L15 loses the tasks only its scheme-A list trains).
-                     The multi-axis L lines pool arch, list and
+                     The multi-axis L lines pool arch, scheme and
                      temperature decisions at once, and their mix is written
                      next to every point (`share_*` columns) because it differs
                      between regimes and cannot be held fixed.
     transformation   the axis the pair differs on, and nothing else: language
-                     count, depth, language list (A vs B), temperature (T = 1 vs
-                     T = 3), second language (ru vs zh vs es at L = 2), seed. The
-                     `scheme` token is unpacked into those three design choices
-                     first — AT3 is list A at T=3, ZH is list A with Chinese in
-                     the second slot — so a pair differing on two of the axes is
-                     a decision about neither and is dropped. This is rq05's
-                     intervention set read as a scale-convergence curve; if the
-                     two RQs merge, this grouping is the piece that moves.
+                     count, depth, activation, data scheme (A vs B vs C at one
+                     L), temperature (T = 1 vs T = 3), seed. The data build is
+                     read as its (scheme, T) first — AT3 is scheme A at T=3, ZH
+                     is scheme B at L = 2 (`utils.moved_axes`) — so a pair
+                     differing on two of the axes is a decision about neither
+                     and is dropped. This is rq05's intervention set read as a
+                     scale-convergence curve; if the two RQs merge, this
+                     grouping is the piece that moves.
 
 Every grouping also carries `OVERALL`, the pooled black line: every pair at the
-grid seed, every data scheme included (A, B, AT3, ZH, ES), so it is the same
+grid seed, every data build included (A, AT3, B, ZH, ES, DCLMP, FWEB), so it is the same
 population as by_L's first panel and means the same thing in every rq02 figure.
 It carries a leave-one-out jackknife band (`lo`/`hi`, 90 %): the unit
 resampled is the design variant, since pairs and tasks both share them, or the
@@ -126,13 +126,13 @@ from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E4
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    AXES_SUFFIX, CKPT_DA_EARLY_FRACS, DESIGN_AXES, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
-    assign_language, at_fraction, design_axes, finals, jackknife_ratio, ladder_frame, pair_sets,
-    size_order)
+    AXES_SUFFIX, CKPT_DA_EARLY_FRACS, GRID_SEED, MIN_PAIRS, NON_EMB, TARGET_SIZE,
+    assign_language, at_fraction, design_axes, finals, jackknife_ratio, ladder_frame, moved_axes,
+    pair_sets, size_order)
 from pretrain.launch_trainings import cell_languages  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
-POOL = "predictivity_all"     # the transformation axes need every scheme and seed
+POOL = "predictivity_seeds"     # the transformation axes need every data build and seed
 TAU = 0.90                    # "recovers 90 % of the full-scale decisions"
 BY_LINE = {"overall": "one pooled line over every pair at the grid seed",
            "L": "one line per language-count regime (pairs sharing the L; any other axis may move)",
@@ -140,28 +140,25 @@ BY_LINE = {"overall": "one pooled line over every pair at the grid seed",
 # The task restrictions a run can ask for, by name: the language set of an L
 # setting (scheme A's, the nested lists), or none.
 LANG_SETS = {"all": None, "L8": frozenset(cell_languages(8, "A"))}
-# The pair's one differing axis -> its label, one label per axis. `scheme` is
-# NOT an axis: it glues the language LIST, the sampling TEMPERATURE and the
-# SECOND LANGUAGE together, so an A-vs-AT3 pair moves the temperature alone
-# while a B-vs-AT3 pair moves the list AND the temperature and is a decision
-# about neither. That split, and the pair sets built on it, live in
-# `analysis.utils` (DESIGN_AXES, design_axes, pair_sets) because a rule belongs
-# in the shared layer, not in one figure — `compute_da` reads the same
-# decomposition for its `axes` column (rule 15). Before the split, a pair whose
-# level combination had no label was dropped silently, which is what hid
-# B-vs-AT3 and ZH-vs-ES; now B-vs-BT3 joins the temperature axis and AT3-vs-BT3
-# the list axis with no code change, once BT3 trains.
+# The pair's one differing axis -> its label, one label per axis. The data
+# BUILD is NOT an axis: it is read as the recipe at its L (`scheme`, A/B/C)
+# and the sampling TEMPERATURE (`T`), so an A-vs-AT3 pair moves the
+# temperature alone while a B-vs-AT3 pair moves the scheme AND the temperature
+# and is a decision about neither. That split, and the pair sets built on it,
+# live in `analysis.utils` (DESIGN_AXES, design_axes, moved_axes, pair_sets)
+# because a rule belongs in the shared layer, not in one figure — `compute_da`
+# reads the same decomposition for its `axes` column (rule 15). One label for
+# the scheme, whatever the L: A vs ZH at L2 and A vs DCLMP at L1 are both a
+# scheme decision, and the L a pair sits at tells them apart.
 AXIS_LABEL = {"L": "language count", "arch": "depth (deep vs shallow)",
-              "list": "language list (A vs B)", "T": "temperature (T=1 vs T=3)",
-              "lang2": "2nd language (ru vs zh vs es)",
-              "en": "English corpus (edu filter on vs off)",
+              "scheme": "data scheme (A vs B vs C)", "T": "temperature (T=1 vs T=3)",
               "activation": "activation (XIELU vs SwiGLU)", "optimizer": "optimizer", "seed": "seed"}
-KEYS = DESIGN_AXES
 # The pooled line every grouping carries, drawn in black: every pair at the grid
 # seed, cross-L and cross-scheme included — the same population as by_L's first
-# panel, so the black line means one thing in every rq02 figure. The scheme is NOT
-# held to A and B: AT3 (temperature), ZH and ES (the second language) are design
-# decisions like the depth or the language count, and the per-regime lines have
+# panel, so the black line means one thing in every rq02 figure. The data build
+# is NOT held to A and B: AT3 (temperature), ZH, ES, DCLMP and FWEB (schemes B
+# and C at L2 and L1) are design decisions like the depth or the language count,
+# and the per-regime lines have
 # always included them, so restricting the pooled line alone made it a different
 # population from the lines drawn beside it. Today this is the 37 pairs the two
 # L50 AT3 families reach the reference with; ZH and ES contribute nothing yet
@@ -227,7 +224,7 @@ def pairs_by_group(attrs: pd.DataFrame, by: str, axes: str = "multi-axis") -> di
                 if ra["L"] == rb["L"] and ra["seed"] == rb["seed"] == GRID_SEED and (a, b) in allowed:
                     groups.setdefault(f"L{int(ra['L'])}", []).append((a, b))
                 continue
-            differ = [k for k in KEYS if ra[k] != rb[k]]
+            differ = moved_axes(ra, rb)
             if len(differ) != 1:              # two axes at once decides neither
                 continue
             axis = differ[0]
@@ -242,7 +239,7 @@ def pair_axis(attrs: pd.DataFrame) -> dict[tuple[str, str], str]:
     out = {}
     for i, a in enumerate(fams):
         for b in fams[i + 1:]:
-            differ = [k for k in KEYS if attrs.loc[a, k] != attrs.loc[b, k]]
+            differ = moved_axes(attrs.loc[a], attrs.loc[b])
             out[(a, b)] = differ[0] if len(differ) == 1 else "multi"
     return out
 
@@ -594,7 +591,7 @@ def generate_readme_panels(pool: str, out_dir: Path, out: pd.DataFrame) -> None:
         "Follow-ups:",
         "\n".join(["- The `above_66_size` twin per panel (`" + stem_for("transformation_panels", "above_66_size") + ".png`): the same split on the cells that rank reliably.",
                     "- A per-axis panel grid on the L8 languages only (`--langs L8`), so the language-count panel is read on one task set.",
-                    "- The second-language and English-corpus panels fill in once their 1.7B cells are in the report (rule 9)."]),
+                    "- The activation panel fills in once the swiglu cells reach 1.7B (rule 9)."]),
         f"Files: [`{stem}.png`]({gh}/{stem}.png), [`{stem}.csv`]({gh}/{stem}.csv)."])
     replace_block(OUT_ROOT / "README.md", "scale-convergence-transformation-panels", body,
                   "scale_convergence.py --by transformation")
@@ -771,7 +768,7 @@ if __name__ == "__main__":
             f"setting ({', '.join(sorted(LANG_SETS[args.langs]))}), which every regime from {args.langs} up trains"
             + (f", and further over the tasks with ≥ {MIN_PAIRS} pairs in every regime at every proxy size — one task set "
                f"for the whole figure, so a gap between lines is a gap on the same benchmarks" if args.common_tasks else "")
-            + f". What this cannot fix: a regime pools arch, list and temperature decisions at once and the mix differs "
+            + f". What this cannot fix: a regime pools arch, scheme and temperature decisions at once and the mix differs "
             f"by regime (`share_*` in the CSV); rule 5 forbids holding it fixed. Under `--axes mono-axis` the regimes "
             f"keep only their one-axis pairs ("
             + ", ".join(f"{g} {n_pairs['L']['multi-axis'][g]} → {n_pairs['L']['mono-axis'].get(g, 0)}"

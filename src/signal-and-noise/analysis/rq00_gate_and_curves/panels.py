@@ -184,7 +184,7 @@ def highlights(out_dir: Path, long: pd.DataFrame, level: pd.DataFrame, sizes: li
 def score_curves(pool: str, out_dir: Path) -> int:
     df = ladder_frame(pool)
     df = df[df["kind"] == "benchmark"]
-    df = G.add_meta(df[[t in _trained_tasks(L, s) for t, L, s in zip(df["task"], df["L"], df["scheme"])]])
+    df = G.add_meta(df[[t in _trained_tasks(L, d) for t, L, d in zip(df["task"], df["L"], df["data"])]])
     df["chance"] = df["task"].map(task_chance)
     df["chinchilla"] = df["frac"] * G.CHINCHILLA_AT_FULL
     curve_dir = out_dir / "score_curves"

@@ -1,7 +1,7 @@
 """rq06 per language: the leave-one-language-out prediction error.
 
     transfer_error_by_L.png   |relative error| of the transferred prediction, language x rungs used, one subplot per L
-    transfer_da_all_lines_mono_axis.png     the list decision (scheme A vs B) read on per-language BPB, DA-size (x = proxy size) and
+    transfer_da_all_lines_mono_axis.png     the list decision (scheme A vs B on the L8-L30 lists, `analyze.by_recipe`) read on per-language BPB, DA-size (x = proxy size) and
                               DA-ckpt (x = the reference's checkpoint), one line per language group: both levels'
                               lists train the language, only one does, neither does but one trains its script, or
                               neither trains even the script (mean over L); the last two are the transfer test
@@ -13,7 +13,7 @@ is on per-language bits per byte only.
 The decision lines read analyze.py's `transfer_da_all_by_group_mono_axis.csv`
 (every evaluated checkpoint, every language: rule 2's exception).
 
-    python analysis/rq06_language_transfer/panels.py --pool predictivity_all
+    python analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -39,11 +39,11 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
-from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS  # noqa: E402
+from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS, RECIPES, by_recipe  # noqa: E402
 from analysis.rq05_design_decisions.panels import da_lines  # noqa: E402
 
 OUT_ROOT = LANGUAGE_TRANSFER
-CANONICAL = "predictivity_all"
+CANONICAL = "predictivity_seeds"
 GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.MUTED, S.RAMP[1], S.SERIES[1]]))
 mpl.rcParams.update(S.RC)
 
@@ -57,9 +57,11 @@ def decision_lines(out_dir: Path) -> bool:
     if g.empty:
         print(f"no rows in {src.name} — the transfer decision lines are skipped")
         return False
-    da_lines(g[g["intervention"] == "scheme"], out_dir, name="transfer_da_all_lines_mono_axis", series="group", colours=GROUP_COLOUR,
-             populations=(("bpb", "-", "per-language BPB"),),
-             title="Does a proxy read the list decision (scheme A vs B) for languages it did not train?",
+    # averaged over L, so one recipe: the language lists (A vs B at L8-L30), not A vs ZH or A vs DCLMP
+    lists = by_recipe(g)
+    da_lines(lists[lists["intervention"] == "scheme_B"], out_dir, name="transfer_da_all_lines_mono_axis", series="group",
+             colours=GROUP_COLOUR, populations=(("bpb", "-", "per-language BPB"),),
+             title=f"Does a proxy read the list decision ({RECIPES['scheme_B'][0]}) for languages it did not train?",
              note="DA = share of a group's languages on which the proxy prefers the list the reference prefers at its final "
                   "checkpoint (per-language BPB), mean over L; group = what the two levels' lists do with the language: both train "
                   "it, only one does (a decision the language's inclusion makes by itself), neither does but a list trains its "
@@ -125,7 +127,7 @@ def main(pool: str) -> None:
         f"The summary above, per language (`{pool}` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq06 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![Transfer error per language and L]({stage}/{pool}/transfer_error_by_L.png)"]
-        + ([f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('The list decision on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]]
+        + ([f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('The list decision (scheme A vs B at L8–L30) on untrained languages, by proxy size and checkpoint', 'transfer_da_all_lines_mono_axis.png'), ('The decisions on untrained languages, by language count', 'transfer_da_all_by_L_mono_axis.png')]]
            if drawn else ["The transfer-decision figures are not drawn: `transfer_da_all_by_group_mono_axis.csv` has no rows."]))
     replace_block(OUT_ROOT / "README.md", "panels", body, f"panels.py --pool {pool}")
 

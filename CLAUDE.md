@@ -66,10 +66,11 @@ Two sweeps, in this order:
    against 1.7B) differ, so they are compared as replications of a finding,
    never pooled. `plan/next_analyses.md` says what each period can still add.
 2. **The predictivity sweep** (current work): a 7-rung ladder
-   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data schemes
+   90M–3B × 6 language settings × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × seven data builds
    (A, AT3, B, ZH, ES, DCLMP, FWEB — the `DATA_SCHEMES` registry in
    `src/pretrain/launch_trainings.py`, the single source of truth for the
-   grid), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
+   grid; the analysis reads a build as scheme A/B/C × temperature T, never by
+   its label — `src/signal-and-noise/analysis/RULES.md`, Definitions), run across CSCS and Azure. Cells are named `lm-*` and log to W&B project
    **`msnr`**. Design: [`plan/small-to-large-predictivity-training-plan.md`](plan/small-to-large-predictivity-training-plan.md).
 
 Read [`src/pretrain/CLAUDE.md`](src/pretrain/CLAUDE.md) and
@@ -263,15 +264,18 @@ are retired — do not carry them into new work):
   at every language setting except 3B, the extrapolation check above the 1.7B
   reference: deep only, seed 1904, L ∈ {8, 15} in schemes A and B (trained) plus
   L ∈ {30, 50} added 2026-09-30 — A-L30, B-L30, A-L50, the cells that take the
-  3B reference over `MIN_PAIRS` on the `L` and `list` axes
+  3B reference over `MIN_PAIRS` on the `L` and `scheme` axes
   ([`plan/3b_models.md`](plan/3b_models.md))
 - Data: fixed 50/50 English (DCLM) + FineWeb-2, with L ∈ {1, 2, 8, 15, 30, 50}
   languages; L=1 is 100% English. The mixture varies the language *count*,
   not the English ratio.
-- Data schemes (the data axis, `DATA_SCHEMES`): A (resource-ranked, T=1, the
+- Data builds (`DATA_SCHEMES`; the launcher calls them schemes, the analysis
+  reads each as its `letter` A/B/C and `temp` T — A and AT3 are scheme A,
+  B/ZH/DCLMP scheme B, ES/FWEB scheme C): A (resource-ranked, T=1, the
   unlabelled baseline), AT3 (A's lists at T=3 — L50 both architectures, L15 and L30 deep
   only; L100 was planned and dropped, [`plan/l100_data_mixture.md`](plan/l100_data_mixture.md)), B (diversity-first, L ∈ {8, 15, 30}),
-  ZH / ES (L2 with Chinese / Spanish instead of Russian). BT3 (B's L30 list
+  ZH / ES (L2 with Chinese / Spanish instead of Russian), DCLMP / FWEB (L1
+  with DCLM minus the edu filter / FineWeb as the English). BT3 (B's L30 list
   at T=3) was registered 2026-09-21 and retired 2026-09-23 without training:
   the AT3 L15/L30 evals gave the temperature axis four mono-axis pairs
   against a MIN_PAIRS of three, so it would have added a fifth to a served

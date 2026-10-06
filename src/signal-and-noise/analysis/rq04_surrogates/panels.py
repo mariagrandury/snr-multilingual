@@ -32,10 +32,9 @@ at a proxy size, so most languages stay blank, and a cell the gate emptied
 The per-L figures read rq02's `da_all_by_L_per_task_multi_axes.csv` (pairs of design
 variants that share the L): a measurement is `train_loss`, `bpb_macro`, the
 per-language BPB (mean) or a benchmark family (mean over its gated tasks);
-a level is safe when it holds at every larger level with a value. Rule 9:
-the L2 ES setting stops at 1B (ZH now runs to 1.7B); this pool excludes
-ZH/ES and L2 has too few pairs against 1.7B, so it is blank in the
-DA-size panel — a 1B reference is not implemented, and the script says so.
+a level is safe when it holds at every larger level with a value. An L
+with fewer than MIN_PAIRS pairs against 1.7B on these tasks is blank in the
+DA-size panel (rule 9 keeps the reference at 1.7B), and the caption names it.
 Version B and the FLOPs version read `da_all_pooled_per_task_multi_axes.csv`: every pair
 of the pool, on the tasks of the languages each cell trains (rule 2) and
 parent tasks only (rule 6); the benchmark mean's task count per size is in
@@ -78,8 +77,8 @@ from scipy.stats import spearmanr  # noqa: E402
 OUT_ROOT = SURROGATES
 ALL_L = (1, 2, 8, 15, 30, 50)   # every language count of the grid, blank until it has pairs (L100 was dropped)
 RHO_MIN = 0.3                   # an SNR definition "tracks" DA at a size once its Spearman rho over the L's tasks reaches this
-RULE9_NOTE = (f"L2's reference would be 1B (the L2 ES setting stops at 1B, rule 9; ZH runs to {TARGET_SIZE}); this pool excludes ZH/ES and L2 has "
-              f"fewer than {MIN_PAIRS} pairs against {TARGET_SIZE}, so L2 is blank in the DA-size panel; a 1B reference is not implemented")
+RULE9_NOTE = (f"L2 has fewer than {MIN_PAIRS} pairs against {TARGET_SIZE} on these tasks, so it is blank in the DA-size panel "
+              f"(rule 9 keeps the reference at {TARGET_SIZE})")
 mpl.rcParams.update(S.RC)
 
 
@@ -161,7 +160,7 @@ def main(pool: str) -> None:
         f"The rankings above, without the aggregation (`{pool}` pool); a surrogate subplot needs 8 tasks at a proxy size. Regenerate with `python analysis/rq04_surrogates/panels.py --pool {pool}`. In every grid white is \"no value\" and grey \"filtered out by the gate\"; each figure's table sits next to it under the same name.",
         f"![rq04 in one figure]({stage}/{pool}/highlights.png)"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('SNR definition per language', 'snr_definition_by_language.png'), ('Surrogates per benchmark', 'surrogates_by_benchmark.png'), ('Surrogates per language', 'surrogates_by_language.png')]]
-        + [f"**Per language count** (rq02's `da_all_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}). Rule 9: {RULE9_NOTE}:"]
+        + [f"**Per language count** (rq02's `da_all_by_L_per_task_multi_axes.csv`: pairs of design variants sharing the L, on the {TRAINED_NOTE}; a level counts when it holds at every larger level with a value; DA ≥ {SAFE_DA}, an SNR definition tracks DA at ρ ≥ {RHO_MIN}; an L with fewer than {MIN_PAIRS} pairs against {TARGET_SIZE} is named in the figure's caption):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Smallest safe level per measurement and L', 'min_level_by_L.png'), ('the same as lines', 'min_level_by_L_lines.png'), ('Smallest size at which an SNR definition tracks DA, per L', 'snr_variant_min_size_by_L.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines.png')]]
         + [f"**Version B — every pair pooled, the size axis instead of the language count** (`da_all_pooled_per_task_multi_axes.csv`, ten checkpoints; the population is every design-variant pair of the pool on the tasks of the languages each cell trains (rule 2), parent tasks only (rule 6), gated at the proxy and at {TARGET_SIZE}; the benchmark mean's task count per size differs with the gate (rule 13) and is in each figure's caption and on the DA-at-1C panel):"]
         + [f"![{alt}]({stage}/{pool}/{name})" for alt, name in [('Earliest checkpoint per proxy size and DA at 1C', 'min_level_by_L_b.png'), ('the same as lines', 'min_level_by_L_lines_b.png'), ('Spearman rho of each SNR definition with DA per proxy size', 'snr_variant_min_size_by_L_b.png'), ('the same as lines', 'snr_variant_min_size_by_L_lines_b.png')]]
@@ -223,12 +222,12 @@ def _two_panels(out_dir: Path, name: str, size_map: pd.DataFrame, ckpt_map: pd.D
 def trained_at(L: int) -> set[str]:
     """The tasks (benchmarks and per-language BPB) in the languages EVERY
     design variant at L trains on: the intersection of the lists of the
-    schemes the registry (`DATA_SCHEMES`) defines at L, English always — the
-    registry, not the schemes with a cell in the table, so a scheme that has
+    data builds the registry (`DATA_SCHEMES`) defines at L, English always — the
+    registry, not the builds with a cell in the table, so a build that has
     not trained at L yet already narrows the set. A benchmark in a language
-    only one scheme's list carries measures that list, not the decision."""
-    schemes = [s for s, d in DATA_SCHEMES.items() if L in d["langs"]]
-    return set.intersection(*[set(_trained_tasks(L, s)) | (trained_bpb_tasks(L, s) or set()) for s in schemes])
+    only one build's list carries measures that list, not the decision."""
+    builds = [d for d, v in DATA_SCHEMES.items() if L in v["langs"]]
+    return set.intersection(*[set(_trained_tasks(L, d)) | (trained_bpb_tasks(L, d) or set()) for d in builds])
 
 
 TRAINED_NOTE = "tasks in the languages every variant at the L trains on (the intersection of the L's lists, English always)"

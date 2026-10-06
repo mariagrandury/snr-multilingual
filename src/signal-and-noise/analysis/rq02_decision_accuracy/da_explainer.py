@@ -2,7 +2,7 @@
 pair sets and the values a cell can take.
 
 Nothing here is measured. Four labelled design variants (Deep-A-T1, Deep-B-T1,
-Shallow-A-T1, Deep-A-T3: depth, language list, sampling temperature) get
+Shallow-A-T1, Deep-A-T3: depth, data scheme, sampling temperature) get
 hand-written scores at five sizes and along one run, chosen so that the
 rankings move with size and with training and one pair ties — the situations
 the real kernel (`snr.metrics.decision_acc_fast`, the sign-of-difference rule;
@@ -67,13 +67,13 @@ SIZES = ["175M", "350M", "600M", "1B", "1.7B"]
 PROXY, FRAC = "350M", 0.5
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 CUT = min(THRESHOLDS)                 # 0.66, the reliability cut of the `above_66_*` figures (reliable_tasks.py)
-# The four toy variants: depth, language list, sampling temperature (T1 is the
+# The four toy variants: depth, data scheme, sampling temperature (T1 is the
 # default temperature and is written out, as the cell names do).
-VARIANTS = {"Deep-A-T1": dict(arch="deep", list="A", T=1),
-            "Deep-B-T1": dict(arch="deep", list="B", T=1),
-            "Shallow-A-T1": dict(arch="shallow", list="A", T=1),
-            "Deep-A-T3": dict(arch="deep", list="A", T=3)}
-AXIS_LABEL = {"arch": "depth", "list": "language list", "T": "temperature"}
+VARIANTS = {"Deep-A-T1": dict(arch="deep", scheme="A", T=1),
+            "Deep-B-T1": dict(arch="deep", scheme="B", T=1),
+            "Shallow-A-T1": dict(arch="shallow", scheme="A", T=1),
+            "Deep-A-T3": dict(arch="deep", scheme="A", T=3)}
+AXIS_LABEL = {"arch": "depth", "scheme": "data scheme", "T": "temperature"}
 FAM_COLOUR = dict(zip(VARIANTS, [S.RAMP[3], S.RAMP[1], S.SERIES[1], S.SERIES[2]]))
 FAM_MARK = dict(zip(VARIANTS, ["o", "s", "^", "D"]))
 # Final scores per size: the reference orders B > A > AT3 > S, the 350M proxy
@@ -89,7 +89,7 @@ assert (RUN[1.0] == FINALS[PROXY]).all()
 
 
 def moved_axis(a: str, b: str) -> str:
-    differ = [k for k in ("arch", "list", "T") if VARIANTS[a][k] != VARIANTS[b][k]]
+    differ = [k for k in ("arch", "scheme", "T") if VARIANTS[a][k] != VARIANTS[b][k]]
     return AXIS_LABEL[differ[0]] if len(differ) == 1 else "two axes"
 
 
@@ -222,7 +222,7 @@ def figure(out_dir: Path) -> pd.DataFrame:
     ax_d.tick_params(length=0); S.clean(ax_d, spines=())
 
     top = G._header(fig, "Decision accuracy, explained on a toy ladder (no measured number in this figure)",
-                    "Four labelled design variants (depth × language list × sampling temperature; T1 is the default temperature) with hand-written "
+                    "Four labelled design variants (depth × data scheme × sampling temperature; T1 is the default temperature) with hand-written "
                     "scores, chosen so that the rankings move with size and along a run and one pair ties. A decision is one pair of variants; DA is the "
                     "share of pairs the proxy orders like the reference (sign of the score difference on both sides: tied on both agrees, tied on one "
                     "is a miss — `decision_acc_fast`). The DAs in (c) are computed by the pipeline's kernel on the toy scores. In the real tables a cell "
@@ -274,7 +274,7 @@ def generate_readme(pool: str, t: pd.DataFrame) -> None:
             "- DA-goal at the final checkpoint is DA-size, and at the reference size DA-ckpt is DA-goal: the early-and-small grid's "
             "last column and last row are the other two figures' numbers.",
             "- `by transformation` is the mono-axis set split by the axis a pair moves; each group needs its own three pairs. On the ladder "
-            "a (task, size) cell holds 0–4 pairs for the temperature axis, 0–6 for the list, 0–10 for depth and 0–39 for the language "
+            "a (task, size) cell holds 0–4 pairs for the temperature axis, 0–12 for the data scheme, 0–10 for depth and 0–39 for the language "
             "count, so the temperature and depth groups often fall below the minimum and are NaN "
             "(`early_small_da_*_by_transformation_*`, `scale_convergence_da_size_transformation_panels*`)."]),
         "Follow-ups:",

@@ -12,6 +12,55 @@ The constants live in one place, `configs/models.json` → `snr`, and reach the
 code through `analysis/utils.py`. The helpers named below are the only
 implementation of each rule: use them, do not re-derive.
 
+## Definitions
+
+A **cell** is one trained run, named by the launcher: (size, L, ladder, data
+build, seed), e.g. `lm-600M-L2-ZH-deep-seed1904`. Its **family** is the cell
+without the size. The analysis never reads the ladder or the build label as a
+level: it reads a family on its **design axes**, L, arch, activation,
+optimizer, scheme, T and seed (`utils.DESIGN_AXES`), through two registry
+mappings the loader applies (`snr/download/ladder.py`; the frame keeps
+`ladder` and `data` beside the levels).
+
+| ladder (`launch_trainings.LADDERS`) | arch | activation | optimizer |
+|---|---|---|---|
+| deep | deep | xielu | ademamix |
+| shallow | shallow | xielu | ademamix |
+| swiglu | deep | swiglu | ademamix |
+
+| data build (`DATA_SCHEMES`: `letter`, `temp`) | L | scheme | T |
+|---|---|---|---|
+| A | 1, 2, 8, 15, 30, 50 | A | 1 |
+| AT3 | 15, 30, 50 | A | 3 |
+| B (diversity-first lists) | 8, 15, 30 | B | 1 |
+| ZH (Chinese second language) | 2 | B | 1 |
+| DCLMP (DCLM without the edu filter) | 1 | B | 1 |
+| ES (Spanish second language) | 2 | C | 1 |
+| FWEB (FineWeb) | 1 | C | 1 |
+
+The scheme is the data recipe **at that L**: within one L a (scheme, T) names
+one build (`utils.data_build`), but across L a letter does not (B is DCLMP at
+L1, ZH at L2, the diversity-first lists at L8–L30), so a pair moves `scheme` when the letters differ or when it
+reads two builds at one T (`utils.moved_axes`); A at L8 and A at L15 differ on
+L alone. Anything a build decides by its label — its language list, its token
+shares, which tasks it trains (rule 2) — reads `data`, never the letter, and a
+baseline "the A cell" is `data == "A"` (scheme A alone also matches AT3).
+
+The four **pools** (`configs/models.json`, resolved by `utils.build_snr_pool`):
+
+| pool | filter | purpose |
+|---|---|---|
+| `predictivity` | seed 1904 | the grid seed, every design (every ladder and build): the headline SNR and DA pool (rq00 gate, rq02–rq04, rq07–rq09), and the one the gate (rule 1) is computed on |
+| `predictivity_seeds` | none | every seed: the seed-noise columns, and the reads that take every run |
+| `predictivity_seeds_train` | the replicate seeds 64, 313, 28, 1797 | the seed holdout's train split |
+| `predictivity_seeds_test` | seed 1904 on exactly the train split's cells (`cells_of`) | the matched holdout's test split |
+
+Every pool is gated with `predictivity`'s mask. Without AT3, ZH, ES, DCLMP and
+FWEB, L1, L2 and T = 3 do not reach rule 5's three pairs, which is why the
+headline pool carries every build.
+
+## The rules
+
 | # | rule | constant / helper |
 |---|---|---|
 | 1 | **The above-random gate.** A benchmark's number at a size counts only where the task is above chance at that size: the Wilson 95 % lower bound of a run's accuracy clears the chance level for at least `MIN_SHARE` (half) of the size's runs. A quantity that ranks against the reference (DA-size, a surrogate of it) also needs the task above chance at the reference. A cross-size fit uses only sizes where the task is above chance. Gated cells are drawn grey and kept in the CSV, never dropped from a grid. Tasks without a chance level (BPB, the loss, generative tasks) are never gated: a mask of NA passes. The chance level is uniform guessing: 1/n_options, or E[1/n_i] over the items when the count varies (TruthfulQA mc1, 0.2253), or the mean true-option share for `truthfulqa_mc2`, whose score is probability mass rather than a pick-one accuracy (0.449; `above_random.CHANCE`, read through `task_chance`). It does not test a constant answer, which scores the majority gold label's share (hellaswag_ta: 0.2585 against 0.25), and the runs of a size answer the same items, so their verdicts are correlated, not independent trials. | `rq00 above_random.load_mask`, `utils.passes_gate`, `grids.mark_gated` |
@@ -28,7 +77,7 @@ implementation of each rule: use them, do not re-derive.
 | 12 | **Figures.** A CSV of the same name next to every PNG; white = no value, grey = gated; a line under the title saying how a cell is computed; the population (tasks, pairs, languages) stated wherever a mean is shown. | `grids`, `style.save_figure` |
 | 13 | **Populations move; say so.** When the set of tasks or pairs behind a cell differs across a row (the gate keeps different tasks at different sizes), the figure or table carries the count, and the README says the populations differ. | `grids` count overlays |
 | 14 | **Outputs follow the code.** After a change to the loader, `configs/models.json` → `snr`, or a helper above, the pipeline is re-run before any table is read or cited; `check_rules.py` is the test that the tables on disk obey the rules. | `run_all_predictivity.sh`, `check_rules.py` |
-| 15 | **Say which pairs a decision accuracy is over.** A DA table carries an `axes` column naming its pair set: `multi-axis` (every pair of design variants at the pool's seed — the convention to 2026-09-22, in which two thirds of the pairs move more than one axis at once), `mono-axis` (the pairs moving exactly one of L, arch, activation, optimizer, list, T, lang2, en — the English corpus of the L=1 DCLMP/FWEB cells — the seed held — the decision a practitioner makes, and what upstream's "every pair" is by construction) and `seed` (the null: two draws of ONE design, emitted only where the pool has replicate seeds). `scheme` is never an axis: it encodes the language list, the sampling temperature and the second language, and `DATA_SCHEMES` is the source of truth for the first two. Nor is a cell's ladder (the `deep`/`shallow`/`swiglu` token in its name): the loader's frame carries its levels as the `arch` (depth: deep|shallow), `activation` and `optimizer` columns (`launch_trainings.LADDERS`), and `design_axes` reads them, so a (deep, swiglu) pair moves `activation` and a (shallow, swiglu) pair moves two axes and is no mono-axis pair. A consumer that does not ask reads `multi-axis`, so a table written before this rule needs no migration; a figure drawn over one pair set is filtered by a reliability computed on the same one (one exception: `rq02/pair_axes.py` filters both of its rows by the multi-axis reliability on purpose, so the pair set is the only thing that differs between them), and its twin sits beside it under `AXES_SUFFIX`. | `utils.DESIGN_AXES`, `utils.design_axes`, `utils.pair_sets`, `utils.pair_agreement`, `utils.one_axes`, `utils.AXES_SUFFIX` |
+| 15 | **Say which pairs a decision accuracy is over.** A DA table carries an `axes` column naming its pair set: `multi-axis` (every pair of design variants at the pool's seed — the convention to 2026-09-22, in which two thirds of the pairs move more than one axis at once), `mono-axis` (the pairs moving exactly one of the design axes L, arch, activation, optimizer, scheme, T — the seed held — the decision a practitioner makes, and what upstream's "every pair" is by construction) and `seed` (the null: two draws of ONE design, emitted only where the pool has replicate seeds). The build label is never an axis; scheme (A/B/C, the recipe at that L) and T are (Definitions above; `DATA_SCHEMES` `letter` and `temp` are the source of truth), so A vs AT3 moves T, A vs ZH moves the scheme and B vs AT3 moves two axes. Nor is a cell's ladder (the `deep`/`shallow`/`swiglu` token in its name): the loader's frame carries its levels as the `arch` (depth: deep|shallow), `activation` and `optimizer` columns (`launch_trainings.LADDERS`), and `design_axes` reads them, so a (deep, swiglu) pair moves `activation` and a (shallow, swiglu) pair moves two axes and is no mono-axis pair. A consumer that does not ask reads `multi-axis`, so a table written before this rule needs no migration; a figure drawn over one pair set is filtered by a reliability computed on the same one (one exception: `rq02/pair_axes.py` filters both of its rows by the multi-axis reliability on purpose, so the pair set is the only thing that differs between them), and its twin sits beside it under `AXES_SUFFIX`. | `utils.DESIGN_AXES`, `utils.design_axes`, `utils.moved_axes`, `utils.pair_sets`, `utils.pair_agreement`, `utils.one_axes`, `utils.AXES_SUFFIX` |
 | 16 | **A name says what the artifact is.** Figure and table names are descriptive and coherent within and across RQs: the same quantity carries the same token in every folder, in one order — `<subject>_da_<kind>[_<breakdown>][_<filter>]_<pair set>[_<view>]` (`scale_convergence_da_size_L_above_66_both_mono_axis_flops`, `early_small_da_goal_by_L_above_80_multi_axes`). A decision-accuracy artifact always names which DA it holds (`da_size`, `da_ckpt`, `da_goal`; `da_all` when one file holds more than one, `da_size_vs_da_ckpt` when it sets two against each other), which pair set (`AXES_SUFFIX`: `_mono_axis`, `_multi_axes`, `_seed_null`; `_both_axes` when an `axes` column carries every pair set, `_mono_vs_multi_axes` when the figure compares them) and, where a reliability filter applies, which one (`above_66_size`, `above_66_ckpt`, `above_66_either`, `above_66_both`, `above_80`). A facet pair shares one table: `<name>_by_benchmark_<pair set>.png` and `<name>_by_language_<pair set>.png` read `<name>_<pair set>.csv` (`grids._csv_path`). A rename changes the writer, every reader and the files (`git mv`) in one change. | `utils.AXES_SUFFIX`, `grids._csv_path`, `check_rules.py --names` (lists the names that break the rule) |
 | 17 | **Nothing is generated outside the regeneration, and nothing orphaned stays unflagged.** Every figure, table, README auto block and paper block is written by a script that `run_all_predictivity.sh` or `scripts/refresh_analysis.sh` runs, so none can diverge from the code or from the report; a generated block names its generator in its marker (`<!-- BEGIN auto:KEY (script) -->`, `% BEGIN generated: KEY (script)`, `% Generated by script`). An orphan — an artifact no generator writes any more (the old twin of a renamed file, the output of a script dropped from the driver) — is flagged, never left to look current: the refresh lists every artifact a `FORCE=1` run did not write, and a rename lists the files it leaves behind with the command that removes them (deleting is the user's call). The slides are outside this rule. | `check_rules.py` (generators), `scripts/refresh_analysis.sh` (the `ORPHAN` lines) |
 
@@ -74,7 +123,7 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
 - **No chance level, so no gate.** Like per-language BPB, the twin has a mask
   of NA and passes rule 1 everywhere, including where its original is at chance.
 - **The store holds finals only.** It was built with `--finals-only` on
-  `predictivity_schemes` (seed 1904), so a twin exists at each cell's final
+  `predictivity` (seed 1904), so a twin exists at each cell's final
   checkpoint and nowhere else: it enters DA-size and every final-checkpoint
   read, and is empty in DA-ckpt, DA-goal before 100 %, the checkpoint noise
   and the seed replicates until the store is rebuilt over every checkpoint.
@@ -194,11 +243,11 @@ for that reason until 2026-09-26; it now reaches 1.7B (rule 9), since 3.51
 epochs stays under the ~4 where repeated tokens are still worth close to
 fresh ones. Any table that compares the L2 schemes states the epoch count.
 
-ZH and ES are the **second-language axis at L = 2**: scheme A trains English
+ZH and ES are **schemes B and C at L = 2** (Definitions): A trains English
 plus Russian, ZH plus Chinese, ES plus Spanish, and all three exist in the
-deep architecture only. They are three levels of one intervention, not three
-unrelated schemes — the L2 analogue of the B / AT3 data axis at higher L —
-and that is what makes them the three families rule 5 counts at L2.
+deep architecture only. They are three levels of the scheme axis at that L —
+the L2 analogue of A vs B at higher L — and that is what makes them the three
+families rule 5 counts at L2.
 
 ## Where a rule cannot be followed
 

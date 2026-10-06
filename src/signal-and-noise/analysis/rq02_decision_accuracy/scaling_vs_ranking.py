@@ -54,7 +54,7 @@ mpl.rcParams.update(S.RC)
 
 def joined(pool: str) -> pd.DataFrame:
     stage = load_pools()[pool].get("stage", "pretraining")
-    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_all" / "scaling_regimes.csv")
+    reg = pd.read_csv(SCALING_PREDICTABILITY / "pretraining" / "predictivity_seeds" / "scaling_regimes.csv")
     cells = pd.read_csv(OUT_ROOT / stage / pool / "agreement_da_size_per_cell_multi_axes.csv")
     t = cells[["task", "size", "family", "language", "rho", "da", "n_models"]].merge(
         reg[["task", "rho_size", "r2_size", "r2_trajectory", "regime"]], on="task")
@@ -99,8 +99,8 @@ def figure(t: pd.DataFrame, sm: pd.DataFrame, path: Path, pool: str) -> None:
     axes[1, 0].set_ylabel(f"rq02: DA-size, proxy → {TARGET_SIZE}")
     top = G._header(fig, "Scaling cleanly and ranking the variants like the reference are different properties",
                     f"One point per benchmark task with both a scaling regime (rq01: ≥ 2 language settings with a size "
-                    f"fit on the gated rungs, deep scheme-A seed-1904 cells) and a decision-accuracy cell at the proxy "
-                    f"(rq02: every grid-seed design-variant pair of every scheme, ≥ 3 pairs, above chance at the proxy "
+                    f"fit on the gated rungs, deep data-A seed-1904 cells) and a decision-accuracy cell at the proxy "
+                    f"(rq02: every grid-seed design-variant pair of every data build, ≥ 3 pairs, above chance at the proxy "
                     f"and at {TARGET_SIZE}). Top: rq01's ρ (score against model size along the ladder, jittered: it "
                     f"lives on a lattice) against rq02's ρ (the proxy's ranking of the variants against the reference's). "
                     f"Bottom: rq01's R² against DA-size. The corner number is the Spearman correlation across tasks "

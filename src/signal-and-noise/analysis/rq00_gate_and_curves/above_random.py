@@ -218,11 +218,11 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     share_of = lambda f: (f.pivot_table(index="task", columns="bucket", values="above", aggfunc="mean")
                           .reindex(index=scores.index, columns=sizes))
     share = share_of(finals)
-    if {"L", "scheme"} <= set(finals.columns):
+    if {"L", "data"} <= set(finals.columns):
         from pretrain.ladder_report import _trained_tasks
         keep = pd.Series(False, index=finals.index)
-        for (L, scheme), g in finals.groupby(["L", "scheme"]):
-            keep.loc[g.index] = g["task"].isin(_trained_tasks(int(L), scheme))
+        for (L, data), g in finals.groupby(["L", "data"]):
+            keep.loc[g.index] = g["task"].isin(_trained_tasks(int(L), data))
         trained = (finals[keep].pivot_table(index="task", columns="bucket",
                                             values="primary_score", aggfunc="mean")
                    .reindex(index=scores.index, columns=sizes))

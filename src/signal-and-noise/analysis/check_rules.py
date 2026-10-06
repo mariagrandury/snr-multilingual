@@ -13,8 +13,9 @@ checks, by rule:
    6  every task name is a per-language parent, except under rq08
    3  a table with a `frac` column covers the ten tenths
   12  a CSV of the same name next to every PNG
-   2  a table with `task`, `L` and `scheme` columns holds no untrained
-      (task, L, scheme) row, except under rq06 and the rq00 gate
+   2  a table with `task`, `L` and `data` columns holds no untrained
+      (task, L, data build) row, except under rq06 and the rq00 gate (a table
+      written before 2026-10-05 carries the build in `scheme`, and is read so)
 
   17  every generated block names a generator the regeneration runs: a README
       `<!-- BEGIN auto:KEY (script ...) -->` block's script is in
@@ -157,12 +158,14 @@ def check_csv(path: Path) -> list[str]:
         if len(off) and not path.stem.endswith("_curves"):
             out.append(f"rule 3: {len(off)} rows off the tenths outside the noise "
                        f"window, e.g. {sorted(set(off.round(3)))[:3]}")
-    # rule 2
-    if {"task", "L", "scheme"} <= set(df.columns) and not _exempt(path, 2):
-        sub = df[["task", "L", "scheme"]].dropna().drop_duplicates()
-        bad = [(t, L, s) for t, L, s in zip(sub["task"], sub["L"], sub["scheme"]) if not is_trained(str(t), int(L), str(s))]
+    # rule 2: trained-ness is the BUILD's (`data`); before 2026-10-05 a table's
+    # `scheme` column held the build label, and a table on disk may predate that
+    build = "data" if "data" in df.columns else "scheme"
+    if {"task", "L", build} <= set(df.columns) and not _exempt(path, 2):
+        sub = df[["task", "L", build]].dropna().drop_duplicates()
+        bad = [(t, L, d) for t, L, d in zip(sub["task"], sub["L"], sub[build]) if not is_trained(str(t), int(L), str(d))]
         if bad:
-            out.append(f"rule 2: {len(bad)} untrained (task, L, scheme) rows, e.g. {bad[:2]}")
+            out.append(f"rule 2: {len(bad)} untrained (task, L, data build) rows, e.g. {bad[:2]}")
     return out
 
 

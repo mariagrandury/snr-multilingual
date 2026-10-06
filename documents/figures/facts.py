@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "src" / "signal-and-noise"))
 ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 P = "pretraining/predictivity"
-PS = "pretraining/predictivity_all"      # rq01, rq03 and rq05 read every seed and scheme
+PS = "pretraining/predictivity_seeds"      # rq01, rq03 and rq05 read every seed and data build
 OUT = REPO / "documents" / "ladder-facts.json"
 
 
@@ -56,11 +56,13 @@ def collect():
     from analysis.utils import ANALYSIS_SIZES
     a = load_predictivity_eval_results()
     a = a[a["size"].isin(ANALYSIS_SIZES)]
-    head = a[(a["seed"] == 1904) & (a["scheme"].isin(["A", "B"]))]
+    head = a[(a["seed"] == 1904) & (a["data"].isin(["A", "B"]))]
     f["paper_population"] = {
         "analysis_sizes": list(ANALYSIS_SIZES),
         "healthy_runs": int(a["model"].nunique()),
         "headline_seed1904_A_B_runs": int(head["model"].nunique()),
+        # the `predictivity` pool since 2026-10-05: seed 1904, every data build
+        "grid_seed1904_runs": int(a.loc[a["seed"] == 1904, "model"].nunique()),
         "healthy_by_size": {k: int(v) for k, v in a.groupby("size")["model"].nunique().items()},
     }
 

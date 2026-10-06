@@ -379,10 +379,10 @@ def render_top_benchmarks_grid(top_df: pd.DataFrame, variant: str,
 # statistical-power table). RQ / setup / TODO prose lives outside the markers.
 
 _POOL_TIERS = [
-    ("predictivity", "grid, seed 1904"),
-    ("predictivity_seeds", "all seeds"),
-    ("predictivity_seeds_train", "holdout train (seeds 64/313)"),
-    ("predictivity_seeds_test", "holdout test (seed 1904)"),
+    ("predictivity", "grid, seed 1904, every design"),
+    ("predictivity_seeds", "every seed"),
+    ("predictivity_seeds_train", "holdout train (replicate seeds 64/313/28/1797)"),
+    ("predictivity_seeds_test", "holdout test (seed 1904 on the same cells)"),
 ]
 
 

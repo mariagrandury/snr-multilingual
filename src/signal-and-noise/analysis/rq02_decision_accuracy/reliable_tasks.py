@@ -91,14 +91,13 @@ THRESHOLDS = (0.80, 0.75, 0.66)        # the cuts drawn; the first is the defaul
 THRESH = THRESHOLDS[0]
 DEFAULT_AXES = PAIR_AXES[0]            # "multi-axis": what a caller that does not ask gets
 KINDS = ("size", "ckpt", "goal")       # the three references a DA column can rank against
-# The DA table this reads by default. `predictivity_schemes` is every data
-# scheme at the grid seed — the population `by_L` and `scale_convergence`
-# actually pair over — while the gate and the outputs stay with the headline
-# pool, whose A/B filter exists to protect an SNR *signal* and has no business
-# selecting decisions. Reading `predictivity`'s table instead made a cell
-# "reliable" on A/B decisions and then used that verdict to filter all-scheme
-# ones (plan/decision_accuracy.md §3.2).
-DA_POOL = "predictivity_schemes"
+# The DA table this reads by default: the grid pool, every data build at the
+# grid seed — the population `by_L` and `scale_convergence` actually pair over
+# and the pool whose gate and folder this writes to. (Until 2026-10-05 the
+# headline pool held schemes A/B only and the verdicts came from a separate
+# all-builds pool; plan/decision_accuracy.md §3.2, §9.) `--da-pool` reads
+# another pool's table.
+DA_POOL = "predictivity"
 REDUCTIONS = ("late", "mean", "median", "max")
 DEFAULT_REDUCTION = "late"             # what the `above_80` filters use
 LATE_SIZE = SMALL_SIZES[-1]            # the largest proxy: the rung just below the reference
@@ -284,7 +283,7 @@ def generate_readme(pool: str, out_dir: Path, tasks: pd.DataFrame, by_lang: pd.D
         f"reference's) and on DA-ckpt (an earlier checkpoint vs the same size's final), reducing each task's cells "
         f"with `{DEFAULT_REDUCTION}` (one fixed cell per axis, so no cell is chosen by its value). Cells need ≥ "
         f"{MIN_PAIRS} pairs (rule 5) and must survive the above-random gate (rule 1). The decisions come from the "
-        f"`{DA_POOL}` pool — every data scheme at the grid seed, which is the population `by_L` and "
+        f"`{DA_POOL}` pool — every data build at the grid seed, which is the population `by_L` and "
         f"`scale_convergence` pair over — while the gate and this folder stay with `{pool}`; the table carries one "
         f"row per pair set (rule 15) and the figures show `{DEFAULT_AXES}`. "
         f"`da_all_reliable_tasks_both_axes.csv` holds the per-task values for every reduction and is threshold-free — each figure "

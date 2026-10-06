@@ -18,7 +18,7 @@ chance at 1.7B (rule 1 at the reference; at least MIN_PANEL of them) and, for
 each proxy size, a single-language view exists where the language is above
 chance at that size too (rule 1 at the proxy); the proxy macro averages the
 languages readable at that size. Pairs are every grid-seed pair of design
-variants over every scheme (rule 15's multi-axis set), ≥ MIN_PAIRS per view
+variants over every data build (rule 15's multi-axis set), ≥ MIN_PAIRS per view
 (rule 5), the band the leave-one-family-out jackknife.
 
 What a result means: if the macro at the proxy recovers the reference macro
@@ -173,7 +173,7 @@ def figure(t: pd.DataFrame, panels: dict, path: Path, pool: str) -> None:
         ax.set_ylabel(f"DA vs the {TARGET_SIZE} macro ranking")
     axes[0, 0].legend(fontsize=6, frameon=False, loc="upper left")
     top = G._header(fig, "The minimal language panel: which languages recover the multilingual decision?",
-                    f"Per benchmark family, the {GRID_SEED}-seed design-variant pairs of every scheme (multi-axis, "
+                    f"Per benchmark family, the {GRID_SEED}-seed design-variant pairs of every data build (multi-axis, "
                     f"rule 15) ranked by a proxy against the {TARGET_SIZE} MACRO ranking (mean score over the panel "
                     f"languages above chance at {TARGET_SIZE}, rule 1; panel = the L8 languages {', '.join(PANEL)}, "
                     f"which every family with L ≥ 8 trains). Grey: the proxy reads one language (drawn where that "
@@ -209,7 +209,7 @@ def generate_readme(pool: str, out_dir: Path, t: pd.DataFrame, panels: dict) -> 
         f"Per benchmark family, decision accuracy of a proxy size against the {TARGET_SIZE} MACRO ranking of the "
         f"design variants (mean over the L8 panel languages above chance at {TARGET_SIZE}), when the proxy reads one "
         f"language, English, or its own macro over the languages readable at that size. Grid-seed pairs of every "
-        f"scheme (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says the "
+        f"data build (multi-axis), ≥ {MIN_PAIRS} pairs, gate `{pool}`. A macro above every single language says the "
         f"languages' errors are independent and the panel is worth evaluating; a single language at the macro says "
         f"it suffices. Regenerate with `python analysis/rq06_language_transfer/language_panel.py --pool {pool}`.",
         md_table(list(tab.columns), tab.values.tolist()),

@@ -84,14 +84,14 @@ def figure(pool: str, task: str, highlight: str | None, out_dir: Path) -> pd.Dat
     chance, n_items, need = task_chance(task), int(task_n_items(task)), needed_score(task)
     sizes = size_order(runs["bucket"].unique())
     if highlight is None:                          # the 350M deep scheme-A run with the fewest languages
-        c = d[(d["size"] == "350M") & (d["ladder"] == "deep") & (d["scheme"] == "A")]
+        c = d[(d["size"] == "350M") & (d["ladder"] == "deep") & (d["data"] == "A")]
         highlight = c.loc[c["L"].idxmin(), "model"] if len(c) else runs["model"].iloc[0]
     lang = assign_language(task)
 
     fig, (ax_a, ax_b, ax_c) = plt.subplots(1, 3, figsize=(16, 5.2), gridspec_kw={"width_ratios": [1.6, 1, .8]})
     # (a) every run along training, the chance and needed-score lines, the highlighted run's bound
     for _, g in d.sort_values("frac").groupby("model"):
-        size, arch, scheme = g[["size", "arch", "scheme"]].iloc[0]
+        size = g["size"].iloc[0]
         x = g["frac"] * G.CHINCHILLA_AT_FULL
         ax_a.plot(x, g["primary_score"], color=S.SIZE_COLOR[size], lw=1.0, alpha=.85, zorder=3)
         ax_a.plot(x.iloc[-1], g["primary_score"].iloc[-1], "o", ms=3.5, color=S.SIZE_COLOR[size], zorder=4)
@@ -251,7 +251,7 @@ def generate_readme(pool: str, task: str, t: pd.DataFrame) -> None:
             f"{'/'.join(str(v) for v in load_mask(pool).loc['hellaswag_eu'])}), to show the share moving with the runs.",
             f"- The same figure on a {int(task_n_items('cultural_bench_easy_argentina'))}-item task (`cultural_bench_easy_argentina`), where the needed "
             f"margin is +{needed_score('cultural_bench_easy_argentina') - task_chance('cultural_bench_easy_argentina'):.2f}: the item count, not the model, decides.",
-            "- A `--pool predictivity_all` version with the replicate seeds, to see how much the per-run verdict moves with the seed."]),
+            "- A `--pool predictivity_seeds` version with the replicate seeds, to see how much the per-run verdict moves with the seed."]),
         f"Files: [`above_random_example.png`]({gh}/above_random_example.png), [`above_random_example.csv`]({gh}/above_random_example.csv)."])
     replace_block(GATE_AND_CURVES / "README.md", "above-random-example", body,
                   f"above_random_example.py --pool {pool} --task {task}")

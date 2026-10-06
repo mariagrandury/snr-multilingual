@@ -20,7 +20,7 @@ predictable on is the finding this figure adds.
 
     scaling_regimes_survivorship.png / .csv   the figure and the per-family table
 
-    python analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_all
+    python analysis/rq01_scaling_predictability/regimes_survivorship.py --pool predictivity_seeds
 """
 
 from __future__ import annotations
@@ -115,7 +115,7 @@ def figure(t: pd.DataFrame, s: pd.DataFrame, path: Path) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--pool", default="predictivity_all")
+    p.add_argument("--pool", default="predictivity_seeds")
     args = p.parse_args()
     out_dir = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     t = pd.read_csv(out_dir / "scaling_regimes.csv")

@@ -130,10 +130,32 @@ step "checks"
 # failed: deleting is the user's call. The frozen 36-sweep pools (their seed
 # holdout and rq08's per_sample/ included) are not ours to regenerate, and the
 # rq00 viewer grids are only redrawn with --curves.
+# Pool folders no generator writes any more, whatever FORCE says: the pools
+# collapsed to four on 2026-10-05 (analysis/RULES.md, Definitions) and their
+# outputs moved with the pool (old -> new). Listed per folder and kept out of the
+# per-file list below so they do not bury it; the removal command is offered only
+# once every file has its twin under the new pool (a step that has not rewritten
+# its tables there yet, e.g. bench_bpb_da without its store, keeps the old copy).
+RETIRED_POOLS="predictivity_all:predictivity_seeds predictivity_schemes:predictivity"
+RETIRED_RE=$(printf '%s\n' $RETIRED_POOLS | cut -d: -f1 | paste -sd'|')
+for r in $RETIRED_POOLS; do
+  for d in src/signal-and-noise/analysis/rq*/pretraining/"${r%%:*}"; do
+    [ -d "$d" ] || continue
+    new="$(dirname "$d")/${r##*:}"
+    left=$(cd "$d" && find . -type f | while IFS= read -r f; do [ -e "../${r##*:}/$f" ] || echo "${f#./}"; done)
+    nl=$(printf '%s' "$left" | grep -c . || true)
+    if [ "$nl" -eq 0 ]; then
+      echo "  ORPHAN $d/ ($(find "$d" -type f | wc -l) files; pool retired 2026-10-05, now ${r##*:}) — remove with: git rm -r $d"
+    else
+      echo "  ORPHAN $d/ ($(find "$d" -type f | wc -l) files; pool retired 2026-10-05, now ${r##*:}) — keep: $nl have no twin under $new/ yet, e.g. $(printf '%s\n' "$left" | head -1)"
+    fi
+  done
+done
 if [ "${FORCE:-0}" = 1 ]; then
   ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
       \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
     | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample)/' \
+    | grep -vE "/($RETIRED_RE)/" \
     | { [ "$CURVES" = 1 ] && cat || grep -vE '/(score_curves|per_benchmark|per_language)/'; } | sort)
   n=$(printf '%s' "$ORPHANS" | grep -c . || true)
   echo "orphans: $n artifacts no generator wrote in this refresh"

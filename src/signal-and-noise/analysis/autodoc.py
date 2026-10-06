@@ -23,9 +23,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-# Canonical pool whose numbers each README/slide reflects: the predictivity
-# ladder as planned (one run per size x L x ladder x scheme, seed 1904). The
-# seed-replicate pools feed the noise estimates and the seed holdout; the
+# Canonical pool whose numbers each README/slide reflects: the grid seed, every
+# design (one run per size x L x ladder x data build, seed 1904; RULES.md,
+# Definitions). The seed pools feed the noise estimates and the seed holdout; the
 # 36-sweep pools (`custom_swissai_hf`, `seeds_*`) keep their committed results
 # as history. A generator no-ops on other pools.
 CANONICAL_POOL = "predictivity"

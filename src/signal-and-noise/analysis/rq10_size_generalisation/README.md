@@ -6,7 +6,7 @@ Every other question stops at the reference: a proxy is judged by whether it
 makes the decisions the 1.7B model makes (rule 10, `analysis/RULES.md`). The
 3B rung exists to ask the one question that cannot be asked inside that
 frame — whether the reference itself is a proxy for the next rung. Four cells
-were trained at 3B for it (deep, L ∈ {8, 15}, schemes A and B;
+were trained at 3B for it (deep, L ∈ {8, 15}, data builds A and B;
 `plan/3b_models.md`), so this RQ is the only reader of
 `build_snr_pool(above_reference=True)` and the only folder the rule-10 checker
 exempts (`check_rules.EXEMPT`).
@@ -45,10 +45,10 @@ The RQ has two halves, and they answer differently:
   (`--reference 1.7B --design 3B`) is that comparison line on its own.
 - **Known-answer check.** `--reference 1.7B --check` reproduces rq02's
   `decision_acc_size_<proxy>` per task for both pair sets
-  (`predictivity_schemes/da_all_per_task_both_axes.csv`, the pool the rq02 decision figures
-  pair over) — exact on all 4,490 cells on 2026-10-02, max |diff| 1.11e-16.
-  The script and rq02 share the pair sets and the kernel; the `predictivity`
-  folder's table is the A/B-only pool and differs by construction.
+  (`predictivity/da_all_per_task_both_axes.csv`, the pool the rq02 decision figures
+  pair over; until 2026-10-05 that was the separate all-builds pool's table)
+  — exact on all 4,490 cells on 2026-10-02, max |diff| 1.11e-16. The script
+  and rq02 share the pair sets and the kernel.
 
 ## Figures, in storyline order
 

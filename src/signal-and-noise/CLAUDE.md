@@ -28,8 +28,8 @@ ladders. Two generations of models flow through it:
 
 - the **predictivity ladder** (current): `lm-<size>-L<L>[-schemeB]-<deep|shallow|swiglu>-seed<seed>`,
   90M–1.7B × L ∈ {1, 2, 8, 15, 30, 50} (L100 was planned and dropped on
-  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × scheme A/B/AT3/ZH/ES ×
-  seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
+  2026-09-20, plan/l100_data_mixture.md) × deep/shallow (+ the swiglu activation on deep at L 8/15/30) × data build
+  A/AT3/B/ZH/ES/DCLMP/FWEB (read as scheme A/B/C × T, analysis/RULES.md Definitions) × seeds, evaluated during training by `src/pretrain/auto_evals_*.py` and
   summarised by `src/pretrain/ladder_report.py` into **one wide CSV** published
   as the HF dataset `msnr-data/ladder-report`. That CSV is the source of truth.
 - the **36-model sweep** (2026-04…06, superseded): `apertus-<size>-fwEdu<N>-fw<M>-seed<S>`
@@ -59,13 +59,17 @@ python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds   # o
 **Loaders.** `snr/download/ladder.py::load_predictivity_eval_results` pulls
 `ladder_report.csv` (`hf_hub_download` into `<DATA_DIR>/ladder-report`, or
 `$SNR_LADDER_DIR`) and melts it to the long schema (`model, size, L, ladder,
-arch, activation, optimizer, scheme, seed, mix, step, task, kind,
+arch, activation, optimizer, data, scheme, T, seed, mix, step, task, kind,
 primary_score, tokens, compute, family`). `ladder` is the cell-name token
 (`deep`/`shallow`/`swiglu`, one trained configuration); `arch` (deep|shallow),
 `activation` (xielu|swiglu) and `optimizer` (ademamix) are its levels on the
 three intervention axes (`launch_trainings.LADDERS`), so `arch == "deep"`
 also matches the swiglu cells — the deep baseline configuration is
-`ladder == "deep"`. A cached CSV from before the split (no `ladder` column,
+`ladder == "deep"`. The same split for the data: the report's `scheme` is the
+BUILD label and becomes `data` (A, AT3, B, ZH, ES, DCLMP, FWEB: what names
+cells, lists and token shares), and `scheme` (A|B|C, the recipe at that L) and
+`T` (1|3) are its levels (`DATA_SCHEMES` `letter`, `temp`), so `scheme == "A"`
+also matches AT3 — the A baseline is `data == "A"`. A cached CSV from before the split (no `ladder` column,
 `arch` = the token) goes through one compatibility branch in the loader.
 `snr/download/apertus.py` is the parquet loader of the 36-sweep and the
 external models. `analysis/utils.build_snr_pool(pool)` picks the loader from
@@ -129,9 +133,11 @@ so a script never decides by model name.
   `analysis/check_rules.py` tests the tables on disk; the driver and the
   review skill run it.
 - Pool member filters apply to the frame's columns (`seeds`, `sizes`, `L`,
-  `ladder`, `arch`, `activation`, `optimizer`, `scheme`; `arch: [deep]`
-  admits the swiglu ladder too), not to models.json names, so scheme-B cells and adopted
-  off-grid seeds count whether or not the registry lists them.
+  `ladder`, `arch`, `activation`, `optimizer`, `data`, `scheme`, `T`;
+  `arch: [deep]` admits the swiglu ladder too), not to models.json names, so
+  new cells and adopted off-grid seeds count whether or not the registry lists
+  them; `cells_of: <pool>` keeps only the cells (`utils.CELL_KEYS`: size, L,
+  ladder, data) that pool has — the seed holdout's test split.
 - `tokens = iter × 2,064,384`; `compute = 6 × (N_non_emb + d·V) × tokens` from
   the reviewed hyperparams files (`configs.flops_params` convention).
 
@@ -140,8 +146,8 @@ passes run in research-question order so the early questions' tables land
 first — rq00 (`above_random.py`, the gate every later step reads; then
 `run_apertus.py`, `curves.py`, `panels.py`, the rf-twin comparison) → rq01
 (`analyze.py`, `panels.py`, `regimes.py`, `regimes_survivorship.py`,
-`scaling_law_error.py`, all on `predictivity_all`) → rq02 (`compute_da.py` per
-pool and for `predictivity_schemes`, `da_per_benchmark.py`, `early_small.py`,
+`scaling_law_error.py`, all on `predictivity_seeds`) → rq02 (`compute_da.py` per
+pool, `bench_bpb_da.py`, `da_per_benchmark.py`, `early_small.py`,
 `reliable_tasks.py`, `by_L.py`, `cross_task.py`, `scale_convergence.py`,
 `paper_rq2.py`, the `--axes mono-axis` twins, then
 the extensions: `scale_convergence.py --by L --langs L8 [--common-tasks]`,
@@ -245,24 +251,20 @@ scheme, every seed — with `params`, `n_non_emb`, `d_model`, `vocab_size`
 (the FLOPs convention) and the per-size save grid. The pools:
 
 ```
-predictivity               lm-{90M…1.7B}-L{1…50}[-schemeB]-{deep,shallow,swiglu}-seed1904
-predictivity_seeds         … every seed (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
-predictivity_seeds_train   seeds 64, 313 at 175M/600M, L ∈ {1, 2, 50}, deep, scheme A (the 64/313 replicates; the 1B ×3 cells' seeds 28/1797 are not in the holdout)
-predictivity_seeds_test    seed 1904 on the same six cells
-predictivity_schemes       every data-scheme cell, AT3/ES/ZH included, seed 1904
-predictivity_all           every trained cell: all seeds, every scheme, every ladder (rq01, rq03, rq05, rq06)
+predictivity               seed 1904, every ladder and data build: the grid seed, every design (headline; the gate)
+predictivity_seeds         every seed, every cell (64/313 at the 175M/600M ×3 cells, 28/1797 at the 1B ×3 cells)
+predictivity_seeds_train   the replicate seeds 64, 313, 28, 1797 (a seed filter only)
+predictivity_seeds_test    seed 1904 on exactly the train split's cells (`cells_of`, never a hand-kept list)
 seeds_*, custom_swissai_hf, external   the 36-sweep + externals (parquet loader)
 ```
 
-The four `predictivity*` pools above filter on `scheme ∈ {A, B}`. AT3, ES and
-ZH are a different intervention (a sampling temperature, a swapped second
-language), so letting them into the headline pool would widen every signal
-without widening the decision the pool exists to measure. They live in
-`predictivity_schemes` instead. The driver runs `compute_da.py` on it because
-`reliable_tasks.py`, `by_L.py` and `scale_convergence.py` pair over every
-scheme at the grid seed (the DA verdicts come from `predictivity_schemes`,
-the gate and the output folder stay `predictivity`; the `axes` column of
-`da_all_per_task_both_axes.csv` names the pair set, rule 15).
+Four pools since 2026-10-05 (analysis/RULES.md, Definitions;
+plan/decision_accuracy.md §9). Until then the headline pool held schemes A/B
+only and two more pools carried the rest (every build at seed 1904, and every
+cell; their names are in §9); their output folders are orphans the refresh
+lists (`RETIRED_POOLS` in `scripts/refresh_analysis.sh`, rule 17). The
+headline pool keeps every build because L1, L2 and T = 3 have too few pairs
+without them, and every pool is gated with `predictivity`'s mask.
 
 The `snr` section of models.json is global: `small_sizes` 90M–1B,
 `target_size` 1.7B (the reference of every question; rq07 alone pins 1B, the

@@ -61,7 +61,7 @@ from analysis.utils import (  # noqa: E402
     GRID_SEED, MIN_PAIRS, TARGET_SIZE, agreement_measures, design_axes, finals, ladder_frame, size_order)
 
 OUT_ROOT = DECISION_ACCURACY
-POOL = "predictivity_all"          # every scheme at the grid seed, as by_L and scale_convergence pair over
+POOL = "predictivity_seeds"          # every data build at the grid seed, as by_L and scale_convergence pair over
 STATS = ["da", "tau_a", "tau_b", "gamma", "da_drop_ref_ties", "rho", "pearson_r"]
 # The reliability cut every rq02 `above_66_*` figure uses, and its image under
 # the identity for the tau-scaled statistics: DA ≥ 0.66 <=> 2·DA − 1 ≥ 0.32.
