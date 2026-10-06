@@ -29,10 +29,13 @@ then ``<SNR data dir>/ladder-report`` — downloaded from the Hub on first use.
 
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
 import os
+import pickle
 import sys
-from functools import lru_cache
+from functools import lru_cache, wraps
 from pathlib import Path
 
 import pandas as pd
@@ -119,6 +122,49 @@ def _on_shared_grid(df: pd.DataFrame) -> pd.Series:
     return on_grid | on_window_grid | ((1 - pos).abs() <= GRID_TOL) | target.isna()
 
 
+# The melted frame is the same for every step of one refresh and costs ~40 s
+# to build, so it is kept on disk (git-ignored), keyed by the bytes of every
+# input it is computed from: the report, this loader and the pretrain modules
+# and configs it reads. One file per argument set, rewritten when an input
+# changes; SNR_CACHE=0 bypasses it, SNR_CACHE_DIR moves it.
+CACHE_DIR = Path(os.environ.get("SNR_CACHE_DIR", Path(__file__).resolve().parents[2] / ".cache"))
+
+
+def _disk_cached(fn):
+    sig = inspect.signature(fn)
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if os.environ.get("SNR_CACHE", "1") == "0":
+            return fn(*args, **kwargs)
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        opts = repr(sorted((k, v) for k, v in bound.arguments.items() if k != "path")).encode()
+        h = hashlib.sha256(opts + pd.__version__.encode())
+        for f in [ladder_dir(bound.arguments["path"]) / "ladder_report.csv", Path(__file__),
+                  *(_SRC / "pretrain" / m for m in ("ladder_report.py", "launch_trainings.py", "pretrain_progress.py")),
+                  *sorted(_HYPERPARAMS.glob("*.json")), *sorted((_SRC.parent / "configs").glob("*.json"))]:
+            h.update(f.name.encode() + f.read_bytes())
+        key = h.hexdigest()
+        cache = CACHE_DIR / f"{fn.__name__}-{hashlib.sha256(opts).hexdigest()[:12]}.pkl"
+        try:                            # key first: a stale file is never unpickled past it
+            with open(cache, "rb") as fh:
+                if pickle.load(fh) == key:
+                    return pickle.load(fh)
+        except Exception:               # unreadable (e.g. pandas upgraded): rebuild and overwrite
+            pass
+        df = fn(*args, **kwargs)
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_name(f"{cache.name}.{os.getpid()}.tmp")
+        with open(tmp, "wb") as fh:
+            pickle.dump(key, fh, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(df, fh, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(tmp, cache)          # atomic: a concurrent reader sees the old file or the new one
+        return df
+    return wrapper
+
+
+@_disk_cached
 def load_predictivity_eval_results(
     path: str | Path | None = None,
     include_diverged: bool = False,

@@ -10,6 +10,7 @@ import sys
 import unittest
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 _SND = Path(__file__).resolve().parents[1]
@@ -80,6 +81,52 @@ class ToleranceAndReference(unittest.TestCase):
         grid = pd.DataFrame(C.compute_early_small_decision_accuracy(df)).set_index(["proxy_size", "frac"])
         self.assertEqual(grid.loc[(C.SMALL_SIZES[0], 1.0), "da"], 1.0)   # vs the final ranking, not an earlier one
         self.assertEqual(grid.loc[(C.TARGET_SIZE, 0.8), "da"], 0.0)
+
+
+class CubeMatchesPerCallKernels(unittest.TestCase):
+    """`da_by_task` reads every DA column from one score cube per task; the
+    per-call kernels state the same rule one cell at a time. On random ladders
+    with tied distances, tied scores, NaN scores, single-checkpoint runs and
+    runs with no checkpoint near a fraction, the two must agree exactly."""
+
+    def _frame(self, rng):
+        sizes = C.bucket_order()[: C.bucket_order().index(C.TARGET_SIZE) + 1][-3:]
+        rows = []
+        for task in ("t0", "t1", "t2"):
+            for fam in "abcdefg":
+                for size in sizes:
+                    if rng.random() < 0.15:
+                        continue                                   # family absent at this size
+                    n = 1 if rng.random() < 0.1 else int(rng.integers(3, 12))
+                    steps = np.sort(rng.choice(np.arange(1, 40) * 50, size=n, replace=False))
+                    for st in steps:
+                        sc = float(rng.integers(0, 4)) if rng.random() < 0.5 else float(rng.random())
+                        rows.append({"model": f"{fam}-{size}", "family": fam, "bucket": size, "size": size,
+                                     "task": task, "step": int(st), "compute": float(st),
+                                     "primary_score": np.nan if rng.random() < 0.05 else sc})
+        return pd.DataFrame(rows), sizes
+
+    def test_cube_equals_per_call(self):
+        for seed in range(4):
+            rng = np.random.default_rng(seed)
+            df, sizes = self._frame(rng)
+            fams = sorted(set(df["family"]))
+            all_pairs = [(a, b) for i, a in enumerate(fams) for b in fams[i + 1:]]
+            psets = {"multi-axis": all_pairs, "mono-axis": all_pairs[::3]}
+            args = (df, ["t0", "t1", "t2"], list(psets), psets, [(sizes[0], sizes[1])], sizes)
+            C._FEW_PAIRS.clear()
+            cube = C.da_by_task(*args)
+            few_cube = sorted(C._FEW_PAIRS, key=repr)
+            C._FEW_PAIRS.clear()
+            per_call = C.da_by_task(*args, cube=False)
+            self.assertEqual(sorted(C._FEW_PAIRS, key=repr), few_cube)
+            for t in cube:
+                for axes in psets:
+                    (r1, n1, e1), (r2, n2, e2) = cube[t][axes], per_call[t][axes]
+                    self.assertEqual(list(r1), list(r2))           # same columns, same order
+                    self.assertEqual(n1, n2)
+                    self.assertTrue(pd.Series(r1).equals(pd.Series(r2)), (seed, t, axes))   # NaN == NaN, else exact
+                    self.assertTrue(pd.DataFrame(e1).equals(pd.DataFrame(e2)), (seed, t, axes))
 
 
 if __name__ == "__main__":
