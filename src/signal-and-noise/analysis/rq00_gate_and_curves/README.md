@@ -324,7 +324,7 @@ external floor is a model floor, not a parameters-at-5C floor.*
 <!-- BEGIN auto:above-random-external (above_random_external.py --pool predictivity) -->
 ## Benchmark floors: the ladder's gate against the public models'
 
-Of the 86 tasks both tiers score, 37 are at chance at every ladder size. Where the public base models (270M–70B, same gate) first read them: ≤ 600M 8, 1B–1.7B 19, 3B–4B 0, 7B–14B 5, ≥ 27B 2, never 3. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only. Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
+Of the 86 tasks both tiers score, 37 are at chance at every ladder size. Where the external models (270M–70B, every release the external tier holds, base and post-trained, same gate) first read them: ≤ 600M 8, 1B–1.7B 19, 3B–4B 0, 7B–14B 5, ≥ 27B 2, never 3. A task readable at ≤ 1.7B by a public model is a size/recipe floor (the 5×-Chinchilla ladder does not reach it; public models of that size train on 10–36 T tokens); a task that needs ≥ 3B or is never read is a benchmark or language-resource floor. "Never reads" is the gate's verdict: at every ladder size fewer than 50% of the size's runs that train the task's language clear the one-sided 95 % Wilson bound over chance; single runs may clear it. Overlap is the 36-sweep's 86-task list only. Regenerate with `python analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity`.
 
 | family | ≤ 600M | 1B–1.7B | 3B–4B | 7B–14B | ≥ 27B | never |
 |---|---|---|---|---|---|---|
@@ -341,10 +341,12 @@ Of the 86 tasks both tiers score, 37 are at chance at every ladder size. Where t
 
 ![The gate on the public models](pretraining/predictivity/above_random_external.png)
 
+The paper version, `above_random_external_paper.png` (alternatives `_paper_b`, one cell per task, and `_paper_c`, a family by bucket grid), recomputes the floor on the public base releases alone (no post-trained release, none of apertus3-a06, ap-from8b-TOP256): ≤ 600M 19, 1B–1.7B 8, 3B–4B 4, 7B–14B 0, ≥ 27B 4, never 2. `above_random_external_models.tex` lists those models per line and size bucket.
+
 Population: the `predictivity` pool (seed 1904, 175M–1.7B, final checkpoint, trained languages) against the external tier's base models (`all/external`, same gate; panels (c) and (d) use the six public lines gemma-3, Qwen3, OLMo-2, Olmo-3, Apertus, apertus3-a06); no task filter beyond the 84-task overlap.
 
 Key findings:
-- 37 of the 86 shared tasks are gated at every ladder size; 27 of them are read by a public base model ≤ 1.7B, 3 by none up to 70B.
+- 37 of the 86 shared tasks are gated at every ladder size; 27 of them are read by an external model ≤ 1.7B, 3 by none up to 70B.
 - (c) the ladder reads 37% of the shared tasks at 90M and 57% at 1.7B; the public base models ≤ 1.7B read Qwen3-1.7B-Base 87%, Qwen3-0.6B-Base 81%, OLMo-2-0425-1B 64%, gemma-3-1b-pt 64%, apertus3-1b-21-nodes 62%, gemma-3-270m 58% (a model's own run clears the bound; the ladder's share is its mask, half of the runs).
 - (d) 28 of the 37 ladder-gated tasks have a trained run at 1.7B (no 1.7B cell trains eu, sw, rule 2); 20 of them have a single run whose lower bound clears chance (near misses: the gate wants half of the runs), and the best public base model ≤ 1.7B beats the ladder's best run on 28.
 
@@ -394,11 +396,13 @@ against the raw runs.
 <!-- BEGIN auto:curves (curves.py --pool predictivity_all) -->
 ## Curves on the analysis' cells
 
-Every cell the `predictivity_all` pool holds (all seeds and schemes), after the loader has dropped diverged and unfinished runs and restricted checkpoints to the shared grid: the detailed counterpart of the progress report's figures. Loss per L, the whole run and its last 10 % (capped at 3.5 nats, where arch and scheme separate); benchmark accuracy as the mean over the tasks in the languages the cell trains on, one line per cell, chance from the option count. Regenerate with `python analysis/rq00_gate_and_curves/curves.py --pool predictivity_all`.
+Every cell the `predictivity_all` pool holds (all seeds and schemes), after the loader has dropped diverged and unfinished runs and restricted checkpoints to the shared grid: the detailed counterpart of the progress report's figures. Loss per L, the whole run and its last 10 % (capped at 3.5 nats, where ladder and scheme separate); benchmark accuracy as the mean over the tasks in the languages the cell trains on, one line per cell, chance from the option count, along the run in Chinchilla multiples; a family's cloze twin sits next to it, titled `(rf)`. Regenerate with `python analysis/rq00_gate_and_curves/curves.py --pool predictivity_all`.
 
 ![Loss curves](pretraining/predictivity_all/loss_curves.png)
 
 ![Benchmark curves](pretraining/predictivity_all/benchmark_curves.png)
+
+The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), drops the header for a legend of the line encoding.
 <!-- END auto:curves -->
 
 [loss_curves.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_all/loss_curves.png) ·

@@ -17,8 +17,10 @@ _ANALYSIS = Path(__file__).resolve().parent
 
 # A. predictivity and patterns in the evaluations
 GATE_AND_CURVES = _ANALYSIS / "rq00_gate_and_curves"            # the above-random gate; score vs compute and vs training
+CHANCE_VS_TRAIN_TOKENS = _ANALYSIS / "rq00_chance_vs_train_tokens"   # the share of cells above chance against the tokens of the language seen
 SCALING_PREDICTABILITY = _ANALYSIS / "rq01_scaling_predictability"  # what moves with size; power-law prediction of the reference
 DECISION_ACCURACY = _ANALYSIS / "rq02_decision_accuracy"        # does a small size / early checkpoint rank like the reference
+DA_VS_TRAIN_TOKENS = _ANALYSIS / "rq02_da_vs_train_tokens"      # DA of a language's BPB against the tokens of the language seen
 # B. cheap measurements
 NOISE_AND_SNR = _ANALYSIS / "rq03_noise_and_snr"                # seed vs checkpoint noise; the 22 SNR definitions; the seed holdout
 SURROGATES = _ANALYSIS / "rq04_surrogates"                      # which cheap statistic predicts decision accuracy

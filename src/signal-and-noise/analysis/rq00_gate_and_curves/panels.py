@@ -105,15 +105,20 @@ def paper_figures(out_dir: Path) -> None:
     level = level[langs]
     order = list((level >= 0).sum(axis=1).sort_values(ascending=False, kind="stable").index)
     G.level_heatmap(level.T, out_dir / "first_size_above_random_paper.png", levels=sizes, title="",
-                    cbar="smallest size above chance", xlabel="", ylabel="", rows=langs, cols=order,
+                    cbar="Smallest size above chance", xlabel="", ylabel="", rows=langs, cols=order,
                     names=("language", "benchmark"), also=(".svg",), name=G.paper_name, cell_text=False, cell_w=0.18)
-    fig, ax = plt.subplots(figsize=(5.4, 0.17 * len(order) + 1.3))
-    tab = G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name, legend_cols=3,
+    height = 0.17 * len(order) + 0.9
+    fig, ax = plt.subplots(figsize=(5.4, height))
+    tab = G.stack_ax(ax, level, "", levels=sizes, rows=order, name=G.paper_name,
                      xlabel="Share of languages above the chance threshold")
-    fig.tight_layout()
+    ax.set_ylim(len(order) - 0.5, -0.5)                  # no blank rows above the first bar or below the last
+    handles, labels = ax.get_legend_handles_labels()
+    ax.get_legend().remove()
+    fig.legend(handles, labels, fontsize=6, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 0))
+    fig.tight_layout(rect=(0, 0.3 / height, 1, 1))       # the legend right under the axis label
     tab.drop(columns="panel").rename(columns={"row": "benchmark", "col": "level", "value": "share"}) \
        .to_csv(out_dir / "first_size_share_paper.csv", index=False)
-    S.save(fig, out_dir / "first_size_share_paper.png", also=(".svg",))
+    S.save_paper(fig, out_dir / "first_size_share_paper")
 
 
 def threshold_panels(out_dir: Path) -> None:

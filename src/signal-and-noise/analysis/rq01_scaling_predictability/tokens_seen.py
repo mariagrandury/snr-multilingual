@@ -1,5 +1,9 @@
-"""rq01 — tokens seen: is a language's evaluation a function of how much of
-that language the proxy has trained on?
+"""Tokens seen: is a language's evaluation a function of how much of that
+language the proxy has trained on?
+
+The two figure families live in the folders of the questions they answer:
+B (above chance) in `rq00_chance_vs_train_tokens/`, A (decision accuracy) in
+`rq02_da_vs_train_tokens/`, each `<stage>/<pool>/` with its README block there.
 
 Both figures share one x axis: the training tokens of ONE language a checkpoint
 has seen — the language's share of the mixture (L, scheme), from the build's own
@@ -9,12 +13,13 @@ checkpoint) grid, not a new measurement, and the plan files live on capstor: a
 cell whose share is unreachable carries NaN tokens, is left out of the figure
 and is counted in the `!!!` line and the README.
 
-A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv
+A) da_goal_multi_axes_across_langs_bpb.png/.pdf/.csv, _cells.csv  (and `_mono_axis_` twins of goal and ckpt)
    DA-goal of a language's BPB against the tokens of that language the proxies
    had seen. DA-goal = the share of pairs of design variants the proxy
    checkpoint orders like the reference's final (rq02's kernel; rule 15's
    multi-axis set: every pair at the grid seed of every scheme, the pair set of
-   rq02's pooled panel). A BPB task is read only on the variants that train its
+   rq02's pooled panel; the `da_{goal,ckpt}_mono_axis_` twins read the mono-axis
+   pairs, those that move exactly one design axis). A BPB task is read only on the variants that train its
    language (rule 2, the loader), so the variants behind one cell differ in L,
    list and temperature and saw different amounts of the language: a cell's x is
    the checkpoint's share of the run times the MEAN over the pair set's proxy
@@ -62,7 +67,8 @@ B) pass_prob_vs_train_tokens_by_benchmark_<population>.png/.pdf/.csv, _points.cs
    header, the language count alone in a panel's title: `_paper` (every
    benchmark) and `_include_rf_paper_vertical` (INCLUDE over its `rf_` twin,
    the two panels stacked in the height of one), and `da_goal_..._paper`, the
-   DA-goal figure without its header.
+   DA-goal figure without its header. Every paper copy goes through
+   `style.save_paper` (rule 18).
 
     python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all
     python analysis/rq01_scaling_predictability/tokens_seen.py --paper     # the paper copies alone, from the tables on disk
@@ -91,19 +97,20 @@ from evals.scripts.utils.configs import load_pools, size_bucket  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
-from analysis.paths import SCALING_PREDICTABILITY  # noqa: E402
+from analysis.paths import CHANCE_VS_TRAIN_TOKENS, DA_VS_TRAIN_TOKENS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, above_chance  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import _scores_at, compute_early_small_decision_accuracy  # noqa: E402
 from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
 from analysis.utils import (  # noqa: E402
-    GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction, benchmark_family, finals,
-    ladder_frame, language_tokens, languages_only, size_order)
+    AXES_SUFFIX, GRID_SEED, MIN_PAIRS, SHARED_FRACS, TARGET_SIZE, assign_language, at_fraction, benchmark_family,
+    design_axes, finals, ladder_frame, language_tokens, languages_only, pair_sets, size_order)
 
-OUT_ROOT = SCALING_PREDICTABILITY
 CANONICAL = "predictivity_all"
 BINS_PER_DECADE = 3
-DA_STEM = "da_{mode}_multi_axes_across_langs_bpb"
-DA_NAME = DA_STEM.format(mode="goal")
+DA_STEM = "da_{mode}{axes}_across_langs_bpb"
+DA_NAME = DA_STEM.format(mode="goal", axes=AXES_SUFFIX["multi-axis"])
+# the pair sets each DA mode is drawn over (rule 15): mono-axis twins of the two checkpoint readings
+DA_AXES = {"goal": ("multi-axis", "mono-axis"), "ckpt": ("multi-axis", "mono-axis"), "size": ("multi-axis",)}
 # mode -> (whose final a proxy checkpoint is ranked against, the fractions of the run it is read at)
 DA_MODES = {"goal": (f"the {TARGET_SIZE} final", SHARED_FRACS),
             "ckpt": ("the proxy size's own final", SHARED_FRACS),
@@ -130,10 +137,10 @@ def _tokens(L, scheme, size, ladder, lang) -> float:
 
 # --- A: DA-goal of a language's BPB against the tokens of the language seen -------------
 
-def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
+def da_cells(df: pd.DataFrame, mode: str = "goal", pairs: list | None = None) -> pd.DataFrame:
     """One row per (BPB task, proxy size, tenth) with >= MIN_PAIRS pairs: the DA
     of the proxy checkpoint against the reference of `mode` (DA_MODES) over
-    every design pair, and the tokens of the task's language the pair set's
+    every design pair (`pairs`: only these, the mono-axis set), and the tokens of the task's language the pair set's
     proxies had seen at that checkpoint (mean, min and max over the variants)."""
     bpb = df[df["kind"] == "bpb"].assign(language=lambda d: d["task"].map(assign_language))
     bpb = languages_only(bpb)
@@ -146,7 +153,7 @@ def da_cells(df: pd.DataFrame, mode: str = "goal") -> pd.DataFrame:
         targets = size_order(dft["bucket"].dropna().unique()) if mode == "ckpt" else [TARGET_SIZE]
         for target in targets:
             ref = set(_scores_at(dft, target, 1.0))
-            for c in compute_early_small_decision_accuracy(dft, target_size=target, fracs=fracs):
+            for c in compute_early_small_decision_accuracy(dft, target_size=target, fracs=fracs, pairs=pairs):
                 if mode == "ckpt" and c["proxy_size"] != target:
                     continue
                 fams = sorted(set(_scores_at(dft, c["proxy_size"], c["frac"])) & ref)
@@ -170,31 +177,32 @@ def da_summary(cells: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str = "goal", x: str = "tokens",
-            paper: bool = False) -> None:
+            paper: bool = False, axes: str = "multi-axis") -> None:
     """`x` = "tokens" (the language's tokens the proxy checkpoint had seen) or
     "frac" (the share of its run the checkpoint sits at: the `_vs_frac` twin);
-    `paper` writes the `_paper` copy, PNG and SVG, without the header."""
+    `paper` writes the `_paper` copy, PNG and SVG, without the header (rule 18);
+    `axes` the pair set the DA is over."""
     ref = DA_MODES[mode][0]
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
     for s in size_order(summary["proxy_size"].unique()):
         g = summary[summary["proxy_size"] == s].sort_values("frac")
         n = g["n_languages"]
-        langs = f"{n.min()} languages" if n.min() == n.max() else f"{n.min()}–{n.max()} languages"
+        langs = f"{n.min()} languages" if n.min() == n.max() else f"{n.min()} to {n.max()} languages"
         ax.errorbar(g[x], g["da"], yerr=g["da_se"].fillna(0), color=S.SIZE_COLOR.get(s, S.MUTED), marker="o",
                     ms=3.5, lw=1.4, capsize=2, label=f"{s}  ({langs})")
     ax.axhline(SAFE_DA, color=S.MUTED, lw=.8, ls=":")
     ax.set_ylim(0.25, 1.0)
     if x == "tokens":
-        ax.set_xscale("log"); ax.set_xlabel("training tokens of the language seen by the proxy checkpoint (log)")
+        ax.set_xscale("log"); ax.set_xlabel("Training tokens of the language seen by the proxy checkpoint (log)")
     else:
-        ax.set_xlim(0, 1.02); ax.xaxis.set_major_formatter(PercentFormatter(1.0)); ax.set_xlabel("share of the proxy's run at the checkpoint")
-    ax.set_ylabel(f"mean DA-{mode} of a language's BPB")
-    ax.legend(frameon=False, loc="lower right", title="proxy size"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    stem = DA_STEM.format(mode=mode) + ("_vs_frac" if x == "frac" else "")
+        ax.set_xlim(0, 1.02); ax.xaxis.set_major_formatter(PercentFormatter(1.0)); ax.set_xlabel("Share of the proxy's run at the checkpoint")
+    ax.set_ylabel(f"Mean DA-{mode} of a language's BPB")
+    ax.legend(frameon=False, loc="lower right", title="Proxy size"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    stem = DA_STEM.format(mode=mode, axes=AXES_SUFFIX[axes]) + ("_vs_frac" if x == "frac" else "")
     if paper:
         fig.tight_layout()
         summary.to_csv(out_dir / f"{stem}_paper.csv", index=False)
-        S.save_figure(fig, out_dir, stem + "_paper", exts=("png", "svg"))
+        S.save_paper(fig, out_dir / f"{stem}_paper")
         return
     what = {"goal": "like the reference once the proxy has seen enough of it",
             "ckpt": "like its own final once it has seen enough of it",
@@ -204,7 +212,7 @@ def plot_da(summary: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, mode: str
              if x == "tokens" else "the share of the run the proxy checkpoint sits at")
     top = G._header(fig, f"Does a language's BPB rank the design variants {what}?",
                     f"point = {unit}: mean over languages of DA-{mode} (share of design-variant pairs the proxy's BPB of that "
-                    f"language orders like {ref}; every pair at seed {GRID_SEED} of every scheme, on the variants that train the "
+                    f"language orders like {ref}; {'every pair' if axes == 'multi-axis' else 'the pairs moving one design axis'} at seed {GRID_SEED} of every scheme, on the variants that train the "
                     f"language, ≥ {MIN_PAIRS} pairs), bar = standard error over languages; x = {xdesc}; "
                     f"{cells.dropna(subset=['tokens'])['task'].nunique()} languages, dotted = {SAFE_DA}"
                     + (f"; the {TARGET_SIZE} line is its own early checkpoints against its final" if mode == "goal" else ""))
@@ -311,7 +319,7 @@ def plot_pass(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, populati
                 "language": f"{fam}  ({nc['benchmark'].nunique()} benchmarks, {len(nc)} cells)",
                 "all": f"{fam}  ({nc['benchmark'].nunique()} benchmarks, {nc['language'].nunique()} languages, {len(nc)} cells)"}
         if by == "benchmark" and paper:
-            title = f"{G.paper_name(fam)}  ({nc['language'].nunique()} languages)"
+            title = f"{G.paper_name(fam)} ({nc['language'].nunique()})"     # the language count, as the other paper figures
         elif by == "benchmark":
             title = f"{head['benchmark']}  ({nc['language'].nunique()} languages, {len(nc)} cells)"
         else:
@@ -323,14 +331,14 @@ def plot_pass(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Path, populati
         ax.axis("off")
     for ax in axes[:, 0]:
         ax.set_ylabel(_cell_label(ckpts) if paper else "cells above chance")
-    fig.supxlabel("training tokens of the task's language (log)", fontsize=9)
+    fig.supxlabel("Training tokens of the task's language (log)", fontsize=9)
     _size_legend(flat[0], sizes)
     runs, verdict = POPULATIONS[population]
     stem = pass_stem(by, population, ckpts)
     if paper:
         fig.tight_layout()
         points.to_csv(out_dir / f"{stem}_paper.csv", index=False)
-        S.save_figure(fig, out_dir, stem + "_paper", exts=("png", "svg"))
+        S.save_paper(fig, out_dir / f"{stem}_paper")
         return
     unit, where = (("(task, size, L, tenth of the run)", "that checkpoint had seen (the tenth × the run's tokens)") if ckpts
                    else ("(task, size, L)", "a full run of the cell trains on"))
@@ -365,22 +373,28 @@ def plot_pass_include_rf(points: pd.DataFrame, cells: pd.DataFrame, out_dir: Pat
     fig.tight_layout()
     stem = pass_stem("benchmark", population, ckpts) + "_include_rf_paper_vertical"
     points[points["benchmark"].isin(fams)].to_csv(out_dir / f"{stem}.csv", index=False)
-    S.save_figure(fig, out_dir, stem, exts=("png", "svg"))
+    S.save_paper(fig, out_dir / stem)
 
 
-def paper(out_dir: Path, population: str = "1904", ckpts: bool = True) -> None:
+def paper(pass_dir: Path, da_dir: Path, population: str = "1904", ckpts: bool = True) -> None:
     """The paper copies, from the `_by_benchmark_` tables on disk."""
     stem = pass_stem("benchmark", population, ckpts)
-    cells, points = pd.read_csv(out_dir / f"{stem}.csv"), pd.read_csv(out_dir / f"{stem}_points.csv")
-    plot_pass(points, cells, out_dir, population, ckpts, "benchmark", paper=True)
-    plot_pass_include_rf(points, cells, out_dir, population, ckpts)
-    plot_da(pd.read_csv(out_dir / f"{DA_NAME}.csv"), pd.read_csv(out_dir / f"{DA_NAME}_cells.csv"), out_dir, paper=True)
+    cells, points = pd.read_csv(pass_dir / f"{stem}.csv"), pd.read_csv(pass_dir / f"{stem}_points.csv")
+    plot_pass(points, cells, pass_dir, population, ckpts, "benchmark", paper=True)
+    plot_pass_include_rf(points, cells, pass_dir, population, ckpts)
+    summary = pd.read_csv(da_dir / f"{DA_NAME}.csv")
+    if summary.empty:
+        print(f"!!! {DA_NAME}.csv is empty (no cell had a token count): its paper copy is not redrawn")
+    else:
+        plot_da(summary, pd.read_csv(da_dir / f"{DA_NAME}_cells.csv"), da_dir, paper=True)
 
 
 # --- README ----------------------------------------------------------------------------
 
-def generate_readme(pool: str, out_dir: Path, summary: pd.DataFrame, cells_a: pd.DataFrame,
+def generate_readme(pool: str, summary: pd.DataFrame, cells_a: pd.DataFrame,
                     cells_b: dict[str, pd.DataFrame]) -> None:
+    """Two blocks: the DA figures' in rq02_da_vs_train_tokens/README.md, the
+    above-chance figures' in rq00_chance_vs_train_tokens/README.md."""
     if pool != CANONICAL:
         return
     stage = load_pools()[pool].get("stage", "pretraining")
@@ -396,26 +410,31 @@ def generate_readme(pool: str, out_dir: Path, summary: pd.DataFrame, cells_a: pd
                    f"\n\n!!! Token counts unreachable (the build's plan is not readable from where this ran): {missing_a} cells of "
                    f"the DA figure, " + ", ".join(f"{n} of `{p}`" for p, n in missing_b.items()) + " — those cells are left out of "
                    "the figures and carry NaN in the tables.")
-    body = "\n\n".join([
-        "## Tokens seen: exposure to a language against its evaluation",
-        f"`tokens_seen.py`, `{pool}` pool: both figures put a language's evaluation against the training tokens of that language "
-        f"the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the "
-        f"run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool {pool}`." + unreachable,
-        f"**A. DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages "
+    intro = (f"`tokens_seen.py`, `{pool}` pool: a language's evaluation against the training tokens of that language "
+             f"the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the "
+             f"run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool {pool}`." + unreachable)
+    da_body = "\n\n".join([
+        "## Decision accuracy against the tokens of the language seen", intro,
+        f"**DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages "
         f"of the share of design-variant pairs the proxy's BPB orders like the {TARGET_SIZE} final (rq02's kernel, every pair at "
         f"seed {GRID_SEED} of every scheme on the variants that train the language, ≥ {MIN_PAIRS} pairs; rule 15's multi-axis "
         f"set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of "
         f"the language they had seen, and a point's x the geometric mean over languages "
         f"({cells_a.dropna(subset=['tokens'])['task'].nunique()} languages; `{DA_NAME}_cells.csv` has the per-language cells "
         f"with the min and max over variants). The {TARGET_SIZE} line is its own early checkpoints against its final. "
-        f"`{DA_STEM.format(mode='ckpt')}` ranks each checkpoint against the proxy size's OWN final (DA-ckpt) and "
-        f"`{DA_STEM.format(mode='size')}` the final of every size against the {TARGET_SIZE} final (DA-size, one point per size: "
+        f"`{DA_STEM.format(mode='ckpt', axes=AXES_SUFFIX['multi-axis'])}` ranks each checkpoint against the proxy size's OWN final (DA-ckpt) and "
+        f"`{DA_STEM.format(mode='size', axes=AXES_SUFFIX['multi-axis'])}` the final of every size against the {TARGET_SIZE} final (DA-size, one point per size: "
         f"the 100 % end of the DA-goal lines); the `_vs_frac` twins of the goal and ckpt figures put the same points against the "
         f"share of the run the checkpoint sits at, where lines that are apart on the token axis falling together says the "
-        f"schedule, not the exposure, decides.",
+        f"schedule, not the exposure, decides. The `{AXES_SUFFIX['mono-axis']}` twins of the goal and ckpt figures read only the "
+        f"pairs that move one design axis (rule 15).",
         md_table(["proxy size", "tokens of a language at 1C", "DA at 1C", "tokens at 5C", "DA at 5C", "languages"], rows),
         f"![DA-goal of BPB vs tokens seen]({rel}/{DA_NAME}.png)",
-        f"**B. Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, "
+        f"![DA-goal of BPB vs tokens seen, mono-axis pairs]({rel}/{DA_STEM.format(mode='goal', axes=AXES_SUFFIX['mono-axis'])}.png)"])
+    replace_block(DA_VS_TRAIN_TOKENS / "README.md", "da-vs-train-tokens", da_body, f"tokens_seen.py --pool {pool}")
+    pass_body = "\n\n".join([
+        "## Share of cells above chance against the tokens of the language seen", intro,
+        f"**Share of a benchmark's cells above chance against the tokens seen.** One (task, size, L) cell per benchmark, "
         f"language and language setting; above chance by rule 1's Wilson test on the cell's runs; cells binned {BINS_PER_DECADE} "
         f"per decade of tokens, a point = the share of the bin's cells above chance with the cell count, one line per size. Two "
         f"populations: `deep_A_1904`, {POPULATIONS['deep_A_1904'][0]}; `1904`, {POPULATIONS['1904'][0]}. The `.csv` next to each "
@@ -428,43 +447,45 @@ def generate_readme(pool: str, out_dir: Path, summary: pd.DataFrame, cells_a: pd
         f"Cells above chance: "
         + ", ".join(f"`{p}` {int(c['above_chance'].sum())} of {len(c)} ({c['task'].nunique()} tasks)" for p, c in cells_b.items()) + ".",
     ] + [f"![Share above chance vs tokens seen, {p}]({rel}/{PASS_NAME}_by_benchmark_{p}.png)" for p in cells_b])
-    replace_block(OUT_ROOT / "README.md", "tokens-seen", body, f"tokens_seen.py --pool {pool}")
-    print(f"Wrote auto README block → {OUT_ROOT / 'README.md'}")
+    replace_block(CHANCE_VS_TRAIN_TOKENS / "README.md", "chance-vs-train-tokens", pass_body, f"tokens_seen.py --pool {pool}")
+    print(f"Wrote auto README blocks → {DA_VS_TRAIN_TOKENS / 'README.md'}, {CHANCE_VS_TRAIN_TOKENS / 'README.md'}")
 
 
 # --- driver ------------------------------------------------------------------------------
 
-def main(pool: str, out_dir: Path) -> None:
+def main(pool: str, pass_dir: Path, da_dir: Path) -> None:
     df = ladder_frame(pool)
     df = df[df["seed"] == GRID_SEED].copy()       # the grid seed: a replicate is a draw of one design, not a second design
     df["bucket"] = df["size"].map(size_bucket)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    for d in (pass_dir, da_dir):
+        d.mkdir(parents=True, exist_ok=True)
     print(f"Pool '{pool}' at seed {GRID_SEED}: {df['model'].nunique()} cells")
 
-    for mode in DA_MODES:
-        stem = DA_STEM.format(mode=mode)
-        c = da_cells(df, mode)
+    mono = pair_sets(design_axes(df))["mono-axis"]
+    for mode, axes in ((m, a) for m in DA_MODES for a in DA_AXES[m]):
+        stem, out_dir = DA_STEM.format(mode=mode, axes=AXES_SUFFIX[axes]), da_dir
+        c = da_cells(df, mode, pairs=mono if axes == "mono-axis" else None)
         s = da_summary(c)
         c.to_csv(out_dir / f"{stem}_cells.csv", index=False)
         s.to_csv(out_dir / f"{stem}.csv", index=False)
         missing = c[c["tokens"].isna()]
-        print(f"A [{mode}]: {len(c)} (language, size, tenth) cells over {c['task'].nunique()} languages with ≥ {MIN_PAIRS} pairs "
+        print(f"A [{mode}, {axes}]: {len(c)} (language, size, tenth) cells over {c['task'].nunique()} languages with ≥ {MIN_PAIRS} pairs "
               f"(rule 5; the kernel leaves the others out), {c['n_variants'].min()}–{c['n_variants'].max()} variants per cell")
         if len(missing):
-            print(f"!!! A [{mode}]: {len(missing)} cells over {missing['task'].nunique()} languages have no token count "
+            print(f"!!! A [{mode}, {axes}]: {len(missing)} cells over {missing['task'].nunique()} languages have no token count "
                   f"(build plan unreachable) and are left out of the figure")
         if not s.empty:
-            plot_da(s, c, out_dir, mode)
+            plot_da(s, c, out_dir, mode, axes=axes)
             if mode != "size":
                 s.to_csv(out_dir / f"{stem}_vs_frac.csv", index=False)     # the same points, drawn against the run share (rule 12)
-                plot_da(s, c, out_dir, mode, x="frac")
-        if mode == "goal":
+                plot_da(s, c, out_dir, mode, x="frac", axes=axes)
+        if mode == "goal" and axes == "multi-axis":
             cells, summary = c, s
 
     fin = finals(df)
     # the same runs at every evaluated tenth: the `_ckpts` twins (`frac` = the tenth asked for)
     tenths = pd.concat([at_fraction(df, f).assign(frac=f) for f in SHARED_FRACS], ignore_index=True)
-    cells_b = {}
+    cells_b, out_dir = {}, pass_dir
     for population in POPULATIONS:
         for ckpts, frame in ((False, fin), (True, tenths)):
             sub = frame[(frame["ladder"] == "deep") & (frame["scheme"] == "A")] if population == "deep_A_1904" else frame
@@ -481,8 +502,9 @@ def main(pool: str, out_dir: Path) -> None:
                                          else f"{pass_stem(by, population, ckpts)}.csv"), index=False)
                 if not points.empty:
                     plot_pass(points, c, out_dir, population, ckpts, by)
-    paper(out_dir)
-    generate_readme(pool, out_dir, summary, cells, cells_b)
+    paper(pass_dir, da_dir)
+    if pool == CANONICAL:
+        generate_readme(pool, summary, cells, cells_b)
 
 
 if __name__ == "__main__":
@@ -492,5 +514,6 @@ if __name__ == "__main__":
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")
-    out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
-    paper(out) if args.paper else main(args.pool, out)
+    sub = Path(load_pools()[args.pool].get("stage", "pretraining")) / args.pool
+    dirs = (CHANCE_VS_TRAIN_TOKENS / sub, DA_VS_TRAIN_TOKENS / sub)
+    paper(*dirs) if args.paper else main(args.pool, *dirs)
