@@ -268,6 +268,12 @@ do_ladder() {
     # No --wait: the deck is not built here (node is not installed on the login
     # nodes), so there is nothing to do afterwards and the unit should not hold
     # for hours. The jobids go in the status file instead.
+    # A manual pause (the report still publishes): `touch $LOG_DIR/PAUSE_REFRESH`
+    # while the analysis code is being changed in the tree the job would run.
+    if [ -e "$LOG_DIR/PAUSE_REFRESH" ]; then
+        say "refresh paused ($LOG_DIR/PAUSE_REFRESH exists) — not submitting"
+        NOTES+=("refresh paused"); finish 0
+    fi
     say "submitting the analysis (FORCE=1, --no-fetch --no-deck)"
     local main_id
     main_id=$($SBATCH --parsable --account=infra01 --partition=normal --nodes=1 \
