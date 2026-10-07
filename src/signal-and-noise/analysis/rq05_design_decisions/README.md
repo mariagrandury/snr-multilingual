@@ -10,14 +10,14 @@
 > *model sizes* do — and, in `early_decision.py`, how early in the proxy's
 > run (the paper's RQ2 and RQ4).
 
-<!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:highlight (analyze.py --pool predictivity_seeds) -->
 ## Highlighted result
 
 - **depth (deep vs shallow) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L8: 90M, L15: 90M, L30: 90M, L50: 90M.
-- **language lists (A vs B) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L8: 90M, L15: 90M, L30: 90M.
+- **data scheme (A vs B) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L8: 90M, L15: 90M, L30: 90M.
 - **temperature (T=1 vs T=3) on per-language BPB** — smallest proxy reaching DA ≥ 0.75 against the reference: L15: 90M, L30: 90M, L50: 90M.
 - **Depth decision on benchmarks** — mean DA over L by proxy: 90M 0.55, 175M 0.52, 350M 0.58, 600M 0.48, 1B 0.49.
-- **Is there a decision to make?** median |Δ| at the reference in seed sds — depth (deep vs shallow): benchmarks 1.3×, bits per byte 1.3×; 2nd language (ru vs es): benchmarks 1.3×; language lists (A vs B): benchmarks 1.3×, bits per byte 1.6×; temperature (T=1 vs T=3): benchmarks 1.4×, bits per byte 5.4×; 2nd language (ru vs zh): benchmarks 1.0×.
+- **Is there a decision to make?** median |Δ| at the reference in seed sds — depth (deep vs shallow): benchmarks 1.3×, bits per byte 1.3×; data scheme (A vs B, B at L8–L30): benchmarks 1.3×, bits per byte 1.6×; data scheme (A vs B, ZH at L2): benchmarks 1.0×; data scheme (A vs B, DCLMP at L1): benchmarks 1.4×; data scheme (A vs C, ES at L2): benchmarks 1.3×; data scheme (A vs C, FWEB at L1): benchmarks 1.8×; temperature (T=1 vs T=3): benchmarks 1.4×, bits per byte 5.4×.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -50,6 +50,16 @@ reference, rule 1), and the single macro-BPB decision
 (`bpb_macro`, the "aggregate criterion" the plan asks to compare against the
 per-language one).
 
+## Key figure
+
+![Design decisions read by proxy size and by the reference's checkpoints](pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.png)
+
+Population: pool `predictivity_seeds` (every seed and data build), mono-axis decisions of the four interventions (a scheme decision per data build), proxies 90M–1B at their final checkpoint (left) and the reference's own ten checkpoints (right), each line against one reference size and the L's that share it, mean over L; solid = per-language BPB of the languages both levels train, dashed = the gated benchmark tasks; dotted line = 0.75.
+
+**Key finding.** Per-language BPB reads the temperature decision from every proxy (0.95–0.99) and the list decision at 0.77–1.00, while benchmarks read no decision reliably (0.45–0.63 for every intervention but the two L1 English-data swaps, up to 0.83), and the depth line swings from 0 to 0.98 between proxies against a reference whose depth effect is 1.3 seed sds.
+
+GitHub: [da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.png) · [da_all_lines_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/da_all_lines_mono_axis_paper.csv). The same on the decided items and per benchmark: [Per benchmark and per language](#per-benchmark-and-per-language).
+
 ## Methodology
 
 - **Intervention decision accuracy.** For each item of a population, the
@@ -71,10 +81,10 @@ per-language one).
 Hand-written numbers in this README are from the ladder-report snapshot
 **2026-09-30 23:54**.
 
-<!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
 
-Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_design_decisions/analyze.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds`.
 
 **depth (deep vs shallow), per-language BPB** (rows: proxy size; columns: L; reference L8 → 1.7B, L15 → 1.7B, L30 → 1.7B, L50 → 1.7B):
 
@@ -86,7 +96,7 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 | 600M | 0.00 | 0.00 | 0.00 | 0.00 |
 | 1B | 1.00 | 1.00 | 1.00 | 0.78 |
 
-**language lists (A vs B), per-language BPB** (rows: proxy size; columns: L; reference L8 → 1.7B, L15 → 1.7B, L30 → 1.7B):
+**data scheme (A vs B), per-language BPB** (rows: proxy size; columns: L; reference L8 → 1.7B, L15 → 1.7B, L30 → 1.7B):
 
 | proxy | L8 | L15 | L30 |
 |---|---|---|---|
@@ -116,15 +126,25 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 | 600M | 0.48 | 0.45 | 0.47 | 0.48 | 0.54 | 0.43 |
 | 1B | 0.48 | 0.44 | 0.47 | 0.50 | 0.56 | 0.49 |
 
-**language lists (A vs B), benchmarks** (rows: proxy size; columns: L; reference L8 → 1.7B, L15 → 1.7B, L30 → 1.7B):
+**data scheme (A vs B), benchmarks** (rows: proxy size; columns: L; reference L1 → 1.7B, L2 → 1.7B, L8 → 1.7B, L15 → 1.7B, L30 → 1.7B):
 
-| proxy | L8 | L15 | L30 |
-|---|---|---|---|
-| 90M | 0.43 | 0.44 | 0.50 |
-| 175M | 0.55 | 0.48 | 0.41 |
-| 350M | 0.45 | 0.51 | 0.42 |
-| 600M | 0.49 | 0.46 | 0.49 |
-| 1B | 0.50 | 0.55 | 0.50 |
+| proxy | L1 | L2 | L8 | L15 | L30 |
+|---|---|---|---|---|---|
+| 90M | 0.60 | 0.48 | 0.43 | 0.44 | 0.50 |
+| 175M | 0.58 | 0.50 | 0.55 | 0.48 | 0.41 |
+| 350M | 0.79 | 0.51 | 0.45 | 0.51 | 0.42 |
+| 600M | 0.52 | 0.57 | 0.49 | 0.46 | 0.49 |
+| 1B | 0.50 | 0.49 | 0.50 | 0.55 | 0.50 |
+
+**data scheme (A vs C), benchmarks** (rows: proxy size; columns: L; reference L1 → 1.7B, L2 → 1.7B):
+
+| proxy | L1 | L2 |
+|---|---|---|
+| 90M | 0.61 | 0.51 |
+| 175M | 0.62 | 0.52 |
+| 350M | 0.83 | 0.52 |
+| 600M | 0.60 | 0.48 |
+| 1B | 0.70 | 0.45 |
 
 **temperature (T=1 vs T=3), benchmarks** (rows: proxy size; columns: L; reference L15 → 1.7B, L30 → 1.7B, L50 → 1.7B):
 
@@ -136,39 +156,21 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq05_
 | 600M | 0.59 | 0.60 | 0.67 |
 | 1B | 0.56 | 0.65 | 0.64 |
 
-**2nd language (ru vs zh), benchmarks** (rows: proxy size; columns: L; reference L2 → 1.7B):
+![Intervention DA grid](pretraining/predictivity_seeds/intervention_da_all_mono_axis.png)
 
-| proxy | L2 |
-|---|---|
-| 90M | 0.48 |
-| 175M | 0.50 |
-| 350M | 0.51 |
-| 600M | 0.57 |
-| 1B | 0.49 |
-
-**2nd language (ru vs es), benchmarks** (rows: proxy size; columns: L; reference L2 → 1.7B):
-
-| proxy | L2 |
-|---|---|
-| 90M | 0.51 |
-| 175M | 0.52 |
-| 350M | 0.52 |
-| 600M | 0.48 |
-| 1B | 0.45 |
-
-![Intervention DA grid](pretraining/predictivity_all/intervention_da_all_mono_axis.png)
-
-**Effect at the reference in seed standard deviations** (median over items and L):
+**Effect at the reference in seed standard deviations** (median over items and L; a scheme decision per recipe, since the letter names a different build at each L):
 
 | intervention | benchmarks | bits per byte |
 |---|---|---|
 | depth (deep vs shallow) | 1.3 | 1.3 |
-| 2nd language (ru vs es) | 1.3 |  |
-| language lists (A vs B) | 1.3 | 1.6 |
+| data scheme (A vs B, B at L8–L30) | 1.3 | 1.6 |
+| data scheme (A vs B, ZH at L2) | 1.0 |  |
+| data scheme (A vs B, DCLMP at L1) | 1.4 |  |
+| data scheme (A vs C, ES at L2) | 1.3 |  |
+| data scheme (A vs C, FWEB at L1) | 1.8 |  |
 | temperature (T=1 vs T=3) | 1.4 | 5.4 |
-| 2nd language (ru vs zh) | 1.0 |  |
 
-![Interventions](pretraining/predictivity_all/rq4_interventions.png)
+![Interventions](pretraining/predictivity_seeds/rq4_interventions.png)
 <!-- END auto:results -->
 
 GitHub: [intervention_da_all_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_all_mono_axis.png) · [intervention_da_all_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_all_mono_axis.csv) ·
@@ -198,15 +200,15 @@ planned decisions are averaged over L, so that every language setting counts
 once. `cells` in the table is the number of settings behind a mean; the
 reference each setting resolved against is carried in `refs`.
 
-<!-- BEGIN auto:early-decision (early_decision.py --pool predictivity_all) -->
+<!-- BEGIN auto:early-decision (early_decision.py --pool predictivity_seeds) -->
 ## How small, and how early (paper RQ2)
 
-Numbers from the `predictivity_all` decision table above. Regenerate with `python analysis/rq05_design_decisions/early_decision.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` decision table above. Regenerate with `python analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds`.
 
 - **depth (deep vs shallow), per-language bits per byte** — final-checkpoint agreement by proxy: 90M 0.97, 175M 0.98, 350M 0.49, 600M 0.00, 1B 0.95; smallest proxy at ≥ 0.75: **90M**, which reaches it at 0.5C of training (5C = the full run).
 - **depth (deep vs shallow), benchmark tasks** — final-checkpoint agreement by proxy: 90M 0.55, 175M 0.52, 350M 0.58, 600M 0.48, 1B 0.49; no proxy reaches 0.75.
-- **language lists (A vs B), per-language bits per byte** — final-checkpoint agreement by proxy: 90M 1.00, 175M 1.00, 350M 1.00, 600M 0.94, 1B 0.77; smallest proxy at ≥ 0.75: **90M**, which reaches it at 0.5C of training (5C = the full run).
-- **language lists (A vs B), benchmark tasks** — final-checkpoint agreement by proxy: 90M 0.46, 175M 0.48, 350M 0.46, 600M 0.48, 1B 0.52; no proxy reaches 0.75.
+- **data scheme (A vs B, B at L8–L30), per-language bits per byte** — final-checkpoint agreement by proxy: 90M 1.00, 175M 1.00, 350M 1.00, 600M 0.94, 1B 0.77; smallest proxy at ≥ 0.75: **90M**, which reaches it at 0.5C of training (5C = the full run).
+- **data scheme (A vs B, B at L8–L30), benchmark tasks** — final-checkpoint agreement by proxy: 90M 0.46, 175M 0.48, 350M 0.46, 600M 0.48, 1B 0.52; no proxy reaches 0.75.
 
 **depth (deep vs shallow) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
@@ -230,7 +232,7 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 | 1B | 0.45 | 0.49 | 0.48 | 0.48 | 0.46 | 0.48 | 0.50 | 0.53 | 0.51 | 0.49 |
 | 1.7B | 0.49 | 0.50 | 0.51 | 0.54 | 0.55 | 0.59 | 0.61 | 0.60 | 0.74 |  |
 
-**language lists (A vs B) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
+**data scheme (A vs B, B at L8–L30) — per-language bits per byte** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
 | proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -241,7 +243,7 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 | 1B | 0.79 | 0.91 | 0.87 | 0.83 | 0.83 | 0.83 | 0.81 | 0.72 | 0.77 | 0.77 |
 | 1.7B | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 | 1.00 |  |
 
-**language lists (A vs B) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
+**data scheme (A vs B, B at L8–L30) — benchmark tasks** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; mean over L of the per-L agreement):
 
 | proxy | 0.5C | 1C | 1.5C | 2C | 2.5C | 3C | 3.5C | 4C | 4.5C | 5C |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -252,7 +254,7 @@ Numbers from the `predictivity_all` decision table above. Regenerate with `pytho
 | 1B | 0.53 | 0.51 | 0.49 | 0.49 | 0.51 | 0.46 | 0.47 | 0.52 | 0.49 | 0.52 |
 | 1.7B | 0.44 | 0.50 | 0.53 | 0.59 | 0.56 | 0.60 | 0.56 | 0.64 | 0.72 |  |
 
-![Early and small](pretraining/predictivity_all/rq2_da_goal_early_small_mono_axis.png)
+![Early and small](pretraining/predictivity_seeds/rq2_da_goal_early_small_mono_axis.png)
 <!-- END auto:early-decision -->
 
 GitHub: [rq2_da_goal_early_small_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/rq2_da_goal_early_small_mono_axis.png) · [rq2_da_goal_early_small_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/rq2_da_goal_early_small_mono_axis.csv) ·
@@ -275,28 +277,28 @@ GitHub: [rq2_da_goal_early_small_mono_axis.png](https://github.com/mariagrandury
   the L15 AT3, ZH and ES 1.7B cells finished (2026-09-26). The `reference_size`
   column names it per cell.
 
-<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+<!-- BEGIN auto:panels (panels.py --pool predictivity_seeds) -->
 ## Per benchmark and per language
 
-The decision table and the early read above, without pooling the benchmarks (`predictivity_all` pool). Language aggregates and per-subject facets are left out here (about 60 % of the pooled benchmark items remain), and a language's subplot averages its BPB item with its benchmark items. Regenerate with `python analysis/rq05_design_decisions/panels.py --pool predictivity_all`. White cells have no value; each figure's table sits next to it under the same name (`intervention_da_size_by_<unit>_mono_axis.csv`).
+The decision table and the early read above, without pooling the benchmarks (`predictivity_seeds` pool). Language aggregates and per-subject facets are left out here (about 60 % of the pooled benchmark items remain), and a language's subplot averages its BPB item with its benchmark items. Regenerate with `python analysis/rq05_design_decisions/panels.py --pool predictivity_seeds`. White cells have no value; each figure's table sits next to it under the same name (`intervention_da_size_by_<unit>_mono_axis.csv`).
 
-![rq05 in one figure](pretraining/predictivity_all/highlights.png)
+![rq05 in one figure](pretraining/predictivity_seeds/highlights.png)
 
-![Decisions by proxy size and checkpoint](pretraining/predictivity_all/da_all_lines_mono_axis.png)
+![Decisions by proxy size and checkpoint](pretraining/predictivity_seeds/da_all_lines_mono_axis.png)
 
-![The same on the items decided outside seed noise](pretraining/predictivity_all/da_all_lines_decided_mono_axis.png)
+![The same on the items decided outside seed noise](pretraining/predictivity_seeds/da_all_lines_decided_mono_axis.png)
 
-![Which depth wins, in seed sds](pretraining/predictivity_all/depth_crossover.png)
+![Which depth wins, in seed sds](pretraining/predictivity_seeds/depth_crossover.png)
 
-![Decisions by compute](pretraining/predictivity_all/da_all_lines_flops_mono_axis.png)
+![Decisions by compute](pretraining/predictivity_seeds/da_all_lines_flops_mono_axis.png)
 
-![Decisions per benchmark](pretraining/predictivity_all/intervention_da_size_by_benchmark_mono_axis.png)
+![Decisions per benchmark](pretraining/predictivity_seeds/intervention_da_size_by_benchmark_mono_axis.png)
 
-![Early and small per benchmark](pretraining/predictivity_all/intervention_da_goal_early_by_benchmark_mono_axis.png)
+![Early and small per benchmark](pretraining/predictivity_seeds/intervention_da_goal_early_by_benchmark_mono_axis.png)
 
-![Decisions per language](pretraining/predictivity_all/intervention_da_size_by_language_mono_axis.png)
+![Decisions per language](pretraining/predictivity_seeds/intervention_da_size_by_language_mono_axis.png)
 
-![Early and small per language](pretraining/predictivity_all/intervention_da_goal_early_by_language_mono_axis.png)
+![Early and small per language](pretraining/predictivity_seeds/intervention_da_goal_early_by_language_mono_axis.png)
 <!-- END auto:panels -->
 
 **Key findings** (`da_all_lines_mono_axis`, `da_all_lines_decided_mono_axis`, `depth_crossover`;
@@ -354,30 +356,27 @@ GitHub: [intervention_da_goal_early_by_benchmark_mono_axis.png](https://github.c
 GitHub: [intervention_da_size_by_language_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_size_by_language_mono_axis.png) · [intervention_da_size_by_language_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_size_by_language_mono_axis.csv) ·
 GitHub: [intervention_da_goal_early_by_language_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_goal_early_by_language_mono_axis.png) · [intervention_da_goal_early_by_language_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/intervention_da_goal_early_by_language_mono_axis.csv)
 
-<!-- BEGIN auto:transformations (transformations.py --pool predictivity_all) -->
+<!-- BEGIN auto:transformations (transformations.py --pool predictivity_seeds) -->
 ## Transformations on one item set
 
-Mean decision accuracy over each transformation's pairs, on the items every transformation decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); `transformation_da_size_mono_axis.csv` has every pair. Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool predictivity_all`.
+Mean decision accuracy over each transformation's pairs, on the items every transformation decides somewhere (benchmarks gated by rq00's above-random mask at the proxy and the reference); `transformation_da_size_mono_axis.csv` has every pair. Regenerate with `python analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds`.
 
 **benchmarks** (rows: transformation; columns: proxy size; mean over pairs, shared items):
 
 | transformation | pairs (with data) | items | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|---|
-| depth (deep vs shallow) | 6 (6) | 866 | 0.55 | 0.52 | 0.58 | 0.47 | 0.49 |
-| language count (L vs next L) | 5 (5) | 864 | 0.52 | 0.56 | 0.64 | 0.54 | 0.52 |
-| language lists (A vs B) | 3 (3) | 870 | 0.46 | 0.48 | 0.46 | 0.48 | 0.52 |
-| temperature (T=1 vs T=3) | 3 (3) | 867 | 0.62 | 0.61 | 0.61 | 0.60 | 0.60 |
+| data scheme (A vs B) | 5 (5) | 129 | 0.47 | 0.54 | 0.54 | 0.50 | 0.53 |
+| data scheme (A vs C) | 2 (2) | 128 | 0.56 | 0.57 | 0.67 | 0.54 | 0.57 |
+| depth (deep vs shallow) | 6 (6) | 128 | 0.51 | 0.52 | 0.57 | 0.45 | 0.46 |
+| language count (L vs next L) | 5 (5) | 129 | 0.48 | 0.57 | 0.60 | 0.48 | 0.51 |
+| temperature (T=1 vs T=3) | 3 (3) | 129 | 0.48 | 0.50 | 0.49 | 0.42 | 0.42 |
 
 **per-language BPB (trained languages)** (rows: transformation; columns: proxy size; mean over pairs, shared items):
 
-| transformation | pairs (with data) | items | 90M | 175M | 350M | 600M | 1B |
-|---|---|---|---|---|---|---|---|
-| depth (deep vs shallow) | 6 (4) | 26 | 0.99 | 1.00 | 0.49 | 0.00 | 0.96 |
-| language count (L vs next L) | 5 (3) | 26 | 0.80 | 0.79 | 0.74 | 0.81 | 0.64 |
-| language lists (A vs B) | 3 (3) | 26 | 1.00 | 1.00 | 1.00 | 0.94 | 0.77 |
-| temperature (T=1 vs T=3) | 3 (3) | 26 | 0.96 | 0.99 | 0.94 | 0.97 | 0.96 |
+| transformation | pairs (with data) | items |
+|---|---|---|
 
-![Transformations](pretraining/predictivity_all/transformation_da_size_mono_axis.png)
+![Transformations](pretraining/predictivity_seeds/transformation_da_size_mono_axis.png)
 <!-- END auto:transformations -->
 
 GitHub: [transformation_da_size_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/transformation_da_size_mono_axis.png) · [transformation_da_size_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq05_design_decisions/pretraining/predictivity_seeds/transformation_da_size_mono_axis.csv)

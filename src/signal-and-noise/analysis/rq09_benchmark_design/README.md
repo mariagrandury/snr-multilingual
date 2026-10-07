@@ -30,6 +30,16 @@ TruthfulQA-Multi to the twelve 36-sweep families (`FAMILY_META` in
 above-random gate (computed upstream of SNR) drops every at-chance benchmark
 before this analysis, so the families seen here are the gate's survivors.
 
+## Key figure
+
+![Median SNR per benchmark family, coloured by answer-option count](pretraining/predictivity/snr_per_family_ranked_paper.png)
+
+Population: pool `predictivity` (seed 1904), SNR `snr_mpd_1.7B` (mean pairwise distance at the 1.7B reference), median over each family's per-language tasks, the families that clear the above-random gate only.
+
+**Key finding.** Among the families that clear the gate, every two- and three-option family except Global PIQA (parallel, one task, 0.42) has a median SNR of 0.80 to 1.41 and every four-option family sits at 0.56 or below; option count is the only design axis with p < 0.05 (p = 0.018), which one of five uncorrected tests can reach by chance.
+
+GitHub: [snr_per_family_ranked_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.png) · [snr_per_family_ranked_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked_paper.csv). The other design axes and their tests: [Results](#results).
+
 ## Methodology
 
 Three phases, all on the per-family `snr_mpd_<reference>` signal (the reference

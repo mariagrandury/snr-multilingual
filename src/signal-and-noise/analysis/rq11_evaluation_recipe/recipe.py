@@ -45,8 +45,10 @@ the variants alike, since bBPB passes where accuracy is at chance).
     recipe_da_size_ladder{...}.png/.csv                         the cheapest reliable proxy per variant
     recipe_da_size_profiles{...}.png/.csv                       share of languages reliable per proxy, per benchmark
     recipe_da_size_variants{...}.png/.csv                       combined vs per variant
+    recipe_da_size_variants_multi_axes_paper.png/.svg/.csv      its first panel alone, for the paper
 
     python analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
+    python analysis/rq11_evaluation_recipe/recipe.py --paper    # the paper figure alone, from the overview table on disk
 """
 
 from __future__ import annotations
@@ -302,6 +304,31 @@ def variants_figure(ov: pd.DataFrame, t: pd.DataFrame, path: Path, note: str) ->
                       tables, name=path.stem)
 
 
+def variants_paper(ov: pd.DataFrame, path: Path) -> None:
+    """The first panel of `variants_figure` for the paper: mean DA-size over
+    every task per variant and for all variants together, no title."""
+    d = ov[ov["population"] == "every task"]
+    fig, ax = plt.subplots(figsize=(5.2, 3.2))
+    rows = []
+    for f, s in [(f, s) for f in FORMATS for s in SCORINGS] + [(None, None)]:   # legend columns: one per format
+        name = ALL if f is None else vname(f, s)
+        g = d[d["variant"] == name].set_index("size").reindex(LEVELS)
+        g["mean_da_size"] = g["mean_da_size"].where(g["n_tasks"] >= MIN_DRAWN)
+        label = "All variants" if f is None else f"{FORMAT_NAME[f][0].upper()}{FORMAT_NAME[f][1:]} {SCORING_NAME[s]}"
+        style = dict(color=S.INK, ls="--", lw=2) if f is None else dict(
+            color={"original": S.MUTED, "rf": S.SERIES[0], "rfgm": S.SERIES[2]}[f], ls="-" if s == "acc" else ":", lw=1.4)
+        ax.plot(range(len(LEVELS)), g["mean_da_size"], marker="o", ms=3.5, label=label, **style)
+        rows.append(g.reset_index()[["size", "mean_da_size", "n_tasks"]].assign(variant=label))
+    ax.axhline(TAU, color=S.MUTED, lw=.8, ls=":", label=f"Reliable ({TAU:g})")
+    ax.set_xticks(range(len(LEVELS))); ax.set_xticklabels(LEVELS); ax.set_ylim(0.4, 0.8)
+    ax.set_xlabel("Proxy size"); ax.set_ylabel(f"Decision accuracy against {TARGET_SIZE}")
+    ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    ax.legend(fontsize=6.5, frameon=False, ncol=4, loc="lower center", bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout()
+    pd.concat(rows)[["variant", "size", "mean_da_size", "n_tasks"]].to_csv(path.with_suffix(".csv"), index=False)
+    S.save(fig, path, also=(".svg",))
+
+
 def readme(pool: str, rec: pd.DataFrame, ov: pd.DataFrame, t: pd.DataFrame) -> None:
     rel = "pretraining/" + pool
     # a mean over fewer than MIN_DRAWN tasks is blanked here as in the figures (it stays in the CSV)
@@ -363,6 +390,8 @@ def main(pool: str) -> None:
         ladder(by, rec, out_dir / f"recipe_da_size_ladder{sfx}.png", note)
         profiles(by, rec, out_dir / f"recipe_da_size_profiles{sfx}.png", note)
         variants_figure(ov, t, out_dir / f"recipe_da_size_variants{sfx}.png", note)
+        if axes == "multi-axis":
+            variants_paper(ov, out_dir / "recipe_da_size_variants_multi_axes_paper.png")
         print(f"[{axes}] {len(t)} tasks over {t['benchmark'].nunique()} benchmarks; recommendation:")
         print(rec.to_string(index=False))
         if axes == "multi-axis" and pool == CANONICAL_POOL:
@@ -372,4 +401,10 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL_POOL)
-    main(p.parse_args().pool)
+    p.add_argument("--paper", action="store_true", help="only the paper figure, from the multi-axis overview table on disk")
+    args = p.parse_args()
+    if args.paper:
+        d = EVALUATION_RECIPE / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+        variants_paper(pd.read_csv(d / "recipe_da_size_overview_multi_axes.csv"), d / "recipe_da_size_variants_multi_axes_paper.png")
+    else:
+        main(args.pool)

@@ -34,9 +34,11 @@ cell (verified exact on 3,312 cells, 2026-09-23).
 
     above_reference_<ref>[_design<d>].png / .csv       the pooled lines of (a), (b) and (d)
     above_reference_<ref>[_design<d>]_per_task.csv     one row per (task, axes, proxy size, frac)
+    above_reference_3B_paper.png / .svg / .csv          panel (a)'s lines to the 3B final alone, for the paper
 
     python analysis/rq10_size_generalisation/above_reference.py --pool predictivity            # reference 3B
     python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B
+    python analysis/rq10_size_generalisation/above_reference.py --paper     # the paper figure alone, from above_reference_3B.csv
 """
 
 from __future__ import annotations
@@ -259,6 +261,27 @@ def figure(tables: dict, path: Path, pool: str, reference: str, design: str, fam
     S.save(fig, path, dpi=150)
 
 
+def figure_paper(pooled_lines: pd.DataFrame, path: Path) -> None:
+    """Panel (a) for the paper: DA-size to the reference final per proxy size,
+    benchmark accuracy and BPB, both pair sets; from the pooled table on disk."""
+    fin = pooled_lines[pooled_lines["frac"] == 1.0]
+    fig, ax = plt.subplots(figsize=(4.8, 3.2))
+    for channel, ls, mk, word in (("benchmarks", "-", "o", "Benchmark accuracy"), ("bpb", (0, (1, 1.5)), "s", "BPB")):
+        for axes_, c in (("multi-axis", S.INK), ("mono-axis", S.RAMP[1])):
+            g = fin[(fin["channel"] == channel) & (fin["axes"] == axes_)].sort_values("non_emb")
+            ax.plot(g["non_emb"], g["da"], color=c, ls=ls, marker=mk, ms=4, lw=1.5,
+                    label=f"{word}, {axes_.replace('-', ' ')} pairs")
+    sizes = size_order(fin["size"].unique())
+    ax.axhline(.5, color=S.MUTED, lw=.8, ls=":")
+    ax.set_xscale("log"); ax.set_xticks([NON_EMB[s_] for s_ in sizes]); ax.set_xticklabels(sizes); ax.minorticks_off()
+    ax.set_ylim(0, 1); ax.set_xlabel("Proxy size"); ax.set_ylabel(f"Decision accuracy against {fin['reference'].iloc[0]}")
+    ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    ax.legend(fontsize=6.5, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout()
+    fin[["channel", "axes", "size", "da", "n_tasks", "n_pairs", "reference"]].to_csv(path.with_suffix(".csv"), index=False)
+    S.save(fig, path, also=(".svg",))
+
+
 def generate_readme(pool: str, reference: str, design: str, stem: str, tables: dict, fams: list, n_ref_runs: int) -> None:
     if pool != CANONICAL_POOL:
         return
@@ -325,6 +348,8 @@ def run(pool: str, reference: str, design: str, out_dir: Path) -> dict:
                tables["pooled_bpb"].assign(channel="bpb")], ignore_index=True) \
       .assign(reference=reference).to_csv(out_dir / f"{stem}.csv", index=False)
     figure(tables, out_dir / f"{stem}.png", pool, reference, design, fams, n_ref_runs)
+    if stem == "above_reference_3B":
+        figure_paper(pd.read_csv(out_dir / f"{stem}.csv"), out_dir / f"{stem}_paper.png")
     if out_dir == OUT_ROOT / load_pools()[pool].get("stage", "pretraining") / pool:
         generate_readme(pool, reference, design, stem, tables, fams, n_ref_runs)
     print(f"--- {stem}: {len(fams)} families at {reference} ({n_ref_runs} runs) ---")
@@ -360,9 +385,13 @@ if __name__ == "__main__":
     ap.add_argument("--design", default="all", choices=list(DESIGNS), help="restrict the families to a rung's design set")
     ap.add_argument("--check", action="store_true", help="with --reference 1.7B: compare against rq02's per-task table")
     ap.add_argument("--out-dir", default=None, help="write elsewhere (the known-answer check, so it leaves no table in the RQ folder)")
+    ap.add_argument("--paper", action="store_true", help="only the paper figure, from above_reference_3B.csv on disk")
     args = ap.parse_args()
     out = Path(args.out_dir) if args.out_dir else OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
     out.mkdir(parents=True, exist_ok=True)
+    if args.paper:
+        figure_paper(pd.read_csv(out / "above_reference_3B.csv"), out / "above_reference_3B_paper.png")
+        sys.exit(0)
     t = run(args.pool, args.reference, args.design, out)
     if args.check:
         check_against_rq02(t, args.pool)

@@ -43,6 +43,16 @@ macro-average):
   the individual-item level (per-sample SNR on binary item accuracy — not
   comparable to subtask-level SNR).
 
+## Key figure
+
+![Best language subset against the random-subset null, per benchmark and size](pretraining/predictivity/gain_over_null_paper.png)
+
+Population: pool `predictivity` (seed 1904), sizes 90M–1.7B, the language-subset case (one subset of each benchmark's per-language tasks), the above-random gate at each size; cell = SNR of the best prefix minus the 95th percentile of 100 random subsets of the same size; white = no swept cell.
+
+**Key finding.** A chosen language subset beats the random-subset null in 54 of 118 (benchmark, size) cells, by more than 0.25 SNR in 36, mostly on the reformulated knowledge benchmarks (Global-MMLU RF median +0.74, Belebele RF +0.41) and MultiBLiMP, while XStoryCloze, LAMBADA and PAWS-X never beat it.
+
+GitHub: [gain_over_null_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null_paper.png) · [gain_over_null_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null_paper.csv). The subject cases and every swept cell: [Per benchmark and per language](#per-benchmark-and-per-language).
+
 ## Methodology
 
 - **Subset SNR.** `signal_to_noise_ratio` over per-*model* last-N-checkpoint

@@ -49,6 +49,16 @@ reading it as a failure of the SNR definition.
 > Apertus checkpoints, then drop the alias and compare like-for-like. See
 > `pretraining/<pool>/agreement.md` for the full caveat.
 
+## Key figure
+
+![Ladder SNR against DataDecide SNR on the shared English tasks](pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.png)
+
+Population: pool `predictivity` (seed 1904), our 1B rung against DataDecide's 1B rung, SNR variant `aad` (the one [`../rq04_surrogates`](../rq04_surrogates/README.md) ranks first), the English tasks both corpora evaluate that clear the above-random gate; each axis on its own scale.
+
+**Key finding.** The ladder orders the three shared English tasks that clear the gate (ARC Easy, ARC Challenge, HellaSwag) as DataDecide does (Pearson r of log₁₀ SNR 1.00, Spearman ρ 1.00), but three points are too few for the agreement to mean anything.
+
+GitHub: [snr_apertus_vs_snr_allenai_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.png) · [snr_apertus_vs_snr_allenai_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_paper.csv). Every variant and the size sweep: [Results](#results).
+
 ## Methodology
 
 - **Apertus side** (multi-seed, 3 mixes × 3 seeds × 4 sizes): the per-task SNR

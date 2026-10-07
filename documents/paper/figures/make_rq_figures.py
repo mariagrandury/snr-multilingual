@@ -19,6 +19,13 @@ comment next to the \\includegraphics.
     app_chance_full       <- the same                                  first_size_above_random_paper
     app_chance_reformulation <- rq00_task_reformulation/reformulations_gate.py --paper  reformulations_gate_paper
     app_da_goal_multi_axes_bpb <- rq01_scaling_predictability/tokens_seen.py --paper  da_goal_multi_axes_across_langs_bpb_paper
+    app_design_decisions  <- rq05_design_decisions/panels.py --paper (pool predictivity_seeds)  da_all_lines_mono_axis_paper
+    app_language_transfer <- rq06_language_transfer/panels.py --paper (pool predictivity_seeds)  transfer_da_all_lines_mono_axis_paper
+    app_external_frameworks <- rq07_external_frameworks/analyze.py --pool predictivity --paper  snr_apertus_vs_snr_allenai_paper
+    app_subset_selection  <- rq08_subset_selection/panels.py --paper                gain_over_null_paper
+    app_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper
+    app_size_generalisation <- rq10_size_generalisation/above_reference.py --paper  above_reference_3B_paper
+    app_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
 
 The rq1 and rq2 copies are PNG; the others PNG and SVG.
 
@@ -37,6 +44,7 @@ ANALYSIS = REPO / "src" / "signal-and-noise" / "analysis"
 
 GATE = ANALYSIS / "rq00_gate_and_curves" / "pretraining" / "predictivity"
 RQ01 = ANALYSIS / "rq01_scaling_predictability" / "pretraining" / "predictivity_seeds"
+PRED, SEEDS = ("pretraining", "predictivity"), ("pretraining", "predictivity_seeds")
 # paper stem -> (the analysis stem it is a copy of, the formats copied)
 FIGURES = {
     "rq0": (RQ01 / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png", "svg")),
@@ -47,6 +55,16 @@ FIGURES = {
     "app_chance_full": (GATE / "first_size_above_random_paper", ("png", "svg")),
     "app_chance_reformulation": (ANALYSIS / "rq00_task_reformulation" / "reformulations_gate_paper", ("png", "svg")),
     "app_da_goal_multi_axes_bpb": (RQ01 / "da_goal_multi_axes_across_langs_bpb_paper", ("png", "svg")),
+    "app_design_decisions": (ANALYSIS.joinpath("rq05_design_decisions", *SEEDS, "da_all_lines_mono_axis_paper"), ("png", "svg")),
+    "app_language_transfer": (ANALYSIS.joinpath("rq06_language_transfer", *SEEDS, "transfer_da_all_lines_mono_axis_paper"),
+                              ("png", "svg")),
+    "app_external_frameworks": (ANALYSIS.joinpath("rq07_external_frameworks", *PRED, "snr_apertus_vs_snr_allenai_paper"),
+                                ("png", "svg")),
+    "app_subset_selection": (ANALYSIS.joinpath("rq08_subset_selection", *PRED, "gain_over_null_paper"), ("png", "svg")),
+    "app_benchmark_design": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "snr_per_family_ranked_paper"), ("png", "svg")),
+    "app_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "above_reference_3B_paper"), ("png", "svg")),
+    "app_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
+                              ("png", "svg")),
 }
 
 
