@@ -15,6 +15,13 @@ pip install --quiet -r requirements-docs.txt
 echo "==> Building MkDocs"
 mkdocs build --clean
 
+# The Slidev deck is not anonymized: skip it during double-blind review.
+if [[ "${BUILD_SLIDES:-0}" != "1" ]]; then
+  echo "==> Skipping Slidev slides (set BUILD_SLIDES=1 after review)"
+  echo "==> Build complete: $ROOT/site"
+  exit 0
+fi
+
 echo "==> Building Slidev slides"
 cd "$ROOT/documents"
 if command -v pnpm >/dev/null 2>&1; then

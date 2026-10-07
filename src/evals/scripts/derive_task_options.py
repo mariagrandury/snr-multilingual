@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -131,6 +132,94 @@ def observed_items(want: set[str]) -> dict[str, int]:
     return seen
 
 
+# --examples: the cells whose evals hold every pretraining task the site
+# shows (L50 = the 50 trained languages, L1 = English), newest saves first.
+EXAMPLE_RUNS = ("lm-1.7B-L50-*/harness/eval_*", "lm-1.7B-L1-*/harness/eval_*")
+PROMPT_CHARS, OPTION_CHARS = 600, 240
+
+
+def _clip(text: str, n: int, tail: bool = False) -> str:
+    """At most n characters; a prompt keeps its END (the question and the
+    answer cue come last, after any passage or few-shot block)."""
+    text = text.strip("\n")
+    if len(text) <= n:
+        return text
+    return "…" + text[-n:] if tail else text[:n] + "…"
+
+
+def _example(rec: dict) -> dict | None:
+    """One scored document as the model saw it: the prompt, the candidate
+    continuations, and the index of the correct one (None when the target is
+    not one of them, e.g. a generative task)."""
+    args = [a for _, a in sorted((rec.get("arguments") or {}).items())]
+    if not args or not isinstance(args[0].get("arg_0"), str):
+        return None
+    ctx = [a["arg_0"] for a in args]
+    conts = [a.get("arg_1") if isinstance(a.get("arg_1"), str) else None for a in args]
+    if len(set(ctx)) == 1:                 # one prompt, one continuation per option
+        prompt, options = ctx[0], [c for c in conts if c is not None]
+    else:                                  # the option sits in the prompt (partial scoring)
+        prompt, options = None, [c + (k or "") for c, k in zip(ctx, conts)]
+    target, gold = str(rec.get("target", "")), None
+    if target.isdigit() and int(target) < len(options):
+        gold = int(target)
+    else:
+        hits = [i for i, o in enumerate(options) if o.strip() == target.strip()]
+        gold = hits[0] if len(hits) == 1 else None
+    return {"prompt": prompt and _clip(prompt, PROMPT_CHARS, tail=True),
+            "options": [_clip(o, OPTION_CHARS) for o in options], "gold": gold}
+
+
+def _source(run: Path, sample_task: str) -> str | None:
+    """`dataset_path (dataset_name)` from the results file that scored the task."""
+    files = list(run.glob(f"per_task/{sample_task}/*/results_*.json")) + list(run.glob("results_*.json"))
+    for f in files:
+        try:
+            cfg = json.loads(f.read_text()).get("configs", {}).get(sample_task)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if cfg and cfg.get("dataset_path") and cfg["dataset_path"] not in ("json", "csv", "parquet", "arrow"):
+            name = cfg.get("dataset_name")
+            return cfg["dataset_path"] + (f" ({name})" if name else "")
+    return None
+
+
+def observed_examples(listed: dict, want: set[str]) -> dict[str, dict]:
+    """task -> {"example": first scored document, "source": its dataset}, read
+    from ONE samples file per task (first record; a group task takes its first
+    subtopic in name order). Walks only EXAMPLE_RUNS and stops once every
+    wanted task is covered."""
+    out: dict[str, dict] = {}
+    resolved: dict[str, str | None] = {}
+    runs = sorted((r for pat in EXAMPLE_RUNS for r in EVAL_LOGS.glob(pat)), key=lambda d: d.name, reverse=True)
+    for run in runs:
+        try:
+            names = sorted(e.name for e in os.scandir(run) if e.name.startswith("samples_"))
+        except OSError:
+            continue
+        for fname in names:
+            m = SAMPLE_RE.search(fname)
+            if not m:
+                continue
+            task = m.group(1)
+            if task not in resolved:
+                resolved[task] = task if task in listed else max(
+                    (k for k in listed if task.startswith(k + "_")), key=len, default=None)
+            entry = resolved[task]
+            if entry is None or entry not in want or entry in out:
+                continue
+            try:
+                with open(run / fname) as fh:
+                    ex = _example(json.loads(fh.readline()))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if ex:
+                out[entry] = {"example": ex, "source": _source(run, task)}
+        if want <= set(out):
+            break
+    return out
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -138,11 +227,29 @@ def main() -> None:
     p.add_argument("--only-missing", action="store_true",
                    help="derive only what tasks.json does not already carry "
                         "(minutes instead of an hour; see the module docstring)")
+    p.add_argument("--examples", action="store_true",
+                   help="instead: record one scored example and the dataset source of every "
+                        "pretraining task (for the website's benchmark cards); with "
+                        "--only-missing, only tasks that have no example yet")
     args = p.parse_args()
 
     # an hour of reading samples: another generator may write tasks.json meanwhile
     tasks, before = read_tasks_json(TASKS_JSON)
     listed = tasks["tasks"]
+    if args.examples:
+        want = {t for t, e in listed.items() if "pretraining" in e.get("stages", [])
+                and not (args.only_missing and "example" in e)}
+        found = observed_examples(listed, want)
+        for task, f in found.items():
+            listed[task]["example"] = f["example"]
+            if f["source"]:
+                listed[task]["source"] = f["source"]
+        print(f"examples: {len(found)} of {len(want)} wanted tasks; "
+              f"{len(want) - len(found)} without samples in {', '.join(EXAMPLE_RUNS)}")
+        if not args.dry_run:
+            write_tasks_json(tasks, before, TASKS_JSON)
+            print(f"wrote {TASKS_JSON}")
+        return
     seen, have_samples = observed_options(listed, args.only_missing)
     added = changed = 0
     for task, counts in sorted(seen.items()):
