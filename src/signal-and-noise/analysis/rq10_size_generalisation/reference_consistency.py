@@ -398,7 +398,8 @@ if __name__ == "__main__":
         print(agree.to_string(index=False))
     else:
         pool_ = pd.concat([pd.read_csv(out / f"reference_consistency_da_size{AXES_SUFFIX[a]}.csv") for a in AXES])
-        pool_ = pool_[pool_["panel"] == "a"]
+        # panel (a)'s rows and columns only, so the paper CSV matches the one a full run writes
+        pool_ = pool_[pool_["panel"] == "a"].drop(columns=["panel", "rho_tasks", "rho_benchmarks", "n_benchmarks"])
     by_bench = out / "gate_crossover_by_benchmark.csv"
     if by_bench.exists():
         figure_paper(pd.read_csv(by_bench), pool_, out / PAPER_STEM)
