@@ -8,12 +8,12 @@
 
 2. Without the null the lever looks universal: the best prefix beats the full set in 163 of the 181 Case-1 cells that have an SNR (median +0.68 SNR), but the null, which scores 163 cells, keeps only 72.
 
-3. Accuracy and BPB families: 52 of 113 cells beat the null (23 benchmarks); bBPB twins: 20 of 50 (14 twins), on the finals-only twins of this refresh.
+3. Accuracy and BPB families: 52 of 113 cells beat the null (23 benchmarks). bBPB twins: 20 of 50 (14 twins), on the finals-only twins of this refresh.
 \end{rqfinding}
 
-\paragraph{Question.} Per benchmark, does a subset of subtasks --- a subset of \emph{languages} in a multilingual family, or a subset of \emph{subjects} in MMLU, or a subset of individual \emph{items} --- give higher SNR than the full set, and does the same subset hold across seeds and scales?
+\paragraph{Question.} Per benchmark, does a subset of subtasks (a subset of \emph{languages} in a multilingual family, or a subset of \emph{subjects} in MMLU, or a subset of individual \emph{items}) give higher SNR than the full set, and does the same subset hold across seeds and scales?
 
-\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B; per multilingual benchmark and size, the language subset with the highest SNR (best prefix of languages ranked by SNR) against the 95th percentile of 100 random subsets of the same size; each per-language task gated above chance.
+\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B. For each multilingual benchmark and size, we take the language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above chance.
 
 \begin{figure}[h]
 \centering

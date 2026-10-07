@@ -48,9 +48,8 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E402
 from analysis.paths import SIZE_GENERALISATION  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import scores_and_mask  # noqa: E402
+from analysis.rq00_gate_and_curves.above_random import MIN_SHARE, scores_and_mask  # noqa: E402
 from analysis.rq10_size_generalisation.above_reference import REFERENCE, on_shared_grid  # noqa: E402
-from analysis.rq00_gate_and_curves.above_random import MIN_SHARE  # noqa: E402
 from analysis.utils import TARGET_SIZE, assign_language, benchmark_family, finals, ladder_frame  # noqa: E402
 
 mpl.use("Agg")

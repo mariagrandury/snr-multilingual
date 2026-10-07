@@ -13,7 +13,7 @@
 
 \paragraph{Question.} Does a benchmark task clear chance once the model has seen enough of the task's language, and is that exposure or model size?
 
-\paragraph{Setup.} A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run, placed at the tokens of the task's language the checkpoint had seen (the language's share of the mixture $\times$ the size's budget $\times$ the tenth). Seed-1904 runs of every data build and ladder, 90M--1.7B, $K \in \{1, 2, 8, 15, 30, 50\}$; the above-chance gate per run.
+\paragraph{Setup.} A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place it at the number of tokens of the task's language that the checkpoint had seen. This number is the language's share of the mixture $\times$ the size's budget $\times$ the tenth. We use seed-1904 runs of every data build and ladder, 90M--1.7B, at $K \in \{1, 2, 8, 15, 30, 50\}$. The above-chance gate is applied per run.
 
 \begin{figure}[h]
 \centering

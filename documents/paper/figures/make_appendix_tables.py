@@ -125,6 +125,12 @@ def fmt_list(xs) -> str:
     return ", ".join(str(x) for x in xs)
 
 
+def and_list(xs, last=" and ") -> str:
+    """a, b and c"""
+    xs = [str(x) for x in xs]
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + last + xs[-1]
+
+
 # --- the grid ---------------------------------------------------------------
 
 def grid_runs() -> list[dict]:
@@ -180,7 +186,7 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
             extra = {s for v in by_L.values() for s in v} - common
             sizes = size_span(common)
             for s in [s for s in lt.LADDER if s in extra]:
-                sizes += f"; {s} at $K \\in \\{{{fmt_list(L for L in Ls if s in by_L[L])}\\}}$"
+                sizes += f" and {s} at $K \\in \\{{{fmt_list(L for L in Ls if s in by_L[L])}\\}}$"
             rep = sum(r["seed"] != 1904 for r in rs)
             total, total_rep = total + len(rs), total_rep + rep
             rows.append(" & ".join([esc(build), BUILD_DESC.get(build, esc(build)), cfg["letter"],
@@ -188,8 +194,8 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
                                     fmt_list(Ls), sizes, str(len(rs)), str(rep or "--")]) + r" \\")
     status = ("" if done < 0 else
               f" All {total} runs had finished at the ladder-report snapshot." if not missing else
-              f" At the ladder-report snapshot {done} of the {total} runs had finished; "
-              f"outstanding: {esc(fmt_list(missing))}.")
+              f" At the ladder-report snapshot, {done} of the {total} runs had finished. "
+              f"The unfinished {'run is' if len(missing) == 1 else 'runs are'} {esc(and_list(missing))}.")
     return "\n".join([
         r"\begin{table*}[t]", r"\centering", r"\small", r"\setlength{\tabcolsep}{3.5pt}",
         r"\resizebox{\linewidth}{!}{",
@@ -197,12 +203,12 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
         r"Build & Data & $M$ & $T$ & Ladder & $K$ & Sizes & Runs & Repl. \\", r"\midrule",
         *rows, r"\midrule",
         f"Total & & & & & & & {total} & {total_rep} \\\\", r"\bottomrule", r"\end{tabular}}",
-        r"\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the build's data "
-        r"scheme at its $K$ (A the baseline recipe, B and C the alternatives at that $K$) and $T$ its "
-        r"sampling temperature, the two design axes a build sets. Ladders: deep (baseline), shallow "
-        r"(about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis); all three use "
-        r"AdEMAMix. Runs counts every seed; Repl.\ the replicate-seed runs among them "
-        r"(Table~\ref{tab:grid})." + status + "}",
+        r"\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the data scheme of the "
+        r"build at its $K$. A is the baseline recipe, and B and C are the alternatives at that $K$. $T$ is the "
+        r"sampling temperature of the build. These are the two design axes that a build sets. The ladders are "
+        r"deep (the baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation "
+        r"axis). All three use AdEMAMix. Runs counts the runs of every seed. Repl.\ counts the replicate-seed "
+        r"runs among them (Table~\ref{tab:grid})." + status + "}",
         r"\label{tab:schemes}", r"\end{table*}"])
 
 
@@ -220,16 +226,16 @@ def seeds_table(runs: list[dict]) -> str:
     by_triple = {}
     for s, (seeds, _) in lt.SEED_TRIPLES.items():
         by_triple.setdefault(tuple(seeds), []).append(s)
-    seeds_txt = "; ".join(f"{fmt_list(seeds)} at {' and '.join(ss)}" for seeds, ss in by_triple.items())
+    seeds_txt = and_list([f"{and_list(seeds)} at {' and '.join(ss)}" for seeds, ss in by_triple.items()], ", and ")
     other = sorted({(r["build"], r["size"], r["L"]) for r in runs
                     if r["seed"] != 1904 and r["build"] != "A"}, key=lambda x: (x[0], lt.LADDER.index(x[1]), x[2]))
     other_txt = "".join(f" The scheme-{b} $K={L}$ cell at {s} also trains the {s} replicate seeds." for b, s, L in other)
     n_a = sum(r["build"] == "A" and r["ladder"] == "deep" for r in runs)
     lines += [r"\bottomrule", r"\end{tabular}",
-              r"\caption{\textbf{Random seeds.} Seeds per $(N, K)$ cell of the deep scheme-A grid "
-              rf"({n_a} runs); -- marks a cell the grid does not train. The replicate seeds are {seeds_txt}, "
-              r"each varying both initialization and data order, and only in the deep ladder; every other "
-              r"ladder and data build trains seed 1904 alone." + other_txt + "}",
+              r"\caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid "
+              rf"({n_a} runs). The replicate seeds are "
+              rf"{seeds_txt}. Each seed changes both the initialization and the data order. Replicate seeds exist "
+              r"only in the deep ladder. Every other ladder and data build trains seed 1904 alone." + other_txt + "}",
               r"\label{tab:grid}", r"\end{table}"]
     return "\n".join(lines)
 
@@ -261,15 +267,15 @@ def ladder_table(runs: list[dict]) -> str:
                 f"{N / 1e6:,.1f}", f"{c['predictivity']['train_tokens'] / 1e9:,.1f}",
                 str(gbs), f"{iters:,}", f"{c['lr'] * 1e3:.2f}", str(lt.n_checkpoints(iters))]) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}}",
-              r"\caption{\textbf{Pretraining hyperparameters per ladder and model size}, for the rungs each "
-              r"ladder trains. $N$ counts non-embedding parameters; the tied embedding adds "
-              r"$d_{\mathrm{model}} \times 131{,}072$. $D = 100N$ is the token budget. Heads gives query/key-value "
-              r"head counts (grouped-query attention, four query heads per key-value head, head dimension 64). "
-              r"FFN is the feed-forward hidden dimension; the SwiGLU ladder keeps the deep shape and narrows "
-              r"the FFN so that its three projections match the deep non-embedding count. Batch is the global "
-              r"batch in sequences of 4,096 tokens; the two smallest rungs train at their own batch and take "
-              r"proportionally more steps for the same $D$. LR is the peak learning rate from the compute-based "
-              r"law at the run's own budget; Ckpts the number of saved checkpoints.}",
+              r"\caption{\textbf{Pretraining hyperparameters per ladder and model size}, for the rungs that each "
+              r"ladder trains. $N$ counts non-embedding parameters. The tied embedding adds "
+              r"$d_{\mathrm{model}} \times 131{,}072$. $D = 100N$ is the token budget. Heads gives the query and "
+              r"key-value head counts (grouped-query attention, four query heads per key-value head, head dimension "
+              r"64). FFN is the feed-forward hidden dimension. The SwiGLU ladder keeps the deep shape and narrows the "
+              r"FFN so that its three projections match the deep non-embedding count. Batch is the global batch in "
+              r"sequences of 4,096 tokens. The two smallest rungs train at their own batch and take proportionally "
+              r"more steps for the same $D$. LR is the peak learning rate from the compute-based law at the run's "
+              r"own budget. Ckpts is the number of saved checkpoints.}",
               r"\label{tab:ladder}", r"\end{table*}"]
     return "\n".join(lines)
 
@@ -342,13 +348,13 @@ def benchmark_table() -> tuple[str, dict]:
         lines.append(row(g, label, task, TWIN_FORMAT[prefix], cons))
     total = sum(n_tasks.values())
     lines += [r"\midrule", f"Total & & & & & {len(trained)} & {total} \\\\", r"\bottomrule", r"\end{tabular}", "}",
-              r"\caption{Benchmarks evaluated during pretraining. Langs is the number of languages the harness "
-              r"registers for the benchmark; Trained how many of them the sweep trains (English and the "
-              r"FineWeb-2 languages of every trained build); Tasks the number of language tasks evaluated on "
+              r"\caption{Benchmarks evaluated during pretraining. Langs is the number of languages that the harness "
+              r"registers for the benchmark. Trained is how many of them the sweep trains (English and the "
+              r"FineWeb-2 languages of every trained build). Tasks is the number of language tasks evaluated on "
               r"those languages. A model is evaluated only on the tasks of the languages in its training "
-              r"mixture. The reformulated variants pose the same items as their original: RF scores the answer "
-              r"strings instead of the option letters, LLM-RF rewrites each item into a statement stem with "
-              r"short continuations. MC = multiple choice; QA = question answering; UD = Universal "
+              r"mixture. The reformulated variants pose the same items as their original. RF scores the answer "
+              r"strings instead of the option letters. LLM-RF rewrites each item into a statement stem with "
+              r"short continuations. MC = multiple choice, QA = question answering, UD = Universal "
               r"Dependencies. Construction: HT = human or professional translation, MT = machine translation, "
               r"native = written in the language, auto = automatically generated.}",
               r"\label{tab:benchmark-families}", r"\end{table*}"]
@@ -388,8 +394,8 @@ def languages_table() -> None:
         fam = m["family"].split(",")[0].split("(")[0].strip()
         la, lb = first_L("A", subset), first_L("B", subset)
         code = iso2.get(subset.split("_")[0])
-        rows.append([subset, m["name"], m["script"], fam,
-                     la if la else "val", lb if lb else ("--" if la else ""),
+        rows.append([subset, re.sub(r"\((\d+)-\)", r"(\1 onward)", m["name"]), m["script"], fam,
+                     la if la else "val", lb or "--",
                      n_families(code) if code else 0, la or 1000])
     rows.append(["dclm", "English", "Latn", "Indo-European", 1, 1, n_families("en"), 0])
     rows.sort(key=lambda r: (r[7], full.index(r[0]) if r[0] in full else -1))
@@ -414,13 +420,14 @@ def languages_table() -> None:
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
         r"\caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A "
-        r"(resource-ranked) list contains the subset, and $K_B$ the smallest trained setting of a scheme-B "
-        r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$); "
-        r"-- marks a language no scheme-B build trains." + c_builds + r" The lists are nested, so a language is trained at every "
-        rf"larger setting of its scheme too. The {n_val} languages marked val are in no training mixture and "
-        r"enter only the shared validation set. Fam.\ counts the benchmark families of the pretraining suite "
-        r"(reformulated variants excluded) that the harness offers for the language. English is the DCLM half "
-        r"of every mixture. Family names are abbreviated to their top-level group.}",
+        r"(resource-ranked) list contains the subset. $K_B$ gives the smallest trained setting of a scheme-B "
+        r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$)."
+        + c_builds + r" The lists are "
+        r"nested, so a language is also trained at every larger setting of its scheme. "
+        rf"The {n_val} languages marked val are in no training mixture. They enter only the shared validation "
+        r"set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) "
+        r"that the harness offers for the language. English is the DCLM half of every mixture. Family names "
+        r"are shortened to their top-level group.}",
         r"\label{tab:app-languages}",
         r"\end{table*}", ""])
     OUT_LANGUAGES.write_text(body)

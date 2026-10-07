@@ -13,7 +13,7 @@
 
 \paragraph{Question.} If every benchmark-language task keeps only the items its 1.7B runs answer above chance, how much do decision accuracy, SNR, the above-random gate and the scaling fit improve, and does it matter whether the gate is applied before or after the items are chosen?
 
-\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only the items its 1.7B runs answer above chance, after the above-chance gate, and is compared with the full task. The selection reads the reference by design, so the gains are an upper bound, not a held-out estimate.
+\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full task. The selection reads the reference by design, so the gains are an upper bound, not a held-out estimate.
 
 \begin{figure}[h]
 \centering

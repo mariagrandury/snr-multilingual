@@ -13,7 +13,7 @@
 
 \paragraph{Question.} At a given number of languages K, when does a small model rank a design choice (depth, data scheme, temperature) the way the 1.7B reference does, and how does the answer move with K?
 
-\paragraph{Setup.} Four single-axis interventions against the deep, scheme-A, $T = 1$ baseline: depth (deep vs shallow at equal non-embedding size), data scheme A vs B and A vs C, and sampling temperature $T = 1$ vs $T = 3$. Every seed; DA-size of the 90M--1B proxies and DA-ckpt of the 1.7B run's earlier checkpoints, both against the 1.7B final, read on the bits per byte of the languages both levels train and on the benchmarks above chance.
+\paragraph{Setup.} We study four single-axis interventions against the baseline (deep, scheme A, $T = 1$). They are depth (deep vs shallow at equal non-embedding size), data scheme A vs B, data scheme A vs C, and sampling temperature $T = 1$ vs $T = 3$. We use every seed. We report the DA-size of the proxies 90M--1B and the DA-ckpt of the earlier checkpoints of the 1.7B run, both against the 1.7B final checkpoint. We read them on the bits per byte of the languages that both levels train and on the benchmarks above chance.
 
 \begin{figure}[h]
 \centering

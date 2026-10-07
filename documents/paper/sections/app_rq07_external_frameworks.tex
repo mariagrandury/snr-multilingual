@@ -4,16 +4,16 @@
 \label{app:rq07_external_frameworks}
 
 \begin{rqfinding}
-1. Both corpora rank the three gated shared tasks the same way (ARC Easy $>$ HellaSwag $>$ ARC Challenge; Spearman $\rho$ 1.00, Pearson r of log$_{10}$ SNR 0.87, p = 0.33), but three points are too few for the agreement to be evidence. (Figure~\ref{fig:app_rq07_external_frameworks}.)
+1. Both corpora rank the three gated shared tasks the same way (ARC Easy $>$ HellaSwag $>$ ARC Challenge, Spearman $\rho$ 1.00, Pearson r of log$_{10}$ SNR 0.87, p = 0.33), but three points are too few for the agreement to be evidence. (Figure~\ref{fig:app_rq07_external_frameworks}.)
 
 2. \textbf{Same order, n = 3.} \texttt{aad} SNR is 1.09 / 0.87 / 0.52 on our ladder and 9.76 / 5.04 / 4.16 on DataDecide for ARC Easy / HellaSwag / ARC Challenge.
 
-3. \textbf{Our SNR is 5.8--9.0$\times$ smaller.} DataDecide's \texttt{aad} SNR exceeds ours by 9.0$\times$ on ARC Easy, 5.8$\times$ on HellaSwag and 7.9$\times$ on ARC Challenge; the log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
+3. \textbf{Our SNR is 5.8--9.0$\times$ smaller.} DataDecide's \texttt{aad} SNR exceeds ours by 9.0$\times$ on ARC Easy, 5.8$\times$ on HellaSwag and 7.9$\times$ on ARC Challenge. The log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
 \end{rqfinding}
 
 \paragraph{Question.} Do the SNR variants and the ``reliable benchmark'' set we find on our ladder also hold on AllenAI's DataDecide / OLMo corpus, on the English benchmarks both share?
 
-\paragraph{Setup.} Our 1B rung (seed 1904, every cell and data build) against DataDecide's 1B rung (25 data recipes), on the English tasks both evaluate that clear the above-chance gate on our side; SNR as the average absolute deviation over noise, compared on a log scale.
+\paragraph{Setup.} We compare our 1B rung (seed 1904, every cell and data build) with the 1B rung of DataDecide (25 data recipes). We use the English tasks that both evaluate and that clear the above-chance gate on our side. SNR is the average absolute deviation over noise, and we compare it on a log scale.
 
 \begin{figure}[h]
 \centering

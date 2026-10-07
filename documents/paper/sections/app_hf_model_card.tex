@@ -1,154 +1,157 @@
 \section{Hugging Face Model Card}
 \label{app:hf_model_card}
 
-We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} This section includes the detailed model card that will accompany the models.
+We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} This section gives the model card that will come with the models. It follows the Hugging Face model card template \citep{ozoani_model_2022}.
 
 % https://huggingface.co/docs/hub/model-card-annotated
-% Please cite as: Ozoani, Ezi and Gerchick, Marissa and Mitchell, Margaret. Model Card Guidebook. Hugging Face, 2022. https://huggingface.co/docs/hub/en/model-card-guidebook
-
-%For reference on model card metadata, see the spec: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
-%Doc / guide: https://huggingface.co/docs/hub/model-cards
-
-% TODO: Format like markdown, page-wide text, code font?
+% Template: https://github.com/huggingface/huggingface_hub/blob/main/src/huggingface_hub/templates/modelcard_template.md
 
 \newpage
-\# Model Card for 
 
-<!-- Provide a quick summary of what the model is/does. -->
+\subsection*{Model Card for the Multilingual Signal-and-Noise Model Ladder}
 
+A ladder of \nruns decoder-only language models (90M--3B non-embedding parameters), pretrained from scratch on controlled multilingual data mixtures. We release them with all intermediate checkpoints, to study which evaluation benchmarks give reliable signal at small scale.
 
-\#\# Model Details
+\subsection*{Model Details}
 
-\#\#\# Model Description
+\subsubsection*{Model Description}
 
-<!-- Provide a longer summary of what this model is. -->
+The ladder changes one design decision at a time around a fixed recipe. The decisions are the model size $N \in \{$90M, 175M, 350M, 600M, 1B, 1.7B, 3B$\}$, the number of languages in the mixture $K \in \{1, 2, 8, 15, 30, 50\}$, the language list (data scheme A, B or C), the sampling temperature ($T = 1$ or 3), the depth-to-width ratio (deep or shallow) and the MLP activation (xIELU or SwiGLU). Every model trains on $D = 100N$ tokens (5$\times$ Chinchilla), and half of the tokens are in English. Each run is one model repository, and its checkpoints are branches.
 
-- **Developed by:** 
-- **Funded by [optional]:** 
-- **Shared by [optional]:** 
-- **Model type:** 
-- **Language(s) (NLP):** 
-- **License:**
+\begin{itemize}
+    \item \textbf{Developed by:} Anonymous (removed for review)
+    \item \textbf{Funded by:} Anonymous (removed for review)
+    \item \textbf{Shared by:} Anonymous (removed for review)
+    \item \textbf{Model type:} decoder-only transformer, causal language model, pretrained only (no instruction tuning)
+    \item \textbf{Language(s) (NLP):} English plus up to 49 other languages (Appendix~\ref{app:data-mixtures}, Table~\ref{tab:app-languages}). The card of each model lists its own $K$ languages.
+    \item \textbf{License:} \checknum{Apache 2.0}
+\end{itemize}
 
-\#\#\# Model Sources
+\subsubsection*{Model Sources}
 
-- **Paper:** Link removed for anonymity.
-- **Repository:** Link removed for anonymity.
-- **Website:** Link removed for anonymity.
+\begin{itemize}
+    \item \textbf{Paper:} Link removed for anonymity.
+    \item \textbf{Repository:} Link removed for anonymity.
+    \item \textbf{Website:} Link removed for anonymity.
+\end{itemize}
 
-\#\# Uses
+\subsection*{Uses}
 
-<!-- Address questions around how the model is intended to be used, including the foreseeable users of the model and those affected by the model. -->
+\subsubsection*{Direct Use}
 
-\#\#\# Direct Use
+Research on pretraining and evaluation. Examples are ablations of data mixtures and architectures at small scale, scaling-law fits across size and training, and checkpoint-level analyses of benchmark signal and noise. The models can also serve as reference proxies when choosing benchmarks for multilingual pretraining runs.
 
-<!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
+\subsubsection*{Downstream Use}
 
-\#\#\# Downstream Use [optional]
+Starting points for continued pretraining or fine-tuning experiments that need many comparable models trained on known data. The models are not adapted to follow instructions.
 
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
+\subsubsection*{Out-of-Scope Use}
 
-\#\#\# Out-of-Scope Use
+Deployment in any user-facing application, generation of factual content, or use in high-stakes settings. The models are small, untuned and not safety-aligned. Their outputs are unreliable and can be harmful.
 
-<!-- This section addresses misuse, malicious use, and uses that the model will not work well for. -->
+\subsection*{Bias, Risks, and Limitations}
 
-\#\# Bias, Risks, and Limitations
+The models inherit the biases of web text (DCLM and FineWeb-2) and of its language distribution. English is half of every mixture. The other languages follow the per-language token shares of the mixture, so lower-resource languages are seen far less. Many multilingual benchmark tasks are at chance for these model sizes (Section~\ref{subsec:rq0}). The 90M and 175M rungs train at a reduced batch (Appendix~\ref{app:model-configurations}).
 
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
+\subsubsection*{Recommendations}
 
-\#\#\# Recommendations
+Compare models only within the controlled settings of the ladder. Read results with the above-chance gate, and use the seed replicates as the noise floor. Do not treat any checkpoint as a usable assistant.
 
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
+\subsection*{How to Get Started with the Model}
 
-Users (both direct and downstream) should be made aware of the risks, biases and limitations of the model. More information needed for further recommendations.
+\begin{small}
+\begin{verbatim}
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-\#\# How to Get Started with the Model
+repo = "<org>/lm-1.7B-L8-deep-seed1904"   # link removed for anonymity
+tok = AutoTokenizer.from_pretrained(repo)
+model = AutoModelForCausalLM.from_pretrained(repo, revision="main")
+# intermediate checkpoints: revision="iter_<step>"
+\end{verbatim}
+\end{small}
 
-Use the code below to get started with the model.
+\subsection*{Training Details}
 
-\#\# Training Details
+\subsubsection*{Training Data}
 
-\#\#\# Training Data
+English comes from DCLM-Edu. The two alternative $K = 1$ builds use DCLM without the educational filter and FineWeb up to 2022. The other languages come from FineWeb-2, with the language lists and token shares of Appendix~\ref{app:data-mixtures}. Each mixture keeps the English share at 50\% and changes only the other languages.
 
-<!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
+\subsubsection*{Training Procedure}
 
-\#\#\# Training Procedure
+\paragraph{Preprocessing}
 
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
+We tokenize with the 131,072-token Apertus tokenizer and pack documents into 4,096-token sequences. The validation documents used for bits-per-byte are held out of every training mixture.
 
-\#\#\#\# Preprocessing [optional]
+\paragraph{Training Hyperparameters}
 
+\begin{itemize}
+    \item \textbf{Training regime:} bf16 mixed precision
+    \item \textbf{Optimizer:} AdEMAMix ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping 0.1
+    \item \textbf{Schedule:} warmup-stable-decay, with a 1$-\sqrt{\cdot}$ cooldown over the last 20\% of training
+    \item \textbf{Batch:} 504 sequences of 4,096 tokens from 350M up, 84 at 90M and 168 at 175M
+    \item \textbf{Learning rate, depth and width per size:} Table~\ref{tab:ladder}
+\end{itemize}
 
-\#\#\#\# Training Hyperparameters
+\paragraph{Speeds, Sizes, Times}
 
-- **Training regime:** <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
+20 checkpoints per run (40 at 1B, 60 at 1.7B and 3B). Pretraining the ladder used \npretrainnodehours node-hours.
 
-\#\#\#\# Speeds, Sizes, Times [optional]
+\subsection*{Evaluation}
 
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
+\subsubsection*{Testing Data, Factors \& Metrics}
 
-\#\# Evaluation
+\paragraph{Testing Data}
 
-<!-- This section describes the evaluation protocols and provides the results. -->
+\nbenchmarks multilingual benchmark families plus English benchmarks in the LM Evaluation Harness (\nbenchmarktasks benchmark-language tasks). We also measure held-out bits-per-byte on 100 languages (Appendix~\ref{app:evaluation-protocol}).
 
-\#\#\# Testing Data, Factors & Metrics
+\paragraph{Factors}
 
-\#\#\#\# Testing Data
+Model size, number of training languages, data scheme, temperature, depth, activation, seed and training checkpoint.
 
-<!-- This should link to a Dataset Card if possible. -->
+\paragraph{Metrics}
 
-\#\#\#\# Factors
+Accuracy (or normalized accuracy) per benchmark-language task, read against its chance level with a one-sided Wilson bound. Bits-per-byte per language. Decision accuracy and signal-to-noise ratio across the ladder.
 
-<!-- These are the things the evaluation is disaggregating by, e.g., subpopulations or domains. -->
+\subsubsection*{Results}
 
-\#\#\#\# Metrics
+\paragraph{Summary}
 
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
+Section~\ref{sec:results} and the per-analysis appendices report the results. Every number is regenerated from the released evaluation logs.
 
-\#\#\# Results
+\subsection*{Environmental Impact}
 
-\#\#\#\# Summary
+\begin{itemize}
+    \item \textbf{Hardware Type:} NVIDIA GH200 (4 per node)
+    \item \textbf{Hours used:} \ngpuhours GPU-hours (training and evaluation)
+    \item \textbf{Cloud Provider:} on-premise HPC (removed for review)
+    \item \textbf{Compute Region:} removed for review
+    \item \textbf{Carbon Emitted:} \checknum{not estimated}
+\end{itemize}
 
-\#\# Model Examination [optional]
+\subsection*{Technical Specifications}
 
-<!-- Relevant interpretability work for the model goes here -->
+\subsubsection*{Model Architecture and Objective}
 
-\#\# Environmental Impact
+Decoder-only transformer trained with next-token prediction: grouped-query attention (4 query heads per key-value head, head dimension 64), rotary position embeddings, RMSNorm, QK-norm, xIELU (or SwiGLU) MLP, no biases, tied input and output embeddings, 4,096-token context.
 
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
+\subsubsection*{Compute Infrastructure}
 
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact\#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
+\paragraph{Hardware}
 
-- **Hardware Type:** 
-- **Hours used:** 
-- **Cloud Provider:** 
-- **Compute Region:** 
-- **Carbon Emitted:** 
+GH200 nodes with four GPUs each.
 
-\#\# Technical Specifications [optional]
+\paragraph{Software}
 
-\#\#\# Model Architecture and Objective
+Megatron-LM (training), Hugging Face Transformers (released checkpoints), LM Evaluation Harness (evaluation).
 
-\#\#\# Compute Infrastructure
+\subsection*{Citation}
 
-\#\#\#\# Hardware
+\textbf{BibTeX:} removed for anonymity.
 
-\#\#\#\# Software
+\subsection*{Model Card Authors}
 
-\#\# Citation
+Anonymous (removed for review).
 
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
+\subsection*{Model Card Contact}
 
-**BibTeX:**
-
-**APA:**
-
-\#\# Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-\#\# More Information [optional]
-
-\#\# Model Card Authors [optional]
-
-\#\# Model Card Contact
+Removed for anonymity.

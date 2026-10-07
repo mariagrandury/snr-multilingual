@@ -41,6 +41,9 @@ Tabs of the MkDocs side:
 - **Docs** — thin stubs that `--8<--` include a README from elsewhere in the
   repo (e.g. `docs/pretraining.md` includes `src/pretrain/README.md`,
   `docs/repo.md` the root README). Edit the original READMEs, not the stubs.
+  Its nav entry is commented out in `mkdocs.yml` for the double-blind review;
+  the pages are still built, searchable, in the sitemap and linked from Home
+  and the Findings pages (mkdocs lists them as "not included in the nav").
 
 The Findings pages read one JSON per RQ. RQ0 (`gate.md`) reads `gate.json`
 (the first-size map, the tokens-seen curves, the format examples from

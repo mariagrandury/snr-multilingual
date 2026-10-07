@@ -8,12 +8,12 @@
 
 2. The top four families are all 2-option: MultiBLiMP 1.70 (34 tasks), XStoryCloze 1.53 (8), XWinograd 1.45 (6), PAWS-X 1.37 (5).
 
-3. The best 4-option family, Global-MMLU 0.83, rests on one task; among 4-option families with at least three tasks the top is INCLUDE at 0.70 (3 tasks).
+3. The best 4-option family, Global-MMLU 0.83, rests on one task. Among 4-option families with at least three tasks the top is INCLUDE at 0.70 (3 tasks).
 \end{rqfinding}
 
 \paragraph{Question.} Why do some multilingual benchmarks separate models cleanly under the SNR framework and others don't? Is it curation quality, task format, item length, or the answer space?
 
-\paragraph{Setup.} Seed-1904 runs of every cell; SNR as mean pairwise distance over noise at the 1.7B reference, the median over each family's per-language tasks, for the benchmark families that clear the above-chance gate; families grouped by curation, source, task format, answer-option count and passage use, tested with Kruskal--Wallis.
+\paragraph{Setup.} Seed-1904 runs of every cell. SNR is the mean pairwise distance over noise at the 1.7B reference. For each family, we take the median over its per-language tasks. We keep the benchmark families that clear the above-chance gate. We group the families by curation, source, task format, answer-option count and passage use, and we test the groups with a Kruskal-Wallis test.
 
 \begin{figure}[h]
 \centering

@@ -179,8 +179,8 @@ GROUP_COLOURS = S.RAMP + [S.SERIES[1], S.SERIES[2], "#8c1d18", "#7a5195"]
 # dark at L50 — the same colour in every figure that draws them, whichever
 # regimes happen to have a line. L1 and L2 draw no line today (rule 5) and sit
 # outside the ramp so that, when they do, they do not shift the other four.
-PAPER_POPULATION = {"all benchmarks": "Benchmarks", "bpb": "BPB"}     # the paper's panel titles
 L_COLOUR = {"L1": "#8c1d18", "L2": "#7a5195", "L8": S.RAMP[0], "L15": S.RAMP[1], "L30": S.RAMP[2], "L50": S.RAMP[3]}
+PAPER_POPULATION = {"all benchmarks": "Benchmarks", "bpb": "BPB"}     # the paper's panel titles
 
 
 def group_order(groups) -> list:

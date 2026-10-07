@@ -13,7 +13,7 @@
 
 \paragraph{Question.} Before training the reference, can a statistic computed on the proxy alone tell us that the proxy's decision will match the reference's? First among the 22 SNR definitions of the noise-and-SNR analysis: which best correlates with \textbf{decision accuracy} across the ladder's languages, and does the answer survive a change of training seed?
 
-\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, tasks above chance. For each of 22 SNR definitions, the Pearson $r$ between $\log_{10}$ SNR and decision accuracy over a language's tasks (languages with at least three tasks), averaged over the 50 trained languages, for DA-size (proxy final against 1.7B final) and DA-ckpt (a proxy's early checkpoints against its final).
+\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, we compute the Pearson $r$ between $\log_{10}$ SNR and decision accuracy over the tasks of one language. We keep the languages with at least three tasks and average over the 50 trained languages. We do this for DA-size (proxy final against 1.7B final) and for DA-ckpt (the early checkpoints of a proxy against its final checkpoint).
 
 \begin{figure}[h]
 \centering
