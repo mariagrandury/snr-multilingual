@@ -29,7 +29,7 @@ so the panels can never disagree with the figures they are taken from:
 Paper conventions: no figure title, no note, no panel titles, no reference
 lines. Each panel names its definition and its reference in its own y label,
 the two line legends sit inside the axes (design axes on the left, in shades
-of dark orange beside the black pooled line, so they are not read as the blue
+of green beside the black pooled line, so they are not read as the blue
 proxy sizes of the middle and right panels, whose legend is shared), and the y
 axis is shared so the three panels are read against one scale. A point that is
 1.0 by comparing a ranking with itself (the 1.7B final on the left, every
@@ -159,7 +159,7 @@ def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence_da_size") -> 
     d = d[d["population"] == "all benchmarks"].sort_values("non_emb")
     rest = [g for g in dict.fromkeys(d["group"]) if g != OVERALL]
     groups = [OVERALL] + rest           # OVERALL heads the legend and sits on top
-    shades = mpl.colormaps["Oranges"](np.linspace(.95, .55, len(rest))) if rest else []
+    shades = mpl.colormaps["Greens"](np.linspace(.95, .55, len(rest))) if rest else []
     colours = dict(zip(rest, shades))
     for grp in groups:
         g = d[d["group"] == grp]

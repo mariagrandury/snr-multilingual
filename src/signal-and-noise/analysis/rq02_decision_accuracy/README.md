@@ -478,7 +478,7 @@ variant whose panels read different populations).
 one, and the black all-pairs line of the left panel is the 5C points of the
 right one. Left: DA-size, the mean over tasks (`reliability_macro`, not the
 pooled ratio), one black line over all pairs and one line per design axis in
-shades of dark orange; the data scheme (A vs B vs C) is one line on the
+shades of green; the data scheme (A vs B vs C) is one line on the
 scheme axis; x is non-embedding parameters. Middle: DA-ckpt, each proxy
 against its own final, x in Chinchilla multiples. Right: DA-goal, the same
 checkpoints against the 1.7B final; the panels share the y axis, so the
