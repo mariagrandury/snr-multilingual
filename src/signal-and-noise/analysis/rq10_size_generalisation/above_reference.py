@@ -3,8 +3,8 @@ still hold one rung ABOVE it, at 3B?
 
 Every other RQ stops at the reference (rule 10). This is the one analysis that
 opts in with `above_reference=True`: it takes every family with a final at the
-`--reference` rung (3B: deep, L ∈ {8, 15}, data builds A and B — four families, six
-multi-axis and four mono-axis pairs) and reads, on those families alone,
+`--reference` rung (3B: deep, L ∈ {8, 15} in data builds A and B, plus A-L30,
+B-L30 and A-L50 as their evaluations land) and reads, on those families alone,
 
   (a) DA-size from every smaller rung to the reference, pooled over the gated
       tasks — the scale-convergence line one rung further out — beside the
@@ -26,7 +26,7 @@ mask stops at 1.7B.
 Until the 3B evaluations land the report holds no 3B row: the script then
 writes the tables with their headers and a figure that says so, and the driver
 runs it every pass so the figure fills in by itself. `--reference 1.7B
---design 3B` is the preview available today — the same four families read to
+--design 3B` is the preview — the same 3B-design families read to
 the current reference — and `--reference 1.7B --check` is the known-answer
 check: its DA-size per task and pair set equals rq02's
 `predictivity/da_all_per_task_both_axes.csv` (`decision_acc_size_<proxy>`) on every
@@ -76,9 +76,10 @@ POOL = "predictivity_seeds"                   # every trained cell; the pairs ar
 REFERENCE = next((s for s in EVAL_SIZES if NON_EMB[s] > NON_EMB[TARGET_SIZE]), TARGET_SIZE)   # 3B today
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 # The design set of a rung: which families it was planned with. `3B` is the
-# four deep L8/L15 A/B cells (plan/3b_models.md); `all` is every family.
+# deep cells of plan/3b_models.md: L8/L15 in A and B, plus A-L30, B-L30 and
+# A-L50 (added 2026-09-30); `all` is every family.
 DESIGNS = {"all": lambda a: pd.Series(True, index=a.index),
-           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & a["L"].isin([8, 15])
+           "3B": lambda a: (a["arch"] == "deep") & (a["activation"] == "xielu") & a["L"].isin([8, 15, 30, 50])
                            & a["data"].isin(["A", "B"])}
 mpl.rcParams.update(S.RC)
 
@@ -331,7 +332,9 @@ def run(pool: str, reference: str, design: str, out_dir: Path) -> dict:
     df = df[on_shared_grid(df)]
     fin = finals(df)
     attrs = design_axes(fin)
-    fams = sorted(set(fin.loc[fin["size"] == reference, "family"]) & set(attrs.index[DESIGNS[design](attrs)]))
+    # a family with only its training loss at the reference (evaluations not landed) is not scored there
+    scored = fin[fin["kind"] != "loss"]
+    fams = sorted(set(scored.loc[scored["size"] == reference, "family"]) & set(attrs.index[DESIGNS[design](attrs)]))
     n_ref_runs = fin.loc[fin["size"] == reference, "model"].nunique()
     mask = gate_mask(df, pool, reference)
     stem = stem_for(reference, design)

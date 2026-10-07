@@ -7,8 +7,9 @@ makes the decisions the 1.7B model makes (rule 10, `analysis/RULES.md`). The
 3B rung asks the one question that frame cannot: whether the reference itself
 is a proxy for the next rung.
 
-Four cells were trained at 3B for it (deep, L ∈ {8, 15}, schemes A and B, seed
-1904; `plan/3b_models.md`). This folder is therefore the only reader of
+Seven cells were trained at 3B for it (deep, seed 1904: L ∈ {8, 15, 30, 50} in
+scheme A and L ∈ {8, 15, 30} in scheme B; `plan/3b_models.md`); a cell enters
+each analysis once its 3B evaluations are in the ladder report. This folder is therefore the only reader of
 `build_snr_pool(above_reference=True)` and the only one the rule-10 checker
 exempts (`check_rules.EXEMPT`).
 
@@ -62,13 +63,13 @@ The question has two halves, and they answer differently:
 
 ## Key figure
 
-![Decision accuracy against the 3B rung, benchmark accuracy and BPB](pretraining/predictivity/above_reference_3B_paper.png)
+![The benchmarks the 3B rung lifts above chance, and decision accuracy to 3B beside 1.7B](pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.png)
 
-Population: pool `predictivity` (seed 1904); DA-size from the finals of 90M–1.7B to the 3B final, 6 multi-axis and 4 mono-axis pairs over the 4 families with a 3B final; gate `predictivity` at the proxy and the Wilson rule on the 3B runs at the reference, no filter; benchmark accuracy (59–90 gated tasks) and per-language BPB (6–7 tasks) pooled separately.
+Population: pool `predictivity` (seed 1904); the deep families scored at both 1.7B and 3B, each (family, task) scored at both rungs. Left: per benchmark with at least five tasks whose share moves, the share of its tasks the above-random gate admits at each rung (rule 1, recomputed on those families). Right: DA-size from the finals of 90M–1B to the 3B final (solid) and to the 1.7B final (dashed) on the same mono-axis decisions, the task above chance at the proxy, 1.7B and 3B, no filter, ≥ 3 pairs; benchmark accuracy and per-language BPB pooled separately, 90 % leave-one-family-out jackknife bands.
 
-**Key finding.** Benchmark accuracy reads the 3B ranking at chance from every proxy (DA-size 0.43–0.52, the 1.7B reference included), while per-language BPB reads it at 0.75–0.96. From the 1.7B reference itself BPB reaches 0.92 (multi-axis) and 0.96 (mono-axis).
+**Key finding.** Pending the regeneration.
 
-GitHub: [above_reference_3B_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.png) · [above_reference_3B_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.csv). The full figure, with the same families read to 1.7B: [The 3B rung as the reference](#the-3b-rung-as-the-reference).
+GitHub: [gate_share_and_da_size_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.png) · [gate_share_and_da_size_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.csv). The full figures: [the gate per benchmark](#the-share-of-each-benchmark-above-chance-at-17b-and-at-3b) and [the framework at the new reference](#is-the-framework-consistent-when-the-reference-moves-from-17b-to-3b). The previous key figure, DA-size to the 3B final alone, is still written as `above_reference_3B_paper.png` ([the 3B rung as the reference](#the-3b-rung-as-the-reference)).
 
 ## Figures, in storyline order
 
@@ -77,24 +78,24 @@ GitHub: [above_reference_3B_paper.png](https://github.com/mariagrandury/snr-mult
 
 **DA-size and DA-goal · reference 3B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 3B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 3B`.
 
-**Population.** 4 families with a final at 3B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
+**Population.** 5 families with a final at 3B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
 
 ![Size generalisation to 3B](pretraining/predictivity/above_reference_3B.png)
 
 | axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 3B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.51 | 63 | 0.48 | 0.92 | 6 |
-| mono-axis | 175M | 0.49 | 59 | 0.51 | 0.92 | 6 |
-| mono-axis | 350M | 0.47 | 68 | 0.46 | 0.75 | 6 |
-| mono-axis | 600M | 0.52 | 73 | 0.44 | 0.88 | 6 |
-| mono-axis | 1B | 0.49 | 77 | 0.53 | 0.92 | 6 |
-| mono-axis | 1.7B | 0.43 | 83 | — | 0.96 | 6 |
-| multi-axis | 90M | 0.51 | 66 | 0.47 | 0.95 | 7 |
-| multi-axis | 175M | 0.49 | 62 | 0.51 | 0.95 | 7 |
-| multi-axis | 350M | 0.46 | 71 | 0.47 | 0.82 | 7 |
-| multi-axis | 600M | 0.51 | 77 | 0.44 | 0.90 | 7 |
-| multi-axis | 1B | 0.49 | 83 | 0.51 | 0.92 | 7 |
-| multi-axis | 1.7B | 0.44 | 90 | — | 0.92 | 7 |
+| mono-axis | 90M | 0.53 | 117 | 0.52 | 0.92 | 6 |
+| mono-axis | 175M | 0.48 | 115 | 0.54 | 0.92 | 6 |
+| mono-axis | 350M | 0.51 | 131 | 0.48 | 0.75 | 6 |
+| mono-axis | 600M | 0.51 | 147 | 0.49 | 0.88 | 6 |
+| mono-axis | 1B | 0.52 | 157 | 0.53 | 0.92 | 6 |
+| mono-axis | 1.7B | 0.47 | 166 | — | 0.96 | 6 |
+| multi-axis | 90M | 0.51 | 125 | 0.52 | 0.95 | 7 |
+| multi-axis | 175M | 0.49 | 126 | 0.55 | 0.95 | 7 |
+| multi-axis | 350M | 0.49 | 142 | 0.49 | 0.82 | 7 |
+| multi-axis | 600M | 0.51 | 158 | 0.51 | 0.90 | 7 |
+| multi-axis | 1B | 0.53 | 170 | 0.53 | 0.92 | 7 |
+| multi-axis | 1.7B | 0.49 | 180 | — | 0.92 | 7 |
 
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
 <!-- END auto:above-reference-3B -->
@@ -151,22 +152,22 @@ is unpredictable" from "this population is unpredictable at any reference".
 
 **DA-size and DA-goal · reference 1.7B · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy, the Wilson rule on the 1.7B runs at the reference · no filter.** Regenerate with `python analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B`.
 
-**Population.** 4 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
+**Population.** 7 families with a final at 1.7B (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L30-deep-seed1904, lm-L30-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904); DA-size pooled over the gated benchmark tasks with ≥ 3 pairs, and separately over the per-language BPB tasks (never gated — no chance level; only the languages every paired family scores clear 3 pairs, which is why the BPB column rests on far fewer tasks).
 
 ![Size generalisation to 1.7B](pretraining/predictivity/above_reference_1.7B_design3B.png)
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 1.7B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.48 | 53 | 0.48 | 0.88 | 6 |
-| mono-axis | 175M | 0.51 | 234 | 0.51 | 0.88 | 6 |
-| mono-axis | 350M | 0.46 | 68 | 0.46 | 0.79 | 6 |
-| mono-axis | 600M | 0.44 | 73 | 0.44 | 0.83 | 6 |
-| mono-axis | 1B | 0.53 | 251 | 0.53 | 0.88 | 6 |
-| multi-axis | 90M | 0.47 | 56 | 0.47 | 0.87 | 7 |
-| multi-axis | 175M | 0.51 | 249 | 0.51 | 0.87 | 7 |
-| multi-axis | 350M | 0.47 | 71 | 0.47 | 0.85 | 7 |
-| multi-axis | 600M | 0.44 | 77 | 0.44 | 0.82 | 7 |
-| multi-axis | 1B | 0.51 | 269 | 0.51 | 0.90 | 7 |
+| mono-axis | 90M | 0.49 | 177 | 0.49 | 0.88 | 21 |
+| mono-axis | 175M | 0.52 | 702 | 0.52 | 0.88 | 21 |
+| mono-axis | 350M | 0.50 | 303 | 0.50 | 0.85 | 21 |
+| mono-axis | 600M | 0.49 | 250 | 0.49 | 0.88 | 21 |
+| mono-axis | 1B | 0.52 | 773 | 0.52 | 0.76 | 21 |
+| multi-axis | 90M | 0.49 | 220 | 0.49 | 0.91 | 31 |
+| multi-axis | 175M | 0.52 | 872 | 0.52 | 0.91 | 31 |
+| multi-axis | 350M | 0.51 | 474 | 0.51 | 0.87 | 31 |
+| multi-axis | 600M | 0.50 | 310 | 0.50 | 0.91 | 31 |
+| multi-axis | 1B | 0.53 | 956 | 0.53 | 0.77 | 31 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
@@ -205,35 +206,63 @@ and the reference's own mask can never say so.
 <!-- BEGIN auto:gate-crossover (gate_crossover.py --pool predictivity) -->
 ## What the 3B rung can measure that the 1.7B reference cannot
 
-**The above-random gate at two rungs · the 4 families with a 3B final · both columns recomputed on those families (rule 1) so the rung is the only difference.** Regenerate with `python analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity`.
+**The above-random gate at two rungs · the 5 families with a 3B final · both columns recomputed on those families (rule 1) so the rung is the only difference.** Regenerate with `python analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity`.
 
-**Population.** 573 tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never enter the gate. The gate admits **337** of them at 1.7B and **429** at 3B (**+92**, +27%).
+**Population.** 841 tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never enter the gate. The gate admits **510** of them at 1.7B and **674** at 3B (**+164**, +32%).
 
 ![Gate crossover](pretraining/predictivity/gate_crossover.png)
 
 |  | at chance at 3B | above chance at 3B |
 |---|---|---|
-| **above chance at 1.7B** | 6 | 331 |
-| **at chance at 1.7B** | 138 | 98 |
+| **above chance at 1.7B** | 6 | 504 |
+| **at chance at 1.7B** | 161 | 170 |
 
-**98 tasks cross into the gate at 3B** and **6** drop out of it. Where they come from:
+**170 tasks cross into the gate at 3B** and **6** drop out of it. Where they come from:
 
 | benchmark | gained | lost | net |
 |---|---|---|---|
-| belebele | 17 | 3 | +14 |
-| global_mmlu_full | 17 | 0 | +17 |
-| cultural_bench_easy | 14 | 0 | +14 |
-| include_base_44 | 14 | 1 | +13 |
-| global_piqa_parallel_cloze | 8 | 0 | +8 |
+| belebele | 40 | 0 | +40 |
+| include_base_44 | 30 | 0 | +30 |
+| global_mmlu_full | 28 | 0 | +28 |
+| cultural_bench_easy | 16 | 0 | +16 |
+| global_piqa_parallel_cloze | 11 | 1 | +10 |
+| include_v2_og | 9 | 2 | +7 |
+| arc | 5 | 0 | +5 |
 | blend_sample | 5 | 0 | +5 |
-| include_v2_og | 5 | 0 | +5 |
-| rf_cultural_bench_easy | 5 | 0 | +5 |
-| cultural_bench_hard | 4 | 0 | +4 |
-| rf_include_base_44 | 2 | 0 | +2 |
-| rfgm_include_base_44 | 2 | 0 | +2 |
-| bbh_mcq | 1 | 1 | +0 |
+| rf_include_base_44 | 5 | 0 | +5 |
+| include_v2_en | 4 | 1 | +3 |
+| rfgm_include_base_44 | 4 | 0 | +4 |
+| cultural_bench_hard | 3 | 0 | +3 |
 
-Files: [`gate_crossover.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.png), [`gate_crossover.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.csv).
+Files: [`gate_crossover.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.png), [`gate_crossover.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover.csv), [`gate_crossover_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_per_task.csv) (every task's run shares and verdicts, `status` = `newly above` for the tasks that cross in).
+
+### The share of each benchmark above chance at 1.7B and at 3B
+
+Per benchmark, the share of its tasks the gate admits at each rung, on the same (family, task) cells; 40 benchmarks, 17 gain, 0 lose, 3 have no task above chance at 1.7B and at least one at 3B.
+
+![Gate share by benchmark](pretraining/predictivity/gate_crossover_by_benchmark.png)
+
+| benchmark | tasks | above at 1.7B | above at 3B | share change |
+|---|---|---|---|---|
+| blend_sample | 5 | 0 (0%) | 5 (100%) | +100% |
+| commonsense_qa | 1 | 0 (0%) | 1 (100%) | +100% |
+| mmlu | 1 | 0 (0%) | 1 (100%) | +100% |
+| global_mmlu_full | 29 | 1 (3%) | 29 (100%) | +97% |
+| cultural_bench_easy | 19 | 1 (5%) | 17 (89%) | +84% |
+| include_base_44 | 36 | 6 (17%) | 36 (100%) | +83% |
+| belebele | 59 | 17 (29%) | 57 (97%) | +68% |
+| paws | 8 | 5 (62%) | 7 (88%) | +25% |
+| arc | 28 | 17 (61%) | 22 (79%) | +18% |
+| global_piqa_parallel_cloze | 63 | 1 (2%) | 11 (17%) | +16% |
+| rf_cultural_bench_easy | 19 | 7 (37%) | 10 (53%) | +16% |
+| cultural_bench_hard | 19 | 1 (5%) | 4 (21%) | +16% |
+| rf_include_base_44 | 36 | 27 (75%) | 32 (89%) | +14% |
+| rfgm_include_base_44 | 36 | 30 (83%) | 34 (94%) | +11% |
+| include_v2_og | 77 | 57 (74%) | 64 (83%) | +9% |
+| include_v2_en | 77 | 66 (86%) | 69 (90%) | +4% |
+| hellaswag | 26 | 25 (96%) | 26 (100%) | +4% |
+
+Files: [`gate_crossover_by_benchmark.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_by_benchmark.png), [`gate_crossover_by_benchmark.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_crossover_by_benchmark.csv).
 <!-- END auto:gate-crossover -->
 
 Key findings:
@@ -266,6 +295,95 @@ Follow-ups:
   newly admitted tasks' DA is any better than the already-admitted ones', i.e.
   whether measurability buys reliability.
 
+Key findings (the per-benchmark shares, `gate_crossover_by_benchmark.png`):
+
+- **Benchmarks the rung lifts the most:** pending the regeneration
+  (`gate_crossover_by_benchmark.csv`, `delta`).
+- **Benchmarks with no task above chance at 1.7B and at least one at 3B:**
+  pending the regeneration.
+- **Benchmarks still at chance at 3B on every task:** pending the
+  regeneration.
+
+Follow-ups:
+
+- Read the newly passing tasks' run counts (`gate_crossover_per_task.csv`,
+  `runs_<size>`): a task only the L50 family trains rests on one run per rung.
+
+### The framework at the new reference: does DA and SNR read the same?
+
+The gate says what the rung can measure; the question left open is whether
+the DA/SNR framework built on the 1.7B reference reads the same at 3B. This
+compares DA-size to the two references on the same decisions, the ranking of
+benchmarks by DA and by SNR under each, and the SNR at the two rungs.
+
+<!-- BEGIN auto:reference-consistency (reference_consistency.py --pool predictivity) -->
+## Is the framework consistent when the reference moves from 1.7B to 3B?
+
+**DA-size to two references and the SNR at two rungs · 5 families scored at both (lm-L15-deep-seed1904, lm-L15-schemeB-deep-seed1904, lm-L50-deep-seed1904, lm-L8-deep-seed1904, lm-L8-schemeB-deep-seed1904) · multi-axis and mono-axis pairs at the grid seed · gate `predictivity` at the proxy and at 1.7B, the Wilson rule on the 3B runs · no filter.** Regenerate with `python analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity`.
+
+**Population.** 10 multi-axis and 6 mono-axis pairs over the 5 families (fewer on a task whose language not every family trains, rule 2). A DA cell is a (task, pair set, proxy) whose decisions both references score, the task above chance at the proxy, at 1.7B and at 3B; 2045 cells over 266 tasks have fewer than 3 pairs and are NaN (rule 5, pair counts in the per-task table). Bands are the 90 % leave-one-family-out jackknife.
+
+![DA-size to two references, multi-axis](pretraining/predictivity/reference_consistency_da_size_multi_axes.png)
+
+![DA-size to two references, mono-axis](pretraining/predictivity/reference_consistency_da_size_mono_axis.png)
+
+Benchmark accuracy, pooled DA-size [90 % band]:
+
+| axes | proxy | tasks | → 1.7B | → 3B |
+|---|---|---|---|---|
+| mono-axis | 90M | 101 | 0.52 [0.44, 0.60] | 0.51 [0.46, 0.56] |
+| mono-axis | 175M | 114 | 0.52 [0.44, 0.60] | 0.47 [0.38, 0.56] |
+| mono-axis | 350M | 129 | 0.48 [0.43, 0.53] | 0.50 [0.36, 0.64] |
+| mono-axis | 600M | 145 | 0.48 [0.36, 0.61] | 0.51 [0.47, 0.55] |
+| mono-axis | 1B | 154 | 0.52 [0.43, 0.61] | 0.52 [0.46, 0.59] |
+| multi-axis | 90M | 109 | 0.51 [0.44, 0.58] | 0.50 [0.44, 0.56] |
+| multi-axis | 175M | 125 | 0.52 [0.46, 0.57] | 0.48 [0.43, 0.53] |
+| multi-axis | 350M | 140 | 0.49 [0.45, 0.52] | 0.49 [0.39, 0.59] |
+| multi-axis | 600M | 156 | 0.51 [0.35, 0.66] | 0.51 [0.48, 0.54] |
+| multi-axis | 1B | 167 | 0.53 [0.43, 0.62] | 0.52 [0.47, 0.58] |
+
+Spearman between the two references' DA, over the benchmark tasks and over the benchmarks (mean DA of their tasks):
+
+| axes | proxy | ρ tasks | tasks | ρ benchmarks | benchmarks |
+|---|---|---|---|---|---|
+| mono-axis | 90M | 0.11 | 101 | 0.14 | 20 |
+| mono-axis | 175M | 0.09 | 114 | 0.03 | 22 |
+| mono-axis | 350M | 0.08 | 129 | -0.05 | 22 |
+| mono-axis | 600M | 0.02 | 145 | 0.43 | 23 |
+| mono-axis | 1B | 0.23 | 154 | 0.35 | 23 |
+| multi-axis | 90M | 0.19 | 109 | 0.16 | 21 |
+| multi-axis | 175M | 0.09 | 125 | -0.07 | 22 |
+| multi-axis | 350M | 0.10 | 140 | 0.02 | 22 |
+| multi-axis | 600M | 0.01 | 156 | 0.56 | 23 |
+| multi-axis | 1B | 0.16 | 167 | 0.32 | 23 |
+
+![SNR at two rungs](pretraining/predictivity/reference_consistency_snr.png)
+
+SNR (`rel_std`) at 1.7B against 3B, tasks above chance at both:
+
+| channel | ρ tasks | tasks | ρ benchmarks | benchmarks | median log10 SNR 1.7B | median log10 SNR 3B | share higher at 3B |
+|---|---|---|---|---|---|---|---|
+| benchmarks | 0.35 | 300 | 0.45 | 24 | -0.02 | -0.16 | 0.33 |
+| bpb | 0.94 | 12 | — | 1 | -0.58 | -0.82 | 0.00 |
+
+Files: [`reference_consistency_da_size_multi_axes.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_multi_axes.csv), [`reference_consistency_da_size_mono_axis.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_mono_axis.csv), [`reference_consistency_da_size_per_task_both_axes.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_da_size_per_task_both_axes.csv), [`reference_consistency_snr.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.png) / [`.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr.csv), [`reference_consistency_snr_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/reference_consistency_snr_per_task.csv).
+<!-- END auto:reference-consistency -->
+
+Key findings:
+
+- **DA-size to 3B against DA-size to 1.7B on the same decisions:** pending
+  the regeneration (benchmark accuracy and BPB, both pair sets).
+- **Does the ranking of benchmarks by DA survive the reference:** pending the
+  regeneration (Spearman over tasks and over benchmarks, per proxy).
+- **SNR at 3B against 1.7B:** pending the regeneration (Spearman over tasks
+  and over benchmarks, the median log10 SNR at each rung).
+
+Follow-ups:
+
+- With few families at 3B the per-task DA sits on a coarse lattice and many
+  cells fall under `MIN_PAIRS`; read the pooled lines and the benchmark-level
+  ρ before the per-task scatter.
+
 ## Extensions from other sweeps
 
 None: the 36-model sweep has no rung above its 1B reference, and the public
@@ -279,5 +397,14 @@ ladder's.
   the decision-accuracy tables, `--out-dir` writes elsewhere (the check).
 - `gate_crossover.py` — the gate half; `--reference` picks the rung read
   above the 1.7B reference.
+- `reference_consistency.py` — the framework at the two references: DA-size
+  to 3B against 1.7B on the same decisions, the DA and SNR rankings of the
+  benchmarks under each, the SNR at both rungs; and the key figure
+  (`--paper` redraws it from the CSVs on disk).
 - `pretraining/predictivity/above_reference_<ref>[_design<d>].{png,csv}`,
-  `..._per_task.csv`, `gate_crossover.{png,csv}`.
+  `..._per_task.csv`, `gate_crossover{,_by_benchmark}.{png,csv}`,
+  `gate_crossover_per_task.csv`,
+  `reference_consistency_da_size_{multi_axes,mono_axis}.{png,csv}`,
+  `reference_consistency_da_size_per_task_both_axes.csv`,
+  `reference_consistency_snr.{png,csv}`, `reference_consistency_snr_per_task.csv`,
+  `gate_share_and_da_size_mono_axis_paper.{png,svg,csv}`.

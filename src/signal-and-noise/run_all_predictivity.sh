@@ -287,6 +287,10 @@ run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # the prior question to the ranking one: which benchmarks the 3B rung lifts above
 # chance that the reference cannot resolve at all (both gate columns on the 3B families)
 run $PY analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity
+# is the framework consistent across the two references: DA-size to 3B vs to 1.7B on the same
+# decisions (jackknife bands), the DA and SNR rankings of benchmarks under each, the SNR at both
+# rungs; then the rq10 paper figure, which reads gate_crossover_by_benchmark.csv (so after it)
+run $PY analysis/rq10_size_generalisation/reference_consistency.py --pool predictivity
 
 pass "rq11 — the evaluation recipe"
 # which benchmark, posed how (original, rf, rfgm) and scored how (accuracy, bBPB), reads the reference
