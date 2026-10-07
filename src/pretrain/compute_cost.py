@@ -27,6 +27,11 @@ are not included.
     python3.11 compute_cost.py                                # since 2026-08-01
     python3.11 compute_cost.py --since 2026-09-01 --users mariagrandury
     python3.11 compute_cost.py --out /tmp/costs.md            # not the plan doc
+
+Next to the markdown it writes the same per-task totals as JSON (`--out` with
+a .json suffix, plan/compute-costs.json by default), which
+documents/paper/sections/verify_paper_results.py turns into the paper's
+node-hour and GPU-hour macros. scripts/refresh_analysis.sh runs both.
 """
 from __future__ import annotations
 
@@ -349,6 +354,13 @@ def main() -> None:
     print(report)
     args.out.write_text(report)
     print(f"wrote {args.out}")
+    summary = {"date": str(datetime.date.today()), "since": args.since, "users": users,
+               "gpus_per_node": GPUS_PER_NODE,
+               "node_hours": {task: {"charged": round(sum(cost[task].values()), 1),
+                                     "kept": round(cost[task]["kept"], 1)}
+                              for task in SWEEP_TASKS}}
+    args.out.with_suffix(".json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(f"wrote {args.out.with_suffix('.json')}")
 
 
 if __name__ == "__main__":

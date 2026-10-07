@@ -45,8 +45,8 @@ using a global batch of 504 sequences (84 at 90M and 168 at 175M, where 504 make
 \textbf{Seeds.} Every configuration is trained with seed 1904. Selected deep configurations at sizes 175M, 600M and 1B use two additional seeds (Table~\ref{tab:grid}).
 These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
 
-% \textbf{Compute.} The scaling ladder required $\sim$ models are trained on nodes of four NVIDIA GH200 GPUs. %, using 3 to 21 nodes per run depending on size.
-% Pretraining the model ladder consumed \checknum{15300} node-hours, plus \checknum{3500} node-hours of data preparation, Megatron-to-HuggingFace checkpoint conversion, benchmark evaluation, and bits-per-byte scoring.
+% \textbf{Compute.} Models are trained on nodes of four NVIDIA GH200 GPUs. %, using 3 to 21 nodes per run depending on size.
+% Pretraining the \nruns runs of the model ladder consumed \npretrainnodehours node-hours, plus \nothernodehours node-hours of data preparation, Megatron-to-HuggingFace checkpoint conversion, benchmark evaluation, and bits-per-byte scoring (\ngpuhours GPU-hours in total).
 
 \subsubsection{Intervention Axes}
 

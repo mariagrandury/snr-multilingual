@@ -15,8 +15,16 @@ is trained, not the one that was planned when the text was written.
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
                 (configs/tasks.json `auto` group) with their language and
                 task counts on the sweep's trained languages
-    nbenchmarks block in main.tex: \\nbenchmarks, the number of rows in the
-                benchmarks table's multilingual block
+    nbenchmarks block in main.tex: the setup counts the prose quotes, written
+                in the same run as the tables they count:
+                \\nbenchmarks   rows of the benchmarks table's multilingual block
+                \\nruns         grid runs, every cell with 3B and replicate
+                               seeds included (the grid table's Total)
+                \\nrunsfinished grid runs at their target iteration in the
+                               ladder report
+                \\ntasksKone ... \\ntasksKfifty  tasks a scheme-A cell is
+                               evaluated on at K = 1, 2, 8, 15, 30, 50 (one
+                               macro per LANG_SETTINGS entry, K spelled out)
 
 A block sits between `% BEGIN generated: KEY (make_appendix_tables.py)` and
 `% END generated: KEY`; text outside it is hand-written and kept.
@@ -157,7 +165,7 @@ def size_span(sizes) -> str:
     return f"{sizes[0]}--{sizes[-1]}" if contiguous and len(sizes) > 2 else fmt_list(sizes)
 
 
-def grid_table(runs: list[dict]) -> str:
+def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
     order = list(lt.DATA_SCHEMES)
     rows, total, total_rep = [], 0, 0
     for build in order:
@@ -178,7 +186,6 @@ def grid_table(runs: list[dict]) -> str:
             rows.append(" & ".join([esc(build), BUILD_DESC.get(build, esc(build)), cfg["letter"],
                                     f"{cfg['temp']:g}", LADDER_DESC.get(ladder, ladder),
                                     fmt_list(Ls), sizes, str(len(rs)), str(rep or "--")]) + r" \\")
-    done, missing = finished(runs)
     status = ("" if done < 0 else
               f" All {total} runs had finished at the ladder-report snapshot." if not missing else
               f" At the ladder-report snapshot {done} of the {total} runs had finished; "
@@ -423,15 +430,38 @@ def languages_table() -> None:
     print("families per trained language:", dict(sorted(cov.items())))
 
 
+# LaTeX macro names take letters only: \ntasksK<K spelled out>.
+K_WORDS = {1: "one", 2: "two", 8: "eight", 15: "fifteen", 30: "thirty", 50: "fifty"}
+
+
+def tasks_per_K() -> dict[int, int]:
+    """Tasks a scheme-A cell at each K is evaluated on (its trained languages)."""
+    tasks, auto = task_languages()
+    out = {}
+    for L in lt.LANG_SETTINGS:
+        langs = lt.cell_languages(L, "A")
+        out[L] = sum(1 for e in tasks.values() if "pretraining" in e.get("stages", [])
+                     and owner(e.get("benchmark", ""), auto) and canon(e.get("language")) in langs)
+    return out
+
+
 def main():
     runs = grid_runs()
-    replace_block(SECTIONS / "app_01_model_ladder.tex", "grid", grid_table(runs))
+    done, missing = finished(runs)
+    replace_block(SECTIONS / "app_01_model_ladder.tex", "grid", grid_table(runs, done, missing))
     replace_block(SECTIONS / "app_01_model_ladder.tex", "seeds", seeds_table(runs))
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
     body, stats = benchmark_table()
     replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
-    # \nbenchmarks is the table's multilingual block, written in the same run so the two cannot disagree
-    replace_block(SECTIONS / "main.tex", "nbenchmarks", f"\\newcommand{{\\nbenchmarks}}{{{stats['multilingual']} }}")
+    # written in the same run as the tables they count, so text and tables cannot disagree
+    per_K = tasks_per_K()
+    if unnamed := sorted(set(per_K) - set(K_WORDS)):
+        raise SystemExit(f"K_WORDS has no name for K = {unnamed}")
+    replace_block(SECTIONS / "main.tex", "nbenchmarks", "\n".join([
+        f"\\newcommand{{\\nbenchmarks}}{{{stats['multilingual']} }}",
+        f"\\newcommand{{\\nruns}}{{{len(runs)} }}",
+        f"\\newcommand{{\\nrunsfinished}}{{{done if done >= 0 else '??'} }}",  # ?? = no ladder report
+        *(f"\\newcommand{{\\ntasksK{K_WORDS[L]}}}{{{n:,} }}" for L, n in per_K.items())]))
     languages_table()
     by = Counter((r["build"], r["ladder"]) for r in runs)
     print(f"grid: {len(runs)} runs ({sum(r['seed'] == 1904 for r in runs)} at seed 1904, "
@@ -439,11 +469,8 @@ def main():
           + ", ".join(f"{b}/{lad} {n}" for (b, lad), n in by.items()))
     print(f"benchmarks: {stats['multilingual']} multilingual, {stats['single']} single-language, "
           f"{stats['twins']} reformulated variants, {stats['tasks']} tasks on trained languages")
-    tasks, auto = task_languages()
-    for L in lt.LANG_SETTINGS:
-        langs = lt.cell_languages(L, "A")
-        n = sum(1 for e in tasks.values() if "pretraining" in e.get("stages", [])
-                and owner(e.get("benchmark", ""), auto) and canon(e.get("language")) in langs)
+    print(f"runs: {done} of {len(runs)} finished")
+    for L, n in per_K.items():
         print(f"  scheme-A L{L}: {n} tasks")
 
 

@@ -22,6 +22,20 @@ loss, the generative tasks) read as gated, wrong on 620 rows.
 
 Run it after `refresh_analysis.sh`; it is cheap and reads only committed CSVs.
 
+It also rewrites the constants block of main.tex (`% BEGIN generated:
+constants`): the release counts \nmodels, \nckpts and \nbenchmarktasks (see
+`provenance`), and the compute the sweep was charged on CSCS, read from
+plan/compute-costs.json, which src/pretrain/compute_cost.py writes from sacct:
+
+    \npretrainnodehours  pretrain node-hours charged, every allocation
+    \nothernodehours     eval + BPB + convert + data node-hours charged
+    \ngpuhours           4 GH200 per node x the two above
+
+Charged, not kept: the methodology sentence says what pretraining "consumed",
+and charged is what the allocations used, failed and requeued work included.
+Node-hours are rounded to the nearest 100 and GPU-hours derived from the
+rounded values, so the three macros add up for a reader.
+
     python3 verify_paper_results.py            # rewrite the five tables
     python3 verify_paper_results.py --check    # exit 1 if any would change
 """
@@ -46,6 +60,7 @@ from analysis.utils import (  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq04_surrogates.snr_definition_postprocess import _table  # noqa: E402
 
+COMPUTE_COSTS = ROOT / "plan" / "compute-costs.json"   # src/pretrain/compute_cost.py
 POOL = "predictivity"
 P = f"pretraining/{POOL}"
 RQ00 = ANALYSIS / "rq00_gate_and_curves" / P
@@ -158,14 +173,28 @@ def surrogates_by_language() -> pd.DataFrame:
     return out.sort_values(["language", "kind", "variant"])
 
 
+def compute_hours() -> dict:
+    """Charged node-hours (pretrain / everything else) and GPU-hours, rounded."""
+    SOURCES.append(COMPUTE_COSTS)
+    c = json.loads(COMPUTE_COSTS.read_text())
+    nh = {task: v["charged"] for task, v in c["node_hours"].items()}
+    pretrain = round(nh.pop("pretrain"), -2)
+    other = round(sum(nh.values()), -2)
+    return {"as_of": c["date"], "pretrain_node_hours": int(pretrain),
+            "other_node_hours": int(other),
+            "gpu_hours": int(c["gpus_per_node"] * (pretrain + other))}
+
+
 def provenance(ten: pd.DataFrame) -> dict:
     """What was read, and the population the paper's prose must quote."""
+    compute = compute_hours()
     from snr.download.ladder import load_predictivity_eval_results
     d = load_predictivity_eval_results()
     d = d[d["size"].isin(ANALYSIS_SIZES)]
     head = d[(d["seed"] == 1904) & (d["data"].isin(["A", "B"]))]
     bench = parents_only(d.loc[d["kind"] == "benchmark", ["task"]].drop_duplicates())
     return {
+        "compute_charged": compute,
         "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
         "sources": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in sorted(set(SOURCES))},
@@ -190,9 +219,13 @@ def write_constants(p: dict) -> None:
     t = tex.read_text()
     B, E = "% BEGIN generated: constants (verify_paper_results.py)", "% END generated: constants"
     i, j = t.index(B), t.index(E)
+    c = p["compute_charged"]
     block = (f"\\newcommand{{\\nmodels}}{{{p['healthy_175M_to_1_7B']} }}\n"
              f"\\newcommand{{\\nckpts}}{{{p['evaluated_checkpoints']:,} }}\n"
-             f"\\newcommand{{\\nbenchmarktasks}}{{{p['benchmark_tasks']:,} }}\n")
+             f"\\newcommand{{\\nbenchmarktasks}}{{{p['benchmark_tasks']:,} }}\n"
+             f"\\newcommand{{\\npretrainnodehours}}{{{c['pretrain_node_hours']:,} }}\n"
+             f"\\newcommand{{\\nothernodehours}}{{{c['other_node_hours']:,} }}\n"
+             f"\\newcommand{{\\ngpuhours}}{{{c['gpu_hours']:,} }}\n")
     tex.write_text(t[:i] + B + "\n" + block + t[j:])
 
 

@@ -64,16 +64,30 @@
 
 % Constants. \nbenchmarks counts the multilingual families of Table~\ref{tab:benchmark-families}
 % (original families with more than one trained language; English-text families and reformulated
-% variants excluded) and is rewritten with that table by make_appendix_tables.py;
-% the three counts after it are rewritten by verify_paper_results.py on every refresh
-% (runs 90M--1.7B, evaluated checkpoints, per-language parent benchmark tasks incl. the reformulated twins).
+% variants excluded) and is rewritten with that table by make_appendix_tables.py, together with
+% \nruns (every grid run, 3B and replicate seeds included), \nrunsfinished and the tasks per scheme-A
+% cell at each K (\ntasksKone ... \ntasksKfifty); the counts after them are rewritten by
+% verify_paper_results.py on every refresh (runs 90M--1.7B, evaluated checkpoints, per-language parent
+% benchmark tasks incl. the reformulated twins) with the charged compute from plan/compute-costs.json
+% (\npretrainnodehours, \nothernodehours, \ngpuhours).
 % BEGIN generated: nbenchmarks (make_appendix_tables.py)
 \newcommand{\nbenchmarks}{18 }
+\newcommand{\nruns}{201 }
+\newcommand{\nrunsfinished}{200 }
+\newcommand{\ntasksKone}{107 }
+\newcommand{\ntasksKtwo}{127 }
+\newcommand{\ntasksKeight}{306 }
+\newcommand{\ntasksKfifteen}{456 }
+\newcommand{\ntasksKthirty}{639 }
+\newcommand{\ntasksKfifty}{846 }
 % END generated: nbenchmarks
 % BEGIN generated: constants (verify_paper_results.py)
 \newcommand{\nmodels}{191 }
 \newcommand{\nckpts}{3,972 }
 \newcommand{\nbenchmarktasks}{1,379 }
+\newcommand{\npretrainnodehours}{39,100 }
+\newcommand{\nothernodehours}{8,900 }
+\newcommand{\ngpuhours}{192,000 }
 % END generated: constants
 
 

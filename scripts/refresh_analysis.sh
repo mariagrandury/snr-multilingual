@@ -85,6 +85,10 @@ step "paper figures"
 # 2c. The paper's audit tables: a reshape of the same rqNN tables, so the
 #     numbers section 4 quotes cannot drift from the ones the figures show.
 step "paper tables"
+# The compute the sweep was charged, from sacct (read-only; a few minutes):
+# plan/compute-costs.{md,json}, whose JSON verify_paper_results.py turns into
+# the paper's node-hour and GPU-hour macros.
+( cd src/pretrain && $PY compute_cost.py | tail -n 2 ) || FAILED+=("compute_cost.py")
 ( cd documents/paper/sections && $PY verify_paper_results.py ) || FAILED+=("verify_paper_results.py")
 # 2d. The paper's generated blocks (rule 17): the setup appendices' tables (the
 #     training grid, seeds, per-ladder hyperparameters, evaluated benchmarks and

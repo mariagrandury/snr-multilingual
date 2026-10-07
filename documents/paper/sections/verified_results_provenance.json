@@ -1,5 +1,11 @@
 {
   "benchmark_tasks": 1379,
+  "compute_charged": {
+    "as_of": "2026-10-07",
+    "gpu_hours": 192000,
+    "other_node_hours": 8900,
+    "pretrain_node_hours": 39100
+  },
   "constants": {
     "ANALYSIS_SIZES": [
       "90M",
@@ -28,6 +34,7 @@
     "90M": 30
   },
   "sources": {
+    "plan/compute-costs.json": "1eee70a6b343260ef1597c58b6c845e56124940525f37cee1f98dc981e8f2bbe",
     "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "ee0c24402c0be72d55836c825550546022348a49484aec7e1cb613dcc77333c8",
     "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv": "b694a01ca802006ca8df8f08d80aec00419da823a2115347e6acddc8184221af",
     "src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv": "65ae53880dbc2469e0dea207063100b9688f43b6bed7c997f563fc464c05809d",
