@@ -168,7 +168,7 @@ def finished(runs: list[dict]) -> tuple[int, list[str]]:
 def size_span(sizes) -> str:
     sizes = [s for s in lt.LADDER if s in sizes]
     contiguous = lt.LADDER[lt.LADDER.index(sizes[0]): lt.LADDER.index(sizes[-1]) + 1] == sizes
-    return f"{sizes[0]} to {sizes[-1]}" if contiguous and len(sizes) > 2 else fmt_list(sizes)
+    return f"{sizes[0]}--{sizes[-1]}" if contiguous and len(sizes) > 2 else fmt_list(sizes)
 
 
 def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
@@ -191,7 +191,7 @@ def grid_table(runs: list[dict], done: int, missing: list[str]) -> str:
             total, total_rep = total + len(rs), total_rep + rep
             rows.append(" & ".join([esc(build), BUILD_DESC.get(build, esc(build)), cfg["letter"],
                                     f"{cfg['temp']:g}", LADDER_DESC.get(ladder, ladder),
-                                    fmt_list(Ls), sizes, str(len(rs)), str(rep)]) + r" \\")
+                                    fmt_list(Ls), sizes, str(len(rs)), str(rep or "--")]) + r" \\")
     status = ("" if done < 0 else
               f" All {total} runs had finished at the ladder-report snapshot." if not missing else
               f" At the ladder-report snapshot, {done} of the {total} runs had finished. "
@@ -221,7 +221,7 @@ def seeds_table(runs: list[dict]) -> str:
         cells = []
         for s in sizes:
             n = sum(r["build"] == "A" and r["ladder"] == "deep" and r["size"] == s and r["L"] == L for r in runs)
-            cells.append(str(n) if n else "")
+            cells.append(str(n) if n else "--")
         lines.append(f"{L} & " + " & ".join(cells) + r" \\")
     by_triple = {}
     for s, (seeds, _) in lt.SEED_TRIPLES.items():
@@ -233,7 +233,7 @@ def seeds_table(runs: list[dict]) -> str:
     n_a = sum(r["build"] == "A" and r["ladder"] == "deep" for r in runs)
     lines += [r"\bottomrule", r"\end{tabular}",
               r"\caption{\textbf{Random seeds.} Number of seeds per $(N, K)$ cell of the deep scheme-A grid "
-              rf"({n_a} runs). An empty cell is a cell that the grid does not train. The replicate seeds are "
+              rf"({n_a} runs). The replicate seeds are "
               rf"{seeds_txt}. Each seed changes both the initialization and the data order. Replicate seeds exist "
               r"only in the deep ladder. Every other ladder and data build trains seed 1904 alone." + other_txt + "}",
               r"\label{tab:grid}", r"\end{table}"]
@@ -395,7 +395,7 @@ def languages_table() -> None:
         la, lb = first_L("A", subset), first_L("B", subset)
         code = iso2.get(subset.split("_")[0])
         rows.append([subset, re.sub(r"\((\d+)-\)", r"(\1 onward)", m["name"]), m["script"], fam,
-                     la if la else "val", lb or "",
+                     la if la else "val", lb or "--",
                      n_families(code) if code else 0, la or 1000])
     rows.append(["dclm", "English", "Latn", "Indo-European", 1, 1, n_families("en"), 0])
     rows.sort(key=lambda r: (r[7], full.index(r[0]) if r[0] in full else -1))
@@ -421,8 +421,8 @@ def languages_table() -> None:
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
         r"\caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A "
         r"(resource-ranked) list contains the subset. $K_B$ gives the smallest trained setting of a scheme-B "
-        r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$). "
-        r"An empty $K_B$ cell marks a language that no scheme-B build trains." + c_builds + r" The lists are "
+        r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$)."
+        + c_builds + r" The lists are "
         r"nested, so a language is also trained at every larger setting of its scheme. "
         rf"The {n_val} languages marked val are in no training mixture. They enter only the shared validation "
         r"set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) "

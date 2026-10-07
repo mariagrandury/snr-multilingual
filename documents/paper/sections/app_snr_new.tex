@@ -12,7 +12,7 @@
 \label{app:surrogates}
 
 A \emph{surrogate} is a statistic of a benchmark that is computed on the proxy size alone. It is meant to tell, without training the reference, whether the ranking of the proxy can be trusted.
-This appendix defines every surrogate we compute. These are the signal-to-noise ratio of \citet{heineman_signal_2025} with all its signal and noise variants (\S\ref{app:sur-snr} to \S\ref{app:sur-noise}), the task-selection criteria of FineTasks (\S\ref{app:sur-finetasks}), and a catalogue of statistics from the literature on evaluation reliability (\S\ref{app:sur-catalogue}).
+This appendix defines every surrogate we compute. These are the signal-to-noise ratio of \citet{heineman_signal_2025} with all its signal and noise variants (\S\ref{app:sur-snr}--\ref{app:sur-noise}), the task-selection criteria of FineTasks (\S\ref{app:sur-finetasks}), and a catalogue of statistics from the literature on evaluation reliability (\S\ref{app:sur-catalogue}).
 For each we give the formula as implemented, the paper it comes from, and, where the two differ, the difference.
 \S\ref{app:sur-scoring} describes how surrogates are scored and \S\ref{app:sur-results} gives the summary table of correlations.
 
@@ -168,7 +168,7 @@ The first analysis of statistics beyond SNR (\texttt{analyze.py}, \texttt{fineta
 \subsection{The catalogue of statistics from the literature}
 \label{app:sur-catalogue}
 
-Tables~\ref{tab:sur-separation} to \ref{tab:sur-agreement} define the catalogue (\texttt{catalogue.py}).
+Tables~\ref{tab:sur-separation}--\ref{tab:sur-agreement} define the catalogue (\texttt{catalogue.py}).
 Most of these statistics were proposed for a different unit of replication, such as test items, topics, seeds or public models.
 We port each one to what one proxy size offers, that is, the checkpoints of its noise window and the rungs below it. The last column states what we changed.
 ``Own'' marks a statistic that the cited paper motivates but does not define.
@@ -235,16 +235,16 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \texttt{monotonicity} & $\mathrm{mean}_a\,\rho_{\text{Spearman}}(t, x_a(t))$ & \citet{kydlicek_finetasks_nodate} & exact. \citet{hofmann_fluid_2025} take $|\rho|$, \citet{yagoubi_e2lm_2025} $\max(0, \rho)$, \citet{madaan_quantifying_2024} Kendall's $\tau$ \\
 \texttt{monotonicity\_steps} & $\mathrm{mean}_a\,\dfrac{\#\text{up} - \#\text{down}}{\#\text{up} + \#\text{down}}$ over consecutive tenths & \citet{heineman_signal_2025} & in the released code only (\texttt{snr/stats.py}) \\
 \texttt{total\_variation} & $\mathrm{mean}_a\,\dfrac{\frac{1}{9}\sum_{t}|x_a(t{+}1) - x_a(t)|}{\max_t x_a(t) - \min_t x_a(t)}$ & \citet{heineman_signal_2025, hofmann_fluid_2025} & the released code without its improvement term. The paper's Eq.~6 subtracts $(U(T) - U(0))/T$ and has no range. \citet{hofmann_fluid_2025} divide the summed variation by $|x(T) - x(1)|$ \\
-\texttt{autocorr} & $\mathrm{mean}_{a,\,\ell \in \{1,2\}}\,|r_\ell(x_a)|$, $r_\ell$ the Pearson correlation of the curve with itself at lag $\ell$ & \citet{yagoubi_e2lm_2025} & their Eqs.~3 and 4 with $L = \lfloor 10/4 \rfloor = 2$ lags. They centre both segments on the mean of the whole curve, and we centre each segment on its own mean \\
+\texttt{autocorr} & $\mathrm{mean}_{a,\,\ell \in \{1,2\}}\,|r_\ell(x_a)|$, $r_\ell$ the Pearson correlation of the curve with itself at lag $\ell$ & \citet{yagoubi_e2lm_2025} & their Eqs.~3--4 with $L = \lfloor 10/4 \rfloor = 2$ lags. They centre both segments on the mean of the whole curve, and we centre each segment on its own mean \\
 \texttt{gain\_over\_noise} & $\mathrm{mean}_a\,(x_a(1) - x_a(0.1))/s$ & \citet{madaan_quantifying_2024} & own \\
 \texttt{late\_slope\_to\_noise} & $\mathrm{mean}_a$ of the least-squares slope over $t \geq 0.5$ divided by its residual deviation & \citet{hofmann_fluid_2025} & own (saturation) \\
 \texttt{nonrandom} & $q = (\bar{x} - c)/(1 - c)$ & \citet{kydlicek_finetasks_nodate} & own: the chance-corrected mean, not the criterion of Table~\ref{tab:sur-finetasks} \\
-\texttt{z\_above\_chance} & $(\bar{x} - c)/\sqrt{c(1-c)/n}$ &  & own: the one-sample binomial $z$ of our above-random gate \\
+\texttt{z\_above\_chance} & $(\bar{x} - c)/\sqrt{c(1-c)/n}$ & -- & own: the one-sample binomial $z$ of our above-random gate \\
 \texttt{emerged\_share} & share of variants with $x_a > c + 2\sqrt{c(1-c)/n}$ & \citet{du_understanding_2024, schaeffer_are_2023} & own. Neither source sets a statistical threshold above chance \\
 \texttt{item\_information} & $q(1 - q)$ & \citet{rodriguez_evaluation_2021, vania_comparing_2021} & the Fisher information $\gamma_i^2\,p_{ij}(1 - p_{ij})$ of \citet{rodriguez_evaluation_2021} with unit discrimination, on the aggregate chance-corrected accuracy. No item response model is fitted \\
 \bottomrule
 \end{tabular}
-\caption{Catalogue, curve shape: does the task behave like a learnable, unsaturated measurement? An empty Source cell marks a statistic without a source.}
+\caption{Catalogue, curve shape: does the task behave like a learnable, unsaturated measurement?}
 \label{tab:sur-shape}
 \end{table}
 
@@ -270,10 +270,10 @@ $\mathrm{MS_B}$ and $\mathrm{MS_W}$ are the between-variant and within-variant m
 \texttt{benchmark\_consensus} & $\mathrm{DA}$ against the mean $z$-score of the same benchmark in other languages & \citet{perlitz_benchbench_2024} & as above \\
 \texttt{item\_total\_corr} & Spearman $\rho$ between the final scores and the mean $z$-score of every other benchmark above chance & \citet{ruan_observational_2024, cronbach_coefficient_1951} & the corrected item-total correlation of test theory. \citet{ruan_observational_2024} extract the common factor by PCA \\
 \midrule
-\texttt{n\_pairs}, \texttt{n\_items}, \texttt{chance} & $|\mathcal{P}|$, $n$, $c$ &  & controls \\
+\texttt{n\_pairs}, \texttt{n\_items}, \texttt{chance} & $|\mathcal{P}|$, $n$, $c$ & -- & controls \\
 \bottomrule
 \end{tabular}
-\caption{Catalogue, the small ladder (top), agreement with the loss and with other benchmarks (middle), and controls. An empty Source cell marks a statistic without a source.}
+\caption{Catalogue, the small ladder (top), agreement with the loss and with other benchmarks (middle), and controls.}
 \label{tab:sur-agreement}
 \end{table}
 
@@ -305,7 +305,7 @@ The \emph{ceiling} of a truth is its $\rho$ with itself when the reference is re
 
 Tables~\ref{tab:sur-corr-catalogue} and~\ref{tab:sur-corr-snr} give the correlation of every surrogate with the three truths over the benchmark tasks.
 Four readings hold across them.
-First, no surrogate reaches the ceiling. The best proxy-only statistics recover $\rho \approx 0.73$ to $0.76$ of a DA-size whose own re-measurement correlates at 0.90.
+First, no surrogate reaches the ceiling. The best proxy-only statistics recover $\rho \approx 0.73$--$0.76$ of a DA-size whose own re-measurement correlates at 0.90.
 Second, the statistics that track decision accuracy best describe whether the proxy's ranking and curves are stable (sign persistence, autocorrelation, monotonicity, Cronbach's $\alpha$), not how far apart the variants are. \checknum{The dispersion signals alone (range, standard deviation, pairwise distance) correlate negatively with every truth}.
 Third, the SNR of \citet{heineman_signal_2025} as released reaches $\rho = 0.35$ with DA-size, against $R = 0.79$ in their setting. \checknum{Replacing the checkpoint noise by the $k$-fold benchmark noise raises every signal}.
 Fourth, the benchmark noise is largely a function of the item count, and the item count alone correlates at 0.38, \checknum{as much as the best ratio}. \texttt{dispersion\_shifted} is constant, so its ratios are the inverse noise.
@@ -335,16 +335,16 @@ separation & \texttt{cronbach\_alpha} & \textbf{0.66} & \textbf{0.70} & \textbf{
  & \texttt{dior} & \textbf{0.39} & \textbf{0.44} & \textbf{0.53} \\
  & \texttt{noise\_to\_binomial} & \textbf{0.28} & \textbf{0.32} & \textbf{0.28} \\
 \midrule
-rank stability & \texttt{da\_ckpt\_mean} & \textbf{0.76} & \textbf{0.80} &  \\
- & \texttt{sign\_persistence} & \textbf{0.76} & \textbf{0.80} &  \\
+rank stability & \texttt{da\_ckpt\_mean} & \textbf{0.76} & \textbf{0.80} & -- \\
+ & \texttt{sign\_persistence} & \textbf{0.76} & \textbf{0.80} & -- \\
  & \texttt{consecutive\_kendall} & \textbf{0.75} & \textbf{0.82} & \textbf{0.94} \\
  & \texttt{crossings} & \textbf{$-$0.73} & \textbf{$-$0.79} & \textbf{$-$0.90} \\
  & \texttt{consecutive\_kendall\_late} & \textbf{0.71} & \textbf{0.77} & \textbf{0.90} \\
- & \texttt{da\_ckpt\_half} & \textbf{0.70} & \textbf{0.75} &  \\
+ & \texttt{da\_ckpt\_half} & \textbf{0.70} & \textbf{0.75} & -- \\
  & \texttt{sign\_consistency\_window} & \textbf{0.70} & \textbf{0.75} & \textbf{0.86} \\
  & \texttt{window\_kendall} & \textbf{0.69} & \textbf{0.73} & \textbf{0.83} \\
  & \texttt{kendall\_w\_window} & \textbf{0.65} & \textbf{0.70} & \textbf{0.82} \\
- & \texttt{settling\_time} & \textbf{$-$0.53} & \textbf{$-$0.56} &  \\
+ & \texttt{settling\_time} & \textbf{$-$0.53} & \textbf{$-$0.56} & -- \\
  & \texttt{split\_half} & \textbf{0.49} & \textbf{0.55} & \textbf{0.64} \\
 \midrule
 curve shape & \texttt{late\_slope\_to\_noise} & \textbf{0.64} & \textbf{0.67} & \textbf{0.71} \\
@@ -379,7 +379,7 @@ control & \texttt{n\_items} & \textbf{0.38} & \textbf{0.39} & \textbf{0.50} \\
  & \texttt{n\_pairs} & \textbf{$-$0.15} & \textbf{$-$0.14} & \textbf{$-$0.13} \\
 \bottomrule
 \end{tabular}
-\caption{Spearman $\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster (298 to 420 clusters for DA-size, 298 to 420 for DA-goal, 302 to 420 for DA-ckpt). We use every pair of variants and pool over the proxy sizes from 90M to 1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. An empty cell marks a statistic that is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size. }
+\caption{Spearman $\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster (298--420 clusters for DA-size, 298--420 for DA-goal, 302--420 for DA-ckpt). We use every pair of variants and pool over the proxy sizes 90M--1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. A statistic without a value is circular for that truth or has too few clusters. Within a family, rows are ordered by $|\rho|$ with DA-size. }
 \label{tab:sur-corr-catalogue}
 \end{table}
 
@@ -409,7 +409,7 @@ control & \texttt{n\_items} & \textbf{0.38} & \textbf{0.39} & \textbf{0.50} \\
 \texttt{mad} & 0.06 & \textbf{0.28} & \textbf{0.34} & 0.08 & \textbf{0.32} & \textbf{0.38} & 0.10 & \textbf{0.45} & \textbf{0.45} \\
 \texttt{gini} & 0.08 & \textbf{0.25} & \textbf{0.45} & 0.05 & \textbf{0.26} & \textbf{0.50} & 0.08 & \textbf{0.33} & \textbf{0.65} \\
 \texttt{rel\_mpsd} & 0.02 & \textbf{0.25} & \textbf{0.15} & 0.03 & \textbf{0.27} & \textbf{0.20} & $-$0.01 & \textbf{0.28} & \textbf{0.23} \\
-\texttt{dispersion\_shifted} &  & \textbf{0.24} & \textbf{0.46} &  & \textbf{0.25} & \textbf{0.51} &  & \textbf{0.30} & \textbf{0.64} \\
+\texttt{dispersion\_shifted} & -- & \textbf{0.24} & \textbf{0.46} & -- & \textbf{0.25} & \textbf{0.51} & -- & \textbf{0.30} & \textbf{0.64} \\
 \texttt{rel\_star\_discrepancy} & 0.03 & \textbf{0.22} & \textbf{0.37} & $-$0.03 & \textbf{0.23} & \textbf{0.39} & $-$0.08 & \textbf{0.32} & \textbf{0.50} \\
 \texttt{mpsd} & 0.01 & \textbf{0.15} & 0.14 & 0.01 & \textbf{0.17} & \textbf{0.20} & 0.00 & \textbf{0.20} & \textbf{0.24} \\
 \texttt{projection} & \textbf{$-$0.23} & $-$0.09 & \textbf{0.34} & \textbf{$-$0.28} & $-$0.10 & \textbf{0.40} & \textbf{$-$0.44} & \textbf{$-$0.18} & \textbf{0.46} \\

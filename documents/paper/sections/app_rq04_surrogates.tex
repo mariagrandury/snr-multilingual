@@ -4,7 +4,7 @@
 \label{app:rq04_surrogates}
 
 \begin{rqfinding}
-1. \textbf{The dispersion SNR definitions track decision accuracy best, as a block:} the top eight (\texttt{aad}, \texttt{quartile\_deviation}, \texttt{rms\_deviation}, \texttt{mpd}, \texttt{dist\_std}, \texttt{dispersion}, \texttt{range}, \texttt{mad}) read mean r 0.32 to 0.35 with DA-size and 0.44 to 0.47 with DA-ckpt (0.39 to 0.41 overall). (Figure~\ref{fig:app_rq04_surrogates}.)
+1. \textbf{The dispersion SNR definitions track decision accuracy best, as a block:} the top eight (\texttt{aad}, \texttt{quartile\_deviation}, \texttt{rms\_deviation}, \texttt{mpd}, \texttt{dist\_std}, \texttt{dispersion}, \texttt{range}, \texttt{mad}) read mean r 0.32--0.35 with DA-size and 0.44--0.47 with DA-ckpt (0.39--0.41 overall). (Figure~\ref{fig:app_rq04_surrogates}.)
 
 2. \textbf{No exact definition is best everywhere:} per language the winner is one of 16 definitions under DA-size and one of 13 under DA-ckpt.
 
@@ -13,7 +13,7 @@
 
 \paragraph{Question.} Before training the reference, can a statistic computed on the proxy alone tell us that the proxy's decision will match the reference's? First among the 22 SNR definitions of the noise-and-SNR analysis: which best correlates with \textbf{decision accuracy} across the ladder's languages, and does the answer survive a change of training seed?
 
-\paragraph{Setup.} Seed-1904 runs of every cell, from 90M to 1.7B, on the tasks above chance. For each of 22 SNR definitions, we compute the Pearson $r$ between $\log_{10}$ SNR and decision accuracy over the tasks of one language. We keep the languages with at least three tasks and average over the 50 trained languages. We do this for DA-size (proxy final against 1.7B final) and for DA-ckpt (the early checkpoints of a proxy against its final checkpoint).
+\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, we compute the Pearson $r$ between $\log_{10}$ SNR and decision accuracy over the tasks of one language. We keep the languages with at least three tasks and average over the 50 trained languages. We do this for DA-size (proxy final against 1.7B final) and for DA-ckpt (the early checkpoints of a proxy against its final checkpoint).
 
 \begin{figure}[h]
 \centering

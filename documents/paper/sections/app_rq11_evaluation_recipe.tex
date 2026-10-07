@@ -4,16 +4,16 @@
 \label{app:rq11_evaluation_recipe}
 
 \begin{rqfinding}
-1. No way of evaluating a benchmark reads the reference's accuracy decision at $\tau$ = 0.75 on average by 1B: the best mean is 0.61 (LLM-RF bBPB at 1B, only the easier bBPB $\rightarrow$ 1.7B bBPB target, LLM-RF at 0.77, clears it). Against the same truth, bBPB matches or edges the original accuracy at the two proxies where both have values (every task: 0.59 against 0.57 at 175M, 0.59 and 0.59 at 1B, paired: 0.60 and 0.60), and the rewrites help only when scored by bBPB (RF and LLM-RF accuracy 0.48 to 0.56 across the five proxies, their bBPB 0.59 to 0.61). (Figure~\ref{fig:app_rq11_evaluation_recipe}.)
+1. No way of evaluating a benchmark reads the reference's accuracy decision at $\tau$ = 0.75 on average by 1B: the best mean is 0.61 (LLM-RF bBPB at 1B, only the easier bBPB $\rightarrow$ 1.7B bBPB target, LLM-RF at 0.77, clears it). Against the same truth, bBPB matches or edges the original accuracy at the two proxies where both have values (every task: 0.59 against 0.57 at 175M, 0.59 and 0.59 at 1B, paired: 0.60 and 0.60), and the rewrites help only when scored by bBPB (RF and LLM-RF accuracy 0.48--0.56 across the five proxies, their bBPB 0.59--0.61). (Figure~\ref{fig:app_rq11_evaluation_recipe}.)
 
 2. \textbf{Against the same truth (bBPB $\rightarrow$ 1.7B accuracy), bBPB is the pick for 16 of the 23 benchmarks with a value and accuracy for 7} (8 of 31 have none).
 
-3. \textbf{The pick is not like for like yet.} A bBPB task is ranked on two proxies (175M, 1B) and an accuracy task on five, so a bBPB pick can be safe ``from 175M'' while dipping below $\tau$ at 350M to 600M unseen. The comparison waits for twins at every proxy.
+3. \textbf{The pick is not like for like yet.} A bBPB task is ranked on two proxies (175M, 1B) and an accuracy task on five, so a bBPB pick can be safe ``from 175M'' while dipping below $\tau$ at 350M--600M unseen. The comparison waits for twins at every proxy.
 \end{rqfinding}
 
 \paragraph{Question.} The rest of the analysis asks whether a cheap measurement reproduces the 1.7B reference's design decision. This analysis turns that into advice for a reader who has to choose what to evaluate: for each benchmark, which \textbf{variant} (the items as published, their \texttt{rf\_} cloze rewrite (RF) or their \texttt{rfgm\_} LLM rewrite (LLM-RF), scored by \textbf{accuracy} or by the gold answer's \textbf{bits per byte} (bBPB)) reads the reference's decision from the smallest proxy?
 
-\paragraph{Setup.} Seed-1904 runs of every cell. We report the DA-size of the proxies from 90M to 1B against the 1.7B final checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold answer (bBPB).
+\paragraph{Setup.} Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each version is scored by accuracy or by the bits per byte of the gold answer (bBPB).
 
 \begin{figure}[h]
 \centering

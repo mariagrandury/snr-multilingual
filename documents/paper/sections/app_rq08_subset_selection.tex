@@ -13,7 +13,7 @@
 
 \paragraph{Question.} Per benchmark, does a subset of subtasks (a subset of \emph{languages} in a multilingual family, or a subset of \emph{subjects} in MMLU, or a subset of individual \emph{items}) give higher SNR than the full set, and does the same subset hold across seeds and scales?
 
-\paragraph{Setup.} Seed-1904 runs of every cell, from 90M to 1.7B. For each multilingual benchmark and size, we take the language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above chance.
+\paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B. For each multilingual benchmark and size, we take the language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above chance.
 
 \begin{figure}[h]
 \centering

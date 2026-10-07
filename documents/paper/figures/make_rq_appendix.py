@@ -26,7 +26,7 @@ refresh moves).
 
 The text is double-blind: links, file names and rule numbers are dropped.
 plain() gives every written sentence the appendix punctuation: no dash and no
-";" outside math and code (a range a--b reads "a to b").
+";" outside math and code. A numeric range keeps its en dash (90M--1.7B).
 The paper writes the number of languages as K where the analysis writes L
 (L8, "(task, L)"); to_tex renames it outside code spans, the README keeps L.
 
@@ -44,7 +44,7 @@ SECTIONS = HERE.parent / "sections"
 PAGES = {
     "rq00_gate_and_curves": (
         "The above-chance gate", "app_chance_share",
-        "Seed-1904 runs of every language setting, ladder and data build, from 90M to 1.7B. A run clears chance on a "
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. A run clears chance on a "
         "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
         "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
         "language clear it. Tasks without a chance level (bits per byte) are not gated.",
@@ -62,21 +62,21 @@ PAGES = {
         "A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place "
         "it at the number of tokens of the task's language that the checkpoint had seen. This number is the "
         "language's share of the mixture $\\times$ the size's budget $\\times$ the tenth. We use seed-1904 runs of "
-        "every data build and ladder, from 90M to 1.7B, at $K \\in \\{1, 2, 8, 15, 30, 50\\}$. The above-chance gate "
+        "every data build and ladder, 90M--1.7B, at $K \\in \\{1, 2, 8, 15, 30, 50\\}$. The above-chance gate "
         "is applied per run.",
         None, 0),
     "rq01_scaling_predictability": (
         "Scaling predictability", "rq1",
         "We fit the final score of each task against model size with a log-linear fit, one series per task and "
         "language setting. We fit only on the sizes where the task is above chance, and we need at least three of "
-        "them. We use the deep cells with the baseline data at seed 1904, from 90M to 1.7B. Each task is one point, "
+        "them. We use the deep cells with the baseline data at seed 1904, 90M--1.7B. Each task is one point, "
         "the median over its language settings.",
         None, 0,
         (("app_benchmark_size_curves",
           "Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy "
           "of every design against non-embedding parameters. This accuracy is the mean over the tasks in the "
           "languages the design trains on. There is one line per (number of languages, ladder, data build, seed), "
-          "from 90M to 1.7B, for every seed and data build. Colour gives the number of trained languages, line "
+          "90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line "
           "width the ladder and line style the data build. The dotted red line is chance. The curves are not "
           "gated, so a family at chance stays visible.",
           "fig:app_size_scaling"),
@@ -84,12 +84,12 @@ PAGES = {
           "Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the "
           "ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains "
           "on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers "
-          "every seed and data build, from 90M to 1.7B. Colour gives the model size, line width the ladder and "
+          "every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and "
           "line style the data build. The dotted red line is chance. The curves are not gated.",
           "fig:app_training_scaling"))),
     "rq02_decision_accuracy": (
         "Decision accuracy across sizes", "app_decision_accuracy",
-        "Seed-1904 runs of every language setting, ladder and data build, from 90M to 1.7B. DA-size is the share of "
+        "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. DA-size is the share of "
         "design pairs that the final checkpoint of a proxy orders in the same way as the final checkpoint of the "
         "1.7B reference. Every task is above chance at the proxy and at 1.7B. A pair may differ on any number of "
         "design axes.",
@@ -98,7 +98,7 @@ PAGES = {
         "Decision accuracy against the tokens of the language seen", "app_da_goal_multi_axes_bpb",
         "We use the bits per byte of 50 languages, one task each. Design pairs are formed among the variants that "
         "train the language (at least three per language). We use every data build at seed 1904, the proxies from "
-        "90M to 1B and the early checkpoints of the 1.7B run. A point is the mean over languages of DA-goal (a "
+        "90M--1B and the early checkpoints of the 1.7B run. A point is the mean over languages of DA-goal (a "
         "checkpoint against the 1.7B final checkpoint) at one size and one tenth of the run. We place it at the "
         "number of tokens of the language seen.",
         None, 0),
@@ -112,7 +112,7 @@ PAGES = {
         None, 0),
     "rq04_surrogates": (
         "SNR as a surrogate for decision accuracy", "app_surrogates",
-        "Seed-1904 runs of every cell, from 90M to 1.7B, on the tasks above chance. For each of 22 SNR definitions, "
+        "Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, "
         "we compute the Pearson $r$ between $\\log_{10}$ SNR and decision accuracy over the tasks of one language. "
         "We keep the languages with at least three tasks and average over the 50 trained languages. We do this for "
         "DA-size (proxy final against 1.7B final) and for DA-ckpt (the early checkpoints of a proxy against its "
@@ -122,7 +122,7 @@ PAGES = {
         "Design decisions", "app_design_decisions",
         "We study four single-axis interventions against the baseline (deep, scheme A, $T = 1$). They are depth "
         "(deep vs shallow at equal non-embedding size), data scheme A vs B, data scheme A vs C, and sampling "
-        "temperature $T = 1$ vs $T = 3$. We use every seed. We report the DA-size of the proxies from 90M to 1B and "
+        "temperature $T = 1$ vs $T = 3$. We use every seed. We report the DA-size of the proxies 90M--1B and "
         "the DA-ckpt of the earlier checkpoints of the 1.7B run, both against the 1.7B final checkpoint. We read "
         "them on the bits per byte of the languages that both levels train and on the benchmarks above chance.",
         None, 0),
@@ -131,7 +131,7 @@ PAGES = {
         "We read the language-list decision (scheme A vs B at $K \\in \\{8, 15, 30\\}$, single-axis pairs, every "
         "seed) on the bits per byte of 100 evaluation languages. We group the languages by whether both lists, one "
         "list or neither list trains them. When neither list trains a language, we also check whether they train "
-        "its script. We report the DA-size of the proxies from 90M to 1B and the DA-ckpt of the checkpoints of the "
+        "its script. We report the DA-size of the proxies 90M--1B and the DA-ckpt of the checkpoints of the "
         "1.7B run, against the 1.7B final checkpoint.",
         None, 0),
     "rq07_external_frameworks": (
@@ -142,7 +142,7 @@ PAGES = {
         None, 0),
     "rq08_subset_selection": (
         "Subset selection", "app_subset_selection",
-        "Seed-1904 runs of every cell, from 90M to 1.7B. For each multilingual benchmark and size, we take the "
+        "Seed-1904 runs of every cell, 90M--1.7B. For each multilingual benchmark and size, we take the "
         "language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare "
         "it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above "
         "chance.",
@@ -158,21 +158,21 @@ PAGES = {
         "Size generalisation to 3B", "app_size_generalisation",
         "The deep cells trained at 3B (seed 1904) and the same families at 1.7B. Each (family, task) is scored at "
         "both rungs. Left: for each benchmark, the share of its tasks above chance at 1.7B and at 3B. We show the "
-        "benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M "
-        "to 1B to the 3B final checkpoint and to the 1.7B final checkpoint, on the same single-axis decisions. "
+        "benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B "
+        "to the 3B final checkpoint and to the 1.7B final checkpoint, on the same single-axis decisions. "
         "Benchmark accuracy (tasks above chance at the proxy, at 1.7B and at 3B) and per-language bits per byte "
         "are pooled separately. The bands are 90\\% leave-one-family-out jackknife bands.",
         None, 0),
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_evaluation_recipe",
-        "Seed-1904 runs of every cell. We report the DA-size of the proxies from 90M to 1B against the 1.7B final "
+        "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "
         "checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each "
         "benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each "
         "version is scored by accuracy or by the bits per byte of the gold answer (bBPB).",
         None, 0),
     "rq12_above_chance_items": (
         "Above-chance items", "app_above_chance_items",
-        "Seed-1904 runs of every cell, from 90M to 1.7B, final checkpoints. Every benchmark-language task keeps only "
+        "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
         "the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full "
         "task. The selection reads the reference by design, so the gains are an upper bound, not a held-out "
         "estimate.",
@@ -181,7 +181,7 @@ PAGES = {
         "English-only models", "app_english_only",
         "We compare the monolingual English cells ($K = 1$) with the baseline cells of the same depth at every "
         "other language setting. These other cells give half of their tokens to English. We use seed 1904, final "
-        "checkpoints and sizes from 90M to 1.7B, on the English accuracy tasks above chance at each size.",
+        "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",
         None, 0),
 }
 
@@ -243,12 +243,13 @@ def to_tex(s):
 
 # math, code and cross-references keep their characters
 PROTECT = re.compile(r"(?<!\\)\$[^$]*(?<!\\)\$|\\texttt\{[^}]*\}|\\(?:ref|label|cite[pt]?)\{[^}]*\}")
+NUM = re.compile("[0-9\x10]")                                # a range end: a number, size, math or ref
 LOWER_KEEP = {"p", "r", "n", "k", "rf", "rfgm", "vs"}       # names that stay lower case at a sentence start
 
 
 def plain(tex):
-    """The appendix punctuation: no dash and no ';' outside math and code. A range
-    a--b reads "a to b", a word--word pair keeps one hyphen, a dash aside becomes a
+    """The appendix punctuation: no dash and no ';' outside math and code. A numeric
+    range a--b keeps its en dash, a word--word pair keeps one hyphen, a dash aside becomes a
     parenthesis, a single dash a comma, and ';' ends the sentence (inside parentheses it becomes a comma)."""
     kept = iter(PROTECT.findall(tex))
     s = PROTECT.sub("\x10", tex)
@@ -256,7 +257,7 @@ def plain(tex):
                lambda m: f" ({m[1] or m[2]}) ", s)                 # a dash aside reads as a parenthesis
     s = re.sub(r"\s*---\s*|\s+--?\s+", ", ", s)
     s = re.sub(r"([^\s(]+)--([^\s,;.:)]+)",
-               lambda m: f"{m[1]}-{m[2]}" if m[1].isalpha() and m[2].isalpha() else f"{m[1]} to {m[2]}", s)
+               lambda m: f"{m[1]}--{m[2]}" if NUM.search(m[1]) and NUM.search(m[2]) else f"{m[1]}-{m[2]}", s)
     out, depth = [], 0
     for ch in s:
         depth += (ch == "(") - (ch == ")")

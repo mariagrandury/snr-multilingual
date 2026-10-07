@@ -11,7 +11,7 @@
 3. \textbf{The Gemini rewrite adds more where it exists.} \texttt{rfgm\_} gains \textbf{+0.168} on belebele (59 of 59 tasks significant) and \textbf{+0.075} on INCLUDE (22 of 36) at 1.7B. \texttt{rfgm\_belebele} passes the gate in 59 of 59 tasks at every size, and \texttt{rfgm\_include\_base\_44} in 32 of 43 at 1.7B.
 \end{rqfinding}
 
-\paragraph{Question.} Do letter-format multiple-choice benchmarks leave chance at 90M to 1.7B once the letters are dropped (\texttt{rf\_}) or the items are rewritten as cloze statements (\texttt{rfgm\_}), and do the reformulated twins then rank designs better?
+\paragraph{Question.} Do letter-format multiple-choice benchmarks leave chance at 90M--1.7B once the letters are dropped (\texttt{rf\_}) or the items are rewritten as cloze statements (\texttt{rfgm\_}), and do the reformulated twins then rank designs better?
 
 \paragraph{Setup.} We compare the letter-format multiple-choice benchmarks (Belebele, Global-MMLU, INCLUDE) with two reformulated twins of every task. The first twin (RF) drops the answer letters and scores each option as a continuation. The second twin (LLM-RF) uses an LLM to rewrite the items as cloze statements. We use the same above-chance gate and the same runs as for the gate itself. We pair each original task with its twin and compare the two with a McNemar test.
 

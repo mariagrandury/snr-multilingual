@@ -27,7 +27,7 @@ piv = {k: c[c["t_kind"] == k].set_index("surrogate") for k in KINDS}
 tt = lambda s: "\\texttt{" + s.replace("_", "\\_") + "}"
 def cell(k, s):
     if s not in piv[k].index or pd.isna(piv[k].loc[s, "rho"]):
-        return ""
+        return "--"
     r, q = piv[k].loc[s, "rho"], piv[k].loc[s, "q"]
     v = f"{r:.2f}".replace("-", "$-$")
     return f"\\textbf{{{v}}}" if pd.notna(q) and q < 0.05 else v
@@ -46,9 +46,9 @@ for fam, g in cat.groupby("family", sort=False):
         out.append(f"{fam_name.get(fam, fam) if i == 0 else ''} & {tt(s)} & " + " & ".join(cell(k, s) for k in KINDS) + " \\\\")
 out += ["\\bottomrule", "\\end{tabular}",
         "\\caption{Spearman $\\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster "
-        f"({units['size'][0]} to {units['size'][1]} clusters for DA-size, {units['goal'][0]} to {units['goal'][1]} for DA-goal, {units['ckpt'][0]} to {units['ckpt'][1]} for DA-ckpt). "
-        "We use every pair of variants and pool over the proxy sizes from 90M to 1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. "
-        "Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. An empty cell marks a statistic that is circular for that truth or has too few clusters. "
+        f"({units['size'][0]}--{units['size'][1]} clusters for DA-size, {units['goal'][0]}--{units['goal'][1]} for DA-goal, {units['ckpt'][0]}--{units['ckpt'][1]} for DA-ckpt). "
+        "We use every pair of variants and pool over the proxy sizes 90M--1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. "
+        "Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. A statistic without a value is circular for that truth or has too few clusters. "
         "Within a family, rows are ordered by $|\\rho|$ with DA-size. }",
         "\\label{tab:sur-corr-catalogue}", "\\end{table}", ""]
 # table B: the SNR grid, per signal
