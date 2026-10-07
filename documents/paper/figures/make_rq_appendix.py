@@ -43,14 +43,14 @@ SECTIONS = HERE.parent / "sections"
 # folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
-        "The above-chance gate", "app_chance_share",
+        "The above-chance gate", "app_rq00_chance_share",
         "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. A run clears chance on a "
         "task when the one-sided 95\\% Wilson lower bound of its accuracy over the task's items is above the chance "
         "level. A (task, size) cell is above chance when at least half of the runs of that size that train the task's "
         "language clear it. Tasks without a chance level (bits per byte) are not gated.",
         None, 0),
     "rq00_task_reformulation": (
-        "Task reformulation", "app_chance_reformulation",
+        "Task reformulation", "app_rq00_chance_reformulation",
         "We compare the letter-format multiple-choice benchmarks (Belebele, Global-MMLU, INCLUDE) with two "
         "reformulated twins of every task. The first twin (RF) drops the answer letters and scores each option as a "
         "continuation. The second twin (LLM-RF) uses an LLM to rewrite the items as cloze statements. We use the same "
@@ -58,7 +58,7 @@ PAGES = {
         "compare the two with a McNemar test.",
         None, 1),
     "rq00_chance_vs_train_tokens": (
-        "Above chance against the tokens of the language seen", "app_chance_vs_train_tokens",
+        "Above chance against the tokens of the language seen", "app_rq00_chance_vs_train_tokens",
         "A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place "
         "it at the number of tokens of the task's language that the checkpoint had seen. This number is the "
         "language's share of the mixture $\\times$ the size's budget $\\times$ the tenth. We use seed-1904 runs of "
@@ -72,7 +72,7 @@ PAGES = {
         "them. We use the deep cells with the baseline data at seed 1904, 90M--1.7B. Each task is one point, "
         "the median over its language settings.",
         None, 0,
-        (("app_benchmark_size_curves",
+        (("app_rq00_benchmark_size_curves",
           "Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy "
           "of every design against non-embedding parameters. This accuracy is the mean over the tasks in the "
           "languages the design trains on. There is one line per (number of languages, ladder, data build, seed), "
@@ -80,7 +80,7 @@ PAGES = {
           "width the ladder and line style the data build. The dotted red line is chance. The curves are not "
           "gated, so a family at chance stays visible.",
           "fig:app_size_scaling"),
-         ("app_benchmark_curves",
+         ("app_rq00_benchmark_curves",
           "Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the "
           "ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains "
           "on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers "
@@ -88,14 +88,14 @@ PAGES = {
           "line style the data build. The dotted red line is chance. The curves are not gated.",
           "fig:app_training_scaling"))),
     "rq02_decision_accuracy": (
-        "Decision accuracy across sizes", "app_decision_accuracy",
+        "Decision accuracy across sizes", "app_rq02_decision_accuracy",
         "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. DA-size is the share of "
         "design pairs that the final checkpoint of a proxy orders in the same way as the final checkpoint of the "
         "1.7B reference. Every task is above chance at the proxy and at 1.7B. A pair may differ on any number of "
         "design axes.",
         None, 0),
     "rq02_da_vs_train_tokens": (
-        "Decision accuracy against the tokens of the language seen", "app_da_goal_multi_axes_bpb",
+        "Decision accuracy against the tokens of the language seen", "app_rq02_da_goal_multi_axes_bpb",
         "We use the bits per byte of 50 languages, one task each. Design pairs are formed among the variants that "
         "train the language (at least three per language). We use every data build at seed 1904, the proxies from "
         "90M--1B and the early checkpoints of the 1.7B run. A point is the mean over languages of DA-goal (a "
@@ -103,7 +103,7 @@ PAGES = {
         "number of tokens of the language seen.",
         None, 0),
     "rq03_noise_and_snr": (
-        "Noise and SNR", "app_noise_and_snr",
+        "Noise and SNR", "app_rq03_noise_and_snr",
         "We use the deep cells with the baseline data that were trained with three seeds (175M and 600M at "
         "$K \\in \\{1, 2, 50\\}$, 1B at $K \\in \\{1, 2, 30\\}$). For each (size, $K$, task) cell, we divide the "
         "absolute effect of each design decision on the final score by a noise. The seed noise is the sample "
@@ -111,7 +111,7 @@ PAGES = {
         "20\\% of the run. Cells at chance are left out.",
         None, 0),
     "rq04_surrogates": (
-        "SNR as a surrogate for decision accuracy", "app_surrogates",
+        "SNR as a surrogate for decision accuracy", "app_rq04_surrogates",
         "Seed-1904 runs of every cell, 90M--1.7B, on the tasks above chance. For each of 22 SNR definitions, "
         "we compute the Pearson $r$ between $\\log_{10}$ SNR and decision accuracy over the tasks of one language. "
         "We keep the languages with at least three tasks and average over the 50 trained languages. We do this for "
@@ -119,7 +119,7 @@ PAGES = {
         "final checkpoint).",
         "highlights", 0),
     "rq05_design_decisions": (
-        "Design decisions", "app_design_decisions",
+        "Design decisions", "app_rq05_design_decisions",
         "We study four single-axis interventions against the baseline (deep, scheme A, $T = 1$). They are depth "
         "(deep vs shallow at equal non-embedding size), data scheme A vs B, data scheme A vs C, and sampling "
         "temperature $T = 1$ vs $T = 3$. We use every seed. We report the DA-size of the proxies 90M--1B and "
@@ -127,7 +127,7 @@ PAGES = {
         "them on the bits per byte of the languages that both levels train and on the benchmarks above chance.",
         None, 0),
     "rq06_language_transfer": (
-        "Language transfer", "app_language_transfer",
+        "Language transfer", "app_rq06_language_transfer",
         "We read the language-list decision (scheme A vs B at $K \\in \\{8, 15, 30\\}$, single-axis pairs, every "
         "seed) on the bits per byte of 100 evaluation languages. We group the languages by whether both lists, one "
         "list or neither list trains them. When neither list trains a language, we also check whether they train "
@@ -135,27 +135,27 @@ PAGES = {
         "1.7B run, against the 1.7B final checkpoint.",
         None, 0),
     "rq07_external_frameworks": (
-        "Agreement with DataDecide", "app_external_frameworks",
+        "Agreement with DataDecide", "app_rq07_external_frameworks",
         "We compare our 1B rung (seed 1904, every cell and data build) with the 1B rung of DataDecide (25 data "
         "recipes). We use the English tasks that both evaluate and that clear the above-chance gate on our side. "
         "SNR is the average absolute deviation over noise, and we compare it on a log scale.",
         None, 0),
     "rq08_subset_selection": (
-        "Subset selection", "app_subset_selection",
+        "Subset selection", "app_rq08_subset_selection",
         "Seed-1904 runs of every cell, 90M--1.7B. For each multilingual benchmark and size, we take the "
         "language subset with the highest SNR, that is, the best prefix of the languages ranked by SNR. We compare "
         "it with the 95th percentile of 100 random subsets of the same size. Each per-language task is gated above "
         "chance.",
         None, 0),
     "rq09_benchmark_design": (
-        "Benchmark design", "app_benchmark_design",
+        "Benchmark design", "app_rq09_benchmark_design",
         "Seed-1904 runs of every cell. SNR is the mean pairwise distance over noise at the 1.7B reference. For each "
         "family, we take the median over its per-language tasks. We keep the benchmark families that clear the "
         "above-chance gate. We group the families by curation, source, task format, answer-option count and "
         "passage use, and we test the groups with a Kruskal-Wallis test.",
         None, 0),
     "rq10_size_generalisation": (
-        "Size generalisation to 3B", "app_size_generalisation",
+        "Size generalisation to 3B", "app_rq10_size_generalisation",
         "The deep cells trained at 3B (seed 1904) and the same families at 1.7B. Each (family, task) is scored at "
         "both rungs. Left: for each benchmark, the share of its tasks above chance at 1.7B and at 3B. We show the "
         "benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B "
@@ -164,21 +164,21 @@ PAGES = {
         "are pooled separately. The bands are 90\\% leave-one-family-out jackknife bands.",
         None, 0),
     "rq11_evaluation_recipe": (
-        "Evaluation recipe", "app_evaluation_recipe",
+        "Evaluation recipe", "app_rq11_evaluation_recipe",
         "Seed-1904 runs of every cell. We report the DA-size of the proxies 90M--1B against the 1.7B final "
         "checkpoint, on multi-axis pairs and on the tasks above chance at the proxy and at the reference. Each "
         "benchmark is read in up to six ways. The items are used as published, as RF or as LLM-RF, and each "
         "version is scored by accuracy or by the bits per byte of the gold answer (bBPB).",
         None, 0),
     "rq12_above_chance_items": (
-        "Above-chance items", "app_above_chance_items",
+        "Above-chance items", "app_rq12_above_chance_items",
         "Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only "
         "the items that its 1.7B runs answer above chance, after the above-chance gate. We compare it with the full "
         "task. The selection reads the reference by design, so the gains are an upper bound, not a held-out "
         "estimate.",
         None, 0),
     "rq13_english_only": (
-        "English-only models", "app_english_only",
+        "English-only models", "app_rq13_english_only",
         "We compare the monolingual English cells ($K = 1$) with the baseline cells of the same depth at every "
         "other language setting. These other cells give half of their tokens to English. We use seed 1904, final "
         "checkpoints and sizes 90M--1.7B, on the English accuracy tasks above chance at each size.",

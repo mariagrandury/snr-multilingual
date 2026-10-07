@@ -25,7 +25,7 @@
 
 \begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_benchmark_size_curves.png}
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_rq00_benchmark_size_curves.png}
 % source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png
 \caption{Benchmark accuracy against model size. For each benchmark family, we plot the final-checkpoint accuracy of every design against non-embedding parameters. This accuracy is the mean over the tasks in the languages the design trains on. There is one line per (number of languages, ladder, data build, seed), 90M--1.7B, for every seed and data build. Colour gives the number of trained languages, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated, so a family at chance stays visible.}
 \label{fig:app_size_scaling}
@@ -33,7 +33,7 @@
 
 \begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_benchmark_curves.png}
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_rq00_benchmark_curves.png}
 % source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png
 \caption{Benchmark accuracy along training. For each benchmark family, we plot the accuracy of every run at the ten evaluated tenths of the run. This accuracy is the mean over the tasks in the languages the run trains on. Training progress is given in Chinchilla multiples of the run's token budget. The figure covers every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and line style the data build. The dotted red line is chance. The curves are not gated.}
 \label{fig:app_training_scaling}
