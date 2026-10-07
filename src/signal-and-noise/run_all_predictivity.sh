@@ -126,10 +126,8 @@ for t in "${POOLS[@]}"; do
 done
 # DA of the benchmark BPB (bBPB) against accuracy on the grid pool; reads the
 # per-item store, so off the cluster it writes nothing (README block `bench-bpb`).
-# The store was built under the retired pool name and lacks some predictivity
-# models (the swiglu and L1 FWEB cells; the script prints and names them): read it
-# there until build_per_item_store is re-run for predictivity. Unreadable parts are skipped.
-run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity --store predictivity_schemes
+# Unreadable parts are skipped; pool models the store lacks are printed.
+run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
   run $PY analysis/rq02_decision_accuracy/early_small.py --pool "$t"
@@ -264,14 +262,14 @@ run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 # (analysis/rq08_subset_selection/build_per_item_store.sbatch), not here
 run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
 # the items the 1.7B runs solve, chosen on half the designs, DA and SNR read on the rest (store finals; nothing without it)
-run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity --store predictivity_schemes   # the retired pool's store (a subset of the models): switch with bench_bpb_da
+run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity
 
 pass "the above-chance items"
 # per benchmark-language task, only the items the 1.7B runs answer above chance, chosen in sample on purpose:
 # how much DA-size, SNR, the gate and the scaling fit rise, under the gate first and under the items first.
 # Reads the per-item store and the gate's mask (nothing without the store); DA-ckpt and the checkpoint SNR
 # are computed where the store holds checkpoints and skipped (said so) on a finals-only store
-run $PY analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity_schemes   # switch with bench_bpb_da
+run $PY analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do
