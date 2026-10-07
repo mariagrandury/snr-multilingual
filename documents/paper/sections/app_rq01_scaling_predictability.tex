@@ -22,3 +22,19 @@
 \caption{Scaling regimes.}
 \label{fig:app_rq01_scaling_predictability}
 \end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_benchmark_size_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_size_curves_paper.png
+\caption{Benchmark accuracy against model size. Per benchmark family, the final-checkpoint accuracy of every design (the mean over the tasks in the languages it trains on) against non-embedding parameters, one line per (number of languages, ladder, data build, seed) across 90M--1.7B, every seed and data build. Colour gives the number of trained languages, line width the ladder and dash the data build; the dotted red line is chance. The curves are not gated, so a family at chance stays visible.}
+\label{fig:app_size_scaling}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth,height=0.9\textheight,keepaspectratio]{figures/app_benchmark_curves.png}
+% source: src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity_seeds/benchmark_curves_paper.png
+\caption{Benchmark accuracy along training. Per benchmark family, the accuracy of every run (the mean over the tasks in the languages it trains on) at the ten evaluated tenths of the run, in Chinchilla multiples of its token budget, every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder and dash the data build; the dotted red line is chance. The curves are not gated.}
+\label{fig:app_training_scaling}
+\end{figure}

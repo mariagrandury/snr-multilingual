@@ -25,6 +25,8 @@ comment next to the \\includegraphics.
                              (written to rq02_da_vs_train_tokens/)
     app_chance_vs_train_tokens <- the same, rq00_chance_vs_train_tokens/      pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper
     app_benchmark_curves  <- rq00_gate_and_curves/curves.py --paper (pool predictivity_seeds)  benchmark_curves_paper
+    app_benchmark_size_curves <- the same                                  benchmark_size_curves_paper
+                             (these two: the extra figures of the scaling-predictability appendix page)
     app_above_random_external <- rq00_gate_and_curves/above_random_external.py  above_random_external_paper
     app_external_models   <- the same                                  above_random_external_models.tex (a LaTeX table)
     app_design_decisions  <- rq05_design_decisions/panels.py --paper (pool predictivity_seeds)  da_all_lines_mono_axis_paper
@@ -79,6 +81,7 @@ FIGURES = {
     "app_da_goal_multi_axes_bpb": (DA_TOKENS / "da_goal_multi_axes_across_langs_bpb_paper", ("png", "svg")),
     "app_chance_vs_train_tokens": (CHANCE_TOKENS / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_paper", ("png", "svg")),
     "app_benchmark_curves": (CURVES / "benchmark_curves_paper", ("png", "svg")),
+    "app_benchmark_size_curves": (CURVES / "benchmark_size_curves_paper", ("png", "svg")),
     "app_above_random_external": (GATE / "above_random_external_paper", ("png", "svg")),
     "app_external_models": (GATE / "above_random_external_models", ("tex",)),
     "app_design_decisions": (ANALYSIS.joinpath("rq05_design_decisions", *SEEDS, "da_all_lines_mono_axis_paper"), ("png", "svg")),

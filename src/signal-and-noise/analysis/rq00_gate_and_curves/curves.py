@@ -8,9 +8,11 @@ progress report's figures, on the same cells.
     benchmark_curves.png   benchmark accuracy vs the run in Chinchilla multiples per family, chance line;
                            a family's `rf_` / `rfgm_` twin sits next to it, titled "<name> (rf)"
     benchmark_curves_paper.png/.svg   the same without the header, a legend instead (rule 18)
+    benchmark_size_curves_paper.png/.svg/.csv   its size twin: each design's final accuracy against
+                           non-embedding parameters per family, colour = L (the rq01 appendix figure)
 
     python analysis/rq00_gate_and_curves/curves.py --pool predictivity_seeds
-    python analysis/rq00_gate_and_curves/curves.py --paper    # the two benchmark figures alone, from benchmark_curves.csv
+    python analysis/rq00_gate_and_curves/curves.py --paper    # the benchmark figures alone, from benchmark_curves.csv
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from evals.scripts.utils.configs import load_pools  # noqa: E402
-from pretrain.ladder_report import CELL_RE, SCHEME_OF, _trained_tasks  # noqa: E402
+from pretrain.ladder_report import CELL_RE, NON_EMB, SCHEME_OF, _trained_tasks  # noqa: E402
 from snr.download.ladder import ladder_dir  # noqa: E402
 from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
@@ -175,6 +177,59 @@ def plot_benchmark_curves(b: pd.DataFrame, out_dir: Path, paper: bool = False) -
     S.save(fig, out_dir / "benchmark_curves.png", dpi=150)
 
 
+def plot_benchmark_size_curves(b: pd.DataFrame, out_dir: Path) -> None:
+    """The paper figure's size twin: each design's final-checkpoint accuracy
+    (mean over the tasks in the languages it trains on) against non-embedding
+    parameters, one panel per family as in `plot_benchmark_curves`, one line per
+    design (L, ladder, data build, seed) across its rungs, colour = L, width =
+    ladder, dash = data build. The plotted values go to the CSV of the same name
+    (rule 12)."""
+    keys = {m: CELL_RE.match(m) for m in b["model"].unique()}
+    fin = b[b["frac"] == b.groupby("model")["frac"].transform("max")]
+    fin = fin.assign(family=fin["task"].map(benchmark_family), chance=fin["task"].map(task_chance),
+                     L=fin["model"].map(lambda m: int(keys[m]["L"])), seed=fin["model"].map(lambda m: int(keys[m]["seed"])))
+    t = fin.groupby(["family", "L", "ladder", "data", "seed", "size"], as_index=False).agg(
+        primary_score=("primary_score", "mean"), chance=("chance", "mean"))
+    t["n_non_emb"] = t["size"].map(NON_EMB)
+    Ls = sorted(int(L) for L in t["L"].unique())
+    colour = dict(zip(Ls, S.SEQ(np.linspace(0.3, 1, len(Ls)))))
+    sizes = [s for s in LADDER_SIZES if s in set(t["size"])]
+    fams = sorted(t["family"].unique(), key=_twin_key)
+    cols = min(4, len(fams)); rows = (len(fams) + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(3.4 * cols, 2.6 * rows), squeeze=False)
+    flat = [a for r in axes for a in r]
+    for ax in flat[len(fams):]:
+        ax.axis("off")
+    for i, (ax, fam) in enumerate(zip(flat, fams)):
+        g = t[t["family"] == fam]
+        for (L, ladder, data, _seed), gd in g.groupby(["L", "ladder", "data", "seed"]):
+            gd = gd.sort_values("n_non_emb")
+            ax.plot(gd["n_non_emb"], gd["primary_score"], color=colour[L], lw=S.LADDER_WIDTH.get(ladder, 1.0),
+                    ls=S.DATA_DASH.get(data, "-"), marker="o", ms=1.8)
+        ch = g["chance"].dropna()
+        if not ch.empty:
+            ax.axhline(ch.mean(), color=S.ALERT, lw=.9, ls=":")
+        _six_ticks(ax, pd.concat([g["primary_score"], ch]))
+        ax.set_xscale("log"); ax.minorticks_off()
+        ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes)
+        ax.set_title(panel_title(fam), loc="left")
+        if i + cols >= len(fams):                  # the lowest panel of its column
+            ax.set_xlabel("Non-embedding parameters")
+        if i % cols == 0:
+            ax.set_ylabel("Final accuracy over\ntrained-language tasks")
+        ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+    present = lambda col, keys: [k for k in keys if k in set(t[col])]   # noqa: E731
+    handles = ([plt.Line2D([], [], color=colour[L], lw=2, label=f"{L} language" + "s" * (L > 1)) for L in Ls]
+               + [plt.Line2D([], [], color=S.MUTED, lw=S.LADDER_WIDTH[a] + 0.6, label=a.capitalize()) for a in present("ladder", S.LADDER_WIDTH)]
+               + [plt.Line2D([], [], color=S.INK, lw=0.9, ls=S.DATA_DASH[v], label=f"Data {v}") for v in present("data", S.DATA_DASH)]
+               + [plt.Line2D([], [], color=S.ALERT, lw=.9, ls=":", label="Chance")])
+    ncol = next((k for k in (8, 9, 6, 7, 5) if len(handles) % k == 0), 8)
+    fig.legend(handles=handles, ncol=ncol, loc="lower center", frameon=False, fontsize=7.5, handlelength=3.2)
+    fig.tight_layout(rect=(0, 0.5 / fig.get_figheight() * (-(-len(handles) // ncol)), 1, 1))
+    t.to_csv(out_dir / "benchmark_size_curves_paper.csv", index=False)
+    S.save_paper(fig, out_dir / "benchmark_size_curves_paper")
+
+
 def benchmark_figures(out_dir: Path, b: pd.DataFrame | None = None) -> None:
     """Both benchmark figures; without `b`, from `benchmark_curves.csv` (a table
     from before it carried the cell's size, ladder and data build reads them off the
@@ -189,6 +244,7 @@ def benchmark_figures(out_dir: Path, b: pd.DataFrame | None = None) -> None:
             b["data"] = b["model"].map(lambda m: SCHEME_OF[keys[m]["scheme"] or ""])
     plot_benchmark_curves(b, out_dir)
     plot_benchmark_curves(b, out_dir, paper=True)
+    plot_benchmark_size_curves(b, out_dir)
 
 
 def generate_readme(pool: str) -> None:
@@ -206,7 +262,9 @@ def generate_readme(pool: str) -> None:
             f"![Loss curves]({rel}/loss_curves.png)\n\n"
             f"![Benchmark curves]({rel}/benchmark_curves.png)\n\n"
             "The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), "
-            "drops the header for a legend of the line encoding.")
+            "drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws "
+            "each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability "
+            "appendix's size figure).")
     readme = OUT_ROOT / "README.md"
     replace_block(readme, "curves", body, f"curves.py --pool {pool}")
     print(f"Wrote auto README block → {readme}")
@@ -225,7 +283,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Ladder pool from configs/models.json (default: {CANONICAL})")
-    p.add_argument("--paper", action="store_true", help="only the two benchmark figures, from benchmark_curves.csv")
+    p.add_argument("--paper", action="store_true", help="only the benchmark figures, from benchmark_curves.csv")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")

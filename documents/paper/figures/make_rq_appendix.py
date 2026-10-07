@@ -20,6 +20,9 @@ refresh moves).
                  then the next Key-findings bullets (the rest of that list, or
                  the first "Key findings" list after the paragraph), each cut
                  to its bold lead and first sentence
+    extras       optional sixth PAGES element: further figures after the main
+                 one, each (paper figure stem, caption in LaTeX, label), on a
+                 float page of their own
 
 The text is double-blind: links, file names and rule numbers are dropped.
 The paper writes the number of languages as K where the analysis writes L
@@ -35,7 +38,7 @@ from make_rq_figures import ANALYSIS, FIGURES, HERE
 
 SECTIONS = HERE.parent / "sections"
 
-# folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)
+# folder -> title, paper figure stem, setup, (README image the finding follows, which bullet)[, extras]
 PAGES = {
     "rq00_gate_and_curves": (
         "The above-chance gate", "app_chance_share",
@@ -63,7 +66,20 @@ PAGES = {
         "Log-linear fits of each task's final score against model size, one series per task and language setting, on "
         "the sizes where the task is above chance (at least three); deep baseline-data cells at seed 1904, 90M--1.7B. "
         "Each task is one point, the median over its language settings.",
-        None, 0),
+        None, 0,
+        (("app_benchmark_size_curves",
+          "Benchmark accuracy against model size. Per benchmark family, the final-checkpoint accuracy of every design "
+          "(the mean over the tasks in the languages it trains on) against non-embedding parameters, one line per "
+          "(number of languages, ladder, data build, seed) across 90M--1.7B, every seed and data build. Colour gives "
+          "the number of trained languages, line width the ladder and dash the data build; the dotted red line is "
+          "chance. The curves are not gated, so a family at chance stays visible.",
+          "fig:app_size_scaling"),
+         ("app_benchmark_curves",
+          "Benchmark accuracy along training. Per benchmark family, the accuracy of every run (the mean over the tasks "
+          "in the languages it trains on) at the ten evaluated tenths of the run, in Chinchilla multiples of its "
+          "token budget, every seed and data build, 90M--1.7B. Colour gives the model size, line width the ladder "
+          "and dash the data build; the dotted red line is chance. The curves are not gated.",
+          "fig:app_training_scaling"))),
     "rq02_decision_accuracy": (
         "Decision accuracy across sizes", "app_decision_accuracy",
         "Seed-1904 runs of every language setting, ladder and data build, 90M--1.7B. DA-size is the share of design "
@@ -273,7 +289,20 @@ def key_findings(lines, image, n=3):
     return [short(b) for b in bullets[image[1]: image[1] + n]]
 
 
-def page(folder, title, stem, setup, kf_image, kf_bullet):
+def extra_figure(stem, caption, label):
+    return "\n".join([
+        "\\begin{figure}[p]",
+        "\\centering",
+        f"\\includegraphics[width=\\textwidth,height=0.9\\textheight,keepaspectratio]{{figures/{stem}.png}}",
+        f"% source: {FIGURES[stem][0].relative_to(ANALYSIS.parents[2])}.png",
+        f"\\caption{{{caption}}}",
+        f"\\label{{{label}}}",
+        "\\end{figure}",
+        "",
+    ])
+
+
+def page(folder, title, stem, setup, kf_image, kf_bullet, extras=()):
     lines = (ANALYSIS / folder / "README.md").read_text().splitlines()
     alt = next(re.match(r"!\[([^\]]*)\]", l)[1] for l in lines if l.startswith("!["))
     src = FIGURES[stem][0]
@@ -308,7 +337,7 @@ def page(folder, title, stem, setup, kf_image, kf_bullet):
         f"\\label{{{label}}}",
         "\\end{figure}",
         "",
-    ])
+    ] + [extra_figure(*e) for e in extras])
 
 
 def main():

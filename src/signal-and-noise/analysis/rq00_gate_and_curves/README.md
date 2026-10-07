@@ -514,7 +514,7 @@ Every cell the `predictivity_seeds` pool holds (all seeds and data builds), afte
 
 ![Benchmark curves](pretraining/predictivity_seeds/benchmark_curves.png)
 
-The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), drops the header for a legend of the line encoding.
+The paper version, `benchmark_curves_paper.png` (`--paper`, redrawn from `benchmark_curves.csv`), drops the header for a legend of the line encoding; its size twin, `benchmark_size_curves_paper.png`, draws each design's final accuracy against non-embedding parameters, colour = L (the scaling-predictability appendix's size figure).
 <!-- END auto:curves -->
 
 *The benchmark panel draws 176 of the 181 cells: the five swiglu cells have
