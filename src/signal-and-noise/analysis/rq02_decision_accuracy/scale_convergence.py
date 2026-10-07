@@ -185,8 +185,10 @@ def group_order(groups) -> list:
 POPULATIONS = ("all benchmarks", "bpb")
 # every population, then one per named filter this figure is asked for.
 # `above_66_size` exists because rq2_da_all_above_66_own reads its DA-size panel over
-# the tasks whose DA-size is reliable, not over the `both` intersection.
-VARIANTS = ("", "above_80", "above_66_both", "above_66_size")
+# the tasks whose DA-size is reliable, not over the `both` intersection;
+# `above_66_either` because the paper's rq2 figure reads all three panels over
+# the tasks reliable on either axis, one population for the three.
+VARIANTS = ("", "above_80", "above_66_both", "above_66_size", "above_66_either")
 # The ten evaluated checkpoints of every run, 0.5C ... 5C (rule 3).
 FRACS = [*CKPT_DA_EARLY_FRACS, 1.0]
 # The same decisions on a COMPUTE axis: every one of those checkpoints against the

@@ -415,75 +415,72 @@ reliable tasks and many hopeless ones — figure 2.
 
 ### 2. The paper figure is a conditional statement
 
-**Left panel DA-size, middle DA-ckpt, right DA-goal · filter per panel:
-`above_66_size` / `above_66_ckpt` / `above_66_either` (the
-`_either_transformation` stem) · mono-axis pairs (`_mono_axis`) · pairs from
-`predictivity` at seed 1904 · gate `predictivity`.** The paper
-embeds `rq2_da_all_multi_axes.png` (`paper_rq2.py`, no filter, multi-axis, copied by
+**Left panel DA-size, middle DA-ckpt, right DA-goal · one filter for all
+three panels: `above_66_either` (the `_either_transformation` stem) ·
+mono-axis pairs (`_mono_axis`) · pairs from `predictivity` at seed 1904 ·
+gate `predictivity`.** The paper embeds
+`rq2_da_all_above_66_either_transformation_mono_axis.png` (`paper_rq2.py
+--axes mono-axis`, copied to `documents/paper/figures/rq2.png` by
 `documents/paper/figures/make_rq_figures.py`); its variants share the
-composition and differ only in filter and pair set: `rq2_da_all_mono_axis`
-(mono-axis, no filter), `rq2_da_all_above_80_*` (the `late` reduction at 0.80, both
-axes), `rq2_da_all_above_66_both[_transformation]_*` (one population on all three
-panels, kept for comparison only) and `rq2_da_all_above_66_own_*` (each panel its own
-cut).
+composition and differ only in filter and pair set: `rq2_da_all_<axes>`
+(no filter), `rq2_da_all_above_80_*` (the `late` reduction at 0.80, both
+axes), `rq2_da_all_above_66_both[_transformation]_*` (the cells reliable on
+both axes) and `rq2_da_all_above_66_own_*` (each panel its own cut, the one
+variant whose panels read different populations).
 
-![RQ2, per-panel cuts, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png)
+![RQ2, one population, mono-axis pairs](pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png)
 
-*Left: DA-size per design axis (mono-axis pairs) and pooled, over the tasks
-whose median DA-size over the proxy sizes is ≥ 0.66 (49 tasks at 90M, 72 at
-1.7B); x is non-embedding parameters, the hollow 1.7B point is 1.0 by
-construction, dotted τ = 0.90. Middle: DA-ckpt over the tasks whose median
-DA-ckpt is ≥ 0.66 (86–114 tasks), each proxy against its own final, x in
-Chinchilla multiples, dotted 0.75. Right: DA-goal over the tasks passing
-either cut (90–136), the same checkpoints against the reference's final; the
-panels share the y axis, so the vertical distance between middle and right is
-what the proxy's SIZE costs on top of reading it early. The left panel is
-therefore not the same cells as the middle and right: three claims, not one
-population seen three ways. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
-`early_small_da_ckpt_by_L_above_66_ckpt_mono_axis.csv`,
-`early_small_da_goal_by_L_above_66_either_mono_axis.csv`.*
+*All three panels read the tasks whose median DA-size or median DA-ckpt is
+≥ 0.66, so the 1.7B line of the middle panel is the 1.7B line of the right
+one, and the black all-pairs line of the left panel is the 5C points of the
+right one. Left: DA-size, the mean over tasks (`reliability_macro`, not the
+pooled ratio), one black line over all pairs and one line per design axis in
+shades of dark orange; the data scheme (A vs B vs C) is one line on the
+scheme axis; x is non-embedding parameters. Middle: DA-ckpt, each proxy
+against its own final, x in Chinchilla multiples. Right: DA-goal, the same
+checkpoints against the 1.7B final; the panels share the y axis, so the
+vertical distance between middle and right is what the proxy's SIZE costs
+on top of reading it early. A point that is 1.0 by comparing a ranking with
+itself is hollow and joined by a dashed segment; there are no reference
+lines. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
+`early_small_da_ckpt_by_L_above_66_either_mono_axis.csv`,
+`early_small_da_goal_by_L_above_66_either_mono_axis.csv`,
+`scale_convergence_da_size_transformation_above_66_either_mono_axis.csv`.*
 
-| line (mono-axis, `above_66_size` tasks) | 90M | 175M | 350M | 600M | 1B | tasks |
+| line (mono-axis, `above_66_either` tasks, mean over tasks) | 90M | 175M | 350M | 600M | 1B | tasks |
 |---|---|---|---|---|---|---|
-| all pairs | 0.644 | 0.720 | 0.699 | 0.742 | 0.759 | 49–70 |
-| temperature (T = 1 vs 3) | 0.683 | 0.804 | 0.821 | 0.827 | 0.828 | 29–41 |
-| language count | 0.678 | 0.756 | 0.729 | 0.829 | 0.789 | 29–41 |
-| depth (deep vs shallow) | 0.658 | 0.661 | 0.643 | 0.569 | 0.746 | 29–43 |
-| language list (A vs B) | 0.389 | 0.583 | 0.479 | 0.537 | 0.500 | 6–10 |
-| second language (ru vs zh vs es) | 0.556 | 0.778 | 0.778 | 0.833 | 0.833 | 3–4 |
+| all pairs | 0.700 | 0.682 | 0.673 | 0.658 | 0.683 | 148–176 |
+| temperature (T = 1 vs 3) | 0.700 | 0.683 | 0.737 | 0.739 | 0.712 | 138–164 |
+| language count | 0.700 | 0.684 | 0.685 | 0.718 | 0.694 | 138–164 |
+| depth (deep vs shallow) | 0.707 | 0.648 | 0.617 | 0.490 | 0.633 | 148–176 |
+| data scheme (A vs B vs C) | 0.522 | 0.585 | 0.538 | 0.600 | 0.581 | 30–36 |
 
 **Key findings**
 
-- On the filtered population the pooled DA-size rises from 0.64 at 90M
-  (0.72 at 175M) to 0.76 at 1B; temperature and language count are the
-  decisions a 175M proxy already reads at 0.76–0.83; depth dips to 0.57 at
-  600M (unexplained); the language-list decision never leaves 0.39–0.58 on
-  6–10 tasks — a coin flip,
-  not below it. On the unfiltered tables the same four lines sit at 0.48–0.57
-  (figure 1).
-- The rise is partly the cut: the filter keeps the tasks whose DA-size
-  cleared 0.66 and then plots DA-size on them; on `predictivity` the
-  82 passers read 0.78 at 1B against 0.52 for the other 746 tasks. Every
-  filtered `rq2_*` figure, including `above_80` whose 1B point is truncated
-  at 0.80 by construction, is "on the cells that rank reliably, this is how
-  the reliability scales"; figure 1 is the unconditional one.
-- Reading a proxy early is cheap, but so is reading a second seed: DA-ckpt
-  on its own filtered population climbs from 0.56–0.61 at 0.5C to 0.81–0.88
-  at 4.5C (0.863, 0.875, 0.806, 0.809, 0.839 from 175M to 1.7B); on every
-  gated task the 175M run reads 0.83 at 90 % and two seeds of one design
-  read 0.81 there (figure 7).
-- Reading a smaller model is not: under DA-goal the sizes separate and stay
-  separated — the 175M line reads 0.48 at 0.5C and 0.52–0.57 thereafter
-  (0.53 at 5C), the 1B line 0.56 → 0.67, the reference's own run 0.58 → 0.82.
-  Training the small proxy longer does not close the gap; the binding
-  constraint is its scale.
+- On the one population the DA-size of a fully trained proxy is flat at
+  0.66–0.70 from 90M to 1B: a larger proxy does not decide more like the
+  1.7B reference. Temperature and language count sit at 0.68–0.74, depth
+  dips to 0.49 at 600M (unexplained), and the data scheme stays at
+  0.52–0.60 on 30–36 tasks, close to a coin flip. On the unfiltered tables
+  the lines sit lower (figure 1).
+- The cut selects on the quantity it plots: the filter keeps the tasks whose
+  DA-size or DA-ckpt cleared 0.66. Every filtered `rq2_*` figure, including
+  `above_80` whose 1B point is truncated at 0.80 by construction, is "on the
+  cells that rank reliably, this is how the reliability scales"; figure 1 is
+  the unconditional one.
+- Reading a proxy early is cheap: DA-ckpt climbs from 0.53–0.60 at 0.5C to
+  0.80–0.86 at 4.5C (0.799, 0.856, 0.816, 0.813, 0.798 from 175M to 1.7B).
+- Reading a smaller model is not: under DA-goal the proxies stay at
+  0.51–0.64 up to 4.5C, against 0.60 → 0.80 for the reference's own run,
+  and reach 0.66–0.70 only at their final checkpoint. Training the small
+  proxy longer does not close the gap; the binding constraint is its scale.
+- Caveat: the DA-goal line of a proxy reads 49–77 tasks up to 4.5C and
+  148–176 at 5C, so the jump at 5C is partly a change of tasks; why fewer
+  tasks pass at the intermediate checkpoints is not yet checked.
 - Which tasks rank reliably: on the multi-axis tables 82 of 473 gated tasks
   pass the DA-size cut, 178 the DA-ckpt cut, 189 either and 71 both; mono-axis
   63 / 141 / 160 / 44. The DA-ckpt cut is the permissive one because its
   median runs over up to 45 cells, the reference's own run included.
-- Caveat: the language-list line rests on 24 comparable decisions at 175M and
-  42 at 1B (4–7 tasks, 12 families), the temperature line on 8 families; those
-  two are the least stable lines in the panel.
 
 **Follow-ups**
 

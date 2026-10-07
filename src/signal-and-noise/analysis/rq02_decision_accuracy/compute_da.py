@@ -136,7 +136,7 @@ def compute_size_decision_accuracy(
 
 
 def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=None,
-                                   return_n=False, pairs=None):
+                                   return_n=False, pairs=None, runs=None):
     """DA within a size bucket: ``family`` ranking at an *early* ckpt vs the
     same family's max-step ckpt.
 
@@ -150,19 +150,20 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
 
     ``model_filter`` (optional) restricts the rows to a set of model names;
     ``pairs`` (optional) restricts the decisions to an explicit family-pair list.
+    ``runs`` (optional) is ``family_runs(df, bucket)`` of this task's rows, built
+    once by a caller that asks for many fractions (``df`` and ``model_filter``
+    are then not read).
     """
-    df = add_family_column(df)
-    if model_filter is not None:
-        df = df[df["model"].isin(model_filter)]
-    scores = df[(df["bucket"] == bucket) & (df["task"] == task)]
-    if scores.empty:
+    if runs is None:
+        df = add_family_column(df)
+        if model_filter is not None:
+            df = df[df["model"].isin(model_filter)]
+        runs = family_runs(df[df["task"] == task], bucket)
+    if not runs:
         return float("nan")
-    early, late, keys = [], [], []
-    for fam, g in scores.groupby("family"):
-        g = g.sort_values("step")
-        max_step = g["step"].max()
-        g_pre = g[g["step"] < max_step]  # candidate early ckpts (exclude the last)
-        if g_pre.empty:
+    early, late = {}, {}
+    for fam, (steps, score, _) in runs.items():
+        if not (steps < steps.max()).any():     # no checkpoint before the last
             key = (bucket, early_frac, fam)
             if key not in _LOGGED_MISSING_CKPTS:
                 _LOGGED_MISSING_CKPTS.add(key)
@@ -171,46 +172,63 @@ def compute_ckpt_decision_accuracy(df, task, bucket, early_frac, model_filter=No
                     f"family={fam} (first seen on task={task}) — skipped"
                 )
             continue
-        target_step = early_frac * max_step
-        early_row = g_pre.iloc[(g_pre["step"] - target_step).abs().argmin()]
-        if abs(early_row["step"] - target_step) > CKPT_TOL * max_step:
+        i = _pick(steps, early_frac)
+        if i is None:
             continue                    # no checkpoint near that fraction
-        max_row = g.loc[g["step"].idxmax()]
-        early.append(float(early_row["primary_score"]))
-        late.append(float(max_row["primary_score"]))
-        keys.append(fam)
-    da, n_pairs = pair_agreement(dict(zip(keys, early)), dict(zip(keys, late)), pairs)
+        early[fam], late[fam] = float(score[i]), float(score[_pick(steps, 1.0)])
+    da, n_pairs = pair_agreement(early, late, pairs)
     if n_pairs < MIN_PAIRS:          # rule 5
         _FEW_PAIRS.append((task, bucket, f"ckpt@{early_frac}", n_pairs))
     return (da, n_pairs) if return_n else da
 
 
-EARLY_SMALL_FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]
-
-
-def _scores_at(dft, bucket, frac) -> dict:
-    """family -> (score, compute) at the checkpoint nearest ``frac`` of the
-    family's own run (its final checkpoint at 1.0), under the CKPT_TOL rule of
-    ``compute_ckpt_decision_accuracy``."""
+def family_runs(dft, bucket) -> dict:
+    """family -> (steps, primary_score, compute) arrays of its rows at
+    ``bucket``, in step order: what ``_pick`` reads. A caller asking for many
+    fractions builds it once per (task, bucket); filtering and sorting the
+    frame anew for every fraction was the whole cost of the checkpoint grids."""
     out = {}
     for fam, g in dft[dft["bucket"] == bucket].groupby("family"):
         g = g.sort_values("step")
-        max_step = g["step"].max()
-        if frac >= 1.0:
-            r = g.loc[g["step"].idxmax()]
-        else:
-            pre = g[g["step"] < max_step]
-            if pre.empty:
-                continue
-            r = pre.iloc[(pre["step"] - frac * max_step).abs().argmin()]
-            if abs(r["step"] - frac * max_step) > CKPT_TOL * max_step:
-                continue
-        out[fam] = (float(r["primary_score"]), float(r.get("compute", np.nan)))
+        out[fam] = (g["step"].to_numpy(), g["primary_score"].to_numpy(dtype=float),
+                    g["compute"].to_numpy(dtype=float) if "compute" in g.columns else np.full(len(g), np.nan))
+    return out
+
+
+def _pick(steps, frac):
+    """Index into a run's step-ordered ``steps`` of the checkpoint nearest
+    ``frac`` of the run: the last checkpoint at 1.0, else the nearest one before
+    it, or None when that one is further than CKPT_TOL of the run away."""
+    max_step = steps.max()
+    if frac >= 1.0:
+        return int(np.argmax(steps))
+    pre = np.flatnonzero(steps < max_step)
+    if not len(pre):
+        return None
+    i = pre[int(np.argmin(np.abs(steps[pre] - frac * max_step)))]
+    if abs(steps[i] - frac * max_step) > CKPT_TOL * max_step:
+        return None
+    return i
+
+
+EARLY_SMALL_FRACS = list(CKPT_DA_EARLY_FRACS) + [1.0]
+
+
+def _scores_at(dft, bucket, frac, runs=None) -> dict:
+    """family -> (score, compute) at the checkpoint nearest ``frac`` of the
+    family's own run (its final checkpoint at 1.0), under the CKPT_TOL rule of
+    ``compute_ckpt_decision_accuracy``. ``runs`` = ``family_runs(dft, bucket)``
+    when the caller already has it."""
+    out = {}
+    for fam, (steps, score, compute) in (family_runs(dft, bucket) if runs is None else runs).items():
+        i = _pick(steps, frac)
+        if i is not None:
+            out[fam] = (float(score[i]), float(compute[i]))
     return out
 
 
 def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EARLY_SMALL_FRACS,
-                                          pairs=None) -> list[dict]:
+                                          pairs=None, runs=None) -> list[dict]:
     """Early AND small, as a ranking: every design variant at a proxy bucket,
     read at 20-100 % of its own run, ranked against the same variants at the
     reference bucket's final checkpoint. The cross of DA-size (the 100 %
@@ -221,16 +239,19 @@ def compute_early_small_decision_accuracy(dft, target_size=TARGET_SIZE, fracs=EA
     ``n_pairs``, the mean training compute of the proxy checkpoints and of the
     reference finals (the cost axis of "how cheaply can we call it")."""
     dft = add_family_column(dft)
-    ref = _scores_at(dft, target_size, 1.0)
+    order = bucket_order()
+    buckets = [b for b in order[: order.index(target_size) + 1] if b in set(dft["bucket"])]
+    # one family_runs per bucket (``runs`` = bucket -> it, when the caller has them), read at every fraction
+    runs = {b: (runs or {}).get(b) or family_runs(dft, b) for b in {*buckets, target_size}}
+    ref = _scores_at(dft, target_size, 1.0, runs[target_size])
     if len(ref) < 2:
         return []
-    order = bucket_order()
     rows = []
-    for b in [b for b in order[: order.index(target_size) + 1] if b in set(dft["bucket"])]:
+    for b in buckets:
         for frac in fracs:
             if b == target_size and frac >= 1.0:
                 continue                    # the reference against itself
-            got = _scores_at(dft, b, frac)
+            got = _scores_at(dft, b, frac, runs[b])
             da, n_pairs = pair_agreement({f: v[0] for f, v in got.items()},
                                          {f: v[0] for f, v in ref.items()}, pairs)
             if n_pairs < MIN_PAIRS:                 # rule 5, as the two kernels above
