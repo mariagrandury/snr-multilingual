@@ -22,7 +22,7 @@
 
 - **Pool** `predictivity_seeds`: every seed of every cell (all seven data
   builds, read as scheme A/B/C × temperature T, and the deep, shallow and
-  swiglu ladders), 181 cells, 26–34 per rung, 90M–1.7B. The log-N fits, the
+  swiglu ladders), 193 cells, 27–37 per rung, 90M–1.7B. The log-N fits, the
   regimes and the scaling-law figure read its deep data-A seed-1904 cells; the
   loss fit and the scaling-law table read every seed-1904 (L, ladder, data
   build).
@@ -40,16 +40,18 @@
   seed-1904 (L, ladder, data build) chain with a 1.7B final (469 chains) and
   drawn for the deep data-A ones, with 1.7B as the only reference (rule 9).
   The loss fit covers every seed-1904 (L, ladder, data build) with ≥ 3
-  rungs: 26 fits.
+  rungs: 29 fits.
 - **bBPB twins**: each benchmark's gold-answer bits per byte, `bbpb_*`, never
-  gated (no chance level). In today's outputs their size fits run over 3–4
-  rungs (1369 three-rung and 978 four-rung fits), against six rungs for 801 of
-  the 1165 gated accuracy fits.
-- **bBPB caveat**: the twins are still being extended to every checkpoint (a
-  second refresh), so their trajectory fits and figure-1 regimes are not
-  quoted here; the accuracy and BPB numbers do not depend on them.
-- **Snapshot**: ladder report **2026-10-06 04:26**, analysis refresh of
-  2026-10-07 (commit `b316f53b`), for every hand-written number.
+  gated (no chance level). Their size fits run over 5–6 rungs (2257 six-rung
+  and 90 five-rung fits), against six rungs for 809 of the 1169 gated accuracy
+  fits.
+- **bBPB coverage**: the per-item store was rebuilt over every checkpoint, so
+  `bench_bpb.csv` holds all 12 checkpoints of every seed-1904 ladder cell (166
+  cells) and the twins' size fits, trajectory fits and figure-1 regimes are
+  quoted below. The seed replicates and the 3B cells still have no twin, which
+  leaves this analysis untouched (its fits read seed-1904 cells up to 1.7B).
+- **Snapshot**: ladder report **2026-10-07 15:51** (outputs regenerated in
+  `7966367c`, prose re-read 2026-10-07), for every hand-written number.
 
 ## Opening figure and key findings
 
@@ -57,27 +59,27 @@
 
 *Figure 1's paper version: deep data-A seed-1904 cells, 90M–1.7B, one point
 per task (median over ≥ 2 language settings) of the gated log-N fits and the
-trajectory fits; today it also draws the bBPB twins (951 points, 342 without
+trajectory fits; it also draws the bBPB twins (952 points, 343 without
 them).*
 
-- **Accuracy scales log-linearly where it is above chance:** 1165 gated
-  (task, L) fits over 418 benchmark tasks, median R² 0.88 (IQR 0.77–0.94);
+- **Accuracy scales log-linearly where it is above chance:** 1169 gated
+  (task, L) fits over 419 benchmark tasks, median R² 0.88 (IQR 0.77–0.94);
   per-language BPB 1.00 (106 fits, 50 languages), training loss 0.98–1.00 at
-  every L. Of the 342 accuracy and BPB tasks with a regime, 263 (77 %) are
+  every L. Of the 343 accuracy and BPB tasks with a regime, 261 (76 %) are
   predictable across both size and training
   ([figure 1](#1-scaling-regimes-the-paper-figure)).
-- **The gate decides which benchmarks have a law at all:** 428 of 896
+- **The gate decides which benchmarks have a law at all:** 427 of 896
   accuracy and BPB tasks are at chance wherever a fit was possible, and 17 of
   42 families lose every task, among them Global-PIQA parallel (0/63),
   Belebele (0/59), INCLUDE (0/36) and Global-MMLU (0/29). Belebele's,
   Global-MMLU's and INCLUDE's reformulated twins fit at family median R²
-  0.84–0.91 (BBH-MCQ's at 0.65, CulturalBench-easy's at 0.77), and
+  0.83–0.92 (BBH-MCQ's at 0.65, CulturalBench-easy's at 0.77), and
   Global-PIQA parallel has no reformulated twin
   ([figure 2](#2-survivorship-what-the-gate-and-the-fit-minimum-removed)).
 - **A letter-answer benchmark's bBPB scales far better once reformulated:**
   over the eight letter-format families the original's bBPB fits at median
-  R² 0.81 and its `rf_` twin's at 0.98 (530 fits each, 3–4 rungs).
-  Global-PIQA parallel, at chance in all 63 tasks, scales at 0.99 in bBPB
+  R² 0.53 and its `rf_` twin's at 0.97 (530 fits each, 5–6 rungs).
+  Global-PIQA parallel, at chance in all 63 tasks, scales at 0.98 in bBPB
   (147 fits; [figure 4](#4-the-fits-per-family-and-per-language)).
 - **A power law fitted on the proxies over-predicts the 1.7B BPB:** in all
   318 deep data-A per-language fits (106 chains), median |error| 7.7 % with
@@ -85,9 +87,9 @@ them).*
   ([figure 3](#3-scaling-law-error-predicting-the-17b-bpb-from-below)).
 - **The loss exponent grows with the language count on the deep data-A
   ladder:** α = 0.085 (L1), 0.094 (L2), 0.097 (L8), 0.100 (L15), 0.103 (L30),
-  0.104 (L50); 0.077–0.108 over all 26 six-rung (L, ladder, data build) fits.
-  Shallow A is not monotone, and the swiglu ladder (1–2 rungs per L so far)
-  has no fit.
+  0.104 (L50); 0.077–0.108 over all 27 six-rung (L, ladder, data build) fits.
+  Shallow A is not monotone, and the swiglu ladder fits at 0.092 (L8, five
+  rungs), 0.103 (L15) and 0.102 (L30, five rungs).
 
 GitHub: [scaling_regimes_outliers_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png) · [scaling_regimes_outliers_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.csv)
 
@@ -140,45 +142,49 @@ Named variants of the same points: `scaling_regimes_families.png` (one label per
 
 **Key findings**
 
-The bullets cover the 342 accuracy and per-language BPB tasks; the 609 bBPB
-points of the figure (951 in all) are left out until the twins' checkpoint
-refresh lands.
+The bullets cover the 343 accuracy and per-language BPB tasks; the 609 bBPB
+points of the figure (952 in all) have a bullet of their own, the last.
 
-- Scaling is predictable on the tasks that survive the gate: of the 342 tasks
-  with a regime, 263 (77 %) are predictable across both size and training, 51
-  across size only, 23 weak in both, 1 predictable during training only
+- Scaling is predictable on the tasks that survive the gate: of the 343 tasks
+  with a regime, 261 (76 %) are predictable across both size and training, 53
+  across size only, 24 weak in both, 1 predictable during training only
   (`multiblimp_ben`) and 4 decline with size (`rf_bbh_mcq_movie_recommendation`,
   `rf_bbh_mcq_ruin_names`, `truthfulqa-multi_mc1_es`,
   `include_v2_en_arabic_morocco`).
-- Medians over the 342: R² 0.887 (IQR 0.812–0.949) for the size fit, 0.758
-  (0.535–0.880) for the trajectory fit, Spearman ρ with size 0.986
-  (0.921–1.000). All 30 per-language BPB tasks are predictable across both.
-- The fit is made on the rungs that already cleared chance. Of the 125
-  three-rung accuracy fits, 120 lost their 90M rung to the gate (111 only a
+- Medians over the 343: R² 0.888 (IQR 0.808–0.948) for the size fit, 0.757
+  (0.526–0.880) for the trajectory fit, Spearman ρ with size 0.986
+  (0.914–1.000). All 30 per-language BPB tasks are predictable across both.
+- The fit is made on the rungs that already cleared chance. Of the 126
+  three-rung accuracy fits, 121 lost their 90M rung to the gate (114 only a
   bottom block), so a line through the rising top of a sigmoid is fitted and
   R² is inflated by construction.
 - The other 5: `truthfulqa-multi_mc1_es` at L8–L50 lost its top rungs (at
   chance from 600M up, so its "declines with size" regime rests on 90M–350M
   fits), and `rf_include_base_44_nepali` at L50 lost its middle ones
   (350M–1B).
-- The reference is inside all but 8 of the 1165 gated accuracy fits (where
+- The reference is inside all but 8 of the 1169 gated accuracy fits (where
   1.7B is at chance it drops out). R² is therefore mostly a property of the
   ladder including 1.7B, not a statement about predicting 1.7B from below
   (figure 3 is that statement).
-- With and without the reformulated twins: the 342 tasks are 199 originals
-  (30 of them per-language BPB; median size-fit R² 0.911) and 143 twins
-  (0.854). The twins are less often predictable across both (70 % against
-  82 %) and more often across size only (20 % against 11 %): they widen the
+- With and without the reformulated twins: the 343 tasks are 202 originals
+  (30 of them per-language BPB; median size-fit R² 0.910) and 141 twins
+  (0.855). The twins are less often predictable across both (70 % against
+  81 %) and more often across size only (21 % against 12 %): they widen the
   population at a slightly weaker fit
   ([the gate's figure 3](../rq00_gate_and_curves/README.md#3-the-reformulated-twins-move-whole-families-across-the-gate)).
-- Spearman ρ saturates: ρ = 1 in 612 of the 1165 gated accuracy fits (53 %;
-  407 of the 801 six-rung ones, 51 %). The trajectory fit runs over all saved
+- Spearman ρ saturates: ρ = 1 in 612 of the 1169 gated accuracy fits (52 %;
+  412 of the 809 six-rung ones, 51 %). The trajectory fit runs over all saved
   points under a WSD decay that is not log-linear in tokens, so part of panel
   (b)'s spread is schedule.
+- The 609 bBPB twins scale more cleanly still: 494 (81 %) are predictable
+  across both, 38 across size only, 43 weak in both, 9 during training only
+  and 25 decline with size. Their medians are R² 0.970 (IQR 0.867–0.986) for
+  the size fit and 0.913 (0.619–0.952) for the trajectory fit, on ungated
+  rungs (no chance level).
 
 **Follow-ups**
 
-- The paper panel is crowded (951 points, 62 families, 37 of them bBPB). In
+- The paper panel is crowded (952 points, 62 families, 37 of them bBPB). In
   order of preference: (1) the accuracy tasks and the bBPB twins in separate
   panels, and the reformulated twins beside the originals (a
   `--twins {all,originals,twins}` switch on `regimes.py`, no new computation);
@@ -186,7 +192,7 @@ refresh lands.
   markers for the twins; (3) one marker per family at its median, area ∝ task
   count, outlier labels kept.
 - Carry the fit's slope per decade beside R², or drop the ρ panel: ρ over
-  at most six rungs saturates (53 % of the accuracy fits sit at ρ = 1).
+  at most six rungs saturates (52 % of the accuracy fits sit at ρ = 1).
 - `04_analysis.tex` against today's family table
   (`scaling_regimes_families.csv`): HellaSwag 0.88, LAMBADA 0.96, BPB 1.00 and
   TruthfulQA 0.97 at ρ −0.75 still hold. Its "INCLUDE keeps a single task, with
@@ -205,8 +211,8 @@ GitHub: [scaling_regimes_by_family_paper.png](https://github.com/mariagrandury/s
 
 *The same population as figure 1, per family: the tasks the regimes figure
 draws against the two ways a task loses its point.* It exists because
-figure 1 shows the 342 accuracy and BPB tasks that have a regime and not the
-554 of 896 that do not.
+figure 1 shows the 343 accuracy and BPB tasks that have a regime and not the
+553 of 896 that do not.
 
 ![Survivorship](pretraining/predictivity_seeds/scaling_regimes_survivorship.png)
 
@@ -218,7 +224,7 @@ in every label. It does not replace `regimes.py`, whose table it reads.*
 
 **Key findings**
 
-- Of the 896 accuracy and per-language BPB tasks, 428 have no fit at any L
+- Of the 896 accuracy and per-language BPB tasks, 427 have no fit at any L
   because they are at chance wherever a fit was possible, and a further 126
   have a fit at a single L and so no median.
 - 17 of the 42 families lose every task, seven of them with ≥ 17 tasks
@@ -226,10 +232,10 @@ in every label. It does not replace `regimes.py`, whose table it reads.*
   0/36, `global_mmlu_full` 0/29, `cultural_bench_easy` 0/19,
   `cultural_bench_hard` 0/19, `bbh_mcq` 0/17); `arc` keeps 2 of 28.
 - The reformulated twins put those families back (`rf_belebele` 36/59,
-  `rfgm_belebele` 38/59, `rf_global_mmlu_full` 22/29, `rf_include_base_44`
-  13/36, `rfgm_include_base_44` 13/36, `rf_bbh_mcq` 9/17,
-  `rf_cultural_bench_easy` 5/19), and INCLUDE v2 adds `include_v2_en` 48/77
-  and `include_v2_og` 38/77.
+  `rfgm_belebele` 38/59, `rf_global_mmlu_full` 21/29, `rf_include_base_44`
+  13/36, `rfgm_include_base_44` 12/36, `rf_bbh_mcq` 9/17,
+  `rf_cultural_bench_easy` 5/19), and INCLUDE v2 adds `include_v2_en` 49/77
+  and `include_v2_og` 39/77.
 - The 20 BPB tasks below the fit minimum (30 of 50 kept) are the languages
   only the L50 mixture trains, which have one L setting by construction.
 - The CSV and panel also carry the 38 bBPB families (816 tasks: 609 in the
@@ -240,8 +246,9 @@ in every label. It does not replace `regimes.py`, whose table it reads.*
 
 - Make the population statement part of the paper figure's caption
   (`plan/decision_accuracy.md` §5 has the recommendation).
-- Draw the bBPB families in a panel of their own once the twins cover every
-  checkpoint; mixed with the accuracy families they double panel (a)'s rows.
+- Draw the bBPB families in a panel of their own, now that the twins cover
+  every checkpoint; mixed with the accuracy families they double panel (a)'s
+  rows.
 
 GitHub: [scaling_regimes_survivorship.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_survivorship.png) · [scaling_regimes_survivorship.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_survivorship.csv)
 
@@ -409,29 +416,30 @@ The family medians above, without the aggregation (`predictivity_seeds` pool). R
 **Key findings**
 
 - The rows pool gated accuracy fits with ungated BPB, loss and bBPB fits, so
-  the population differs by row (the `fits` column); the bBPB rows rest on 3–4
+  the population differs by row (the `fits` column); the bBPB rows rest on 5–6
   rungs each.
 - Per-language BPB (family median R² 1.00, 106 fits), the loss (0.99), ARC
   (0.97; ARC-MT 0.99), LAMBADA and XStoryCloze (0.96) follow a log-linear law;
-  XWinograd (0.90, 26 fits) and HellaSwag (0.89, 62) sit a step below.
+  XWinograd (0.92, 26 fits) and HellaSwag (0.89, 62) sit a step below.
 - Belebele and Global-MMLU have no gated fit, and INCLUDE (`include_base_44`)
   one (Urdu at L50, R² 0.01), too few for a family median. Their reformulated
-  twins fit at 0.84–0.91.
+  twins fit at 0.83–0.92.
 - The answer count does not order the gated accuracy fits: median R² 0.93 /
-  0.84 / 0.87 / 0.90 over the 2- / 3- / 4- / 5-option fits (165 / 49 / 889 /
+  0.84 / 0.87 / 0.90 over the 2- / 3- / 4- / 5-option fits (169 / 49 / 889 /
   22). The 6-, 7- and 8-option medians (0.88, 0.75, 0.67) rest on 6 fits each.
-- bBPB fits at median R² 0.98 (2347 fits, 816 tasks) against 0.88 over the
-  1165 gated accuracy fits, but on 3–4 rungs against mostly six, so the gap is
-  not yet a like-for-like comparison.
+- bBPB fits at median R² 0.96 (2347 fits, 816 tasks, 2257 on six rungs)
+  against 0.88 over the 1169 gated accuracy fits (809 on six rungs). The rung
+  counts now mostly match, but the accuracy fits keep only the rungs above
+  chance and the bBPB fits every rung, so the gap is still not like for like.
 - The reformulation is what makes a letter-answer benchmark's bBPB scale. On
   the eight letter-format families (Belebele, Global-MMLU, INCLUDE, BBH-MCQ,
   CulturalBench-easy, ACP-Bench-MCQ, MMLU, CommonsenseQA) the original's bBPB
-  fits at 0.81 (IQR 0.29–0.96) and its `rf_` twin's at 0.98 (530 fits each;
-  e.g. `bbpb_bbh_mcq` 0.21 against `bbpb_rf_bbh_mcq` 0.87).
-- The weakest bBPB families are BBH-MCQ (0.21), BLEnD (0.30), CommonsenseQA
-  (0.43, 6 fits) and ACP-Bench-MCQ (0.44); the cloze arms sit between (BBH
-  0.72, ACP-Bench 0.60). Global-PIQA parallel, at chance in all 63 tasks,
-  scales at 0.99 in bBPB (147 fits).
+  fits at 0.53 (IQR 0.12–0.81) and its `rf_` twin's at 0.97 (IQR 0.93–0.99;
+  530 fits each; e.g. `bbpb_bbh_mcq` 0.09 against `bbpb_rf_bbh_mcq` 0.80).
+- The weakest bBPB families are BLEnD (0.03), BBH-MCQ (0.09),
+  CulturalBench-easy (0.12) and the two cloze arms (ACP-Bench 0.13, BBH 0.19),
+  then ACP-Bench-MCQ (0.39) and CommonsenseQA (0.44, 6 fits). Global-PIQA
+  parallel, at chance in all 63 tasks, scales at 0.98 in bBPB (147 fits).
 
 **Follow-ups**
 
@@ -440,8 +448,9 @@ The family medians above, without the aggregation (`predictivity_seeds` pool). R
   statement as figure 2.
 - Split panel (b) of `rq1_scaling` into accuracy and bBPB families. With 63
   families its labels overlap.
-- Compare bBPB with accuracy on the same rungs (refit accuracy on the 3–4
-  sizes the twins cover) before quoting bBPB as the better-scaling metric.
+- Compare bBPB with accuracy on the same rungs (refit each twin on the rungs
+  where its original clears the gate) before quoting bBPB as the
+  better-scaling metric.
 
 GitHub: [rq1_scaling.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_scaling.png) · [rq1_scaling.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/rq1_scaling.csv) ·
 GitHub: [scaling_fit.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.png) · [scaling_fit.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_fit.csv) ·
@@ -473,24 +482,28 @@ corner number is the Spearman correlation across tasks.*
 
 **Key findings**
 
-The bullets cover the accuracy and per-language BPB tasks, 220–309 per proxy
-at the five proxies 90M–1B. The CSV also holds bBPB twins at 175M, 350M and
-1B, which the decision-accuracy README's auto block counts in (804–918 tasks
-there); they are left out here until the twins' checkpoint refresh.
+The bullets cover the accuracy and per-language BPB tasks, 223–310 per proxy
+at the five proxies 90M–1B. The CSV also holds the 609 bBPB twins at every
+proxy, which the decision-accuracy README's auto block counts in (832–919
+tasks there); the last bullet reads them alone.
 
 - A benchmark that scales cleanly ranks the variants only somewhat better.
   Across tasks, Spearman between the size ρ and the ranking ρ is +0.31 to
-  +0.40, and between the size-fit R² and DA-size +0.29 to +0.40.
-- Tasks predictable across both read DA-size 0.56–0.60 at the five proxies,
+  +0.40, and between the size-fit R² and DA-size +0.27 to +0.39.
+- Tasks predictable across both read DA-size 0.55–0.60 at the five proxies,
   against 0.44–0.48 for the other regimes. The trajectory R² is the better
   surrogate (+0.51 to +0.57 with DA-size), the monotonicity property FineTasks
   selects on
   ([surrogates, FineTasks' criteria](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)).
 - Scaling smoothly with size is close to necessary for ranking but far from
-  sufficient: 78 % of the 204 (task, proxy) cells with DA-size above 0.7 sit
-  at ρ = 1. Yet over the 578 cells at ρ = 1 the ranking ρ spans −0.9 to 1.0
+  sufficient: 78 % of the 203 (task, proxy) cells with DA-size above 0.7 sit
+  at ρ = 1. Yet over the 582 cells at ρ = 1 the ranking ρ spans −0.9 to 1.0
   (5th–95th percentile −0.27 to 0.86), so choosing benchmarks by their
   scaling curves alone keeps many tasks that decide nothing.
+- The bBPB twins alone (609 per proxy) show the same pattern, a little
+  stronger: Spearman +0.33 to +0.41 between the two ρ and +0.42 to +0.54
+  between the size-fit R² and DA-size. Their tasks predictable across both
+  read DA-size 0.63–0.66 against 0.53–0.56 for the other regimes.
 
 **Follow-ups**
 

@@ -1,8 +1,8 @@
 # Task reformulation for the auto evals
 
 Status 2026-10-07. Every hand-written number outside the dated sections, and
-every generated block, is from the ladder-report snapshot **2026-10-06 04:26**
-(full refresh, commit b316f53b), read from this folder's CSVs and the
+every generated block, is from the ladder-report snapshot **2026-10-07 15:51**
+(outputs regenerated in `7966367c`, prose re-read 2026-10-07), read from this folder's CSVs and the
 `predictivity` gate mask (`../rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv`).
 
 The dated sections keep their own dates: the harness survey and the pilot of
@@ -22,8 +22,8 @@ letters are dropped (`rf_`) or the items are rewritten as cloze statements
 
 On 2026-09-18, before the twins and the probe promotions, 113 of 461 gated
 tasks cleared chance at any size, and only 21 of 252 four-option tasks. In
-today's mask, 549 of the 1,041 non-twin benchmark tasks clear chance at some
-size and 231 of the 615 four-option ones.
+today's mask, 547 of the 1,041 non-twin benchmark tasks clear chance at some
+size and 229 of the 615 four-option ones.
 
 `global_mmlu_full` clears in 6 of 37 languages at 175M, 2 at 350M, 1 at 1.7B
 and none at 90M, 600M or 1B. `global_piqa_*` clears in at most 3 of its 95
@@ -59,7 +59,7 @@ Population: the `predictivity` gate mask, per family and size, the original
 (grey) against each twin, paired on the task; * marks McNemar p < 0.05. The
 counts below are tasks above the gate (`reformulations_gate_mcnemar.csv`).
 
-Key findings (snapshot 2026-10-06 04:26):
+Key findings (snapshot 2026-10-07 15:51):
 
 - **The letter-format originals sit on chance.** Their median margin over chance (trained languages, deep scheme-A finals) stays within ±0.013 at every size; at 1.7B it is +0.011 on belebele, −0.010 on Global-MMLU and +0.005 on INCLUDE. At 1.7B the gate keeps 5 of 105 belebele, 1 of 37 Global-MMLU and 3 of 43 INCLUDE originals.
 - **Dropping the letters moves whole families across the gate.** At 1.7B the `rf_` twins pass in 86 of 105 belebele, 35 of 37 Global-MMLU and 31 of 43 INCLUDE tasks (McNemar twin-only : original-only 82 : 1, 34 : 0 and 29 : 1; p ≤ 5.8e-08). The McNemar test is significant at every size for belebele and Global-MMLU, and from 175M for INCLUDE.
@@ -67,7 +67,7 @@ Key findings (snapshot 2026-10-06 04:26):
 - **The Gemini rewrite adds more where it exists.** `rfgm_` gains **+0.168** on belebele (59 of 59 tasks significant) and **+0.075** on INCLUDE (22 of 36) at 1.7B. `rfgm_belebele` passes the gate in 59 of 59 tasks at every size, and `rfgm_include_base_44` in 32 of 43 at 1.7B; Global-MMLU has no rewrite yet.
 - **The gain is not the metric.** On plain `acc` on both sides, the median rf gain per (task, model) at 1.7B is +0.124 belebele, +0.047 Global-MMLU and +0.062 INCLUDE, against +0.104 / +0.064 / +0.078 on acc_norm (`rf_significance.csv`, 288 pairs).
 - **Over the gate's whole population, the twins pass in 267 of 332 tasks at 1.7B (0.80)**, against 511 of 1,041 non-twin benchmark tasks (0.49). Their own 230 originals pass in 9.
-- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.485 at 90M and 0.550 at 1B on the twins (145 and 214 tasks), against 0.553 and 0.593 on the non-twin tasks (153 and 237). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
+- **Passing the gate does not make the twins rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference, `predictivity`) is 0.486 at 90M and 0.550 at 1B on the twins (146 and 214 tasks), against 0.550 and 0.593 on the non-twin tasks (155 and 236). The twins' pairs come from the deep scheme-A cells alone (the L axis), so the two means are not on the same pairs.
 
 Follow-ups:
 
@@ -206,7 +206,7 @@ scheme-A cells). So the `auto:rf-compare` table further down (after
 It moves only after `ladder_report.py --plot --publish --push-hf` has picked up
 new rf results and `scripts/refresh_analysis.sh` has re-run. Until then `compare.py` refuses to run against a report without the `rf_*` columns (it would empty the table); point `SNR_LADDER_DIR` at a report that has them.
 
-The conclusion does not depend on the metric. On the 2026-10-06 04:26 snapshot,
+The conclusion does not depend on the metric. On the 2026-10-07 15:51 snapshot,
 the median rf gain per (task, model) at 1.7B is +0.104 on acc_norm and +0.124
 on acc for belebele, +0.064 and +0.047 for Global-MMLU, and +0.078 and +0.062
 for INCLUDE (`rf_significance.csv`, which carries the twin run's own `acc`, the
@@ -930,9 +930,9 @@ Key findings:
 
 - **At 1.7B the large twins pass in significantly more tasks than their originals.** Twin-only : original-only is 82 : 1 for belebele rf (p 1.7e-23), 56 : 0 for belebele rfgm (2.8e-17), 34 : 0 for Global-MMLU rf (1.2e-10), 29 : 1 and 30 : 1 for INCLUDE rf and rfgm (5.8e-08, 3.0e-08), 10 : 0 for bbh_mcq (0.002) and 7 : 0 for cultural_bench_easy (0.016).
 - **acp_bench_mcq does not reach p < 0.05** (5 : 0, p 0.06), and mmlu and commonsense_qa have one task each (p 1).
-- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 13 of its 19 originals pass where the twin does not, and none the reverse.
+- **Across sizes, belebele and Global-MMLU are significant at every size, INCLUDE and bbh_mcq from 175M.** At 90M cultural_bench_easy is significant the other way: 12 of its 19 originals pass where the twin does not, against 1 the other way round.
 - **The "originals only" row is every non-twin benchmark task** (511 of 1,041 pass at 1.7B, 0.49), not the twins' own originals, which pass in 9 of 230.
-- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.485 / 0.505 / 0.499 / 0.500 / 0.550 on the twins from 90M to 1B, against 0.553 / 0.574 / 0.572 / 0.599 / 0.593 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
+- **The twins do not rank designs better.** Mean DA-size (proxy → 1.7B, multi-axis pairs, gated at proxy and reference) is 0.486 / 0.505 / 0.499 / 0.501 / 0.550 on the twins from 90M to 1B, against 0.550 / 0.574 / 0.570 / 0.597 / 0.593 on the non-twin tasks. The twins' pairs are the deep scheme-A cells' alone (the L axis), so this is not a same-pairs comparison.
 
 Follow-ups:
 

@@ -18,20 +18,19 @@
   scheme A/B/C × temperature T, and every ladder, swiglu included), sizes
   90M–1.7B (rule 10), 90M–1B proxies against the 1.7B reference, the
   loader's parent tasks in trained languages only (rules 2 and 6).
-- **Per-item store** `predictivity_schemes` (this run's `--store-pool`; the
-  code default is now the `predictivity` store), read with its rows filtered
-  to the pool's models; it skips a truncated part with a warning. The store
-  lacks 3 of the pool's models (lm-90M-L1-fweb-b84-deep, lm-350M-L1-fweb-deep
-  and lm-600M-L1-fweb-deep, seed 1904); they are left out of every number
-  here until the store is rebuilt for the pool. The store holds checkpoints, so
-  DA-ckpt and the checkpoint SNR are computed (tables only, not drawn yet).
+- **Per-item store** `predictivity` (this run's `--store-pool`, the code
+  default), read with its rows filtered to the pool's models; it skips a
+  truncated part with a warning. It holds every checkpoint of 166 of the
+  pool's runs (the 7 swiglu runs the 2026-10-07 report added are not in it
+  yet), so DA-ckpt and the checkpoint SNR are computed on every size (tables
+  only, not drawn yet; figures 2 and 4 quote them).
 - **Gate pool** `predictivity` (the committed mask of the
   [above-random gate](../rq00_gate_and_curves/README.md)), and for one ordering
   the same gate recomputed on the kept items.
-- **Snapshot**: the ladder report of 2026-10-06 04:26, outputs regenerated
-  and prose re-read on 2026-10-07 (the results block states the report it
-  was built from). The gate recomputed on the store's full-benchmark scores
-  matches the committed mask on 5,042 of 5,046 (task, size) cells (results
+- **Snapshot**: the ladder report of 2026-10-07 15:51 (refresh commit
+  7966367c), prose re-read on 2026-10-07 (the results block states the report
+  it was built from). The gate recomputed on the store's full-benchmark scores
+  matches the committed mask on 5,046 of 5,046 (task, size) cells (results
   block, "Checks").
 
 ## Key figure
@@ -39,15 +38,15 @@
 ![SNR on the above-chance items](pretraining/predictivity/above_chance_items_snr.png)
 
 **Key finding.** Keeping only the items the 1.7B runs answer above chance
-raises the median paired SNR from ×1.26 at 90M to ×1.52 at 1.7B, almost all
+raises the median paired SNR from ×1.25 at 90M to ×1.52 at 1.7B, almost all
 through a lower k-fold noise (×0.57–0.85) while the signal stays flat
 (×0.87–1.07). Decision accuracy barely follows, although the selection reads
 the reference it is scored against: the paired DA-size gain is +0.043 at 90M
-and +0.000 to +0.020 at 175M–1B (multi-axis pairs).
+and +0.001 to +0.020 at 175M–1B (multi-axis pairs).
 
 Population: pool `predictivity`, finals, *gate, then items* against the full
-benchmark on the cells the committed gate passes (SNR on 303–475 tasks per
-size, DA-size on 293–446 tasks per proxy); details in
+benchmark on the cells the committed gate passes (SNR on 306–475 tasks per
+size, DA-size on 296–445 tasks per proxy); details in
 [figure 2](#2-decision-accuracy-rises-a-little-at-the-small-proxies-on-the-same-tasks-only)
 and [figure 4](#4-snr-rises-through-the-noise-and-not-the-signal).
 
@@ -205,7 +204,7 @@ on the kept items for *items, then gate*.
   (1.7B) for the full benchmarks: the in-sample selection all but guarantees
   the reference's verdict and lifts every proxy's.
 - So *items, then gate* scores DA-size on 692–756 tasks per proxy against
-  293–446 for the full benchmark: the next figure asks whether the tasks it
+  296–445 for the full benchmark: the next figure asks whether the tasks it
   adds rank anything.
 
 **Follow-ups**
@@ -228,35 +227,42 @@ reference, pooled over the tasks with the 90 % leave-one-family-out band.
 **Key findings**
 
 - On the same cells, the kept items rank slightly better: the paired gain of
-  *gate, then items*, averaged over the 293–446 tasks per proxy, is +0.043 at
-  90M, +0.018 to +0.020 at 175M–600M and +0.000 at 1B (multi-axis; mono-axis
-  +0.001 to +0.031). The pooled lines move −0.010 to +0.017 (multi-axis) and
-  −0.007 to +0.011 (mono-axis), inside the full benchmark's jackknife band at
+  *gate, then items*, averaged over the 296–445 tasks per proxy, is +0.043 at
+  90M, +0.019 to +0.020 at 175M–600M and +0.001 at 1B (multi-axis; mono-axis
+  +0.002 to +0.030). The pooled lines move −0.009 to +0.017 (multi-axis) and
+  −0.006 to +0.010 (mono-axis), inside the full benchmark's jackknife band at
   every proxy.
-- Pooled, the full benchmark reads 0.536–0.562 (multi-axis), *gate, then
-  items* 0.539–0.553 and *items, then gate* 0.506–0.527 (692–756 tasks): the
+- Pooled, the full benchmark reads 0.537–0.562 (multi-axis), *gate, then
+  items* 0.541–0.554 and *items, then gate* 0.508–0.527 (692–756 tasks): the
   tasks the recomputed gate admits pull the pooled line down, not up.
-- The 310–420 admitted cells per proxy rank at or below a coin flip,
-  0.470–0.503 (multi-axis, 0.503 at 600M; mono-axis 0.456–0.491), and read higher the more items their
-  task keeps: 0.410 at 1–30 kept items, 0.477, 0.494 and 0.530 in the middle
+- The 311–422 admitted cells per proxy rank at or below a coin flip,
+  0.470–0.503 (multi-axis, 0.503 at 600M; mono-axis 0.456–0.488), and read higher the more items their
+  task keeps: 0.409 at 1–30 kept items, 0.478, 0.495 and 0.529 in the middle
   bins, 0.546 above 1,000.
-- 49 of the 3,600 *items, then gate* cells have every design variant tied at
+- 48 of the 3,607 *items, then gate* cells have every design variant tied at
   the proxy or the reference (a two-option task answered by a constant bias
   keeps exactly the items whose gold matches it); they read a mean DA-size of
   0.87 from the tie convention alone.
 - The subset selection's
   [held-out reading of the solved items](../rq08_subset_selection/README.md#items-the-reference-solves)
-  (same pool and store, multi-axis, 234–358 paired tasks) gains +0.022 to
+  (same pool and store, multi-axis, 237–357 paired tasks) gains +0.022 to
   +0.033 at 90M–600M and +0.002 at 1B: about the in-sample gain here. The
   selections differ (items at least half of the 1.7B runs solve, against
   items above chance), so the closeness bounds the leakage only loosely.
+- Along training (DA-ckpt, each size's checkpoints at 10–90 % of its run
+  against its own final ranking, multi-axis, `above_chance_items_da_ckpt_*`),
+  the kept items agree with the final ranking earlier at every proxy: a mean
+  paired gain of +0.01 to +0.06 over the nine checkpoints at 90M–1B, but
+  −0.014 to +0.033 at 1.7B, the size the items were chosen on. At 90 % of the
+  run the pooled DA-ckpt is 0.755–0.818 for the full benchmark at 90M–1B
+  (0.741 at 1.7B) and 0.767–0.831 for *gate, then items* (0.727).
 
 **Follow-ups**
 
 - DA-size with the reference read on the full benchmark (only the proxy on
   the kept items), to separate a moved target from a better proxy.
-- A figure of DA-ckpt on the kept items (`above_chance_items_da_ckpt_*`, now
-  computed), read against the seed null.
+- A figure of DA-ckpt on the kept items (`above_chance_items_da_ckpt_*`, the
+  bullet above), read against the seed null.
 
 GitHub: [above_chance_items_da_size_both_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_da_size_both_axes.png) · [above_chance_items_da_size_both_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_da_size_both_axes.csv)
 
@@ -271,8 +277,8 @@ the mono-axis twin is
 **Key findings**
 
 - Over the benchmarks with at least five paired tasks, the paired gain stays
-  within −0.07 and +0.23 at 90M–600M, and within −0.12 and +0.06 at 1B.
-- Global-MMLU-RF gains most at the small proxies (+0.23 at 90M on 12 tasks,
+  within −0.07 and +0.21 at 90M–600M, and within −0.12 and +0.06 at 1B.
+- Global-MMLU-RF gains most at the small proxies (+0.21 at 90M on 13 tasks,
   +0.07 to +0.09 at 175M–600M) and loses at 1B (−0.02 on 28); HellaSwag
   likewise (+0.15 at 90M on 23, +0.01 at 1B on 25). XNLI loses at 175M–1B
   (−0.02 to −0.07, 12–13 tasks) and XCOPA at 1B (−0.12, 8 tasks): the items
@@ -280,8 +286,8 @@ the mono-axis twin is
   larger ones.
 - The *items, then gate* panel fills in benchmarks the full benchmark does
   not read at that proxy, near or below a coin flip: Global-MMLU 0.46–0.55
-  (19–29 tasks), Global PIQA parallel 0.40–0.47 (58–63), CulturalBench-hard
-  0.39–0.44 (10–18). ACP-Bench cloze reads 0.94–0.98 on its 7 tasks only
+  (20–29 tasks), Global PIQA parallel 0.39–0.47 (59–63), CulturalBench-hard
+  0.38–0.44 (10–18). ACP-Bench cloze reads 0.94–0.98 on its 7 tasks only
   through the tie convention: 34 of its 35 multi-axis cells have every variant tied at
   the proxy or at 1.7B.
 
@@ -305,24 +311,29 @@ multi-axis.
 
 **Key findings**
 
-- The median SNR rises from 0.290–0.353 (full benchmark, 309–486 tasks per
-  size) to 0.398–0.515 (*gate, then items*, 303–475) and 0.380–0.541
-  (*items, then gate*, 672–773); the paired ratio grows with size, ×1.26 at
+- The median SNR rises from 0.284–0.353 (full benchmark, 310–486 tasks per
+  size) to 0.389–0.515 (*gate, then items*, 306–475) and 0.378–0.541
+  (*items, then gate*, 672–773); the paired ratio grows with size, ×1.25 at
   90M to ×1.52 at 1.7B.
 - The signal barely moves (×0.87–1.07): the gain is the relative k-fold noise
   falling (×0.57–0.85), because the kept items are answered right more often,
   not because the design variants separate more.
-- SNR tracks DA-size a little better on the kept items: ρ = 0.36–0.47 for
-  *gate, then items* against 0.29–0.41 for the full benchmark, and 0.27–0.34
+- SNR tracks DA-size a little better on the kept items: ρ = 0.35–0.47 for
+  *gate, then items* against 0.28–0.41 for the full benchmark, and 0.26–0.34
   for *items, then gate*. SNR rises by a quarter to a half while DA-size
   gains at most +0.043: most of the higher SNR is the SNR of an easier test,
   not of a better ranking.
 
+- On the checkpoint SNR (noise and SNR's 20 % window, the `*_ckpt` columns
+  of the SNR table) the kept items gain nothing: the median paired ratio is
+  ×0.94–1.08 at 90M–1B and ×0.76 at 1.7B (signal ×0.87–1.07, checkpoint noise
+  ×0.98–1.12). The final-checkpoint gain is the k-fold noise's, which depends
+  on the accuracy and the item count the selection changes.
+
 **Follow-ups**
 
-- A figure of the checkpoint SNR (the 20 % window, now in the `*_ckpt`
-  columns of the SNR table): the k-fold noise is a function of the accuracy and the
-  item count, so it is the reading most exposed to this selection.
+- A figure of the checkpoint SNR beside the final one, per size, to show the
+  two readings part on the kept items.
 
 GitHub: [above_chance_items_snr.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr.png) · [above_chance_items_snr.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr.csv)
 
@@ -336,16 +347,16 @@ the median paired log2 ratio for *gate, then items*.
 **Key findings**
 
 - Per benchmark, the median paired log2 ratio over the sizes with at least
-  five paired tasks, read as a ratio, runs from ×0.86 (CulturalBench-easy,
-  90M only) to ×2.40 (Global-MMLU-RF, over all six sizes), with HellaSwag at
-  ×1.89 over all six; among the benchmarks that gain, the lowest is ×1.11
+  five paired tasks, read as a ratio, runs from ×0.84 (CulturalBench-easy,
+  90M only) to ×2.46 (Global-MMLU-RF, over all six sizes), with HellaSwag at
+  ×1.89 over all six; among the benchmarks that gain, the lowest is ×1.10
   (MultiBLiMP).
-- Every such benchmark gains SNR but CulturalBench-easy (×0.86, its one such
+- Every such benchmark gains SNR but CulturalBench-easy (×0.84, its one such
   size, 90M, 8 tasks).
 - The largest SNRs of *items, then gate* sit on benchmarks the full benchmark
-  barely passes: Global-MMLU 4.5–7.0 on 19–29 tasks (the full benchmark
+  barely passes: Global-MMLU 5.2–7.0 on 20–29 tasks (the full benchmark
   passes in at most two languages at any size, none at 90M, 600M or 1B) and
-  MMLU 2.4–5.5 (one task, never passed). Thousands of kept items shrink the
+  MMLU 2.3–5.6 (one task, never passed). Thousands of kept items shrink the
   k-fold noise, while Global-MMLU's DA-size in figure 3 stays at 0.46–0.55.
 
 **Follow-ups**
@@ -358,9 +369,9 @@ GitHub: [above_chance_items_snr_by_benchmark.png](https://github.com/mariagrandu
 ### Scaling predictability
 
 The results block's last table: on the deep data-A cells the median R² of
-the log-N fit rises from 0.88 (1,143 fits) to 0.93 for *gate, then items*
-(+0.034 on 1,141 paired fits, read on the same rungs as the full benchmark),
-and *items, then gate* fits 2,095 (task, L) series at a median of 0.87.
+the log-N fit rises from 0.88 (1,147 fits) to 0.93 for *gate, then items*
+(+0.034 on 1,145 paired fits, read on the same rungs as the full benchmark),
+and *items, then gate* fits 2,100 (task, L) series at a median of 0.87.
 Easier items track size more smoothly once the gate is fixed; admitting the
 tasks the recomputed gate adds brings the median back to about the full
 benchmark's.

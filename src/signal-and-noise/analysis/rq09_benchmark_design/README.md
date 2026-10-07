@@ -24,7 +24,7 @@ Each family is the median over its per-language aggregate tasks, grouped by cura
 
 ![Median SNR per benchmark family, coloured by answer-option count](pretraining/predictivity/snr_per_family_ranked_paper.png)
 
-Population: pool `predictivity` (seed 1904), SNR `snr_mpd_1.7B` (mean pairwise distance at the 1.7B reference), median over each family's per-language tasks, the 17 families (328 tasks, 49 languages) that clear the above-random gate only; snapshot 2026-10-06 04:26.
+Population: pool `predictivity` (seed 1904), SNR `snr_mpd_1.7B` (mean pairwise distance at the 1.7B reference), median over each family's per-language tasks, the 17 families (328 tasks, 49 languages) that clear the above-random gate only; snapshot 2026-10-07 15:51.
 
 **Key finding.** Among the 17 families that clear the gate, every two- and three-option family except Global PIQA (parallel, one task, 0.48) has a median SNR of 0.89 to 1.70, and every four-option family sits at 0.41 to 0.83. Option count is the only family-level design axis with p < 0.05 (H = 5.69, p = 0.017), which one of five uncorrected tests can reach by chance.
 
@@ -76,7 +76,7 @@ lm-eval task READMEs); the `FAMILY_META` dict in [analyze.py](analyze.py) is its
 machine-readable mirror, with a task-level `xnli_eu` override re-tagged
 `mt_post_edited`. Length features exist only for the 10 original families with sampled items (`length_features.csv`), not for the twins, INCLUDE or Global PIQA.
 
-Hand-written numbers in this README are from the ladder-report snapshot **2026-10-06 04:26** (refresh commit b316f53b, outputs regenerated 2026-10-07). FineTasks' selection criteria, judged on this ladder, live in the surrogates analysis ([README](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)).
+Hand-written numbers in this README are from the ladder-report snapshot **2026-10-07 15:51** (refresh commit 7966367c, outputs regenerated 2026-10-07; every table here is unchanged from the 2026-10-06 04:26 snapshot). FineTasks' selection criteria, judged on this ladder, live in the surrogates analysis ([README](../rq04_surrogates/README.md#finetasks-criteria-on-the-ladder)).
 
 **Families without metadata are left out.** `load_per_task_snr` keeps a family only if it has a `FAMILY_META` entry. As of 2026-10-07, 25 benchmark families with a 1.7B SNR in the pool have none, so they are in no table here: the 14 `bbpb_` benchmark-BPB twins, `arc_mt`, `global_piqa_nonparallel_cloze`, `include_v2_en`, `include_v2_og`, `lambada_openai_mt`, `mathqa` and the `rf_` twins of acp_bench, bbh, commonsense_qa, cultural_bench_easy and mmlu (plus per-language `bpb`, which is not a benchmark).
 
@@ -155,7 +155,7 @@ The family medians above, per language (`predictivity` pool). Regenerate with `p
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/highlights.csv) ·
 [snr_family_by_language.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq09_benchmark_design/pretraining/predictivity/snr_family_by_language.png)
 
-Population (both figures): pool `predictivity` (seed 1904), `log10` of `snr_mpd_1.7B` per (benchmark, language) task at the 1.7B reference, gate survivors only: 17 families, 328 tasks, 49 languages; snapshot 2026-10-06 04:26. The two rank panels of `highlights.png` show the top and bottom eight of each list, so the 17th family, `rfgm_belebele` (the median one, log10 −0.20), and the 33 middle languages are not drawn.
+Population (both figures): pool `predictivity` (seed 1904), `log10` of `snr_mpd_1.7B` per (benchmark, language) task at the 1.7B reference, gate survivors only: 17 families, 328 tasks, 49 languages; snapshot 2026-10-07 15:51. The two rank panels of `highlights.png` show the top and bottom eight of each list, so the 17th family, `rfgm_belebele` (the median one, log10 −0.20), and the 33 middle languages are not drawn.
 
 Key findings (`highlights.csv`, `snr_family.csv`):
 

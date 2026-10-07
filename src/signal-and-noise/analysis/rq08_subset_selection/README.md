@@ -27,9 +27,9 @@ The 36-sweep pools stay as history (final section, "Extensions from other sweeps
 Three subtask cases plus two per-item views; Case 1 asks which language
 subset of a multilingual family (Belebele, Global-PIQA, MultiBLiMP,
 Global-MMLU, the per-language BPB family `bpb`, …) carries the family's
-signal. The benchmark-BPB (`bbpb_`) twins are finals-only in this refresh,
-so their cells say nothing about early checkpoints and are empty at 90M and
-600M.
+signal. The benchmark-BPB (`bbpb_`) twins are scored at every checkpoint of
+every size since this refresh, so their cells read the same noise window as
+the accuracy tasks and fill the 90M and 600M columns.
 
 Cases 2 and 3 were **not** regenerated in this refresh:
 `global_mmlu_full.csv` (2 rows) and `global_mmlu_full_per_language.csv`
@@ -48,9 +48,10 @@ from this README until they are rerun on the current pool.
   `task` = `global_mmlu_full_<lang>`; `subtask` = one subject within that
   language.
 - **Per item on the ladder** — `per_item_ladder.py` and `reference_solved.py`
-  read the per-item store (finals from the `predictivity_schemes` store, which
-  lacks 3 of the pool's 90M–600M fweb-deep models). Per-item SNR on item
-  accuracy is not comparable to subtask-level SNR.
+  read the per-item store `predictivity`, which holds every checkpoint of 166
+  grid-seed runs; the 7 swiglu runs the 2026-10-07 report added (90M to
+  1.7B) are not in it yet, so they are not in these numbers. Per-item SNR on item accuracy is not comparable to subtask-level
+  SNR.
 - **Per-item (Option D)** — `per_sample/variance_prefilter/`, 36-sweep only
   (see the final section, "Extensions from other sweeps").
 
@@ -58,21 +59,20 @@ from this README until they are rerun on the current pool.
 
 ![Best language subset against the random-subset null, per benchmark and size](pretraining/predictivity/gain_over_null_paper.png)
 
-Population: pool `predictivity` (seed 1904, every cell, data build and ladder), sizes 90M–1.7B, Case 1 only (the language subsets of each benchmark), above-random gate on each per-language task: 181 swept (benchmark, size) cells over 40 benchmarks. The figure shows the 163 cells (37 benchmarks: 23 accuracy or BPB families and 14 bBPB twins) where the best prefix beats the full set, because only those get a null; cell = SNR of the best prefix minus the 95th percentile of 100 random subsets of the same size; white = no null value (59 of the 222 cells: the bBPB twins at 90M and 600M, 28 cells; the swept cells where the full set is already the best prefix; the unswept cells).
+Population: pool `predictivity` (seed 1904, every cell, data build and ladder), sizes 90M–1.7B, Case 1 only (the language subsets of each benchmark), above-random gate on each per-language task: 210 swept (benchmark, size) cells over 40 benchmarks. The figure shows the 183 cells (37 benchmarks: 23 accuracy or BPB families and 14 bBPB twins) where the best prefix beats the full set, because only those get a null; cell = SNR of the best prefix minus the 95th percentile of 100 random subsets of the same size; white = no null value (39 of the 222 cells: the swept cells where the full set is already the best prefix, and the unswept cells).
 
-**Key finding.** A chosen language subset beats the random-subset null in 72 of the 181 swept (benchmark, size) cells (72 of the 163 with a positive raw gain), by more than 0.25 SNR in 47, led by HellaSwag (median +0.85 over six sizes), Global-MMLU RF (+0.74), Belebele RF (+0.54) and MultiBLiMP (+0.47). XStoryCloze, LAMBADA, XWinograd, XCOPA and the BPB family never beat it, and XNLI sits below it (median −0.26).
+**Key finding.** A chosen language subset beats the random-subset null in 75 of the 210 swept (benchmark, size) cells (75 of the 183 with a positive raw gain), by more than 0.25 SNR in 58, led by HellaSwag (median +0.90 over six sizes), Belebele RF (+0.70), MultiBLiMP (+0.62) and Global-MMLU RF (+0.58). XStoryCloze, LAMBADA, XWinograd, XCOPA and the BPB family never beat it, and INCLUDE v2 (EN) sits below it (median −0.11).
 
 **Key findings**
 
-- Without the null the lever looks universal: the best prefix beats the full set in 163 of the 181 Case-1 cells that have an SNR (median +0.68 SNR), but the null, which scores 163 cells, keeps only 72.
-- Accuracy and BPB families: 52 of 113 cells beat the null (23 benchmarks); bBPB twins: 20 of 50 (14 twins), on the finals-only twins of this refresh.
-- The largest gaps over the null are Belebele RF at 600M (+1.22), Belebele LLM-RF at 90M (+1.18), Belebele RF bBPB at 1B (+1.15) and HellaSwag at 1.7B (+1.14).
-- The share of benchmarks that beat the null does not grow with size: over all swept benchmarks it is 0.56 at 90M, 0.38 at 175M, 0.40 at 350M, 0.48 at 600M, 0.38 at 1B and 0.32 at 1.7B (18, 32, 35, 21, 37 and 38 benchmarks; the task set differs across sizes, rule 13).
-- `highlights.csv` gives 0.56, 0.41, 0.47, 0.53, 0.44 and 0.34 because its denominator is the benchmarks whose best prefix beats the full set at that size (18 at 90M to 35 at 1.7B).
+- Without the null the lever looks universal: the best prefix beats the full set in 183 of the 210 Case-1 cells that have an SNR (median +0.75 SNR), but the null, which scores 183 cells, keeps only 75.
+- Accuracy and BPB families: 47 of 113 cells beat the null (23 benchmarks); bBPB twins: 28 of 70 (14 twins), now on the twins' full noise window.
+- The largest gaps over the null are Belebele LLM-RF bBPB at 175M (+1.38), PAWS-X bBPB at 600M (+1.23), HellaSwag at 1.7B (+1.14) and Belebele RF bBPB at 1B (+1.07).
+- The share of benchmarks that beat the null does not grow with size: over all swept benchmarks it is 0.38 at 90M, 0.38 at 175M, 0.37 at 350M, 0.36 at 600M, 0.35 at 1B and 0.32 at 1.7B (32, 32, 35, 36, 37 and 38 benchmarks; the task set differs across sizes, rule 13).
+- `highlights.csv` gives 0.39, 0.41, 0.46, 0.45, 0.42 and 0.34 because its denominator is the benchmarks whose best prefix beats the full set at that size (28–31 at 90M–1B, 35 at 1.7B).
 
 **Follow-ups**
 
-- Rerun once the bBPB twins carry every checkpoint, to fill the 90M and 600M columns and to read the twins' cells on the full noise window.
 - Rerun Cases 2 and 3 on the current pool, so the MMLU subject subsets can join the figure.
 
 GitHub: [gain_over_null_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null_paper.png) · [gain_over_null_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null_paper.csv). The subject cases and every swept cell: [Per benchmark and per language](#per-benchmark-and-per-language).
@@ -100,7 +100,7 @@ GitHub: [gain_over_null_paper.png](https://github.com/mariagrandury/snr-multilin
   full set is the best prefix there is no null).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (refresh commit b316f53b, outputs of 2026-10-07),
+**2026-10-07 15:51** (refresh commit 7966367c, outputs of 2026-10-07),
 except the Case 2 and Case 3 rows, which date from 2026-09-21.
 
 <!-- BEGIN auto:results (smooth_subtasks.py --pool predictivity) -->
@@ -136,8 +136,8 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 **Key findings** (the block above: pool `predictivity`, every case, ranked by the raw gain)
 
-- The raw ranking is not the null's: of the twelve largest raw gains, ARC at 1B (+2.29) and 1.7B (+2.19) gain nothing over the null and Belebele LLM-RF bBPB at 1B (+2.24) only +0.02.
-- Six of the twelve rows are bBPB twins, so the top of this table leans on the finals-only twins of this refresh.
+- The raw ranking is not the null's: of the twelve largest raw gains, ARC at 1B (+2.39) and 1.7B (+2.19) gain nothing over the null and Belebele LLM-RF bBPB at 90M (+2.19) falls 0.16 below it.
+- Eight of the twelve rows are bBPB twins, so the top of this table leans on the twins, now read on their full noise window.
 - The MMLU subject figure (`global_mmlu_full_subjects.png`) and the "median gain by case" line of the highlight block mix in the Case 2 and Case 3 rows of 2026-09-21; they are not current.
 
 **Follow-ups**
@@ -157,10 +157,10 @@ Every swept cell in one grid (`predictivity` pool). Regenerate with `python anal
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
 GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
 
-**Key findings** (the two figures above: pool `predictivity`, every case, the above-random gate; the 169 cells with a null value, of which 163 Case 1 and 6 from the Cases 2–3 tables of 2026-09-21)
+**Key findings** (the two figures above: pool `predictivity`, every case, the above-random gate; the 189 cells with a null value, of which 183 Case 1 and 6 from the Cases 2–3 tables of 2026-09-21)
 
 - The Case 1 numbers are those of the [opening figure](#key-figure); the Case 2 and 3 columns of `highlights.png` (share 1.0 at 350M and 600M) come from the stale tables.
-- The benchmark ranking in `highlights.png` includes two stale Case 3 rows, `global_mmlu_full_ms` (+0.47) and `global_mmlu_full_lt` (+0.43); on current rows it is HellaSwag, Global-MMLU RF, Belebele RF, MultiBLiMP, INCLUDE RF (+0.46) and Belebele LLM-RF (+0.29) at the top.
+- The benchmark ranking in `highlights.png` includes two stale Case 3 rows, `global_mmlu_full_ms` (+0.47) and `global_mmlu_full_lt` (+0.43); on current rows it is HellaSwag, Belebele RF, MultiBLiMP, Global-MMLU RF, Belebele RF bBPB (+0.38) and INCLUDE v2 (OG) (+0.34) at the top.
 
 **Follow-ups**
 
@@ -182,16 +182,16 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate
 ![Items the reference solves](pretraining/predictivity/reference_solved_da_size_multi_axes.png)
 <!-- END auto:reference-solved -->
 
-**Key findings** (the block above: pool `predictivity`, ladder report 2026-10-06 04:26, DA-size at the final checkpoint, multi-axis pairs, 234 tasks at 90M to 358 at 1B with paired held-out values; finals read from the `predictivity_schemes` store, which lacks 3 of the pool's models)
+**Key findings** (the block above: pool `predictivity`, ladder report 2026-10-07 15:51, DA-size at the final checkpoint, multi-axis pairs, 237 tasks at 90M to 357 at 1B with paired held-out values; finals read from the per-item store `predictivity`, every checkpoint of 166 grid-seed runs, without the 7 newest swiglu runs)
 
 - Held out, the solved items read the reference better at 90M–600M: +0.033,
-  +0.026, +0.028 and +0.022 over the full set on the same pairs (Wilcoxon
-  p < 0.001 at each size), and not at 1B (+0.002, p = 0.68).
+  +0.025, +0.028 and +0.022 over the full set on the same pairs (Wilcoxon
+  p < 0.001 at each size), and not at 1B (+0.002, p = 0.74).
 - 39–40 % of the items are solved at every proxy, and the in-sample DA
   (0.57–0.58) is at most 0.01 above the held-out one (0.56–0.57): the
   selection does not lean on the reference by much.
 - SNR tracks the held-out DA a little more closely on the solved items
-  (ρ 0.35–0.45 against 0.26–0.41), so a higher SNR on them is not only noise
+  (ρ 0.34–0.46 against 0.27–0.41), so a higher SNR on them is not only noise
   removed.
 - The in-sample counterpart, every task reduced to the items its 1.7B runs
   answer above chance, is the [above-chance items](../rq12_above_chance_items/README.md)
@@ -201,8 +201,8 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate
 
 - The same table per benchmark, to see whether the gain comes from a few
   families with many easy items.
-- Once the store holds every checkpoint, the held-out DA-ckpt of the solved
-  items, to see whether the gain also comes earlier in training.
+- The store now holds every checkpoint: add the held-out DA-ckpt of the
+  solved items, to see whether the gain also comes earlier in training.
 
 GitHub: [reference_solved_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_da_size_multi_axes.png) · [reference_solved_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_da_size_multi_axes.csv) · [reference_solved_summary_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_summary_da_size_multi_axes.csv) · [reference_solved_per_task_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_per_task_da_size_multi_axes.csv)
 
@@ -235,11 +235,11 @@ Per-item subset selection over the `predictivity` design variants, from the per-
 ![per-item ladder](pretraining/predictivity/per_item_ladder.png)
 <!-- END auto:per-item-ladder -->
 
-**Key findings** (the block above: pool `predictivity`, seed 1904, sizes 90M–1.7B, per-item store `predictivity_schemes`, above-chance tasks only: 317 at 90M to 494 at 1.7B in `per_item_summary.csv`; held-out DA-size on multi-axis pairs, finals)
+**Key findings** (the block above: pool `predictivity`, seed 1904, sizes 90M–1.7B, per-item store `predictivity` (every checkpoint), above-chance tasks only: 318 at 90M to 494 at 1.7B in `per_item_summary.csv`; held-out DA-size on multi-axis pairs, finals)
 
-- Item subsets win SNR almost everywhere: the best prefix beats the null in 98–99 % of the above-chance tasks at every size, with a median gain of +0.67 (350M) to +1.11 (1.7B) SNR.
-- The winning prefixes are tiny (median 4–8 items out of a median 900) and about half of each benchmark's items are dead (median share 0.48–0.57 per size), so the SNR is won on a handful of items.
-- They do not read the reference: held out (90M–1B, 234 to 358 tasks with multi-axis pairs), the subset's DA is 0.33–0.38 against 0.53–0.57 for the full set on the same pairs and 0.29–0.32 for a random subset of the same size. The 317–494 above-chance tasks apply only to the SNR bullets.
+- Item subsets win SNR almost everywhere: the best prefix beats the null in 97–99 % of the above-chance tasks at every size, with a median gain over the null of +0.68 (350M) to +1.09 (1.7B) SNR.
+- The winning prefixes are tiny (median 4–8 items out of a median 900) and about half of each benchmark's items are dead (median share 0.52–0.61 per size), so the SNR is won on a handful of items.
+- They do not read the reference: held out (90M–1B, 237 to 357 tasks with multi-axis pairs), the subset's DA is 0.33–0.38 against 0.53–0.57 for the full set on the same pairs and 0.29–0.32 for a random subset of the same size. The 318–494 above-chance tasks apply only to the SNR bullets.
 - Item-level SNR selection is therefore the opposite lever to the [items the reference solves](#items-the-reference-solves), which keep about 40 % of the items and gain DA held out.
 
 **Follow-ups**
@@ -263,7 +263,7 @@ GitHub: [per_item_ladder.png](https://github.com/mariagrandury/snr-multilingual/
 
 - `per_item_store/<store>/` (git-ignored, cluster-only) — one row per (model,
   checkpoint, task, item), built by `build_per_item_store.sbatch`
-  (`build_per_item_store.py`, resumable; finals only for now). Read by
+  (`build_per_item_store.py`, resumable; every checkpoint). Read by
   `per_item_ladder.py`, `reference_solved.py`, the bBPB DA comparison and the
   above-chance items analysis.
 - `bench_bpb.csv` — the store reduced to one bits-per-byte value of the gold

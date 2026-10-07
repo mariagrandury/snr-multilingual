@@ -25,9 +25,9 @@ the proxy and at 1.7B.
 
 ## Key finding
 
-**Snapshot:** ladder report 2026-10-06 04:26, tables regenerated 2026-10-07
-(commit b316f53b) on the pool above. Every number below is read from the CSV
-beside the figure it describes.
+**Snapshot:** ladder report 2026-10-07 15:51, outputs regenerated in
+`7966367c`, prose re-read 2026-10-07, on the pool above. Every number below is
+read from the CSV beside the figure it describes.
 
 ![Scale convergence, overall](pretraining/predictivity/scale_convergence_da_size_multi_axes.png)
 
@@ -36,41 +36,41 @@ beside the figure it describes.
 
 - **A smaller fully trained model ranks the design variants close to a coin
   flip.** On benchmark accuracy alone, DA-size is 0.52, 0.54, 0.53, 0.55 and
-  0.57 from 90M to 1B (mean over 290–440 gated tasks,
+  0.57 from 90M to 1B (mean over 293–439 gated tasks,
   `bench_bpb_da_size_summary_multi_axes.csv`); no proxy comes near τ = 0.90.
-- **The pooled line in the figure mixes two populations.** It reads 0.54,
-  0.58, 0.56, 0.55, 0.59 (90 % jackknife ± 0.02–0.03), but its tasks include
-  the bBPB twins at 175M and 1B (816 tasks) and at 350M (544) and none at 90M
-  or 600M, so its zigzag is a change of tasks, not of size.
+- **The pooled line in the figure adds the bBPB twins at every size and is
+  flat.** It reads 0.60, 0.58, 0.59, 0.58, 0.59 (90 % jackknife ± 0.02–0.03)
+  over 1117–1266 tasks, the 816 twins among them at every size, so the task
+  count now moves with the gate alone.
 - **Bits per byte ranks like the reference; accuracy does not.** FineWeb2 BPB
   reads 0.96, 0.96, 0.92, 0.74, 0.92 (mean over 50 per-language tasks) and
   `bpb_macro` 0.95–0.98. The gold answer's bits per byte on the same benchmark
-  items (bBPB, finals only) predicts the 1.7B accuracy ranking at 0.59–0.61,
-  +0.11 over accuracy at 90M and +0.03 at 1B.
-- **Reading a run early mostly measures persistence.** On the accuracy-only
-  sizes DA-ckpt at 90 % of a run is 0.75 (90M) and 0.77 (600M); the 175M,
-  350M and 1B rows carry the bBPB twins' early checkpoints and are not read.
-  Two seeds of one design, which have nothing to decide, already read
-  0.71–0.73 at 90 % against 0.75–0.77 for the real pairs (175M, 600M, 1B;
-  341–414 gated tasks).
-- **Early and small at once never works for benchmarks.** On the
-  accuracy-only rows DA-goal stays at 0.51–0.53 (90M) and 0.50–0.55 (600M) at
-  every checkpoint from 0.5C to 5C (0.52–0.58 and 0.53–0.64 on the filtered
-  paper figure). The 175M, 350M, 1B and 1.7B rows, the reference's own run
-  included, carry the twins' early checkpoints and are not read until the
-  twin refresh; the paper figure's filtered DA-size line (0.58–0.64,
-  `above_66_either`, mono-axis) is conditional on the tasks that passed the cut.
+  items (bBPB) predicts the 1.7B accuracy ranking at 0.59–0.61 from a proxy's
+  final checkpoint, +0.11 over accuracy at 90M and +0.03 at 1B.
+- **Reading a run early mostly measures persistence.** On accuracy alone
+  DA-ckpt at 90 % of a run is 0.74–0.82 at every size (0.75 at 90M, 0.77 at
+  600M), and with the twins, which now carry every checkpoint, 0.83–0.90 at
+  the proxies. Two seeds of one design, which have nothing to decide, already
+  read 0.71–0.73 at 90 % against 0.75–0.77 for the real pairs (175M, 600M,
+  1B; 339–417 gated accuracy tasks, the seed replicates having no twin).
+- **Early and small at once never works for benchmarks.** On accuracy alone
+  DA-goal stays at 0.48–0.58 at every proxy and checkpoint from 0.5C to 5C
+  (90M 0.51–0.53, 600M 0.50–0.55), the twins alone at 0.61–0.68, and the
+  filtered paper figure at 0.58–0.65. The reference's own run reads its final
+  accuracy ranking at 0.54 at 0.5C and 0.74 at 4.5C; the paper figure's
+  filtered DA-size line (0.61–0.65, `above_66_either`, mono-axis) is
+  conditional on the tasks that passed the cut.
 - **Seeds disagree as much as sizes.** On English at 175M–1B two seeds of
   the same designs agree at 0.55–0.71, the range in which the proxy agrees
   with the reference (0.53–0.73 over the three proxy seeds).
 - **Language-count regimes are unordered on any task set; the tier order
-  follows the task population.** On accuracy alone at 90M the L8 tier leads
-  (0.561 against 0.495 for L50, intervals disjoint), at 600M the tiers
-  overlap, and with the twins at 1B L50 leads (0.675 against 0.576). The
-  token-share ρ flips the same way (+0.19 to +0.23 at 90M, 350M, 600M; −0.39
-  at 175M, −0.54 at 1B).
-- **DA is Kendall's τ under another tie convention** (r = 0.986 over 4,046
-  cells), and the convention flips the reliable-task verdict on 0.8–7.4 % of
+  follows the kind of score.** On accuracy alone the L8 tier leads at 90M
+  (0.559 against 0.495 for L50) and the tiers sit within 0.03 at 600M and 1B,
+  while with the twins, now at every size, L50 leads at every size (0.675
+  against 0.576 at 1B). The token-share ρ splits the same way (+0.02 to +0.22
+  on accuracy alone, −0.39 to −0.54 with the twins).
+- **DA is Kendall's τ under another tie convention** (r = 0.989 over 5,954
+  cells), and the convention flips the reliable-task verdict on 0.6–2.4 % of
   cells per proxy size.
 
 ## Naming
@@ -104,15 +104,17 @@ from figure 1 on is computed over (`reliable_tasks.py`, `by_L.py`,
 `scale_convergence.py` and the extensions; rule 15); `predictivity_seeds`
 adds the replicate seeds as separate models (figure 7). The gate pool is
 `predictivity` everywhere; the output folder is `pretraining/predictivity/`.
-The swiglu cells (L8, L15, L30) have no 1.7B run, so they enter DA-ckpt but
-no pair against the reference (`pairs_da_all_by_L_multi_axes.csv`).
+The swiglu cells (L8, L15, L30) enter DA-ckpt but no benchmark or BPB pair
+against the reference: L8's and L30's have no 1.7B run, and L15's 1.7B run
+has only its training loss so far (15 loss pairs at L15,
+`pairs_da_all_by_L_multi_axes.csv`).
 
 **Benchmark-BPB twins (2026-10-07 tables).** Every benchmark task has a
-`bbpb_<task>` twin, and the twins exist at 175M and 1B (816 tasks), at 350M
-(544) and at 1.7B, but at neither 90M nor 600M (`da_all_per_task_both_axes.csv`).
-Every "all benchmarks" population therefore differs by proxy size; nothing
-here is read about bBPB before the final checkpoint until the refresh with the
-twins at every checkpoint.
+`bbpb_<task>` twin, and since the per-item store was rebuilt over every
+checkpoint the 816 twins exist at every size from 90M to 1.7B and at every
+checkpoint of every seed-1904 cell (`da_all_per_task_both_axes.csv`). They
+therefore enter DA-size, DA-ckpt and DA-goal at every fraction; the seed
+replicates and the 3B cells still have no twin, so figure 7 holds no bBPB row.
 
 The reference is 1.7B (rule 9). Until 2026-10-05 the `predictivity` pool held
 schemes A/B only and the decisions came from a separate all-builds pool whose
@@ -138,11 +140,12 @@ grid seed (260 of the 325 at the reference move more than one axis at once). `mo
 activation, optimizer, data scheme (A/B/C, the recipe at that L), T — the
 decision a practitioner makes, and what upstream's "every pair" is by
 construction. `seed`: two draws of one design (the null; DA-ckpt only,
-figure 7). On the 2026-10-06 report the mono-axis pairs at the grid seed are
+figure 7). On the 2026-10-07 report the mono-axis pairs at the grid seed are
 `language count` 39, `depth` 10, `data scheme` 12 (A vs B at L8–L30, A/ZH/ES
-at L2, A/DCLMP/FWEB at L1 — until that date three axes, language list 6,
+at L2, A/DCLMP/FWEB at L1 — until 2026-10-05 three axes, language list 6,
 second language 3 and English corpus 3) and `temperature` 4; the other 260 of
-the 325 pairs move two or more axes.
+the 325 pairs move two or more axes. The training loss alone, which also has
+the L15 swiglu run at 1.7B, counts 351 pairs, 66 of them mono-axis.
 
 **Filters.** An `above_*` stem keeps the tasks whose DA cleared a cut on a
 reduction of their cells (`reliable_tasks.py`): `above_66_size` /
@@ -190,8 +193,8 @@ table; the design-decisions analysis asks the complementary question — which
 proxy *size* ranks an intervention like the reference, with languages as the
 population.
 
-With few families at a size (26 at 1.7B on the 2026-10-06 report, every
-build at the grid seed; most languages only the L50 mixture trains, 15 of 19,
+With few families at a size (26 at 1.7B with benchmark scores on the
+2026-10-07 report, 27 on the training loss, every build at the grid seed; most languages only the L50 mixture trains, 15 of 19,
 rest on four families and six pairs; he, ka, ml and ta, also trained by
 scheme-B cells, on eight families and 28 pairs),
 DA is quantised to 1/#pairs: read the
@@ -298,7 +301,7 @@ and after, only the grouping moved (12 = 6 + 3 + 3 mono-axis pairs at the grid
 seed). **B vs AT3 moves two axes** (scheme and T) and is dropped from every
 per-axis line, as before.
 
-On the 2026-10-06 report the mono-axis pairs at the reference are `language
+On the 2026-10-07 report the mono-axis pairs at the reference are `language
 count` 39, `depth` 10, `data scheme` 12 and `temperature` 4 (the L15, L30 and L50
 AT3 cells against their scheme-A twins); the other 260 of the 325 pairs move two
 or more axes.
@@ -335,8 +338,8 @@ pairs from `predictivity` at seed 1904 · gate `predictivity`.**
 Pooled over decisions, gated at the proxy and at the reference, ≥ 3 pairs
 per task; the band is the 90 % leave-one-unit-out jackknife (a unit is one
 of the 26 design variants on the pooled line). The task count moves with the
-bBPB twins (Setup): 298 at 90M, 1154 at 175M, 915 at 350M, 413 at 600M,
-1267 at 1B.
+gate alone, the 816 bBPB twins entering at every size (Setup): 1117 at 90M,
+1152 at 175M, 1188 at 350M, 1232 at 600M, 1266 at 1B.
 
 <!-- BEGIN auto:scale-convergence (scale_convergence.py) -->
 ## Scale convergence — the minimum useful scale
@@ -412,24 +415,24 @@ Files: [`scale_convergence_da_size_transformation_panels_multi_axes.png`](https:
 
 **Key findings**
 
-- Pooled over every gated benchmark decision, DA-size is 0.543 [0.519,
-  0.567], 0.580 [0.555, 0.606], 0.564 [0.536, 0.591], 0.553 [0.531, 0.575]
+- Pooled over every gated benchmark decision, DA-size is 0.596 [0.571,
+  0.620], 0.580 [0.555, 0.606], 0.587 [0.564, 0.609], 0.582 [0.558, 0.606]
   and 0.587 [0.558, 0.617] at 90M, 175M, 350M, 600M and 1B (26 families).
   Nowhere near τ = 0.90, so N_min is undefined.
-- The ups and downs follow the bBPB twins, not size: the sizes without them
-  (90M, 600M) are the two low points. On accuracy alone the mean over tasks
-  rises only from 0.52 (90M, 290 tasks) to 0.57 (1B, 440 tasks)
-  ([figure 11](#11-benchmark-bpb-a-continuous-score-on-the-same-items)).
-- The mono-axis pairs read lower: 0.508, 0.548, 0.528,
-  0.520, 0.551 (`scale_convergence_da_size_mono_axis.csv`).
+- The line is flat because every size now carries the same 816 bBPB twins:
+  90M is its highest point and the five intervals overlap. On accuracy alone
+  the mean over tasks rises only from 0.52 (90M, 293 tasks) to 0.57 (1B, 439
+  tasks) ([figure 11](#11-benchmark-bpb-a-continuous-score-on-the-same-items)).
+- The mono-axis pairs read lower: 0.575, 0.548, 0.558,
+  0.546, 0.551 (`scale_convergence_da_size_mono_axis.csv`).
 - Per-language BPB does far better, pooled 0.945, 0.944, 0.885, 0.785, 0.910
   over 50 tasks, and the aggregates best of all: `bpb_macro` 0.95–0.98 and
-  `train_loss` 0.82–0.90 from any proxy size (highlight block). The design
+  `train_loss` 0.81–0.90 from any proxy size (highlight block). The design
   differences move most benchmark scores by less than their noise; BPB, which
   sums over every token, sees them.
 - By design axis (`scale_convergence_da_size_transformation_multi_axes.csv`)
-  the lines sit at 0.48–0.62: temperature highest (0.51–0.62), depth at
-  0.48–0.50, data scheme 0.48–0.54. By language count the regime lines are
+  the lines sit at 0.47–0.63: temperature highest (0.60–0.63), depth at
+  0.47–0.55, data scheme 0.48–0.54. By language count the regime lines are
   unordered (figure 4).
 
 **Follow-ups**
@@ -492,40 +495,39 @@ lines. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
 
 | line (mono-axis, `above_66_either` tasks, mean over tasks) | 90M | 175M | 350M | 600M | 1B | tasks |
 |---|---|---|---|---|---|---|
-| all pairs | 0.579 | 0.604 | 0.590 | 0.639 | 0.641 | 90–743 |
-| temperature (T = 1 vs 3) | 0.662 | 0.688 | 0.750 | 0.781 | 0.734 | 56–507 |
-| language count | 0.576 | 0.596 | 0.667 | 0.693 | 0.602 | 56–507 |
-| depth (deep vs shallow) | 0.602 | 0.515 | 0.533 | 0.524 | 0.532 | 57–543 |
-| data scheme (A vs B vs C) | 0.463 | 0.491 | 0.465 | 0.607 | 0.535 | 18–135 |
+| all pairs | 0.648 | 0.611 | 0.634 | 0.607 | 0.643 | 706–742 |
+| temperature (T = 1 vs 3) | 0.734 | 0.706 | 0.738 | 0.733 | 0.737 | 485–503 |
+| language count | 0.595 | 0.602 | 0.614 | 0.625 | 0.610 | 485–503 |
+| depth (deep vs shallow) | 0.590 | 0.527 | 0.548 | 0.471 | 0.529 | 520–539 |
+| data scheme (A vs B vs C) | 0.501 | 0.499 | 0.494 | 0.536 | 0.516 | 127–131 |
 
 **Key findings**
 
 - On the filtered population the DA-size of a fully trained proxy stays at
-  0.58–0.64 from 90M to 1B: a larger proxy barely decides more like the 1.7B
-  reference. Temperature reads 0.66–0.78, language count 0.58–0.69, depth
-  0.52–0.60 and the data scheme 0.46–0.61 on 18–135 tasks, close to a coin flip.
-- The population is mostly bBPB twins and moves with them: 618 of the 758
-  mono-axis tasks that pass either cut are twins, so the line rests on 90
-  tasks at 90M and 113 at 600M against 716–743 at 175M and 1B. Read the 90M
-  and 600M points as the accuracy-only ones.
+  0.61–0.65 from 90M to 1B: a larger proxy decides no more like the 1.7B
+  reference (0.648 at 90M, 0.643 at 1B). Temperature reads 0.71–0.74,
+  language count 0.59–0.62, depth 0.47–0.59 and the data scheme 0.49–0.54 on
+  127–131 tasks, close to a coin flip.
+- The population is mostly bBPB twins: 621 of the 757 mono-axis tasks that
+  pass either cut are twins. Since the twins now exist at every size, the
+  line rests on 706–742 tasks at every proxy and reads one mix of scores.
 - The cut selects on the quantity it plots: the filter keeps the tasks whose
   DA-size or DA-ckpt cleared 0.66. Every filtered `rq2_*` figure, including
   `above_80` whose 1B point is truncated at 0.80 by construction, is "on the
   cells that rank reliably, this is how the reliability scales"; figure 1 is
   the unconditional one.
-- On the accuracy-only sizes DA-ckpt climbs from 0.5C to 4.5C, 0.59 → 0.81
-  at 90M and 0.56 → 0.83 at 600M; the other lines carry the twins' early
-  checkpoints and are not read here. Figure 7's seed null reaches 0.71–0.73
-  at 90 % of a run, so most of this rise is persistence, not decision.
-- Under DA-goal the accuracy-only proxies stay at 0.52–0.58 (90M) and
-  0.53–0.64 (600M) at every checkpoint up to 5C; the other lines, the
-  reference's own run included, carry the twins' early checkpoints and are
-  not read here. Training the small proxy longer does not close the gap; the
-  binding constraint is its scale.
+- DA-ckpt climbs from 0.5C to 4.5C at every size, from 0.61–0.67 to
+  0.86–0.92 at the proxies and 0.64 → 0.83 at 1.7B
+  (`early_small_da_ckpt_by_L_above_66_either_mono_axis.csv`). Figure 7's seed
+  null reaches 0.71–0.73 at 90 % of a run, so most of this rise is
+  persistence, not decision.
+- Under DA-goal every proxy stays at 0.58–0.65 at every checkpoint up to 5C,
+  while the reference's own run reaches 0.83 at 4.5C. Training the small
+  proxy longer does not close the gap; the binding constraint is its scale.
 - Which tasks rank reliably (`da_all_reliable_tasks_both_axes.csv`, median
-  reduction, cut 0.66): multi-axis 461 of 1336 tasks pass the DA-size cut,
-  855 the DA-ckpt cut, 876 either and 440 both; without the 816 twins, 92,
-  167, 182 and 77 of 520. Mono-axis 294 / 725 / 758 / 261 (74 / 118 / 140 / 52
+  reduction, cut 0.66): multi-axis 466 of 1335 tasks pass the DA-size cut,
+  851 the DA-ckpt cut, 870 either and 447 both; without the 816 twins, 94,
+  166, 182 and 78 of 519. Mono-axis 319 / 717 / 757 / 279 (77 / 107 / 136 / 48
   without the twins); the DA-ckpt cut is the permissive one because its
   median runs over up to 54 cells.
 
@@ -544,8 +546,8 @@ lines. CSVs: `rq2_da_all_above_66_either_transformation_mono_axis.csv`,
 - Bootstrap over design variants (not tasks, which share the variants) for a
   90 % interval on every line: a task in most L50-only languages has six
   pairs (28 for he, ka, ml and ta), so its DA moves in steps of 1/6.
-- An accuracy-only twin of the paper figure (no `bbpb_` tasks), so its five
-  sizes read one kind of score until the twins exist at every size and checkpoint.
+- An accuracy-only twin of the paper figure (no `bbpb_` tasks): 621 of its
+  757 tasks are twins, so its lines say mostly how bBPB decides.
 
 GitHub: [rq2_da_all_above_66_either_transformation_mono_axis.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png) · [rq2_da_all_above_66_either_transformation_mono_axis.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.csv) ·
 GitHub: [rq2_da_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.png) · [rq2_da_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_multi_axes.csv) ·
@@ -565,7 +567,7 @@ multi-axis (the table carries mono-axis too) · pairs from
 on gate DA-size at the reference too (rule 1): before that, three cells at
 chance at 1.7B counted as reliable, and the `above_66_both` population read
 23 cells; the 2026-09-23 snapshot with the twins at 175M and 350M took it
-to 71. On the 2026-10-07 tables it holds 440 multi-axis tasks, 363 of them
+to 71. On the 2026-10-07 tables it holds 447 multi-axis tasks, 369 of them
 bBPB twins.
 
 <!-- BEGIN auto:reliable-tasks (reliable_tasks.py --pool predictivity) -->
@@ -656,12 +658,12 @@ Per language, how many benchmarks clear DA ≥ 0.8 on DA-size (a proxy size's fi
 
 **Key findings**
 
-- At 0.8 on the `late` reduction, 217 tasks in 46 languages pass both axes,
-  172 of them bBPB twins; the 45 accuracy tasks are mostly hellaswag (19),
+- At 0.8 on the `late` reduction, 218 tasks in 46 languages pass both axes,
+  173 of them bBPB twins; the 45 accuracy tasks are mostly hellaswag (19),
   then multiblimp (6) and the reformulated Global-MMLU and INCLUDE twins.
 - DA-size is the binding axis: 236 tasks clear it at 0.8, only 58 of them on
   accuracy, while DA-ckpt passes most of every language's benchmarks
-  (English 84 of 140 against 3 on DA-size).
+  (English 80 of 138 against 3 on DA-size).
 
 **Follow-ups**
 
@@ -761,11 +763,11 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 ![DA-size per language](pretraining/predictivity/da_size_by_language_multi_axes.png)
 <!-- END auto:early-small -->
 
-The "all benchmarks" rows of the grid above hold the bBPB twins at 175M,
-350M, 1B and 1.7B and none at 90M or 600M (Setup), so the rows differ in
-population and only the 90M and 600M rows are accuracy alone. Nothing is read
-here about bBPB before the final checkpoint; the refresh with the twins at
-every checkpoint redraws the grid ([Benchmark BPB](#11-benchmark-bpb-a-continuous-score-on-the-same-items)).
+The "all benchmarks" rows of the grid above hold the 816 bBPB twins at every
+size and checkpoint beside 301–494 gated accuracy tasks (Setup), so every row
+reads the same mix of scores. The Key findings below split the grid into the
+two kinds by hand from `early_small_da_goal_multi_axes.csv` and
+`da_all_per_task_both_axes.csv` ([Benchmark BPB](#11-benchmark-bpb-a-continuous-score-on-the-same-items)).
 
 <!-- BEGIN auto:by-L (by_L.py --pool predictivity) -->
 ## Per language count
@@ -858,28 +860,29 @@ Files: [`early_small_da_goal_by_transformation_mono_axis.png`](https://github.co
 
 **Key findings**
 
-- DA-goal for the benchmark mean never reaches 0.75 at a proxy: the
-  accuracy-only rows read 0.51–0.53 (90M) and 0.50–0.55 (600M) at every
-  checkpoint from 0.5C to 5C. The 175M, 350M, 1B and 1.7B rows, the
-  reference's own run included, carry the twins' early checkpoints and are
-  not read until the twin refresh.
-- The pooled-over-decisions reading of figure 1 (0.54–0.59) and this
-  mean-over-tasks one are two estimands with one verdict.
+- DA-goal for the benchmark mean never reaches 0.75 at a proxy: the grid's
+  rows read 0.59–0.64 at every checkpoint from 0.5C to 5C, against 0.62 →
+  0.81 for the reference's own run. Split by kind, accuracy alone reads
+  0.48–0.58 at the proxies (90M 0.51–0.53, 600M 0.50–0.55, 1.7B 0.54 → 0.74)
+  and the twins alone 0.61–0.68 (1.7B 0.68 → 0.85).
+- The pooled-over-decisions reading of figure 1 (0.58–0.60) and this
+  mean-over-tasks one (0.61–0.63 at 5C) are two estimands with one verdict.
 - BPB (mean over 50 tasks) reads the 1.7B ranking at ≥ 0.75 from 90M at 0.5C
   (0.95) and stays there at 175M (0.91–0.96), 350M (0.83–0.92) and 1B
   (0.76–0.92). The 600M row never gets there (0.70–0.74), the one size where
   BPB is not a safe proxy.
-- On the accuracy-only sizes DA-ckpt rises from 0.51 at 10 % to 0.75 at 90 %
-  (90M) and 0.52 → 0.77 (600M); the other rows carry the twins' early
-  checkpoints. Read against the seed
-  null of figure 7 (0.71–0.73 at 90 % on 175M, 600M, 1B), the design signal
-  at 90 % is +0.03 to +0.04.
+- On accuracy alone DA-ckpt rises from 0.51–0.54 at 10 % to 0.75–0.82 at
+  90 % at the proxies (90M 0.53 → 0.75, 600M 0.52 → 0.77), and the twins
+  alone from 0.63–0.70 to 0.87–0.93. Read against the seed null of figure 7
+  (0.71–0.73 at 90 % on 175M, 600M, 1B, accuracy only), the design signal at
+  90 % is +0.02 to +0.04.
 - Every L now draws a panel: each regime has 6 (L1, L2, L8, L50) or 10 (L15,
-  L30) usable pairs against 1.7B at every proxy size; the swiglu variants are
-  planned but have no 1.7B run (`pairs_da_all_by_L_multi_axes.csv`).
-- Smallest safe level per (benchmark, language): never 722, 1B 148, 175M
-  124, 90M 33, 350M 9, 600M 9 of 1045 cells. The twins can only be safe at
-  175M, 350M or 1B, and "safe" with 3 pairs is a weak guarantee.
+  L30) usable benchmark pairs against 1.7B at every proxy size; the L8 and
+  L30 swiglu variants have no 1.7B run and L15's only its training loss
+  (`pairs_da_all_by_L_multi_axes.csv`).
+- Smallest safe level per (benchmark, language): never 723, 1B 161, 90M 113,
+  600M 26, 350M 13, 175M 10 of 1046 cells; 80 of the 113 at 90M and 87 of the
+  161 at 1B are bBPB twins. "Safe" with 3 pairs is a weak guarantee.
 
 **Follow-ups**
 
@@ -890,8 +893,9 @@ Files: [`early_small_da_goal_by_transformation_mono_axis.png`](https://github.co
 - `early_small_by_L_own` (the size's cost separated from the checkpoint's) as
   an appendix pair with `early_small_da_goal_by_L_multi_axes`;
   `pairs_da_all_by_L_multi_axes.csv` justifies why per-L DA is coarse.
-- Redraw the grid after the refresh with the twins at every checkpoint, so
-  every row reads one population.
+- An accuracy-only and a twins-only version of the grid, so the split the
+  Key findings make by hand is drawn; every row now holds the twins at every
+  checkpoint.
 
 GitHub: [early_small_da_goal_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_multi_axes.png) · [early_small_da_goal_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_multi_axes.csv) ·
 [early_small_da_goal_by_benchmark_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/early_small_da_goal_by_benchmark_multi_axes.png) ·
@@ -963,32 +967,32 @@ The `--by L` lines read over the tasks in the 8 languages of the L8 setting (de,
 
 | regime, L8-language tasks (unfiltered, pooled) | 90M | 175M | 350M | 600M | 1B | tasks | decision mix at 1B |
 |---|---|---|---|---|---|---|---|
-| L1 (English only) | 0.594 | 0.602 | 0.643 | 0.565 | 0.628 | 23–129 | depth 0.17, scheme 0.50, two-axis 0.33 |
-| L2 | 0.464 | 0.514 | 0.508 | 0.532 | 0.456 | 23–129 | depth 0.17, scheme 0.50, two-axis 0.33 |
-| L8 | 0.571 | 0.511 | 0.480 | 0.475 | 0.505 | 52–250 | depth ⅓, scheme ⅓, two-axis ⅓ |
-| L15 | 0.479 | 0.492 | 0.514 | 0.499 | 0.543 | 98–429 | depth 0.22, scheme 0.16, T 0.14, two-axis 0.47 |
-| L30 | 0.509 | 0.521 | 0.501 | 0.520 | 0.522 | 98–429 | depth 0.20, scheme 0.20, T 0.10, two-axis 0.50 |
-| L50 | 0.495 | 0.568 | 0.530 | 0.524 | 0.562 | 98–429 | depth ⅓, T ⅓, two-axis ⅓ |
-| all pairs | 0.561 | 0.573 | 0.567 | 0.558 | 0.576 | 98–429 | L 0.13, two-axis 0.77 |
+| L1 (English only) | 0.583 | 0.602 | 0.643 | 0.599 | 0.628 | 121–129 | depth 0.17, scheme 0.50, two-axis 0.33 |
+| L2 | 0.528 | 0.514 | 0.513 | 0.530 | 0.456 | 121–129 | depth 0.17, scheme 0.50, two-axis 0.33 |
+| L8 | 0.508 | 0.511 | 0.497 | 0.515 | 0.505 | 226–250 | depth ⅓, scheme ⅓, two-axis ⅓ |
+| L15 | 0.524 | 0.492 | 0.514 | 0.510 | 0.543 | 380–429 | depth 0.22, scheme 0.16, T 0.14, two-axis 0.47 |
+| L30 | 0.543 | 0.521 | 0.508 | 0.518 | 0.522 | 380–429 | depth 0.20, scheme 0.20, T 0.10, two-axis 0.50 |
+| L50 | 0.598 | 0.568 | 0.582 | 0.546 | 0.562 | 380–429 | depth ⅓, T ⅓, two-axis ⅓ |
+| all pairs | 0.586 | 0.573 | 0.580 | 0.574 | 0.576 | 380–429 | L 0.13, two-axis 0.77 |
 
 *`scale_convergence_da_size_L8_multi_axes.csv`; the task counts move with the
-bBPB twins (98 at 90M and 141 at 600M on the pooled line, 392–429 at the
-other sizes).*
+gate alone, the bBPB twins entering at every size (380 at 90M to 429 at 1B on
+the pooled line).*
 
 **Key findings**
 
 - The per-L lines do not order by L: on the L8 languages the English-only L1
-  line is highest (0.57–0.64), L2 is lowest at 1B (0.46), and L8, L15, L30 and
-  L50 cross between 0.48 and 0.57. The pooled line sits at 0.56–0.58 at every
-  proxy.
-- Fixing the task set does not order them either: on the 23 tasks common to
-  every regime and size, L1 reads 0.59 → 0.67 from 90M to 1B, L8 0.55 → 0.57,
-  L15 0.48 → 0.51, L2 0.46 → 0.53, L30 0.51 → 0.47 and L50 0.49 → 0.49 (a
-  lattice, not a trend). Filtered on `above_66_size` the lines read 0.44–0.91
-  on 6–99 tasks and are again unordered.
-- The mono-axis pairs keep every L line (auto block: L8 10 → 5 planned pairs,
-  L30 15 → 6); L1 and L2 have lines because the DCLMP/FWEB and ZH/ES cells
-  give each four families.
+  line is highest from 175M to 1B (0.60–0.64; 0.58 at 90M, behind L50's
+  0.60), L2 is lowest at 1B (0.46), and L8, L15, L30 and L50 cross between
+  0.49 and 0.60. The pooled line sits at 0.57–0.59 at every proxy.
+- Fixing the task set does not order them either: on the 121 tasks common to
+  every regime and size, L1 reads 0.58 → 0.64 from 90M to 1B, L8 0.47 → 0.52,
+  L15 0.50 → 0.55, L30 0.50 → 0.54, L2 0.53 → 0.46 and L50 0.49 → 0.43 (not a
+  trend). Filtered on `above_66_size` the lines read 0.50–0.94 on 7–107 tasks
+  and are again unordered.
+- The mono-axis pairs keep every L line (`pairs_da_all_by_L_mono_axis.csv`:
+  on the benchmarks L1, L2, L8 and L50 keep 4 pairs, L15 and L30 5); L1 and L2
+  have lines because the DCLMP/FWEB and ZH/ES cells give each four families.
 - A regime line is not the effect of language count: within a regime the
   decisions are depth, scheme and temperature in a mix that differs by
   regime. The decisions within any regime are read equally poorly from a
@@ -1046,21 +1050,21 @@ For each language of the L8 setting, the `--by L` lines read on that language's 
   (28), and the regime lines within a panel cross at every size. Spanish,
   French and Italian have no L8 line (scheme B's L8 list does not contain
   them, so their L8 cells have one pair).
-- English sits at or near the bottom at every size (0.51–0.54 from 90M to
-  1B) and Russian at the top (0.62–0.69). The task counts move with the
-  bBPB twins (en 23 tasks at 90M against 129 at 1B), so a per-language line
-  is not one population across sizes.
-- Exposure does not collapse the lines: the collapse R² is 0.00–0.16 under
-  size and 0.00–0.14 under tokens, and tokens beat size for four languages by
-  at most 0.06 (ja 0.09 → 0.14). If reliability were a function of how many
+- English sits at the bottom at every size (0.53–0.54 from 90M to 1B) and
+  Russian at the top (0.67–0.70). The task counts now move with the gate
+  alone, the twins entering at every size (en 121 tasks at 90M against 129 at
+  1B).
+- Exposure does not collapse the lines: the collapse R² is 0.00–0.07 under
+  size and 0.00–0.23 under tokens, and tokens beat size for six languages by
+  at most 0.21 (zh 0.02 → 0.23). If reliability were a function of how many
   of a language's tokens the models saw, the tokens axis would order the
   points; it does not.
 
 **Follow-ups**
 
 - Every regime line rests on 3–5 families (4–5 for en, ru, zh, de, ja; the
-  L15 lines of es, fr and it on 3); the open gap is the twins at 90M and 600M, which the refresh
-  with the twins at every size and checkpoint fills.
+  L15 lines of es, fr and it on 3), so a per-language line moves in coarse
+  steps; a bootstrap over families would say which crossings are real.
 
 GitHub: [scale_convergence_da_size_lang_all_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes.png) · [scale_convergence_da_size_lang_all_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes.csv) ·
 GitHub: [scale_convergence_da_size_lang_all_multi_axes_tokens.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_tokens.png) · [scale_convergence_da_size_lang_all_multi_axes_tokens.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/scale_convergence_da_size_lang_all_multi_axes_tokens.csv) ·
@@ -1096,19 +1100,22 @@ The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks 
 
 **Key findings**
 
-- On accuracy alone the high-resource tier reads best: at 90M the L8 tier
-  is 0.561 [0.535, 0.586] against 0.511 (L15), 0.494 (L30) and 0.495 [0.460,
-  0.530] (L50), on 53–98 tasks. At 600M the gap closes (L8 0.558, the others
-  0.529–0.553, intervals overlapping).
-- Where the bBPB twins enter the order reverses: at 1B the L50-only tier
-  reads 0.675 [0.60, 0.75], L30 0.614, L15 0.603 and L8 0.576 [0.55, 0.60],
-  on 229–429 tasks. Filtered on `above_66_size` the 1B tiers read 0.74–0.82,
-  L50 again highest.
+- On accuracy alone the high-resource tier reads best at 90M: the L8 tier is
+  0.559 against 0.511 (L15), 0.497 (L30) and 0.495 (L50), on 53–99 tasks; at
+  600M and 1B the tiers sit within 0.03 (0.529–0.557 and 0.557–0.571). These
+  accuracy-only values are pooled by hand from `early_small_da_goal_multi_axes.csv`
+  without the `bbpb_` rows; the figure, which now carries the twins at every
+  size, has no accuracy-only interval.
+- With the twins the order reverses at every size: the L50-only tier reads
+  0.643–0.692 (0.692 [0.63, 0.75] at 90M, 0.675 [0.60, 0.75] at 1B) and L8
+  0.573–0.586 (0.576 [0.55, 0.60] at 1B), on 199–429 tasks. Filtered on
+  `above_66_size` the tiers read 0.70–0.81 at every size, L50 highest
+  (0.77–0.81).
 - The token share follows the same split: Spearman ρ between a language's
-  share of the L50 mixture and its reliability is +0.23 (90M), +0.22 (350M)
-  and +0.19 (600M) over 46–48 languages, but −0.39 (175M) and −0.54 (1B)
-  over 49. Neither sign is a resource effect until one population is read at
-  every size.
+  share of the L50 mixture and its reliability is −0.39 to −0.54 at every size
+  over 49 languages in the figure (−0.46 at 90M, −0.54 at 1B), but +0.02 to
+  +0.22 on accuracy alone over 46–48 (+0.22 at 90M, +0.02 at 1B). The sign
+  follows the kind of score, so neither reads as a resource effect.
 - The tiers also differ in decision mix (15 of the 19 L50-only languages are read
   from the four L50 families alone, six pairs that are mostly temperature and
   depth decisions; he, ka, ml and ta, also trained by scheme-B cells, from
@@ -1116,9 +1123,8 @@ The pooled `all pairs` line of `scale_convergence.py` read over the gated tasks 
 
 **Follow-ups**
 
-- An accuracy-only version of both panels (no `bbpb_` tasks), and the same
-  after the refresh with the twins at every size, so the sign of the tier
-  effect is read on one population.
+- An accuracy-only and a twins-only version of both panels, with intervals,
+  since the sign of the tier effect flips with the kind of score.
 - The same decision set in every tier (rule 5 forbids it on this grid; the
   L8-only replicate of figure 4's follow-up would allow it).
 - A per-family version of panel (a), to separate benchmark mix from tier.
@@ -1164,11 +1170,12 @@ What the replicate seeds say about decision accuracy — English at three proxy 
   much as the proxy disagrees with the reference.
 - DA-ckpt is mostly within-run persistence: two seeds of one design, which
   have nothing to decide, read 0.50 at 10 % of the 175M run and 0.73 at 90 %,
-  against 0.53 and 0.76 for the real pairs (600M 0.47 → 0.73 against 0.52 →
+  against 0.54 and 0.76 for the real pairs (600M 0.47 → 0.73 against 0.52 →
   0.77; 1B 0.48 → 0.71 against 0.52 → 0.75). At 90 % the real pairs exceed
-  the null by +0.03 to +0.04, the gap is largest mid-run (+0.08 at 50 % of
-  175M, +0.09 at 40 % of 600M, +0.07 at 30 % of 1B), and the null reads 341,
-  414 and 362 gated tasks (`seed_uncertainty_da_all_seed_null.csv`).
+  the null by +0.02 to +0.04, the gap is largest mid-run (+0.08 at 50 % of
+  175M, +0.09 at 40 % of 600M, +0.06 at 30 % of 1B), and the null reads 339,
+  417 and 362 gated accuracy tasks, the seed replicates having no bBPB twin
+  (`seed_uncertainty_da_all_seed_null.csv`).
 - These replicated cells are three or four cross-L deep designs on one or two
   languages: they give the scale of seed noise, not an interval for the pooled
   lines. No Wilson or binomial interval is drawn anywhere: the pairs share
@@ -1186,7 +1193,7 @@ GitHub: [seed_uncertainty_da_all_seed_null.png](https://github.com/mariagrandury
 
 **DA-size's population · no filter · multi-axis pairs · pairs from
 `predictivity` · gate `predictivity`; one point per (task, proxy
-size) cell, median 11 models per cell; 4,047 cells, the bBPB twins' among them.**
+size) cell, median 12 models per cell; 5,955 cells, 4,080 of them the bBPB twins'.**
 
 <!-- BEGIN auto:agreement-measures (agreement.py --pool predictivity) -->
 ## Decision accuracy is Kendall's τ under another tie convention
@@ -1212,20 +1219,21 @@ Spearman ρ and Pearson r on the raw scores are the two statistics that are NOT 
 
 **Key findings**
 
-- The three statistics are one statistic: over the 4,046 cells where all
-  three are defined r(DA, τ_b) = 0.986, r(DA, ρ) = 0.971 and r(τ_b, ρ) = 0.983
-  (Spearman 0.984, 0.977, 0.989; `agreement_da_size_correlation_multi_axes.csv`).
+- The three statistics are one statistic: over the 5,954 cells where all
+  three are defined r(DA, τ_b) = 0.989, r(DA, ρ) = 0.973 and r(τ_b, ρ) = 0.982
+  (Spearman 0.988, 0.981, 0.989; `agreement_da_size_correlation_multi_axes.csv`).
   The relation to τ_a is exact, 2·DA − 1 = τ_a + (T_both − T_one)/n on every
   cell, so DA and τ_a differ only in how tied pairs are counted.
-- Ties are 3.4 % of the pairs, touch 35 % of the cells, and 95 % are
-  one-sided. The twins never tie (0 ties over their 2,176 cells), so on
-  accuracy alone ties are 7.1 % of the pairs (10,841 of 152,610).
-- The convention moves the verdict on 0.8–7.4 % of cells against the DA ≥
-  0.66 set: τ_a flips 1.2–5.4 %, τ_b 1.2–6.3 %, γ 1.3–7.4 % and DA with the
-  reference's ties dropped 0.8–2.9 % per proxy size, most at 90M and 600M,
-  the sizes without twins. The correlations are guaranteed by the identity;
-  the flip rate is the number with content, and a published reliable-task
-  list depends on the tie convention at the margin.
+- Ties are 2.0 % of the pairs, touch 24 % of the cells, and 95 % are
+  one-sided. The twins never tie (0 ties over their 4,080 cells), so on
+  accuracy alone ties are 7.1 % of the pairs (10,836 of 152,809).
+- The convention moves the verdict on 0.6–2.4 % of cells against the DA ≥
+  0.66 set: τ_a flips 1.1–1.7 %, τ_b 1.2–2.1 %, γ 1.3–2.4 % and DA with the
+  reference's ties dropped 0.6–1.4 % per proxy size, most at 600M and 1B; the
+  twins, which never tie, now dilute the rate at every size. The correlations
+  are guaranteed by the identity; the flip rate is the number with content,
+  and a published reliable-task list depends on the tie convention at the
+  margin.
 
 **Follow-ups**
 
@@ -1240,7 +1248,7 @@ GitHub: [agreement_da_size_cut_sensitivity_multi_axes.png](https://github.com/ma
 ### 9. Multi-axis against mono-axis pairs
 
 **`rq2_da_all_above_66_both_mono_vs_multi_axes`: the three definitions · filter `above_66_both`
-(440 tasks at 1B, 363 of them bBPB twins; the one place it is drawn, for the pair-set comparison only) ·
+(447 tasks at 1B, 369 of them bBPB twins; the one place it is drawn, for the pair-set comparison only) ·
 rows multi-axis and mono-axis · pairs from `predictivity` · gate
 `predictivity`.** Exploratory (`pair_axes.py`); it fed `plan/decision_accuracy.md`
 and the `axes` column of rule 15.
@@ -1257,13 +1265,14 @@ in `plan/decision_accuracy.md` (§2, §6).
 
 **Key findings**
 
-- DA-size reads 0.05–0.08 lower under the mono-axis pairs:
-  0.625, 0.663, 0.651, 0.688, 0.680 against 0.696, 0.741, 0.733, 0.740, 0.756
+- DA-size reads 0.07–0.08 lower under the mono-axis pairs:
+  0.682, 0.666, 0.674, 0.654, 0.671 against 0.748, 0.742, 0.748, 0.736, 0.748
   from 90M to 1B, and DA-goal at 5C likewise (`rq2_da_all_above_66_both_mono_vs_multi_axes.csv`).
 - The mono-axis pairs are the stricter and smaller set: 28 % of the
-  decisions (6,972 of 24,872 at 175M). The task count moves with the twins
-  (62 at 90M, 75 at 600M, 430–440 at 175M and 1B), and the DA-ckpt rows carry
-  the twins' early checkpoints, so they are not read here.
+  decisions (7,106 of 25,278 at 175M), on 431–447 tasks at every size now
+  that the twins carry every size and checkpoint. DA-ckpt reads 0.01–0.08
+  lower under them too, the gap closing towards 4.5C (0.84–0.92 against
+  0.87–0.93 at 4.5C).
 
 **Follow-ups**
 
@@ -1275,8 +1284,10 @@ GitHub: [rq2_da_all_above_66_both_mono_vs_multi_axes.png](https://github.com/mar
 ### 10. Cross-task predictability
 
 **DA-size and DA-ckpt · no filter · multi-axis pairs of `predictivity` (every
-build: 26 variants at 1.7B, 325 pairs; DA-ckpt pools the within-size pairs of
-every size, 2,083) · gate `predictivity` on both sides.** Every parent
+build: 27 variants at 1.7B and 351 pairs counting the L15 swiglu run, whose
+1.7B cell has only the training loss, 26 and 325 on the benchmarks; DA-ckpt
+pools the within-size pairs of every size, 2,410) · gate `predictivity` on
+both sides.** Every parent
 task as the proxy for every other one; a cell is the smallest size or earliest
 checkpoint at which x's ranking safely predicts y's final ranking (DA ≥ 0.75
 over ≥ 3 pairs, held at every larger level).
@@ -1303,13 +1314,17 @@ Full task-level maps: [`cross_task_da_size_multi_axes.png`](pretraining/predicti
 
 - Cross-task predictability is almost absent between accuracies: of the
   6,480 off-diagonal benchmark-family pairs of the DA-size map, 32 reach a
-  median safe size (20 at 175M, 1 at 350M, 11 at 1B), and on average 3.8 %
-  of a family pair's task pairs reach one, 53 % never and 43 % are gated
-  (`cross_task_da_size_by_family_multi_axes.csv`).
+  median safe size (17 at 1B, 6 at 90M, 3 each at 175M, 350M and 600M), and
+  on average 3.8 % of a family pair's task pairs reach one, 53 % never and
+  43 % are gated (`cross_task_da_size_by_family_multi_axes.csv`).
 - Every one of the 32 has BPB, the loss or a bBPB twin on at least one side,
   most often `global_piqa_nonparallel_cloze` (accuracy or twin) and
   per-language BPB. No accuracy → accuracy family pair is safe at any size.
-- The DA-ckpt map carries the twins' early checkpoints and is not read here.
+- The DA-ckpt map, now with the twins at every checkpoint, says the same: 39
+  of the 6,480 family pairs reach a median safe checkpoint (37 at 0.5C, 2 at
+  4.5C), every one with BPB, the loss or a twin on a side, and on average 2.0 % of a
+  family pair's task pairs reach one, 58 % never and 40 % are gated
+  (`cross_task_da_ckpt_by_family_multi_axes.csv`).
 
 **Follow-ups**
 
@@ -1319,7 +1334,6 @@ Full task-level maps: [`cross_task_da_size_multi_axes.png`](pretraining/predicti
 - Same-L blocks share the design variants, so a same-list transfer is partly
   by construction: compare against a permutation baseline (the cross-task DA
   of two languages whose L lists are shuffled).
-- Read the DA-ckpt map after the refresh with the twins at every checkpoint.
 
 GitHub: [cross_task_da_size_by_family_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.png) · [cross_task_da_size_by_family_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_size_by_family_multi_axes.csv) ·
 GitHub: [cross_task_da_ckpt_by_family_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.png) · [cross_task_da_ckpt_by_family_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/cross_task_da_ckpt_by_family_multi_axes.csv) ·
@@ -1336,14 +1350,15 @@ GitHub: [cross_task_da_ckpt_benchmarks_multi_axes.png](https://github.com/mariag
 variants at 1.7B, 325 pairs) · final checkpoints only · gate `predictivity`
 on the accuracy side only.** Figures 1–10 read every benchmark through its
 accuracy, a step function of the log-likelihoods the harness already
-computed, with the twins added wherever the store has them (Setup). This figure reads the same items, the same checkpoints and the same
+computed, with the twins added at every size and checkpoint (Setup). This figure reads the same items, the same final checkpoints and the same
 pairs through the gold answer's bits-per-byte (**bBPB**). Does a continuous
 score rank like the reference where accuracy is a coin flip?
 
 How bBPB is computed (no model is re-run; `build_per_item_store.py` +
 `bench_bpb_da.py`):
 
-- **Source.** The lm-eval samples files of every final checkpoint,
+- **Source.** The lm-eval samples files of every checkpoint (the store holds
+  all of them since 2026-10-07; this figure reads the finals),
   `eval_logs/.../<cell>-iter<N>/harness/eval_*/samples_<task>_*.jsonl`. The
   newest file per task wins across the top-up eval dirs. A parent with no file
   of its own is the union of its subject files (rule 6). Only the iopsstor
@@ -1473,12 +1488,12 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity` (406 of its 435 p
 ![bBPB DA, heat map](pretraining/predictivity/bench_bpb_da_size_heatmap_multi_axes.png)
 <!-- END auto:bench-bpb -->
 
-Snapshot: ladder report 2026-10-06 04:26, tables regenerated 2026-10-07; bBPB
-from the per-item store `predictivity_schemes` (finals read), 816 parent tasks
-with bBPB, the eight pool models the store lacks left out (listed in the auto
-block). This figure reads the store directly, so it has bBPB at all five proxy
-sizes, 90M and 600M included, unlike the twins of figures 1–10. Raw
-per-task DAs and both gate flags: [`bench_bpb_da_size_multi_axes.csv`](pretraining/predictivity/bench_bpb_da_size_multi_axes.csv);
+Snapshot: ladder report 2026-10-07 15:51, outputs regenerated in `7966367c`;
+bBPB from the per-item store `predictivity` (rebuilt over every checkpoint,
+finals read here), 816 parent tasks with bBPB, the seven swiglu pool models
+the store lacks left out (listed in the auto block). This figure reads the
+store directly and has bBPB at all five proxy sizes, as the twins of
+figures 1–10 now do too. Raw per-task DAs and both gate flags: [`bench_bpb_da_size_multi_axes.csv`](pretraining/predictivity/bench_bpb_da_size_multi_axes.csv);
 every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretraining/predictivity/bench_bpb_da_size_summary_multi_axes.csv).
 
 **Key findings**
@@ -1488,10 +1503,10 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
     acc → acc is +0.11 at 90M (0.61 against 0.52; bBPB better on 71 % of
     tasks, worse on 20 %).
   - The gain shrinks with the proxy size: +0.06 at 175M, +0.07 at 350M, +0.05
-    at 600M and +0.03 at 1B, where it is better on 52 % and worse on 36 %.
+    at 600M and +0.03 at 1B, where it is better on 53 % and worse on 36 %.
     Wilcoxon p < 0.001 at every size.
 - **It reads more tasks.** bBPB → acc is defined on 483 tasks at every proxy
-  size. acc → acc is defined on 290 at 90M and 440 at 1B, because accuracy
+  size. acc → acc is defined on 293 at 90M and 439 at 1B, because accuracy
   must also clear chance at the proxy.
 - **It is flat in size, accuracy is not.** bBPB → acc stays at 0.59–0.61
   from 90M to 1B, while acc → acc only climbs from 0.52 to 0.57.
@@ -1507,7 +1522,7 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
 - **Per benchmark.** Means are over the five proxy sizes, and the arrows read
   as acc → acc, then bBPB → acc.
   - The largest gains are on the multilingual cloze sets: global_mmlu_full-rf
-    0.55 → 0.68, xcopa 0.49 → 0.63, include_base_44-rf 0.54 → 0.63 and
+    0.56 → 0.68, xcopa 0.49 → 0.63, include_base_44-rf 0.54 → 0.63 and
     belebele-rf 0.49 → 0.58.
   - hellaswag (0.76 → 0.82) and xstorycloze (0.66 → 0.74) were already
     reliable and stay the best.
@@ -1522,10 +1537,10 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
 
 **Follow-ups**
 
-- **The full checkpoint grid.** The refresh with the twins at every
-  checkpoint (`build_per_item_store.py` without `--finals-only`) runs on
-  2026-10-07. It gives bBPB's DA-ckpt, DA-goal and SNR on the ten checkpoints,
-  the readings figures 3 and 7 use for accuracy.
+- ~~**The full checkpoint grid.**~~ Done on 2026-10-07: the store holds every
+  checkpoint of every seed-1904 cell, so the twins carry bBPB's DA-ckpt and
+  DA-goal into figure 3 (DA-goal 0.61–0.68 at the proxies, DA-ckpt 0.87–0.93
+  at 90 % of a run) and its SNR into the noise-and-SNR analysis.
 - ~~**Feed bBPB into the shared pipeline.**~~ Done: `utils.with_bbpb_twins`
   puts a `bbpb_<task>` twin in every `build_snr_pool` population, so
   `compute_da.py`, the scale-convergence figure and the SNR tables already
@@ -1536,7 +1551,8 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
   - lambada has one continuation, so its gold is that continuation.
   - Both are a change to `gold_index` and a re-extract of those two families.
 - **Seed null.** Repeat on `predictivity_seeds` to place bBPB's 0.61 against
-  the two-seeds-of-one-design null of figure 7, as DA-ckpt was.
+  the two-seeds-of-one-design null of figure 7, as DA-ckpt was; it waits on a
+  twin for the 20 seed-replicate models, which the store does not hold yet.
 - **The reference's two rankings.** The DA between the 1.7B bBPB and the
   1.7B accuracy rankings, per task, bounds what bBPB → acc can reach and
   separates the likelihood-vs-accuracy gap from proxy noise.
@@ -1554,9 +1570,9 @@ block of the first stays here because its script reads this folder's per-task ta
 
 - **Scaling cleanly and ranking like the reference are different
   properties.** Across tasks, the scaling analysis's ρ of score with size
-  correlates with the proxy's ranking ρ at only +0.31 (175M) to +0.40 (90M);
-  the trajectory R² is the better surrogate (+0.46 to +0.57 with DA-size), on
-  220–918 tasks that move with the twins (auto block below). Write-up:
+  correlates with the proxy's ranking ρ at only +0.33 (175M) to +0.41 (1B);
+  the trajectory R² is the better surrogate (+0.49 to +0.57 with DA-size), on
+  832–919 tasks, the twins included at every size (auto block below). Write-up:
   [scaling predictability, figure 5](../rq01_scaling_predictability/README.md#5-scaling-cleanly-and-ranking-like-the-reference-are-different-properties).
 - **FineTasks' selection criteria, judged by the reference they cannot
   see.** Their pass rates and the DA-size of the tasks they pass are read in

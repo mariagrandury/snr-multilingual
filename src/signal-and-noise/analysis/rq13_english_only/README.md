@@ -30,8 +30,9 @@ collects them.
   English every other cell trains on), and two deep cells that change only the
   English corpus — DCLM without the edu classifier (`dclmP`, scheme B at L1)
   and plain FineWeb up to 2022 (`fweb`, scheme C at L1).
-- **No swiglu.** The swiglu cells (deep, L8/L15/L30) have no L1 counterpart,
-  so every comparison here reads the deep and shallow ladders only.
+- **No swiglu.** The swiglu ladders (deep, L8/L15/L30) have no L1
+  counterpart beyond one 90M cell, so every comparison here reads the deep and
+  shallow ladders only.
 - **Scores, the gate, scaling.** The L1 baseline cell against the
   baseline cell (scheme A, T = 1) of the same depth at every other L (deep
   against deep, shallow against shallow), final checkpoints, 90M–1.7B. The
@@ -68,11 +69,11 @@ collects them.
   rewrites, and the bBPB twins (lower is better, oriented before any gap is
   read; no chance level, so never gated). The English validation BPB
   (`bpb_dclm`) is read beside them, never pooled with them.
-- **The bBPB twins are final checkpoints only** in this snapshot, and the
-  store has none at 90M and 600M (and part of 350M). So the twins enter the
-  decision-accuracy lines at 175M and 1B alone (98 of 123 and 129 tasks); their
-  SNR rows are kept out of any reading until the twins exist at every
-  checkpoint, and both sections give the accuracy-only reading.
+- **The bBPB twins exist at every checkpoint of every size** since this
+  snapshot, so they enter the decision-accuracy lines at every drawn proxy (98
+  of 121–129 tasks) and their SNR rows read the full noise window; both
+  sections give the accuracy-only and the twin-only reading beside the pooled
+  one, because the twins outnumber the accuracy tasks three to one.
 - **Rules.** The gate of rule 1 blanks every at-chance (task, size) cell
   (decision accuracy at the proxy and the reference); rule 5's three pairs per
   DA cell; the noise window of rule 4 for the SNR; sizes 90M–1.7B (rule 10);
@@ -91,16 +92,16 @@ Pool `predictivity`, ladder-report snapshot **2026-10-07 15:51**; seed 1904 for 
 
 ![English scores](pretraining/predictivity/english_only_scores.png)
 
-Pool `predictivity` (seed 1904, every data build, swiglu left out), ladder-report snapshot 2026-10-06 04:26, prose re-read 2026-10-07; final checkpoints, 90M–1.7B, gate `predictivity`. The L1 baseline cell against the same-depth baseline cell of L2, L8, L15, L30 and L50, on the 26–33 accuracy-scored English tasks above chance at each drawn size (350M thin for deep).
+Pool `predictivity` (seed 1904, every data build, swiglu left out), ladder-report snapshot 2026-10-07 15:51, prose re-read 2026-10-07; final checkpoints, 90M–1.7B, gate `predictivity`. The L1 baseline cell against the same-depth baseline cell of L2, L8, L15, L30 and L50, on the 26–33 accuracy-scored English tasks above chance at each drawn size (350M thin for deep).
 
 Key findings:
 
-- **The English-only cells are better at English, by a small margin.** Deep L1 wins more than half of the English accuracy tasks against every other L at every drawn size (25 of 25 (size, L) cells; win share 0.56–0.79 per size, every L pooled), but the mean gap at 1.7B is 1.2 points (33 tasks, every L pooled); shallow L1 wins 28 of 30 cells, 0.6 points at 1.7B.
+- **The English-only cells are better at English, by a small margin.** Deep L1 wins more than half of the English accuracy tasks against every other L at every drawn size (25 of 25 (size, L) cells; win share 0.60–0.79 per size, every L pooled), but the mean gap at 1.7B is 1.2 points (33 tasks, every L pooled); shallow L1 wins 29 of 30 cells, 0.6 points at 1.7B.
 - **English BPB is the cleanest separation.** L1 has the lower `bpb_dclm` in all 30 (size, L) comparisons at both depths; the deep gap is 0.049 bits per byte at 90M and shrinks to 0.028 at 1.7B (0.782 against 0.810).
 - **Part of the lead is beyond seed noise.** Deep L1 is ahead by more than 2 seed sd in 0.55 (175M), 0.45 (600M) and 0.45 (1B) of the (task, L) comparisons and behind by as much in 0.03–0.07.
 - **Clearing chance earlier holds per task, not per share.** Against each of the five L, deep L1 clears chance from a smaller size on more tasks than from a larger one (92 against 30 (task, L) pairs), but its share of English tasks above chance is ahead in only 14 of 25 (size, L) cells (0.42 against a median 0.36 at 1.7B).
 - **Scaling is about as regular.** The 1.7B English BPB forecast from 90M–1B misses by 1.0 % at L1 against 1.1–1.4 % elsewhere; the median R² of the English accuracy fits is 0.87 at L1 against 0.81–0.93 (31 fits each).
-- **Decision accuracy is higher at L1, but the decisions differ.** With four families per L, DA-size (multi-axis, no filter) is 0.60 at 175M and 0.63 at 1B for L1 against 0.45–0.52 and 0.46–0.51 for L2/L15/L30, on the depth pair alone 0.52 against 0.44–0.48. On the shared deep-against-shallow decision, accuracy tasks alone, L1's median log10 SNR is highest at 175M (0.17 against −0.10 to 0.06) and 1.7B (−0.15 against −0.31 to −0.17) and tied at 1B (−0.01 against −0.22 to 0.01); the bBPB-pooled verdict waits for the twins at every checkpoint.
+- **Decision accuracy is higher at L1, but the decisions differ.** With four families per L, DA-size (multi-axis, no filter) is 0.58–0.63 at 90M–1B for L1 against 0.45–0.53 for L2/L15/L30, on the depth pair alone 0.51 against 0.45–0.47. On the shared deep-against-shallow decision, accuracy tasks alone, L1's median log10 SNR is highest at every drawn size but 1B, where it ties (−0.01 against −0.22 to 0.01); on the bBPB twins alone it is mid-pack, so the pooled verdict is "partly" (ahead in 11, tied in 4, behind in 10 of 25 cells).
 - **Next to DataDecide.** L1's DA-size is below / inside / above DataDecide's range in 3 / 5 / 3 of 11 format-matched (task, size) cells, median ratio 0.95; the SNRs are not comparable.
 
 [english_only_scores.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scores.png) · [english_only_scores.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_scores.csv) · [english_only_verdict.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_verdict.csv)
@@ -135,10 +136,11 @@ Follow-ups:
   says whether L1's lead is the token count alone.
 - The DCLM-without-edu and FineWeb L1 cells against the baseline L1 cell: the
   English-corpus effect next to the language-count effect, on the same tasks.
-- Re-read the bBPB of the L1 deep cell at 1B (mean gap −0.320 bits against a
-  median of 0.008) at its neighbouring checkpoints once the twins exist along
-  the run: with finals only, a one-cell spike cannot be told from a bad
-  checkpoint or seed noise.
+- The bBPB of the L1 deep cell at 1B (mean gap −0.320 bits against a median
+  of 0.008) is not one bad checkpoint: its `bbh_mcq` twins rise from 1.6 bits
+  at 10 % of the run to 3.2–3.5 over the last four checkpoints, against
+  1.5–1.8 for L2 and L15 deep at the same steps (`bench_bpb.csv`); a replicate
+  seed of that cell would say whether it is the seed.
 - The 90M deep mean gap (−7.3 points against a median of 0.8) without the
   `cultural_bench_easy` letter tasks the outlier bullet names, to see whether
   L1 trails at 90M at all.
@@ -228,18 +230,18 @@ Key findings (DA-size against 1.7B, no reliability filter, pooled over the Engli
 
 Key findings, read from `english_only_da_size_per_task_both_axes.csv` and `english_only_da_size_by_L_both_axes.csv` (multi-axis, the lines' shared cells, 6 pairs per task):
 
-- **Only 175M and 1B are drawn, and the twins dominate them.** The lines read 123 tasks at 175M (25 accuracy, 98 bBPB) and 129 at 1B (31, 98); 90M, 350M and 600M are thin because the twins are missing there.
-- **The generated bBPB bullet's "not in the lines" disagrees with the setup block**, which counts the 98 twins in the 175M and 1B lines; the per-task CSV marks them shared at both sizes for every group.
-- **L1's lead holds on each scoring alone.** Accuracy tasks: L1 0.59 (175M) and 0.63 (1B) against 0.43–0.51 and 0.45–0.51 for L2/L15/L30; bBPB twins: L1 0.60 and 0.63 against 0.46–0.53 and 0.44–0.52.
-- **The band separates L1 at 175M only, and not from every L.** L1's 90 % band at 175M (0.548–0.655) just clears L2's and L15's upper ends (0.546, 0.490) but overlaps L30's (0.456–0.585); at 1B it spans 0.47–0.79 and overlaps all three.
-- **Most of the gap is the decision, not the proxy.** On the depth pair, the one decision every group shares, L1 is at 0.52 against 0.44–0.48; the L1 pairs that move the English corpus reach 0.63 (data build) and 0.65 (two axes at once).
+- **Four proxies are drawn, and the twins dominate them.** The lines read 121 tasks at 90M (23 accuracy, 98 bBPB), 123 at 175M (25, 98) and 129 at 600M and 1B (31, 98); 350M is thin (14 tasks) because the L1 deep cell there has 18 of the 206 English tasks.
+- **The generated bBPB bullet's "not in the lines" disagrees with the setup block**, which counts the 98 twins in every drawn line; the per-task CSV marks them shared at every drawn size for every group.
+- **L1's lead holds on each scoring alone.** Accuracy tasks: L1 0.59, 0.59, 0.56 and 0.63 (90M, 175M, 600M, 1B) against 0.43–0.48, 0.43–0.51, 0.39–0.53 and 0.45–0.51 for L2/L15/L30; bBPB twins: L1 0.58, 0.60, 0.61 and 0.63 against 0.49–0.54, 0.46–0.53, 0.44–0.53 and 0.44–0.52.
+- **The band separates L1 at 175M only, and not from every L.** L1's 90 % band at 175M (0.548–0.655) just clears L2's and L15's upper ends (0.546, 0.490) but overlaps L30's (0.456–0.585); at 90M (0.49–0.67), 600M (0.40–0.80) and 1B (0.47–0.79) it overlaps all three.
+- **Most of the gap is the decision, not the proxy.** On the depth pair, the one decision every group shares, L1 is at 0.51 against 0.45–0.47; the L1 pairs that move the English corpus reach 0.63 (data build) and 0.60 (two axes at once).
 
 Follow-ups:
 
 - The seed-null DA of the L1 replicates at 175M, 600M and 1B, as the floor
   these lines should be read against.
-- The bBPB twins at 90M, 350M and 600M (one store rebuild): they would make
-  those sizes non-thin and give the lines more than two proxies.
+- The English tasks the 350M L1 deep cell lacks (it has 18 of 206), which
+  keep 350M thin in every section.
 - Next: whether the same families separate more cleanly than they wobble,
   [Noise and SNR](#noise-and-snr).
 
@@ -262,19 +264,18 @@ Key findings:
 [english_only_snr.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_snr.png) · [english_only_snr.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_snr.csv) · [english_only_snr_per_task.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq13_english_only/pretraining/predictivity/english_only_snr_per_task.csv)
 <!-- END auto:english-snr -->
 
-Key findings, read from `english_only_snr_per_task.csv` (mirrored families, ungated tasks, median log10 SNR at 175M / 1B / 1.7B):
+Key findings, read from `english_only_snr_per_task.csv` (ungated tasks every group of the reading has, median log10 SNR at 90M / 175M / 600M / 1B / 1.7B):
 
-- **On accuracy tasks alone L1 leads from 1B, not at 175M.** L1 0.34 / 0.28 / 0.25 against L2 0.35 / 0.15 / 0.09, L15 0.23 / 0.11 / 0.01 and L30 0.14 / 0.04 / −0.04 (26 / 32 / 33 tasks). The pooled mirrored-SNR lead (9 of 9 in the verdict) is 98 bBPB twins to these 26 / 32 / 33 accuracy tasks, and the twin SNR is not readable until the twins exist across the noise window.
-- **On the shared decision, accuracy tasks alone, L1 is highest or tied.** Deep against shallow (20 / 24 / 22 tasks), L1's median log10 SNR is 0.17 / −0.01 / −0.15 at 175M / 1B / 1.7B against −0.10 to 0.06 / −0.22 to 0.01 / −0.31 to −0.17 for the other L's, tied with L8 at 1B (0.01 against −0.01). The pooled reading in the generated block and the verdict's 7 / 4 / 4 of 15 include the 98 twins and wait for the twins at every checkpoint.
+- **Mirrored families: on accuracy tasks alone L1 leads at every drawn size but 175M.** L1 0.36 / 0.34 / 0.36 / 0.28 / 0.25 against L2 0.22 / 0.35 / 0.23 / 0.15 / 0.09, L15 0.28 / 0.23 / 0.09 / 0.11 / 0.01 and L30 0.28 / 0.14 / 0.13 / 0.04 / −0.04 (29 / 26 / 31 / 32 / 33 tasks). On the 98 twins alone, now on the full noise window, L1 leads at every size (0.30–0.46 against 0.06–0.32), so the pooled lead (15 of 15 in the verdict) holds on each scoring.
+- **On the shared decision, accuracy tasks alone, L1 is highest or tied.** Deep against shallow (18 / 20 / 19 / 24 / 22 tasks), L1's median log10 SNR is 0.21 / 0.17 / 0.16 / −0.01 / −0.15 against −0.02 to 0.16 / −0.10 to 0.06 / −0.11 to 0.04 / −0.22 to 0.01 / −0.31 to −0.17 for the other L's, tied with L8 at 1B (0.01 against −0.01). On the twins alone it is mid-pack (−0.11 to 0.10 against −0.17 to 0.19), so the pooled reading in the generated block and the verdict's 11 / 4 / 10 of 25 are the twins'.
 
 Follow-ups:
 
 - The signal and the noise parts separately (both are in
   `english_only_snr_per_task.csv`): whether L1's SNR comes from a wider
   spread across its families or from quieter late checkpoints.
-- The bBPB SNR again once the twins exist at every checkpoint of the noise
-  window, before reading the pooled lines, which are 98 twins to 26–33
-  accuracy tasks.
+- The deep-against-shallow SNR of the twins per benchmark family, to see
+  which twins put L1 mid-pack where its accuracy tasks lead.
 - Next: whether the L1 numbers land where an external English ladder puts the
   same tasks, [Next to AllenAI DataDecide](#next-to-allenai-datadecide).
 

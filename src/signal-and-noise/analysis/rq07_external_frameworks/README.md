@@ -63,8 +63,8 @@ Population: pool `predictivity` (seed 1904, every cell and data build at the 1B 
 
 **Key findings**
 
-- **Same order, n = 3.** `aad` SNR is 1.09 / 0.87 / 0.52 on our ladder and 9.76 / 5.04 / 4.16 on DataDecide for ARC Easy / HellaSwag / ARC Challenge.
-- **Our SNR is 5.8–9.0× smaller.** DataDecide's `aad` SNR exceeds ours by 9.0× on ARC Easy, 5.8× on HellaSwag and 7.9× on ARC Challenge; the log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
+- **Same order, n = 3.** `aad` SNR is 1.03 / 0.82 / 0.50 on our ladder and 9.76 / 5.04 / 4.16 on DataDecide for ARC Easy / HellaSwag / ARC Challenge.
+- **Our SNR is 6.1–9.4× smaller.** DataDecide's `aad` SNR exceeds ours by 9.4× on ARC Easy, 6.1× on HellaSwag and 8.2× on ARC Challenge; the log-scale correlation ignores this offset, so compare orders across corpora, never SNR levels.
 - **The seed pool agrees.** On `predictivity_seeds` (every seed) the same three tasks keep the same order (ρ 1.00, Pearson r 0.84).
 - **Half of DataDecide's shared tasks are gated out on our side.** DataDecide also scores MMLU (5.01), CSQA (3.45) and OpenBookQA (1.69), but none of them clears the above-random gate at our 1B rung, so the top-5 overlap is 3 of 5 (Jaccard 0.60).
 
@@ -114,11 +114,11 @@ GitHub: [snr_apertus_vs_snr_allenai_paper.png](https://github.com/mariagrandury/
 
 | family | members (r, seed 1904 / all seeds) | reading |
 |---|---|---|
-| **dispersion** | `dispersion` 0.79/0.75, `range` 0.79/0.75, `mpd` 0.96/0.97, `aad` 0.87/0.84, `rms_deviation` 0.99/1.00, `quartile_deviation` 0.79/0.53, `dist_std` 0.99/0.98, `mpsd` 0.98/1.00 | positive in both pools (0.53–1.00) |
-| **discrepancy** | `discrepancy` 0.83/0.83, `star_discrepancy` 0.92/0.93, `star_discrepancy_shifted` 0.84/0.85, `dispersion_shifted` 0.94/0.96, `rel_star_discrepancy` 0.79/0.68, `gini` −0.82/−0.85 | positive except `gini` |
-| **relative-spread** | `rel_std` −0.68/−0.99, `rel_mpd` −0.91/−0.98, `rel_mpsd` 0.31/0.09, `rel_dispersion` −0.04/−0.11, `iqr` 0.97/−0.95 | does not transfer (incl. AllenAI's default `rel_std`); `iqr` flips sign between pools |
-| **depth** | `tukey` 0.62/0.92, `projection` 0.75/0.85 | positive, pool-dependent |
-| **robust** | `mad` 0.63/0.59 | positive |
+| **dispersion** | `dispersion` 0.80/0.77, `range` 0.80/0.77, `mpd` 0.95/0.96, `aad` 0.87/0.84, `rms_deviation` 0.99/0.99, `quartile_deviation` 0.80/0.40, `dist_std` 1.00/0.99, `mpsd` 0.97/1.00 | positive in both pools (0.40–1.00) |
+| **discrepancy** | `discrepancy` 0.84/0.84, `star_discrepancy` 0.92/0.93, `star_discrepancy_shifted` 0.84/0.85, `dispersion_shifted` 0.95/0.96, `rel_star_discrepancy` 0.81/0.71, `gini` −0.82/−0.85 | positive except `gini` |
+| **relative-spread** | `rel_std` −0.65/−0.96, `rel_mpd` −0.92/−0.99, `rel_mpsd` 0.16/0.03, `rel_dispersion` 0.01/−0.07, `iqr` 0.88/−0.87 | does not transfer (incl. AllenAI's default `rel_std`); `iqr` flips sign between pools |
+| **depth** | `tukey` 0.54/0.84, `projection` 0.59/0.79 | positive, pool-dependent |
+| **robust** | `mad` 0.80/0.57 | positive |
 
 **Enlarging the shared universe.** The 6-task overlap (3 after the gate; 7 on the
 36-sweep) is the binding constraint: 235 of DataDecide's 241 task rows (subjects
@@ -154,7 +154,7 @@ Not worth adding: `paloma_*` (perplexity, custom harness), `multitask_*` /
 `custom_loss_*` (aggregates / loss probes), `copycolors:mc` (niche).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (full refresh, commit `b316f53b`).
+**2026-10-07 15:51** (full refresh, commit `7966367c`).
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity) -->
 ## Results
@@ -184,11 +184,11 @@ Population: pools `predictivity` (seed 1904) and `predictivity_seeds` (every see
 
 **Key findings**
 
-- **No variant is significant at 1B↔1B on seed 1904.** Pearson r ranges from −0.91 (`rel_mpd`) to 0.99 (`dist_std`, p = 0.07), and 17 of the 22 variants have r ≥ 0.6.
-- **The seed pool moves individual variants a lot.** On `predictivity_seeds`, `mpsd` (r 1.00, p = 0.01) and `rms_deviation` (r 1.00, p = 0.04) pass p < 0.05, while `iqr` flips from 0.97 to −0.95.
-- **Relative-spread variants do not transfer.** AllenAI's default `rel_std` has r −0.68 (seed 1904) and −0.99 (all seeds) at 1B↔1B, against 0.84–0.87 for `aad`.
-- **The correlation exists only from 600M up.** At 175M↔150M and 350M↔300M only 2 shared tasks clear the gate, so r is undefined; `aad` has r 0.94 on seed 1904 (0.99 on every seed) at 600M↔750M, and 0.97 at the unmatched 1.7B↔1B.
-- **Three points make r unstable across sizes.** `rel_std` goes from −0.68 at 1B↔1B to 1.00 at 1.7B↔1B, each over three tasks, so read any single variant's r as indicative only.
+- **One variant is significant at 1B↔1B on seed 1904, on three points.** Pearson r ranges from −0.92 (`rel_mpd`) to 1.00 (`dist_std`, p = 0.04, the only p < 0.05), and 15 of the 22 variants have r ≥ 0.6.
+- **The seed pool moves individual variants a lot.** On `predictivity_seeds` only `mpsd` (r 1.00, p = 0.04) passes p < 0.05 (`dist_std` drops to p = 0.10), while `iqr` flips from 0.88 to −0.87.
+- **Relative-spread variants do not transfer.** AllenAI's default `rel_std` has r −0.65 (seed 1904) and −0.96 (all seeds) at 1B↔1B, against 0.84–0.87 for `aad`.
+- **The correlation exists only from 600M up.** At 175M↔150M and 350M↔300M only 2 shared tasks clear the gate, so r is undefined; `aad` has r 0.95 on seed 1904 (0.99 on every seed) at 600M↔750M, and 0.97 at the unmatched 1.7B↔1B.
+- **Three points make r unstable across sizes.** `rel_std` goes from −0.65 at 1B↔1B to 1.00 at 1.7B↔1B, each over three tasks, so read any single variant's r as indicative only.
 
 **Follow-ups**
 

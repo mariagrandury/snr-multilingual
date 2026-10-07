@@ -127,17 +127,18 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
   (`DISCREPANCY_UNIT_INTERVAL`) are NaN on the twins, as on BPB and the loss.
 - **No chance level, so no gate.** Like per-language BPB, the twin has a mask
   of NA and passes rule 1 everywhere, including where its original is at chance.
-- **The store holds finals only.** It was built with `--finals-only` on
-  seed 1904, so a twin exists only where the store holds the cell's final
-  checkpoint (`with_bbpb_twins` is an inner join on `bench_bpb.csv`): it
-  enters DA-size and every final-checkpoint read, and is empty in DA-ckpt,
-  DA-goal before 100 %, the checkpoint noise and the seed replicates until the
-  store is rebuilt over every checkpoint. The nightly only reduces the store
-  (`--bench-bpb`) and extracts nothing, so a cell evaluated after the last
-  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
-  has no twin until the sbatch is re-submitted (it resumes); the loader prints
-  those models, and a bBPB DA over them runs over fewer families than its
-  original's.
+- **Every checkpoint, seed 1904 only.** The store was rebuilt over every
+  checkpoint on 2026-10-07 (`build_per_item_store.py` without
+  `--finals-only`) and holds all checkpoints of every seed-1904 ladder cell,
+  so a twin enters DA-size, DA-ckpt, DA-goal at every fraction, the
+  checkpoint noise and the SNR (`with_bbpb_twins` is an inner join on
+  `bench_bpb.csv`). It does not hold the seed replicates (64/313, 28/1797)
+  nor the 3B cells, so the seed noise, the seed holdout and the 3B reads have
+  no twin. The nightly only reduces the store (`--bench-bpb`) and extracts
+  nothing, so a cell evaluated after the last `build_per_item_store.sbatch`
+  run has no twin until the sbatch is re-submitted (it resumes); the loader
+  prints those models, and a bBPB DA over them runs over fewer families than
+  its original's.
 - **Two targets for a twin.** A twin is read against the 1.7B bBPB (bBPB →
   bBPB, no chance level, never gated) or against its original's 1.7B
   accuracy (bBPB → accuracy, the same truth as the accuracy variants, gated

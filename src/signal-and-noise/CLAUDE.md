@@ -90,13 +90,15 @@ so a script never decides by model name.
   driver's first step; without the cluster-only store it keeps the committed
   table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
   original's row, so it exists only where the original is AND the store holds
-  that (model, step): an inner join on `bench_bpb.csv`. The nightly only
-  reduces the store and extracts nothing, so a cell evaluated after the last
-  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
-  has no twin until the sbatch is re-submitted; the loader prints those models. Its
+  that (model, step): an inner join on `bench_bpb.csv`. The store holds every
+  checkpoint of every seed-1904 ladder cell (rebuilt 2026-10-07), but not the
+  seed replicates nor the 3B cells. The nightly only reduces the store and
+  extracts nothing, so a cell evaluated after the last
+  `build_per_item_store.sbatch` run has no twin until the sbatch is
+  re-submitted; the loader prints those models. Its
   family is `bbpb_<family>`, its language the original's, and it is
-  lower-is-better (`utils.lower_is_better`). Finals only for now: see
-  RULES.md "The benchmark-BPB twins".
+  lower-is-better (`utils.lower_is_better`). See RULES.md "The benchmark-BPB
+  twins".
 - `mix` is the cell's design variant (`L8-schemeB-deep`, `launch_trainings.mix_label`)
   — the role the data mixture played in the 36-sweep — and `family`
   (`lm-L8-schemeB-deep-seed1904`) is the cross-size identity DA groups on.

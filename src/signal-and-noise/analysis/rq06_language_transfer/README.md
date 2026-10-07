@@ -39,8 +39,8 @@ decision); scheme A vs C at L1 (A vs FWEB) and L2 (A vs ES); temperature
 
 Language panel: pool `predictivity`, seed 1904, 14 design variants of every
 data build (91 multi-axis pairs per benchmark), gate `predictivity`, no
-filter, reference 1.7B, the eight L8 languages; the bBPB twins exist at the
-final checkpoint only in this refresh.
+filter, reference 1.7B, the eight L8 languages; the bBPB twins exist at every
+checkpoint of every size since the 2026-10-07 refresh.
 
 ## Key figure
 
@@ -72,8 +72,8 @@ GitHub: [transfer_da_all_lines_mono_axis_paper.png](https://github.com/mariagran
   (the progress report's `plot_bpb` on the analysis' cells).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (refresh at commit b316f53b, read 2026-10-07). The bBPB
-twins are scored at final checkpoints only in this refresh.
+**2026-10-07 15:51** (refresh at commit 7966367c, read 2026-10-07). The bBPB
+twins are scored at every checkpoint of every size in this refresh.
 
 <!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
@@ -228,8 +228,8 @@ the proxy's own macro over the languages readable at its size.
 
 Population: 14 design variants (91 pairs per benchmark), the eight L8
 languages (en, ru, zh, de, ja, es, fr, it). The pooled row covers 15
-benchmarks plus their 19 bBPB twins at 175M, 350M and 1B but only the 14–15
-benchmarks at 90M and 600M (no twin there), so its populations differ by size.
+benchmarks plus their 19 bBPB twins at every size but 90M, which lacks `paws`
+(33 tasks), so its populations differ by one task across sizes.
 
 <!-- BEGIN auto:language-panel (language_panel.py --pool predictivity) -->
 ## The minimal language panel
@@ -282,12 +282,12 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
 - **English alone is the weakest single-language proxy at 1B.** Pooled over
   the panel's benchmarks, English reads 0.58 against 0.61–0.66 for the other
   seven languages (zh 0.66, ru 0.66, de 0.64, es 0.62, fr 0.62, it 0.62,
-  ja 0.61) and 0.67 for the panel macro; at 600M English (0.60) sits with
-  Japanese (0.56) and Chinese (0.57) at the bottom, below the macro's 0.68.
-- **English or Japanese is the lowest single language at every size.** They
-  are the two lowest at 90M (ja 0.54, en 0.55), 175M (en 0.55, ja 0.57), 350M
-  (ja 0.53, en 0.55) and 1B (en 0.58, ja 0.61). At 600M the bottom two are
-  Japanese 0.56 and Chinese 0.57, with English third at 0.60.
+  ja 0.61) and 0.67 for the panel macro; at 600M English (0.57) is again the
+  lowest, below Japanese (0.60) and the macro's 0.67.
+- **English is the lowest single language at every size, Japanese the second.**
+  English reads 0.55–0.58 and Japanese 0.57–0.62 at every size: 90M (en 0.57,
+  ja 0.62), 175M (en 0.55, ja 0.57), 350M (en 0.57, ja 0.59), 600M (en 0.57,
+  ja 0.60) and 1B (en 0.58, ja 0.61).
 - **Per benchmark the macro beats English where it matters.** At 1B the
   proxy's macro reaches 0.93 on hellaswag, 0.89 on LAMBADA and INCLUDE-rfgm
   and 0.81 on Global-MMLU-rf, where English alone reads 0.87, 0.78, — and
@@ -298,10 +298,10 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
   Global-MMLU-rf and LAMBADA, so there the languages' errors are partly
   independent; INCLUDE-rf trails Russian 0.67 to 0.73, and on `xnli` (macro
   0.33) and `xwinograd` (0.26) nothing reads the reference above 0.54.
-- **The macro is the safest proxy from 350M up.** Pooled, it reads 0.65,
-  0.68 and 0.67 at 350M, 600M and 1B, above every single language, while
-  Italian edges it at 90M (0.659 against 0.655, both 0.66 at two decimals)
-  and German beats it at 175M (0.66 against 0.65).
+- **The macro is a safe proxy but not always the best one.** Pooled, it
+  reads 0.68, 0.67 and 0.67 at 90M, 600M and 1B, above every single language
+  (Italian 0.67, French 0.67, Russian and Chinese 0.66), while German beats
+  it at 175M (0.66 against 0.65) and at 350M (0.69 against 0.68).
 
 **Follow-ups** (`plan/next_analyses.md` §6)
 
@@ -310,8 +310,8 @@ Per benchmark family, decision accuracy of a proxy size against the 1.7B MACRO r
   per-L pairs, rule 2).
 - The seed null of the decision-accuracy analysis ([its seed-uncertainty figure](../rq02_decision_accuracy/README.md#7-seed-uncertainty-and-the-da-ckpt-null))
   as the floor of every panel.
-- The pooled row once the bBPB twins exist at every size, so that 90M and
-  600M pool the same 34 benchmarks as the other sizes.
+- Drop `paws` from the pooled row at every size (90M has no `paws` cell), so
+  that the five sizes pool exactly the same 33 tasks.
 
 GitHub: [language_panel.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/language_panel.png) · [language_panel.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity/language_panel.csv)
 

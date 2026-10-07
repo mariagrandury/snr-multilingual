@@ -25,7 +25,7 @@
 - **Seed holdout (predictivity_seeds_train → predictivity_seeds_test)**: Spearman ρ of the global variant ranking **0.84** (DA-ckpt), **0.81** (DA-size); family-level per-language agreement 100% / 100%. A ranking that does not survive the seed swap is noise-dominated — only the *family* recommendation transfers.
 <!-- END auto:highlight -->
 
-## Headlines (ladder report 2026-10-06 04:26)
+## Headlines (ladder report 2026-10-07 15:51)
 
 *Pool `predictivity`: seed 1904, every cell (L ∈ {1, 2, 8, 15, 30, 50}; the
 deep, shallow and swiglu ladders; every data build), sizes 90M–1.7B, the gate
@@ -40,32 +40,35 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 **Key findings**
 
 - **The dispersion SNR definitions track decision accuracy best, as a
-  block:** the top eight (`aad`, `quartile_deviation`, `rms_deviation`,
-  `mpd`, `dist_std`, `dispersion`, `range`, `mad`) read mean r 0.32–0.35
-  with DA-size and 0.44–0.47 with DA-ckpt (0.39–0.41 overall,
-  `top_variants_overall.csv`; the figure's all-task panels read 0.34–0.35
-  and 0.41–0.45 for its top six). The leader `aad` (0.34 / 0.47) wins by
-  less than 0.01, and the depth definitions are anti-signals (`tukey`
-  −0.18 / −0.27, `projection` −0.21 / −0.26).
+  block:** the top eight (`aad`, `dist_std`, `quartile_deviation`,
+  `rms_deviation`, `mpd`, `range`, `dispersion`, `mad`) read mean r
+  0.27–0.30 with DA-size and 0.40–0.42 with DA-ckpt (0.34–0.36 overall,
+  `top_variants_overall.csv`; the figure's all-task panels read 0.31–0.34
+  and 0.41–0.44 for their top six, its DA-size panel led by the
+  relative-spread `rel_mpd`, `iqr` and `rel_std`). The leader `aad` (0.30 /
+  0.42) wins by less than 0.01, and the depth definitions are anti-signals
+  (`tukey` −0.12 / −0.21, `projection` −0.15 / −0.23).
 - **No exact definition is best everywhere:** per language the winner is
-  one of 16 definitions under DA-size and one of 13 under DA-ckpt. The
-  dispersion family wins 31 of 50 languages under DA-ckpt but 14 under
-  DA-size, where discrepancy wins 17.
-- **The seed holdout cannot settle the ranking yet:** the global ranking of
-  the 22 definitions correlates across the seed split at Spearman ρ 0.82
-  under DA-ckpt and −0.28 under DA-size. The per-language agreement quoted
-  in the highlight rests on English alone (DA-size, 0 of 1) and on English
-  and Russian (DA-ckpt, 2 of 2).
-- **Beyond SNR, the ranking of statistics changes with the proxy:** on the
-  rungs without bBPB twins, SNR relative std leads at 90M (Spearman ρ 0.42
-  with DA-size, 298 tasks), while at 600M four candidates sit at 0.30–0.32
-  (413 tasks). Margin above chance (−0.07 to 0.04) and signal alone (−0.13
-  to 0.05) carry nothing on the benchmark tasks.
+  one of 12 definitions under DA-size and one of 11 under DA-ckpt. The
+  dispersion family wins 23 of 50 languages under DA-ckpt but 10 under
+  DA-size, where discrepancy wins 24.
+- **The seed holdout now agrees under both DA kinds, on one or two
+  languages:** the global ranking of the 22 definitions correlates across
+  the seed split at Spearman ρ 0.84 under DA-ckpt and 0.81 under DA-size.
+  The per-language agreement quoted in the highlight rests on English alone
+  (DA-size, 1 of 1) and on English and Russian (DA-ckpt, 2 of 2).
+- **Beyond SNR, the early-checkpoint agreement leads at every proxy, but on
+  the bBPB twins:** it reads Spearman ρ 0.54–0.64 with DA-size over
+  1117–1266 tasks (816 of them twins at every rung) against 0.18–0.40 on
+  the 301–450 accuracy tasks alone, where SNR relative std (0.20–0.39) and
+  the inverted noise (0.22–0.35) read as much. Margin above chance (−0.07
+  to 0.04) and signal alone (−0.11 to 0.04) carry nothing on the benchmark
+  tasks.
 - **The proxy's own rank stability beats every SNR in the catalogue:** over
   420 (benchmark, language) clusters, consecutive-checkpoint Kendall τ reads
-  ρ 0.94 against DA-ckpt and 0.82 against DA-goal, and the proxy's mean
-  DA-ckpt 0.76 against DA-size (ceilings 0.97 / 0.94 / 0.90). AllenAI's
-  relative-std / checkpoint-noise SNR reads 0.50–0.57.
+  ρ 0.97 against DA-ckpt and 0.86 against DA-goal, and the proxy's mean
+  DA-ckpt 0.84 against DA-size (ceilings 0.99 / 0.95 / 0.92). AllenAI's
+  relative-std / checkpoint-noise SNR reads 0.59–0.65.
 - **FineTasks' criteria separate reliable tasks only modestly:** on the 846
   accuracy benchmark tasks the three together pass 16 % (90M) to 42 % (1B),
   against 37–54 % for our gate. Their passers read DA-size 0.56–0.59
@@ -98,13 +101,12 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
   not a language's and are left out (rule 7). The 22 definitions are grouped
   into families (dispersion / relative spread / discrepancy / robust /
   depth).
-- **bBPB twins (populations move, rule 13).** The `bbpb_*` twins have an SNR
-  only at the rungs the per-item store held when this refresh ran: 175M,
-  350M, 1B and 1.7B (816, 595, 816 and 816 twins; 544 of the 350M twins
-  also have DA-size and 521 have DA-ckpt), none at 90M or 600M. Every
-  pooled or per-proxy number that includes those rungs mixes the twins in;
-  nothing below claims anything about bBPB at early checkpoints until the
-  store is rebuilt over every checkpoint.
+- **bBPB twins (populations move, rule 13).** The per-item store was rebuilt
+  over every checkpoint of every seed-1904 ladder cell, so the 816 `bbpb_*`
+  twins have an SNR, a DA-size and a DA-ckpt at every rung from 90M to 1.7B,
+  and every pooled or per-proxy number below mixes them in. The seed
+  replicates (seeds 64/313/28/1797, 20 models) and the five 3B cells still
+  have no twin, so the seed holdout holds no bBPB row.
 
 ## Methodology
 
@@ -125,7 +127,8 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
   splits, today 1 (DA-size) and 2 (DA-ckpt).
 
 Hand-written numbers in this README are from the ladder-report snapshot
-**2026-10-06 04:26** (outputs regenerated 2026-10-07).
+**2026-10-07 15:51** (outputs regenerated in `7966367c`, prose re-read
+2026-10-07).
 
 <!-- BEGIN auto:results (snr_definition_postprocess.py --pool predictivity) -->
 ## Results
@@ -232,20 +235,21 @@ GitHub: [top_benchmarks_per_language.png](https://github.com/mariagrandury/snr-m
 **Key findings** (pool `predictivity`, 90M–1.7B, gated, 50 languages under
 each DA kind; the holdout rows on the ×3 cells only)
 
-- **A block, not a winner:** the eight leading definitions span 0.39–0.41
-  overall, and `aad` leads `quartile_deviation` by 0.001. With every replicate
-  seed in the signal pool (`predictivity_seeds`) the leader is still `aad`,
-  at 0.34 / 0.46.
-- **The most reliable benchmark per language is, today, a bBPB twin:** a
-  `bbpb_*` task has the highest `aad` SNR at 1.7B in 47 of 50 languages, and
-  an accuracy task only in Bulgarian and Danish (MultiBLiMP); in Latvian the
+- **A block, not a winner:** the eight leading definitions span 0.34–0.36
+  overall, and `aad` leads `dist_std` by 0.002. With every replicate seed in
+  the signal pool (`predictivity_seeds`) the leader becomes `dist_std`, at
+  0.30 / 0.42, with `aad` second by 0.002.
+- **The most reliable benchmark per language is a bBPB twin:** a `bbpb_*`
+  task has the highest `aad` SNR at 1.7B in 47 of 50 languages, and an
+  accuracy task only in Bulgarian and Danish (MultiBLiMP); in Latvian the
   language's own BPB ranks first. MultiBLiMP, in either scoring, is the top
-  benchmark in 14 languages; the bBPB rows are provisional until the store
-  holds every checkpoint.
+  benchmark in 14 languages, and the twins now carry every checkpoint, so
+  their rows are no longer provisional.
 - **The seed holdout is too thin to read:** the per-language agreement
-  (0 % / 100 %) and the 43 % / 94 % retention are over 1 language (DA-size)
-  and 2 (DA-ckpt). The cell-level Pearson r between the splits, −0.17 over
-  22 (definition, language) cells and 0.68 over 44, carries the same caveat.
+  (100 % / 100 %) and the 48 % / 96 % retention are over 1 language
+  (DA-size) and 2 (DA-ckpt). The cell-level Pearson r between the splits,
+  0.85 over 22 (definition, language) cells and 0.67 over 44, carries the
+  same caveat.
 
 **Follow-ups**
 
@@ -254,7 +258,7 @@ each DA kind; the holdout rows on the ×3 cells only)
 - A bootstrap over languages for the mean r of the top eight definitions:
   they sit within 0.03 of each other, so only the family can be claimed.
 - The language count beside every holdout percentage in the generated
-  block (see the TODO below): 0 % and 100 % are 0 of 1 and 2 of 2.
+  block (see the TODO below): the two 100 % are 1 of 1 and 2 of 2.
 
 ### Statistics beyond SNR — setup
 
@@ -273,10 +277,10 @@ candidate and DA-size per proxy size (90M–1B), with the p-value and n; a cell
 needs at least 8 tasks, and the noise part is inverted so that "higher is
 better" holds for every candidate.
 
-Population: pool `predictivity`. The benchmark n moves with the bBPB twins
-(rule 13): 298 tasks at 90M and 413 at 600M (no twins), 1154, 915 and 1267
-at 175M, 350M and 1B, of which 816, 544 and 816 are twins; the BPB rows
-are the 50 trained languages at every proxy.
+Population: pool `predictivity`. The benchmark n carries the bBPB twins
+(rule 13): 1117, 1152, 1188, 1232 and 1266 tasks at 90M–1B, of which 816 at
+every proxy are twins and 301–450 accuracy tasks; the BPB rows are the 50
+trained languages at every proxy.
 
 <!-- BEGIN auto:surrogates (analyze.py --pool predictivity) -->
 ## Statistics beyond SNR (paper RQ3)
@@ -317,30 +321,33 @@ GitHub: [rq3_surrogates.png](https://github.com/mariagrandury/snr-multilingual/b
 [facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq04_surrogates/pretraining/predictivity/facts.json)
 
 **Key findings** (pool `predictivity`, DA-size against 1.7B, gated; the
-benchmark n per cell in the table)
+benchmark n per cell in the table; the accuracy-only and twin-only ρ are
+recomputed by hand from the noise-and-SNR per-task table with this
+script's gate, without the `bbpb_` rows or with them alone)
 
-- **On the twin-free rungs no candidate stands out:** at 90M SNR relative
-  std leads (ρ 0.42, 298 tasks) ahead of SNR `dist_std` (0.29) and the
-  early-checkpoint agreement (0.25). At 600M (413 tasks) SNR relative std,
-  the scaling-fit R², the early-checkpoint agreement and the inverted noise
-  all read 0.30–0.32.
-- **The early-checkpoint agreement's lead is not yet readable:** its mean ρ
-  of 0.42 comes from 0.64 at 175M and 0.57 at 1B, the two rungs where 816
-  bBPB twins join the population. It reads 0.25 at 90M and 0.31 at 600M
-  (no twins) and 0.33 at 350M (892 tasks, 521 of them twins).
+- **On the twins the early-checkpoint agreement leads at every proxy:** ρ
+  0.54–0.64 over 1117–1266 tasks (mean 0.58), ahead of the scaling-fit R²
+  (0.40–0.45 from 350M) and SNR relative std (0.24–0.51). On the 816 twins
+  alone it reads 0.59–0.72.
+- **On the accuracy tasks alone no candidate stands out:** over 301–450
+  tasks the early-checkpoint agreement reads 0.18–0.40, SNR relative std
+  0.20–0.39 and the inverted noise 0.22–0.35. The leader among the three
+  changes with the proxy (SNR relative std at 90M, 175M and 600M, the noise
+  at 350M, the early agreement at 1B).
 - **On the benchmark tasks, margin above chance and signal alone predict
-  nothing:** ρ −0.07 to 0.04 (293–446 accuracy tasks) and −0.13 to 0.05 at
+  nothing:** ρ −0.07 to 0.04 (296–445 accuracy tasks) and −0.11 to 0.04 at
   every proxy. There the SNR's predictive part is its noise, which reads
-  0.22–0.41 inverted.
+  0.24–0.46 inverted.
 - **Per-language BPB flips sign at 600M:** SNR `dist_std` reads 0.45–0.53 at
-  90M, 175M, 350M and 1B but −0.43 at 600M (50 languages). SNR relative
+  90M, 175M, 350M and 1B but −0.44 at 600M (50 languages). SNR relative
   std, signal alone and the scaling-fit R² flip there too, and the inverted
   noise rises from about 0 to 0.41.
 
 **Follow-ups**
 
-- The benchmark rows split by scoring (accuracy vs bBPB), so a per-proxy ρ
-  compares the same kind of task at every rung.
+- The benchmark rows split by scoring (accuracy vs bBPB) in the generated
+  table, so the accuracy-only reading above comes from the pipeline rather
+  than by hand.
 - The 600M BPB row: which cells and languages drive the sign flip, and
   whether the 600M DA-size against 1.7B is itself an outlier in the
   decision-accuracy tables.
@@ -355,9 +362,9 @@ selects tasks per language with four such statistics.
 (moved here from the benchmark-design folder on 2026-09-23; outputs
 `pretraining/predictivity/finetasks_*`) computes them per (task, size) on the
 `predictivity` pool: every design variant at each size at seed 1904 (every L,
-ladder and data build; up to 26 runs per task and size), on the ten evaluated
-tenths (7–8 for 36 of the 1367 task rows at 350M). It judges them by DA-size against the 1.7B reference, which the
-criteria never see.
+ladder and data build; up to 29 runs per task and size), on the ten evaluated
+tenths, which every task row now has. It judges them by DA-size against the
+1.7B reference, which the criteria never see.
 
 The gate is not applied (non-random is one of the criteria under test) but
 the mask is carried, and every candidate is scored as Spearman ρ with DA-size
@@ -365,11 +372,11 @@ across tasks, the way the SNR definitions above are. Their "noise" is the
 spread across recipes at one step, which this framework calls signal, so
 their SNR is the inverse of ours and the two should not be expected to agree.
 
-Population: 846 accuracy benchmark tasks at every size, plus the bBPB twins
-where they have checkpoints (816 at 175M, 1B and 1.7B, 521 at 350M; rule 13).
-The twins pass neither monotonicity nor non-random by construction (lower
-is better, no chance level), so they lower the generated table's pass shares
-at those sizes and sit in its "fail" column.
+Population: 846 accuracy benchmark tasks plus the 816 bBPB twins at every
+size (1662 rows; rule 13). The twins pass neither monotonicity nor
+non-random by construction (lower is better, no chance level), so they
+lower the generated table's pass shares at every size and sit in its
+"fail" column.
 
 <!-- BEGIN auto:finetasks-criteria (finetasks_criteria.py --pool predictivity) -->
 ## FineTasks' criteria on the ladder
@@ -416,28 +423,30 @@ accuracy-only numbers are read from `finetasks_criteria.csv` without the
 
 - **The composite selects better-than-average tasks but not reliable ones:**
   on the 846 accuracy tasks, monotonicity ≥ 0.5, cross-run SNR > 20 and best
-  margin > 3 std together pass 16 / 21 / 29 / 36 / 42 % of tasks at
+  margin > 3 std together pass 16 / 22 / 30 / 36 / 42 % of tasks at
   90M / 175M / 350M / 600M / 1B, below our gate's 37 / 40 / 44 / 49 / 54 %.
   Their passers read DA-size 0.56–0.59 against 0.46–0.49 for the rest.
 - **Their SNR criterion does not discriminate, monotonicity does the work:**
-  the SNR > 20 cut passes 61–62 % of the accuracy tasks at every size, while
-  monotonicity rises from 19 % (90M) to 51 % (1B).
-- **The four statistics correlate weakly with DA-size where no twin
-  enters:** Spearman 0.12–0.31 at 90M and 600M. The negative monotonicity at
-  175M, 350M and 1B (−0.37, −0.26, −0.33) is the bBPB twins: pooled over the
+  the SNR > 20 cut passes 61–63 % of the accuracy tasks at every proxy, while
+  monotonicity rises from 18 % (90M) to 50 % (1B).
+- **The four statistics correlate weakly with DA-size on the accuracy
+  tasks:** Spearman 0.12–0.42 per proxy (0.12–0.25 at 90M, 0.29–0.42 at 1B).
+  The negative monotonicity of the generated table at every size (−0.33 to
+  −0.49) is the bBPB twins (−0.50 to −0.63 on them alone): pooled over the
   proxies on the accuracy tasks alone it reads +0.31.
 - **Pooled, the proxy's own run is the best reference-free signal:**
   `finetasks_surrogates_rank.csv` (twins included) puts the proxy's median
-  DA-ckpt at 0.54, its own trajectory R² at 0.49 and its DA-ckpt at 50 % of
-  the run at 0.46, against 0.33 for the item count, at most 0.29 for an SNR
-  definition and 0.23 for FineTasks' SNR and for our gate. On the accuracy
-  tasks alone the median DA-ckpt drops to 0.38, level with the DA between the
-  two rungs below (0.33) and the item count (0.33).
+  DA-ckpt at 0.61, the DA between the two rungs below at 0.57, its own
+  trajectory R² at 0.56 and its DA-ckpt at 50 % of the run at 0.54, against
+  0.33 for the item count, at most 0.31 for an SNR definition, 0.23 for our
+  gate and 0.19 for FineTasks' SNR. On the accuracy tasks alone the median
+  DA-ckpt drops to 0.38, level with the DA between the two rungs below
+  (0.33) and the item count (0.33).
 - **Spread across variants is not agreement with the reference:** the
-  relative signal reads −0.05 and the cross-variant std 0.07 pooled, while
-  the relative noise reads −0.28. The statistics that see the reference
-  remain far above (the proxy ranking's own τ_b 0.98, the full-trajectory R²
-  0.53).
+  relative signal reads −0.03 and the cross-variant std 0.14 pooled, while
+  the relative noise reads −0.29. The statistics that see the reference
+  remain far above (the proxy ranking's own τ_b 0.99, the full-trajectory R²
+  0.55).
 - **The format FineTasks chose matters more than its thresholds:** of their
   96 picks, 55 exist in our registry and 35 have results at 1B, where 49 % of
   the originals pass their criteria on our ladder against all 13 cloze twins.
@@ -523,15 +532,16 @@ GitHub: [snr_variant_min_size_by_L_flops.png](https://github.com/mariagrandury/s
 **Key findings** (pool `predictivity`, multi-axis pairs, gated at the proxy
 and at 1.7B; populations per figure as stated in the generated block)
 
-- **Per L, an SNR definition almost never tracks DA:** 112 of the 132
+- **Per L, an SNR definition almost never tracks DA:** 115 of the 132
   (definition, L) cells of `snr_variant_min_size_by_L` never reach ρ ≥ 0.3
-  under DA-size, 83 under DA-ckpt. Per-L DA rests on few pairs, so this
+  under DA-size, 84 under DA-ckpt. Per-L DA rests on few pairs, so this
   reads the lattice of possible DA values as much as the definitions.
 - **Pooled over every pair (version B), the best definition reads ρ
-  0.33–0.41 with DA-size on the benchmarks at every proxy**, the median
-  definition 0.23–0.30; with DA-ckpt the best reads 0.50–0.64.
+  0.34–0.51 with DA-size on the benchmarks at every proxy**, the median
+  definition 0.21–0.35; with DA-ckpt the best reads 0.49–0.76, both peaking
+  at 350M.
 - **The per-language BPB flip at 600M shows here too:** the median
-  definition's ρ with DA-size on BPB is 0.39–0.52 at 90M–350M and 0.46 at
+  definition's ρ with DA-size on BPB is 0.39–0.51 at 90M–350M and 0.46 at
   1B, but −0.35 at 600M.
 - **The per-FLOPs line zigzags by construction:** it joins a bigger model's
   first (peak-LR) checkpoint to a smaller model's annealed final.
@@ -564,44 +574,46 @@ an extra. The numbers are in the generated block below.
 Population: pool `predictivity`, proxies 90M–1B, cells above chance
 (rule 1), 420 (benchmark, language) clusters over every benchmark. A cluster
 holds a benchmark's original, its `rf_` twins and their bBPB twins, which
-carry checkpoints only at 175M, 350M and 1B in this refresh, so the DA-goal
-and DA-ckpt rows are provisional until the store is rebuilt.
+now carry every checkpoint at every proxy, so the DA-goal and DA-ckpt rows
+include them in full.
 
 **Key findings**
 
-- **The ceiling.** A truth re-read at 90 % keeps ρ 0.90 (DA-size), 0.94
-  (DA-goal) and 0.97 (DA-ckpt) with itself on the benchmarks (multi-axis).
+- **The ceiling.** A truth re-read at 90 % keeps ρ 0.92 (DA-size), 0.95
+  (DA-goal) and 0.99 (DA-ckpt) with itself on the benchmarks (multi-axis).
 - **No surrogate reaches it, the proxy's rank stability comes closest:** the
-  consecutive-checkpoint Kendall τ reads 0.94 against DA-ckpt and 0.82
-  against DA-goal, the proxy's mean DA-ckpt 0.76 against DA-size (84–97 % of
-  the ceiling). On mono-axis pairs the best read 0.86, 0.64 and 0.59.
-- **SNR is mid-table.** AllenAI's `rel_std` / checkpoint noise reads 0.50,
-  0.54 and 0.57 on DA-size, DA-goal and DA-ckpt; the best grid combinations
-  read 0.52, 0.56 (`aad / ckpt_abs`) and 0.67
-  (`star_discrepancy_shifted / kfold_rel`).
+  consecutive-checkpoint Kendall τ reads 0.97 against DA-ckpt and 0.86
+  against DA-goal, the proxy's mean DA-ckpt 0.84 against DA-size (90–98 % of
+  the ceiling; the mean DA-ckpt, tied with `sign_persistence`, also leads
+  DA-goal at 0.87). On mono-axis pairs the best read 0.91, 0.73 and 0.68.
+- **SNR is mid-table.** AllenAI's `rel_std` / checkpoint noise reads 0.59,
+  0.62 and 0.65 on DA-size, DA-goal and DA-ckpt; the best grid combinations
+  read 0.59, 0.62 (`aad / ckpt_abs`) and 0.67
+  (`star_discrepancy_shifted / kfold_rel`), within 0.02 of it.
 - **The k-fold noise helps, and the item count is part of it:** relative
-  k-fold noise beats relative checkpoint noise for 17, 18 and 13 of the 22
-  signals (DA-size, DA-goal, DA-ckpt). `n_items` alone reads 0.38, 0.39 and
-  0.50.
+  k-fold noise beats relative checkpoint noise for 16, 18 and 16 of the 22
+  signals (DA-size, DA-goal, DA-ckpt). `n_items` alone reads 0.38, 0.40 and
+  0.49.
 - **Signal alone carries almost nothing:** range, `dist_std` and `mpd` across
-  variants read 0.03–0.13 against the three DA truths, and the depth signals
-  are negative (−0.20 to −0.45).
-- **Particular cases** reach |ρ| 0.94–0.99 on single languages, benchmarks
-  or L tiers (10–122 clusters). The `reliable (on the truth)` subsets are
+  variants read −0.04 to 0.08 against the three DA truths, and the depth
+  signals are negative (−0.14 to −0.40).
+- **Particular cases** reach |ρ| 0.96–0.99 on single languages, benchmarks
+  or L tiers (11–116 clusters). The `reliable (on the truth)` subsets are
   selected on the truth, so their ρ is conditional on it.
-- **Language count.** Over pairs of variants sharing L, mean DA-size is 0.62
-  / 0.49 / 0.51 / 0.55 / 0.54 / 0.58 at L1 / 2 / 8 / 15 / 30 / 50 (129–1269
+- **Language count.** Over pairs of variants sharing L, mean DA-size is 0.61
+  / 0.51 / 0.51 / 0.56 / 0.56 / 0.61 at L1 / 2 / 8 / 15 / 30 / 50 (129–1269
   tasks): no monotone trend.
-- **Split-half check.** 1627 of 5319 configurations chosen on one half hold
+- **Split-half check.** 2052 of 5446 configurations chosen on one half hold
   on the other at q < 0.05; the strongest is the consecutive-checkpoint
-  Kendall τ at 175M against DA-ckpt (0.76 on 500 held-out tasks).
+  Kendall τ on the L8 tier against DA-ckpt (0.79 on 151 held-out tasks).
 
 **Follow-ups**
 
-- The catalogue rows split by scoring once the bBPB store holds every
-  checkpoint, so the rank-stability lead can be read on accuracy alone.
+- The catalogue rows split by scoring (accuracy vs bBPB), so the
+  rank-stability lead can be read on accuracy alone; the twins now carry
+  every checkpoint, so nothing blocks it.
 - A per-proxy version of the strongest surrogates: the split-half winners
-  concentrate at 175M, a rung where the bBPB twins enter.
+  concentrate at 90M and 175M and on the L8 tier.
 
 <!-- BEGIN auto:catalogue (search.py --pool predictivity) -->
 ## A catalogue of surrogates beyond SNR
@@ -795,12 +807,12 @@ Numbers from the `predictivity` pool. Regenerate with `python analysis/rq04_surr
       split holds one pair — the two seeds of the same cell — and its
       "decision accuracy" is 0 or 1 and measures seed noise, not a ranking.
       The median task has one pair.
-      *Implications (2026-10-06 04:26 report).* Only English has a best
+      *Implications (2026-10-07 15:51 report).* Only English has a best
       definition on both splits under DA-size and only English and Russian
-      under DA-ckpt, so the per-language agreement (0 % / 100 %) is 0 of 1 and
-      2 of 2 languages. The global ranking ρ (−0.28 DA-size, 0.82 DA-ckpt) is
+      under DA-ckpt, so the per-language agreement (100 % / 100 %) is 1 of 1
+      and 2 of 2 languages. The global ranking ρ (0.81 DA-size, 0.84 DA-ckpt) is
       over 22 definitions on splits that share only those 1–2 languages, so "the ranking
-      does not survive a seed swap" says more about the holdout than about the
+      survives a seed swap" says as much about the holdout as about the
       definitions; nothing in the main `predictivity` tables is affected.
       *Options.* (A) keep only tasks with ≥ 6 pairs on both splits: an honest
       check, but English + BPB only. (B) treat replicate seeds as replicates,
