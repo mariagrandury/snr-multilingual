@@ -683,6 +683,12 @@ Numbers from the `predictivity` pool: every design variant at a proxy size, read
 ![DA-size per language](pretraining/predictivity/da_size_by_language_multi_axes.png)
 <!-- END auto:early-small -->
 
+The 5C column of the grid above also holds the bBPB twins, which exist at
+final checkpoints only, so its "all benchmarks" population is several times
+that of the earlier columns and every row steps up there. The grid is kept as
+it is: the step closes once the per-item store holds every checkpoint and the
+twins fill the earlier columns ([Benchmark BPB](#11-benchmark-bpb-a-continuous-score-on-the-same-items)).
+
 <!-- BEGIN auto:by-L (by_L.py --pool predictivity) -->
 ## Per language count
 
@@ -1295,10 +1301,10 @@ How bBPB is computed (no model is re-run; `build_per_item_store.py` +
     where both are defined.
   - The raw ungated DAs and both gate flags stay in `bench_bpb_da_size_multi_axes.csv`.
 
-<!-- BEGIN auto:bench-bpb (bench_bpb_da.py --pool predictivity_schemes) -->
+<!-- BEGIN auto:bench-bpb (bench_bpb_da.py --pool predictivity) -->
 ## Benchmark BPB against accuracy
 
-DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pairs), gate `predictivity` on the accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from `da_per_task.csv`. Regenerate with `python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity_schemes` (after `build_per_item_store.py --pool predictivity_schemes --finals-only`).
+DA-size, final checkpoints, multi-axis pairs of `predictivity` (325 of its 435 pairs: those between families the store holds, for every reading and the FineWeb2 tick), gate `predictivity` on the accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size on the same pairs. Regenerate with `python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity --store predictivity_schemes` (after `build_per_item_store.py --pool predictivity_schemes --finals-only`). The store `predictivity_schemes` lacks 8 of the pool's models (lm-175M-L15-b168-swiglu-seed1904, lm-350M-L1-fweb-deep-seed1904, lm-600M-L1-fweb-deep-seed1904, lm-600M-L30-swiglu-seed1904, lm-90M-L1-b84-swiglu-seed1904, lm-90M-L1-fweb-b84-deep-seed1904, lm-90M-L30-b84-swiglu-seed1904, lm-90M-L8-b84-swiglu-seed1904); they are left out until the store is rebuilt for the pool.
 
 **all benchmarks**
 
@@ -1318,7 +1324,7 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pair
 | 175M | 0.53 (328) | 0.59 (478) | 0.66 | +0.06 (328) | 59% / 33% | <0.001 | 0.97 |
 | 350M | 0.53 (365) | 0.60 (478) | 0.69 | +0.07 (365) | 64% / 28% | <0.001 | 0.98 |
 | 600M | 0.55 (397) | 0.60 (478) | 0.66 | +0.05 (397) | 58% / 34% | <0.001 | 0.95 |
-| 1B | 0.57 (438) | 0.60 (478) | 0.67 | +0.03 (438) | 53% / 36% | <0.001 | 0.97 |
+| 1B | 0.57 (438) | 0.60 (478) | 0.68 | +0.03 (438) | 53% / 35% | <0.001 | 0.97 |
 
 **all lettered** (the continuation is the letter: bBPB is the letter's surprisal)
 
@@ -1335,7 +1341,7 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pair
 | benchmark | tasks | acc → 1.7B acc | bBPB → 1.7B acc | bBPB → 1.7B bBPB |
 |---|---|---|---|---|
 | acp_bench_cloze | 7 |  |  |  |
-| arc | 28 | 0.56 | 0.64 | 0.63 |
+| arc | 28 | 0.57 | 0.65 | 0.63 |
 | arc_mt | 11 | 0.58 | 0.63 | 0.64 |
 | bbh_cloze | 6 |  |  |  |
 | bbh_mcq | 17 |  |  |  |
@@ -1344,18 +1350,18 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pair
 | hellaswag | 26 | 0.76 | 0.82 | 0.87 |
 | include_v2_en | 77 | 0.48 | 0.49 | 0.52 |
 | include_v2_og | 77 | 0.54 | 0.59 | 0.64 |
-| mathqa | 1 | 0.53 | 0.51 | 0.49 |
+| mathqa | 1 | 0.53 | 0.53 | 0.51 |
 | multiblimp | 34 | 0.65 | 0.66 | 0.69 |
-| openbookqa | 1 |  | 0.56 | 0.57 |
+| openbookqa | 1 |  | 0.57 | 0.58 |
 | paws | 8 | 0.58 | 0.54 | 0.68 |
 | acp_bench_mcq-rf | 7 | 0.43 | 0.50 | 0.54 |
 | bbh_mcq-rf | 17 | 0.46 | 0.47 | 0.54 |
 | belebele-rf | 59 | 0.49 | 0.58 | 0.71 |
-| commonsense_qa-rf | 1 | 0.53 | 0.57 | 0.58 |
+| commonsense_qa-rf | 1 | 0.53 | 0.59 | 0.59 |
 | cultural_bench_easy-rf | 19 | 0.36 | 0.43 | 0.53 |
 | global_mmlu_full-rf | 29 | 0.55 | 0.68 | 0.64 |
 | include_base_44-rf | 36 | 0.53 | 0.62 | 0.69 |
-| mmlu-rf | 1 | 0.64 | 0.67 | 0.60 |
+| mmlu-rf | 1 | 0.65 | 0.68 | 0.62 |
 | belebele-rfgm | 59 | 0.50 | 0.59 | 0.74 |
 | include_base_44-rfgm | 36 | 0.55 | 0.63 | 0.80 |
 | toxigen | 1 |  |  |  |
@@ -1373,17 +1379,20 @@ DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (325 pair
 | include_base_44 (letter) | 36 | 0.57 | 0.49 | 0.54 |
 | mmlu (letter) | 1 |  |  |  |
 
-![bBPB DA, overall](pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.png)
+![bBPB DA, overall](pretraining/predictivity/bench_bpb_da_size_bars_multi_axes.png)
 
-![bBPB DA, per benchmark](pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.png)
+![bBPB DA, per benchmark](pretraining/predictivity/bench_bpb_da_size_bars_benchmarks_multi_axes.png)
 
-![bBPB DA, heat map](pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.png)
+![bBPB DA, heat map](pretraining/predictivity/bench_bpb_da_size_heatmap_multi_axes.png)
 <!-- END auto:bench-bpb -->
 
-Snapshot: ladder report cached 2026-10-02 06:24, samples read from
-`eval_logs` on 2026-10-02 (816 parent tasks with bBPB at the finals of 150
-cells). Raw per-task DAs and both gate flags: [`bench_bpb_da_size_multi_axes.csv`](pretraining/predictivity_schemes/bench_bpb_da_size_multi_axes.csv);
-every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretraining/predictivity_schemes/bench_bpb_da_size_summary_multi_axes.csv).
+Snapshot: ladder report cached 2026-10-06 04:26; bBPB from the per-item
+store `predictivity_schemes` (manifest of 2026-10-06 11:59, finals read):
+816 parent tasks with bBPB on 153 of the pool's models, eight pool models
+absent from that store and one truncated Global-MMLU RF part skipped; the
+driver switches to the `predictivity` store once its build finishes. Raw
+per-task DAs and both gate flags: [`bench_bpb_da_size_multi_axes.csv`](pretraining/predictivity/bench_bpb_da_size_multi_axes.csv);
+every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretraining/predictivity/bench_bpb_da_size_summary_multi_axes.csv).
 
 **Key findings**
 
@@ -1430,10 +1439,10 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
   `--finals-only` (normal partition, about 4 h). That gives bBPB's DA-ckpt,
   DA-goal and SNR on the ten checkpoints, the readings figures 3 and 7 use for
   accuracy.
-- **Feed bBPB into the shared pipeline.** Write it into `ladder_report.csv` as
-  a `bbpb__<task>` kind (not `bpb__`, which is the FineWeb2 family in
-  `snr/download/ladder.py`). Then `compute_da.py`, the scale-convergence
-  figure and rq03's SNR read it without a separate script.
+- ~~**Feed bBPB into the shared pipeline.**~~ Done: `utils.with_bbpb_twins`
+  puts a `bbpb_<task>` twin in every `build_snr_pool` population, so
+  `compute_da.py`, the scale-convergence figure and the SNR tables already
+  read it; this figure stays as the head-to-head of the three readings.
 - **xwinograd and lambada.** Their `target` is the answer string, not a
   choice index, so they have no bBPB yet.
   - xwinograd's gold index is the doc's `answer` field.
@@ -1447,9 +1456,9 @@ every number below is in [`bench_bpb_da_size_summary_multi_axes.csv`](pretrainin
 - **Cross-reading.** bBPB → acc against figure 10's cross-task map: a task's
   bBPB as the proxy for another task's accuracy.
 
-GitHub: [bench_bpb_da_size_bars_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.png) · [bench_bpb_da_size_bars_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_multi_axes.csv) ·
-GitHub: [bench_bpb_da_size_bars_benchmarks_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.png) · [bench_bpb_da_size_bars_benchmarks_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_bars_benchmarks_multi_axes.csv) ·
-GitHub: [bench_bpb_da_size_heatmap_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.png) · [bench_bpb_da_size_heatmap_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity_schemes/bench_bpb_da_size_heatmap_multi_axes.csv)
+GitHub: [bench_bpb_da_size_bars_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_bars_multi_axes.png) · [bench_bpb_da_size_bars_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_bars_multi_axes.csv) ·
+GitHub: [bench_bpb_da_size_bars_benchmarks_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_bars_benchmarks_multi_axes.png) · [bench_bpb_da_size_bars_benchmarks_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_bars_benchmarks_multi_axes.csv) ·
+GitHub: [bench_bpb_da_size_heatmap_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_heatmap_multi_axes.png) · [bench_bpb_da_size_heatmap_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/bench_bpb_da_size_heatmap_multi_axes.csv)
 
 ### 12. Read next in the other RQs
 

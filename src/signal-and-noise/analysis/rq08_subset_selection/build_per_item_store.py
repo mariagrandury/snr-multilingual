@@ -143,7 +143,10 @@ def extract(job: tuple[str, int, list[str]]) -> tuple[pd.DataFrame, list[dict]]:
 
 
 def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> None:
-    """Append one part file per family and the manifest lines."""
+    """Append one part file per family and the manifest lines. A part is
+    written under a dot-prefixed name and renamed when complete: pyarrow's
+    dataset reader and `readable_parts` skip dot files, so a reader that lists
+    the folder mid-write never sees half a part."""
     if not frames:
         return
     df = pd.concat(frames)
@@ -151,7 +154,9 @@ def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> No
     for fam, g in df.groupby(df["task"].map(benchmark_family)):
         d = out_dir / f"{fam}.parquet"
         d.mkdir(parents=True, exist_ok=True)
-        g.to_parquet(d / f"part-{tag}.parquet", index=False)
+        tmp = d / f".part-{tag}.parquet"
+        g.to_parquet(tmp, index=False)
+        os.replace(tmp, d / f"part-{tag}.parquet")
     m = pd.DataFrame(manifest)
     path = out_dir / "manifest.csv"
     m.to_csv(path, mode="a", header=not path.exists(), index=False)
@@ -160,9 +165,12 @@ def flush(frames: list[pd.DataFrame], manifest: list[dict], out_dir: Path) -> No
 
 def readable_parts(family: Path) -> list[Path]:
     """The part files of one store family whose footer opens; a truncated part
-    (an extraction killed mid-write) is skipped with a warning, never removed."""
+    (an extraction killed mid-write) is skipped with a warning, never removed;
+    a dot-file is `flush`'s in-progress temp part and is never listed."""
     ok = []
     for f in sorted(Path(family).glob("*.parquet")):
+        if f.name.startswith("."):
+            continue
         try:
             pq.ParquetFile(f)
         except (pa.ArrowInvalid, OSError) as e:
@@ -203,7 +211,11 @@ def write_bench_bpb() -> None:
         print(f"no per-item store at {STORE / BBPB_POOL}: {BENCH_BPB.name} not written (build_per_item_store.sbatch builds it)")
         return
     t = bench_bpb(parts)[["model", "step", "task", "bbpb"]]
-    t.sort_values(["model", "step", "task"]).to_csv(BENCH_BPB, index=False)
+    out = t.sort_values(["model", "step", "task"]).to_csv(index=False)
+    if BENCH_BPB.is_file() and BENCH_BPB.read_text() == out:   # keep the mtime: the driver's fresh() reads it
+        print(f"{BENCH_BPB.name} unchanged: {len(t)} (model, step, task)")
+        return
+    BENCH_BPB.write_text(out)
     print(f"wrote {BENCH_BPB}: {len(t)} (model, step, task), {t['model'].nunique()} models, {t['task'].nunique()} tasks")
 
 

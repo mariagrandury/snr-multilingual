@@ -110,21 +110,45 @@ Every swept cell in one grid (`predictivity` pool). Regenerate with `python anal
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/highlights.csv) ·
 GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.png) · [gain_over_null.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/gain_over_null.csv)
 
-<!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity_schemes) -->
+<!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity) -->
 ## Items the reference solves
 
-DA-size, final checkpoints, multi-axis pairs of `predictivity_schemes` (grid seed), gate `predictivity` at the proxy and the reference, 460 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity_schemes`.
+DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate `predictivity` at the proxy and the reference, 460 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity --store predictivity_schemes`. The store `predictivity_schemes` lacks 3 of the pool's models (lm-350M-L1-fweb-deep-seed1904, lm-600M-L1-fweb-deep-seed1904, lm-90M-L1-fweb-b84-deep-seed1904); they are left out until the store is rebuilt for the pool.
 
 | proxy | tasks | solved share | DA all (held out) | DA solved (held out) | Δ | Wilcoxon p | DA solved (in sample) | ρ(SNR, DA) all | ρ(SNR, DA) solved |
 |---|---|---|---|---|---|---|---|---|---|
-| 90M | 235 | 0.40 | 0.54 | 0.57 | +0.034 | 0.000 | 0.57 | 0.27 | 0.36 |
-| 175M | 269 | 0.40 | 0.54 | 0.57 | +0.024 | 0.001 | 0.58 | 0.31 | 0.40 |
-| 350M | 298 | 0.40 | 0.53 | 0.56 | +0.026 | 0.000 | 0.57 | 0.32 | 0.39 |
-| 600M | 332 | 0.40 | 0.55 | 0.57 | +0.021 | 0.000 | 0.58 | 0.39 | 0.47 |
-| 1B | 360 | 0.39 | 0.57 | 0.57 | +0.003 | 0.818 | 0.57 | 0.40 | 0.45 |
+| 90M | 235 | 0.40 | 0.53 | 0.57 | +0.035 | 0.000 | 0.57 | 0.27 | 0.36 |
+| 175M | 269 | 0.40 | 0.54 | 0.57 | +0.024 | 0.001 | 0.58 | 0.32 | 0.40 |
+| 350M | 298 | 0.40 | 0.53 | 0.56 | +0.027 | 0.000 | 0.57 | 0.31 | 0.38 |
+| 600M | 332 | 0.40 | 0.55 | 0.57 | +0.021 | 0.000 | 0.58 | 0.39 | 0.45 |
+| 1B | 360 | 0.39 | 0.57 | 0.57 | +0.003 | 0.784 | 0.58 | 0.40 | 0.45 |
 
-![Items the reference solves](pretraining/predictivity_schemes/reference_solved_da_size_multi_axes.png)
+![Items the reference solves](pretraining/predictivity/reference_solved_da_size_multi_axes.png)
 <!-- END auto:reference-solved -->
+
+**Key findings** (the block above: pool `predictivity`, ladder report cached 2026-10-06 04:26, finals read from the `predictivity_schemes` store until the `predictivity` store is built)
+
+- Held out, the solved items read the reference better at 90M–600M: +0.021
+  to +0.035 over the full set on the same pairs (Wilcoxon p ≤ 0.001), and
+  not at 1B (+0.003, p = 0.78).
+- About 40 % of the items are solved at every proxy, and the in-sample DA
+  (0.57–0.58) is barely above the held-out one: the selection does not lean
+  on the reference by much.
+- SNR tracks the held-out DA a little more closely on the solved items
+  (ρ 0.36–0.45 against 0.27–0.40), so a higher SNR on them is not only noise
+  removed.
+- The in-sample counterpart, every task reduced to the items its 1.7B runs
+  answer above chance, is the [above-chance items](../rq12_above_chance_items/README.md)
+  analysis.
+
+**Follow-ups**
+
+- The same table per benchmark, to see whether the gain comes from a few
+  families with many easy items.
+- Once the store holds every checkpoint, the held-out DA-ckpt of the solved
+  items, to see whether the gain also comes earlier in training.
+
+GitHub: [reference_solved_da_size_multi_axes.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_da_size_multi_axes.png) · [reference_solved_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_da_size_multi_axes.csv) · [reference_solved_summary_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_summary_da_size_multi_axes.csv) · [reference_solved_per_task_da_size_multi_axes.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq08_subset_selection/pretraining/predictivity/reference_solved_per_task_da_size_multi_axes.csv)
 
 ## TODO
 
@@ -227,6 +251,19 @@ Headline numbers from the `custom_swissai_hf` pool. Regenerate with `python anal
 
 ## Files
 
+- `per_item_store/<store>/` (git-ignored, cluster-only) — one row per (model,
+  checkpoint, task, item), built by `build_per_item_store.sbatch`
+  (`build_per_item_store.py`, resumable; finals only for now). Read by
+  `per_item_ladder.py`, `reference_solved.py`, the bBPB DA comparison and the
+  above-chance items analysis.
+- `bench_bpb.csv` — the store reduced to one bits-per-byte value of the gold
+  answer per (model, step, task) by `build_per_item_store.py --bench-bpb`
+  (the driver's first pass, rewritten only when its content changes);
+  `utils.with_bbpb_twins` reads it to add every loader's `bbpb_` twins.
+- `pretraining/<pool>/reference_solved_per_task_da_size_multi_axes.csv` — per
+  task and proxy: pairs, the DAs and SNRs of the full and the solved items,
+  `gated`; `reference_solved_summary_da_size_multi_axes.csv` per proxy; the
+  figure `reference_solved_da_size_multi_axes.png` with its CSV.
 - `pretraining/<pool>/summary.csv` — every (case, task, size) by `snr_gain`.
 - `…/per_benchmark.csv` (Case 1), `global_mmlu_full.csv` (Case 2),
   `global_mmlu_full_per_language.csv` (Case 3) + their `*_plots/`.

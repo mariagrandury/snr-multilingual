@@ -71,12 +71,13 @@ def _line_style(size, ladder, data) -> dict:
 
 # --- the paper's RQ1: log-N fits ------------------------------------------------
 
-def fit_table(fin: pd.DataFrame, pool: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def fit_table(fin: pd.DataFrame, pool: str, mask: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """One row per (task, L) of the grid: the log-N fit over the rungs where
-    the task is above chance (rule 1, `grids.mark_gated`); `n_rungs` counts
-    them, `gated_rungs` the rungs the gate removed, and `gated` marks a series
-    the gate left with fewer than MIN_RUNGS (its statistics are NaN)."""
-    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score")
+    the task is above chance (rule 1, `grids.mark_gated`, `mask` replacing the
+    pool's); `n_rungs` counts them, `gated_rungs` the rungs the gate removed,
+    and `gated` marks a series the gate left with fewer than MIN_RUNGS (its
+    statistics are NaN)."""
+    g0 = G.mark_gated(_grid(fin), pool, "size", "primary_score", mask=mask)
     rows = []
     for (task, L), g_all in g0.groupby(["task", "L"]):
         g_all = g_all.assign(N=g_all["size"].map(NON_EMB)).dropna(subset=["N"]).sort_values("N")

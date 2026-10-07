@@ -41,6 +41,7 @@ from analysis.autodoc import replace_block  # noqa: E402
 from analysis.paths import LANGUAGE_TRANSFER  # noqa: E402
 from analysis.rq05_design_decisions.analyze import INTERVENTIONS, LANGUAGE_GROUPS, RECIPES, by_recipe  # noqa: E402
 from analysis.rq05_design_decisions.panels import da_lines  # noqa: E402
+from analysis.utils import RELIABLE_DA  # noqa: E402
 
 OUT_ROOT = LANGUAGE_TRANSFER
 CANONICAL = "predictivity_seeds"
@@ -65,7 +66,7 @@ def decision_lines(out_dir: Path) -> bool:
              note="DA = share of a group's languages on which the proxy prefers the list the reference prefers at its final "
                   "checkpoint (per-language BPB), mean over L; group = what the two levels' lists do with the language: both train "
                   "it, only one does (a decision the language's inclusion makes by itself), neither does but a list trains its "
-                  "script, or neither trains even the script; dotted line = 0.75")
+                  f"script, or neither trains even the script; dotted line = {RELIABLE_DA:g}")
     fin = g[g["frac"] == 1.0].groupby(["intervention", "label", "L", "group"])["decision_acc"].mean().reset_index()
     keys = [k for k in INTERVENTIONS if k in set(fin["intervention"])]
     Ls = sorted(fin["L"].unique())
@@ -77,7 +78,7 @@ def decision_lines(out_dir: Path) -> bool:
             r = sub[sub["group"] == grp].set_index("L")["decision_acc"].reindex(Ls)
             ax.plot(range(len(Ls)), r, color=c, marker="o", ms=3.5, lw=1.3, label=grp)
         ax.set_xticks(range(len(Ls))); ax.set_xticklabels([f"L{L}" for L in Ls])
-        ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+        ax.axhline(RELIABLE_DA, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
         ax.set_title(INTERVENTIONS[k][0], loc="left", fontsize=8.5); ax.set_xlabel("language count"); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
         tables.append(sub.rename(columns={"group": "row", "L": "col", "decision_acc": "value"}).assign(panel=INTERVENTIONS[k][0])
                       [["panel", "row", "col", "value"]])

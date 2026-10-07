@@ -123,9 +123,10 @@ BENCH_BPB = SUBSET_SELECTION / "bench_bpb.csv"      # model, step, task, bbpb
 # table splits by variant with one groupby instead of parsing names.
 FORMATS = ("original", "rf", "rfgm")
 SCORINGS = ("acc", "bbpb")
-# tau: a decision accuracy at or above it "reads like the reference" (rq02's
-# safe sizes, rq05's lines, rq11's recommendation). One constant, so a figure,
-# a table and a README sentence that quote it cannot drift apart.
+# tau: a decision accuracy at or above it "reads like the reference" (the safe
+# proxy sizes, the design-decision and language-transfer lines, the evaluation
+# recipe). One constant, so a figure, a table and a README sentence that quote
+# it cannot drift apart. Distinct from the above_66/above_80 reliability filters.
 RELIABLE_DA = 0.75
 
 
@@ -739,11 +740,21 @@ def with_bbpb_twins(df: pd.DataFrame) -> pd.DataFrame:
     (`BENCH_BPB`, written from the per-item store) has a value for: a copy of
     the row with the gold-answer bits per byte as its score. A copy, so the
     twin carries the row's model, size, step and design columns and inherits
-    every rule the row already passed (the frame is filtered before this)."""
+    every rule the row already passed (the frame is filtered before this).
+    A model with benchmark rows of a task family the table covers but no row
+    at all in the table (a cell evaluated after the last store build) gets no
+    twin: printed, since its twins' DA then runs over fewer families than the
+    originals'."""
     if not BENCH_BPB.is_file():
         return df
     t = pd.read_csv(BENCH_BPB)
-    twin = df[df["kind"] == "benchmark"].merge(t, on=["model", "step", "task"])
+    bench = df[df["kind"] == "benchmark"]
+    covered = bench["task"].isin(set(t["task"]))       # families with no bBPB anywhere are not a gap
+    absent = sorted(set(bench.loc[covered, "model"]) - set(t["model"]))
+    if absent:
+        print(f"bBPB twins: {len(absent)} models not in the per-item store (rebuild with "
+              f"build_per_item_store.sbatch): {', '.join(absent)}")
+    twin = bench.merge(t, on=["model", "step", "task"])
     twin = twin.assign(task=BBPB + twin["task"], primary_score=twin["bbpb"]).drop(columns="bbpb")
     return pd.concat([df, twin], ignore_index=True)
 

@@ -4,8 +4,8 @@ Which (subsets of) benchmarks give a reliable signal at each stage of
 multilingual pretraining? The study extends the Signal-and-Noise framework
 (Heineman et al., 2025) to multilingual models: a benchmark is useful when a
 cheap measurement — a smaller model, an earlier checkpoint, a statistic of the
-proxy alone — makes the decision the reference-size model would make. Twelve
-research questions in six themes, one folder each (rq00 has two, the gate and
+proxy alone — makes the decision the reference-size model would make. The
+research questions in six themes and a seventh of checks on the ladder itself, one folder each (rq00 has two, the gate and
 the task reformulation); `rqNN_*/README.md` is the
 single document of its question (the README rules at the end of
 [RULES.md](RULES.md)), and the outputs live under `<rq>/<stage>/<pool>/`.
@@ -33,8 +33,10 @@ refresh regenerates the auto blocks and moves them.
 | | [rq07_external_frameworks](rq07_external_frameworks/README.md) | Do our SNR values agree with AllenAI DataDecide on the English tasks both corpora evaluate? | [snr_apertus_vs_snr_allenai_grid](rq07_external_frameworks/pretraining/predictivity/snr_apertus_vs_snr_allenai_grid.png) |
 | **D. Can the benchmarks be improved?** | [rq08_subset_selection](rq08_subset_selection/README.md) | Can a language, subject or item subset of a benchmark beat the full set's SNR by more than selection alone gives for free? | [gain_over_null](rq08_subset_selection/pretraining/predictivity/gain_over_null.png) |
 | | [rq09_benchmark_design](rq09_benchmark_design/README.md) | Which design features of a benchmark — curation, source, format, option count, item length — go with a high SNR? | [snr_per_family_ranked](rq09_benchmark_design/pretraining/predictivity/snr_per_family_ranked.png) |
+| | [above-chance items](rq12_above_chance_items/README.md) | If every benchmark-language task keeps only the items its 1.7B runs answer above chance (chosen in sample, on purpose), how much do decision accuracy, SNR and the above-random gate rise, with the gate applied before or after the items are chosen? | [above_chance_items_da_size_both_axes](rq12_above_chance_items/pretraining/predictivity/above_chance_items_da_size_both_axes.png) |
 | **E. Past the reference** | [rq10_size_generalisation](rq10_size_generalisation/README.md) | Does a ranking that holds at the 1.7B reference still hold one rung above it, at 3B (the only reader of `above_reference=True`; the four 3B L8/L15 cells are evaluated, L30/L50 still training)? | [above_reference_3B](rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png) |
 | **F. The recommendation** | [rq11_evaluation_recipe](rq11_evaluation_recipe/README.md) | Which benchmark, posed how (original, RF, LLM-RF) and scored how (accuracy, bBPB), reads the 1.7B decision from the smallest proxy (DA-size ≥ τ = 0.75, `utils.RELIABLE_DA`)? | [recipe_da_size_ladder_multi_axes](rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_ladder_multi_axes.png) |
+| **G. Checks on the ladder itself** | [English only (L1)](rq13_english_only/README.md) | Do the monolingual-English cells score higher on the English benchmarks than the multilingual cells of their size, clear chance earlier, rank their design variants as reliably and with as high an SNR, and land where AllenAI DataDecide puts the same tasks? | [english_only_scores](rq13_english_only/pretraining/predictivity/english_only_scores.png) |
 
 **The paper's figures.** `documents/paper/figures/make_rq_figures.py` copies
 them from the analysis, never the reverse: `rq1` ← rq01
@@ -113,11 +115,13 @@ FORCE=1 HF_HUB_OFFLINE=1 OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 bash run_all_p
 ```
 
 `run_all_predictivity.sh` runs the passes in research-question order, which
-is also the dependency order: rq00 (`above_random.py`, the gate every later
+is also the dependency order: first the bBPB twins' table
+(`build_per_item_store.py --bench-bpb` rewrites `rq08_subset_selection/bench_bpb.csv`
+from the per-item store before any loader reads it) → rq00 (`above_random.py`, the gate every later
 step reads; `run_apertus.py`, `curves.py`, `panels.py`; the twin comparison,
 `reformulations_gate.py` and `above_random_external.py`) → rq01 (`analyze.py`,
-`panels.py`, `regimes.py`, `regimes_survivorship.py`, `scaling_law_error.py`)
-→ rq02 (`compute_da.py` per pool, `bench_bpb_da.py`,
+`panels.py`, `regimes.py`, `regimes_survivorship.py`, `scaling_law_error.py`,
+`tokens_seen.py`) → rq02 (`compute_da.py` per pool, `bench_bpb_da.py`,
 `da_per_benchmark.py`, `early_small.py`, `reliable_tasks.py`, `by_L.py`,
 `cross_task.py`, `scale_convergence.py`, `paper_rq2.py`, the `--axes mono-axis` twins, then `scale_convergence.py --by L
 --langs L8 [--common-tasks]`, `by_language.py`, `agreement.py`,
@@ -129,8 +133,14 @@ pool, `compare_seed_splits.py`) → rq04 (`analyze_snr_variants.py`,
 `panels.py`; then rq03's `effect_vs_noise.py`, which reads rq05's table, and
 rq03's `panels.py`, which draws from it) →
 rq06 (`analyze.py`, `panels.py`, `language_panel.py`) → rq07 (reads rq04's
-ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung) →
+ranking) → the English-only check (`english_only.py`, after the AllenAI table it reads) → rq08
+(`smooth_subtasks.py`, `panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the
+above-chance items (`above_chance_items.py`, after the per-item store steps) → rq09 → rq10
+(`above_reference.py`, the 3B rung; `gate_crossover.py`) → the evaluation recipe (`recipe.py`, which
+reads decision accuracy's per-task early-small table) →
 `report_figures/make_figures.py` → `check_rules.py`.
+A cached table is rebuilt when the ladder report or `bench_bpb.csv` is newer
+than it (the first pass rewrites `bench_bpb.csv` only when its content changes).
 `FORCE=1` is needed whenever the report was regenerated since the last run
 (a cached table carries the report's commit time and looks newer);
 `CURVES=1` also redraws rq00's ~140 accuracy-vs-FLOPs grids (an hour).

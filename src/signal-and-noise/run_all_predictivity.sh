@@ -27,7 +27,10 @@
 #   rq05  design decisions on every seed and data build; then rq03's effect-vs-noise
 #   rq06  language transfer (reads rq05)
 #   rq07  DataDecide agreement (reads rq03 and rq04)
+#         English only: the L1 cells against the multilingual ones (reads the gate and the
+#         external frameworks comparison's AllenAI table)
 #   rq08  subset selection; rq09 benchmark design (reads rq03 code)
+#         the above-chance items (reads the per-item store and the gate's mask)
 #   then the report figures and the rules check over every table on disk.
 #
 # Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
@@ -59,13 +62,17 @@ run() { local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWar
        printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${2##*/}"; }
 pass() { echo; echo "############################## $* ##############################"; }
 stage_of() { $PY -c "import sys,json; print(json.load(open('../../configs/models.json'))['pools'][sys.argv[1]].get('stage','pretraining'))" "$1"; }
-# The ladder report is the only input, so a cached table older than it was built
-# from data we no longer have. Reusing it lets a whole run finish on last
-# night's numbers while every log line claims success.
+# The cached tables have two inputs, the ladder report and the bBPB twins' table
+# (bench_bpb.csv, rewritten by the first pass only when its content changes), so
+# a cached table older than either was built from data we no longer have.
+# Reusing it lets a whole run finish on last night's numbers while every log
+# line claims success.
 LADDER_CSV=$($PY -c "from snr.download.ladder import ladder_dir; print(ladder_dir() / 'ladder_report.csv')")
-# FORCE=1 recomputes the cached tables even when the report is not newer — after
+BENCH_BPB_CSV=analysis/rq08_subset_selection/bench_bpb.csv
+# FORCE=1 recomputes the cached tables even when neither input is newer — after
 # a change to the kernel, the gate or the loader, which the mtime cannot see.
-fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ]; }
+fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ] \
+            && { [ ! -f "$BENCH_BPB_CSV" ] || [ ! "$BENCH_BPB_CSV" -nt "$1" ]; }; }
 # The acc-vs-FLOPs grids (rq00) are ~140 figures nothing else reads and about
 # an hour of this script; CURVES=1 redraws them. Every table, CSV and README
 # block is written either way, so the default is a complete refresh of the
@@ -243,6 +250,13 @@ for t in "${DOC_POOLS[@]}"; do
   fi
 done
 
+pass "English only — the monolingual-English cells against the multilingual ones"
+# reads the gate's mask, the decision-accuracy and noise-and-SNR computations
+# (as functions), the replicate seeds and the AllenAI table of the external
+# frameworks comparison above; `predictivity` holds every L1 family (deep,
+# shallow, DCLM without edu, FineWeb), so this run writes the README too
+run $PY analysis/rq13_english_only/english_only.py --pool predictivity
+
 pass "rq08 — subset selection"
 run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
@@ -251,6 +265,13 @@ run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 run $PY analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity
 # the items the 1.7B runs solve, chosen on half the designs, DA and SNR read on the rest (store finals; nothing without it)
 run $PY analysis/rq08_subset_selection/reference_solved.py --pool predictivity --store predictivity_schemes   # the retired pool's store (a subset of the models): switch with bench_bpb_da
+
+pass "the above-chance items"
+# per benchmark-language task, only the items the 1.7B runs answer above chance, chosen in sample on purpose:
+# how much DA-size, SNR, the gate and the scaling fit rise, under the gate first and under the items first.
+# Reads the per-item store and the gate's mask (nothing without the store); DA-ckpt and the checkpoint SNR
+# are computed where the store holds checkpoints and skipped (said so) on a finals-only store
+run $PY analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity_schemes   # switch with bench_bpb_da
 
 pass "rq09 — benchmark design"
 for t in "${DOC_POOLS[@]}"; do

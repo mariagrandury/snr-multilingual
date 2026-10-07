@@ -170,17 +170,20 @@ def wilson_lcb(score, n_items):
     return lcb
 
 
-def above_chance(score, task) -> pd.Series:
+def above_chance(score, task, n_items=None) -> pd.Series:
     """Per element: 1.0 when the run's one-sided 95 % LCB clears chance, 0.0 when it
-    does not, NaN when the task has no chance level or no item count."""
+    does not, NaN when the task has no chance level or no item count. `n_items`
+    (per element) replaces the task's item count, for a score read on a subset
+    of the task's items."""
     task = pd.Series(task)
     chance = task.map(task_chance).astype(float)
-    lcb = wilson_lcb(score, task.map(task_n_items))
+    lcb = wilson_lcb(score, task.map(task_n_items) if n_items is None else n_items)
     out = pd.Series((lcb > chance.to_numpy()).astype(float), index=task.index)
     return out.mask(~np.isfinite(lcb) | chance.isna())
 
 
-def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool = False):
+def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool = False,
+                    n_items: dict | None = None):
     """Core, reused by run() and by the SNR pipeline.
 
     `df` is the raw per-row eval frame for the models in scope. Rows are
@@ -194,7 +197,12 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     option counts and the item counts. A mask cell is 1 (at least MIN_SHARE
     of the runs confidently above chance), 0 (at chance) or NA (no score, or
     no chance level / item count for the task).
+
+    `n_items` (task -> item count) replaces the count of `configs/tasks.json`
+    for scores read on a subset of each task's items (the above-chance items
+    analysis); the chance level and the rule are the task's own.
     """
+    count = task_n_items if n_items is None else (lambda t: float(n_items.get(t, np.nan)))
     df = df[df["task"].apply(_is_parent_task)].copy()
     df["family"] = df["task"].apply(benchmark_family)
     df["language"] = df["task"].apply(assign_language)
@@ -212,8 +220,9 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     # language, and an English-only cell averaged into `arc_th` drags the mean
     # to chance whatever a cell that trained Thai can do. A task no cell
     # trained keeps the plain mean.
-    finals = finals.assign(above=above_chance(finals["primary_score"].to_numpy(), finals["task"].to_numpy()).to_numpy(),
-                           n_items=finals["task"].map(task_n_items).to_numpy())
+    n_of = finals["task"].map(count).to_numpy(dtype=float)
+    finals = finals.assign(above=above_chance(finals["primary_score"].to_numpy(), finals["task"].to_numpy(), n_of).to_numpy(),
+                           n_items=n_of)
     finals["lcb"] = wilson_lcb(finals["primary_score"], finals["n_items"])
     share_of = lambda f: (f.pivot_table(index="task", columns="bucket", values="above", aggfunc="mean")
                           .reindex(index=scores.index, columns=sizes))
@@ -242,7 +251,7 @@ def scores_and_mask(df: pd.DataFrame, sizes: list[str] | None = None, runs: bool
     mask = share.ge(MIN_SHARE).where(share.notna()).astype("Int64")  # 1 = above chance
     meta = pd.DataFrame({"family": fam, "language": lang,
                          "n_options": n_opt.astype("Int64"), "random_baseline": base_s,
-                         "n_items": pd.Series({t: task_n_items(t) for t in fam.index}).astype("Int64"),
+                         "n_items": pd.Series({t: count(t) for t in fam.index}).astype("Int64"),
                          "options_exact": ~fam.isin(_APPROX)})
     if runs:
         cols = ["task", "model", "bucket", "primary_score", "n_items", "lcb", "above"] + (["trained"] if "trained" in finals else [])
