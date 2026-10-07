@@ -9,9 +9,11 @@ Using these views, we ask which multilingual measurements track learning, when t
 \label{subsec:rq0}
 
 \begin{rqfinding}
-1. Continuation tasks pass it more often than knowledge tasks.
+1. Most of the evaluation is at chance somewhere on the ladder: of the trained-language benchmark tasks, 37\% are above chance at 90M and 58\% at 1.7B, and 39\% never pass at any size.
 
-2. Tasks evaluated on acc\_norm on the continuation instead of logprob of the option letter (A,B,C,D) have higher prob of passing the above chance threshold.
+2. The answer format, not the number of options, decides who passes: at 1.7B the letter-answer originals of Belebele, Global-MMLU and INCLUDE pass in 5 of 105, 1 of 37 and 3 of 43 language subsets, against 86, 35 and 31 once the options are scored as text, while two- and four-option tasks pass at similar rates.
+
+3. The item count sets the bar: the margin over chance a run needs ranges from $+0.006$ for the largest tasks (14{,}042 items) to $+0.157$ for the smallest (25 items).
 \end{rqfinding}
 
 
