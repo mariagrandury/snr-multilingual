@@ -69,6 +69,13 @@ exception, and says so below.
                                  broken out by design axis as
                                  rq2_da_all_above_66_both_transformation does for the
                                  `both` population.
+    rq2_da_all_above_66_own_transformation.*
+                                 rq2_da_all_above_66_own with the DA-size panel broken
+                                 out by design axis: DA-size over the DA-size passers,
+                                 DA-ckpt over the DA-ckpt passers, DA-goal over either
+                                 (the paper figure's populations before 2026-10-07).
+                                 Three populations, so its 1.7B lines and its 5C points
+                                 need not match across panels.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
 or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
@@ -125,6 +132,8 @@ RQ2_VARIANTS = {
                                      "_above_66_both", "_above_66_both"),
     "above_66_either_transformation": ("scale_convergence_da_size_transformation_above_66_either",
                                        "_above_66_either", "_above_66_either"),
+    "above_66_own_transformation": ("scale_convergence_da_size_transformation_above_66_size",
+                                    "_above_66_ckpt", "_above_66_either"),
 }
 mpl.rcParams.update(S.RC)
 
