@@ -1,13 +1,43 @@
 \section{Analysis}
 \label{sec:results}
 
-We analyze the task scores $Y_{b_\ell}(\theta,S,f)$ as defined in §3.
+We analyze the task scores $Y_{b_\ell}(\theta,S,f)$ as defined in §\ref{sec:methodology}.
 Throughout the analysis, we use these evaluation runs as the basic observations and aggregate them differently depending on the question: across model sizes to study scaling with size, across checkpoints to study training trajectories, and across architectures, mixtures, and seeds to assess robustness.
 Using these views, we ask which multilingual measurements track learning, when the rankings they induce transfer to larger models, and whether cheaper statistics can anticipate that transfer.
 
-\begin{figure}[t]
+\subsection{At which size are multilingual benchmark tasks above chance?}
+\label{subsec:rq0}
+
+\begin{rqfinding}
+1. Continuation tasks pass it more often than knowledge tasks.
+
+2. Tasks evaluated on acc\_norm on the continuation instead of logprob of the option letter (A,B,C,D) have higher prob of passing the above chance threshold.
+\end{rqfinding}
+
+
+We first ask whether each benchmark provides measurable signal at the model scales considered.
+For each benchmark--language task $b_\ell$ and model size $N$, we compare performance against the corresponding chance level, calculated as explained in §\ref{subsec:evaluation}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/rq0.png}
+\caption{Reformulation helps benchmarks pass the above chance threshold.}
+    \label{fig:rq0}
+\end{figure}
+
+
+\textbf{Effect of task format.}
+A remaining concern is that weak scaling may reflect the evaluation protocol rather than the underlying capability measured by the benchmark.
+Multiple-choice tasks that present their options as lettered alternatives require the model to map an answer label onto its content, an ability that small models may lack independently of whether they know the answer \citeneeded.
+To isolate this effect, we reformulate the three benchmarks of Belebele, Global-MMLU, and INCLUDE so that the model scores the full answer options directly, rather than predicting their corresponding letter labels. 
+We apply two reformulations. The first is programmatic: we remove the answer labels and score the four options directly, leaving the text of every item unchanged. 
+The second is model-based: we prompt \texttt{gemini-3.8-flash} \citep{gemini_team_gemini_2024} to restate each question as a declarative stem and each option as a statement completing it, without revealing which option is correct. 
+%\AR{Do we have detailed results somewhere? A figure or a table?}
+Both reformulations substantially increase the number of benchmark--language subsets that pass the above-chance filter at 1.7B, from 11 to 86 of 105 for Belebele, from 0 to 35 of 37 total language subsets) for Global-MMLU, and from 4 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, which we have so far completed for INCLUDE, is stronger still: 34 of 43 subsets pass the filter and accuracy rises by 0.075. Gains widen with model size, from 0.007 at 175M to 0.075 at 1.7B, and the rewrite introduces no length cue, as the correct option is the single longest in 23.2\% of original items and 23.3\% of rewritten ones against 25\% by chance. Detailed results by benchmark are in Appendix~\ref{app:chance-threshold}.
+
+\begin{figure*}[t]
 \centering
-% src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_seeds/scaling_regimes_outliers_paper.png
+% src/signal-and-noise/analysis/rq01_scaling_predictability/pretraining/predictivity_all/scaling_regimes_outliers_paper.png
 \includegraphics[width=\textwidth]{figures/rq1.png}
 \caption{\textbf{Benchmark scaling predictability.}
 \textbf{(a)} Median $R^2$ versus Spearman $\rho$ across model-size fits, showing scaling predictability and direction.
@@ -15,14 +45,19 @@ Using these views, we ask which multilingual measurements track learning, when t
 Detailed scaling curves are provided in Appendix~\ref{fig:app_size_scaling} and Appendix~\ref{fig:app_training_scaling}. % TODO Figures
 }
 \label{fig:rq1}
-\end{figure}
+\end{figure*}
 
-\subsection{RQ1: Which multilingual benchmark tasks scale predictably?}
+\subsection{Which multilingual benchmark tasks scale predictably?}
 \label{subsec:rq1}
 
-We first ask whether each benchmark provides measurable signal at the model scales considered.
-For each benchmark--language task $b_\ell$ and model size $N$, we compare performance against the corresponding chance level.
-For the proxy-reference pairs above the chance gate, we measure how predictably benchmark performance changes with model size and training progress.
+\begin{rqfinding}
+1. 
+
+2. 
+\end{rqfinding}
+
+\textbf{Benchmark scaling behavior.}
+For the proxy-reference model pairs above the chance gate, we measure how predictably benchmark performance changes with model size and training progress.
 For model size scaling, we fit final-checkpoint performance against $\log_{10}N$ across model sizes, holding model configuration and seed fixed, and require at least three model sizes.
 For training scaling, we fit performance against log training tokens within each model, requiring at least five checkpoints.
 For each task, we summarize the resulting fits across mixtures that train its language, requiring at least two fits on each axis. % REVIEW
@@ -37,54 +72,56 @@ For BPB and training loss, we reverse the sign of $\rho$ so that positive values
 % Figure 1(b) scaling behavior should be analyzed at the benchmark-language level (not only at the benchmark-family level).
 
 % TODO: specify hellaswag (X/total tasks)... I think we should remove globalmmlu, include and belebele, they do not pass random gate. TruthfulQA?
-Figure~\ref{fig:rq1}(a) shows that benchmarks differ substantially in how predictably they scale with model size. HellaSwag, LAMBADA, and BPB have median size-fit $R^2$ values of 0.88, 0.96, and 1.00, respectively, whereas the original Global-MMLU and Belebele tasks never clear the chance gate on enough sizes to be fitted and INCLUDE keeps a single task, with $R^2 = 0.17$. The direction of scaling also matters, since high predictability does not necessarily correspond to improvement. For example, TruthfulQA has a median size-fit $R^2$ of 0.97 but $\rho=-0.75$, indicating a strong and consistent decrease with model size and showing why $R^2$ alone is insufficient.
-Figure~\ref{fig:rq1}(b) compares scaling predictability across model size and training. Some benchmark evaluations can be well predicted along both dimensions, while others can be predicted across model size but not across training checkpoints. Of the 346 tasks with a regime, 266 are predictable along both, 50 across model size only, and a single one across training checkpoints only.
+Figure~\ref{fig:rq1}(a) shows that benchmarks differ substantially in how predictably they scale with model size. HellaSwag, LAMBADA, and BPB have median size-fit $R^2$ values of 0.97, 0.99, and 0.95, respectively, whereas Global-MMLU, INCLUDE, and Belebele provide weak fits on the scaling ladder considered here. The direction of scaling also matters, since high predictability does not necessarily correspond to improvement. For example, TruthfulQA has a median size-fit $R^2$ of 0.73 but $\rho=-0.83$, indicating a strong and consistent decrease with model size and showing why $R^2$ alone is insufficient.
+Figure~\ref{fig:rq1}(b) compares scaling predictability across model size and training. Some benchmark evaluations can be well predicted along both dimensions, while others can be predicted across model size but not across training checkpoints. We find no cases where performance is predictable across training checkpoints but not across model size.
 This suggests that, for the measurements that exhibit predictable scaling in our setting, varying model size may provide useful signal without requiring long training trajectories.
 In other words, in our setting, comparing larger models earlier in training appears more informative than training smaller models for longer.
 
-A remaining concern is that weak scaling may reflect the evaluation protocol rather than the underlying capability measured by the benchmark.
-Multiple-choice tasks that present their options as lettered alternatives require the model to map an answer label onto its content, an ability that small models may lack independently of whether they know the answer \citep{}.
-To isolate this effect, we reformulate the three benchmarks of Belebele, Global-MMLU, and INCLUDE so that the model scores the full answer options directly, rather than predicting their corresponding letter labels. 
-We apply two reformulations. The first is programmatic: we remove the answer labels and score the four options directly, leaving the text of every item unchanged. 
-The second is model-based: we prompt \texttt{gemini-3.8-flash} [CITE] to restate each question as a declarative stem and each option as a statement completing it, without revealing which option is correct. 
-\AR{Do we have detailed results somewhere? A figure or a table?}
-Both reformulations substantially increase the number of benchmark--language subsets that pass the above-chance filter at 1.7B, from 11 to 86 of 105 for Belebele, from 0 to 35 of 37 for Global-MMLU, and from 4 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, completed for INCLUDE and Belebele, is stronger still: on INCLUDE 33 of 43 subsets pass the filter and accuracy rises by 0.075, and on Belebele every one of the 59 trained-language subsets passes and accuracy rises by 0.168. Gains widen with model size, from 0.006 at 90M to 0.075 at 1.7B on INCLUDE, and the rewrite introduces no length cue, as the correct option is strictly the longest in 22.2\% of original INCLUDE items and 21.9\% of rewritten ones against 25\% by chance. These results indicate that the weak scaling of these benchmarks is in large part a property of their answer format rather than of the capability they target: once the answer is scored as text, the same items separate models across the ladder.
+% moved to RQ0
+%\textbf{Effect of task format.}
+% A remaining concern is that weak scaling may reflect the evaluation protocol rather than the underlying capability measured by the benchmark. Multiple-choice tasks that present their options as lettered alternatives require the model to map an answer label onto its content, an ability that small models may lack independently of whether they know the answer \citep{}. To isolate this effect, we reformulate the three benchmarks of Belebele, Global-MMLU, and INCLUDE so that the model scores the full answer options directly, rather than predicting their corresponding letter labels.  We apply two reformulations. The first is programmatic: we remove the answer labels and score the four options directly, leaving the text of every item unchanged. The second is model-based: we prompt \texttt{gemini-3.8-flash} [CITE] to restate each question as a declarative stem and each option as a statement completing it, without revealing which option is correct.  \AR{Do we have detailed results somewhere? A figure or a table?} Both reformulations substantially increase the number of benchmark--language subsets that pass the above-chance filter at 1.7B, from 11 to 86 of 105 for Belebele, from 0 to 35 of 37 total language subsets) for Global-MMLU, and from 4 to 31 of 43 for INCLUDE. Accuracy on the trained-language subsets rises by 0.098, 0.058, and 0.047, respectively, measured on the same models and checkpoints as the original items. The model-based reformulation, which we have so far completed for INCLUDE, is stronger still: 34 of 43 subsets pass the filter and accuracy rises by 0.075. Gains widen with model size, from 0.007 at 175M to 0.075 at 1.7B, and the rewrite introduces no length cue, as the correct option is the single longest in 23.2\% of original items and 23.3\% of rewritten ones against 25\% by chance.
+\textbf{Effect of task format.}
+These above random gate results suggest that much of the weak scaling in these benchmarks comes from the answer format rather than the capability being tested.
+Once models score the answer text directly, the same items provide substantially clearer signal across the scaling ladder, showing that benchmark predictability and usefulness for scaling predictions depend also on how it is evaluated.
 
 
 
 %\subsection{RQ2: How early can we make reliable decisions?}
-\subsection{RQ2: How small and early can a proxy be while preserving the reference decision?}
+\subsection{How small and early can a proxy be while preserving the reference decision?}
 \label{subsec:rq2}
+
+\begin{rqfinding}
+1. 
+
+2. 
+\end{rqfinding}
 
 % FINDINGS:
 % - Within-model training convergence (Fig. 2b): As training progresses, checkpoints become more similar to the final version of the same model.
 % - Full-scale decision prediction (Fig. 2c): Training smaller models longer does not make them much better at matching the final 1.7B model.
 % - Scale convergence (Fig. 2a): Larger small models do not consistently make the same decisions as the 1.7B model.
 
-
-\begin{figure}[t]
-\centering
-% src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png
-\includegraphics[width=\textwidth]{figures/rq2.png}
-\caption{\textbf{Decision reliability across scale and training.}
-Decision accuracy of a proxy on single-axis decisions, over one set of benchmark--language tasks shared by the three panels: those whose median DA-size or median DA-ckpt is at least 0.66.
-\textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, averaged over tasks, one line per design axis and a black line over all pairs, which equals the 5C points of (c).
-\textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint against the final checkpoint of the same model size, averaged over tasks, one line per proxy size.
-\textbf{(c)} Full-scale decision prediction: DA of each checkpoint against the final 1.7B ranking; its 1.7B line equals the 1.7B line of (b).
-Hollow points joined by a dashed segment equal one by construction, since they compare a ranking with itself: the final 1.7B model in (a) and (c), and every size's final checkpoint in (b).
-% Panels (b) and (c) share their axis in Chinchilla multiples and all three share the vertical axis, so the gap between (b) and (c) is the cost of the proxy's size on top of reading it early.
-}
-\label{fig:rq2}
-\end{figure}
-
-
-We next ask how early in model development we can recover the decisions that would be obtained from a full evaluation. 
+We next ask how early in model development we can recover the decisions that would be obtained from a full evaluation.
+As discussed in Section~\ref{sec:methodology}, 
 To isolate this question from benchmark quality itself, we restrict the analysis to benchmarks that already exhibit high decision reliability under full evaluation. The selection procedure and per-benchmark results are reported in Appendix~\ref{app:rq2_benchmarks}. 
 We study decision reliability along two dimensions of model development: training progress and model scale, and analyze it from three complementary perspectives. First, we measure within-model training convergence by comparing the decision at each intermediate checkpoint to the decision made by the final checkpoint of the same model size, testing how early a model’s eventual decision stabilizes during training (Figure~\ref{fig:rq2}b). Second, we measure full-scale decision prediction by comparing every intermediate checkpoint, across model sizes, to the fully trained largest model, testing how early smaller and partially trained models can recover the decision of the final reference model (Figure~\ref{fig:rq2}c). Third, we study scale convergence by comparing the final checkpoint of each model size to the final checkpoint of the largest model, quantifying how small a model can be while still reproducing decisions made at full scale (Figure~\ref{fig:rq2}a).
 
 \textbf{Within-model training convergence.}
 Figure~\ref{fig:rq2}b shows that decision reliability increases steadily over training when each checkpoint is compared to the final checkpoint of the same model. 
-Early checkpoints recover only around 55--66\% of the final decisions, while agreement rises substantially later in training, with smaller models generally stabilizing earlier than larger ones.
+Early checkpoints recover only around 50--60\% of the final decisions, while agreement rises substantially later in training, with smaller models generally stabilizing earlier than larger ones.
+
+\begin{figure*}[t]
+\centering
+% src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_above_66_either_transformation_one_axis.png
+\includegraphics[width=\textwidth]{figures/rq2.png}
+\caption{\textbf{Decision reliability across scale and training.}
+Decision accuracy of a proxy against the 1.7B reference on single-axis decisions, over the benchmark--language tasks whose median DA under each panel's own definition is at least 0.66.
+\textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, pooled over decisions, one line per design axis and a black line over all pairs. 
+\textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint relative to the final checkpoint of the same model size, averaged over tasks. 
+\textbf{(c)} Full-scale decision prediction: DA of each intermediate checkpoint relative to the final 1.7B reference model, measuring how early partially trained and smaller models recover the full-scale decision.}
+\label{fig:rq2}
+\end{figure*}
+
 
 \textbf{Predicting full-scale decisions from cheaper models.}
 Figures~\ref{fig:rq2}a and~\ref{fig:rq2}c show that this within-model convergence does not translate into reliable prediction of the final 1.7B decisions. 
@@ -92,21 +129,61 @@ Across fully trained smaller models, agreement with the 1.7B reference remains m
 Together, these results suggest that the cross-scale gap cannot be closed by training cheaper proxy models longer alone.
 
 
-\subsection{RQ3: Can cheap proxy statistics predict decision accuracy?}
+\subsection{Can cheap proxy statistics predict decision accuracy?}
 \label{subsec:rq3}
 
+\begin{rqfinding}
+1. 
 
-\textbf{Finding.} Statistics of a single proxy correlate only weakly with decision accuracy and do not certify an individual decision. On benchmark tasks no candidate exceeds $\rho = 0.35$ at any proxy size. The strongest are the noise term on its own (inverted, 0.20 to 0.34) and the discrepancy SNR (0.19 to 0.30); the relative-standard-deviation SNR reaches only 0.05 to 0.15, and its signal term alone correlates negatively, so on this ladder a task that spreads the design variants more at the proxy agrees less with the reference.
+2. 
+\end{rqfinding}
 
-\textbf{Setup.} Decision accuracy needs the reference model. We ask which statistics predict it, distinguishing statistics of a single proxy size from those requiring a scaling curve. For every task and proxy size we compute the signal-to-noise ratio under three of the definitions of \S\ref{subsec:methodology-snr} (relative standard deviation, discrepancy, and the standard deviation of pairwise distances), the signal and the noise on their own, the margin above chance, the coefficient of determination of the scaling fit of \S\ref{subsec:rq1}, and the agreement between the proxy's ranking at 10\% of its run and at its end. Each candidate is correlated (Spearman $\rho$) with the task's decision accuracy by size, the agreement between the ranking of all design variants at the proxy size and at the 1.7B reference, computed by the pipeline of \citet{heineman_signal_2025} on the same cells. We report the correlation separately for benchmark tasks and for the per-language bits-per-byte tasks, at the five proxies from 90M to 1B.
+As discussed in Section~\ref{subsec:rq2}, decision accuracy (DA) measures whether the ranking of models with different development decisions agrees with their ordering at reference scale. 
+\textcolor{blue}{However, DA is inherently retrospective, meaning that computing it requires both the proxy ranking and the ranking of the larger reference models.}
+Ideally, we would instead like a \textcolor{blue}{\textit{surrogate metric} that can be computed from the proxy models alone and approximates the DA that would be obtained against the reference.}
+Prior work has proposed several such diagnostics, most notably signal-to-noise ratio (SNR) \citep{heineman_signal_2025}, which compares the separation between model variants to the variability of their evaluation scores.
+These methods have primarily been studied in English settings and at scales where downstream benchmark signal is already measurable.
+In this experiment, we investigate first whether existing surrogate metrics remain predictive of DA in the multilingual setting and second, which surrogate provides a reliable signal at the smallest model scale.
 
-%\begin{figure}[t]
-%\centering
-%\includegraphics[width=\textwidth]{figures/rq3_surrogates.pdf}
-%\caption{Which small-scale statistic predicts decision accuracy. Spearman correlation between each candidate and the task's decision accuracy against the reference, for benchmark tasks (left) and per-language bits per byte (right), at three proxy sizes; $n$ is the number of tasks behind each point.}
-%\label{fig:rq3}
-%\end{figure}
+We first test whether statistics proposed to characterize evaluation reliability can serve as surrogates for DA without requiring the reference model. 
+\textcolor{blue}{For each benchmark–language task and proxy size, we compute each surrogate using only information available at the proxy scale and measure its Spearman ($\rho$) association with DA}, i.e., agreement between the proxy-size ranking and the ranking at the 1.7B reference model.
+Figure~\ref{fig:rq3} shows the Spearman ($\rho$) association with DA of different surrogate implementations across model sizes over all benchmarks that have passed the above-chance threshold, depicting how their predictive strength changes as the proxy scale increases and whether any surrogate remains consistently informative across scales. 
+We compare several families of surrogate statistics that can be computed without the reference model, including scaling-fit \(R^2\), SNR-based measures \citep{heineman_signal_2025} and their signal/noise components, margin above chance, and early-checkpoint ranking agreement. 
+Scaling-fit \(R^2\) measures how well benchmark performance follows a log-linear trend across the model sizes available up to the proxy point; margin above chance measures how far the benchmark score is above random-guessing performance; and early-checkpoint ranking agreement measures how well the ranking of model variants at an early training checkpoint matches their ranking at the final checkpoint of the same model size.
+For each benchmark--language task and proxy size, we compute the surrogate using only information available up to that proxy point and measure its Spearman association with DA.
+For detailed implementation for the SNR variants, please refer to the Appendix~\ref{}.
 
-\textbf{Results.} We evaluate the candidates on the tasks above chance at the proxy and at the reference; correlations require defined values for both the candidate and decision accuracy, which leaves 235, 269, 298, 332 and 360 benchmark tasks from 90M to 1B and 34 per-language bits-per-byte tasks at every size. Pooled over these tasks, decision accuracy by size is 0.54 to 0.56 (\S\ref{subsec:rq2}), so there is variation to predict. On benchmarks the relative-standard-deviation SNR gives $\rho = 0.15$, 0.05, 0.11, 0.11 and 0.08 from 90M to 1B. Its signal term alone is negative at every size ($-0.10$ to $-0.28$), while its noise term alone, inverted so that less noise counts as better, reaches 0.20 to 0.34: the association SNR has comes from the noise, not from the dispersion across design variants. The discrepancy SNR is the best of the three definitions on benchmarks (0.19 to 0.30) and is undefined on bits per byte, the standard deviation of pairwise distances is near zero ($-0.07$ to 0.09), and the margin above chance predicts nothing or worse ($-0.25$ to 0.02). On bits per byte, 34 languages, the correlations swing with the proxy size, from $-0.10$ at 350M to 0.85 at 600M for the relative-standard-deviation SNR, and are not a stable guide.
 
-\textbf{Within-proxy stability.} The proxy's own training curve provides another surrogate without a noise estimate. The agreement between a proxy's ranking of the variants at 10\% of its run and at its end correlates with its decision accuracy at 0.19, 0.23, 0.03, 0.09 and 0.19 on benchmarks, and between $-0.15$ and 0.70 on bits per byte, no better than SNR. The coefficient of determination of the scaling fit over the proxy's own rungs, defined from 350M up, is a weak predictor on benchmarks (0.25 to 0.26) and none on bits per byte ($-0.62$ to 0.06), where every language scales predictably. Neither these nor the 211 statistics of the wider catalogue in Appendix~\ref{app:surrogates} reach the reliability of decision accuracy re-measured on the reference itself, and none supplies a calibrated threshold for accepting a decision: a proxy statistic can flag tasks worth a closer look, but the decision still has to be checked on a larger model.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/rq3.png}
+\caption{\textbf{Surrogate predictivity across proxy model sizes.} 
+Spearman rank correlation (\(\rho\)) between each surrogate statistic and DA-size for benchmark--language tasks at different proxy sizes. 
+Higher values indicate that the surrogate is more strongly associated with preserving model-variant rankings at the reference scale.
+Scaling-fit \(R^2\) is reported only from 600M onward, as at least three model-size points are required for a meaningful fit.}
+    \label{fig:rq3}
+\end{figure}
+
+
+
+\textbf{Surrogate predictivity in the multilingual setting.}
+We find that \textcolor{blue}{no single surrogate consistently predicts decision accuracy} across the multilingual settings of our model ladder.
+Figure~\ref{fig:rq3} shows that among the simple candidates, scaling-fit \(R^2\) provides the strongest overall association with DA, \textcolor{blue}{suggesting that benchmarks with more predictable scaling behavior are also more likely to preserve the ranking of model variants across scales.}
+For SNR-based surrogates, however, performance depends strongly on how noise is defined, with some noise estimates yielding substantially stronger associations than others; for example, replacing checkpoint-based noise with k-fold benchmark noise increases the association with DA from \(\rho=0.23\) to \(\rho=0.45\).
+The aggregate results in Figure~\ref{fig:rq3} pool all benchmark--language tasks that pass the chance threshold. When we stratify the analysis by benchmark or multilingual training regime, however, substantially stronger relationships emerge. 
+While the strongest association in the pooled benchmark analysis is \(\rho=0.52\), surrogate predictivity rises to \(\rho=0.84\) for HellaSwag, \(\rho=0.81\) for per-language BPB, and \(\rho=0.66\) for models trained on \(8\) languages. 
+These values are \(0.32\), \(0.29\), and \(0.14\) higher than the pooled association, respectively, corresponding to an average increase of \(0.25\) in Spearman correlation.
+Detailed stratification of surrogate--DA Spearman correlations across benchmarks, numbers of training languages, and model sizes can be found in Appendix~\ref{}.
+
+
+\textbf{At what model scale does surrogate signal emerge?}
+\textcolor{blue}{We next ask how early in model development a surrogate becomes informative about DA.}
+Using the same analysis in Figure~\ref{fig:rq3}, we compare surrogate--DA associations across increasing proxy model sizes, from 175M to 1B.
+This allows us to test whether useful surrogate signal is already present at the smallest scale and whether it strengthens or remains stable as model scale increases.
+\textcolor{blue}{At the smallest proxy scale, no surrogate provides a strong and stable signal of DA.}
+Early-checkpoint ranking agreement is strongest at 175M ($\rho=0.32$), but its association drops to $\rho=0.02$ at 350M, indicating that this early signal is not consistent across scales.
+By 350M, inverted relative-standard-deviation noise reaches $\rho=0.35$ and discrepancy-based SNR reaches $\rho=0.31$.
+Scaling-fit $R^2$ becomes available only from 600M onward, where it reaches $\rho=0.23$ and increases to $\rho=0.35$ at 1B.
+Overall, a useful surrogate signal does not emerge reliably at the smallest proxy scale, and the surrogate providing the strongest association changes as model size increases.
+Similar to our earlier findings on multilingual benchmark scaling, we find that decision surrogates behave less consistently than suggested by prior English-focused studies, with their usefulness depending strongly on model scale, benchmark and training-language regime.

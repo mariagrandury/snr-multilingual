@@ -1,0 +1,52 @@
+\section{Evaluation Protocol}
+\label{app:evaluation-protocol}
+
+\textbf{Bits-per-byte implementation.} We measure the negative log-likelihood of held-out text in bits, normalized by its UTF-8 byte count.
+For language $\ell$, let $x_1,\ldots,x_{m_\ell}$ be the evaluated token sequence, $c_t$ the context preceding token $x_t$ within the scoring block, and $b_\ell$ the number of bytes in the evaluated text. We compute
+\begin{equation}
+\mathrm{BPB}_\ell = \frac{-\sum_{t=2}^{m_\ell}\log_2 p(x_t \mid c_t)}{b_\ell}.
+\label{eq:bpb}
+\end{equation}
+
+We concatenate validation documents without end-of-document separators and score them in blocks with 4,096 input tokens and one-token overlap between successive blocks. Each token except the first of the stream is scored once; context resets at block boundaries. We select a deterministic prefix ending at the document boundary that reaches 1M tokens, or the full stream if it is shorter. We measure the denominator by decoding the entire selected prefix and counting its UTF-8 bytes, including the initial conditioning token. Thus, the implementation omits the first token's likelihood but retains its bytes. We also compute token-level perplexity from the same forward passes.
+
+% The original draft reports a standard error of about 0.003 bits for this
+% prefix. Add the estimation procedure before presenting it as uncertainty.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\label{tab:benchmark-families}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llllr}
+\toprule
+\textbf{Benchmark Family} & \textbf{Task} & \textbf{Format} & \textbf{Construction} & \# \textbf{Langs} \\
+\midrule
+Belebele          & reading comprehension     & 4-way MC, 900 items/lang      & HT (FLORES)           & 122 \\
+Global PIQA           & physical commonsense      & 2-way completion              & native                & 116 \\
+MultiBLiMP            & grammatical acceptability & minimal pairs                 & auto (UD, UniMorph)   & 101 \\
+INCLUDE             & regional knowledge        & MC exam questions             & native                &  44 \\
+Global-MMLU  & world knowledge & MC (MMLU)                & HT + community        &  42 \\
+Okapi HellaSwag           & activity commonsense      & 4-way completion              & MT                    &  31 \\
+Okapi ARC             & science QA                & MC                            & MT                    &  31 \\
+XNLI                 & natural language inference & 3-way                        & HT                    &  15 \\
+XStoryCloze              & narrative commonsense     & 2-way ending                  & HT                    &  11 \\
+XCOPA                  & causal commonsense        & 2-way, 500 items              & HT                    &  11 \\
+PAWS-X                 & paraphrase identification & 2-way                         & HT                    &   7 \\
+XWinograd     & coreference               & Winograd schemas              & HT                    &   6 \\
+LAMBADA multilingual & last-word prediction & completion             & MT                    &   5 \\
+TruthfulQA-Multi  & truthfulness           & MC                            & HT                    &   5 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Benchmark families evaluated during pretraining. ``Langs'' is the number of languages the harness ships for the family; a model is evaluated only on the languages in its training mixture. MC = multiple choice; QA = question answering; UD = Universal Dependencies. Construction: HT = human or professional translation, MT = machine translation, native = written in the language, auto = automatically generated.}
+\end{table*}
+
+\textbf{Task selection.} We select the registered tasks whose language is in the training mixture; task counts can exceed family counts. For the resource-ranked lists, the number of tasks grows with $L$: 106 at $L=1$, 125 at $L=2$, 294 at $L=8$, 430 at $L=15$, 590 at $L=30$, and 776 at $L=50$. These counts cover the whole evaluated group, which besides the multilingual families of Table~\ref{tab:benchmark-families} contains the reformulated variants of the letter-format families (\S\ref{subsec:rq1}) and a set of English-only benchmarks \checknum{(the table predates their addition and must be regenerated)}. Every trained language is covered by at least one family. For the seed-1904 deep scheme-A ladder we additionally run every task in every language, independent of the training mixture, to read cross-lingual transfer on the benchmarks as well as on bits-per-byte. 
+
+\textbf{Language coverage.} Every trained language is covered by at least one benchmark family, and English by \nbenchmarks multilingual families plus the English-only benchmarks. Eighteen languages have exactly one family and fifteen have two; the languages with a single family are covered by Belebele or Global PIQA alone, and for those the per-language benchmark read rests on one task. Counting tasks rather than families, a cell is evaluated on 106 tasks at $L=1$, 125 at $L=2$, 294 at $L=8$, 430 at $L=15$, 590 at $L=30$ and 776 at $L=50$, the reformulated variants and the English-only benchmarks included. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness; re-enabling them would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.
+
+
+\textbf{Harness settings.} All benchmarks run through the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2024}, installed from a pinned shared checkout with the source commit recorded in each evaluation job, with the vLLM backend \citep{kwon_efficient_2023}, a maximum context of 4,096 tokens, a beginning-of-sequence token prepended to every prompt, no chat template, and each task's default prompt and number of in-context examples. We report accuracy for multiple-choice and completion tasks and exact match for the generative ones, and aggregate sub-tasks (for example the MMLU subjects) to their family by the harness's own grouping. Base models at these sizes are at chance on several families. The above-chance threshold of Appendix~\ref{app:chance-threshold} decides per task and size whether such a cell enters the analysis.
+

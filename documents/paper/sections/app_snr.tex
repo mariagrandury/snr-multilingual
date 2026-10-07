@@ -1,3 +1,5 @@
+\clearpage
+
 \section{Signal and Noise}
 \label{subsec:methodology-snr}
 
@@ -17,7 +19,7 @@ A higher SNR means score differences across models are large relative to the ben
 \begin{equation}
 \text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
 \end{equation}
-On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and our released analysis (rq05) reports every intervention's effect against the seed noise.
+On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and \S\ref{subsec:rq4} reports every intervention's effect against the seed noise.
 We also consider a fifth noise definition, computable from a single evaluation run on any model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
 \begin{equation}
 \text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
@@ -30,7 +32,7 @@ where $m_1, \dots, m_k$ are the per-fold scores of model $m$. The fold scores ar
 
 When designing an measure of signal, we want to incorporate the uniformity of benchmark scores and the overall range of scores. Given the final checkpoints of training runs under similar compute spend $C_\text{final}$, we evaluate multiple approaches to measuring signal:
 
-\begin{itemize}[itemsep=0pt,topsep=0pt]
+\begin{itemize}[leftmargin=15pt,noitemsep,topsep=0pt]
     \item \textbf{Variance} measures average squared distance from the mean: $\text{Var}(C_\text{final}) = \frac{1}{n} \sum_{i=1}^{n} \|c_i - \bar{c}\|^2$
     \item \textbf{Mean distance} measures average pairwise distance between points: $\text{Mean Dist}(C_\text{final}) = \frac{2}{n(n-1)} \sum_{i < j} \|c_i - c_j\|$
     \item \textbf{Relative standard deviation}, or the coefficient of variation, measures the standard deviation divided by the mean: $\text{Rel. Std.}(C_\text{final}) = \frac{\sqrt{\text{Var}(C_\text{final})}}{\text{Mean}(C_\text{final})}$

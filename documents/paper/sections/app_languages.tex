@@ -1,9 +1,0 @@
-\section{Languages and benchmark coverage}
-\label{app:languages}
-
-Table~\ref{tab:app-languages} lists the 99 FineWeb-2 languages of the sweep with the language setting at which each enters the scheme-A and scheme-B lists, and the number of benchmark families the harness offers for it. The scheme-A lists are the top $L-1$ FineWeb-2 subsets by training-split bytes, nested across settings; scheme B reorders the top 49 so that each script, then each family, is covered first, and coincides with scheme A at $L \geq 50$. The table is generated from the language-set files and the task registry of the released code.
-
-\input{sections/app_tables_generated}
-
-\label{app:benchmark-coverage}
-\textbf{Coverage.} Every trained language is covered by at least one benchmark family, and English by \checknum{twelve} multilingual families plus the English-only benchmarks. Eighteen languages have exactly one family and fifteen have two; the languages with a single family are covered by Belebele or Global PIQA alone, and for those the per-language benchmark read rests on one task. Counting tasks rather than families, a cell is evaluated on 106 tasks at $L=1$, 125 at $L=2$, 294 at $L=8$, 430 at $L=15$, 590 at $L=30$ and 776 at $L=50$, the reformulated variants and the English-only benchmarks included. Two IrokoBench families (AfriXNLI and AfriMMLU) are wired but disabled because of a loading defect in the pinned harness; re-enabling them would add a second or third human-translated family for Amharic, Igbo, Kinyarwanda, Southern Sotho, Xhosa and Zulu.

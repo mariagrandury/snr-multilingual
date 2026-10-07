@@ -1,12 +1,12 @@
 \section{Experimental Setup}
 \label{sec:methodology}
 
-Consider a model trained with non-embedding parameter count $N$, architecture $A$, number of training languages $K$, language-selection scheme $M$ (\ie{} the way of choosing the pretraining languages), and data sampling temperature $T$ (\ie{} the way of sampling across languages).
+Consider a model trained with non-embedding parameter count $N$, architecture $A$, number of training languages $K$, language-selection scheme $M$ (\ie{} the rule for choosing the pretraining languages), and data sampling temperature $T$ (\ie{} the way of sampling across languages).
 We define \emph{model configuration} as
 \[
 \theta=(N,A,K,M,T).
 \]
-For each configuration, we train one or more runs with random seed $S$ and save checkpoints at training fractions $f$.
+For each configuration, we train one or more runs with random seed $S$ and save checkpoints at training fractions $f\in (0,1.0]$.
 Our evaluation suite contains benchmarks $b$, each comprising language tasks $b_\ell$. For example, the HellaSwag benchmark contains tasks such as HellaSwag-es, HellaSwag-hi, and HellaSwag-gr. Evaluating checkpoint $(\theta,S,f)$ on task $b_\ell$ produces the score
 $Y_{b_\ell}(\theta,S,f)$.
 We use these scores to test whether rankings obtained at smaller sizes or earlier training fractions agree with rankings at a reference point.
@@ -30,7 +30,7 @@ following the fixed-multiple ladder design of
 \citet{magnusson_datadecide_2025}. 
 
 \textbf{Training corpora.}
-We draw English data from DCLM-edu \citep{li_datacomp-lm_2025} and data for the remaining languages from the quality-filtered FineWeb-2 collection used to train Apertus \citep{penedo_fineweb2_2025,messmer_enhancing_2026,apertus_apertus_2025}. We tokenize all corpora with the shared Apertus tokenizer.
+We draw English data from DCLM-edu \citep{li_datacomp-lm_2025} and data for the remaining languages from the quality-filtered FineWeb-2 collection used to train Apertus \citep{penedo_fineweb2_2025,messmer_enhancing_2026,apertus_apertus_2025}. %We tokenize all corpora with the Apertus tokenizer.
 
 \textbf{Shared architecture.} We train decoder-only transformers using the Apertus recipe \citep{apertus_apertus_2025}, with grouped-query attention,
 %\citep{ainslie_gqa_2023},
@@ -40,24 +40,30 @@ rotary position embeddings \citep{su_roformer_2023}, RMSNorm, QK-layernorm, and 
 We use AdEMAMix as optimizer
 %\citep{pagliardini_ademamix_2024}
 and a warmup-stable-decay learning-rate schedule, %\citep{hagele_scaling_2024},
-using a global batch of 504 sequences (84 at 90M and 168 at 175M, see Appendix~\ref{app:model-configurations}). We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
+using a global batch of 504 sequences. We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
 
-\textbf{Seeds.} Every configuration is trained with seed 1904. Selected deep scheme-A configurations at sizes 175M, 600M and 1B use two additional seeds (Appendix~\ref{app:training-grid}). These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
-% Seed replicates are never ranked against each other as design variants: every ranking in \S\ref{subsec:methodology-da} compares configurations at seed 1904.
+\textbf{Seeds.} Every configuration is trained with seed 1904. Selected configurations at sizes 175M, 600M and 1B use two additional seeds.
+% (Appendix~\ref{app:training-grid})
+These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
 
+% \textbf{Compute.} The scaling ladder required $\sim$ models are trained on nodes of four NVIDIA GH200 GPUs. %, using 3 to 21 nodes per run depending on size.
+% Pretraining the model ladder consumed \checknum{15300} node-hours, plus \checknum{3500} node-hours of data preparation, Megatron-to-HuggingFace checkpoint conversion, benchmark evaluation, and bits-per-byte scoring.
 
 \subsubsection{Intervention Axes}
 
-\textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B. The analysis reads the ladder from 90M to the 1.7B reference; the 3B rung, trained only at $K \in \{8, 15\}$ under schemes A and B with the deep architecture, sits above the reference and is reserved for an extrapolation check.
+\textbf{Number of parameters $N$.} We train seven model sizes, measured in non-embedding parameters: 90M, 175M, 350M, 600M, 1B, 1.7B, 3B.
+% REVIEW 90M/3B
+% The analysis reads the ladder from 175M to the 1.7B reference.
 
-\textbf{Architecture $A$.} We compare a deep with a shallow-wide architecture at each size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the ratio of query heads to key-value heads. Their non-embedding counts differ from the corresponding deep models by 0.4\% to 5.2\% \AR{Point to a table in the appendix for the specific architecture aspect ratios and details}.
+\textbf{Architecture $A$.} We compare a deep with a shallow-wide architecture at each size. The shallow models roughly double the width-to-depth ratio while preserving the feed-forward multiplier and the ratio of query heads to key-value heads. %Their non-embedding counts differ from the corresponding deep models by 0.4\% to 5.2\%. Details about the full specific architecture and model configurations can be found
+Detailed model configurations in Appendix \ref{app:model-configurations}.
 
-\textbf{Number of training languages $K$.} We vary the number of training languages over $K \in \{1, 2, 8, 15, 30, 50\}$. The $K=1$ setting is English only; multilingual settings allocate half the training tokens to English and half to the other $K-1$ languages.
+\textbf{Number of training languages $K$.} We vary the number of training languages over $K \in \{1, 2, 8, 15, 30, 50\}$. The $K=1$ setting is English only. Multilingual settings allocate half the training tokens to English and half to the other $K-1$ languages.
 
 \textbf{Language selection scheme $M$.}
-We compare two rules for choosing the non-English languages. Scheme A ranks languages by available corpus size, whereas scheme B prioritizes diversity in script and language family.
-%; scheme B is defined at $K \in \{8, 15, 30\}$ and coincides with scheme A at $K = 50$. At $K=2$ we additionally vary the second language: Russian, Chinese, or Spanish.
-Appendix~\ref{app:languages} lists the languages selected by each scheme at every value of $K$.
+We compare two rules for choosing the non-English languages. Scheme $M_1$ ranks languages by available corpus size, whereas scheme $M_2$ prioritizes diversity in script and language family.
+% Scheme $M_2$ is defined at $K \in \{8, 15, 30\}$ and coincides with scheme $M_1$ at $K = 50$. At $K=2$ we additionally vary the second language: Russian, Chinese, or Spanish.
+Appendix~\ref{app:data-mixtures} lists the languages selected by each scheme at every value of $K$.
 
 \textbf{Sampling temperature $T$.}
 Within the non-English half of the training mixture, language $i$ receives a sampling probability proportional to
@@ -65,16 +71,17 @@ $q_i \propto p_i^{1/T}$,
 where $p_i$ is the language's estimated proportion of the available corpus. We use $T=1$ for proportional sampling and $T=3$ for flattened sampling.
 % The $T=3$ runs use the scheme-A lists at $K \in \{15, 30, 50\}$, with both architectures at $K=50$ and the deep architecture only at $K=15$ and $K=30$.
 
+
 %\textbf{Held-out data.} We construct one fixed validation set covering English and the 99 non-English languages. Training builds exclude the rows assigned to validation. We use the same validation text for a given language across model sizes, mixtures, and interventions, so within-language score differences reflect model differences on shared data.
 
 
 \subsection{Evaluation}
 \label{subsec:evaluation}
 
-We use the following evaluations:
+We assess the reliability of the following evaluations:
 \begin{itemize}[leftmargin=15pt,noitemsep,topsep=0pt]
 
-\item \textbf{Downstream tasks.} We evaluate \nbenchmarks benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the Swiss AI fork of the LM Evaluation Harness \citep{gao_framework_2021} using the vLLM backend \citep{kwon_efficient_2023}. We use each task's documented prompt and number of in-context examples, without a chat template.
+\item \textbf{Downstream tasks.} We evaluate \nbenchmarks benchmark families spanning reading comprehension, commonsense, factual knowledge, grammatical acceptability, and other capabilities (Table~\ref{tab:benchmark-families}). These include parallel multilingual items, native-language questions, machine translations, and automatically generated probes. We use the LM Evaluation Harness \citep{gao_framework_2021}. We use each task's documented prompt and number of in-context examples, without a chat template.
 % The evaluated group also contains the reformulated variants of the letter-format families described in \S\ref{subsec:rq1}, which are gated, counted and plotted like any other benchmark.
 By default, we evaluate each model only on the languages included in its training mixture.
 % For the seed-1904, deep, scheme-A ladder, we additionally evaluate all validation languages and all benchmark languages registered in the harness. This extended evaluation supports our analysis of transfer to languages absent from a model's training mixture.
@@ -86,39 +93,21 @@ Lower BPB indicates better prediction of the held-out text. \AR{We include BPB a
 \end{itemize}
 
 We evaluate both at the same aligned training fractions for every model size, allowing us to compare rankings across size and training progress.
-Specifically, we evaluate the ten deciles from 10\% to 100\% of training and two additional checkpoints at 85\% and 95\%, for a total of twelve aligned fractions. Every analysis along a run reads the ten deciles, which every size shares and which we label in Chinchilla multiples: each run trains five times the $20N$ budget, so 20\% of a run is 1C and its end 5C. % The 85\% and 95\% checkpoints serve only the checkpoint-noise estimate, taken over the five evenly spaced checkpoints in the last 20\% of training.
+Specifically, we evaluate the ten deciles from 10\% to 100\% of training and two additional checkpoints at 85\% and 95\%, for a total of twelve aligned fractions. Every analysis along a run reads the ten deciles, which we label in Chinchilla multiples: each run trains five times the $20N$ budget, so 20\% of a run is 1C and its end 5C. % The 85\% and 95\% checkpoints serve only the checkpoint-noise estimate, taken over the five evenly spaced checkpoints in the last 20\% of training.
 
-% An evaluation run is considered above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds this level. We retain a benchmark--language--size cell when at least half of its evaluation runs satisfy this condition.
-We apply an above-chance gate before any analysis of a benchmark task. For each language task $b_\ell$ and model size $N$, we take the final-checkpoint accuracy of every model of that size and mark it as above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds the task's chance level $1/m_b$, where $m_b$ is the number of answer options.
-We retain the task at that size when at least half of these models satisfy the condition. %, using only the models whose mixture trains $\ell$ whenever any exist.
+An evaluation run is considered above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds this level.
+We retain a benchmark--language--size cell when at least half of its evaluation runs satisfy this condition.
+% We apply an above-chance gate before any analysis of a benchmark task. For each language task $b_\ell$ and model size $N$, we take the final-checkpoint accuracy of every model of that size and mark it as above chance when the lower bound of its one-sided 95\% Wilson confidence interval exceeds the task's chance level $1/m_b$, where $m_b$ is the number of answer options.
+% We retain the task at that size when at least half of these models satisfy the condition. %, using only the models whose mixture trains $\ell$ whenever any exist.
 This prevents near-random variation from being interpreted as evidence for or against scaling.
 Because the threshold depends on the number of evaluation examples, it adapts to the size of each task rather than using a fixed margin above chance.
-A retained task contributes to a scaling fit only at the sizes where it passes, and a ranking against the reference additionally requires the task to pass at the reference size.
-Measurements without a meaningful chance level, such as bits per byte, are never gated.
-We report the implementation and statistics of the gate in Appendix~\ref{app:results-filtering}.
+Measurements without a meaningful chance level, such as bits per byte, are not filtered out by this procedure.
+We report the implementation and statistics of the gate in Appendix~\ref{app:chance-threshold}.
 
-
-
-
-\subsection{Compute}
-
-All models are trained on nodes of four NVIDIA GH200 GPUs, using 3 to 21 nodes per run depending on size. Pretraining the model ladder consumed \checknum{15,300} node-hours, plus \checknum{3,500} node-hours of data preparation, Megatron-to-HuggingFace checkpoint conversion, benchmark evaluation, and bits-per-byte scoring.
 % TODO: Update from \texttt{plan/compute-costs.md} when the sweep is complete.
 
 
-
-\subsection{Ranking Agreement}
-\label{subsec:methodology-da}
-
-Ranking agreement (RA) measures whether a set of model variants is ranked in the same order at a cheaper \emph{proxy point} and at the  \emph{reference point}. 
-A proxy point is defined by a model size and training fraction $(N,f)$, while the reference point is the final checkpoint ($f=1$) either at the same size $N$ or at the reference size $N_{\mathrm{ref}} = 1.7$B, the largest rung of the ladder.
-% A pair of variants enters a comparison against the reference only when both members reach $N_{\mathrm{ref}}$; a reference cell that is missing is left empty, never filled from a smaller size.
-RA ranges from 0 to 1, where 1 indicates perfect agreement with the reference ranking and 0 indicates no agreement.
-Therefore, higher RA means that evaluation at the proxy point is more likely to support the same development decision as the full reference evaluation.
-We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
-
-
-\begin{table}[h]
+\begin{table*}[ht]
     \centering
     \begin{tabular}{llll}
         \toprule
@@ -138,13 +127,33 @@ We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
             & How small and early can the proxy be? \\
         \bottomrule
     \end{tabular}
-        \caption{\textbf{Ranking-agreement (RA) settings.} The proxy and reference contain the same model variants but differ in model size, training progress, or both. $N$ is the non-embedding parameter count, $N_{\mathrm{ref}} = 1.7$B is the reference size, and $f$ is the fraction of the training.}
+        \caption{\textbf{Ranking-agreement (RA) settings.} The proxy and reference contain the same model variants but differ in model size, training progress, or both. $N$ is the non-embedding parameter count, $N_{\mathrm{ref}}$ is the largest size shared by all compared variants (usually 1.7B), and $f$ is the fraction of the training.}
     \label{tab:ra_defs}
-\end{table}
+\end{table*}
 
 
-We quantify ranking agreement with decision accuracy (DA; \citealp{heineman_signal_2025}), the fraction of pairwise preferences that agree between the proxy and the reference. Kendall's $\tau$ and Spearman's $\rho$ are computed on the same cells as a check; DA is a rescaling of Kendall's $\tau_a$ up to the treatment of ties, $2\,\mathrm{DA} - 1 = \tau_a + (T_{\mathrm{both}} - T_{\mathrm{one}})/|\mathcal{P}|$ with $T_{\mathrm{both}}$ and $T_{\mathrm{one}}$ the numbers of pairs tied on both or on one side, so we report DA alone.
-For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations that differ only in the design choice under study,
+\subsection{Ranking Agreement}
+\label{subsec:methodology-da}
+
+Ranking agreement (RA) measures whether a set of model variants is ranked in the same order at a cheaper \emph{proxy point} and at the  \emph{reference point}. 
+A proxy point is defined by a model size and training fraction $(N,f)$, while the reference point is the final checkpoint ($f=1$) at the same size $N$ or the largest size shared by all compared variants, $N_{\mathrm{ref}}$.
+RA ranges from 0 to 1, where 1 indicates perfect agreement with the reference ranking and 0 indicates no agreement.
+Therefore, higher RA means that evaluation at the proxy point is more likely to support the same development decision as the full reference evaluation.
+We consider the three transfer settings defined in Table~\ref{tab:ra_defs}.
+
+
+We quantify ranking agreement using three complementary metrics. Spearman's rank correlation $\rho$ measures agreement between the complete proxy and reference rankings.
+Kendall's $\tau$ ... % TODO: Define or move to appendix
+Decision accuracy (DA; \citealp{heineman_signal_2025}) measures the fraction of pairwise preferences that agree between them.
+%For a set $\mathcal{P}$ of model-variant pairs,
+%\begin{equation}
+%\mathrm{DA} = \frac{1}{|\mathcal{P}|} \sum_{(a,b)\in\mathcal{P}} \mathbb{1}
+%\left[ \operatorname{sign}\!\left(U(s_a)-U(s_b)\right) =
+%\operatorname{sign}\!\left(U(m_a)-U(m_b)\right) \right],
+%\label{eq:decision-accuracy}
+%\end{equation}
+%where $s_a$ and $m_a$ denote variant $a$ at the small proxy and reference points, respectively, and $U(\cdot)$ returns the benchmark score.
+For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of pairs of model configurations,
 \begin{equation}
 \mathrm{DA}_{b_\ell}(N,f)
 =
@@ -152,13 +161,14 @@ For a language task $b_\ell$, a proxy point $(N,f)$ and a set $\mathcal{P}$ of p
 \sum_{(\theta_a,\theta_b)\in\mathcal{P}}
 \mathbb{1}
 \left[
-\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a,S,f)-Y_{b_\ell}(\theta_b,S,f)\right)
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a,f)-Y_{b_\ell}(\theta_b,f)\right)
 =
-\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a^{\mathrm{ref}},S,1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},S,1)\right)
+\operatorname{sign}\!\left(Y_{b_\ell}(\theta_a^{\mathrm{ref}},1)-Y_{b_\ell}(\theta_b^{\mathrm{ref}},1)\right)
 \right],
 \label{eq:decision-accuracy}
 \end{equation}
-where $\theta_a$ has size $N$, $\theta_a^{\mathrm{ref}}$ is the same configuration at $N_{\mathrm{ref}}$ (or at $N$ itself in the RA-checkpoint setting), and $S=1904$ throughout. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. A cell $(b_\ell, N, f)$ needs at least three pairs; with fewer it is undefined rather than reported.
+where $\theta_a$ has size $N$, $\theta_a^{\mathrm{ref}}$ is the same configuration at $N_{\mathrm{ref}}$. A pair tied on both sides counts as agreement and a pair tied on one side as disagreement. DA equals one when every pairwise preference transfers and equals $0.5$ in expectation under random, tie-free rankings. A cell $(b_\ell, N, f)$ is reported if it has at least three pairs.
+
 
 \textbf{Ranking comparison axes.}
 When computing RA, we distinguish between two types of model comparisons based on which design choices vary.
@@ -169,6 +179,8 @@ This setting reflects a typical controlled development ablation where we test wh
 In \emph{multi-axis} comparisons, models may differ in two or more design choices. This tests whether a benchmark preserves rankings across heterogeneous model configurations, similar to how benchmarks are used to rank independently developed models on a leaderboard.
 We report results for the two settings separately.
 % Figure~\ref{fig:rq2} reports single-axis comparisons; every table is also computed over the multi-axis pairs.
+% Seed replicates are never ranked against each other as design variants, every ranking compares configurations at seed 1904.
+
 
 %\textbf{Predicting Ranking Agreement.}
 %Computing RA requires evaluating the model variants at the reference point, which is precisely the cost that proxy experiments aim to avoid. We therefore test whether statistics available from the proxy runs predict RA. We define the signal-to-noise ratio as
