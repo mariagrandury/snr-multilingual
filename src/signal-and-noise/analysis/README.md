@@ -1,5 +1,7 @@
 # Analysis — the research questions
 
+> **Outdated.** This overview was last updated on 2026-10-07 from the 2026-10-06 04:26 ladder report. The folder READMEs are current (2026-10-07 15:51 report, with the 3B rung and the bBPB twins at every checkpoint); read their numbers, not the ones below.
+
 Which (subsets of) benchmarks give a reliable signal at each stage of
 multilingual pretraining? The study extends the Signal-and-Noise framework
 (Heineman et al., 2025) to multilingual models: a benchmark is useful when a
