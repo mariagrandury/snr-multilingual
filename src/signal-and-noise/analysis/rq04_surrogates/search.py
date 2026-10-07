@@ -69,6 +69,7 @@ a configuration with q < Q on the validation half.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from itertools import combinations
 from pathlib import Path
@@ -111,6 +112,10 @@ QUANTILES = (0.25, 0.5, 0.75)
 N_VALIDATE, N_PERM, N_BOOT = 400, 2000, 500
 TOP_PER_SUBSET = 3                      # ... plus the discovery-best three of every (truth, subset)
 Q = 0.05
+# Processes per phase. Every phase maps one job per truth with Pool.map, which keeps
+# the job order, and each validation job seeds its own rng, so the tables do not
+# depend on it; more workers also keep each process under a login node's CPU limit.
+N_JOBS = int(os.environ.get("SEARCH_WORKERS", "4"))
 mpl.rcParams.update(S.RC)
 
 
@@ -633,7 +638,7 @@ def main(pool: str, out_dir: Path) -> None:
     d, names = load(out_dir, pool)
     print(f"{len(d):,} cells, {d['task'].nunique()} tasks, {len(names)} surrogates, "
           f"{d.groupby(TRUTH).ngroups} truths")
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         corr = pd.DataFrame([r for rows in p.map(screen_truth, [(tr, g, names) for tr, g in truths(d)]) for r in rows])
     print(f"  screened: {len(corr):,} correlations")
     jobs = []
@@ -644,7 +649,7 @@ def main(pool: str, out_dir: Path) -> None:
             top = top.reindex(top[col].abs().sort_values(ascending=False).index).head(TOP_K)
             if len(top) >= 2:
                 jobs.append((tr, g, top, basis))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         filt = pd.DataFrame([r for rows in p.map(filters_truth, jobs) for r in rows])
     filt.to_csv(out_dir / "surrogate_filters.csv", index=False)
     print(f"  filters: {len(filt):,} correlations")
@@ -669,7 +674,7 @@ def main(pool: str, out_dir: Path) -> None:
         rows = pick[(pick[TRUTH].astype(str) == pd.Series(tr).astype(str)).all(axis=1)]
         if len(rows):
             vjobs.append((g, rows.to_dict("records"), i))
-    with Pool(4) as p:
+    with Pool(N_JOBS) as p:
         val = pd.DataFrame([r for rows in p.map(validate_job, vjobs) for r in rows])
     assert np.allclose(val["rho_val"], val["rho_val_check"], equal_nan=True), "validation cells differ from the screen"
     val["q_val"] = bh(val["p_val"].to_numpy())

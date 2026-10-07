@@ -12,6 +12,11 @@
 #   bash scripts/refresh_analysis.sh --no-deck    # skip the slidev build
 #   bash scripts/refresh_analysis.sh --curves     # also redraw rq00's ~140
 #                                                 # acc-vs-FLOPs grids (+1 h)
+#   bash scripts/refresh_analysis.sh --no-report  # skip the deck figures, the
+#                                                 # report PDF, the compendium
+#                                                 # and their figure check
+#   PARALLEL=1 bash scripts/refresh_analysis.sh   # the analysis as parallel lanes
+#                                                 # (run_all_predictivity.sh)
 #
 # Two things this cannot guess, both of which silently produce stale numbers:
 #
@@ -34,12 +39,13 @@ PY=${PY:-python3}
 # Fixed PDF creation date: an unchanged figure re-renders to the same bytes,
 # so git sees no diff (PNGs are already deterministic).
 export SOURCE_DATE_EPOCH=0
-FETCH=1; DECK=1
+FETCH=1; DECK=1; REPORT=1
 CURVES=${CURVES:-0}
 for a in "$@"; do
   case "$a" in
     --no-fetch) FETCH=0 ;;
     --no-deck)  DECK=0 ;;
+    --no-report) REPORT=0 ;;
     --curves)   CURVES=1 ;;
     *) echo "unknown flag: $a" >&2; exit 2 ;;
   esac
@@ -98,6 +104,7 @@ step "paper tables"
 ( cd documents/paper/sections && $PY make_surrogate_tables.py ) || FAILED+=("make_surrogate_tables.py")
 
 # 3. The deck figures, then the two report figures the deck reuses.
+if [ "$REPORT" = 1 ]; then
 step "figures"
 for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch \
          fig_benchmark_predictivity fig_rqs fig_appendix fig_from_analysis; do
@@ -105,6 +112,8 @@ for f in fig_setup fig_languages fig_benchmarks fig_predictivity fig_rq6_sketch 
   ( cd documents/figures && HF_HUB_OFFLINE=1 $PY "$f.py" ) 2>&1 | tail -3
   [ ${PIPESTATUS[0]} -eq 0 ] || FAILED+=("$f.py")
 done
+
+fi
 
 # 3b. The scaling-fit panel. ladder_report.py draws it on the cluster as part of
 #     --plot, but this one reads the published CSV alone, so it refreshes here.
@@ -121,6 +130,7 @@ print("wrote", LR.plot_scaling(ladder_dir() / "ladder_report.csv",
                                R / "documents" / "public" / "ladder"))
 EOF
 
+if [ "$REPORT" = 1 ]; then
 # 4. The report PDF.
 step "report pdf"
 run $PY documents/build_report.py
@@ -130,6 +140,7 @@ run $PY documents/build_report.py
 #    load images only from a data URI.
 step "compendium"
 run $PY scripts/inline_artifact.py
+fi
 
 # 6. Checks that catch a stale or missing figure before anyone presents it.
 step "checks"
@@ -172,7 +183,7 @@ if [ "${FORCE:-0}" = 1 ]; then
   [ "$n" -eq 0 ] || printf '%s\n' "$ORPHANS" | sed 's/^/  ORPHAN /' | head -60
   [ "$n" -gt 60 ] && echo "  ... and $((n - 60)) more"
 fi
-$PY - "$LADDER" <<'EOF' || FAILED+=("figure check")
+[ "$REPORT" = 1 ] && { $PY - "$LADDER" <<'EOF' || FAILED+=("figure check"); }
 import re, pathlib, sys
 root = pathlib.Path("documents")
 pub = root / "public"

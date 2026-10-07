@@ -47,7 +47,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
     bucket_order, load_languages, load_pools)
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
-from analysis.autodoc import CANONICAL_POOL  # noqa: E402
+from analysis.autodoc import CANONICAL_POOL, rewrite  # noqa: E402
 from analysis.utils import (LANGUAGE_AGGREGATES, RELIABLE_DA, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
@@ -346,13 +346,12 @@ def generate_slides(long: pd.DataFrame, pool: str) -> None:
         _END,
     ]) + "\n"
 
-    text = _SLIDES.read_text()
-    if _BEGIN in text and _END in text:
-        text = re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
-                      text, flags=re.DOTALL)
-    else:
-        text = text.rstrip() + "\n\n" + block
-    _SLIDES.write_text(text)
+    def edit(text: str) -> str:
+        if _BEGIN in text and _END in text:
+            return re.sub(re.escape(_BEGIN) + r".*?" + re.escape(_END), block.rstrip(),
+                          text, flags=re.DOTALL)
+        return text.rstrip() + "\n\n" + block
+    rewrite(_SLIDES, edit)                       # locked: other steps write slides.md too
     print(f"Wrote appendix slides → {_SLIDES} "
           f"({len(ar)} above-random + {len(overview)} overview + "
           f"{len(lang_slides)} per-language DA)")

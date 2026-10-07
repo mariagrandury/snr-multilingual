@@ -33,6 +33,11 @@
 #         the above-chance items (reads the per-item store and the gate's mask)
 #   then the report figures and the rules check over every table on disk.
 #
+# PARALLEL=1 runs the same steps as serial chains side by side (`lane` below),
+# at most MAXJOBS (5) at once, each step logged whole under
+# $LOG_DIR/<date>/<lane>/ (logs/regen-parallel on iopsstor). Serial mode, the
+# default, ignores the lanes and runs every step in the order written.
+#
 # Themes: A predictivity of the evaluation (rq00-rq02), B cheap measurements
 # (rq03-rq04), C generalisation (rq05-rq07), D benchmark improvement (rq08-rq09),
 # then rq10, the one question past the reference (the 3B rung).
@@ -57,7 +62,8 @@ DOC_POOLS=(predictivity_seeds predictivity)
 
 # Per-step wall time, so the next person can see where the hours go instead
 # of inferring it from output timestamps.
-run() { local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
+run() { if [ "$PARALLEL" = 1 ] && [ -z "${IN_LANE:-}" ]; then printf '%q ' "$@" >> "$RUN_DIR/$LANE/steps"; echo >> "$RUN_DIR/$LANE/steps"; return 0; fi
+       local t0=$SECONDS; echo; echo ">>> $*"; "$@" 2>&1 | tee "${STEP_LOG:-/dev/null}" | grep -vE "RuntimeWarning|scores_shifted|scores = \(scores|depths|rel_noise|ckpt-DA: only one ckpt|Tasks:|families:|languages:|Per-benchmark grids|Per-language grids|projection |rms_deviation |range  |iqr  |tukey " | tail -18
        [ "${PIPESTATUS[0]}" -eq 0 ] || FAILED+=("$*")
        printf '    [%dm %02ds] %s\n' $(( (SECONDS - t0) / 60 )) $(( (SECONDS - t0) % 60 )) "${2##*/}"; }
 pass() { echo; echo "############################## $* ##############################"; }
@@ -80,7 +86,55 @@ fresh() { [ "${FORCE:-0}" != 1 ] && [ -f "$1" ] && [ ! "$LADDER_CSV" -nt "$1" ] 
 CURVES=${CURVES:-0}
 GRIDS=(--no-grids); [ "$CURVES" = 1 ] && GRIDS=()
 
+# PARALLEL=1: `lane NAME DEP...` starts a chain; every `run` after it, up to the
+# next `lane`, joins that chain (naming a lane again appends to it). A chain
+# runs its steps in the order written and starts once every DEP chain has
+# finished, at most MAXJOBS chains at a time; SKIP_LANES="a b" counts lanes a
+# previous run finished as done (to resume one that was cut off). The DEPs follow the reads each
+# step's comment states (a step that only imports another's functions does not
+# wait for it); steps that write the same README take a lock on it
+# (analysis/autodoc.py rewrite). Serial mode ignores the lanes.
+PARALLEL=${PARALLEL:-0}
+MAXJOBS=${MAXJOBS:-5}
+LOG_DIR=${LOG_DIR:-/iopsstor/scratch/cscs/mariagrandury/logs/regen-parallel}
+LANE=; LANES=(); declare -A LANE_DEPS=()
+[ "$PARALLEL" = 1 ] && RUN_DIR=$LOG_DIR/$(date +%Y%m%d_%H%M%S) && mkdir -p "$RUN_DIR"
+lane() { [ "$PARALLEL" = 1 ] || return 0; LANE=$1; shift
+         [ -n "${LANE_DEPS[$LANE]+x}" ] && return 0
+         LANES+=("$LANE"); LANE_DEPS[$LANE]="$*"; mkdir -p "$RUN_DIR/$LANE"; : > "$RUN_DIR/$LANE/steps"; }
+run_lane() { local l=$1 i=0 line s; IN_LANE=1; FAILED=()
+  while IFS= read -r line; do
+    i=$((i + 1)); eval "set -- $line"; s=${2##*/}
+    STEP_LOG=$RUN_DIR/$l/$(printf %02d $i)_${s%.py}.log run "$@"
+  done < "$RUN_DIR/$l/steps"
+  printf '%s\n' ${FAILED[@]+"${FAILED[@]}"} > "$RUN_DIR/$l/failed"; touch "$RUN_DIR/$l/done"; }
+schedule() { local -A state=(); local l d ok n t0=$SECONDS
+  echo "parallel: ${#LANES[@]} lanes, at most $MAXJOBS at once; logs in $RUN_DIR"
+  for l in ${SKIP_LANES:-}; do state[$l]=skip; done
+  while :; do
+    n=0
+    for l in "${LANES[@]}"; do
+      [ "${state[$l]:-}" = run ] || continue
+      if [ -f "$RUN_DIR/$l/done" ]; then state[$l]=done; printf '[%dm] done  %s\n' $(( (SECONDS - t0) / 60 )) "$l"; else n=$((n + 1)); fi
+    done
+    for l in "${LANES[@]}"; do
+      [ -z "${state[$l]:-}" ] && [ "$n" -lt "$MAXJOBS" ] || continue
+      ok=1; for d in ${LANE_DEPS[$l]}; do case "${state[$d]:-}" in done|skip) ;; *) ok=0 ;; esac; done
+      [ "$ok" = 1 ] || continue
+      state[$l]=run; n=$((n + 1)); printf '[%dm] start %s\n' $(( (SECONDS - t0) / 60 )) "$l"
+      run_lane "$l" > "$RUN_DIR/$l/lane.log" 2>&1 &
+    done
+    [ "$n" -eq 0 ] && break
+    sleep 10
+  done
+  for l in "${LANES[@]}"; do
+    [ "${state[$l]:-}" = skip ] && continue
+    [ "${state[$l]:-}" = done ] || { FAILED+=("lane $l never started (waits for: ${LANE_DEPS[$l]})"); continue; }
+    while IFS= read -r d; do [ -n "$d" ] && FAILED+=("$d"); done < "$RUN_DIR/$l/failed"
+  done; }
+
 pass "the benchmark BPB twins"
+lane bpb
 # every loader adds a `bbpb_<task>` row beside a benchmark row the table has a
 # value for (utils.with_bbpb_twins), so it is (re)written before anything loads;
 # without the cluster-only per-item store it writes nothing and the committed table stays
@@ -89,7 +143,9 @@ run $PY analysis/rq08_subset_selection/build_per_item_store.py --bench-bpb
 pass "rq00 — the above-random gate and the curves"
 # The gate first: every later step reads its mask, and the rq00 panels read
 # it too, so they follow it here rather than at the end of the run.
+lane gate bpb
 run $PY analysis/rq00_gate_and_curves/above_random.py --only predictivity
+lane rq00 gate
 run $PY analysis/rq00_gate_and_curves/run_apertus.py --pool predictivity ${GRIDS[@]+"${GRIDS[@]}"}
 run $PY analysis/rq00_gate_and_curves/curves.py --pool predictivity_seeds
 run $PY analysis/rq00_gate_and_curves/panels.py --pool predictivity
@@ -103,6 +159,7 @@ run $PY analysis/rq00_task_reformulation/probe_survivors.py
 run $PY analysis/rq00_gate_and_curves/above_random_external.py --pool predictivity
 
 pass "rq01 — scaling predictability"
+lane rq01 gate
 # The ladder-frame reads take every seed and data build (`predictivity_seeds`).
 run $PY analysis/rq01_scaling_predictability/analyze.py --pool predictivity_seeds
 run $PY analysis/rq01_scaling_predictability/panels.py --pool predictivity_seeds
@@ -114,6 +171,7 @@ run $PY analysis/rq01_scaling_predictability/scaling_law_error.py --pool predict
 run $PY analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds
 
 pass "rq02 — decision accuracy"
+lane da gate
 # The per-pool DA tables (the truth every later RQ reads), cached until the
 # report is newer than them.
 for t in "${POOLS[@]}"; do
@@ -127,6 +185,7 @@ done
 # DA of the benchmark BPB (bBPB) against accuracy on the grid pool; reads the
 # per-item store, so off the cluster it writes nothing (README block `bench-bpb`).
 # Unreadable parts are skipped; pool models the store lacks are printed.
+lane rq02 da rq00 rq01
 run $PY analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq02_decision_accuracy/da_per_benchmark.py --pool "$t"
@@ -186,6 +245,7 @@ run $PY analysis/rq02_decision_accuracy/pair_axes.py --pool predictivity
 
 pass "rq03 — noise and the SNR variants"
 # The 22 SNR variants per pool (they read rq02's DA), cached like the DA tables.
+lane da
 for t in "${POOLS[@]}"; do
   st=$(stage_of "$t")
   if fresh "analysis/rq03_noise_and_snr/$st/$t/snr_variants_per_task.csv"; then
@@ -201,11 +261,13 @@ run $PY analysis/rq03_noise_and_snr/compare_seed_splits.py \
 # both run in the rq05 block below.
 
 pass "rq04 — surrogates"
+lane rq04snr da
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq04_surrogates/analyze_snr_variants.py --pool "$t"
   run $PY analysis/rq04_surrogates/snr_definition_postprocess.py --pool "$t"
 done
 # surrogates read the headline pool's rq03 table, rq00's scores, rq01's fits and rq02's by_L
+lane rq04 rq04snr rq02 rq00 rq01
 run $PY analysis/rq04_surrogates/analyze.py --pool predictivity
 run $PY analysis/rq04_surrogates/panels.py --pool predictivity
 # FineTasks' four selection criteria on the ladder, judged by DA-size, plus every surrogate against DA-size
@@ -217,16 +279,19 @@ run $PY analysis/rq04_surrogates/search.py --pool predictivity
 pass "rq05 — design decisions"
 # rq05 needs the four interventions and its early-decision read follows from
 # its decision table; rq06 reads its table for the never-trained languages.
+lane rq05 gate
 run $PY analysis/rq05_design_decisions/analyze.py --pool predictivity_seeds
 run $PY analysis/rq05_design_decisions/early_decision.py --pool predictivity_seeds
 run $PY analysis/rq05_design_decisions/panels.py --pool predictivity_seeds
 run $PY analysis/rq05_design_decisions/transformations.py --pool predictivity_seeds
 # rq03's effect-vs-noise reads rq05's interventions and the seed replicates;
 # rq03's panels draw the effect-over-seed grids from it, so they come right after
+lane rq03 rq05 da
 run $PY analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
 run $PY analysis/rq03_noise_and_snr/panels.py --pool predictivity
 
 pass "rq06 — language transfer"
+lane rq06 rq05 rq02
 run $PY analysis/rq06_language_transfer/analyze.py --pool predictivity_seeds
 run $PY analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
 # the minimal language panel: one language / English / the panel macro at the proxy against the 1.7B macro ranking
@@ -236,6 +301,7 @@ pass "rq07 — external frameworks"
 # rq07 needs the AllenAI-side SNR table (built once from the DataDecide `core`
 # split on HF; a git-lfs pointer here means `git lfs pull` first) and rq04's
 # variant ranking per pool.
+lane rq07 rq04snr da
 ALLENAI_CSV=analysis/rq07_external_frameworks/allenai_snr_variants_per_task.csv
 if [ ! -f "$ALLENAI_CSV" ]; then
   run $PY analysis/rq07_external_frameworks/build_allenai_variants.py
@@ -253,9 +319,11 @@ pass "English only — the monolingual-English cells against the multilingual on
 # (as functions), the replicate seeds and the AllenAI table of the external
 # frameworks comparison above; `predictivity` holds every L1 family (deep,
 # shallow, DCLM without edu, FineWeb), so this run writes the README too
+lane rq13 rq00 rq01 rq02 rq03 rq07
 run $PY analysis/rq13_english_only/english_only.py --pool predictivity
 
 pass "rq08 — subset selection"
+lane rq08 gate
 run $PY analysis/rq08_subset_selection/smooth_subtasks.py --pool predictivity
 run $PY analysis/rq08_subset_selection/panels.py --pool predictivity
 # per-item view: reads the per-item store; the store is built by the sbatch
@@ -269,9 +337,11 @@ pass "the above-chance items"
 # how much DA-size, SNR, the gate and the scaling fit rise, under the gate first and under the items first.
 # Reads the per-item store and the gate's mask (nothing without the store); DA-ckpt and the checkpoint SNR
 # are computed where the store holds checkpoints and skipped (said so) on a finals-only store
+lane rq12 rq01 rq02 da rq08
 run $PY analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity
 
 pass "rq09 — benchmark design"
+lane rq09 rq04snr da
 for t in "${DOC_POOLS[@]}"; do
   run $PY analysis/rq09_benchmark_design/analyze.py --pool "$t"
 done
@@ -281,6 +351,7 @@ pass "rq10 — size generalisation (the 3B rung as the reference)"
 # the one reader of above_reference=True: every family with a 3B final, read from
 # every smaller rung; writes header-only tables and a placeholder figure until the
 # 3B evaluations are in the report, so the block fills in by itself
+lane rq10 gate da rq02
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity
 # today's preview: the same four families read to 1.7B (the comparison line of panel (a))
 run $PY analysis/rq10_size_generalisation/above_reference.py --pool predictivity --reference 1.7B --design 3B
@@ -295,12 +366,15 @@ run $PY analysis/rq10_size_generalisation/reference_consistency.py --pool predic
 pass "rq11 — the evaluation recipe"
 # which benchmark, posed how (original, rf, rfgm) and scored how (accuracy, bBPB), reads the reference
 # from the smallest proxy: reads rq02's per-task early-small table, so it runs after rq02 (tau = utils.RELIABLE_DA)
+lane rq11 rq02
 run $PY analysis/rq11_evaluation_recipe/recipe.py --pool predictivity
 
 pass "report figures and the rules check"
+lane final bpb gate rq00 rq01 da rq02 rq04snr rq04 rq05 rq03 rq06 rq07 rq13 rq08 rq12 rq09 rq10 rq11
 run $PY analysis/report_figures/make_figures.py
 # every table on disk against analysis/RULES.md (rule 14)
 run $PY analysis/check_rules.py --quiet
+[ "$PARALLEL" = 1 ] && schedule
 
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "############################## FAILED ##############################"
