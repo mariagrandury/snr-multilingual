@@ -121,28 +121,42 @@ an `rf_` twin has one as well (`belebele-rf-bbpb`). What a reader has to be told
 
 - **Lower is better.** Every score oriented by direction goes through
   `utils.lower_is_better` (per-language BPB, the benchmark BPB, the loss);
-  DA and the dispersion SNRs do not care.
+  DA and the dispersion SNRs do not care. The [0, 1] discrepancy SNRs
+  (`DISCREPANCY_UNIT_INTERVAL`) are NaN on the twins, as on BPB and the loss.
 - **No chance level, so no gate.** Like per-language BPB, the twin has a mask
   of NA and passes rule 1 everywhere, including where its original is at chance.
 - **The store holds finals only.** It was built with `--finals-only` on
-  `predictivity` (seed 1904), so a twin exists at each cell's final
-  checkpoint and nowhere else: it enters DA-size and every final-checkpoint
-  read, and is empty in DA-ckpt, DA-goal before 100 %, the checkpoint noise
-  and the seed replicates until the store is rebuilt over every checkpoint.
+  seed 1904, so a twin exists only where the store holds the cell's final
+  checkpoint (`with_bbpb_twins` is an inner join on `bench_bpb.csv`): it
+  enters DA-size and every final-checkpoint read, and is empty in DA-ckpt,
+  DA-goal before 100 %, the checkpoint noise and the seed replicates until the
+  store is rebuilt over every checkpoint. The nightly only reduces the store
+  (`--bench-bpb`) and extracts nothing, so a cell evaluated after the last
+  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
+  has no twin until the sbatch is re-submitted (it resumes); the loader prints
+  those models, and a bBPB DA over them runs over fewer families than its
+  original's.
+- **Two targets for a twin.** A twin is read against the 1.7B bBPB (bBPB →
+  bBPB, no chance level, never gated) or against its original's 1.7B
+  accuracy (bBPB → accuracy, the same truth as the accuracy variants, gated
+  on the original's accuracy at the reference only). The bBPB DA comparison
+  and the evaluation recipe report both and say which one each number uses.
 - **Same items again.** Like an `rf_` twin it is not an independent task
   (rule 8's caveat above); the twin cluster of rq04 holds the original, its
   `rf_` twins and all their `bbpb_` twins (`grids.base`).
 - `reformulations_gate.py` leaves it out: its question is the accuracy
   formulations, and the twin would count as an "original".
-- **Every benchmark row carries its variant.** The loader writes `format`
+- **Every benchmark row carries its variant.** The ladder-pool loader writes `format`
   (original / rf / rfgm) and `scoring` (acc / bbpb) on every benchmark row
   (`utils.variant`, `utils.with_variant_columns`), so a table splits by variant
   with a groupby. A pooled "all benchmarks" number pools every variant;
   rq11 (`rq11_evaluation_recipe`) gives every finding per variant and pooled,
   and the head-to-head on the paired cells.
-- **One reliability cut, τ = 0.75** (`utils.RELIABLE_DA`): rq02's safe sizes
-  and rq11's recommendation read it from there, and every figure, table and
-  README block that uses it states it.
+- **One safe-agreement cut, τ = 0.75** (`utils.RELIABLE_DA`), distinct from
+  the above_66/above_80 reliability filters: the safe proxy sizes, the
+  design-decision and language-transfer lines and the evaluation recipe read
+  it from there, and every figure, table and README block that uses it
+  states it.
 
 ## The probe candidates are not in the populations
 

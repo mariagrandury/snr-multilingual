@@ -464,7 +464,8 @@ def kfold_noise(p: np.ndarray, n_items: float) -> dict:
 def snr_grid(df: pd.DataFrame) -> pd.DataFrame:
     """One row per (task, proxy): every AllenAI signal, every noise in NOISES
     and every signal / noise ratio, from rq03's per-model arrays and
-    aggregators. The discrepancy signals are NaN off the benchmarks, as in rq03."""
+    aggregators. The discrepancy signals are NaN on the scores off [0, 1] (BPB, the
+    bBPB twins, the loss: `lower_is_better`), as in the noise-and-SNR table."""
     df = df.assign(bucket=df["size"].map(size_bucket))
     rows = []
     for (t, s), g in df[df["size"].isin(SMALL_SIZES)].groupby(["task", "size"], sort=False):
@@ -472,11 +473,12 @@ def snr_grid(df: pd.DataFrame) -> pd.DataFrame:
         if inputs is None or t in ("bpb_macro", "train_loss"):
             continue
         bench = benchmark_family(t) not in ("bpb", "loss")
+        unit = not lower_is_better(t)                                # a score on [0, 1]
         sig, noi = {}, {}
         for fd in AGGREGATION_FUNCTIONS:
             k = variant_key(fd)
             a, b, _ = variant_signal_noise_snr(inputs, fd["func"])
-            sig[k] = np.nan if k in DISCREPANCY_UNIT_INTERVAL and not bench else a
+            sig[k] = np.nan if k in DISCREPANCY_UNIT_INTERVAL and not unit else a
             if k == "rel_std":
                 noi["ckpt_rel"] = b                                  # AllenAI's: mean step std / mean window score
             if k in DEPTH:

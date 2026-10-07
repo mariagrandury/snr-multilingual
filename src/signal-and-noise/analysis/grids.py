@@ -97,15 +97,17 @@ def chinchilla(frac: float) -> str:
     return f"{frac * CHINCHILLA_AT_FULL:g}C"
 
 
-def mark_gated(df: pd.DataFrame, pool: str, size_col: str, value: str, reference: str | None = None) -> pd.DataFrame:
+def mark_gated(df: pd.DataFrame, pool: str, size_col: str, value: str, reference: str | None = None,
+               mask: pd.DataFrame | None = None) -> pd.DataFrame:
     """Blank `value` and set `gated` where the above-random gate filters the
     row out: the task is at chance at its own size, or at `reference` (the
     size it is ranked against). Tasks without a chance level (BPB) and sizes
-    the gate has no column for are never gated."""
+    the gate has no column for are never gated. `mask` replaces the pool's
+    committed one (a gate recomputed on other scores, `scores_and_mask`)."""
     from analysis.autodoc import CANONICAL_POOL
     from analysis.rq00_gate_and_curves.above_random import load_mask
     df = df.copy()
-    mask = load_mask(pool)
+    mask = load_mask(pool) if mask is None else mask
     if mask is None:            # only the canonical pool has a gate report: same tasks and sizes, its seed
         print(f"  ({pool}: no above-random mask of its own, gating with {CANONICAL_POOL}'s)")
         mask = load_mask(CANONICAL_POOL)

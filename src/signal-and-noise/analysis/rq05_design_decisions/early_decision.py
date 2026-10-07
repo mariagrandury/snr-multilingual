@@ -43,7 +43,7 @@ from analysis import style as S  # noqa: E402
 from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq05_design_decisions.analyze import by_recipe  # noqa: E402
-from analysis.utils import size_order  # noqa: E402
+from analysis.utils import RELIABLE_DA, size_order  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
 CANONICAL = "predictivity_seeds"
@@ -111,14 +111,14 @@ def generate_readme(pool: str, out_dir: Path, agg: pd.DataFrame) -> None:
             label = g["label"].iloc[0]
             final = g[g["frac"] == 1.0].set_index("proxy_size")["da"]
             sizes = size_order(final.index)
-            first = next((s for s in sizes if final[s] >= 0.75), None)
+            first = next((s for s in sizes if final[s] >= RELIABLE_DA), None)
             early = g[(g["proxy_size"] == (first or sizes[-1]))].sort_values("frac")
-            e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= 0.75), "never")
+            e_first = next((G.chinchilla(r.frac) for r in early.itertuples() if r.da >= RELIABLE_DA), "never")
             bullets.append(
                 f"- **{label}, {title}** — final-checkpoint agreement by proxy: "
                 + ", ".join(f"{s} {fmt(final[s])}" for s in sizes)
-                + (f"; smallest proxy at ≥ 0.75: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
-                   if first else "; no proxy reaches 0.75."))
+                + (f"; smallest proxy at ≥ {RELIABLE_DA:g}: **{first}**, which reaches it at {e_first} of training (5C = the full run)."
+                   if first else f"; no proxy reaches {RELIABLE_DA:g}."))
             piv = g.pivot_table(index="proxy_size", columns="frac", values="da")
             piv = piv.reindex(size_order(piv.index))
             blocks += [f"**{label} — {title}** (rows: proxy size; columns: the proxy's training tokens in Chinchilla multiples, 5C = the full run; "

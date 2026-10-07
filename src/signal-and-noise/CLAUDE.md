@@ -89,7 +89,11 @@ so a script never decides by model name.
   (the per-item store reduced by `build_per_item_store.py --bench-bpb`, the
   driver's first step; without the cluster-only store it keeps the committed
   table). `build_snr_pool` appends it AFTER its rule filters, as a copy of the
-  original's row, so it is wherever the original is and nowhere else. Its
+  original's row, so it exists only where the original is AND the store holds
+  that (model, step): an inner join on `bench_bpb.csv`. The nightly only
+  reduces the store and extracts nothing, so a cell evaluated after the last
+  `build_per_item_store.sbatch` run (the six L1 FineWeb cells for now)
+  has no twin until the sbatch is re-submitted; the loader prints those models. Its
   family is `bbpb_<family>`, its language the original's, and it is
   lower-is-better (`utils.lower_is_better`). Finals only for now: see
   RULES.md "The benchmark-BPB twins".
@@ -143,7 +147,8 @@ so a script never decides by model name.
 
 **Pipeline order** (`run_all_predictivity.sh`, reorganised 2026-09-23): the
 passes run in research-question order so the early questions' tables land
-first — rq00 (`above_random.py`, the gate every later step reads; then
+first — the bBPB twins' table (`build_per_item_store.py --bench-bpb`, which
+rewrites `bench_bpb.csv` before any loader runs) → rq00 (`above_random.py`, the gate every later step reads; then
 `run_apertus.py`, `curves.py`, `panels.py`, the rf-twin comparison) → rq01
 (`analyze.py`, `panels.py`, `regimes.py`, `regimes_survivorship.py`,
 `scaling_law_error.py`, all on `predictivity_seeds`) → rq02 (`compute_da.py` per
@@ -158,7 +163,9 @@ rq02's DA; `compare_seed_splits.py`; `panels.py`) → rq04 (the variant ranking,
 proxy-only surrogates from `literature.md` and the AllenAI signal × noise grid
 against every DA) → rq05 (+ rq03's
 `effect_vs_noise.py`, which reads rq05's table) → rq06 → rq07 (reads rq04's
-ranking) → rq08 → rq09 → rq10 (`above_reference.py`, the 3B rung as the
+ranking) → the English-only check (`english_only.py`) → rq08 (`smooth_subtasks.py`,
+`panels.py`, `per_item_ladder.py`, `reference_solved.py`) → the above-chance
+items (`above_chance_items.py`) → rq09 → rq10 (`above_reference.py`, the 3B rung as the
 reference, the only reader of `above_reference=True`; filled since the
 2026-09-30 report holds the four 3B L8/L15 cells' evaluations) → rq11
 (`recipe.py`: per benchmark, which format and scoring to evaluate, from rq02's

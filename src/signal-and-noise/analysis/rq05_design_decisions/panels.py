@@ -55,7 +55,7 @@ from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq05_design_decisions.analyze import (  # noqa: E402
     CANONICAL, COLOUR, DECIDED, INTERVENTIONS, MIN_ITEMS, RECIPES, by_recipe, gate_mask, intervention_da, seed_sd)
 from analysis.rq05_design_decisions.early_decision import DECISIONS  # noqa: E402
-from analysis.utils import CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
+from analysis.utils import CKPT_DA_EARLY_FRACS, GRID_SEED, LADDER_SIZES, RELIABLE_DA, TARGET_SIZE, finals, ladder_frame, trained_bpb_tasks  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
 FRACS10 = list(CKPT_DA_EARLY_FRACS) + [1.0]   # every evaluated checkpoint (rule 3)
@@ -114,7 +114,7 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
                     ax.plot(range(len(xs)), g["decision_acc"], color=colours[key], ls=ls, marker=(markers or {}).get(key, "o"),
                             ms=3.5, lw=1.3)
         ax.set_xticks(range(len(xs))); ax.set_xticklabels([str(v) if x != "frac" else G.chinchilla(v) for v in xs])
-        ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+        ax.axhline(RELIABLE_DA, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
         ax.set_xlabel(xlab[0].upper() + xlab[1:] if paper else xlab); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
         if not paper:
             ax.set_title(ttl, loc="left", fontsize=8.5)
@@ -137,7 +137,10 @@ def da_lines(da: pd.DataFrame, out_dir: Path, *, name: str = "da_all_lines_mono_
     fig.legend(handles=handles, fontsize=6.5, frameon=False, ncol=ncol, loc="upper center", bbox_to_anchor=(0.5, 0.0))
     fig.tight_layout()
     pd.concat(tables)[["panel", "row", "col", "value"]].to_csv(out_dir / f"{name}.csv", index=False)
-    S.save(fig, out_dir / f"{name}.png", also=(".svg",))
+    if paper:
+        S.save_paper(fig, out_dir / name)            # rule 18: linted, refused if it breaks the rule
+    else:
+        S.save(fig, out_dir / f"{name}.png", also=(".svg",))
 
 
 def paper_figure(da: pd.DataFrame, out_dir: Path) -> None:
@@ -168,7 +171,7 @@ def da_lines_flops(da: pd.DataFrame, full_compute: pd.Series, out_dir: Path, *, 
                         ms=2.8, lw=1.1)
                 tables.append(g.assign(panel="flops", row=f"{key} / {pop}").rename(columns={"compute_share": "col", "decision_acc": "value"})
                               [["panel", "row", "col", "value"]])
-    ax.set_xscale("log"); ax.axhline(0.75, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
+    ax.set_xscale("log"); ax.axhline(RELIABLE_DA, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(0.0, 1.02)
     ax.set_xlabel(f"training compute of the (proxy size, checkpoint) cell, share of the {TARGET_SIZE} run")
     ax.set_ylabel("decision accuracy (mean over L)"); ax.grid(color=S.GRID, lw=.6, which="both"); S.clean(ax)
     drawn = set(t[series])
@@ -275,7 +278,7 @@ def main(pool: str) -> None:
     da_lines(da, out_dir, **RECIPE_KW,
              title="How small and how early each design decision can be read",
              note="DA = share of items on which the proxy prefers the level of the intervention the reference prefers at its final "
-                  "checkpoint, mean over the language settings; dotted line = 0.75")
+                  f"checkpoint, mean over the language settings; dotted line = {RELIABLE_DA:g}")
     paper_figure(da, out_dir)
     # a proxy cell's compute: the mean full-run compute of the size's families (deep and shallow differ by up to 13 %)
     depth_crossover(frame, out_dir)
@@ -290,7 +293,7 @@ def main(pool: str) -> None:
     da_lines_flops(da, frame.groupby(["size", "model"])["compute"].max().groupby("size").mean(), out_dir, **RECIPE_KW,
                    title="How much compute reads each design decision",
                    note="point = one (proxy size, checkpoint) cell at the compute spent up to that checkpoint; DA = share of items on "
-                        "which the cell prefers the level the reference prefers at its final checkpoint, mean over L; dotted line = 0.75")
+                        f"which the cell prefers the level the reference prefers at its final checkpoint, mean over L; dotted line = {RELIABLE_DA:g}")
     if pool != CANONICAL:
         return
     rel = f"{stage}/{pool}"

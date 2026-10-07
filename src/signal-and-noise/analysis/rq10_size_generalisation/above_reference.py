@@ -279,7 +279,7 @@ def figure_paper(pooled_lines: pd.DataFrame, path: Path) -> None:
     ax.legend(fontsize=6.5, frameon=False, ncol=2, loc="lower center", bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout()
     fin[["channel", "axes", "size", "da", "n_tasks", "n_pairs", "reference"]].to_csv(path.with_suffix(".csv"), index=False)
-    S.save(fig, path, also=(".svg",))
+    S.save_paper(fig, path.with_suffix(""))
 
 
 def generate_readme(pool: str, reference: str, design: str, stem: str, tables: dict, fams: list, n_ref_runs: int) -> None:

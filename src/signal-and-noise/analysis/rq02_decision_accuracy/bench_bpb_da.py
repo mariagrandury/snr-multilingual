@@ -72,18 +72,26 @@ ALL, CLOZE, LETTER = "all benchmarks", "all cloze", "all lettered"
 mpl.rcParams.update(S.RC)
 
 
-def da_table(pool: str, store_dir: Path) -> tuple[pd.DataFrame, int, list[str]]:
-    """task x size: the three raw DAs, the gate flags and the three gated readings."""
+def da_table(pool: str, store_dir: Path) -> tuple[pd.DataFrame, list, int, list[str], dict]:
+    """task x size: the three raw DAs, the gate flags and the three gated readings;
+    the multi-axis pairs they are over (those between families the store holds),
+    the pool's pair count, the pool models the store lacks, and the FineWeb2 val
+    BPB tick (`bpb_macro`'s DA-size on the same pairs)."""
     per = bench_bpb(sorted(store_dir.glob("*.parquet"))).rename(columns={"bbpb": "bpb"})
     letter = per.groupby("task")["bytes_gold"].mean() <= 2.5
 
     df = ladder_frame(pool)
     pairs = pair_sets(design_axes(df))["multi-axis"]
     missing = store_gap(df["model"], store_dir)
+    macro = finals(df[df["task"] == "bpb_macro"])
     df = finals(df[(df["kind"] == "benchmark") & ~df["task"].str.startswith(BBPB)]).merge(per[["model", "step", "task", "bpb"]], on=["model", "step", "task"])
     df = df.dropna(subset=["bpb"])   # a NaN score would count as a disagreeing pair in pair_agreement
-    print(f"{pool}: {df['model'].nunique()} models, {df['task'].nunique()} tasks with bBPB, "
-          f"{len(pairs)} multi-axis pairs, finals only, gate {GATE_POOL}")
+    fams = set(df["family"])         # a family the store lacks has no bBPB: its pairs are not compared
+    used = [(a, b) for a, b in pairs if a in fams and b in fams]
+    print(f"{pool}: {df['model'].nunique()} models, {df['task'].nunique()} tasks with bBPB, {len(used)} of "
+          f"{len(pairs)} multi-axis pairs (between families the store holds), finals only, gate {GATE_POOL}")
+    at = {s: macro[macro["size"] == s].set_index("family")["primary_score"].to_dict() for s in [*SMALL_SIZES, TARGET_SIZE]}
+    tick = {s: pair_agreement(at[s], at[TARGET_SIZE], used)[0] for s in SMALL_SIZES} if len(macro) else {}
 
     rows = []
     for task, g in df.groupby("task"):
@@ -91,9 +99,9 @@ def da_table(pool: str, store_dir: Path) -> tuple[pd.DataFrame, int, list[str]]:
         ref = at[TARGET_SIZE]
         for s in SMALL_SIZES:
             p = at[s]
-            da_acc, n = pair_agreement(p["primary_score"].to_dict(), ref["primary_score"].to_dict(), pairs)
-            da_bpb, _ = pair_agreement(p["bpb"].to_dict(), ref["bpb"].to_dict(), pairs)
-            da_x, _ = pair_agreement((-p["bpb"]).to_dict(), ref["primary_score"].to_dict(), pairs)
+            da_acc, n = pair_agreement(p["primary_score"].to_dict(), ref["primary_score"].to_dict(), used)
+            da_bpb, _ = pair_agreement(p["bpb"].to_dict(), ref["bpb"].to_dict(), used)
+            da_x, _ = pair_agreement((-p["bpb"]).to_dict(), ref["primary_score"].to_dict(), used)
             rows.append({"task": task, "family": benchmark_family(task), "size": s, "da_acc": da_acc,
                          "da_bpb": da_bpb, "da_bpb_to_acc": da_x, "n_pairs": n})
     out = pd.DataFrame(rows)
@@ -107,7 +115,7 @@ def da_table(pool: str, store_dir: Path) -> tuple[pd.DataFrame, int, list[str]]:
     out["acc_acc"] = out["da_acc"].where(ref_ok & out["above_chance_proxy"])
     out["bbpb_acc"] = out["da_bpb_to_acc"].where(ref_ok)
     out["bbpb_bbpb"] = out["da_bpb"].where(ref_ok)
-    return out, len(pairs), missing
+    return out, used, len(pairs), missing, tick
 
 
 def summarise(g: pd.DataFrame) -> pd.Series:
@@ -177,7 +185,11 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
     fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.4), sharey=True)
     for ax, g in zip(axes, [ALL, CLOZE, LETTER]):
         s = summ.loc[g]
-        bars_ax(ax, s, f"{g} ({int(s['n_tasks'].max())} tasks)", ref)
+        n = s["n_tasks"].max()
+        if pd.isna(n):           # a store without lettered (or cloze) tasks: the group is all NaN rows
+            ax.set_title(f"{g} (0 tasks)", loc="left", fontsize=8.5); S.clean(ax)
+            continue
+        bars_ax(ax, s, f"{g} ({int(n)} tasks)", ref)
     axes[0].set_ylabel("decision accuracy vs 1.7B")
     top = legend_top(fig, axes[0], G._header(fig, "Benchmark BPB against accuracy as the proxy for the 1.7B ranking", note))
     fig.tight_layout(rect=(0, 0, 1, top))
@@ -200,7 +212,7 @@ def bars(summ: pd.DataFrame, letter: dict, out_dir: Path, note: str, ref: dict) 
     S.save_figure(fig, out_dir, "bench_bpb_da_size_bars_benchmarks_multi_axes")
 
 
-def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str, store: str,
+def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, n_pool_pairs: int, pool: str, store: str,
            missing: list[str]) -> None:
     def size_rows(g):
         return [[z, f"{fmt(r.acc_acc)} ({int(r.acc_acc_n)})", f"{fmt(r.bbpb_acc)} ({int(r.bbpb_acc_n)})",
@@ -215,19 +227,20 @@ def readme(summ: pd.DataFrame, letter: dict, ref: dict, n_pairs: int, pool: str,
                 for f in fams]
     body = [
         "## Benchmark BPB against accuracy",
-        f"DA-size, final checkpoints, multi-axis pairs of `{pool}` ({n_pairs} pairs), gate `{GATE_POOL}` on the "
+        f"DA-size, final checkpoints, multi-axis pairs of `{pool}` ({n_pairs} of its {n_pool_pairs} pairs: those between "
+        f"families the store holds, for every reading and the FineWeb2 tick), gate `{GATE_POOL}` on the "
         "accuracy side only: every reading counts the tasks above chance at 1.7B, and acc → acc also needs the "
         "task above chance at the proxy (its task count is the smaller one). The paired gain is bBPB → acc "
-        "minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size from "
-        "`da_all_per_task_both_axes.csv`. Regenerate with "
+        "minus acc → acc on the tasks where both are defined. FineWeb2 val BPB is `bpb_macro`'s DA-size on the same "
+        "pairs. Regenerate with "
         f"`python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool {pool}"
         f"{'' if store == pool else ' --store ' + store}` (after "
         f"`build_per_item_store.py --pool {store} --finals-only`)."
         + (f" The store `{store}` lacks {len(missing)} of the pool's models ({', '.join(missing)}); "
            "they are left out until the store is rebuilt for the pool." if missing else ""),
-        f"**{ALL}**", md_table(head, size_rows(ALL)),
-        f"**{CLOZE}** (the answer text is the continuation)", md_table(head, size_rows(CLOZE)),
-        f"**{LETTER}** (the continuation is the letter: bBPB is the letter's surprisal)", md_table(head, size_rows(LETTER)),
+        *[x for g, cap in [(ALL, ""), (CLOZE, " (the answer text is the continuation)"),
+                           (LETTER, " (the continuation is the letter: bBPB is the letter's surprisal)")]
+          if summ.loc[g, "n_tasks"].notna().any() for x in (f"**{g}**{cap}", md_table(head, size_rows(g)))],
         "**Per benchmark**, mean over the five proxy sizes (tasks: the parent tasks with bBPB; cells: task-mean DA over those above chance at 1.7B, blank = all gated):",
         md_table(["benchmark", "tasks", *READINGS.values()], fam_rows),
         f"![bBPB DA, overall](pretraining/{pool}/bench_bpb_da_size_bars_multi_axes.png)",
@@ -244,7 +257,7 @@ def main(pool: str, store: str | None = None) -> None:
         # committed tables with column-less files (per_item_ladder.py does the same)
         print(f"no per-item store at {STORE / store}: nothing written (build_per_item_store.sbatch builds it)")
         return
-    out, n_pairs, missing = da_table(pool, STORE / store)
+    out, used, n_pool_pairs, missing, ref = da_table(pool, STORE / store)
     out_dir = DECISION_ACCURACY / "pretraining" / pool
     out_dir.mkdir(parents=True, exist_ok=True)
     out.to_csv(out_dir / "bench_bpb_da_size_multi_axes.csv", index=False)
@@ -253,9 +266,6 @@ def main(pool: str, store: str | None = None) -> None:
     print(summ.loc[[ALL, CLOZE, LETTER], ["n_tasks", *READINGS, "acc_acc_n", "bbpb_acc_n", "n_paired",
                                           "gain", "bbpb_better", "acc_better", "p"]].round(3).to_string())
 
-    da = pd.read_csv(out_dir / "da_all_per_task_both_axes.csv")
-    da = da[(da["axes"] == "multi-axis") & (da["task"] == "bpb_macro")].iloc[0]
-    ref = {s: da[f"decision_acc_size_{s}"] for s in SMALL_SIZES}
     letter = out.groupby("family")["letter"].all().to_dict()
     note = (f"DA-size, final checkpoints, multi-axis pairs of {pool}; gate {GATE_POOL} on the accuracy side only "
             "(tasks above chance at 1.7B; acc → acc also above chance at the proxy). bBPB = item mean of "
@@ -265,7 +275,7 @@ def main(pool: str, store: str | None = None) -> None:
     bars(summ, letter, out_dir, note + " Bars: mean DA over tasks (n in the panel title); dashed line = coin flip; "
          "black tick = FineWeb2 val BPB's DA; an empty panel = every task gated.", ref)
     if pool == DOC_POOL:
-        readme(summ, letter, ref, n_pairs, pool, store, missing)
+        readme(summ, letter, ref, len(used), n_pool_pairs, pool, store, missing)
 
 
 if __name__ == "__main__":

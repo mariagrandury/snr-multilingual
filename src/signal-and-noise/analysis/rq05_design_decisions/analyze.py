@@ -69,7 +69,7 @@ from analysis.autodoc import fmt, md_table, replace_block  # noqa: E402
 from analysis.paths import DESIGN_DECISIONS  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.utils import (CKPT_DA_EARLY_FRACS,  # noqa: E402
-    GRID_SEED, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate, size_order, trained_bpb_tasks)
+    GRID_SEED, RELIABLE_DA, TARGET_SIZE, at_fraction, data_build, finals, ladder_frame, lower_is_better, passes_gate, size_order, trained_bpb_tasks)
 from pretrain.launch_trainings import DATA_SCHEMES  # noqa: E402
 
 OUT_ROOT = DESIGN_DECISIONS
@@ -443,9 +443,9 @@ def generate_readme(pool: str, out_dir: Path, da: pd.DataFrame, ev: pd.DataFrame
                     continue
                 grid = core.pivot_table(index="proxy_size", columns="L", values="decision_acc")
                 grid = grid.reindex(size_order(grid.index))
-                first = {L: next((s for s in grid.index if grid.loc[s, L] >= 0.75), "—") for L in grid.columns}
+                first = {L: next((s for s in grid.index if grid.loc[s, L] >= RELIABLE_DA), "—") for L in grid.columns}
                 if pop == "bpb_trained":
-                    bullets.append(f"- **{INTERVENTIONS[k][0]} on {title}** — smallest proxy reaching DA ≥ 0.75 "
+                    bullets.append(f"- **{INTERVENTIONS[k][0]} on {title}** — smallest proxy reaching DA ≥ {RELIABLE_DA:g} "
                                    "against the reference: " + ", ".join(f"L{L}: {s}" for L, s in first.items()) + ".")
                 rows = [[s] + [fmt(grid.loc[s, L]) for L in grid.columns] for s in grid.index]
                 refs = ", ".join(f"L{L} → {r}" for L, r in core.groupby("L")["reference_size"].first().items())

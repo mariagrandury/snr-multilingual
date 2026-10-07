@@ -54,7 +54,7 @@ def paper_figure(out_dir: Path) -> None:
     fig.colorbar(ax.images[-1], ax=ax, shrink=0.4, pad=0.03).set_label("Best subset SNR over the null's 95th percentile", fontsize=7.5)
     fig.tight_layout()
     g[["task", "name", "size", "gain_over_null", "gated"]].to_csv(out_dir / "gain_over_null_paper.csv", index=False)
-    S.save(fig, out_dir / "gain_over_null_paper.png", also=(".svg",))
+    S.save_paper(fig, out_dir / "gain_over_null_paper")
 
 
 def main(pool: str) -> None:

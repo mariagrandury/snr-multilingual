@@ -31,7 +31,10 @@ EXTERNAL_FRAMEWORKS = _ANALYSIS / "rq07_external_frameworks"    # agreement with
 # D. benchmark improvement
 SUBSET_SELECTION = _ANALYSIS / "rq08_subset_selection"          # can a subset beat the full set
 BENCHMARK_DESIGN = _ANALYSIS / "rq09_benchmark_design"          # which design features predict reliability
+ABOVE_CHANCE_ITEMS = _ANALYSIS / "rq12_above_chance_items"      # how much DA and SNR rise on the items the reference answers above chance
 # E. past the reference
 SIZE_GENERALISATION = _ANALYSIS / "rq10_size_generalisation"    # the 3B rung as the reference: the only reader of above_reference=True
 # F. the recommendation
 EVALUATION_RECIPE = _ANALYSIS / "rq11_evaluation_recipe"        # which benchmark, posed and scored how, to evaluate
+# checks on the ladder itself
+ENGLISH_ONLY = _ANALYSIS / "rq13_english_only"                  # do the English-only (L1) cells read the English benchmarks better

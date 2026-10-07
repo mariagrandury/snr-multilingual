@@ -48,7 +48,7 @@ from evals.scripts.utils.configs import (  # noqa: E402
 from analysis.rq00_gate_and_curves.above_random import (  # noqa: E402
     TABLE_STYLE, above_random_slides, fmt_cell, md_table)
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
-from analysis.utils import (LANGUAGE_AGGREGATES, one_axes, passes_gate,  # noqa: E402
+from analysis.utils import (LANGUAGE_AGGREGATES, RELIABLE_DA, one_axes, passes_gate,  # noqa: E402
     _BUCKET_RE, TARGET_SIZE, assign_language, benchmark_family)
 from snr.constants import PLOT_DIR  # noqa: E402
 from analysis.paths import DECISION_ACCURACY
@@ -231,7 +231,7 @@ def generate_readme(df: pd.DataFrame, pool: str, out_dir: Path) -> None:
 # The above-random slides live in above_random.py (imported above); this module
 # owns the per-language decision-accuracy slides and stitches the full block.
 
-_DA_BOLD = 0.75         # bold decision-accuracy cells at/above this
+_DA_BOLD = RELIABLE_DA  # bold decision-accuracy cells at/above this (tau)
 _BEGIN = "<!-- BEGIN generated signal slides (analysis/rq02_decision_accuracy/da_per_benchmark.py) -->"
 _END = "<!-- END generated signal slides -->"
 

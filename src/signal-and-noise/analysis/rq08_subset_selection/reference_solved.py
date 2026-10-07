@@ -27,11 +27,12 @@ the in-sample reading (every 1.7B run selects) is kept beside it as an upper
 bound and labelled so. Rule 1: a task counts at a size when it is above chance
 there and at the reference (`passes_gate`, the `predictivity` mask).
 
-Outputs under pretraining/<pool>/: reference_solved_da_size_multi_axes.csv
-(task x proxy size), reference_solved_summary_da_size_multi_axes.csv (per size:
-mean DAs, the paired test, and the SNR-DA Spearman of both sets), the figure
-reference_solved_da_size_multi_axes.png with its CSV, and the README's
-`reference-solved` block.
+Outputs under pretraining/<pool>/: reference_solved_per_task_da_size_multi_axes.csv
+(task x proxy size: n_pairs, the DAs, the SNRs, gated),
+reference_solved_summary_da_size_multi_axes.csv (per size: mean DAs, the paired
+test, and the SNR-DA Spearman of both sets), the figure
+reference_solved_da_size_multi_axes.png with its CSV (the values it draws), and
+the README's `reference-solved` block.
 
     python analysis/rq08_subset_selection/reference_solved.py --pool predictivity [--store predictivity_schemes]
 """
@@ -236,7 +237,7 @@ def main(pool: str, store: str | None = None) -> None:
     cols = [c for c in out.columns if c.startswith(("da_", "snr_"))]
     out.loc[out["gated"], cols] = np.nan                     # rule 1: at chance, kept and blanked
     out_dir.mkdir(parents=True, exist_ok=True)
-    out.to_csv(out_dir / f"{NAME}.csv", index=False)
+    out.to_csv(out_dir / "reference_solved_per_task_da_size_multi_axes.csv", index=False)   # {NAME}.csv is the figure's
     summ = summarise(out[~out["gated"]])
     summ.to_csv(out_dir / "reference_solved_summary_da_size_multi_axes.csv", index=False)
     print(summ.round(3).to_string())

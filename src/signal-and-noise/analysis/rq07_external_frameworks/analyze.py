@@ -266,7 +266,7 @@ def _plot_scatter_paper(xy: pd.DataFrame, variant: str, path: Path) -> None:
     ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.tight_layout()
     xy.rename_axis("task").reset_index().assign(name=names, variant=variant).to_csv(path.with_suffix(".csv"), index=False)
-    S.save(fig, path, also=(".svg",))
+    S.save_paper(fig, path.with_suffix(""))
 
 
 def _plot_grid(

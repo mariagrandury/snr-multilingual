@@ -531,7 +531,7 @@ def ranked_bar_paper(per_family: pd.DataFrame, out_path: Path) -> None:
     fig.tight_layout()
     df[["family", "n_tasks", "snr_median", "n_options"]].assign(name=[G.paper_name(f) for f in df["family"]]) \
         .to_csv(out_path.with_suffix(".csv"), index=False)
-    S.save(fig, out_path, also=(".svg",))
+    S.save_paper(fig, out_path.with_suffix(""))
 
 
 # --- auto-generated README block (canonical pool only) ----------------------

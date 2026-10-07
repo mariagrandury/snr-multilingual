@@ -128,8 +128,9 @@ step "checks"
 # artifact of the current sweep older than this refresh has no generator left —
 # a renamed figure's old twin, a script dropped from the driver. Flagged, not
 # failed: deleting is the user's call. The frozen 36-sweep pools (their seed
-# holdout and rq08's per_sample/ included) are not ours to regenerate, and the
-# rq00 viewer grids are only redrawn with --curves.
+# holdout and rq08's per_sample/ included) are not ours to regenerate, rq08's
+# git-ignored per_item_store/ is data the store sbatch builds, not an artifact,
+# and the rq00 viewer grids are only redrawn with --curves.
 # Pool folders no generator writes any more, whatever FORCE says: the pools
 # collapsed to four on 2026-10-05 (analysis/RULES.md, Definitions) and their
 # outputs moved with the pool (old -> new). Listed per folder and kept out of the
@@ -154,7 +155,7 @@ done
 if [ "${FORCE:-0}" = 1 ]; then
   ORPHANS=$(find src/signal-and-noise/analysis/rq*/ documents/paper/figures -type f \
       \( -name '*.png' -o -name '*.csv' -o -name '*.svg' -o -name '*.pdf' -o -name '*.json' \) ! -newer "$STARTED" \
-    | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample)/' \
+    | grep -vE '/(all|custom_swissai_hf|external|seeds_[0-9_]+(__vs__seeds_[0-9_]+)?|per_sample|per_item_store)/' \
     | grep -vE "/($RETIRED_RE)/" \
     | { [ "$CURVES" = 1 ] && cat || grep -vE '/(score_curves|per_benchmark|per_language)/'; } | sort)
   n=$(printf '%s' "$ORPHANS" | grep -c . || true)
