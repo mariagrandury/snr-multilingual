@@ -24,12 +24,12 @@ at 0.67. The 600M shallow rung trains on 15 % more compute than the deep one
 (3 to 9 % at the other sizes). The dip is a property of the 600M rung's
 design, and the figure needs that sentence wherever it is shown.
 
-<!-- BEGIN auto:da-vs-train-tokens (tokens_seen.py --pool predictivity_all) -->
+<!-- BEGIN auto:da-vs-train-tokens (tokens_seen.py --pool predictivity_seeds) -->
 ## Decision accuracy against the tokens of the language seen
 
-`tokens_seen.py`, `predictivity_all` pool: a language's evaluation against the training tokens of that language the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_all`.
+`tokens_seen.py`, `predictivity_seeds` pool: a language's evaluation against the training tokens of that language the model had seen (its share of the mixture from the build's plan × the cell's budget × the checkpoint's share of the run). Regenerate with `python analysis/rq01_scaling_predictability/tokens_seen.py --pool predictivity_seeds`.
 
-**DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages of the share of design-variant pairs the proxy's BPB orders like the 1.7B final (rq02's kernel, every pair at seed 1904 of every scheme on the variants that train the language, ≥ 3 pairs; rule 15's multi-axis set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of the language they had seen, and a point's x the geometric mean over languages (50 languages; `da_goal_multi_axes_across_langs_bpb_cells.csv` has the per-language cells with the min and max over variants). The 1.7B line is its own early checkpoints against its final. `da_ckpt_multi_axes_across_langs_bpb` ranks each checkpoint against the proxy size's OWN final (DA-ckpt) and `da_size_multi_axes_across_langs_bpb` the final of every size against the 1.7B final (DA-size, one point per size: the 100 % end of the DA-goal lines); the `_vs_frac` twins of the goal and ckpt figures put the same points against the share of the run the checkpoint sits at, where lines that are apart on the token axis falling together says the schedule, not the exposure, decides. The `_mono_axis` twins of the goal and ckpt figures read only the pairs that move one design axis (rule 15).
+**DA-goal of a language's BPB against the tokens seen.** Per proxy size and tenth of the run, the mean over languages of the share of design-variant pairs the proxy's BPB orders like the 1.7B final (rq02's kernel, every pair at seed 1904 of every data build on the variants that train the language, ≥ 3 pairs; rule 15's multi-axis set), with its standard error over languages; the x of a cell is the mean over the pair set's proxies of the tokens of the language they had seen, and a point's x the geometric mean over languages (50 languages; `da_goal_multi_axes_across_langs_bpb_cells.csv` has the per-language cells with the min and max over variants). The 1.7B line is its own early checkpoints against its final. `da_ckpt_multi_axes_across_langs_bpb` ranks each checkpoint against the proxy size's OWN final (DA-ckpt) and `da_size_multi_axes_across_langs_bpb` the final of every size against the 1.7B final (DA-size, one point per size: the 100 % end of the DA-goal lines); the `_vs_frac` twins of the goal and ckpt figures put the same points against the share of the run the checkpoint sits at, where lines that are apart on the token axis falling together says the schedule, not the exposure, decides. The `_mono_axis` twins of the goal and ckpt figures read only the pairs that move one design axis (rule 15).
 
 | proxy size | tokens of a language at 1C | DA at 1C | tokens at 5C | DA at 5C | languages |
 |---|---|---|---|---|---|
@@ -39,59 +39,59 @@ design, and the figure needs that sentence wherever it is shown.
 | 600M | 0.10 B | 0.72 | 0.51 B | 0.74 | 50 |
 | 1B | 0.16 B | 0.79 | 0.80 B | 0.92 | 50 |
 
-![DA-goal of BPB vs tokens seen](pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb.png)
+![DA-goal of BPB vs tokens seen](pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.74 (600M) to 0.96 (175M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M never, 1B 10%.
 
-![DA-goal of BPB vs tokens seen, mono-axis pairs](pretraining/predictivity_all/da_goal_mono_axis_across_langs_bpb.png)
+![DA-goal of BPB vs tokens seen, mono-axis pairs](pretraining/predictivity_seeds/da_goal_mono_axis_across_langs_bpb.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_mono_axis_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_mono_axis_across_langs_bpb.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_mono_axis_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_mono_axis_across_langs_bpb.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.60 (600M) to 0.94 (175M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 20%, 600M never, 1B 40%.
 - The mono-axis pairs read lower than the multi-axis set at 50 of 50 (size, tenth) points, by 0.07 on average.
 
-![DA-goal of BPB vs share of the run](pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb_vs_frac.png)
+![DA-goal of BPB vs share of the run](pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_vs_frac.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb_vs_frac.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_goal_multi_axes_across_langs_bpb_vs_frac.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_vs_frac.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_goal_multi_axes_across_langs_bpb_vs_frac.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.74 (600M) to 0.96 (175M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M never, 1B 10%.
 
-![DA-ckpt of BPB vs tokens seen](pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb.png)
+![DA-ckpt of BPB vs tokens seen](pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 1.00 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 10%.
 
-![DA-ckpt of BPB vs tokens seen, mono-axis pairs](pretraining/predictivity_all/da_ckpt_mono_axis_across_langs_bpb.png)
+![DA-ckpt of BPB vs tokens seen, mono-axis pairs](pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_mono_axis_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_mono_axis_across_langs_bpb.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_mono_axis_across_langs_bpb.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.98 (90M) to 0.99 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 30%.
 - The mono-axis pairs read lower than the multi-axis set at 43 of 45 (size, tenth) points, by 0.03 on average.
 
-![DA-ckpt of BPB vs share of the run](pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png)
+![DA-ckpt of BPB vs share of the run](pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_ckpt_multi_axes_across_langs_bpb_vs_frac.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_ckpt_multi_axes_across_langs_bpb_vs_frac.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.99 (90M) to 1.00 (600M).
 - First tenth of the run at DA ≥ 0.75: 90M 10%, 175M 10%, 350M 10%, 600M 10%, 1B 10%.
 
-![DA-size of BPB vs tokens seen](pretraining/predictivity_all/da_size_multi_axes_across_langs_bpb.png)
+![DA-size of BPB vs tokens seen](pretraining/predictivity_seeds/da_size_multi_axes_across_langs_bpb.png)
 
-[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_size_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_all/da_size_multi_axes_across_langs_bpb.csv)
+[PNG on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_size_multi_axes_across_langs_bpb.png) · [CSV on GitHub](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq02_da_vs_train_tokens/pretraining/predictivity_seeds/da_size_multi_axes_across_langs_bpb.csv)
 
 Key findings:
 - Over 50 languages, the proxies' last point ranges from 0.74 (600M) to 0.96 (175M).

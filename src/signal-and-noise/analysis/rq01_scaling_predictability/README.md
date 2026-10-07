@@ -10,12 +10,12 @@
 > the prediction test: how well a power law fitted on the proxy rungs
 > predicts the reference rung's per-language BPB.
 
-<!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:highlight (analyze.py --pool predictivity_seeds) -->
 ## Highlighted result
 
-- **3638 (task, L) fits over 1288 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 737 rungs from the fitted series and left 1301 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 425 tasks without any fit. Best-scaling families (median R²): `bpb` 1.00, `bbpb_hellaswag` 1.00, `bbpb_xstorycloze` 0.99, `loss` 0.99; worst: `bbpb_cultural_bench_easy` 0.12, `bbpb_bbh_mcq` 0.09, `bbpb_blend_sample` 0.03.
+- **3624 (task, L) fits over 1285 tasks**, each on the rungs where the task is above chance (rule 1, rq00's mask): the gate removed 705 rungs from the fitted series and left 1316 (task, L) series with fewer than 3 rungs (no fit, `gated` in `rq1_fits.csv`), 428 tasks without any fit. Best-scaling families (median R²): `bbpb_hellaswag` 1.00, `bbpb_arc_mt` 1.00, `bpb` 1.00, `bbpb_rfgm_include_base_44` 0.99; worst: `bbpb_commonsense_qa` 0.43, `bbpb_blend_sample` 0.30, `bbpb_bbh_mcq` 0.21.
 - **Median R² by answer count** (over the gated benchmark fits): 0.93 over the 2-option fits, 0.84 over the 3-option fits, 0.87 over the 4-option fits, 0.90 over the 5-option fits, 0.88 over the 6-option fits, 0.75 over the 7-option fits, 0.67 over the 8-option fits.
-- **Loss exponent α per (L, arch, scheme)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.085 (6), L1 deep/DCLMP 0.077 (6), L1 deep/FWEB 0.082 (6), L1 shallow/A 0.089 (6), L2 deep/A 0.094 (6), L2 deep/ES 0.091 (6), L2 deep/ZH 0.093 (6), L2 shallow/A 0.101 (6), L8 deep/A 0.097 (6), L8 deep/B 0.099 (6), L8 shallow/A 0.104 (6), L8 shallow/B 0.096 (6), L15 deep/A 0.100 (6), L15 deep/AT3 0.101 (6), L15 deep/B 0.101 (6), L15 shallow/A 0.093 (6), L15 shallow/B 0.102 (6), L30 deep/A 0.103 (6), L30 deep/AT3 0.103 (6), L30 deep/B 0.100 (6), L30 shallow/A 0.096 (6), L30 shallow/B 0.106 (6), L50 deep/A 0.104 (6), L50 deep/AT3 0.108 (6), L50 shallow/A 0.102 (6), L50 shallow/AT3 0.102 (6).
+- **Loss exponent α per (L, ladder, data build)**, the seed-1904 cells, sizes in the fit in brackets: L1 deep/A 0.085 (6), L1 deep/DCLMP 0.077 (6), L1 deep/FWEB 0.082 (6), L1 shallow/A 0.089 (6), L2 deep/A 0.094 (6), L2 deep/ES 0.091 (6), L2 deep/ZH 0.093 (6), L2 shallow/A 0.101 (6), L8 deep/A 0.097 (6), L8 deep/B 0.099 (6), L8 shallow/A 0.104 (6), L8 shallow/B 0.096 (6), L15 deep/A 0.100 (6), L15 deep/AT3 0.101 (6), L15 deep/B 0.101 (6), L15 shallow/A 0.093 (6), L15 shallow/B 0.102 (6), L30 deep/A 0.103 (6), L30 deep/AT3 0.103 (6), L30 deep/B 0.100 (6), L30 shallow/A 0.096 (6), L30 shallow/B 0.106 (6), L50 deep/A 0.104 (6), L50 deep/AT3 0.108 (6), L50 shallow/A 0.102 (6), L50 shallow/AT3 0.102 (6).
 <!-- END auto:highlight -->
 
 ## Setup
@@ -77,18 +77,18 @@ figure is `scaling_regimes_outliers_paper` (copied by
 `documents/paper/figures/make_rq_figures.py`), its appendix twin
 `scaling_regimes_by_family_paper`.
 
-<!-- BEGIN auto:regimes (regimes.py --pool predictivity_all) -->
+<!-- BEGIN auto:regimes (regimes.py --pool predictivity_seeds) -->
 ## Scaling regimes per benchmark-language pair
 
-`regimes.py`: one point per task, medians over the deep scheme-A seed-1904 cells (parent tasks, trained languages) — the R² and (oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ 5 points), one per (L, size). Both use only the sizes where the task is above chance (rule 1, rq00's mask): 346 tasks have a point; the gate removed 425 tasks that are at chance at every size where a fit was possible (per family: acp_bench_cloze 7, acp_bench_mcq 7, arc 26, arc_mt 8, bbh_cloze 6, bbh_mcq 17, belebele 59, blend_sample 5, commonsense_qa 1, cultural_bench_easy 19, cultural_bench_hard 19, global_mmlu_full 29, global_piqa_nonparallel_cloze 1, global_piqa_parallel_cloze 63, hellaswag 2, include_base_44 32, include_v2_en 15, include_v2_og 32, mmlu 1, openbookqa 1, paws 5, rf_acp_bench_mcq 2, rf_bbh_mcq 8, rf_belebele 4, rf_cultural_bench_easy 13, rf_global_mmlu_full 4, rf_include_base_44 16, rfgm_include_base_44 14, toxigen 1, truthfulqa-multi_mc1 1, truthfulqa_mc2 3, xcopa 1, xnli 3); the training loss is left out (rule 7). The quadrants of (b) split at R² = 0.5, a heuristic; a task with median ρ < 0 is the fifth regime `declines with size` whatever its quadrant (5 tasks, black edge in panel (b)). Table: `scaling_regimes.csv`. Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_all`.
+`regimes.py`: one point per task, medians over the deep data-A seed-1904 cells (parent tasks, trained languages) — the R² and (oriented) Spearman ρ of the gated log-N fits of `rq1_fits.csv`, one per L, and the R² of the training-trajectory fit (score ~ log tokens over a run's checkpoints, ≥ 5 points), one per (L, size). Both use only the sizes where the task is above chance (rule 1, rq00's mask): 951 tasks have a point; the gate removed 428 tasks that are at chance at every size where a fit was possible (per family: acp_bench_cloze 7, acp_bench_mcq 7, arc 26, arc_mt 9, bbh_cloze 6, bbh_mcq 17, belebele 59, blend_sample 5, commonsense_qa 1, cultural_bench_easy 19, cultural_bench_hard 19, global_mmlu_full 29, global_piqa_nonparallel_cloze 1, global_piqa_parallel_cloze 63, hellaswag 2, include_base_44 35, include_v2_en 16, include_v2_og 31, mmlu 1, openbookqa 1, paws 6, rf_acp_bench_mcq 2, rf_bbh_mcq 8, rf_belebele 3, rf_cultural_bench_easy 14, rf_global_mmlu_full 3, rf_include_base_44 16, rfgm_include_base_44 14, toxigen 1, truthfulqa-multi_mc1 1, truthfulqa_mc2 3, xnli 3); the training loss is left out (rule 7). The quadrants of (b) split at R² = 0.5, a heuristic; a task with median ρ < 0 is the fifth regime `declines with size` whatever its quadrant (29 tasks, black edge in panel (b)). Table: `scaling_regimes.csv`. Regenerate with `python analysis/rq01_scaling_predictability/regimes.py --pool predictivity_seeds`.
 
-![Scaling regimes](pretraining/predictivity_all/scaling_regimes.png)
+![Scaling regimes](pretraining/predictivity_seeds/scaling_regimes.png)
 
 Named variants of the same points: `scaling_regimes_families.png` (one label per family at its median point, `scaling_regimes_families.csv`; `scaling_regimes_families_paper.png/.pdf/.svg` its bare, square version for the paper), `scaling_regimes_outliers.png` (plus the tasks in another quadrant than their family's majority and > 0.25 from its median point, `scaling_regimes_outliers.csv`; `scaling_regimes_outliers_paper.png/.pdf/.svg` is its bare, square-panel version for the paper, the label text pulled 45% towards the ink), `scaling_regimes_by_family.png` (panel (b) per family, tasks named by language, its per-task table with the labels next to it; `_paper.png/.pdf/.svg/.csv` is its bare version for the paper's appendix) and `scaling_regimes.html` (hover names, click-to-highlight legend; for the project site).
 
-![Scaling regimes, outliers named](pretraining/predictivity_all/scaling_regimes_outliers.png)
+![Scaling regimes, outliers named](pretraining/predictivity_seeds/scaling_regimes_outliers.png)
 
-![Scaling regimes per family](pretraining/predictivity_all/scaling_regimes_by_family.png)
+![Scaling regimes per family](pretraining/predictivity_seeds/scaling_regimes_by_family.png)
 <!-- END auto:regimes -->
 
 **Key findings**
@@ -186,10 +186,10 @@ ladder top and evaluated at the 1.7B reference (rule 11: the reference never
 enters the fit).* The leave-top-out error is the prediction test figure 1's
 R² cannot be.
 
-<!-- BEGIN auto:scaling-law-error (scaling_law_error.py --pool predictivity_all) -->
+<!-- BEGIN auto:scaling-law-error (scaling_law_error.py --pool predictivity_seeds) -->
 ## Scaling-law error on per-language BPB
 
-Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size: dropped L1 deep/FWEB. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` pool (deep, data A, seed 1904; the loader keeps trained languages only). The reference is 1.7B for every chain (rule 9); a chain without a 1.7B final is dropped, never referenced at a smaller size; none dropped. Regenerate with `python analysis/rq01_scaling_predictability/scaling_law_error.py --pool predictivity_seeds`.
 
 - **Scaling-law error** — median |relative error| of the 1.7B per-language BPB predicted from the proxy ladder: L1 0.011, L2 0.015, L8 0.022, L15 0.019, L30 0.024, L50 0.026 (largest proxy ladder at that L).
 
@@ -206,7 +206,7 @@ Numbers from the `predictivity_all` pool (deep, scheme A, seed 1904; the loader 
 | L30 | 30 | 0.077 | 0.043 | 0.024 |
 | L50 | 50 | 0.083 | 0.051 | 0.026 |
 
-![Scaling-law error](pretraining/predictivity_all/scaling_law_error.png)
+![Scaling-law error](pretraining/predictivity_seeds/scaling_law_error.png)
 <!-- END auto:scaling-law-error -->
 
 **Key findings**
@@ -238,97 +238,96 @@ GitHub: [scaling_law_error.png](https://github.com/mariagrandury/snr-multilingua
 (`rq1_families.csv`) and drawn per benchmark and per language; the loss
 scaling fit per (L, arch, scheme).*
 
-<!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
 
-Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq01_scaling_predictability/analyze.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq01_scaling_predictability/analyze.py --pool predictivity_seeds`.
 
 **Per family** (median over its gated (task, L) fits, ≥ 3 fits; ρ = −1 is the ideal for BPB and loss):
 
 | family | R² | ρ | fits | options |
 |---|---|---|---|---|
-| bbpb_blend_sample | 0.03 | -0.03 | 21 |  |
-| bbpb_bbh_mcq | 0.09 | 0.03 | 102 |  |
-| bbpb_cultural_bench_easy | 0.12 | -0.09 | 86 |  |
-| bbpb_acp_bench_cloze | 0.13 | -0.03 | 42 |  |
-| bbpb_bbh_cloze | 0.19 | -0.30 | 36 |  |
-| include_base_44 | 0.28 | 0.40 | 5 | 4 |
-| bbpb_acp_bench_mcq | 0.39 | -0.60 | 42 |  |
-| bbpb_commonsense_qa | 0.44 | -0.57 | 6 |  |
+| bbpb_bbh_mcq | 0.21 | 0.40 | 102 |  |
+| bbpb_blend_sample | 0.30 | 0.50 | 21 |  |
+| bbpb_commonsense_qa | 0.43 | -0.50 | 6 |  |
+| bbpb_acp_bench_mcq | 0.44 | -0.50 | 42 |  |
 | rf_acp_bench_mcq | 0.49 | 0.65 | 30 | 4 |
-| bbpb_toxigen | 0.52 | -0.66 | 6 |  |
-| bbpb_include_base_44 | 0.56 | -0.77 | 79 |  |
+| bbpb_toxigen | 0.57 | -0.70 | 6 |  |
+| bbpb_acp_bench_cloze | 0.60 | -0.20 | 42 |  |
 | rf_bbh_mcq | 0.65 | 0.80 | 54 | 3 |
-| rf_cultural_bench_easy | 0.77 | 0.87 | 27 | 4 |
-| bbpb_global_mmlu_full | 0.80 | -0.83 | 79 |  |
-| bbpb_rf_bbh_mcq | 0.80 | -0.90 | 102 |  |
-| bbpb_mmlu | 0.81 | -0.94 | 6 |  |
-| bbpb_belebele | 0.83 | -0.94 | 130 |  |
-| rf_global_mmlu_full | 0.83 | 1.00 | 71 | 4 |
+| bbpb_include_base_44 | 0.71 | -0.50 | 79 |  |
+| bbpb_bbh_cloze | 0.72 | -0.50 | 36 |  |
+| paws | 0.72 | 0.90 | 7 | 2 |
+| bbpb_cultural_bench_easy | 0.73 | -0.80 | 86 |  |
+| rf_cultural_bench_easy | 0.77 | 0.87 | 23 | 4 |
 | mathqa | 0.84 | 0.97 | 6 | 5 |
-| rf_belebele | 0.84 | 0.94 | 122 | 4 |
+| rf_include_base_44 | 0.84 | 0.97 | 48 | 4 |
+| rf_global_mmlu_full | 0.84 | 1.00 | 74 | 4 |
+| rf_belebele | 0.85 | 0.94 | 124 | 4 |
 | xnli | 0.86 | 0.94 | 37 | 3 |
-| rf_include_base_44 | 0.87 | 1.00 | 48 | 4 |
-| bbpb_mathqa | 0.87 | -0.91 | 6 |  |
-| bbpb_rf_commonsense_qa | 0.88 | -0.94 | 6 |  |
-| xcopa | 0.88 | 0.99 | 19 | 2 |
+| bbpb_rf_bbh_mcq | 0.87 | -1.00 | 102 |  |
+| xcopa | 0.88 | 0.96 | 20 | 2 |
 | hellaswag | 0.89 | 1.00 | 62 | 4 |
-| include_v2_og | 0.89 | 1.00 | 138 | 4 |
-| include_v2_en | 0.89 | 0.94 | 171 | 4 |
-| paws | 0.89 | 1.00 | 11 | 2 |
+| include_v2_og | 0.89 | 1.00 | 139 | 4 |
+| include_v2_en | 0.89 | 0.94 | 168 | 4 |
 | rfgm_belebele | 0.89 | 0.99 | 130 | 4 |
-| xwinograd | 0.90 | 0.97 | 26 | 2 |
 | rf_mmlu | 0.90 | 1.00 | 6 | 4 |
-| rfgm_include_base_44 | 0.92 | 0.96 | 54 | 4 |
-| bbpb_rf_acp_bench_mcq | 0.94 | -1.00 | 42 |  |
+| xwinograd | 0.90 | 0.99 | 26 | 2 |
+| rfgm_include_base_44 | 0.91 | 0.94 | 52 | 4 |
+| bbpb_mmlu | 0.92 | -1.00 | 6 |  |
+| bbpb_global_mmlu_full | 0.93 | -1.00 | 79 |  |
+| bbpb_rf_commonsense_qa | 0.93 | -1.00 | 6 |  |
+| bbpb_mathqa | 0.93 | -1.00 | 6 |  |
 | multiblimp | 0.94 | 1.00 | 77 | 2 |
-| bbpb_xnli | 0.95 | -1.00 | 45 |  |
 | rf_commonsense_qa | 0.96 | 1.00 | 6 | 5 |
 | xstorycloze | 0.96 | 1.00 | 28 | 2 |
 | lambada_openai_mt | 0.96 | 1.00 | 22 |  |
-| bbpb_paws | 0.96 | -1.00 | 29 |  |
-| bbpb_include_v2_og | 0.96 | -1.00 | 211 |  |
-| bbpb_rf_cultural_bench_easy | 0.97 | -1.00 | 86 |  |
-| bbpb_multiblimp | 0.97 | -1.00 | 77 |  |
-| bbpb_include_v2_en | 0.97 | -1.00 | 211 |  |
+| bbpb_belebele | 0.96 | -1.00 | 130 |  |
+| bbpb_rf_acp_bench_mcq | 0.97 | -1.00 | 42 |  |
+| bbpb_include_v2_og | 0.97 | -1.00 | 211 |  |
+| bbpb_openbookqa | 0.97 | -1.00 | 6 |  |
 | truthfulqa-multi_mc1 | 0.97 | -0.75 | 4 | 5 |
 | arc | 0.97 | 1.00 | 12 | 4 |
-| bbpb_openbookqa | 0.98 | -1.00 | 6 |  |
-| bbpb_rf_belebele | 0.98 | -1.00 | 130 |  |
-| bbpb_rf_include_base_44 | 0.98 | -1.00 | 79 |  |
-| bbpb_global_piqa_parallel_cloze | 0.98 | -1.00 | 147 |  |
-| arc_mt | 0.99 | 1.00 | 12 | 4 |
-| bbpb_arc | 0.99 | -1.00 | 74 |  |
-| bbpb_truthfulqa_mc2 | 0.99 | -1.00 | 13 |  |
-| bbpb_rf_global_mmlu_full | 0.99 | -1.00 | 79 |  |
+| bbpb_xnli | 0.97 | -1.00 | 45 |  |
+| bbpb_include_v2_en | 0.98 | -1.00 | 211 |  |
+| arc_mt | 0.99 | 1.00 | 8 | 4 |
 | bbpb_rf_mmlu | 0.99 | -1.00 | 6 |  |
-| bbpb_rfgm_include_base_44 | 0.99 | -1.00 | 79 |  |
-| bbpb_xcopa | 0.99 | -1.00 | 20 |  |
-| bbpb_arc_mt | 0.99 | -1.00 | 30 |  |
-| bbpb_rfgm_belebele | 0.99 | -1.00 | 130 |  |
-| bbpb_truthfulqa-multi_mc1 | 0.99 | -1.00 | 10 |  |
-| loss | 0.99 | -1.00 | 6 |  |
+| bbpb_paws | 0.99 | -1.00 | 29 |  |
+| bbpb_rf_cultural_bench_easy | 0.99 | -1.00 | 86 |  |
+| bbpb_truthfulqa_mc2 | 0.99 | -1.00 | 13 |  |
+| bbpb_multiblimp | 0.99 | -1.00 | 77 |  |
+| bbpb_rf_global_mmlu_full | 0.99 | -1.00 | 79 |  |
+| bbpb_rf_include_base_44 | 0.99 | -1.00 | 79 |  |
+| bbpb_rf_belebele | 0.99 | -1.00 | 130 |  |
 | bbpb_xstorycloze | 0.99 | -1.00 | 28 |  |
-| bbpb_hellaswag | 1.00 | -1.00 | 64 |  |
+| loss | 0.99 | -1.00 | 6 |  |
+| bbpb_rfgm_belebele | 0.99 | -1.00 | 130 |  |
+| bbpb_xcopa | 0.99 | -1.00 | 20 |  |
+| bbpb_global_piqa_parallel_cloze | 0.99 | -1.00 | 147 |  |
+| bbpb_truthfulqa-multi_mc1 | 0.99 | -1.00 | 10 |  |
+| bbpb_arc | 0.99 | -1.00 | 74 |  |
+| bbpb_rfgm_include_base_44 | 0.99 | -1.00 | 79 |  |
 | bpb | 1.00 | -1.00 | 106 |  |
+| bbpb_arc_mt | 1.00 | -1.00 | 30 |  |
+| bbpb_hellaswag | 1.00 | -1.00 | 64 |  |
 
-![RQ1 scaling](pretraining/predictivity_all/rq1_scaling.png)
+![RQ1 scaling](pretraining/predictivity_seeds/rq1_scaling.png)
 
-![Scaling fit](pretraining/predictivity_all/scaling_fit.png)
+![Scaling fit](pretraining/predictivity_seeds/scaling_fit.png)
 <!-- END auto:results -->
 
-<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+<!-- BEGIN auto:panels (panels.py --pool predictivity_seeds) -->
 ## Per benchmark and per language
 
-The family medians above, without the aggregation (`predictivity_all` pool). Regenerate with `python analysis/rq01_scaling_predictability/panels.py --pool predictivity_all`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+The family medians above, without the aggregation (`predictivity_seeds` pool). Regenerate with `python analysis/rq01_scaling_predictability/panels.py --pool predictivity_seeds`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
 
-![rq01 in one figure](pretraining/predictivity_all/highlights.png)
+![rq01 in one figure](pretraining/predictivity_seeds/highlights.png)
 
-![Median R² per benchmark and L](pretraining/predictivity_all/fit_r2_median.png)
+![Median R² per benchmark and L](pretraining/predictivity_seeds/fit_r2_median.png)
 
-![Fit R² per benchmark](pretraining/predictivity_all/fit_r2_by_benchmark.png)
+![Fit R² per benchmark](pretraining/predictivity_seeds/fit_r2_by_benchmark.png)
 
-![Fit R² per language](pretraining/predictivity_all/fit_r2_by_language.png)
+![Fit R² per language](pretraining/predictivity_seeds/fit_r2_by_language.png)
 <!-- END auto:panels -->
 
 **Key findings**

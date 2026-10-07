@@ -73,18 +73,18 @@ GitHub: [above_reference_3B_paper.png](https://github.com/mariagrandury/snr-mult
 
 | axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 3B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.50 | 60 | 0.48 | 0.92 | 6 |
-| mono-axis | 175M | 0.48 | 58 | 0.47 | 0.92 | 6 |
+| mono-axis | 90M | 0.51 | 63 | 0.48 | 0.92 | 6 |
+| mono-axis | 175M | 0.49 | 59 | 0.51 | 0.92 | 6 |
 | mono-axis | 350M | 0.47 | 68 | 0.46 | 0.75 | 6 |
-| mono-axis | 600M | 0.52 | 76 | 0.44 | 0.88 | 6 |
-| mono-axis | 1B | 0.49 | 78 | 0.48 | 0.92 | 6 |
-| mono-axis | 1.7B | 0.43 | 85 | — | 0.96 | 6 |
-| multi-axis | 90M | 0.51 | 63 | 0.47 | 0.95 | 7 |
-| multi-axis | 175M | 0.49 | 61 | 0.49 | 0.95 | 7 |
+| mono-axis | 600M | 0.52 | 73 | 0.44 | 0.88 | 6 |
+| mono-axis | 1B | 0.49 | 77 | 0.53 | 0.92 | 6 |
+| mono-axis | 1.7B | 0.43 | 83 | — | 0.96 | 6 |
+| multi-axis | 90M | 0.51 | 66 | 0.47 | 0.95 | 7 |
+| multi-axis | 175M | 0.49 | 62 | 0.51 | 0.95 | 7 |
 | multi-axis | 350M | 0.46 | 71 | 0.47 | 0.82 | 7 |
-| multi-axis | 600M | 0.51 | 80 | 0.44 | 0.90 | 7 |
-| multi-axis | 1B | 0.49 | 83 | 0.48 | 0.92 | 7 |
-| multi-axis | 1.7B | 0.44 | 93 | — | 0.92 | 7 |
+| multi-axis | 600M | 0.51 | 77 | 0.44 | 0.90 | 7 |
+| multi-axis | 1B | 0.49 | 83 | 0.51 | 0.92 | 7 |
+| multi-axis | 1.7B | 0.44 | 90 | — | 0.92 | 7 |
 
 Files: [`above_reference_3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.png), [`above_reference_3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B.csv), [`above_reference_3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_per_task.csv).
 <!-- END auto:above-reference-3B -->
@@ -144,15 +144,15 @@ is unpredictable" from "this population is unpredictable at any reference".
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 1.7B | BPB tasks |
 |---|---|---|---|---|---|---|
 | mono-axis | 90M | 0.48 | 53 | 0.48 | 0.88 | 6 |
-| mono-axis | 175M | 0.47 | 58 | 0.47 | 0.88 | 6 |
+| mono-axis | 175M | 0.51 | 234 | 0.51 | 0.88 | 6 |
 | mono-axis | 350M | 0.46 | 68 | 0.46 | 0.79 | 6 |
-| mono-axis | 600M | 0.44 | 76 | 0.44 | 0.83 | 6 |
-| mono-axis | 1B | 0.48 | 77 | 0.48 | 0.88 | 6 |
+| mono-axis | 600M | 0.44 | 73 | 0.44 | 0.83 | 6 |
+| mono-axis | 1B | 0.53 | 251 | 0.53 | 0.88 | 6 |
 | multi-axis | 90M | 0.47 | 56 | 0.47 | 0.87 | 7 |
-| multi-axis | 175M | 0.49 | 61 | 0.49 | 0.87 | 7 |
+| multi-axis | 175M | 0.51 | 249 | 0.51 | 0.87 | 7 |
 | multi-axis | 350M | 0.47 | 71 | 0.47 | 0.85 | 7 |
-| multi-axis | 600M | 0.44 | 80 | 0.44 | 0.82 | 7 |
-| multi-axis | 1B | 0.48 | 82 | 0.48 | 0.90 | 7 |
+| multi-axis | 600M | 0.44 | 77 | 0.44 | 0.82 | 7 |
+| multi-axis | 1B | 0.51 | 269 | 0.51 | 0.90 | 7 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
@@ -187,13 +187,13 @@ and the reference's own mask can never say so.
 
 **The above-random gate at two rungs · the 4 families with a 3B final · both columns recomputed on those families (rule 1) so the rung is the only difference.** Regenerate with `python analysis/rq10_size_generalisation/gate_crossover.py --pool predictivity`.
 
-**Population.** 541 tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never enter the gate. The gate admits **305** of them at 1.7B and **397** at 3B (**+92**, +30%).
+**Population.** 573 tasks carry a chance level at both rungs; BPB and the generative tasks have none, so they never enter the gate. The gate admits **337** of them at 1.7B and **429** at 3B (**+92**, +27%).
 
 ![Gate crossover](pretraining/predictivity/gate_crossover.png)
 
 |  | at chance at 3B | above chance at 3B |
 |---|---|---|
-| **above chance at 1.7B** | 6 | 299 |
+| **above chance at 1.7B** | 6 | 331 |
 | **at chance at 1.7B** | 138 | 98 |
 
 **98 tasks cross into the gate at 3B** and **6** drop out of it. Where they come from:

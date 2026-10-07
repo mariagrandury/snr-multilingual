@@ -74,62 +74,54 @@ language settings per seed, while English and the BPB tasks cover them all.
 Hand-written numbers in this README are from the ladder-report snapshot
 **2026-09-30 23:54** unless a section names an earlier one.
 
-<!-- BEGIN auto:effect-vs-noise (effect_vs_noise.py --pool predictivity_all) -->
+<!-- BEGIN auto:effect-vs-noise (effect_vs_noise.py --pool predictivity_seeds) -->
 ## Intervention effect against noise
 
-Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds`.
 
-- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep scheme-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
-- **Gate.** 9147 of 33438 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
-- **Seed noise vs detrended checkpoint noise** — median ratio 1.63 over 1478 (size, L, task) cells with seed replicates.
-- **Depth effect vs seed noise** — median |Δ|/seed-std 1.33; 29% of 1473 cells above 2× (a distinct model for SNR, not a re-roll).
+- **Noise definitions.** Seed noise = sample std (n−1) of the final score across the replicate seeds of the deep data-A cell; checkpoint noise = std of the grid seed's run over the noise window, the k/20 points in the last 20% of the run (80/85/90/95/100 %, the same for BPB and benchmarks), raw (n−1) and detrended by a line (n−2). Every std divides by its residual degrees of freedom. The seed-over-checkpoint ratio compares run-to-run scatter with the within-run scatter of one run: above 1 a re-roll of the seed moves the score more than the late checkpoints do.
+- **Gate.** 9221 of 26806 (size, L, task) cells are at chance at their size (rule 1); they keep their row, carry no number and enter no median below.
+- **Seed noise vs detrended checkpoint noise** — median ratio 1.62 over 1466 (size, L, task) cells with seed replicates.
+- **Depth effect vs seed noise** — median |Δ|/seed-std 1.32; 29% of 1461 cells above 2× (a distinct model for SNR, not a re-roll).
 
 **Effect over noise** (median over the ungated (size, L, task) cells; `n` = cells behind the median):
 
 | population | effect / noise | median | n |
 |---|---|---|---|
-| benchmark | arch / seed | 1.20 | 1316 |
-| benchmark | arch / ckpt | 1.97 | 6703 |
-| benchmark | scheme / seed | 1.16 | 320 |
-| benchmark | scheme / ckpt | 1.86 | 2561 |
-| benchmark | temperature / seed | 1.35 | 1105 |
-| benchmark | temperature / ckpt | 2.14 | 5485 |
-| benchmark | zh / seed | 1.44 | 87 |
-| benchmark | zh / ckpt | 2.59 | 177 |
-| benchmark | es / seed | 1.35 | 87 |
-| benchmark | es / ckpt | 2.24 | 177 |
+| benchmark | arch / seed | 1.18 | 1304 |
+| benchmark | arch / ckpt | 2.09 | 14439 |
+| benchmark | scheme_B / seed | 1.32 | 494 |
+| benchmark | scheme_B / ckpt | 2.04 | 6791 |
+| benchmark | scheme_C / seed | 1.60 | 177 |
+| benchmark | scheme_C / ckpt | 3.38 | 1019 |
+| benchmark | temperature / seed | 1.35 | 1091 |
+| benchmark | temperature / ckpt | 2.74 | 11659 |
 | bpb | arch / seed | 1.77 | 139 |
 | bpb | arch / ckpt | 1.95 | 636 |
-| bpb | scheme / seed | 0.21 | 26 |
-| bpb | scheme / ckpt | 1.27 | 222 |
+| bpb | scheme_B / seed | 0.27 | 32 |
+| bpb | scheme_B / ckpt | 1.31 | 234 |
+| bpb | scheme_C / seed | 160.69 | 6 |
+| bpb | scheme_C / ckpt | 43.92 | 12 |
 | bpb | temperature / seed | 12.33 | 130 |
 | bpb | temperature / ckpt | 11.77 | 570 |
-| bpb | zh / seed | 4.95 | 3 |
-| bpb | zh / ckpt | 3.08 | 6 |
-| bpb | es / seed | 8.51 | 3 |
-| bpb | es / ckpt | 5.78 | 6 |
 | bpb_macro | arch / seed | 1.84 | 9 |
 | bpb_macro | arch / ckpt | 1.04 | 36 |
-| bpb_macro | scheme / seed | 3.80 | 1 |
-| bpb_macro | scheme / ckpt | 2.13 | 18 |
+| bpb_macro | scheme_B / seed | 3.84 | 7 |
+| bpb_macro | scheme_B / ckpt | 2.36 | 30 |
+| bpb_macro | scheme_C / seed | 31.32 | 6 |
+| bpb_macro | scheme_C / ckpt | 10.91 | 12 |
 | bpb_macro | temperature / seed | 3.05 | 3 |
 | bpb_macro | temperature / ckpt | 1.21 | 18 |
-| bpb_macro | zh / seed | 33.96 | 3 |
-| bpb_macro | zh / ckpt | 13.02 | 6 |
-| bpb_macro | es / seed | 24.28 | 3 |
-| bpb_macro | es / ckpt | 9.80 | 6 |
 | loss | arch / seed | 1.16 | 9 |
 | loss | arch / ckpt | 1.44 | 36 |
-| loss | scheme / seed | 11.14 | 1 |
-| loss | scheme / ckpt | 1.99 | 18 |
+| loss | scheme_B / seed | 7.54 | 7 |
+| loss | scheme_B / ckpt | 3.68 | 30 |
+| loss | scheme_C / seed | 2.92 | 6 |
+| loss | scheme_C / ckpt | 2.86 | 12 |
 | loss | temperature / seed | 7.20 | 3 |
 | loss | temperature / ckpt | 1.41 | 18 |
-| loss | zh / seed | 7.54 | 3 |
-| loss | zh / ckpt | 6.34 | 6 |
-| loss | es / seed | 3.42 | 3 |
-| loss | es / ckpt | 2.66 | 6 |
 
-![Effect vs noise](pretraining/predictivity_all/effect_vs_noise.png)
+![Effect vs noise](pretraining/predictivity_seeds/effect_vs_noise.png)
 <!-- END auto:effect-vs-noise -->
 
 GitHub: [effect_vs_noise.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.png) · [effect_vs_noise.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds/effect_vs_noise.csv)
@@ -161,9 +153,9 @@ Regenerate with `python analysis/rq03_noise_and_snr/panels.py --pool predictivit
 
 ![SNR per language](pretraining/predictivity/snr_by_language.png)
 
-![Depth effect over seed noise per benchmark](pretraining/predictivity_all/effect_over_seed_by_benchmark.png)
+![Depth effect over seed noise per benchmark](pretraining/predictivity_seeds/effect_over_seed_by_benchmark.png)
 
-![Depth effect over seed noise per language](pretraining/predictivity_all/effect_over_seed_by_language.png)
+![Depth effect over seed noise per language](pretraining/predictivity_seeds/effect_over_seed_by_language.png)
 <!-- END auto:panels -->
 
 GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.png) · [highlights.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity/highlights.csv) ·
@@ -179,14 +171,14 @@ GitHub: [highlights.png](https://github.com/mariagrandury/snr-multilingual/blob/
 
 Regenerate with `python analysis/rq03_noise_and_snr/compare_seed_splits.py --train-pool predictivity_seeds_train --test-pool predictivity_seeds_test`; the tables are under `pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/`.
 
-`predictivity_seeds_train` (seeds 64, 313) and `predictivity_seeds_test` (seeds 1904) hold the same 6 cells: 175M L1 deep scheme A, 600M L1 deep scheme A, 175M L2 deep scheme A, 600M L2 deep scheme A, 175M L50 deep scheme A, 600M L50 deep scheme A.
+`predictivity_seeds_train` (seeds 28, 64, 313, 1797) and `predictivity_seeds_test` (seeds 1904) hold the same 10 cells: 175M L1 deep data A, 1B L1 deep data A, 600M L1 deep data A, 175M L2 deep data A, 1B L2 deep data A, 600M L2 deep data A, 1B L30 deep data A, 1B L30 deep data B, 175M L50 deep data A, 600M L50 deep data A.
 
 A language's r is rq04's Pearson r over its tasks' (log10 SNR, DA) points and needs at least 3 distinct tasks with a value (rule 8); `multi` and `??` are never a language (rule 7). DA-size on the holdout is 175M → 600M (scaling pair) (the pools stop at 600M, so the 1.7B reference never enters; rule 9); DA-ckpt is the within-size early → final ranking. Agreement is counted over the languages with a best variant on both splits.
 
 | DA | languages | same variant | same family | Spearman ρ of the variant ranking |
 |---|---|---|---|---|
-| DA-size | 1 | 0 | 0 | -0.29 |
-| DA-ckpt | 1 | 0 | 0 | 0.79 |
+| DA-size | 1 | 0 | 0 | -0.28 |
+| DA-ckpt | 2 | 0 | 2 | 0.82 |
 <!-- END auto:seed-holdout -->
 
 [headline_metrics.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq03_noise_and_snr/pretraining/predictivity_seeds_train__vs__predictivity_seeds_test/headline_metrics.csv) ·
