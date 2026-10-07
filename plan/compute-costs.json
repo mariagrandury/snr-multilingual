@@ -8,16 +8,16 @@
   "gpus_per_node": 4,
   "node_hours": {
     "pretrain": {
-      "charged": 39060.4,
+      "charged": 39207.0,
       "kept": 37155.2
     },
     "eval": {
-      "charged": 5102.7,
-      "kept": 3617.2
+      "charged": 5106.3,
+      "kept": 3620.7
     },
     "bpb": {
-      "charged": 3194.4,
-      "kept": 2347.2
+      "charged": 3196.3,
+      "kept": 0.0
     },
     "convert": {
       "charged": 230.2,

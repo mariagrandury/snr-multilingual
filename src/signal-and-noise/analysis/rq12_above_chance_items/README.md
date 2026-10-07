@@ -91,10 +91,10 @@ and [figure 4](#4-snr-rises-through-the-noise-and-not-the-signal).
   an item of a variable-option family is held to the family's chance level
   (TruthfulQA mc1's E[1/n], mc2's mean true-option share), not its own.
 
-<!-- BEGIN auto:results (above_chance_items.py --pool predictivity --store-pool predictivity_schemes) -->
+<!-- BEGIN auto:results (above_chance_items.py --pool predictivity --store-pool predictivity) -->
 ## Results
 
-Pool `predictivity` (90M, 175M, 350M, 600M, 1B, 1.7B), per-item store `predictivity_schemes`, ladder report of 2026-10-06 04:26. **Rule 11 is waived by design:** the items are chosen on the pool's 1.7B runs that train the task's language and DA is scored against the 1.7B reference: the selection reads the reference by design, and the numbers measure how much that inflates DA and SNR. DA-ckpt and the checkpoint SNR are in `above_chance_items_da_ckpt_*` and the `*_ckpt` columns of the SNR table. The surrogates are not computed (the catalogue reads a task's item count by its name and its truths from the decision-accuracy table on disk). Checks: the store's full-benchmark score equals the ladder report's within 1e-3 on 100.0% of 63155 finals; the gate recomputed on them by the same code agrees with the committed mask on 5042 of 5046 (task, size) cells. Regenerate with `python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity_schemes`.
+Pool `predictivity` (90M, 175M, 350M, 600M, 1B, 1.7B), per-item store `predictivity`, ladder report of 2026-10-07 15:51. **Rule 11 is waived by design:** the items are chosen on the pool's 1.7B runs that train the task's language and DA is scored against the 1.7B reference: the selection reads the reference by design, and the numbers measure how much that inflates DA and SNR. DA-ckpt and the checkpoint SNR are in `above_chance_items_da_ckpt_*` and the `*_ckpt` columns of the SNR table. The surrogates are not computed (the catalogue reads a task's item count by its name and its truths from the decision-accuracy table on disk). Checks: the store's full-benchmark score equals the ladder report's within 1e-3 on 100.0% of 68415 finals; the gate recomputed on them by the same code agrees with the committed mask on 5046 of 5046 (task, size) cells. Regenerate with `python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity`.
 
 The runs that select a task's items are its 1.7B finals in the cells that train its language (rule 2): 4–26 per task, 161 of 841 tasks on 4 (`n_reference_runs` in the selection table).
 
@@ -113,77 +113,77 @@ The runs that select a task's items are its 1.7B finals in the cells that train 
 
 | ordering | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| full benchmark | 0.37 (312) | 0.40 (336) | 0.44 (373) | 0.49 (409) | 0.54 (450) | 0.58 (489) |
-| gate, then items | 0.37 (312) | 0.40 (336) | 0.44 (373) | 0.49 (409) | 0.54 (450) | 0.58 (489) |
-| items, then gate | 0.85 (715) | 0.82 (693) | 0.84 (706) | 0.88 (736) | 0.90 (757) | 0.98 (826) |
+| full benchmark | 0.37 (313) | 0.40 (334) | 0.44 (374) | 0.49 (412) | 0.54 (450) | 0.58 (489) |
+| gate, then items | 0.37 (313) | 0.40 (334) | 0.44 (374) | 0.49 (412) | 0.54 (450) | 0.58 (489) |
+| items, then gate | 0.86 (720) | 0.82 (693) | 0.84 (707) | 0.87 (735) | 0.90 (757) | 0.98 (826) |
 
 **DA-size** against the 1.7B final, pooled over the tasks, its 90 % leave-one-family-out jackknife band and the task count; rule 1 at the proxy and at 1.7B, ≥ 3 pairs (rule 5: no cell has fewer and are NaN); the task count moves along a row and between the orderings (rule 13):
 
 | pairs | ordering | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| multi-axis | full benchmark | 0.536 [0.51, 0.56] (293) | 0.545 [0.52, 0.57] (333) | 0.536 [0.51, 0.56] (366) | 0.548 [0.53, 0.57] (408) | 0.562 [0.53, 0.60] (446) |
-| multi-axis | gate, then items | 0.553 [0.53, 0.58] (293) | 0.546 [0.52, 0.57] (333) | 0.539 [0.51, 0.57] (366) | 0.551 [0.53, 0.58] (408) | 0.552 [0.52, 0.59] (446) |
-| multi-axis | items, then gate | 0.506 [0.49, 0.52] (712) | 0.512 [0.50, 0.53] (692) | 0.513 [0.49, 0.53] (705) | 0.525 [0.51, 0.54] (735) | 0.527 [0.50, 0.55] (756) |
-| mono-axis | full benchmark | 0.504 [0.48, 0.52] (293) | 0.517 [0.49, 0.54] (333) | 0.506 [0.49, 0.52] (366) | 0.517 [0.50, 0.54] (408) | 0.522 [0.49, 0.56] (446) |
-| mono-axis | gate, then items | 0.514 [0.49, 0.54] (293) | 0.513 [0.49, 0.54] (333) | 0.509 [0.49, 0.53] (366) | 0.517 [0.50, 0.54] (408) | 0.515 [0.48, 0.55] (446) |
-| mono-axis | items, then gate | 0.482 [0.47, 0.50] (712) | 0.490 [0.47, 0.51] (692) | 0.491 [0.47, 0.51] (705) | 0.502 [0.49, 0.52] (735) | 0.502 [0.48, 0.53] (756) |
+| multi-axis | full benchmark | 0.537 [0.51, 0.56] (296) | 0.545 [0.52, 0.57] (331) | 0.539 [0.52, 0.56] (367) | 0.549 [0.53, 0.57] (411) | 0.562 [0.53, 0.60] (445) |
+| multi-axis | gate, then items | 0.554 [0.53, 0.58] (296) | 0.546 [0.52, 0.57] (331) | 0.541 [0.52, 0.57] (367) | 0.552 [0.53, 0.58] (411) | 0.553 [0.52, 0.59] (445) |
+| multi-axis | items, then gate | 0.508 [0.49, 0.52] (717) | 0.512 [0.50, 0.53] (692) | 0.517 [0.50, 0.54] (707) | 0.526 [0.51, 0.55] (735) | 0.527 [0.50, 0.55] (756) |
+| mono-axis | full benchmark | 0.504 [0.48, 0.53] (296) | 0.517 [0.49, 0.54] (331) | 0.506 [0.49, 0.52] (367) | 0.518 [0.50, 0.54] (411) | 0.522 [0.49, 0.56] (445) |
+| mono-axis | gate, then items | 0.514 [0.48, 0.55] (296) | 0.513 [0.49, 0.54] (331) | 0.510 [0.49, 0.53] (367) | 0.518 [0.50, 0.54] (411) | 0.516 [0.48, 0.55] (445) |
+| mono-axis | items, then gate | 0.483 [0.47, 0.50] (717) | 0.491 [0.47, 0.51] (692) | 0.492 [0.47, 0.51] (707) | 0.502 [0.48, 0.52] (735) | 0.502 [0.48, 0.53] (756) |
 
-**The DA-size gain**: the paired difference over the full benchmark averaged over the (task, proxy) cells both readings have, the difference of the pooled lines (which weight a task by its pairs), and the cells items, then gate admits that the committed gate blanks on the full benchmark. Items, then gate − full equals gate, then items − full on 3690 of 3692 paired (task, pair set, proxy) cells (the same sub-scores wherever both have a value), so only the latter is shown; both are in `above_chance_items_da_size_both_axes.csv`:
+**The DA-size gain**: the paired difference over the full benchmark averaged over the (task, proxy) cells both readings have, the difference of the pooled lines (which weight a task by its pairs), and the cells items, then gate admits that the committed gate blanks on the full benchmark. Items, then gate − full equals gate, then items − full on 3698 of 3700 paired (task, pair set, proxy) cells (the same sub-scores wherever both have a value), so only the latter is shown; both are in `above_chance_items_da_size_both_axes.csv`:
 
 | pairs | reading | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|---|
-| multi-axis | gate, then items − full: mean paired Δ over the tasks (cells) | +0.043 (293) | +0.018 (333) | +0.020 (366) | +0.020 (408) | +0.000 (446) |
-| multi-axis | gate, then items − full: Δ of the pooled DA-size (the figure's lines) | +0.017 | +0.001 | +0.002 | +0.003 | -0.010 |
-| multi-axis | items, then gate: mean DA on the admitted cells (cells) | 0.470 (420) | 0.494 (359) | 0.485 (339) | 0.503 (327) | 0.498 (310) |
-| mono-axis | gate, then items − full: mean paired Δ over the tasks (cells) | +0.031 (293) | +0.004 (333) | +0.019 (366) | +0.009 (408) | +0.001 (446) |
-| mono-axis | gate, then items − full: Δ of the pooled DA-size (the figure's lines) | +0.011 | -0.004 | +0.004 | +0.000 | -0.007 |
-| mono-axis | items, then gate: mean DA on the admitted cells (cells) | 0.456 (420) | 0.478 (359) | 0.467 (339) | 0.491 (327) | 0.488 (310) |
+| multi-axis | gate, then items − full: mean paired Δ over the tasks (cells) | +0.043 (296) | +0.019 (331) | +0.020 (367) | +0.020 (411) | +0.001 (445) |
+| multi-axis | gate, then items − full: Δ of the pooled DA-size (the figure's lines) | +0.017 | +0.001 | +0.002 | +0.003 | -0.009 |
+| multi-axis | items, then gate: mean DA on the admitted cells (cells) | 0.470 (422) | 0.494 (361) | 0.486 (340) | 0.503 (324) | 0.496 (311) |
+| mono-axis | gate, then items − full: mean paired Δ over the tasks (cells) | +0.030 (296) | +0.004 (331) | +0.020 (367) | +0.009 (411) | +0.002 (445) |
+| mono-axis | gate, then items − full: Δ of the pooled DA-size (the figure's lines) | +0.010 | -0.004 | +0.004 | +0.000 | -0.006 |
+| mono-axis | items, then gate: mean DA on the admitted cells (cells) | 0.456 (422) | 0.479 (361) | 0.467 (340) | 0.488 (324) | 0.487 (311) |
 
 The admitted cells by the number of items their task keeps (mean DA-size over every proxy, cells):
 
 | pairs | 1-30 kept items | 31-100 kept items | 101-300 kept items | 301-1000 kept items | > 1000 kept items |
 |---|---|---|---|---|---|
-| multi-axis | 0.410 (302) | 0.477 (378) | 0.494 (541) | 0.530 (318) | 0.546 (216) |
-| mono-axis | 0.397 (302) | 0.473 (378) | 0.482 (541) | 0.509 (318) | 0.517 (216) |
+| multi-axis | 0.409 (304) | 0.478 (375) | 0.495 (547) | 0.529 (315) | 0.546 (217) |
+| mono-axis | 0.396 (304) | 0.473 (375) | 0.481 (547) | 0.508 (315) | 0.517 (217) |
 
 **Tied sub-benchmarks.** Where the models answer a two-option task by a constant bias, the items above chance are the ones whose gold matches it, and every design variant scores alike on them; a pair tied at the proxy and at the reference counts as agreeing (decision accuracy's tie convention), so such a cell reads DA-size 1. Cells where every variant ties at the proxy or at 1.7B (`tied` in the per-task table):
 
 | pairs | ordering | cells with a DA-size value | of which every variant ties | their mean DA-size |
 |---|---|---|---|---|
-| multi-axis | full benchmark | 1846 | 1 | 0.52 |
-| multi-axis | gate, then items | 1846 | 6 | 0.44 |
-| multi-axis | items, then gate | 3600 | 49 | 0.87 |
-| mono-axis | full benchmark | 1846 | 1 | 0.56 |
-| mono-axis | gate, then items | 1846 | 6 | 0.46 |
-| mono-axis | items, then gate | 3600 | 49 | 0.87 |
+| multi-axis | full benchmark | 1850 | 1 | 0.52 |
+| multi-axis | gate, then items | 1850 | 6 | 0.44 |
+| multi-axis | items, then gate | 3607 | 48 | 0.87 |
+| mono-axis | full benchmark | 1850 | 1 | 0.56 |
+| mono-axis | gate, then items | 1850 | 6 | 0.46 |
+| mono-axis | items, then gate | 3607 | 48 | 0.86 |
 
 **SNR** at the final checkpoint (rel_std signal over the relative k-fold noise of the task's items; tasks above chance at the size) and its gain on the paired cells:
 
 | reading | 90M | 175M | 350M | 600M | 1B | 1.7B |
 |---|---|---|---|---|---|---|
-| full benchmark: median SNR (tasks) | 0.300 (309) | 0.290 (334) | 0.290 (371) | 0.318 (407) | 0.331 (448) | 0.353 (486) |
-| gate, then items: median SNR (tasks) | 0.398 (303) | 0.407 (333) | 0.413 (369) | 0.475 (405) | 0.509 (444) | 0.515 (475) |
-| items, then gate: median SNR (tasks) | 0.380 (690) | 0.386 (672) | 0.384 (682) | 0.447 (709) | 0.499 (721) | 0.541 (773) |
-| gate, then items / full: median paired SNR ratio | 1.26 | 1.36 | 1.36 | 1.43 | 1.51 | 1.52 |
-| gate, then items / full: median paired signal ratio | 1.06 | 1.07 | 1.05 | 1.02 | 0.99 | 0.87 |
-| gate, then items / full: median paired k-fold noise ratio | 0.85 | 0.82 | 0.78 | 0.73 | 0.67 | 0.57 |
-| items, then gate: median SNR on the admitted cells (cells) | 0.372 (392) | 0.360 (340) | 0.368 (317) | 0.411 (304) | 0.468 (277) | 0.672 (298) |
+| full benchmark: median SNR (tasks) | 0.296 (310) | 0.284 (332) | 0.286 (372) | 0.319 (410) | 0.332 (448) | 0.353 (486) |
+| gate, then items: median SNR (tasks) | 0.389 (306) | 0.403 (331) | 0.413 (370) | 0.478 (408) | 0.503 (444) | 0.515 (475) |
+| items, then gate: median SNR (tasks) | 0.378 (695) | 0.382 (672) | 0.394 (684) | 0.443 (708) | 0.495 (721) | 0.541 (773) |
+| gate, then items / full: median paired SNR ratio | 1.25 | 1.35 | 1.35 | 1.43 | 1.50 | 1.52 |
+| gate, then items / full: median paired signal ratio | 1.06 | 1.07 | 1.05 | 1.02 | 0.98 | 0.87 |
+| gate, then items / full: median paired k-fold noise ratio | 0.85 | 0.82 | 0.79 | 0.73 | 0.67 | 0.57 |
+| items, then gate: median SNR on the admitted cells (cells) | 0.373 (394) | 0.359 (342) | 0.369 (318) | 0.411 (300) | 0.480 (277) | 0.672 (298) |
 
 **Does SNR track DA-size?** Spearman ρ(SNR, DA-size multi-axis) over the tasks at each proxy (tasks):
 
 | ordering | 90M | 175M | 350M | 600M | 1B |
 |---|---|---|---|---|---|
-| full benchmark | 0.29 (291) | 0.32 (331) | 0.31 (364) | 0.41 (406) | 0.34 (444) |
-| gate, then items | 0.39 (290) | 0.37 (330) | 0.36 (362) | 0.47 (404) | 0.42 (440) |
-| items, then gate | 0.27 (689) | 0.33 (671) | 0.27 (682) | 0.33 (708) | 0.34 (720) |
+| full benchmark | 0.28 (294) | 0.32 (329) | 0.30 (365) | 0.41 (409) | 0.33 (443) |
+| gate, then items | 0.38 (293) | 0.38 (328) | 0.35 (363) | 0.47 (407) | 0.42 (439) |
+| items, then gate | 0.27 (694) | 0.34 (671) | 0.26 (684) | 0.33 (708) | 0.32 (720) |
 
 **Scaling predictability**: the log-N fit of the final scores per (task, L) on the deep data-A cells at the grid seed, over the rungs the ordering's gate passes:
 
 | ordering | fits | median R² | median ρ with size | median ΔR² (paired) | paired fits |
 |---|---|---|---|---|---|
-| full benchmark | 1143 | 0.88 | 1.00 |  |  |
-| gate, then items | 1141 | 0.93 | 1.00 | +0.034 | 1141 |
-| items, then gate | 2095 | 0.87 | 0.94 | +0.028 | 1143 |
+| full benchmark | 1147 | 0.88 | 1.00 |  |  |
+| gate, then items | 1145 | 0.93 | 1.00 | +0.034 | 1145 |
+| items, then gate | 2100 | 0.87 | 0.94 | +0.029 | 1147 |
 <!-- END auto:results -->
 
 ## Figures, in storyline order

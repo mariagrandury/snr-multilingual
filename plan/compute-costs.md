@@ -4,20 +4,20 @@
 
 What the predictivity sweep has spent on CSCS as of 2026-10-07: every Slurm allocation mariagrandury, aromanou ran since 2026-08-01, attributed from what it left on disk. What the sweep *should* cost is [compute-budget.md](compute-budget.md); how each task is attributed is the docstring of [compute_cost.py](../src/pretrain/compute_cost.py). Node-hours = elapsed × nodes, 1 node = 4 GPUs. Azure runs are not included.
 
-**Kept 43,720 of 47,991 node-hours charged (91%), 174,880 GPU-hours.**
+**Kept 41,376 of 48,143 node-hours charged (86%), 165,505 GPU-hours.**
 
 ## By task
 
 | task | jobs | charged | kept | kept % | failed | not in grid | not auto | superseded | wasted | in flight | no record |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| pretrain | 1,442 | 39,060 | 37,155 | 95% | 64 | 1,044 | 0 | 0 | 135 | 657 | 5 |
-| eval | 32,472 | 5,103 | 3,617 | 71% | 316 | 840 | 153 | 50 | 126 | 0 | 0 |
-| bpb | 2,302 | 3,194 | 2,347 | 73% | 20 | 339 | 0 | 0 | 488 | 0 | 0 |
+| pretrain | 1,442 | 39,207 | 37,155 | 95% | 64 | 1,044 | 0 | 0 | 135 | 803 | 5 |
+| eval | 32,472 | 5,106 | 3,621 | 71% | 316 | 840 | 153 | 50 | 126 | 0 | 0 |
+| bpb | 2,302 | 3,196 | 0 | 0% | 0 | 339 | 0 | 0 | 0 | 2 | 2,855 |
 | convert | 4,558 | 230 | 207 | 90% | 10 | 13 | 0 | 0 | 0 | 0 | 0 |
 | data | 345 | 403 | 393 | 98% | 10 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **total** | 41,119 | **47,991** | **43,720** | 91% | 420 | 2,236 | 153 | 50 | 750 | 657 | 5 |
+| **total** | 41,119 | **48,143** | **41,376** | 86% | 400 | 2,236 | 153 | 50 | 261 | 805 | 2,860 |
 
-Not in the total: 149 node-hours in 77 non-sweep jobs, the largest `ladder-refresh` 63.1, `mirror-eval-logs` 55.2, `snr-analysis` 13.7.
+Not in the total: 149 node-hours in 76 non-sweep jobs, the largest `ladder-refresh` 63.1, `mirror-eval-logs` 55.2, `snr-analysis` 13.7.
 
 ## By size
 
@@ -25,13 +25,13 @@ Per task, kept / charged node-hours. Jobs whose name carries no ladder size (dat
 
 | size | charged | kept | kept % | pretrain | eval | bpb | convert | data | largest loss |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 90M | 1,137 | 560 | 49% | 181 / 378 | 278 / 545 | 91 / 202 | 9 / 13 | — | not in grid 530 |
-| 175M | 2,732 | 1,068 | 39% | 546 / 1,360 | 345 / 953 | 157 / 386 | 20 / 32 | — | not in grid 1,647 |
-| 350M | 2,544 | 2,044 | 80% | 1,464 / 1,510 | 438 / 675 | 130 / 345 | 12 / 14 | — | wasted 240 |
-| 600M | 4,829 | 4,404 | 91% | 3,628 / 3,634 | 553 / 723 | 207 / 453 | 17 / 19 | — | wasted 266 |
-| 1B | 10,197 | 9,984 | 98% | 8,659 / 8,759 | 825 / 920 | 451 / 466 | 49 / 51 | — | wasted 81 |
-| 1.7B | 18,240 | 17,404 | 95% | 15,380 / 16,088 | 1,011 / 1,108 | 939 / 969 | 73 / 74 | — | in flight 657 |
-| 3B | 7,898 | 7,852 | 99% | 7,297 / 7,330 | 167 / 179 | 372 / 373 | 15 / 15 | — | wasted 19 |
+| 90M | 1,137 | 468 | 41% | 181 / 378 | 278 / 545 | 0 / 202 | 9 / 13 | — | not in grid 530 |
+| 175M | 2,732 | 911 | 33% | 546 / 1,360 | 345 / 953 | 0 / 386 | 20 / 32 | — | not in grid 1,647 |
+| 350M | 2,545 | 1,915 | 75% | 1,464 / 1,510 | 439 / 675 | 0 / 345 | 12 / 14 | — | no record 345 |
+| 600M | 4,833 | 4,200 | 87% | 3,628 / 3,634 | 556 / 726 | 0 / 453 | 17 / 19 | — | no record 454 |
+| 1B | 10,198 | 9,533 | 93% | 8,659 / 8,759 | 825 / 920 | 0 / 467 | 49 / 51 | — | no record 467 |
+| 1.7B | 18,387 | 16,465 | 90% | 15,380 / 16,235 | 1,011 / 1,108 | 0 / 970 | 73 / 74 | — | no record 970 |
+| 3B | 7,898 | 7,479 | 95% | 7,297 / 7,330 | 167 / 179 | 0 / 373 | 15 / 15 | — | no record 377 |
 | no size | 414 | 404 | 98% | 0 / 0 | 0 / 0 | — | 11 / 11 | 393 / 403 | failed 10 |
 
 ## By user
@@ -39,7 +39,7 @@ Per task, kept / charged node-hours. Jobs whose name carries no ladder size (dat
 | user | charged | kept | kept % | failed | not in grid | not auto | superseded | wasted | in flight | no record |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | aromanou | 6,567 | 5,891 | 90% | 357 | 290 | 0 | 0 | 29 | 0 | 0 |
-| mariagrandury | 41,424 | 37,829 | 91% | 63 | 1,946 | 153 | 50 | 721 | 657 | 5 |
+| mariagrandury | 41,576 | 35,485 | 85% | 43 | 1,946 | 153 | 50 | 233 | 805 | 2,860 |
 
 ## Buckets
 

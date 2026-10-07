@@ -10,11 +10,11 @@
 <!-- BEGIN auto:highlight (smooth_subtasks.py --pool predictivity) -->
 ## Highlighted result
 
-- **`bbpb_rf_belebele` 1B (per_benchmark)** — a subset beats the full set: SNR **3.05 → 5.46** (**+2.41**) with `bbpb_rf_belebele_eng_Latn|bbpb_rf_belebele_rus_Cyrl|bbpb_rf_belebele_zho_Hant`.
-- **`bbpb_paws` 175M (per_benchmark)** — a subset beats the full set: SNR **3.32 → 5.63** (**+2.31**) with `bbpb_paws_es|bbpb_paws_de|bbpb_paws_zh`.
-- **`arc` 1B (per_benchmark)** — a subset beats the full set: SNR **3.02 → 5.31** (**+2.29**) with `arc_easy|arc_challenge`.
-- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.68 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
-- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **78 of 169** swept cells beat the null's 95th percentile: `bbpb_rf_belebele` 1B, `bbpb_paws` 175M, `bbpb_rfgm_belebele` 1B, `bbpb_rfgm_belebele` 175M, `bbpb_rfgm_belebele` 1.7B.
+- **`bbpb_rf_belebele` 1B (per_benchmark)** — a subset beats the full set: SNR **3.05 → 5.67** (**+2.62**) with `bbpb_rf_belebele_eng_Latn|bbpb_rf_belebele_rus_Cyrl|bbpb_rf_belebele_zho_Hant`.
+- **`bbpb_paws` 175M (per_benchmark)** — a subset beats the full set: SNR **3.44 → 5.88** (**+2.44**) with `bbpb_paws_es|bbpb_paws_de|bbpb_paws_zh`.
+- **`bbpb_rfgm_belebele` 175M (per_benchmark)** — a subset beats the full set: SNR **3.04 → 5.44** (**+2.40**) with `bbpb_rfgm_belebele_spa_Latn|bbpb_rfgm_belebele_rus_Cyrl|bbpb_rfgm_belebele_zho_Hant`.
+- **Median gain by case** — global_mmlu_full_subjects 1.03; global_mmlu_full_per_language 0.83; per_benchmark 0.75 (SNR units; a subset only helps where the gain clears the seed noise reported in rq03).
+- **Selection null** — the best prefix is chosen on the numbers it is scored on, so `best ≥ full` always; against 100 random subsets of the same size, **81 of 189** swept cells beat the null's 95th percentile: `bbpb_rf_belebele` 1B, `bbpb_paws` 175M, `bbpb_rfgm_belebele` 175M, `bbpb_rfgm_belebele` 1B, `bbpb_rfgm_belebele` 350M.
 <!-- END auto:highlight -->
 
 ## Experimental setup
@@ -112,18 +112,18 @@ Headline numbers from the `predictivity` pool. Regenerate with `python analysis/
 
 | case | task | size | full → best SNR | +gain | null p95 | best subset |
 |---|---|---|---|---|---|---|
-| per_benchmark | `bbpb_rf_belebele` | 1B | 3.05 → 5.46 | +2.41 | 4.31 | `bbpb_rf_belebele_eng_Latn` \| `bbpb_rf_belebele_rus_Cyrl` \| `bbpb_rf_belebele_zho_Hant` |
-| per_benchmark | `bbpb_paws` | 175M | 3.32 → 5.63 | +2.31 | 4.81 | `bbpb_paws_es` \| `bbpb_paws_de` \| `bbpb_paws_zh` |
-| per_benchmark | `arc` | 1B | 3.02 → 5.31 | +2.29 | 5.31 | `arc_easy` \| `arc_challenge` |
-| per_benchmark | `bbpb_rfgm_belebele` | 1B | 3.11 → 5.35 | +2.24 | 5.32 | `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_zho_Hant` \| `… (+4)` |
-| per_benchmark | `bbpb_rfgm_belebele` | 175M | 2.97 → 5.21 | +2.23 | 4.24 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_zho_Hant` |
+| per_benchmark | `bbpb_rf_belebele` | 1B | 3.05 → 5.67 | +2.62 | 4.59 | `bbpb_rf_belebele_eng_Latn` \| `bbpb_rf_belebele_rus_Cyrl` \| `bbpb_rf_belebele_zho_Hant` |
+| per_benchmark | `bbpb_paws` | 175M | 3.44 → 5.88 | +2.44 | 4.87 | `bbpb_paws_es` \| `bbpb_paws_de` \| `bbpb_paws_zh` |
+| per_benchmark | `bbpb_rfgm_belebele` | 175M | 3.04 → 5.44 | +2.40 | 4.06 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_zho_Hant` |
+| per_benchmark | `arc` | 1B | 3.05 → 5.44 | +2.39 | 5.44 | `arc_easy` \| `arc_challenge` |
+| per_benchmark | `bbpb_rfgm_belebele` | 1B | 3.21 → 5.58 | +2.37 | 5.13 | `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_zho_Hant` \| `… (+5)` |
+| per_benchmark | `bbpb_rfgm_belebele` | 350M | 3.08 → 5.41 | +2.33 | 5.28 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_zho_Hans` |
 | per_benchmark | `arc` | 1.7B | 3.18 → 5.37 | +2.19 | 5.37 | `arc_easy` |
+| per_benchmark | `bbpb_rfgm_belebele` | 90M | 3.09 → 5.27 | +2.19 | 5.43 | `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_zho_Hans` \| `bbpb_rfgm_belebele_rus_Cyrl` |
+| per_benchmark | `hellaswag` | 350M | 3.03 → 5.21 | +2.18 | 4.68 | `hellaswag_it` \| `hellaswag_es` \| `hellaswag_ru` |
 | per_benchmark | `bbpb_rfgm_belebele` | 1.7B | 3.30 → 5.46 | +2.15 | 5.15 | `bbpb_rfgm_belebele_zho_Hant` \| `bbpb_rfgm_belebele_spa_Latn` \| `bbpb_rfgm_belebele_eng_Latn` \| `bbpb_rfgm_belebele_rus_Cyrl` |
-| per_benchmark | `hellaswag` | 350M | 2.97 → 5.04 | +2.06 | 4.36 | `hellaswag_it` \| `hellaswag_es` \| `hellaswag_ru` |
-| per_benchmark | `hellaswag` | 175M | 2.96 → 4.96 | +2.00 | 4.30 | `hellaswag_es` \| `hellaswag_ru` \| `hellaswag_it` |
-| per_benchmark | `rfgm_belebele` | 90M | 2.93 → 4.92 | +2.00 | 3.74 | `rfgm_belebele_spa_Latn` \| `rfgm_belebele_zho_Hans` |
-| per_benchmark | `bbpb_rf_belebele` | 175M | 3.17 → 5.13 | +1.96 | 4.87 | `bbpb_rf_belebele_spa_Latn` \| `bbpb_rf_belebele_zho_Hans` \| `bbpb_rf_belebele_zho_Hant` \| `bbpb_rf_belebele_rus_Cyrl` \| `… (+5)` |
-| per_benchmark | `hellaswag` | 90M | 3.07 → 4.96 | +1.89 | 4.23 | `hellaswag_ru` \| `hellaswag_es` |
+| per_benchmark | `bbpb_rf_belebele` | 90M | 3.19 → 5.31 | +2.12 | 4.35 | `bbpb_rf_belebele_spa_Latn` \| `bbpb_rf_belebele_zho_Hant` \| `bbpb_rf_belebele_zho_Hans` |
+| per_benchmark | `hellaswag` | 175M | 3.06 → 5.17 | +2.11 | 4.34 | `hellaswag_es` \| `hellaswag_ru` |
 
 ![](pretraining/predictivity/global_mmlu_full_subjects.png)
 <!-- END auto:results -->
@@ -169,15 +169,15 @@ GitHub: [gain_over_null.png](https://github.com/mariagrandury/snr-multilingual/b
 <!-- BEGIN auto:reference-solved (reference_solved.py --pool predictivity) -->
 ## Items the reference solves
 
-DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate `predictivity` at the proxy and the reference, 453 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity --store predictivity_schemes`. The store `predictivity_schemes` lacks 3 of the pool's models (lm-350M-L1-fweb-deep-seed1904, lm-600M-L1-fweb-deep-seed1904, lm-90M-L1-fweb-b84-deep-seed1904); they are left out until the store is rebuilt for the pool.
+DA-size, final checkpoints, multi-axis pairs of `predictivity` (grid seed), gate `predictivity` at the proxy and the reference, 453 tasks with per-item outputs. An item is solved when at least 0.5 of the 1.7B runs of the selecting half answer it right; the subset's proxy mean is scored against the 1.7B final of the full task on the other half's pairs, both ways round (held out, rule 11), beside the full set on the same pairs; the in-sample column selects with every 1.7B run and has seen the truth. SNR = relative dispersion of the design means over the relative k-fold noise, read at the proxy alone; the solved set's SNR is on the items at least half of all the 1.7B runs solve, while the DA it is correlated with is the held-out one. Regenerate with `python analysis/rq08_subset_selection/reference_solved.py --pool predictivity`.
 
 | proxy | tasks | solved share | DA all (held out) | DA solved (held out) | Δ | Wilcoxon p | DA solved (in sample) | ρ(SNR, DA) all | ρ(SNR, DA) solved |
 |---|---|---|---|---|---|---|---|---|---|
-| 90M | 234 | 0.40 | 0.54 | 0.57 | +0.033 | 0.000 | 0.57 | 0.26 | 0.35 |
-| 175M | 269 | 0.40 | 0.54 | 0.57 | +0.026 | 0.000 | 0.57 | 0.31 | 0.39 |
-| 350M | 297 | 0.40 | 0.53 | 0.56 | +0.028 | 0.000 | 0.57 | 0.32 | 0.38 |
-| 600M | 328 | 0.40 | 0.55 | 0.57 | +0.022 | 0.000 | 0.58 | 0.41 | 0.45 |
-| 1B | 358 | 0.39 | 0.57 | 0.57 | +0.002 | 0.684 | 0.58 | 0.41 | 0.45 |
+| 90M | 237 | 0.40 | 0.54 | 0.57 | +0.033 | 0.000 | 0.57 | 0.27 | 0.34 |
+| 175M | 267 | 0.40 | 0.54 | 0.57 | +0.025 | 0.001 | 0.57 | 0.32 | 0.39 |
+| 350M | 298 | 0.40 | 0.53 | 0.56 | +0.028 | 0.000 | 0.57 | 0.32 | 0.37 |
+| 600M | 331 | 0.40 | 0.55 | 0.57 | +0.022 | 0.000 | 0.58 | 0.41 | 0.46 |
+| 1B | 357 | 0.39 | 0.57 | 0.57 | +0.002 | 0.742 | 0.58 | 0.41 | 0.44 |
 
 ![Items the reference solves](pretraining/predictivity/reference_solved_da_size_multi_axes.png)
 <!-- END auto:reference-solved -->
@@ -209,28 +209,28 @@ GitHub: [reference_solved_da_size_multi_axes.png](https://github.com/mariagrandu
 <!-- BEGIN auto:per-item-ladder (per_item_ladder.py --pool predictivity) -->
 ## Per item on the ladder
 
-Per-item subset selection over the `predictivity` design variants, from the per-item store (`build_per_item_store.sbatch`). Regenerate with `python analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity`. Grid-seed (1904) design variants, 520 tasks over 26 runs at most; per-item SNR on the rule-4 window (80-100 % of the run, k/20 points); dead = the same mean outcome in every run. Gain = best-prefix SNR minus the 95th percentile of 100 random subsets of the same size. Held-out DA: items chosen on half of the families (stratified over L, arch, scheme, T), scored on the other half's multi-axis pairs (>= 3, proxy final vs the 1.7B final of the full task), both halves averaged; random = 20 draws. Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).
+Per-item subset selection over the `predictivity` design variants, from the per-item store (`build_per_item_store.sbatch`). Regenerate with `python analysis/rq08_subset_selection/per_item_ladder.py --pool predictivity`. Grid-seed (1904) design variants, 519 tasks over 29 runs at most; per-item SNR on the rule-4 window (80-100 % of the run, k/20 points); dead = the same mean outcome in every run. Gain = best-prefix SNR minus the 95th percentile of 100 random subsets of the same size. Held-out DA: items chosen on half of the families (stratified over L, arch, scheme, T), scored on the other half's multi-axis pairs (>= 3, proxy final vs the 1.7B final of the full task), both halves averaged; random = 20 draws. Grey = at chance at that size (rule 1); the task set differs across sizes (counts in the cells, rule 13).
 
 | task | size | items | dead | full -> best SNR | best n | null p95 | held-out DA full / subset / random |
 |---|---|---|---|---|---|---|---|
-| `mathqa` | 1B | 2985 | 0.54 | 3.26 -> 7.21 | 2 | 3.49 | 0.64 / 0.01 / 0.10 |
-| `xnli_en` | 1.7B | 2490 | 0.19 | 2.93 -> 7.21 | 2 | 3.60 | 1.00 / 0.08 / 0.25 |
-| `rf_global_mmlu_full_en` | 1B | 14042 | 0.47 | 5.39 -> 7.21 | 6 | 3.72 | 0.74 / 0.53 / 0.47 |
-| `rf_commonsense_qa` | 1.7B | 1221 | 0.52 | 3.06 -> 7.21 | 2 | 3.79 | 1.00 / 0.38 / 0.39 |
-| `rf_mmlu` | 1.7B | 14042 | 0.45 | 4.83 -> 7.21 | 2 | 3.81 | 1.00 / 0.48 / 0.48 |
-| `xwinograd_en` | 600M | 2325 | 0.25 | 3.80 -> 7.21 | 2 | 3.89 | 0.65 / 0.42 / 0.43 |
-| `xstorycloze_en` | 1.7B | 1511 | 0.64 | 3.65 -> 7.21 | 2 | 3.90 | 1.00 / 0.23 / 0.17 |
-| `arc_easy` | 1B | 2376 | 0.39 | 5.13 -> 7.21 | 2 | 3.91 | 0.59 / 0.51 / 0.49 |
-| `rfgm_belebele_eng_Latn` | 175M | 898 | 0.51 | 4.03 -> 7.21 | 4 | 3.92 | 0.48 / 0.47 / 0.38 |
-| `xwinograd_en` | 1B | 2325 | 0.28 | 4.35 -> 7.21 | 2 | 3.94 | 0.69 / 0.39 / 0.37 |
+| `xwinograd_en` | 90M | 2325 | 0.14 | 4.76 -> 7.62 | 2 | 3.89 | 0.68 / 0.37 / 0.42 |
+| `rf_mmlu` | 1.7B | 14042 | 0.45 | 4.83 -> 7.21 | 2 | 3.55 | 1.00 / 0.48 / 0.49 |
+| `paws_en` | 1B | 2000 | 0.07 | 3.44 -> 7.48 | 2 | 3.86 | 0.58 / 0.42 / 0.40 |
+| `rf_global_mmlu_full_en` | 175M | 14042 | 0.52 | 4.56 -> 7.48 | 6 | 4.04 | 0.72 / 0.32 / 0.39 |
+| `rf_bbh_mcq_ruin_names` | 1B | 249 | 0.46 | 3.26 -> 7.48 | 2 | 4.06 | 0.52 / 0.12 / 0.19 |
+| `rf_commonsense_qa` | 1B | 1221 | 0.55 | 3.83 -> 7.48 | 2 | 4.08 | 0.58 / 0.08 / 0.17 |
+| `arc_easy` | 1B | 2376 | 0.39 | 5.25 -> 7.48 | 2 | 4.10 | 0.59 / 0.51 / 0.48 |
+| `xnli_en` | 1.7B | 2490 | 0.19 | 2.93 -> 7.21 | 2 | 3.83 | 1.00 / 0.08 / 0.22 |
+| `arc_challenge` | 1B | 1172 | 0.41 | 5.00 -> 7.48 | 2 | 4.11 | 0.64 / 0.09 / 0.21 |
+| `rf_mmlu` | 175M | 14042 | 0.50 | 3.55 -> 7.48 | 2 | 4.11 | 0.63 / 0.46 / 0.37 |
 
 | size | tasks | DA full set | DA held-out subset | DA random subset |
 |---|---|---|---|---|
-| 90M | 234 | 0.54 | 0.37 | 0.30 |
-| 175M | 269 | 0.54 | 0.36 | 0.30 |
-| 350M | 297 | 0.53 | 0.38 | 0.32 |
-| 600M | 328 | 0.55 | 0.36 | 0.29 |
-| 1B | 358 | 0.57 | 0.33 | 0.29 |
+| 90M | 237 | 0.54 | 0.37 | 0.30 |
+| 175M | 267 | 0.54 | 0.36 | 0.30 |
+| 350M | 298 | 0.53 | 0.38 | 0.32 |
+| 600M | 331 | 0.55 | 0.36 | 0.29 |
+| 1B | 357 | 0.57 | 0.33 | 0.29 |
 
 ![per-item ladder](pretraining/predictivity/per_item_ladder.png)
 <!-- END auto:per-item-ladder -->

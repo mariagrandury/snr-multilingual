@@ -84,16 +84,16 @@ GitHub: [gate_share_and_da_size_mono_axis_paper.png](https://github.com/mariagra
 
 | axes | proxy | DA-size → 3B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 3B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.53 | 117 | 0.52 | 0.92 | 6 |
+| mono-axis | 90M | 0.52 | 116 | 0.53 | 0.92 | 6 |
 | mono-axis | 175M | 0.48 | 115 | 0.54 | 0.92 | 6 |
-| mono-axis | 350M | 0.51 | 131 | 0.48 | 0.75 | 6 |
-| mono-axis | 600M | 0.51 | 147 | 0.49 | 0.88 | 6 |
+| mono-axis | 350M | 0.51 | 131 | 0.52 | 0.75 | 6 |
+| mono-axis | 600M | 0.51 | 149 | 0.53 | 0.88 | 6 |
 | mono-axis | 1B | 0.52 | 157 | 0.53 | 0.92 | 6 |
 | mono-axis | 1.7B | 0.47 | 166 | — | 0.96 | 6 |
-| multi-axis | 90M | 0.51 | 125 | 0.52 | 0.95 | 7 |
+| multi-axis | 90M | 0.51 | 125 | 0.53 | 0.95 | 7 |
 | multi-axis | 175M | 0.49 | 126 | 0.55 | 0.95 | 7 |
-| multi-axis | 350M | 0.49 | 142 | 0.49 | 0.82 | 7 |
-| multi-axis | 600M | 0.51 | 158 | 0.51 | 0.90 | 7 |
+| multi-axis | 350M | 0.49 | 142 | 0.54 | 0.82 | 7 |
+| multi-axis | 600M | 0.51 | 160 | 0.55 | 0.90 | 7 |
 | multi-axis | 1B | 0.53 | 170 | 0.53 | 0.92 | 7 |
 | multi-axis | 1.7B | 0.49 | 180 | — | 0.92 | 7 |
 
@@ -158,16 +158,16 @@ is unpredictable" from "this population is unpredictable at any reference".
 
 | axes | proxy | DA-size → 1.7B | tasks | DA-size → 1.7B (same families) | BPB DA-size → 1.7B | BPB tasks |
 |---|---|---|---|---|---|---|
-| mono-axis | 90M | 0.49 | 177 | 0.49 | 0.88 | 21 |
-| mono-axis | 175M | 0.52 | 702 | 0.52 | 0.88 | 21 |
-| mono-axis | 350M | 0.50 | 303 | 0.50 | 0.85 | 21 |
-| mono-axis | 600M | 0.49 | 250 | 0.49 | 0.88 | 21 |
-| mono-axis | 1B | 0.52 | 773 | 0.52 | 0.76 | 21 |
-| multi-axis | 90M | 0.49 | 220 | 0.49 | 0.91 | 31 |
-| multi-axis | 175M | 0.52 | 872 | 0.52 | 0.91 | 31 |
-| multi-axis | 350M | 0.51 | 474 | 0.51 | 0.87 | 31 |
-| multi-axis | 600M | 0.50 | 310 | 0.50 | 0.91 | 31 |
-| multi-axis | 1B | 0.53 | 956 | 0.53 | 0.77 | 31 |
+| mono-axis | 90M | 0.53 | 681 | 0.53 | 0.88 | 21 |
+| mono-axis | 175M | 0.52 | 700 | 0.52 | 0.88 | 21 |
+| mono-axis | 350M | 0.51 | 726 | 0.51 | 0.85 | 21 |
+| mono-axis | 600M | 0.52 | 752 | 0.52 | 0.88 | 21 |
+| mono-axis | 1B | 0.52 | 772 | 0.52 | 0.76 | 21 |
+| multi-axis | 90M | 0.53 | 842 | 0.53 | 0.91 | 31 |
+| multi-axis | 175M | 0.52 | 870 | 0.52 | 0.91 | 31 |
+| multi-axis | 350M | 0.52 | 900 | 0.52 | 0.87 | 31 |
+| multi-axis | 600M | 0.53 | 932 | 0.53 | 0.91 | 31 |
+| multi-axis | 1B | 0.53 | 955 | 0.53 | 0.77 | 31 |
 
 Files: [`above_reference_1.7B_design3B.png`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.png), [`above_reference_1.7B_design3B.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B.csv), [`above_reference_1.7B_design3B_per_task.csv`](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_1.7B_design3B_per_task.csv).
 <!-- END auto:above-reference-1.7B-design3B -->
@@ -331,30 +331,30 @@ Benchmark accuracy, pooled DA-size [90 % band]:
 
 | axes | proxy | tasks | → 1.7B | → 3B |
 |---|---|---|---|---|
-| mono-axis | 90M | 101 | 0.52 [0.44, 0.60] | 0.51 [0.46, 0.56] |
+| mono-axis | 90M | 102 | 0.52 [0.44, 0.60] | 0.51 [0.46, 0.56] |
 | mono-axis | 175M | 114 | 0.52 [0.44, 0.60] | 0.47 [0.38, 0.56] |
 | mono-axis | 350M | 129 | 0.48 [0.43, 0.53] | 0.50 [0.36, 0.64] |
-| mono-axis | 600M | 145 | 0.48 [0.36, 0.61] | 0.51 [0.47, 0.55] |
+| mono-axis | 600M | 147 | 0.48 [0.35, 0.61] | 0.51 [0.48, 0.55] |
 | mono-axis | 1B | 154 | 0.52 [0.43, 0.61] | 0.52 [0.46, 0.59] |
-| multi-axis | 90M | 109 | 0.51 [0.44, 0.58] | 0.50 [0.44, 0.56] |
+| multi-axis | 90M | 111 | 0.51 [0.43, 0.59] | 0.50 [0.44, 0.56] |
 | multi-axis | 175M | 125 | 0.52 [0.46, 0.57] | 0.48 [0.43, 0.53] |
 | multi-axis | 350M | 140 | 0.49 [0.45, 0.52] | 0.49 [0.39, 0.59] |
-| multi-axis | 600M | 156 | 0.51 [0.35, 0.66] | 0.51 [0.48, 0.54] |
+| multi-axis | 600M | 158 | 0.50 [0.35, 0.66] | 0.51 [0.48, 0.53] |
 | multi-axis | 1B | 167 | 0.53 [0.43, 0.62] | 0.52 [0.47, 0.58] |
 
 Spearman between the two references' DA, over the benchmark tasks and over the benchmarks (mean DA of their tasks):
 
 | axes | proxy | ρ tasks | tasks | ρ benchmarks | benchmarks |
 |---|---|---|---|---|---|
-| mono-axis | 90M | 0.11 | 101 | 0.14 | 20 |
+| mono-axis | 90M | 0.11 | 102 | 0.06 | 21 |
 | mono-axis | 175M | 0.09 | 114 | 0.03 | 22 |
 | mono-axis | 350M | 0.08 | 129 | -0.05 | 22 |
-| mono-axis | 600M | 0.02 | 145 | 0.43 | 23 |
+| mono-axis | 600M | 0.01 | 147 | 0.27 | 23 |
 | mono-axis | 1B | 0.23 | 154 | 0.35 | 23 |
-| multi-axis | 90M | 0.19 | 109 | 0.16 | 21 |
+| multi-axis | 90M | 0.18 | 111 | 0.11 | 21 |
 | multi-axis | 175M | 0.09 | 125 | -0.07 | 22 |
 | multi-axis | 350M | 0.10 | 140 | 0.02 | 22 |
-| multi-axis | 600M | 0.01 | 156 | 0.56 | 23 |
+| multi-axis | 600M | -0.00 | 158 | 0.38 | 23 |
 | multi-axis | 1B | 0.16 | 167 | 0.32 | 23 |
 
 ![SNR at two rungs](pretraining/predictivity/reference_consistency_snr.png)

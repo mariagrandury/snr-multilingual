@@ -4,7 +4,7 @@
 \label{app:rq10_size_generalisation}
 
 \begin{rqfinding}
-1. Benchmark accuracy reads the 3B ranking at chance from every proxy (DA-size 0.43--0.52, the 1.7B reference included), while per-language BPB reads it at 0.75--0.96. From the 1.7B reference itself BPB reaches 0.92 (multi-axis) and 0.96 (mono-axis). (Figure~\ref{fig:app_rq10_size_generalisation}.)
+1. Pending the regeneration. (Figure~\ref{fig:app_rq10_size_generalisation}.)
 
 2. \textbf{In benchmark accuracy nothing predicts 3B, but nothing predicts 1.7B either.} DA-size $\rightarrow$ 3B is 0.43--0.52 from every proxy over 59--90 gated tasks, the 1.7B reference included (0.43 mono-axis over 83 tasks, 0.44 multi-axis over 90), while the same four families read to 1.7B give 0.44--0.48 mono-axis and 0.44--0.49 multi-axis on benchmark tasks alone: the 3B number is this population's chance-level ranking arriving one rung later, not a property of 3B.
 
@@ -13,12 +13,12 @@
 
 \paragraph{Question.} Does a ranking that holds at 1.7B still hold one rung above it, at 3B?
 
-\paragraph{Setup.} The four deep cells trained at 3B ($K \in \{8, 15\}$, schemes A and B, seed 1904). DA-size from the final checkpoints of 90M--1.7B to the 3B final, benchmark accuracy (tasks above chance) and per-language bits per byte pooled separately, on multi- and single-axis pairs.
+\paragraph{Setup.} The deep cells trained at 3B (seed 1904) and the same families at 1.7B, each (family, task) scored at both rungs. Left: per benchmark, the share of its tasks above chance at 1.7B and at 3B, for the benchmarks with at least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B to the 3B final and to the 1.7B final on the same single-axis decisions, benchmark accuracy (tasks above chance at the proxy, 1.7B and 3B) and per-language bits per byte pooled separately, with 90\% leave-one-family-out jackknife bands.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/app_size_generalisation.png}
-% source: src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.png
-\caption{Decision accuracy against the 3B rung, benchmark accuracy and BPB.}
+% source: src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/gate_share_and_da_size_mono_axis_paper.png
+\caption{The benchmarks the 3B rung lifts above chance, and decision accuracy to 3B beside 1.7B.}
 \label{fig:app_rq10_size_generalisation}
 \end{figure}

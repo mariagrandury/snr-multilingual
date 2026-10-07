@@ -166,7 +166,7 @@ Cross-corpus agreement by pool (headline = `predictivity`). Regenerate with `pyt
 | pool | variant (from rq04) | Pearson r | Spearman ρ | n_shared |
 |---|---|---|---|---|
 | `predictivity` (grid, seed 1904) | `aad` | 0.87 | 1.00 | 3 |
-| `predictivity_seeds` (all seeds) | `aad` | 0.84 | 1.00 | 3 |
+| `predictivity_seeds` (all seeds) | `dist_std` | 0.99 | 1.00 | 3 |
 
 ![Ladder vs AllenAI SNR — rq04's variant](pretraining/predictivity/snr_apertus_vs_snr_allenai_aad.png)
 

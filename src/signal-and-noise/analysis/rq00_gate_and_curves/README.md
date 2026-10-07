@@ -14,7 +14,7 @@
 ## Highlighted result
 
 - **The benchmarks that separate the language settings most: `cultural_bench_easy`, `bbpb_bbh_cloze`, `bbpb_bbh_mcq`** — top-3 families by Signal ((max−min)/mean of per-setting final scores) at 1.7B.
-- **Above-random gate.** Of **1373 benchmarks, 821 clear chance at ≥1 size** and 778 at 1.7B (552 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
+- **Above-random gate.** Of **1373 benchmarks, 820 clear chance at ≥1 size** and 778 at 1.7B (553 are random everywhere). The at-chance cells are removed before any SNR is computed; the breakdown by answer count below shows how much of the gate is an option-count effect.
 <!-- END auto:highlight -->
 
 ## Setup
@@ -111,11 +111,11 @@ An educational reading of the rule above on one benchmark-language task (the gat
 Key findings:
 
 - `include_v2_og_hungarian_hungary` has 4 options (0.25 chance) and 1,386 items, so a single run needs 0.270 (+0.020 over chance) for its LCB to clear chance; at n = 1,386 the bound sits 0.019 below the score.
-- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/9 → at chance, 175M 3/9 → at chance, 350M 4/9 → at chance, 600M 4/9 → at chance, 1B 5/9 → above, 1.7B 7/9 → above; the task enters every RQ from **1B** on and is grey below it.
-- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 1B, 1.7B run(s). 8 of 11 cells are blanked; the task is never a decision at 90M, 175M, 350M, 600M.
+- Verdict per size (runs passing / runs that train the language, ≥ 50% needed): 90M 1/10 → at chance, 175M 3/9 → at chance, 350M 5/10 → above, 600M 5/10 → above, 1B 6/10 → above, 1.7B 7/9 → above; the task enters every RQ from **350M** on and is grey below it.
+- What that means in rq02 (panel c): a DA-size cell needs the proxy and the reference above chance, so `include_v2_og_hungarian_hungary` contributes only the 350M → 1.7B, 600M → 1.7B, 1B → 1.7B DA-size cell(s); a DA-ckpt cell needs the run's own size above chance, so it contributes only the 350M, 600M, 1B, 1.7B run(s). 4 of 11 cells are blanked; the task is never a decision at 90M, 175M.
 - The highlighted run `lm-350M-L30-deep-seed1904` ends at 0.258 with LCB 0.239: not above chance — a score above the dotted line is not enough, the band's lower edge has to be.
-- Population: 54 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
-- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.50 gated; 175M 0.67 gated; 350M 0.39 gated; 600M 0.58 gated; 1B 0.53).
+- Population: 58 runs over 6 sizes (rule 2: only the runs that train the language count; a run scored on a language it never saw sits at chance and would drag the share down). The six runs of a size answer the same items, so their verdicts are correlated, not six independent trials.
+- What the gate is not: chance is uniform guessing (1/4), so a run that always picks the majority gold label is not caught (on `include_v2_og_hungarian_hungary` that scores the majority label's share, above 0.25); and the gate is not a filter on DA — it blanks a cell by the gate alone, whatever the DA there (DA-size per proxy: 90M 0.50 gated; 175M 0.67 gated; 350M 0.39; 600M 0.58; 1B 0.53).
 
 Follow-ups:
 
@@ -274,7 +274,7 @@ Headline numbers from the `predictivity` pool. Regenerate: `python analysis/rq00
 |---|---|---|---|
 | 2 | 0.50 | 289 / 358 | 285 / 358 |
 | 3 | 0.33 | 19 / 24 | 17 / 24 |
-| 4 | 0.25 | 494 / 932 | 459 / 932 |
+| 4 | 0.25 | 493 / 932 | 459 / 932 |
 | 5 | 0.20 | 14 / 43 | 13 / 43 |
 | 6 | 0.17 | 1 / 4 | 1 / 4 |
 | 7 | 0.14 | 1 / 7 | 1 / 7 |

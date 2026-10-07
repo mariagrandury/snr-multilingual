@@ -286,7 +286,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.583,
+    "decision_acc": 0.581,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -295,7 +295,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.453,
+    "decision_acc": 0.475,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -304,7 +304,7 @@
     "label": "depth (deep vs shallow)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.52,
+    "decision_acc": 0.55,
     "cells": 6,
     "refs": "1.7B"
    },
@@ -466,7 +466,7 @@
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.477,
+    "decision_acc": 0.459,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -475,7 +475,7 @@
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.44,
+    "decision_acc": 0.478,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -484,7 +484,7 @@
     "label": "data scheme (A vs B, B at L8\u2013L30)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.454,
+    "decision_acc": 0.457,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -655,7 +655,7 @@
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.633,
+    "decision_acc": 0.516,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -664,7 +664,7 @@
     "label": "data scheme (A vs B, DCLMP at L1)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.522,
+    "decision_acc": 0.595,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -781,7 +781,7 @@
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.473,
+    "decision_acc": 0.508,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -790,7 +790,7 @@
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.552,
+    "decision_acc": 0.567,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -799,7 +799,7 @@
     "label": "data scheme (A vs B, ZH at L2)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.409,
+    "decision_acc": 0.483,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -916,7 +916,7 @@
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.527,
+    "decision_acc": 0.516,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -925,7 +925,7 @@
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.567,
+    "decision_acc": 0.477,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -934,7 +934,7 @@
     "label": "data scheme (A vs C, ES at L2)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.435,
+    "decision_acc": 0.512,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -1060,7 +1060,7 @@
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.6,
+    "decision_acc": 0.75,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -1069,7 +1069,7 @@
     "label": "data scheme (A vs C, FWEB at L1)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.609,
+    "decision_acc": 0.57,
     "cells": 1,
     "refs": "1.7B"
    },
@@ -1186,7 +1186,7 @@
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "350M",
-    "decision_acc": 0.601,
+    "decision_acc": 0.627,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -1195,7 +1195,7 @@
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "600M",
-    "decision_acc": 0.585,
+    "decision_acc": 0.622,
     "cells": 3,
     "refs": "1.7B"
    },
@@ -1204,7 +1204,7 @@
     "label": "temperature (T=1 vs T=3)",
     "population": "benchmark",
     "proxy_size": "90M",
-    "decision_acc": 0.511,
+    "decision_acc": 0.635,
     "cells": 3,
     "refs": "1.7B"
    },

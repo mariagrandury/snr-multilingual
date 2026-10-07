@@ -64,8 +64,8 @@ z
    <g id="patch_6">
     <path d="M 202.003407 177.885242 
 L 204.96238 177.885242 
-L 204.96238 86.132205 
-L 202.003407 86.132205 
+L 204.96238 99.239781 
+L 202.003407 99.239781 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #e3e2de; stroke: #5c5c57; stroke-width: 0.4; stroke-linejoin: miter"/>
    </g>
@@ -120,8 +120,8 @@ z
    <g id="patch_13">
     <path d="M 156.879062 177.885242 
 L 159.838035 177.885242 
-L 159.838035 127.403358 
-L 156.879062 127.403358 
+L 159.838035 124.0379 
+L 156.879062 124.0379 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #cde2fb"/>
    </g>
@@ -240,8 +240,8 @@ z
    <g id="patch_28">
     <path d="M 114.71369 177.885242 
 L 117.672664 177.885242 
-L 117.672664 154.718362 
-L 114.71369 154.718362 
+L 117.672664 157.614222 
+L 114.71369 157.614222 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #86b6ef"/>
    </g>
@@ -432,8 +432,8 @@ z
    <g id="patch_52">
     <path d="M 123.590611 177.885242 
 L 126.549584 177.885242 
-L 126.549584 174.989382 
-L 123.590611 174.989382 
+L 126.549584 172.093522 
+L 123.590611 172.093522 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #e3e2de; stroke: #5c5c57; stroke-width: 0.4; stroke-linejoin: miter"/>
    </g>
@@ -496,16 +496,16 @@ z
    <g id="patch_60">
     <path d="M 126.549584 177.885242 
 L 129.508557 177.885242 
-L 129.508557 125.759762 
-L 126.549584 125.759762 
+L 129.508557 122.863902 
+L 126.549584 122.863902 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #1c5cab"/>
    </g>
    <g id="patch_61">
     <path d="M 174.632902 177.885242 
 L 177.591876 177.885242 
-L 177.591876 76.921475 
-L 174.632902 76.921475 
+L 177.591876 80.286934 
+L 174.632902 80.286934 
 z
 " clip-path="url(#p1b21cdd004)" style="fill: #1c5cab"/>
    </g>
@@ -2176,7 +2176,7 @@ z
    </g>
    <g id="text_17">
     <!-- * -->
-    <g style="fill: #1b1b19" transform="translate(156.358548 124.912919) scale(0.08 -0.08)">
+    <g style="fill: #1b1b19" transform="translate(156.358548 121.54746) scale(0.08 -0.08)">
      <use xlink:href="#DejaVuSans-2a"/>
     </g>
    </g>
@@ -2194,7 +2194,7 @@ z
    </g>
    <g id="text_20">
     <!-- * -->
-    <g style="fill: #1b1b19" transform="translate(114.193177 152.227923) scale(0.08 -0.08)">
+    <g style="fill: #1b1b19" transform="translate(114.193177 155.123783) scale(0.08 -0.08)">
      <use xlink:href="#DejaVuSans-2a"/>
     </g>
    </g>
@@ -2242,13 +2242,13 @@ z
    </g>
    <g id="text_28">
     <!-- * -->
-    <g style="fill: #1b1b19" transform="translate(126.029071 123.269323) scale(0.08 -0.08)">
+    <g style="fill: #1b1b19" transform="translate(126.029071 120.373463) scale(0.08 -0.08)">
      <use xlink:href="#DejaVuSans-2a"/>
     </g>
    </g>
    <g id="text_29">
     <!-- * -->
-    <g style="fill: #1b1b19" transform="translate(174.112389 74.431035) scale(0.08 -0.08)">
+    <g style="fill: #1b1b19" transform="translate(174.112389 77.796494) scale(0.08 -0.08)">
      <use xlink:href="#DejaVuSans-2a"/>
     </g>
    </g>
@@ -2335,19 +2335,19 @@ z
    <g id="PathCollection_3">
     <g clip-path="url(#p1b21cdd004)">
      <use xlink:href="#mb8beb69563" x="74.027806" y="53.363263" style="fill: #eb6834; stroke: #eb6834"/>
-     <use xlink:href="#mb8beb69563" x="122.111124" y="125.759762" style="fill: #eb6834; stroke: #eb6834"/>
+     <use xlink:href="#mb8beb69563" x="122.111124" y="128.655622" style="fill: #eb6834; stroke: #eb6834"/>
     </g>
    </g>
    <g id="PathCollection_4">
     <g clip-path="url(#p1b21cdd004)">
      <use xlink:href="#mb8beb69563" x="79.945752" y="53.363263" style="fill: #eb6834; stroke: #eb6834"/>
-     <use xlink:href="#mb8beb69563" x="128.029071" y="114.176322" style="fill: #eb6834; stroke: #eb6834"/>
+     <use xlink:href="#mb8beb69563" x="128.029071" y="117.072182" style="fill: #eb6834; stroke: #eb6834"/>
     </g>
    </g>
    <g id="PathCollection_5">
     <g clip-path="url(#p1b21cdd004)">
      <use xlink:href="#mb8beb69563" x="85.863699" y="53.363263" style="fill: #eb6834; stroke: #eb6834"/>
-     <use xlink:href="#mb8beb69563" x="133.947018" y="102.592882" style="fill: #eb6834; stroke: #eb6834"/>
+     <use xlink:href="#mb8beb69563" x="133.947018" y="99.697022" style="fill: #eb6834; stroke: #eb6834"/>
     </g>
    </g>
    <g id="PathCollection_6">
