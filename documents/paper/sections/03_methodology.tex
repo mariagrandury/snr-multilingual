@@ -41,6 +41,7 @@ We use AdEMAMix as optimizer
 %\citep{pagliardini_ademamix_2024}
 and a warmup-stable-decay learning-rate schedule, %\citep{hagele_scaling_2024},
 using a global batch of 504 sequences (84 at 90M and 168 at 175M, where 504 makes the short runs diverge; Appendix~\ref{app:model-configurations}). We scale the peak learning rate with the run's training budget and the initialization standard deviation with model width.
+At $K \in \{8, 15, 30\}$ we also train the deep architecture with Muon \citep{jordan_muon_2024}, following the Moonlight recipe \citep{liu_muon_2025}. Muon updates the hidden weight matrices, and each update is rescaled by $0.2\sqrt{\max(m, n)}$ for an $m \times n$ matrix so that its size matches that of AdamW. This lets Muon reuse the same peak learning rate and weight decay. Embeddings, the output layer, norms and biases keep AdamW.
 
 \textbf{Seeds.} Every configuration is trained with seed 1904. Selected deep configurations at sizes 175M, 600M and 1B use two additional seeds (Table~\ref{tab:grid}).
 These replicates vary both initialization and data order, so their variability estimates the combined effect of training randomness.
