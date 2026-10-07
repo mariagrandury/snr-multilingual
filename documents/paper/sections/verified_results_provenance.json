@@ -1,4 +1,5 @@
 {
+  "benchmark_tasks": 1379,
   "constants": {
     "ANALYSIS_SIZES": [
       "90M",
@@ -13,6 +14,7 @@
     "TARGET_SIZE": "1.7B"
   },
   "da_rows": 163720,
+  "evaluated_checkpoints": 3772,
   "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
   "grid_seed1904_runs": 161,
   "headline_seed1904_A_B_runs": 113,

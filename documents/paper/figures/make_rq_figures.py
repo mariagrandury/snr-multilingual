@@ -16,6 +16,8 @@ comment next to the \\includegraphics.
                              scaling_regimes_outliers_paper.png
     rq2  decision accuracy<- rq02_decision_accuracy/paper_rq2.py     (pool predictivity, --axes mono-axis)
                              rq2_da_all_above_66_either_transformation_mono_axis.png
+    rq3  surrogates       <- rq04_surrogates/analyze.py              (pool predictivity)
+                             rq3_surrogates.png
     app_chance_share      <- rq00_gate_and_curves/panels.py --paper    first_size_share_paper
     app_chance_full       <- the same                                  first_size_above_random_paper
     app_chance_reformulation <- rq00_task_reformulation/reformulations_gate.py --paper  reformulations_gate_paper
@@ -33,7 +35,15 @@ comment next to the \\includegraphics.
     app_size_generalisation <- rq10_size_generalisation/above_reference.py --paper  above_reference_3B_paper
     app_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
 
-The rq1 and rq2 copies are PNG, the table TeX; the others PNG and SVG. Every
+    app_decision_accuracy <- rq02_decision_accuracy/scale_convergence.py    scale_convergence_da_size_multi_axes
+    app_noise_and_snr     <- rq03_noise_and_snr/effect_vs_noise.py (pool predictivity_seeds)  effect_vs_noise
+    app_surrogates        <- rq04_surrogates (pool predictivity)             top_variants_overall
+    app_above_chance_items <- rq12_above_chance_items/above_chance_items.py  above_chance_items_snr
+    app_english_only      <- rq13_english_only/english_only.py              english_only_scores
+                             (these five: the main figure of an appendix page of make_rq_appendix.py,
+                             no _paper version exists)
+
+The rq1, rq2 and rq3 copies and the last five are PNG, the table TeX; the others PNG and SVG. Every
 `_paper` source is written through `style.save_paper` (RULES.md rule 18).
 
 A file whose bytes did not change is not rewritten, so an unchanged figure
@@ -61,6 +71,7 @@ FIGURES = {
     "rq1": (RQ01 / "scaling_regimes_outliers_paper", ("png",)),
     "rq2": (ANALYSIS / "rq02_decision_accuracy" / "pretraining" / "predictivity"
             / "rq2_da_all_above_66_either_transformation_mono_axis", ("png",)),
+    "rq3": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "rq3_surrogates"), ("png",)),
     "app_chance_share": (GATE / "first_size_share_paper", ("png", "svg")),
     "app_chance_full": (GATE / "first_size_above_random_paper", ("png", "svg")),
     "app_chance_reformulation": (ANALYSIS / "rq00_task_reformulation" / "reformulations_gate_paper", ("png", "svg")),
@@ -79,6 +90,13 @@ FIGURES = {
     "app_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "above_reference_3B_paper"), ("png", "svg")),
     "app_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
                               ("png", "svg")),
+    # the per-analysis appendix pages (make_rq_appendix.py) of the folders without a _paper figure
+    "app_decision_accuracy": (ANALYSIS.joinpath("rq02_decision_accuracy", *PRED, "scale_convergence_da_size_multi_axes"),
+                              ("png",)),
+    "app_noise_and_snr": (ANALYSIS.joinpath("rq03_noise_and_snr", *SEEDS, "effect_vs_noise"), ("png",)),
+    "app_surrogates": (ANALYSIS.joinpath("rq04_surrogates", *PRED, "top_variants_overall"), ("png",)),
+    "app_above_chance_items": (ANALYSIS.joinpath("rq12_above_chance_items", *PRED, "above_chance_items_snr"), ("png",)),
+    "app_english_only": (ANALYSIS.joinpath("rq13_english_only", *PRED, "english_only_scores"), ("png",)),
 }
 
 

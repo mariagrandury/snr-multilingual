@@ -78,13 +78,18 @@ step "analysis pipeline"
 #     only copied here, so the paper can never be newer than the tables.
 step "paper figures"
 ( cd documents/paper/figures && $PY make_rq_figures.py ) || FAILED+=("make_rq_figures.py")
+# The appendix's one page per analysis folder: question and key finding read
+# from each README, the figure copied just above.
+( cd documents/paper/figures && $PY make_rq_appendix.py ) || FAILED+=("make_rq_appendix.py")
 
 # 2c. The paper's audit tables: a reshape of the same rqNN tables, so the
 #     numbers section 4 quotes cannot drift from the ones the figures show.
 step "paper tables"
 ( cd documents/paper/sections && $PY verify_paper_results.py ) || FAILED+=("verify_paper_results.py")
-# 2d. The paper's generated blocks (rule 17): the appendix tables of benchmark
-#     families per language, and the surrogate correlation tables of app_snr_new.tex.
+# 2d. The paper's generated blocks (rule 17): the setup appendices' tables (the
+#     training grid, seeds, per-ladder hyperparameters, evaluated benchmarks and
+#     languages, read from DATA_SCHEMES / hyperparams / tasks.json and the ladder
+#     report), and the surrogate correlation tables of app_snr_new.tex.
 ( cd documents/paper/figures && $PY make_appendix_tables.py ) || FAILED+=("make_appendix_tables.py")
 ( cd documents/paper/sections && $PY make_surrogate_tables.py ) || FAILED+=("make_surrogate_tables.py")
 

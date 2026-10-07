@@ -19,7 +19,7 @@ A higher SNR means score differences across models are large relative to the ben
 \begin{equation}
 \text{Checkpoint noise} = \sigma\big(\{U(t_j)\}_{j=T-k+1}^{T}\big).
 \end{equation}
-On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and \S\ref{subsec:rq4} reports every intervention's effect against the seed noise.
+On our ladder both checkpoint noise, over the last five evaluated checkpoints of each run, and seed noise, over the cells trained with three seeds, are measurable, and Appendix~\ref{app:rq03_noise_and_snr} reports every intervention's effect against the seed noise.
 We also consider a fifth noise definition, computable from a single evaluation run on any model. Benchmark noise is the average relative standard deviation of scores across $k = 5$ disjoint folds of the evaluation set:
 \begin{equation}
 \text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\tfrac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}
@@ -67,4 +67,4 @@ Calculating the above sources of noise{} are either too expensive to estimate at
 
 $$\text{Noise}(M) = \frac{1}{|M|} \sum_{m \in M} \frac{\sqrt{\frac{1}{k}\sum_{i=1}^{k}(m_i - \bar{m})^2}}{\bar{m}}$$
 
-where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We adopt the benchmark noise over the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, it correlates more strongly with decision accuracy than checkpoint noise ($R = 0.808$ vs. $R = 0.760$).
+where $m_1, \dots, m_k$ are the per-fold scores of model $m$. We adopt the benchmark noise over the original checkpoint-to-checkpoint noise for two reasons. First, it is computable from a single evaluation run, since fold scores are derived by partitioning stored per-question outputs without rerunning inference. This makes the framework applicable to any public model, including those without released intermediate checkpoints. Second, it correlates more strongly with decision accuracy than checkpoint noise ($\rho = 0.47$ vs.\ $\rho = 0.35$ with DA-size).

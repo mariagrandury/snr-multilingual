@@ -41,7 +41,8 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "src" / "signal-and-noise"))
 
 from analysis.utils import (  # noqa: E402
-    ANALYSIS_SIZES, MIN_LANG_TASKS, MIN_PAIRS, TARGET_SIZE, passes_gate)
+    ANALYSIS_SIZES, LANGUAGE_AGGREGATES, MIN_LANG_TASKS, MIN_PAIRS, TARGET_SIZE,
+    assign_language, parents_only, passes_gate)
 from analysis.rq00_gate_and_curves.above_random import load_mask  # noqa: E402
 from analysis.rq04_surrogates.snr_definition_postprocess import _table  # noqa: E402
 
@@ -163,6 +164,7 @@ def provenance(ten: pd.DataFrame) -> dict:
     d = load_predictivity_eval_results()
     d = d[d["size"].isin(ANALYSIS_SIZES)]
     head = d[(d["seed"] == 1904) & (d["data"].isin(["A", "B"]))]
+    bench = parents_only(d.loc[d["kind"] == "benchmark", ["task"]].drop_duplicates())
     return {
         "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
         "sources": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -174,7 +176,24 @@ def provenance(ten: pd.DataFrame) -> dict:
         "grid_seed1904_runs": int(d.loc[d["seed"] == 1904, "model"].nunique()),   # the `predictivity` pool
         "sizes": {k: int(v) for k, v in d.groupby("size")["model"].nunique().items()},
         "da_rows": int(len(ten)),
+        # The release counts main.tex's \nmodels / \nckpts / \nbenchmarktasks quote:
+        # every evaluated (run, checkpoint) and every per-language parent benchmark task
+        # (rule 6, twins included; BPB, the loss and the cross-language aggregates are not).
+        "evaluated_checkpoints": int(len(d[["model", "step"]].drop_duplicates())),
+        "benchmark_tasks": int((~bench["task"].map(assign_language).isin(LANGUAGE_AGGREGATES)).sum()),
     }
+
+
+def write_constants(p: dict) -> None:
+    """Rewrite the counts block of main.tex from the provenance record."""
+    tex = HERE / "main.tex"
+    t = tex.read_text()
+    B, E = "% BEGIN generated: constants (verify_paper_results.py)", "% END generated: constants"
+    i, j = t.index(B), t.index(E)
+    block = (f"\\newcommand{{\\nmodels}}{{{p['healthy_175M_to_1_7B']} }}\n"
+             f"\\newcommand{{\\nckpts}}{{{p['evaluated_checkpoints']:,} }}\n"
+             f"\\newcommand{{\\nbenchmarktasks}}{{{p['benchmark_tasks']:,} }}\n")
+    tex.write_text(t[:i] + B + "\n" + block + t[j:])
 
 
 def main(check: bool) -> int:
@@ -197,9 +216,10 @@ def main(check: bool) -> int:
         print(f"{'would change' if check and stale else 'wrote':>12}  {name}  ({len(df)} rows)")
     text = json.dumps(provenance(ten), indent=2, sort_keys=True) + "\n"
     prov = HERE / "verified_results_provenance.json"
+    p = json.loads(text)
     if not check:
         prov.write_text(text)
-    p = json.loads(text)
+        write_constants(p)
     print(f"{'wrote':>12}  {prov.name}")
     print(f"\npopulation: {p['healthy_175M_to_1_7B']} healthy runs 175M-{TARGET_SIZE}, "
           f"{p['grid_seed1904_runs']} in the grid pool (seed 1904, every data build), "

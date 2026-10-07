@@ -4,7 +4,7 @@
 
 
 For each language task $b_\ell$ and model size $N$, we test whether the observed accuracy is distinguishable from random guessing.
-For a task with $m_b$ answer options, chance accuracy is defined as $1/m_b$; the option count is read from the evaluated samples where available and from the benchmark's specification otherwise.
+For a task with $m_b$ answer options, chance accuracy is defined as $1/m_b$; the option count is read from the evaluated samples where available and from the benchmark's specification otherwise. Where the option count varies across items, chance is the mean of $1/m$ over the items (TruthfulQA mc1, 0.2253), and for TruthfulQA mc2, whose score is probability mass rather than a single pick, it is the mean share of true options (0.449).
 For every model of size $N$, we take its final-checkpoint accuracy $\hat{p}$ over the task's $n$ scored items, recover the count of correct answers as $\operatorname{round}(\hat{p}\,n)$, and compute the one-sided 95\% Wilson lower confidence bound on the proportion.
 The model is above chance when
 
@@ -12,7 +12,7 @@ The model is above chance when
 \operatorname{LCB}_{95}(\hat{p}) > \frac{1}{m_b}.
 \]
 
-We then aggregate these decisions over the models of the same size: both architectures and every language mixture at seed 1904.
+We then aggregate these decisions over the models of the same size: every ladder and every data build at seed 1904.
 A $(b_\ell, N)$ cell is retained if at least 50\% of these models are above chance.
 When models trained on the benchmark language are available, only those models enter the decision; otherwise, all evaluated models of that size do.
 The resulting mask is the gate every analysis reads: a gated cell keeps its place in every grid and table but carries no value, a scaling fit uses only the sizes where the task passes, and a ranking against the reference also requires the task to pass at the reference size.
@@ -21,10 +21,10 @@ This filtering step is used only to determine whether a benchmark provides measu
 
 \textbf{Per-benchmark threshold.} The Wilson bound accounts for the number of evaluation examples, so the amount by which accuracy must exceed chance varies across tasks.
 Smaller evaluation sets require a larger margin above chance, while larger sets can support smaller but more reliable departures from chance.
-For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.75 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
+For example, the median required margins are 9.00 percentage points for nonparallel Global PIQA (100 items per language), 2.44 for Belebele (900), 0.74 for HellaSwag (about 9,000), and 0.60 for Global-MMLU (about 14,000).
 
 \textbf{The formulation effect.}
-The corresponding fractions of benchmark--language--size cells that pass the filter over the five sizes from 175M to 1.7B are 25.0\%, 4.0\%, 79.4\%, and 2.2\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.0\% and 75.7\% of their cells.
+The corresponding fractions of benchmark--language--size cells that pass the filter over the six sizes from 90M to 1.7B are 25.0\%, 1.1\%, 79.0\%, and 4.1\%, respectively. The reformulated variants of Belebele and Global-MMLU pass in 75.4\% and 73.4\% of their cells.
 
 
 \begin{figure}[t]
