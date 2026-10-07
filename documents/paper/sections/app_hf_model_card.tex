@@ -1,7 +1,7 @@
 \section{Hugging Face Model Card}
 \label{app:hf_model_card}
 
-We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} This section includes the model card that will accompany the models, following the Hugging Face model card template \citep{ozoani_model_2022}.
+We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} This section gives the model card that will come with the models. It follows the Hugging Face model card template \citep{ozoani_model_2022}.
 
 % https://huggingface.co/docs/hub/model-card-annotated
 % Template: https://github.com/huggingface/huggingface_hub/blob/main/src/huggingface_hub/templates/modelcard_template.md
@@ -10,20 +10,20 @@ We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} Thi
 
 \subsection*{Model Card for the Multilingual Signal-and-Noise Model Ladder}
 
-A ladder of \nruns decoder-only language models (90M to 3B non-embedding parameters) pretrained from scratch on controlled multilingual data mixtures, released with all intermediate checkpoints to study which evaluation benchmarks give reliable signal at small scale.
+A ladder of \nruns decoder-only language models (90M to 3B non-embedding parameters), pretrained from scratch on controlled multilingual data mixtures. We release them with all intermediate checkpoints, to study which evaluation benchmarks give reliable signal at small scale.
 
 \subsection*{Model Details}
 
 \subsubsection*{Model Description}
 
-The ladder varies one design decision at a time around a fixed recipe: model size $N \in \{$90M, 175M, 350M, 600M, 1B, 1.7B, 3B$\}$, the number of languages in the mixture $K \in \{1, 2, 8, 15, 30, 50\}$, the language list (data scheme A, B or C), the sampling temperature ($T = 1$ or 3), the depth-to-width ratio (deep or shallow) and the MLP activation (xIELU or SwiGLU). Every model trains on $D = 100N$ tokens (5$\times$ Chinchilla) with half of the tokens in English. Each run is one model repository; its checkpoints are branches.
+The ladder changes one design decision at a time around a fixed recipe. The decisions are the model size $N \in \{$90M, 175M, 350M, 600M, 1B, 1.7B, 3B$\}$, the number of languages in the mixture $K \in \{1, 2, 8, 15, 30, 50\}$, the language list (data scheme A, B or C), the sampling temperature ($T = 1$ or 3), the depth-to-width ratio (deep or shallow) and the MLP activation (xIELU or SwiGLU). Every model trains on $D = 100N$ tokens (5$\times$ Chinchilla), and half of the tokens are in English. Each run is one model repository, and its checkpoints are branches.
 
 \begin{itemize}
     \item \textbf{Developed by:} Anonymous (removed for review)
     \item \textbf{Funded by:} Anonymous (removed for review)
     \item \textbf{Shared by:} Anonymous (removed for review)
     \item \textbf{Model type:} decoder-only transformer, causal language model, pretrained only (no instruction tuning)
-    \item \textbf{Language(s) (NLP):} English plus up to 49 other languages (Appendix~\ref{app:data-mixtures}, Table~\ref{tab:app-languages}); each model's card lists its own $K$ languages
+    \item \textbf{Language(s) (NLP):} English plus up to 49 other languages (Appendix~\ref{app:data-mixtures}, Table~\ref{tab:app-languages}). The card of each model lists its own $K$ languages.
     \item \textbf{License:} \checknum{Apache 2.0}
 \end{itemize}
 
@@ -39,7 +39,7 @@ The ladder varies one design decision at a time around a fixed recipe: model siz
 
 \subsubsection*{Direct Use}
 
-Research on pretraining and evaluation: ablations of data mixtures and architectures at small scale, scaling-law fits across size and training, checkpoint-level analyses of benchmark signal and noise, and as reference proxies when choosing benchmarks for multilingual pretraining runs.
+Research on pretraining and evaluation. Examples are ablations of data mixtures and architectures at small scale, scaling-law fits across size and training, and checkpoint-level analyses of benchmark signal and noise. The models can also serve as reference proxies when choosing benchmarks for multilingual pretraining runs.
 
 \subsubsection*{Downstream Use}
 
@@ -47,15 +47,15 @@ Starting points for continued pretraining or fine-tuning experiments that need m
 
 \subsubsection*{Out-of-Scope Use}
 
-Deployment in any user-facing application, generation of factual content, or use in high-stakes settings. The models are small, untuned and not safety-aligned; their outputs are unreliable and can be harmful.
+Deployment in any user-facing application, generation of factual content, or use in high-stakes settings. The models are small, untuned and not safety-aligned. Their outputs are unreliable and can be harmful.
 
 \subsection*{Bias, Risks, and Limitations}
 
-The models inherit the biases of web text (DCLM and FineWeb-2) and of its language distribution: English is half of every mixture, and the other languages follow the per-language token shares of the mixture, so lower-resource languages are seen far less. Many multilingual benchmark tasks are at chance for these model sizes (Section~\ref{subsec:rq0}). The 90M and 175M rungs train at a reduced batch (Appendix~\ref{app:model-configurations}).
+The models inherit the biases of web text (DCLM and FineWeb-2) and of its language distribution. English is half of every mixture. The other languages follow the per-language token shares of the mixture, so lower-resource languages are seen far less. Many multilingual benchmark tasks are at chance for these model sizes (Section~\ref{subsec:rq0}). The 90M and 175M rungs train at a reduced batch (Appendix~\ref{app:model-configurations}).
 
 \subsubsection*{Recommendations}
 
-Compare models only within the ladder's controlled settings, read results with the above-chance gate and the seed replicates as the noise floor, and do not treat any checkpoint as a usable assistant.
+Compare models only within the controlled settings of the ladder. Read results with the above-chance gate, and use the seed replicates as the noise floor. Do not treat any checkpoint as a usable assistant.
 
 \subsection*{How to Get Started with the Model}
 
@@ -74,13 +74,13 @@ model = AutoModelForCausalLM.from_pretrained(repo, revision="main")
 
 \subsubsection*{Training Data}
 
-English: DCLM-Edu; the two alternative $K = 1$ builds use DCLM without the educational filter and FineWeb up to 2022. Other languages: FineWeb-2, with the language lists and token shares of Appendix~\ref{app:data-mixtures}. Each mixture holds the English share at 50\% and varies only the other languages.
+English comes from DCLM-Edu. The two alternative $K = 1$ builds use DCLM without the educational filter and FineWeb up to 2022. The other languages come from FineWeb-2, with the language lists and token shares of Appendix~\ref{app:data-mixtures}. Each mixture keeps the English share at 50\% and changes only the other languages.
 
 \subsubsection*{Training Procedure}
 
 \paragraph{Preprocessing}
 
-Tokenized with the 131,072-token Apertus tokenizer; documents are packed into 4,096-token sequences. Validation documents used for bits-per-byte are held out of every training mixture.
+We tokenize with the 131,072-token Apertus tokenizer and pack documents into 4,096-token sequences. The validation documents used for bits-per-byte are held out of every training mixture.
 
 \paragraph{Training Hyperparameters}
 
@@ -88,7 +88,7 @@ Tokenized with the 131,072-token Apertus tokenizer; documents are packed into 4,
     \item \textbf{Training regime:} bf16 mixed precision
     \item \textbf{Optimizer:} AdEMAMix ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping 0.1
     \item \textbf{Schedule:} warmup-stable-decay, with a 1$-\sqrt{\cdot}$ cooldown over the last 20\% of training
-    \item \textbf{Batch:} 504 sequences of 4,096 tokens from 350M up; 84 at 90M and 168 at 175M
+    \item \textbf{Batch:} 504 sequences of 4,096 tokens from 350M up, 84 at 90M and 168 at 175M
     \item \textbf{Learning rate, depth and width per size:} Table~\ref{tab:ladder}
 \end{itemize}
 
@@ -102,7 +102,7 @@ Tokenized with the 131,072-token Apertus tokenizer; documents are packed into 4,
 
 \paragraph{Testing Data}
 
-\nbenchmarks multilingual benchmark families plus English benchmarks in the LM Evaluation Harness (\nbenchmarktasks benchmark--language tasks), and held-out bits-per-byte on 100 languages (Appendix~\ref{app:evaluation-protocol}).
+\nbenchmarks multilingual benchmark families plus English benchmarks in the LM Evaluation Harness (\nbenchmarktasks benchmark-language tasks). We also measure held-out bits-per-byte on 100 languages (Appendix~\ref{app:evaluation-protocol}).
 
 \paragraph{Factors}
 
@@ -110,13 +110,13 @@ Model size, number of training languages, data scheme, temperature, depth, activ
 
 \paragraph{Metrics}
 
-Accuracy (or normalized accuracy) per benchmark--language task, read against its chance level with a one-sided Wilson bound; bits-per-byte per language; decision accuracy and signal-to-noise ratio across the ladder.
+Accuracy (or normalized accuracy) per benchmark-language task, read against its chance level with a one-sided Wilson bound. Bits-per-byte per language. Decision accuracy and signal-to-noise ratio across the ladder.
 
 \subsubsection*{Results}
 
 \paragraph{Summary}
 
-Section~\ref{sec:results} and the per-analysis appendices report the results; every number is regenerated from the released evaluation logs.
+Section~\ref{sec:results} and the per-analysis appendices report the results. Every number is regenerated from the released evaluation logs.
 
 \subsection*{Environmental Impact}
 

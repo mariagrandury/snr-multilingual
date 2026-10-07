@@ -4,16 +4,16 @@
 \label{app:rq00_chance_vs_train_tokens}
 
 \begin{rqfinding}
-1. Outside English, the share of cells above chance rises with every decade of the language's tokens, from 39 \% at $10^{7}$--$10^{8}$ tokens to 60 \% at $10^{10}$--$10^{11}$, but at matched tokens the larger model still clears chance more often (40 \% at 90M against 57 \% at 1.7B at $10^{8}$--$10^{9}$ tokens): exposure is necessary, not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
+1. Outside English, the share of cells above chance rises with every decade of the language's tokens, from 39 \% at $10^{7}$ to $10^{8}$ tokens to 60 \% at $10^{10}$ to $10^{11}$, but at matched tokens the larger model still clears chance more often (40 \% at 90M against 57 \% at 1.7B at $10^{8}$ to $10^{9}$ tokens): exposure is necessary, not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
 
-2. Pooled over every language the curve peaks at 48 \% ($10^{8}$--$10^{9}$), dips to 47 \% ($10^{9}$--$10^{10}$) and drops to 36 \% in $10^{10}$--$10^{11}$ (23,897 cells), because 80 \% of that bin is English: English cells clear chance in 29 \% of 38,160 (106 tasks), the other languages in 48 \% of 127,860 (735 tasks).
+2. Pooled over every language the curve peaks at 48 \% ($10^{8}$ to $10^{9}$), dips to 47 \% ($10^{9}$ to $10^{10}$) and drops to 36 \% in $10^{10}$ to $10^{11}$ (23,897 cells), because 80 \% of that bin is English: English cells clear chance in 29 \% of 38,160 (106 tasks), the other languages in 48 \% of 127,860 (735 tasks).
 
 3. Without English the share rises monotonically per decade: 34 \% ($10^{5}$, 77 cells), 37 \% ($10^{6}$), 39 \% ($10^{7}$), 48 \% ($10^{8}$), 57 \% ($10^{9}$), 60 \% ($10^{10}$, 4,711 cells).
 \end{rqfinding}
 
 \paragraph{Question.} Does a benchmark task clear chance once the model has seen enough of the task's language, and is that exposure or model size?
 
-\paragraph{Setup.} A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run, placed at the tokens of the task's language the checkpoint had seen (the language's share of the mixture $\times$ the size's budget $\times$ the tenth). Seed-1904 runs of every data build and ladder, 90M--1.7B, $K \in \{1, 2, 8, 15, 30, 50\}$; the above-chance gate per run.
+\paragraph{Setup.} A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run. We place it at the number of tokens of the task's language that the checkpoint had seen. This number is the language's share of the mixture $\times$ the size's budget $\times$ the tenth. We use seed-1904 runs of every data build and ladder, from 90M to 1.7B, at $K \in \{1, 2, 8, 15, 30, 50\}$. The above-chance gate is applied per run.
 
 \begin{figure}[h]
 \centering

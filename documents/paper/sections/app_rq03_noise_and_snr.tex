@@ -4,7 +4,7 @@
 \label{app:rq03_noise_and_snr}
 
 \begin{rqfinding}
-1. \textbf{Seed noise exceeds checkpoint noise.} The seed std is a median 1.62$\times$ the detrended checkpoint std over 1466 ungated cells and larger in 74 \% of them (benchmarks 1.70 over 1309 cells, per-language BPB 1.33 over 139); per size 1.60 at 175M, 1.77 at 600M and 1.54 at 1B. (Figure~\ref{fig:app_rq03_noise_and_snr}.)
+1. \textbf{Seed noise exceeds checkpoint noise.} The seed std is a median 1.62$\times$ the detrended checkpoint std over 1466 ungated cells and larger in 74 \% of them (benchmarks 1.70 over 1309 cells, per-language BPB 1.33 over 139). Per size 1.60 at 175M, 1.77 at 600M and 1.54 at 1B. (Figure~\ref{fig:app_rq03_noise_and_snr}.)
 
 2. \textbf{So the checkpoint-noise SNR is optimistic.} A design difference that clears the checkpoint noise need not clear a re-roll of the seed: on the same 1461 seed cells, depth's median effect is 2.06$\times$ the detrended checkpoint noise but 1.32$\times$ the seed noise (51 \% against 29 \% above 2$\times$).
 
@@ -13,7 +13,7 @@
 
 \paragraph{Question.} How much does a measurement move when nothing but the seed or the checkpoint changes, how does that noise compare with the effect of a design decision, and what is each benchmark's signal-to-noise ratio under the 22 candidate definitions?
 
-\paragraph{Setup.} The deep baseline-data cells trained with three seeds (175M and 600M at $K \in \{1, 2, 50\}$, 1B at $K \in \{1, 2, 30\}$). Per (size, $K$, task) cell, the absolute effect of each design decision on the final score over the seed noise (sample standard deviation across seeds) or the checkpoint noise (detrended standard deviation over the last 20\% of the run); cells at chance are left out.
+\paragraph{Setup.} We use the deep cells with the baseline data that were trained with three seeds (175M and 600M at $K \in \{1, 2, 50\}$, 1B at $K \in \{1, 2, 30\}$). For each (size, $K$, task) cell, we divide the absolute effect of each design decision on the final score by a noise. The seed noise is the sample standard deviation across seeds. The checkpoint noise is the detrended standard deviation over the last 20\% of the run. Cells at chance are left out.
 
 \begin{figure}[h]
 \centering

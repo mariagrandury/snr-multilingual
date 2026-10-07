@@ -27,7 +27,7 @@ piv = {k: c[c["t_kind"] == k].set_index("surrogate") for k in KINDS}
 tt = lambda s: "\\texttt{" + s.replace("_", "\\_") + "}"
 def cell(k, s):
     if s not in piv[k].index or pd.isna(piv[k].loc[s, "rho"]):
-        return "--"
+        return ""
     r, q = piv[k].loc[s, "rho"], piv[k].loc[s, "q"]
     v = f"{r:.2f}".replace("-", "$-$")
     return f"\\textbf{{{v}}}" if pd.notna(q) and q < 0.05 else v
@@ -46,9 +46,9 @@ for fam, g in cat.groupby("family", sort=False):
         out.append(f"{fam_name.get(fam, fam) if i == 0 else ''} & {tt(s)} & " + " & ".join(cell(k, s) for k in KINDS) + " \\\\")
 out += ["\\bottomrule", "\\end{tabular}",
         "\\caption{Spearman $\\rho$ of each catalogue statistic with decision accuracy over the benchmark tasks, one point per (benchmark, language) cluster "
-        f"({units['size'][0]}--{units['size'][1]} clusters for DA-size, {units['goal'][0]}--{units['goal'][1]} for DA-goal, {units['ckpt'][0]}--{units['ckpt'][1]} for DA-ckpt), "
-        "every pair of variants, pooled over the proxy sizes 90M--1B and, for DA-goal and DA-ckpt, over the nine early checkpoints. "
-        "Bold: Benjamini--Hochberg $q < 0.05$ over every configuration of the search. A dash marks a statistic that is circular for that truth or has too few clusters. "
+        f"({units['size'][0]} to {units['size'][1]} clusters for DA-size, {units['goal'][0]} to {units['goal'][1]} for DA-goal, {units['ckpt'][0]} to {units['ckpt'][1]} for DA-ckpt). "
+        "We use every pair of variants and pool over the proxy sizes from 90M to 1B. For DA-goal and DA-ckpt, we also pool over the nine early checkpoints. "
+        "Bold marks Benjamini-Hochberg $q < 0.05$ over every configuration of the search. An empty cell marks a statistic that is circular for that truth or has too few clusters. "
         "Within a family, rows are ordered by $|\\rho|$ with DA-size. }",
         "\\label{tab:sur-corr-catalogue}", "\\end{table}", ""]
 # table B: the SNR grid, per signal
@@ -71,9 +71,9 @@ for k in KINDS:
     s = g["rho"].abs().idxmax(); _, a, b = s.split("__")
     best.append(f"{tt(a)} / {tt(b)}, $\\rho = {g.loc[s, 'rho']:.2f}$")
 out += ["\\bottomrule", "\\end{tabular}",
-        "\\caption{The signal $\\times$ noise grid: Spearman $\\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt; "
-        "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold); "
-        "then each noise alone. Same population and conventions as Table~\\ref{tab:sur-corr-catalogue}; rows ordered by $|\\rho|$ of the checkpoint-noise SNR with DA-size. "
+        "\\caption{The signal $\\times$ noise grid. We give the Spearman $\\rho$ with decision accuracy of each signal alone, of its ratio to the relative checkpoint noise (/ckpt, where "
+        "\\texttt{rel\\_dispersion} / \\texttt{ckpt\\_rel} is the SNR of \\citet{heineman_signal_2025} as released) and of its ratio to the relative $k$-fold benchmark noise (/$k$-fold). "
+        "The last rows give each noise alone. The population and conventions are the same as in Table~\\ref{tab:sur-corr-catalogue}. Rows are ordered by $|\\rho|$ of the checkpoint-noise SNR with DA-size. "
         f"The strongest of the 132 ratios is {best[0]} for DA-size, {best[1]} for DA-goal and {best[2]} for DA-ckpt.}}",
         "\\label{tab:sur-corr-snr}", "\\end{table}"]
 block = "\n".join(out)
