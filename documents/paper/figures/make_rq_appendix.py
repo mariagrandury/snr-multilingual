@@ -12,12 +12,18 @@ refresh moves).
                  its "Research question" / "Question" section (or, failing that,
                  the first paragraph), cut after its last "?"; without one, the
                  question in the title line
-    key finding  the **Key finding.** paragraph if the README has one, else the
-                 bold lead and first sentence of a bullet after the figure's
-                 image in the README (the folder's first image when the figure
-                 is not drawn there)
+    findings     an rqfinding box (defined in main.tex) of at most three
+                 findings: the opening key finding, i.e. the **Key finding.**
+                 paragraph if the README has one, else the bold lead and first
+                 sentence of a bullet after the figure's image in the README
+                 (the folder's first image when the figure is not drawn there),
+                 then the next Key-findings bullets (the rest of that list, or
+                 the first "Key findings" list after the paragraph), each cut
+                 to its bold lead and first sentence
 
 The text is double-blind: links, file names and rule numbers are dropped.
+The paper writes the number of languages as K where the analysis writes L
+(L8, "(task, L)"); to_tex renames it outside code spans, the README keeps L.
 
     python make_rq_appendix.py
 """
@@ -50,7 +56,7 @@ PAGES = {
         "A cell is one (task, size, language setting) read at each of the ten evaluated tenths of the run, placed at "
         "the tokens of the task's language the checkpoint had seen (the language's share of the mixture $\\times$ the "
         "size's budget $\\times$ the tenth). Seed-1904 runs of every data build and ladder, 90M--1.7B, "
-        "$L \\in \\{1, 2, 8, 15, 30, 50\\}$; the above-chance gate per run.",
+        "$K \\in \\{1, 2, 8, 15, 30, 50\\}$; the above-chance gate per run.",
         None, 0),
     "rq01_scaling_predictability": (
         "Scaling predictability", "rq1",
@@ -73,8 +79,8 @@ PAGES = {
         None, 0),
     "rq03_noise_and_snr": (
         "Noise and SNR", "app_noise_and_snr",
-        "The deep baseline-data cells trained with three seeds (175M and 600M at $L \\in \\{1, 2, 50\\}$, 1B at "
-        "$L \\in \\{1, 2, 30\\}$). Per (size, $L$, task) cell, the absolute effect of each design decision on the final "
+        "The deep baseline-data cells trained with three seeds (175M and 600M at $K \\in \\{1, 2, 50\\}$, 1B at "
+        "$K \\in \\{1, 2, 30\\}$). Per (size, $K$, task) cell, the absolute effect of each design decision on the final "
         "score over the seed noise (sample standard deviation across seeds) or the checkpoint noise (detrended standard "
         "deviation over the last 20\\% of the run); cells at chance are left out.",
         None, 0),
@@ -94,7 +100,7 @@ PAGES = {
         None, 0),
     "rq06_language_transfer": (
         "Language transfer", "app_language_transfer",
-        "The language-list decision (scheme A vs B at $L \\in \\{8, 15, 30\\}$, single-axis pairs, every seed) read on "
+        "The language-list decision (scheme A vs B at $K \\in \\{8, 15, 30\\}$, single-axis pairs, every seed) read on "
         "the bits per byte of 100 evaluation languages, grouped by whether both lists, one list or neither train the "
         "language and, if neither, whether they train its script. DA-size of the 90M--1B proxies and DA-ckpt of the "
         "1.7B run's checkpoints, against the 1.7B final.",
@@ -119,9 +125,11 @@ PAGES = {
         None, 0),
     "rq10_size_generalisation": (
         "Size generalisation to 3B", "app_size_generalisation",
-        "The four deep cells trained at 3B ($L \\in \\{8, 15\\}$, schemes A and B, seed 1904). DA-size from the final "
-        "checkpoints of 90M--1.7B to the 3B final, benchmark accuracy (tasks above chance) and per-language bits per "
-        "byte pooled separately, on multi- and single-axis pairs.",
+        "The deep cells trained at 3B (seed 1904) and the same families at 1.7B, each (family, task) scored at both "
+        "rungs. Left: per benchmark, the share of its tasks above chance at 1.7B and at 3B, for the benchmarks with at "
+        "least five tasks whose share moves. Right: DA-size from the final checkpoints of 90M--1B to the 3B final and to "
+        "the 1.7B final on the same single-axis decisions, benchmark accuracy (tasks above chance at the proxy, 1.7B and "
+        "3B) and per-language bits per byte pooled separately, with 90\\% leave-one-family-out jackknife bands.",
         None, 0),
     "rq11_evaluation_recipe": (
         "Evaluation recipe", "app_evaluation_recipe",
@@ -137,7 +145,7 @@ PAGES = {
         None, 0),
     "rq13_english_only": (
         "English-only models", "app_english_only",
-        "The monolingual-English cells ($L = 1$) against the same-depth baseline cells of every other language setting, "
+        "The monolingual-English cells ($K = 1$) against the same-depth baseline cells of every other language setting, "
         "which give English half of their tokens; seed 1904, final checkpoints, 90M--1.7B, on the English accuracy "
         "tasks above chance at each size.",
         None, 0),
@@ -188,6 +196,7 @@ def to_tex(s):
         if i % 2:
             out.append("\\texttt{" + escape(part) + "}")
             continue
+        part = re.sub(r"\bL(?=\d+\b)|\bL\b(?![-'’])", "K", part)          # the language count is K in the paper
         part = re.sub(r"(\d+)\^(\d+)", lambda m: f"\x00{m[1]}\x01{m[2]}\x02", part)
         part = re.sub(r'"([^"]*)"', "\x03\\1\x04", part)
         part = escape(part).replace("\x03", "``").replace("\x04", "''")
@@ -223,13 +232,8 @@ def question(lines):
     return para[: para.rfind("?") + 1]
 
 
-def key_finding(lines, image):
-    for i, l in enumerate(lines):
-        m = re.match(r"\*\*Key finding(?: \([^)]*\))?\.\*\*\s*", l)
-        if m:
-            return paragraphs([l[m.end():]] + lines[i + 1:])[0]
-    images = [i for i, l in enumerate(lines) if l.startswith("![")]
-    start = next((i for i in images if re.search(rf"/{re.escape(image[0])}\.png\)", lines[i])), images[0])
+def bullet_list(lines, start):
+    """The first Markdown bullet list after line `start`, one string per bullet."""
     bullets, cur = [], None
     for l in lines[start + 1:]:
         if l.startswith("- "):
@@ -241,33 +245,60 @@ def key_finding(lines, image):
             break
         else:
             cur = None
-    text = " ".join(bullets[image[1]])
+    return [" ".join(b) for b in bullets]
+
+
+def short(text):
+    """A bullet's bold lead and first sentence."""
     m = re.match(r"(\*\*.+?\*\*)\s*(.*)", text)
     lead, rest = (m[1], m[2]) if m else ("", text)
     first = re.split(r"(?<=[\w%)\]])[.;]\s+(?=[A-Z])", rest, maxsplit=1)[0].rstrip(".")
+    # a closing clause that points at the README's own tables, figures or bullets
+    first = re.sub(r";[^;]*\b(?:above(?!\s+chance)|below|bullet)\b[^;]*$", "", first)
     return f"{lead} {first}." if first else lead
+
+
+def key_findings(lines, image, n=3):
+    """The opening key finding and the Key-findings bullets after it, at most n."""
+    for i, l in enumerate(lines):
+        m = re.match(r"\*\*Key finding(?: \([^)]*\))?\.\*\*\s*", l)
+        if m:
+            nxt = next((j for j in range(i + 1, len(lines))
+                        if re.match(r"(#+\s*)?(\*\*)?Key findings\b", lines[j])), None)
+            rest = bullet_list(lines, nxt) if nxt is not None else []
+            return [paragraphs([l[m.end():]] + lines[i + 1:])[0]] + [short(b) for b in rest[: n - 1]]
+    images = [i for i, l in enumerate(lines) if l.startswith("![")]
+    start = next((i for i in images if re.search(rf"/{re.escape(image[0])}\.png\)", lines[i])), images[0])
+    bullets = bullet_list(lines, start)
+    return [short(b) for b in bullets[image[1]: image[1] + n]]
 
 
 def page(folder, title, stem, setup, kf_image, kf_bullet):
     lines = (ANALYSIS / folder / "README.md").read_text().splitlines()
     alt = next(re.match(r"!\[([^\]]*)\]", l)[1] for l in lines if l.startswith("!["))
     src = FIGURES[stem][0]
-    image = (kf_image or src.name, kf_bullet)
+    # a `_paper` twin the README does not show is read through the figure it is a twin of
+    shown = src.name if any(f"/{src.name}.png)" in l for l in lines) else src.name.removesuffix("_paper")
+    image = (kf_image or shown, kf_bullet)
     caption = CAPTIONS.get(folder) or next((re.match(r"!\[([^\]]*)\]", l)[1] for l in lines
-                    if l.startswith("![") and f"/{src.name}.png)" in l), None) or alt
+                    if l.startswith("![") and f"/{shown}.png)" in l), None) or alt
     caption = re.sub(r",\s*(the )?paper (figure|copy)$", "", caption.rstrip("."))
     label = f"fig:app_{folder}"
+    findings = [to_tex(k) for k in key_findings(lines, image)]
+    findings[0] += f" (Figure~\\ref{{{label}}}.)"
     return "\n".join([
         f"% Generated by documents/paper/figures/make_rq_appendix.py from the {folder} README; do not edit.",
         "\\clearpage",
         f"\\section{{{title}}}",
         f"\\label{{app:{folder}}}",
         "",
+        "\\begin{rqfinding}",
+        "\n\n".join(f"{i}. {k}" for i, k in enumerate(findings, 1)),
+        "\\end{rqfinding}",
+        "",
         f"\\paragraph{{Question.}} {to_tex(question(lines))}",
         "",
         f"\\paragraph{{Setup.}} {setup}",
-        "",
-        f"\\paragraph{{Key finding.}} {to_tex(key_finding(lines, image))} (Figure~\\ref{{{label}}}.)",
         "",
         "\\begin{figure}[h]",
         "\\centering",

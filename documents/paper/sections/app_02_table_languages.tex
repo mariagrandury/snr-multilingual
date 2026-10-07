@@ -6,7 +6,7 @@
 \begin{minipage}[t]{0.49\textwidth}\centering
 \begin{tabular}{llllrrr}
 \toprule
-Subset & Language & Script & Family & $L_A$ & $L_B$ & Fam. \\
+Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\
 \midrule
 dclm & English & Latn & Indo-European & 1 & 1 & 25 \\
 rus\_Cyrl & Russian & Cyrl & Indo-European & 2 & 8 & 14 \\
@@ -64,7 +64,7 @@ als\_Latn & Tosk Albanian & Latn & Indo-European & 50 & -- & 5 \\
 \begin{minipage}[t]{0.49\textwidth}\centering
 \begin{tabular}{llllrrr}
 \toprule
-Subset & Language & Script & Family & $L_A$ & $L_B$ & Fam. \\
+Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\
 \midrule
 mkd\_Cyrl & Macedonian & Cyrl & Indo-European & val &  & 4 \\
 tel\_Telu & Telugu & Telu & Dravidian & val &  & 7 \\
@@ -119,6 +119,6 @@ sot\_Latn & Southern Sotho & Latn & Niger-Congo & val &  & 1 \\
 \bottomrule
 \end{tabular}
 \end{minipage}
-\caption{The languages of the sweep. $L_A$ gives the smallest language setting whose scheme-A (resource-ranked) list contains the subset, and $L_B$ the smallest trained setting of a scheme-B build that contains it (the Chinese swap at $L=2$, the diversity-first lists at $L \in \{8, 15, 30\}$); -- marks a language no scheme-B build trains. The scheme-C build at $L=2$ trains Spanish. The lists are nested, so a language is trained at every larger setting of its scheme too. The 50 languages marked val are in no training mixture and enter only the shared validation set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) that the harness offers for the language. English is the DCLM half of every mixture. Family names are abbreviated to their top-level group.}
+\caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A (resource-ranked) list contains the subset, and $K_B$ the smallest trained setting of a scheme-B build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$); -- marks a language no scheme-B build trains. The scheme-C build at $K=2$ trains Spanish. The lists are nested, so a language is trained at every larger setting of its scheme too. The 50 languages marked val are in no training mixture and enter only the shared validation set. Fam.\ counts the benchmark families of the pretraining suite (reformulated variants excluded) that the harness offers for the language. English is the DCLM half of every mixture. Family names are abbreviated to their top-level group.}
 \label{tab:app-languages}
 \end{table*}

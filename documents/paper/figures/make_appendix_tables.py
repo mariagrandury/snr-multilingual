@@ -15,6 +15,8 @@ is trained, not the one that was planned when the text was written.
     benchmarks  block in app_03_evaluation.tex: the evaluated benchmarks
                 (configs/tasks.json `auto` group) with their language and
                 task counts on the sweep's trained languages
+    nbenchmarks block in main.tex: \\nbenchmarks, the number of rows in the
+                benchmarks table's multilingual block
 
 A block sits between `% BEGIN generated: KEY (make_appendix_tables.py)` and
 `% END generated: KEY`; text outside it is hand-written and kept.
@@ -170,7 +172,7 @@ def grid_table(runs: list[dict]) -> str:
             extra = {s for v in by_L.values() for s in v} - common
             sizes = size_span(common)
             for s in [s for s in lt.LADDER if s in extra]:
-                sizes += f"; {s} at $L \\in \\{{{fmt_list(L for L in Ls if s in by_L[L])}\\}}$"
+                sizes += f"; {s} at $K \\in \\{{{fmt_list(L for L in Ls if s in by_L[L])}\\}}$"
             rep = sum(r["seed"] != 1904 for r in rs)
             total, total_rep = total + len(rs), total_rep + rep
             rows.append(" & ".join([esc(build), BUILD_DESC.get(build, esc(build)), cfg["letter"],
@@ -185,11 +187,11 @@ def grid_table(runs: list[dict]) -> str:
         r"\begin{table*}[t]", r"\centering", r"\small", r"\setlength{\tabcolsep}{3.5pt}",
         r"\resizebox{\linewidth}{!}{",
         r"\begin{tabular}{llcclllrr}", r"\toprule",
-        r"Build & Data & $M$ & $T$ & Ladder & $L$ & Sizes & Runs & Repl. \\", r"\midrule",
+        r"Build & Data & $M$ & $T$ & Ladder & $K$ & Sizes & Runs & Repl. \\", r"\midrule",
         *rows, r"\midrule",
         f"Total & & & & & & & {total} & {total_rep} \\\\", r"\bottomrule", r"\end{tabular}}",
         r"\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the build's data "
-        r"scheme at its $L$ (A the baseline recipe, B and C the alternatives at that $L$) and $T$ its "
+        r"scheme at its $K$ (A the baseline recipe, B and C the alternatives at that $K$) and $T$ its "
         r"sampling temperature, the two design axes a build sets. Ladders: deep (baseline), shallow "
         r"(about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis); all three use "
         r"AdEMAMix. Runs counts every seed; Repl.\ the replicate-seed runs among them "
@@ -201,7 +203,7 @@ def seeds_table(runs: list[dict]) -> str:
     sizes = list(lt.LADDER)
     lines = [r"\begin{table}[t]", r"\centering", r"\small",
              r"\begin{tabular}{l" + "c" * len(sizes) + "}", r"\toprule",
-             "$L$ & " + " & ".join(sizes) + r" \\", r"\midrule"]
+             "$K$ & " + " & ".join(sizes) + r" \\", r"\midrule"]
     for L in lt.LANG_SETTINGS:
         cells = []
         for s in sizes:
@@ -214,10 +216,10 @@ def seeds_table(runs: list[dict]) -> str:
     seeds_txt = "; ".join(f"{fmt_list(seeds)} at {' and '.join(ss)}" for seeds, ss in by_triple.items())
     other = sorted({(r["build"], r["size"], r["L"]) for r in runs
                     if r["seed"] != 1904 and r["build"] != "A"}, key=lambda x: (x[0], lt.LADDER.index(x[1]), x[2]))
-    other_txt = "".join(f" The scheme-{b} $L={L}$ cell at {s} also trains the {s} replicate seeds." for b, s, L in other)
+    other_txt = "".join(f" The scheme-{b} $K={L}$ cell at {s} also trains the {s} replicate seeds." for b, s, L in other)
     n_a = sum(r["build"] == "A" and r["ladder"] == "deep" for r in runs)
     lines += [r"\bottomrule", r"\end{tabular}",
-              r"\caption{\textbf{Random seeds.} Seeds per $(N, L)$ cell of the deep scheme-A grid "
+              r"\caption{\textbf{Random seeds.} Seeds per $(N, K)$ cell of the deep scheme-A grid "
               rf"({n_a} runs); -- marks a cell the grid does not train. The replicate seeds are {seeds_txt}, "
               r"each varying both initialization and data order, and only in the deep ladder; every other "
               r"ladder and data build trains seed 1904 alone." + other_txt + "}",
@@ -388,14 +390,14 @@ def languages_table() -> None:
 
     def tab(part):
         lines = [r"\begin{tabular}{llllrrr}", r"\toprule",
-                 r"Subset & Language & Script & Family & $L_A$ & $L_B$ & Fam. \\", r"\midrule"]
+                 r"Subset & Language & Script & Family & $K_A$ & $K_B$ & Fam. \\", r"\midrule"]
         for r in part:
             lines.append(" & ".join(esc(x) for x in r) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         return "\n".join(lines)
 
     c_builds = "".join(
-        f" The scheme-C build at $L={L}$ trains {', '.join(meta[s]['name'] for s in lt.cell_fineweb_subsets(L, bld))}."
+        f" The scheme-C build at $K={L}$ trains {', '.join(meta[s]['name'] for s in lt.cell_fineweb_subsets(L, bld))}."
         for bld, cfg in lt.DATA_SCHEMES.items() if cfg["letter"] == "C" for L in sorted(cfg["langs"]) if L >= 2)
     half = (len(rows) + 1) // 2
     n_val = sum(r[4] == "val" for r in rows)
@@ -404,9 +406,9 @@ def languages_table() -> None:
         r"\begin{table*}[p]", r"\centering", r"\tiny", r"\setlength{\tabcolsep}{2.5pt}",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[:half]), r"\end{minipage}\hfill",
         r"\begin{minipage}[t]{0.49\textwidth}\centering", tab(rows[half:]), r"\end{minipage}",
-        r"\caption{The languages of the sweep. $L_A$ gives the smallest language setting whose scheme-A "
-        r"(resource-ranked) list contains the subset, and $L_B$ the smallest trained setting of a scheme-B "
-        r"build that contains it (the Chinese swap at $L=2$, the diversity-first lists at $L \in \{8, 15, 30\}$); "
+        r"\caption{The languages of the sweep. $K_A$ gives the smallest language setting whose scheme-A "
+        r"(resource-ranked) list contains the subset, and $K_B$ the smallest trained setting of a scheme-B "
+        r"build that contains it (the Chinese swap at $K=2$, the diversity-first lists at $K \in \{8, 15, 30\}$); "
         r"-- marks a language no scheme-B build trains." + c_builds + r" The lists are nested, so a language is trained at every "
         rf"larger setting of its scheme too. The {n_val} languages marked val are in no training mixture and "
         r"enter only the shared validation set. Fam.\ counts the benchmark families of the pretraining suite "
@@ -428,6 +430,8 @@ def main():
     replace_block(SECTIONS / "app_01_model_ladder.tex", "ladder", ladder_table(runs))
     body, stats = benchmark_table()
     replace_block(SECTIONS / "app_03_evaluation.tex", "benchmarks", body)
+    # \nbenchmarks is the table's multilingual block, written in the same run so the two cannot disagree
+    replace_block(SECTIONS / "main.tex", "nbenchmarks", f"\\newcommand{{\\nbenchmarks}}{{{stats['multilingual']} }}")
     languages_table()
     by = Counter((r["build"], r["ladder"]) for r in runs)
     print(f"grid: {len(runs)} runs ({sum(r['seed'] == 1904 for r in runs)} at seed 1904, "

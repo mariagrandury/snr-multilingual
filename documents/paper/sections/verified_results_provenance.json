@@ -14,18 +14,18 @@
     "TARGET_SIZE": "1.7B"
   },
   "da_rows": 163720,
-  "evaluated_checkpoints": 3772,
+  "evaluated_checkpoints": 3972,
   "generated_by": "documents/paper/sections/verify_paper_results.py (reshape, no re-derivation)",
-  "grid_seed1904_runs": 161,
-  "headline_seed1904_A_B_runs": 113,
-  "healthy_175M_to_1_7B": 181,
+  "grid_seed1904_runs": 171,
+  "headline_seed1904_A_B_runs": 123,
+  "healthy_175M_to_1_7B": 191,
   "sizes": {
-    "1.7B": 26,
-    "175M": 33,
-    "1B": 34,
-    "350M": 26,
-    "600M": 33,
-    "90M": 29
+    "1.7B": 27,
+    "175M": 35,
+    "1B": 36,
+    "350M": 29,
+    "600M": 34,
+    "90M": 30
   },
   "sources": {
     "src/signal-and-noise/analysis/rq00_gate_and_curves/pretraining/predictivity/above_random_mask.csv": "ee0c24402c0be72d55836c825550546022348a49484aec7e1cb613dcc77333c8",

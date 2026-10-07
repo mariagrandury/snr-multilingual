@@ -15,9 +15,9 @@ We provide the training grid and checkpoint schedule (\S\ref{app:training-grid})
 \resizebox{\linewidth}{!}{
 \begin{tabular}{llcclllrr}
 \toprule
-Build & Data & $M$ & $T$ & Ladder & $L$ & Sizes & Runs & Repl. \\
+Build & Data & $M$ & $T$ & Ladder & $K$ & Sizes & Runs & Repl. \\
 \midrule
-A & resource-ranked lists & A & 1 & deep & 1, 2, 8, 15, 30, 50 & 90M--1.7B; 3B at $L \in \{8, 15, 30, 50\}$ & 58 & 18 \\
+A & resource-ranked lists & A & 1 & deep & 1, 2, 8, 15, 30, 50 & 90M--1.7B; 3B at $K \in \{8, 15, 30, 50\}$ & 58 & 18 \\
 A & resource-ranked lists & A & 1 & shallow & 1, 2, 8, 15, 30, 50 & 90M--1.7B & 36 & -- \\
 A & resource-ranked lists & A & 1 & deep + SwiGLU & 8, 15, 30 & 90M--1.7B & 18 & -- \\
 AT3 & scheme-A lists, flattened & A & 3 & deep & 15, 30, 50 & 90M--1.7B & 18 & -- \\
@@ -32,12 +32,12 @@ FWEB & FineWeb (crawls $\le$ 2022) & C & 1 & deep & 1 & 90M--1.7B & 6 & -- \\
 Total & & & & & & & 201 & 20 \\
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the build's data scheme at its $L$ (A the baseline recipe, B and C the alternatives at that $L$) and $T$ its sampling temperature, the two design axes a build sets. Ladders: deep (baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis); all three use AdEMAMix. Runs counts every seed; Repl.\ the replicate-seed runs among them (Table~\ref{tab:grid}). At the ladder-report snapshot 200 of the 201 runs had finished; outstanding: 3B-L30-schemeB-deep-seed1904.}
+\caption{\textbf{Training grid.} One row per data build and ladder. $M$ is the build's data scheme at its $K$ (A the baseline recipe, B and C the alternatives at that $K$) and $T$ its sampling temperature, the two design axes a build sets. Ladders: deep (baseline), shallow (about twice the width-to-depth ratio) and deep + SwiGLU (the activation axis); all three use AdEMAMix. Runs counts every seed; Repl.\ the replicate-seed runs among them (Table~\ref{tab:grid}). At the ladder-report snapshot 200 of the 201 runs had finished; outstanding: 3B-L30-schemeB-deep-seed1904.}
 \label{tab:schemes}
 \end{table*}
 % END generated: grid
 
-\textbf{Seeds.} Every cell trains with seed 1904. To measure how much a ranking can move for reasons unrelated to the intervention, a subset of cells trains three seeds, each with a different initialization and data order (Table~\ref{tab:grid}): seeds 64, 313, and 1904 at 175M and 600M for $L \in \{1, 2, 50\}$, and seeds 28, 1797, and 1904 at 1B for $L \in \{1, 2, 30\}$ (scheme A, and scheme B at $L=30$), all in the deep architecture. The seed triples cover 175M, 600M, and 1B; they do not directly estimate seed variability at 1.7B. The other ladders and data builds (shallow, SwiGLU, AT3, ZH, ES, DCLMP, FWEB) are intervention levels rather than part of the noise estimate and train a single seed.
+\textbf{Seeds.} Every cell trains with seed 1904. To measure how much a ranking can move for reasons unrelated to the intervention, a subset of cells trains three seeds, each with a different initialization and data order (Table~\ref{tab:grid}): seeds 64, 313, and 1904 at 175M and 600M for $K \in \{1, 2, 50\}$, and seeds 28, 1797, and 1904 at 1B for $K \in \{1, 2, 30\}$ (scheme A, and scheme B at $K=30$), all in the deep architecture. The seed triples cover 175M, 600M, and 1B; they do not directly estimate seed variability at 1.7B. The other ladders and data builds (shallow, SwiGLU, AT3, ZH, ES, DCLMP, FWEB) are intervention levels rather than part of the noise estimate and train a single seed.
 
 % BEGIN generated: seeds (make_appendix_tables.py)
 \begin{table}[t]
@@ -45,7 +45,7 @@ Total & & & & & & & 201 & 20 \\
 \small
 \begin{tabular}{lccccccc}
 \toprule
-$L$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
+$K$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
 \midrule
 1 & 1 & 3 & 1 & 3 & 3 & 1 & -- \\
 2 & 1 & 3 & 1 & 3 & 3 & 1 & -- \\
@@ -55,7 +55,7 @@ $L$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
 50 & 1 & 3 & 1 & 3 & 1 & 1 & 1 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Random seeds.} Seeds per $(N, L)$ cell of the deep scheme-A grid (58 runs); -- marks a cell the grid does not train. The replicate seeds are 64, 313, 1904 at 175M and 600M; 28, 1797, 1904 at 1B, each varying both initialization and data order, and only in the deep ladder; every other ladder and data build trains seed 1904 alone. The scheme-B $L=30$ cell at 1B also trains the 1B replicate seeds.}
+\caption{\textbf{Random seeds.} Seeds per $(N, K)$ cell of the deep scheme-A grid (58 runs); -- marks a cell the grid does not train. The replicate seeds are 64, 313, 1904 at 175M and 600M; 28, 1797, 1904 at 1B, each varying both initialization and data order, and only in the deep ladder; every other ladder and data build trains seed 1904 alone. The scheme-B $K=30$ cell at 1B also trains the 1B replicate seeds.}
 \label{tab:grid}
 \end{table}
 % END generated: seeds
@@ -73,7 +73,7 @@ $L$ & 90M & 175M & 350M & 600M & 1B & 1.7B & 3B \\
 
 \textbf{Shallow ladder.} The depth intervention trains a second ladder at the same six non-embedding sizes with roughly twice the width-to-depth ratio (110 to 146 against 51 to 77). To constrain the architecture comparison, the shallow search pins the feed-forward multiplier and the query-to-key-value head ratio to the deep values, restricts $d_{\mathrm{model}}$ to multiples of 256, and among candidates within 4\% of the target size picks the ratio closest to 128. The shallow sizes land within 0.4\% to 5.2\% of the deep ones, and each shallow run trains its own $D = 100N$.
 
-\textbf{SwiGLU ladder.} The activation intervention trains the deep ladder with SwiGLU in place of xIELU, under scheme A at $L \in \{8, 15, 30\}$ and from 90M to 1.7B. It keeps every deep dimension except the feed-forward width, which shrinks to about $2.67\,d_{\mathrm{model}}$ so that the three SwiGLU projections match the deep non-embedding count (within 0.6\%); each run again trains its own $D = 100N$.
+\textbf{SwiGLU ladder.} The activation intervention trains the deep ladder with SwiGLU in place of xIELU, under scheme A at $K \in \{8, 15, 30\}$ and from 90M to 1.7B. It keeps every deep dimension except the feed-forward width, which shrinks to about $2.67\,d_{\mathrm{model}}$ so that the three SwiGLU projections match the deep non-embedding count (within 0.6\%); each run again trains its own $D = 100N$.
 
 % BEGIN generated: ladder (make_appendix_tables.py)
 \begin{table*}[t]
@@ -113,6 +113,6 @@ deep + SwiGLU & 1.7B & 30 & 2,304 & 77 & 6,144 & 2.67 & 36/9 & 1,672.2 & 167.2 &
 \end{table*}
 % END generated: ladder
 
-\textbf{Optimization.} Every run uses the same optimizer and schedule, with only the per-size values changing. We train with AdEMAMix \citep{pagliardini_ademamix_2024} ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping at 0.1, and a global batch of 504 sequences of 4,096 tokens, about 2.06M tokens per step, from 350M up; the 90M and 175M rungs train at 84 and 168 sequences (see below). The learning rate follows a warmup-stable-decay schedule \citep{hagele_scaling_2024}: linear warmup over about 4\% of the steps, a constant phase, and a $1-\sqrt{\cdot}$ decay to zero over the final 20\%. The peak learning rate comes from a compute-based law evaluated at each run's own budget, $\eta = 0.3118\, C^{-1/8}$ with $C = 6 N D = 600 N^2$, so it decreases smoothly from $1.43 \times 10^{-3}$ at 90M to $6.9 \times 10^{-4}$ at 1.7B and $6.0 \times 10^{-4}$ at 3B. We scale optimizer warmup with run length and initialization with width: the AdEMAMix $\alpha$ and $\beta_3$ warmup spans the full run, and the initialization standard deviation is width-scaled as $0.008944 \sqrt{1792 / d_{\mathrm{model}}}$. Training uses BF16 mixed precision with FP32 gradient accumulation in the Swiss AI fork of Megatron-LM \citep{shoeybi_megatron-lm_2019}, with data parallelism only (no tensor or pipeline parallelism).
+\textbf{Optimization.} Every run uses the same optimizer and schedule, with only the per-size values changing. We train with AdEMAMix \citep{pagliardini_ademamix_2024} ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping at 0.1, and a global batch of 504 sequences of 4,096 tokens, about 2.06M tokens per step, from 350M up; the 90M and 175M rungs train at 84 and 168 sequences (see below). The learning rate follows a warmup-stable-decay schedule \citep{hagele_scaling_2024}: linear warmup over about 4\% of the steps, a constant phase, and a $1-\sqrt{\cdot}$ decay to zero over the final 20\%. The peak learning rate comes from a compute-based law evaluated at each run's own budget, $\eta = 0.3118\, C^{-1/8}$ with $C = 6 N D = 600 N^2$, so it decreases smoothly from $1.43 \times 10^{-3}$ at 90M to $6.9 \times 10^{-4}$ at 1.7B and $6.0 \times 10^{-4}$ at 3B. We scale optimizer warmup with run length and initialization with width: the AdEMAMix $\alpha$ and $\beta_3$ warmup spans the full run, and the initialization standard deviation is width-scaled as $0.008944 \sqrt{1792 / d_{\mathrm{model}}}$. Training uses BF16 mixed precision with FP32 gradient accumulation in a fork of Megatron-LM \citep{shoeybi_megatron-lm_2019}, with data parallelism only (no tensor or pipeline parallelism).
 
 \textbf{The two smallest rungs.} At the 504-sequence batch, nine of the ten completed 90M runs diverge: each reaches its best training loss between 15\% and 19\% of the way through training and degrades for the rest of the run, ending 1.2 to 1.9 nats above its own best. No larger rung shows this. Held-out bits-per-byte rises with training on every language we checked, so the degradation is real rather than an artefact of the training objective. Retraining the rung at three learning rates spanning a factor of five and at one half and one sixth of the batch size reproduces the failure at the same fraction of the optimizer steps, which points to the interaction between the fixed $\beta_3$ timescale of AdEMAMix, about 10,000 steps, and a run that is only 4,500 steps long (8,540 at 175M, whose batch-504 runs also land off the power law of the larger rungs). We therefore train these two rungs at their own global batch, 84 sequences at 90M and 168 at 175M (the nearest value the 175M data-parallel layout admits), holding $D = 100N$ fixed: the step count grows by the same factor, to 27,000 and 25,620 steps, so the $\beta_3$ memory covers about 0.37 and 0.39 of the run. This removes the divergence without changing any optimizer constant, which the step-matched batch cuts above did not; no run of the grid diverges, and the batch-504 runs of these two rungs enter no analysis.

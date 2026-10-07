@@ -1,79 +1,102 @@
+\documentclass[11pt]{article}
 
-\documentclass{article} % For LaTeX2e
-\usepackage{iclr2027_conference,times}
+% Change "review" to "final" to generate the final (sometimes called camera-ready) version.
+% Change to "preprint" to generate a non-anonymous version with page numbers.
+\usepackage[review]{acl}
 
-% Optional math commands from https://github.com/goodfeli/dlbook_notation.
-\input{math_commands.tex}
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
 
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+%Including images in your LaTeX document requires adding
+%additional package(s)
+\usepackage{graphicx}
+
+
+% Our additional packages
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage{xspace}
+\usepackage{wrapfig}
+\usepackage{amsmath}
 
-\newcommand{\ie}{i.e.}\xspace
-\newcommand{\eg}{e.g.}\xspace
+
+
+\newcommand{\ie}{{i.e.}\xspace}
+\newcommand{\eg}{{e.g.}\xspace}
 
 \definecolor{pink}{RGB}{204, 0, 102}
 \newcommand{\AR}[1]{\textcolor{pink}{\textit{(Angie: #1)}}}
 
-
-% \title{Signal-Aware Framework for Multilingual Language Model Evaluation}
-\title{Decision Reliability in Multilingual Model Development}
-
-% Alternative titles:
-% Predicting Reliable Decisions in Multilingual Model Scaling
-% Decision Reliability in Multilingual Model Development/Scaling
-
-% Evaluating Multilingual Evaluations: In Search for Benchmarks that Enable Reliable Decisions
-
-% MAIN RESEARCH QUESTION
-% People use evaluations of cheaper, small/partially trained models to make expensive training decisions. When is that practice actually reliable in multilingual model development?
-
-
-
-% Authors must not appear in the submitted version. They should be hidden
-% as long as the \iclrfinalcopy macro remains commented out below.
-% Non-anonymous submissions will be rejected without review.
-
-\author{María Grandury
-EPFL\\
-\And
-Angelika Romanou
-EPFL\\
-\And
-Clara Meister
-EPFL
-\And
-Éléonore Hasler
-\And
-Antoine Bosselut
-}
-
-% The \author macro works with any number of authors. There are two commands
-% used to separate the names and addresses of multiple authors: \And and \AND.
-%
-% Using \And between authors leaves it to \LaTeX{} to determine where to break
-% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
-% puts 3 of 4 authors names on the first line, and the last on the second
-% line, try using \AND instead of \And before the third author name.
-
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
 \newcommand{\update}{\marginpar{UPDATE}}
-\newcommand{\citeneeded}[1]{\textcolor{red}{[CITE: #1]}}
+\newcommand{\citeneeded}[1]{\textcolor{blue}{[CITE]}}
 \newcommand{\checknum}[1]{\textcolor{orange}{#1}}
 
-% Constants. \nbenchmarks counts the multilingual families of Table~\ref{tab:benchmark-families};
-% the three counts below are rewritten by verify_paper_results.py on every refresh
+
+\usepackage{tcolorbox}
+\newtcolorbox{rqfinding}{colback=teal!8, colframe=teal!55, arc=3pt, boxrule=0.7pt, left=5pt, right=5pt, top=4pt, bottom=4pt, fontupper=\small}
+
+% Constants. \nbenchmarks counts the multilingual families of Table~\ref{tab:benchmark-families}
+% (original families with more than one trained language; English-text families and reformulated
+% variants excluded) and is rewritten with that table by make_appendix_tables.py;
+% the three counts after it are rewritten by verify_paper_results.py on every refresh
 % (runs 90M--1.7B, evaluated checkpoints, per-language parent benchmark tasks incl. the reformulated twins).
-\newcommand{\nbenchmarks}{14 }
+% BEGIN generated: nbenchmarks (make_appendix_tables.py)
+\newcommand{\nbenchmarks}{18 }
+% END generated: nbenchmarks
 % BEGIN generated: constants (verify_paper_results.py)
-\newcommand{\nmodels}{181 }
-\newcommand{\nckpts}{3,772 }
+\newcommand{\nmodels}{191 }
+\newcommand{\nckpts}{3,972 }
 \newcommand{\nbenchmarktasks}{1,379 }
 % END generated: constants
+
+
+% \title{Signal-Aware Framework for Multilingual Language Model Evaluation}
+\title{Model DR.: Diagnosing Decision Reliability \\ in Multilingual Model Development}
+% \title{Decision Reliability in Multilingual Model Development}
+% \title{Evaluating Multilingual Evaluations: In Search for Benchmarks that Enable Reliable Decisions}
+
+
+\author{
+  \textbf{María Grandury\textsuperscript{1}},
+  \textbf{Angelika Romanou\textsuperscript{1}},
+  \textbf{Éléonore Hasler\textsuperscript{1}},
+  \textbf{Clara Meister\textsuperscript{1}},
+  \textbf{Antoine Bosselut\textsuperscript{1}}
+%  \textbf{Sixth Author\textsuperscript{1}},
+%  \textbf{Seventh Author\textsuperscript{1}},
+%  \textbf{Eighth Author \textsuperscript{1,2,3,4}},
+\\
+\\
+  \textsuperscript{1}EPFL,
+%  \textsuperscript{2}Affiliation 2,
+}
 
 
 %\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.

@@ -3,16 +3,22 @@
 \section{Above-chance items}
 \label{app:rq12_above_chance_items}
 
+\begin{rqfinding}
+1. Keeping only the items the 1.7B runs answer above chance raises the median paired SNR from $\times$1.26 at 90M to $\times$1.52 at 1.7B, almost all through a lower k-fold noise ($\times$0.57--0.85) while the signal stays flat ($\times$0.87--1.07). Decision accuracy barely follows, although the selection reads the reference it is scored against: the paired DA-size gain is +0.043 at 90M and +0.000 to +0.020 at 175M--1B (multi-axis pairs). (Figure~\ref{fig:app_rq12_above_chance_items}.)
+
+2. The kept items are 43 \% of the items of the 489 tasks the committed gate passes at 1.7B, and 42 \% over all 840 tasks with an item above chance.
+
+3. Recomputed on the kept items, the gate passes 826 of those 840 tasks at 1.7B and 82--90 \% of the 841 at the proxies, against 37 \% (90M) to 58 \% (1.7B) for the full benchmarks: the in-sample selection all but guarantees the reference's verdict and lifts every proxy's.
+\end{rqfinding}
+
 \paragraph{Question.} If every benchmark-language task keeps only the items its 1.7B runs answer above chance, how much do decision accuracy, SNR, the above-random gate and the scaling fit improve, and does it matter whether the gate is applied before or after the items are chosen?
 
 \paragraph{Setup.} Seed-1904 runs of every cell, 90M--1.7B, final checkpoints. Every benchmark-language task keeps only the items its 1.7B runs answer above chance, after the above-chance gate, and is compared with the full task. The selection reads the reference by design, so the gains are an upper bound, not a held-out estimate.
 
-\paragraph{Key finding.} Keeping only the items the 1.7B runs answer above chance raises the median paired SNR from $\times$1.26 at 90M to $\times$1.52 at 1.7B, almost all through a lower k-fold noise ($\times$0.57--0.85) while the signal stays flat ($\times$0.87--1.07). Decision accuracy barely follows, although the selection reads the reference it is scored against: the paired DA-size gain is +0.043 at 90M and +0.000 to +0.020 at 175M--1B (multi-axis pairs). (Figure~\ref{fig:app_rq12_above_chance_items}.)
-
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/app_above_chance_items.png}
-% source: src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr.png
+% source: src/signal-and-noise/analysis/rq12_above_chance_items/pretraining/predictivity/above_chance_items_snr_paper.png
 \caption{SNR on the above-chance items.}
 \label{fig:app_rq12_above_chance_items}
 \end{figure}
