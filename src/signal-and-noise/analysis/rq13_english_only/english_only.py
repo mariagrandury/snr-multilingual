@@ -82,6 +82,8 @@ tasks).
 Outputs, `pretraining/<pool>/`:
 
     english_only_scores.png/.csv                 mean gap and win share per size, L1 against every other L
+    english_only_scores_paper.png/.svg/.csv      the same for the paper: bare (rule 18); `--paper` redraws it
+                                                 alone from english_only_scores_summary.csv
     english_only_scores_by_benchmark.png/.csv    the same per benchmark (deep, every other L pooled)
     english_only_scores_per_task.csv             one row per (task, size, arch, comparator L)
     english_only_scores_summary.csv              per (scoring, arch, size, comparator), with `thin`
@@ -549,9 +551,12 @@ def _thin_note(t: pd.DataFrame, what: str) -> str:
             + ", ".join(sorted({f"{r} {int(n)}" for r, n in zip(x["where"], x["n_tasks"])})) + ".") if len(x) else ""
 
 
-def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str) -> None:
+def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str, paper: bool = False) -> None:
+    """`paper`: english_only_scores_paper, the bare rule-18 version (capitalized
+    labels, no title or caption, the line key under the panels), written
+    through style.save_paper with the table it draws."""
     acc = summ[summ["scoring"] == "acc"]
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.2))
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.4) if paper else (15, 4.2))
     tabs = []
     for ax, arch in zip(axes[:2], ARCHS):
         a = acc[(acc["arch"] == arch) & ~acc["thin"]]
@@ -568,10 +573,16 @@ def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str) -> No
                     ax.annotate(str(int(n)), (sizes.index(s), v), textcoords="offset points", xytext=(0, 5), fontsize=6,
                                 ha="center")
         ax.axhline(0, color=S.MUTED, lw=.8)
-        ax.set_title(f"({'ab'[ARCHS.index(arch)]}) {arch}: L1 minus L, accuracy points (mean; pooled median dotted)",
+        ax.set_title(f"({'ab'[ARCHS.index(arch)]}) {arch.capitalize()}: L1 minus L, accuracy points" if paper else
+                     f"({'ab'[ARCHS.index(arch)]}) {arch}: L1 minus L, accuracy points (mean; pooled median dotted)",
                      loc="left", fontsize=8.5)
-        ax.set_ylabel("mean over the English tasks above chance"); _x(ax, sizes)
-    axes[0].legend(fontsize=6.5, frameon=False, ncol=2)
+        ax.set_ylabel(f"{'M' if paper else 'm'}ean over the English tasks above chance"); _x(ax, sizes)
+    if paper:                     # the line key under the panels, one row
+        handles, labels = axes[0].get_legend_handles_labels()
+        fig.legend(handles, labels, fontsize=7, frameon=False, ncol=len(handles), loc="upper center",
+                   bbox_to_anchor=(0.5, 0.0))
+    else:
+        axes[0].legend(fontsize=6.5, frameon=False, ncol=2)
     ax = axes[2]
     p = acc[acc["comparator"] == "every L > 1"]
     tabs.append(pd.DataFrame({"panel": "tasks per size (every L > 1)", "row": p["arch"], "col": p["size"],
@@ -588,8 +599,16 @@ def fig_scores(summ: pd.DataFrame, out_dir: Path, sizes: list, where: str) -> No
             tabs.append(_line(ax, s.index, s["behind_beyond_seed"], "shares", f"behind by > {BEYOND:g} seed sd", sizes,
                               color=S.SERIES[1], ls="", label=f"deep: behind by > {BEYOND:g} seed sd"))
     ax.axhline(0.5, color=S.MUTED, lw=.8, ls=":"); ax.set_ylim(-0.02, 1.02)
-    ax.set_title("(c) share of (task, L) comparisons, every L > 1 pooled", loc="left", fontsize=8.5)
+    ax.set_title(f"(c) {'S' if paper else 's'}hare of (task, L) comparisons, every L > 1 pooled", loc="left", fontsize=8.5)
     ax.legend(fontsize=6.5, frameon=False); _x(ax, sizes)
+    if paper:
+        ax.set_ylabel("Share of comparisons")
+        for a in axes:
+            a.set_xlabel("Model size")
+        fig.tight_layout()
+        pd.concat(tabs, ignore_index=True).to_csv(out_dir / "english_only_scores_paper.csv", index=False)
+        S.save_paper(fig, out_dir / "english_only_scores_paper")
+        return
     G.save_highlights(fig, out_dir, "Do the English-only cells score higher on the English benchmarks?",
                       f"Final checkpoint of the L1 baseline cell against the same-depth baseline cell at each other L, seed "
                       f"{GRID_SEED}, {where}; accuracy-scored English tasks above chance at the size (rule 1) that both "
@@ -1300,6 +1319,7 @@ def main(pool: str, seeds_pool: str, write_readme: bool) -> None:
     summ = score_summary(g)
     where = f"pool `{pool}`, gate `{gate_pool}`"
     fig_scores(summ, out_dir, sizes, where)
+    fig_scores(summ, out_dir, sizes, where, paper=True)
     summ.to_csv(out_dir / "english_only_scores_summary.csv", index=False)
     fig_scores_by_benchmark(g, out_dir, sizes, where)
 
@@ -1367,5 +1387,12 @@ if __name__ == "__main__":
     p.add_argument("--readme", action="store_true",
                    help=f"write the README blocks from this pool (by default only `{CANONICAL_POOL}` writes them, and "
                         "only when L1 has three families there)")
+    p.add_argument("--paper", action="store_true",
+                   help="only english_only_scores_paper, the paper's bare figure, from english_only_scores_summary.csv on disk")
     a = p.parse_args()
-    main(a.pool, a.seeds_pool, a.readme)
+    if a.paper:
+        d = ENGLISH_ONLY / load_pools()[a.pool].get("stage", "pretraining") / a.pool
+        summ = pd.read_csv(d / "english_only_scores_summary.csv")
+        fig_scores(summ, d, size_order(summ["size"].unique()), "", paper=True)
+    else:
+        main(a.pool, a.seeds_pool, a.readme)

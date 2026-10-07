@@ -139,8 +139,9 @@ mpl.rcParams.update(S.RC)
 
 
 def _ncol(n: int) -> int:
-    """Legend columns of equal height: two once a single column gets tall."""
-    return 2 if n > 3 else 1
+    """Legend columns of equal height (rule 18): two once a single column gets
+    tall and the entries split evenly, one otherwise."""
+    return 2 if n > 3 and n % 2 == 0 else 1
 
 
 def _self_reference(ax, x0, y0, x1, c, z=3) -> None:
@@ -174,7 +175,8 @@ def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence_da_size") -> 
     ax.set_xlabel("Model size (non-embedding parameters)")
     ax.set_ylabel(f"DA-size (reference is the final checkpoint of {TARGET_SIZE})")
     if len(groups) > 1:               # the pooled grouping is one line; it needs no key
-        ax.legend(fontsize=6.5, frameon=False, loc="lower left", ncol=_ncol(len(groups)))
+        ncol = _ncol(len(groups))     # one tall column sits in the empty top left, under the 1.0 line
+        ax.legend(fontsize=6.5, frameon=False, loc="lower left" if ncol > 1 else "upper left", ncol=ncol)
     return d.assign(panel="DA-size")
 
 
@@ -223,8 +225,7 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
         ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.tight_layout()
     pd.concat(rows, ignore_index=True).to_csv(out_dir / f"rq2_da_all{suffix}.csv", index=False)
-    fig.savefig(out_dir / f"rq2_da_all{suffix}.svg", bbox_inches="tight", facecolor=S.SURFACE)
-    S.save(fig, out_dir / f"rq2_da_all{suffix}.png", dpi=200)          # closes the figure
+    S.save_paper(fig, out_dir / f"rq2_da_all{suffix}")       # rule 18: every rq2 figure is a bare paper figure
 
 
 if __name__ == "__main__":

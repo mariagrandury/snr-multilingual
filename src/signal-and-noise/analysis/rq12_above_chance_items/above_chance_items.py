@@ -55,12 +55,14 @@ Outputs under pretraining/<pool>/, each name prefixed `above_chance_items_`:
                                  per benchmark and proxy: mean DA-size per ordering and the paired gain
   snr_per_task.csv               per ordering, task, size: signal, noise and SNR (final; checkpoint if stored)
   snr.png/.csv                   per ordering and size: median SNR, paired ratio over full, ρ(SNR, DA-size)
+  snr_paper.png/.svg/.csv        the same for the paper: bare (rule 18); `--paper` redraws it alone from snr.csv
   snr_by_benchmark.png/.csv      per benchmark and size: median SNR per ordering and the median paired
                                  log2(SNR kept / SNR full)
   scaling_fits.csv               per ordering, task, L: the log-N fit of the final scores
   da_ckpt_per_task_both_axes.csv, da_ckpt_both_axes.csv   only when the store holds checkpoints
 
     python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity [--store-pool predictivity]
+    python analysis/rq12_above_chance_items/above_chance_items.py --paper    # the _paper figure alone, from the CSV
 """
 
 from __future__ import annotations
@@ -247,6 +249,34 @@ def lines(ax, t: pd.DataFrame, y: str, sizes: list, lo: str | None = None, hi: s
                             bbox=dict(boxstyle="square,pad=0.05", fc=S.SURFACE, ec="none", alpha=.85))
     ax.set_xticks(range(len(sizes))); ax.set_xticklabels(sizes); ax.set_xlabel("model size")
     ax.grid(color=S.GRID, lw=.6); S.clean(ax)
+
+
+def snr_figure(snr_summary: pd.DataFrame, sizes: list, paper_dir: Path | None = None):
+    """The three SNR panels: median SNR, the paired gain over the full benchmark,
+    ρ(SNR, DA-size). With `paper_dir`, the bare rule-18 twin `<NAME>_snr_paper`
+    (capitalized labels, no title or caption) is written there through
+    style.save_paper with the table it draws; otherwise the figure is returned."""
+    paper = paper_dir is not None
+    cap = (lambda t: t[0].upper() + t[1:]) if paper else (lambda t: t)
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.2) if paper else (13, 3.8))
+    lines(axes[0], snr_summary, "snr_median", sizes, count="n_tasks")
+    axes[0].set_ylabel(cap("median SNR over the tasks")); axes[0].legend(fontsize=7, frameon=False)
+    lines(axes[1], snr_summary, "snr_ratio_median", sizes, orderings=("gate_then_items",))
+    g = snr_summary[snr_summary["ordering"] == "gate_then_items"].set_index("size").reindex(sizes)
+    for c, ls, lab in (("signal_ratio_median", "--", "gate, then items: signal"), ("noise_ratio_median", ":", "gate, then items: k-fold noise")):
+        axes[1].plot(range(len(sizes)), g[c], ls, lw=1.2, color=COLOUR["gate_then_items"], label=lab)
+    axes[1].axhline(1, color=S.MUTED, lw=.8); axes[1].set_ylabel(cap("median ratio, kept / full (paired cells)"))
+    axes[1].set_ylim(0.3, None); axes[1].legend(fontsize=6.5, frameon=False, loc="lower left")
+    lines(axes[2], snr_summary[snr_summary["size"].isin(SMALL_SIZES)], "rho_snr_da_size", SMALL_SIZES, count="n_tasks_rho")
+    axes[2].axhline(0, color=S.MUTED, lw=.8); axes[2].set_ylim(-1, 1); axes[2].set_ylabel("Spearman ρ(SNR, DA-size multi-axis)")
+    for ax, lab in zip(axes, ("SNR", "gain over the full benchmark", "does SNR track DA-size?")):
+        ax.set_title(cap(lab), loc="left", fontsize=8.5)
+        ax.set_xlabel(cap(ax.get_xlabel()))
+    if not paper:
+        return fig
+    fig.tight_layout()
+    snr_summary.to_csv(paper_dir / f"{NAME}_snr_paper.csv", index=False)
+    S.save_paper(fig, paper_dir / f"{NAME}_snr_paper")
 
 
 GAIN = "gate, then items − full (paired)"
@@ -482,20 +512,8 @@ def main(pool: str, store_pool: str, out_dir: Path, readme: bool) -> None:
              "cell = mean DA-size over the benchmark's languages (count under the value) on the full benchmark, on its "
              "above-chance items under each ordering, and the paired gain of gate, then items over the full benchmark "
              f"on the same cells; grey = every task gated (at the proxy or at {TARGET_SIZE}); {gate_note}. " + cells_note)
-    fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
-    lines(axes[0], snr_summary, "snr_median", sizes, count="n_tasks")
-    axes[0].set_ylabel("median SNR over the tasks"); axes[0].legend(fontsize=7, frameon=False)
-    lines(axes[1], snr_summary, "snr_ratio_median", sizes, orderings=("gate_then_items",))
-    g = snr_summary[snr_summary["ordering"] == "gate_then_items"].set_index("size").reindex(sizes)
-    for c, ls, lab in (("signal_ratio_median", "--", "gate, then items: signal"), ("noise_ratio_median", ":", "gate, then items: k-fold noise")):
-        axes[1].plot(range(len(sizes)), g[c], ls, lw=1.2, color=COLOUR["gate_then_items"], label=lab)
-    axes[1].axhline(1, color=S.MUTED, lw=.8); axes[1].set_ylabel("median ratio, kept / full (paired cells)")
-    axes[1].set_ylim(0.3, None); axes[1].legend(fontsize=6.5, frameon=False, loc="lower left")
-    lines(axes[2], snr_summary[snr_summary["size"].isin(SMALL_SIZES)], "rho_snr_da_size", SMALL_SIZES, count="n_tasks_rho")
-    axes[2].axhline(0, color=S.MUTED, lw=.8); axes[2].set_ylim(-1, 1); axes[2].set_ylabel("Spearman ρ(SNR, DA-size multi-axis)")
-    for ax, lab in zip(axes, ("SNR", "gain over the full benchmark", "does SNR track DA-size?")):
-        ax.set_title(lab, loc="left", fontsize=8.5)
-    save(fig, out_dir, f"{NAME}_snr", "Above-chance items: signal-to-noise ratio",
+    snr_figure(snr_summary, sizes, out_dir)               # the paper's bare twin
+    save(snr_figure(snr_summary, sizes), out_dir, f"{NAME}_snr", "Above-chance items: signal-to-noise ratio",
          "SNR at the final checkpoint = the spread of the design variants' finals (rel_std signal, std / mean) over the "
          "relative k-fold benchmark noise on the task's (kept) items; cells above chance at the size (count next to the "
          "point); ratios over the cells both readings have (items, then gate reads the same sub-scores there, so its "
@@ -632,6 +650,13 @@ if __name__ == "__main__":
     ap.add_argument("--store-pool", default=BBPB_POOL,
                     help="the per-item store folder to read (rows filtered to the pool's models and checkpoints)")
     ap.add_argument("--out-dir", type=Path, default=None, help="write here instead of pretraining/<pool>/ (no README)")
+    ap.add_argument("--paper", action="store_true",
+                    help=f"only {NAME}_snr_paper, the paper's bare figure, from {NAME}_snr.csv on disk")
     a = ap.parse_args()
     default = ABOVE_CHANCE_ITEMS / load_pools()[a.pool].get("stage", "pretraining") / a.pool
-    main(a.pool, a.store_pool, a.out_dir or default, readme=a.out_dir is None and a.pool == CANONICAL_POOL)
+    if a.paper:
+        d = a.out_dir or default
+        t = pd.read_csv(d / f"{NAME}_snr.csv")
+        snr_figure(t, [s for s in ANALYSIS_SIZES if s in set(t["size"])], d)
+    else:
+        main(a.pool, a.store_pool, a.out_dir or default, readme=a.out_dir is None and a.pool == CANONICAL_POOL)

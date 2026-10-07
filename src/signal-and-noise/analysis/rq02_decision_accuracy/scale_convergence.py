@@ -93,12 +93,15 @@ default they are not (an L50 line pools 52 tasks, an L8 line 7):
                                  reaches_tau, n_min_size (and n_min_compute on the
                                  compute axis). n_min_* is NA when no real proxy
                                  clears tau.
+    scale_convergence_da_size_multi_axes_paper.png/.svg/.csv   the plain figure for the
+                                 paper's appendix: bare (rule 18, style.save_paper), same table.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15): `_multi_axes`, or
 `_mono_axis` with --axes mono-axis, before any `_flops`.
 
     python analysis/rq02_decision_accuracy/scale_convergence.py --by L --pool predictivity
     python analysis/rq02_decision_accuracy/scale_convergence.py --by L --langs L8 --common-tasks
+    python analysis/rq02_decision_accuracy/scale_convergence.py --paper    # the _paper figure alone, from the CSV
 """
 
 from __future__ import annotations
@@ -176,6 +179,7 @@ GROUP_COLOURS = S.RAMP + [S.SERIES[1], S.SERIES[2], "#8c1d18", "#7a5195"]
 # dark at L50 — the same colour in every figure that draws them, whichever
 # regimes happen to have a line. L1 and L2 draw no line today (rule 5) and sit
 # outside the ramp so that, when they do, they do not shift the other four.
+PAPER_POPULATION = {"all benchmarks": "Benchmarks", "bpb": "BPB"}     # the paper's panel titles
 L_COLOUR = {"L1": "#8c1d18", "L2": "#7a5195", "L8": S.RAMP[0], "L15": S.RAMP[1], "L30": S.RAMP[2], "L50": S.RAMP[3]}
 
 
@@ -476,7 +480,9 @@ def draw_lines(ax, out: pd.DataFrame, groups: list, colours: dict, x: str = "non
 
 def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
            populations: tuple = POPULATIONS, note: str = "", x: str = "non_emb",
-           counts: bool = False) -> None:
+           counts: bool = False, paper: bool = False) -> None:
+    """`paper`: the bare rule-18 version (no title or caption, capitalized
+    labels), written through style.save_paper to `path` without its suffix."""
     # OVERALL first, so it heads the legend; its zorder keeps it above the rest.
     rest = group_order(g for g in out["group"].unique() if g != OVERALL)
     groups = [OVERALL] + rest
@@ -490,14 +496,19 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
         if x == "non_emb":
             ax.set_xticks([NON_EMB[s] for s in size_order(out["size"].unique())])
             ax.set_xticklabels(size_order(out["size"].unique()))
-            ax.set_xlabel("non-embedding parameters (log)")
+            ax.set_xlabel("Non-embedding parameters (log)" if paper else "non-embedding parameters (log)")
         else:
             ax.set_xlabel("training FLOPs spent by the proxies (log)")
-        ax.set_title(pop, loc="left", fontsize=8.5)
+        ax.set_title(PAPER_POPULATION.get(pop, pop) if paper else pop, loc="left", fontsize=8.5)
         ax.grid(color=S.GRID, lw=.6); S.clean(ax)
-    axes[0].set_ylabel(f"decision reliability vs {TARGET_SIZE} final")
+    axes[0].set_ylabel(f"{'D' if paper else 'd'}ecision reliability vs {TARGET_SIZE} final")
     if len(groups) > 1:               # a lone pooled line names itself in the subtitle
         axes[0].legend(fontsize=6.5, frameon=False, ncol=2, loc="lower right")
+    if paper:
+        fig.set_size_inches(3.6 * len(populations), 3.2)
+        fig.tight_layout()
+        S.save_paper(fig, path.with_suffix(""))
+        return
     top = G._header(fig, f"Scale convergence: how small a fully trained model still decides like {TARGET_SIZE}",
                     f"{BY_LINE[by]}; "
                     + (f"a decision = one pair of design variants, read at both models' FINAL checkpoint "
@@ -514,6 +525,16 @@ def figure(out: pd.DataFrame, path: Path, by: str, pool: str, tau: float,
                     f"minimum as everywhere in rq02; pairs from the {POOL} pool, gated with {pool}'s mask." + note)
     fig.tight_layout(rect=(0, 0, 1, top))
     S.save(fig, path, dpi=150)
+
+
+PAPER_STEM = "scale_convergence_da_size_multi_axes"      # the plain pooled figure the paper's appendix shows
+
+
+def paper_figure(out_dir: Path) -> None:
+    """`<PAPER_STEM>_paper`, the bare twin of the plain figure, from its CSV on disk."""
+    out = pd.read_csv(out_dir / f"{PAPER_STEM}.csv")
+    out.to_csv(out_dir / f"{PAPER_STEM}_paper.csv", index=False)
+    figure(out, out_dir / f"{PAPER_STEM}_paper.png", "overall", "", float(out["tau"].iloc[0]), paper=True)
 
 
 def panel_figure(out: pd.DataFrame, path: Path, pool: str, tau: float, populations: tuple = POPULATIONS,
@@ -695,6 +716,8 @@ def run(by: str, pool: str, tau: float, out_dir: Path, variant: str = "",
     # the two-panel one has ring labels in the same place.
     figure(out, out_dir / f"{stem}.png", by, pool, tau, populations, note, x,
            counts=langs != "all" and not common and bool(variant))
+    if stem == PAPER_STEM:                 # the paper's appendix figure, bare (rule 18)
+        paper_figure(out_dir)
     if by == "transformation":            # the one-panel-per-axis twin, over the same table (rule 12: written beside it)
         pstem = stem_for("transformation_panels", variant, axes, langs, common) + ("_flops" if x == "compute" else "")
         out.to_csv(out_dir / f"{pstem}.csv", index=False)
@@ -740,8 +763,13 @@ if __name__ == "__main__":
                    help="restrict the tasks to the languages of one L setting (stem token replaces `L`)")
     p.add_argument("--common-tasks", action="store_true",
                    help="restrict to the tasks with ≥ MIN_PAIRS pairs in every regime at every proxy size")
+    p.add_argument("--paper", action="store_true",
+                   help=f"only {PAPER_STEM}_paper, the paper's bare figure, from {PAPER_STEM}.csv on disk")
     args = p.parse_args()
     out = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+    if args.paper:
+        paper_figure(out)
+        sys.exit(0)
     tables, n_pairs = {}, {}
     for by in args.by:
         res = run_all(by, args.pool, args.tau, out, args.axes, args.langs, args.common_tasks)

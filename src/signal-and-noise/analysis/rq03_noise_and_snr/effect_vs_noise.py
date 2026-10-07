@@ -22,8 +22,10 @@ only (the loader, rules 6 and 2).
 
     effect_vs_noise.csv   per (size, L, task): |Δ| per intervention, seed noise, raw and detrended checkpoint noise, ratios
     effect_vs_noise.png
+    effect_vs_noise_paper.png/.svg/.csv   the same medians for the paper: bare (rule 18), a row per noise
 
     python analysis/rq03_noise_and_snr/effect_vs_noise.py --pool predictivity_seeds
+    python analysis/rq03_noise_and_snr/effect_vs_noise.py --paper    # the _paper figure alone, from the CSV
 """
 
 from __future__ import annotations
@@ -115,21 +117,46 @@ def effect_vs_noise(df: pd.DataFrame, fin: pd.DataFrame, pool: str) -> pd.DataFr
 
 
 
-def plot_effect_vs_noise(evn: pd.DataFrame, path: Path) -> None:
+PAPER_POPULATION = {"benchmark": "Benchmarks", "bpb": "BPB per language", "bpb_macro": "BPB macro", "loss": "Training loss"}
+PAPER_NOISE = {"seed": "seed noise", "ckpt": "checkpoint noise"}
+
+
+def plot_effect_vs_noise(evn: pd.DataFrame, path: Path, paper: bool = False) -> None:
+    """`paper`: the bare rule-18 version, one row per noise and one column per
+    intervention, written through style.save_paper with the medians it draws."""
     cols = [c for c in evn.columns if c.startswith("effect_") and ("_over_seed" in c or "_over_ckpt" in c)
             and evn[c].notna().any()]
     if not cols:
         return
-    fig, axes = plt.subplots(1, len(cols), figsize=(3.4 * len(cols), 3.2), squeeze=False)
-    for ax, col in zip(axes[0], cols):
+    if paper:                              # one row per noise, one column per intervention
+        cols = sorted(cols, key=lambda c: c.endswith("_over_ckpt"))
+        fig, axes = plt.subplots(2, len(cols) // 2, figsize=(1.9 * len(cols), 4.6), squeeze=False)
+    else:
+        fig, axes = plt.subplots(1, len(cols), figsize=(3.4 * len(cols), 3.2), squeeze=False)
+    rows = []
+    for ax, col in zip(axes.ravel(), cols):
         for pop, g in evn.groupby("population"):
             med = g.groupby("size")[col].median().dropna()
             sizes = size_order(med.index)
             if sizes:
-                ax.plot(sizes, [med[s] for s in sizes], marker="o", label=pop)
+                ax.plot(sizes, [med[s] for s in sizes], marker="o", ms=3.5 if paper else 6,
+                        label=PAPER_POPULATION.get(pop, pop) if paper else pop)
+                rows += [{"panel": col, "population": pop, "size": s, "median": med[s]} for s in sizes]
         ax.axhline(1, ls="--", lw=0.8, color=S.MUTED)
-        ax.set_yscale("log"); ax.set_title(col.replace("effect_", "").replace("_over_", " / "), loc="left", fontsize=8)
-        ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("size"); S.clean(ax)
+        k, noise = col.removeprefix("effect_").split("_over_")
+        ax.set_yscale("log")
+        ax.set_title(f"{INTERVENTIONS[k][0][0].upper()}{INTERVENTIONS[k][0][1:]}\nover {PAPER_NOISE[noise]}" if paper
+                     else f"{k} / {noise}", loc="left", fontsize=7.5 if paper else 8)
+        ax.grid(color=S.GRID, lw=.6); ax.set_xlabel("Model size" if paper else "size"); S.clean(ax)
+    if paper:
+        for row in axes:
+            row[0].set_ylabel("Median |effect| / noise")
+        fig.legend(*axes[0][0].get_legend_handles_labels(), fontsize=7, frameon=False, ncol=4,
+                   loc="upper center", bbox_to_anchor=(0.5, 0.0))
+        fig.tight_layout()
+        pd.DataFrame(rows).to_csv(path.with_suffix(".csv"), index=False)
+        S.save_paper(fig, path.with_suffix(""))
+        return
     axes[0][0].set_ylabel("median |effect| / noise")
     axes[0][0].legend(fontsize=7, frameon=False)
     fig.suptitle("Intervention effect against seed and late-checkpoint noise (1 = the same model)\n"
@@ -192,6 +219,7 @@ def main(pool: str, out_dir: Path) -> None:
     print(f"Wrote → {out_dir / 'effect_vs_noise.csv'} ({len(evn)} cells)")
     if not evn.empty:
         plot_effect_vs_noise(evn, out_dir / "effect_vs_noise.png")
+        plot_effect_vs_noise(evn, out_dir / "effect_vs_noise_paper.png", paper=True)
     generate_readme(pool, out_dir, evn)
 
 
@@ -200,8 +228,14 @@ if __name__ == "__main__":
     p.add_argument("--pool", default=CANONICAL,
                    help=f"Ladder pool from configs/models.json (default: {CANONICAL}; the seed "
                         "replicates are what the seed-noise column is made of).")
+    p.add_argument("--paper", action="store_true",
+                   help="only effect_vs_noise_paper, the paper's bare figure, from effect_vs_noise.csv on disk")
     args = p.parse_args()
     if args.pool not in load_pools():
         p.error(f"unknown pool {args.pool!r}; available: {sorted(load_pools())}")
     stage = load_pools()[args.pool].get("stage", "pretraining")
-    main(args.pool, OUT_ROOT / stage / args.pool)
+    out = OUT_ROOT / stage / args.pool
+    if args.paper:
+        plot_effect_vs_noise(pd.read_csv(out / "effect_vs_noise.csv"), out / "effect_vs_noise_paper.png", paper=True)
+    else:
+        main(args.pool, out)
