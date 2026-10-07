@@ -33,8 +33,8 @@ Three decision accuracies share this table, by what the ranking is compared agai
               run (`da_own`): what the size would have decided early. A run's final is
               its own reference, so the 5C column is trivially 1.0 and is not drawn.
 
-Ten figures per pair set, one per (reading, variant); above_66_ckpt draws DA-ckpt
-alone and above_66_either DA-goal alone. All share the y axis, so any two of
+Eleven figures per pair set, one per (reading, variant); above_66_ckpt draws DA-ckpt
+alone. All share the y axis, so any two of
 them overlay. The variants differ only in which tasks the mean runs over:
 
     <plain>     every gated benchmark task, dashed, one line per proxy size
@@ -101,7 +101,7 @@ from analysis.autodoc import CANONICAL_POOL, md_table, replace_block  # noqa: E4
 from pretrain.launch_trainings import DATA_SCHEMES, LADDERS, ladders_for, mix_label, scheme_sizes  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
 from analysis.rq02_decision_accuracy.compute_da import (  # noqa: E402
-    compute_ckpt_decision_accuracy, compute_early_small_decision_accuracy)
+    compute_ckpt_decision_accuracy, compute_early_small_decision_accuracy, family_runs)
 from analysis.rq02_decision_accuracy.early_small import MIN_PAIRS, SAFE_DA  # noqa: E402
 from analysis.rq02_decision_accuracy.reliable_tasks import FILTERS, load_reliable  # noqa: E402
 from analysis.rq02_decision_accuracy.scale_convergence import AXIS_LABEL, OVERALL, pairs_by_group  # noqa: E402
@@ -116,9 +116,18 @@ FRACS = [k / 10 for k in range(1, 11)]     # the ten evaluated checkpoints of ev
 mpl.rcParams.update(S.RC)
 
 
+KERNEL_COLS = ["task", "bucket", "family", "step", "primary_score", "compute"]
+
+
 def _da_table(df: pd.DataFrame, label, pairs=None) -> list[dict]:
     """Per task, proxy size and fraction: DA vs the reference's final ranking
     and vs the size's own final ranking, over the pairs of `df`."""
+    # The kernels read these columns alone, and each task's runs are split and
+    # sorted once (`family_runs`) rather than in every one of the ~100 kernel calls
+    # per task: on the full pool frame (two dozen columns, most of them Arrow
+    # strings) that re-copying was nearly all of the 1.5-2.5 h a run took. Row
+    # order and values are unchanged, so the tables are bit-identical.
+    df = df[KERNEL_COLS].astype({c: object for c in ("task", "bucket", "family")})
     buckets = [b for b in bucket_order() if b in set(df["bucket"])]
     ref_full = df.loc[df["bucket"] == TARGET_SIZE, "compute"].max()
     rows = []
@@ -129,8 +138,10 @@ def _da_table(df: pd.DataFrame, label, pairs=None) -> list[dict]:
         # (the kernels return exactly that), so the 45 kernel calls below are skipped
         if pairs is not None and sum(a in set(dft["family"]) and b in set(dft["family"]) for a, b in pairs) < MIN_PAIRS:
             continue
-        ref = {(r["proxy_size"], r["frac"]): r for r in compute_early_small_decision_accuracy(dft, fracs=FRACS, pairs=pairs)}
-        own = {(b, f): compute_ckpt_decision_accuracy(dft, t, b, f, return_n=True, pairs=pairs) for b in buckets for f in FRACS[:-1]}
+        runs = {b: family_runs(dft, b) for b in buckets}       # each run sorted once, read at every fraction
+        ref = {(r["proxy_size"], r["frac"]): r for r in compute_early_small_decision_accuracy(dft, fracs=FRACS, pairs=pairs, runs=runs)}
+        own = {(b, f): compute_ckpt_decision_accuracy(dft, t, b, f, return_n=True, pairs=pairs, runs=runs[b])
+               for b in buckets for f in FRACS[:-1]}
         own = {k: v if isinstance(v, tuple) else (np.nan, 0) for k, v in own.items()}   # a bare NaN when the bucket is absent
         for b in buckets:
             for f in FRACS:
@@ -261,14 +272,16 @@ BOTH_READINGS = ("goal", "ckpt")
 # variant -> (the groups drawn, the reliable_tasks FILTERS name or None, which
 # readings get it). The one-axis filters exist for rq2_da_all_above_66_own, which reads
 # each panel over the tasks reliable on THAT panel's own axis: the DA-ckpt panel
-# over the DA-ckpt passers, the DA-goal panel over either.
+# over the DA-ckpt passers, the DA-goal panel over either. `above_66_either` is
+# drawn for both readings because the paper's rq2 figure reads every panel over
+# that one population, so its DA-ckpt and DA-goal 1.7B lines are one curve.
 VARIANTS = {
     "": (BENCH, None, BOTH_READINGS),
     "with_bpb": (WITH_BPB, None, BOTH_READINGS),
     "above_80": (BENCH, "above_80", BOTH_READINGS),
     "above_66_both": (BENCH, "above_66_both", BOTH_READINGS),
     "above_66_ckpt": (BENCH, "above_66_ckpt", ("ckpt",)),
-    "above_66_either": (BENCH, "above_66_either", ("goal",)),
+    "above_66_either": (BENCH, "above_66_either", BOTH_READINGS),
 }
 
 
@@ -466,7 +479,7 @@ def generate_readme_transformation(pool: str, out_dir: Path, summaries: dict) ->
         f"(`{L_POOL}`, every data build) by the one axis each pair moves — {', '.join(axes_)} — one panel per axis and a first panel "
         f"over every mono-axis pair (median pairs per cell up to {int(summaries[('ckpt', '')]['median_pairs'].max())}). Same gate (rule 1), "
         f"pair minimum (rule 5) and filter variants as the per-L figures; the `above_66_ckpt` twin filters the DA-ckpt figure and "
-        f"`above_66_either` the DA-goal one, both on the mono-axis reliability (rule 15). Task counts sit at the end of every line "
+        f"`above_66_either` both, all on the mono-axis reliability (rule 15). Task counts sit at the end of every line "
         f"and the populations differ between panels and sizes (rule 13). Regenerate with "
         f"`python analysis/rq02_decision_accuracy/by_L.py --pool {pool} --by transformation`.",
         f"![DA-ckpt per design axis]({rel}/{stem('ckpt', '')}.png)",

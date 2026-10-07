@@ -6,7 +6,11 @@ so the panels can never disagree with the figures they are taken from:
 
     left    DA-size   `scale_convergence_da_size<axes>.csv`, the `all benchmarks` population:
                       how small a FULLY TRAINED model may be and still decide like
-                      the reference. The PLAIN grouping — the single pooled line
+                      the reference. Drawn as `reliability_macro`, the mean over
+                      tasks, which is how the other two panels average, so a
+                      size's DA-size is exactly its 5C point in the DA-goal panel
+                      (the table's pooled ratio `reliability` weights a task by its
+                      pair count and is not that number). The PLAIN grouping — the single pooled line
                       over every pair at the grid seed, every data build (the
                       `predictivity` pool), which is the claim the
                       question is written as; `scale_convergence_da_size_transformation<axes>.csv`
@@ -22,10 +26,20 @@ so the panels can never disagree with the figures they are taken from:
                       between them is what the proxy SIZE costs, on top of reading
                       the proxy early.
 
-Paper conventions: no figure title, no note, no panel titles. Each panel names
-its definition in its own y label, the two line legends sit inside the axes
-(design axes on the left, proxy sizes in the middle, shared with the right),
-and the y axis is shared so the three panels are read against one scale.
+Paper conventions: no figure title, no note, no panel titles, no reference
+lines. Each panel names its definition and its reference in its own y label,
+the two line legends sit inside the axes (design axes on the left, in shades
+of dark orange beside the black pooled line, so they are not read as the blue
+proxy sizes of the middle and right panels, whose legend is shared), and the y
+axis is shared so the three panels are read against one scale. A point that is
+1.0 by comparing a ranking with itself (the 1.7B final on the left, every
+size's own final in the middle, the 1.7B final on the right) is drawn hollow,
+joined by a dashed segment.
+
+The three panels of one figure read ONE task population, so the 1.7B line of
+the DA-ckpt panel is the 1.7B line of the DA-goal panel, and the pooled DA-size
+line is the 5C points of the DA-goal panel; `rq2_da_all_above_66_own` is the one
+exception, and says so below.
 
     rq2.png / .svg / .csv        the three panels over every task (the SVG is the
                                  vector copy)
@@ -49,12 +63,12 @@ and the y axis is shared so the three panels are read against one scale.
                                  does each definition do on the tasks it is
                                  trustworthy for", not as a like-for-like comparison.
     rq2_da_all_above_66_either_transformation.*
-                                 the per-panel populations of rq2_da_all_above_66_own with the
-                                 DA-size panel broken out by design axis, as
-                                 rq2_da_all_above_66_both_transformation does for the shared
-                                 population. The left panel therefore reads over the
-                                 DA-size passers only, so its axes are not the same
-                                 cells as the middle and right panels.
+                                 the paper's figure: the three panels over the cells
+                                 reliable on EITHER axis at 0.66 (`median`), one
+                                 population for all three, with the DA-size panel
+                                 broken out by design axis as
+                                 rq2_da_all_above_66_both_transformation does for the
+                                 `both` population.
 
 Every name above carries the pair set's AXES_SUFFIX (rule 15), `rq2_da_all_multi_axes.*`
 or `rq2_da_all_mono_axis.*` with --axes mono-axis, and reads the tables with the same one.
@@ -77,6 +91,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -91,12 +106,12 @@ from analysis import grids as G  # noqa: E402
 from analysis import style as S  # noqa: E402
 from analysis.autodoc import CANONICAL_POOL  # noqa: E402
 from analysis.paths import DECISION_ACCURACY  # noqa: E402
-from analysis.rq02_decision_accuracy.early_small import SAFE_DA  # noqa: E402
-from analysis.rq02_decision_accuracy.scale_convergence import GROUP_COLOURS, OVERALL, TAU  # noqa: E402
+from analysis.rq02_decision_accuracy.scale_convergence import OVERALL  # noqa: E402
 from analysis.utils import AXES_SUFFIX, NON_EMB, SMALL_SIZES, TARGET_SIZE, size_order  # noqa: E402
 
 OUT_ROOT = DECISION_ACCURACY
-YLIM = (0.25, 1.0)            # one scale for the three panels
+YLIM = (0.25, 1.02)           # one scale for the three panels; 1.0 (the hollow self-references) inside it
+Y_SIZE = "reliability_macro"  # DA-size as a mean over tasks, the other two panels' average
 # rq2 variant -> the tables the three panels read: the DA-size panel's stem in
 # full (so the GROUPING is data too, not only the filter), then the DA-ckpt and
 # DA-goal suffixes. One entry per figure, so both the per-panel filter and the
@@ -108,58 +123,74 @@ RQ2_VARIANTS = {
     "above_66_own": ("scale_convergence_da_size_above_66_size", "_above_66_ckpt", "_above_66_either"),
     "above_66_both_transformation": ("scale_convergence_da_size_transformation_above_66_both",
                                      "_above_66_both", "_above_66_both"),
-    "above_66_either_transformation": ("scale_convergence_da_size_transformation_above_66_size",
-                                       "_above_66_ckpt", "_above_66_either"),
+    "above_66_either_transformation": ("scale_convergence_da_size_transformation_above_66_either",
+                                       "_above_66_either", "_above_66_either"),
 }
 mpl.rcParams.update(S.RC)
 
 
+def _ncol(n: int) -> int:
+    """Legend columns of equal height: two once a single column gets tall."""
+    return 2 if n > 3 else 1
+
+
+def _self_reference(ax, x0, y0, x1, c, z=3) -> None:
+    """The dashed segment to a point that is 1.0 by comparing a ranking with
+    itself, and that point, hollow: it closes the line without counting as one
+    of its measurements."""
+    ax.plot([x0, x1], [y0, 1.0], color=c, lw=1.0, ls=(0, (2, 2)), alpha=.45, zorder=2)
+    ax.plot([x1], [1.0], marker="o", ms=4.5, mfc=S.SURFACE, mec=c, mew=1.2, ls="none", zorder=z)
+
+
 def _scale_panel(ax, out_dir: Path, stem: str = "scale_convergence_da_size") -> pd.DataFrame:
-    """DA-size: reliability vs non-embedding parameters. `stem` picks which
-    scale-convergence table, and so whether this is the single pooled line or
-    one line per design axis."""
+    """DA-size: the mean over tasks vs non-embedding parameters. `stem` picks
+    which scale-convergence table, and so whether this is the single pooled
+    line or one line per design axis."""
     d = pd.read_csv(out_dir / f"{stem}.csv")
     d = d[d["population"] == "all benchmarks"].sort_values("non_emb")
     rest = [g for g in dict.fromkeys(d["group"]) if g != OVERALL]
     groups = [OVERALL] + rest           # OVERALL heads the legend and sits on top
-    colours = dict(zip(rest, GROUP_COLOURS * 3))
+    shades = mpl.colormaps["Oranges"](np.linspace(.95, .55, len(rest))) if rest else []
+    colours = dict(zip(rest, shades))
     for grp in groups:
         g = d[d["group"] == grp]
         real, ref = g[g["size"] != TARGET_SIZE], g[g["size"] == TARGET_SIZE]
         c, lw, z = (S.INK, 2.0, 6) if grp == OVERALL else (colours[grp], 1.4, 3)
-        ax.plot(real["non_emb"], real["reliability"], color=c, marker="o", ms=4, lw=lw, label=grp, zorder=z)
-        if len(ref) and len(real):      # the reference is 1.0 by self-comparison: faint, hollow
-            ax.plot([real["non_emb"].iloc[-1], ref["non_emb"].iloc[0]],
-                    [real["reliability"].iloc[-1], ref["reliability"].iloc[0]],
-                    color=c, lw=1.0, ls=(0, (2, 2)), alpha=.45, zorder=2)
-            ax.plot(ref["non_emb"], ref["reliability"], marker="o", ms=4.5, mfc=S.SURFACE, mec=c, mew=1.2, ls="none", zorder=z)
-    ax.axhline(TAU, color=S.MUTED, lw=.8, ls=":")
+        ax.plot(real["non_emb"], real[Y_SIZE], color=c, marker="o", ms=4, lw=lw, label=grp, zorder=z)
+        if len(ref) and len(real):      # the reference is 1.0 by self-comparison
+            _self_reference(ax, real["non_emb"].iloc[-1], real[Y_SIZE].iloc[-1], ref["non_emb"].iloc[0], c, z)
     ax.set_xscale("log")
     sizes = size_order(d["size"].unique())
-    ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes)
-    ax.set_xlabel("model size (non-embedding parameters)")
-    ax.set_ylabel(f"DA-size — vs {TARGET_SIZE} final, fully trained")
+    ax.set_xticks([NON_EMB[s] for s in sizes]); ax.set_xticklabels(sizes); ax.minorticks_off()
+    ax.set_xlabel("Model size (non-embedding parameters)")
+    ax.set_ylabel(f"DA-size (reference is the final checkpoint of {TARGET_SIZE})")
     if len(groups) > 1:               # the pooled grouping is one line; it needs no key
-        ax.legend(fontsize=6.5, frameon=False, loc="lower left")
+        ax.legend(fontsize=6.5, frameon=False, loc="lower left", ncol=_ncol(len(groups)))
     return d.assign(panel="DA-size")
 
 
 def _run_panel(ax, out_dir: Path, name: str, ylabel: str, legend: bool, suffix: str = "") -> pd.DataFrame:
-    """DA-ckpt / DA-goal: the `all pairs` panel of by_L, one line per proxy size."""
+    """DA-ckpt / DA-goal: the `all pairs` panel of by_L, one line per proxy size.
+    A line with no 5C point is ranked against its own final there (every size
+    under DA-ckpt, the reference under DA-goal), which is 1.0 and drawn hollow."""
     d = pd.read_csv(out_dir / f"early_small_da_{name}_by_L{suffix}.csv")
     d = d[(d["L"].astype(str) == "all") & (d["group"] == "all benchmarks")].sort_values("chinchilla")
     sizes = [s for s in SMALL_SIZES + [TARGET_SIZE] if s in set(d["proxy_size"])]
+    x_final = G.CHINCHILLA_AT_FULL
     for s_ in sizes:
         g = d[d["proxy_size"] == s_]
-        ax.plot(g["chinchilla"], g["da"], color=S.SIZE_COLOR.get(s_, S.MUTED), marker="o", ms=3.5, lw=1.4, label=s_)
-    ax.axhline(SAFE_DA, color=S.MUTED, lw=.8, ls=":")
+        c = S.SIZE_COLOR.get(s_, S.MUTED)
+        ax.plot(g["chinchilla"], g["da"], color=c, marker="o", ms=3.5, lw=1.4, label=s_)
+        if g["chinchilla"].max() < x_final:
+            _self_reference(ax, g["chinchilla"].iloc[-1], g["da"].iloc[-1], x_final, c)
     ax.set_xticks([1, 2, 3, 4, 5]); ax.set_xticklabels([G.chinchilla(f) for f in (.2, .4, .6, .8, 1.0)])
     ax.set_xlim(0.3, 5.2)
-    ax.set_xlabel("proxy's training tokens (× Chinchilla)")
+    ax.set_xlabel("Proxy's training tokens (× Chinchilla)")
     ax.set_ylabel(ylabel)
     if legend:
-        ax.legend(fontsize=6.5, frameon=False, loc="lower right", ncol=2, title="proxy size", title_fontsize=6.5)
-    return d.assign(panel=ylabel.split(" —")[0])
+        ax.legend(fontsize=6.5, frameon=False, loc="lower right", ncol=_ncol(len(sizes)),
+                  title="Proxy size", title_fontsize=6.5)
+    return d.assign(panel=f"DA-{name}")
 
 
 def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
@@ -177,8 +208,8 @@ def figure(out_dir: Path, variant: str = "", axes: str = "multi-axis") -> None:
         return
     fig, ax3 = plt.subplots(1, 3, figsize=(13.5, 4.0), sharey=True)
     rows = [_scale_panel(ax3[0], out_dir, sz + a),
-            _run_panel(ax3[1], out_dir, "ckpt", "DA-ckpt — vs its own size's final", True, ck + a),
-            _run_panel(ax3[2], out_dir, "goal", f"DA-goal — vs {TARGET_SIZE} final", False, gl + a)]
+            _run_panel(ax3[1], out_dir, "ckpt", "DA-ckpt (reference is the final checkpoint of the same size)", True, ck + a),
+            _run_panel(ax3[2], out_dir, "goal", f"DA-goal (reference is the final checkpoint of {TARGET_SIZE})", False, gl + a)]
     for ax in ax3:
         ax.set_ylim(*YLIM); ax.grid(color=S.GRID, lw=.6); S.clean(ax)
     fig.tight_layout()

@@ -67,10 +67,11 @@ Both reformulations substantially increase the number of benchmark--language sub
 % src/signal-and-noise/analysis/rq02_decision_accuracy/pretraining/predictivity/rq2_da_all_above_66_either_transformation_mono_axis.png
 \includegraphics[width=\textwidth]{figures/rq2.png}
 \caption{\textbf{Decision reliability across scale and training.}
-Decision accuracy of a proxy against the 1.7B reference on single-axis decisions, over the benchmark--language tasks whose median DA under each panel's own definition is at least 0.66.
-\textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, pooled over decisions, one line per design axis and a black line over all pairs; the hollow 1.7B point equals one by construction and the dotted line marks 0.90.
-\textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint against the final checkpoint of the same model size, averaged over tasks, one line per proxy size; the dotted line marks 0.75.
-\textbf{(c)} Full-scale decision prediction: DA of each checkpoint against the final 1.7B ranking.
+Decision accuracy of a proxy on single-axis decisions, over one set of benchmark--language tasks shared by the three panels: those whose median DA-size or median DA-ckpt is at least 0.66.
+\textbf{(a)} Scale convergence: DA of the final checkpoint of each model size against the final 1.7B ranking, averaged over tasks, one line per design axis and a black line over all pairs, which equals the 5C points of (c).
+\textbf{(b)} Within-model training convergence: DA of each intermediate checkpoint against the final checkpoint of the same model size, averaged over tasks, one line per proxy size.
+\textbf{(c)} Full-scale decision prediction: DA of each checkpoint against the final 1.7B ranking; its 1.7B line equals the 1.7B line of (b).
+Hollow points joined by a dashed segment equal one by construction, since they compare a ranking with itself: the final 1.7B model in (a) and (c), and every size's final checkpoint in (b).
 % Panels (b) and (c) share their axis in Chinchilla multiples and all three share the vertical axis, so the gap between (b) and (c) is the cost of the proxy's size on top of reading it early.
 }
 \label{fig:rq2}
