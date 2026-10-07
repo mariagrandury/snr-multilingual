@@ -50,6 +50,16 @@ The RQ has two halves, and they answer differently:
   — exact on all 4,490 cells on 2026-10-02, max |diff| 1.11e-16. The script
   and rq02 share the pair sets and the kernel.
 
+## Key figure
+
+![Decision accuracy against the 3B rung, benchmark accuracy and BPB](pretraining/predictivity/above_reference_3B_paper.png)
+
+Population: DA-size against the 3B final, multi-axis and mono-axis pairs at the grid seed over the 4 families with a 3B final, gate `predictivity` at the proxy and the Wilson rule on the 3B runs at the reference, no filter; benchmark accuracy and per-language BPB pooled separately.
+
+**Key finding.** Benchmark accuracy reads the 3B ranking at chance from every proxy (DA-size 0.43–0.52, the 1.7B reference included), while per-language BPB reads it at 0.75–0.96, and from the 1.7B reference at 0.92 (multi-axis) and 0.96 (mono-axis).
+
+GitHub: [above_reference_3B_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.png) · [above_reference_3B_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq10_size_generalisation/pretraining/predictivity/above_reference_3B_paper.csv). The full figure, with the same families read to 1.7B: [The 3B rung as the reference](#the-3b-rung-as-the-reference).
+
 ## Figures, in storyline order
 
 <!-- BEGIN auto:above-reference-3B (above_reference.py --pool predictivity --reference 3B) -->

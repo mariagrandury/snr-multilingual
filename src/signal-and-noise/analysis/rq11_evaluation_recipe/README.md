@@ -27,6 +27,16 @@ variants. When the store covers every checkpoint, the DA-goal cells below
 100 % and the safe-compute column fill in on the next refresh without a code
 change.
 
+## Key figure
+
+![Mean DA-size per way of evaluating a benchmark](pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png)
+
+Population: DA-size against the 1.7B final, multi-axis pairs of `predictivity` (seed 1904), gate `predictivity` at the proxy and the reference (a bBPB task has no chance level and passes), ≥ 3 pairs, no filter, every task; bBPB at final checkpoints only; a point on fewer than 5 tasks is not drawn.
+
+**Key finding.** No way of evaluating a benchmark reaches the reliable threshold (0.75) on average by 1B, but bBPB scoring reads the reference better than accuracy and the LLM rewrite scored by bBPB is highest (0.56–0.65 against 0.51–0.54 for the original accuracy).
+
+GitHub: [recipe_da_size_variants_multi_axes_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.png) · [recipe_da_size_variants_multi_axes_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq11_evaluation_recipe/pretraining/predictivity/recipe_da_size_variants_multi_axes_paper.csv). Variants together and apart, and the recommendation per benchmark: [Results](#results).
+
 ## Methodology
 
 - **Per task**: DA-size at each proxy (rule 1 at the proxy and the reference,

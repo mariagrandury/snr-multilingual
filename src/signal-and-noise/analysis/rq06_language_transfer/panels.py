@@ -7,6 +7,7 @@
                               neither trains even the script (mean over L); the last two are the transfer test
     transfer_da_all_by_L_mono_axis.png      the same agreement per language count, one panel per intervention, one line per group
                               (DA-size, mean over the proxy sizes)
+    transfer_da_all_lines_mono_axis_paper.png/.svg/.csv   transfer_da_all_lines_mono_axis for the paper, no title
 
 Reads `rq5_transfer.csv`. There is no per-benchmark view: the transfer test
 is on per-language bits per byte only.
@@ -14,6 +15,7 @@ The decision lines read analyze.py's `transfer_da_all_by_group_mono_axis.csv`
 (every evaluated checkpoint, every language: rule 2's exception).
 
     python analysis/rq06_language_transfer/panels.py --pool predictivity_seeds
+    python analysis/rq06_language_transfer/panels.py --paper    # the paper figure alone, from transfer_da_all_by_group_mono_axis.csv
 """
 
 from __future__ import annotations
@@ -48,6 +50,12 @@ GROUP_COLOUR = dict(zip(LANGUAGE_GROUPS, [S.RAMP[3], S.MUTED, S.RAMP[1], S.SERIE
 mpl.rcParams.update(S.RC)
 
 
+def paper_figure(lists: pd.DataFrame, out_dir: Path) -> None:
+    """transfer_da_all_lines_mono_axis for the paper: the list decision per language group, no title."""
+    da_lines(lists[lists["intervention"] == "scheme_B"], out_dir, name="transfer_da_all_lines_mono_axis_paper", series="group",
+             colours=GROUP_COLOUR, populations=(("bpb", "-", "BPB"),), title="", note="", paper=True)
+
+
 def decision_lines(out_dir: Path) -> bool:
     """Draw the two transfer-decision figures; False when there is nothing to draw."""
     src = out_dir / "transfer_da_all_by_group_mono_axis.csv"
@@ -66,6 +74,7 @@ def decision_lines(out_dir: Path) -> bool:
                   "checkpoint (per-language BPB), mean over L; group = what the two levels' lists do with the language: both train "
                   "it, only one does (a decision the language's inclusion makes by itself), neither does but a list trains its "
                   "script, or neither trains even the script; dotted line = 0.75")
+    paper_figure(lists, out_dir)
     fin = g[g["frac"] == 1.0].groupby(["intervention", "label", "L", "group"])["decision_acc"].mean().reset_index()
     keys = [k for k in INTERVENTIONS if k in set(fin["intervention"])]
     Ls = sorted(fin["L"].unique())
@@ -135,4 +144,10 @@ def main(pool: str) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--pool", default=CANONICAL)
-    main(p.parse_args().pool)
+    p.add_argument("--paper", action="store_true", help="only the paper figure, from transfer_da_all_by_group_mono_axis.csv on disk")
+    args = p.parse_args()
+    if args.paper:
+        d = OUT_ROOT / load_pools()[args.pool].get("stage", "pretraining") / args.pool
+        paper_figure(by_recipe(pd.read_csv(d / "transfer_da_all_by_group_mono_axis.csv").assign(population="bpb")), d)
+    else:
+        main(args.pool)

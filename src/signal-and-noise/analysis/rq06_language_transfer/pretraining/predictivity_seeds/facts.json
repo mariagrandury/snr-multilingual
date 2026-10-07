@@ -1,0 +1,235 @@
+{
+ "rq5": {
+  "summary": [
+   {
+    "trained": false,
+    "k": 1,
+    "transfer": 0.05,
+    "own": NaN,
+    "last": 0.248,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 2,
+    "transfer": 0.043,
+    "own": NaN,
+    "last": 0.188,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 3,
+    "transfer": 0.037,
+    "own": 0.048,
+    "last": 0.121,
+    "n": 494
+   },
+   {
+    "trained": false,
+    "k": 4,
+    "transfer": 0.031,
+    "own": 0.027,
+    "last": 0.066,
+    "n": 494
+   },
+   {
+    "trained": true,
+    "k": 1,
+    "transfer": 0.044,
+    "own": NaN,
+    "last": 0.326,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 2,
+    "transfer": 0.053,
+    "own": NaN,
+    "last": 0.257,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 3,
+    "transfer": 0.047,
+    "own": 0.039,
+    "last": 0.161,
+    "n": 106
+   },
+   {
+    "trained": true,
+    "k": 4,
+    "transfer": 0.039,
+    "own": 0.015,
+    "last": 0.076,
+    "n": 106
+   }
+  ],
+  "alpha_pooled_by_L": {
+   "1": 0.09,
+   "2": 0.096,
+   "8": 0.096,
+   "15": 0.094,
+   "30": 0.106,
+   "50": 0.117
+  },
+  "alpha_own_spread_by_L": {
+   "1": {
+    "median": 0.09,
+    "std": 0.026
+   },
+   "2": {
+    "median": 0.097,
+    "std": 0.038
+   },
+   "8": {
+    "median": 0.097,
+    "std": 0.043
+   },
+   "15": {
+    "median": 0.096,
+    "std": 0.039
+   },
+   "30": {
+    "median": 0.106,
+    "std": 0.035
+   },
+   "50": {
+    "median": 0.117,
+    "std": 0.039
+   }
+  },
+  "n_languages": 100,
+  "references": {
+   "1": "1.7B",
+   "2": "1.7B",
+   "8": "1.7B",
+   "15": "1.7B",
+   "30": "1.7B",
+   "50": "1.7B"
+  },
+  "decision_transfer": [
+   {
+    "group": "trained by both levels",
+    "proxy_size": "90M",
+    "da": 0.953,
+    "cells": 16
+   },
+   {
+    "group": "trained by both levels",
+    "proxy_size": "175M",
+    "da": 0.964,
+    "cells": 16
+   },
+   {
+    "group": "trained by both levels",
+    "proxy_size": "350M",
+    "da": 0.831,
+    "cells": 16
+   },
+   {
+    "group": "trained by both levels",
+    "proxy_size": "600M",
+    "da": 0.705,
+    "cells": 16
+   },
+   {
+    "group": "trained by both levels",
+    "proxy_size": "1B",
+    "da": 0.906,
+    "cells": 16
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "90M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "175M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "350M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "600M",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "trained by one level",
+    "proxy_size": "1B",
+    "da": 1.0,
+    "cells": 5
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "90M",
+    "da": 0.699,
+    "cells": 16
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "175M",
+    "da": 0.732,
+    "cells": 16
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "350M",
+    "da": 0.69,
+    "cells": 16
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "600M",
+    "da": 0.694,
+    "cells": 16
+   },
+   {
+    "group": "script trained",
+    "proxy_size": "1B",
+    "da": 0.743,
+    "cells": 16
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "90M",
+    "da": 0.561,
+    "cells": 16
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "175M",
+    "da": 0.621,
+    "cells": 16
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "350M",
+    "da": 0.61,
+    "cells": 16
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "600M",
+    "da": 0.609,
+    "cells": 16
+   },
+   {
+    "group": "script not trained",
+    "proxy_size": "1B",
+    "da": 0.677,
+    "cells": 16
+   }
+  ]
+ }
+}

@@ -25,6 +25,13 @@ comment next to the \\includegraphics.
     app_benchmark_curves  <- rq00_gate_and_curves/curves.py --paper (pool predictivity_seeds)  benchmark_curves_paper
     app_above_random_external <- rq00_gate_and_curves/above_random_external.py  above_random_external_paper
     app_external_models   <- the same                                  above_random_external_models.tex (a LaTeX table)
+    app_design_decisions  <- rq05_design_decisions/panels.py --paper (pool predictivity_seeds)  da_all_lines_mono_axis_paper
+    app_language_transfer <- rq06_language_transfer/panels.py --paper (pool predictivity_seeds)  transfer_da_all_lines_mono_axis_paper
+    app_external_frameworks <- rq07_external_frameworks/analyze.py --pool predictivity --paper  snr_apertus_vs_snr_allenai_paper
+    app_subset_selection  <- rq08_subset_selection/panels.py --paper                gain_over_null_paper
+    app_benchmark_design  <- rq09_benchmark_design/analyze.py --pool predictivity --paper  snr_per_family_ranked_paper
+    app_size_generalisation <- rq10_size_generalisation/above_reference.py --paper  above_reference_3B_paper
+    app_evaluation_recipe <- rq11_evaluation_recipe/recipe.py --paper               recipe_da_size_variants_multi_axes_paper
 
 The rq1 and rq2 copies are PNG, the table TeX; the others PNG and SVG. Every
 `_paper` source is written through `style.save_paper` (RULES.md rule 18).
@@ -47,6 +54,7 @@ RQ01 = ANALYSIS / "rq01_scaling_predictability" / "pretraining" / "predictivity_
 CHANCE_TOKENS = ANALYSIS / "rq00_chance_vs_train_tokens" / "pretraining" / "predictivity_seeds"
 DA_TOKENS = ANALYSIS / "rq02_da_vs_train_tokens" / "pretraining" / "predictivity_seeds"
 CURVES = ANALYSIS / "rq00_gate_and_curves" / "pretraining" / "predictivity_seeds"
+PRED, SEEDS = ("pretraining", "predictivity"), ("pretraining", "predictivity_seeds")
 # paper stem -> (the analysis stem it is a copy of, the formats copied)
 FIGURES = {
     "rq0": (CHANCE_TOKENS / "pass_prob_vs_train_tokens_by_benchmark_1904_ckpts_include_rf_paper_vertical", ("png", "svg")),
@@ -61,6 +69,16 @@ FIGURES = {
     "app_benchmark_curves": (CURVES / "benchmark_curves_paper", ("png", "svg")),
     "app_above_random_external": (GATE / "above_random_external_paper", ("png", "svg")),
     "app_external_models": (GATE / "above_random_external_models", ("tex",)),
+    "app_design_decisions": (ANALYSIS.joinpath("rq05_design_decisions", *SEEDS, "da_all_lines_mono_axis_paper"), ("png", "svg")),
+    "app_language_transfer": (ANALYSIS.joinpath("rq06_language_transfer", *SEEDS, "transfer_da_all_lines_mono_axis_paper"),
+                              ("png", "svg")),
+    "app_external_frameworks": (ANALYSIS.joinpath("rq07_external_frameworks", *PRED, "snr_apertus_vs_snr_allenai_paper"),
+                                ("png", "svg")),
+    "app_subset_selection": (ANALYSIS.joinpath("rq08_subset_selection", *PRED, "gain_over_null_paper"), ("png", "svg")),
+    "app_benchmark_design": (ANALYSIS.joinpath("rq09_benchmark_design", *PRED, "snr_per_family_ranked_paper"), ("png", "svg")),
+    "app_size_generalisation": (ANALYSIS.joinpath("rq10_size_generalisation", *PRED, "above_reference_3B_paper"), ("png", "svg")),
+    "app_evaluation_recipe": (ANALYSIS.joinpath("rq11_evaluation_recipe", *PRED, "recipe_da_size_variants_multi_axes_paper"),
+                              ("png", "svg")),
 }
 
 

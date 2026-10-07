@@ -9,7 +9,7 @@
 > ([`documents/paper/sections/04_analysis.tex`](../../../../documents/paper/sections/04_analysis.tex)).
 > The folder also holds the detailed per-language BPB curves of every cell.
 
-<!-- BEGIN auto:highlight (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:highlight (analyze.py --pool predictivity_seeds) -->
 ## Highlighted result
 
 - **trained languages (106 (L, language) cases)** — one 175M rung plus the pooled exponent predicts the reference within 4.4 % (median); with every proxy rung, transferred 3.9 % vs own fit 1.5 % vs largest proxy as is 7.6 %.
@@ -24,6 +24,16 @@ checkpoint, from 90M up, at every L with at least four sizes (three proxy
 rungs and a reference, the largest size at that L). Every one of the 100
 validation languages is a series; "trained" means the language is in the
 cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
+
+## Key figure
+
+![The list decision by language group, by proxy size and by the reference's checkpoints](pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis_paper.png)
+
+Population: pool `predictivity_seeds`, the list decision (data scheme A vs B on the L8–L30 lists, mono-axis, reference 1.7B), per-language BPB of all 100 evaluation languages grouped by what the two lists do with the language, proxies 90M–1B at their final checkpoint (left) and the reference's own checkpoints (right), mean over L; dotted line = 0.75.
+
+**Key finding.** The list decision does not transfer to untrained languages at a proxy's scale: languages whose script a list trains are read at 0.63–0.73 below 1B (0.81 at 1B) and unseen scripts at 0.42–0.73, never 0.75, against 0.77–1.00 on the languages the lists train.
+
+GitHub: [transfer_da_all_lines_mono_axis_paper.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis_paper.png) · [transfer_da_all_lines_mono_axis_paper.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis_paper.csv). Every intervention by language count: [Per benchmark and per language](#per-benchmark-and-per-language).
 
 ## Methodology
 
@@ -46,10 +56,10 @@ cell's FineWeb-2 list at that L (`launch_trainings.cell_fineweb_subsets`).
 Hand-written numbers in this README are from the ladder-report snapshot
 **2026-09-30 23:54**.
 
-<!-- BEGIN auto:results (analyze.py --pool predictivity_all) -->
+<!-- BEGIN auto:results (analyze.py --pool predictivity_seeds) -->
 ## Results
 
-Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_language_transfer/analyze.py --pool predictivity_all`.
+Numbers from the `predictivity_seeds` pool. Regenerate with `python analysis/rq06_language_transfer/analyze.py --pool predictivity_seeds`.
 
 **Median |relative error| of the reference's BPB** (k = rungs measured for the held-out language):
 
@@ -64,34 +74,34 @@ Numbers from the `predictivity_all` pool. Regenerate with `python analysis/rq06_
 | trained | 3 | 0.047 | 0.039 | 0.161 | 106 |
 | trained | 4 | 0.039 | 0.015 | 0.076 | 106 |
 
-![Transfer](pretraining/predictivity_all/rq5_transfer.png)
+![Transfer](pretraining/predictivity_seeds/rq5_transfer.png)
 
 **Decision transfer** (DA-size of rq05's interventions on per-language BPB: the share of a group's languages on which the proxy's final ranking of the two levels matches the reference's, mean over interventions and L; the group says what the two levels' lists do with the language):
 
 | language group | proxy | DA-size | cells |
 |---|---|---|---|
-| trained by both levels | 90M | 0.95 | 14 |
-| trained by both levels | 175M | 0.96 | 14 |
-| trained by both levels | 350M | 0.81 | 14 |
-| trained by both levels | 600M | 0.66 | 14 |
-| trained by both levels | 1B | 0.89 | 14 |
+| trained by both levels | 90M | 0.95 | 16 |
+| trained by both levels | 175M | 0.96 | 16 |
+| trained by both levels | 350M | 0.83 | 16 |
+| trained by both levels | 600M | 0.70 | 16 |
+| trained by both levels | 1B | 0.91 | 16 |
 | trained by one level | 90M | 1.00 | 5 |
 | trained by one level | 175M | 1.00 | 5 |
 | trained by one level | 350M | 1.00 | 5 |
 | trained by one level | 600M | 1.00 | 5 |
 | trained by one level | 1B | 1.00 | 5 |
-| script trained | 90M | 0.67 | 14 |
-| script trained | 175M | 0.71 | 14 |
-| script trained | 350M | 0.65 | 14 |
-| script trained | 600M | 0.66 | 14 |
-| script trained | 1B | 0.71 | 14 |
-| script not trained | 90M | 0.52 | 14 |
-| script not trained | 175M | 0.59 | 14 |
-| script not trained | 350M | 0.58 | 14 |
-| script not trained | 600M | 0.58 | 14 |
-| script not trained | 1B | 0.64 | 14 |
+| script trained | 90M | 0.70 | 16 |
+| script trained | 175M | 0.73 | 16 |
+| script trained | 350M | 0.69 | 16 |
+| script trained | 600M | 0.69 | 16 |
+| script trained | 1B | 0.74 | 16 |
+| script not trained | 90M | 0.56 | 16 |
+| script not trained | 175M | 0.62 | 16 |
+| script not trained | 350M | 0.61 | 16 |
+| script not trained | 600M | 0.61 | 16 |
+| script not trained | 1B | 0.68 | 16 |
 
-![BPB curves](pretraining/predictivity_all/bpb_curves.png)
+![BPB curves](pretraining/predictivity_seeds/bpb_curves.png)
 <!-- END auto:results -->
 
 GitHub: [rq5_transfer.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/rq5_transfer.png) · [rq5_transfer.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/rq5_transfer.csv) ·
@@ -99,18 +109,18 @@ GitHub: [rq5_transfer.png](https://github.com/mariagrandury/snr-multilingual/blo
 GitHub: [bpb_curves.png](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/bpb_curves.png) · [bpb_curves.csv](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/bpb_curves.csv) ·
 [facts.json](https://github.com/mariagrandury/snr-multilingual/blob/main/src/signal-and-noise/analysis/rq06_language_transfer/pretraining/predictivity_seeds/facts.json)
 
-<!-- BEGIN auto:panels (panels.py --pool predictivity_all) -->
+<!-- BEGIN auto:panels (panels.py --pool predictivity_seeds) -->
 ## Per benchmark and per language
 
-The summary above, per language (`predictivity_all` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool predictivity_all`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
+The summary above, per language (`predictivity_seeds` pool). Regenerate with `python analysis/rq06_language_transfer/panels.py --pool predictivity_seeds`. In every grid white is "no value" and grey "filtered out by the gate"; each figure's table sits next to it under the same name.
 
-![rq06 in one figure](pretraining/predictivity_all/highlights.png)
+![rq06 in one figure](pretraining/predictivity_seeds/highlights.png)
 
-![Transfer error per language and L](pretraining/predictivity_all/transfer_error_by_L.png)
+![Transfer error per language and L](pretraining/predictivity_seeds/transfer_error_by_L.png)
 
-![The list decision on untrained languages, by proxy size and checkpoint](pretraining/predictivity_all/transfer_da_all_lines_mono_axis.png)
+![The list decision (scheme A vs B at L8–L30) on untrained languages, by proxy size and checkpoint](pretraining/predictivity_seeds/transfer_da_all_lines_mono_axis.png)
 
-![The decisions on untrained languages, by language count](pretraining/predictivity_all/transfer_da_all_by_L_mono_axis.png)
+![The decisions on untrained languages, by language count](pretraining/predictivity_seeds/transfer_da_all_by_L_mono_axis.png)
 <!-- END auto:panels -->
 
 Numbers below are from the tables written before 2026-10-05, when the
