@@ -5,61 +5,60 @@ We release the ladder on Hugging Face.\footnote{Link removed for anonymity.} Thi
 
 % https://huggingface.co/docs/hub/model-card-annotated
 % Template: https://github.com/huggingface/huggingface_hub/blob/main/src/huggingface_hub/templates/modelcard_template.md
-% Rendered as the Markdown file it will be published as: code font, page-wide.
 
 \newpage
-\begingroup
-\small\ttfamily\raggedright
-\setlength{\parindent}{0pt}\setlength{\parskip}{0.5\baselineskip}
 
-\# Model Card for the Multilingual Signal-and-Noise Model Ladder
+\subsection*{Model Card for the Multilingual Signal-and-Noise Model Ladder}
 
 A ladder of \nruns decoder-only language models (90M to 3B non-embedding parameters) pretrained from scratch on controlled multilingual data mixtures, released with all intermediate checkpoints to study which evaluation benchmarks give reliable signal at small scale.
 
-\#\# Model Details
+\subsection*{Model Details}
 
-\#\#\# Model Description
+\subsubsection*{Model Description}
 
 The ladder varies one design decision at a time around a fixed recipe: model size $N \in \{$90M, 175M, 350M, 600M, 1B, 1.7B, 3B$\}$, the number of languages in the mixture $K \in \{1, 2, 8, 15, 30, 50\}$, the language list (data scheme A, B or C), the sampling temperature ($T = 1$ or 3), the depth-to-width ratio (deep or shallow) and the MLP activation (xIELU or SwiGLU). Every model trains on $D = 100N$ tokens (5$\times$ Chinchilla) with half of the tokens in English. Each run is one model repository; its checkpoints are branches.
 
-- **Developed by:** Anonymous (removed for review)\\
-- **Funded by:** Anonymous (removed for review)\\
-- **Shared by:** Anonymous (removed for review)\\
-- **Model type:** decoder-only transformer, causal language model, pretrained only (no instruction tuning)\\
-- **Language(s) (NLP):** English plus up to 49 other languages (Appendix~\ref{app:data-mixtures}, Table~\ref{tab:app-languages}); each model's card lists its own $K$ languages\\
-- **License:** \checknum{Apache 2.0}
+\begin{itemize}
+    \item \textbf{Developed by:} Anonymous (removed for review)
+    \item \textbf{Funded by:} Anonymous (removed for review)
+    \item \textbf{Shared by:} Anonymous (removed for review)
+    \item \textbf{Model type:} decoder-only transformer, causal language model, pretrained only (no instruction tuning)
+    \item \textbf{Language(s) (NLP):} English plus up to 49 other languages (Appendix~\ref{app:data-mixtures}, Table~\ref{tab:app-languages}); each model's card lists its own $K$ languages
+    \item \textbf{License:} \checknum{Apache 2.0}
+\end{itemize}
 
-\#\#\# Model Sources
+\subsubsection*{Model Sources}
 
-- **Paper:** Link removed for anonymity.\\
-- **Repository:** Link removed for anonymity.\\
-- **Website:** Link removed for anonymity.
+\begin{itemize}
+    \item \textbf{Paper:} Link removed for anonymity.
+    \item \textbf{Repository:} Link removed for anonymity.
+    \item \textbf{Website:} Link removed for anonymity.
+\end{itemize}
 
-\#\# Uses
+\subsection*{Uses}
 
-\#\#\# Direct Use
+\subsubsection*{Direct Use}
 
 Research on pretraining and evaluation: ablations of data mixtures and architectures at small scale, scaling-law fits across size and training, checkpoint-level analyses of benchmark signal and noise, and as reference proxies when choosing benchmarks for multilingual pretraining runs.
 
-\#\#\# Downstream Use
+\subsubsection*{Downstream Use}
 
 Starting points for continued pretraining or fine-tuning experiments that need many comparable models trained on known data. The models are not adapted to follow instructions.
 
-\#\#\# Out-of-Scope Use
+\subsubsection*{Out-of-Scope Use}
 
 Deployment in any user-facing application, generation of factual content, or use in high-stakes settings. The models are small, untuned and not safety-aligned; their outputs are unreliable and can be harmful.
 
-\#\# Bias, Risks, and Limitations
+\subsection*{Bias, Risks, and Limitations}
 
 The models inherit the biases of web text (DCLM and FineWeb-2) and of its language distribution: English is half of every mixture, and the other languages follow the per-language token shares of the mixture, so lower-resource languages are seen far less. Many multilingual benchmark tasks are at chance for these model sizes (Section~\ref{subsec:rq0}). The 90M and 175M rungs train at a reduced batch (Appendix~\ref{app:model-configurations}).
 
-\#\#\# Recommendations
+\subsubsection*{Recommendations}
 
 Compare models only within the ladder's controlled settings, read results with the above-chance gate and the seed replicates as the noise floor, and do not treat any checkpoint as a usable assistant.
 
-\#\# How to Get Started with the Model
+\subsection*{How to Get Started with the Model}
 
-\endgroup
 \begin{small}
 \begin{verbatim}
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -70,89 +69,89 @@ model = AutoModelForCausalLM.from_pretrained(repo, revision="main")
 # intermediate checkpoints: revision="iter_<step>"
 \end{verbatim}
 \end{small}
-\begingroup
-\small\ttfamily\raggedright
-\setlength{\parindent}{0pt}\setlength{\parskip}{0.5\baselineskip}
 
-\#\# Training Details
+\subsection*{Training Details}
 
-\#\#\# Training Data
+\subsubsection*{Training Data}
 
 English: DCLM-Edu; the two alternative $K = 1$ builds use DCLM without the educational filter and FineWeb up to 2022. Other languages: FineWeb-2, with the language lists and token shares of Appendix~\ref{app:data-mixtures}. Each mixture holds the English share at 50\% and varies only the other languages.
 
-\#\#\# Training Procedure
+\subsubsection*{Training Procedure}
 
-\#\#\#\# Preprocessing
+\paragraph{Preprocessing}
 
 Tokenized with the 131,072-token Apertus tokenizer; documents are packed into 4,096-token sequences. Validation documents used for bits-per-byte are held out of every training mixture.
 
-\#\#\#\# Training Hyperparameters
+\paragraph{Training Hyperparameters}
 
-- **Training regime:** bf16 mixed precision\\
-- **Optimizer:** AdEMAMix ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping 0.1\\
-- **Schedule:** warmup-stable-decay, with a 1$-\sqrt{\cdot}$ cooldown over the last 20\% of training\\
-- **Batch:** 504 sequences of 4,096 tokens from 350M up; 84 at 90M and 168 at 175M\\
-- **Learning rate, depth and width per size:** Table~\ref{tab:ladder}
+\begin{itemize}
+    \item \textbf{Training regime:} bf16 mixed precision
+    \item \textbf{Optimizer:} AdEMAMix ($\beta_1 = 0.9$, $\beta_2 = 0.999$, $\beta_3 = 0.9999$, $\alpha = 8$), weight decay 0.1, gradient clipping 0.1
+    \item \textbf{Schedule:} warmup-stable-decay, with a 1$-\sqrt{\cdot}$ cooldown over the last 20\% of training
+    \item \textbf{Batch:} 504 sequences of 4,096 tokens from 350M up; 84 at 90M and 168 at 175M
+    \item \textbf{Learning rate, depth and width per size:} Table~\ref{tab:ladder}
+\end{itemize}
 
-\#\#\#\# Speeds, Sizes, Times
+\paragraph{Speeds, Sizes, Times}
 
 20 checkpoints per run (40 at 1B, 60 at 1.7B and 3B). Pretraining the ladder used \npretrainnodehours node-hours.
 
-\#\# Evaluation
+\subsection*{Evaluation}
 
-\#\#\# Testing Data, Factors \& Metrics
+\subsubsection*{Testing Data, Factors \& Metrics}
 
-\#\#\#\# Testing Data
+\paragraph{Testing Data}
 
 \nbenchmarks multilingual benchmark families plus English benchmarks in the LM Evaluation Harness (\nbenchmarktasks benchmark--language tasks), and held-out bits-per-byte on 100 languages (Appendix~\ref{app:evaluation-protocol}).
 
-\#\#\#\# Factors
+\paragraph{Factors}
 
 Model size, number of training languages, data scheme, temperature, depth, activation, seed and training checkpoint.
 
-\#\#\#\# Metrics
+\paragraph{Metrics}
 
 Accuracy (or normalized accuracy) per benchmark--language task, read against its chance level with a one-sided Wilson bound; bits-per-byte per language; decision accuracy and signal-to-noise ratio across the ladder.
 
-\#\#\# Results
+\subsubsection*{Results}
 
-\#\#\#\# Summary
+\paragraph{Summary}
 
 Section~\ref{sec:results} and the per-analysis appendices report the results; every number is regenerated from the released evaluation logs.
 
-\#\# Environmental Impact
+\subsection*{Environmental Impact}
 
-- **Hardware Type:** NVIDIA GH200 (4 per node)\\
-- **Hours used:** \ngpuhours GPU-hours (training and evaluation)\\
-- **Cloud Provider:** on-premise HPC (removed for review)\\
-- **Compute Region:** removed for review\\
-- **Carbon Emitted:** \checknum{not estimated}
+\begin{itemize}
+    \item \textbf{Hardware Type:} NVIDIA GH200 (4 per node)
+    \item \textbf{Hours used:} \ngpuhours GPU-hours (training and evaluation)
+    \item \textbf{Cloud Provider:} on-premise HPC (removed for review)
+    \item \textbf{Compute Region:} removed for review
+    \item \textbf{Carbon Emitted:} \checknum{not estimated}
+\end{itemize}
 
-\#\# Technical Specifications
+\subsection*{Technical Specifications}
 
-\#\#\# Model Architecture and Objective
+\subsubsection*{Model Architecture and Objective}
 
 Decoder-only transformer trained with next-token prediction: grouped-query attention (4 query heads per key-value head, head dimension 64), rotary position embeddings, RMSNorm, QK-norm, xIELU (or SwiGLU) MLP, no biases, tied input and output embeddings, 4,096-token context.
 
-\#\#\# Compute Infrastructure
+\subsubsection*{Compute Infrastructure}
 
-\#\#\#\# Hardware
+\paragraph{Hardware}
 
 GH200 nodes with four GPUs each.
 
-\#\#\#\# Software
+\paragraph{Software}
 
 Megatron-LM (training), Hugging Face Transformers (released checkpoints), LM Evaluation Harness (evaluation).
 
-\#\# Citation
+\subsection*{Citation}
 
-**BibTeX:** removed for anonymity.
+\textbf{BibTeX:} removed for anonymity.
 
-\#\# Model Card Authors
+\subsection*{Model Card Authors}
 
 Anonymous (removed for review).
 
-\#\# Model Card Contact
+\subsection*{Model Card Contact}
 
 Removed for anonymity.
-\endgroup
