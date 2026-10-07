@@ -4,9 +4,9 @@
 \label{app:rq02_decision_accuracy}
 
 \begin{rqfinding}
-1. \textbf{A smaller fully trained model ranks the design variants close to a coin flip.} On benchmark accuracy alone, DA-size is 0.52, 0.54, 0.53, 0.55 and 0.57 from 90M to 1B (mean over 290--440 gated tasks). No proxy comes near $\tau$ = 0.90. (Figure~\ref{fig:app_rq02_decision_accuracy}.)
+1. \textbf{A smaller fully trained model ranks the design variants close to a coin flip.} On benchmark accuracy alone, DA-size is 0.52, 0.54, 0.53, 0.55 and 0.57 from 90M to 1B (mean over 293--439 gated tasks). No proxy comes near $\tau$ = 0.90. (Figure~\ref{fig:app_rq02_decision_accuracy}.)
 
-2. \textbf{The pooled line in the figure mixes two populations.} It reads 0.54, 0.58, 0.56, 0.55, 0.59 (90 \% jackknife $\pm$ 0.02--0.03), but its tasks include the bBPB twins at 175M and 1B (816 tasks) and at 350M (544) and none at 90M or 600M, so its zigzag is a change of tasks, not of size.
+2. \textbf{The pooled line in the figure adds the bBPB twins at every size and is flat.} It reads 0.60, 0.58, 0.59, 0.58, 0.59 (90 \% jackknife $\pm$ 0.02--0.03) over 1117--1266 tasks, the 816 twins among them at every size, so the task count now moves with the gate alone.
 
 3. \textbf{Bits per byte ranks like the reference. Accuracy does not.} FineWeb2 BPB reads 0.96, 0.96, 0.92, 0.74, 0.92 (mean over 50 per-language tasks) and \texttt{bpb\_macro} 0.95--0.98.
 \end{rqfinding}

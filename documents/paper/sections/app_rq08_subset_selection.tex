@@ -4,11 +4,11 @@
 \label{app:rq08_subset_selection}
 
 \begin{rqfinding}
-1. A chosen language subset beats the random-subset null in 72 of the 181 swept (benchmark, size) cells (72 of the 163 with a positive raw gain), by more than 0.25 SNR in 47, led by HellaSwag (median +0.85 over six sizes), Global-MMLU RF (+0.74), Belebele RF (+0.54) and MultiBLiMP (+0.47). XStoryCloze, LAMBADA, XWinograd, XCOPA and the BPB family never beat it, and XNLI sits below it (median $-$0.26). (Figure~\ref{fig:app_rq08_subset_selection}.)
+1. A chosen language subset beats the random-subset null in 75 of the 210 swept (benchmark, size) cells (75 of the 183 with a positive raw gain), by more than 0.25 SNR in 58, led by HellaSwag (median +0.90 over six sizes), Belebele RF (+0.70), MultiBLiMP (+0.62) and Global-MMLU RF (+0.58). XStoryCloze, LAMBADA, XWinograd, XCOPA and the BPB family never beat it, and INCLUDE v2 (EN) sits below it (median $-$0.11). (Figure~\ref{fig:app_rq08_subset_selection}.)
 
-2. Without the null the lever looks universal: the best prefix beats the full set in 163 of the 181 Case-1 cells that have an SNR (median +0.68 SNR), but the null, which scores 163 cells, keeps only 72.
+2. Without the null the lever looks universal: the best prefix beats the full set in 183 of the 210 Case-1 cells that have an SNR (median +0.75 SNR), but the null, which scores 183 cells, keeps only 75.
 
-3. Accuracy and BPB families: 52 of 113 cells beat the null (23 benchmarks). bBPB twins: 20 of 50 (14 twins), on the finals-only twins of this refresh.
+3. Accuracy and BPB families: 47 of 113 cells beat the null (23 benchmarks). bBPB twins: 28 of 70 (14 twins), now on the twins' full noise window.
 \end{rqfinding}
 
 \paragraph{Question.} Per benchmark, does a subset of subtasks (a subset of \emph{languages} in a multilingual family, or a subset of \emph{subjects} in MMLU, or a subset of individual \emph{items}) give higher SNR than the full set, and does the same subset hold across seeds and scales?

@@ -4,11 +4,11 @@
 \label{app:rq03_noise_and_snr}
 
 \begin{rqfinding}
-1. \textbf{Seed noise exceeds checkpoint noise.} The seed std is a median 1.62$\times$ the detrended checkpoint std over 1466 ungated cells and larger in 74 \% of them (benchmarks 1.70 over 1309 cells, per-language BPB 1.33 over 139). Per size 1.60 at 175M, 1.77 at 600M and 1.54 at 1B. (Figure~\ref{fig:app_rq03_noise_and_snr}.)
+1. \textbf{Seed noise exceeds checkpoint noise.} The seed std is a median 1.62$\times$ the detrended checkpoint std over 1467 ungated cells and larger in 74 \% of them (benchmarks 1.70 over 1310 cells, per-language BPB 1.33 over 139). Per size 1.60 at 175M, 1.77 at 600M and 1.56 at 1B. (Figure~\ref{fig:app_rq03_noise_and_snr}.)
 
-2. \textbf{So the checkpoint-noise SNR is optimistic.} A design difference that clears the checkpoint noise need not clear a re-roll of the seed: on the same 1461 seed cells, depth's median effect is 2.06$\times$ the detrended checkpoint noise but 1.32$\times$ the seed noise (51 \% against 29 \% above 2$\times$).
+2. \textbf{So the checkpoint-noise SNR is optimistic.} A design difference that clears the checkpoint noise need not clear a re-roll of the seed: on the same 1462 seed cells, depth's median effect is 2.07$\times$ the detrended checkpoint noise but 1.32$\times$ the seed noise (51 \% against 29 \% above 2$\times$).
 
-3. \textbf{No design axis clears twice the seed noise in half of its cells.} Against seed noise the median effect is 1.32 for depth, 1.29 for scheme A vs B (540 cells, 29 \% above 2$\times$), 1.73 for scheme A vs C (195, 43 \%) and 1.51 for temperature T 1 vs 3 (1227, 38 \%).
+3. \textbf{No design axis clears twice the seed noise in half of its cells.} Against seed noise the median effect is 1.32 for depth, 1.30 for scheme A vs B (540 cells, 29 \% above 2$\times$), 1.73 for scheme A vs C (195, 43 \%) and 1.53 for temperature T 1 vs 3 (1228, 38 \%).
 \end{rqfinding}
 
 \paragraph{Question.} How much does a measurement move when nothing but the seed or the checkpoint changes, how does that noise compare with the effect of a design decision, and what is each benchmark's signal-to-noise ratio under the 22 candidate definitions?

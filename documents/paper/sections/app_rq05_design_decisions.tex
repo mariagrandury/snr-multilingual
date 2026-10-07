@@ -4,7 +4,7 @@
 \label{app:rq05_design_decisions}
 
 \begin{rqfinding}
-1. Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95--0.99, mean over K15--K50) and the language-list decision at 0.77--1.00 (K8--K30), while on the gated benchmarks only one proxy reads a decision at 0.75 (the K1 DCLMP swap at 350M, 0.79): 0.41--0.62 for every intervention but the two K1 English-data swaps (DCLMP 0.50--0.79, FWEB 0.60--0.74). (Figure~\ref{fig:app_rq05_design_decisions}.)
+1. Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95--0.99, mean over K15--K50) and the language-list decision at 0.77--1.00 (K8--K30), while on the gated benchmarks only two proxies read a decision at 0.75, both K1 English-data swaps (DCLMP at 350M, 0.79, FWEB at 600M, 0.75): 0.45--0.64 for every intervention but those two swaps (DCLMP 0.50--0.79, FWEB 0.57--0.75). (Figure~\ref{fig:app_rq05_design_decisions}.)
 
 2. On per-language BPB the temperature decision is read at 0.87--1.00 by every proxy at every K, and the language-list decision at 0.83--1.00 except 1B at K30 (0.31).
 

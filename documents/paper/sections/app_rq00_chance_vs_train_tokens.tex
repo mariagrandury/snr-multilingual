@@ -4,11 +4,11 @@
 \label{app:rq00_chance_vs_train_tokens}
 
 \begin{rqfinding}
-1. Outside English, the share of cells above chance rises with every decade of the language's tokens, from 39 \% at $10^{7}$--$10^{8}$ tokens to 60 \% at $10^{10}$--$10^{11}$, but at matched tokens the larger model still clears chance more often (40 \% at 90M against 57 \% at 1.7B at $10^{8}$--$10^{9}$ tokens): exposure is necessary, not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
+1. Outside English, the share of cells above chance rises with every decade of the language's tokens, from 40 \% at $10^{7}$--$10^{8}$ tokens to 60 \% at $10^{10}$--$10^{11}$, but at matched tokens the larger model still clears chance more often (40 \% at 90M against 57 \% at 1.7B at $10^{8}$--$10^{9}$ tokens): exposure is necessary, not sufficient. (Figure~\ref{fig:app_rq00_chance_vs_train_tokens}.)
 
-2. Pooled over every language the curve peaks at 48 \% ($10^{8}$--$10^{9}$), dips to 47 \% ($10^{9}$--$10^{10}$) and drops to 36 \% in $10^{10}$--$10^{11}$ (23,897 cells), because 80 \% of that bin is English: English cells clear chance in 29 \% of 38,160 (106 tasks), the other languages in 48 \% of 127,860 (735 tasks).
+2. Pooled over every language the curve peaks at 48 \% ($10^{8}$--$10^{9}$), dips to 47 \% ($10^{9}$--$10^{10}$) and drops to 36 \% in $10^{10}$--$10^{11}$ (23,897 cells), because 80 \% of that bin is English: English cells clear chance in 29 \% of 38,160 (106 tasks), the other languages in 49 \% of 127,860 (735 tasks).
 
-3. Without English the share rises monotonically per decade: 34 \% ($10^{5}$, 77 cells), 37 \% ($10^{6}$), 39 \% ($10^{7}$), 48 \% ($10^{8}$), 57 \% ($10^{9}$), 60 \% ($10^{10}$, 4,711 cells).
+3. Without English the share rises monotonically per decade: 34 \% ($10^{5}$, 77 cells), 37 \% ($10^{6}$), 40 \% ($10^{7}$), 49 \% ($10^{8}$), 58 \% ($10^{9}$), 60 \% ($10^{10}$, 4,711 cells).
 \end{rqfinding}
 
 \paragraph{Question.} Does a benchmark task clear chance once the model has seen enough of the task's language, and is that exposure or model size?

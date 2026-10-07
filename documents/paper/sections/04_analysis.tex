@@ -53,11 +53,11 @@ Detailed scaling curves with model size and along training are in Figures~\ref{f
 \label{subsec:rq1}
 
 \begin{rqfinding}
-1. Above chance, benchmark accuracy scales log-linearly with model size: the median size-fit $R^2$ is 0.88 over 418 benchmark tasks, and per-language BPB fits at a median $R^2$ of 1.00 over the 50 trained languages.
+1. Above chance, benchmark accuracy scales log-linearly with model size: the median size-fit $R^2$ is 0.88 over 419 benchmark tasks, and per-language BPB fits at a median $R^2$ of 1.00 over the 50 trained languages.
 
-2. The letter-format knowledge benchmarks have no scaling law on our ladder: Belebele (0 of 59 tasks), INCLUDE (0 of 36) and Global-MMLU (0 of 29) stay at chance wherever a fit is possible, while their reformulated variants fit at a family median $R^2$ of 0.84--0.91.
+2. The letter-format knowledge benchmarks have no scaling law on our ladder: Belebele (0 of 59 tasks), INCLUDE (0 of 36) and Global-MMLU (0 of 29) stay at chance wherever a fit is possible, while their reformulated variants fit at a family median $R^2$ of 0.84--0.92.
 
-3. Predictability across size usually comes with predictability across training: 263 of the 342 tasks with a fit (77\%) scale predictably along both axes.
+3. Predictability across size usually comes with predictability across training: 261 of the 343 tasks with a fit (76\%) scale predictably along both axes.
 \end{rqfinding}
 
 \textbf{Benchmark scaling behavior.}
@@ -114,7 +114,7 @@ We study decision reliability along two dimensions of model development: trainin
 
 \textbf{Within-model training convergence.}
 Figure~\ref{fig:rq2}b shows that decision reliability increases steadily over training when each checkpoint is compared to the final checkpoint of the same model. 
-Early checkpoints recover only around 56--65\% of the final decisions, while agreement rises substantially later in training, \checknum{with smaller models generally stabilizing earlier than larger ones}.
+Early checkpoints recover only around 61--67\% of the final decisions, while agreement rises substantially later in training, with smaller models generally stabilizing earlier than larger ones.
 
 \begin{figure*}[t]
 \centering
@@ -139,11 +139,11 @@ Together, these results suggest that the cross-scale gap cannot be closed by tra
 \label{subsec:rq3}
 
 \begin{rqfinding}
-1. No surrogate leads at every proxy size: at 90M the relative-standard-deviation SNR leads ($\rho = 0.42$ with DA-size), while at 600M four candidates tie at $\rho = 0.30$--$0.32$.
+1. \checknum{No surrogate leads at every proxy size: at 90M the relative-standard-deviation SNR leads ($\rho = 0.32$ with DA-size), while at 600M three candidates tie at $\rho = 0.29$--$0.31$.}
 
-2. Early-checkpoint ranking agreement is unstable across scale: $\rho = 0.64$ at 175M but 0.25 at 90M and 0.33 at 350M.
+2. \checknum{Early-checkpoint ranking agreement is unstable across scale}: $\rho = 0.64$ at 175M but 0.59 at 90M and 0.56 at 350M.
 
-3. Margin above chance and signal alone carry no information on benchmark tasks ($\rho$ between $-0.13$ and $0.05$ at every proxy); the predictive part of SNR is its noise term (0.22--0.41, inverted).
+3. Margin above chance and signal alone carry no information on benchmark tasks ($\rho$ between $-0.11$ and $0.04$ at every proxy); the predictive part of SNR is its noise term (0.24--0.46, inverted).
 \end{rqfinding}
 
 As discussed in Section~\ref{subsec:rq2}, decision accuracy (DA) measures whether the ranking of models with different development decisions agrees with their ordering at reference scale. 
@@ -178,10 +178,10 @@ Scaling-fit \(R^2\) is reported only from 350M onward, as at least three model-s
 \textbf{Surrogate predictivity in the multilingual setting.}
 We find that \textcolor{blue}{no single surrogate consistently predicts decision accuracy} across the multilingual settings of our model ladder.
 Figure~\ref{fig:rq3} shows that \checknum{among the simple candidates, scaling-fit \(R^2\) provides the strongest overall association with DA}, \textcolor{blue}{suggesting that benchmarks with more predictable scaling behavior are also more likely to preserve the ranking of model variants across scales.}
-For SNR-based surrogates, however, performance depends strongly on how noise is defined, with some noise estimates yielding substantially stronger associations than others; for example, replacing checkpoint-based noise with k-fold benchmark noise increases the association with DA from \(\rho=0.35\) to \(\rho=0.47\).
+For SNR-based surrogates, however, performance depends strongly on how noise is defined, with some noise estimates yielding substantially stronger associations than others; for example, replacing checkpoint-based noise with k-fold benchmark noise increases the association with DA from \(\rho=0.40\) to \(\rho=0.46\).
 The aggregate results in Figure~\ref{fig:rq3} pool all benchmark--language tasks that pass the chance threshold. When we stratify the analysis by benchmark or multilingual training regime, however, substantially stronger relationships emerge. 
-While the strongest association in the pooled benchmark analysis is \(\rho=0.52\), surrogate predictivity rises to \(\rho=0.89\) for HellaSwag, \(\rho=0.64\) for per-language BPB, and \checknum{\(\rho=0.27\) for models trained on \(8\) languages}. 
-\checknum{These values are \(0.37\), \(0.12\), and \(-0.25\) higher than the pooled association, respectively, corresponding to an average increase of \(0.08\) in Spearman correlation.}
+While the strongest association in the pooled benchmark analysis is \(\rho=0.59\), surrogate predictivity rises to \(\rho=0.88\) for HellaSwag, \(\rho=0.62\) for per-language BPB, and \(\rho=0.67\) for models trained on \(8\) languages. 
+These values are \(0.29\), \(0.03\), and \(0.08\) higher than the pooled association, respectively, corresponding to an average increase of \(0.13\) in Spearman correlation.
 Detailed stratification of surrogate--DA Spearman correlations across benchmarks, numbers of training languages, and model sizes can be found in Appendix~\ref{app:rq04_surrogates}.
 
 
@@ -190,8 +190,8 @@ Detailed stratification of surrogate--DA Spearman correlations across benchmarks
 Using the same analysis in Figure~\ref{fig:rq3}, we compare surrogate--DA associations across increasing proxy model sizes, from 90M to 1B.
 This allows us to test whether useful surrogate signal is already present at the smallest scale and whether it strengthens or remains stable as model scale increases.
 \textcolor{blue}{At the smallest proxy scale, no surrogate provides a strong and stable signal of DA.}
-Early-checkpoint ranking agreement is strongest at 175M ($\rho=0.64$), but its association drops to $\rho=0.33$ at 350M, indicating that this early signal is not consistent across scales.
-By 350M, inverted relative-standard-deviation noise reaches $\rho=0.41$ and discrepancy-based SNR reaches $\rho=0.33$.
-Scaling-fit $R^2$ becomes available only from 350M onward, where it reaches $\rho=0.35$ \checknum{and increases to $\rho=0.32$ at 1B}.
-Overall, a useful surrogate signal does not emerge reliably at the smallest proxy scale, and the surrogate providing the strongest association changes as model size increases.
+Early-checkpoint ranking agreement is strongest at 175M ($\rho=0.64$), but its association drops to $\rho=0.56$ at 350M, indicating that this early signal is not consistent across scales.
+By 350M, inverted relative-standard-deviation noise reaches $\rho=0.46$ and discrepancy-based SNR reaches $\rho=0.33$.
+Scaling-fit $R^2$ becomes available only from 350M onward, where it reaches $\rho=0.44$ and increases to $\rho=0.45$ at 1B.
+Overall, a useful surrogate signal does not emerge reliably at the smallest proxy scale, \checknum{and the surrogate providing the strongest association changes as model size increases}.
 Similar to our earlier findings on multilingual benchmark scaling, we find that decision surrogates behave less consistently than suggested by prior English-focused studies, with their usefulness depending strongly on model scale, benchmark and training-language regime.
