@@ -200,6 +200,14 @@ deep architecture only. They are three levels of one intervention, not three
 unrelated schemes — the L2 analogue of the B / AT3 data axis at higher L —
 and that is what makes them the three families rule 5 counts at L2.
 
+## Anonymity (double-blind review)
+
+No figure, README, site page or paper text may link or name our HF orgs,
+W&B, GitHub, author names or handles, affiliation, cluster or storage paths.
+Where such a link belongs, write the notice sentence; for the website its one
+copy is `extra.anonymity_notice` in `mkdocs.yml`, and `mkdocs_hooks.py`
+redacts and checks the built site.
+
 ## Where a rule cannot be followed
 
 Say it in three places: the script's output (a line starting with `!!! RULE n:`),

@@ -1,7 +1,6 @@
 site_name: SNR Multilingual
 site_description: Signal-Aware Framework for Multilingual LM Evaluation
 site_url: https://snr-multilingual.netlify.app/
-repo_url: https://github.com/mariagrandury/snr-multilingual
 docs_dir: docs
 site_dir: site
 exclude_docs: |
@@ -13,6 +12,7 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections
+    - navigation.footer
     - navigation.indexes
     - navigation.top
     - navigation.tracking
@@ -34,34 +34,61 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  icon:
-    repo: fontawesome/brands/github
 
 nav:
   - Home: index.md
-  - Pretraining:
-      - Overview: pretraining.md
-      - Conversion: pretraining/conversion.md
-      - Azure: pretraining/azure.md
-  - Evaluation:
-      - Overview: evaluation/index.md
-      - Signal-to-Ratio Configs: evaluation/configs.md
-  - Signal & Noise:
-      - Overview: signal-noise/index.md
-      - Analysis: signal-noise/analysis.md
-      - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
-      - "RQ0 · Task reformulation": signal-noise/task_reformulation.md
-      - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
-      - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
-      - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
-      - "RQ4 · Surrogates": signal-noise/surrogates.md
-      - "RQ5 · Design decisions": signal-noise/design_decisions.md
-      - "RQ6 · Language transfer": signal-noise/language_transfer.md
-      - "RQ7 · External frameworks": signal-noise/external_frameworks.md
-      - "RQ8 · Subset selection": signal-noise/subset_selection.md
-      - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
-  - Documents: documents.md
-  - Slides: /slides/
+  - Model ladder: ladder.md
+  - Findings:
+      - findings/index.md
+      - "A · Is the evaluation predictable?":
+          - "RQ0 · Above chance": findings/gate.md
+          - "RQ1 · Scaling": findings/scaling.md
+          - "RQ2 · Decision accuracy": findings/decision-accuracy.md
+      - "B · Can it be measured cheaply?":
+          - "RQ3 · Noise and SNR": findings/noise-snr.md
+          - "RQ4 · Cheap predictors": findings/surrogates.md
+      - "C · Does it generalise?":
+          - "RQ5 · Design decisions": findings/design-decisions.md
+          - "RQ6 · Language transfer": findings/language-transfer.md
+          - "RQ7 · External frameworks": findings/external.md
+      - "D · Can benchmarks be improved?":
+          - "RQ8 · Subsets": findings/subsets.md
+          - "RQ9 · Benchmark design": findings/benchmark-design.md
+          - "RQ12 · Above-chance items": findings/above-chance-items.md
+      - "E · Past the reference":
+          - "RQ10 · 3B": findings/size-generalisation.md
+      - "F · The recommendation":
+          - "RQ11 · Evaluation recipe": findings/recipe.md
+      - "Sanity check":
+          - "RQ13 · English only": findings/english-only.md
+  - Benchmarks: benchmarks.md
+  - Recommender: recommend.md
+  - Docs:
+      - Overview: repo.md
+      - Pretraining:
+          - Overview: pretraining.md
+          - Conversion: pretraining/conversion.md
+          - Azure: pretraining/azure.md
+      - Evaluation:
+          - Overview: evaluation/index.md
+          - Signal-to-Ratio Configs: evaluation/configs.md
+      - Signal & Noise:
+          - Overview: signal-noise/index.md
+          - Analysis: signal-noise/analysis.md
+          - "RQ0 · Gate & curves": signal-noise/gate_and_curves.md
+          - "RQ0 · Task reformulation": signal-noise/task_reformulation.md
+          - "RQ1 · Scaling predictability": signal-noise/scaling_predictability.md
+          - "RQ2 · Decision accuracy": signal-noise/decision_accuracy.md
+          - "RQ3 · Noise & SNR": signal-noise/noise_and_snr.md
+          - "RQ4 · Surrogates": signal-noise/surrogates.md
+          - "RQ5 · Design decisions": signal-noise/design_decisions.md
+          - "RQ6 · Language transfer": signal-noise/language_transfer.md
+          - "RQ7 · External frameworks": signal-noise/external_frameworks.md
+          - "RQ8 · Subset selection": signal-noise/subset_selection.md
+          - "RQ9 · Benchmark design": signal-noise/benchmark_design.md
+      - Documents: documents.md
+      # Slides: /slides/ hidden during double-blind review (the deck names the
+      # affiliation and authors); build.sh builds it only with BUILD_SLIDES=1.
 
 markdown_extensions:
   - admonition
@@ -91,8 +118,21 @@ markdown_extensions:
 plugins:
   - search
 
+extra:
+  # Double-blind review: the site must not link or name our HF orgs, W&B,
+  # GitHub, personal pages, authors or cluster paths. Every such link shows
+  # this sentence instead — write `{{ anonymity_notice }}` in a page, read it
+  # in JS from <meta name="anonymity-notice">; mkdocs_hooks.py redacts the rest.
+  anonymity_notice: Link momentarily removed for double blind review
+
 hooks:
   - mkdocs_hooks.py
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js
+  - https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/dist/plot.umd.min.js
+  - interactive/app.js
+
+extra_css:
+  - interactive/app.css
