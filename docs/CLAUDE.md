@@ -29,7 +29,7 @@ Tabs of the MkDocs side:
   `rq00_chance_vs_train_tokens/` or, before that move, `rq01_scaling_predictability/`);
   cells without a token count (mixture plans unreachable) are left out with a
   printed warning. The Evaluation section's score curves read rq00's
-  `score_curves.csv` and `predictivity_all/benchmark_curves.csv`; its
+  `score_curves.csv` and `predictivity_seeds/benchmark_curves.csv`; its
   benchmark cards read `configs/tasks.json`, whose per-task `example` and
   `source` come from `python3 src/evals/scripts/derive_task_options.py
   --examples` (one scored item per task from the eval samples; re-run it
@@ -58,8 +58,8 @@ checkout, and their pages say so.
 
 The site must not link or name our HF orgs, W&B, GitHub, personal pages,
 authors or cluster paths — a leak gets the paper rejected. Where such a link
-belongs, write `{{ anonymity_notice }}` (the sentence is `extra.anonymity_notice`
-in `mkdocs.yml`; `app.js` reads it from `<meta name="anonymity-notice">`).
+belongs, write `{{ anonymity_notice }}` (the sentence is `REMOVED_LINK`
+in `anonymity.py`; `app.js` reads it from `<meta name="anonymity-notice">`).
 `mkdocs_hooks.py` also turns blocked links in included READMEs into that
 sentence, redacts usernames and storage paths, and warns at the end of the
 build on anything left (`anonymity: <file> contains [...]`): a clean build

@@ -41,7 +41,7 @@ the DA-ckpt panel is the 1.7B line of the DA-goal panel, and the pooled DA-size
 line is the 5C points of the DA-goal panel; `rq2_da_all_above_66_own` is the one
 exception, and says so below.
 
-    rq2.png / .svg / .csv        the three panels over every task (the SVG is the
+    rq2_da_all.png / .svg / .csv the three panels over every task (the SVG is the
                                  vector copy)
     rq2_da_all_above_80.*               the same three panels over the cells reliable on
                                  BOTH axes at 0.80 (the `late` reduction)

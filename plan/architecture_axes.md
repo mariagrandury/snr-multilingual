@@ -119,7 +119,8 @@ trains. `ladder_report.py` publishes the levels as meta columns beside
 the split, `arch` = the token, goes through one compatibility branch in the
 loader). Verified on the trained grid when the axes were first split
 (2026-10-03): every existing mono-axis count is unchanged (L 39, arch 10,
-list 6, T 4, lang2 3, en 1 — 63 in all).
+list 6, T 4, lang2 3, en 1 — 63 in all; since 2026-10-05 list, lang2 and en
+are one `scheme` axis, plan/decision_accuracy.md §9).
 
 A ladder added to `HYPERPARAMS` without a `LADDERS` entry raises rather than
 being silently pooled into an axis.

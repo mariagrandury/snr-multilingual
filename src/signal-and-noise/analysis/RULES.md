@@ -269,8 +269,8 @@ families rule 5 counts at L2.
 
 No figure, README, site page or paper text may link or name our HF orgs,
 W&B, GitHub, author names or handles, affiliation, cluster or storage paths.
-Where such a link belongs, write the notice sentence; for the website its one
-copy is `extra.anonymity_notice` in `mkdocs.yml`, and `mkdocs_hooks.py`
+Where such a link belongs, write the notice sentence; its one copy is
+`REMOVED_LINK` in `anonymity.py` (the website reads it too), and `mkdocs_hooks.py`
 redacts and checks the built site.
 
 ## Where a rule cannot be followed

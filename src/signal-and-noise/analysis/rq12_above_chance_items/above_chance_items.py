@@ -4,8 +4,8 @@ benchmark-language task keeps only the items its 1.7B runs answer above chance?
 Selection. An item is above chance at the reference when the mean of its
 per-item metric (the task's own, acc or acc_norm, `metric_for`, as the subset
 selection's `reference_solved.py` reads it) over the pool's TARGET_SIZE final
-runs that train the task's language (the loader's frame, rule 2: from 2 runs
-for a language only the widest mixtures train to every run for English)
+runs that train the task's language (the loader's frame, rule 2: in pool `predictivity` from 4 runs
+for a language only the widest mixtures train to 26 for English)
 exceeds the task's chance level (`above_random.task_chance`, the level the
 above-random gate tests). Each task (one benchmark in one language; parents
 only, rule 6) is reduced on its own, from the per-item store

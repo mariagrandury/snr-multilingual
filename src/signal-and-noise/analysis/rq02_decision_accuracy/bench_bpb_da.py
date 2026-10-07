@@ -37,7 +37,7 @@ names the per_item_store/<store> folder when it differs from the pool; the
 merge keeps the pool's models, and the pool models the store lacks are printed
 and named in the README block.
 
-    python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity [--store predictivity_schemes]
+    python analysis/rq02_decision_accuracy/bench_bpb_da.py --pool predictivity [--store <store folder>]
 """
 
 from __future__ import annotations

@@ -220,6 +220,9 @@ on 2026-09-21 one started before a path fix kept writing conversions to the old
 capstor tree for three hours after the fix landed. `ladder` (04:00) publishes,
 installs, then submits the analysis plus a separate `afterany` job for the
 `--curves` grids, so the hour they cost does not lengthen the main refresh.
+While the analysis code is mid-change, `touch
+/iopsstor/scratch/cscs/$USER/logs/nightly/PAUSE_REFRESH`: `ladder` still
+publishes but submits nothing (remove the file to resume).
 
 Two traps it exists for. `ladder_report.publish()` catches its own push
 failures and still exits 0, so after a failed `--push-git` the fetch *succeeds*

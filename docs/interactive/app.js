@@ -13,7 +13,7 @@
   const LADDER = ["90M", "175M", "350M", "600M", "1B", "1.7B"];   // the analysis sizes, up to the reference
   const LS = [1, 2, 8, 15, 30, 50];
   // Double-blind review: no links to our HF / W&B pages. The sentence is the
-  // `anonymity_notice` in mkdocs.yml, injected by mkdocs_hooks.py as a <meta>.
+  // anonymity.py REMOVED_LINK, injected by mkdocs_hooks.py as a <meta>.
   const ANON = document.querySelector('meta[name="anonymity-notice"]')?.content || "";
   const REDRAW = [];
   const POP = { benchmark: "benchmarks", bpb_macro: "BPB, all languages", bpb_trained: "BPB, trained languages", loss: "training loss" };

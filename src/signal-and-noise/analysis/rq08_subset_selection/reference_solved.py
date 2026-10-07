@@ -34,7 +34,7 @@ test, and the SNR-DA Spearman of both sets), the figure
 reference_solved_da_size_multi_axes.png with its CSV (the values it draws), and
 the README's `reference-solved` block.
 
-    python analysis/rq08_subset_selection/reference_solved.py --pool predictivity [--store predictivity_schemes]
+    python analysis/rq08_subset_selection/reference_solved.py --pool predictivity [--store <store folder>]
 """
 
 from __future__ import annotations

@@ -139,8 +139,11 @@ def same_population(early: pd.DataFrame, df: pd.DataFrame, psets: dict) -> None:
     loads now (a table left from an earlier pool or report): its accuracy rows
     would be compared with bbpb_acc rows computed live on this pool. The test:
     the largest pair count of its accuracy rows is the number of the pool's
-    pairs whose two families both reach the reference."""
-    ref = set(df.loc[df["bucket"] == TARGET_SIZE, "family"])
+    pairs whose two families both reach the reference on one of its benchmark
+    tasks (a family whose reference run has only its BPB scored, e.g. a 1.7B
+    cell whose benchmark evals have not landed, cannot be in that table)."""
+    acc = set(early.loc[~early["task"].str.startswith(BBPB), "task"])
+    ref = set(df.loc[(df["bucket"] == TARGET_SIZE) & df["task"].isin(acc), "family"])
     for axes, g in early[~early["task"].str.startswith(BBPB)].groupby("axes"):
         want = sum(a in ref and b in ref for a, b in psets[axes])
         if g["n_pairs"].max() != want:

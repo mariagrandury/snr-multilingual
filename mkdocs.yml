@@ -118,12 +118,11 @@ markdown_extensions:
 plugins:
   - search
 
-extra:
-  # Double-blind review: the site must not link or name our HF orgs, W&B,
-  # GitHub, personal pages, authors or cluster paths. Every such link shows
-  # this sentence instead — write `{{ anonymity_notice }}` in a page, read it
-  # in JS from <meta name="anonymity-notice">; mkdocs_hooks.py redacts the rest.
-  anonymity_notice: Link momentarily removed for double blind review
+# Double-blind review: the site must not link or name our HF orgs, W&B,
+# GitHub, personal pages, authors or cluster paths. Every such link shows
+# the sentence anonymity.py REMOVED_LINK holds (its one copy) — write
+# `{{ anonymity_notice }}` in a page, read it in JS from
+# <meta name="anonymity-notice">; mkdocs_hooks.py redacts the rest.
 
 hooks:
   - mkdocs_hooks.py

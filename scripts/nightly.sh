@@ -38,6 +38,7 @@
 #   bash scripts/nightly.sh ladder            # or: evals
 #   bash scripts/nightly.sh ladder --dry-run  # print the plan, touch nothing
 #   NIGHTLY_NO_SUBMIT=1 bash scripts/nightly.sh ladder   # stop before sbatch
+#   touch $LOG_DIR/PAUSE_REFRESH   # ladder: publish, skip the analysis submit
 #
 # Arm both (once; the enable reaches every login node because $HOME is shared,
 # and the lock is what keeps that from meaning three runs):

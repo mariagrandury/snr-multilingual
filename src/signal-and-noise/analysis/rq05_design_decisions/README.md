@@ -63,7 +63,7 @@ per-language one).
 
 Population: pool `predictivity_seeds` (every seed, ladder and data build; benchmarks gated with `predictivity`'s mask), DA-size (left) and DA-ckpt (right) on mono-axis decisions of the four interventions (a scheme decision per data build), proxies 90M–1B at their final checkpoint (left) and the reference's own nine earlier checkpoints, 0.5C–4.5C (right), each line against one reference size and the L's that share it, mean over L; solid = per-language BPB of the languages both levels train, dashed = the gated benchmark tasks; dotted line = 0.75.
 
-**Key finding (2026-10-06 refresh).** Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95–0.99, mean over L15–L50) and the language-list decision at 0.77–1.00 (L8–L30), while no proxy reads a decision on the gated benchmarks at 0.75: 0.41–0.62 for every intervention but the two L1 English-data swaps (DCLMP 0.50–0.79, FWEB 0.60–0.74).
+**Key finding (2026-10-06 refresh).** Per-language BPB of the trained languages reads the temperature decision from every proxy (0.95–0.99, mean over L15–L50) and the language-list decision at 0.77–1.00 (L8–L30), while on the gated benchmarks only one proxy reads a decision at 0.75 (the L1 DCLMP swap at 350M, 0.79): 0.41–0.62 for every intervention but the two L1 English-data swaps (DCLMP 0.50–0.79, FWEB 0.60–0.74).
 
 The depth line on per-language BPB swings from 0.00 (600M) to 0.98 (175M) against a reference whose depth effect is 1.3 seed sds, and the reference's own checkpoints reach 0.76–0.85 on the benchmarks at 90 % of its run, where before 80 % only the L1 FWEB swap reaches 0.75.
 

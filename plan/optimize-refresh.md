@@ -31,6 +31,8 @@ Sources: `/iopsstor/scratch/cscs/mariagrandury/logs/nightly/2026-10-04.refresh-3
 | after the pipeline: paper figures and tables, deck figures, scaling plot, report PDF, compendium, checks, facts | ~7 min | | job elapsed 223.5 min minus 216.4 min of steps |
 | separate `ladder-curves` job (`run_apertus.py` with grids) | own job, 4 h limit | | ~85 min in an older `snr-analysis-*.log` (not re-checked) |
 
+**Measured 2026-10-07** (`.../2026-10-07.regen-3601965.log`, the full refresh after §3.1, §3.3 and §3.4, frozen 10-06 report, `COMPUTE_DA_WORKERS=64`, four pools): the 85 driver steps took 217 min (job 3 h 41 min). `compute_da.py` is no longer the cost, 1.6 min for the four pools (44 s `predictivity_seeds`, 40 s `predictivity`, 5–6 s each holdout). The two rq04 surrogate steps now dominate: `search.py` 84 min and `catalogue.py` 28 min, 52 % of the steps. Next are `per_item_ladder.py` (10.4 min), `above_chance_items.py` (7.2 min), rq01 `regimes.py` (5.9 min), `finetasks_criteria.py` (5.2 min) and `scale_convergence.py` (4.1 min for the headline call).
+
 **The loader is paid on every step.** I measured it in the worktree, single-threaded on the login node:
 - `load_predictivity_eval_results()` takes 39.4 s and produces a 4.43 M × 19 frame. A second call in the same process takes 38.1 s again, so nothing is cached.
 - `build_snr_pool()` takes 46.6 s for `predictivity` (614 k rows, 1,714 tasks, 22 families), 45.9 s for `predictivity_seeds` (711 k rows, 36 families) and 48.8 s for `predictivity_schemes` (893 k rows, 30 families).
@@ -110,7 +112,7 @@ Add a unit test next to `tests/test_metrics.py` that checks the cube kernel agai
 
 ### 3.2 Compute once across nested pools (saves the remaining pool repeats; effort about half a day, after 3.1)
 
-A family's checkpoint selection depends only on its own rows. So build the cubes once on the union frame (`predictivity_all`, or the union of the five pools) and evaluate each pool as (its families, its `pair_sets`, its buckets, its `_scaling_da_pairs`) on the shared cubes, all in one process.
+A family's checkpoint selection depends only on its own rows. So build the cubes once on the union frame (`predictivity_seeds`, which holds every family of the four pools since 2026-10-05) and evaluate each pool as (its families, its `pair_sets`, its buckets, its `_scaling_da_pairs`) on the shared cubes, all in one process.
 
 Two things are pool-specific and must be recomputed per pool: `pair_sets`'s fallback when the pool has no grid-seed cell (utils.py:408–440) and `_scaling_da_pairs`'s "≥ 2 shared families" (compute_da.py:246–260). Results stay bit-identical. Verify the same way as 3.1.
 
@@ -163,14 +165,14 @@ The consumer map (paper `\includegraphics` / `\input`, `make_rq_figures.py`, `ve
 | `da_explainer.py` | demote | toy explainer, "no measured number" (driver comment) |
 | `pair_axes.py` | demote | "(exploratory)" in the driver |
 | `scale_convergence.py --by L --langs L8 [--common-tasks]`, `by_language.py`, `language_tier.py` | demote unless the paper uses them | extensions; per the 2026-09-30 snapshot they "do not order the per-L lines" (`src/signal-and-noise/CLAUDE.md`) |
-| `catalogue.py` + `search.py` (~210 surrogates) | check the cost and the consumer | new since 10-04, cost unknown |
+| `catalogue.py` + `search.py` (~210 surrogates) | check the cost and the consumer | new since 10-04; 28 + 84 min on 10-07, the largest two steps |
 | the decision-accuracy, SNR and surrogate tables per pool, seed holdout, `reliable_tasks.py`, `paper_rq2.py`, `scale_convergence.py` (headline), gate, scaling | keep | read by the paper path (`make_rq_figures.py`, `verify_paper_results.py`); to be confirmed by grep |
 
 ## 6. Execution order and verification
 
 1. [ ] **Snapshot today's outputs as the reference.** Use the worktree, not the main checkout, while jobs run there.
 2. [ ] **3.1 kernel.** (partly done 2026-10-07; numbers in §3.1: `cmp` passed on `predictivity_seeds_test`, `predictivity_seeds_train` and a 60-task `predictivity` subset; the full-pool old-vs-new `cmp` is still to do on Slurm) Benchmark old against new on `predictivity` restricted to ~30 tasks, then the full pool. `cmp` the three CSVs.
-3. [ ] **3.2 shared cubes over the five pools.** `cmp` all fifteen CSVs.
+3. [ ] **3.2 shared cubes over the four pools (five until 2026-10-05).** `cmp` all twelve CSVs.
 4. [ ] **3.3 loader cache (pickle).** (partly done 2026-10-07, at the loader, as a pickle; §3.3: `assert_frame_equal` passed for the loaded frame and the `predictivity` and `predictivity_seeds_train` pools; the full driver run is still to be timed on Slurm) `assert_frame_equal` per pool, then time one full driver run.
 5. [ ] **§4.1 hash freshness.** Remove `FORCE=1` from `nightly.sh`.
 6. [ ] **§5.** Finish the consumer map. Move the demoted steps behind `--full`, and drop the deck steps from `refresh_analysis.sh`.
@@ -183,6 +185,6 @@ The consumer map (paper `\includegraphics` / `\input`, `make_rq_figures.py`, `ve
 - Reading `scale_convergence.py`, the SNR variants, `tokens_seen.py`, `finetasks_criteria.py`, `compare_seed_splits.py` and `smooth_subtasks.py` for quadratic loops.
 - The consumer map per script output (paper `.tex`, `make_rq_figures.py`, `verify_paper_results.py`, `make_appendix_tables.py`, `make_surrogate_tables.py`, READMEs, `build_report.py`, `facts.py`, `check_rules.py`, other scripts' inputs), and the list of outputs nothing consumes.
 - The keep / demote / drop ranking of every step in `run_all_predictivity.sh`, with evidence.
-- The cost of the steps added since 2026-10-04: `catalogue.py`, `search.py`, `bench_bpb_da.py`, `reference_solved.py`, `recipe.py`, the probe `compare.py`.
+- ~~The cost of the steps added since 2026-10-04~~ measured 2026-10-07 (§2): `search.py` 84 min, `catalogue.py` 28 min, `bench_bpb_da.py` 2.0 min, `reference_solved.py` 1.4 min, `recipe.py` 1.2 min, the probe `compare.py` 1.1 + 0.5 min.
 - The cost of each post-pipeline step individually, and whether the report PDF needs any `documents/figures/fig_*.py` output.
 - Checks that the parquet round-trip preserves dtypes, and whether the frame has NaN scores or duplicate (family, bucket, task, step) rows, which the cube kernel must replicate.

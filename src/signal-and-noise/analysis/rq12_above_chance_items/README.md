@@ -391,7 +391,7 @@ store steps; `--store-pool` reads another store folder):
 
 ```bash
 OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4 HF_HUB_OFFLINE=1 \
-  python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity_schemes
+  python analysis/rq12_above_chance_items/above_chance_items.py --pool predictivity --store-pool predictivity
 ```
 
 Without a store, or with one that does not cover the pool, it prints why and

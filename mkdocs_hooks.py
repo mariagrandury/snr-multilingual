@@ -1,6 +1,7 @@
 import logging
 import posixpath
 import re
+import sys
 from pathlib import Path
 
 from mkdocs.structure.files import File
@@ -8,6 +9,9 @@ from mkdocs.structure.files import File
 log = logging.getLogger("mkdocs.hooks")
 
 REPO_ROOT = Path(__file__).resolve().parent
+# mkdocs loads this file by path, so the repo root is not on sys.path.
+sys.path.insert(0, str(REPO_ROOT))
+from anonymity import REMOVED_LINK  # noqa: E402
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 # Images referenced by an included README are published under this prefix at
 # their repo-relative path, so same-named figures in different dirs never clash.
@@ -102,12 +106,12 @@ def _link_readme(text, readme, page_uri):
 # --- Double-blind review -------------------------------------------------
 # The site must not link or name our HF orgs, W&B, GitHub, personal pages,
 # authors or cluster paths. A link to any of them becomes the
-# `extra.anonymity_notice` sentence of mkdocs.yml (pages write
-# `{{ anonymity_notice }}`, app.js reads <meta name="anonymity-notice">);
+# `anonymity.REMOVED_LINK` sentence (pages write `{{ anonymity_notice }}`,
+# app.js reads <meta name="anonymity-notice">);
 # a bare mention in text or code becomes a neutral placeholder.
 NOTICE_TOKEN = "{{ anonymity_notice }}"
-_NOTICE = {"text": ""}  # the wording lives only in mkdocs.yml extra.anonymity_notice
-_PEOPLE = r"mariagrandury|aromanou|maria[_ ]?grandury|antonia[_ ]?romanou|grandury|romanou"
+_NOTICE = {"text": REMOVED_LINK}  # the wording lives only in anonymity.py
+_PEOPLE = r"mariagrandury|aromanou|maria[_ ]?grandury|antonia[_ ]?romanou|grandury|romanou|angelika|hasler|bosselut|clara[_ ]?meister"
 # Affiliation, cluster and personal hosts: any URL containing one becomes the notice.
 _AFFIL = r"swiss[- _]?ai|cscs|clariden|epfl|claude\.ai/"
 _ORGS = r"swiss-ai|msnr|msnr-data|multilingual-snr|snr-models"
@@ -127,13 +131,16 @@ _REDACT = [
     # (e.g. Apertus-70B-2509, Megatron-LM) would still point at the org.
     (re.compile(rf"(?<![\w/.-])(?:{_ORGS})/[\w.-]+"), lambda m: _NOTICE["text"]),
     (re.compile(_PEOPLE, re.I), "anon"),
+    # The project's own handle names our HF orgs (msnr, msnr-data), the W&B
+    # project, buckets and the harness fork; the paper never uses it.
+    (re.compile(r"(?<![a-z0-9])msnr(?![a-z0-9])", re.I), "project"),
     # Affiliation and unreleased internal checkpoints in prose and code.
     (re.compile(r"custom_swissai_hf"), "custom_hf"),
     (re.compile(r"apertus3(?:[- ]a06)?(?:-[\w{},*.-]*)?|[\w-]*from8b[\w-]*|\ba06\b", re.I), "internal-checkpoint"),
     # Our own runs and containers are named after the Apertus architecture
     # (`apertus-350M-fwEdu60-...`, `apertus-eval`); the released Apertus
     # models (`Apertus-8B-2509`, capitalised) are third-party and stay.
-    (re.compile(r"\bapertus-(?=[\d*{])"), "model-"),
+    (re.compile(r"\bapertus-(?=[\d*{<])"), "model-"),
     (re.compile(r"\bapertus-(eval|nemo)\b"), r"\1-container"),
     (re.compile(r"\bapertus-(?=data-mix)"), ""),
     # Cluster filesystems, Slurm accounts and machine names (the affiliation).
@@ -153,7 +160,7 @@ _REDACT = [
 # What must never reach the built site; on_post_build warns on any hit.
 # The affiliation, cluster and internal checkpoints are redacted above; a hit
 # here means a page or data file bypassed _anonymize (static JSON, raw HTML).
-_LEAK = re.compile(rf"{_PEOPLE}|epfl|swiss[- _]?ai|cscs|clariden|claude\.ai/|apertus3|from8b|github\.com/swiss-ai|huggingface\.co/(?:datasets/)?(?:{_ORGS})\b|wandb\.ai/\w|iopsstor|capstor|(?<!\w)(?:a139|infra01)(?!\w)|\balps\d*\b|anon-org/|\ba06\b|snreswsstorage|azureml-blobstore-[0-9a-f]", re.I)
+_LEAK = re.compile(rf"{_PEOPLE}|epfl|swiss[- _]?ai|cscs|clariden|claude\.ai/|apertus3|from8b|github\.com/swiss-ai|huggingface\.co/(?:datasets/)?(?:{_ORGS})\b|wandb\.ai/\w|iopsstor|capstor|(?<!\w)(?:a139|infra01)(?!\w)|\balps\d*\b|anon-org/|\ba06\b|snreswsstorage|azureml-blobstore-[0-9a-f]|(?<![a-z0-9])msnr(?![a-z0-9])", re.I)
 
 
 # Figures whose pixels name internal lines (the a06 / distillation / Swiss-AI
@@ -190,13 +197,6 @@ def _anonymize(markdown):
             line = pattern.sub(repl, line)
         out.append(line)
     return "".join(out)
-
-
-def on_config(config):
-    _NOTICE["text"] = (config.get("extra") or {}).get("anonymity_notice") or ""
-    if not _NOTICE["text"]:
-        log.warning("anonymity: mkdocs.yml extra.anonymity_notice is missing; blocked links lose their notice")
-    return config
 
 
 ANALYSIS = REPO_ROOT / "src/signal-and-noise/analysis"

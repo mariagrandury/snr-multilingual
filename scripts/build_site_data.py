@@ -22,7 +22,7 @@ from analysis import paths  # noqa: E402
 
 OUT = REPO / "docs/interactive/data"
 PRED = "pretraining/predictivity"
-ALL = "pretraining/predictivity_all"
+ALL = "pretraining/predictivity_seeds"   # every seed and data build
 
 
 def rows(df: pd.DataFrame) -> list[dict]:
@@ -135,7 +135,7 @@ def evaluation(languages: list[str]) -> dict:
 
     Curves: rq00's score_curves.csv (per language: benchmark score per size
     along the run, mean over the cells that train the language) and, for
-    "all", predictivity_all/benchmark_curves.csv averaged the same way (per
+    "all", predictivity_seeds/benchmark_curves.csv averaged the same way (per
     cell over its trained-language tasks, then over the cells of a size).
     The x grid is training tokens in Chinchilla multiples (5 = the full run);
     `sizes` carries each rung's full-run tokens and FLOPs parameters (baseline
